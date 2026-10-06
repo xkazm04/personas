@@ -1,48 +1,44 @@
 /**
  * ChatVariantTabs — the Athena chat's variant switcher.
  *
- * FILAMENT WON the `athena-chrome` contest (owner, 2026-10-06) and is the
- * DEFAULT now. It had been reachable on master since `657b361397` - the tab was
- * here, the files were here, `ChatVariantHost` dispatched to it - but the store
- * below opened on `spread` and holds no persistence, so every launch and every
- * reload put Spread on screen. A winner you have to go and click, every time,
- * is not a winner the app ships.
+ * FUSION IS THE DEFAULT as of 2026-10-07: the owner reviewed round 5's six
+ * variants, liked none of them whole, and named the piece of each he wanted
+ * kept - Spread's keyboard decision, Filament's slim rail and toolset,
+ * Current's content rendering and managed overview, R5 · A's island, R5 · C's
+ * margin count. Fusion is that fusion (`frame/variants/fusion/`), so it is
+ * what the app opens on and the first tab.
  *
- * `current` and `spread` stay selectable at the owner's instruction: he is
- * setting up a separate project to fuse them with Filament, and deleting them
- * now would delete the inputs to that fusion. This is the one case where
- * keeping the losing variants alive is the explicit ask rather than the usual
- * rot - so it is recorded here, not assumed.
+ * Filament (the `athena-chrome` contest winner, 2026-10-06) and Current stay
+ * selectable beside it. Halo · Spread and R5 · A / B / C were deleted the same
+ * day at the owner's instruction, once Fusion had taken the parts he wanted
+ * from them. The store below holds no persistence, so a default is
+ * only a default if it is written here - every launch and every reload opens
+ * on it.
  */
 
 import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 
-// TODO(prototype, 2026-10-07): athena chat round 5 - consolidate after the owner picks.
-// `r5a` / `r5b` / `r5c` are round 5's three variant slots
-// (`frame/variants/r5{a,b,c}/index.tsx`, dispatched by `ChatVariantHost`).
-export type ChatVariant = 'current' | 'spread' | 'filament' | 'r5a' | 'r5b' | 'r5c';
+// TODO(prototype, 2026-10-07): athena chat - consolidate Fusion / Filament / Current once the owner settles.
+export type ChatVariant = 'fusion' | 'current' | 'filament';
 
 export const useChatVariantStore = create<{ variant: ChatVariant; set: (v: ChatVariant) => void }>((set) => ({
-  // The winner, so it is what the app opens on. Deliberately NOT persisted to
+  // The owner's fusion, so it is what the app opens on. Deliberately NOT persisted to
   // Web Storage: the default is now the thing you want, which is what made the
   // missing persistence a problem in the first place, and a storage site here
   // would be one the golden path then has to route somewhere
   // (`raw-web-storage`).
-  variant: 'filament',
+  variant: 'fusion',
   set: (variant) => set({ variant }),
 }));
 
-// Winner first: the strip reads left-to-right as what ships, then the two kept
-// for the fusion project.
+// Fusion first: the strip reads left-to-right as what ships, then what stays
+// selectable beside it.
 const TABS: { id: ChatVariant; label: string; testId: string }[] = [
+  { id: 'fusion', label: 'Fusion', testId: 'chat-variant-fusion' },
   { id: 'filament', label: 'Filament', testId: 'chat-variant-filament' },
   { id: 'current', label: 'Current', testId: 'chat-variant-current' },
-  { id: 'spread', label: 'Halo · Spread', testId: 'chat-variant-spread' },
-  { id: 'r5a', label: 'R5 · A', testId: 'chat-variant-r5a' },
-  { id: 'r5b', label: 'R5 · B', testId: 'chat-variant-r5b' },
-  { id: 'r5c', label: 'R5 · C', testId: 'chat-variant-r5c' },
 ];
 
 export function ChatVariantTabs({ lifted }: { lifted: boolean }) {
