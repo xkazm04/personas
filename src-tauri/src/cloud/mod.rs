@@ -2,6 +2,7 @@ pub(crate) mod athena_send;
 pub mod client;
 pub mod config;
 pub mod pairing;
+pub(crate) mod persona_chat_send;
 pub mod persona_projection;
 pub mod remote_commands;
 pub mod runner;

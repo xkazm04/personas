@@ -13,9 +13,8 @@
 //!
 //! * Row: `command_type = 'chat_send'`, `persona_id = 'athena'`
 //!   ([`ATHENA_PERSONA`]), and the envelope's `"persona":"athena"`. A
-//!   `chat_send` naming any other persona is refused
-//!   `unsupported_command_type` before the trust check (persona chat waits for
-//!   its turn to move into Rust).
+//!   `chat_send` naming any other persona is a persona chat
+//!   (`cloud::persona_chat_send`).
 //! * `params` = `{"sessionId": "<Athena thread id>" | null, "message": "..."}`,
 //!   read from the SIGNED envelope. `null` (or absent) starts a new thread. A
 //!   named thread must exist and be active, else `not_found`.
@@ -62,9 +61,8 @@ pub const MAX_MESSAGE_BYTES: usize = 8 * 1024;
 const START_WAIT: Duration = Duration::from_secs(5);
 const START_POLL: Duration = Duration::from_millis(100);
 
-/// Whether a `chat_send` row targets a recipient this desktop serves: Athena
-/// only. Decided from the row before the trust check, so a persona chat is
-/// refused the same way with or without a signature.
+/// Whether a `chat_send` targets Athena (and so takes this path); any other
+/// `persona_id` is a persona chat (`cloud::persona_chat_send`).
 pub fn is_supported_target(persona_id: Option<&str>) -> bool {
     persona_id == Some(ATHENA_PERSONA)
 }

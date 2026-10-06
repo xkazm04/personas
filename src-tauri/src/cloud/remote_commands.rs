@@ -25,13 +25,14 @@
 //! 2. **The auto-run set is closed**: `run_persona`, `pause_persona`,
 //!    `resume_persona`, `cancel_execution` and `chat_send` ([`auto_verb`]).
 //!    Two of them spend money on the user's plan with no desktop prompt and no
-//!    daily cap (M17): `run_persona`, and `chat_send`, which starts one Athena
-//!    turn. `chat_send` is served for ATHENA only (`persona_id = 'athena'`,
-//!    M18): one naming a persona is refused `unsupported_command_type` before
-//!    any trust check, until persona chat's turn moves into Rust. It also runs
-//!    only while the operator has "Sync chats" on, because its reply reaches
-//!    the phone as synced data (`cloud::athena_send`). The trust boundary is
-//!    the phone's non-extractable key plus revocation from this desk.
+//!    daily cap (M17): `run_persona`, and `chat_send`, which starts one chat
+//!    turn - with Athena (`persona_id = 'athena'`, `cloud::athena_send`) or
+//!    with a persona (its id, `cloud::persona_chat_send`: one persona
+//!    execution, through the same Rust turn the desktop chat uses). A
+//!    persona `chat_send` is refused `persona_paused` while that persona is
+//!    paused. `chat_send` runs only while the operator has "Sync chats" on,
+//!    because its reply reaches the phone as synced data. The trust boundary
+//!    is the phone's non-extractable key plus revocation from this desk.
 //! 3. **Everything else still needs the operator's click.** An unsigned
 //!    `run_persona` (an older web build, or a browser that was never paired)
 //!    surfaces the approval card exactly as before. The queue verbs
@@ -53,8 +54,8 @@
 //!    poll. A command already claimed finishes.
 //!
 //! What a paired phone can NOT do: edit a persona, read or touch credentials,
-//! chat with a persona (Athena only), use a queue verb without a click here,
-//! or send any verb outside rule 2.
+//! chat with a paused persona, use a queue verb without a click here, or send
+//! any verb outside rule 2.
 //!
 //! ## Queue verbs
 //!
@@ -110,6 +111,7 @@ use tokio::sync::Mutex;
 use ts_rs::TS;
 
 use crate::cloud::athena_send;
+use crate::cloud::persona_chat_send;
 use crate::cloud::sync::client::SyncClient;
 use crate::cloud::sync::cursor;
 use crate::cloud::trust::{self, Controller, Trust, Verified};
@@ -206,31 +208,15 @@ pub struct RemoteCommand {
 const QUEUE_VERBS: &[&str] = &["queue_reorder", "queue_set_lane", "queue_cancel"];
 
 /// The v1 verbs of the mobile command plane (PHASE2-SPEC 2.2), besides
-/// `run_persona`. `chat_send` is served for Athena only
-/// ([`athena_send::is_supported_target`]); a `chat_send` to a persona is still
-/// refused `unsupported_command_type` (see [`unsupported_target`]) until the
-/// persona chat turn moves into Rust.
+/// `run_persona`. `chat_send` is served for Athena
+/// ([`athena_send::is_supported_target`]) and for any persona
+/// (`persona_chat_send`).
 const V1_VERBS: &[&str] = &[
     "pause_persona",
     "resume_persona",
     "cancel_execution",
     "chat_send",
 ];
-
-/// A known verb aimed at a recipient this build does not serve, with the
-/// refusal to record: today only a `chat_send` to anyone but Athena. Decided
-/// from the row before the trust check, so the answer is the same signed or
-/// not (and a persona chat never reaches a dispatch).
-fn unsupported_target(c: &CommandRow) -> Option<String> {
-    (c.command_type == "chat_send"
-        && !athena_send::is_supported_target(c.persona_id.as_deref()))
-    .then(|| {
-        format!(
-            "unsupported_command_type: this desktop does not implement `chat_send` to a persona yet (only to Athena, persona_id = '{}')",
-            athena_send::ATHENA_PERSONA
-        )
-    })
-}
 
 /// Everything this desktop will act on. Anything else is refused and recorded.
 fn is_known_command_type(t: &str) -> bool {
@@ -359,9 +345,6 @@ fn to_remote(c: CommandRow, pool: &DbPool) -> RemoteCommand {
 enum Route {
     /// A verb this build does not implement: refuse and record.
     RejectUnknown,
-    /// A known verb for a recipient this build does not serve: refuse with
-    /// this message ([`unsupported_target`]).
-    RejectUnsupported(String),
     /// Past its window: mark `expired`, never execute (D4).
     Expire,
     /// Refuse with a [`trust::reason`].
@@ -375,9 +358,6 @@ enum Route {
 fn route(c: &CommandRow, controllers: &[Controller], device: &str, now: DateTime<Utc>) -> Route {
     if !is_known_command_type(&c.command_type) {
         return Route::RejectUnknown;
-    }
-    if let Some(refusal) = unsupported_target(c) {
-        return Route::RejectUnsupported(refusal);
     }
     if row_expired(c, now) {
         return Route::Expire;
@@ -743,15 +723,29 @@ impl VerbExecutor for AppExecutor {
                         result_ref: None,
                     }
                 }
-                "chat_send" => {
-                    // Athena only (re-checked inside `plan`): validate, pick or
-                    // open the thread, start the turn on Athena's own path.
+                "chat_send" if athena_send::is_supported_target(cmd.persona_id.as_deref()) => {
+                    // Athena: validate, pick or open the thread, start the
+                    // turn on Athena's own path.
                     let plan = athena_send::plan(&state.db, &state.user_db, cmd)?;
                     let thread = athena_send::resolve_thread(&state.user_db, &plan)?;
                     let user_message_id =
                         athena_send::start_turn(&self.app, state.inner(), &thread, &plan.message)
                             .await?;
                     athena_send::outcome(&thread, user_message_id)
+                }
+                "chat_send" => {
+                    // A persona: validate, then the desktop's one chat turn,
+                    // with the command id as the run's idempotency key.
+                    let plan = persona_chat_send::plan(&state.db, cmd)?;
+                    let started = crate::commands::core::chat_turn::start(
+                        state.inner(),
+                        self.app.clone(),
+                        &plan.persona_id,
+                        plan.request(),
+                        cmd.id.clone(),
+                    )
+                    .await?;
+                    persona_chat_send::outcome(&started)
                 }
                 verb if QUEUE_VERBS.contains(&verb) => {
                     require_operator_for_queue(authority)?;
@@ -898,16 +892,6 @@ async fn process_row(
                         "unsupported_command_type: this desktop does not implement `{}`",
                         c.command_type
                     ) }),
-                )
-                .await;
-        }
-        Route::RejectUnsupported(message) => {
-            tracing::warn!(command_type = %c.command_type, id = %c.id, "remote command: unsupported recipient, refusing");
-            plane
-                .refuse(
-                    &c.id,
-                    Resolution::Rejected,
-                    json!({ "error_message": message }),
                 )
                 .await;
         }
@@ -1478,6 +1462,9 @@ mod tests {
     struct FakePlane {
         writes: StdMutex<Vec<Write>>,
         lose_claims: bool,
+        /// Ids already claimed: a second claim of one id loses, exactly as the
+        /// cloud's `status=eq.pending` compare-and-set does.
+        claimed: StdMutex<HashSet<String>>,
     }
 
     impl FakePlane {
@@ -1490,7 +1477,7 @@ mod tests {
     impl CommandPlane for FakePlane {
         async fn claim(&self, id: &str) -> Result<bool, AppError> {
             self.writes.lock().unwrap().push(Write::Claim(id.into()));
-            Ok(!self.lose_claims)
+            Ok(!self.lose_claims && self.claimed.lock().unwrap().insert(id.to_string()))
         }
         async fn finish(&self, id: &str, status: Resolution, fields: Value) {
             self.writes.lock().unwrap().push(Write::Finish(
@@ -1533,6 +1520,38 @@ mod tests {
             _authority: &Authority,
         ) -> Result<Outcome, AppError> {
             self.calls.lock().unwrap().push(cmd.command_type.clone());
+            if cmd.command_type == "chat_send"
+                && !athena_send::is_supported_target(cmd.persona_id.as_deref())
+            {
+                // A persona: the production plan and the production turn up to
+                // the engine (user row, context, input); the run itself is an
+                // execution row keyed by the command id, as the engine's
+                // idempotent create would write it.
+                let plan = persona_chat_send::plan(&self.pool, cmd)?;
+                let prepared = crate::commands::core::chat_turn::prepare(
+                    &self.pool,
+                    &plan.persona_id,
+                    &plan.request(),
+                )?;
+                let (run, _) =
+                    crate::db::repos::execution::executions::create_with_idempotency_reporting(
+                        &self.pool,
+                        &plan.persona_id,
+                        None,
+                        Some(prepared.input.input.clone()),
+                        None,
+                        None,
+                        Some(cmd.id.clone()),
+                        false,
+                    )?;
+                return Ok(persona_chat_send::outcome(
+                    &crate::commands::core::chat_turn::ChatTurnStarted {
+                        session_id: prepared.session_id,
+                        user_message: prepared.user_message,
+                        execution_id: run.id,
+                    },
+                ));
+            }
             if cmd.command_type == "chat_send" {
                 let user_db = &self.user_db;
                 let plan = athena_send::plan(&self.pool, user_db, cmd)?;
@@ -1769,28 +1788,229 @@ mod tests {
         assert!(exec.calls.lock().unwrap().is_empty(), "nothing executed");
     }
 
+    /// The persona harness with "Sync chats" set as given.
+    fn persona_chat_harness(chats_on: bool) -> (DbPool, String, FakePlane, DbExecutor) {
+        let (pool, persona, plane, exec) = harness();
+        crate::db::repos::core::settings::set(
+            &pool,
+            crate::db::settings_keys::CLOUD_SYNC_CHATS_ENABLED,
+            if chats_on { "true" } else { "false" },
+        )
+        .expect("chats setting");
+        (pool, persona, plane, exec)
+    }
+
+    /// One COUNT(*); the checkout propagates.
+    fn count(pool: &DbPool, sql: &str, p: impl rusqlite::Params) -> Result<i64, AppError> {
+        Ok(pool.get()?.query_row(sql, p, |r| r.get(0))?)
+    }
+
+    const PERSONA_HELLO: &str = r#"{"sessionId":null,"message":"What is on my plate today?"}"#;
+
+    fn session_messages(pool: &DbPool, persona: &str, session: &str) -> Vec<(String, String)> {
+        crate::db::repos::communication::chat::get_session_messages(pool, persona, session, None)
+            .expect("messages")
+            .into_iter()
+            .map(|m| (m.role.to_string(), m.content))
+            .collect()
+    }
+
     #[test]
-    fn a_chat_send_to_a_persona_is_unsupported_signed_or_not() {
-        let (_pool, plane, exec) = chat_harness(true);
+    fn a_signed_chat_send_to_a_persona_starts_its_turn_and_completes_with_the_ids() {
+        let (pool, persona, plane, exec) = persona_chat_harness(true);
         let phone = Phone::new();
-        let signed = phone.row_with("chat_send", "a-persona-id", DEV, Utc::now(), ATHENA_HELLO);
-        let mut unsigned = signed.clone();
-        unsigned.id = uuid::Uuid::new_v4().to_string();
-        unsigned.controller_id = None;
-        run(&plane, &exec, &[phone.controller()], signed);
-        run(&plane, &exec, &[], unsigned);
+        let mut row = phone.row_with("chat_send", &persona, DEV, Utc::now(), PERSONA_HELLO);
+        // The row's params column is NOT signed: what runs is the envelope's.
+        row.params = Some(json!({ "sessionId": null, "message": "tampered column" }));
+        let id = row.id.clone();
+        run(&plane, &exec, &[phone.controller()], row);
+
         let writes = plane.writes();
-        assert_eq!(writes.len(), 2, "{writes:?}");
-        for w in writes {
-            let Write::Refuse(_, status, fields) = w else {
-                panic!("a refusal, never a claim: {w:?}")
-            };
-            assert_eq!(status, "rejected");
-            assert!(fields["error_message"]
-                .as_str()
-                .is_some_and(|m| m.starts_with("unsupported_command_type")));
-        }
+        assert_eq!(
+            writes[..2],
+            [Write::Stamp(CTL.into()), Write::Claim(id.clone())]
+        );
+        let Some(Write::Finish(fid, status, fields)) = writes.last().cloned() else {
+            panic!("finish: {writes:?}")
+        };
+        assert_eq!((fid.as_str(), status.as_str()), (id.as_str(), "completed"));
+        let session = fields["result"]["sessionId"].as_str().expect("session id");
+        assert!(session.starts_with("chat-"), "{session}");
+        let run_id = fields["result"]["executionId"]
+            .as_str()
+            .expect("execution id");
+        assert_eq!(
+            fields["execution_id"],
+            json!(run_id),
+            "the row names the run"
+        );
+        assert!(fields["result"]["userMessageId"].is_string());
+        // The command id is the run's idempotency key.
+        let by_key = crate::db::repos::execution::executions::get_by_idempotency_key(&pool, &id)
+            .expect("lookup")
+            .expect("the run");
+        assert_eq!(by_key.id, run_id);
+        // The message came from the SIGNED envelope; a new session runs as the
+        // agent itself, with the whole (one-message) transcript.
+        assert_eq!(
+            session_messages(&pool, &persona, session),
+            vec![("user".to_string(), "What is on my plate today?".to_string())]
+        );
+        assert_eq!(
+            by_key.input_data.as_deref(),
+            Some(
+                r#"{"_chat":true,"conversation":"Human: What is on my plate today?","latest_message":"What is on my plate today?"}"#
+            )
+        );
+    }
+
+    #[test]
+    fn an_unsigned_chat_send_to_a_persona_is_rejected_controller_not_paired() {
+        let (pool, persona, plane, exec) = persona_chat_harness(true);
+        let mut row = Phone::new().row_with("chat_send", &persona, DEV, Utc::now(), PERSONA_HELLO);
+        row.controller_id = None;
+        let id = row.id.clone();
+        run(&plane, &exec, &[], row);
+        assert_eq!(
+            plane.writes(),
+            vec![Write::Refuse(
+                id,
+                "rejected".into(),
+                json!({ "error_message": "controller_not_paired" })
+            )]
+        );
         assert!(exec.calls.lock().unwrap().is_empty(), "nothing executed");
+        let n = count(&pool, "SELECT COUNT(*) FROM chat_messages", []).expect("count");
+        assert_eq!(n, 0, "no message written");
+    }
+
+    #[test]
+    fn a_persona_chat_send_while_chats_do_not_sync_fails_chat_sync_off() {
+        let (_pool, persona, plane, exec) = persona_chat_harness(false);
+        let phone = Phone::new();
+        run(
+            &plane,
+            &exec,
+            &[phone.controller()],
+            phone.row_with("chat_send", &persona, DEV, Utc::now(), PERSONA_HELLO),
+        );
+        let Some(Write::Finish(_, status, fields)) = plane.writes().pop() else {
+            panic!("finish")
+        };
+        assert_eq!(status, "failed");
+        assert_eq!(fields, json!({ "error_message": "chat_sync_off" }));
+    }
+
+    #[test]
+    fn a_persona_chat_send_to_a_paused_persona_fails_persona_paused() {
+        let (pool, persona, plane, exec) = persona_chat_harness(true);
+        crate::db::repos::core::personas::set_enabled(&pool, &persona, false).expect("pause");
+        let phone = Phone::new();
+        run(
+            &plane,
+            &exec,
+            &[phone.controller()],
+            phone.row_with("chat_send", &persona, DEV, Utc::now(), PERSONA_HELLO),
+        );
+        let Some(Write::Finish(_, status, fields)) = plane.writes().pop() else {
+            panic!("finish")
+        };
+        assert_eq!(status, "failed");
+        assert_eq!(fields, json!({ "error_message": "persona_paused" }));
+    }
+
+    /// Two polls that both see the same pending row: one claim wins, the turn
+    /// runs once, and the second sees "no longer pending".
+    #[test]
+    fn a_re_claimed_persona_chat_send_runs_once() {
+        let (pool, persona, plane, exec) = persona_chat_harness(true);
+        let phone = Phone::new();
+        let row = phone.row_with("chat_send", &persona, DEV, Utc::now(), PERSONA_HELLO);
+        let id = row.id.clone();
+        run(&plane, &exec, &[phone.controller()], row.clone());
+        run(&plane, &exec, &[phone.controller()], row);
+        assert_eq!(exec.calls.lock().unwrap().len(), 1, "executed once");
+        let finishes = plane
+            .writes()
+            .into_iter()
+            .filter(|w| matches!(w, Write::Finish(..)))
+            .count();
+        assert_eq!(finishes, 1);
+        let n = count(
+            &pool,
+            "SELECT COUNT(*) FROM chat_messages WHERE role = 'user'",
+            [],
+        )
+        .expect("count");
+        assert_eq!(n, 1, "one user message");
+        let runs = count(
+            &pool,
+            "SELECT COUNT(*) FROM persona_executions WHERE idempotency_key = ?1",
+            rusqlite::params![id],
+        )
+        .expect("count");
+        assert_eq!(runs, 1, "one run");
+    }
+
+    /// A follow-up names the session the first send opened; it continues the
+    /// stored mode and resumes the Claude session once one is stored.
+    #[test]
+    fn a_follow_up_chat_send_continues_the_named_session() {
+        let (pool, persona, plane, exec) = persona_chat_harness(true);
+        let phone = Phone::new();
+        run(
+            &plane,
+            &exec,
+            &[phone.controller()],
+            phone.row_with("chat_send", &persona, DEV, Utc::now(), PERSONA_HELLO),
+        );
+        let Some(Write::Finish(_, _, first)) = plane.writes().pop() else {
+            panic!("finish")
+        };
+        let session = first["result"]["sessionId"]
+            .as_str()
+            .expect("session")
+            .to_string();
+        crate::db::repos::communication::chat::upsert_session_context(
+            &pool,
+            crate::db::models::UpsertSessionContextInput {
+                session_id: session.clone(),
+                persona_id: persona.clone(),
+                title: None,
+                summary: None,
+                system_prompt_hash: None,
+                working_memory: None,
+                chat_mode: None,
+                claude_session_id: Some("claude-sess-9".into()),
+            },
+        )
+        .expect("claude session");
+        let params = format!(r#"{{"sessionId":"{session}","message":"And tomorrow?"}}"#);
+        let row = phone.row_with("chat_send", &persona, DEV, Utc::now(), &params);
+        let id = row.id.clone();
+        run(&plane, &exec, &[phone.controller()], row);
+        let Some(Write::Finish(_, status, fields)) = plane.writes().pop() else {
+            panic!("finish")
+        };
+        assert_eq!(status, "completed");
+        assert_eq!(fields["result"]["sessionId"], json!(session));
+        let follow_run =
+            crate::db::repos::execution::executions::get_by_idempotency_key(&pool, &id)
+                .expect("lookup")
+                .expect("run");
+        assert_eq!(
+            follow_run.input_data.as_deref(),
+            Some(r#"{"_chat":true,"latest_message":"And tomorrow?"}"#)
+        );
+        // A session of another persona is not this one's.
+        let other = seed_persona(&pool);
+        let row = phone.row_with("chat_send", &other, DEV, Utc::now(), &params);
+        run(&plane, &exec, &[phone.controller()], row);
+        let Some(Write::Finish(_, status, fields)) = plane.writes().pop() else {
+            panic!("finish")
+        };
+        assert_eq!(status, "failed");
+        assert_eq!(fields, json!({ "error_message": "not_found" }));
     }
 
     #[test]
