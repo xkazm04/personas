@@ -81,8 +81,13 @@ export interface Readout {
 export interface DialLayout {
   c: Pt;
   R: number;
-  /** The centre hub: a fixed readable box inscribed in the instrument's face. */
+  /** The centre hub: a readable box inscribed in the instrument's face, in two
+   *  shapes. `hub` is the wide one; `hubTall` trades width for height, for an
+   *  act whose content would not fit the wide one. `orbitH` caps either while
+   *  the casting crowd orbits above and below it. */
   hub: { w: number; h: number };
+  hubTall: { w: number; h: number };
+  orbitH: number;
   colW: number;
   readouts: Record<GlyphDimension, Readout>;
   /** Free room in the top-left and bottom-right corners (legend, title block). */
@@ -100,9 +105,11 @@ export function dialLayout(w: number, h: number): DialLayout | null {
   const R = D / 2;
   const c = { x: w / 2, y: h / 2 };
   const face = R * RADII.face;
-  const hubW = clamp(2 * face * 0.82, Math.min(300, 2 * face * 0.94), 440);
-  // Inscribed in the face, and clear of the casting orbit above and below it.
-  const hubH = Math.min(2 * Math.sqrt(Math.max(0, face * face - (hubW / 2) ** 2)), 2 * (ORBIT.r * Math.cos(rad(ORBIT.half)) * R - 24));
+  // Both shapes are inscribed in the face: a corner never reaches the ring.
+  const inscribed = (w: number) => ({ w, h: 2 * Math.sqrt(Math.max(0, face * face - (w / 2) ** 2)) });
+  const hub = inscribed(clamp(2 * face * 0.82, Math.min(300, 2 * face * 0.94), 440));
+  const hubTall = inscribed(clamp(2 * face * 0.66, Math.min(280, 2 * face * 0.9), 400));
+  const orbitH = 2 * (ORBIT.r * Math.cos(rad(ORBIT.half)) * R - 24);
   const colW = Math.min(250, (w - D) / 2 - COL_GAP - 8);
   const readouts = {} as Record<GlyphDimension, Readout>;
   for (const dim of GLYPH_DIMENSIONS) {
@@ -115,7 +122,7 @@ export function dialLayout(w: number, h: number): DialLayout | null {
   }
   const topChip = readouts.error.end.y - CHIP_H / 2;
   return {
-    c, R, hub: { w: hubW, h: hubH }, colW, readouts,
+    c, R, hub, hubTall, orbitH, colW, readouts,
     legendRoom: topChip - 14,
     plateTop: readouts.message.end.y + CHIP_H / 2 + 10,
   };
@@ -172,3 +179,16 @@ export function fanAnnulus(a: Pt, r0: number, r1: number, p0: number, p1: number
 /** The dial's real angle at fan angle phi, for a sector centred on theta. */
 export const realAngle = (theta: number, phi: number) => theta + (phi * HALF_SPAN) / FAN_HALF;
 export const fanAngle = (theta: number, real: number) => ((real - theta) * FAN_HALF) / HALF_SPAN;
+
+export interface HubRect { x: number; y: number; w: number; h: number }
+
+/** The hub's two boxes on the stage, centred on the dial; capped under the
+ *  casting orbit while it is drawn. Without a dial, the whole stage. */
+export function hubRects(L: DialLayout | null, orbiting: boolean, stage: { w: number; h: number }): { wide: HubRect; tall: HubRect | null } {
+  if (!L) return { wide: { x: 0, y: 0, w: stage.w, h: stage.h }, tall: null };
+  const at = ({ w, h }: { w: number; h: number }): HubRect => {
+    const hh = orbiting ? Math.min(h, L.orbitH) : h;
+    return { x: L.c.x - w / 2, y: L.c.y - hh / 2, w, h: hh };
+  };
+  return { wide: at(L.hub), tall: at(L.hubTall) };
+}

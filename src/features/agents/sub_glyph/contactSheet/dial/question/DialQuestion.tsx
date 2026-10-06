@@ -100,11 +100,13 @@ export function DialQuestion({ qs, index, color, draftOf, onDraft, onPick, onNex
                     role="radio"
                     aria-checked={on}
                     onClick={() => onPick(opt)}
-                    className="!justify-start !gap-3 w-full !px-1.5 !py-2 text-left"
+                    className="w-full !px-1.5 !py-2 text-left [&>span]:w-full [&>span]:min-w-0"
                     style={{ borderBottom: `1px ${on ? "solid" : "dashed"} ${on ? color : "var(--ink-faint)"}`, background: on ? tint(color, 0.1) : undefined }}
                   >
-                    <InkBadge num={String(i + 1)} ink={on ? "done" : "pending"} color={color} populated size={22} />
-                    <span className="typo-body text-foreground">{opt}</span>
+                    <span className="flex w-full min-w-0 items-center gap-3">
+                      <InkBadge num={String(i + 1)} ink={on ? "done" : "pending"} color={color} populated size={22} />
+                      <span className="min-w-0 typo-body text-foreground">{opt}</span>
+                    </span>
                   </Button>
                 );
               })}

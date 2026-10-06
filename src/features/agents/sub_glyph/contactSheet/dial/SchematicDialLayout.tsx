@@ -12,7 +12,8 @@
  *  orbits it and the winner flies in to be crowned. A sector click EXPLODES it
  *  and so does the question round, the asked sector beside its question
  *  (DialLayers); every other layer is Cinema's camera, unchanged. While a
- *  sector is out the dial sinks well back, so nothing behind it competes. */
+ *  sector is out the dial sinks well back and the construction grid fades to
+ *  half with it, so nothing behind the nested layer competes. */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/utility/interaction/useMotion";
@@ -33,7 +34,7 @@ import { useSheetKeys } from "../cinema/useSheetKeys";
 import { populatedDims } from "../cinema/sheetModel";
 import { useSheetSleep } from "../cinema/stage/useSheetSleep";
 import { COPY as CINEMA } from "../cinema/copy";
-import { dialLayout, sectorPoint } from "./dialGeometry";
+import { dialLayout, hubRects, sectorPoint } from "./dialGeometry";
 import { inkOf, rimTicks, type Ink } from "./dialMarks";
 import { useDialMarks } from "./useDialMarks";
 import { useStageSize } from "./useStageSize";
@@ -41,6 +42,7 @@ import { DialPrint } from "./DialPrint";
 import { DialHub } from "./DialHub";
 import { DialLegend, DialPlate } from "./DialPlate";
 import { DialLayers } from "./DialLayers";
+import { DialGrid } from "./DialGrid";
 import { COPY } from "./copy";
 import "./dial.css";
 
@@ -61,7 +63,7 @@ export function SchematicDialLayout(props: GlyphFullLayoutProps) {
   const L = useMemo(() => dialLayout(stage.w, stage.h), [stage.w, stage.h]);
   useEffect(() => { setLayer(null); setModal(null); setExploded(null); }, [s.sessionId]);
 
-  const hubBox = useMemo<Rect>(() => (L ? { x: L.c.x - L.hub.w / 2, y: L.c.y - L.hub.h / 2, w: L.hub.w, h: L.hub.h } : { x: 0, y: 0, w: stage.w, h: stage.h }), [L, stage.w, stage.h]);
+  const hubBox = useMemo<Rect>(() => hubRects(L, false, { w: stage.w, h: stage.h }).wide, [L, stage.w, stage.h]);
   const centreRect = useCallback((): Rect => hubBox, [hubBox]);
   const frameRect = useCallback((dim: GlyphDimension | null): Rect => {
     if (!dim || !L) return hubBox;
@@ -124,11 +126,12 @@ export function SchematicDialLayout(props: GlyphFullLayoutProps) {
   const drawing = useDialMarks(drawKey, inks, ticks, sectorText);
   const working = act === "casting" || act === "wiring" || act === "screening" || drawing.count < drawing.total;
   const stamp = act === "premiere" ? COPY.stamp.issued : act === "verdict" && props.testPassed ? COPY.stamp.passed : act === "stopped" ? COPY.stamp.stopped : null;
+  const orbiting = act === "casting" || act === "questions" || act === "wiring";
   const billing = `${values.trigger?.caption ?? CINEMA.frame.runsOnAsk}${values.message?.caption ? ` · ${values.message.caption}` : ""}`;
 
   const hub = (
     <DialHub
-      p={props} s={s} tight={tight} billing={billing} box={hubBox}
+      p={props} s={s} tight={tight} billing={billing} boxes={hubRects(L, orbiting && s.cast.phase !== "crowned", stage)}
       a={{
         openContext: (el) => setLayer({ kind: "context", from: clientRect(el) }),
         openCore: (el) => setLayer({ kind: "core", from: clientRect(el) }),
@@ -146,7 +149,8 @@ export function SchematicDialLayout(props: GlyphFullLayoutProps) {
 
   return (
     <div className="bp-root flex-1 min-h-0 w-full flex flex-col" data-testid="SchematicDialLayout" style={{ ["--cinema-accent" as string]: s.cast.accent, ["--paper" as string]: "var(--background)" }}>
-      <div ref={stageRef} className="bp-grid relative flex-1 min-h-0 min-w-0 overflow-clip" aria-label={COPY.root}>
+      <div ref={stageRef} className="relative flex-1 min-h-0 min-w-0 overflow-clip" aria-label={COPY.root}>
+        <DialGrid receded={out} />
         <motion.div
           className={`absolute inset-0 ${sleep.frozen ? PAUSED : ""}`}
           style={{ transformOrigin: sleep.origin, willChange: sleep.frozen ? "transform, opacity" : undefined, visibility: sleep.hidden && !out ? "hidden" : undefined }}
@@ -161,7 +165,7 @@ export function SchematicDialLayout(props: GlyphFullLayoutProps) {
             <DialPrint
               frozen={sleep.frozen} stage={stage} layout={L} labels={dimText.label} drawing={drawing}
               populated={populated} values={frameValues} cast={s.cast} presence={s.presence}
-              orbiting={act === "casting" || act === "questions" || act === "wiring"} working={working}
+              orbiting={orbiting} working={working}
               sweepKey={drawKey} onOpen={explode} hub={hub}
               furniture={
                 <>

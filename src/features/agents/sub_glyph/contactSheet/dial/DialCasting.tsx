@@ -3,7 +3,10 @@
  *  and below it, and are cast down to finalists; the moment the real identity
  *  streams in, the winner leaves its orbit slot and flies into the hub (one
  *  shared layout id), where its name is lettered in under it with the role and
- *  mission (Cinema's crowning moment, kept). The hub stays free for the panel. */
+ *  mission (Cinema's crowning moment, kept). The hub stays free for the panel.
+ *  The same crowned header carries the hub to the end of the build: the draft
+ *  and the verdict rename it in place, the premiere letters "now showing" over
+ *  it and bills it under, never a card of its own (the panel is the one). */
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { CinemaSilhouette } from "@/features/agents/sub_glyph/cinemaShared";
@@ -11,6 +14,8 @@ import { useAgentStore } from "@/stores/agentStore";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import type { CinemaCast } from "../cinema/useCinemaCast";
 import { CrownedName } from "../cinema/centre/IdentityCentre";
+import { NameField } from "../cinema/centre/TitleCard";
+import { LETTERING } from "../blueprint";
 import { EASE } from "../cinema/cinemaMotion";
 import { COPY as CINEMA } from "../cinema/copy";
 import { orbitSlot, type Pt } from "./dialGeometry";
@@ -51,11 +56,17 @@ interface DialIdentityProps {
   cast: CinemaCast;
   agentName: string;
   tight: boolean;
+  /** Lettered over the name (the premiere's "now showing"). */
+  kicker?: string;
+  /** The name renames in place (draft, screening, verdict). */
+  onRename?: (v: string) => void;
+  /** One line under the mission (the premiere's billing). */
+  footnote?: string | null;
   children: React.ReactNode;
 }
 
-/** The hub through casting, questions and wiring: the crowned persona over the panel. */
-export function DialIdentity({ cast, agentName, tight, children }: DialIdentityProps) {
+/** The hub from casting to premiere: the crowned persona over the panel. */
+export function DialIdentity({ cast, agentName, tight, kicker, onRename, footnote, children }: DialIdentityProps) {
   const core = useAgentStore((s) => s.buildBehaviorCore);
   const role = core?.identity?.role ?? null;
   const mission = core?.mission ?? null;
@@ -76,11 +87,13 @@ export function DialIdentity({ cast, agentName, tight, children }: DialIdentityP
           </motion.span>
         </motion.span>
         <span className="flex min-w-0 flex-col items-start text-left">
-          <CrownedName name={agentName.trim() || CINEMA.yourAgent} />
+          {kicker && <span style={{ ...LETTERING, fontSize: 10, color: accent }}>{kicker}</span>}
+          {onRename ? <NameField name={agentName} onChange={onRename} /> : <CrownedName name={agentName.trim() || CINEMA.yourAgent} />}
           {role && <motion.span initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="typo-caption font-mono uppercase tracking-[0.1em] truncate max-w-full" style={{ color: accent }}>{role}</motion.span>}
         </span>
       </div>
       {mission && !tight && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }} className="typo-body text-foreground line-clamp-2">{mission}</motion.p>}
+      {footnote && <span className="typo-caption text-foreground truncate max-w-full">{footnote}</span>}
       {children}
     </div>
   );

@@ -108,7 +108,7 @@ describe("SchematicDialLayout", () => {
     const q = { cellKey: DIM_TO_CELL_KEY.trigger, question: "When should it run?", options: ["Every morning", "Hourly"] };
     state = { ...state, flow: { ...state.flow, qs: [q], n: 1, current: q, stage: "asking", pick } } as SheetState;
     render(<SchematicDialLayout {...props({ buildPhase: "awaiting_input" })} />);
-    ids("dial-question-layer", "dial-exploded-fan", "dial-question");
+    ids("dial-question-layer", "dial-exploded-fan", "dial-question", "dial-grid");
     expect(screen.queryByTestId("dial-exploded-controls")).toBeNull();
     fireEvent.click(screen.getByRole("radio", { name: /Hourly/ }));
     expect(pick).toHaveBeenLastCalledWith("Hourly");
@@ -129,6 +129,8 @@ describe("SchematicDialLayout", () => {
     state = makeState("draft", { connector: "lit" });
     render(<SchematicDialLayout {...props({ hasDesignResult: true, buildPhase: "draft_ready" })} />);
     ids("sheet-cinema-action-panel", "build-simulate-open");
+    // The dial draws Cinema's panel as a drafted title block, not a raised card.
+    expect(screen.getByTestId("sheet-cinema-action-panel").className).not.toContain("shadow-elevation-2");
   });
 
   it("verdict: promote and the report when passed; promote-anyway when the screening failed", () => {

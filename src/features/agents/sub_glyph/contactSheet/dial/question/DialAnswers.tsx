@@ -68,12 +68,14 @@ export function DialAnswersList({ stage, qs, draftOf, onOpen }: DialAnswersListP
               size="sm"
               disabled={sending}
               onClick={() => onOpen(i)}
-              className="!justify-start !gap-2.5 w-full !px-1.5 !py-1.5 text-left"
+              className="w-full !px-1.5 !py-1 text-left [&>span]:w-full [&>span]:min-w-0"
               style={{ borderBottom: "1px dashed var(--ink-faint)" }}
             >
-              <InkBadge num={r.num} ink="done" color={r.color} populated size={18} />
-              <span className="w-[84px] shrink-0 truncate" style={{ ...LETTERING, color: r.color }}>{r.name}</span>
-              <span className="typo-body text-foreground truncate">{draftOf(q)}</span>
+              <span className="flex w-full min-w-0 items-center gap-2.5">
+                <InkBadge num={r.num} ink="done" color={r.color} populated size={18} />
+                <span className="w-[92px] shrink-0 truncate" style={{ ...LETTERING, color: r.color }}>{r.name}</span>
+                <span className="min-w-0 typo-body text-foreground truncate">{draftOf(q)}</span>
+              </span>
             </Button>
           </li>
         );

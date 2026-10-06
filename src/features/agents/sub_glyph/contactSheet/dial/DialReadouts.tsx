@@ -33,6 +33,11 @@ export function useCallout(latest: DialMark | null): DialMark | null {
   return latest && shown === latest.id ? latest : null;
 }
 
+/** Below this column width the "by the build / set by you" word is dropped
+ *  for a finished part (its inked badge already says it is done), so the
+ *  name and the caption keep the room and nothing runs off the stage. */
+const ROOMY = 210;
+
 function stateWord(ink: Ink, value: FrameValue | null): string {
   if (ink === "done" && value?.by) return COPY.by[value.by];
   return COPY.ink[ink];
@@ -66,15 +71,19 @@ export const DialReadouts = memo(function DialReadouts({ readouts, colW, labels,
             size="sm"
             data-testid={`dial-readout-${dim}`}
             onClick={() => onOpen(dim)}
-            className={`dial-readout absolute !px-1.5 !py-1 flex-col !gap-0.5 !justify-center ${left ? "!items-end text-right" : "!items-start text-left"}`}
+            className={`dial-readout absolute !px-1.5 !py-1 [&>span]:w-full [&>span]:min-w-0 ${left ? "text-right" : "text-left"}`}
             style={{ left: left ? r.end.x - colW - 6 : r.end.x + 6, top: r.end.y - CHIP_H / 2, width: colW, height: CHIP_H }}
           >
-            <span className={`flex w-full items-center gap-2 ${left ? "flex-row-reverse" : ""}`}>
+            {/* Button wraps its label in a bare span; this column is the chip's real body. */}
+            <span className={`flex w-full min-w-0 flex-col justify-center gap-0.5 ${left ? "items-end" : "items-start"}`}>
+            <span className={`flex w-full min-w-0 items-center gap-2 ${left ? "flex-row-reverse" : ""}`}>
               <InkBadge num={frameNumber(dim)} ink={ink[dim]} color={color} populated={populated[dim]} size={18} />
-              <span className="dial-readout-label truncate" style={{ ...LETTERING, color: vivid ? color : colorWithAlpha(color, ink[dim] === "pending" ? 0.62 : 0.85) }}>
+              <span className="dial-readout-label min-w-0 truncate" style={{ ...LETTERING, color: vivid ? color : colorWithAlpha(color, ink[dim] === "pending" ? 0.62 : 0.85) }}>
                 {labels[dim]}
               </span>
-              <span className={`typo-caption whitespace-nowrap ${left ? "mr-auto" : "ml-auto"}`}>{stateWord(ink[dim], value)}</span>
+              {(colW >= ROOMY || ink[dim] !== "done") && (
+                <span className={`typo-caption shrink-0 whitespace-nowrap ${left ? "mr-auto" : "ml-auto"}`}>{stateWord(ink[dim], value)}</span>
+              )}
             </span>
             <span className="block w-full truncate typo-body text-foreground">
               {writing ? (
@@ -83,6 +92,7 @@ export const DialReadouts = memo(function DialReadouts({ readouts, colW, labels,
                   <Lettered text={writing.text} />
                 </span>
               ) : value?.caption ?? " "}
+            </span>
             </span>
           </Button>
         );
