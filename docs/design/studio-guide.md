@@ -107,5 +107,7 @@ Kept on purpose: the owner preferred the plan drawer's look to the goals rail's,
 wears it - icon header with the count, a 2 px progress line, `StudioChecklistStepper` as the
 timeline, `PlanGlyph` as the no-plan state - while keeping the rail's own behaviour (draft goals
 from the sketch, ghost rows while she plans, add a goal on G). The dock's goals button shows or
-hides the rail (`useStudioHistory.goalsOpen`, kept per machine); its Plan | App switch pins the
-frame the way B does.
+hides the rail (`useStudioHistory.goalsOpen`, kept per machine); its Plan | App icons (right
+end of the input row) pin the frame the way B does. Plan draws the blueprint sheet over a running
+app at the replay pace; the preview iframes stay mounted under it, hidden and inert
+(`StudioPreviewFrames hidden`), because drawn after the sheet a visible frame covers it.

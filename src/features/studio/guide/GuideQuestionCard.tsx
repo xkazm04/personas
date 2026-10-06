@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { guideStrings } from './guideCopy';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useDecisionKeys } from '../useDecisionKeys';
 
 // The question card (contest A/3): large, informative, grows out of the orb's
@@ -70,7 +71,13 @@ export default function GuideQuestionCard({
         </button>
       </header>
       <div className="px-5 pb-5 pt-4">
-        {reason && <p className="border-l-2 border-primary/50 pl-3 typo-body text-foreground/90">{reason}</p>}
+        {/* Her last beat is markdown (a proposed plan comes as headings and
+            lists); a long one scrolls inside the card, the question stays put. */}
+        {reason && (
+          <div className="max-h-[40vh] overflow-y-auto overscroll-contain border-l-2 border-primary/50 pl-3" data-testid="question-reason">
+            <MarkdownRenderer content={reason} variant="card" />
+          </div>
+        )}
         <h3 className="mt-3 typo-heading-lg text-foreground">{question}</h3>
         {pointsAtElement && <p className="mt-1 typo-caption text-primary">{g.points_at_element}</p>}
         {options.length > 0 ? (

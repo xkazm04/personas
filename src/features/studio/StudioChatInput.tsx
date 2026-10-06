@@ -5,10 +5,10 @@ import {
   AppWindow,
   ChevronDown,
   ChevronUp,
+  DraftingCompass,
   CircleStop,
   Image as ImageIcon,
   ListChecks,
-  Map as MapIcon,
   MessageSquare,
   Square,
   Wand2,
@@ -143,7 +143,9 @@ export default function StudioChatInput({
       <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-8">
         <div
           className={`flex w-full flex-col gap-2 transition-[max-width] duration-200 ${
-            chatOpen ? 'max-w-[46rem]' : 'max-w-[38rem]'
+            // The row grows to the right by the frame switch's width (~4rem),
+            // so the field keeps the width it had without it.
+            chatOpen ? 'max-w-[46rem]' : view ? 'max-w-[42rem]' : 'max-w-[38rem]'
           }`}
         >
           {/* Expanded body — the full conversation */}
@@ -223,25 +225,23 @@ export default function StudioChatInput({
             inputTestId="studio-chat-input"
             sendLabel={t.common.send}
             leading={
-              <>
-                <button
-                  type="button"
-                  onClick={() => setChatOpen((v) => !v)}
-                  aria-label={
-                    chatOpen ? t.studio.collapse_conversation : t.studio.expand_conversation
-                  }
-                  aria-expanded={chatOpen}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary"
-                >
-                  {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                </button>
-                {/* The frame switch sits ahead of the field: it says what the
-                    message is about, the plan or the app on screen. */}
-                {view && <FrameViewSwitch view={view} />}
-              </>
+              <button
+                type="button"
+                onClick={() => setChatOpen((v) => !v)}
+                aria-label={
+                  chatOpen ? t.studio.collapse_conversation : t.studio.expand_conversation
+                }
+                aria-expanded={chatOpen}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary"
+              >
+                {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+              </button>
             }
             trailing={
               <>
+                {/* What the frame shows, first among the row's tools so the field
+                    keeps its width: icons only, each named by its tooltip. */}
+                {view && <FrameViewSwitch view={view} />}
                 <button
                   type="button"
                   onClick={() => void pickReference()}
@@ -321,8 +321,9 @@ export default function StudioChatInput({
   );
 }
 
-// Plan | App, the same choice the B key makes in Guide. App is held back until
-// the preview is live; the tooltip says why instead of a dead button.
+// Plan | App, the same choice the B key makes: the blueprint sheet or the
+// running app. App is held back until the preview is live; its tooltip says
+// why instead of leaving a dead button.
 function FrameViewSwitch({
   view,
 }: {
@@ -333,32 +334,29 @@ function FrameViewSwitch({
   const option = (v: StudioFrameView) => {
     const on = view.showing === v;
     const blocked = v === 'app' && !view.appReady;
+    const label = v === 'plan' ? g.view_plan : g.view_app;
     return (
-      <Button
-        variant={on ? 'accent' : 'ghost'}
-        tone={on ? 'highlight' : undefined}
-        size="xs"
-        aria-pressed={on}
-        disabled={blocked}
-        onClick={() => view.onChange(v)}
-        data-testid={`studio-view-${v}`}
-        icon={v === 'plan' ? <MapIcon className="h-3.5 w-3.5" /> : <AppWindow className="h-3.5 w-3.5" />}
-        className={`rounded-full ${blocked ? 'pointer-events-none' : ''}`}
-      >
-        {v === 'plan' ? g.view_plan : g.view_app}
-      </Button>
+      <Tooltip content={blocked ? g.tool_needs_live : label} placement="top" {...(blocked ? { triggerFocusable: true, triggerClassName: 'flex rounded-full' } : {})}>
+        <Button
+          variant={on ? 'accent' : 'ghost'}
+          tone={on ? 'highlight' : undefined}
+          size="icon-sm"
+          aria-pressed={on}
+          aria-label={label}
+          disabled={blocked}
+          onClick={() => view.onChange(v)}
+          data-testid={`studio-view-${v}`}
+          className={`rounded-full ${blocked ? 'pointer-events-none' : ''}`}
+        >
+          {v === 'plan' ? <DraftingCompass className="h-4 w-4" /> : <AppWindow className="h-4 w-4" />}
+        </Button>
+      </Tooltip>
     );
   };
   return (
-    <div role="group" aria-label={g.view_switch} className="flex shrink-0 items-center gap-0.5">
+    <div role="group" aria-label={g.view_switch} className="flex shrink-0 items-center gap-0.5 rounded-full border border-border p-0.5">
       {option('plan')}
-      {view.appReady ? (
-        option('app')
-      ) : (
-        <Tooltip content={g.tool_needs_live} placement="top" triggerFocusable triggerClassName="flex rounded-full">
-          {option('app')}
-        </Tooltip>
-      )}
+      {option('app')}
     </div>
   );
 }

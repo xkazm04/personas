@@ -52,6 +52,7 @@ export default function GuideDraftingSheet({
   proofUrl,
   booting = false,
   opened = false,
+  replay = false,
 }: {
   name: string;
   sketch: SiteSketch | null;
@@ -70,6 +71,8 @@ export default function GuideDraftingSheet({
   booting?: boolean;
   /** A project opened from disk rather than created now: no stock page, no setup log. */
   opened?: boolean;
+  /** Redraw at the replay pace: the sheet was asked for over a running app. */
+  replay?: boolean;
 }) {
   const { t } = useTranslation();
   const g = guideStrings(t);
@@ -133,7 +136,7 @@ export default function GuideDraftingSheet({
   const goalSteps = showGoalsInBlock ? goals.length : 0;
   const total = drawing === 'skeleton' ? 0 : regionsTotal + briefStep + goalSteps;
   const buildKey = `${drawing}:${pages.map((p) => `${p.title}(${p.regions.map((r) => r.title).join(',')})`).join('|')}`;
-  const stepMs = opened || drawing === 'plan' ? STEP_MS.replay : drawing === 'template' ? STEP_MS.template : STEP_MS.sketch;
+  const stepMs = opened || replay || drawing === 'plan' ? STEP_MS.replay : drawing === 'template' ? STEP_MS.template : STEP_MS.sketch;
   const count = useBuildUp(buildKey, total, stepMs);
   const building = count < total;
   // Regions drawn so far on the page at `index`, which has `regions` of them.

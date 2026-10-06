@@ -215,6 +215,9 @@ export default function GuideStudio({
               proofUrl={live && id ? (preview.previewUrls[id] ?? null) : null}
               booting={!drafting && !!rt && rt.phase !== 'live'}
               opened={opened}
+              // Plan picked over a running app: the drawing replays at the
+              // quick pace instead of the setup wait's.
+              replay={blueprintPinned === true}
             />
           )}
           {!drafted && sketchMode && !showVision && (sketchSrc || rt) && (
@@ -250,7 +253,9 @@ export default function GuideStudio({
           )}
           {rt && !showVision && !drafting && (
             <>
-              {live && <StudioPreviewFrames preview={preview} showPointer={!showBlueprint} />}
+              {/* The frames stay warm under the plan sheet, never on top of it:
+                  drawn after the sheet, a visible frame would cover it. */}
+              {live && <StudioPreviewFrames preview={preview} showPointer={!showBlueprint} hidden={showBlueprint} />}
               {!drafted && showBlueprint && !sketchMode && (
                 <GuideBlueprint name={rt.name} phase={rt.phase} phases={rt.phases} messages={rt.messages} />
               )}
