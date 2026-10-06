@@ -77,14 +77,45 @@ describe('LifecyclePage', () => {
     expect(askAthena).toHaveBeenCalledWith('lifecycle', expect.stringContaining('Acme (id p-missing)'));
   });
 
-  it('opens the detail layer for a step', async () => {
+  // The owner's note, 2026-10-06: a node click must NOT open a drawer. It
+  // selects, and the state renders inline under the timeline, which is what
+  // makes walking the journey possible.
+  it('renders the selected step inline, with no drawer', async () => {
     project('p-detail', soloV0());
     render(<LifecyclePage />);
 
+    // The region is pre-seeded with the weakest step, so it has content before
+    // any click: that is what keeps it from shoving the timeline when it appears.
+    const region = await screen.findByTestId('lc-state-region');
+    expect(region.textContent).toBeTruthy();
+
     fireEvent.click(await screen.findByTestId('lc-node-gate'));
-    const sheet = await screen.findByTestId('lc-step-detail');
-    expect(sheet.textContent).toContain('Rule for gate.');
-    expect(sheet.textContent).toContain('Git hook');
+    const state = await screen.findByTestId('lc-step-state');
+    expect(state.textContent).toContain('Rule for gate.');
+    expect(state.textContent).toContain('Git hook');
+    expect(screen.getByTestId('lc-node-gate').getAttribute('aria-pressed')).toBe('true');
+    // The retired right-drawer must not be reachable from a node any more.
+    expect(screen.queryByTestId('lc-step-detail')).toBeNull();
+    // The timeline is still on screen with its selection.
+    expect(screen.getByTestId('lc-journey-track')).toBeTruthy();
+  });
+
+  it('formats the step evidence as a table ledger', async () => {
+    project('p-ledger', soloV0({
+      evidence: [
+        evidenceItem('c1', '2026-09-25T10:00:00Z', [['gate', 'skipped']]),
+        evidenceItem('c2', '2026-09-26T10:00:00Z', [['gate', 'done']]),
+      ],
+      steps: [stepView('gate', 'after', [['hook', 'live']], { skipped: 1, done: 1 })],
+    }));
+    render(<LifecyclePage />);
+
+    await screen.findByTestId('lc-step-state');
+    // UnifiedTable owns the column header and the rows; both outcomes for the
+    // selected step appear, and the unrelated steps' outcomes do not.
+    expect(screen.getByText('Outcome')).toBeTruthy();
+    expect(screen.getAllByText('Skipped').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Done').length).toBeGreaterThan(0);
   });
 
   it('shows an inline error when the read fails', async () => {
@@ -93,6 +124,9 @@ describe('LifecyclePage', () => {
     render(<LifecyclePage />);
 
     await screen.findByText("Could not read this project's practice.");
-    expect(screen.queryByTestId('lc-journey')).toBeNull();
+    // The chrome stays (the action row and the banner are permanent); what a
+    // failed read must NOT produce is a timeline or a selected step.
+    expect(screen.queryByTestId('lc-journey-track')).toBeNull();
+    expect(screen.queryByTestId('lc-step-state')).toBeNull();
   });
 });

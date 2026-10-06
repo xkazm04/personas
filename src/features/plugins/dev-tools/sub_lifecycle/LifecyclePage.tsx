@@ -1,182 +1,91 @@
 /**
- * Lifecycle: the active project's development practice (Lifecycle v2). The
- * header names the preset and version; the body is the interim journey
- * (journey/LifecycleJourney), which the lifecycle-nextgen contest winner
- * replaces. Actions: Install into repo (only while a repo binding is missing;
- * dispatches a Run Desk task) and Ask Athena (she reads and changes the
- * practice; the user never edits it here).
+ * Lifecycle: the active project's development practice. The header names the
+ * preset and version; the body is one of three prototype layouts over ONE data
+ * model (`lifecycleView/useLifecycleView`), so a variant is layout and styling
+ * only.
  *
- * Loading pattern v2: the header is permanent chrome; a cold first load ghosts
- * the lanes under it; a warm remount paints from the module cache in
- * useLifecycleSnapshot and revalidates; a failure shows an inline banner and
- * keeps any warm snapshot on screen.
+ * 2026-10-06, the owner's note: a node click no longer opens a drawer. The
+ * selected step's state renders inline under the timeline, and the evidence is
+ * a real `UnifiedTable` ledger rather than loose cards. The right-drawer
+ * `StepDetailSheet` is gone: a modal that reopens on every node made walking
+ * the journey impossible, which is the one thing the surface exists for.
+ *
+ * Loading pattern v2: the header and the action row are permanent chrome; a
+ * cold first load ghosts the timeline and the ledger ghosts itself (UnifiedTable
+ * owns that contract from `isLoading`); a warm remount paints from the module
+ * cache in useLifecycleSnapshot and revalidates; a failure shows an inline
+ * banner and keeps any warm snapshot on screen.
+ *
+ * The variant switcher is dev-only and declared as a named constant rather than
+ * an `import.meta.env.DEV` gate inside the JSX, and it is session-scoped: it
+ * exists to pick a winner, and a Web Storage call for a prototype toggle would
+ * add a storage site the golden path then has to route somewhere.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Download, GitBranch, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { GitBranch } from 'lucide-react';
 
-import { installLifecycle } from '@/api/devTools/lifecycle';
-import { useAskAthena } from '@/features/companions/athena/useAskAthena';
-import { Button } from '@/features/shared/components/buttons';
-import { Banner } from '@/features/shared/components/feedback/Banner';
-import { ConfirmPopover } from '@/features/shared/components/feedback/ConfirmPopover';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
-import { ActionRow } from '@/features/shared/components/layout/ActionRow';
+import { Segmented } from '@/features/shared/components/kit';
 import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useTranslation } from '@/i18n/useTranslation';
-import { toastCatch } from '@/lib/silentCatch';
-import { useSystemStore } from '@/stores/systemStore';
-import { useToastStore } from '@/stores/toastStore';
 
 import { LifecycleProjectPicker } from './LifecycleProjectPicker';
-import { JourneyGhost } from './journey/JourneyGhost';
-import { LifecycleJourney } from './journey/LifecycleJourney';
-import { authorLabel, bindingKindLabel, presetLabel, stepLabel } from './journey/journeyLabels';
-import { installInFlight, missingBindings, weakest } from './journey/journeyModel';
-import { useLifecycleSnapshot } from './journey/useLifecycleSnapshot';
+import { LifecycleViewProvider } from './lifecycleView/context';
+import { useLifecycleView } from './lifecycleView/useLifecycleView';
+import { LedgerFirst } from './lifecycleView/variants/LedgerFirst';
+import { RailBelow } from './lifecycleView/variants/RailBelow';
+import { StepperBeside } from './lifecycleView/variants/StepperBeside';
+
+/** See the header: a build-flag decision taken at the point of rendering cannot
+ *  be enumerated or reviewed; a named constant can be grepped. */
+const SHOW_LAYOUT_SWITCHER = import.meta.env.DEV;
+
+type LifecycleLayout = 'rail' | 'stepper' | 'ledger';
+
+const LAYOUTS: Array<{ v: LifecycleLayout; label: string }> = [
+  { v: 'rail', label: 'Rail below' },
+  { v: 'stepper', label: 'Stepper beside' },
+  { v: 'ledger', label: 'Ledger first' },
+];
+
+/** The baseline: the surface as it shipped, minus the drawer. */
+const DEFAULT_LAYOUT: LifecycleLayout = 'rail';
 
 export default function LifecyclePage() {
-  const { t, tx } = useTranslation();
-  const dl = t.plugins.dev_lifecycle;
-  const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const activeProject = useSystemStore((s) => s.projects.find((p) => p.id === s.activeProjectId));
-  const addToast = useToastStore((s) => s.addToast);
-  const askAthena = useAskAthena();
-  const { snapshot, loading, error, refetch } = useLifecycleSnapshot(activeProjectId);
-
-  // The install task id this page just dispatched; missing bindings read as
-  // pending until the refetched snapshot names that task (the backend then
-  // reports pending itself, and stops when the task ends).
-  const [dispatched, setDispatched] = useState<{ projectId: string; taskId: string } | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const installRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (dispatched && snapshot?.projectId === dispatched.projectId && snapshot.installTaskId === dispatched.taskId) {
-      setDispatched(null);
-    }
-  }, [dispatched, snapshot]);
-
-  const current = snapshot && snapshot.projectId === activeProjectId ? snapshot : null;
-  const forcePending = !!dispatched && dispatched.projectId === activeProjectId;
-  const missing = useMemo(() => (current ? missingBindings(current) : []), [current]);
-  const installing = forcePending || (current ? installInFlight(current) : false);
-
-  const subtitle = current
-    ? current.version === 0
-      ? tx(dl.lc_subtitle_default, { preset: presetLabel(dl, current.preset) })
-      : tx(dl.lc_subtitle_version, {
-          preset: presetLabel(dl, current.preset),
-          version: current.version,
-          author: authorLabel(dl, current.author) ?? '',
-        })
-    : activeProject?.root_path ?? '';
-
-  const missingText = missing
-    .map((m) => `${stepLabel(dl, m.stepId, m.label)} (${bindingKindLabel(dl, m.kind)})`)
-    .join(', ');
-
-  const handleInstall = async () => {
-    if (!activeProjectId) return;
-    try {
-      const taskId = await installLifecycle(activeProjectId);
-      if (taskId) {
-        setDispatched({ projectId: activeProjectId, taskId });
-        addToast(tx(dl.lc_install_started, { id: taskId }), 'success');
-      } else {
-        addToast(dl.lc_install_nothing, 'warning');
-      }
-      setConfirmOpen(false);
-      refetch();
-    } catch (err) {
-      toastCatch('lifecycle:install', dl.lc_install_failed)(err);
-    }
-  };
-
-  const handleAskAthena = () => {
-    if (!activeProject) return;
-    const weak = current ? weakest(current) : null;
-    const text = weak
-      ? tx(dl.lc_ask_athena_prompt_weakest, {
-          name: activeProject.name, id: activeProject.id, step: stepLabel(dl, weak.node.id, weak.node.label),
-        })
-      : tx(dl.lc_ask_athena_prompt, { name: activeProject.name, id: activeProject.id });
-    askAthena('lifecycle', text);
-  };
+  const { t } = useTranslation();
+  const model = useLifecycleView();
+  const [layout, setLayout] = useState<LifecycleLayout>(DEFAULT_LAYOUT);
 
   return (
-    <ContentBox>
-      <ContentHeader
-        icon={<GitBranch className="w-5 h-5 text-violet-400" />}
-        iconColor="violet"
-        title={t.plugins.dev_tools.lifecycle_title}
-        subtitle={subtitle}
-        actions={<LifecycleProjectPicker />}
-      />
-
-      <ContentBody centered>
-        {!activeProjectId ? (
-          <EmptyState icon={GitBranch} title={dl.lc_empty_title} subtitle={dl.lc_empty_subtitle} />
-        ) : (
-          <div className="space-y-6 pb-6">
-            <ActionRow
-              left={installing ? (
-                <span className="flex items-center gap-1.5 typo-caption text-status-warning" data-testid="lc-install-running">
-                  <span className="w-3 h-3 rounded-interactive border-2 border-dashed border-status-warning/80" aria-hidden />
-                  {dl.lc_install_running}
-                </span>
-              ) : undefined}
-            >
-              {current && missing.length > 0 && !installing && (
-                <Button
-                  ref={installRef}
-                  variant="secondary"
-                  size="sm"
-                  icon={<Download className="w-3.5 h-3.5" />}
-                  onClick={() => setConfirmOpen(true)}
-                  data-testid="lc-install"
-                >
-                  {dl.lc_install}
-                </Button>
+    <LifecycleViewProvider model={model}>
+      <ContentBox>
+        <ContentHeader
+          icon={<GitBranch className="w-5 h-5 text-violet-400" />}
+          iconColor="violet"
+          title={t.plugins.dev_tools.lifecycle_title}
+          subtitle={model.subtitle}
+          actions={
+            <div className="flex items-center gap-2">
+              {SHOW_LAYOUT_SWITCHER && (
+                <Segmented label="Lifecycle layout" value={layout} onChange={setLayout} options={LAYOUTS} />
               )}
-              <Button
-                variant="accent"
-                tone="agent"
-                size="sm"
-                icon={<Sparkles className="w-3.5 h-3.5" />}
-                onClick={handleAskAthena}
-                disabled={!activeProject}
-                data-testid="lc-ask-athena"
-              >
-                {dl.lc_ask_athena}
-              </Button>
-            </ActionRow>
+              <LifecycleProjectPicker />
+            </div>
+          }
+        />
 
-            {error && (
-              <Banner severity="error" compact message={dl.lc_load_failed} cause={error} onRetry={refetch} />
-            )}
-
-            {current ? (
-              <LifecycleJourney snapshot={current} forcePending={forcePending} />
-            ) : loading ? (
-              <JourneyGhost />
-            ) : null}
-          </div>
-        )}
-      </ContentBody>
-
-      <ConfirmPopover
-        open={confirmOpen}
-        anchorRef={installRef}
-        title={dl.lc_install_title}
-        detail={tx(dl.lc_install_body, { items: missingText })}
-        confirmLabel={dl.lc_install_confirm}
-        confirmIcon={<Download className="w-3.5 h-3.5" />}
-        onConfirm={handleInstall}
-        onCancel={() => setConfirmOpen(false)}
-        width={380}
-        testId="lc-install-confirm"
-        confirmTestId="lc-install-confirm-go"
-      />
-    </ContentBox>
+        <ContentBody centered>
+          {!model.projectId ? (
+            <EmptyState icon={GitBranch} title={model.dl.lc_empty_title} subtitle={model.dl.lc_empty_subtitle} />
+          ) : layout === 'stepper' ? (
+            <StepperBeside />
+          ) : layout === 'ledger' ? (
+            <LedgerFirst />
+          ) : (
+            <RailBelow />
+          )}
+        </ContentBody>
+      </ContentBox>
+    </LifecycleViewProvider>
   );
 }
