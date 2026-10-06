@@ -24667,12 +24667,12 @@ export type Translations = {
       external_count: string;
       ports_in_use: string;
       add_title: string;
-      add_folder: string;
-      add_folder_placeholder: string;
-      add_browse: string;
-      add_workspace: string;
+      add_search: string;
+      add_new_project: string;
+      add_all_added: string;
+      add_none_match: string;
+      add_adding: string;
       add_no_workspace: string;
-      add_submit: string;
       add_scan_hint: string;
       edit_title: string;
       edit_save: string;
@@ -24688,8 +24688,6 @@ export type Translations = {
       rescan_failed: string;
       open_failed: string;
       list_failed: string;
-      add_folder_required: string;
-      add_browse_title: string;
       command_too_long: string;
       command_placeholder_invalid: string;
       command_blank_hint: string;

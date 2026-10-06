@@ -7,6 +7,7 @@
  *   browser/servers/switchboard   the Switchboard prototype, same fleet
  *   browser/servers/tiles         the Live tiles prototype, same fleet
  *   browser/servers/empty         no app servers yet (whichever variant is stored)
+ *   browser/servers/add           the Add app picker open over the Rack layout
  *
  * The variant is chosen the way the operator chooses it: the switcher's stored
  * value, seeded in `prepare` before the page first renders.
@@ -35,4 +36,14 @@ export const SERVER_CONTROL_MODULES: Record<string, HarnessModule> = {
   'browser/servers/switchboard': { load: page, prepare: prepare('switchboard') },
   'browser/servers/tiles': { load: page, prepare: prepare('tiles') },
   'browser/servers/empty': { load: page, prepare: prepare(null) },
+  'browser/servers/add': {
+    load: async () => {
+      const [{ default: Page }, { default: AddAppModal }] = await Promise.all([
+        page(),
+        import('@/features/browser/servers/AddAppModal'),
+      ]);
+      return { default: () => (<><Page /><AddAppModal isOpen onClose={() => {}} /></>) };
+    },
+    prepare: prepare('rack'),
+  },
 };

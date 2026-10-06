@@ -46,6 +46,15 @@ export function serverControlTapes({ RECORDED_AT }) {
     standards_config: null, llm_tracking_credential_id: null, support_credential_id: null, data_links: null,
     workspace_id: s.workspaceId, enabled: true, kind: 'code',
   }));
+  // Projects NOT in Server control yet: what Add app offers (one per workspace, one loose).
+  const EXTRA = [
+    ['p-billing', 'billing-portal', 'ws-core', 'Next.js,React,TypeScript'],
+    ['p-blog', 'studio-blog', 'ws-freelance', 'Astro,TypeScript'],
+    ['p-cli', 'deploy-cli', null, 'Node.js,TypeScript'],
+  ].map(([id, name, workspace_id, tech_stack], i) => ({
+    ...PROJECTS[0], id, name, root_path: `C:\\dev\\${name}`, workspace_id, tech_stack,
+    team_id: null, created_at: iso(60 * 24 * (12 - i)),
+  }));
 
   const site = (origin, label, extra = {}) => ({
     origin, label, enabled: true, overrides: {}, budget: 50, credential_id: null,
@@ -64,7 +73,7 @@ export function serverControlTapes({ RECORDED_AT }) {
       calls: [
         { cmd: 'dev_servers_list', response: servers },
         { cmd: 'dev_tools_workspace_list', response: WORKSPACES },
-        { cmd: 'dev_tools_list_projects', response: PROJECTS },
+        { cmd: 'dev_tools_list_projects', response: [...PROJECTS, ...EXTRA] },
         { cmd: 'browser_sites_list', response: SITES },
       ],
     };
@@ -79,6 +88,7 @@ export function serverControlTapes({ RECORDED_AT }) {
       'browser/servers/switchboard': () => tape('browser/servers/switchboard', FULL, SERVERS),
       'browser/servers/tiles': () => tape('browser/servers/tiles', FULL, SERVERS),
       'browser/servers/empty': () => tape('browser/servers/empty', 'Synthetic: no app servers yet.', []),
+      'browser/servers/add': () => tape('browser/servers/add', 'Synthetic: the Add app picker open over the full fleet; three projects are not in the view yet.', SERVERS),
     },
   };
 }
