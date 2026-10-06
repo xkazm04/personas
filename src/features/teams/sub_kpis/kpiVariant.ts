@@ -24,7 +24,7 @@ export const KPI_SHIPPED_VARIANTS: readonly KpiVariant[] = ['map', 'ledger', 'ri
 /** The three under review. Dev builds only; labels are deliberately NOT
  *  translated - a review bench must not spend 14 locales on concept names
  *  that may not survive the round (same call as the retired treatment axis). */
-export const KPI_PROTOTYPE_VARIANTS: readonly KpiVariant[] = ['assay'];
+export const KPI_PROTOTYPE_VARIANTS: readonly KpiVariant[] = ['assay', 'almanac'];
 
 /** Dev builds only: a design review bench is not product surface. */
 export const SHOW_KPI_PROTOTYPES = import.meta.env.DEV;

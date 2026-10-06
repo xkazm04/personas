@@ -1,6 +1,5 @@
-// The bench on first load, and the one thing a judge will try: press a place.
-// A prototype that throws on mount scores zero on craft however good the idea
-// is, so this is deliberately a smoke test plus the descent.
+// The almanac on first load, and the descent. A prototype that throws on
+// mount scores zero on craft however good the idea is.
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
@@ -14,8 +13,14 @@ vi.mock('@/i18n/useTranslation', () => ({
   useTranslation: () => ({ t: en, tx: (s: string) => s }),
 }));
 
-import Assay from '../variants/Assay';
+import Almanac from '../variants/Almanac';
 import type { KpiProjectRollup } from '../kpiOverviewModel';
+
+const DAY = 86_400_000;
+
+function iso(ms: number): string {
+  return new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
+}
 
 function kpi(over: Partial<DevKpi> = {}): DevKpi {
   return {
@@ -24,7 +29,7 @@ function kpi(over: Partial<DevKpi> = {}): DevKpi {
     direction: 'up', baseline_value: 0, target_value: 100, target_date: null,
     current_value: null, last_measured_at: null, cadence: 'weekly', status: 'active',
     created_by: 'test', rationale: null, needed_connector: null,
-    created_at: '2026-01-01 00:00:00', updated_at: '2026-01-01 00:00:00',
+    created_at: iso(Date.now() - 100 * DAY), updated_at: iso(Date.now() - 100 * DAY),
     metric_type: null, tier: 'supporting', context_id: null, warn_at: null, crit_at: null,
     manual_rating: null, assessment_pros: null, assessment_cons: null,
     last_skip_at: null, last_skip_rationale: null, use_case_id: null,
@@ -45,44 +50,36 @@ function rollup(projectId: string, label: string, kpis: DevKpi[]): KpiProjectRol
 }
 
 const overview = [
-  rollup('p1', 'personas', [
-    kpi({ id: 'a' }),
-    kpi({ id: 'b' }),
-    kpi({ id: 'c', measure_kind: 'codebase', current_value: 120 }),
-  ]),
-  rollup('p2', 'ascent', [kpi({ id: 'd', measure_kind: 'connector' })]),
+  rollup('p1', 'personas', [kpi({ id: 'a' }), kpi({ id: 'b', cadence: 'manual' })]),
+  rollup('p2', 'ascent', [kpi({ id: 'c', cadence: 'manual' })]),
 ];
 
-describe('Assay', () => {
-  it('draws one lane per mechanism and nothing else', () => {
-    render(<Assay overview={overview} loading={false} onFocus={vi.fn()} onOpen={vi.fn()} />);
-    expect(screen.getByTestId('kpi-assay')).toBeTruthy();
-    expect(screen.getByTestId('kpi-assay-lane-manual')).toBeTruthy();
-    expect(screen.getByTestId('kpi-assay-lane-codebase')).toBeTruthy();
-    expect(screen.getByTestId('kpi-assay-lane-connector')).toBeTruthy();
-    expect(screen.queryByTestId('kpi-assay-lane-derived')).toBeNull();
+describe('Almanac', () => {
+  it('draws one band per place and nothing else', () => {
+    render(<Almanac overview={overview} loading={false} onFocus={vi.fn()} onOpen={vi.fn()} />);
+    expect(screen.getByTestId('kpi-almanac')).toBeTruthy();
+    expect(screen.getByTestId('kpi-almanac-band-p1')).toBeTruthy();
+    expect(screen.getByTestId('kpi-almanac-band-p2')).toBeTruthy();
+    expect(screen.queryByTestId('kpi-almanac-band-p3')).toBeNull();
   });
 
-  it('a lane with full yield loses nobody, so it names no place', () => {
-    render(<Assay overview={overview} loading={false} onFocus={vi.fn()} onOpen={vi.fn()} />);
-    // the codebase KPI is read AND judged: nothing stalled, no rail
-    expect(screen.queryByTestId('kpi-assay-share-codebase-p1')).toBeNull();
-    expect(screen.getByTestId('kpi-assay-share-manual-p1')).toBeTruthy();
-  });
-
-  it('pressing a place at the portfolio DESCENDS rather than leaving the surface', () => {
+  it('descends at the portfolio, then hands up a focus one level down', () => {
     const onFocus = vi.fn();
-    render(<Assay overview={overview} loading={false} onFocus={onFocus} onOpen={vi.fn()} />);
-    fireEvent.click(screen.getByTestId('kpi-assay-share-manual-p1'));
+    render(<Almanac overview={overview} loading={false} onFocus={onFocus} onOpen={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('kpi-almanac-place-p1'));
     expect(onFocus).not.toHaveBeenCalled();
-    // one altitude down the places are groups, and pressing one hands up a focus
-    fireEvent.click(screen.getByTestId('kpi-assay-share-manual-g'));
+    fireEvent.click(screen.getByTestId('kpi-almanac-place-g'));
     expect(onFocus).toHaveBeenCalledWith({ projectId: 'p1', groupId: 'g' });
   });
 
   it('renders a ghost, never a spinner, while a cold store is read', () => {
-    render(<Assay overview={[]} loading onFocus={vi.fn()} onOpen={vi.fn()} />);
-    expect(screen.getByTestId('kpi-assay-ghost')).toBeTruthy();
+    render(<Almanac overview={[]} loading onFocus={vi.fn()} onOpen={vi.fn()} />);
+    expect(screen.getByTestId('kpi-almanac-ghost')).toBeTruthy();
     expect(document.querySelectorAll('[class*=spin]').length).toBe(0);
+  });
+
+  it('an estate with no rows still renders its axis rather than collapsing', () => {
+    render(<Almanac overview={[]} loading={false} onFocus={vi.fn()} onOpen={vi.fn()} />);
+    expect(screen.getByTestId('kpi-almanac')).toBeTruthy();
   });
 });

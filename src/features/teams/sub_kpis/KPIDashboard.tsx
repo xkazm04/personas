@@ -33,6 +33,7 @@ const StateRiver = lazyRetry(() => import('./variants/StateRiver'));
 // shipped three, so a production bundle that can never select them still
 // never loads them.
 const Assay = lazyRetry(() => import('./variants/Assay'));
+const Almanac = lazyRetry(() => import('./variants/Almanac'));
 const KpiGroupLayer = lazyRetry(() => import('./layer/KpiGroupLayer'));
 
 const VARIANT_COMPONENT: Record<KpiVariant, React.ComponentType<KpiVariantProps>> = {
@@ -40,10 +41,10 @@ const VARIANT_COMPONENT: Record<KpiVariant, React.ComponentType<KpiVariantProps>
   ledger: AttentionLedger,
   river: StateRiver,
   assay: Assay,
-  // `almanac` and `console` are declared in `KpiVariant` and land in their own
-  // commits; until then they are not in `KPI_PROTOTYPE_VARIANTS`, so neither
-  // the strip nor a persisted value can select one.
-  almanac: Assay,
+  almanac: Almanac,
+  // `console` is declared in `KpiVariant` and lands in its own commit; until
+  // then it is not in `KPI_PROTOTYPE_VARIANTS`, so neither the strip nor a
+  // persisted value can select it.
   console: Assay,
 };
 
