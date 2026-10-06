@@ -1,0 +1,56 @@
+/* The Schematic Dial's loops (spark onboarding-blueprint WP3). CSS on purpose:
+   the app's global reduced-motion reset stops CSS animations, and it cannot see
+   framer-motion's script-driven ones (census rule looping-framer-animation).
+   Colour comes from the blueprint kit's ink (--ink*, from --cinema-accent). */
+
+/* A sector being drafted: its hatch lines run under the pen. The lines are
+   drawn 10 px apart along x, so a 10 px run is a seamless loop. */
+.dial-hatch {
+  animation: dial-hatch-run 1.6s linear infinite;
+}
+@keyframes dial-hatch-run {
+  to { transform: translateX(10px); }
+}
+
+/* A sector the build is asking about breathes, it is not coloured in. */
+.dial-asking {
+  animation: dial-asking 1.8s ease-in-out infinite;
+}
+@keyframes dial-asking {
+  50% { opacity: 0.4; }
+}
+
+/* The sweep arm's nib, while the build works. */
+.dial-nib {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dial-nib 1.4s ease-in-out infinite;
+}
+@keyframes dial-nib {
+  50% { transform: scale(1.6); }
+}
+
+/* Sectors are the dial's controls: hover and keyboard focus ink their slot. */
+.dial-sector {
+  cursor: pointer;
+  outline: none;
+}
+.dial-sector-hit {
+  fill: transparent;
+  stroke: transparent;
+  transition: fill 0.2s ease, stroke 0.2s ease;
+}
+.dial-sector:hover .dial-sector-hit,
+.dial-sector:focus-visible .dial-sector-hit {
+  fill: color-mix(in srgb, var(--ink) 9%, transparent);
+  stroke: var(--ink-strong);
+  stroke-width: 1.5;
+}
+
+/* Readout chips keep the ink when hovered, they never turn into a button slab. */
+.dial-readout:hover .dial-readout-label,
+.dial-readout:focus-visible .dial-readout-label {
+  text-decoration: underline;
+  text-decoration-color: var(--ink-dim);
+  text-underline-offset: 3px;
+}
