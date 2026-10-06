@@ -8,6 +8,7 @@
  * row never wraps at a 1280 px window.
  */
 import { useLayoutEffect, useRef, useState, type MutableRefObject } from 'react';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { Layers } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -23,6 +24,7 @@ export function Strip({ counts, items, openChip, chipRefs, onChip, onTriageAll }
   onChip: (chip: HubChip) => void;
   onTriageAll: () => void;
 }) {
+  const still = useReducedMotion();
   const rowRef = useRef<HTMLDivElement>(null);
   const [compact, setCompact] = useState(false);
   const labelWidth = useRef(0);
@@ -66,12 +68,13 @@ export function Strip({ counts, items, openChip, chipRefs, onChip, onTriageAll }
   return (
     <div
       ref={rowRef}
-      className="flex min-h-[52px] flex-nowrap items-center gap-2 overflow-hidden border-b border-border px-3 py-2"
+      className="au-scope au-strip flex min-h-[56px] flex-nowrap items-center gap-2 overflow-hidden px-3 py-2.5"
       data-testid="p2-strip"
+      data-still={still ? '' : undefined}
     >
       <div className={`flex flex-nowrap items-center ${compact ? 'gap-0.5' : 'gap-1'}`} role="group" aria-label="Decisions">
         {DECISION_CHIPS.map(chip)}
-        <span className={`h-6 w-px bg-primary/15 ${compact ? 'mx-1' : 'mx-1.5'}`} aria-hidden />
+        <span className={`h-6 w-px bg-gradient-to-b from-transparent via-primary/25 to-transparent ${compact ? 'mx-0.5' : 'mx-1'}`} aria-hidden />
         {chip('ready')}
       </div>
       <Tooltip content={first ? `Walk all ${total} in order — starts with “${first.title}”` : 'Nothing waiting'} placement="bottom">
@@ -83,13 +86,14 @@ export function Strip({ counts, items, openChip, chipRefs, onChip, onTriageAll }
           disabled={total === 0}
           icon={<Layers className="h-4 w-4" aria-hidden />}
           data-testid="p2-triage-all"
-          className={`whitespace-nowrap ${compact ? 'px-2!' : ''}`}
+          className={`au-triage au-sheen flex-shrink-0 whitespace-nowrap rounded-input ${compact ? 'pl-1.5! pr-1!' : 'pl-3! pr-1!'} [&>span:last-child]:inline-flex [&>span:last-child]:items-center [&>span:last-child]:gap-2`}
         >
-          {compact ? `All ${total}` : `Triage all ${total}`}
+          {compact ? 'All' : 'Triage all'}
+          <span className="au-triage-count au-count inline-flex h-6 min-w-[1.75rem] items-center justify-center rounded-interactive px-1.5 typo-body-lg tabular-nums">{total}</span>
         </Button>
       </Tooltip>
       <div
-        className="ml-auto flex h-8 w-[440px] flex-shrink-0 items-center justify-center rounded-input border border-dashed border-primary/15 typo-caption"
+        className="ml-auto flex h-9 w-[440px] flex-shrink-0 items-center justify-center rounded-input border border-dashed border-primary/15 typo-caption"
         aria-hidden
       >
         fleet tally · layout switch · simulation toggle (440 px)

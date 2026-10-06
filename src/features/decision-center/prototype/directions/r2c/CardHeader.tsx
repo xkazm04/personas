@@ -1,49 +1,59 @@
 /**
- * The card's head — one anatomy for all four types, built to pass the modal's
- * 5-second test top-down:
- *   eyebrow  chip · kind · tier          (what kind of thing this is)
- *   title    the ask, in one line        (what is being asked)
- *   band     "If you <verb>: <effect>"   (what happens if you say yes) + key
+ * The card's head — one anatomy for all four types, read top-down in the
+ * modal's 5-second order:
+ *   tile + eyebrow   the kind as a lit glyph; "GATES · REVIEW" said once; the
+ *                    tier as a lamp (its words in a tooltip). Severity is a
+ *                    WORD only on incidents, where it is the decision's subject.
+ *   title            the ask — up to two balanced lines, never cut.
+ *   consequence      "If you approve — <one sentence>". No key here: the key
+ *                    is printed once, inside the verdict button.
  */
-import { Kbd } from '@/features/shared/triage/triageFocusBridge';
-import { TONE_CHIP } from '@/features/agents/quick-answer/triage/deck/DeckChips';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { TONE_TEXT } from '@/features/shared/triage/triageFocusBridge';
 import { chipOf, modalTypeOf, type DecisionItem } from '../../../model/decisionModel';
-import { CHIP_META, KIND_LABEL, TIER_META, readMinutes, tierOf, yesDoes } from './deckMeta';
+import { CHIP_META, KIND_ICON, KIND_LABEL, TIER_META, tierOf, yesDoes } from './deckMeta';
+import { Lamp } from './parts';
 
-function yesLine(item: DecisionItem): { verb: string; key: string; effect: string } {
+function yesLine(item: DecisionItem): { verb: string; effect: string } {
   const type = modalTypeOf(item.kind);
-  if (type === 'chat') {
-    return { verb: 'reply', key: 'Space', effect: `Your answer is posted to ${item.source.label}; D closes it without a reply.` };
-  }
-  if (item.kind === 'report') {
-    return { verb: 'mark it done', key: 'D', effect: `About ${readMinutes(item)} min to read. Done marks it read; 1 follows up in chat.` };
-  }
-  return { verb: item.verdictLabels.accept.toLowerCase(), key: item.kind === 'council' ? 'A ↵' : 'A', effect: yesDoes(item) };
+  if (type === 'chat') return { verb: 'reply', effect: `Your answer is posted to ${item.source.label}.` };
+  if (item.kind === 'report') return { verb: 'mark it done', effect: 'It is marked read and leaves your queue.' };
+  return { verb: item.verdictLabels.accept.toLowerCase(), effect: yesDoes(item) };
 }
 
+const SEVERITY_TONE = { critical: 'danger', high: 'danger', medium: 'warning', low: 'neutral' } as const;
+
 export function CardHeader({ item, titleId }: { item: DecisionItem; titleId: string }) {
-  const tier = TIER_META[tierOf(item)];
+  const tier = tierOf(item);
+  const meta = TIER_META[tier];
   const chip = CHIP_META[chipOf(item.kind)];
+  const Icon = KIND_ICON[item.kind];
   const yes = yesLine(item);
-  const alertTone = item.alert?.tone ?? 'success';
+  const sev = item.kind === 'incident' && item.severity ? item.severity.toLowerCase() : null;
+  const sevTone = sev ? SEVERITY_TONE[sev as keyof typeof SEVERITY_TONE] ?? 'warning' : null;
+  const lampTip = item.alert ? `${meta.label} — ${item.alert.label}` : meta.label;
   return (
-    <header className="flex flex-col gap-3 border-b border-primary/10 px-6 pb-4 pt-5">
-      <div className="flex items-center gap-2 typo-caption">
-        <chip.icon className="h-4 w-4 text-primary" aria-hidden />
-        <span className="typo-eyebrow text-primary">{chip.label}</span>
-        <span aria-hidden>·</span>
-        <span className="text-foreground">{KIND_LABEL[item.kind]}</span>
-        <span className={`ml-1 rounded-pill border px-2 py-px typo-caption ${TONE_CHIP[tier.tone]}`}>{tier.label}</span>
-        {item.alert && (
-          <span className={`rounded-pill border px-2 py-px typo-caption ${TONE_CHIP[item.alert.tone]}`}>{item.alert.label}</span>
-        )}
+    <header className="relative z-[1] grid flex-shrink-0 grid-cols-[auto_1fr] gap-x-4 pb-5 pl-7 pr-4 pt-3">
+      <span className="au-tile row-span-3 flex h-12 w-12 items-center justify-center rounded-card" aria-hidden>
+        <Icon className="h-6 w-6" />
+      </span>
+      <div className="flex min-h-6 items-center gap-2.5 pr-2">
+        <span className="au-ink-tone typo-eyebrow">{chip.label}</span>
+        <span className="typo-eyebrow text-foreground" aria-hidden>·</span>
+        <span className="typo-eyebrow text-foreground">{KIND_LABEL[item.kind]}</span>
+        <Tooltip content={lampTip}>
+          <span className="inline-flex items-center gap-1.5 pl-1" tabIndex={0} aria-label={lampTip}>
+            <Lamp tone={meta.tone} breathe={tier === 1} />
+          </span>
+        </Tooltip>
+        {sev && sevTone && <span className={`typo-eyebrow ${TONE_TEXT[sevTone]}`}>{sev}</span>}
       </div>
-      <h2 id={titleId} className="typo-heading-lg max-w-[60ch] text-foreground">{item.title}</h2>
-      <div className={`flex items-center gap-3 rounded-input border px-3 py-2 ${TONE_CHIP[alertTone]}`} data-testid="p2-yes-band">
-        <span className="typo-label whitespace-nowrap">If you {yes.verb}</span>
-        <span className="min-w-0 flex-1 typo-body text-foreground">{yes.effect}</span>
-        <Kbd>{yes.key}</Kbd>
-      </div>
+      <h2 id={titleId} className="typo-heading-lg mt-1 line-clamp-2 max-w-[56ch] text-foreground [text-wrap:balance]">{item.title}</h2>
+      <p className={`au-l-${item.alert?.tone ?? 'success'} au-yes mt-3 flex max-w-[78ch] items-baseline gap-2.5 rounded-r-input py-1.5 pl-3 pr-3`} data-testid="p2-yes-band">
+        <span className="au-ink-lamp typo-label whitespace-nowrap">If you {yes.verb}</span>
+        <span className="min-w-0 typo-body text-foreground">{yes.effect}</span>
+      </p>
+      <span className="au-divider absolute bottom-0 left-7 right-0 h-px" aria-hidden />
     </header>
   );
 }

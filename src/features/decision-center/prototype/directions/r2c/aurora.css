@@ -1,0 +1,539 @@
+/*
+ * R2-C "Aurora Deck" — the material. Every colour is a theme token
+ * (--foreground / --background / --primary / --status-* / --role-*) mixed with
+ * color-mix(); no literal colour lives in this file. Layout and motion only.
+ *
+ * Prefix `au-` keeps it from colliding with sibling directions' stylesheets
+ * when the Lab has loaded several chunks.
+ *
+ * Tones are set by class, never inline:
+ *   .au-t-<tone>  -> --au-tone  (the kind: aurora, kind tile, living border)
+ *   .au-l-<tone>  -> --au-lamp  (urgency: lamps, chip glow, verdict colour)
+ *   .au-tier-<n>  -> --au-tier  (queue tier: spine stripe, pips)
+ * Reduced motion: any ancestor with [data-still] freezes every animation.
+ */
+
+@property --au-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* Registered so the deck's light can cross-fade when the card in hand changes kind. */
+@property --au-tone {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --au-tier {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+/* ---------------------------------------------------------------- scope -- */
+
+.au-scope {
+  --au-hi: color-mix(in oklab, var(--foreground) 10%, transparent);
+  --au-hair: color-mix(in oklab, var(--foreground) 9%, transparent);
+  --au-shade: color-mix(in oklab, var(--background) 45%, black);
+  --au-glow: 16%;
+  --au-aur: 30%;
+  --au-tone: var(--primary);
+  --au-lamp: var(--primary);
+  --au-tier: var(--primary);
+  transition: --au-tone 700ms ease, --au-tier 700ms ease;
+}
+
+[data-theme^='light'] .au-scope,
+[data-theme^='light'].au-scope {
+  --au-hi: color-mix(in oklab, var(--background) 85%, transparent);
+  --au-hair: color-mix(in oklab, var(--foreground) 10%, transparent);
+  --au-shade: color-mix(in oklab, var(--foreground) 16%, transparent);
+  --au-glow: 7%;
+  --au-aur: 13%;
+}
+
+.au-t-accent { --au-tone: var(--primary); }
+.au-t-info { --au-tone: var(--status-info); }
+.au-t-warning { --au-tone: var(--status-warning); }
+.au-t-danger { --au-tone: var(--status-error); }
+.au-t-success { --au-tone: var(--status-success); }
+.au-t-agent { --au-tone: var(--role-agent); }
+.au-t-human { --au-tone: var(--role-human); }
+.au-t-neutral { --au-tone: var(--muted-foreground); }
+
+.au-l-accent { --au-lamp: var(--primary); }
+.au-l-warning { --au-lamp: var(--status-warning); }
+.au-l-danger { --au-lamp: var(--status-error); }
+.au-l-success { --au-lamp: var(--status-success); }
+.au-l-neutral { --au-lamp: var(--muted-foreground); }
+
+.au-tier-1 { --au-tier: var(--status-error); }
+.au-tier-2 { --au-tier: var(--primary); }
+.au-tier-3 { --au-tier: var(--muted-foreground); }
+.au-tier-ok { --au-tier: var(--status-success); }
+
+.au-ink-tone { color: var(--au-tone); }
+.au-ink-lamp { color: var(--au-lamp); }
+
+/* --------------------------------------------------------------- lamps -- */
+
+.au-lamp {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--au-lamp);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--au-lamp) 22%, transparent),
+    0 0 10px color-mix(in oklab, var(--au-lamp) 65%, transparent);
+}
+
+.au-lamp-breathe {
+  animation: au-breathe 2.6s ease-in-out infinite;
+}
+
+@keyframes au-breathe {
+  0%, 100% {
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--au-lamp) 18%, transparent),
+      0 0 4px color-mix(in oklab, var(--au-lamp) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--au-lamp) 26%, transparent),
+      0 0 16px color-mix(in oklab, var(--au-lamp) 85%, transparent);
+  }
+}
+
+/* --------------------------------------------------------------- strip -- */
+
+.au-strip {
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--foreground) 3%, transparent), transparent),
+    var(--background);
+  box-shadow: inset 0 -1px 0 var(--au-hair);
+}
+
+.au-chip {
+  position: relative;
+  isolation: isolate;
+  height: 2.25rem;
+  background: color-mix(in oklab, var(--foreground) 4%, transparent);
+  box-shadow: inset 0 1px 0 var(--au-hi), inset 0 0 0 1px var(--au-hair);
+  transition: transform 160ms ease, box-shadow 220ms ease, background-color 220ms ease;
+}
+.au-chip:hover { transform: translateY(-1px); background: color-mix(in oklab, var(--foreground) 7%, transparent); }
+
+/* Urgency glow: a pool of the lamp's light under the chip, stronger the more urgent. */
+.au-chip[data-urgency='1'] { --au-pool: 26%; }
+.au-chip[data-urgency='2'] { --au-pool: 46%; }
+.au-chip[data-urgency='3'] { --au-pool: 64%; }
+.au-chip[data-urgency] {
+  box-shadow: inset 0 1px 0 var(--au-hi), inset 0 0 0 1px var(--au-hair),
+    0 10px 18px -12px color-mix(in oklab, var(--au-lamp) var(--au-pool), transparent);
+}
+.au-chip[data-urgency]::after {
+  content: '';
+  position: absolute;
+  inset: auto 18% -1px 18%;
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--au-lamp) var(--au-pool), transparent), transparent);
+  pointer-events: none;
+}
+
+/* The chip that holds the roster's first item: tinted, a living ring, a breathing lamp. */
+.au-chip[data-next] {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--au-lamp) 24%, transparent), color-mix(in oklab, var(--au-lamp) 12%, transparent));
+  box-shadow: inset 0 1px 0 var(--au-hi), 0 0 0 1px color-mix(in oklab, var(--au-lamp) 30%, transparent),
+    0 12px 26px -12px color-mix(in oklab, var(--au-lamp) 80%, transparent);
+}
+.au-chip[data-next]::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  padding: 1px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--au-angle), var(--au-lamp), transparent 28%, color-mix(in oklab, var(--au-lamp) 45%, transparent) 50%, transparent 72%, var(--au-lamp));
+  mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+  mask-composite: exclude;
+  animation: au-spin 5s linear infinite;
+}
+.au-chip[data-next] .au-count { color: var(--au-lamp); }
+.au-count { font-weight: 750; }
+
+.au-chip[data-zero] { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 6%, transparent); }
+.au-chip[data-zero] .au-count { color: var(--muted-foreground); }
+.au-chip[data-failed] {
+  background: color-mix(in oklab, var(--status-error) 8%, transparent);
+  box-shadow: none;
+  outline: 1px dashed color-mix(in oklab, var(--status-error) 60%, transparent);
+  outline-offset: -1px;
+}
+.au-chip[data-open] { box-shadow: inset 0 1px 0 var(--au-hi), 0 0 0 2px color-mix(in oklab, var(--primary) 55%, transparent); }
+
+.au-chip-lamp { position: absolute; right: -3px; top: -3px; width: 0.45rem; height: 0.45rem; box-shadow: 0 0 0 2px var(--background), 0 0 8px color-mix(in oklab, var(--au-lamp) 70%, transparent); }
+
+.au-triage {
+  position: relative;
+  overflow: hidden;
+  height: 2.25rem;
+  background: linear-gradient(135deg, var(--primary), color-mix(in oklab, var(--primary) 65%, var(--role-agent)));
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--background) 30%, transparent),
+    0 10px 24px -12px color-mix(in oklab, var(--primary) 80%, transparent);
+}
+.au-triage-count {
+  background: color-mix(in oklab, var(--background) 28%, transparent);
+  box-shadow: inset 0 1px 2px color-mix(in oklab, var(--background) 40%, transparent);
+}
+
+/* Hover sheen: a highlight sweeps across a pressable once. */
+.au-sheen { position: relative; overflow: hidden; }
+.au-sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, color-mix(in oklab, var(--foreground) 16%, transparent) 50%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform 520ms ease;
+  pointer-events: none;
+}
+.au-sheen:hover::after { transform: translateX(120%); }
+.au-lift { transition: transform 160ms ease, box-shadow 220ms ease, background-color 160ms ease; }
+.au-lift:hover { transform: translateY(-1px); }
+
+/* ---------------------------------------------------------------- glass -- */
+
+.au-glass {
+  background:
+    radial-gradient(90% 60% at 0% 0%, color-mix(in oklab, var(--au-lamp) var(--au-glow), transparent), transparent 60%),
+    color-mix(in oklab, var(--background) 86%, transparent);
+  backdrop-filter: blur(var(--blur-modal, 12px)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--blur-modal, 12px)) saturate(1.2);
+  box-shadow: inset 0 1px 0 var(--au-hi), var(--shadow-elevation-4), 0 40px 70px -40px var(--au-shade);
+}
+
+/* 1 px gradient hairline (bright top-left, fading out) on any .au-hair element. */
+/* .au-hair needs a positioned host (relative / absolute) — set it on the element. */
+.au-hair::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(140deg, color-mix(in oklab, var(--au-tone) 55%, transparent), var(--au-hair) 40%, transparent 75%, var(--au-hair));
+  mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.au-row { transition: background-color 160ms ease, box-shadow 160ms ease; }
+.au-row[data-focused] {
+  background: linear-gradient(90deg, color-mix(in oklab, var(--au-tier) 12%, transparent), color-mix(in oklab, var(--foreground) 4%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--au-tier) 28%, transparent);
+}
+.au-row:hover:not([data-focused]) { background: color-mix(in oklab, var(--foreground) 4%, transparent); }
+
+.au-stripe {
+  width: 3px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--au-tier), color-mix(in oklab, var(--au-tier) 35%, transparent));
+  box-shadow: 0 0 10px color-mix(in oklab, var(--au-tier) 55%, transparent);
+}
+.au-tier-3 .au-stripe, .au-stripe.au-tier-3 { box-shadow: none; }
+
+.au-monogram {
+  background: linear-gradient(145deg, color-mix(in oklab, var(--au-mono, var(--primary)) 55%, var(--background)), color-mix(in oklab, var(--au-mono, var(--primary)) 20%, var(--background)));
+  box-shadow: inset 0 1px 0 var(--au-hi), 0 0 0 1px color-mix(in oklab, var(--au-mono, var(--primary)) 45%, transparent);
+  color: var(--foreground);
+}
+
+/* ---------------------------------------------------------------- deck --- */
+
+.au-aurora {
+  position: absolute;
+  inset: -22vh -18vw;
+  z-index: 0;
+  pointer-events: none;
+  filter: blur(56px);
+}
+.au-aurora > i {
+  position: absolute;
+  border-radius: 50%;
+  animation: au-drift 20s ease-in-out infinite alternate;
+}
+.au-aurora > i:nth-child(1) {
+  left: 8%; top: 4%; width: 48%; height: 58%;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--au-tone) var(--au-aur), transparent), transparent);
+}
+.au-aurora > i:nth-child(2) {
+  right: 6%; top: 14%; width: 42%; height: 52%;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--primary) calc(var(--au-aur) * 0.7), transparent), transparent);
+  animation-duration: 26s;
+  animation-direction: alternate-reverse;
+}
+.au-aurora > i:nth-child(3) {
+  left: 28%; bottom: 2%; width: 46%; height: 40%;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--au-tier) calc(var(--au-aur) * 0.6), transparent), transparent);
+  animation-duration: 32s;
+}
+/* The floor vignettes toward the edges, so the deck is the lit thing in the room. */
+.au-vignette {
+  position: absolute;
+  inset: -60vh -60vw;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 48% 52% at 50% 48%, transparent 55%, color-mix(in oklab, var(--au-shade) 70%, transparent));
+}
+
+@keyframes au-drift {
+  0% { transform: translate3d(-4%, -2%, 0) scale(1); }
+  100% { transform: translate3d(5%, 4%, 0) scale(1.12); }
+}
+
+.au-stack { perspective: 1400px; perspective-origin: 50% 40%; }
+
+.au-card {
+  isolation: isolate;
+  background:
+    radial-gradient(70% 55% at 0% 0%, color-mix(in oklab, var(--au-tone) var(--au-glow), transparent), transparent 70%),
+    linear-gradient(180deg, color-mix(in oklab, var(--foreground) 3%, transparent), transparent 30%),
+    color-mix(in oklab, var(--background) 91%, var(--primary) 9%);
+  box-shadow: inset 0 1px 0 var(--au-hi), var(--shadow-elevation-4), 0 60px 90px -50px var(--au-shade);
+}
+[data-theme^='light'] .au-card {
+  background:
+    radial-gradient(70% 55% at 0% 0%, color-mix(in oklab, var(--au-tone) var(--au-glow), transparent), transparent 70%),
+    color-mix(in oklab, var(--background) 97%, var(--primary) 3%);
+}
+
+/* The living border: a conic band of the kind tone circling the card. */
+.au-living::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  padding: 1.5px;
+  border-radius: inherit;
+  background:
+    conic-gradient(from var(--au-angle), color-mix(in oklab, var(--au-tone) 90%, transparent), transparent 22%, transparent 40%, color-mix(in oklab, var(--primary) 55%, transparent) 55%, transparent 72%, color-mix(in oklab, var(--au-tone) 90%, transparent)),
+    linear-gradient(var(--au-hair), var(--au-hair));
+  mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: au-spin 14s linear infinite;
+}
+
+@keyframes au-spin { to { --au-angle: 360deg; } }
+
+.au-ghost {
+  background: color-mix(in oklab, var(--background) 88%, var(--primary) 12%);
+  box-shadow: inset 0 1px 0 var(--au-hi), inset 0 0 0 1px var(--au-hair), 0 30px 60px -30px var(--au-shade);
+  transform-origin: 50% 100%;
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 420ms ease;
+}
+/* Tilted back from their bottom edge, so each ghost shows a lit lip under the card in hand. */
+.au-ghost[data-depth='1'] { transform: translateY(18px) scale(0.965) rotateX(7deg); opacity: 0.85; filter: blur(0.5px); }
+.au-ghost[data-depth='2'] { transform: translateY(36px) scale(0.93) rotateX(12deg); opacity: 0.5; filter: blur(1px); }
+.au-ghost::after {
+  content: '';
+  position: absolute;
+  inset: auto 6% 0 6%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--au-tone) 45%, transparent), transparent);
+}
+[data-theme^='light'] .au-ghost { background: color-mix(in oklab, var(--background) 94%, var(--foreground) 6%); }
+
+.au-stack-badge {
+  background: color-mix(in oklab, var(--background) 80%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 var(--au-hi), 0 0 0 1px var(--au-hair), var(--shadow-elevation-2);
+}
+
+/* Kind tile: the icon in a tinted, softly lit square. */
+.au-tile {
+  color: var(--au-tone);
+  background: linear-gradient(150deg, color-mix(in oklab, var(--au-tone) 26%, transparent), color-mix(in oklab, var(--au-tone) 8%, transparent));
+  box-shadow: inset 0 1px 0 var(--au-hi), inset 0 0 0 1px color-mix(in oklab, var(--au-tone) 35%, transparent),
+    0 8px 24px -8px color-mix(in oklab, var(--au-tone) 60%, transparent);
+}
+
+.au-spine {
+  position: absolute;
+  left: 0; top: 1.25rem;
+  width: 3px; height: 3.5rem;
+  border-radius: 0 999px 999px 0;
+  background: var(--au-tier);
+  box-shadow: 0 0 14px 1px color-mix(in oklab, var(--au-tier) 70%, transparent);
+}
+
+.au-yes {
+  background: linear-gradient(90deg, color-mix(in oklab, var(--au-lamp) 12%, transparent), transparent 85%);
+  box-shadow: inset 2px 0 0 var(--au-lamp);
+}
+
+.au-well {
+  background: color-mix(in oklab, var(--background) 80%, black);
+  box-shadow: inset 0 2px 10px var(--au-shade), inset 0 0 0 1px var(--au-hair);
+}
+[data-theme^='light'] .au-well {
+  background: color-mix(in oklab, var(--background) 95%, var(--foreground) 5%);
+  box-shadow: inset 0 1px 3px color-mix(in oklab, var(--foreground) 10%, transparent), inset 0 0 0 1px var(--au-hair);
+}
+
+.au-hero-tile {
+  background: color-mix(in oklab, var(--foreground) 4%, transparent);
+  box-shadow: inset 0 1px 0 var(--au-hi);
+}
+
+/* Capsule meter: a tone-gradient fill behind ten notched segments. */
+.au-meter {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--foreground) 8%, transparent);
+  box-shadow: inset 0 1px 2px var(--au-shade);
+  overflow: hidden;
+}
+.au-meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--au-lamp) 45%, transparent), var(--au-lamp));
+  box-shadow: 0 0 10px color-mix(in oklab, var(--au-lamp) 55%, transparent);
+  mask: repeating-linear-gradient(90deg, black 0 calc(10% - 2px), transparent calc(10% - 2px) 10%);
+}
+
+/* ------------------------------------------------------------- verdicts -- */
+
+.au-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5em;
+  height: 1.5em;
+  padding: 0 0.4em;
+  color: currentColor;
+  background: color-mix(in oklab, currentColor 12%, transparent);
+  box-shadow: inset 0 -1px 0 color-mix(in oklab, currentColor 30%, transparent), inset 0 0 0 1px color-mix(in oklab, currentColor 22%, transparent);
+}
+
+.au-verdict { min-height: 2.75rem; }
+.au-verdict-yes {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--au-lamp) 26%, transparent), color-mix(in oklab, var(--au-lamp) 13%, transparent));
+  box-shadow: inset 0 1px 0 var(--au-hi), inset 0 0 0 1px color-mix(in oklab, var(--au-lamp) 45%, transparent),
+    0 10px 24px -14px color-mix(in oklab, var(--au-lamp) 90%, transparent);
+}
+.au-verdict-no {
+  background: color-mix(in oklab, var(--au-lamp) 9%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--au-lamp) 30%, transparent);
+}
+.au-verdict[data-armed] {
+  box-shadow: 0 0 0 2px var(--au-lamp), 0 0 22px color-mix(in oklab, var(--au-lamp) 60%, transparent);
+}
+.au-branch {
+  background: color-mix(in oklab, var(--foreground) 4%, transparent);
+  box-shadow: inset 0 1px 0 var(--au-hi), inset 0 0 0 1px var(--au-hair);
+}
+.au-branch[data-accent] {
+  background: linear-gradient(90deg, color-mix(in oklab, var(--primary) 12%, transparent), color-mix(in oklab, var(--primary) 4%, transparent));
+  box-shadow: inset 0 1px 0 var(--au-hi), inset 0 0 0 1px color-mix(in oklab, var(--primary) 30%, transparent);
+}
+
+.au-stamp {
+  color: var(--au-lamp);
+  background: color-mix(in oklab, var(--background) 72%, transparent);
+  backdrop-filter: blur(6px);
+  border: 3px solid currentColor;
+  box-shadow: 0 0 0 7px color-mix(in oklab, var(--au-lamp) 16%, transparent),
+    0 0 70px color-mix(in oklab, var(--au-lamp) 50%, transparent);
+}
+.au-burst {
+  border-radius: 999px;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--au-lamp) 40%, transparent), transparent);
+}
+
+.au-keys {
+  background: color-mix(in oklab, var(--background) 90%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: inset 0 1px 0 var(--au-hi), 0 0 0 1px var(--au-hair), var(--shadow-elevation-4);
+}
+
+/* -------------------------------------------------------- reduced motion -- */
+
+[data-still] .au-chip[data-next]::before,
+[data-still] .au-living::before,
+[data-still] .au-aurora > i,
+[data-still] .au-lamp-breathe {
+  animation: none;
+}
+[data-still] .au-sheen::after { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .au-chip[data-next]::before,
+  .au-living::before,
+  .au-aurora > i,
+  .au-lamp-breathe { animation: none; }
+}
+
+/* The deck track's current pip: lit in its tier colour. */
+.au-pip-on {
+  background: var(--au-tier);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--au-tier) 70%, transparent);
+}
+
+.au-divider { background: linear-gradient(90deg, color-mix(in oklab, var(--au-tone) 30%, transparent), var(--au-hair) 30%, transparent); }
+
+/* ------------------------------------------------------------ body parts -- */
+
+.au-lineage::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0.25rem; bottom: 0.25rem;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--au-tone), color-mix(in oklab, var(--au-tone) 10%, transparent));
+}
+
+.au-bubble {
+  background: linear-gradient(160deg, color-mix(in oklab, var(--au-tone) 14%, transparent), color-mix(in oklab, var(--au-tone) 5%, transparent));
+  box-shadow: inset 0 1px 0 var(--au-hi), inset 0 0 0 1px color-mix(in oklab, var(--au-tone) 22%, transparent);
+}
+.au-bubble-ask {
+  box-shadow: inset 0 1px 0 var(--au-hi), 0 0 0 1px color-mix(in oklab, var(--au-tone) 55%, transparent),
+    0 12px 30px -14px color-mix(in oklab, var(--au-tone) 70%, transparent);
+}
+
+.au-reader-bar {
+  background: color-mix(in oklab, var(--background) 82%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: inset 0 -1px 0 var(--au-hair);
+}
+.au-progress {
+  background: linear-gradient(90deg, color-mix(in oklab, var(--au-tone) 70%, var(--primary)), var(--primary));
+  box-shadow: 0 0 8px color-mix(in oklab, var(--primary) 60%, transparent);
+}
+.au-toc-on {
+  background: linear-gradient(90deg, color-mix(in oklab, var(--primary) 16%, transparent), transparent);
+  box-shadow: inset 2px 0 0 var(--primary);
+}
+
+/* ------------------------------------------------------------ light tune -- */
+/* Paper over a dimmed floor: the card is the theme's own white card surface and the
+   rail well is the canvas sunk into it. (The app's light brightness setting filters
+   <html> at 0.82; a nested brightness filter cannot lift white past it — it clamps
+   at 1.0 first — so separation comes from the layers and shadows, not a filter.) */
+[data-theme^='light'] .au-card {
+  background:
+    radial-gradient(70% 55% at 0% 0%, color-mix(in oklab, var(--au-tone) var(--au-glow), transparent), transparent 70%),
+    linear-gradient(var(--card-bg), var(--card-bg)),
+    var(--background);
+}
+[data-theme^='light'] .au-well { background: var(--background); }
+[data-theme^='light'] .au-hero-tile { background: color-mix(in oklab, var(--card-bg) 70%, var(--background)); box-shadow: inset 0 0 0 1px var(--au-hair); }
+[data-theme^='light'] .au-branch { background: var(--card-bg); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 12%, transparent), 0 1px 2px var(--au-shade); }
+[data-theme^='light'] .au-verdict-no { background: color-mix(in oklab, var(--au-lamp) 12%, var(--card-bg)); }
+[data-theme^='light'] .au-ghost { background: linear-gradient(var(--card-bg), var(--card-bg)), var(--background); }
+
+/* "Waiting" lamps stay quiet so the urgent chip is the only light that pulls. */
+.au-chip[data-urgency='1']:not([data-next]) .au-chip-lamp { box-shadow: 0 0 0 2px var(--background); }
+
+/* Glyphs that label a value sit one step back: the app's one muting token, on icons only. */
+.au-quiet { color: var(--muted-foreground); }

@@ -29,7 +29,7 @@ export function queueOf(scope: DeckScope, items: DecisionItem[], ready: Decision
 }
 
 /** Beat between the stamp landing and the card leaving, in ms. */
-const STAMP_BEAT = 170;
+const STAMP_BEAT = 150;
 
 export interface DeckMotionState { dir: 1 | -1; leave: Leave }
 

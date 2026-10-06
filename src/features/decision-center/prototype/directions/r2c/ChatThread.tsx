@@ -9,11 +9,12 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Button } from '@/features/shared/components/buttons';
 import type { DecisionItem, DecisionThreadMessage } from '../../../model/decisionModel';
+import { Keycap } from './parts';
 
 const AUTHOR_TONE: Record<DecisionThreadMessage['author'], string> = {
-  user: 'border-primary/25 bg-primary/10',
-  persona: 'border-primary/10 bg-secondary/40',
-  athena: 'border-role-agent/30 bg-role-agent/10',
+  user: 'au-bubble au-t-accent',
+  persona: 'au-bubble au-t-neutral',
+  athena: 'au-bubble au-t-agent',
 };
 
 function Message({ m, ask }: { m: DecisionThreadMessage; ask: boolean }) {
@@ -23,9 +24,9 @@ function Message({ m, ask }: { m: DecisionThreadMessage; ask: boolean }) {
       <span className="flex items-center gap-1.5 typo-caption">
         <span className="text-foreground">{m.name}</span>
         <RelativeTime timestamp={m.at} className="typo-caption" />
-        {ask && <span className="rounded-pill bg-status-warning/15 px-2 typo-caption text-status-warning">the ask</span>}
+        {ask && <span className="flex items-center gap-1.5 typo-eyebrow text-status-warning"><span className="au-lamp au-l-warning au-lamp-breathe" aria-hidden />the ask</span>}
       </span>
-      <div className={`max-w-[80%] rounded-card border px-3.5 py-2.5 ${AUTHOR_TONE[m.author]} ${ask ? 'ring-2 ring-status-warning/40' : ''}`}>
+      <div className={`max-w-[80%] rounded-card px-4 py-2.5 ${ask ? 'au-bubble au-t-warning au-bubble-ask' : AUTHOR_TONE[m.author]}`}>
         <MarkdownRenderer content={m.body} variant="card" className="typo-body text-foreground" />
       </div>
     </div>
@@ -49,10 +50,10 @@ export function ChatThread({ item, onSend }: { item: DecisionItem; onSend: (text
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div ref={scroll} className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5" data-p2-scroll={item.id}>
+      <div ref={scroll} className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto py-5 pl-[5.75rem] pr-8" data-p2-scroll={item.id}>
         {messages.map((m, i) => <Message key={m.id} m={m} ask={i === messages.length - 1} />)}
       </div>
-      <div className="flex items-end gap-2 border-t border-primary/10 px-6 py-3">
+      <div className="flex items-end gap-2 py-3 pl-[5.75rem] pr-8">
         <textarea
           data-p2-composer={item.id}
           rows={2}
@@ -63,12 +64,12 @@ export function ChatThread({ item, onSend }: { item: DecisionItem; onSend: (text
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
             if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); e.currentTarget.blur(); }
           }}
-          placeholder={canReply ? `Reply to ${item.source.label}…  (Space to focus, ↵ to send)` : 'This channel only takes replies in its own view'}
+          placeholder={canReply ? `Reply to ${item.source.label}…` : 'This channel only takes replies in its own view'}
           aria-label={`Reply to ${item.source.label}`}
-          className="min-h-[64px] flex-1 resize-none rounded-input border border-primary/20 bg-background px-3 py-2 typo-body text-foreground focus:border-primary/50 focus:outline-none"
+          className="au-well min-h-[64px] flex-1 resize-none rounded-input px-3.5 py-2.5 typo-body text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
           data-testid="p2-composer"
         />
-        <Button variant="primary" size="md" onClick={send} disabled={!draft.trim()} iconRight={<CornerDownLeft className="h-4 w-4" aria-hidden />}>
+        <Button variant="primary" size="md" onClick={send} disabled={!draft.trim()} iconRight={<Keycap><CornerDownLeft className="h-3.5 w-3.5" aria-hidden /></Keycap>} className="au-lift au-sheen">
           Send
         </Button>
       </div>

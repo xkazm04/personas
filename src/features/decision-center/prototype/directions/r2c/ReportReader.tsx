@@ -21,7 +21,7 @@ export function ReportReader({ item, doc, reader }: { item: DecisionItem; doc: P
   return (
     <div ref={reader.scrollRef} className="relative min-h-0 flex-1 overflow-y-auto" data-p2-scroll={item.id} data-testid="p2-reader">
       <div
-        className="sticky top-0 z-10 flex items-center gap-3 border-b border-primary/10 bg-background px-6"
+        className="au-reader-bar sticky top-0 z-10 flex items-center gap-3 px-7"
         style={{ height: READER_CHROME_OFFSET }}
       >
         <span className="min-w-0 flex-1 truncate typo-caption">
@@ -30,7 +30,7 @@ export function ReportReader({ item, doc, reader }: { item: DecisionItem; doc: P
         <span className="typo-data tabular-nums text-foreground">{formatPercent(reader.progress, { fromRatio: true, precision: 0 })}</span>
         <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/10" aria-hidden>
           <motion.span
-            className="block h-full origin-left bg-primary"
+            className="au-progress block h-full origin-left"
             animate={{ scaleX: reader.progress }}
             transition={{ duration: 0.12 }}
           />
@@ -52,7 +52,7 @@ export function ReportReader({ item, doc, reader }: { item: DecisionItem; doc: P
 export function ReaderContents({ doc, reader, isHtml }: { doc: PreparedDocument; reader: ReaderState; isHtml: boolean }) {
   return (
     <nav className="flex flex-col gap-1 pt-4" aria-label="Contents" data-testid="p2-contents">
-      <span className="typo-label">Contents</span>
+      <span className="typo-eyebrow text-foreground">Contents</span>
       {isHtml || doc.headings.length === 0 ? (
         <span className="typo-caption">No outline — this document carries its own layout.</span>
       ) : (
@@ -65,9 +65,9 @@ export function ReaderContents({ doc, reader, isHtml }: { doc: PreparedDocument;
               size="xs"
               onClick={() => reader.jump(h.id)}
               aria-current={on ? 'location' : undefined}
-              className={`w-full min-w-0 justify-start! rounded-input text-left [&>span]:block [&>span]:min-w-0 [&>span]:truncate ${h.level === 1 ? '' : h.level === 2 ? 'pl-4' : 'pl-7'} ${on ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
+              className={`w-full min-w-0 justify-start! rounded-input text-left h-auto! py-1! [&>span]:block [&>span]:min-w-0 ${h.level === 1 ? '' : h.level === 2 ? 'pl-4' : 'pl-7'} ${on ? 'au-toc-on text-primary' : 'text-foreground'}`}
             >
-              <span className="truncate typo-caption text-current">{h.text}</span>
+              <span className="typo-caption text-current [text-wrap:pretty]">{h.text}</span>
             </Button>
           );
         })

@@ -10,29 +10,81 @@
  */
 import type { LucideIcon } from 'lucide-react';
 import {
-  BookOpenText,
+  CircleHelp,
+  Dna,
   FileText,
+  Flag,
+  Landmark,
   Lightbulb,
   MessagesSquare,
   Rocket,
   ShieldCheck,
   Siren,
+  SlidersHorizontal,
   Sparkles,
+  Vote,
 } from 'lucide-react';
 import type { TriageTone } from '@/features/agents/quick-answer/triage/triageTypes';
 import type { DecisionItem, DecisionKind, DecisionTier, HubChip } from '../../../model/decisionModel';
-import { modalTypeOf } from '../../../model/decisionModel';
+import { chipOf, modalTypeOf } from '../../../model/decisionModel';
 
 export const CHIP_META: Record<HubChip, { label: string; icon: LucideIcon; hint: string }> = {
   gates: { label: 'Gates', icon: ShieldCheck, hint: 'Reviews, questions and approvals holding work' },
-  proposals: { label: 'Proposals', icon: Sparkles, hint: 'Policy, promotion and goal sign-offs' },
+  proposals: { label: 'Proposals', icon: Vote, hint: 'Policy, promotion and goal sign-offs' },
   backlog: { label: 'Backlog', icon: Lightbulb, hint: 'Scanner ideas waiting for a verdict' },
   incidents: { label: 'Incidents', icon: Siren, hint: 'Failures and alerts' },
-  council: { label: 'Council', icon: BookOpenText, hint: 'Council verdicts to approve or send back' },
+  council: { label: 'Council', icon: Landmark, hint: 'Council verdicts to approve or send back' },
   reports: { label: 'Reports', icon: FileText, hint: 'Unread reports' },
   chat: { label: 'Chat', icon: MessagesSquare, hint: 'Threads waiting for your reply' },
   ready: { label: 'Ready', icon: Rocket, hint: 'Accepted ideas ready to dispatch' },
 };
+
+/** The kind, drawn: one glyph per kind (the card's tile), the word only in the eyebrow. */
+export const KIND_ICON: Record<DecisionKind, LucideIcon> = {
+  review: ShieldCheck,
+  question: CircleHelp,
+  approval: Sparkles,
+  policy: SlidersHorizontal,
+  evolution: Dna,
+  goal: Flag,
+  idea: Lightbulb,
+  incident: Siren,
+  council: Landmark,
+  report: FileText,
+  message: MessagesSquare,
+};
+
+/** Aurora tone suffix (`au-t-*` / `au-l-*` in aurora.css). */
+export type AuroraTone = TriageTone | 'info' | 'agent' | 'human';
+
+/** The kind's light — the aurora, the kind tile and the living border share it. */
+export const CHIP_TONE: Record<HubChip, AuroraTone> = {
+  gates: 'warning',
+  proposals: 'agent',
+  backlog: 'info',
+  incidents: 'danger',
+  council: 'human',
+  reports: 'accent',
+  chat: 'success',
+  ready: 'success',
+};
+
+export const kindTone = (item: DecisionItem): AuroraTone => CHIP_TONE[chipOf(item.kind)];
+
+/** Lamp tone -> urgency rank (chip glow strength). */
+export const URGENCY: Record<TriageTone, number> = { danger: 3, warning: 2, accent: 1, success: 1, neutral: 0 };
+
+/**
+ * At most two tags, and never one that repeats something already on the card:
+ * severity (the tier lamp says it; incidents say it in words), or the source's
+ * own name / team (the ledger's monogram says it).
+ */
+export function cardTags(item: DecisionItem) {
+  const seen = [item.source.label, item.source.sublabel ?? ''].map((s) => s.toLowerCase());
+  return item.tags
+    .filter((t) => t.id !== 'sev' && !seen.includes(t.label.toLowerCase()))
+    .slice(0, 2);
+}
 
 export const KIND_LABEL: Record<DecisionKind, string> = {
   review: 'Review',

@@ -8,12 +8,13 @@ import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, Rocket } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { Kbd } from '@/features/shared/triage/triageFocusBridge';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { modalTypeOf, type DecisionItem, type HubChip } from '../../../model/decisionModel';
+import type { ChipCount } from '../../../model/decisionModel';
 import { CHIP_META } from './deckMeta';
+import { Keycap } from './parts';
 import { PEEK_PRIORITY, isTypingTarget, plain } from './keys';
 import { PeekRow } from './PeekRow';
 
@@ -21,10 +22,12 @@ export type PeekVerdict = 'accept' | 'reject' | 'done';
 
 const reads = (item: DecisionItem) => modalTypeOf(item.kind) === 'report' || modalTypeOf(item.kind) === 'chat';
 
-export function Peek({ chip, rows, failed, nextId, active, anchor, onOpen, onVerdict, onDispatchAll, onClose }: {
+export function Peek({ chip, rows, failed, lamp, nextId, active, anchor, onOpen, onVerdict, onDispatchAll, onClose }: {
   chip: HubChip;
   rows: DecisionItem[];
   failed: boolean;
+  /** The chip's lamp — the glass is lit from its corner in that tone. */
+  lamp: ChipCount['lamp'];
   nextId: string | null;
   active: boolean;
   anchor: RefObject<HTMLElement | null>;
@@ -95,26 +98,27 @@ export function Peek({ chip, rows, failed, nextId, active, anchor, onOpen, onVer
       exit={still ? { opacity: 0 } : { opacity: 0, y: -6, scaleY: 0.96 }}
       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
       style={{ left, transformOrigin: 'top left' }}
-      className="absolute top-full z-30 mt-1.5 flex w-[480px] max-w-[calc(100%-16px)] flex-col rounded-card border border-primary/20 bg-background shadow-elevation-3"
+      className={`au-scope au-glass au-hair au-l-${isReady ? 'success' : lamp} au-t-${isReady ? 'success' : lamp === 'neutral' ? 'accent' : lamp} absolute top-full z-30 mt-2 flex w-[500px] max-w-[calc(100%-16px)] flex-col rounded-modal`}
       data-testid="p2-peek"
+      data-still={still ? '' : undefined}
     >
-      <header className="flex items-center gap-2 border-b border-primary/10 px-4 py-2.5">
-        <meta.icon className="h-4 w-4 text-primary" aria-hidden />
+      <header className="flex items-center gap-2.5 px-4 pb-2 pt-3">
+        <span className="au-tile flex h-8 w-8 items-center justify-center rounded-input"><meta.icon className="h-4 w-4" aria-hidden /></span>
         <span className="typo-heading text-foreground">{meta.label}</span>
-        <span className="typo-caption">{rows.length} waiting</span>
+        <span className="flex items-baseline gap-1 typo-caption"><span className="typo-heading tabular-nums text-foreground">{rows.length}</span> waiting</span>
         <span className="ml-auto flex items-center gap-1.5">
           {isReady ? (
-            <Button variant="accent" tone="success" size="xs" onClick={onDispatchAll} disabled={rows.length === 0} icon={<Rocket className="h-3.5 w-3.5" aria-hidden />}>
+            <Button variant="accent" tone="success" size="xs" onClick={onDispatchAll} disabled={rows.length === 0} icon={<Rocket className="h-3.5 w-3.5" aria-hidden />} className="au-lift au-sheen">
               Dispatch all
             </Button>
           ) : rows.length > 0 && (
-            <Button variant="ghost" size="xs" className="whitespace-nowrap" onClick={() => onOpen(rows[f]!, rowEls.current[rows[f]!.id] ?? null)} iconRight={<ArrowRight className="h-3.5 w-3.5" aria-hidden />}>
+            <Button variant="ghost" size="xs" className="au-lift whitespace-nowrap" onClick={() => onOpen(rows[f]!, rowEls.current[rows[f]!.id] ?? null)} iconRight={<ArrowRight className="h-3.5 w-3.5" aria-hidden />}>
               Open deck
             </Button>
           )}
         </span>
       </header>
-      <div className="flex max-h-[420px] flex-col gap-1 overflow-y-auto p-2">
+      <div className="flex max-h-[440px] flex-col gap-1 overflow-y-auto px-2 pb-2">
         <AnimatePresence initial={!still} custom={leaveDir}>
           {rows.map((item, i) => (
             <PeekRow
@@ -135,15 +139,11 @@ export function Peek({ chip, rows, failed, nextId, active, anchor, onOpen, onVer
         {failed && <p className="px-3 py-2 typo-body text-status-error">This source did not answer — the list may be incomplete.</p>}
         {rows.length === 0 && !failed && <p className="px-3 py-6 text-center typo-caption">All clear here.</p>}
       </div>
+      {/* The verdict keys sit on the focused row; only the navigation keys live down here. */}
       <footer className="flex items-center gap-1.5 border-t border-primary/10 px-4 py-2 typo-caption">
-        <Kbd>↑</Kbd><Kbd>↓</Kbd> move <Kbd>↵</Kbd> open
-        {isReady ? <><Kbd>A</Kbd> dispatch</> : (
-          <>
-            {rows.some((r) => !reads(r)) && <><Kbd>A</Kbd> approve <Kbd>R</Kbd> reject</>}
-            {rows.some(reads) && <><Kbd>D</Kbd> done</>}
-          </>
-        )}
-        <span className="ml-auto flex items-center gap-1.5"><Kbd>Esc</Kbd> close</span>
+        <Keycap>↑</Keycap><Keycap>↓</Keycap> move
+        {isReady && <><Keycap className="ml-2">A</Keycap> dispatch</>}
+        <span className="ml-auto flex items-center gap-1.5"><Keycap>Esc</Keycap> close</span>
       </footer>
     </motion.div>
   );

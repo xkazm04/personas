@@ -1,19 +1,22 @@
 /**
- * One peek row: tier stripe, kind icon, title, then source · age · cost. The
- * focused row shows its one-key verdicts; the first row of the roster is
- * flagged NEXT. Ready rows carry their own Dispatch button.
+ * One peek row: a glowing tier stripe (red = blocking, primary = decide, grey =
+ * read), the title (two lines, never cut mid-word), then the ledger in icons:
+ * source monogram, clock + age, gauge + cost. The focused row shows its keys
+ * once, inset; the roster's first row is flagged NEXT with a breathing lamp.
+ * Ready rows carry their own Dispatch button.
  */
 import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
-import { Rocket } from 'lucide-react';
+import { Clock, Gauge, Rocket } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { Kbd } from '@/features/shared/triage/triageFocusBridge';
-import { chipOf, modalTypeOf, type DecisionItem } from '../../../model/decisionModel';
-import { CHIP_META, TIER_FILL, TIER_META, costOf, tierOf } from './deckMeta';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { modalTypeOf, type DecisionItem } from '../../../model/decisionModel';
+import { TIER_META, costOf, tierOf } from './deckMeta';
+import { Keycap, Lamp, Monogram } from './parts';
 
 /** Exit reads the presence `custom` (the verdict's direction), not stale props. */
-const ROW_LEAVE = { leave: (dir: number) => ({ opacity: 0, x: dir * 140, transition: { duration: 0.2 } }) };
+const ROW_LEAVE = { leave: (dir: number) => ({ opacity: 0, x: dir * 160, filter: 'blur(2px)', transition: { duration: 0.22 } }) };
 
 export interface PeekRowProps {
   item: DecisionItem;
@@ -32,7 +35,6 @@ export const PeekRow = forwardRef<HTMLDivElement, PeekRowProps>(function PeekRow
   ref,
 ) {
   const tier = tierOf(item);
-  const Icon = CHIP_META[isReady ? 'ready' : chipOf(item.kind)].icon;
   const type = modalTypeOf(item.kind);
   const reads = type === 'report' || type === 'chat';
   return (
@@ -44,44 +46,51 @@ export const PeekRow = forwardRef<HTMLDivElement, PeekRowProps>(function PeekRow
       animate={{ opacity: 1, y: 0, transition: { delay: index * 0.035, duration: 0.18 } }}
       variants={ROW_LEAVE}
       exit="leave"
-      className={`group relative flex items-stretch gap-3 rounded-card border pl-0 pr-2 transition-colors ${
-        focused ? 'border-primary/40 bg-primary/10' : 'border-transparent hover:bg-secondary/40'}`}
+      className={`au-row ${isReady ? 'au-tier-ok' : `au-tier-${tier}`} ${isReady ? 'au-l-success' : ''} group relative flex items-stretch gap-3 rounded-card py-1 pl-1.5 pr-2`}
+      data-focused={focused ? '' : undefined}
       onMouseEnter={onFocus}
       data-testid={`p2-peek-row-${item.id}`}
     >
-      <span className={`w-1 flex-shrink-0 rounded-pill ${isReady ? 'bg-status-success' : TIER_FILL[tier]}`} aria-hidden />
+      <Tooltip content={isReady ? 'Accepted — ready to dispatch' : TIER_META[tier].label}>
+        <span className={`au-stripe flex-shrink-0 ${isReady ? 'au-tier-ok' : ''}`} aria-label={isReady ? 'accepted' : TIER_META[tier].label} />
+      </Tooltip>
       <Button
         variant="ghost"
         size="sm"
         onClick={onOpen}
         aria-label={`Open: ${item.title}`}
-        className="min-w-0 flex-1 rounded-card px-0 py-2 text-left hover:bg-transparent [&>span]:flex [&>span]:min-w-0 [&>span]:flex-1 [&>span]:items-start [&>span]:gap-2.5"
+        className="min-w-0 flex-1 rounded-card px-0 py-1.5 text-left hover:bg-transparent [&>span]:flex [&>span]:min-w-0 [&>span]:flex-1 [&>span]:flex-col [&>span]:gap-1"
       >
-        <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" aria-hidden />
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="typo-body truncate text-foreground">{item.title}</span>
-          <span className="flex min-w-0 items-center gap-1.5 typo-caption">
-            {tier === 1 && !isReady && <span className="flex-shrink-0 text-status-error">{TIER_META[1].label} ·</span>}
-            <span className="min-w-[3rem] truncate">{item.source.label}</span>
-            <span aria-hidden>·</span>
-            <RelativeTime timestamp={item.createdAt} className="typo-caption flex-shrink-0" />
-            <span aria-hidden>·</span>
-            <span className="flex-shrink-0 text-foreground">{isReady ? 'accepted' : costOf(item)}</span>
+        <span className="line-clamp-2 typo-body text-foreground [text-wrap:pretty]">{item.title}</span>
+        <span className="flex min-w-0 items-center gap-3 typo-caption">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <Monogram item={item} size="sm" />
+            <span className="truncate">{item.source.label}</span>
+          </span>
+          <span className="flex flex-shrink-0 items-center gap-1">
+            <Clock className="h-3.5 w-3.5" aria-hidden />
+            <RelativeTime timestamp={item.createdAt} className="typo-caption" />
+          </span>
+          <span className="flex flex-shrink-0 items-center gap-1 text-foreground">
+            {isReady ? <Rocket className="h-3.5 w-3.5" aria-hidden /> : <Gauge className="h-3.5 w-3.5" aria-hidden />}
+            {isReady ? 'accepted' : costOf(item)}
           </span>
         </span>
       </Button>
       <div className="flex flex-shrink-0 items-center gap-1.5">
         {isReady ? (
-          <Button variant="accent" tone="success" size="xs" onClick={onDispatch} icon={<Rocket className="h-3.5 w-3.5" aria-hidden />}>
+          <Button variant="accent" tone="success" size="xs" onClick={onDispatch} icon={<Rocket className="h-3.5 w-3.5" aria-hidden />} className="au-lift">
             Dispatch
           </Button>
         ) : focused ? (
-          <span className="flex items-center gap-1 typo-caption">
-            {reads ? <Kbd>D</Kbd> : <><Kbd>A</Kbd><Kbd>R</Kbd></>}
-            <Kbd>↵</Kbd>
+          <span className="flex items-center gap-1 text-foreground" aria-label={reads ? 'D done, Enter open' : 'A approve, R reject, Enter open'}>
+            {reads ? <Keycap>D</Keycap> : <><Keycap className="text-status-success">A</Keycap><Keycap className="text-status-error">R</Keycap></>}
+            <Keycap>↵</Keycap>
           </span>
         ) : isNext ? (
-          <span className="rounded-pill bg-primary/15 px-2 py-0.5 typo-caption text-primary">next</span>
+          <span className="flex items-center gap-1.5 typo-eyebrow text-primary">
+            <Lamp tone="accent" breathe /> next
+          </span>
         ) : null}
       </div>
     </motion.div>

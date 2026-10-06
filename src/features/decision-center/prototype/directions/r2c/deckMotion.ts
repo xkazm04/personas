@@ -23,17 +23,20 @@ const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 
 export interface Custom { dir: 1 | -1; leave: Leave }
 
+/** Where a decided card goes: accept up-right (+4°), reject down-left (−4°), done files up, skip slides under the stack. */
 const LEAVE_TO: Record<Exclude<Leave, 'walk'>, TargetAndTransition> = {
-  accept: { x: 240, y: -70, rotate: 7, scale: 0.92, opacity: 0 },
-  reject: { x: -60, y: 200, rotate: -9, scale: 0.9, opacity: 0 },
-  done: { y: -140, scale: 0.95, opacity: 0 },
-  skip: { y: 40, scale: 0.88, opacity: 0 },
+  accept: { x: 300, y: -120, rotate: 4, scale: 0.94, opacity: 0, zIndex: 5, transition: { duration: 0.42, ease: [0.4, 0, 0.6, 1] } },
+  reject: { x: -280, y: 170, rotate: -4, scale: 0.94, opacity: 0, zIndex: 5, transition: { duration: 0.42, ease: [0.4, 0, 0.6, 1] } },
+  done: { y: -160, scale: 0.95, opacity: 0, zIndex: 5, transition: { duration: 0.38 } },
+  skip: { y: 34, scale: 0.92, rotateX: 8, opacity: 0, zIndex: -1, transition: { duration: 0.36 } },
 };
 
 export const CARD_MOTION = {
   enter: ({ dir, leave }: Custom) =>
-    leave === 'walk' ? CARD_VARIANTS.enter(dir) : { y: 26, scale: 0.95, opacity: 0 },
-  center: { x: 0, y: 0, rotate: 0, scale: 1, opacity: 1 },
+    // The next card RISES off the stack: it starts where the first ghost sat.
+    leave === 'walk' ? CARD_VARIANTS.enter(dir) : { y: 18, scale: 0.965, rotateX: 5, opacity: 0.6 },
+  // A decided card stays ON TOP (zIndex 5) while it flies off; the next one rises beneath it.
+  center: { x: 0, y: 0, rotate: 0, rotateX: 0, scale: 1, opacity: 1, zIndex: 1 },
   exit: ({ dir, leave }: Custom) => (leave === 'walk' ? CARD_VARIANTS.exit(dir) : LEAVE_TO[leave]),
 };
 
@@ -67,7 +70,10 @@ export function originMotion(origin: OriginBox | null, still: boolean) {
     initial: from,
     animate: {
       opacity: 1, x: 0, y: 0, scale: 1,
-      transition: { duration: sec(still ? MOTION.duration.fast : MOTION.duration.normal), ease: EASE_OUT, delay: still ? 0 : 0.08 },
+      // The plate springs out of the chip / row (300/30); reduced motion is a plain fade.
+      transition: still
+        ? { duration: sec(MOTION.duration.fast), ease: EASE_OUT }
+        : { type: 'spring' as const, stiffness: 300, damping: 30, opacity: { duration: 0.16 } },
     },
     exit: { ...from, transition: { duration: sec(MOTION.duration.fast), ease: 'easeIn' as const } },
   };
@@ -75,6 +81,15 @@ export function originMotion(origin: OriginBox | null, still: boolean) {
 
 /** Stamp that lands on a card the moment it is decided. */
 export const STAMP_MOTION = {
-  initial: { opacity: 0, scale: 1.6, rotate: -14 },
-  animate: { opacity: 1, scale: 1, rotate: -8, transition: { type: 'spring' as const, stiffness: 520, damping: 26 } },
+  initial: { opacity: 0, scale: 1.9, rotate: -16 },
+  animate: { opacity: 1, scale: 1, rotate: -7, transition: { type: 'spring' as const, stiffness: 620, damping: 24 } },
 };
+
+/** The light ring that bursts out from under the stamp as it lands. */
+export const BURST_MOTION = {
+  initial: { opacity: 0.9, scale: 0.4 },
+  animate: { opacity: 0, scale: 2.4, transition: { duration: 0.45, ease: EASE_OUT } },
+};
+
+/** Card content arrives a beat after its plate lands. */
+export const CONTENT_FADE = { initial: { opacity: 0 }, animate: { opacity: 1, transition: { delay: 0.08, duration: 0.16 } } };

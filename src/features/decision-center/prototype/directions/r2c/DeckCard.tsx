@@ -3,12 +3,18 @@
  * all four modal types; only the body and the rail's type section differ.
  * The card is the unit that slides when walking and leaves on a verdict
  * (`CARD_MOTION`), and it wears the verdict stamp for the beat before it goes.
+ *
+ * Aurora material: a layered surface lit from the kind tile's corner, a
+ * living conic border in the kind tone (static under reduced motion), a tier
+ * spine of light on the left edge, and the ledger rail sunk into a well.
  */
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { Check, CornerUpRight, SkipForward, X } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { modalTypeOf, type DecisionItem } from '../../../model/decisionModel';
-import { CARD_MOTION, CARD_TRANSITION, STAMP_MOTION, STILL_CARD, STILL_TRANSITION, type Leave } from './deckMotion';
+import { BURST_MOTION, CARD_MOTION, CARD_TRANSITION, STAMP_MOTION, STILL_CARD, STILL_TRANSITION, type Leave } from './deckMotion';
 import { CardHeader } from './CardHeader';
 import { ChatThread } from './ChatThread';
 import { DeckDock } from './DeckDock';
@@ -17,22 +23,41 @@ import { ProseBody } from './ProseBody';
 import { QuestionFields } from './QuestionFields';
 import { prepareDocument } from './readerDocument';
 import { ReaderContents, ReportReader } from './ReportReader';
+import { ThreadPeople } from './ThreadPeople';
 import type { DeckActions } from './useDeckActions';
 import type { DeckController } from './useDeck';
 import { useReader } from './useReader';
 
-const STAMP_TONE: Record<Exclude<Leave, 'walk'>, string> = {
-  accept: 'border-status-success text-status-success',
-  reject: 'border-status-error text-status-error',
-  done: 'border-primary text-primary',
-  skip: 'border-muted-foreground text-muted-foreground',
+const STAMP: Record<Exclude<Leave, 'walk'>, { lamp: string; icon: LucideIcon }> = {
+  accept: { lamp: 'au-l-success', icon: Check },
+  reject: { lamp: 'au-l-danger', icon: X },
+  done: { lamp: 'au-l-accent', icon: Check },
+  skip: { lamp: 'au-l-neutral', icon: SkipForward },
 };
 
 function stampLabel(item: DecisionItem, leave: Exclude<Leave, 'walk'>): string {
-  if (leave === 'done') return modalTypeOf(item.kind) === 'chat' ? 'Done ✓' : 'Read ✓';
+  if (leave === 'done') return modalTypeOf(item.kind) === 'chat' ? 'Done' : 'Read';
   if (leave === 'skip') return item.verdictLabels.skip;
-  if (leave === 'accept' && modalTypeOf(item.kind) === 'chat') return 'Sent ✓';
-  return leave === 'accept' ? `${item.verdictLabels.accept} ✓` : `${item.verdictLabels.reject} ✕`;
+  if (leave === 'accept' && modalTypeOf(item.kind) === 'chat') return 'Sent';
+  return leave === 'accept' ? item.verdictLabels.accept : item.verdictLabels.reject;
+}
+
+function Stamp({ item, leave, still }: { item: DecisionItem; leave: Exclude<Leave, 'walk'>; still: boolean }) {
+  const s = STAMP[leave];
+  const Icon = leave === 'accept' && modalTypeOf(item.kind) === 'chat' ? CornerUpRight : s.icon;
+  return (
+    <div className={`${s.lamp} pointer-events-none absolute inset-0 z-20 flex items-center justify-center`} aria-hidden>
+      {!still && <motion.span {...BURST_MOTION} className="au-burst absolute h-72 w-72" />}
+      <motion.span
+        initial={still ? { opacity: 0 } : STAMP_MOTION.initial}
+        animate={still ? { opacity: 1 } : STAMP_MOTION.animate}
+        className="au-stamp flex items-center gap-3 rounded-modal px-7 py-3 typo-hero uppercase"
+      >
+        <Icon className="h-10 w-10" strokeWidth={3} aria-hidden />
+        {stampLabel(item, leave)}
+      </motion.span>
+    </div>
+  );
 }
 
 export interface CardState {
@@ -72,10 +97,7 @@ export function DeckCard({ item, deck, act, state, titleId }: {
     ? <ReaderContents doc={doc} reader={reader} isHtml={!isMd} />
     : type === 'chat'
       ? (
-        <div className="flex flex-col gap-1 pt-4">
-          <span className="typo-label">In this thread</span>
-          <span className="typo-body text-foreground">{[...new Set(item.thread?.messages.map((m) => m.name) ?? [])].join(', ')}</span>
-        </div>
+        <ThreadPeople item={item} />
       )
       : null;
 
@@ -87,13 +109,16 @@ export function DeckCard({ item, deck, act, state, titleId }: {
       animate="center"
       exit="exit"
       transition={still ? STILL_TRANSITION : CARD_TRANSITION}
-      className="absolute inset-0 flex flex-col overflow-hidden rounded-modal border border-primary/15 bg-background shadow-elevation-4"
+      className="au-card au-living absolute inset-0 flex flex-col overflow-hidden rounded-modal"
       data-testid="p2-card"
       data-item={item.id}
     >
-      <CardHeader item={item} titleId={titleId} />
-      <div className="flex min-h-0 flex-1">
-        <div className="flex min-w-0 flex-1 flex-col">{body}</div>
+      <span className="au-spine" aria-hidden />
+      <div className="flex min-h-0 flex-1 gap-2 p-3 pl-0">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <CardHeader item={item} titleId={titleId} />
+          {body}
+        </div>
         <LedgerRail
           item={item}
           extra={extra}
@@ -102,17 +127,7 @@ export function DeckCard({ item, deck, act, state, titleId }: {
       </div>
       {/* The live region is born empty and stays mounted; only its text follows the stamp. */}
       <span className="sr-only" aria-live="polite">{stamp ? stampLabel(item, stamp) : ''}</span>
-      {stamp && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden>
-          <motion.span
-            initial={still ? { opacity: 0 } : STAMP_MOTION.initial}
-            animate={still ? { opacity: 1 } : STAMP_MOTION.animate}
-            className={`rounded-card border-4 bg-background/80 px-6 py-2 typo-hero uppercase ${STAMP_TONE[stamp]}`}
-          >
-            {stampLabel(item, stamp)}
-          </motion.span>
-        </div>
-      )}
+      {stamp && <Stamp item={item} leave={stamp} still={still} />}
     </motion.article>
   );
 }

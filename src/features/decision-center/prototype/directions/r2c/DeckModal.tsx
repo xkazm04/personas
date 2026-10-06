@@ -7,6 +7,10 @@
  * The tray grows out of the chip / peek row that opened it and shrinks back
  * into it on close (origin morph); walking slides cards by direction; a
  * verdict stamps the card and sends it off toward its meaning.
+ *
+ * Aurora: the whole session sits in a field of slow light keyed to the card
+ * in hand (kind tone, primary, tier tone) over a vignetted floor, so the deck
+ * is the lit object in the room. The field re-tints as you walk.
  */
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -15,7 +19,8 @@ import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import type { DecisionItem } from '../../../model/decisionModel';
 import { modalTypeOf } from '../../../model/decisionModel';
 import type { PrototypeVerdict } from '../../directionContract';
-import { originMotion, type OriginBox } from './deckMotion';
+import { CONTENT_FADE, originMotion, type OriginBox } from './deckMotion';
+import { kindTone, tierOf } from './deckMeta';
 import { DeckCard } from './DeckCard';
 import { DeckTray } from './DeckTray';
 import { useDeck, type DeckScope } from './useDeck';
@@ -85,6 +90,7 @@ function DeckSessionView({ scope, scopeLabel, startId, origin, items, ready, onD
   const [rating, setRating] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [missing, setMissing] = useState(false);
+  const [keysOpen, setKeysOpen] = useState(false);
   const item = deck.item;
 
   useEffect(() => {
@@ -94,9 +100,10 @@ function DeckSessionView({ scope, scopeLabel, startId, origin, items, ready, onD
   }, [item?.id]);
 
   const act = useDeckActions(deck, { rating, answers, onIncomplete: () => setMissing(true) });
-  useDeckKeys(deck, act, { enabled: !!item, onRate: setRating });
+  useDeckKeys(deck, act, { enabled: !!item, onRate: setRating, onKeys: () => setKeysOpen((o) => !o) });
   useEffect(() => {
     escapeGuard.current = () => {
+      if (keysOpen) { setKeysOpen(false); return true; }
       if (deck.prompt) { deck.setPrompt(null); return true; }
       if (deck.armed) { deck.setArmed(null); return true; }
       return false;
@@ -108,7 +115,16 @@ function DeckSessionView({ scope, scopeLabel, startId, origin, items, ready, onD
   const morph = originMotion(origin, still);
 
   return (
-    <motion.div initial={morph.initial} animate={morph.animate} exit={morph.exit} className={`relative w-full ${wide ? '' : 'max-w-[min(1120px,92vw)]'}`} data-testid="p2-deck">
+    <motion.div
+      initial={morph.initial}
+      animate={morph.animate}
+      exit={morph.exit}
+      className={`au-scope au-t-${item ? kindTone(item) : 'accent'} au-tier-${item ? tierOf(item) : 2} relative w-full ${wide ? '' : 'max-w-[min(1120px,92vw)]'}`}
+      data-testid="p2-deck"
+      data-still={still ? '' : undefined}
+    >
+        <motion.div className="au-vignette" aria-hidden {...CONTENT_FADE} />
+        <motion.div className="au-aurora" aria-hidden {...CONTENT_FADE}><i /><i /><i /></motion.div>
         <DeckTray
           scopeLabel={scopeLabel}
           queue={deck.queue}
@@ -118,6 +134,8 @@ function DeckSessionView({ scope, scopeLabel, startId, origin, items, ready, onD
           onWalk={deck.walk}
           onClose={onBack}
           tall={wide}
+          keysOpen={keysOpen}
+          onKeys={setKeysOpen}
         >
           <AnimatePresence initial={false} custom={deck.motion} mode="popLayout">
             {item && (

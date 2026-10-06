@@ -91,6 +91,7 @@ export function Hub({ items, counts, ready, initial, onDecide }: HubProps) {
               chip={peek.chip}
               rows={peekRows}
               failed={counts[peek.chip].failed}
+              lamp={counts[peek.chip].lamp}
               nextId={items[0]?.id ?? null}
               active={!session}
               anchor={anchor}
