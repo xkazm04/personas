@@ -17,13 +17,15 @@ import type { AtlasFigureProps } from '../atlasFigure';
 import { MatrixFigure } from './matrix/MatrixFigure';
 import { StampSheetFigure } from './stampsheet/StampSheetFigure';
 import { CoreSampleFigure } from './coresample/CoreSampleFigure';
+import { CohortsFigure } from './cohorts/CohortsFigure';
 
-export type AtlasConcept = 'matrix' | 'stampsheet' | 'coresample';
+export type AtlasConcept = 'matrix' | 'stampsheet' | 'coresample' | 'cohorts';
 
 export const CONCEPT_FIGURES: Record<AtlasConcept, (p: AtlasFigureProps) => ReactElement> = {
   matrix: MatrixFigure,
   stampsheet: StampSheetFigure,
   coresample: CoreSampleFigure,
+  cohorts: CohortsFigure,
 };
 
 /** Named for the concept, never for a finish. */
@@ -31,4 +33,5 @@ export const CONCEPT_OPTIONS: ReadonlyArray<{ v: AtlasConcept; label: string }> 
   { v: 'matrix', label: 'Matrix' },
   { v: 'stampsheet', label: 'Stamp sheet' },
   { v: 'coresample', label: 'Core sample' },
+  { v: 'cohorts', label: 'Cohorts' },
 ];
