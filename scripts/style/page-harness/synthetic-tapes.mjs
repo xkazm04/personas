@@ -24,6 +24,7 @@ import { missionControlTapes } from './missionControlTapes.mjs';
 import { monitorBoardTapes } from './monitorBoardTapes.mjs';
 import { monitorRailTapes } from './monitorRailTapes.mjs';
 import { monitorActivityTapes } from './monitorActivityTapes.mjs';
+import { athenaChatTapes } from './athenaChatTapes.mjs';
 
 export const RECORDED_AT = '2026-09-22T15:40:00.000Z';
 const T0 = Date.parse(RECORDED_AT);
@@ -297,6 +298,20 @@ function kitTilesTape(id) {
   };
 }
 
+/**
+ * The chat tapes carry the route behind the chat too (Overview > Executions,
+ * `bg=executions`, the default). Its calls go first and lose to the chat's on a
+ * shared command, so the chat's answers are the ones replayed.
+ */
+function athenaChatBuilders() {
+  const background = activityTapes({ RECORDED_AT, PERSONAS }).builders['overview/sub_activity'];
+  return Object.fromEntries(Object.entries(athenaChatTapes({ RECORDED_AT }).builders).map(([id, build]) => [id, () => {
+    const chat = build();
+    const own = new Set(chat.calls.map((c) => c.cmd));
+    return { ...chat, calls: [...background().calls.filter((c) => !own.has(c.cmd)), ...chat.calls] };
+  }]));
+}
+
 const BUILDERS = {
   'overview/sub_events': () => subEvents(),
   'plugins/dev-tools/sub_triage': () => subTriage(),
@@ -360,6 +375,8 @@ const BUILDERS = {
   ...twinDetailTapes({ RECORDED_AT }).builders,
   // Overview > Mission Control (missionControlSurfaces.tsx, missionControlTapes.mjs).
   ...missionControlTapes({ RECORDED_AT, PERSONAS }).builders,
+  // The Athena chat overlay, open over Overview > Executions (athenaChatSurfaces.tsx, athenaChatTapes.mjs).
+  ...athenaChatBuilders(),
   // shoot.mjs --self-test probes: no data needed.
   '__selftest/empty': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),
   '__selftest/console-error': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),

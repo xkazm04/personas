@@ -35,6 +35,7 @@ import { ACTIVITY_MODULES } from './activitySurfaces';
 import { INBOX_MODULES } from './inboxSurfaces';
 import { MONITOR_RAIL_MODULES } from './monitorRailSurfaces';
 import { MONITOR_ACTIVITY_MODULES } from './monitorActivitySurfaces';
+import { ATHENA_CHAT_MODULES } from './athenaChatSurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -114,6 +115,8 @@ export const MODULES: Record<string, HarnessModule> = {
   ...TWIN_DETAIL_MODULES,
   // Overview > Mission Control (missionControlSurfaces.tsx, missionControlTapes.mjs).
   ...MISSION_CONTROL_MODULES,
+  // The Athena chat overlay, open, per scenario; variant and background are URL params (athenaChatSurfaces.tsx, athenaChatTapes.mjs).
+  ...ATHENA_CHAT_MODULES,
   // Probes for `shoot.mjs --self-test`: each must make the shooter exit non-zero.
   '__selftest/empty': {
     load: async () => ({ default: () => <div /> }),
