@@ -1,0 +1,243 @@
+/* Busbar - the goals-filmstrip-r2 winner (B/3), ported as a figure.
+
+   The winner drew milestones as wiring: a rail per milestone, goals hung from
+   it on drop wires with a junction dot, unassigned goals on a dashed open bus.
+   Its geometry is kept here in the form it was written (pseudo-elements,
+   absolute wires, corner brackets); its COLOURS are not. Every ink is a token:
+   --h is the rail (a --brand-* hue by milestone number), --sc a goal status
+   (--status-* / --role-highlight), and every surface and rule is a
+   color-mix() of --foreground over --background, so all the themes - the
+   light ones included - repaint it without a second palette.
+   Type is never sized here: every text node carries a typo-* token in the JSX.
+   The one font property is the family for the winner's monospace readouts,
+   routed through the product's own --font-mono. */
+
+.bb {
+  --bb-line: color-mix(in srgb, var(--foreground) 18%, transparent);
+  --bb-line-soft: color-mix(in srgb, var(--foreground) 9%, transparent);
+  --bb-panel: color-mix(in srgb, var(--foreground) 4%, var(--background));
+  --bb-panel-hi: color-mix(in srgb, var(--foreground) 7%, var(--background));
+  --bb-dim: color-mix(in srgb, var(--foreground) 62%, var(--background));
+  --bb-wire: 12px;
+  --bb-pw: 232px;
+  --bb-pg: 10px;
+  position: relative;
+}
+.bb-mono { font-family: var(--font-mono); }
+.bb-dim { color: var(--bb-dim); }
+
+/* ---- hex terminal ---- */
+.bb-hex { position: relative; display: inline-grid; place-items: center; flex: none; }
+.bb-hex svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.bb-hex-label { position: relative; color: var(--hx); line-height: 1; }
+
+/* ---- keycap ---- */
+.bb-kc {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px; padding: 0 5px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 40%, transparent);
+  background: var(--bb-panel);
+  color: var(--foreground);
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--background) 70%, transparent);
+  white-space: nowrap;
+}
+
+/* ---- the focused project: a framed drafting sheet ---- */
+.bb-sheet {
+  position: relative;
+  margin: 10px 8px 12px;
+  padding: 8px 14px 6px;
+  border: 1.5px solid color-mix(in srgb, var(--primary) 60%, transparent);
+  background: linear-gradient(180deg, var(--bb-panel), var(--background));
+  box-shadow: inset 0 0 30px color-mix(in srgb, var(--primary) 6%, transparent);
+}
+.bb-cb { position: absolute; width: 14px; height: 14px; border: 0 solid var(--primary); pointer-events: none; }
+.bb-cb.tl { left: -5px; top: -5px; border-width: 3px 0 0 3px; }
+.bb-cb.tr { right: -5px; top: -5px; border-width: 3px 3px 0 0; }
+.bb-cb.bl { left: -5px; bottom: -5px; border-width: 0 0 3px 3px; }
+.bb-cb.br { right: -5px; bottom: -5px; border-width: 0 3px 3px 0; }
+.bb-head { padding-bottom: 6px; border-bottom: 1px solid var(--bb-line-soft); }
+.bb-eyebrow { color: var(--primary); letter-spacing: 0.12em; }
+.bb-readout { display: flex; flex-wrap: wrap; }
+.bb-readout > span { border: 1px solid var(--bb-line); padding: 1px 8px; margin-right: -1px; white-space: nowrap; }
+
+/* ---- a band: terminal block left, rail leaves its right edge ---- */
+.bb-band {
+  position: relative;
+  display: grid; grid-template-columns: 224px minmax(0, 1fr); column-gap: 20px;
+  padding: 6px 0 8px;
+  border-top: 1px dashed var(--bb-line-soft);
+}
+.bb-band:first-child { border-top: 0; }
+.bb-band.is-over { background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--h) 9%, transparent)); }
+.bb-rail {
+  position: absolute; left: 228px; right: 0; top: 22px; height: 2px;
+  background: color-mix(in srgb, var(--h) 28%, transparent); pointer-events: none;
+}
+.bb-rail::before {
+  content: ""; position: absolute; left: -7px; top: -5px; width: 8px; height: 8px;
+  border: 2px solid var(--h); background: var(--background);
+}
+.bb-rail::after {
+  content: ""; position: absolute; right: -1px; top: -7px; width: 2px; height: 16px;
+  background: color-mix(in srgb, var(--h) 45%, transparent);
+}
+.bb-rail-on { position: absolute; left: 0; top: -0.5px; height: 3px; background: var(--h); box-shadow: 0 0 10px var(--h), 0 0 2px var(--h); }
+.bb-rail-on::after {
+  content: ""; position: absolute; right: -4px; top: -3px; width: 9px; height: 9px;
+  background: var(--h); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+.bb-rail-on.is-zero::after { display: none; }
+.bb-rail-pct { position: absolute; top: -24px; transform: translateX(-50%); color: var(--h); background: var(--background); padding: 0 4px; white-space: nowrap; }
+.bb-band.is-shipped .bb-rail { background: var(--h); }
+.bb-band.is-open .bb-rail { height: 0; background: none; border-top: 2px dashed var(--h); }
+.bb-band.is-over .bb-rail { background: color-mix(in srgb, var(--h) 60%, transparent); box-shadow: 0 0 14px var(--h); }
+
+/* terminal block */
+.bb-tb {
+  display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 10px;
+  align-items: start; align-self: start; padding-right: 10px; min-width: 0;
+  outline: none; cursor: pointer;
+}
+.bb-tb:focus-visible { outline: 1px dashed var(--h); outline-offset: 3px; }
+.bb-tb:hover .bb-hex polygon { fill: color-mix(in srgb, var(--h) 24%, var(--background)); }
+.bb-ladder { display: inline-flex; align-items: center; margin-top: 3px; }
+.bb-ladder span { padding: 0 4px; border: 1px solid transparent; color: var(--bb-dim); }
+.bb-ladder i { width: 6px; height: 1px; background: var(--bb-line); }
+.bb-ladder span.past { border-color: var(--bb-line); }
+.bb-ladder span.on { color: var(--background); background: var(--h); border-color: var(--h); }
+
+/* bus area: rows of cards hang below the rail; a second row hangs from a sub-rail */
+.bb-bus { position: relative; padding-top: 29px; min-width: 0; }
+.bb-band.is-empty .bb-bus { padding-top: 10px; }
+.bb-brow { position: relative; display: flex; align-items: flex-start; gap: var(--bb-pg); width: max-content; max-width: 100%; }
+.bb-brow + .bb-brow { margin-top: 9px; padding-top: var(--bb-wire); }
+.bb-brow + .bb-brow::before {
+  content: ""; position: absolute; top: 0; left: -12px; right: calc(var(--bb-pw) - 19px); height: 2px;
+  background: color-mix(in srgb, var(--h) 75%, transparent);
+}
+.bb-brow:not(:last-child)::after {
+  content: ""; position: absolute; left: -12px; width: 2px; top: 0; bottom: -9px;
+  background: color-mix(in srgb, var(--h) 75%, transparent);
+}
+.bb-brow:first-child:not(:last-child)::after { top: calc(-1 * var(--bb-wire) - 2px); }
+.bb-band.is-open .bb-brow + .bb-brow::before { background: none; border-top: 2px dashed var(--h); }
+.bb-band.is-open .bb-brow:not(:last-child)::after { background: none; width: 0; border-left: 2px dashed var(--h); }
+
+/* ---- a goal card ---- */
+.bb-card {
+  position: relative; width: var(--bb-pw); flex: none;
+  padding: 5px 9px 7px;
+  border: 1px solid var(--bb-line); background: var(--bb-panel);
+  cursor: grab; outline: none;
+  transition: border-color 0.15s, background-color 0.15s, opacity 0.2s;
+}
+.bb-card:hover { border-color: color-mix(in srgb, var(--foreground) 36%, transparent); background: var(--bb-panel-hi); }
+.bb-k { position: absolute; width: 9px; height: 9px; border: 0 solid var(--sc); pointer-events: none; transition: width 0.16s ease-out, height 0.16s ease-out; }
+.bb-k.a { left: -1px; top: -1px; border-width: 2px 0 0 2px; }
+.bb-k.b { right: -1px; bottom: -1px; border-width: 0 2px 2px 0; }
+.bb-card.is-cursor { border-color: transparent; background: color-mix(in srgb, var(--primary) 8%, var(--bb-panel)); }
+.bb-card.is-cursor .bb-k { width: calc(100% + 2px); height: calc(100% + 2px); border-color: var(--primary); }
+.bb-card.is-marked {
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 3px var(--status-warning),
+    0 0 0 5px var(--background), 0 0 0 6px var(--status-warning);
+}
+.bb-card.is-done { background: color-mix(in srgb, var(--foreground) 2%, var(--background)); }
+.bb-card.is-dragging { opacity: 0.4; border-style: dashed; }
+.bb-sc { color: var(--sc); }
+
+.bb-wire {
+  position: absolute; left: 17px; top: calc(-1 * var(--bb-wire) - 1px);
+  width: 2px; height: calc(var(--bb-wire) + 1px);
+  background: var(--h); transform-origin: 50% 100%; pointer-events: none;
+}
+.bb-wire::before {
+  content: ""; position: absolute; left: -3px; top: -4px; width: 8px; height: 8px;
+  border-radius: 50%; background: var(--h); box-shadow: 0 0 6px var(--h);
+}
+.bb-card.is-cursor .bb-wire { box-shadow: 0 0 8px var(--h); }
+.bb-card.on-open .bb-wire { top: -8px; height: 8px; width: 0; background: none; border-left: 2px dashed var(--h); }
+.bb-card.on-open .bb-wire::before { left: -6px; top: -9px; background: transparent; border: 1.5px solid var(--h); box-shadow: none; }
+.bb-card.is-sub .bb-wire {
+  left: calc(-1 * var(--bb-pg) - 1px); top: 15px;
+  width: calc(var(--bb-pg) + 1px); height: 2px; border: 0;
+  background: var(--h); transform-origin: 0 50%;
+}
+.bb-card.is-sub .bb-wire::before { left: -4px; top: -3px; }
+
+.bb-ph { display: flex; align-items: center; gap: 6px; min-height: 22px; }
+.bb-pl { display: flex; align-items: center; gap: 7px; min-height: 18px; }
+.bb-meter { display: grid; grid-template-columns: repeat(20, 1fr); gap: 1px; flex: 1; min-width: 30px; height: 9px; }
+.bb-meter i { background: color-mix(in srgb, var(--foreground) 11%, transparent); }
+.bb-meter i.on { background: var(--sc); }
+.bb-meter i.half { background: color-mix(in srgb, var(--sc) 45%, transparent); }
+.bb-stamp { flex: none; white-space: nowrap; }
+.bb-stamp.fin { color: var(--status-success); }
+.bb-stamp.due { color: var(--primary); }
+.bb-stamp.late { color: var(--background); background: var(--status-error); padding: 0 5px; }
+.bb-stamp.none { color: var(--bb-dim); }
+
+/* ---- the other projects: compact bus strips ---- */
+.bb-strip {
+  position: relative;
+  display: grid; grid-template-columns: 244px minmax(0, 1fr) 140px; align-items: center; column-gap: 18px;
+  min-height: 52px; padding: 4px 12px;
+  border-top: 1px solid var(--bb-line-soft);
+  cursor: pointer; outline: none;
+  transition: background-color 0.15s;
+}
+.bb-strip:hover { background: color-mix(in srgb, var(--foreground) 3%, transparent); }
+.bb-strip:focus-visible { box-shadow: inset 0 0 0 1px var(--primary); }
+.bb-strip-bus { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 4px 16px; min-height: 44px; padding-top: 4px; min-width: 0; }
+.bb-grp { position: relative; display: flex; flex-wrap: wrap; align-items: flex-start; min-width: 0; }
+.bb-grp.is-over { background: color-mix(in srgb, var(--h) 12%, transparent); }
+.bb-gt { position: relative; width: 30px; height: 24px; margin-top: -4px; }
+.bb-gt::after { content: ""; position: absolute; left: 20px; right: -2px; top: 11px; height: 2px; background: var(--h); }
+.bb-grp.is-open .bb-gt::after { height: 0; background: none; border-top: 2px dashed var(--h); }
+.bb-cell { position: relative; display: block; width: 28px; height: 40px; flex: none; cursor: grab; }
+.bb-cell::before { content: ""; position: absolute; left: 0; right: 0; top: 7px; height: 2px; background: var(--h); }
+.bb-grp.is-open .bb-cell::before { height: 0; background: none; border-top: 2px dashed var(--h); }
+.bb-cell-pin { position: absolute; left: 13px; top: 9px; width: 2px; height: 5px; background: var(--h); }
+.bb-grp.is-open .bb-cell-pin { width: 0; background: none; border-left: 2px dashed var(--h); }
+.bb-cell .bb-hex { position: absolute; left: 2px; top: 13px; }
+.bb-cell:hover .bb-hex { filter: brightness(1.3); }
+.bb-cell.is-sub { width: 20px; }
+.bb-cell.is-sub::before { display: none; }
+.bb-cell.is-sub .bb-hex { left: 3px; top: 21px; }
+.bb-cell.is-sub .bb-cell-pin { left: -8px; top: 28px; width: 12px; height: 2px; border: 0; background: var(--h); }
+.bb-led { display: flex; gap: 2px; }
+.bb-led i { width: 8px; height: 16px; background: color-mix(in srgb, var(--foreground) 12%, transparent); }
+.bb-led i.on { background: var(--primary); box-shadow: 0 0 6px color-mix(in srgb, var(--primary) 50%, transparent); }
+.bb-led i.half { background: color-mix(in srgb, var(--primary) 45%, transparent); }
+
+/* ---- the status line ---- */
+.bb-status {
+  position: sticky; bottom: 0; z-index: 5;
+  padding: 6px 14px 7px;
+  border-top: 1px solid var(--bb-line);
+  background: color-mix(in srgb, var(--foreground) 3%, var(--background));
+}
+.bb-mode { color: var(--primary); letter-spacing: 0.1em; }
+.bb-mode.is-marked { color: var(--status-warning); }
+.bb-mode.is-move { color: var(--brand-purple); }
+.bb-mode.is-jump { color: var(--brand-emerald); }
+.bb-seg + .bb-seg::before { content: "/"; padding: 0 8px; color: var(--bb-dim); }
+
+/* ---- motion: one-shot only, and none at all under reduced motion ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .bb-rail-on { transition: width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .bb-card.is-wired .bb-wire { animation: bb-wdraw 0.34s cubic-bezier(0.2, 0.8, 0.2, 1) 0.12s both; }
+  .bb-card.is-wired .bb-wire::before { animation: bb-jpop 0.3s cubic-bezier(0.3, 1.6, 0.5, 1) 0.42s both; }
+  .bb-card.is-wired.is-sub .bb-wire { animation-name: bb-wdrawx; }
+  .bb-card.is-cut .bb-spark { animation: bb-spark 0.4s steps(2) 1 both; }
+}
+.bb-spark { position: absolute; left: 8px; top: -22px; width: 22px; height: 18px; pointer-events: none; opacity: 0; }
+.bb-spark::before, .bb-spark::after {
+  content: ""; position: absolute; left: 10px; top: 0; width: 2px; height: 18px;
+  background: var(--status-error); transform: rotate(35deg); box-shadow: 0 0 6px var(--status-error);
+}
+.bb-spark::after { transform: rotate(-35deg); background: var(--foreground); }
+@keyframes bb-wdraw { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes bb-wdrawx { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes bb-jpop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+@keyframes bb-spark { 0% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
