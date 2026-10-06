@@ -54,7 +54,11 @@ export async function devTools(route, body, { timeoutMs } = {}) {
   });
   const text = await res.text();
   let json; try { json = JSON.parse(text); } catch { json = { raw: text }; }
-  if (!res.ok) throw new Error(`${route} -> ${res.status}: ${text.slice(0, 400)}`);
+  if (!res.ok) {
+    const err = new Error(`${route} -> ${res.status}: ${text.slice(0, 400)}`);
+    err.status = res.status;   // a 404 is "the route is not built yet": the outbox keeps the entry queued
+    throw err;
+  }
   return json;
 }
 

@@ -14,6 +14,11 @@
 //   ask resolve   -> invoke update_manual_review_status {id, status:'resolved', reviewerNotes}
 //   say           -> invoke post_persona_channel_message {personaId, content, clientId:null}
 //                    for the operator's own words; the master's say has no door (NO_DOOR.masterSay)
+//   plan          -> POST /dev-tools/milestones {projectId, name, goal?, description?, targetDate?} -> {milestoneId}
+//                    per milestone, then POST /dev-tools/goals {projectId, title, description?, targetDate?,
+//                    milestoneId} -> {goalId} per goal. Every id is recorded in the entry's `created` and
+//                    never posted again. Until a route answers, a 404 leaves the entry queued with the
+//                    evidence "route missing (404)" (those routes are new on 2026-10-07).
 
 import { OUTBOX_STATES, Refusal, nowIso } from './contract.mjs';
 import { listSlugs, loadOutbox, updateOutbox } from './store.mjs';
@@ -129,7 +134,76 @@ async function say(e, { db, doors, dryRun }) {
   return after ? res('replayed', `db: channel message ${id8(after.id)}`) : res('failed', 'post-check: the message is not in the channel after the door answered');
 }
 
-const HANDLERS = { 'idea-verdict': ideaVerdict, 'task-complete': taskComplete, ask, say };
+/** A door that answered 404: the route is not built yet (or not in this build). Not a failure of the entry. */
+export const is404 = (err) => err?.status === 404 || /->\s*404\b/.test(String(err?.message ?? err ?? ''));
+const firstLine = (err) => String(err?.message || err).split('\n')[0].slice(0, 240);
+
+/** The goal's text for the app: its description, then its measure (the goals door has no measure field). */
+export const goalDescription = (g) => [g.description, g.measure ? `Measure: ${g.measure}` : null].filter((s) => typeof s === 'string' && s.trim()).join('\n\n');
+
+/**
+ * plan {projectId, plan}: milestones first (each needs its id for its goals), then goals. Idempotent
+ * three ways: an id in `created` is never posted again; before a post, a milestone of the same name in
+ * the project (or a goal of the same title linked to that milestone) is adopted instead (a crash between
+ * the post and the journal line); after the posts, every created id must read back from the DB.
+ * Progress is returned in `created` on EVERY outcome, so a failure halfway is resumed, not repeated.
+ */
+async function plan(e, { db, doors, dryRun }) {
+  const { projectId, plan: p } = e.payload;
+  const ms = Array.isArray(p?.milestones) ? p.milestones : [];
+  const created = { milestones: { ...(e.created?.milestones ?? {}) }, goals: { ...(e.created?.goals ?? {}) } };
+  const done = (state, evidence) => res(state, evidence, { created });
+  const ids8 = (o) => Object.values(o).map(id8).join(', ');
+  let posted = 0, adopted = 0, wouldPost = 0;
+  const post = async (route, body, what) => {
+    if (typeof doors.devTools !== 'function') return { stop: res('skipped', 'no door: doors.devTools is absent', { created }) };
+    try { return { answer: await doors.devTools(route, body) }; } catch (err) {
+      return { stop: is404(err)
+        ? done('queued', `route missing (404): POST /dev-tools${route} (${posted} posted before it)`)
+        : done('failed', `door error on ${what}: ${firstLine(err)}`) };
+    }
+  };
+  for (let i = 0; i < ms.length; i++) {
+    const m = ms[i];
+    const goals = Array.isArray(m.goals) ? m.goals : [];
+    let mid = created.milestones[i] ?? null;
+    if (!mid) {
+      mid = one(db, 'select id from dev_milestones where project_id = ? and name = ?', [projectId, m.name])?.id ?? null;
+      if (mid) { created.milestones[i] = mid; adopted++; }
+    }
+    if (!mid) {
+      if (dryRun) { wouldPost += 1 + goals.length; continue; }
+      const r = await post('/milestones', { projectId, name: m.name, ...(m.goal ? { goal: m.goal } : {}), ...(m.targetDate ? { targetDate: m.targetDate } : {}) }, `milestone ${i + 1}`);
+      if (r.stop) return r.stop;
+      mid = r.answer?.milestoneId ?? r.answer?.id ?? null;
+      if (!mid) return done('failed', `the milestones door answered without a milestoneId for milestone ${i + 1}`);
+      created.milestones[i] = mid; posted++;
+    }
+    for (let k = 0; k < goals.length; k++) {
+      const g = goals[k], key = `${i}.${k}`;
+      if (created.goals[key]) continue;
+      const found = one(db, `select g.id from dev_goals g join dev_milestone_items mi on mi.item_id = g.id and mi.item_kind = 'goal'
+                             where mi.milestone_id = ? and g.title = ?`, [mid, g.title])?.id ?? null;
+      if (found) { created.goals[key] = found; adopted++; continue; }
+      if (dryRun) { wouldPost++; continue; }
+      const description = goalDescription(g);
+      const r = await post('/goals', { projectId, title: g.title, ...(description ? { description } : {}), milestoneId: mid }, `goal ${key}`);
+      if (r.stop) return r.stop;
+      const gid = r.answer?.goalId ?? r.answer?.id ?? null;
+      if (!gid) return done('failed', `the goals door answered without a goalId for goal ${key}`);
+      created.goals[key] = gid; posted++;
+    }
+  }
+  if (dryRun) return done('queued', wouldPost ? `would POST ${wouldPost} milestone/goal row(s) through /dev-tools/milestones and /dev-tools/goals` : 'nothing left to post');
+  const missing = [
+    ...Object.values(created.milestones).filter((id) => !one(db, 'select id from dev_milestones where id = ?', [id])),
+    ...Object.values(created.goals).filter((id) => !one(db, 'select id from dev_goals where id = ?', [id])),
+  ];
+  if (missing.length) return done('failed', `post-check: ${missing.length} created id(s) not in the app DB: ${missing.map(id8).join(', ')}`);
+  return done('replayed', `db: ${Object.keys(created.milestones).length} milestone(s) [${ids8(created.milestones)}] and ${Object.keys(created.goals).length} goal(s) [${ids8(created.goals)}] (${posted} posted now, ${adopted} found already there)`);
+}
+
+const HANDLERS = { 'idea-verdict': ideaVerdict, 'task-complete': taskComplete, ask, say, plan };
 
 /**
  * (entry, {dryRun, doors, db}) => {state, evidence}   // read-only DB check before and after posting.
@@ -190,7 +264,7 @@ export async function cmdOutbox({ _ = [], flags = {} } = {}, deps = {}) {
         continue;
       }
       const r = await replayEntry(e, { doors, db });
-      const updated = updateOutbox(e.slug, e.id, { state: r.state, attempts: (e.attempts ?? 0) + 1, evidence: r.evidence, replayedAt: nowIso() });
+      const updated = updateOutbox(e.slug, e.id, { state: r.state, attempts: (e.attempts ?? 0) + 1, evidence: r.evidence, replayedAt: nowIso(), ...(r.created ? { created: r.created } : {}) });
       out.push(summary(updated));
     }
   } finally { if (own) db.close(); }

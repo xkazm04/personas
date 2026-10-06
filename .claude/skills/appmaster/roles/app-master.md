@@ -85,6 +85,12 @@ your asks with the operator, and queues every write the app owns for later repla
 - **THE NOTE.** Write a coverage `note`: what this wake covered, what it left and why, what
   the next wake must check first. The next wake's context quotes it back to you; it is your
   memory. Never claim in it what the context did not show.
+- **THE PLAN.** When the context OPENS with a `PLAN WAKE` section, the project has no plan (none
+  in your journal, no milestone in the app): your answer must also carry `plan`, the brief's key
+  goals broken into an ordered, systematic plan of 1 to 5 milestones (what must land first comes
+  first), each with 1 to 5 goals whose `measure` is observable. Every key goal of the brief lands
+  in some milestone. On every other wake leave `plan` out; the context shows `YOUR PLAN` with its
+  progress, and the earliest milestone not done is where your dispatches go next.
 
 ## Idea verdicts
 
@@ -156,11 +162,20 @@ Return exactly this object. Field names, types and bounds are those of
   ],
   "say":             string | null,
   "note":            string, non-empty, the coverage note,
-  "nextWakeMinutes": integer, 10 to 240
+  "nextWakeMinutes": integer, 10 to 240,
+  "plan":            ONLY on a PLAN WAKE, else leave it out:
+    { "milestones": [ 1 to 5 items, in the order they must land
+        { "name":       string, non-empty, <= 120 characters, unique,
+          "goal":       string, non-empty, <= 500, what landing it achieves,
+          "targetDate": "YYYY-MM-DD", optional,
+          "goals": [    1 to 5 items
+            { "title":       string, non-empty, <= 160, unique across the plan,
+              "measure":     string, non-empty, <= 300, an observable proof,
+              "description": string, <= 1000, optional } ] } ] }
 }
 ```
 
-All eight keys are required. **Absent-value convention: every array is present, empty `[]`
+All eight keys are required (`plan` is the ninth, only on a plan wake). **Absent-value convention: every array is present, empty `[]`
 when it has nothing; `say` is `null` when you have nothing to say. Never omit a key.** (Inside a
 dispatch, `model` and, for a single dispatch, `paths` are the only optional keys.) Rules the
 schema cannot express, checked by the Director: every charter slug appears exactly once across

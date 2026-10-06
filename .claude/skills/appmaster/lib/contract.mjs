@@ -124,6 +124,11 @@ export const SLEEP_MAX_SEC = 3600;
  * refuses it explicitly. A usage limit is NOT a reason to queue: it stops the loop.
  * The lock serialises dispatch and promote across processes (several awaits promote at once).
  */
+/**
+ * The plan a master returns on a PLAN WAKE (a project with no plan in the journal and no milestone in
+ * the app): 1..5 milestones of 1..5 goals each, strings bounded. Queued as ONE outbox entry `plan`.
+ */
+export const PLAN = { minMilestones: 1, maxMilestones: 5, minGoals: 1, maxGoals: 5, nameMax: 120, goalMax: 500, titleMax: 160, measureMax: 300, descriptionMax: 1000 };
 export const QUEUE_REASONS = ['global cap', 'project cap', 'repo lane', 'paths overlap', 'memory'];
 export const QUEUE_STATES = ['queued', 'promoted', 'dropped'];
 export const QUEUE_LOCK = { waitMs: 30000, pollMs: 100, staleMin: 10 };
@@ -133,7 +138,7 @@ export const QUEUE_LOCK = { waitMs: 30000, pollMs: 100, staleMin: 10 };
 export const RUN_STATES = ['planned', 'running', 'exited', 'verifying', 'merged', 'held', 'released', 'failed'];
 export const LIVE_RUN_STATES = ['planned', 'running', 'exited', 'verifying'];
 export const ASK_KINDS = ['scope', 'spend', 'risk', 'goal-conflict', 'recipe-failing', 'merge-held', 'other'];
-export const OUTBOX_KINDS = ['idea-verdict', 'task-complete', 'ask', 'say'];
+export const OUTBOX_KINDS = ['idea-verdict', 'task-complete', 'ask', 'say', 'plan'];
 export const OUTBOX_STATES = ['queued', 'replayed', 'failed', 'skipped'];
 export const VERDICT_STATUSES = ['accepted', 'rejected'];
 /** Exit codes: 0 ok, 2 refused by a brake or a gate (stdout carries {refused}), 1 error. */
@@ -210,6 +215,8 @@ export const claudeBin = () => process.env.APPMASTER_CLAUDE_BIN || 'claude';
  * @property {string|null} say
  * @property {string} note              the coverage note; the next wake's context quotes it
  * @property {number} nextWakeMinutes   integer WAKE_MIN..WAKE_MAX
+ * @property {{milestones:Array<{name:string,goal:string,targetDate?:string|null,goals:Array<{title:string,measure:string,description?:string|null}>}>}|null} [plan]
+ *   REQUIRED on a plan wake (the wake line carries planWake: true), refused on any other; absent or null otherwise
  */
 
 /**
@@ -264,8 +271,10 @@ export const claudeBin = () => process.env.APPMASTER_CLAUDE_BIN || 'claude';
  * @property {string} kind             OUTBOX_KINDS
  * @property {string} slug
  * @property {string} projectId
- * @property {Object} payload          idea-verdict {ideaId,status,reason} | task-complete {ideaIds,sha,title,runId,branch}
- *                                     | ask {askId,question,context,options} | say {message}
+ * @property {Object} payload          idea-verdict {ideaId,status,reason} | task-complete {ideaIds,sha,title,runId,branch,repo?}
+ *                                     | ask {askId,question,context,options} | say {message} | plan {projectId,plan}
+ * @property {Object} [created]        ids a multi-post replay already created (plan: {milestones:{i:id}, goals:{"i.j":id}}),
+ *                                     so a later replay never posts them again
  * @property {{wakeId?:string,runId?:string}} source
  * @property {string} queuedAt
  * @property {string} state            OUTBOX_STATES

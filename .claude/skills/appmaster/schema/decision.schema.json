@@ -65,6 +65,37 @@
     },
     "say": { "type": ["string", "null"] },
     "note": { "type": "string", "minLength": 1, "description": "The coverage note: what this wake covered and left. The next wake's context quotes it." },
-    "nextWakeMinutes": { "type": "integer", "minimum": 10, "maximum": 240 }
+    "nextWakeMinutes": { "type": "integer", "minimum": 10, "maximum": 240 },
+    "plan": {
+      "description": "OPTIONAL top-level key: REQUIRED on a PLAN WAKE (the context opens with a PLAN WAKE section; the wake line carries planWake: true), refused on any other wake (lib/decision.mjs validatePlan; bounds in contract.mjs PLAN). Names and goal titles are unique. Queued as ONE outbox entry `plan`.",
+      "type": ["object", "null"], "additionalProperties": false,
+      "required": ["milestones"],
+      "properties": {
+        "milestones": {
+          "type": "array", "minItems": 1, "maxItems": 5,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["name", "goal", "goals"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+              "goal": { "type": "string", "minLength": 1, "maxLength": 500 },
+              "targetDate": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+              "goals": {
+                "type": "array", "minItems": 1, "maxItems": 5,
+                "items": {
+                  "type": "object", "additionalProperties": false,
+                  "required": ["title", "measure"],
+                  "properties": {
+                    "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+                    "measure": { "type": "string", "minLength": 1, "maxLength": 300 },
+                    "description": { "type": ["string", "null"], "maxLength": 1000 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }

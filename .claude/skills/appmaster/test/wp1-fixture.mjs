@@ -55,6 +55,8 @@ create table dev_goals (id text primary key, project_id text, parent_goal_id tex
 create table dev_ideas (id text primary key, project_id text, title text, status text, scan_type text, effort integer, impact integer, risk integer, goal_id text, created_at text, updated_at text);
 create table dev_tasks (id text primary key, project_id text, title text, description text, source_idea_id text, goal_id text, status text, error text, started_at text, created_at text);
 create table dev_kpis (id text primary key, project_id text, name text, status text, last_measured_at text, created_at text);
+create table dev_milestones (id text primary key, project_id text, name text, goal text, status text default 'planned', order_index integer default 0, target_date text, cut_at text, shipped_at text, created_at text, updated_at text, description text);
+create table dev_milestone_items (milestone_id text, item_kind text, item_id text, bucket text default 'core');
 `;
 
 const sqlNow = (minAgo = 0) => new Date(Date.now() - minAgo * 60000).toISOString().replace('T', ' ').slice(0, 19);

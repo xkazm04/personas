@@ -265,6 +265,31 @@ export function projectSnapshot(d, project) {
   };
 }
 
+/**
+ * (db, projectId) => {rows:[{id,name,status,target_date}], error:string|null}   The project's milestones.
+ * A failed read (an older DB without the table, a locked file) is an `error`, never an empty list:
+ * "no milestones" is what triggers a PLAN WAKE, and an unreadable table must not.
+ */
+export function milestonesOf(d, projectId) {
+  try {
+    const rows = d.prepare(`select id, name, status, target_date from dev_milestones where project_id = ? order by order_index, created_at`)
+      .all(projectId).map((r) => ({ ...r }));
+    return { rows, error: null };
+  } catch (e) { return { rows: [], error: String(e.message || e).split('\n')[0] }; }
+}
+
+/** (db, created:{milestones:{i:id}, goals:{"i.j":id}}) => {milestones:{id:{status}}, goals:{id:{status,progress}}} */
+export function planProgress(d, created) {
+  const mIds = Object.values(created?.milestones ?? {}).filter(Boolean);
+  const gIds = Object.values(created?.goals ?? {}).filter(Boolean);
+  const byId = (rows) => Object.fromEntries(rows.map((r) => [r.id, r]));
+  const marks = (n) => Array(n).fill('?').join(', ');
+  return {
+    milestones: mIds.length ? byId(q(d, `select id, status from dev_milestones where id in (${marks(mIds.length)})`, mIds)) : {},
+    goals: gIds.length ? byId(q(d, `select id, status, progress from dev_goals where id in (${marks(gIds.length)})`, gIds)) : {},
+  };
+}
+
 /** Repo docs the master and builders should read, by path (never inlined: kp's CLAUDE.md is 23KB). */
 export function repoDocs(root) {
   return ['CLAUDE.md', 'AGENTS.md', path.join('.claude', 'CLAUDE.md')]

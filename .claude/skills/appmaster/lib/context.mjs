@@ -10,13 +10,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  ASK_KINDS, GLOBAL_CAP, MAX_ASKS, MAX_DISPATCH, MEM, PER_PROJECT_CAP, WAKE_MAX, WAKE_MIN,
+  ASK_KINDS, GLOBAL_CAP, MAX_ASKS, MAX_DISPATCH, MEM, PER_PROJECT_CAP, PLAN, WAKE_MAX, WAKE_MIN,
   LIVE_RUN_STATES, contextDir, briefPath, mintId, nowIso, shortId,
 } from './contract.mjs';
-import { loadBrief, loadWakes, saveWake, openAsks, loadAsks, loadChannel, listRuns } from './store.mjs';
+import { loadBrief, loadWakes, saveWake, openAsks, loadAsks, loadChannel, listRuns, loadOutbox } from './store.mjs';
 import {
   openDb, resolveProject, masterPersona, chartersFor, projectSnapshot, pendingReviews,
-  operatorChannelSince, repoDocs,
+  operatorChannelSince, repoDocs, milestonesOf, planProgress,
 } from './dbread.mjs';
 import { brakes, parseTs, ageText, lastDecided, isDue } from './brakes.mjs';
 import { queueTable } from './queue.mjs';
@@ -72,6 +72,17 @@ export function renderAt(input, C) {
   const nowMs = parseTs(now);
   const L = [];
   const head = (h) => { L.push(''); L.push(h); };
+  const plan = input.plan ?? {};
+
+  // a project with no plan anywhere opens with the PLAN WAKE: this wake's answer carries one
+  if (plan.wake) {
+    L.push('PLAN WAKE: this project has no plan yet (no plan in your journal, no milestone in the app). This wake, besides your usual decision, return `plan`: the brief\'s key goals broken into an ordered, systematic plan.');
+    L.push(`- ${PLAN.minMilestones}-${PLAN.maxMilestones} milestones, in the order they must land; each {name, goal, targetDate?, goals}. ${PLAN.minGoals}-${PLAN.maxGoals} goals per milestone; each {title, measure, description?}.`);
+    L.push('- Every key goal of the brief lands in some milestone; a measure is something observable (a number, a test, a state the app shows), never "improved".');
+    L.push(`- Bounds: name <= ${PLAN.nameMax} characters, milestone goal <= ${PLAN.goalMax}, goal title <= ${PLAN.titleMax}, measure <= ${PLAN.measureMax}, description <= ${PLAN.descriptionMax}; targetDate YYYY-MM-DD or omitted; names and titles unique.`);
+    L.push('- The plan is queued for the app (milestones, then their goals) and shown back to you on every later wake with its progress. Dispatch as usual this wake too.');
+    L.push('');
+  }
 
   // identity + the standing question
   L.push(`You are the App Master of ${p.name} (slug ${p.slug}); this is your wake ${wakeId}. You hold standing responsibilities (charters) over this project. You run HEADLESS: the Personas app is closed, this document is your whole view, and your answer is one JSON object a terminal session carries out.`);
@@ -103,6 +114,14 @@ export function renderAt(input, C) {
     if (lastWake.note) L.push(`Your note from last wake, in your own words: "${clip(lastWake.note, 600)}"`);
   } else {
     L.push('This is your first headless wake: the journal holds no earlier decision.');
+  }
+
+  // the plan from the journal, with its progress in the app; else the app's own milestones
+  if (plan.journal) L.push(...renderPlan(plan.journal, C, nowMs));
+  else if (plan.app?.rows?.length) {
+    head(`MILESTONES IN THE APP (${plan.app.rows.length}; your plan is these, not one you wrote)`);
+    for (const m of plan.app.rows.slice(0, PLAN.maxMilestones)) L.push(`- ${clip(m.name, C.title)} (${m.status}${m.target_date ? `, target ${m.target_date}` : ''})`);
+    L.push(...more(plan.app.rows.length, PLAN.maxMilestones, '  '));
   }
 
   // HOW TO DECIDE
@@ -241,10 +260,48 @@ export function renderAt(input, C) {
 
   // OUTPUT CONTRACT (schema/decision.schema.json)
   head('ANSWER WITH ONE JSON OBJECT AND NOTHING ELSE - no prose before or after, no code fence:');
-  L.push(`{"wakeId":"${wakeId}","dispatch":[{"charterSlug":"<slug>","reason":"<why this one now>","brief":"<the builder's whole task>","ideaIds":["<accepted idea id>"],"model":"sonnet|opus","paths":["<repo-relative path prefix or glob it will touch>"]}],"defer":[{"charterSlug":"<slug>","reason":"<why it waits>"}],"asks":[{"kind":"<kind>","question":"<the decision you need>","context":"<why the loop needs it>","options":[{"label":"<a choice>","action":"<what you do if chosen>"}]}],"ideaVerdicts":[{"ideaId":"<pending idea id>","status":"accepted|rejected","reason":"<why>"}],"say":"<message to the operator>|null","note":"<coverage note for your next wake>","nextWakeMinutes":<${WAKE_MIN}-${WAKE_MAX}>}`);
+  const planShape = plan.wake ? `,"plan":{"milestones":[{"name":"<milestone>","goal":"<what landing it achieves>","targetDate":"YYYY-MM-DD","goals":[{"title":"<goal>","measure":"<observable proof>","description":"<optional>"}]}]}` : '';
+  L.push(`{"wakeId":"${wakeId}","dispatch":[{"charterSlug":"<slug>","reason":"<why this one now>","brief":"<the builder's whole task>","ideaIds":["<accepted idea id>"],"model":"sonnet|opus","paths":["<repo-relative path prefix or glob it will touch>"]}],"defer":[{"charterSlug":"<slug>","reason":"<why it waits>"}],"asks":[{"kind":"<kind>","question":"<the decision you need>","context":"<why the loop needs it>","options":[{"label":"<a choice>","action":"<what you do if chosen>"}]}],"ideaVerdicts":[{"ideaId":"<pending idea id>","status":"accepted|rejected","reason":"<why>"}],"say":"<message to the operator>|null","note":"<coverage note for your next wake>","nextWakeMinutes":<${WAKE_MIN}-${WAKE_MAX}>${planShape}}`);
+  if (plan.wake) L.push('`plan` is REQUIRED this wake (PLAN WAKE); on any other wake leave it out.');
   L.push(`Every key is always present ([] when empty, say null when silent). wakeId is exactly "${wakeId}"; every charter slug exactly once across dispatch and defer, no other slug; dispatch at most ${MAX_DISPATCH}, and with two each carries non-empty disjoint paths and no idea in both; model optional${repos.length ? `; repo optional (self, ${repos.map((r) => r.key).join(', ')})` : ''}; asks at most ${MAX_ASKS}, 2-4 options each, kind one of ${ASK_KINDS.join(', ')}; nextWakeMinutes an integer; every ideaId copied from this document.`);
   L.push(`Charter slugs: ${charters.map((c) => c.slug).join(', ') || '(none)'}`);
   return L.join('\n') + '\n';
+}
+
+/**
+ * YOUR PLAN: the plan a plan wake decided, from the journal, with what the app shows of it. An id the
+ * outbox replay created is read back for its status; without one the milestone is "not in the app yet"
+ * and the replay's own evidence says why (e.g. "route missing (404)").
+ */
+export function renderPlan(j, C, nowMs) {
+  const L = ['', `YOUR PLAN (decided ${stampAgeShort(j.at, nowMs)} at wake ${shortId(j.wakeId)}; in the app: ${planAppState(j.entry)})`];
+  const created = j.entry?.created ?? { milestones: {}, goals: {} };
+  const prog = j.progress ?? { milestones: {}, goals: {} };
+  (j.plan?.milestones ?? []).forEach((m, i) => {
+    const mid = created.milestones?.[i];
+    const ms = mid ? (prog.milestones?.[mid]?.status ?? 'created, not read back') : 'not in the app yet';
+    const goals = m.goals ?? [];
+    const done = goals.filter((g, k) => prog.goals?.[created.goals?.[`${i}.${k}`]]?.status === 'done').length;
+    L.push(`${i + 1}. ${clip(m.name, C.title)}${m.targetDate ? ` (target ${m.targetDate})` : ''} - ${ms}; goals done ${done}/${goals.length}: ${clip(m.goal, C.note)}`);
+    goals.forEach((g, k) => {
+      const gr = prog.goals?.[created.goals?.[`${i}.${k}`]];
+      L.push(`   - ${clip(g.title, C.title)} - measure: ${clip(g.measure, 140)}${gr ? ` [${gr.status}${gr.progress != null ? ` ${gr.progress}%` : ''}]` : ''}`);
+    });
+  });
+  L.push('Steer dispatches by this plan: the earliest milestone not done is where the work goes next.');
+  return L;
+}
+const planAppState = (e) => {
+  if (!e) return 'no outbox entry';
+  if (e.state === 'replayed') return 'posted';
+  return `${e.state}${e.evidence ? ` (${clip(e.evidence, 140)})` : ' (the outbox replays it when the app is up)'}`;
+};
+
+/** The newest decided wake that carried a plan: {wakeId, at, plan}, or null. */
+export function latestPlan(wakes) {
+  return wakes.filter((w) => w.status === 'decided' && w.decision?.plan)
+    .sort((a, b) => String(a.decidedAt ?? a.at).localeCompare(String(b.decidedAt ?? b.at)))
+    .map((w) => ({ wakeId: w.wakeId, at: w.decidedAt ?? w.at, plan: w.decision.plan })).at(-1) ?? null;
 }
 
 // ---------------------------------------------------------------- gathering
@@ -307,6 +364,16 @@ export function gatherContext(ref) {
     const table = queueTable(nowMs);
     input.queue = { mine: table.filter((q) => q.slug === project.slug), total: table.length };
     input.repos = briefRepos(brief).map((r) => ({ key: r.key, root: r.root, baseBranch: r.baseBranch, lane: laneFor(r.root) }));
+    // PLAN WAKE: no plan in the journal AND the app's dev_milestones is empty for the project. An
+    // unreadable milestones table is not "empty": it never starts a plan wake.
+    const planRec = latestPlan(wakes);
+    const entry = planRec ? loadOutbox(project.slug).find((e) => e.kind === 'plan' && e.source?.wakeId === planRec.wakeId) ?? null : null;
+    const app = milestonesOf(d, project.id);
+    input.plan = {
+      wake: !planRec && !app.error && app.rows.length === 0,
+      journal: planRec ? { ...planRec, entry: entry ? { state: entry.state, evidence: entry.evidence ?? null, created: entry.created ?? null } : null, progress: entry?.created ? planProgress(d, entry.created) : null } : null,
+      app,
+    };
     input.due = isDue(wakes, nowMs);
   } finally { d.close(); }
   return input;
@@ -321,10 +388,11 @@ export async function cmdContext({ flags = {} } = {}) {
   const file = path.join(contextDir(project.slug), `${input.wakeId}.md`);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, text);
-  saveWake(project.slug, { wakeId: input.wakeId, slug: project.slug, at: input.now, contextPath: file, status: 'context', project, due: input.due, chars: text.length });
+  // the wake remembers what it asked for: decide requires a plan on a plan wake and refuses one elsewhere
+  saveWake(project.slug, { wakeId: input.wakeId, slug: project.slug, at: input.now, contextPath: file, status: 'context', project, due: input.due, chars: text.length, planWake: input.plan?.wake === true });
   const m = input.machine;
   return {
-    wakeId: input.wakeId, path: file, slug: project.slug, due: input.due, chars: text.length,
+    wakeId: input.wakeId, path: file, slug: project.slug, due: input.due, chars: text.length, planWake: input.plan?.wake === true,
     brakes: {
       memory: { freeGb: m.memory.freeGb, usedPct: m.memory.usedPct, needGb: m.memory.dispatchNeedGb, stop: m.memory.stop },
       limit: { limited: m.limit.limited, resetsAt: m.limit.resetsAt },
