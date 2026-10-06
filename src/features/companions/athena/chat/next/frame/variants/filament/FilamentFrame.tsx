@@ -71,7 +71,12 @@ function useHeaderSeam(layerRef: React.RefObject<HTMLDivElement | null>) {
       const rel = r.bottom - layerTop;
       if (rel > content) content = rel;
     }
-    setSeam({ line: Math.round(line), content: Math.round(content) });
+    const next = { line: Math.round(line), content: Math.round(content) };
+    // This runs after EVERY render (the layout effect below has no deps), so it
+    // must keep the old object when nothing moved: a fresh one each time is a
+    // new state each time, and the layer re-rendered until React aborted it
+    // ("Maximum update depth exceeded", measured in the page harness 2026-10-06).
+    setSeam((prev) => (prev && prev.line === next.line && prev.content === next.content ? prev : next));
   };
   const measureRef = useRef(measure);
   measureRef.current = measure;
