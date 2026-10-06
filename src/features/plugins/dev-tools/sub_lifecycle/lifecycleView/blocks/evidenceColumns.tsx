@@ -8,12 +8,11 @@
  * SELECTED STEP. A change that recorded nothing for the step reads `unknown`
  * and an absence mark, never `done` and never a zero.
  *
- * The column model is skin-invariant on purpose: a variant may change the
- * table's density, height, frame and row accent (`EvidenceLedger` reads those
- * from the skin), but never a column, an order or a sort - that would be a
- * different surface, not a different look.
+ * The column model is the same for every concept on purpose: a concept may dock
+ * the ledger in a different well, but a different column, order or sort would be
+ * a different surface, not a different answer to the same one.
  *
- * VISUAL REBUILD, 2026-10-06. Two defects of the version this replaces:
+ * Two defects of the version this replaces:
  *  - the Outcome cell switched TYPE STEP by value: `typo-body` (--type-1) for
  *    `done` and `typo-label` (--type-0) for everything else. One column, two cap
  *    heights, so the ledger's ink was ragged inside a row rhythm the table was

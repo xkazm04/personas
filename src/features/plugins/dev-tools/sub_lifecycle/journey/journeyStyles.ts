@@ -11,8 +11,8 @@
  * border-double`, which on the 14px legend chip spends 6 of 14 pixels on a
  * three-stroke border and composites into a slightly thicker `live`.
  *
- * The ladder now separates all five states on TWO colourless axes, stroke
- * STYLE and stroke WIDTH, with no arbitrary bracket value:
+ * The ladder separates all five states on TWO colourless axes, stroke STYLE
+ * and stroke WIDTH, with no arbitrary bracket value:
  *
  *   live      solid   2px   the binding is installed and running
  *   detected  solid   1px   observed in the repo, not installed by us
@@ -23,9 +23,14 @@
  * Read as a ladder: a CLOSED stroke means the binding exists, an OPEN one that
  * it does not; 2px is a state you can act on, 1px one you only read.
  *
- * Three FILL treatments sit on top of that one ladder, so the skin a variant
- * picks changes how solid the mark looks without ever changing what the shape
- * means (`NODE_MARK`).
+ * 2026-10-06, SECOND PASS: there used to be THREE fill treatments here
+ * (`STATE_WASH` / `STATE_STROKE` / `STATE_PLATE`) addressed through a
+ * `NODE_MARK` map, because a prototype round made the variant axis a SKIN. The
+ * owner threw that round out - "to change colors of borders or background is
+ * not prototyping nor component redesign" - so the kept treatment is the only
+ * one left, under a name that describes what it IS (a state mark) rather than
+ * the finish it was branded with. A concept that needs to draw a state
+ * differently draws it in its own directory; it does not add a column here.
  */
 import type { LifecycleBindingState } from '@/lib/bindings/LifecycleBindingState';
 import type { LifecycleOutcome } from '@/lib/bindings/LifecycleOutcome';
@@ -39,41 +44,17 @@ const STROKE: Record<LifecycleBindingState, string> = {
   advisory: 'border border-dashed',
 };
 
-/** `wash` - the state is a colour the step is soaked in. Stroke plus a tint. */
-export const STATE_WASH: Record<LifecycleBindingState, string> = {
+/**
+ * The state mark: the colourless stroke ladder plus the status tint the step is
+ * soaked in. One treatment, because the surface has one look.
+ */
+export const STATE_MARK: Record<LifecycleBindingState, string> = {
   live: `${STROKE.live} border-status-success/80 bg-status-success/10`,
   detected: `${STROKE.detected} border-status-info/80 bg-status-info/10`,
   pending: `${STROKE.pending} border-status-warning/80 bg-status-warning/10`,
   missing: `${STROKE.missing} border-status-error/90 bg-status-error/10`,
   advisory: `${STROKE.advisory} border-foreground/45 bg-transparent`,
 };
-
-/** `engraved` - no fill anywhere. The mark is a stroke on the page. */
-export const STATE_STROKE: Record<LifecycleBindingState, string> = {
-  live: `${STROKE.live} border-status-success bg-transparent`,
-  detected: `${STROKE.detected} border-status-info bg-transparent`,
-  pending: `${STROKE.pending} border-status-warning bg-transparent`,
-  missing: `${STROKE.missing} border-status-error bg-transparent`,
-  advisory: `${STROKE.advisory} border-foreground/55 bg-transparent`,
-};
-
-/** `plated` - the step is a raised plate: a heavier tint and an outer ring. */
-export const STATE_PLATE: Record<LifecycleBindingState, string> = {
-  live: `${STROKE.live} border-status-success/70 bg-status-success/15 shadow-sm shadow-status-success/20`,
-  detected: `${STROKE.detected} border-status-info/70 bg-status-info/15 shadow-sm shadow-status-info/20`,
-  pending: `${STROKE.pending} border-status-warning/70 bg-status-warning/15 shadow-sm shadow-status-warning/20`,
-  missing: `${STROKE.missing} border-status-error/80 bg-status-error/15 shadow-sm shadow-status-error/25`,
-  advisory: `${STROKE.advisory} border-foreground/40 bg-foreground/[0.04]`,
-};
-
-/** The three fills, addressed by the skin's `nodeMark`. */
-export const NODE_MARK = {
-  wash: STATE_WASH,
-  stroke: STATE_STROKE,
-  plate: STATE_PLATE,
-} as const;
-
-export type NodeMark = keyof typeof NODE_MARK;
 
 export const STATE_TEXT: Record<LifecycleBindingState, string> = {
   live: 'text-status-success',
@@ -85,9 +66,9 @@ export const STATE_TEXT: Record<LifecycleBindingState, string> = {
 
 /**
  * The small state chip in the legend and the binding list: the SAME ladder, so
- * the legend is a truthful key to the rail in every skin. Hollow by default -
- * the chip is a key, not a value - and the skin decides its size (it needs at
- * least 16px for a 2px dash to read as more than one dash per side).
+ * the legend is a truthful key to the rail. Hollow by default - the chip is a
+ * key, not a value - and the call site sizes it (it needs at least 16px for a
+ * 2px dash to read as more than one dash per side).
  */
 export const STATE_CHIP: Record<LifecycleBindingState, string> = {
   live: `${STROKE.live} border-status-success`,

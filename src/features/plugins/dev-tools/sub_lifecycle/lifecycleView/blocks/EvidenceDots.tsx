@@ -1,27 +1,25 @@
 /**
- * The up-to-eight outcome dots drawn under a step in the rail, newest LAST.
- * Lifted out of the retired `journey/JourneyTrack`; its own file because the dot
- * row is the rail node's third line and every visual variant draws it.
+ * The up-to-eight outcome dots for a step, newest LAST. Its own file because the
+ * dot row is a step's evidence pulse and every concept draws it somewhere.
  *
  * VISUAL FIX, 2026-10-06: the no-evidence case returned `<span className="h-1.5"
  * aria-hidden />`, an inline span with no content and no width - zero area, so a
  * step with no recorded evidence was shorter than its neighbours and the caption
  * row above it stopped aligning across the rail (Gate 2b: row rhythm). The row
- * now always reserves the same box, whether or not it has dots in it.
+ * always reserves the same box, whether or not it has dots in it.
  */
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { outcomeLabel } from '../../journey/journeyLabels';
 import { OUTCOME_DOT } from '../../journey/journeyStyles';
 import type { JourneyNode } from '../../journey/journeyModel';
-import { useSkin } from '../skins';
 
-/** Reserved whatever the skin's dot size is: the largest dot any skin draws is 8px. */
+/** Reserved whatever the dot size is: the largest dot drawn is 8px. */
 const ROW = 'flex h-2 items-center gap-1';
+const DOT = 'w-1.5 h-1.5 rounded-full';
 
 export function EvidenceDots({ node }: { node: JourneyNode }) {
   const { t, tx } = useTranslation();
-  const skin = useSkin();
   const dl = t.plugins.dev_lifecycle;
 
   if (node.dots.length === 0) return <span className={ROW} aria-hidden />;
@@ -35,7 +33,7 @@ export function EvidenceDots({ node }: { node: JourneyNode }) {
         <span
           key={`${d.sourceKind}:${d.sourceRef}`}
           data-outcome={d.outcome}
-          className={`${skin.dot} ${OUTCOME_DOT[d.outcome]}`}
+          className={`${DOT} ${OUTCOME_DOT[d.outcome]}`}
         />
       ))}
     </span>
