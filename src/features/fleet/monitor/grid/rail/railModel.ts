@@ -24,8 +24,7 @@
 // THE ADAPTERS ARE RETIRED (2026-10-06, decision-center spark A3). Their only
 // reader was the Activity DecisionDock's three feeds, which became the
 // Decision Center roster. What is left is the ROW SHAPE, still drawn by the
-// Board's needs rail (`fleetboard/NeedsRail`) through `RailList` and produced
-// by the simulation (`simulation/simRail`).
+// Board's needs rail (`fleetboard/NeedsRail`) through `RailList`.
 
 import type { LucideIcon } from 'lucide-react';
 import type { TriageTone } from '@/features/agents/quick-answer/triage/triageTypes';

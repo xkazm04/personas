@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import enBundle from '@/i18n/locales/en.json';
 import type { Translations } from '@/i18n/generated/types';
 
-import { formatRelativeTime } from './formatRelativeTime';
+import { formatRelativeTime } from '../formatRelativeTime';
 
 const enT = enBundle as unknown as Translations;
 

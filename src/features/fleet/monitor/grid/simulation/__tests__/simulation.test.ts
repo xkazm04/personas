@@ -24,7 +24,6 @@ import {
   buildSimQueueSnapshot, buildSimSessions, LONG_TITLES, SHORT_TITLES, SIM_LIVE_SESSIONS, SIM_QUEUE_CAP, SIM_QUEUED_SESSIONS,
 } from '../simSessions';
 import { buildSimAccountsSnapshot, simRelogin, simSaveProfile, simSetProfile } from '../simPlans';
-import { buildSimRail } from '../simRail';
 import { groupSessions } from '../../fleetSessionModel';
 import {
   _resetSimulationForTests, isTestBuild, setSimulation, simulationEnabled, toggleSimulation,
@@ -230,25 +229,6 @@ describe('the simulated plans', () => {
     expect(linked.accounts.find((a) => a.id === 'sim-plan-4')!.login).toEqual({
       profileKey: 'home', codeInboxProfileKey: 'proton-inbox', reloginUnattended: true,
     });
-  });
-});
-
-describe('the simulated rail', () => {
-  it('gives every tab more rows than one page, so paging is exercised', () => {
-    const rows = buildSimRail({ review: 'Review', dispatch: 'Dispatch', message: 'Message' });
-    expect(rows.reviews.length).toBeGreaterThan(30);
-    expect(rows.dispatch.length).toBeGreaterThan(0);
-    expect(rows.messages.length).toBeGreaterThan(0);
-    // Messages are threads: no group bands, some unread, some read (so the
-    // unread-only default and the "All threads" toggle both have work to do).
-    expect(rows.messages.every((r) => r.groupHeader === null)).toBe(true);
-    expect(rows.messages.some((r) => r.unread)).toBe(true);
-    expect(rows.messages.some((r) => !r.unread)).toBe(true);
-  });
-
-  it('offers no verdict on a simulated review — there is no door to write through', () => {
-    const rows = buildSimRail({ review: 'Review', dispatch: 'Dispatch', message: 'Message' });
-    expect(rows.reviews.every((r) => !r.decidable)).toBe(true);
   });
 });
 

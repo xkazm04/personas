@@ -3837,10 +3837,6 @@
           "reason": "the compliant form and this leaf's reference implementation - its map is committed AS A MAP (batch.items.map(i => ({ ideaId, verdict, reason })) at :111) into a door whose parameter is Vec<TriageOverride>, so the per-item verdict reaches the backend; it is the positive control below, and this exemption failing is how the gate reports that its own reference implementation was deleted"
         },
         {
-          "path": "src/features/shared/components/decisions/useTriageFocus.ts",
-          "reason": "the shared triage focus component, and a second instance of the compliant form this rule already exempts AthenaVerdictCard.tsx for: its staging map is committed AS A MAP, as the `answers` field of the TriageFocusDecide payload that onDecide receives, so no per-option verdict is destroyed at the boundary. The parent item additionally rolls up to one spine verdict because the spine's vocabulary is the closed three-value TriageVerdict, but that rollup travels BESIDE the map rather than instead of it, which is exactly the distinction this rule draws between a staged map that reaches the door and one flattened into prose. If a future edit drops `answers` from the payload, this exemption must go with it and the site becomes a real match."
-        },
-        {
           "path": "**/__tests__/**",
           "reason": "test files legitimately construct a staged verdict map to assert the collapse"
         }

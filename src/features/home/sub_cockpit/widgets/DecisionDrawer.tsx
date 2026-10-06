@@ -12,7 +12,7 @@ import { HtmlDocumentFrame } from '@/features/shared/components/document/HtmlDoc
 import { FormField } from '@/features/shared/components/forms/FormField';
 import { Dot, KitButton, KitHost, Meta, Section, Surface, type Glyph, type Tone } from '@/features/shared/components/kit';
 import { decisionChipLabel } from '@/features/shared/chrome/TitleBarDecisionTooltip';
-import { formatRelativeTime } from '@/features/companions/athena/inbox/utils/formatRelativeTime';
+import { formatRelativeTime } from './formatRelativeTime';
 import {
   chipOf,
   modalTypeOf,

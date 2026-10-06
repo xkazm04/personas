@@ -1,5 +1,5 @@
 /**
- * formatRelativeTime — shared relative-time label for inbox renderers.
+ * formatRelativeTime — relative-time label for the Cockpit decision widgets.
  *
  * Buckets:
  *   - nullish / non-string input  → "—"

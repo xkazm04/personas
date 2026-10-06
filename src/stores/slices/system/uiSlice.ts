@@ -81,7 +81,6 @@ export type HeaderOverlay =
   | 'none'
   | 'monitor'
   | 'notifications'
-  | 'quick-answer'
   | 'schedules';
 
 export interface UiSlice {

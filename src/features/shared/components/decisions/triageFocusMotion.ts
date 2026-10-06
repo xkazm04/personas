@@ -6,14 +6,13 @@
 // leaves towards the side you came from, so prev and next are distinguishable
 // without reading the counter.
 //
-// Kept in its own module so the component files stay under the 200-line limit
-// and so a second surface can animate a card identically without importing a
-// component to get at a constant.
+// Kept in its own module so a surface can animate a card identically without
+// importing a component to get at a constant. TriageFocus, the component it
+// was written for, was retired 2026-10-06; the Decision Deck
+// (`decision-center/deck/deckMotion.ts`) is its reader now.
 
 /** Horizontal travel of the ITEM card, in px. */
 const CARD_TRAVEL = 300;
-/** Horizontal travel of the inner decision-option card, in px. */
-const OPTION_TRAVEL = 200;
 
 /** `custom` is the direction: +1 forward through the queue, -1 back. */
 export const CARD_VARIANTS = {
@@ -22,26 +21,4 @@ export const CARD_VARIANTS = {
   exit: (dir: number) => ({ x: dir > 0 ? -CARD_TRAVEL : CARD_TRAVEL, opacity: 0, scale: 0.96 }),
 };
 
-export const OPTION_VARIANTS = {
-  enter: (dir: number) => ({ x: dir > 0 ? OPTION_TRAVEL : -OPTION_TRAVEL, opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? -OPTION_TRAVEL : OPTION_TRAVEL, opacity: 0 }),
-};
-
 export const CARD_SPRING = { type: 'spring', stiffness: 300, damping: 30 } as const;
-export const OPTION_SPRING = { type: 'spring', stiffness: 400, damping: 35 } as const;
-
-/**
- * The reduced-motion answer: cross-fade in place, no travel.
- *
- * A spring slide is exactly the kind of large-displacement transform the
- * `prefers-reduced-motion` guidance is about, and this one fires on every
- * verdict — the busiest animation on a triage surface.
- */
-export const STILL_VARIANTS = {
-  enter: { x: 0, opacity: 0 },
-  center: { x: 0, opacity: 1 },
-  exit: { x: 0, opacity: 0 },
-};
-
-export const STILL_SPRING = { duration: 0.12 } as const;

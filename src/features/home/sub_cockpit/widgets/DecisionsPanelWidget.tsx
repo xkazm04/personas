@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { debtText } from '@/i18n/DebtText';
 import { Tile } from '@/features/shared/components/kit';
-import { formatRelativeTime } from '@/features/companions/athena/inbox/utils/formatRelativeTime';
+import { formatRelativeTime } from './formatRelativeTime';
 import type { DecisionItem } from '@/features/decision-center/model/decisionModel';
 import { useDecisionRoster } from '@/features/decision-center/useDecisionRoster';
 

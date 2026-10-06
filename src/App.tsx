@@ -317,7 +317,7 @@ export default function App() {
     useToastStore.getState().addToast(t.common.language_changed, 'success', 1600);
   }, [language, t]);
 
-  /* C5 — SHELL SUSPENSION. The monitor / quick-answer / schedules overlays
+  /* C5 — SHELL SUSPENSION. The monitor / schedules overlays
    * are fully opaque and cover the whole content area, yet the app shell
    * underneath stayed mounted, painted, hit-testable and in the a11y tree.
    * While one of them is open the content wrapper goes `inert` +
@@ -331,7 +331,7 @@ export default function App() {
    * immediate on close so the exit fade plays over live content. */
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
   const wantShellSuspend =
-    headerOverlay === 'monitor' || headerOverlay === 'quick-answer' || headerOverlay === 'schedules';
+    headerOverlay === 'monitor' || headerOverlay === 'schedules';
   const [shellSuspended, setShellSuspended] = useState(false);
   useEffect(() => {
     if (!wantShellSuspend) {

@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**174 reusable components** live under `src/features/shared/components/`.
+**173 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -33,11 +33,6 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 |---|---|
 | `DecisionActions` | Accept/reject control shared by every decision surface (review, backlog, knowledge). |
 | `DecisionRow` | One list row for any decision stream — title, supporting line, facts, verdict. |
-| `TriageFocus` | Focused triage surface for a queue of TriageItems - N-of-M navigation, a per-decision carousel, arm-then-confirm keyboard, and an  |
-| `TriageFocusActions` | TriageFocus part: the three-verdict action bar, its note field and the keyboard legend. |
-| `TriageFocusCard` | TriageFocus part: one item card - persona, chips, age, decision carousel and the deck body. |
-| `TriageFocusQueue` | TriageFocus part: the optional 330px queue rail, built from the kit Rows/ListRow. |
-| `useTriageFocus` | TriageFocus state: cursors, per-option verdicts, the note, and the one guarded verdict write. |
 
 ## display — Read-only display: badges, status, avatars, tables, time, numbers, tooltips
 
@@ -92,12 +87,15 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 |---|---|
 | `DocumentBlocks` | DocumentBlocks — a section's prose as individually clickable rows (each heading, paragraph and list item), where one click selects |
 | `DocumentClosedRow` | DocumentClosedRow — one muted single-line row for a section that is not open, so the whole document stays in view. Part of Documen |
+| `DocumentGhost` | DocumentGhost - calm, static placeholder lines for a long-form document body while it loads (no spinner, no pulse); the reader's c |
 | `DocumentPage` | DocumentPage — what the open leaf holds: the author seal, the title, a one-line lede, the chapter as clickable rows with the click |
 | `DocumentRail` | DocumentRail — DocumentSurface's optional side panel: one band per section, its height the section's real line count. Part of Docu |
 | `DocumentRowEditor` | DocumentRowEditor — one row of a DocumentSurface chapter, edited in place: the clicked bullet or paragraph becomes a field in the  |
 | `DocumentSurface` | DocumentSurface — a long-form two-author document as a bound book: a to-scale side rail (parametrized), a chapter switcher with wa |
 | `DocumentTabs` | DocumentTabs — the tab buttons inside DocumentSurface's strip. Part of DocumentSurface, not a standalone primitive: it renders the |
 | `DocumentTurnHint` | DocumentTurnHint — the edge-of-chapter cue that fills as the reader keeps scrolling past the end (or top) of a DocumentSurface cha |
+| `HtmlDocumentFrame` | HtmlDocumentFrame - renders an agent-authored HTML/CSS document sanitized inside a script-free sandboxed iframe that grows to its  |
+| `ReportBody` | ReportBody - the body of a long-form document (persona report, council report): html renders in the sanitized HtmlDocumentFrame, m |
 | `useChapterScroll` | The open chapter's leaf. |
 | `useDocumentSurface` | any) is being written in, and the per-chapter drafts. |
 
@@ -237,6 +235,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `DataDiffSection` | Undo this run" action. |
 | `ExecutionDetailContent` | _(add a `@catalog` tag)_ |
 | `ExecutionDetailModal` | a single execution. |
+| `ModalShell` | ModalShell - the standard modal interior over BaseModal: surface, |
 
 ## overlays — Popovers, dropdowns, command palette, filter bars
 
@@ -273,4 +272,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_174 components, 40 without a `@catalog` description._
+_173 components, 40 without a `@catalog` description._
