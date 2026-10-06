@@ -151,6 +151,8 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "cloud_controller_revoke",
     "discover_connector_resources",
     "execute_persona",
+    // A persona chat turn starts a paid run exactly as execute_persona does.
+    "start_chat_turn",
     // Credentials -- Write/Delete CRUD (reads are public)
     "create_credential",
     "update_credential",

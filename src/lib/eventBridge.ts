@@ -76,6 +76,13 @@ const EVENT_BRIDGE_TIMING = {
    */
   DEV_TOOLS_SHIP_DEBOUNCE_MS: 250,
   /**
+   * Debounce for `CHAT_CHANGED`. The same pre-commit hazard as the Ship
+   * event (the hook fires inside the write transaction), so the same trailing
+   * debounce and the same value: shorter risks reading before the commit,
+   * longer makes a reply the operator is waiting for visibly late.
+   */
+  CHAT_CHANGED_DEBOUNCE_MS: 250,
+  /**
    * Throttle for `NETWORK_SNAPSHOT_UPDATED`. The Rust P2P engine can emit
    * snapshots faster than React can re-render them. Halving causes dropped
    * frames during peer churn; doubling lets the dock stale-render connection
@@ -940,6 +947,29 @@ const registry: EventRegistration[] = [
         useToastStore
           .getState()
           .addToast(interpolate(template, { name: payload.personaName ?? payload.personaId }), "success");
+      });
+      return [unlisten];
+    },
+  },
+
+  // -- A persona chat row landed (CDC push) ---------------------------------
+  //
+  // The chat turn runs in Rust, so a turn's reply is a row written by the
+  // completion hook, and a turn a paired phone started arrives the same way.
+  // Only message writes matter (a context write is the turn's own bookkeeping,
+  // and refetching on it would answer the refetch's own touch). Debounced: a
+  // turn writes its user row and its context in one burst.
+  {
+    event: EventName.CHAT_CHANGED,
+    setup: async () => {
+      let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+      const unlisten = await typedListen(EventName.CHAT_CHANGED, (payload) => {
+        if (payload.table !== "chat_messages") return;
+        if (debounceTimer !== null) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          debounceTimer = null;
+          void useAgentStore.getState().refreshActiveChat();
+        }, EVENT_BRIDGE_TIMING.CHAT_CHANGED_DEBOUNCE_MS);
       });
       return [unlisten];
     },

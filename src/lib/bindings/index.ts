@@ -159,6 +159,7 @@ export type { ChatMessage } from "./ChatMessage";
 export type { ChatRole } from "./ChatRole";
 export type { ChatSession } from "./ChatSession";
 export type { ChatSessionContext } from "./ChatSessionContext";
+export type { ChatTurnStarted } from "./ChatTurnStarted";
 export type { CircuitBreakerStatus } from "./CircuitBreakerStatus";
 export type { CircuitTransitionEvent } from "./CircuitTransitionEvent";
 export type { ClaudeAccountsSnapshot } from "./ClaudeAccountsSnapshot";

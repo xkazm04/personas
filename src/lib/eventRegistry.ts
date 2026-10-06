@@ -321,6 +321,10 @@ export const EventName = {
   // A paired phone's command (pause / resume / cancel) ran here with no prompt
   REMOTE_COMMAND_APPLIED: 'remote-command-applied',
 
+  // Persona chat row changed (CDC on chat_messages / chat_session_context):
+  // a turn's reply, or a turn a paired phone started, landed
+  CHAT_CHANGED: 'chat-changed',
+
   // SLA reliability breach (published to the persona-event bus on the
   // execution-completion path; one enter-event + one recovery per episode)
   SLA_BREACH_OPENED: 'sla.breach.opened',
@@ -1235,6 +1239,13 @@ export interface EventPayloadMap {
 
   // Paired-phone command applied locally (Rust RemoteCommandApplied, camelCase)
   [EventName.REMOTE_COMMAND_APPLIED]: import('./bindings/RemoteCommandApplied').RemoteCommandApplied;
+
+  /** Same `CdcEvent` payload as `DEV_TOOLS_SHIP_CHANGED`; the open chat refetches. */
+  [EventName.CHAT_CHANGED]: {
+    action: 'insert' | 'update' | 'delete';
+    table: string;
+    rowid: number;
+  };
 
   // SLA reliability breach (payload shape mirrors Rust SlaBreachEventPayload,
   // camelCase). Emitted on the persona-event bus, so consumers receive it inside

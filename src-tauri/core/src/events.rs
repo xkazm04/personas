@@ -364,6 +364,11 @@ event_names! {
     // (cloud::remote_commands, PHASE2-SPEC D1): refetch personas + tell the
     // operator what their phone did.
     REMOTE_COMMAND_APPLIED     => "remote-command-applied",
+    // Persona chat: a `chat_messages` or `chat_session_context` row changed.
+    // CDC, payload `CdcEvent` (`{action, table, rowid}`). The chat turn runs
+    // in Rust (`commands::core::chat_turn`), so its reply - and a turn a
+    // paired phone started - lands as a row the open chat refetches on this.
+    CHAT_CHANGED               => "chat-changed",
 
     // SLA reliability breach (published to the persona-event BUS by
     // `engine::sla_breach` on the execution-completion path; zero-config
