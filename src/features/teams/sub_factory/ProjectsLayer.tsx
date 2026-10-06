@@ -6,7 +6,7 @@
 //
 // The Passport Wall is the production baseline here — the earlier KPI-health
 // Cards and the Heat-grid prototype were consolidated out (2026-06-21).
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ComponentType } from 'react';
 
 import { getProjectFavicon } from '@/api/devTools/devTools';
 import { projectWallSummary } from '@/api/devTools/milestones';
@@ -28,6 +28,12 @@ import { useFactoryData } from './factoryData';
 import { collectKpiAttention } from './factoryModel';
 import { PassportWallGhost } from './PassportWallGhost';
 import { useFactoryWords } from './useFactoryWords';
+import type { AtlasFigureProps } from './passport/atlas/atlasFigure';
+import { ProjectsLayerAtlasHost } from './ProjectsLayerAtlasHost';
+import { VariantFavicons, VARIANT_WORDS } from './projectsLayerVariantKit';
+import { DossierFigure } from './ProjectsLayerVariant1';
+import { InstrumentFigure } from './ProjectsLayerVariant2';
+import { SpecimenFigure } from './ProjectsLayerVariant3';
 
 /** root_path → favicon data URL (null = probed, none found). Module scope —
  *  repo favicons don't change mid-session; remounts must not re-probe N repos.
@@ -35,17 +41,49 @@ import { useFactoryWords } from './useFactoryWords';
  *  (see docs/concepts/golden-paths/shared-fetch-cache.md §12 item 10). */
 const FAVICON_CACHE = createModuleCache<string, string | null>({ maxSize: 32 });
 
-export function ProjectsLayer({
-  onOpen,
-  onOpenShip,
-  onJumpKpi,
-}: {
+interface ProjectsLayerProps {
   onOpen: (id: string) => void;
   /** Raises the Notepad filtered to this project — the cover's minimized
    *  roadmap strip. Named for the door, not the destination: the Ship tab it
    *  used to open was retired on 2026-09-15. */
   onOpenShip?: (id: string) => void;
   onJumpKpi?: (projectId: string, groupId: string, kpiId: string) => void;
+}
+
+// TODO(prototype, 2026-10-06): consolidate ProjectsLayer switcher
+// /prototype round: Baseline + three redesigns of the Atlas matrix's components
+// (same information architecture, same data, same doors). Baseline is default.
+const PROTOTYPE_VARIANTS: ReadonlyArray<{ v: string; label: string; hint: string; figure?: ComponentType<AtlasFigureProps> }> = [
+  { v: 'baseline', label: 'Baseline', hint: 'The Atlas matrix as it ships.' },
+  { v: 'dossier', label: '1 Dossier', hint: 'A typeset register: split names, severity rules, every cell prints its value.', figure: DossierFigure },
+  { v: 'instrument', label: '2 Instrument', hint: 'Readings on scales: favicon tiles, score dials, a rung meter per cell.', figure: InstrumentFigure },
+  { v: 'specimen', label: '3 Specimen', hint: 'Catalogue labels: stack line, Auto|Prod balance bar, stamped values.', figure: SpecimenFigure },
+];
+
+export function ProjectsLayer(props: ProjectsLayerProps) {
+  const [variant, setVariant] = useState('baseline');
+  const active = PROTOTYPE_VARIANTS.find((x) => x.v === variant);
+  return (
+    <div className="space-y-2">
+      <KitHost testId="projects-layer-prototype">
+        <div className="flex flex-wrap items-center gap-3 px-1">
+          <Segmented label={VARIANT_WORDS.switcherLabel} value={variant} onChange={setVariant} options={PROTOTYPE_VARIANTS} />
+          <span className="typo-caption k-quiet">{active?.hint}</span>
+        </div>
+      </KitHost>
+      <ProjectsLayerBaseline {...props} figure={active?.figure} />
+    </div>
+  );
+}
+
+function ProjectsLayerBaseline({
+  onOpen,
+  onOpenShip,
+  onJumpKpi,
+  figure,
+}: ProjectsLayerProps & {
+  /** Prototype: a variant's drawing of the Atlas portfolio. Absent = the shipped matrix. */
+  figure?: ComponentType<AtlasFigureProps>;
 }) {
   const w = useFactoryWords();
   // The Passport Atlas (contest winner, 2026-09-25) runs beside the legacy wall
@@ -187,7 +225,17 @@ export function ProjectsLayer({
         <PassportWallGhost />
       ) : passports.length > 0 && (
         <ImproveProvider value={improve}>
-          {view === 'atlas' ? (
+          {view === 'atlas' && figure ? (
+            <VariantFavicons.Provider value={faviconBySlug}>
+              <ProjectsLayerAtlasHost
+                passports={passports}
+                onOpen={onOpen}
+                rescanningProject={rescanningProject}
+                onRescanProject={rescanProject}
+                figure={figure}
+              />
+            </VariantFavicons.Provider>
+          ) : view === 'atlas' ? (
             <PassportAtlas
               passports={passports}
               onOpen={onOpen}

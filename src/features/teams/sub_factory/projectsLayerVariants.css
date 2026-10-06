@@ -1,0 +1,104 @@
+/* /prototype ProjectsLayer (2026-10-06): layout and one-shot motion for the three
+ * matrix variants. Same grid as the baseline (one project per line, one dimension
+ * per column); what changes is what each line and each cell draws. Type and
+ * colour stay tokens: typo-* on the element, var(--status-*) / var(--primary)
+ * through --tone, color-mix() over them. Every animation runs once. */
+
+.plv { overflow-x: auto; scrollbar-width: thin; padding-bottom: 4px; }
+.plv__head, .plv__row { display: grid; align-items: stretch; grid-template-columns: var(--plv-cols); }
+.plv__head { position: sticky; top: 0; z-index: 3; background: var(--background); min-height: 56px; }
+.plv__row { position: relative; --band: transparent; }
+.plv__row > * { min-width: 0; background: var(--band); transition: background-color 160ms ease; }
+.plv__row:hover { --band: var(--band-hover); }
+.plv__row.is-selected { --band: var(--band-sel); }
+.plv__cell { display: flex; align-items: center; justify-content: center; cursor: pointer; outline-offset: -2px; }
+.plv__cell:focus-visible { outline: 2px solid var(--primary); }
+.plv__cell.is-column { background: color-mix(in srgb, var(--primary) 5%, var(--band)); }
+.plv__dimhead { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; padding: 0 3px 6px; border-bottom: 2px solid var(--rule); text-align: center; line-height: 1.2; transition: color 160ms ease, border-color 160ms ease; }
+.plv__dimhead.is-current { color: var(--primary); border-bottom-color: var(--primary); }
+.plv__scorehead { display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; color: var(--quiet); }
+.plv__namehead { display: flex; align-items: flex-end; gap: 6px; padding: 0 10px 8px var(--gutter); }
+.plv__name.k-btn, .plv__name { height: auto; min-width: 0; flex: 1; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; padding: 4px 6px; background: transparent; border: 0; text-align: left; white-space: normal; }
+.plv__name:hover .plv__title { color: var(--primary); }
+.plv__title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; transition: color 140ms ease; }
+
+@keyframes plv-rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes plv-stamp { 0% { opacity: 0; transform: scale(1.18); } 70% { opacity: 1; transform: scale(0.97); } 100% { opacity: 1; transform: none; } }
+@keyframes plv-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes plv-grow-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes plv-ping { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 45%, transparent); } to { box-shadow: 0 0 0 8px transparent; } }
+
+/* ---- 1 Dossier: the line as a typeset entry ---- */
+.plv1 { --plv-cols: minmax(300px, 340px) 72px 72px repeat(var(--cols), minmax(68px, 1fr)); }
+.plv1 .plv__row { min-height: 58px; }
+.plv1 .plv__row > * { box-shadow: inset 0 -1px 0 var(--rule); }
+.plv1-id { display: flex; align-items: stretch; gap: 6px; padding: 0 10px 0 16px; position: relative; }
+.plv1-rule { width: 3px; margin: 10px 0; border-radius: 2px; background: var(--tone); flex: none; transform-origin: top; animation: plv-grow-y 420ms cubic-bezier(.2, .7, .2, 1) both; animation-delay: var(--d, 0s); }
+.plv1-rule[data-ink='warn'] { background: repeating-linear-gradient(to bottom, var(--tone) 0 4px, transparent 4px 7px); }
+.plv1-rule[data-ink='unknown'] { background: none; width: 0; border-left: 2px dashed var(--tone); }
+.plv1-kicker { display: flex; align-items: center; gap: 6px; max-width: 100%; color: var(--quiet); }
+.plv1-gaps { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; flex: none; min-width: 34px; line-height: 1.1; }
+.plv1-score { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
+.plv1-cell { flex-direction: column; gap: 3px; padding: 0 4px; }
+.plv1-cell__word { max-width: 100%; color: var(--quiet); animation: plv-rise 360ms ease both; animation-delay: var(--d, 0s); }
+.plv__row.is-selected .plv1-cell__word, .plv1-cell:hover .plv1-cell__word { color: var(--foreground); }
+.plv1-spine { position: absolute; left: 6px; top: 8px; bottom: 8px; width: 3px; border-radius: 2px; background: var(--primary); box-shadow: 0 0 12px var(--glow); pointer-events: none; }
+
+/* ---- 2 Instrument: every value a reading on a scale ---- */
+.plv2 { --plv-cols: minmax(290px, 330px) 64px 64px repeat(var(--cols), minmax(60px, 1fr)); }
+.plv2 .plv__row { min-height: 56px; }
+.plv2 .plv__row:nth-child(even) { --band: var(--band-alt); }
+.plv2 .plv__row:hover { --band: var(--band-hover); }
+.plv2 .plv__row.is-selected { --band: var(--band-sel); }
+.plv2-id { display: flex; align-items: center; gap: 10px; padding: 0 10px 0 16px; }
+.plv2-tile { position: relative; width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 8px; background: color-mix(in srgb, var(--tone) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 40%, transparent); color: var(--tone); overflow: hidden; }
+.plv2-tile img { width: 22px; height: 22px; object-fit: contain; }
+.plv2-tile[data-ink='unknown'] { box-shadow: none; outline: 1.5px dashed var(--tone); outline-offset: -1.5px; background: transparent; }
+.plv2-tile[data-ink='warn'] { background: linear-gradient(to top, color-mix(in srgb, var(--tone) 22%, transparent) 50%, color-mix(in srgb, var(--tone) 6%, transparent) 50%); }
+.plv2-tile__gaps { position: absolute; right: 0; bottom: 0; min-width: 15px; padding: 0 3px; border-radius: 6px 0 0 0; background: var(--tone); color: var(--background); text-align: center; line-height: 1.35; }
+.plv2-gauge { display: grid; place-items: center; position: relative; }
+.plv2-gauge svg { width: 40px; height: 40px; transform: rotate(-90deg); overflow: visible; }
+.plv2-gauge__num { position: absolute; inset: 0; display: grid; place-items: center; }
+.plv2-meter { display: flex; gap: 2px; width: 100%; max-width: 44px; height: 10px; align-items: stretch; }
+.plv2-meter__seg { flex: 1; border-radius: 2px; background: var(--rule); position: relative; overflow: hidden; transition: background-color 140ms ease; }
+.plv2-meter__seg.is-on::after { content: ''; position: absolute; inset: 0; background: var(--tone); transform-origin: left; animation: plv-grow 300ms cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--d, 0s) + var(--sd, 0s)); }
+.plv2-meter[data-ink='warn'] .plv2-meter__seg.is-on::after { background: repeating-linear-gradient(135deg, var(--tone) 0 3px, color-mix(in srgb, var(--tone) 55%, transparent) 3px 5px); }
+.plv2-meter[data-ink='unknown'] .plv2-meter__seg { background: none; outline: 1px dashed var(--line); outline-offset: -1px; }
+.plv2-meter[data-ink='setup'] .plv2-meter__seg { background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--status-info) 55%, transparent); }
+.plv2-cell { flex-direction: column; gap: 4px; border-radius: 6px; }
+.plv2-cell:hover .plv2-meter__seg:not(.is-on) { background: var(--line); }
+.plv2-count { color: var(--tone); animation: plv-rise 300ms ease both; animation-delay: var(--d, 0s); }
+.plv2-cell.is-pinged { animation: plv-ping 520ms ease-out 1; }
+
+/* ---- 3 Specimen: a catalogue label per line, a stamped value per cell ---- */
+.plv3 { --plv-cols: minmax(320px, 360px) 136px repeat(var(--cols), minmax(76px, 1fr)); }
+.plv3 .plv__row { min-height: 64px; }
+.plv3 .plv__row + .plv__row > * { box-shadow: inset 0 1px 0 var(--rule); }
+.plv3-id { display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 6px 10px 6px 16px; }
+.plv3-tagline { display: flex; align-items: center; gap: 8px; min-width: 0; padding-left: 6px; }
+.plv3-tag { padding: 0 7px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent); background: color-mix(in srgb, var(--primary) 8%, transparent); color: var(--primary); white-space: nowrap; flex: none; max-width: 55%; overflow: hidden; text-overflow: ellipsis; }
+.plv3-stack { color: var(--quiet); }
+.plv3-balance { display: grid; grid-template-columns: 24px 1fr 24px; align-items: center; gap: 4px; padding: 0 8px; }
+.plv3-balance__track { position: relative; height: 12px; }
+.plv3-balance__track::before { content: ''; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--line); }
+.plv3-balance__bar { position: absolute; top: 2px; bottom: 2px; border-radius: 2px; animation: plv-grow 480ms cubic-bezier(.2, .7, .2, 1) both; animation-delay: var(--d, 0s); }
+.plv3-balance__bar.is-auto { right: 50%; background: color-mix(in srgb, var(--status-info) 70%, transparent); transform-origin: right; }
+.plv3-balance__bar.is-prod { left: 50%; background: color-mix(in srgb, var(--primary) 70%, transparent); transform-origin: left; }
+.plv3-cell { position: relative; }
+.plv3-stamp { max-width: calc(100% - 8px); padding: 1px 7px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--tone) 38%, transparent); background: color-mix(in srgb, var(--tone) 12%, transparent); color: var(--tone); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: plv-stamp 380ms cubic-bezier(.2, .7, .2, 1) both; animation-delay: var(--d, 0s); transition: background-color 140ms ease; }
+.plv3-stamp[data-ink='good'] { background: transparent; }
+.plv3-stamp[data-ink='setup'] { border-style: dashed; background: transparent; }
+.plv3-stamp[data-ink='unknown'] { border-style: dotted; background: transparent; }
+.plv3-stamp[data-ink='info'] { border-color: transparent; background: transparent; color: var(--quiet); }
+.plv3-cell:hover .plv3-stamp { background: color-mix(in srgb, var(--tone) 22%, transparent); }
+.plv3-focus { position: absolute; inset: 8px 3px; border-radius: 8px; box-shadow: 0 0 0 2px var(--primary); pointer-events: none; }
+
+@container kit (max-width: 1100px) {
+  .plv1 { --plv-cols: minmax(240px, 270px) 60px 60px repeat(var(--cols), minmax(58px, 1fr)); }
+  .plv2 { --plv-cols: minmax(230px, 260px) 54px 54px repeat(var(--cols), minmax(50px, 1fr)); }
+  .plv3 { --plv-cols: minmax(250px, 280px) 112px repeat(var(--cols), minmax(64px, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plv *, .plv *::after { animation: none !important; transition: none !important; }
+}
