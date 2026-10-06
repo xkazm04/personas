@@ -1,28 +1,24 @@
 /**
- * GoalsProgress — portfolio-level goals overview (Goals v2 L2 "Progress" view).
+ * GoalsProgress - portfolio-level goals overview (Goals v2 L2 "Progress" view).
  *
- * Each project is a filmstrip: its goals are equal-size square frames laid in
- * strict chronological ORDER — not at exact date positions. Order carries the
- * chronology (past → future, left → right), which trades date fidelity for a
+ * Each project is a row; its goals are equal-size square frames laid in strict
+ * chronological ORDER - not at exact date positions. Order carries the
+ * chronology (past to future, left to right), which trades date fidelity for a
  * regular, scannable grid where dozens of goals across every project read in
  * one viewsight. Two in-row markers keep orientation: a violet rule at "now"
  * and a dashed rule before the dateless tail. Clicking a frame opens the goal
  * detail drawer; the "+" at the end of a row creates a goal in that project.
  *
- * A done-filter (All · 7D · None) controls how much completed history stays on
- * the strip, so finished work doesn't crowd out the live work.
+ * A done-filter (All / 7D / None) controls how much completed history stays on
+ * the row, so finished work does not crowd out the live work.
  *
- * Always cross-project — the view exists to compare projects, so it ignores the
- * Board/Timeline scope switch. Internals live in progressShared.
+ * Data lives in `progress/useProgressModel`; the shared node/legend/ghost parts
+ * live in `progressShared`. This file is the control row plus the rows.
  */
-import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { inPickerScope, type PickerScope } from '@/features/plugins/dev-tools/sub_workspaces/usePickerScope';
+import type { PickerScope } from '@/features/plugins/dev-tools/sub_workspaces/usePickerScope';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
-import { silentCatch } from '@/lib/silentCatch';
-import type { DevGoal } from '@/lib/bindings/DevGoal';
-import { isComplete } from './goalStatus';
 import { GoalAtmosphere } from './goalsTheme';
 import {
   NODE_PX,
@@ -31,146 +27,23 @@ import {
   ProgressLegend,
   ProgressEmpty,
   ProgressGhost,
-  useGoalsPortfolio,
   useGoalDrawer,
-  groupByProject,
-  anchorDate,
-  isOverdue,
-  isRecentlyDone,
 } from './progressShared';
+import { useProgressModel, type DoneFilter } from './progress/useProgressModel';
 
 const LEFT_W = 200;
-
-/** A frame on the strip: the goal plus everything its node needs, precomputed. */
-interface StripNode {
-  goal: DevGoal;
-  overdue: boolean;
-  /**
-   * Entry-animation stagger (ms), or `null` once the one-shot cascade has
-   * already played (see `hasEnteredOnceRef` below). Baked in so memoized
-   * nodes get stable props.
-   */
-  delay: number | null;
-}
-
-/**
- * How much completed history the strip carries.
- * `all` — every done goal · `recent` — only those finished in the last 7 days ·
- * `none` — no done goals at all (live work only).
- *
- * Applied as CSS (the strip's `data-done-filter`, matched by `group-data-*`
- * variants on the nodes), NOT by rebuilding the node list — see GoalSquare's
- * header for why. This predicate exists only to COUNT what's hidden.
- */
-type DoneFilter = 'all' | 'recent' | 'none';
-const DONE_FILTER_KEY = 'personas.goals.progress.doneFilter';
-
-function readDoneFilter(): DoneFilter {
-  try {
-    const v = localStorage.getItem(DONE_FILTER_KEY);
-    return v === 'all' || v === 'recent' || v === 'none' ? v : 'recent';
-  } catch (err) {
-    silentCatch('GoalsProgress.readDoneFilter')(err);
-    return 'recent';
-  }
-}
-
-/** Does this goal survive the done-filter? Ongoing goals always do. */
-function passesFilter(g: DevGoal, filter: DoneFilter, now: number): boolean {
-  if (!isComplete(g.status)) return true;
-  if (filter === 'all') return true;
-  if (filter === 'none') return false;
-  return isRecentlyDone(g, now);
-}
 
 export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } = {}) {
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
-  const [doneFilter, setDoneFilter] = useState<DoneFilter>(readDoneFilter);
-  const { projects, allGoals: portfolioGoals, refresh } = useGoalsPortfolio(doneFilter);
-  // The header picker's workspace / project filters the portfolio.
-  const allGoals = useMemo(
-    () => (portfolioGoals && projectScope ? portfolioGoals.filter((g) => inPickerScope(projectScope, g.project_id)) : portfolioGoals),
-    [portfolioGoals, projectScope],
-  );
-  const { openGoal, createGoalIn, drawer } = useGoalDrawer(allGoals ?? [], refresh);
+  const model = useProgressModel(projectScope);
+  const { doneFilter, rows, hiddenIds, allGoals } = model;
+  const { openGoal, createGoalIn, drawer } = useGoalDrawer(allGoals ?? [], model.refresh);
 
-  const changeDoneFilter = (next: DoneFilter) => {
-    setDoneFilter(next);
-    try {
-      localStorage.setItem(DONE_FILTER_KEY, next);
-    } catch (err) {
-      silentCatch('GoalsProgress.persistDoneFilter')(err);
-    }
-  };
-
-  /**
-   * One-shot guard for the node entrance cascade: latches true the first time
-   * `rows` is built from real (non-null) data. Every later rebuild — a drawer
-   * close/edit calling `refresh()`, a poll, a projects refetch — bakes `null`
-   * delays instead, so nodes render plainly. Ungated, this replayed the
-   * cascade on every refresh: the nodes never unmount (stable `goal.id` keys),
-   * but rebaking a fresh `animationDelay` on an already-finished CSS animation
-   * is enough for some browsers to run it again. A genuine reload of the
-   * portfolio (this view has none today — it's always cross-project) would
-   * reset this ref; nothing here currently does.
-   */
-  const hasEnteredOnceRef = useRef(false);
-
-  /**
-   * The strip layout. Completed history is filtered in SQL (see
-   * `useGoalsPortfolio`); we only mount the live slice plus whatever the
-   * current done-filter asked for. The CSS hide-rules on GoalSquare remain as
-   * a belt for a filter flip whose refetch has not landed yet.
-   */
-  const rows = useMemo(() => {
-    const now = Date.now();
-    const goals = (allGoals ?? []).filter((g) => passesFilter(g, doneFilter, now));
-    const playEntrance = allGoals !== null && !hasEnteredOnceRef.current;
-    let nodeIndex = 0;
-    const toNode = (g: DevGoal): StripNode => ({
-      goal: g,
-      overdue: isOverdue(g, now),
-      delay: playEntrance ? Math.min(nodeIndex++, 24) * 14 : null,
-    });
-
-    const built = groupByProject(projects, goals).map((row) => {
-      const dated = row.goals
-        .map((g) => ({ g, at: anchorDate(g) }))
-        .filter((x): x is { g: DevGoal; at: number } => x.at !== null)
-        .sort((a, b) => a.at - b.at);
-      return {
-        ...row,
-        past: dated.filter((x) => x.at < now).map((x) => toNode(x.g)),
-        future: dated.filter((x) => x.at >= now).map((x) => toNode(x.g)),
-        undated: row.goals.filter((g) => anchorDate(g) === null).map(toNode),
-      };
-    });
-    if (playEntrance) hasEnteredOnceRef.current = true;
-    return built;
-  }, [allGoals, projects, doneFilter]);
-
-  /**
-   * The filter's only JS-side output: which goals the CSS is hiding. Drives the
-   * counts and the per-row dashed rule — never the node list itself.
-   */
-  const hiddenIds = useMemo(() => {
-    const now = Date.now();
-    const hidden = new Set<string>();
-    if (doneFilter === 'all') return hidden;
-    for (const g of allGoals ?? []) {
-      if (!passesFilter(g, doneFilter, now)) hidden.add(g.id);
-    }
-    return hidden;
-  }, [allGoals, doneFilter]);
-
-  // Still fetching — a calm delayed ghost of the filmstrip rather than a
-  // blank region or the (settled-only) empty state. See ProgressGhost.
+  // Still fetching - a calm delayed ghost of the rows rather than a blank
+  // region or the (settled-only) empty state. See ProgressGhost.
   if (allGoals === null) return <ProgressGhost />;
   if (rows.length === 0) return <ProgressEmpty dl={dl} />;
-
-  const hiddenGoals = hiddenIds.size;
-  const shownGoals = allGoals.length - hiddenGoals;
 
   return (
     <div className="relative pb-6" data-testid="goals-progress">
@@ -188,7 +61,7 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
             fullWidth={false}
             ariaLabel={dl.progress_filter_done_aria}
             activeTab={doneFilter}
-            onTabChange={changeDoneFilter}
+            onTabChange={model.setDoneFilter}
             tabs={[
               { id: 'all', label: dl.progress_filter_all },
               { id: 'recent', label: dl.progress_filter_recent },
@@ -198,18 +71,18 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
         </div>
       </div>
 
-      {/* The strip owns the filter: nodes carry static `group-data-[done-filter=…]`
-          hide-rules, so flipping this attribute is a style recalc — no node
-          re-renders, no remounts. */}
+      {/* The strip owns the filter: nodes carry static group-data hide-rules,
+          so flipping this attribute is a style recalc - no node re-renders,
+          no remounts. */}
       <div
         data-done-filter={doneFilter}
         className="group/strip relative rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 overflow-hidden"
       >
-        {/* Header — summary + the strip's reading direction. */}
+        {/* Header - summary + the row's reading direction. */}
         <div className="flex items-center border-b border-primary/10 bg-secondary/20">
           <div className="shrink-0 px-3 py-2" style={{ width: LEFT_W }}>
             <span className="typo-caption text-foreground tabular-nums">
-              {tx(dl.progress_summary, { projects: rows.length, goals: shownGoals })}
+              {tx(dl.progress_summary, { projects: rows.length, goals: model.shownGoals })}
             </span>
           </div>
           <div className="flex-1 flex items-center gap-2 px-1 py-2">
@@ -238,15 +111,15 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
             data-testid={`progress-row-${row.projectId}`}
             className="flex items-stretch border-b border-primary/5 last:border-b-0 transition-colors hover:bg-primary/[0.03]"
           >
+            {/* Project name only. The "N active / M done" sub-label used to sit
+                under it and was removed 2026-10-06: the squares to its right
+                already carry both counts by colour, so it restated the row. */}
             <div
-              className="shrink-0 px-3 py-2.5 flex flex-col justify-center gap-0.5 min-w-0 border-r border-primary/5"
+              className="shrink-0 px-3 py-2.5 flex flex-col justify-center min-w-0 border-r border-primary/5"
               style={{ width: LEFT_W }}
             >
               <span className="typo-body text-foreground truncate" title={row.name}>
                 {row.name}
-              </span>
-              <span className="typo-caption text-foreground tabular-nums">
-                {tx(dl.progress_row_counts, { active: row.activeCount, done: row.doneCount })}
               </span>
             </div>
 
@@ -256,71 +129,38 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
               style={{ minHeight: NODE_PX + 20 }}
             >
               {row.past.map((n) => (
-                <GoalSquare
-                  key={n.goal.id}
-                  goal={n.goal}
-                  overdue={n.overdue}
-                  delay={n.delay}
-                  dl={dl}
-                  onOpen={openGoal}
-                />
+                <GoalSquare key={n.goal.id} goal={n.goal} overdue={n.overdue} delay={n.delay} dl={dl} onOpen={openGoal} />
               ))}
-              {/* "Now" rule — everything left is behind us, right is ahead. */}
+              {/* "Now" rule - everything left is behind us, right is ahead. */}
               <Tooltip content={dl.progress_today}>
-                <span
-                  aria-hidden="true"
-                  className="w-0.5 rounded-full bg-violet-400/70 mx-0.5"
-                  style={{ height: NODE_PX }}
-                />
+                <span aria-hidden="true" className="w-0.5 rounded-full bg-violet-400/70 mx-0.5" style={{ height: NODE_PX }} />
               </Tooltip>
               {row.future.map((n) => (
-                <GoalSquare
-                  key={n.goal.id}
-                  goal={n.goal}
-                  overdue={n.overdue}
-                  delay={n.delay}
-                  dl={dl}
-                  onOpen={openGoal}
-                />
+                <GoalSquare key={n.goal.id} goal={n.goal} overdue={n.overdue} delay={n.delay} dl={dl} onOpen={openGoal} />
               ))}
               {/* The dashed rule only earns its place when a dateless goal is
-                  actually visible — but the nodes themselves stay mounted so a
+                  actually visible - but the nodes themselves stay mounted so a
                   filter flip never remounts them. */}
               {row.undated.some((n) => !hiddenIds.has(n.goal.id)) && (
                 <Tooltip content={dl.progress_no_date}>
-                  <span
-                    aria-hidden="true"
-                    className="border-l border-dashed border-primary/30 mx-0.5"
-                    style={{ height: NODE_PX }}
-                  />
+                  <span aria-hidden="true" className="border-l border-dashed border-primary/30 mx-0.5" style={{ height: NODE_PX }} />
                 </Tooltip>
               )}
               {row.undated.map((n) => (
-                <GoalSquare
-                  key={n.goal.id}
-                  goal={n.goal}
-                  overdue={n.overdue}
-                  delay={n.delay}
-                  dl={dl}
-                  onOpen={openGoal}
-                />
+                <GoalSquare key={n.goal.id} goal={n.goal} overdue={n.overdue} delay={n.delay} dl={dl} onOpen={openGoal} />
               ))}
 
-              {/* Tail: the next empty frame — authors a goal in THIS project. */}
-              <AddGoalButton
-                projectName={row.name}
-                label={dl.goal_new_title}
-                onClick={() => createGoalIn(row.projectId)}
-              />
+              {/* Tail: the next empty frame - authors a goal in THIS project. */}
+              <AddGoalButton projectName={row.name} label={dl.goal_new_title} onClick={() => createGoalIn(row.projectId)} />
             </div>
           </div>
         ))}
 
         {/* Honest footer: the filter hides goals; say how many. */}
-        {hiddenGoals > 0 && (
+        {model.hiddenGoals > 0 && (
           <div className="px-3 py-1.5 border-t border-primary/5 bg-secondary/10 text-right">
             <span className="typo-caption text-foreground tabular-nums">
-              {tx(dl.progress_hidden_note, { count: hiddenGoals })}
+              {tx(dl.progress_hidden_note, { count: model.hiddenGoals })}
             </span>
           </div>
         )}
