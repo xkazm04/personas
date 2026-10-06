@@ -5,10 +5,10 @@ import {
   AppWindow,
   ChevronDown,
   ChevronUp,
+  DraftingCompass,
   CircleStop,
   Image as ImageIcon,
   ListChecks,
-  Map as MapIcon,
   MessageSquare,
   Square,
   Wand2,
@@ -23,41 +23,32 @@ import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { QUEUED_NOTES_MAX, useStudioStore } from './studioStore';
 import StudioBuildSettings from './StudioBuildSettings';
 import StudioMessages from './StudioMessages';
-import StudioPlanDrawer from './StudioPlanDrawer';
-import StudioQuickActions from './StudioQuickActions';
 import { phaseProgress } from './studioBuildModel';
 import { classifyMidTurnIntent } from '@/features/companions/athena/midTurnIntent';
 import { isStopOnly } from './studioSeed';
 
-// The Studio dock — Athena's conversation + input, docked bottom-center over the
-// immersive preview. Collapsed by default (latest message only) so the preview +
-// orb stay the star; expand for a readable, scrollable conversation panel. The
-// build plan is NOT in the dock: it opens as a right-edge drawer from the plan
-// button in the input row, so you can read the plan while you keep steering. The
-// dock re-centres itself into the space the drawer leaves.
+// The Studio dock — a thin toolbar over the input row, docked bottom-center
+// over the frame. Every control lives on the toolbar so the input row is the
+// field and Send alone. Guide draws the latest message, the question and the
+// next moves itself; the chevron expands the full conversation above. A note
+// typed while Athena works is queued for her next step instead of refused. The
+// goals button shows or hides the goals rail beside the frame.
 
 export type StudioFrameView = 'plan' | 'app';
 
 export default function StudioChatInput({
-  variant = 'default',
-  onPlanClick,
+  goals,
   view,
 }: {
-  /** `guide`: the Guide layout draws the latest message, the question and the
-   *  next moves itself, so the dock is only the input row + tools; a note typed
-   *  while Athena works is queued for her next step instead of refused. */
-  variant?: 'default' | 'guide';
-  /** Guide: the plan button points at the goals rail instead of the drawer. */
-  onPlanClick?: () => void;
-  /** Guide: what the main frame shows, the plan sheet or the running app. The
-   *  App side waits for a live preview; without one there is nothing to show. */
+  /** The goals rail beside the frame: whether it shows, and the toggle. */
+  goals?: { open: boolean; onToggle: () => void };
+  /** What the main frame shows, the plan sheet or the running app. The App
+   *  side waits for a live preview; without one there is nothing to show. */
   view?: { showing: StudioFrameView; appReady: boolean; onChange: (v: StudioFrameView) => void };
 } = {}) {
-  const guide = variant === 'guide';
   const { t, tx } = useTranslation();
   const [input, setInput] = useState('');
   const [chatOpen, setChatOpen] = useState(false);
-  const [planOpen, setPlanOpen] = useState(false);
   // The step (by its start time) whose queue refused a note; the notice is
   // about that step only and is gone once the next one starts.
   const [queueFullTurn, setQueueFullTurn] = useState<number | null>(null);
@@ -107,7 +98,6 @@ export default function StudioChatInput({
     const text = input.trim();
     if (!text) return;
     if (working) {
-      if (!guide) return;
       // A bare stop word only stops: queued, it became the sole note of a new
       // turn told to carry on.
       if (isStopOnly(text)) {
@@ -150,21 +140,8 @@ export default function StudioChatInput({
 
   return (
     <>
-      <StudioPlanDrawer
-        open={planOpen}
-        onClose={() => setPlanOpen(false)}
-        phases={phases ?? []}
-        done={done}
-        total={total}
-        busy={busy}
-      />
-
-      {/* Dock — full-width row so the column stays centred in whatever space the
-          plan drawer leaves behind (pure padding transition, no transform fight). */}
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-8 transition-[padding] duration-300 ease-out"
-        style={planOpen ? { paddingRight: 'calc(min(22rem, 45%) + 2rem)' } : undefined}
-      >
+      {/* Dock — a full-width row so the column stays centred over the frame. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-8">
         <div
           className={`flex w-full flex-col gap-2 transition-[max-width] duration-200 ${
             chatOpen ? 'max-w-[46rem]' : 'max-w-[38rem]'
@@ -204,9 +181,6 @@ export default function StudioChatInput({
             )}
           </AnimatePresence>
 
-          {/* Collapsed — the latest message bubble (+ earlier-message reveal) */}
-          {!chatOpen && !guide && <StudioMessages />}
-
           {/* Stop found nothing to interrupt. Saying so is the whole point: the
               dock has just been released early, and without a line here that
               reads as the build having finished. */}
@@ -232,76 +206,44 @@ export default function StudioChatInput({
             {queueFull ? tx(guideStrings(t).notes_full, { max: QUEUED_NOTES_MAX }) : null}
           </p>
 
-          {!guide && !working && !question && !chatOpen && <StudioQuickActions id={activeId} />}
-
-          {/* Input row */}
-          <ChatInputBar
-            value={input}
-            onChange={setInput}
-            onSubmit={send}
-            placeholder={
-              guide && working
-                ? guideStrings(t).placeholder_queue
-                : question
-                ? tx(t.studio.answer_athena, { name })
-                : autonomous
-                  ? tx(t.studio.building_autonomously, { name })
-                  : tx(t.studio.tell_athena, { name })
-            }
-            disabled={working && !guide}
-            busy={busy && !autonomous && !guide}
-            boxShadow={stateShadow}
-            inputTestId="studio-chat-input"
-            sendLabel={t.common.send}
-            leading={
+          {/* Toolbar — every control on one thin row above the field, so the
+              field takes the whole input row and Send sits right beside it.
+              Left: what you look at (conversation, frame, goals); right: what
+              the next step gets (a reference, settings) and stop / autonomous. */}
+          <div
+            data-testid="studio-dock-toolbar"
+            className="pointer-events-auto flex h-9 items-center gap-0.5 rounded-full border border-border bg-background/85 px-1 shadow-elevation-2 backdrop-blur"
+          >
+            <button
+              type="button"
+              onClick={() => setChatOpen((v) => !v)}
+              aria-label={chatOpen ? t.studio.collapse_conversation : t.studio.expand_conversation}
+              aria-expanded={chatOpen}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary"
+            >
+              {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+            </button>
+            {view && (
               <>
-                <button
-                  type="button"
-                  onClick={() => setChatOpen((v) => !v)}
-                  aria-label={
-                    chatOpen ? t.studio.collapse_conversation : t.studio.expand_conversation
-                  }
-                  aria-expanded={chatOpen}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary"
-                >
-                  {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                </button>
-                {/* The frame switch sits ahead of the field: it says what the
-                    message is about, the plan or the app on screen. */}
-                {view && <FrameViewSwitch view={view} />}
+                <ToolbarDivider />
+                <FrameViewSwitch view={view} />
               </>
-            }
-            trailing={
+            )}
+            {goals && (
               <>
+                <ToolbarDivider />
                 <button
                   type="button"
-                  onClick={() => void pickReference()}
-                  disabled={working}
-                  aria-label={t.studio.add_reference_image}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
-                >
-                  <ImageIcon className="h-4 w-4" />
-                </button>
-                {/* Build plan — the drawer's one entry point, sitting with the other
-                    input-row tools instead of floating above the dock. */}
-                <button
-                  type="button"
-                  onClick={() => (onPlanClick ? onPlanClick() : setPlanOpen((v) => !v))}
+                  onClick={goals.onToggle}
                   data-testid="studio-plan-button"
-                  // Guide: the button moves focus to the goals rail; it opens
-                  // nothing, so it names the goals and claims no expanded state.
                   aria-label={
-                    onPlanClick
-                      ? hasPlan
-                        ? `${guideStrings(t).goals} · ${tx(guideStrings(t).goals_progress, { done, total })}`
-                        : guideStrings(t).goals
-                      : hasPlan
-                        ? tx(t.studio.plan_progress, { done, total })
-                        : t.studio.build_plan
+                    hasPlan
+                      ? `${guideStrings(t).goals} · ${tx(guideStrings(t).goals_progress, { done, total })}`
+                      : guideStrings(t).goals
                   }
-                  aria-expanded={onPlanClick ? undefined : planOpen}
-                  className={`relative flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2 transition-colors ${
-                    planOpen
+                  aria-expanded={goals.open}
+                  className={`relative flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2 transition-colors ${
+                    goals.open
                       ? 'bg-secondary/70 text-primary'
                       : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
                   }`}
@@ -319,36 +261,64 @@ export default function StudioChatInput({
                     </span>
                   )}
                 </button>
-                <StudioBuildSettings id={activeId} />
-                {busy ? (
-                  <button
-                    type="button"
-                    onClick={() => stopTurn(activeId)}
-                    data-testid="studio-stop"
-                    aria-label={t.studio.stop_athena}
-                    className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-status-error/40 bg-status-error/10 px-2.5 typo-label text-status-error transition-colors hover:bg-status-error/20"
-                  >
-                    <CircleStop className="h-4 w-4" />
-                    {t.studio.stop}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => (autonomous ? stopAutonomous(activeId) : startAutonomous(activeId))}
-                    aria-label={
-                      autonomous ? t.studio.stop_autonomous : t.studio.build_autonomously
-                    }
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
-                      autonomous
-                        ? 'bg-primary/20 text-primary'
-                        : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
-                    }`}
-                  >
-                    {autonomous ? <Square className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
-                  </button>
-                )}
               </>
+            )}
+            <div className="flex-1" />
+            <button
+              type="button"
+              onClick={() => void pickReference()}
+              disabled={working}
+              aria-label={t.studio.add_reference_image}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
+            >
+              <ImageIcon className="h-4 w-4" />
+            </button>
+            <StudioBuildSettings id={activeId} />
+            <ToolbarDivider />
+            {busy ? (
+              <button
+                type="button"
+                onClick={() => stopTurn(activeId)}
+                data-testid="studio-stop"
+                aria-label={t.studio.stop_athena}
+                className="flex h-7 shrink-0 items-center gap-1 rounded-full border border-status-error/40 bg-status-error/10 px-2.5 typo-label text-status-error transition-colors hover:bg-status-error/20"
+              >
+                <CircleStop className="h-4 w-4" />
+                {t.studio.stop}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => (autonomous ? stopAutonomous(activeId) : startAutonomous(activeId))}
+                aria-label={autonomous ? t.studio.stop_autonomous : t.studio.build_autonomously}
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors ${
+                  autonomous
+                    ? 'bg-primary/20 text-primary'
+                    : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
+                }`}
+              >
+                {autonomous ? <Square className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
+              </button>
+            )}
+          </div>
+
+          {/* Input row: the field and Send, nothing between them. */}
+          <ChatInputBar
+            value={input}
+            onChange={setInput}
+            onSubmit={send}
+            placeholder={
+              working
+                ? guideStrings(t).placeholder_queue
+                : question
+                ? tx(t.studio.answer_athena, { name })
+                : autonomous
+                  ? tx(t.studio.building_autonomously, { name })
+                  : tx(t.studio.tell_athena, { name })
             }
+            boxShadow={stateShadow}
+            inputTestId="studio-chat-input"
+            sendLabel={t.common.send}
           />
         </div>
       </div>
@@ -356,8 +326,14 @@ export default function StudioChatInput({
   );
 }
 
-// Plan | App, the same choice the B key makes in Guide. App is held back until
-// the preview is live; the tooltip says why instead of a dead button.
+/** A hairline between the toolbar's groups. */
+function ToolbarDivider() {
+  return <span aria-hidden className="mx-0.5 h-4 w-px shrink-0 bg-border" />;
+}
+
+// Plan | App, the same choice the B key makes: the blueprint sheet or the
+// running app. App is held back until the preview is live; its tooltip says
+// why instead of leaving a dead button.
 function FrameViewSwitch({
   view,
 }: {
@@ -368,32 +344,29 @@ function FrameViewSwitch({
   const option = (v: StudioFrameView) => {
     const on = view.showing === v;
     const blocked = v === 'app' && !view.appReady;
+    const label = v === 'plan' ? g.view_plan : g.view_app;
     return (
-      <Button
-        variant={on ? 'accent' : 'ghost'}
-        tone={on ? 'highlight' : undefined}
-        size="xs"
-        aria-pressed={on}
-        disabled={blocked}
-        onClick={() => view.onChange(v)}
-        data-testid={`studio-view-${v}`}
-        icon={v === 'plan' ? <MapIcon className="h-3.5 w-3.5" /> : <AppWindow className="h-3.5 w-3.5" />}
-        className={`rounded-full ${blocked ? 'pointer-events-none' : ''}`}
-      >
-        {v === 'plan' ? g.view_plan : g.view_app}
-      </Button>
+      <Tooltip content={blocked ? g.tool_needs_live : label} placement="top" {...(blocked ? { triggerFocusable: true, triggerClassName: 'flex rounded-full' } : {})}>
+        <Button
+          variant={on ? 'accent' : 'ghost'}
+          tone={on ? 'highlight' : undefined}
+          size="icon-sm"
+          aria-pressed={on}
+          aria-label={label}
+          disabled={blocked}
+          onClick={() => view.onChange(v)}
+          data-testid={`studio-view-${v}`}
+          className={`rounded-full ${blocked ? 'pointer-events-none' : ''}`}
+        >
+          {v === 'plan' ? <DraftingCompass className="h-4 w-4" /> : <AppWindow className="h-4 w-4" />}
+        </Button>
+      </Tooltip>
     );
   };
   return (
     <div role="group" aria-label={g.view_switch} className="flex shrink-0 items-center gap-0.5">
       {option('plan')}
-      {view.appReady ? (
-        option('app')
-      ) : (
-        <Tooltip content={g.tool_needs_live} placement="top" triggerFocusable triggerClassName="flex rounded-full">
-          {option('app')}
-        </Tooltip>
-      )}
+      {option('app')}
     </div>
   );
 }

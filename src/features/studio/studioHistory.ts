@@ -57,12 +57,11 @@ interface StudioHistoryStore {
   prune: (liveIds: readonly string[]) => void;
   setOpenTabs: (ids: string[], activeId: string | null) => void;
   /**
-   * Which Studio layout renders: the current one or Guide.
-   * TODO(prototype, 2026-09-23): the switch exists until Guide reaches parity;
-   * then the current layout is descoped (docs/design/studio-guide.md).
+   * Whether the goals rail is shown beside the frame. Toggled from the dock's
+   * goals button; kept per machine so a hidden rail stays hidden.
    */
-  layout: StudioLayout;
-  setLayout: (layout: StudioLayout) => void;
+  goalsOpen: boolean;
+  setGoalsOpen: (open: boolean) => void;
   /**
    * The last "Plan first" choice, which new projects start with. It is set
    * from a project's build settings; without it the switch could never reach
@@ -81,15 +80,13 @@ interface StudioHistoryStore {
 
 export type StudioSheetStyle = 'plan' | 'drafting';
 
-export type StudioLayout = 'current' | 'guide';
-
 export const useStudioHistory = create<StudioHistoryStore>()(
   persist(
     (set) => ({
       byProject: {},
       openTabIds: [],
       activeTabId: null,
-      layout: 'guide',
+      goalsOpen: true,
       gatePlanDefault: false,
       sheetStyle: 'drafting',
       save: (id, entry) =>
@@ -130,7 +127,7 @@ export const useStudioHistory = create<StudioHistoryStore>()(
           };
         }),
       setOpenTabs: (ids, activeId) => set({ openTabIds: ids, activeTabId: activeId }),
-      setLayout: (layout) => set({ layout }),
+      setGoalsOpen: (goalsOpen) => set({ goalsOpen }),
       setGatePlanDefault: (on) => set({ gatePlanDefault: on }),
       setSheetStyle: (sheetStyle) => set({ sheetStyle }),
     }),
