@@ -24,6 +24,7 @@ import { BOARD_VARIANTS, type BoardVariant } from '../../board/queue/boardVarian
 import { PERSONA_LAMP } from './tone';
 import { Kbd, Lamp } from './parts';
 import type { PanelFilter } from './boardFilter';
+import { DecisionLabLauncher } from '@/features/decision-center/prototype/DecisionLabLauncher';
 
 export function CommandBar({
   filter, showTally, active, onPick, onClear, layout, onLayout,
@@ -120,6 +121,7 @@ export function CommandBar({
           tabs={BOARD_VARIANTS.map((id) => ({ id, label: layoutLabel[id], testId: `fleet-board-variant-${id}` }))}
         />
         <SimulationToggle />
+        <DecisionLabLauncher />
       </div>
     </div>
   );

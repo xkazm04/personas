@@ -722,6 +722,10 @@
           "reason": "the UAT / test-automation harness — its 55 labels are read by the harness author in a report, never rendered in the product UI"
         },
         {
+          "path": "src/features/decision-center/prototype/**",
+          "reason": "the decision-center spark's dev-only prototype round (fixture roster + three directions behind import.meta.env.DEV); never shipped, deleted with this exclude by the consolidation package"
+        },
+        {
           "path": "src/lib/personas/platformDefinitions.ts",
           "reason": "the `label` fields are vendor product names (n8n, Zapier, Make, GitHub Actions) — proper nouns rendered verbatim in every locale, not display copy that a translation lookup should reach"
         }

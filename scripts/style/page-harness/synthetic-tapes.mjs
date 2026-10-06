@@ -356,6 +356,8 @@ const BUILDERS = {
   ...twinDetailTapes({ RECORDED_AT }).builders,
   // Overview > Mission Control (missionControlSurfaces.tsx, missionControlTapes.mjs).
   ...missionControlTapes({ RECORDED_AT, PERSONAS }).builders,
+  // Decision Center prototype Lab (decisionCenterSurfaces.tsx): fixture roster, no IPC.
+  'decision-center/prototype': () => ({ version: 1, module: 'decision-center/prototype', source: 'synthetic', recordedAt: RECORDED_AT, note: 'Fixture roster, no IPC; ?kit=<p1|p2|p3>:<entry> picks the view.', calls: [] }),
   // shoot.mjs --self-test probes: no data needed.
   '__selftest/empty': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),
   '__selftest/console-error': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),

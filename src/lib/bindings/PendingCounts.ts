@@ -21,6 +21,30 @@
  */
 export type PendingCounts = { goalAcceptance: number, manualReviews: number, ideas: number, policyProposals: number, promotionProposals: number, 
 /**
+ * Open audit incidents (status open | acknowledged | in_progress).
+ */
+openIncidents: number, 
+/**
+ * The subset of `open_incidents` at severity critical or high (decision tier 1).
+ */
+blockingIncidents: number, 
+/**
+ * Persona reports with `is_read = 0`.
+ */
+unreadReports: number, 
+/**
+ * Athena companion approvals awaiting a human.
+ */
+companionApprovals: number, 
+/**
+ * Council subjects that are decidable (state ready AND tier major or kind architecture).
+ */
+councilDecidable: number, 
+/**
+ * `total` + open_incidents + unread_reports + companion_approvals + council_decidable (blocking_incidents is a subset, not added). Build questions and chat are added client-side.
+ */
+decisionTotal: number, 
+/**
  * The five above. The caller adds build questions on top.
  */
 total: number, };
