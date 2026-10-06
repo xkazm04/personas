@@ -96,6 +96,7 @@ export function fixtureRunDetail(
     run: {
       id: run.run_id,
       subjectId,
+      mode: 'full',
       roundNo: run.round_no,
       supersedesRunId: run.supersedes_run_id,
       rubricVersion: run.rubric_version,

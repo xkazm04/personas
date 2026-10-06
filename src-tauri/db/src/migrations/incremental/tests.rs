@@ -2257,3 +2257,134 @@ fn a_fresh_schema_has_an_optional_review_execution_id() {
         .unwrap();
     assert_eq!(notnull, 0);
 }
+
+// ── e61: council runs carry a mode; rounds are per (subject, mode) ─────────
+
+/// A pre-0.4.0 store keys a round by `(subject_id, round_no)`, so a lite
+/// round 1 beside a full round 1 cannot exist. The rebuild adds `mode`
+/// (existing rows are full), widens the key to `(subject_id, mode, round_no)`,
+/// keeps every child row (verdicts and the decision that cites the run), keeps
+/// the run-dir index, and is a no-op on replay.
+#[test]
+fn council_runs_gain_a_mode_and_count_rounds_per_mode() {
+    let pool = crate::init_test_db().unwrap();
+    let conn = pool.get().unwrap();
+    conn.execute_batch(
+        "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/council-p1');
+         INSERT INTO dev_council_subjects (id, project_id, kind, slug, title, created_at, updated_at)
+            VALUES ('s1', 'p1', 'architecture', 'store', 'Store', datetime('now'), datetime('now'));
+         DROP TABLE dev_council_runs;
+         CREATE TABLE dev_council_runs (
+            id TEXT PRIMARY KEY NOT NULL,
+            subject_id TEXT NOT NULL
+                REFERENCES dev_council_subjects(id) ON DELETE CASCADE,
+            round_no INTEGER NOT NULL CHECK (round_no >= 1),
+            supersedes_run_id TEXT
+                REFERENCES dev_council_runs(id) ON DELETE SET NULL,
+            rubric_version TEXT NOT NULL
+                CHECK (rubric_version IN ('feature-v1','architecture-v1')),
+            trust_state TEXT NOT NULL
+                CHECK (trust_state IN ('uncalibrated','untrusted','trusted')),
+            outcome TEXT NOT NULL
+                CHECK (outcome IN ('ready','fail','incomplete','stalled')),
+            overall REAL,
+            coverage REAL NOT NULL,
+            head_sha TEXT NOT NULL,
+            span_digest TEXT NOT NULL,
+            spanned_paths_json TEXT NOT NULL,
+            hard_failures_json TEXT NOT NULL,
+            must_address_json TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            run_dir TEXT NOT NULL,
+            started_at TEXT,
+            finished_at TEXT,
+            ingested_at TEXT NOT NULL,
+            UNIQUE (subject_id, round_no)
+         );
+         CREATE UNIQUE INDEX idx_dev_council_runs_run_dir ON dev_council_runs(run_dir);
+         INSERT INTO dev_council_runs (id, subject_id, round_no, rubric_version, trust_state,
+                outcome, overall, coverage, head_sha, span_digest, spanned_paths_json,
+                hard_failures_json, must_address_json, summary, run_dir, ingested_at)
+            VALUES ('r1', 's1', 1, 'architecture-v1', 'uncalibrated', 'ready', 0.8, 1.0,
+                'abc', 'd', '[]', '[]', '[]', 'clean', '/runs/r1', datetime('now'));
+         INSERT INTO dev_council_verdicts (id, run_id, dimension, kind, state, score, confidence,
+                floor, floor_hit, advisory, payload_json)
+            VALUES ('v1', 'r1', 'craft', 'mixed', 'measured', 0.8, 'med', NULL, 0, 0, '{}');
+         INSERT INTO dev_council_decisions (id, subject_id, run_id, decision, saw_digest, decided_at)
+            VALUES ('d1', 's1', 'r1', 'approved', 'dig', datetime('now'));",
+    )
+    .unwrap();
+
+    run_incremental(&conn).unwrap();
+
+    assert!(has_column(&conn, "dev_council_runs", "mode").unwrap());
+    let mode: String = conn
+        .query_row(
+            "SELECT mode FROM dev_council_runs WHERE id = 'r1'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(
+        mode, "full",
+        "every run ingested before lite existed was a full council"
+    );
+    let children: (i64, i64) = conn
+        .query_row(
+            "SELECT (SELECT COUNT(*) FROM dev_council_verdicts WHERE run_id = 'r1'),
+                    (SELECT COUNT(*) FROM dev_council_decisions WHERE run_id = 'r1')",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!(children, (1, 1), "the swap cascaded nothing");
+    assert!(has_index(&conn, "idx_dev_council_runs_run_dir").unwrap());
+
+    let insert = |id: &str, mode: &str, round: i64| {
+        conn.execute(
+            "INSERT INTO dev_council_runs (id, subject_id, mode, round_no, rubric_version,
+                trust_state, outcome, coverage, head_sha, span_digest, spanned_paths_json,
+                hard_failures_json, must_address_json, summary, run_dir, ingested_at)
+             VALUES (?1, 's1', ?2, ?3, 'architecture-v1', 'uncalibrated', 'ready', 0.7, 'abc',
+                'd', '[]', '[]', '[]', 's', '/runs/' || ?1, datetime('now'))",
+            rusqlite::params![id, mode, round],
+        )
+    };
+    insert("r1-lite", "lite", 1).expect("a lite round 1 beside the full round 1");
+    assert!(
+        insert("r1-again", "full", 1).is_err(),
+        "a second full round 1 is still unrepresentable"
+    );
+    assert!(
+        insert("r-odd", "partial", 2).is_err(),
+        "mode is a closed set"
+    );
+
+    let ddl = |conn: &Connection| -> String {
+        conn.query_row(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_council_runs'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap()
+    };
+    let once = ddl(&conn);
+    run_incremental(&conn).unwrap();
+    assert_eq!(ddl(&conn), once, "a replay does not rebuild again");
+
+    // The subject still takes its runs AND the decision that pins one with
+    // it. This only holds while `dev_council_decisions` is newer than
+    // `dev_council_runs` (SQLite cascades newest child first), which is why
+    // the step recreates the decisions table after the runs table.
+    conn.execute("DELETE FROM dev_council_subjects WHERE id = 's1'", [])
+        .expect("a decided subject is still deletable after the rebuild");
+    let left: (i64, i64) = conn
+        .query_row(
+            "SELECT (SELECT COUNT(*) FROM dev_council_runs),
+                    (SELECT COUNT(*) FROM dev_council_decisions)",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!(left, (0, 0));
+}

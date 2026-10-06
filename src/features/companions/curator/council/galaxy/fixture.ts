@@ -252,6 +252,8 @@ export async function loadReferenceFixture(): Promise<FixtureBundle> {
       title: row.title,
       state: row.state,
       tier: row.tier,
+      // Fixture councils are full councils; lite runs exist only in a live store.
+      mode: 'full',
       roundNo: row.round_no,
       latestRunId: row.latest_run_id ?? null,
       outcome: null,

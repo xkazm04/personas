@@ -660,6 +660,7 @@ mod tests {
     fn a_run(subject_id: &str, round: i32, outcome: &str, dir: &str) -> NewRun {
         NewRun {
             subject_id: subject_id.to_string(),
+            mode: "full".into(),
             round_no: round,
             supersedes_run_id: None,
             rubric_version: "feature-v1".into(),

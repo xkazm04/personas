@@ -276,6 +276,7 @@ export function mapFixtureProject(project: FileProject, scenarios: FileScenarios
           title: f.name,
           state: c.state,
           tier: f.tier,
+          mode: c.round_no == null ? null : 'full',
           roundNo: c.round_no ?? null,
           latestRunId: c.last_run ?? null,
           outcome: c.state,

@@ -123,6 +123,15 @@
 //!                                             dir>/reports/<reportId>/NN-<name>`. `personaId` defaults to the
 //!                                             project's App Master (409 when it has none). Deciding the
 //!                                             approval deletes the copies and flips `attachmentsCleaned`.
+//!   POST /council/ingest                    → { projectId, runDir } → the `dev_tools_council_ingest` summary.
+//!                                             `runDir` sits under the project's `.personas/council/runs/` or
+//!                                             the headless App Master's durable copy
+//!                                             `<personas repo>/.claude/master/<slug>/headless/council/<run>/`
+//!                                             (`<slug>` = the project root's last segment). 404 unknown
+//!                                             project, 400 outside both roots, 422 a run the door read and
+//!                                             refused (body = the summary, reason in `refused`); an
+//!                                             already-ingested run is a 200 with `runsSkipped: 1`.
+//!   POST /use-cases/{use_case_id}/tier      → { tier: major|standard } → { useCaseId, tier }
 
 use std::sync::Arc;
 
@@ -228,6 +237,8 @@ pub fn router(app: AppHandle) -> Router {
             post(assign_workspace_route),
         )
         .route("/reports", post(post_report_route))
+        .route("/council/ingest", post(council_ingest_route))
+        .route("/use-cases/{use_case_id}/tier", post(use_case_tier_route))
         .with_state(DevToolsHttp { app })
 }
 
@@ -1911,6 +1922,46 @@ async fn assign_workspace_route(
         headless_doors::assign_workspace(&pool, &project_id, &b)
     })
     .await
+}
+
+/// One council run dir through the council door. The durable headless root
+/// is resolved against the source checkout this binary was built from.
+async fn council_ingest_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<headless_doors::CouncilIngestInput>,
+) -> Result<Json<personas_core::models::CouncilIngestSummary>, (StatusCode, String)> {
+    let pool = db(&s)?;
+    let project_id = b.project_id.clone();
+    let personas_repo = crate::companion::dev_mode::repo_root();
+    let out = door("council ingest", move || {
+        headless_doors::ingest_council_run(&pool, &b, &personas_repo)
+    })
+    .await?;
+    if out.0.runs_ingested > 0 {
+        crate::commands::infrastructure::dev_tools::council_ingest::emit_council_changed(
+            &s.app,
+            &project_id,
+        );
+    }
+    Ok(out)
+}
+
+async fn use_case_tier_route(
+    State(s): State<DevToolsHttp>,
+    Path(use_case_id): Path<String>,
+    Json(b): Json<headless_doors::SetTierInput>,
+) -> Result<Json<headless_doors::TierSet>, (StatusCode, String)> {
+    let pool = db(&s)?;
+    let out = door("set use-case tier", move || {
+        headless_doors::set_use_case_tier(&pool, &use_case_id, &b)
+    })
+    .await?;
+    // The tier is an input to the derived council state, same as the command.
+    crate::commands::infrastructure::dev_tools::council_ingest::emit_council_changed(
+        &s.app,
+        &out.0.project_id,
+    );
+    Ok(out)
 }
 
 /// The copies go under Tauri's `app_data_dir` (where the database lives), the

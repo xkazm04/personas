@@ -19,12 +19,16 @@
 //! together. A caller replaying an outbox must be able to tell "fix the payload"
 //! from "this will never succeed as asked".
 
+use std::path::Path;
+
 use serde::{Deserialize, Serialize};
 
+use crate::commands::infrastructure::dev_tools::{council, council_ingest};
 use crate::db::repos::dev_tools as repo;
 use crate::db::repos::dev_workspaces as ws_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
+use personas_core::models::CouncilIngestSummary;
 
 /// Why a door refused, in the vocabulary the route turns into a status code.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -296,6 +300,91 @@ pub fn assign_workspace(
     let project = ws_repo::assign_project(pool, project_id, workspace_id.as_deref())?;
     Ok(WorkspaceAssigned {
         workspace_id: project.workspace_id,
+    })
+}
+
+// ============================================================================
+// POST /dev-tools/council/ingest
+// ============================================================================
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CouncilIngestInput {
+    pub project_id: String,
+    /// One run directory: under the project's `.personas/council/runs/`, or
+    /// the headless App Master's durable copy for this project
+    /// (`<personas repo>/.claude/master/<slug>/headless/council/<run>/`).
+    pub run_dir: String,
+}
+
+/// `dev_tools_council_ingest`'s body for ONE run directory, answering the same
+/// `CouncilIngestSummary` JSON with its refusals mapped to statuses: an unknown
+/// project is a 404, a directory outside both allowed roots a 400, and a run
+/// the door READ AND REFUSED (a stale round, numbers that disagree, an unknown
+/// slug, over 1 MiB) a 422 whose body is that same summary JSON, the reason in
+/// `refused`. A run already ingested is a 200 with `runsSkipped: 1`, so a
+/// replayed outbox entry is idempotent.
+///
+/// `personas_repo` is the checkout `.claude/master/` lives in; the route
+/// passes `companion::dev_mode::repo_root()`.
+pub fn ingest_council_run(
+    pool: &DbPool,
+    input: &CouncilIngestInput,
+    personas_repo: &Path,
+) -> Result<CouncilIngestSummary, DoorError> {
+    require_project(pool, &input.project_id)?;
+    let run_dir = input.run_dir.trim();
+    if run_dir.is_empty() {
+        return Err(DoorError::BadRequest("`runDir` must not be empty".into()));
+    }
+    let summary = council_ingest::ingest_council_runs_from(
+        pool,
+        &input.project_id,
+        Some(run_dir.to_string()),
+        personas_repo,
+    )?;
+    if !summary.refused.is_empty() {
+        let body = serde_json::to_string(&summary)
+            .map_err(|e| DoorError::Internal(format!("council ingest: summary: {e}")))?;
+        return Err(DoorError::Unprocessable(body));
+    }
+    Ok(summary)
+}
+
+// ============================================================================
+// POST /dev-tools/use-cases/{useCaseId}/tier
+// ============================================================================
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetTierInput {
+    /// `major` | `standard`. Only a major feature reaches the council's human
+    /// gate.
+    pub tier: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TierSet {
+    pub use_case_id: String,
+    pub tier: String,
+    /// For the route's council-changed emit; not part of the answer.
+    #[serde(skip)]
+    pub project_id: String,
+}
+
+/// `dev_tools_set_use_case_tier`'s body: an unknown tier is a 400, an unknown
+/// feature a 404.
+pub fn set_use_case_tier(
+    pool: &DbPool,
+    use_case_id: &str,
+    input: &SetTierInput,
+) -> Result<TierSet, DoorError> {
+    let updated = council::set_use_case_tier_checked(pool, use_case_id, input.tier.trim())?;
+    Ok(TierSet {
+        use_case_id: updated.id,
+        tier: updated.tier,
+        project_id: updated.project_id,
     })
 }
 
@@ -607,5 +696,148 @@ mod tests {
         ));
         let body: AssignWorkspaceInput = serde_json::from_str("{}").unwrap();
         assert!(body.workspace_id.is_none() && body.workspace_name.is_none());
+    }
+
+    fn council_project(pool: &DbPool) -> (String, std::path::PathBuf) {
+        let root = std::env::temp_dir().join(format!("doors-council-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(root.join(".personas").join("council").join("runs")).unwrap();
+        let id = crate::db::repos::dev::projects::create_project(
+            pool,
+            "council-app",
+            &root.to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .id;
+        (id, root)
+    }
+
+    fn run_dir(root: &std::path::Path, name: &str) -> std::path::PathBuf {
+        let dir = root
+            .join(".personas")
+            .join("council")
+            .join("runs")
+            .join(name);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn ingest(project_id: &str, dir: &std::path::Path) -> CouncilIngestInput {
+        CouncilIngestInput {
+            project_id: project_id.into(),
+            run_dir: dir.to_string_lossy().into_owned(),
+        }
+    }
+
+    #[test]
+    fn the_council_door_maps_each_refusal_to_its_status() {
+        let pool = init_test_db().unwrap();
+        let (project_id, root) = council_project(&pool);
+        let personas = root.join("personas-checkout");
+
+        let dir = run_dir(&root, "d-checkout-r1");
+        assert!(matches!(
+            ingest_council_run(&pool, &ingest("nope", &dir), &personas),
+            Err(DoorError::NotFound(_))
+        ));
+        let mut blank = ingest(&project_id, &dir);
+        blank.run_dir = "  ".into();
+        assert!(matches!(
+            ingest_council_run(&pool, &blank, &personas),
+            Err(DoorError::BadRequest(_))
+        ));
+        let outside = root.join("elsewhere");
+        std::fs::create_dir_all(&outside).unwrap();
+        assert!(matches!(
+            ingest_council_run(&pool, &ingest(&project_id, &outside), &personas),
+            Err(DoorError::BadRequest(_))
+        ));
+
+        // Read and refused: the body is the command's own summary JSON.
+        std::fs::write(dir.join("result.json"), "{ not json").unwrap();
+        match ingest_council_run(&pool, &ingest(&project_id, &dir), &personas) {
+            Err(DoorError::Unprocessable(body)) => {
+                let summary: CouncilIngestSummary = serde_json::from_str(&body).unwrap();
+                assert_eq!(summary.runs_ingested, 0);
+                assert_eq!(summary.refused.len(), 1, "{body}");
+                assert!(
+                    body.contains("runsIngested"),
+                    "camelCase like the command: {body}"
+                );
+            }
+            other => panic!("expected a 422, got {other:?}"),
+        }
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// An outbox replay of a run that already landed answers 200, not a
+    /// refusal: the marker the first ingest wrote is the idempotency spine.
+    #[test]
+    fn an_already_ingested_run_is_a_skip_not_a_refusal() {
+        let pool = init_test_db().unwrap();
+        let (project_id, root) = council_project(&pool);
+        let dir = run_dir(&root, "d-checkout-r1");
+        std::fs::write(dir.join("ingested.json"), "{}").unwrap();
+        let out = ingest_council_run(&pool, &ingest(&project_id, &dir), &root).unwrap();
+        assert_eq!(out.runs_skipped, 1);
+        assert_eq!(out.runs_ingested, 0);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn the_tier_door_sets_major_and_refuses_unknowns() {
+        let pool = init_test_db().unwrap();
+        let p = project(&pool, "ascent");
+        let uc = crate::db::repos::dev::use_cases::create_use_case(
+            &pool,
+            &p,
+            "Checkout",
+            None,
+            "capability",
+            None,
+            &[],
+            Some("active"),
+            "scan",
+            None,
+        )
+        .unwrap();
+        let out = set_use_case_tier(
+            &pool,
+            &uc.id,
+            &SetTierInput {
+                tier: "major".into(),
+            },
+        )
+        .unwrap();
+        assert_eq!(out.tier, "major");
+        assert_eq!(out.project_id, p);
+        assert_eq!(
+            serde_json::to_value(&out).unwrap(),
+            serde_json::json!({ "useCaseId": uc.id, "tier": "major" })
+        );
+        assert!(matches!(
+            set_use_case_tier(
+                &pool,
+                &uc.id,
+                &SetTierInput {
+                    tier: "epic".into()
+                }
+            ),
+            Err(DoorError::BadRequest(_))
+        ));
+        assert!(matches!(
+            set_use_case_tier(
+                &pool,
+                "no-such-feature",
+                &SetTierInput {
+                    tier: "major".into()
+                }
+            ),
+            Err(DoorError::NotFound(_))
+        ));
     }
 }

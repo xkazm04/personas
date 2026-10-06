@@ -3,7 +3,12 @@
 /**
  * One council round over one subject. Runs supersede, never rewrite.
  */
-export type CouncilRun = { id: string, subjectId: string, roundNo: number, supersedesRunId: string | null, 
+export type CouncilRun = { id: string, subjectId: string, 
+/**
+ * 'full' | 'lite'. Rounds are counted per mode: a lite round 1 and a full
+ * round 1 of one subject are two different runs.
+ */
+mode: string, roundNo: number, supersedesRunId: string | null, 
 /**
  * 'feature-v1' | 'architecture-v1'
  */

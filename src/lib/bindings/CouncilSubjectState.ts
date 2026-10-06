@@ -18,7 +18,13 @@ state: string,
 /**
  * 'major' | 'standard' for a use case; null for an architecture subject.
  */
-tier: string | null, roundNo: number | null, latestRunId: string | null, 
+tier: string | null, 
+/**
+ * 'full' | 'lite' - the mode of the run `state` was derived from: the
+ * newest FULL run, or the newest lite one while no full run exists. A lite
+ * run never supersedes a full one, and is never decided.
+ */
+mode: string | null, roundNo: number | null, latestRunId: string | null, 
 /**
  * 'ready' | 'fail' | 'incomplete' | 'stalled' - the latest run's own outcome.
  */

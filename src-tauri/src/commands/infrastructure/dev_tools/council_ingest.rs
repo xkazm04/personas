@@ -44,11 +44,12 @@ use crate::ipc_auth::require_auth;
 use crate::AppState;
 use personas_core::events::event_name;
 use personas_core::models::{
-    aggregate_scenarios, round4, rubric_for, CouncilIngestSummary, ScenarioAggregate,
-    ScenarioDeclaration, ScenarioReport, COUNCIL_CONFIDENCES, COUNCIL_COVERAGE_FLOOR,
-    COUNCIL_HARD_FAILURE_CODES, COUNCIL_MAX_ROUND, COUNCIL_NUMERIC_TOLERANCE, COUNCIL_OUTCOMES,
-    COUNCIL_RUBRIC_VERSIONS, COUNCIL_SUBJECT_KINDS, COUNCIL_TRUSTED_OVERALL, COUNCIL_TRUST_STATES,
-    COUNCIL_VERDICT_KINDS, COUNCIL_VERDICT_STATES, SCENARIO_PROOFS, SCENARIO_RESULT_STATES,
+    aggregate_scenarios, lite_skipped_dimensions, round4, rubric_for, CouncilIngestSummary,
+    ScenarioAggregate, ScenarioDeclaration, ScenarioReport, COUNCIL_CONFIDENCES,
+    COUNCIL_COVERAGE_FLOOR, COUNCIL_HARD_FAILURE_CODES, COUNCIL_MAX_ROUND, COUNCIL_MODES,
+    COUNCIL_NUMERIC_TOLERANCE, COUNCIL_OUTCOMES, COUNCIL_RUBRIC_VERSIONS, COUNCIL_SUBJECT_KINDS,
+    COUNCIL_TRUSTED_OVERALL, COUNCIL_TRUST_STATES, COUNCIL_VERDICT_KINDS, COUNCIL_VERDICT_STATES,
+    SCENARIO_PROOFS, SCENARIO_RESULT_STATES,
 };
 use personas_db::DbPool;
 
@@ -84,6 +85,14 @@ const MAX_AXIS_TEXT: usize = 200;
 struct CouncilResult {
     #[serde(default)]
     schema_version: Option<u32>,
+    /// `full` | `lite` (registry council 0.4.0). ABSENT means full: every
+    /// result written before lite existed is a full council.
+    #[serde(default)]
+    mode: Option<String>,
+    /// A lite result names the rubric rows it did not judge. Absent on a full
+    /// one, which skips nothing by design.
+    #[serde(default)]
+    skipped_dimensions: Option<Vec<String>>,
     #[serde(default)]
     run_id: String,
     subject: ResultSubject,
@@ -185,6 +194,8 @@ struct ResultDimension {
 /// door recomputed rather than the ones the file stated.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct ValidatedCouncilRun {
+    /// 'full' | 'lite'. `round_no` below is the round within this mode.
+    pub mode: String,
     pub kind: String,
     pub slug: String,
     pub title: String,
@@ -512,6 +523,55 @@ pub(crate) fn validate_council_result(
     // being silently replaced by the door's own answer.
     one_of(&result.outcome, &COUNCIL_OUTCOMES, "outcome")?;
 
+    let mode = match result.mode.as_deref() {
+        None => "full".to_string(),
+        Some(m) => one_of(m, &COUNCIL_MODES, "mode")?,
+    };
+    // Lite is one pass over a fixed subset of a FEATURE rubric. The scope is
+    // the app's, not the file's: `skipped_dimensions` must name exactly the
+    // rows the rubric's lite scope skips, so the scope of a review is stated
+    // rather than inferred from which rows happen to be empty.
+    let lite_skipped: &[&str] = match (mode.as_str(), result.skipped_dimensions.as_ref()) {
+        ("lite", skipped) => {
+            if kind != "use_case" {
+                return Err(AppError::Validation(
+                    "mode lite: only a use_case subject may be reviewed in lite - a redesign \
+                     goes to the full council"
+                        .into(),
+                ));
+            }
+            let Some(scope) = lite_skipped_dimensions(&rubric_version) else {
+                return Err(AppError::Validation(format!(
+                    "mode lite: rubric {rubric_version} has no lite scope"
+                )));
+            };
+            let Some(skipped) = skipped else {
+                return Err(AppError::Validation(
+                    "mode lite: skipped_dimensions must name the rows lite does not judge".into(),
+                ));
+            };
+            let mut theirs: Vec<&str> = skipped.iter().map(|s| s.trim()).collect();
+            theirs.sort_unstable();
+            let mut ours: Vec<&str> = scope.to_vec();
+            ours.sort_unstable();
+            if theirs != ours {
+                return Err(AppError::Validation(format!(
+                    "mode lite: skipped_dimensions must be exactly {} for {rubric_version}, found {theirs:?}",
+                    ours.join(", ")
+                )));
+            }
+            scope
+        }
+        (_, Some(_)) => {
+            return Err(AppError::Validation(
+                "skipped_dimensions belongs to a lite result only - the full council skips \
+                 nothing by design"
+                    .into(),
+            ))
+        }
+        (_, None) => &[],
+    };
+
     if result.round_no < 1 {
         return Err(AppError::Validation(format!(
             "round_no is {}; rounds start at 1",
@@ -520,7 +580,8 @@ pub(crate) fn validate_council_result(
     }
     if result.round_no != prior_round + 1 {
         return Err(AppError::Validation(format!(
-            "round_no is {} but this subject's last round was {prior_round} - \
+            "round_no is {} but this subject's last round was {prior_round} \
+             (counting {mode} rounds only) - \
              a council round is the next one or it is not a round",
             result.round_no
         )));
@@ -699,6 +760,22 @@ pub(crate) fn validate_council_result(
         });
     }
 
+    // A skipped row exists for this subject and nobody looked: it is
+    // `unmeasured` (so it stays in the coverage denominator - a complete lite
+    // pass over feature-v1 reads 0.70), never `not_applicable`, which would
+    // report coverage 1.0 and make a lite pass indistinguishable from a full
+    // council to any consumer that ignores `mode`.
+    for name in lite_skipped {
+        if let Some(v) = verdicts.iter().find(|v| v.dimension == *name) {
+            if v.state != "unmeasured" {
+                return Err(AppError::Validation(format!(
+                    "mode lite: {name} is skipped in lite and must be unmeasured, found `{}`",
+                    v.state
+                )));
+            }
+        }
+    }
+
     // Every dimension of the rubric, exactly once. A run that simply omitted
     // the member it could not reach would shrink its own denominator, which is
     // the cheapest way to fake coverage.
@@ -860,6 +937,7 @@ pub(crate) fn validate_council_result(
     }
 
     Ok(ValidatedCouncilRun {
+        mode,
         kind,
         slug,
         title,
@@ -932,17 +1010,51 @@ fn runs_root(root: &Path) -> PathBuf {
         .fold(root.to_path_buf(), |p, seg| p.join(seg))
 }
 
-/// Resolve one run dir, refusing anything outside the project's own runs tree.
-fn resolve_run_dir(root: &Path, run_dir: &str) -> Result<PathBuf, AppError> {
+/// Where the headless App Master keeps a DURABLE copy of a council run it
+/// dispatched: `<personas repo>/.claude/master/<slug>/headless/council/`, with
+/// `<slug>` the project root's last path segment (the skill addresses a
+/// project by it). The run dir in the project's own tree lives in a worktree
+/// that is gone by the time the outbox replays, so the copy is what reaches
+/// this door.
+fn headless_council_root(personas_repo: &Path, project_root: &Path) -> Option<PathBuf> {
+    let slug = project_root.file_name()?.to_str()?;
+    Some(HEADLESS_COUNCIL_REL.iter().fold(
+        personas_repo.join(".claude").join("master").join(slug),
+        |p, seg| p.join(seg),
+    ))
+}
+
+/// The durable copy sits under `<slug>/` + these.
+const HEADLESS_COUNCIL_REL: [&str; 2] = ["headless", "council"];
+
+/// Resolve one run dir, refusing anything outside the two trees a run may come
+/// from: the project's own `.personas/council/runs/`, and the headless App
+/// Master's durable copy for THIS project (`headless_council_root`). Nothing
+/// broader: another project's copies, the rest of `.claude/` and every other
+/// directory are refused. Everything after this (the 1 MiB cap, the slug, the
+/// recomputation) applies to both alike.
+fn resolve_run_dir(root: &Path, personas_repo: &Path, run_dir: &str) -> Result<PathBuf, AppError> {
     let canon = PathBuf::from(run_dir)
         .canonicalize()
         .map_err(|e| AppError::Validation(format!("Run dir not readable: {e}")))?;
-    let canon_root = runs_root(root).canonicalize().map_err(|_| {
-        AppError::Validation("No .personas/council/runs directory in this repo yet".into())
-    })?;
-    if !canon.starts_with(&canon_root) {
+    let allowed: Vec<PathBuf> = [
+        Some(runs_root(root)),
+        headless_council_root(personas_repo, root),
+    ]
+    .into_iter()
+    .flatten()
+    .filter_map(|p| p.canonicalize().ok())
+    .collect();
+    if allowed.is_empty() {
         return Err(AppError::Validation(
-            "Run dir must be inside the project's .personas/council/runs/".into(),
+            "No .personas/council/runs directory in this repo yet".into(),
+        ));
+    }
+    if !allowed.iter().any(|a| canon.starts_with(a) && canon != *a) {
+        return Err(AppError::Validation(
+            "Run dir must be inside the project's .personas/council/runs/ or the headless \
+             App Master's .claude/master/<project>/headless/council/"
+                .into(),
         ));
     }
     Ok(canon)
@@ -983,17 +1095,35 @@ pub(crate) fn emit_council_changed(app: &AppHandle, project_id: &str) {
     }
 }
 
-/// Body of [`dev_tools_council_ingest`], minus the IPC envelope.
+/// Body of [`dev_tools_council_ingest`], minus the IPC envelope. The durable
+/// headless root is resolved against the source checkout this binary was built
+/// from (`companion::dev_mode::repo_root`), where `.claude/master/` lives.
 pub(crate) fn ingest_council_runs(
     pool: &DbPool,
     project_id: &str,
     run_dir: Option<String>,
 ) -> Result<CouncilIngestSummary, AppError> {
+    ingest_council_runs_from(
+        pool,
+        project_id,
+        run_dir,
+        &crate::companion::dev_mode::repo_root(),
+    )
+}
+
+/// [`ingest_council_runs`] with the Personas checkout named, so the durable
+/// root can be exercised against a scratch tree.
+pub(crate) fn ingest_council_runs_from(
+    pool: &DbPool,
+    project_id: &str,
+    run_dir: Option<String>,
+    personas_repo: &Path,
+) -> Result<CouncilIngestSummary, AppError> {
     let project = repo::get_project_by_id(pool, project_id)?;
     let root = PathBuf::from(&project.root_path);
 
     let dirs: Vec<PathBuf> = match run_dir {
-        Some(d) => vec![resolve_run_dir(&root, &d)?],
+        Some(d) => vec![resolve_run_dir(&root, personas_repo, &d)?],
         None => crate::commands::infrastructure::skill_runs::ingestable_runs_oldest_first(
             &runs_root(&root),
         ),
@@ -1060,6 +1190,9 @@ fn ingest_one_run(pool: &DbPool, project_id: &str, dir: &Path) -> Result<bool, A
         .map_err(|e| AppError::Validation(format!("result.json is not valid: {e}")))?;
     let kind = one_of(&peek.subject.kind, &COUNCIL_SUBJECT_KINDS, "subject.kind")?;
     let slug = bounded(&peek.subject.slug, 200, "subject.slug")?;
+    // The round count is per mode; an unknown mode finds no prior round here
+    // and is refused by the validation below with its own message.
+    let mode = peek.mode.as_deref().map(str::trim).unwrap_or("full");
     let use_case_id = if kind == "use_case" {
         Some(
             repo::list_use_cases(pool, project_id, None)?
@@ -1088,7 +1221,7 @@ fn ingest_one_run(pool: &DbPool, project_id: &str, dir: &Path) -> Result<bool, A
         .ok()
     };
     let prior_round = match existing.as_deref() {
-        Some(id) => council_repo::latest_run(pool, id)?
+        Some(id) => council_repo::latest_run_in_mode(pool, id, mode)?
             .map(|r| r.round_no)
             .unwrap_or(0),
         None => 0,
@@ -1162,12 +1295,16 @@ fn ingest_one_run(pool: &DbPool, project_id: &str, dir: &Path) -> Result<bool, A
         &validated.title,
         use_case_id.as_deref(),
     )?;
-    let supersedes = council_repo::latest_run(pool, &subject.id)?.map(|r| r.id);
+    // Supersede within the mode: a lite round follows the lite chain and a
+    // full round the full one, so neither ever supersedes the other.
+    let supersedes =
+        council_repo::latest_run_in_mode(pool, &subject.id, &validated.mode)?.map(|r| r.id);
 
     let run = council_repo::insert_run_full(
         pool,
         &council_repo::NewRun {
             subject_id: subject.id.clone(),
+            mode: validated.mode.clone(),
             round_no: validated.round_no,
             // Taken from the LEDGER, not from the file: the file's
             // `supersedes_run_id` is the skill's own run id, which is not the
@@ -1197,6 +1334,7 @@ fn ingest_one_run(pool: &DbPool, project_id: &str, dir: &Path) -> Result<bool, A
         "schema_version": COUNCIL_RESULT_VERSION,
         "subject_id": subject.id,
         "run_id": run.id,
+        "mode": run.mode,
         "round_no": run.round_no,
         "outcome": run.outcome,
     });
@@ -2278,6 +2416,266 @@ mod door_tests {
         .to_string();
         assert!(err.contains("must be inside"), "{err}");
 
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    // ── lite and full: two round counts, one door ─────────────────────────
+
+    /// A complete lite pass over feature-v1: value, craft and robustness
+    /// judged; rivalry and economics carried as unmeasured. Coverage is over
+    /// the WHOLE rubric, so it reads 0.70, and overall is the mean over the
+    /// three rows actually scored.
+    fn lite_json(run_id: &str, slug: &str, round: i64) -> String {
+        let mut v = super::tests::good_result();
+        v["run_id"] = json!(run_id);
+        v["subject"]["slug"] = json!(slug);
+        v["round_no"] = json!(round);
+        v["mode"] = json!("lite");
+        v["skipped_dimensions"] = json!(["rivalry", "economics"]);
+        v["dimensions"][2] = super::tests::dim("rivalry", "judged", "unmeasured", None);
+        v["dimensions"][4] = super::tests::dim("economics", "mechanical", "unmeasured", None);
+        // (.30*.8 + .25*.6 + .15*.7) / .70 = .495 / .70
+        v["overall"] = json!(round4(0.495 / 0.70));
+        v["coverage"] = json!(0.7);
+        v["outcome"] = json!(if round > 3 { "stalled" } else { "ready" });
+        v.to_string()
+    }
+
+    fn runs_of(pool: &DbPool, project_id: &str) -> Vec<(String, i32, String)> {
+        let states = council_repo::list_subject_states(pool, Some(project_id)).unwrap();
+        let conn = pool.get().unwrap();
+        let mut stmt = conn
+            .prepare(
+                "SELECT mode, round_no, outcome FROM dev_council_runs WHERE subject_id = ?1
+                 ORDER BY mode, round_no",
+            )
+            .unwrap();
+        let rows = stmt
+            .query_map([&states[0].id], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+            .unwrap();
+        rows.collect::<Result<Vec<_>, _>>().unwrap()
+    }
+
+    #[test]
+    fn a_lite_round_1_and_then_a_full_round_1_both_ingest() {
+        let tmp = tmp_root("lite-full");
+        let (pool, project_id) = seeded(&tmp);
+        write_run(
+            &tmp,
+            "d-checkout-lite-r1",
+            &lite_json("d-checkout-lite-r1", "checkout", 1),
+        );
+        let s = ingest_council_runs(&pool, &project_id, None).unwrap();
+        assert!(s.refused.is_empty(), "{:?}", s.refused);
+        assert_eq!(s.runs_ingested, 1);
+
+        write_run(
+            &tmp,
+            "d-checkout-r1",
+            &result_json("d-checkout-r1", "checkout", 1),
+        );
+        let s = ingest_council_runs(&pool, &project_id, None).unwrap();
+        assert!(
+            s.refused.is_empty(),
+            "the full round 1 after a lite one: {:?}",
+            s.refused
+        );
+        assert_eq!(s.runs_ingested, 1);
+
+        assert_eq!(
+            runs_of(&pool, &project_id),
+            vec![
+                ("full".to_string(), 1, "ready".to_string()),
+                ("lite".to_string(), 1, "ready".to_string()),
+            ]
+        );
+        let state = &council_repo::list_subject_states(&pool, Some(&project_id)).unwrap()[0];
+        assert_eq!(state.mode.as_deref(), Some("full"), "the full run governs");
+        let full = council_repo::latest_run_in_mode(&pool, &state.id, "full")
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            full.supersedes_run_id, None,
+            "a full round 1 supersedes no lite run"
+        );
+        let lite = council_repo::latest_run_in_mode(&pool, &state.id, "lite")
+            .unwrap()
+            .unwrap();
+        assert!((lite.coverage - 0.7).abs() < 1e-9, "{}", lite.coverage);
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    /// The round cap is per mode: a fourth LITE round stalls, and the full
+    /// council's count is untouched by it.
+    #[test]
+    fn a_lite_round_4_stalls_without_touching_the_full_count() {
+        let tmp = tmp_root("lite-stall");
+        let (pool, project_id) = seeded(&tmp);
+        write_run(
+            &tmp,
+            "d-checkout-r1",
+            &result_json("d-checkout-r1", "checkout", 1),
+        );
+        ingest_council_runs(&pool, &project_id, None).unwrap();
+        for round in 1..=4 {
+            let name = format!("d-checkout-lite-r{round}");
+            write_run(&tmp, &name, &lite_json(&name, "checkout", round));
+            let s = ingest_council_runs(&pool, &project_id, None).unwrap();
+            assert!(s.refused.is_empty(), "lite r{round}: {:?}", s.refused);
+        }
+        assert_eq!(
+            runs_of(&pool, &project_id),
+            vec![
+                ("full".to_string(), 1, "ready".to_string()),
+                ("lite".to_string(), 1, "ready".to_string()),
+                ("lite".to_string(), 2, "ready".to_string()),
+                ("lite".to_string(), 3, "ready".to_string()),
+                ("lite".to_string(), 4, "stalled".to_string()),
+            ]
+        );
+        let state = &council_repo::list_subject_states(&pool, Some(&project_id)).unwrap()[0];
+        assert_eq!(
+            state.round_no,
+            Some(1),
+            "the full council is still on round 1"
+        );
+        assert_eq!(state.outcome.as_deref(), Some("ready"));
+
+        // ...and the full round 2 is the next full round, not round 6.
+        write_run(
+            &tmp,
+            "d-checkout-r2",
+            &result_json("d-checkout-r2", "checkout", 2),
+        );
+        let s = ingest_council_runs(&pool, &project_id, None).unwrap();
+        assert!(s.refused.is_empty(), "{:?}", s.refused);
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn the_lite_shape_is_held_to_its_scope() {
+        let lite = |f: &dyn Fn(&mut serde_json::Value)| {
+            let mut v: serde_json::Value =
+                serde_json::from_str(&lite_json("2026-09-20-1200", "checkout", 1)).unwrap();
+            f(&mut v);
+            validate_council_result(&v.to_string(), "2026-09-20-1200", 0, &[])
+        };
+        let ok = lite(&|_| {}).unwrap();
+        assert_eq!(ok.mode, "lite");
+        assert!((ok.coverage - 0.7).abs() < 1e-9);
+
+        let err = lite(&|v| v["skipped_dimensions"] = json!(["rivalry"])).unwrap_err();
+        assert!(err.to_string().contains("exactly"), "{err}");
+        let err = lite(&|v| {
+            v.as_object_mut().unwrap().remove("skipped_dimensions");
+        })
+        .unwrap_err();
+        assert!(err.to_string().contains("skipped_dimensions"), "{err}");
+        let err = lite(&|v| v["mode"] = json!("partial")).unwrap_err();
+        assert!(err.to_string().contains("mode"), "{err}");
+
+        // A skipped row written as not_applicable would read coverage 1.0.
+        let err = lite(&|v| {
+            v["dimensions"][2] = super::tests::dim("rivalry", "judged", "not_applicable", None);
+            v["coverage"] = json!(1.0);
+        })
+        .unwrap_err();
+        assert!(err.to_string().contains("must be unmeasured"), "{err}");
+
+        // A full result may not name skipped rows; an absent mode is full.
+        let mut full = super::tests::good_result();
+        full["skipped_dimensions"] = json!([]);
+        assert!(validate_council_result(&full.to_string(), "2026-09-20-1200", 0, &[]).is_err());
+        let plain = validate_council_result(
+            &super::tests::good_result().to_string(),
+            "2026-09-20-1200",
+            0,
+            &[],
+        )
+        .unwrap();
+        assert_eq!(plain.mode, "full");
+    }
+
+    /// The headless App Master's durable copy is the second accepted root -
+    /// for THIS project's slug only - and everything else is still refused.
+    #[test]
+    fn a_durable_headless_copy_ingests_and_an_arbitrary_dir_is_refused() {
+        let tmp = tmp_root("durable");
+        let project_root = tmp.join("checkout-app");
+        std::fs::create_dir_all(&project_root).unwrap();
+        let (pool, project_id) = seeded(&project_root);
+        // The project's own runs tree exists, so a refusal below is about
+        // WHERE the dir is, not about there being no tree to compare against.
+        std::fs::create_dir_all(runs_root(&project_root)).unwrap();
+        let personas = tmp.join("personas");
+        let slug = "checkout-app";
+
+        let copy = |owner: &str, name: &str| -> PathBuf {
+            let dir = personas
+                .join(".claude")
+                .join("master")
+                .join(owner)
+                .join("headless")
+                .join("council")
+                .join(name);
+            std::fs::create_dir_all(&dir).unwrap();
+            std::fs::write(dir.join("result.json"), result_json(name, "checkout", 1)).unwrap();
+            dir
+        };
+
+        // Another project's copy, and a run dir outside both trees.
+        let foreign = copy("someone-else", "d-checkout-r1");
+        let err = ingest_council_runs_from(
+            &pool,
+            &project_id,
+            Some(foreign.to_string_lossy().into_owned()),
+            &personas,
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("must be inside"), "{err}");
+        let loose = tmp.join("loose").join("d-checkout-r1");
+        std::fs::create_dir_all(&loose).unwrap();
+        std::fs::write(
+            loose.join("result.json"),
+            result_json("d-checkout-r1", "checkout", 1),
+        )
+        .unwrap();
+        let err = ingest_council_runs_from(
+            &pool,
+            &project_id,
+            Some(loose.to_string_lossy().into_owned()),
+            &personas,
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("must be inside"), "{err}");
+
+        // This project's durable copy lands, with every other check intact.
+        let durable = copy(slug, "d-checkout-r1");
+        let s = ingest_council_runs_from(
+            &pool,
+            &project_id,
+            Some(durable.to_string_lossy().into_owned()),
+            &personas,
+        )
+        .unwrap();
+        assert_eq!(s.runs_ingested, 1, "{:?}", s.refused);
+        assert!(durable.join("ingested.json").is_file());
+
+        // The project's own runs tree still works beside it.
+        write_run(
+            &project_root,
+            "d-checkout-r2",
+            &result_json("d-checkout-r2", "checkout", 2),
+        );
+        let own = runs_root(&project_root).join("d-checkout-r2");
+        let s = ingest_council_runs_from(
+            &pool,
+            &project_id,
+            Some(own.to_string_lossy().into_owned()),
+            &personas,
+        )
+        .unwrap();
+        assert_eq!(s.runs_ingested, 1, "{:?}", s.refused);
         let _ = std::fs::remove_dir_all(&tmp);
     }
 
