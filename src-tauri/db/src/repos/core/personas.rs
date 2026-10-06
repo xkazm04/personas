@@ -34,6 +34,12 @@ static DECRYPTION_FAILURE_COUNT: AtomicU64 = AtomicU64::new(0);
 /// Below this (but > 0) the persona is "degraded"; exactly 0 is "healthy".
 const HEALTH_FAILING_RATIO: f64 = 0.6;
 
+/// How many of a persona's most recent outcomes the health read keeps, and the
+/// bound on the per-persona seek that fetches them. Mirrored in the
+/// simulation's `simCards.ts` ("How many recent outcomes the backend keeps per
+/// persona").
+const RECENT_OUTCOME_WINDOW: usize = 10;
+
 /// Trust score component weights (must sum to 100).
 const TRUST_W_SUCCESS: f64 = 50.0;
 const TRUST_W_COST: f64 = 20.0;
@@ -1527,10 +1533,25 @@ pub fn update_name(pool: &DbPool, id: &str, name: &str) -> Result<(), AppError> 
     })
 }
 
-/// Batch-fetch sidebar summary data (enabled trigger count + last execution time + health)
-/// for all personas in a single CTE query, eliminating the N+1 per-persona health pattern.
-/// Previously ran 3 queries per persona (recent statuses, runs today, 7-day sparkline);
-/// now uses 1 base query + 3 batched queries across all personas.
+/// Sidebar/Monitor summary data (enabled trigger count + last execution time +
+/// health) for every persona.
+///
+/// Three reads, and the middle one is deliberately per-persona:
+///  1. one batched base query (trigger counts + last run) for the whole fleet;
+///  2. one bounded `LIMIT 10` seek PER PERSONA THAT HAS EVER RUN for the recent
+///     outcome window - see the comment on it for why this beats the
+///     `ROW_NUMBER() OVER (PARTITION BY ...)` CTE over the whole table that it
+///     replaced. It is an N+1 by shape and a constant by cost: each seek walks
+///     ten entries of `idx_pe_persona_created_id` and stops;
+///  3. one batched query for runs-today and the 7-day sparkline.
+///
+/// Measured 2026-10-06 (`summary_read_cost_against_the_window_function`, an
+/// `#[ignore]`d stopwatch in this file's tests, debug build): at 40 personas
+/// the recent-outcome read went 3.2 -> 169.5 ms across 2k -> 100k executions
+/// under the window function, and 3.0 -> 7.2 ms under the bounded seek. The
+/// rest of `get_summaries` (the two date-filtered aggregates in step 3) is
+/// what dominates the remaining ~70 ms at 100k rows; no index candidate
+/// improved it (see the WP5 notes on `the_recent_window_seeks_an_index_...`).
 #[instrument(skip(pool))]
 pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
     timed_query!("personas", "personas::get_summaries", {
@@ -1574,18 +1595,53 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
         let base_rows: Vec<(String, i64, Option<String>)> =
             collect_rows(base_rows, "personas::get_summaries/base_rows");
 
-        // Query 2: Combined CTE for recent statuses, runs-today, and 7-day sparkline
-        // Single scan of persona_executions instead of 3 separate queries.
-        let mut combined_stmt = conn.prepare_cached(
-            "WITH ranked AS (
-             SELECT persona_id, status, created_at,
-                    ROW_NUMBER() OVER (PARTITION BY persona_id ORDER BY created_at DESC) AS rn
+        // Query 2: the recent-outcome window, bounded.
+        //
+        // This used to be a `ROW_NUMBER() OVER (PARTITION BY persona_id ORDER
+        // BY created_at DESC)` CTE over the WHOLE of `persona_executions`,
+        // filtered to `rn <= 10` afterwards. Ranking every execution ever run
+        // to keep ten per persona is the unbounded shape: its cost grows with
+        // the history, not with the fleet. Here the bound is explicit -
+        // `LIMIT RECENT_OUTCOME_WINDOW` per persona, seeking
+        // `idx_pe_persona_created_id (persona_id, created_at DESC, id DESC)`,
+        // so the rows read are at most 10 x (personas that have ever run),
+        // independent of how long the fleet has been running.
+        //
+        // `ORDER BY created_at DESC, id DESC` is the index's own order and the
+        // `id` tiebreak that `e20_persona_run_paging_index` added for exactly
+        // this reason. The window function had no tiebreak, so which ten rows
+        // it kept on a `created_at` tie was undefined; this is a
+        // determinization of that, not a change of defined behaviour.
+        // Newest-first is load-bearing downstream: `monitorModel.ts` reads
+        // `recentStatuses[0]` as the latest outcome.
+        let mut recent_stmt = conn.prepare_cached(
+            "SELECT status
              FROM persona_executions
-         ),
-         recent AS (
-             SELECT persona_id, status FROM ranked WHERE rn <= 10
-         ),
-         today AS (
+             WHERE persona_id = ?1
+             ORDER BY created_at DESC, id DESC
+             LIMIT ?2",
+        )?;
+        let mut recent_map: std::collections::HashMap<String, Vec<String>> =
+            std::collections::HashMap::with_capacity(base_rows.len());
+        for (persona_id, _, last_run_at) in &base_rows {
+            // No last run means no execution rows at all - skip the seek.
+            if last_run_at.is_none() {
+                continue;
+            }
+            let rows = recent_stmt
+                .query_map(params![persona_id, RECENT_OUTCOME_WINDOW as i64], |row| {
+                    row.get::<_, String>("status")
+                })?;
+            let statuses: Vec<String> = collect_rows(rows, "personas::get_summaries/recent");
+            if !statuses.is_empty() {
+                recent_map.insert(persona_id.clone(), statuses);
+            }
+        }
+
+        // Query 3: runs-today and the 7-day sparkline in one scan.
+        // Both are date-filtered; neither is per-persona, so they stay batched.
+        let mut combined_stmt = conn.prepare_cached(
+            "WITH today AS (
              SELECT persona_id, COUNT(*) AS cnt
              FROM persona_executions
              WHERE created_at >= ?1
@@ -1597,27 +1653,22 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
              WHERE created_at >= ?2
              GROUP BY persona_id, DATE(created_at)
          )
-         SELECT 'R' AS kind, persona_id, status AS val, NULL AS day, 0 AS cnt FROM recent
+         SELECT 'T' AS kind, persona_id, NULL AS day, cnt FROM today
          UNION ALL
-         SELECT 'T' AS kind, persona_id, NULL AS val, NULL AS day, cnt FROM today
-         UNION ALL
-         SELECT 'S' AS kind, persona_id, NULL AS val, day, cnt FROM sparkline",
+         SELECT 'S' AS kind, persona_id, day, cnt FROM sparkline",
         )?;
-        // Every branch of the UNION names the same five columns —
-        // kind / persona_id / val / day / cnt — which is what makes a by-name
-        // read work across all three.
+        // Both branches of the UNION name the same four columns —
+        // kind / persona_id / day / cnt — which is what makes a by-name
+        // read work across both.
         let combined_rows = combined_stmt.query_map(params![today_start, week_ago], |row| {
             Ok((
                 row.get::<_, String>("kind")?,
                 row.get::<_, String>("persona_id")?,
-                row.get::<_, Option<String>>("val")?,
                 row.get::<_, Option<String>>("day")?,
                 row.get::<_, i64>("cnt")?,
             ))
         })?;
 
-        let mut recent_map: std::collections::HashMap<String, Vec<String>> =
-            std::collections::HashMap::new();
         let mut today_map: std::collections::HashMap<String, i64> =
             std::collections::HashMap::new();
         let mut spark_map: std::collections::HashMap<
@@ -1625,15 +1676,9 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
             std::collections::HashMap<String, i64>,
         > = std::collections::HashMap::new();
 
-        for (kind, pid, val, day, cnt) in
-            collect_rows(combined_rows, "personas::get_summaries/combined")
+        for (kind, pid, day, cnt) in collect_rows(combined_rows, "personas::get_summaries/combined")
         {
             match kind.as_str() {
-                "R" => {
-                    if let Some(status) = val {
-                        recent_map.entry(pid).or_default().push(status);
-                    }
-                }
                 "T" => {
                     today_map.insert(pid, cnt);
                 }
@@ -2536,6 +2581,306 @@ mod tests {
             let sql = format!("SELECT {columns} FROM personas LIMIT 0");
             conn.prepare(&sql)
                 .unwrap_or_else(|e| panic!("personas projection does not match schema: {e}"));
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // get_summaries: the bounded recent-outcome window (WP5)
+    // ---------------------------------------------------------------
+
+    /// Fixture fleet: `personas` personas, `runs_each` executions apiece, every
+    /// `created_at` distinct so neither the old window function nor the new
+    /// `(created_at DESC, id DESC)` seek has a tie to break arbitrarily.
+    /// Statuses cycle so health lands on every branch across the fleet.
+    fn seed_summary_fixture(pool: &DbPool, personas: usize, runs_each: usize) {
+        const STATUSES: [&str; 4] = ["completed", "failed", "completed", "cancelled"];
+        let mut conn = pool.conn("tests::seed_summary_fixture").unwrap();
+        // One transaction for the whole fixture: the measurement below seeds
+        // 100k rows and autocommit makes the SEED the thing being timed.
+        let conn = conn.transaction().unwrap();
+        for p in 0..personas {
+            let pid = format!("p{p:04}");
+            conn.execute(
+                "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+                 VALUES (?1, ?2, 'sp', datetime('now'), datetime('now'))",
+                params![pid, format!("Persona {p}")],
+            )
+            .unwrap();
+            for r in 0..runs_each {
+                // Distinct second per run, newest last; spread far enough back
+                // that the today / 7-day-sparkline aggregates see a real mix.
+                let created = (chrono::Utc::now()
+                    - chrono::Duration::seconds((runs_each - r) as i64 * 97))
+                .to_rfc3339();
+                conn.execute(
+                    "INSERT INTO persona_executions (id, persona_id, status, created_at)
+                     VALUES (?1, ?2, ?3, ?4)",
+                    params![
+                        format!("{pid}-e{r:06}"),
+                        pid,
+                        STATUSES[(p + r) % STATUSES.len()],
+                        created
+                    ],
+                )
+                .unwrap();
+            }
+        }
+        conn.commit().unwrap();
+    }
+
+    /// The pre-WP5 recent-outcome read, verbatim: rank EVERY execution with
+    /// `ROW_NUMBER() OVER (PARTITION BY persona_id ORDER BY created_at DESC)`
+    /// and keep `rn <= 10`. Kept here as the reference the bounded seek is
+    /// asserted against - if the two ever disagree on a tie-free fixture, the
+    /// bound changed behaviour.
+    fn legacy_recent_map(pool: &DbPool) -> std::collections::HashMap<String, Vec<String>> {
+        let conn = pool.conn("tests::legacy_recent_map").unwrap();
+        let mut stmt = conn
+            .prepare(
+                "WITH ranked AS (
+                     SELECT persona_id, status, created_at,
+                            ROW_NUMBER() OVER (PARTITION BY persona_id ORDER BY created_at DESC) AS rn
+                     FROM persona_executions
+                 )
+                 SELECT persona_id, status FROM ranked WHERE rn <= 10",
+            )
+            .unwrap();
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, String>("persona_id")?,
+                    row.get::<_, String>("status")?,
+                ))
+            })
+            .unwrap();
+        let mut map: std::collections::HashMap<String, Vec<String>> =
+            std::collections::HashMap::new();
+        for r in rows {
+            let (pid, status) = r.unwrap();
+            map.entry(pid).or_default().push(status);
+        }
+        map
+    }
+
+    /// The WP5 shape in isolation, so the measurement can attribute the saving
+    /// to the bound rather than to the rest of `get_summaries`.
+    fn bounded_recent_map(pool: &DbPool) -> std::collections::HashMap<String, Vec<String>> {
+        let conn = pool.conn("tests::bounded_recent_map").unwrap();
+        let ids: Vec<String> = {
+            let mut stmt = conn.prepare("SELECT id FROM personas").unwrap();
+            let rows = stmt.query_map([], |r| r.get::<_, String>("id")).unwrap();
+            rows.map(Result::unwrap).collect()
+        };
+        let mut stmt = conn
+            .prepare_cached(
+                "SELECT status FROM persona_executions WHERE persona_id = ?1
+                 ORDER BY created_at DESC, id DESC LIMIT ?2",
+            )
+            .unwrap();
+        let mut map = std::collections::HashMap::new();
+        for pid in ids {
+            let statuses: Vec<String> = stmt
+                .query_map(params![pid, RECENT_OUTCOME_WINDOW as i64], |r| {
+                    r.get::<_, String>("status")
+                })
+                .unwrap()
+                .map(Result::unwrap)
+                .collect();
+            map.insert(pid, statuses);
+        }
+        map
+    }
+
+    /// Acceptance 2: the returned shape is identical for a fixture fleet. The
+    /// comparison is at the WIRE level (serde), not on the Rust structs, so it
+    /// covers key names and JSON types as well as values - and it is exactly
+    /// what the IPC caller receives.
+    #[test]
+    fn the_bounded_summary_read_matches_the_window_function_it_replaced() {
+        let pool = init_test_db().unwrap();
+        seed_summary_fixture(&pool, 12, 25);
+
+        let summaries = get_summaries(&pool).unwrap();
+        let legacy = legacy_recent_map(&pool);
+        assert_eq!(summaries.len(), 12);
+
+        for s in &summaries {
+            let expected = legacy
+                .get(&s.persona_id)
+                .unwrap_or_else(|| panic!("legacy has no row for {}", s.persona_id));
+            assert_eq!(
+                &s.health.recent_statuses, expected,
+                "recent_statuses diverged for {} (bounded seek vs ROW_NUMBER)",
+                s.persona_id
+            );
+            // Every derived health field is computed from recent_statuses, so
+            // equality above pins them - assert the wire shape explicitly.
+            let json = serde_json::to_value(s).unwrap();
+            let obj = json.as_object().unwrap();
+            let mut keys: Vec<&str> = obj.keys().map(String::as_str).collect();
+            keys.sort_unstable();
+            assert_eq!(
+                keys,
+                ["enabledTriggerCount", "health", "lastRunAt", "personaId"]
+            );
+            let mut hkeys: Vec<&str> = obj["health"]
+                .as_object()
+                .unwrap()
+                .keys()
+                .map(String::as_str)
+                .collect();
+            hkeys.sort_unstable();
+            assert_eq!(
+                hkeys,
+                [
+                    "recentStatuses",
+                    "runsToday",
+                    "sparkline",
+                    "status",
+                    "successRate",
+                    "totalRecent"
+                ]
+            );
+            assert_eq!(obj["health"]["sparkline"].as_array().unwrap().len(), 7);
+        }
+    }
+
+    /// Acceptance 3: the bound. Ten rows per persona, newest first - the order
+    /// `monitorModel.ts` depends on when it reads `recentStatuses[0]` as the
+    /// latest outcome.
+    #[test]
+    fn the_recent_window_is_ten_rows_per_persona_newest_first() {
+        let pool = init_test_db().unwrap();
+        seed_summary_fixture(&pool, 3, 40);
+
+        let summaries = get_summaries(&pool).unwrap();
+        for s in &summaries {
+            assert_eq!(
+                s.health.recent_statuses.len(),
+                RECENT_OUTCOME_WINDOW,
+                "{} kept {} outcomes, not the window",
+                s.persona_id,
+                s.health.recent_statuses.len()
+            );
+            assert_eq!(s.health.total_recent, RECENT_OUTCOME_WINDOW as i64);
+
+            // Newest first: pull the same persona's ten newest directly.
+            let conn = pool.conn("tests::newest_first").unwrap();
+            let mut stmt = conn
+                .prepare(
+                    "SELECT status FROM persona_executions WHERE persona_id = ?1
+                     ORDER BY created_at DESC, id DESC LIMIT 10",
+                )
+                .unwrap();
+            let newest: Vec<String> = stmt
+                .query_map(params![s.persona_id], |r| r.get::<_, String>("status"))
+                .unwrap()
+                .map(Result::unwrap)
+                .collect();
+            assert_eq!(s.health.recent_statuses, newest);
+        }
+    }
+
+    /// A persona that has never run keeps the dormant shape, and costs no seek
+    /// at all - the read skips personas whose `last_run_at` is NULL.
+    #[test]
+    fn a_persona_that_never_ran_is_dormant_with_an_empty_window() {
+        let pool = init_test_db().unwrap();
+        seed_summary_fixture(&pool, 1, 3);
+        pool.conn("tests::idle_persona")
+            .unwrap()
+            .execute(
+                "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+                 VALUES ('idle', 'Idle', 'sp', datetime('now'), datetime('now'))",
+                [],
+            )
+            .unwrap();
+
+        let summaries = get_summaries(&pool).unwrap();
+        let idle = summaries.iter().find(|s| s.persona_id == "idle").unwrap();
+        assert!(matches!(idle.health.status, HealthStatus::Dormant));
+        assert!(idle.health.recent_statuses.is_empty());
+        assert_eq!(idle.health.total_recent, 0);
+        assert_eq!(idle.health.success_rate, 0.0);
+        assert_eq!(idle.health.sparkline, vec![0; 7]);
+        assert!(idle.last_run_at.is_none());
+    }
+
+    /// The bound is STRUCTURAL, not just a LIMIT: SQLite must satisfy the
+    /// recent-outcome read by seeking `idx_pe_persona_created_id`, never by
+    /// scanning `persona_executions` or sorting it into a temp b-tree. A plan
+    /// that scans would make the "ten rows per persona" claim false the moment
+    /// the history grew.
+    #[test]
+    fn the_recent_window_seeks_an_index_and_never_scans() {
+        let pool = init_test_db().unwrap();
+        seed_summary_fixture(&pool, 2, 5);
+        let conn = pool.conn("tests::explain_recent_window").unwrap();
+        let mut stmt = conn
+            .prepare(
+                "EXPLAIN QUERY PLAN
+                 SELECT status FROM persona_executions WHERE persona_id = ?1
+                 ORDER BY created_at DESC, id DESC LIMIT ?2",
+            )
+            .unwrap();
+        let plan: Vec<String> = stmt
+            .query_map(params!["p0000", 10i64], |r| r.get::<_, String>("detail"))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect();
+        let plan = plan.join(" | ");
+        assert!(
+            plan.contains("USING INDEX idx_pe_persona_created_id"),
+            "recent-outcome read no longer seeks the paging index: {plan}"
+        );
+        assert!(
+            !plan.contains("SCAN persona_executions"),
+            "recent-outcome read fell back to a table scan: {plan}"
+        );
+        assert!(
+            !plan.contains("TEMP B-TREE"),
+            "recent-outcome read sorts instead of walking the index: {plan}"
+        );
+    }
+
+    /// Not a gate - a stopwatch. `cargo test -p personas-db -- --ignored
+    /// summary_read_cost --nocapture` prints the bounded read's wall time
+    /// against the `ROW_NUMBER`-over-everything shape it replaced, on a fleet
+    /// whose history is large enough for the difference to be the history and
+    /// not the noise. Ignored by default: a timing assertion on a shared
+    /// Windows checkout is a flake, and the honest artefact is the number, not
+    /// a threshold.
+    #[test]
+    #[ignore = "measurement, not an assertion - run with --ignored --nocapture"]
+    fn summary_read_cost_against_the_window_function() {
+        for (personas, runs_each) in [(40usize, 50usize), (40, 500), (40, 2500)] {
+            let pool = init_test_db().unwrap();
+            seed_summary_fixture(&pool, personas, runs_each);
+            let rows = personas * runs_each;
+
+            let t = Instant::now();
+            let legacy = legacy_recent_map(&pool);
+            let legacy_ms = t.elapsed().as_secs_f64() * 1000.0;
+
+            let t = Instant::now();
+            let bounded = bounded_recent_map(&pool);
+            let bounded_ms = t.elapsed().as_secs_f64() * 1000.0;
+
+            let t = Instant::now();
+            let summaries = get_summaries(&pool).unwrap();
+            let whole_ms = t.elapsed().as_secs_f64() * 1000.0;
+
+            // Same answer at every size, or the numbers below mean nothing.
+            for s in &summaries {
+                assert_eq!(&s.health.recent_statuses, &legacy[&s.persona_id]);
+                assert_eq!(&s.health.recent_statuses, &bounded[&s.persona_id]);
+            }
+            println!(
+                "{personas} personas x {runs_each} runs ({rows} rows): \
+                 recent outcomes: ROW_NUMBER {legacy_ms:.1} ms -> bounded seek {bounded_ms:.1} ms \
+                 | whole get_summaries {whole_ms:.1} ms (the remainder is the untouched \
+                 date-filtered today/sparkline scans)"
+            );
         }
     }
 
