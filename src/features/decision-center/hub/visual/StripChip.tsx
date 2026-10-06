@@ -1,23 +1,30 @@
 /**
- * One chip on the strip: icon with its lamp, label (dropped to a tooltip when
+ * One chip on the strip: icon with its lamp, label (dropped to the tooltip when
  * the bar is narrow), and the count — the hero, in bold tabular figures, that
  * rolls like an odometer when it changes.
  *
- * Aurora reading: a chip glows by URGENCY (a pool of its lamp's light under it,
- * stronger for critical than for waiting). The chip that holds the roster's
- * first item is lit in its lamp colour, wears a slowly circling conic ring and
- * a breathing lamp — the eye lands there first. Zero chips stay in place, dark;
- * a failed source shows a dashed red outline and a warning glyph, never a 0.
+ * Aurora reading (R2-C): a chip glows by URGENCY (a pool of its lamp's light
+ * under it, stronger for critical than for waiting). The lead chip — the most
+ * urgent one holding something — is lit in its lamp colour, wears a slowly
+ * circling conic ring and a breathing lamp, so the eye lands there first. Zero
+ * chips stay in place, dark and pressable; a source that did not answer shows
+ * a dashed outline and a warning glyph, never a 0 (a 0 there would be a
+ * confident lie about nothing waiting).
  */
 import { forwardRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { TriangleAlert } from 'lucide-react';
+
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { useTranslation } from '@/i18n/useTranslation';
+import { MOTION } from '@/lib/utils/designTokens';
+
 import type { ChipCount, HubChip } from '../../model/decisionModel';
-import { CHIP_META, URGENCY } from '../../deck/deckMeta';
+import { URGENCY } from '../../deck/deckMeta';
 import { Lamp } from '../../deck/parts';
+import { CHIP_ICON, chipHint, chipLabel } from '../chipMeta';
 
 function RollingCount({ n }: { n: number }) {
   const still = useReducedMotion();
@@ -36,7 +43,7 @@ function RollingCount({ n }: { n: number }) {
           initial={still ? { opacity: 0 } : { y: dir * 14, opacity: 0, filter: 'blur(2px)' }}
           animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
           exit={still ? { opacity: 0 } : { y: -dir * 14, opacity: 0, filter: 'blur(2px)' }}
-          transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+          transition={still ? { duration: MOTION.duration.fast / 1000 } : { type: 'spring', ...MOTION.spring.snappy }}
           className="au-count typo-body-lg tabular-nums text-foreground"
         >
           {n}
@@ -52,20 +59,22 @@ export interface StripChipProps {
   compact: boolean;
   isNext: boolean;
   open: boolean;
-  onPress: () => void;
+  onPress: (chip: HubChip, anchor: HTMLElement) => void;
 }
 
 export const StripChip = forwardRef<HTMLButtonElement, StripChipProps>(function StripChip(
   { chip, count, compact, isNext, open, onPress },
   ref,
 ) {
-  const meta = CHIP_META[chip];
-  const Icon = meta.icon;
+  const { t, tx } = useTranslation();
+  const m = t.monitor;
+  const label = chipLabel(m, chip);
+  const Icon = CHIP_ICON[chip];
   const zero = !count.failed && count.n === 0;
   const lit = !zero && !count.failed && count.lamp !== 'neutral';
   const tip = count.failed
-    ? `${meta.label}: the source did not answer — count unknown`
-    : `${meta.label}: ${count.n} · ${meta.hint}`;
+    ? tx(m.dc_hub_chip_failed, { label })
+    : tx(m.dc_hub_chip_tip_hint, { label, count: count.n, hint: chipHint(m, chip) });
 
   return (
     <Tooltip content={tip} placement="bottom">
@@ -73,11 +82,12 @@ export const StripChip = forwardRef<HTMLButtonElement, StripChipProps>(function 
         ref={ref}
         variant="ghost"
         size="sm"
-        onClick={onPress}
-        aria-pressed={open}
+        onClick={(e) => onPress(chip, e.currentTarget)}
         aria-expanded={open}
+        aria-haspopup="dialog"
         aria-label={tip}
-        data-testid={`p2-chip-${chip}`}
+        data-testid={`decision-chip-${chip}`}
+        data-count={count.failed ? 'failed' : count.n}
         data-urgency={lit ? URGENCY[count.lamp] || undefined : undefined}
         data-next={isNext && !zero ? '' : undefined}
         data-zero={zero ? '' : undefined}
@@ -89,8 +99,12 @@ export const StripChip = forwardRef<HTMLButtonElement, StripChipProps>(function 
           <Icon className="h-4 w-4" aria-hidden />
           {lit && <Lamp tone={count.lamp} breathe={isNext} className="au-chip-lamp" />}
         </span>
-        {!compact && <span className="typo-caption text-current">{meta.label}</span>}
-        {count.failed ? <TriangleAlert className="h-4 w-4 text-status-error" aria-hidden /> : <RollingCount n={count.n} />}
+        {!compact && <span className="typo-caption text-current">{label}</span>}
+        {count.failed ? (
+          <TriangleAlert className="h-4 w-4 text-status-error" aria-hidden data-testid={`decision-chip-${chip}-failed`} />
+        ) : (
+          <RollingCount n={count.n} />
+        )}
       </Button>
     </Tooltip>
   );

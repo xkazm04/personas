@@ -1,9 +1,7 @@
-/** The peek's key table, and the router's one switch. */
+/** The peek's key table. */
 import { describe, expect, it } from 'vitest';
 
 import { item } from '../../__tests__/rosterFixtures';
-import type { DecisionKind } from '../../model/decisionModel';
-import { surfaceOf } from '../openDecision';
 import { peekKeyAction } from '../peekKeys';
 
 const review = item({ id: 'review:1', kind: 'review' });
@@ -44,17 +42,5 @@ describe('peekKeyAction', () => {
   it('acts on nothing when the peek has no rows', () => {
     expect(peekKeyAction('a', { armed: false, item: null })).toBeNull();
     expect(peekKeyAction('Escape', { armed: false, item: null })).toEqual({ type: 'close' });
-  });
-});
-
-describe('surfaceOf', () => {
-  it('routes every kind to its existing surface', () => {
-    const table: Record<DecisionKind, ReturnType<typeof surfaceOf>> = {
-      review: 'focus', question: 'focus', policy: 'focus', evolution: 'focus', goal: 'focus', approval: 'focus',
-      idea: 'backlog', incident: 'incident', report: 'report', council: 'council', message: 'thread',
-    };
-    for (const [kind, surface] of Object.entries(table)) {
-      expect(surfaceOf(kind as DecisionKind)).toBe(surface);
-    }
   });
 });

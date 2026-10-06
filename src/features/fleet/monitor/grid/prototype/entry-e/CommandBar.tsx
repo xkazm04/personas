@@ -1,7 +1,8 @@
 // The ONE band of chrome above the panel. Left, the census: every agent in the
 // fleet counted by lamp, and each lamp is the filter for its own number.
 // Middle, the Decision Center's strip (`DecisionHub`): one chip per kind of
-// thing waiting on a human, each opening its peek. Right, the layout switch.
+// thing waiting on a human, each opening its peek, and every peek row opening
+// the one global Decision Deck. Right, the layout switch.
 //
 // THE KEYCAP LEGEND IS GONE (2026-10-06, decision-center A3). The band printed
 // the board's `n`/`k` walk; the strip needed the width, and the decision keys
@@ -32,10 +33,9 @@ import { PERSONA_LAMP } from './tone';
 import { Lamp } from './parts';
 import type { PanelFilter } from './boardFilter';
 import { DecisionHub } from '@/features/decision-center/hub/DecisionHub';
-import type { FeedTeam } from '../../../channels/types';
 
 export function CommandBar({
-  filter, showTally, active, onPick, onClear, layout, onLayout, feedTeams,
+  filter, showTally, active, onPick, onClear, layout, onLayout,
 }: {
   /** Counts per state over what the current layout can show (agents + sessions). */
   filter: PanelFilter;
@@ -45,8 +45,6 @@ export function CommandBar({
   onClear: () => void;
   layout: BoardVariant;
   onLayout: (v: BoardVariant) => void;
-  /** The Monitor's team feeds — the hub opens a team thread over them. */
-  feedTeams?: readonly FeedTeam[];
 }) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
@@ -114,7 +112,7 @@ export function CommandBar({
         </div>
       )}
 
-      <DecisionHub feedTeams={feedTeams} />
+      <DecisionHub />
 
       <div className="ml-auto flex items-center gap-3">
         <SegmentedTabs

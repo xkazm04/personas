@@ -12,7 +12,7 @@ import * as devApi from '@/api/devTools/devTools';
 import {
   MAX_PARALLEL,
   MIN_PARALLEL,
-} from '@/features/agents/quick-answer/triage/deck/useAcceptedDispatch';
+} from '@/features/decision-center/hub/ready/useAcceptedDispatch';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import type { TaskCounts } from './useTaskQueue';
 
@@ -29,7 +29,7 @@ const BULK_LIMIT = 200;
 const CANCEL_ALL_CONCURRENCY = 15;
 
 // The bounds for this stepper are NOT declared here any more. They were, and
-// identically in `triage/deck/useAcceptedDispatch.ts`, each under a comment
+// identically in `decision-center/hub/ready/useAcceptedDispatch.ts`, each under a comment
 // saying it mirrored the other — three copies of one number (the executor's
 // `MIN_BATCH_LANES`/`MAX_BATCH_LANES` being the third) and no way to tell if
 // one had moved. One declaration, imported.

@@ -2,7 +2,7 @@
   "module": "monitor/rail",
   "kit": null,
   "label": "peek",
-  "createdAt": "2026-10-06T13:37:07.834Z",
+  "createdAt": "2026-10-06T15:13:16.742Z",
   "browser": "147.0.7727.15",
   "tape": {
     "path": "synthetic",
@@ -83,8 +83,8 @@
         "fleet_list_sessions": 1
       },
       "stable": true,
-      "textLength": 3930,
-      "textSample": "Persona Monitor Activity Timeline Conversations Map Board 100 12 24 6 58 3 3 7 3 1 4 0 0 Dispatch Persona Athena 3 hr. ago Create Goal Athena 47 min. ago Remember a fact Athena 12 min. ago ↑ ↓ ↵ A R E",
+      "textLength": 3951,
+      "textSample": "Persona Monitor Activity Timeline Conversations Map Board 100 12 24 6 58 3 3 7 3 1 4 0 0 21 Gates 3 Dispatch Persona A Athena 3 hr. ago A R ↵ Create Goal A Athena 47 min. ago Remember a fact A Athena ",
       "dims": {
         "document": {
           "width": 1280,
@@ -162,8 +162,8 @@
         "fleet_list_sessions": 1
       },
       "stable": true,
-      "textLength": 3964,
-      "textSample": "Persona Monitor Activity Timeline Conversations Map Board All 100 Running 12 Needs you 24 Failed 6 Idle 58 3 3 7 3 1 4 0 0 Dispatch Persona Athena 3 hr. ago Create Goal Athena 47 min. ago Remember a f",
+      "textLength": 3985,
+      "textSample": "Persona Monitor Activity Timeline Conversations Map Board All 100 Running 12 Needs you 24 Failed 6 Idle 58 3 3 7 3 1 4 0 0 21 Gates 3 Dispatch Persona A Athena 3 hr. ago A R ↵ Create Goal A Athena 47 ",
       "dims": {
         "document": {
           "width": 1920,
@@ -241,8 +241,8 @@
         "fleet_list_sessions": 1
       },
       "stable": true,
-      "textLength": 3930,
-      "textSample": "Persona Monitor Activity Timeline Conversations Map Board 100 12 24 6 58 3 3 7 3 1 4 0 0 Dispatch Persona Athena 3 hr. ago Create Goal Athena 47 min. ago Remember a fact Athena 12 min. ago ↑ ↓ ↵ A R E",
+      "textLength": 3951,
+      "textSample": "Persona Monitor Activity Timeline Conversations Map Board 100 12 24 6 58 3 3 7 3 1 4 0 0 21 Gates 3 Dispatch Persona A Athena 3 hr. ago A R ↵ Create Goal A Athena 47 min. ago Remember a fact A Athena ",
       "dims": {
         "document": {
           "width": 1280,
@@ -320,8 +320,8 @@
         "fleet_list_sessions": 1
       },
       "stable": true,
-      "textLength": 3964,
-      "textSample": "Persona Monitor Activity Timeline Conversations Map Board All 100 Running 12 Needs you 24 Failed 6 Idle 58 3 3 7 3 1 4 0 0 Dispatch Persona Athena 3 hr. ago Create Goal Athena 47 min. ago Remember a f",
+      "textLength": 3985,
+      "textSample": "Persona Monitor Activity Timeline Conversations Map Board All 100 Running 12 Needs you 24 Failed 6 Idle 58 3 3 7 3 1 4 0 0 21 Gates 3 Dispatch Persona A Athena 3 hr. ago A R ↵ Create Goal A Athena 47 ",
       "dims": {
         "document": {
           "width": 1920,

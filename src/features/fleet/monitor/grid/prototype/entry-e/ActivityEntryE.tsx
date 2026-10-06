@@ -24,7 +24,8 @@
 // THE DOCKED DESK IS RETIRED (2026-10-06, decision-center spark A3). Its three
 // feeds became the Decision Center roster, its figures became the strip's
 // chips in the band above (`CommandBar` → `DecisionHub`), and an opened row
-// now opens in its own surface. The board gets the full width back.
+// opens the global Decision Deck (decision-center wave 3). The board gets the
+// full width back.
 
 import { memo, useCallback, useState } from 'react';
 import type { PersonaCardModel } from '../../../monitorModel';
@@ -73,7 +74,6 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
         onClear={surface.clearFilter}
         layout={layout}
         onLayout={onLayout}
-        feedTeams={props.feedTeams}
       />
       <WorkspaceTabs scope={workspaces} />
 

@@ -1,84 +1,73 @@
 /**
  * DecisionHub — the Decision Center's home on the Monitor's Activity band:
- * strip (level 1) → peek (level 2) → the item's own surface (level 3).
+ * strip (level 1) → peek (level 2) → the Decision Deck (level 3).
  *
- * The WIRING half. It owns the one roster read, which chip is open, the
- * verdict writes and the router; the strip and the peeks are slots it fills.
+ * The WIRING half; R2-C's strip and peek (`visual/`) are the look. It owns the
+ * one roster read, which chip is open, and the one-key verdict writes.
  *
- *  - Counts are always on. Items load only for the open chip (`load: [chip]`),
- *    or for every chip while "Triage all" is finding its first item.
+ *  - Counts are always on. Items load only for the open chip (`load: [chip]`).
  *  - A one-key verdict writes through `roster.decide` (optimistic; the roster
  *    restores the item and rethrows on failure). A lost compare-and-swap gets
  *    the "decided elsewhere" toast, anything else `toastCatch`.
- *  - Escape steps back one level at a time: the open surface's own modal
- *    first (the peek's keys are off while it is up), then the peek, and only
- *    then — on a press that reaches it — the Monitor.
+ *  - Enter on a row (or "Open deck") opens the deck through its one door,
+ *    scoped to the chip and focused on the row, growing out of the row; the
+ *    peek folds away behind it. "Triage all" opens the deck over every chip.
+ *  - Escape steps back one level at a time: the deck first (its own keys),
+ *    then — because the hub asked the deck to return to the chip — the peek
+ *    reopens on the row it left, then the strip, and only then the Monitor.
  */
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { FeedTeam } from '@/features/fleet/monitor/channels/types';
 import { useTranslation } from '@/i18n/useTranslation';
 import { isDecisionConflict } from '@/lib/decisions/rowWrites';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 
 import type { DecisionChip, DecisionItem, HubChip } from '../model/decisionModel';
+import { deckOriginOf, openDecisionDeck, useDecisionDeckStore, type DeckRequest } from '../deck/deckStore';
 import { useDecisionRoster } from '../useDecisionRoster';
-import { walkChip } from './chipMeta';
-import { DecisionPeek } from './DecisionPeek';
-import { DecisionStrip } from './DecisionStrip';
-import { useDecisionOpener } from './openDecision';
-import { PEEK_WIDTH } from './PeekPanel';
+import { leadChip, walkChip } from './chipMeta';
 import { ReadyPeek } from './ReadyPeek';
 import { useLoadSettled } from './useLoadSettled';
-import { useTriageAll, type TriageAllPhase } from './useTriageAll';
+import { Peek } from './visual/Peek';
+import { Strip, type StripRefs } from './visual/Strip';
 
-const NO_FEED_TEAMS: readonly FeedTeam[] = [];
-const GUTTER = 16;
+interface OpenPeek {
+  chip: HubChip;
+  /** The row to land on (the deck closed on it). */
+  focusId: string | null;
+}
 
-export function DecisionHub({ feedTeams = NO_FEED_TEAMS }: { feedTeams?: readonly FeedTeam[] }) {
+const NO_ITEMS: DecisionItem[] = [];
+
+export function DecisionHub() {
   const { t } = useTranslation();
-  const boxRef = useRef<HTMLDivElement>(null);
-  const chipRefs = useRef(new Map<HubChip, HTMLElement>());
-  const [peek, setPeek] = useState<{ chip: HubChip; left: number } | null>(null);
-  const [allPhase, setAllPhase] = useState<TriageAllPhase>('idle');
+  const chipRefs: StripRefs = useRef({});
+  const [peek, setPeek] = useState<OpenPeek | null>(null);
 
   const peekChip = peek?.chip ?? null;
   const decisionChip: DecisionChip | null = peekChip && peekChip !== 'ready' ? peekChip : null;
-  const load = useMemo(
-    () => (allPhase !== 'idle' ? 'all' as const : decisionChip ? [decisionChip] : []),
-    [allPhase, decisionChip],
-  );
+  const load = useMemo(() => (decisionChip ? [decisionChip] : []), [decisionChip]);
   const roster = useDecisionRoster({ load });
-  const { decide, refresh } = roster;
-  const opener = useDecisionOpener({ decide, refresh, feedTeams });
-  const triageAll = useTriageAll(allPhase, setAllPhase, roster, opener);
+  const { decide, refresh, counts } = roster;
 
-  /** Hang the peek under `anchor`, clamped so it never leaves the window. */
-  const place = useCallback((chip: HubChip, anchor: HTMLElement | undefined) => {
-    const box = boxRef.current?.getBoundingClientRect();
-    const at = anchor?.getBoundingClientRect();
-    if (!box || !at) return setPeek({ chip, left: 0 });
-    const max = window.innerWidth - GUTTER - PEEK_WIDTH - box.left;
-    setPeek({ chip, left: Math.max(GUTTER - box.left, Math.min(at.left - box.left, max)) });
+  const deckOpen = useDecisionDeckStore((s) => s.request !== null);
+  const closedReturnTo = useDecisionDeckStore((s) => s.closedReturnTo);
+  /** The deck session THIS hub opened; only its close reopens a peek. */
+  const ownSession = useRef<number | null>(null);
+  const lastFocus = useRef<string | null>(null);
+
+  const onChip = useCallback((chip: HubChip) => {
+    setPeek((p) => (p?.chip === chip ? null : { chip, focusId: null }));
   }, []);
-
-  const onPick = useCallback((chip: HubChip, anchor: HTMLElement) => {
-    chipRefs.current.set(chip, anchor);
-    if (peekChip === chip) setPeek(null);
-    else place(chip, anchor);
-  }, [peekChip, place]);
-
   const onWalk = useCallback((step: 1 | -1) => {
-    if (!peekChip) return;
-    const next = walkChip(peekChip, step);
-    const anchor = chipRefs.current.get(next)
-      ?? boxRef.current?.querySelector<HTMLElement>(`[data-testid="decision-chip-${next}"]`)
-      ?? undefined;
-    place(next, anchor);
-  }, [peekChip, place]);
-
-  const closePeek = useCallback(() => setPeek(null), []);
+    setPeek((p) => (p ? { chip: walkChip(p.chip, step), focusId: null } : p));
+  }, []);
+  /** Close only if `chip`'s peek is still the open one (a deferred close may land late). */
+  const closeChip = useCallback((chip: HubChip) => {
+    setPeek((p) => (p?.chip === chip ? null : p));
+  }, []);
+  const closeOpen = useCallback(() => { if (peekChip) closeChip(peekChip); }, [peekChip, closeChip]);
 
   const decidedElsewhere = t.monitor.dc_hub_decided_elsewhere;
   const onDecide = useCallback((item: DecisionItem, verdict: 'accept' | 'reject') => {
@@ -92,51 +81,90 @@ export function DecisionHub({ feedTeams = NO_FEED_TEAMS }: { feedTeams?: readonl
     })();
   }, [decide, decidedElsewhere]);
 
-  const chipItems = decisionChip ? roster.byChip[decisionChip] : undefined;
-  const items = useMemo(() => chipItems ?? [], [chipItems]);
+  const openDeck = useCallback((request: DeckRequest) => {
+    openDecisionDeck(request);
+    ownSession.current = useDecisionDeckStore.getState().session;
+    setPeek(null);
+  }, []);
+
+  const onOpen = useCallback((item: DecisionItem, from: Element | null) => {
+    if (!decisionChip) return;
+    lastFocus.current = item.id;
+    openDeck({
+      scope: { kind: 'chip', chip: decisionChip },
+      focusId: item.id,
+      origin: deckOriginOf(from),
+      returnTo: decisionChip,
+    });
+  }, [decisionChip, openDeck]);
+
+  const onTriageAll = useCallback((anchor: HTMLElement) => {
+    lastFocus.current = null;
+    openDeck({ scope: { kind: 'all' }, origin: deckOriginOf(anchor) });
+  }, [openDeck]);
+
+  // The deck this hub opened closed with a chip to return to: reopen its peek
+  // on the row the deck was opened from (if it is still waiting).
+  useEffect(() => {
+    if (!closedReturnTo) return;
+    const deck = useDecisionDeckStore.getState();
+    if (deck.request || ownSession.current !== deck.session) return;
+    ownSession.current = null;
+    deck.consumeReturn();
+    setPeek({ chip: closedReturnTo.chip, focusId: lastFocus.current });
+  }, [closedReturnTo]);
+
+  const items = (decisionChip ? roster.byChip[decisionChip] : undefined) ?? NO_ITEMS;
   const error = decisionChip ? roster.errors[decisionChip] ?? null : null;
   const settled = useLoadSettled(decisionChip, roster.loading);
-  const openItem = opener.open;
-  const onOpen = useCallback((item: DecisionItem) => openItem(item, items), [openItem, items]);
-
-  const keyboard = !opener.isOpen;
+  // A chip whose source did not answer is never shown as an empty band: an
+  // uncountable chip with nothing listed reads as failed, with a retry.
+  const failed = error !== null
+    || (decisionChip !== null && counts[decisionChip].failed && settled && items.length === 0);
+  const lead = leadChip(counts);
+  const keyboard = !deckOpen;
+  const anchor = peekChip ? chipRefs.current[peekChip] ?? null : null;
 
   return (
-    // The hub takes the band's free width; the strip measures it as a CONTAINER
-    // (chip names appear only when the band has room for all of them). The
-    // container is the strip's own wrapper and never an ancestor of the peek
-    // or a surface: a size container is a containing block for fixed
-    // descendants, which would trap a non-portal modal inside the band.
-    <div ref={boxRef} className="relative flex min-w-0 flex-1 items-center">
-      <div className="@container min-w-0 flex-1">
-        <DecisionStrip
-          counts={roster.counts}
-          active={peekChip}
-          onPick={onPick}
-          onTriageAll={triageAll.start}
-          triageAllDisabled={roster.total === 0}
-          triageAllBusy={triageAll.busy}
-        />
-      </div>
+    // The hub takes the band's free width; the strip measures it and drops its
+    // labels when they would not fit. The peek hangs from this box.
+    <div className="relative flex min-w-0 flex-1 items-center" data-testid="decision-hub">
+      <Strip
+        counts={counts}
+        total={roster.total}
+        openChip={peekChip}
+        chipRefs={chipRefs}
+        onChip={onChip}
+        onTriageAll={onTriageAll}
+      />
       {peek && peek.chip === 'ready' && (
-        <ReadyPeek left={peek.left} keyboard={keyboard} onWalk={onWalk} onClose={closePeek} />
+        <ReadyPeek
+          count={counts.ready.failed ? null : counts.ready.n}
+          anchor={anchor}
+          keyboard={keyboard}
+          onWalk={onWalk}
+          onClose={closeOpen}
+        />
       )}
       {peek && decisionChip && (
-        <DecisionPeek
+        <Peek
+          key={decisionChip}
           chip={decisionChip}
           items={items}
+          lamp={counts[decisionChip].lamp}
           ready={settled || items.length > 0 || error !== null}
-          error={error}
+          failed={failed}
+          lead={lead === decisionChip}
+          anchor={anchor}
+          keyboard={keyboard}
+          initialFocusId={peek.focusId}
           onRetry={refresh}
           onDecide={onDecide}
           onOpen={onOpen}
           onWalk={onWalk}
-          onClose={closePeek}
-          keyboard={keyboard}
-          left={peek.left}
+          onClose={closeOpen}
         />
       )}
-      {opener.surface}
     </div>
   );
 }

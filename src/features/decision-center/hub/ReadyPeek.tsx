@@ -1,6 +1,6 @@
 /**
  * ReadyPeek — the `ready` chip's peek: ideas a person accepted that never
- * became work, and the bar that sends them.
+ * became work, and the bar that sends them, in R2-C's glass.
  *
  * Rehomed from the retired DecisionDock's Dispatch tab. It is the deck's own
  * machinery, unchanged: `useAcceptedDispatch` reads the list once on mount
@@ -11,31 +11,30 @@
  */
 import { useEffect } from 'react';
 
-import { DeckAcceptedList } from '@/features/agents/quick-answer/triage/deck/DeckAcceptedList';
-import { DeckDispatchBar } from '@/features/agents/quick-answer/triage/deck/DeckDispatchBar';
-import { useAcceptedDispatch } from '@/features/agents/quick-answer/triage/deck/useAcceptedDispatch';
+import { DeckAcceptedList } from './ready/DeckAcceptedList';
+import { DeckDispatchBar } from './ready/DeckDispatchBar';
+import { useAcceptedDispatch } from './ready/useAcceptedDispatch';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
-import { chipLabel } from './chipMeta';
-import { PeekPanel } from './PeekPanel';
 import { usePeekKeyboard } from './usePeekKeyboard';
+import { PeekShell } from './visual/PeekShell';
 
 const NO_ITEMS: never[] = [];
 const noop = () => undefined;
 
 export function ReadyPeek({
-  left, keyboard, onWalk, onClose,
+  count, anchor, keyboard, onWalk, onClose,
 }: {
-  left: number;
+  count: number | null;
+  anchor: HTMLElement | null;
   keyboard: boolean;
   onWalk: (step: 1 | -1) => void;
   onClose: () => void;
 }) {
-  const { t, tx } = useTranslation();
-  const label = chipLabel(t.monitor, 'ready');
+  const { t } = useTranslation();
   const ctl = useAcceptedDispatch({
     resolveErrorMessage: (err) =>
       resolveErrorTranslated(t, err instanceof Error ? err.message : String(err)).message,
@@ -50,11 +49,13 @@ export function ReadyPeek({
   }, [report, refreshUndispatched]);
 
   return (
-    <PeekPanel label={tx(t.monitor.dc_hub_peek_aria, { label })} title={label} left={left} onClose={onClose} testId="decision-peek">
-      <DeckDispatchBar ctl={ctl} />
-      <div className="flex min-h-0 flex-1 flex-col" data-testid="decision-peek-ready">
-        <DeckAcceptedList ctl={ctl} />
+    <PeekShell chip="ready" lamp="success" count={count} anchor={anchor} onClose={onClose}>
+      <div className="flex min-h-0 flex-1 flex-col px-2 pb-2" data-testid="decision-peek-ready">
+        <DeckDispatchBar ctl={ctl} />
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <DeckAcceptedList ctl={ctl} />
+        </div>
       </div>
-    </PeekPanel>
+    </PeekShell>
   );
 }
