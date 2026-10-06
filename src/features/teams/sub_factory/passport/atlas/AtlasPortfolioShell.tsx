@@ -3,20 +3,20 @@
 // current coordinate. Every count is derived from the passports in hand.
 //
 // This is structure, so the kit owns it (doctrine 6c): a figure never
-// re-authors a toolbar or a stat strip. What it supplies is the drawing in the
-// middle and, while the owner is comparing, the control that picks its look.
+// re-authors a toolbar or a stat strip. What a concept supplies is the drawing
+// in the middle, and nothing else.
 import { useMemo, useRef, type ReactNode } from 'react';
 import { KitButton, SearchField, Segmented, StatStrip, Toolbar, UnitStrip } from '@/features/shared/components/kit';
 import { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import type { AppPassport } from '../passportModel';
 import { inkOf, needCare, type AtlasLens, type AtlasRow, type AtlasSort } from './atlasModel';
-import type { AtlasCoord, AtlasNames, AtlasSkin } from './atlasFigure';
+import type { AtlasCoord, AtlasNames } from './atlasFigure';
 import { InkDot, valueText } from './AtlasParts';
 import { ATLAS_WORDS as W, INK_MARK, LEGEND_ORDER, LENSES, SORTS } from './atlasWords';
 
 export interface PortfolioView { lens: AtlasLens; sort: AtlasSort; query: string; unfold: boolean; at: AtlasCoord }
 
-export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, view, onView, figure, skin, extraControls }: {
+export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, view, onView, figure, extraControls }: {
   all: AppPassport[];
   projects: AppPassport[];
   rows: AtlasRow[];
@@ -26,11 +26,7 @@ export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, v
   onView: (patch: Partial<PortfolioView>) => void;
   /** The figure, already wired to the model. Null when nothing matched. */
   figure: ReactNode;
-  /** The benched look. Absent for the baseline, so its CSS is the bare class
-   *  it always was; a look is an attribute the legend and readout share with
-   *  the figure, which is why it is set here and not inside the matrix. */
-  skin?: AtlasSkin;
-  /** Dev-only look picker; absent in a production build. */
+  /** Dev-only concept picker; absent in a production build. */
   extraControls?: ReactNode;
 }) {
   const searchRef = useRef<HTMLInputElement>(null);
@@ -47,7 +43,6 @@ export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, v
   return (
     <div
       className="atlas-portfolio"
-      data-skin={skin}
       onKeyDown={(e) => {
         if (e.key === '/' && (e.target as HTMLElement).tagName !== 'INPUT') { e.preventDefault(); searchRef.current?.focus(); }
       }}

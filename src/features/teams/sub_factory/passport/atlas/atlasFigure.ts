@@ -28,14 +28,3 @@ export interface AtlasFigureProps {
   /** Opens that project's passport (the project layer). */
   onOpenProject: (slug: string) => void;
 }
-
-/** The benched LOOKS of the one matrix figure. `baseline` is what ships.
- *
- * Every look draws the SAME figure: the same grid, projects as reading lines,
- * dimensions as columns, a mark per cell, one roving coordinate and one
- * keyboard model. What differs is execution - rule and band treatment, the
- * type token each slot wears, the rhythm, and how the six marks are cut. The
- * semantics (`role="grid"`, the aria counts, the roving `tabIndex`, every
- * `data-testid`) live once in `MatrixFigure` and cannot vary.
- */
-export type AtlasSkin = 'baseline' | 'plate' | 'gazette' | 'chart';
