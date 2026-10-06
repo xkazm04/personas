@@ -351,6 +351,7 @@
 .sd-d-ship { font-size: var(--sd-t2); font-weight: 600; color: var(--sd-ink); margin-bottom: 6px; }
 .sd-d-ship-btn:hover { text-decoration: underline; }
 .sd-d-ship .sd-tide i, .sd-d-tide i { width: 10px; height: 14px; }
+.sd-d-tiderow { margin: 2px 0 8px; }
 .sd-d-kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: baseline; font-size: var(--sd-t1); margin: 0; }
 .sd-d-kv dt { color: var(--sd-ink3); }
 .sd-d-kv dd { margin: 0; color: var(--sd-ink); }

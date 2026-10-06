@@ -12,7 +12,7 @@ import type { DimKey } from '../lib/dimRegistry';
 import type { Box } from './soundingsGeometry';
 import { buoyDepth, stationSpan, STRIP_BOTTOM } from './soundingsGeometry';
 import { buildStations, rankStations, relatedStations, visibleEdges } from './soundingsModel';
-import { useStatusWord, type CardHandlers } from './SoundingsCard';
+import { useStatusWord, type CardHandlers } from './cardShell';
 import { useChartGeometry } from './useChartGeometry';
 import { useSoundingsWords } from './soundingsWords';
 import { FILE, useSoundingsNav, type LiftKey } from './useSoundingsNav';

@@ -3,7 +3,7 @@
 // chart's state.
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { useStatusWord } from './SoundingsCard';
+import { useStatusWord } from './cardShell';
 import { FlagGlyph, StatusMark } from './soundingsParts';
 
 export function SoundingsHelp() {

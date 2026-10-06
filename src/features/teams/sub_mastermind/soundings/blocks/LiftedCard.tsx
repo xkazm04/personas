@@ -2,7 +2,8 @@
 // two transient overlays that belong to the same layer - Athena's sonar pings
 // and the name tip over a sliver.
 import { buoyDepth, stationSpan } from '../soundingsGeometry';
-import { ProjectFile, ReadingCard } from '../SoundingsCard';
+import { ProjectFile } from './ProjectFile';
+import { ReadingCard } from './ReadingCard';
 import { useSoundingsModel } from '../context';
 import { FILE } from '../useSoundingsNav';
 

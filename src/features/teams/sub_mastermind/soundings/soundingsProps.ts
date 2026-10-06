@@ -1,7 +1,7 @@
 // Soundings — the contract with MastermindPage. Its own file so the model hook
 // and the view can both name it without one importing the other.
 import type { DimNode, Scene } from '../lib/types';
-import type { Anchor } from './SoundingsCard';
+import type { Anchor } from './cardShell';
 
 export interface SoundingsViewProps {
   scene: Scene;
