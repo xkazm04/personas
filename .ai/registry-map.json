@@ -3427,7 +3427,11 @@
           "revision": 24,
           "changedAt": "2026-09-23",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:260 leaves a member that hit the 15-min straggler deadline (or was cancelled) in status 'running' after the cohort phase reads completed, and BulkRerunReport.tsx:220 renders it as running, so no member is ever classified timed-out/cut-off as result-harvest requires; the idempotency key (:244) is minted from Date.now(), the attempt rather than the work, so it cannot dedupe a repeated batch. Cap (:11) and landed-only aggregation are realized.",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:e63d5473ea2636c8",
+          "evaluatedRevision": 24
         },
         {
           "subject": "tracing",
@@ -10199,7 +10203,11 @@
           "revision": 8,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:198 the agent_ir fix pass is a generate-shaped one-shot (JSON in, JSON out) yet spawns with --dangerously-skip-permissions and cwd=home (:204) through a hand-rolled Command::new (:205) beside the run_claude_cli door (src-tauri/engine/src/cli_process.rs:605), so it misses the door's CLAUDECODE/CLAUDE_CODE strip, kill_on_drop and output cap, and ignores the envelope's error subtype (split_result_envelope :345); a 'generate' call holds write access over the operator's whole home dir and can start as a nested session",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+          "evaluatedRevision": 9
         },
         {
           "subject": "deployment-contract",
@@ -10634,7 +10642,11 @@
           "revision": 8,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2350 persona executions (children that read connector/web content) spawn via CliProcessDriver, whose build_and_spawn_core (src-tauri/engine/src/cli_process.rs:928) inherits the FULL host env (incl. PERSONAS_API_KEY set at boot/finalize.rs:52, already delivered to the sidecar by name at cli_mcp_config.rs:154) while the probe at cli_process.rs:774 env_clears to an allowlist; untrusted-content children must get a built env, not a denylist. Billing strip itself is right: last-applied at cli_process.rs:960, vault refuses reserved names at runner/credentials.rs:932",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+          "evaluatedRevision": 9
         }
       ],
       "governance": "governed"
@@ -11390,13 +11402,12 @@
           "revision": 24,
           "changedAt": "2026-09-23",
           "confidence": "strong",
-          "state": "conformant",
-          "evidence": "src/features/fleet/monitor/monitorModel.ts:120 status visuals are now keyed on the CLOSED ActiveProcessStatus union, and an unrecognized token resolves to a neutral, non-pulsing meta (:154), never running. The recorded deviation (a union widened to string that defaulted to a live pulse) is FIXED.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:a03459c799a53308",
+          "state": "unknown",
+          "evidence": "Re-read 2026-10-06: session-registry consumer side (src/features/fleet/monitor/monitorModel.ts:125 Record over the closed ActiveProcessStatus) and absent-status-passthrough (:142 inert unknown meta, never running) are realized, but that is 2 of 18 techniques, below the conformant evidence floor; the rest are unread against this surface. The prior 'conformant' is withdrawn as under-evidenced, not as wrong.",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:e63d5473ea2636c8",
           "evaluatedRevision": 24,
-          "revisionsBehind": 0,
-          "stale": true
+          "revisionsBehind": 0
         },
         {
           "subject": "mcp-tools",
@@ -11482,13 +11493,12 @@
           "revision": 24,
           "changedAt": "2026-09-23",
           "confidence": "strong",
-          "state": "conformant",
-          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:92 a compile-time exhaustiveness assertion now ties GROUP_ORDER to FleetSessionState, and the finished row exists (:82). The recorded deviation (finished sessions vanishing from the list) is FIXED, and the union has since grown to nine states (queued), all of which are covered.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:a03459c799a53308",
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:95 picks remove-vs-kill from a hand-written {exited, hibernated} pair of the now 10-state FleetSessionState instead of the console axis FleetStatusDots.tsx:48 already derives, so the X on an expired row (labelled 'Kill session' at :272) calls fleet_kill_session, gets KillOutcome::NoChild (src-tauri/src/commands/fleet/registry.rs:528) and Ok, and the terminal row never leaves the list; a queued row likewise cannot be cancelled although src-tauri/src/commands/fleet/queue.rs:1717 cancel_dispatch exists. The earlier GROUP_ORDER fix holds (moved to sub_grid/fleetGridGroups.ts:47).",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:e63d5473ea2636c8",
           "evaluatedRevision": 24,
-          "revisionsBehind": 0,
-          "stale": true
+          "revisionsBehind": 0
         },
         {
           "subject": "agent-instruction-files",
@@ -11686,13 +11696,12 @@
           "revision": 24,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:154 fans the broadcast through a bounded pool (width chosen at :30, not the selection size). It reports all-sent / partial (:181) / none with exact counts and narrows a retry to exactly the failed ids (:205). Terminal attachment is a lease (fleetTerminalManager.ts:16).",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:a03459c799a53308",
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 states a broadcast target must have a PTY writer but filters out only exited|hibernated, so writer-less queued and expired rows stay targetable; each write fails 'session writer dropped' (src-tauri/src/commands/fleet/registry.rs write_input), is reported as a partial failure (:181), and the retry retargets the selection onto exactly those rows (:209), which can never succeed. Bounded pool (:154) and lease attachment remain realized.",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:e63d5473ea2636c8",
           "evaluatedRevision": 24,
-          "revisionsBehind": 0,
-          "stale": true
+          "revisionsBehind": 0
         },
         {
           "subject": "prompt-assembly",
@@ -13011,7 +13020,11 @@
           "revision": 6,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:67-68 filters the Welcome module cards with hand-copied SIMPLE_SECTIONS/DEV_MODE_SECTIONS (src/lib/utils/platform/platform.ts:102-103) instead of the registry policy src/lib/navigation/registry.ts:160 passesGates, so the two disagree: registry.ts:85 gates plugins at minTier TEAM, the card hides it below BUILDER, and on the default TEAM tier (src/lib/constants/uiModes.ts:65) the rail offers Plugins while Welcome hides it -- entitlement-gating's one-authority rule; the card vocabulary is also a second hand-kept list (src/features/home/sub_welcome/HomeWelcome.tsx:13 NAV_CARDS) cast unchecked into the navigate door at HomeWelcome.tsx:68 (navigation-model). Realized: lazy-section-loading prefetch-on-intent through the shared deduped map (NavigationGrid.tsx:49 -> src/features/home/lib/prefetch.ts:60) and badge-and-attention derived inventory chips from the sidebar attention source (src/features/home/sub_welcome/lib/useNavCardStatus.ts:69,104). Surface is DEV-only today (src/features/shared/chrome/sidebar/sidebarData.ts:59).",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-runtime-assembly",
@@ -13754,7 +13767,11 @@
           "revision": 8,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/hooks/utility/data/useCliReadiness.ts:40 collapses every non-missing-binary probe failure (incl. init timeout, EOF) into 'no_session', so unknown renders as 'sign in'; useEngineCapabilities.ts:71 derives installed-ness from a second predicate (healthCheckLocal's claude_cli, resolved by where/which, not the spawn resolver), so the shell gate and the operation gate can disagree on one machine",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+          "evaluatedRevision": 9
         },
         {
           "subject": "supply-chain",
@@ -15153,7 +15170,11 @@
           "revision": 3,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "Precondition (a credential value held by, or crossing into, the webview tier) does not hold: this context is a static connector catalog plus an ID-only action dispatcher - src/lib/credentials/remediationExecutor.ts:21 passes event.credentialId alone to rotation, src/lib/credentials/catalogApiEndpoints.ts:4 is endpoint metadata with no auth material, and parseCredentialLedger.ts:31 parses non-secret metadata; zero import.meta.env reads. Credential attachment for catalog endpoints happens in execute_api_request (commands-credentials, judged separately).",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"
@@ -17477,7 +17498,11 @@
           "revision": 24,
           "changedAt": "2026-09-23",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/notepad/plan/ShipDispatch.tsx:71 (and the goal brief at :45) sends a write-capable Fleet worker into the shared repo root with no restated invariant (commit/push/branch discipline, write scope) and no line telling it what it cannot see, which brief-carries-the-session requires; the dispatch it calls spawns then names in two steps (src/features/teams/sub_factory/passport/passportFleet.tsx:66-67), so a failed rename leaves an anonymous worker the derived-key readback (ShipCriteriaPanel.tsx:45) cannot find and a retry spawns a duplicate.",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:e63d5473ea2636c8",
+          "evaluatedRevision": 24
         },
         {
           "subject": "quality-gates",
@@ -28124,7 +28149,11 @@
           "revision": 8,
           "changedAt": "2026-09-25",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/stores/slices/agents/chatSlice.ts:226 a follow-up turn --resumes the stored claudeSessionId sending only latest_message, and :322 maps every non-completed turn to a generic error while the id stays bound; with no 'thread gone' class (persona chat has none, unlike companion/session/cli.rs:681) and no fold of the client-held transcript, a resume whose Claude thread is gone fails every Retry forever",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+          "evaluatedRevision": 9
         },
         {
           "subject": "test-harness",
@@ -28653,6 +28682,19 @@
           "evaluatedAgainst": "sha256-b2:6f44ad03ebd5bd19",
           "evaluatedRevision": 4,
           "revisionsBehind": 0
+        },
+        {
+          "subject": "app-shell",
+          "bundle": "software-engineering",
+          "score": 0,
+          "why": [],
+          "source": "conform",
+          "confidence": "strong",
+          "state": "unknown",
+          "evidence": "added by /conform: the matcher scored this at zero; src/stores/slices/system/uiSlice.ts:523 setSidebarSection is the shell navigate door and holds the one current-location value plus back/forward history -- the core of app-shell navigation-model -- but the context speaks store/slice vocabulary, not shell/nav",
+          "digest": "sha256-b2:62a9a7fc993ea8b5",
+          "revision": 6,
+          "changedAt": "2026-09-23"
         }
       ],
       "governance": "governed"
@@ -34858,7 +34900,11 @@
           "revision": 3,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "broker-proxy-attaches-secret: useWorkspaceConnect.ts:83-85 sends a one-time oauthSessionRef redeemed server-side, the token never crosses IPC; omit-the-column-not-the-value: src-tauri/core/src/models/credential.rs:40-42 serde-skips encrypted_data off the webview shape and src/lib/bindings/CredentialFieldMeta.ts:3 carries no value column; outbound-fetch-destination-validation n/a: the only data-borne address (authorize_url) is scheme-allowlisted at src-tauri/src/engine/mcp_tools.rs:532 and opened in the user browser with no credential (PendingAuthModal.tsx:58); public-vs-server-env-split n/a: zero import.meta.env reads; RLS techniques n/a: no browser-reachable store; audit detail is a fixed vocabulary (src-tauri/src/commands/credentials/crud.rs:201).",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"
@@ -35591,7 +35637,11 @@
           "revision": 3,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "broker-proxy-attaches-secret: ChatTab.tsx:256 / src/api/vault/database/dbSchema.ts:74 send credentialId + SQL only, credential attached in Rust; outbound-fetch-destination-validation: that broker fetches via SSRF_SAFE_HTTP (src-tauri/src/engine/db_query.rs:138); opaque-upstream-errors (operator-owned DB, so detail is legitimate) with credential material scrubbed by sanitize_error before return (db_query.rs:148, :244); allowlisted-operator-stream: telemetry carries only read/mutation, never the statement (ChatTab.tsx:249-250) and console history is memory-only (ConsoleTab.tsx:47); env-split and RLS techniques n/a (no env reads, no browser-held DB role key).",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
+          "evaluatedRevision": 3
         },
         {
           "subject": "credential-vault",
@@ -36850,7 +36900,11 @@
           "revision": 8,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:247-251 run_standards_scan hand-builds its spawn from build_cli_args and never calls force_subscription_auth (build_cli_args' env_removals carry no ANTHROPIC_* key), so a metered key in the app env silently bills every standards scan; all repo scans here (context_generation.rs:1624, use_case_scan.rs:608, kpi_scan.rs:802) run as readonly-scan in the project root with --dangerously-skip-permissions, an editor wearing a scanner's label",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+          "evaluatedRevision": 9
         }
       ],
       "governance": "governed"
