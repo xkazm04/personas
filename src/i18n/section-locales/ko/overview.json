@@ -2088,5 +2088,11 @@
     "loop_off": "주의 루프가 꺼져 있습니다",
     "no_schedule": "예약된 실행이 없습니다",
     "per_day": "하루 {value}"
-  }
+  },
+  "reader_full_report_title": "위원회 전체 보고서",
+  "reader_no_full_report": "이 실행에는 전체 보고서가 없습니다",
+  "reader_no_full_report_hint": "이 위원회 실행은 실행 디렉터리에 report.html 또는 report.md를 작성하지 않았습니다.",
+  "reader_priority_critical": "치명적",
+  "reader_read_full_report": "전체 보고서 읽기",
+  "reader_report_unreadable": "전체 보고서를 읽을 수 없습니다"
 }

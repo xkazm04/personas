@@ -2088,5 +2088,11 @@
     "loop_off": "Цикл внимания выключен",
     "no_schedule": "Нет запланированных запусков",
     "per_day": "{value} в день"
-  }
+  },
+  "reader_full_report_title": "Полный отчёт совета",
+  "reader_no_full_report": "Для этого запуска нет полного отчёта",
+  "reader_no_full_report_hint": "Этот запуск совета не создал report.html или report.md в каталоге запуска.",
+  "reader_priority_critical": "Критический",
+  "reader_read_full_report": "Читать полный отчёт",
+  "reader_report_unreadable": "Не удалось прочитать полный отчёт"
 }

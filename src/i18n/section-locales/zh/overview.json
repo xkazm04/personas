@@ -2088,5 +2088,11 @@
     "loop_off": "注意力循环已关闭",
     "no_schedule": "没有计划的运行",
     "per_day": "每天 {value}"
-  }
+  },
+  "reader_full_report_title": "委员会完整报告",
+  "reader_no_full_report": "此次运行没有完整报告",
+  "reader_no_full_report_hint": "此次委员会运行未在其运行目录中写入 report.html 或 report.md。",
+  "reader_priority_critical": "严重",
+  "reader_read_full_report": "阅读完整报告",
+  "reader_report_unreadable": "无法读取完整报告"
 }

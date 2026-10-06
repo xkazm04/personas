@@ -2088,5 +2088,11 @@
     "loop_off": "La boucle d'attention est désactivée",
     "no_schedule": "Aucune exécution planifiée",
     "per_day": "{value} par jour"
-  }
+  },
+  "reader_full_report_title": "Rapport complet du conseil",
+  "reader_no_full_report": "Aucun rapport complet pour cette exécution",
+  "reader_no_full_report_hint": "Cette exécution du conseil n'a écrit ni report.html ni report.md dans son répertoire d'exécution.",
+  "reader_priority_critical": "Critique",
+  "reader_read_full_report": "Lire le rapport complet",
+  "reader_report_unreadable": "Impossible de lire le rapport complet"
 }

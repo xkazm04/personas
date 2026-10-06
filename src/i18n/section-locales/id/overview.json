@@ -2088,5 +2088,11 @@
     "loop_off": "Loop perhatian nonaktif",
     "no_schedule": "Tidak ada eksekusi terjadwal",
     "per_day": "{value} per hari"
-  }
+  },
+  "reader_full_report_title": "Laporan lengkap dewan",
+  "reader_no_full_report": "Tidak ada laporan lengkap untuk eksekusi ini",
+  "reader_no_full_report_hint": "Eksekusi dewan ini tidak menulis report.html atau report.md ke direktori eksekusinya.",
+  "reader_priority_critical": "Kritis",
+  "reader_read_full_report": "Baca laporan lengkap",
+  "reader_report_unreadable": "Laporan lengkap tidak dapat dibaca"
 }

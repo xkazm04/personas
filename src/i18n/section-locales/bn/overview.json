@@ -2088,5 +2088,11 @@
     "loop_off": "মনোযোগ লুপ বন্ধ",
     "no_schedule": "কোনো নির্ধারিত রান নেই",
     "per_day": "প্রতিদিন {value}"
-  }
+  },
+  "reader_full_report_title": "কাউন্সিলের পূর্ণ রিপোর্ট",
+  "reader_no_full_report": "এই রানের জন্য কোনো পূর্ণ রিপোর্ট নেই",
+  "reader_no_full_report_hint": "এই কাউন্সিল রান তার রান ডিরেক্টরিতে report.html বা report.md লেখেনি।",
+  "reader_priority_critical": "জরুরি",
+  "reader_read_full_report": "পূর্ণ রিপোর্ট পড়ুন",
+  "reader_report_unreadable": "পূর্ণ রিপোর্টটি পড়া যায়নি"
 }

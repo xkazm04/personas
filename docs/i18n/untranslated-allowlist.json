@@ -4103,5 +4103,13 @@
   "zh:vault.playground.path_placeholder",
   "zh:vault.schema_configs.database.subtype_convex_label",
   "zh:vault.schema_configs.database.subtype_postgresql_label",
-  "zh:vault.shared.api_path_placeholder"
+  "zh:vault.shared.api_path_placeholder",
+  "*:monitor.dc_source_athena",
+  "de:monitor.dc_fact_status",
+  "de:monitor.dc_source_system",
+  "de:monitor.dc_priority_normal",
+  "es:monitor.dc_priority_normal",
+  "fr:monitor.dc_fact_action",
+  "id:monitor.dc_fact_status",
+  "id:monitor.dc_priority_normal"
 ]

@@ -2088,5 +2088,11 @@
     "loop_off": "ध्यान लूप बंद है",
     "no_schedule": "कोई शेड्यूल्ड रन नहीं",
     "per_day": "{value} प्रति दिन"
-  }
+  },
+  "reader_full_report_title": "पूरी काउंसिल रिपोर्ट",
+  "reader_no_full_report": "इस रन की कोई पूरी रिपोर्ट नहीं",
+  "reader_no_full_report_hint": "इस काउंसिल रन ने अपनी रन डायरेक्टरी में report.html या report.md नहीं लिखी।",
+  "reader_priority_critical": "गंभीर",
+  "reader_read_full_report": "पूरी रिपोर्ट पढ़ें",
+  "reader_report_unreadable": "पूरी रिपोर्ट पढ़ी नहीं जा सकी"
 }

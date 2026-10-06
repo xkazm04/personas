@@ -2088,5 +2088,11 @@
     "loop_off": "Vòng chú ý đang tắt",
     "no_schedule": "Không có lần chạy nào được lên lịch",
     "per_day": "{value} mỗi ngày"
-  }
+  },
+  "reader_full_report_title": "Báo cáo đầy đủ của hội đồng",
+  "reader_no_full_report": "Không có báo cáo đầy đủ cho lượt chạy này",
+  "reader_no_full_report_hint": "Lượt chạy của hội đồng này không ghi report.html hoặc report.md vào thư mục chạy.",
+  "reader_priority_critical": "Nghiêm trọng",
+  "reader_read_full_report": "Đọc báo cáo đầy đủ",
+  "reader_report_unreadable": "Không thể đọc báo cáo đầy đủ"
 }

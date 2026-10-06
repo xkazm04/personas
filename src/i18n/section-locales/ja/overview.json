@@ -2088,5 +2088,11 @@
     "loop_off": "アテンションループはオフです",
     "no_schedule": "予定された実行はありません",
     "per_day": "1日あたり {value}"
-  }
+  },
+  "reader_full_report_title": "評議会の完全レポート",
+  "reader_no_full_report": "この実行の完全レポートはありません",
+  "reader_no_full_report_hint": "この評議会の実行は、実行ディレクトリにreport.htmlまたはreport.mdを書き出しませんでした。",
+  "reader_priority_critical": "重大",
+  "reader_read_full_report": "完全レポートを読む",
+  "reader_report_unreadable": "完全レポートを読み込めませんでした"
 }

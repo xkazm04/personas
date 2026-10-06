@@ -2088,5 +2088,11 @@
     "loop_off": "حلقة الانتباه متوقفة",
     "no_schedule": "لا عمليات تشغيل مجدولة",
     "per_day": "{value} يوميًا"
-  }
+  },
+  "reader_full_report_title": "تقرير المجلس الكامل",
+  "reader_no_full_report": "لا يوجد تقرير كامل لهذا التشغيل",
+  "reader_no_full_report_hint": "لم يكتب تشغيل المجلس هذا ملف report.html أو report.md في مجلد التشغيل.",
+  "reader_priority_critical": "حرجة",
+  "reader_read_full_report": "قراءة التقرير الكامل",
+  "reader_report_unreadable": "تعذّرت قراءة التقرير الكامل"
 }

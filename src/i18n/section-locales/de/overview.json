@@ -2088,5 +2088,11 @@
     "loop_off": "Aufmerksamkeitsschleife ist aus",
     "no_schedule": "Keine geplanten Läufe",
     "per_day": "{value} pro Tag"
-  }
+  },
+  "reader_full_report_title": "Vollständiger Ratsbericht",
+  "reader_no_full_report": "Kein vollständiger Bericht für diesen Lauf",
+  "reader_no_full_report_hint": "Dieser Ratslauf hat keine report.html oder report.md in sein Laufverzeichnis geschrieben.",
+  "reader_priority_critical": "Kritisch",
+  "reader_read_full_report": "Vollständigen Bericht lesen",
+  "reader_report_unreadable": "Der vollständige Bericht konnte nicht gelesen werden"
 }

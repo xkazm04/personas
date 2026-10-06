@@ -2088,5 +2088,11 @@
     "loop_off": "Smyčka pozornosti je vypnutá",
     "no_schedule": "Žádná naplánovaná spuštění",
     "per_day": "{value} za den"
-  }
+  },
+  "reader_full_report_title": "Úplný report rady",
+  "reader_no_full_report": "Pro tento běh není k dispozici úplný report",
+  "reader_no_full_report_hint": "Tento běh rady do svého adresáře nezapsal soubor report.html ani report.md.",
+  "reader_priority_critical": "Kritická",
+  "reader_read_full_report": "Číst úplný report",
+  "reader_report_unreadable": "Úplný report se nepodařilo přečíst"
 }

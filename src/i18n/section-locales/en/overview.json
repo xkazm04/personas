@@ -1630,6 +1630,12 @@
   "no_output": "No output yet",
   "no_background_jobs": "No background jobs running or recent",
   "background_jobs_hint": "Tasks appear here when you import workflows, set up templates, generate agents, or run diagnostics",
+  "reader_priority_critical": "Critical",
+  "reader_read_full_report": "Read full report",
+  "reader_full_report_title": "Full council report",
+  "reader_no_full_report": "No full report for this run",
+  "reader_no_full_report_hint": "This council run did not write a report.html or report.md into its run directory.",
+  "reader_report_unreadable": "The full report could not be read",
   "realtime": {
     "idle": "Idle -- click {action} to simulate traffic",
     "test_flow": "Test Flow",

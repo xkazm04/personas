@@ -2088,5 +2088,11 @@
     "loop_off": "El bucle de atención está desactivado",
     "no_schedule": "No hay ejecuciones programadas",
     "per_day": "{value} al día"
-  }
+  },
+  "reader_full_report_title": "Informe completo del consejo",
+  "reader_no_full_report": "No hay informe completo de esta ejecución",
+  "reader_no_full_report_hint": "Esta ejecución del consejo no escribió un report.html ni un report.md en su directorio de ejecución.",
+  "reader_priority_critical": "Crítica",
+  "reader_read_full_report": "Leer informe completo",
+  "reader_report_unreadable": "No se pudo leer el informe completo"
 }
