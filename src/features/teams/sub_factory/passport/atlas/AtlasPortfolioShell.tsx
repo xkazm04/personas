@@ -16,7 +16,7 @@ import { ATLAS_WORDS as W, INK_MARK, LEGEND_ORDER, LENSES, SORTS } from './atlas
 
 export interface PortfolioView { lens: AtlasLens; sort: AtlasSort; query: string; unfold: boolean; at: AtlasCoord }
 
-export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, view, onView, figure, extraControls }: {
+export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, view, onView, figure }: {
   all: AppPassport[];
   projects: AppPassport[];
   rows: AtlasRow[];
@@ -26,8 +26,6 @@ export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, v
   onView: (patch: Partial<PortfolioView>) => void;
   /** The figure, already wired to the model. Null when nothing matched. */
   figure: ReactNode;
-  /** Dev-only concept picker; absent in a production build. */
-  extraControls?: ReactNode;
 }) {
   const searchRef = useRef<HTMLInputElement>(null);
   const care = needCare(all);
@@ -57,7 +55,6 @@ export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, v
             <InkDot ink="setup" /> {W.sharedSetup(sharedSetup.length)}
           </KitButton>
         )}
-        {extraControls}
       </Toolbar>
       <div className="atlas-legend typo-caption" aria-hidden="true">
         {LEGEND_ORDER.map((k) => <span key={k} className="atlas-legend__item"><InkDot ink={k} /> {INK_MARK[k].label}</span>)}

@@ -1,26 +1,24 @@
 // Passport Atlas — the portfolio layer: the kit-governed chrome from
-// AtlasPortfolioShell with ONE figure in the middle.
+// AtlasPortfolioShell with the matrix figure in the middle.
 //
 // `AtlasFigureProps` is the whole contract between the model and the figure,
-// so the drawing never carries a second copy of the data model — and so a
-// benched concept is a drawing and nothing else.
+// so the drawing never carries a second copy of the data model. The seam is
+// worth keeping on its own terms: it is what lets the figure be tested and
+// read without the shell, and it survived two prototype rounds that did not.
 //
-// The picker is dev-only and its gate is a named module constant, not a brace
-// at the render site. The default is the shipped matrix, so nothing changes
-// for a user until the owner picks.
-import { useState } from 'react';
-import { Segmented } from '@/features/shared/components/kit';
+// The matrix is the only figure. Three benched concepts (a stamp sheet, a core
+// sample, a cohort banding) were built here on 2026-10-06 and deleted the same
+// day at the owner's instruction, along with the skin layer that preceded
+// them. What stays from that work is the parts that stand without a bench:
+// `useRovingFigure` (one keyboard model instead of a copy per drawing) and the
+// figure contract itself.
 import { AtlasPortfolioShell, type PortfolioView } from './AtlasPortfolioShell';
 import type { AtlasCoord, AtlasFigureProps, AtlasNames } from './atlasFigure';
-import { CONCEPT_FIGURES, CONCEPT_OPTIONS, type AtlasConcept } from './variants/concepts';
-import { ATLAS_WORDS as W } from './atlasWords';
+import { MatrixFigure } from './variants/matrix/MatrixFigure';
 import type { AppPassport } from '../passportModel';
 import type { AtlasRow } from './atlasModel';
 
 export type { PortfolioView };
-
-/** The bench is a development surface. Production always renders the matrix. */
-const SHOW_CONCEPT_BENCH = import.meta.env.DEV;
 
 export function AtlasPortfolio({ all, projects, rows, sharedSetup, names, view, onView, onOpenCell, onOpenProject }: {
   all: AppPassport[];
@@ -33,11 +31,6 @@ export function AtlasPortfolio({ all, projects, rows, sharedSetup, names, view, 
   onOpenCell: (c: AtlasCoord) => void;
   onOpenProject: (slug: string) => void;
 }) {
-  // Session state, deliberately: a throwaway comparison toggle is not a
-  // preference, so it is never written to Web Storage.
-  const [concept, setConcept] = useState<AtlasConcept>('matrix');
-  const Figure = CONCEPT_FIGURES[SHOW_CONCEPT_BENCH ? concept : 'matrix'];
-
   const figure: AtlasFigureProps = {
     projects, rows, names, at: view.at,
     onMove: (at) => onView({ at }),
@@ -53,10 +46,7 @@ export function AtlasPortfolio({ all, projects, rows, sharedSetup, names, view, 
       names={names}
       view={view}
       onView={onView}
-      figure={<Figure {...figure} />}
-      extraControls={SHOW_CONCEPT_BENCH
-        ? <Segmented label={W.figure} options={CONCEPT_OPTIONS} value={concept} onChange={setConcept} />
-        : undefined}
+      figure={<MatrixFigure {...figure} />}
     />
   );
 }

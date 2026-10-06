@@ -1,11 +1,11 @@
 // The ONE keyboard model every portfolio figure obeys.
 //
-// The baseline matrix owned this outright, which meant the next figure had to
+// The matrix owned this outright, which meant any second figure had to
 // re-author it and the operator's key map would then depend on which drawing
-// he was looking at. It does not: a project is always the vertical axis, a
-// dimension always the horizontal one, Enter always opens the cell and P
-// always opens the passport, whether the figure draws a grid, a sheet of
-// stamps, a stack of cores or a set of cohorts.
+// he was looking at. Extracting it was the one piece of the 2026-10-06
+// concept bench worth keeping after the concepts themselves were deleted: a
+// project is always the vertical axis, a dimension always the horizontal one,
+// Enter always opens the cell and P always opens the passport.
 //
 // What a figure still owns is which element carries `data-cell="pi:di"`. The
 // hook moves DOM focus there and nothing else, so a figure is free to draw

@@ -1,18 +1,12 @@
-// THESIS — the portfolio is ONE figure: a project is a reading line, a
-// dimension is a column, a state is a mark, and the eye finds a cluster of bad
-// marks without reading a word. The shipped baseline (contest winner,
-// 2026-09-25) and the default.
-//
 // Passport Atlas — the portfolio matrix (the proposed kit part SpineMatrix):
 // one project per reading line, one dimension per column, a state mark per
 // cell. A roving coordinate moves with the arrows; a cell opens the drawer,
 // a project's name opens its passport. Fixed row bands on the 8px grid, the
 // spine glows on the selected line, headings stay horizontal.
 //
-// The key map is `useRovingFigure`, shared by every concept on the bench so
-// the operator's keyboard does not depend on which drawing he is looking at.
-// Everything else below - `role="grid"`, the aria counts, the bands, the spine
-// and every `data-testid` - is this figure's own and is unchanged.
+// The contest winner of 2026-09-25 and the only figure. The key map lives in
+// `useRovingFigure` rather than here, which is the one piece worth keeping
+// from the benched concepts that were deleted on 2026-10-06.
 import { Button } from '@/features/shared/components/buttons';
 import { Hint } from '@/features/shared/components/kit';
 import { countInk, inkOf } from '../../atlasModel';
