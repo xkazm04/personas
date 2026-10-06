@@ -155,6 +155,15 @@ export const FEATURE_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
  * (machine-enforced: the operator reviews the pile before more is added to it).
  */
 export const UX = { charter: 'ux-proposal', titlePrefix: '[UX]', pendingMax: 10 };
+/**
+ * Charters with no row in recipe_definitions: their title and one-line purpose are built in, so the
+ * context still says what each is for (lib/dbread.mjs chartersFor, the YOUR CHARTERS section).
+ */
+export const BUILTIN_CHARTERS = {
+  'council-lite-review': { title: 'Council-lite review of one feature', purpose: 'Run the lite council on one feature (featureSlug) and report its outcome and must-address; every feature passes it, reworked until lite-ready. Writes no code.' },
+  'council-review': { title: 'Full council review of one major feature', purpose: 'Run the full council on one lite-ready feature you judge major; a ready result goes to the operator as a Report with an Approval. Writes no code.' },
+  'ux-proposal': { title: 'UX proposal', purpose: 'File one [UX] idea through the ideas door and merge its prototype as a /layout lab variant, for the operator to judge; refused while more than 10 [UX] ideas wait.' },
+};
 export const QUEUE_REASONS = ['global cap', 'project cap', 'repo lane', 'paths overlap', 'memory'];
 export const QUEUE_STATES = ['queued', 'promoted', 'dropped'];
 export const QUEUE_LOCK = { waitMs: 30000, pollMs: 100, staleMin: 10 };

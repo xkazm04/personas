@@ -227,4 +227,30 @@ test('status --text names each running run\'s model and its paths', async () => 
   assert.match(txt.text, new RegExp(`Running ${C.shortId(run.runId)} accepted-idea-delivery \\(claude-opus-5\\).*; paths src/x/\\.`));
 });
 
+test('recipes: each charter quotes its v3 recipe need and core action; a charter with none says so, built-ins give their purpose', async () => {
+  const d = D.openDb();
+  try {
+    const m = D.recipesBySlug(d, ['project-kpi-stewardship', 'accepted-idea-delivery', 'council-review']);
+    assert.deepEqual(m.get('project-kpi-stewardship'), { name: 'Project KPI and coverage stewardship', need: 'RECIPE-NEED-KPI', coreAction: 'RECIPE-CORE-KPI' }, 'the newest row of a slug wins');
+    assert.equal(m.has('council-review'), false);
+    // council-review has an app-master template on disk (and, in the real DB, a recipe row): its text
+    // comes from there; ux-proposal has neither and is built in. Both carry the built-in purpose, which
+    // the context prints only when no recipe row exists.
+    const cs = D.chartersFor(d, IDS.project, demoBrief([{ slug: 'council-review', priority: null }, { slug: 'ux-proposal', priority: null }]));
+    assert.deepEqual(cs.map((c) => [c.source, c.recipe, Boolean(c.purpose)]), [['template', null, true], ['builtin', null, true]]);
+  } finally { d.close(); }
+  S.saveBrief('demo', demoBrief([...CHARTERS, { slug: 'council-lite-review', priority: null }, { slug: 'ux-proposal', priority: null }]));
+  const r = await X.cmdContext({ flags: { project: 'demo' } });
+  const doc = fs.readFileSync(r.path, 'utf8');
+  assert.match(doc, /- slug: project-kpi-stewardship[\s\S]*?recipe "Project KPI and coverage stewardship" need: RECIPE-NEED-KPI\n  recipe core action: RECIPE-CORE-KPI/);
+  assert.match(doc, /recipe "Accepted idea delivery to the main branch" need: RECIPE-NEED-DELIVERY/);
+  assert.ok(!doc.includes('OLD-NEED'), 'an older recipe row is not quoted');
+  assert.match(doc, /- slug: made-up-charter[\s\S]*?recipe: no recipe_definitions row for this slug\n/);
+  assert.match(doc, /- slug: council-lite-review[\s\S]*?title: Council-lite review of one feature · text from builtin[\s\S]*?recipe: no recipe_definitions row for this slug; its built-in purpose: Run the lite council on one feature/);
+  assert.match(doc, /- slug: ux-proposal[\s\S]*?its built-in purpose: File one \[UX\] idea/);
+  // every budget level keeps the recipe quote: the master works to it even in a crowded context
+  for (const C of X.BUDGET_LEVELS) assert.ok(C.recipeNeed > 0 && C.recipeCore > 0);
+  assert.ok(doc.length <= X.MAX_CONTEXT_CHARS);
+});
+
 test('cleanup', () => { fixture.close(); fs.rmSync(env.tmp, { recursive: true, force: true }); });

@@ -26,7 +26,12 @@ import { briefRepos, laneFor } from './repos.mjs';
 
 export { parseTs, ageText, lastDecided, isDue };
 
-export const MAX_CONTEXT_CHARS = 12000;
+/**
+ * 20000 since 2026-10-07 (12000 before): the plan, council, queue and recipe sections need the room.
+ * Measured on the real DB that day at the fullest budget level: kp 19446, ascent 16782, pof 12602
+ * characters (about 5k tokens at most); at 16000, kp fell to the tightest level (3 goals, 3 ideas).
+ */
+export const MAX_CONTEXT_CHARS = 20000;
 const UNOBSERVED_GAP_MIN = 240;   // attention_decide.rs UNOBSERVED_GAP_MINUTES
 
 // ---------------------------------------------------------------- small pure helpers
@@ -45,11 +50,12 @@ const askForText = (a) => (Array.isArray(a) ? a.join('; ') : a) || 'a scope chan
 // ---------------------------------------------------------------- the renderer (pure)
 
 /** List caps per budget level; renderContext steps down a level until the doc fits MAX_CONTEXT_CHARS. */
+// recipeNeed/recipeCore never reach 0: the master works to its charters' recipes at every budget level
 export const BUDGET_LEVELS = [
-  { brief: 400, need: 160, core: 200, note: 260, goals: 10, ideas: 8, pending: 6, branches: 6, kpiNames: 5, asks: 6, said: 5, saidChars: 600, title: 120, features: 14, mustAddress: 3 },
-  { brief: 300, need: 0, core: 200, note: 220, goals: 8, ideas: 6, pending: 5, branches: 5, kpiNames: 3, asks: 5, said: 4, saidChars: 500, title: 100, features: 10, mustAddress: 2 },
-  { brief: 200, need: 0, core: 150, note: 160, goals: 5, ideas: 4, pending: 3, branches: 3, kpiNames: 0, asks: 4, said: 3, saidChars: 400, title: 76, features: 6, mustAddress: 1 },
-  { brief: 110, need: 0, core: 0, note: 120, goals: 3, ideas: 3, pending: 2, branches: 2, kpiNames: 0, asks: 3, said: 2, saidChars: 220, title: 80, features: 4, mustAddress: 1 },
+  { brief: 400, need: 160, core: 200, note: 260, goals: 10, ideas: 8, pending: 6, branches: 6, kpiNames: 5, asks: 6, said: 5, saidChars: 600, title: 120, features: 14, mustAddress: 3, recipeNeed: 240, recipeCore: 280 },
+  { brief: 300, need: 0, core: 200, note: 220, goals: 8, ideas: 6, pending: 5, branches: 5, kpiNames: 3, asks: 5, said: 4, saidChars: 500, title: 100, features: 10, mustAddress: 2, recipeNeed: 180, recipeCore: 220 },
+  { brief: 200, need: 0, core: 150, note: 160, goals: 5, ideas: 4, pending: 3, branches: 3, kpiNames: 0, asks: 4, said: 3, saidChars: 400, title: 76, features: 6, mustAddress: 1, recipeNeed: 130, recipeCore: 160 },
+  { brief: 110, need: 0, core: 0, note: 120, goals: 3, ideas: 3, pending: 2, branches: 2, kpiNames: 0, asks: 3, said: 2, saidChars: 220, title: 80, features: 4, mustAddress: 1, recipeNeed: 90, recipeCore: 110 },
 ];
 /** COUNCIL section order: what needs the master's hand first. */
 const COUNCIL_ORDER = { rejected: 0, 'lite-fail': 1, 'lite-incomplete': 1, 'full-fail': 2, 'full-incomplete': 2, none: 3, 'lite-ready': 4, 'full-ready': 5, stalled: 6, approved: 7 };
@@ -181,8 +187,15 @@ export function renderAt(input, C) {
   for (const c of charters) {
     L.push(`- slug: ${c.slug} · priority ${c.priority ?? 'none declared (your judgment)'}`);
     L.push(`  title: ${clip(c.title, C.title)}${c.dbStatus && c.dbStatus !== 'active' ? ` (in-app status: ${c.dbStatus})` : ''} · text from ${c.source}${c.model ? ` · builder model ${c.model}` : ''}`);
-    if (c.need && C.need) L.push(`  need: ${clip(c.need, C.need)}`);
-    if (c.coreAction && C.core) L.push(`  core action: ${clip(c.coreAction, C.core)}`);
+    // the charter's v3 recipe (recipe_definitions): work to it, not only to the slug
+    if (c.recipe) {
+      L.push(`  recipe "${clip(c.recipe.name, C.title)}" need: ${clip(c.recipe.need || '(the recipe states none)', C.recipeNeed)}`);
+      L.push(`  recipe core action: ${clip(c.recipe.coreAction || '(the recipe states none)', C.recipeCore)}`);
+    } else {
+      L.push(`  recipe: no recipe_definitions row for this slug${c.purpose ? `; its built-in purpose: ${c.purpose}` : ''}`);
+      if (c.need && C.need) L.push(`  need: ${clip(c.need, C.need)}`);
+      if (c.coreAction && C.core) L.push(`  core action: ${clip(c.coreAction, C.core)}`);
+    }
     if (c.lastDecidedAt || c.lastDispatchedAt) L.push(`  in-app: decided ${stampAgeShort(c.lastDecidedAt, nowMs)}, dispatched ${stampAgeShort(c.lastDispatchedAt, nowMs)}`);
     if (c.pacingNote) {
       const seen = firstWithNote.get(c.pacingNote);

@@ -14,7 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
-import { DB_PATH, REPO_ROOT, UX, slugOf, slugify } from './contract.mjs';
+import { BUILTIN_CHARTERS, DB_PATH, REPO_ROOT, UX, slugOf, slugify } from './contract.mjs';
 import { listSlugs, loadWakes } from './store.mjs';
 
 export const TEMPLATE_DIR = path.join(REPO_ROOT, 'scripts', 'templates', '_app_master');
@@ -133,12 +133,40 @@ export const briefCharters = (brief) => (brief?.charters ?? [])
   .filter((c) => c.slug);
 
 /**
- * (db, projectId, brief) => Array<{slug,title,priority,need,coreAction,pacingNote,source:"db"|"template"|"slug-only"}>
+ * (db, slugs) => Map<slug, {name, need, coreAction}>   The v3 recipe of each charter slug, from
+ * recipe_definitions (read-only), matched by `prompt_template.$.slug`; the newest row wins when a slug
+ * has several. A failed read (an older DB) is an empty map: the context then says "no recipe row".
+ */
+export function recipesBySlug(d, slugs) {
+  const want = [...new Set((slugs ?? []).filter(Boolean))];
+  const out = new Map();
+  if (!d || !want.length) return out;
+  const marks = want.map(() => '?').join(', ');
+  const rows = tryRows(d, `select json_extract(prompt_template, '$.slug') slug, name,
+                                  json_extract(prompt_template, '$.description.need') need,
+                                  json_extract(prompt_template, '$.description.coreAction') coreAction
+                           from recipe_definitions
+                           where json_valid(prompt_template) and json_extract(prompt_template, '$.slug') in (${marks})
+                           order by updated_at desc`, want).rows;
+  for (const r of rows) if (!out.has(r.slug)) out.set(r.slug, { name: r.name ?? r.slug, need: r.need ?? null, coreAction: r.coreAction ?? null });
+  return out;
+}
+
+/**
+ * (db, projectId, brief) => Array<{slug,title,priority,need,coreAction,pacingNote,source:"db"|"template"|"builtin"|"slug-only",recipe,purpose}>
  * The brief decides WHICH charters exist; their text comes from the master persona's
  * persona_responsibilities spec (description.need/coreAction, pacing.coverageNote, recipeRef.slug),
- * else scripts/templates/_app_master/<slug>.json, else the slug alone.
+ * else scripts/templates/_app_master/<slug>.json, else BUILTIN_CHARTERS, else the slug alone. Each also
+ * carries its v3 `recipe` ({name, need, coreAction} from recipe_definitions, or null) and, for a
+ * built-in charter, its one-line `purpose`.
  */
 export function chartersFor(d, projectId, brief) {
+  const recipes = recipesBySlug(d, briefCharters(brief).map((c) => c.slug));
+  const withRecipe = (c) => ({ ...c, recipe: recipes.get(c.slug) ?? null, purpose: BUILTIN_CHARTERS[c.slug]?.purpose ?? null });
+  return chartersText(d, projectId, brief).map(withRecipe);
+}
+
+function chartersText(d, projectId, brief) {
   const m = d && projectId ? masterPersona(d, projectId) : null;
   const rows = m ? q(d, `select id, title, status, spec, updated_at from persona_responsibilities
                          where persona_id = ? order by case status when 'active' then 0 else 1 end, updated_at desc`, [m.id]) : [];
@@ -163,6 +191,10 @@ export function chartersFor(d, projectId, brief) {
     if (t) {
       return { slug, title: t.title ?? slug, priority, need: t.description?.need ?? null, coreAction: t.description?.coreAction ?? null,
         pacingNote: null, lastDecidedAt: null, lastDispatchedAt: null, dbStatus: null, source: 'template' };
+    }
+    if (BUILTIN_CHARTERS[slug]) {
+      return { slug, title: BUILTIN_CHARTERS[slug].title, priority, need: null, coreAction: null, pacingNote: null,
+        lastDecidedAt: null, lastDispatchedAt: null, dbStatus: null, source: 'builtin' };
     }
     return { slug, title: slug, priority, need: null, coreAction: null, pacingNote: null,
       lastDecidedAt: null, lastDispatchedAt: null, dbStatus: null, source: 'slug-only' };

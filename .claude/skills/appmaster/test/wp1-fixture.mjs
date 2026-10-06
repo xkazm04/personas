@@ -62,6 +62,7 @@ create table dev_council_subjects (id text primary key, project_id text, kind te
 create table dev_council_runs (id text primary key, subject_id text, round_no integer, outcome text, overall real, coverage real, must_address_json text, run_dir text, finished_at text, ingested_at text);
 create table dev_council_decisions (id text primary key, subject_id text, run_id text, decision text, reason text, decided_at text);
 create table persona_reports (id text primary key, persona_id text, title text, content text, created_at text);
+create table recipe_definitions (id text primary key, project_id text default 'default', name text, description text, prompt_template text, is_builtin integer default 0, created_at text, updated_at text);
 `;
 
 const sqlNow = (minAgo = 0) => new Date(Date.now() - minAgo * 60000).toISOString().replace('T', ' ').slice(0, 19);
@@ -106,6 +107,14 @@ export function makeDb(env) {
   run("insert into dev_council_runs values ('cr-kpi-1', 's-kpi', 1, 'ready', 0.82, 0.9, '[]', ?, '2026-09-21 10:00:00', '2026-09-21 10:05:00')",
     path.join(env.demoRoot, '.personas', 'council', 'runs', '2026-09-21-kpi-board-r1'));
   run("insert into dev_council_decisions values ('cd-kpi', 's-kpi', 'cr-kpi-1', 'approved', 'looks right', '2026-09-22 09:00:00')");
+  // v3 recipes (recipe_definitions): the slug and the description live inside prompt_template's JSON;
+  // an older row of the same slug loses to the newest; a plain-text template is not a v3 recipe
+  const recipe = (id, slug, name, need, coreAction, updated) => run('insert into recipe_definitions (id, name, description, prompt_template, created_at, updated_at) values (?,?,?,?,?,?)',
+    id, name, 'flat description', JSON.stringify({ id, slug, title: name, description: { need, coreAction } }), updated, updated);
+  recipe('rec-kpi-old', 'project-kpi-stewardship', 'Old KPI recipe', 'OLD-NEED', 'OLD-CORE', '2026-01-01T00:00:00Z');
+  recipe('rec-kpi', 'project-kpi-stewardship', 'Project KPI and coverage stewardship', 'RECIPE-NEED-KPI', 'RECIPE-CORE-KPI', '2026-09-30T00:00:00Z');
+  recipe('rec-del', 'accepted-idea-delivery', 'Accepted idea delivery to the main branch', 'RECIPE-NEED-DELIVERY', 'RECIPE-CORE-DELIVERY', '2026-09-30T00:00:00Z');
+  run("insert into recipe_definitions (id, name, prompt_template, created_at, updated_at) values ('rec-plain', 'Plain', 'not json at all', '2026-09-30', '2026-09-30')");
   return d;
 }
 
