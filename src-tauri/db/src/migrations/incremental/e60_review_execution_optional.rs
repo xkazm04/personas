@@ -157,7 +157,7 @@ mod tests {
     #[test]
     fn only_the_execution_id_not_null_is_relaxed() {
         let ddl = "CREATE TABLE persona_manual_reviews (
-    id                TEXT PRIMARY KEY,
+    id                TEXT PRIMARY KEY NOT NULL,
     execution_id      TEXT NOT NULL REFERENCES persona_executions(id) ON DELETE CASCADE,
     persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
     title             TEXT NOT NULL
@@ -166,6 +166,10 @@ mod tests {
         assert!(out.contains(
             "execution_id      TEXT REFERENCES persona_executions(id) ON DELETE CASCADE"
         ));
+        assert!(
+            out.contains("id                TEXT PRIMARY KEY NOT NULL"),
+            "{out}"
+        );
         assert!(out.contains("persona_id        TEXT NOT NULL"), "{out}");
         assert!(out.contains("title             TEXT NOT NULL"), "{out}");
     }
