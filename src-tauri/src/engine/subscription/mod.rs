@@ -57,12 +57,12 @@ mod autonomy_reviews;
 mod builtin;
 mod desktop;
 mod runner;
-mod traits;
+pub use personas_engine::subscription::traits;
 /// `pub(crate)`: the Activity board's `fleet_autopilot_status` command reads
 /// the same verdicts the tick does, so the board and the loop cannot disagree.
 pub(crate) mod usage_governor;
 pub(crate) mod usage_pacing;
-mod wake;
+pub use personas_engine::subscription::wake;
 mod watchdogs;
 
 #[cfg(test)]

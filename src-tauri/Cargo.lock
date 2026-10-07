@@ -5457,6 +5457,7 @@ dependencies = [
  "tracing",
  "ts-rs",
  "url",
+ "urlencoding",
  "uuid",
  "which",
  "windows 0.58.0",

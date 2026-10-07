@@ -1662,7 +1662,8 @@
       "goldenPath": "docs/concepts/golden-paths/cloud-auth-degraded-mode.md",
       "title": "A remote call that carried a credential folds its non-2xx into an untyped message string, so no caller can tell \"the credential was rejected, re-authenticate\" from \"the service is down, retry\"",
       "roots": [
-        "src-tauri/src"
+        "src-tauri/src",
+   "src-tauri/engine/src"
       ],
       "extensions": [
         ".rs"
@@ -4016,7 +4017,7 @@
       },
       "exclude": [
         {
-          "path": "src-tauri/src/engine/db_query.rs",
+          "path": "src-tauri/engine/src/db_query.rs",
           "reason": "the primitive itself — the one classifier that owns the read/write decision for every door onto this database (is_mutation :383, is_sqlite_read :360, and the CTE_MUTATION_VERBS list :290). Everything else in the repo should be calling this or the classify_db_query IPC command that wraps it."
         },
         {

@@ -1,0 +1,1876 @@
+//! Capability-gate state machine.
+//!
+//! Rule 16/17 of the build prompt instruct the LLM to emit a clarifying_question
+//! BEFORE resolving trigger / connectors / review_policy / memory_policy on any
+//! capability. In practice Sonnet 4.x treats the rule as advisory and jumps to
+//! resolution (or directly to agent_ir) from inference alone. This state
+//! machine enforces the rule on the Rust side: it suppresses out-of-order
+//! `CapabilityResolutionUpdate` events for gated fields and SYNTHESIZES a
+//! clarifying_question locally so the UI surface doesn't depend on the LLM
+//! cooperating. The LLM is still the primary question author when it obeys;
+//! synthesis is purely a fallback.
+//!
+//! Per-capability gate state is keyed by `capability_id`. A gate goes:
+//!
+//! ```text
+//! Closed ──(question asked OR intent-derived)──▶ Pending ──(user answers)──▶ Open
+//! ```
+//!
+//! Intent-derived heuristics can also skip straight to `Open` when the intent
+//! unambiguously names the value (e.g. "every morning" → trigger=Open).
+
+use std::collections::HashMap;
+
+use personas_db::models::BuildEvent;
+use personas_db::repos::resources::connectors as connector_repo;
+use personas_db::DbPool;
+
+use super::parser::build_clarifying_question_events;
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum Gate {
+    #[default]
+    Closed,
+    Pending,
+    Open,
+}
+
+#[derive(Clone, Default, Debug)]
+pub struct CapabilityGates {
+    pub trigger: Gate,
+    pub connectors: Gate,
+    pub review_policy: Gate,
+    pub memory_policy: Gate,
+    /// 2026-05-05 — output shape gate. Closed when the capability produces
+    /// content (digest / summary / report / brief / list / etc.) and the
+    /// user hasn't specified a format. The user picks markdown / table /
+    /// prose / JSON, or attaches a reference example via the typed
+    /// payload (`accepts_reference: true`). Pre-fix the LLM invented a
+    /// format and the user discovered the mismatch only after promote.
+    pub sample_output: Gate,
+}
+
+impl CapabilityGates {
+    fn field_state(&self, field: &str) -> Option<Gate> {
+        match field {
+            "suggested_trigger" => Some(self.trigger),
+            "connectors" => Some(self.connectors),
+            "review_policy" => Some(self.review_policy),
+            "memory_policy" => Some(self.memory_policy),
+            "sample_output" => Some(self.sample_output),
+            _ => None,
+        }
+    }
+
+    pub fn is_gate_open(&self, field: &str) -> bool {
+        self.field_state(field)
+            .map(|g| g == Gate::Open)
+            .unwrap_or(true)
+    }
+
+    pub fn mark_pending(&mut self, field: &str) {
+        let slot = match field {
+            "suggested_trigger" => &mut self.trigger,
+            "connectors" => &mut self.connectors,
+            "review_policy" => &mut self.review_policy,
+            "memory_policy" => &mut self.memory_policy,
+            "sample_output" => &mut self.sample_output,
+            _ => return,
+        };
+        if *slot == Gate::Closed {
+            *slot = Gate::Pending;
+        }
+    }
+
+    pub fn mark_open(&mut self, field: &str) {
+        match field {
+            "suggested_trigger" => self.trigger = Gate::Open,
+            "connectors" => self.connectors = Gate::Open,
+            "review_policy" => self.review_policy = Gate::Open,
+            "memory_policy" => self.memory_policy = Gate::Open,
+            "sample_output" => self.sample_output = Gate::Open,
+            _ => {}
+        }
+    }
+
+    /// First gate that is still closed (Closed OR Pending). Returns the v3
+    /// field name. Order matters — the most-load-bearing gate goes first so
+    /// we don't interview the user for a field that's about to be moot.
+    pub fn first_unopen_field(&self) -> Option<&'static str> {
+        if self.trigger != Gate::Open {
+            return Some("suggested_trigger");
+        }
+        if self.connectors != Gate::Open {
+            return Some("connectors");
+        }
+        if self.review_policy != Gate::Open {
+            return Some("review_policy");
+        }
+        if self.memory_policy != Gate::Open {
+            return Some("memory_policy");
+        }
+        if self.sample_output != Gate::Open {
+            return Some("sample_output");
+        }
+        None
+    }
+}
+
+/// The currently-pending gate, if any — i.e. the question we're waiting on a
+/// user answer for. Used on user-answer receipt to know which gate to flip
+/// `Open`.
+#[derive(Clone, Debug)]
+pub struct PendingGate {
+    pub cap_id: String,
+    pub field: String,
+}
+
+pub const GATED_CAPABILITY_FIELDS: &[&str] = &[
+    "suggested_trigger",
+    "connectors",
+    "review_policy",
+    "memory_policy",
+    "sample_output",
+];
+
+pub fn is_gated_field(field: &str) -> bool {
+    GATED_CAPABILITY_FIELDS.contains(&field)
+}
+
+/// Map the legacy `cell_key` returned by the frontend when the user answers a
+/// clarifying question back to the v3 field name so we can flip the gate.
+pub fn legacy_cell_to_v3_field(cell_key: &str) -> Option<&'static str> {
+    match cell_key {
+        "triggers" => Some("suggested_trigger"),
+        "connectors" => Some("connectors"),
+        "human-review" => Some("review_policy"),
+        "memory" => Some("memory_policy"),
+        // 2026-05-05 — output-shape question (5th gate). Frontend submits
+        // answers under "sample-output" since that mirrors the dimension
+        // naming in the legacy 3×3 matrix UI.
+        "sample-output" | "sample_output" => Some("sample_output"),
+        _ => None,
+    }
+}
+
+// --- Intent heuristics ------------------------------------------------------
+// Each heuristic returns `Gate::Open` when the intent unambiguously names the
+// dimension's value; otherwise `Gate::Closed`. Conservative by design — when
+// in doubt, ask. Keep the keyword lists in sync with prompt.rs Rule 16 so the
+// build prompt and the gate fallback agree on what counts as "explicit".
+
+fn intent_implies_trigger(intent_lower: &str) -> Gate {
+    const EVENT_KW: &[&str] = &[
+        "whenever",
+        "when a ",
+        "when an ",
+        "when new ",
+        "on new ",
+        "as soon as",
+        "reacts to",
+        "react to",
+        "listen for",
+        "listening for",
+        "incoming ",
+        "arrives",
+        "when arrives",
+    ];
+    // Bare "weekly"/"monthly" are intentionally NOT keywords — in English
+    // they more often modify a content noun ("draft a weekly report",
+    // "monthly recap") than express a schedule. For schedule intents users
+    // can say "every week"/"every month"/"runs weekly"/"weekly at 9am".
+    // "daily " is kept because the dominant phrasing ("daily digest",
+    // "daily report") is genuinely schedule-leaning here.
+    const SCHEDULE_KW: &[&str] = &[
+        "every morning",
+        "every evening",
+        "every day",
+        "every night",
+        "every hour",
+        "every week",
+        "every weekday",
+        "every month",
+        "every two hours",
+        "every few hours",
+        "every monday",
+        "every tuesday",
+        "every wednesday",
+        "every thursday",
+        "every friday",
+        "every saturday",
+        "every sunday",
+        "daily ",
+        "daily.",
+        "runs daily",
+        "runs weekly",
+        "runs monthly",
+        "weekly at",
+        "monthly at",
+        "each morning",
+        "each evening",
+        "each weekday",
+        "each friday",
+        "each monday",
+        "each tuesday",
+        "each wednesday",
+        "each thursday",
+        "each saturday",
+        "each sunday",
+        "at 9am",
+        "at 8am",
+        "at 7am",
+        "at 6am",
+        "at 5pm",
+        "at 6pm",
+        "at 7pm",
+        "at 8pm",
+        "at noon",
+        "cron",
+        "once an hour",
+        "once a day",
+        "once a week",
+    ];
+    const MANUAL_KW: &[&str] = &[
+        "on command",
+        "when i ask",
+        "manually",
+        "on demand",
+        "i'll trigger",
+        "i will trigger",
+    ];
+    for kw in EVENT_KW.iter().chain(SCHEDULE_KW).chain(MANUAL_KW) {
+        if intent_lower.contains(kw) {
+            return Gate::Open;
+        }
+    }
+    Gate::Closed
+}
+
+fn intent_implies_review(intent_lower: &str) -> Gate {
+    const KW: &[&str] = &[
+        "automatically",
+        "auto-publish",
+        "auto publish",
+        "no review",
+        "no approval",
+        "without asking",
+        "without approval",
+        "no human",
+        "fully automated",
+    ];
+    for kw in KW {
+        if intent_lower.contains(kw) {
+            return Gate::Open;
+        }
+    }
+    // 2026-05-04 — Phase 1's `intent_is_simple_periodic_report` short-circuit
+    // was removed. Combined with the trigger + connectors keyword auto-opens,
+    // it caused common intents like "track tasks in Linear daily and
+    // summarize" to flip ALL four gates Open, which produced an agent_ir
+    // with zero clarifying questions and dropped the user straight into the
+    // test phase with empty/failed tests. The pacing benefit didn't justify
+    // the loss of the substantive review-policy interview.
+    Gate::Closed
+}
+
+fn intent_implies_memory(intent_lower: &str) -> Gate {
+    const KW: &[&str] = &[
+        "stateless",
+        "independently",
+        "each run is independent",
+        "each independently",
+        "no memory",
+        "independent runs",
+        "remember my",
+        "remember user",
+        "learn over time",
+        "remember preferences",
+    ];
+    for kw in KW {
+        if intent_lower.contains(kw) {
+            return Gate::Open;
+        }
+    }
+    // 2026-05-04 — see `intent_implies_review` above for context. Phase 1's
+    // simple-periodic-report shortcut was the load-bearing reason the
+    // questionnaire skipped straight to test on Project-Coordinator-style
+    // intents. Memory now ALWAYS gates closed unless the intent explicitly
+    // names cross-run state.
+    Gate::Closed
+}
+
+/// 2026-05-05 — output-shape gate heuristic.
+///
+/// Returns `Closed` when the intent describes a content-producing
+/// capability (digest / summary / report / brief / list / overview /
+/// snapshot / etc.) AND the intent does NOT already specify a format.
+/// `Open` when the intent either:
+///   • Doesn't produce content (event-driven side-effects, automation
+///     without an emitted artefact) — nothing to ask about.
+///   • Already specifies a format ("post a markdown table", "write JSON",
+///     "send a one-line note") — the LLM has enough to design from.
+///
+/// Pre-fix the LLM invented a format silently. R12-class intents
+/// ("build one weekly digest combining X+Y+Z") landed with whatever
+/// shape the LLM defaulted to, and the user discovered the mismatch
+/// post-promote.
+fn intent_implies_sample_output(intent_lower: &str) -> Gate {
+    // Content-output verbs / nouns. Intent contains one of these →
+    // capability produces content the user might want shaped a specific
+    // way. Keep this list narrow — generic verbs like "send" / "save" /
+    // "write" don't imply content shape on their own; they're carriers.
+    const CONTENT_KW: &[&str] = &[
+        "digest",
+        "summary",
+        "summarize",
+        "summarise",
+        "summari",
+        "report on",
+        " report ",
+        "brief",
+        "briefing",
+        "list ",
+        "list my",
+        "list of",
+        "overview",
+        "snapshot",
+        "weekly review",
+        "daily review",
+        "monthly review",
+        "rundown",
+        "round-up",
+        "roundup",
+        "recap",
+        "compile",
+        "aggregate",
+        "consolidate",
+    ];
+    let has_content = CONTENT_KW.iter().any(|k| intent_lower.contains(k));
+    if !has_content {
+        return Gate::Open;
+    }
+
+    // Explicit format mentions — user already told us how it should look.
+    // Skip the question.
+    const FORMAT_KW: &[&str] = &[
+        "markdown",
+        "as markdown",
+        "in markdown",
+        "table",
+        "as a table",
+        "in a table",
+        "grid",
+        "json",
+        "as json",
+        "structured json",
+        "csv",
+        "tsv",
+        "spreadsheet",
+        "one-line",
+        "one line note",
+        "single line",
+        "bullet list",
+        "bullet points",
+        "bulleted",
+        "prose",
+        "paragraph",
+    ];
+    let has_format = FORMAT_KW.iter().any(|k| intent_lower.contains(k));
+    if has_format {
+        return Gate::Open;
+    }
+
+    Gate::Closed
+}
+
+/// Phase 1 questionnaire pacing — detects "simple periodic informational
+/// report" intents that should not need review_policy / memory_policy
+/// questions. The shape:
+///
+///   1. Schedule trigger (cadence keyword or named time-of-day).
+///   2. Output is informational — "summarize / digest / list / report on /
+///      log / scan / track / monitor / count / export / brief / snapshot".
+///   3. No external publishing pattern — "post to slack", "email me",
+///      "draft a reply", "respond to", "approve". When the user is sending
+///      an artefact to someone else or chaining into a draft step, the
+///      review/memory questions are still legitimate.
+///
+/// Conservative on purpose: when in doubt, return false and let the regular
+/// keyword heuristics decide. We only short-circuit when ALL three signals
+/// are present.
+///
+/// Kept around (no longer wired into the gate heuristics — see
+/// `intent_implies_review` / `intent_implies_memory` above) so the existing
+/// test suite around the keyword combinations still compiles. If we revive
+/// the auto-open later we can wire it back in one line.
+#[allow(dead_code)]
+fn intent_is_simple_periodic_report(intent_lower: &str) -> bool {
+    // (1) Schedule trigger detected. We re-use intent_implies_trigger and
+    // tighten to schedule-only (event/manual triggers don't count as
+    // "periodic").
+    const SCHEDULE_KW: &[&str] = &[
+        "every morning",
+        "every evening",
+        "every day",
+        "every night",
+        "every hour",
+        "every week",
+        "every weekday",
+        "every month",
+        "every two hours",
+        "every few hours",
+        "every monday",
+        "every tuesday",
+        "every wednesday",
+        "every thursday",
+        "every friday",
+        "every saturday",
+        "every sunday",
+        "daily ",
+        "daily.",
+        "runs daily",
+        "runs weekly",
+        "runs monthly",
+        "weekly at",
+        "monthly at",
+        "each morning",
+        "each evening",
+        "each weekday",
+        "each friday",
+        "each monday",
+        "each sunday",
+        "each tuesday",
+        "each wednesday",
+        "each thursday",
+        "each saturday",
+        "at 9am",
+        "at 8am",
+        "at 7am",
+        "at 6am",
+        "at 5pm",
+        "at 6pm",
+        "at 7pm",
+        "at 8pm",
+        "at noon",
+        "cron",
+        "once an hour",
+        "once a day",
+        "once a week",
+    ];
+    let has_schedule = SCHEDULE_KW.iter().any(|k| intent_lower.contains(k));
+    if !has_schedule {
+        return false;
+    }
+
+    // (2) Informational output verb.
+    const INFORMATIONAL_KW: &[&str] = &[
+        "summarize",
+        "summarise",
+        "summary",
+        "summari",
+        "digest",
+        "brief",
+        "briefing",
+        "list ",
+        "compile",
+        "snapshot",
+        "log them",
+        "log it",
+        "report on",
+        "report ",
+        "scan ",
+        "monitor ",
+        "monitor for",
+        "check ",
+        "count ",
+        "track ",
+        "tracking ",
+        "export ",
+        "save ",
+        "save the",
+        "save my",
+        "save a",
+        "build a ",
+        "build one ",
+        "fetch ",
+        "gather ",
+        "ingest ",
+    ];
+    let has_informational = INFORMATIONAL_KW.iter().any(|k| intent_lower.contains(k));
+    if !has_informational {
+        return false;
+    }
+
+    // (3) NOT external-publishing — these patterns produce content that
+    // leaves the user's local context and warrants review/memory questions.
+    const EXTERNAL_PUBLISH_KW: &[&str] = &[
+        " email me ",
+        " message me ",
+        "send me an email",
+        "send an email",
+        // Slack/Discord/Teams as a destination — substring forms catch
+        // both "post TO slack" and "post a digest...to slack".
+        "post to slack",
+        "post to discord",
+        "post to teams",
+        " to slack",
+        " to discord",
+        " to teams",
+        " in slack",
+        " in discord",
+        " in teams",
+        // Direct messaging shapes
+        "draft a reply",
+        "draft replies",
+        "draft a response",
+        "reply to ",
+        "respond to ",
+        "auto-respond",
+        "approve",
+        "escalate to",
+    ];
+    let has_external_publish = EXTERNAL_PUBLISH_KW.iter().any(|k| intent_lower.contains(k));
+    if has_external_publish {
+        return false;
+    }
+
+    true
+}
+
+/// Fuzzy aliases the connector registry doesn't necessarily carry as exact
+/// `name` rows — multi-word forms ("google drive"), normalised spellings
+/// ("local-drive" / "built-in drive"). Kept as a small seed so intent matching
+/// works even when the registry only has the canonical name. Real connectors
+/// added to the DB are picked up dynamically via `registry_keywords`.
+const FUZZY_CONNECTOR_ALIASES: &[&str] = &[
+    "google drive",
+    "google sheets",
+    "google calendar",
+    "local drive",
+    "local-drive",
+    "local_drive",
+    "built-in drive",
+    "built in drive",
+];
+
+fn intent_implies_connectors_with_registry(
+    intent_lower: &str,
+    registry_keywords: &[String],
+) -> Gate {
+    for kw in FUZZY_CONNECTOR_ALIASES {
+        if intent_lower.contains(kw) {
+            return Gate::Open;
+        }
+    }
+    for kw in registry_keywords {
+        if !kw.is_empty() && intent_lower.contains(kw.as_str()) {
+            return Gate::Open;
+        }
+    }
+    Gate::Closed
+}
+
+/// 2026-05-05 — connectors gate with vault-ambiguity guard.
+///
+/// Returns `Closed` when the intent names a service that has 2+
+/// credentials in the vault, even if `intent_implies_connectors_with_registry`
+/// would otherwise auto-open it. This forces the existing
+/// connector_category picker to fire so the user can choose between
+/// (e.g.) their 4 GitHub PATs.
+///
+/// Pre-fix: intent says "GitHub", vault has 4 GitHub creds, the gate
+/// auto-opened on keyword match, and the runtime picked
+/// `get_by_service_type(pool, "github").first()` deterministically but
+/// arbitrarily. The user never knew which credential their persona was
+/// using until they checked the audit log.
+///
+/// `ambiguous_services` is the set returned by
+/// `cred_repo::get_ambiguous_service_types`. Empty set → behaviour
+/// unchanged from the registry-only version.
+fn intent_implies_connectors_with_ambiguity(
+    intent_lower: &str,
+    registry_keywords: &[String],
+    ambiguous_services: &std::collections::HashSet<String>,
+) -> Gate {
+    // 2026-05-06 — scan ALL connector keywords for ambiguity hits before
+    // deciding the gate state. Pre-fix the function returned Open on the
+    // first non-ambiguous match and never checked the rest, so an intent
+    // like "Linear + GitHub + Google Calendar" against a vault with 5
+    // GitHub PATs would auto-open the gate (via "google calendar"
+    // matching first) and skip the credential picker entirely. Now: any
+    // matched service that's ambiguous forces Closed; only when every
+    // matched service is unambiguous does the gate auto-open.
+    let mut any_match = false;
+    for kw in FUZZY_CONNECTOR_ALIASES {
+        if intent_lower.contains(kw) {
+            any_match = true;
+            if let Some(svc) = canonical_service_type_for_alias(kw) {
+                if ambiguous_services.contains(svc) {
+                    return Gate::Closed;
+                }
+            }
+        }
+    }
+    for kw in registry_keywords {
+        if kw.is_empty() {
+            continue;
+        }
+        if intent_lower.contains(kw.as_str()) {
+            any_match = true;
+            // The registry keyword IS the service_type (or close to it).
+            // Match against ambiguous set directly.
+            if ambiguous_services.contains(kw) {
+                return Gate::Closed;
+            }
+        }
+    }
+    if any_match {
+        Gate::Open
+    } else {
+        Gate::Closed
+    }
+}
+
+/// Map a fuzzy alias (the human-text form) to its canonical
+/// `service_type` so we can probe `ambiguous_services` against the
+/// alias-form match. Best-effort — unknown aliases return `None` and
+/// fall through to the existing auto-open path.
+fn canonical_service_type_for_alias(alias: &str) -> Option<&'static str> {
+    match alias {
+        "google drive" => Some("google_drive"),
+        "google sheets" => Some("google_sheets"),
+        "google calendar" => Some("google_calendar"),
+        "local drive" | "local-drive" | "local_drive" | "built-in drive" | "built in drive" => {
+            Some("local_drive")
+        }
+        _ => None,
+    }
+}
+
+/// Same as `gate_seed_for_intent` but consults the connector registry list
+/// (typically from `engine::api_proxy::cached_connector_keywords`) so any
+/// connector added via the catalog UI participates in keyword matching
+/// without a code edit.
+#[allow(dead_code)] // pending: build session still uses the static-keyword variant
+pub fn gate_seed_for_intent_with_registry(
+    intent: &str,
+    registry_keywords: &[String],
+) -> CapabilityGates {
+    let intent_lower = intent.to_lowercase();
+    CapabilityGates {
+        trigger: intent_implies_trigger(&intent_lower),
+        connectors: intent_implies_connectors_with_registry(&intent_lower, registry_keywords),
+        review_policy: intent_implies_review(&intent_lower),
+        memory_policy: intent_implies_memory(&intent_lower),
+        sample_output: intent_implies_sample_output(&intent_lower),
+    }
+}
+
+/// 2026-05-05 — gate seed with vault-ambiguity awareness.
+///
+/// Same as `gate_seed_for_intent_with_registry` but additionally takes
+/// `ambiguous_services` (service_types with 2+ credentials in the vault).
+/// When the intent names an ambiguous service, the connectors gate
+/// stays Closed so the existing connector_category picker fires and
+/// the user chooses between the multiple credentials.
+///
+/// Falls back to the keyword-only fallback list when the registry
+/// snapshot is empty (mirrors `intent_implies_connectors`'s behaviour).
+pub fn gate_seed_for_intent_with_context(
+    intent: &str,
+    registry_keywords: &[String],
+    ambiguous_services: &std::collections::HashSet<String>,
+) -> CapabilityGates {
+    let intent_lower = intent.to_lowercase();
+    // Mirror `intent_implies_connectors`'s fallback when the registry is
+    // empty so stand-alone callers (tests, future cold-start paths) behave
+    // sanely without a populated connector_definitions table.
+    const KNOWN_FALLBACK: &[&str] = &[
+        "gmail",
+        "outlook",
+        "slack",
+        "discord",
+        "teams",
+        "telegram",
+        "whatsapp",
+        "twilio",
+        "github",
+        "gitlab",
+        "bitbucket",
+        "linear",
+        "jira",
+        "notion",
+        "trello",
+        "asana",
+        "clickup",
+        "attio",
+        "monday",
+        "basecamp",
+        "airtable",
+        "supabase",
+        "postgres",
+        "google sheets",
+        "google drive",
+        "dropbox",
+        "cal.com",
+        "calcom",
+        "google calendar",
+        "calendly",
+        "hubspot",
+        "salesforce",
+        "pipedrive",
+        "stripe",
+        "alpha vantage",
+        "alpha_vantage",
+        "alphavantage",
+        "sentry",
+        "betterstack",
+        "better stack",
+        "datadog",
+        "pagerduty",
+        "leonardo",
+        "leonardo ai",
+        "leonardo_ai",
+        "openai",
+        "anthropic",
+        "midjourney",
+        "elevenlabs",
+        "gemini",
+    ];
+    let combined: Vec<String> = if registry_keywords.is_empty() {
+        KNOWN_FALLBACK.iter().map(|s| s.to_string()).collect()
+    } else {
+        let mut v: Vec<String> = registry_keywords.to_vec();
+        v.extend(KNOWN_FALLBACK.iter().map(|s| s.to_string()));
+        v
+    };
+    CapabilityGates {
+        trigger: intent_implies_trigger(&intent_lower),
+        connectors: intent_implies_connectors_with_ambiguity(
+            &intent_lower,
+            &combined,
+            ambiguous_services,
+        ),
+        review_policy: intent_implies_review(&intent_lower),
+        memory_policy: intent_implies_memory(&intent_lower),
+        sample_output: intent_implies_sample_output(&intent_lower),
+    }
+}
+
+/// 2026-05-05 — context-aware variants used by the runner.
+///
+/// Pre-fix the gate-seed walked the intent heuristics in isolation. The
+/// new variants thread `ambiguous_services` (service_types with 2+
+/// credentials in the vault) so a build whose intent says "GitHub"
+/// against a vault with 4 GitHub PATs keeps the connectors gate Closed
+/// — the user picks the right credential before promote.
+pub fn init_gates_from_enumeration_with_context(
+    coverage: &mut HashMap<String, CapabilityGates>,
+    titles: &mut HashMap<String, String>,
+    data: &serde_json::Value,
+    intent: &str,
+    registry_keywords: &[String],
+    ambiguous_services: &std::collections::HashSet<String>,
+) {
+    let Some(caps) = data.get("capabilities").and_then(|v| v.as_array()) else {
+        return;
+    };
+    let seed = gate_seed_for_intent_with_context(intent, registry_keywords, ambiguous_services);
+
+    for cap in caps {
+        let Some(id) = cap.get("id").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        if let Some(title) = cap.get("title").and_then(|v| v.as_str()) {
+            titles
+                .entry(id.to_string())
+                .or_insert_with(|| title.to_string());
+        }
+        coverage
+            .entry(id.to_string())
+            .or_insert_with(|| seed.clone());
+    }
+}
+
+pub fn ensure_capability_in_coverage_with_context(
+    coverage: &mut HashMap<String, CapabilityGates>,
+    cap_id: &str,
+    intent: &str,
+    registry_keywords: &[String],
+    ambiguous_services: &std::collections::HashSet<String>,
+) {
+    if !coverage.contains_key(cap_id) {
+        coverage.insert(
+            cap_id.to_string(),
+            gate_seed_for_intent_with_context(intent, registry_keywords, ambiguous_services),
+        );
+    }
+}
+
+/// Walk coverage to find the first capability with a still-unopen gate —
+/// used when the LLM tries to emit `agent_ir` with missing dimensions.
+pub fn find_first_unopen_gate(
+    coverage: &HashMap<String, CapabilityGates>,
+) -> Option<(String, &'static str)> {
+    // Deterministic order: sort cap_ids so the same gate fires each turn.
+    let mut ids: Vec<&String> = coverage.keys().collect();
+    ids.sort();
+    for id in ids {
+        if let Some(field) = coverage.get(id).and_then(|g| g.first_unopen_field()) {
+            return Some((id.clone(), field));
+        }
+    }
+    None
+}
+
+/// Look up the catalog category for a named connector. Used to pick the
+/// `category` token on synthesized `scope=connector_category` questions.
+fn infer_connector_category(value: &serde_json::Value, pool: &DbPool) -> Option<String> {
+    let names: Vec<String> = if let Some(arr) = value.as_array() {
+        arr.iter()
+            .filter_map(|v| {
+                v.as_str()
+                    .map(|s| s.to_string())
+                    .or_else(|| {
+                        v.get("name")
+                            .and_then(|n| n.as_str())
+                            .map(|s| s.to_string())
+                    })
+                    .or_else(|| {
+                        v.get("service_type")
+                            .and_then(|n| n.as_str())
+                            .map(|s| s.to_string())
+                    })
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+    for name in names {
+        if let Ok(Some(conn)) = connector_repo::get_by_name(pool, &name) {
+            if !conn.category.is_empty() {
+                return Some(conn.category);
+            }
+        }
+    }
+    None
+}
+
+/// Synthesize a `clarifying_question` event for a gate the LLM skipped. Emits
+/// both the v3 `ClarifyingQuestionV3` typed event AND the legacy `Question`
+/// mirror (via [`build_clarifying_question_events`]) so the existing UI panel
+/// renders it identically to an LLM-authored question.
+/// Synthesize a clarifying_question for EVERY unopen gate on `cap_id`.
+///
+/// Pre-fix the synthesizer fired one gate per turn (gated by a
+/// `synthesized_this_turn` flag in the runner). The user's experience
+/// was: review_policy in turn 1 → user answers → wait through another
+/// LLM round → memory_policy in turn 2. Two-minute gaps between
+/// questions for what should have been a single batch. Build prompt
+/// rule 25 instructs the LLM to batch but the LLM treats it as
+/// advisory; the synthesizer is the fallback and it was serializing.
+///
+/// This batched path:
+///   • Walks the canonical gate order (trigger → connectors →
+///     review_policy → memory_policy) to keep the question stream
+///     deterministic.
+///   • Skips gates already Open (intent-resolved or previously
+///     answered) AND gates already Pending (LLM already asked about
+///     them in this turn).
+///   • Marks each emitted gate Pending so the same call doesn't
+///     re-fire them and the answer-handler knows what the user is
+///     responding to.
+///
+/// Returns the build events ready to push onto `synthesized` in
+/// `runner::run_session`. Empty Vec when nothing to ask.
+pub fn synthesize_all_unopen_gates(
+    cap_id: &str,
+    coverage: &mut std::collections::HashMap<String, CapabilityGates>,
+    capability_titles: &std::collections::HashMap<String, String>,
+    proposed_value_for_connectors: &serde_json::Value,
+    pool: &DbPool,
+    session_id: &str,
+    ambient_connectors: &[String],
+) -> Vec<BuildEvent> {
+    let mut out: Vec<BuildEvent> = Vec::new();
+    let title = capability_titles
+        .get(cap_id)
+        .map(|s| s.as_str())
+        .unwrap_or(cap_id);
+
+    // Collect unopen fields up front to avoid borrowing `coverage`
+    // through the loop while we mutate it via `mark_pending`.
+    let unopen_fields: Vec<&'static str> = match coverage.get(cap_id) {
+        Some(gates) => GATED_CAPABILITY_FIELDS
+            .iter()
+            .copied()
+            .filter(|f| !gates.is_gate_open(f))
+            .collect(),
+        None => return out,
+    };
+
+    for field in unopen_fields {
+        let synth = synthesize_gate_question(
+            cap_id,
+            field,
+            title,
+            proposed_value_for_connectors,
+            pool,
+            session_id,
+            ambient_connectors,
+        );
+        if synth.is_empty() {
+            continue;
+        }
+        if let Some(cg) = coverage.get_mut(cap_id) {
+            cg.mark_pending(field);
+        }
+        out.extend(synth);
+    }
+    out
+}
+
+/// Convert a raw LLM-emitted capability id (e.g. `uc_weekly_digest`) to a
+/// reader-friendly title (`Weekly Digest`). Used as a last-resort fallback
+/// inside `synthesize_gate_question` when `capability_titles` doesn't yet
+/// have an entry for the cap — typically because a `capability_resolution`
+/// event arrived before `capability_enumeration` populated the title map,
+/// or the LLM skipped enumeration entirely. Pre-fix users saw raw ids in
+/// the UI ("Should 'uc_weekly_digest' wait for your approval…").
+pub fn humanise_capability_id(raw: &str) -> String {
+    let trimmed = raw.strip_prefix("uc_").unwrap_or(raw);
+    trimmed
+        .split('_')
+        .filter(|s| !s.is_empty())
+        .map(|s| {
+            let mut chars = s.chars();
+            match chars.next() {
+                Some(first) => {
+                    let head = first.to_uppercase().to_string();
+                    head + chars.as_str()
+                }
+                None => String::new(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Pick the best display title for a capability when emitting a clarifying
+/// question. Prefers the captured title when it's non-empty AND doesn't
+/// look like a raw id; falls back to `humanise_capability_id`. Never
+/// returns an empty string.
+fn display_title_for_cap<'a>(captured: Option<&'a str>, cap_id: &'a str) -> String {
+    if let Some(t) = captured {
+        let trimmed = t.trim();
+        if !trimmed.is_empty() && !trimmed.starts_with("uc_") && trimmed != cap_id {
+            return trimmed.to_string();
+        }
+    }
+    humanise_capability_id(cap_id)
+}
+
+pub fn synthesize_gate_question(
+    cap_id: &str,
+    field: &str,
+    title: &str,
+    proposed_value: &serde_json::Value,
+    pool: &DbPool,
+    session_id: &str,
+    // Ambient-derived connector evidence (newest-first), used only by the
+    // `connectors` branch to pre-rank the picker when the user's intent is
+    // silent about which service to wire. Empty in headless/one-shot builds
+    // and when ambient context is disabled. See
+    // `ambient_context::AmbientContextFusion::connector_evidence`.
+    ambient_connectors: &[String],
+) -> Vec<BuildEvent> {
+    // Resolve the displayable title. The caller passes whatever it has;
+    // we humanise on the way out so the UI never shows raw ids.
+    let display_title = display_title_for_cap(Some(title), cap_id);
+    let title = display_title.as_str();
+    let mut obj = serde_json::Map::new();
+    obj.insert(
+        "capability_id".into(),
+        serde_json::Value::String(cap_id.to_string()),
+    );
+
+    match field {
+        "suggested_trigger" => {
+            obj.insert("scope".into(), serde_json::Value::String("field".into()));
+            obj.insert(
+                "field".into(),
+                serde_json::Value::String("suggested_trigger".into()),
+            );
+            obj.insert(
+                "question".into(),
+                serde_json::Value::String(format!("How should \"{title}\" fire?")),
+            );
+            obj.insert(
+                "options".into(),
+                serde_json::json!([
+                    "A: On demand — I'll trigger it manually",
+                    "B: On a schedule (daily/weekly/…)",
+                    "C: When an external event occurs (e.g. new document, inbound message)",
+                ]),
+            );
+        }
+        "review_policy" => {
+            obj.insert("scope".into(), serde_json::Value::String("field".into()));
+            obj.insert(
+                "field".into(),
+                serde_json::Value::String("review_policy".into()),
+            );
+            obj.insert(
+                "question".into(),
+                serde_json::Value::String(format!(
+                    "Should \"{title}\" wait for your approval before publishing its output?"
+                )),
+            );
+            obj.insert(
+                "options".into(),
+                serde_json::json!([
+                    "Never — auto-publish; I can undo/discard myself",
+                    "On low confidence — only pause when unsure",
+                    "Always — I want to sign off every run",
+                ]),
+            );
+        }
+        "memory_policy" => {
+            obj.insert("scope".into(), serde_json::Value::String("field".into()));
+            obj.insert(
+                "field".into(),
+                serde_json::Value::String("memory_policy".into()),
+            );
+            // Re-shaped 2026-05-03 — the original yes/no question made memory
+            // feel optional. With memory enabled, the persona is expected to
+            // consult it on every run, so the substantive question is *what*
+            // to carry forward. The "Nothing" option still maps to
+            // `enabled: false` downstream.
+            obj.insert("question".into(), serde_json::Value::String(
+                format!("What should \"{title}\" remember between runs? (Pick \"Nothing\" if it doesn't need memory.)")
+            ));
+            obj.insert(
+                "options".into(),
+                serde_json::json!([
+                    "User preferences and corrections",
+                    "Items I've already approved or rejected",
+                    "Recurring context (people, projects, topics I care about)",
+                    "Nothing — each run is independent",
+                ]),
+            );
+        }
+        "connectors" => {
+            let category = infer_connector_category(proposed_value, pool)
+                .unwrap_or_else(|| "storage".to_string());
+            obj.insert(
+                "scope".into(),
+                serde_json::Value::String("connector_category".into()),
+            );
+            obj.insert(
+                "field".into(),
+                serde_json::Value::String("connectors".into()),
+            );
+            obj.insert(
+                "category".into(),
+                serde_json::Value::String(category.clone()),
+            );
+            obj.insert(
+                "question".into(),
+                serde_json::Value::String(format!(
+                    "Which {category} connector should \"{title}\" use?"
+                )),
+            );
+            obj.insert("options".into(), serde_json::json!([]));
+            // Pre-rank hint: when the user is actively working with a service
+            // (its name shows up in ambient desktop signals) while building a
+            // persona whose intent doesn't name a connector, surface those
+            // service keywords so the picker can highlight / float them to the
+            // top. The question still fires — the user confirms. Only the
+            // matched connector vocabulary is carried here, never raw ambient
+            // content. Omitted entirely when there's no evidence.
+            if !ambient_connectors.is_empty() {
+                obj.insert(
+                    "suggested".into(),
+                    serde_json::Value::Array(
+                        ambient_connectors
+                            .iter()
+                            .map(|s| serde_json::Value::String(s.clone()))
+                            .collect(),
+                    ),
+                );
+            }
+        }
+        "sample_output" => {
+            // 2026-05-05 — output-shape question. `accepts_reference: true`
+            // flips the answering UI into reference-attach mode so users
+            // can paste / drop a real example (an existing report, an
+            // email body, a JSON fixture). The free-text fallback
+            // captures format preferences when the user doesn't have a
+            // sample handy.
+            obj.insert("scope".into(), serde_json::Value::String("field".into()));
+            obj.insert(
+                "field".into(),
+                serde_json::Value::String("sample_output".into()),
+            );
+            obj.insert(
+                "question".into(),
+                serde_json::Value::String(format!(
+                    "How should \"{title}\" format its output? Paste / attach an example, \
+                     or pick a shape:"
+                )),
+            );
+            obj.insert(
+                "options".into(),
+                serde_json::json!([
+                    "Markdown — bullet list with short headings",
+                    "Markdown — table or grid layout",
+                    "Prose summary — short paragraphs, no bullets",
+                    "JSON — structured payload",
+                    "I'll attach an example",
+                ]),
+            );
+            obj.insert("accepts_reference".into(), serde_json::Value::Bool(true));
+        }
+        _ => return Vec::new(),
+    }
+
+    build_clarifying_question_events(&obj, session_id)
+}
+
+// =============================================================================
+// Tests
+// =============================================================================
+//
+// These tests pin down the Rule 16/17 contract: every gated dimension must
+// either be auto-opened by an unambiguous intent keyword OR ask the user. The
+// `intent_implies_*` keyword lists are the load-bearing piece — when the
+// build prompt's "skip when intent literally says X" clauses change in
+// `session_prompt.rs::Rule 16`, mirror the change here so a drift in either
+// direction is caught at `cargo test` time, not by an e2e regression.
+//
+// `synthesize_gate_question` is covered for the field-scoped branches
+// (suggested_trigger / review_policy / memory_policy). The connectors branch
+// calls `infer_connector_category`, which hits the DB — that path is exercised
+// by the live `e2e_question_loop.py` scenario rather than here.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── intent heuristics — trigger ─────────────────────────────────────────
+
+    #[test]
+    fn trigger_auto_opens_on_event_keywords() {
+        for intent in [
+            "translate every incoming document from english to czech",
+            "react to new files in my drive",
+            "whenever a new ticket arrives, triage it",
+            "on new email, summarise it",
+            "as soon as a stripe charge fails, log it",
+            "listen for inbound webhooks",
+        ] {
+            assert_eq!(
+                intent_implies_trigger(&intent.to_lowercase()),
+                Gate::Open,
+                "expected event-keyword auto-open for: {intent}"
+            );
+        }
+    }
+
+    #[test]
+    fn trigger_auto_opens_on_schedule_keywords() {
+        for intent in [
+            "every morning summarise my inbox",
+            "daily digest of news",
+            "every week clean up dead branches",
+            "every month reconcile expenses",
+            "runs weekly to refresh the leaderboard",
+            "weekly at 9am post the recap",
+            "at 7am send the digest",
+            "cron 0 9 * * 1-5",
+        ] {
+            assert_eq!(
+                intent_implies_trigger(&intent.to_lowercase()),
+                Gate::Open,
+                "expected schedule-keyword auto-open for: {intent}"
+            );
+        }
+    }
+
+    #[test]
+    fn trigger_auto_opens_on_manual_keywords() {
+        for intent in [
+            "on command, draft a reply",
+            "manually run a deep search",
+            "when i ask, summarise the meeting notes",
+            "on demand interactive assistant",
+        ] {
+            assert_eq!(
+                intent_implies_trigger(&intent.to_lowercase()),
+                Gate::Open,
+                "expected manual-keyword auto-open for: {intent}"
+            );
+        }
+    }
+
+    #[test]
+    fn trigger_stays_closed_when_intent_is_silent() {
+        // No trigger-shaped phrase → must remain Closed → forces a question.
+        for intent in [
+            "translate documents from english to czech",
+            "draft a weekly report on customer churn",
+            "summarise my open tickets",
+            "help me triage support requests",
+        ] {
+            assert_eq!(
+                intent_implies_trigger(&intent.to_lowercase()),
+                Gate::Closed,
+                "expected silence → Closed for: {intent}"
+            );
+        }
+    }
+
+    // ── intent heuristics — review_policy ───────────────────────────────────
+
+    #[test]
+    fn review_auto_opens_on_explicit_automation_keywords() {
+        for intent in [
+            "automatically publish the digest",
+            "no review needed, just send it",
+            "without asking, post to slack",
+            "fully automated translation pipeline",
+            "no human in the loop",
+        ] {
+            assert_eq!(
+                intent_implies_review(&intent.to_lowercase()),
+                Gate::Open,
+                "expected review auto-open for: {intent}"
+            );
+        }
+    }
+
+    #[test]
+    fn review_stays_closed_when_intent_is_silent_about_approval() {
+        // Silent intents that DON'T match the Phase 1 simple-periodic-report
+        // fast-path must still leave review Closed.
+        for intent in [
+            "translate every incoming document",
+            "help me triage support requests",
+            // Note: "send a daily digest of headlines" used to be a closed
+            // case but it now matches rule 26 (periodic + informational +
+            // no external publish). It auto-opens with default "never".
+        ] {
+            assert_eq!(
+                intent_implies_review(&intent.to_lowercase()),
+                Gate::Closed,
+                "expected silence → Closed for: {intent}"
+            );
+        }
+    }
+
+    // ── intent heuristics — memory_policy ───────────────────────────────────
+
+    #[test]
+    fn memory_auto_opens_on_explicit_memory_keywords() {
+        for intent in [
+            "stateless email triage",
+            "each independently — no shared state",
+            "remember my preferences",
+            "remember user choices for next time",
+            "learn over time which senders i ignore",
+        ] {
+            assert_eq!(
+                intent_implies_memory(&intent.to_lowercase()),
+                Gate::Open,
+                "expected memory auto-open for: {intent}"
+            );
+        }
+    }
+
+    #[test]
+    fn memory_stays_closed_when_intent_is_silent() {
+        for intent in [
+            "translate every incoming document",
+            // Note: a bare "weekly summary of github issues" no longer
+            // counts as silent — Phase 1 rule 26 short-circuits these
+            // simple periodic reports. See review_short_circuits_*.
+            "help me triage support requests",
+        ] {
+            assert_eq!(
+                intent_implies_memory(&intent.to_lowercase()),
+                Gate::Closed,
+                "expected silence → Closed for: {intent}"
+            );
+        }
+    }
+
+    // ── Phase 1 rule 26 — simple periodic informational reports ─────────────
+    //
+    // These tests pin down the contract for `intent_is_simple_periodic_report`
+    // and its use in `intent_implies_review` / `intent_implies_memory`. The
+    // R01–R10 batch of `13-rapid-validation-personas.md` is the canonical
+    // workload; a regression here would put their question rounds back to
+    // 4–7. Add an assertion any time you add a new simple-periodic-report
+    // shape to the keyword tables.
+
+    #[test]
+    fn simple_periodic_report_no_longer_short_circuits_review_or_memory() {
+        // 2026-05-04 — Phase 1's simple-periodic-report fast-path was
+        // unwired from the gate heuristics because it caused common
+        // Project-Coordinator-style intents to skip the questionnaire
+        // entirely (all four gates auto-open → straight to test). The
+        // detection function still works in isolation (kept around for
+        // possible future reuse), but the review and memory gates must
+        // now stay Closed for these intents so the user is asked.
+        for intent in [
+            "every weekday at 8am, summarize my unread gmail messages from the last 24 hours into a short digest",
+            "every monday morning, list my open linear issues assigned to me and post the summary as a notion page",
+            "each evening at 7pm, save the list of github prs i authored today to my local drive as a markdown file",
+            "every weekday at 7am, build a one-paragraph briefing of today's google calendar events",
+            "once an hour during work hours, check sentry for new unresolved errors and write a one-line note when there are any",
+            "every friday at 5pm, export my notion tasks database to a markdown file in my local drive",
+            "each morning at 9am, fetch the latest alpha vantage quote for aapl and append it to a daily price log in airtable",
+            "every sunday evening, count my open asana tasks across all projects and save the totals to a notion entry",
+            "each weekday at noon, list my today's cal.com bookings and write a short check-in note",
+            "every two hours during work hours, scan my clickup board for tasks marked urgent and log them to a local file",
+        ] {
+            assert!(
+                intent_is_simple_periodic_report(intent),
+                "the detection function still recognises: {intent}"
+            );
+            assert_eq!(
+                intent_implies_review(intent),
+                Gate::Closed,
+                "review must stay Closed (user still asked) for: {intent}"
+            );
+            assert_eq!(
+                intent_implies_memory(intent),
+                Gate::Closed,
+                "memory must stay Closed (user still asked) for: {intent}"
+            );
+        }
+    }
+
+    #[test]
+    fn external_publishing_intents_still_ask_review_and_memory() {
+        // R11 / R15 / R20-style intents that produce drafts or messages
+        // for someone else MUST keep the review/memory gates closed so the
+        // user is asked. A regression here = false confidence on an action
+        // that needs human approval.
+        for intent in [
+            // R11 — draft replies for approval
+            "watch my gmail inbox and on every new message classify it as urgent / followup / fyi, and additionally draft a short reply for urgent messages for me to approve before sending",
+            // Hypothetical "post to slack" periodic
+            "every morning at 8am post a digest of overnight emails to slack",
+            // "Email me" periodic
+            "every weekday at 6pm, email me a summary of cal.com bookings",
+        ] {
+            assert!(
+                !intent_is_simple_periodic_report(&intent.to_lowercase()),
+                "external-publish intent must NOT short-circuit: {intent}"
+            );
+        }
+    }
+
+    #[test]
+    fn event_driven_intents_do_not_count_as_periodic() {
+        // R13 / R14 / R17 / R20 — event triggers, no periodic cadence.
+        for intent in [
+            "when a new high-priority sentry error fires, open a corresponding github issue",
+            "when a new commit lands on the main branch of my github repo, write a one-line release note to a notion page",
+            "when a new attachment arrives in gmail, save the file to my local drive and record the filename, sender, and date in airtable",
+            "when i drop a file into a watched local drive folder, generate a leonardo ai cover image based on the filename",
+        ] {
+            assert!(
+                !intent_is_simple_periodic_report(intent),
+                "event-driven intent must NOT short-circuit: {intent}"
+            );
+        }
+    }
+
+    // ── intent heuristics — connectors ──────────────────────────────────────
+
+    // 2026-05-06 — multi-service ambiguity regression. Pre-fix
+    // intent_implies_connectors_with_ambiguity returned Open on the first
+    // non-ambiguous match and never checked the rest — so an intent
+    // mentioning Google Calendar + GitHub against a vault with 5 GitHub PATs
+    // skipped the connector picker entirely. The fix scans ALL matched
+    // services; ANY ambiguous hit forces Closed.
+    #[test]
+    fn connectors_closed_when_any_intent_service_is_ambiguous() {
+        let registry: Vec<String> =
+            vec!["github".into(), "linear".into(), "google_calendar".into()];
+        let mut ambiguous = std::collections::HashSet::new();
+        ambiguous.insert("github".to_string());
+
+        // Intent mentions multiple services; one is ambiguous → Closed
+        let intent = "build a weekly digest covering my linear issues, my github prs, and today's google calendar events".to_lowercase();
+        assert_eq!(
+            intent_implies_connectors_with_ambiguity(&intent, &registry, &ambiguous),
+            Gate::Closed,
+            "ambiguous github should force Closed even when google_calendar is unambiguous"
+        );
+
+        // Same intent, no ambiguity → Open
+        let no_ambig = std::collections::HashSet::new();
+        assert_eq!(
+            intent_implies_connectors_with_ambiguity(&intent, &registry, &no_ambig),
+            Gate::Open,
+            "all clean: at least one match → Open"
+        );
+
+        // Ambiguous service mentioned alone → Closed
+        let intent_solo = "summarise my github prs".to_lowercase();
+        assert_eq!(
+            intent_implies_connectors_with_ambiguity(&intent_solo, &registry, &ambiguous),
+            Gate::Closed,
+        );
+    }
+
+    // ── gate_seed_for_intent — composite of the four heuristics ─────────────
+
+    // ── CapabilityGates — state machine ─────────────────────────────────────
+
+    #[test]
+    fn default_gates_are_all_closed() {
+        let gates = CapabilityGates::default();
+        for field in GATED_CAPABILITY_FIELDS {
+            assert_eq!(gates.field_state(field), Some(Gate::Closed));
+            assert!(!gates.is_gate_open(field));
+        }
+    }
+
+    #[test]
+    fn unknown_fields_report_open_to_avoid_blocking_unrelated_resolutions() {
+        // Non-gated fields must not be suppressed by the gate machinery —
+        // is_gate_open returns true so the resolution flows through.
+        let gates = CapabilityGates::default();
+        assert!(gates.is_gate_open("input_schema"));
+        assert!(gates.is_gate_open("tool_hints"));
+        assert_eq!(gates.field_state("input_schema"), None);
+    }
+
+    #[test]
+    fn mark_pending_promotes_closed_to_pending_but_not_open_to_pending() {
+        let mut gates = CapabilityGates::default();
+        gates.mark_pending("suggested_trigger");
+        assert_eq!(gates.field_state("suggested_trigger"), Some(Gate::Pending));
+
+        gates.mark_open("suggested_trigger");
+        gates.mark_pending("suggested_trigger");
+        assert_eq!(
+            gates.field_state("suggested_trigger"),
+            Some(Gate::Open),
+            "Open must NOT regress to Pending"
+        );
+    }
+
+    #[test]
+    fn mark_open_flips_any_state_to_open() {
+        let mut gates = CapabilityGates::default();
+        for field in GATED_CAPABILITY_FIELDS {
+            gates.mark_open(field);
+            assert!(gates.is_gate_open(field));
+        }
+    }
+
+    #[test]
+    fn first_unopen_field_returns_in_priority_order() {
+        // Trigger → connectors → review_policy → memory_policy → sample_output.
+        let mut gates = CapabilityGates::default();
+        assert_eq!(gates.first_unopen_field(), Some("suggested_trigger"));
+
+        gates.mark_open("suggested_trigger");
+        assert_eq!(gates.first_unopen_field(), Some("connectors"));
+
+        gates.mark_open("connectors");
+        assert_eq!(gates.first_unopen_field(), Some("review_policy"));
+
+        gates.mark_open("review_policy");
+        assert_eq!(gates.first_unopen_field(), Some("memory_policy"));
+
+        gates.mark_open("memory_policy");
+        assert_eq!(gates.first_unopen_field(), Some("sample_output"));
+
+        gates.mark_open("sample_output");
+        assert_eq!(gates.first_unopen_field(), None);
+    }
+
+    #[test]
+    fn pending_counts_as_unopen() {
+        let mut gates = CapabilityGates::default();
+        gates.mark_pending("suggested_trigger");
+        assert_eq!(
+            gates.first_unopen_field(),
+            Some("suggested_trigger"),
+            "Pending must still surface as unopen — the user hasn't answered yet"
+        );
+    }
+
+    // ── is_gated_field / legacy_cell_to_v3_field ────────────────────────────
+
+    #[test]
+    fn is_gated_field_recognises_only_the_v3_fields() {
+        for field in GATED_CAPABILITY_FIELDS {
+            assert!(is_gated_field(field), "{field} should be gated");
+        }
+        // `use_case_flow` is retired (Recipe v3: the branchy node/edge runbook
+        // is gone, and `activities` on the recipe replaces the readable part
+        // of it). The build prompt no longer asks for it. It stays in this
+        // list rather than leaving it: an OLD session's stored payload can
+        // still carry the field, and arriving as a `capability_resolution`
+        // for a non-gated field must remain harmless rather than a hard error.
+        for field in ["input_schema", "tool_hints", "use_case_flow", "tools", ""] {
+            assert!(!is_gated_field(field), "{field} should NOT be gated");
+        }
+    }
+
+    #[test]
+    fn legacy_cell_to_v3_field_round_trips_known_dims() {
+        assert_eq!(
+            legacy_cell_to_v3_field("triggers"),
+            Some("suggested_trigger")
+        );
+        assert_eq!(legacy_cell_to_v3_field("connectors"), Some("connectors"));
+        assert_eq!(
+            legacy_cell_to_v3_field("human-review"),
+            Some("review_policy")
+        );
+        assert_eq!(legacy_cell_to_v3_field("memory"), Some("memory_policy"));
+    }
+
+    #[test]
+    fn legacy_cell_to_v3_field_returns_none_for_non_gated_cells() {
+        // The matrix has cells like "messages", "use-cases", "events" that
+        // are NOT gated dimensions. The mapper must return None so the
+        // run_session loop skips its gate-flip path for those answers.
+        for cell in ["messages", "use-cases", "events", "error-handling", ""] {
+            assert!(
+                legacy_cell_to_v3_field(cell).is_none(),
+                "{cell} must not map to a gated v3 field"
+            );
+        }
+    }
+
+    // ── coverage map helpers ───────────────────────────────────────────────
+
+    #[test]
+    fn find_first_unopen_gate_walks_capabilities_in_sorted_id_order() {
+        let mut coverage = HashMap::new();
+        // Insert in non-sorted order so the test catches a HashMap-iteration bug.
+        coverage.insert("uc_b".to_string(), CapabilityGates::default());
+        coverage.insert("uc_a".to_string(), CapabilityGates::default());
+        coverage.insert("uc_c".to_string(), CapabilityGates::default());
+
+        let (cap, field) = find_first_unopen_gate(&coverage).expect("at least one closed gate");
+        assert_eq!(
+            cap, "uc_a",
+            "must walk in sorted cap_id order for determinism"
+        );
+        assert_eq!(field, "suggested_trigger");
+    }
+
+    #[test]
+    fn find_first_unopen_gate_returns_none_when_everything_open() {
+        let mut coverage = HashMap::new();
+        let mut all_open = CapabilityGates::default();
+        for field in GATED_CAPABILITY_FIELDS {
+            all_open.mark_open(field);
+        }
+        coverage.insert("uc_only".to_string(), all_open);
+        assert!(find_first_unopen_gate(&coverage).is_none());
+    }
+
+    #[test]
+    fn find_first_unopen_gate_returns_none_for_empty_coverage() {
+        let coverage: HashMap<String, CapabilityGates> = HashMap::new();
+        assert!(find_first_unopen_gate(&coverage).is_none());
+    }
+
+    // ── synthesize_gate_question — field-scoped branches (no DB) ────────────
+    //
+    // These three branches don't touch the DB, so we can drive them with
+    // serde_json::Value::Null as the proposed_value. The connectors branch
+    // calls infer_connector_category which hits the DB — covered by the live
+    // e2e_question_loop.py scenario instead.
+
+    fn dummy_pool() -> personas_db::DbPool {
+        // We never use the pool for the field-scoped branches, but the API
+        // still requires one. An in-memory SQLite pool with no schema is the
+        // smallest construct that satisfies the type.
+        use r2d2_sqlite::SqliteConnectionManager;
+        r2d2::Pool::builder()
+            .max_size(1)
+            .build(SqliteConnectionManager::memory())
+            .expect("in-memory SQLite pool for tests")
+    }
+
+    fn assert_question_envelope(events: &[BuildEvent], expected_field: &str) {
+        // Both v3 + legacy mirror should be emitted by build_clarifying_question_events.
+        assert!(
+            events.len() >= 1,
+            "expected at least one event, got {}",
+            events.len()
+        );
+        let has_v3 = events.iter().any(|e| matches!(e, BuildEvent::ClarifyingQuestionV3 { field, .. } if field.as_deref() == Some(expected_field)));
+        assert!(
+            has_v3,
+            "expected v3 ClarifyingQuestionV3 for field {expected_field}"
+        );
+    }
+
+    #[test]
+    fn synthesize_trigger_question_includes_three_options() {
+        let events = synthesize_gate_question(
+            "uc_x",
+            "suggested_trigger",
+            "Document Translator",
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+            &[],
+        );
+        assert_question_envelope(&events, "suggested_trigger");
+    }
+
+    #[test]
+    fn synthesize_review_question_includes_three_options() {
+        let events = synthesize_gate_question(
+            "uc_x",
+            "review_policy",
+            "Document Translator",
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+            &[],
+        );
+        assert_question_envelope(&events, "review_policy");
+    }
+
+    #[test]
+    fn synthesize_memory_question_includes_two_options() {
+        let events = synthesize_gate_question(
+            "uc_x",
+            "memory_policy",
+            "Document Translator",
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+            &[],
+        );
+        assert_question_envelope(&events, "memory_policy");
+    }
+
+    #[test]
+    fn synthesize_returns_empty_for_unknown_field() {
+        let events = synthesize_gate_question(
+            "uc_x",
+            "input_schema", // not a gated dimension
+            "Document Translator",
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+            &[],
+        );
+        assert!(
+            events.is_empty(),
+            "non-gated fields must produce zero synthesis events"
+        );
+    }
+
+    // ── 2026-05-04 — title humanization + batched synthesis ─────────────────
+
+    #[test]
+    fn humanise_capability_id_strips_uc_prefix_and_titlecases() {
+        for (raw, expected) in [
+            ("uc_weekly_digest", "Weekly Digest"),
+            ("uc_morning_email_summary", "Morning Email Summary"),
+            ("uc_classify", "Classify"),
+            ("uc_", ""),
+            ("plain", "Plain"),
+            ("snake_case_thing", "Snake Case Thing"),
+        ] {
+            assert_eq!(humanise_capability_id(raw), expected, "raw={raw}");
+        }
+    }
+
+    #[test]
+    fn synthesize_question_humanises_id_when_title_is_blank_or_id_like() {
+        // Title is empty → should fall back to humanised id
+        let events = synthesize_gate_question(
+            "uc_weekly_digest",
+            "review_policy",
+            "",
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+            &[],
+        );
+        let v3 = events
+            .iter()
+            .find_map(|e| match e {
+                BuildEvent::ClarifyingQuestionV3 { question, .. } => Some(question.clone()),
+                _ => None,
+            })
+            .expect("v3 question emitted");
+        assert!(
+            v3.contains("\"Weekly Digest\""),
+            "humanised title should appear, got: {v3}"
+        );
+        assert!(
+            !v3.contains("uc_weekly_digest"),
+            "raw id must NOT leak into the question, got: {v3}"
+        );
+
+        // Title equals the id → also fall back to humanised
+        let events = synthesize_gate_question(
+            "uc_morning_brief",
+            "memory_policy",
+            "uc_morning_brief",
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+            &[],
+        );
+        let v3 = events
+            .iter()
+            .find_map(|e| match e {
+                BuildEvent::ClarifyingQuestionV3 { question, .. } => Some(question.clone()),
+                _ => None,
+            })
+            .expect("v3 question emitted");
+        assert!(
+            v3.contains("\"Morning Brief\""),
+            "humanised title should appear when title==id, got: {v3}"
+        );
+        assert!(
+            !v3.contains("uc_morning_brief"),
+            "raw id must NOT leak into the question, got: {v3}"
+        );
+    }
+
+    #[test]
+    fn synthesize_question_uses_real_title_when_provided() {
+        let events = synthesize_gate_question(
+            "uc_weekly_digest",
+            "review_policy",
+            "Weekly Project Digest",
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+            &[],
+        );
+        let v3 = events
+            .iter()
+            .find_map(|e| match e {
+                BuildEvent::ClarifyingQuestionV3 { question, .. } => Some(question.clone()),
+                _ => None,
+            })
+            .expect("v3 question emitted");
+        assert!(v3.contains("\"Weekly Project Digest\""), "got: {v3}");
+    }
+
+    #[test]
+    fn batched_synthesis_emits_question_per_unopen_gate_in_canonical_order() {
+        // Capability with all five gates Closed → expect 5 V3 events
+        // (trigger → connectors → review_policy → memory_policy → sample_output).
+        let mut coverage = HashMap::new();
+        coverage.insert("uc_test".to_string(), CapabilityGates::default());
+        let mut titles = HashMap::new();
+        titles.insert("uc_test".to_string(), "Test Capability".to_string());
+
+        let events = synthesize_all_unopen_gates(
+            "uc_test",
+            &mut coverage,
+            &titles,
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+            &[],
+        );
+
+        let v3_fields: Vec<String> = events
+            .iter()
+            .filter_map(|e| match e {
+                BuildEvent::ClarifyingQuestionV3 { field, .. } => field.clone(),
+                _ => None,
+            })
+            .collect();
+
+        assert_eq!(
+            v3_fields,
+            vec![
+                "suggested_trigger".to_string(),
+                "connectors".to_string(),
+                "review_policy".to_string(),
+                "memory_policy".to_string(),
+                "sample_output".to_string(),
+            ],
+            "all five gates must fire in canonical order"
+        );
+
+        // Every gate should now be Pending (mark_pending called)
+        for field in GATED_CAPABILITY_FIELDS {
+            assert_eq!(
+                coverage.get("uc_test").unwrap().field_state(field),
+                Some(Gate::Pending),
+                "gate {field} should be Pending after batched synthesis"
+            );
+        }
+    }
+
+    #[test]
+    fn batched_synthesis_skips_already_open_gates() {
+        // Three gates Open (trigger + connectors + sample_output), two Closed → expect 2 emissions.
+        let mut coverage = HashMap::new();
+        let mut gates = CapabilityGates::default();
+        gates.mark_open("suggested_trigger");
+        gates.mark_open("connectors");
+        gates.mark_open("sample_output");
+        coverage.insert("uc_partial".to_string(), gates);
+        let titles = HashMap::new();
+
+        let events = synthesize_all_unopen_gates(
+            "uc_partial",
+            &mut coverage,
+            &titles,
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+            &[],
+        );
+
+        let v3_fields: Vec<String> = events
+            .iter()
+            .filter_map(|e| match e {
+                BuildEvent::ClarifyingQuestionV3 { field, .. } => field.clone(),
+                _ => None,
+            })
+            .collect();
+
+        assert_eq!(
+            v3_fields,
+            vec!["review_policy".to_string(), "memory_policy".to_string()],
+            "only the still-Closed gates should fire"
+        );
+    }
+
+    #[test]
+    fn batched_synthesis_returns_empty_when_no_capability() {
+        let mut coverage: HashMap<String, CapabilityGates> = HashMap::new();
+        let titles = HashMap::new();
+        let events = synthesize_all_unopen_gates(
+            "uc_missing",
+            &mut coverage,
+            &titles,
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+            &[],
+        );
+        assert!(
+            events.is_empty(),
+            "missing capability should produce zero events, not panic"
+        );
+    }
+}

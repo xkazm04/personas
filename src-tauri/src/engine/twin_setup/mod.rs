@@ -23,10 +23,10 @@ pub(crate) mod llm;
 pub(crate) mod parse;
 pub(crate) mod plan;
 pub(crate) mod prompts;
-pub(crate) mod queue;
+pub use personas_engine::twin_setup::queue;
 pub(crate) mod reconcile;
 pub(crate) mod session;
-pub(crate) mod skeleton;
+pub use personas_engine::twin_setup::skeleton;
 
 #[cfg(test)]
 mod tests;

@@ -19,9 +19,9 @@
 //! - [`openai`]  — streaming text path (no tools)
 //! - [`tools`]   — tool-calling loop + built-ins + in-process MCP bridge
 
-mod config;
-mod events;
-mod openai;
+pub use personas_engine::http_engine::config;
+pub use personas_engine::http_engine::events;
+pub use personas_engine::http_engine::openai;
 mod secrets;
 mod tools;
 

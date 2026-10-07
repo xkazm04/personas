@@ -20,13 +20,13 @@
 mod events;
 mod fanout;
 mod fix_pass;
-mod gates;
-mod kp_surface;
+pub use personas_engine::build_session::gates;
+pub use personas_engine::build_session::kp_surface;
 mod oneshot;
 mod orchestrator;
-mod parser;
-mod provisional;
-pub mod reference;
+pub use personas_engine::build_session::parser;
+pub use personas_engine::build_session::provisional;
+pub use personas_engine::build_session::reference;
 mod restart;
 mod runner;
 mod session_prompt;

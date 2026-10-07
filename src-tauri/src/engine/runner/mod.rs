@@ -6,11 +6,11 @@
 
 mod credentials;
 mod env;
-mod globals;
+pub use personas_engine::runner::globals;
 pub(crate) mod hooks;
-mod stages;
+pub use personas_engine::runner::stages;
 pub(crate) mod team_context;
-mod workspace_gc;
+pub use personas_engine::runner::workspace_gc;
 
 // Cross-module re-exports. These paths are what external callers (outside
 // `engine::runner`) see — matches the layout before the submodule split so no
