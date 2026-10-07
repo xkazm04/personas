@@ -447,6 +447,51 @@ sites that still take an `AppHandle` only to call `.emit()` on it, then make `ta
 an optional dependency. Build a new trait for this and you have duplicated a working
 one — see `.claude/rules/rust-backend.md` on unadopted abstractions.
 
+### Profile and feature levers, measured — including the ones that make it WORSE
+
+The peak is **64% frontend**, confirmed two ways on 2026-10-07: `cargo check --lib`
+peaks at 5,884 MB against a 9,212 MB `build --lib` peak, and `-Ztime-passes` (via
+`RUSTC_BOOTSTRAP=1`) shows RSS at 1.6 GB after macro expansion, 4.5 GB after
+type-check and 5.96 GB after borrowck — codegen then adds ~3.3 GB on top of a
+frontend that stays resident. Self-profile shows the shape of the cost: 2.28 M
+`evaluate_obligation` calls and 3,168 coroutines. `cargo llvm-lines` finds no
+pathology, just a flat 9.9 M IR lines.
+
+"Only splitting the crate moves the frontend" is true of the FLOOR, and it is also
+the trap: it stops you asking whether the crate type-checks code nobody asked for.
+**A leaked dependency feature is frontend cost too, and the biggest single win here
+was exactly that** — see the axum `tower-log` commit, −837 MB for one line, more than
+a 39-file code-motion wave bought.
+
+| lever | peak | verdict |
+|---|---|---|
+| drop axum's `tower-log` default | **−837 MB** (build), −825 MB (check) | **taken** — nothing here wanted `tracing/log` |
+| `debug = 0` on app_lib | −790 MB | **operator trade** — costs the line-table backtraces kept after LNK1140 |
+| `panic = "abort"` in dev | −1,070 MB | **no** — changes runtime behaviour on the ORT `catch_unwind` path |
+| `-j 2` | −800 MB | free, +25% wall; the throttle already caps at cores−2 |
+| `-j 4` | −240 MB | adds only ~45 MB once `debug = 0` is on |
+| `CARGO_INCREMENTAL=0` | **+530 MB WORSE** on build; −172 MB and much faster on *check* | check-only lane |
+| `codegen-units = 16` | **+400 MB worse** | the effective default is 256, because incremental is on |
+| `codegen-units = 1` | **+1,740 MB worse** | never |
+| `split-debuginfo`, `debug-assertions = false` | within noise | skip |
+
+Two methodology notes that cost real time. **Wall-clock is not comparable unless both
+runs had the same dependency cache state** — an identical baseline measured 750 s and
+then 420 s, so ignore wall differences under ~100 s, and ignore them entirely across a
+dependency-graph change. And **`cargo check` compiles no `#[cfg(test)]` code**, so a
+clean `check` proves less than it appears to; use `--all-targets`.
+
+### Extracting `src/commands/` — feasible, with a catch
+
+`#[tauri::command]` functions CAN live in a different crate from the one calling
+`tauri::generate_handler!`; proven with a throwaway crate outside this repo. They must
+be `pub`, because the macro's helpers are `#[macro_export]` plus `pub use`. **But the
+argument-deserialisation wrapper still expands in the handler crate**, so all 1,612
+wrappers keep costing type-check wherever `generate_handler!` lives — only the function
+bodies move. The harder blocker is a cycle: `commands/` pulls from `db`, `engine`,
+`companion` and `ipc_auth`, while 262 references run the other way into `commands::`.
+A commands crate would have to sit ABOVE `app_lib` with those back-references inverted.
+
 ### Verifying a move: `cargo check` is not enough, and `super::` is a trap
 
 **`cargo check` compiles no `#[cfg(test)]` code.** Both crates reported 0 errors and
