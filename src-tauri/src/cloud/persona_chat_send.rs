@@ -22,8 +22,8 @@
 //!   [`MAX_MESSAGE_BYTES`] UTF-8 bytes (`message_too_long`). A `message` or
 //!   `sessionId` of the wrong JSON type is `bad_params`.
 //! * Other preconditions, in this order: "Sync chats" on (`chat_sync_off`);
-//!   the persona exists here (`not_found`); the persona is not paused
-//!   (`persona_paused`).
+//!   the persona exists here (`not_found`). A paused persona is accepted
+//!   (M21, below).
 //! * `result` on `completed` = `{"sessionId", "userMessageId",
 //!   "executionId"}`, and the row's `execution_id` column = the run. The
 //!   command completes when the turn STARTS; the user row is already written
@@ -34,15 +34,15 @@
 //!   row stays, as it does at the desk.
 //! * The command id is the run's idempotency key.
 //!
-//! # Why a paused persona refuses
+//! # Why a paused persona still chats (owner decision M21, 2026-10-07)
 //!
-//! Pause is the brake the operator - and the phone itself, through
-//! `pause_persona` - puts on an agent, and `chat_send` is one of the two verbs
-//! that spend on the user's plan with no prompt here and no cap. A turn
-//! started through a pause would be the one unprompted spend the operator
-//! explicitly asked to stop. Refusing costs one tap (`resume_persona` is a v1
-//! verb) and says why; running would cost money nobody can see coming. The
-//! desk's own chat is not gated: there the operator is looking at the switch.
+//! Pause means the persona does not operate in its own role: its triggers,
+//! schedules and event subscriptions stop. A `chat_send` is not the persona
+//! acting on its own; it is the user asking it something, exactly as an
+//! explicit `run_persona` is (which never checked the pause either), and the
+//! desk's own chat runs a paused persona too. So the phone's turn runs, the
+//! persona stays paused, and the two explicit verbs behave the same. The
+//! spend is the same spend M17 already accepts for any paired `chat_send`.
 
 use rusqlite::OptionalExtension;
 use serde_json::{json, Value};
@@ -117,11 +117,9 @@ pub fn plan(pool: &DbPool, cmd: &Effective) -> Result<PersonaChatPlan, AppError>
     }
     let persona_id = cmd.persona_id.clone().unwrap_or_default();
     // A missing id and an unknown one are the same answer: no such persona.
-    let persona = crate::db::repos::core::personas::get_by_id(pool, &persona_id)
+    // Its pause is not checked: a paused persona still takes a chat (M21).
+    crate::db::repos::core::personas::get_by_id(pool, &persona_id)
         .map_err(|_| AppError::NotFound(format!("Persona {persona_id}")))?;
-    if !persona.enabled {
-        return Err(AppError::Validation("persona_paused".into()));
-    }
     if let Some(id) = session_id.as_deref() {
         if !is_syncable_session_id(id) || !session_belongs(pool, &persona_id, id)? {
             return Err(AppError::NotFound(format!("Chat session {id}")));
@@ -290,8 +288,9 @@ mod tests {
             "not_found"
         );
 
+        // M21: a paused persona still takes an explicit chat.
         crate::db::repos::core::personas::set_enabled(&pool, &p, false).unwrap();
-        assert_eq!(send(json!({ "message": "x" })), "persona_paused");
+        assert!(plan(&pool, &cmd(&p, json!({ "message": "x" }))).is_ok());
 
         let (off, p_off) = setup(false);
         assert_eq!(

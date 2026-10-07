@@ -29,9 +29,11 @@
 //!    turn - with Athena (`persona_id = 'athena'`, `cloud::athena_send`) or
 //!    with a persona (its id, `cloud::persona_chat_send`: one persona
 //!    execution, through the same Rust turn the desktop chat uses). A
-//!    persona `chat_send` is refused `persona_paused` while that persona is
-//!    paused. `chat_send` runs only while the operator has "Sync chats" on,
-//!    because its reply reaches the phone as synced data. The trust boundary
+//!    persona `chat_send` runs while that persona is paused, as `run_persona`
+//!    does (M21): pause stops the persona's own triggers, schedules and event
+//!    subscriptions, not an explicit ask. `chat_send` runs only while the
+//!    operator has "Sync chats" on, because its reply reaches the phone as
+//!    synced data. The trust boundary
 //!    is the phone's non-extractable key plus revocation from this desk.
 //! 3. **Everything else still needs the operator's click.** An unsigned
 //!    `run_persona` (an older web build, or a browser that was never paired)
@@ -58,8 +60,7 @@
 //!    signed command of the same poll. A command already claimed finishes.
 //!
 //! What a paired phone can NOT do: edit a persona, read or touch credentials,
-//! chat with a paused persona, use a queue verb without a click here, or send
-//! any verb outside rule 2.
+//! use a queue verb without a click here, or send any verb outside rule 2.
 //!
 //! ## Queue verbs
 //!
@@ -2166,22 +2167,29 @@ mod tests {
         assert_eq!(fields, json!({ "error_message": "chat_sync_off" }));
     }
 
+    /// M21: pause stops the persona's own role (triggers, schedules, event
+    /// subscriptions), not an explicit ask. A paused persona takes the turn,
+    /// as it takes a `run_persona`, and stays paused.
     #[test]
-    fn a_persona_chat_send_to_a_paused_persona_fails_persona_paused() {
+    fn a_persona_chat_send_to_a_paused_persona_starts_its_turn() {
         let (pool, persona, plane, exec) = persona_chat_harness(true);
         crate::db::repos::core::personas::set_enabled(&pool, &persona, false).expect("pause");
         let phone = Phone::new();
-        run(
-            &plane,
-            &exec,
-            &[phone.controller()],
-            phone.row_with("chat_send", &persona, DEV, Utc::now(), PERSONA_HELLO),
-        );
-        let Some(Write::Finish(_, status, fields)) = plane.writes().pop() else {
+        let row = phone.row_with("chat_send", &persona, DEV, Utc::now(), PERSONA_HELLO);
+        let id = row.id.clone();
+        run(&plane, &exec, &[phone.controller()], row);
+        let Some(Write::Finish(fid, status, fields)) = plane.writes().pop() else {
             panic!("finish")
         };
-        assert_eq!(status, "failed");
-        assert_eq!(fields, json!({ "error_message": "persona_paused" }));
+        assert_eq!((fid.as_str(), status.as_str()), (id.as_str(), "completed"));
+        let run_id = fields["result"]["executionId"]
+            .as_str()
+            .expect("execution id");
+        let by_key = crate::db::repos::execution::executions::get_by_idempotency_key(&pool, &id)
+            .expect("lookup")
+            .expect("the run");
+        assert_eq!(by_key.id, run_id, "the turn started a run");
+        assert!(!enabled(&pool, &persona), "the persona stays paused");
     }
 
     /// Two polls that both see the same pending row: one claim wins, the turn
