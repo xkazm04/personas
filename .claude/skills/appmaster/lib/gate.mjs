@@ -114,7 +114,8 @@ export function failureSignature(text, cap = 300) {
 export function testFilesIn(failures) {
   const files = new Set();
   for (const f of failures || []) {
-    const m = /([\w@./-]+\.test\.[cm]?[jt]sx?)/.exec(String(f));
+    // node:test / vitest files (x.test.ts) and Playwright specs (x.spec.ts, printed as "x.spec.ts:15:5 ›")
+    const m = /([\w@./-]+\.(?:test|spec)\.[cm]?[jt]sx?)/.exec(String(f));
     if (m) files.add(m[1]);
   }
   return [...files];

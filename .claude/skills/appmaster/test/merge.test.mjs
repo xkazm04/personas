@@ -404,6 +404,9 @@ test('(xv) the failure signature is the same for the same test in the branch wor
   const pwBase = G.failureSignature('  ✘ 1004 [node] › tests/golden-path/kit-catalog.probe.spec.ts:191:7 › kit census › census.json is what the tree measures today (145ms)\n');
   assert.deepEqual(pwBranch, pwBase);
   assert.equal(G.failuresAreInherited(pwBranch, pwBase), true);
+  // a branch-only Playwright failure names its spec, so the flaky rerun can narrow to it
+  assert.deepEqual(G.testFilesIn(['✘ [node] › tests/golden-path/job-elapsed.probe.spec.ts:15:5 › formatElapsed uses m:ss']), ['tests/golden-path/job-elapsed.probe.spec.ts']);
+  assert.deepEqual(G.testFilesIn(['app/api/x/route.test.ts']), ['app/api/x/route.test.ts']);
 });
 
 test('(xvi) settle with no memory headroom refuses, leaves the run exactly as it was, and a later settle succeeds', () => {
