@@ -120,16 +120,20 @@ pub fn register_deep_link_handler(app: &tauri::App) {
                     // any web page can craft this URL.
                     match parse_nav_link(&url_str) {
                         Some(NavLink::Persona(id)) => {
-                            let _ = dl_handle.emit(
+                            if let Err(e) = dl_handle.emit(
                                 event_name::PERSONA_LINK_OPENED,
                                 serde_json::json!({ "personaId": id }),
-                            );
+                            ) {
+                                tracing::warn!(error = %e, "persona deep link emit failed");
+                            }
                         }
                         Some(NavLink::Execution(id)) => {
-                            let _ = dl_handle.emit(
+                            if let Err(e) = dl_handle.emit(
                                 event_name::EXECUTION_LINK_OPENED,
                                 serde_json::json!({ "executionId": id }),
-                            );
+                            ) {
+                                tracing::warn!(error = %e, "execution deep link emit failed");
+                            }
                         }
                         None => {
                             tracing::warn!(host = %host, "dropped malformed navigation deep link")
