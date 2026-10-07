@@ -78,8 +78,31 @@ export const repoOf = (run) => ({
   root: run?.repoRoot ?? run?.project?.root,
   baseBranch: run?.repoBase ?? run?.project?.baseBranch,
 });
-/** Env a builder and its gates get for the repo they work in. */
-export const repoEnv = (root) => (root && normRoot(root) === normRoot(PERSONAS_ROOT) ? { CARGO_TARGET_DIR: PERSONAS_CARGO_TARGET } : {});
+/**
+ * Cargo jobs one Rust run may use. Up to GLOBAL_CAP builders, their gates and the operator's own
+ * builds share one 16-core machine; an uncapped cargo takes every core (operator, 2026-10-07).
+ */
+export const RUST_BUILD_JOBS = 6;
+const rustRepoCache = new Map();
+/** A repo compiles Rust when its root, or its src-tauri/, holds a Cargo.toml. */
+export function isRustRepo(root) {
+  if (!root) return false;
+  const key = normRoot(root);
+  if (!rustRepoCache.has(key)) {
+    rustRepoCache.set(key, ['Cargo.toml', path.join('src-tauri', 'Cargo.toml')].some((f) => fs.existsSync(path.join(root, f))));
+  }
+  return rustRepoCache.get(key);
+}
+/**
+ * Env a builder and its gates get for the repo they work in: the Personas repo's one cargo target,
+ * and a job cap on any Rust repo. Other Rust repos keep a target per worktree on purpose: a target
+ * shared by two live worktrees lets one branch's tests run the other's binaries (cargo judges
+ * freshness by mtime and hashes member paths relative to the workspace).
+ */
+export const repoEnv = (root) => ({
+  ...(root && normRoot(root) === normRoot(PERSONAS_ROOT) ? { CARGO_TARGET_DIR: PERSONAS_CARGO_TARGET } : {}),
+  ...(isRustRepo(root) ? { CARGO_BUILD_JOBS: String(RUST_BUILD_JOBS) } : {}),
+});
 
 /** Projects this skill manages by default; any other brief.json opts in with `"headless": true`. */
 export const DEFAULT_MANAGED = ['pof', 'ascent', 'kp'];

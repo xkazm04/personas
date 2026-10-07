@@ -129,6 +129,7 @@ export function renderBuilderPrompt(run, brief = {}, gates = {}) {
   const target = repoOf(run);
   const env = repoEnv(target.root);
   if (env.CARGO_TARGET_DIR) ruleLines.push(`CARGO_TARGET_DIR is set to the one Personas cargo target (${env.CARGO_TARGET_DIR}); never override it or start a second Rust build tree.`);
+  if (env.CARGO_BUILD_JOBS) ruleLines.push(`This repo compiles Rust on a machine other builders share. While you iterate, compile only what you touched: \`cargo check -p <crate>\` or \`cargo test -p <crate> <filter>\`. Run the full-workspace clippy and test once, at the end, before your final commit, never after each edit. CARGO_BUILD_JOBS is ${env.CARGO_BUILD_JOBS}; do not raise it.`);
   const values = {
     project: p.name && p.name !== p.slug ? `${p.name} (${p.slug})` : p.slug,
     root: target.root,
@@ -153,6 +154,41 @@ export function renderBuilderPrompt(run, brief = {}, gates = {}) {
   return fillTemplate(template, values, 'builder prompt');
 }
 
+/**
+ * (runs, root, sha) => {runId, sha, settledAt, gates: {name: 'ok'|'skipped'}, commands} | null
+ * The newest merged run whose merge gate verified exactly `sha` in repo `root`. Its results stand for
+ * that tree, so a review judging that head need not recompile it (operator, 2026-10-07). A record
+ * with any failed gate is no record: the reviewer runs the gates itself.
+ */
+export function gateRecordFor(runs, root, sha) {
+  if (!sha || !root) return null;
+  const want = normRoot(root);
+  const hit = (runs || [])
+    .filter((r) => r?.state === 'merged' && r.mergedSha === sha && r.verdict?.gates && normRoot(repoOf(r).root || '') === want)
+    .sort((a, b) => String(b.settledAt || '').localeCompare(String(a.settledAt || '')))[0];
+  if (!hit) return null;
+  // a base that moved during the gates was rebased again and the full gates re-ran on the merged tree
+  const raw = hit.verdict.gatesAfterRebase && Object.keys(hit.verdict.gatesAfterRebase).length ? hit.verdict.gatesAfterRebase : hit.verdict.gates;
+  const gates = {}; const commands = {};
+  for (const [name, g] of Object.entries(raw)) {
+    gates[name] = g?.skipped ? 'skipped' : g?.ok ? 'ok' : 'failed';
+    if (g?.command) commands[name] = g.command;
+  }
+  if (!Object.keys(gates).length || Object.values(gates).includes('failed')) return null;
+  return { runId: hit.runId, sha, settledAt: hit.settledAt || null, gates, commands };
+}
+
+/** The reviewer's rule line for a gate record: cite it, do not re-run what it already proved. */
+export function gateRecordRule(rec) {
+  const passed = Object.entries(rec.gates).filter(([, v]) => v === 'ok').map(([k]) => `${k} (\`${rec.commands[k] ?? k}\`)`);
+  const skipped = Object.entries(rec.gates).filter(([, v]) => v === 'skipped').map(([k]) => k);
+  return `The merge gate already verified this exact tree: run ${shortId(rec.runId)} merged ${rec.sha.slice(0, 10)}`
+    + `${rec.settledAt ? ` at ${rec.settledAt}` : ''} with ${passed.join(', ') || 'no gate'} passing`
+    + `${skipped.length ? ` (${skipped.join(', ')} skipped there)` : ''}. Do NOT re-run those commands: cite this record as the`
+    + ` council's gate evidence, labelled as the merge gate's result. Run a gate yourself only if \`git rev-parse HEAD\``
+    + ` is not ${rec.sha.slice(0, 10)}, or for a gate that record skipped. This keeps the shared machine from recompiling the same tree.`;
+}
+
 /** Every {{placeholder}} filled; a missing value or a placeholder the map lacks is an error, never a blank. */
 function fillTemplate(template, values, what) {
   const missing = Object.entries(values).filter(([, v]) => v === undefined || v === null || v === '').map(([k]) => k);
@@ -166,10 +202,12 @@ function fillTemplate(template, values, what) {
  * (run, brief, seed) => string   // roles/council-reviewer.md filled: a review run runs the council on
  * one feature and writes no code. `seed` is what seedCouncil put in the worktree before it started.
  */
-export function renderReviewerPrompt(run, brief = {}, seed = {}) {
+export function renderReviewerPrompt(run, brief = {}, seed = {}, runs = null) {
   const template = fs.readFileSync(path.join(SKILL_DIR, 'roles', 'council-reviewer.md'), 'utf8');
   const { rules } = splitBoundaries(brief?.boundaries);
-  const extraRules = Array.isArray(brief?.rules) ? brief.rules : brief?.rules ? [brief.rules] : [];
+  const extraRules = Array.isArray(brief?.rules) ? [...brief.rules] : brief?.rules ? [brief.rules] : [];
+  const record = gateRecordFor(runs ?? listSlugs().flatMap((s) => listRuns(s)), repoOf(run).root, run.baseSha);
+  if (record) extraRules.push(gateRecordRule(record));
   const p = run.project || {};
   const lite = run.councilMode === 'lite';
   const present = seed.present ?? run.councilSeeded ?? [];
