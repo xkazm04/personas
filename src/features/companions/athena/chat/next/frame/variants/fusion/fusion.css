@@ -41,7 +41,7 @@
 .fusion .fu-glass.is-open { background: var(--fu-glass-strong); box-shadow: inset 0 0 0 1px var(--fu-rule), inset 0 1px 0 var(--fu-sheen), var(--shadow-elevation-4); }
 .fusion .fu-kbd {
   display: inline-flex; align-items: center; justify-content: center; flex: none;
-  min-width: 22px; height: 22px; padding: 0 6px; border-radius: var(--radius-interactive);
+  min-width: 1.5em; height: 1.55em; padding: 0 0.4em; line-height: 1; border-radius: var(--radius-interactive);
   box-shadow: inset 0 0 0 1px var(--fu-rule); background: color-mix(in srgb, var(--foreground) 4%, transparent);
   color: var(--muted-foreground); white-space: nowrap; font-family: var(--font-mono);
 }
@@ -52,8 +52,8 @@
   background: var(--background) url('/athena/athena_baseline.jpg') 50% 31% / 250% no-repeat;
   box-shadow: inset 0 0 0 1px var(--fu-rule);
 }
-.fusion .fu-mark { position: relative; flex: none; width: 30px; height: 30px; border-radius: 50%; }
-.fusion .fu-mark.is-lg { width: 34px; height: 34px; }
+.fusion .fu-mark { position: relative; flex: none; width: calc(var(--fu-u) * 1.8); height: calc(var(--fu-u) * 1.8); border-radius: 50%; }
+.fusion .fu-mark.is-lg { width: calc(var(--fu-u) * 2.05); height: calc(var(--fu-u) * 2.05); }
 .fusion .fu-ring {
   position: absolute; inset: -3px; border-radius: 50%;
   background: conic-gradient(from 0deg, color-mix(in srgb, var(--primary) 0%, transparent), var(--primary) 30%, color-mix(in srgb, var(--primary) 0%, transparent) 31%);
@@ -71,14 +71,37 @@
 @keyframes fu-glow { 50% { box-shadow: 0 0 0 1.5px var(--primary), 0 0 10px var(--primary); } }
 
 /* ── the island ────────────────────────────────────────────────────────── */
-.fusion .fu-dock { position: absolute; left: 0; right: 0; bottom: 44px; display: flex; justify-content: center; align-items: flex-end; pointer-events: none; z-index: 5; }
+/* The island's boxes hold text, so they are multiples of ONE type unit (the caption
+   size, which --type-f scales with Settings > Appearance > text size). Island.tsx reads
+   them back through the .fu-probe boxes because framer animates numbers.
+   --fu-island-h is what the decision stage must clear above the dock (the decision row);
+   the stage's bottom rule should read calc(var(--fu-dock-b) + var(--fu-island-h) + 12px). */
+.fusion {
+  --fu-u: calc(1rem * var(--type-f));
+  --fu-cap-h: calc(var(--fu-u) * 2.7);
+  --fu-row-h: calc(var(--fu-u) * 3.75);
+  --fu-island-h: var(--fu-row-h);
+  --fu-dock-b: calc(2rem + 12px);
+}
+.fusion .fu-probe { position: absolute; left: 0; bottom: 0; width: 0; overflow: hidden; visibility: hidden; pointer-events: none; }
+.fusion .fu-probe i { display: block; width: 1px; }
+.fusion .fu-probe i:nth-child(1) { height: var(--fu-cap-h); }
+.fusion .fu-probe i:nth-child(2) { height: var(--fu-row-h); }
+.fusion .fu-probe i:nth-child(3) { height: var(--fu-dock-b); }
+.fusion .fu-probe i:nth-child(4) { height: var(--radius-modal); }
+.fusion .fu-dock { position: absolute; left: 0; right: 0; bottom: var(--fu-dock-b); display: flex; justify-content: center; align-items: flex-end; pointer-events: none; z-index: 5; }
 .fusion .fu-island { position: relative; overflow: hidden; pointer-events: auto; display: flex; flex-direction: column; }
-.fusion .fu-cap { display: flex; align-items: center; gap: 10px; height: 44px; width: max-content; padding: 0 8px 0 7px; background: transparent; border-radius: var(--radius-pill); color: var(--foreground); }
+.fusion .fu-cap-row { display: flex; align-items: center; height: var(--fu-cap-h); padding-right: 0.5rem; }
+.fusion .fu-cap { display: flex; align-items: center; gap: 0.6rem; height: var(--fu-cap-h); width: max-content; padding: 0 0.5rem 0 0.45rem; background: transparent; border-radius: var(--radius-pill); color: var(--foreground); }
 .fusion .fu-cap:hover { background: color-mix(in srgb, var(--foreground) 4%, transparent); }
 .fusion .fu-cap:focus-visible, .fusion .fu-gate:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--focus-ring-color); }
-.fusion .fu-cap-label { white-space: nowrap; }
-.fusion .fu-gate { display: inline-flex; align-items: center; gap: 4px; flex: none; height: 26px; padding: 0 9px 0 7px; border-radius: var(--radius-pill); background: var(--fu-warm); color: var(--background); }
-.fusion .fu-gate svg { width: 14px; height: 14px; }
+/* A long thread title ends in an ellipsis at a fixed measure; its full words ride in the tooltip and the aria-label. */
+.fusion .fu-cap-label { white-space: nowrap; min-width: 0; max-width: min(17em, 38vw); overflow: hidden; text-overflow: ellipsis; }
+.fusion .fu-gate-wrap { display: flex; flex: none; overflow: hidden; }
+.fusion .fu-gate-wrap > .fu-gate { margin-left: 0.4rem; }
+.fusion .fu-gate { display: inline-flex; align-items: center; gap: 0.25rem; flex: none; height: calc(var(--fu-u) * 1.65); padding: 0 0.55rem 0 0.45rem; border-radius: var(--radius-pill); background: var(--fu-warm); color: var(--background); }
+.fusion .fu-gate svg { width: calc(var(--fu-u) * 0.875); height: calc(var(--fu-u) * 0.875); }
+.fusion .fu-cap-row > .fu-kbd { margin-left: 0.4rem; }
 .fusion .fu-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px 6px 14px; flex: none; }
 .fusion .fu-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
 .fusion .fu-compose { flex: none; padding: 6px 10px 8px; box-shadow: inset 0 1px 0 var(--fu-rule-soft); }
