@@ -81,6 +81,8 @@ recordings/
 !.claude/skills/
 !.claude/rules/
 !.claude/perfect/
+!.claude/mods/
+.claude/mods/**/.claude-plugin/types/
 !.claude/contest/
 !.claude/council/
 !.claude/friend/

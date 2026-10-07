@@ -1,0 +1,1 @@
+{ "name": "dev-law", "version": "0.1.0", "description": "Repo-tracked guard for the Personas checkout: denies shell commands this machine already paid for (shared-checkout git sweeps, bare cargo test, whole vitest runs, blind node kills, MSYS traps) and nudges when source edits leave their feature doc stale" }
