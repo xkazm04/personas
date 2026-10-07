@@ -761,7 +761,8 @@ mod tests {
         std::fs::write(dir.join("result.json"), "{ not json").unwrap();
         match ingest_council_run(&pool, &ingest(&project_id, &dir), &personas) {
             Err(DoorError::Unprocessable(body)) => {
-                let summary: CouncilIngestSummary = serde_json::from_str(&body).unwrap();
+                let summary: CouncilIngestSummary =
+                    crate::engine::safe_json::from_str_as(&body).unwrap();
                 assert_eq!(summary.runs_ingested, 0);
                 assert_eq!(summary.refused.len(), 1, "{body}");
                 assert!(
