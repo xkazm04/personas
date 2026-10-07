@@ -1263,7 +1263,7 @@ pub fn update_manual_review_status(
 
 /// The database half of a manual-review resolution: the chokepoint status
 /// write (`manual_reviews::update_status`, which also writes the one `learned`
-/// memory) and the row as it now stands. Pool-only, so it is tested on its
+/// memory) and the row as that write returned it. Pool-only, so it is tested on its
 /// own; [`resolve_manual_review`] is the whole resolution.
 pub(crate) fn record_review_decision(
     pool: &crate::db::DbPool,
@@ -1271,9 +1271,7 @@ pub(crate) fn record_review_decision(
     status: crate::db::models::ManualReviewStatus,
     reviewer_notes: Option<String>,
 ) -> Result<(PersonaManualReview, Option<LearnedMemoryRef>), AppError> {
-    let learned = manual_repo::update_status(pool, id, status, reviewer_notes)?;
-    let review = manual_repo::get_by_id(pool, id)?;
-    Ok((review, learned))
+    manual_repo::update_status_returning(pool, id, status, reviewer_notes)
 }
 
 /// One manual-review resolution with every side effect: the status write and

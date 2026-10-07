@@ -11,6 +11,10 @@ use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use personas_core::error::AppError;
 
+/// The columns [`row_to_review`] reads, in the order the flip's `RETURNING`
+/// emits them.
+const REVIEW_COLUMNS: &str = "id, execution_id, persona_id, title, description, severity,      context_data, suggested_actions, status, reviewer_notes, resolved_at, created_at,      updated_at, use_case_id, assignment_id, step_id";
+
 fn row_to_review(row: &rusqlite::Row) -> rusqlite::Result<PersonaManualReview> {
     Ok(PersonaManualReview {
         id: row.get("id")?,
@@ -399,22 +403,39 @@ pub fn update_status(
     status: ManualReviewStatus,
     reviewer_notes: Option<String>,
 ) -> Result<Option<LearnedMemoryRef>, AppError> {
-    let learned = flip_status(pool, id, status, reviewer_notes)?;
+    update_status_returning(pool, id, status, reviewer_notes).map(|(_, learned)| learned)
+}
+
+/// [`update_status`], also returning the review as the flip wrote it.
+///
+/// The row comes back from the flip's own `UPDATE ... RETURNING`, so a caller
+/// that needs it does not read it a second time AFTER the decision committed:
+/// a failed re-read there would report an error for a decision that was in
+/// fact made. Nothing after the flip writes the review row (the learning loop
+/// writes memories, the attachment release writes reports), so the returned
+/// snapshot is the row as it stands.
+pub fn update_status_returning(
+    pool: &DbPool,
+    id: &str,
+    status: ManualReviewStatus,
+    reviewer_notes: Option<String>,
+) -> Result<(PersonaManualReview, Option<LearnedMemoryRef>), AppError> {
+    let (review, learned) = flip_status(pool, id, status, reviewer_notes)?;
     if status != ManualReviewStatus::Pending {
         release_linked_report(pool, id);
     }
-    Ok(learned)
+    Ok((review, learned))
 }
 
-/// The body of [`update_status`]: the compare-and-swap flip and the learning
-/// loop. Returns with every pooled connection it took released, so the
+/// The body of [`update_status_returning`]: the compare-and-swap flip and the
+/// learning loop. Returns with every pooled connection it took released, so the
 /// attachment release that follows checks out its own.
 fn flip_status(
     pool: &DbPool,
     id: &str,
     status: ManualReviewStatus,
     reviewer_notes: Option<String>,
-) -> Result<Option<LearnedMemoryRef>, AppError> {
+) -> Result<(PersonaManualReview, Option<LearnedMemoryRef>), AppError> {
     timed_query!("manual_reviews", "manual_reviews::update_status", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
@@ -449,31 +470,37 @@ fn flip_status(
         // decision recorded by proxy -- so the caller's action was genuinely
         // dropped and must be surfaced as `Err`, not treated as a benign no-op.
         let expected = current.status.as_str();
-        let rows = conn.execute(
-            "UPDATE persona_manual_reviews
-             SET status = ?1,
-                 reviewer_notes = COALESCE(?2, reviewer_notes),
-                 resolved_at = COALESCE(?3, resolved_at),
-                 updated_at = ?4
-             WHERE id = ?5 AND status = ?6",
-            params![
-                status.as_str(),
-                reviewer_notes,
-                resolved_at,
-                now,
-                id,
-                expected
-            ],
-        )?;
+        let flipped = conn
+            .query_row(
+                &format!(
+                    "UPDATE persona_manual_reviews
+                     SET status = ?1,
+                         reviewer_notes = COALESCE(?2, reviewer_notes),
+                         resolved_at = COALESCE(?3, resolved_at),
+                         updated_at = ?4
+                     WHERE id = ?5 AND status = ?6
+                     RETURNING {REVIEW_COLUMNS}"
+                ),
+                params![
+                    status.as_str(),
+                    reviewer_notes,
+                    resolved_at,
+                    now,
+                    id,
+                    expected
+                ],
+                row_to_review,
+            )
+            .optional()?;
 
-        if rows == 0 {
+        let Some(review) = flipped else {
             // get_by_id above succeeded, so the row exists — a 0-row flip means a
             // concurrent caller already resolved it. Surface a benign error that the
             // command layer's `?` turns into "someone else won; don't re-fire".
             return Err(AppError::Validation(format!(
                 "Manual review {id} was already resolved by a concurrent action"
             )));
-        }
+        };
 
         // Surfaced reference to whatever the learning loop wrote (Phase 2).
         let mut learned: Option<LearnedMemoryRef> = None;
@@ -661,7 +688,7 @@ fn flip_status(
             }
         }
 
-        Ok(learned)
+        Ok((review, learned))
     })
 }
 
@@ -1557,5 +1584,78 @@ mod tests {
             Some(linked.id)
         );
         assert!(find_by_report_id(&pool, "rep-1").unwrap().is_none());
+    }
+
+    fn pending_review(pool: &DbPool, notes_seed: Option<&str>) -> String {
+        let (persona_id, execution_id) = setup_persona_and_execution(pool);
+        let review = create(
+            pool,
+            CreateManualReviewInput {
+                execution_id,
+                persona_id,
+                title: "Returning review".into(),
+                description: None,
+                severity: None,
+                context_data: None,
+                suggested_actions: None,
+                use_case_id: None,
+                assignment_id: None,
+                step_id: None,
+            },
+        )
+        .unwrap();
+        if let Some(n) = notes_seed {
+            append_reviewer_note(pool, &review.id, n).unwrap();
+        }
+        review.id
+    }
+
+    #[test]
+    fn update_status_returning_matches_a_later_read() {
+        let pool = init_test_db().unwrap();
+        let id = pending_review(&pool, None);
+
+        let (review, _) = update_status_returning(
+            &pool,
+            &id,
+            ManualReviewStatus::Approved,
+            Some("ship it".into()),
+        )
+        .unwrap();
+        assert_eq!(review.status, ManualReviewStatus::Approved);
+        assert!(review.resolved_at.is_some());
+        assert_eq!(review.reviewer_notes.as_deref(), Some("ship it"));
+
+        let read = get_by_id(&pool, &id).unwrap();
+        assert_eq!(
+            serde_json::to_value(&review).unwrap(),
+            serde_json::to_value(&read).unwrap()
+        );
+    }
+
+    #[test]
+    fn update_status_returning_none_notes_keep_existing_notes() {
+        let pool = init_test_db().unwrap();
+        let id = pending_review(&pool, Some("earlier note"));
+        let before = get_by_id(&pool, &id).unwrap().reviewer_notes;
+        assert!(before.is_some());
+
+        let (review, _) =
+            update_status_returning(&pool, &id, ManualReviewStatus::Rejected, None).unwrap();
+        assert_eq!(review.reviewer_notes, before);
+    }
+
+    #[test]
+    fn update_status_returning_lost_cas_is_err_without_a_review() {
+        let pool = init_test_db().unwrap();
+        let id = pending_review(&pool, None);
+        update_status_returning(&pool, &id, ManualReviewStatus::Approved, None).unwrap();
+
+        let second = update_status_returning(&pool, &id, ManualReviewStatus::Rejected, None);
+        assert!(matches!(second, Err(AppError::Validation(_))));
+        assert_eq!(
+            get_by_id(&pool, &id).unwrap().status,
+            ManualReviewStatus::Approved
+        );
     }
 }
