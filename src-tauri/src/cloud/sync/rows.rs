@@ -53,7 +53,7 @@ const SECRET_KEY_NEEDLES: &[&str] = &[
     "bearer",
 ];
 
-fn key_is_secret(key: &str) -> bool {
+pub(super) fn key_is_secret(key: &str) -> bool {
     let k = key.to_ascii_lowercase();
     SECRET_KEY_NEEDLES.iter().any(|n| k.contains(n))
 }
@@ -75,6 +75,15 @@ pub(super) fn value_looks_secret(s: &str) -> bool {
         "eyJ",
         "Bearer ",
         "-----BEGIN",
+        "AIza",
+        "npm_",
+        "hf_",
+        "rk_live_",
+        "rk_test_",
+        "whsec_",
+        "shpat_",
+        "glsa_",
+        "xapp-",
     ];
     if PREFIXES.iter().any(|p| s.starts_with(p)) {
         return true;

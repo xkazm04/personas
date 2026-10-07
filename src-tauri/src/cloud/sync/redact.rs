@@ -12,7 +12,7 @@
 //! first could cut a token in half and leave a prefix the masker no longer
 //! recognises.
 
-use super::rows::value_looks_secret;
+use super::rows::{key_is_secret, value_looks_secret};
 
 /// What a masked token becomes.
 pub const REDACTED: &str = "[redacted]";
@@ -68,19 +68,60 @@ fn unwrap_token(tok: &str) -> (&str, &str, &str) {
     (&tok[..start], &rest[..core_len], &rest[core_len..])
 }
 
+/// Length band of the mixed-case rule: shorter reads as a word or a short id,
+/// 60 and over is already caught by the density rule in `value_looks_secret`.
+const MIXED_TOKEN_LEN: std::ops::RangeInclusive<usize> = 32..=59;
+
+/// A 32 to 59 character run of ASCII letters and digits with upper case, lower
+/// case and a digit all present: the shape of a random base62 key. A UUID has
+/// hyphens, a git SHA or a hash is single-case hex, prose has no digits inside
+/// its words, so none of those match.
+fn looks_mixed_token(core: &str) -> bool {
+    MIXED_TOKEN_LEN.contains(&core.len())
+        && core.bytes().all(|b| b.is_ascii_alphanumeric())
+        && core.bytes().any(|b| b.is_ascii_uppercase())
+        && core.bytes().any(|b| b.is_ascii_lowercase())
+        && core.bytes().any(|b| b.is_ascii_digit())
+}
+
+/// A lowercase hex run of exactly 40 (git SHA) or 64 (sha256) characters. The
+/// density rule in `value_looks_secret` reads a 64-character hash as a key; in
+/// prose it is far more often a commit or a digest. A hex value under a
+/// secret-named key is still masked by [`names_a_secret`].
+fn looks_like_hash(core: &str) -> bool {
+    matches!(core.len(), 40 | 64)
+        && core
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+}
+
 fn looks_secret(core: &str) -> bool {
-    core.len() >= MIN_PREFIX_TOKEN && value_looks_secret(core)
+    if looks_like_hash(core) {
+        return false;
+    }
+    (core.len() >= MIN_PREFIX_TOKEN && value_looks_secret(core)) || looks_mixed_token(core)
+}
+
+/// `name_with_sep` (a key with its trailing `=` or `:`) names a secret:
+/// `DB_PASSWORD=`, `"password":`.
+fn names_a_secret(name_with_sep: &str) -> bool {
+    key_is_secret(
+        name_with_sep
+            .trim_end_matches(['=', ':'])
+            .trim_matches(is_wrapper),
+    )
 }
 
 /// Mask one whitespace-free token, or return `None` to keep it as it is.
-/// `after_bearer`: the previous token was the word `Bearer`, so this one is
-/// the credential whatever it looks like.
-fn mask_token(tok: &str, after_bearer: bool) -> Option<String> {
+/// `forced`: the previous token was the word `Bearer`, or a secret-named key
+/// with its separator (`password:`), so this one is the credential whatever it
+/// looks like.
+fn mask_token(tok: &str, forced: bool) -> Option<String> {
     let (lead, core, trail) = unwrap_token(tok);
     if core.is_empty() {
         return None;
     }
-    if after_bearer {
+    if forced {
         return Some(format!("{lead}{REDACTED}{trail}"));
     }
     let masked = if core.contains("://") {
@@ -98,7 +139,7 @@ fn mask_core(core: &str) -> Option<String> {
     if let Some(i) = core.rfind(['=', ':']) {
         let (name, value) = core.split_at(i + 1);
         let (vlead, vcore, vtrail) = unwrap_token(value);
-        if !vcore.is_empty() && looks_secret(vcore) {
+        if !vcore.is_empty() && (looks_secret(vcore) || names_a_secret(name)) {
             return Some(format!("{name}{vlead}{REDACTED}{vtrail}"));
         }
     }
@@ -110,8 +151,11 @@ fn mask_core(core: &str) -> Option<String> {
 /// the reader would lose every long URL; judged by segment, only the part that
 /// carries a key goes.
 fn mask_url(url: &str) -> Option<String> {
+    let (url, mut changed) = match mask_userinfo(url) {
+        Some(u) => (u, true),
+        None => (url.to_string(), false),
+    };
     let mut out = String::with_capacity(url.len());
-    let mut changed = false;
     for piece in url.split_inclusive(['/', '?', '&', '#']) {
         let (body, sep) = match piece.char_indices().last() {
             Some((i, '/' | '?' | '&' | '#')) => piece.split_at(i),
@@ -129,12 +173,33 @@ fn mask_url(url: &str) -> Option<String> {
     changed.then_some(out)
 }
 
+/// The password in `scheme://user:pass@host`: the userinfo is judged by its
+/// position, not its look, because a password is any string at all.
+fn mask_userinfo(url: &str) -> Option<String> {
+    let after_scheme = url.find("://")? + 3;
+    let authority_len = url[after_scheme..]
+        .find(['/', '?', '#'])
+        .unwrap_or(url.len() - after_scheme);
+    let authority = &url[after_scheme..after_scheme + authority_len];
+    let at = authority.rfind('@')?;
+    let (user, password) = authority[..at].split_once(':')?;
+    if password.is_empty() || password == REDACTED {
+        return None;
+    }
+    Some(format!(
+        "{}{user}:{REDACTED}{}",
+        &url[..after_scheme],
+        &url[after_scheme + at..]
+    ))
+}
+
 /// Mask every whitespace-delimited token that looks like a credential
 /// ([`value_looks_secret`], with the prose floor above), keeping all other
 /// text and all whitespace byte for byte.
 pub fn redact_text(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     let mut after_bearer = false;
+    let mut after_secret_key = false;
     let mut rest = s;
     while !rest.is_empty() {
         let ws = rest.len() - rest.trim_start().len();
@@ -145,11 +210,17 @@ pub fn redact_text(s: &str) -> String {
         }
         let end = rest.find(char::is_whitespace).unwrap_or(rest.len());
         let tok = &rest[..end];
-        match mask_token(tok, after_bearer) {
+        let core = unwrap_token(tok).1;
+        let is_bearer = core.eq_ignore_ascii_case("bearer");
+        // `Authorization: Bearer x` keeps its own rule: the word `Bearer` is
+        // not itself the credential.
+        let forced = after_bearer || (after_secret_key && !is_bearer);
+        match mask_token(tok, forced) {
             Some(masked) => out.push_str(&masked),
             None => out.push_str(tok),
         }
-        after_bearer = unwrap_token(tok).1.eq_ignore_ascii_case("bearer");
+        after_bearer = is_bearer;
+        after_secret_key = core.ends_with(['=', ':']) && names_a_secret(core);
         rest = &rest[end..];
     }
     out
@@ -236,6 +307,77 @@ mod tests {
     #[test]
     fn ordinary_words_that_share_a_prefix_are_kept() {
         let text = "We use sk-learn and xoxo, AKIA is a name, eyJ alone is nothing.";
+        assert_eq!(redact_text(text), text);
+    }
+
+    #[test]
+    fn a_secret_named_key_in_prose_masks_its_value() {
+        assert_eq!(
+            redact_text("set DB_PASSWORD=hunter2 and retry"),
+            "set DB_PASSWORD=[redacted] and retry"
+        );
+        assert_eq!(
+            redact_text("the password: hunter2 was reused"),
+            "the password: [redacted] was reused"
+        );
+        assert_eq!(
+            redact_text(r#"{"client_secret":"abc"}"#),
+            r#"{"client_secret":"[redacted]"}"#
+        );
+        // A key that is not secret-named keeps its value.
+        assert_eq!(
+            redact_text("name=alice mode: fast"),
+            "name=alice mode: fast"
+        );
+    }
+
+    #[test]
+    fn the_password_in_url_userinfo_is_masked() {
+        assert_eq!(
+            redact_text("connect postgres://admin:hunter2@db.internal:5432/app now"),
+            "connect postgres://admin:[redacted]@db.internal:5432/app now"
+        );
+        let plain = "see https://user@example.com/path and https://example.com:8080/x";
+        assert_eq!(redact_text(plain), plain);
+    }
+
+    #[test]
+    fn newer_token_prefixes_are_masked() {
+        for tok in [
+            "AIzaSyA1b2C3d4E5f6G7h8I9j0KlMnOpQrStUvW", // gitleaks:allow
+            "npm_aB3dE5gH7jK9mN1pQ3sT5vW7yZ9bC1dE3fG5", // gitleaks:allow
+            "hf_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789", // gitleaks:allow
+            "rk_live_4eC39HqLyjWDarjtT1zdp7dc",        // gitleaks:allow
+            "rk_test_4eC39HqLyjWDarjtT1zdp7dc",        // gitleaks:allow
+            "whsec_8f2a1b3c4d5e6f708192a3b4c5d6e7f8",  // gitleaks:allow
+            "shpat_0123456789abcdef0123456789abcdef",  // gitleaks:allow
+            "glsa_AbCdEfGhIjKlMnOpQrStUvWxYz012345_0a1b2c3d", // gitleaks:allow
+            "xapp-1-A0123456789-1234567890123-abcdef0123456789", // gitleaks:allow
+        ] {
+            assert_eq!(
+                redact_text(&format!("key {tok} end")),
+                "key [redacted] end",
+                "{tok}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_mixed_case_digit_run_of_key_length_is_masked() {
+        let tok = "aB3dE5gH7jK9mN1pQ3sT5vW7yZ9bC1dE"; // gitleaks:allow
+        assert_eq!(tok.len(), 32);
+        assert_eq!(
+            redact_text(&format!("value {tok} here")),
+            "value [redacted] here"
+        );
+    }
+
+    #[test]
+    fn identifiers_hashes_and_prose_stay_intact() {
+        let text = "id 6f1d2c3b-4a59-4e68-9d7c-0b1a2c3d4e5f commit \
+            9fceb02d0ae598e95dc970b74767f19372d61af8 sha \
+            e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 \
+            and the quick brown fox jumps over the lazy dog, twice daily.";
         assert_eq!(redact_text(text), text);
     }
 
