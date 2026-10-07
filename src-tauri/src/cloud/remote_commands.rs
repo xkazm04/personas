@@ -568,26 +568,6 @@ impl Outcome {
     }
 }
 
-/// A paired phone may not start a run on a paused persona (scan 5e21d618
-/// finding 8). This is the run's rule only: a phone's chat turn with a paused
-/// persona is allowed (M21, `persona_chat_send`). An operator-approved
-/// run keeps its behaviour (the operator saw the card and chose). An unknown
-/// persona is left to the run's own NotFound.
-fn refuse_paused_for_paired(
-    pool: &DbPool,
-    persona_id: &str,
-    authority: &Authority,
-) -> Result<(), AppError> {
-    if matches!(authority, Authority::Paired { .. }) {
-        if let Ok(p) = crate::db::repos::core::personas::get_by_id(pool, persona_id) {
-            if !p.enabled {
-                return Err(AppError::Validation("persona_paused".into()));
-            }
-        }
-    }
-    Ok(())
-}
-
 /// The `error_message` a failure writes: a short token for the conditions
 /// the web renders (`not_found`, `project_off: <name>`). Every other error
 /// writes the closed token `internal_error`: its text can carry paths, SQL or
@@ -835,7 +815,6 @@ impl VerbExecutor for AppExecutor {
                 },
                 "run_persona" => {
                     let persona_id = cmd.require_persona()?.to_string();
-                    refuse_paused_for_paired(&state.db, &persona_id, authority)?;
                     // The command id is the idempotency key: a re-delivered
                     // command returns the run it already started.
                     let exec = crate::commands::execution::executions::execute_persona_inner(
@@ -1557,8 +1536,8 @@ mod tests {
             "not_found"
         );
         assert_eq!(
-            failure_message(&AppError::Validation("persona_paused".into())),
-            "persona_paused"
+            failure_message(&AppError::Validation("bad_params".into())),
+            "bad_params"
         );
         let leaky = AppError::Internal("open /home/me/secret.db: no such table".into());
         assert_eq!(failure_message(&leaky), "internal_error");
@@ -1902,22 +1881,6 @@ mod tests {
         crate::db::repos::core::personas::get_by_id(pool, id)
             .expect("persona")
             .enabled
-    }
-
-    #[test]
-    fn a_paired_run_on_a_paused_persona_is_refused_but_an_approved_one_is_not() {
-        let pool = crate::db::init_test_db().expect("db");
-        let id = seed_persona(&pool);
-        let paired = Authority::Paired {
-            controller_id: "c".into(),
-            valid_until: Utc::now(),
-        };
-        assert!(refuse_paused_for_paired(&pool, &id, &paired).is_ok());
-        crate::db::repos::core::personas::set_enabled(&pool, &id, false).expect("pause");
-        let err = refuse_paused_for_paired(&pool, &id, &paired).expect_err("paused");
-        assert!(matches!(err, AppError::Validation(m) if m == "persona_paused"));
-        assert!(refuse_paused_for_paired(&pool, &id, &Authority::OperatorApproved).is_ok());
-        assert!(refuse_paused_for_paired(&pool, "no-such", &paired).is_ok());
     }
 
     struct Phone {
