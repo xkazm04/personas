@@ -1190,7 +1190,7 @@ mod tests {
             serde_json::json!({ "a": 1, "b": 3, "c": "x" })
         );
 
-        pool.get()
+        crate::PoolExt::conn(&pool, "test:reports_corrupt_metadata")
             .unwrap()
             .execute(
                 "UPDATE persona_reports SET metadata = 'not json' WHERE id = ?1",

@@ -2122,7 +2122,7 @@ fn review_execution_id_becomes_optional_without_losing_rows_or_threads() {
     let exec =
         crate::repos::execution::executions::create(&pool, &persona_id, None, None, None, None)
             .unwrap();
-    let conn = pool.get().unwrap();
+    let conn = crate::PoolExt::conn(&pool, "test:e60_e61_2125").unwrap();
 
     // The pre-e60 shape, exactly as a live install holds it (the three
     // trailing columns were added by later ALTERs).
@@ -2247,7 +2247,7 @@ fn review_execution_id_becomes_optional_without_losing_rows_or_threads() {
 #[test]
 fn a_fresh_schema_has_an_optional_review_execution_id() {
     let pool = crate::init_test_db().unwrap();
-    let conn = pool.get().unwrap();
+    let conn = crate::PoolExt::conn(&pool, "test:e60_e61_2250").unwrap();
     let notnull: i64 = conn
         .query_row(
             "SELECT \"notnull\" FROM pragma_table_info('persona_manual_reviews') WHERE name = 'execution_id'",
@@ -2268,7 +2268,7 @@ fn a_fresh_schema_has_an_optional_review_execution_id() {
 #[test]
 fn council_runs_gain_a_mode_and_count_rounds_per_mode() {
     let pool = crate::init_test_db().unwrap();
-    let conn = pool.get().unwrap();
+    let conn = crate::PoolExt::conn(&pool, "test:e60_e61_2271").unwrap();
     conn.execute_batch(
         "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/council-p1');
          INSERT INTO dev_council_subjects (id, project_id, kind, slug, title, created_at, updated_at)
@@ -2396,7 +2396,7 @@ fn council_runs_gain_a_mode_and_count_rounds_per_mode() {
 #[test]
 fn the_decisions_table_is_moved_after_the_runs_table_when_it_is_not() {
     let pool = crate::init_test_db().unwrap();
-    let conn = pool.get().unwrap();
+    let conn = crate::PoolExt::conn(&pool, "test:e60_e61_2399").unwrap();
     // Recreate the runs table (already on the new shape) so it is the newest:
     // what a runs-only rebuild leaves behind.
     let ddl: String = conn

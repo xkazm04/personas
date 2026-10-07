@@ -2443,7 +2443,7 @@ mod door_tests {
 
     fn runs_of(pool: &DbPool, project_id: &str) -> Vec<(String, i32, String)> {
         let states = council_repo::list_subject_states(pool, Some(project_id)).unwrap();
-        let conn = pool.get().unwrap();
+        let conn = crate::db::acquire_logged(pool, "test:council_runs_of").unwrap();
         let mut stmt = conn
             .prepare(
                 "SELECT mode, round_no, outcome FROM dev_council_runs WHERE subject_id = ?1

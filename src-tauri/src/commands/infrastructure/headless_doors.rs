@@ -682,7 +682,7 @@ mod tests {
         workspace(&pool, "Core");
         // A second row with the same name. Inserted directly: the point is a
         // store that already holds the ambiguity, however it got there.
-        pool.get()
+        crate::db::acquire_logged(&pool, "test:headless_dup_workspace")
             .unwrap()
             .execute(
                 "INSERT INTO dev_workspaces (id, name, adopt_default_skills, created_at, updated_at)
