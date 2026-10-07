@@ -51,6 +51,18 @@ test('resolveProject: by name, slug and id; base branch falls back to the branch
   assert.throws(() => D.resolveProject('nope'), /no dev_projects row/);
 });
 
+test('withBriefBase: a brief baseBranch that exists wins over the app row; a phantom one is noted, not used', () => {
+  const p = D.resolveProject('demo');
+  const moved = D.withBriefBase(p, { baseBranch: 'autopilot/x-1' });
+  assert.equal(moved.baseBranch, 'autopilot/x-1');
+  assert.match(moved.baseBranchNote, /the brief names autopilot\/x-1; the app row resolves to main/);
+  const phantom = D.withBriefBase(p, { baseBranch: 'revamp/nowhere' });
+  assert.equal(phantom.baseBranch, 'main');
+  assert.match(phantom.baseBranchNote, /revamp\/nowhere, which does not exist/);
+  assert.equal(D.withBriefBase(p, {}), p);
+  assert.equal(D.withBriefBase(p, { baseBranch: 'main' }), p);
+});
+
 test('chartersFor: brief decides which; text from db, then template, then the slug alone', () => {
   const d = D.openDb();
   try {

@@ -11,7 +11,7 @@ import { resolveProject } from './dbread.mjs';
 export const BRIEF_KEYS = [
   'project', 'product', 'stage', 'users', 'operatorRole', 'goals', 'charters', 'model', 'maxParallel', 'maxConcurrent',
   'boundaries', 'askFor', 'pacing', 'reportStyle', 'tone', 'digestCadence', 'digest', 'rung', 'extra', 'gates', 'models', 'headless',
-  'repos',
+  'repos', 'baseBranch',
 ];
 const REPO_KEYS = ['key', 'root', 'baseBranch', 'lane', 'gates'];
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -50,6 +50,7 @@ export function validateBrief(brief) {
     }
   }
   if (brief.headless != null && typeof brief.headless !== 'boolean') errors.push('headless must be true or false');
+  if (brief.baseBranch != null && !(typeof brief.baseBranch === 'string' && brief.baseBranch.trim())) errors.push('baseBranch must name the branch the project\'s own runs are cut from and merge into');
   if (brief.repos != null) {
     if (!Array.isArray(brief.repos)) errors.push('repos must be an array of {key, root, baseBranch, lane?, gates?}');
     else {

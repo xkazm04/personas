@@ -15,7 +15,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
 import { BUILTIN_CHARTERS, DB_PATH, REPO_ROOT, UX, slugOf, slugify } from './contract.mjs';
-import { listSlugs, loadWakes } from './store.mjs';
+import { listSlugs, loadBrief, loadWakes } from './store.mjs';
 
 export const TEMPLATE_DIR = path.join(REPO_ROOT, 'scripts', 'templates', '_app_master');
 /** In-app caps (attention_decide.rs): goals 12, unmerged branches 10, in-flight tasks 10. */
@@ -75,6 +75,20 @@ export function baseBranchOf(row) {
   return { baseBranch: found, baseBranchNote: `dev_projects.main_branch is ${row.main_branch ?? 'null'}; the checkout has ${found}, not ${declared}` };
 }
 
+/**
+ * A brief's `baseBranch` names the project's own trunk when the app row does not (2026-10-07:
+ * personas-web works on revamp/stage-fit while its row says master, so a scan was cut from a base
+ * 200 commits behind and its merge refused). It wins only when that branch exists in the checkout.
+ */
+export function withBriefBase(ctx, brief) {
+  const b = typeof brief?.baseBranch === 'string' ? brief.baseBranch.trim() : '';
+  if (!ctx || !b || b === ctx.baseBranch) return ctx;
+  if (ctx.root && fs.existsSync(ctx.root) && !branchExists(ctx.root, b)) {
+    return { ...ctx, baseBranchNote: `the brief names ${b}, which does not exist in ${ctx.root}; using ${ctx.baseBranch}` };
+  }
+  return { ...ctx, baseBranch: b, baseBranchNote: `the brief names ${b}; the app row resolves to ${ctx.baseBranch}` };
+}
+
 /** (ref: string, db?) => ProjectCtx   // id | name | root | slug; throws on no match */
 export function resolveProject(ref, d) {
   if (!ref || ref === true) throw new Error('--project <id|name|root|slug> is required');
@@ -89,7 +103,7 @@ export function resolveProject(ref, d) {
       || rows.find((p) => slugify(p.name) === slugify(r));
     if (!hit) throw new Error(`no dev_projects row matches "${ref}"`);
     const ctx = { slug: slugOf(hit.name, hit.root_path), id: hit.id, name: hit.name, root: hit.root_path, ...baseBranchOf(hit) };
-    return ctx;
+    return withBriefBase(ctx, loadBrief(ctx.slug));
   } finally { if (own) d.close(); }
 }
 
@@ -103,7 +117,7 @@ export function resolveManaged(ref) {
   const s = slugify(ref);
   if (listSlugs().includes(s)) {
     const known = loadWakes(s).filter((w) => w.project).at(-1)?.project;
-    if (known) return { slug: s, project: known };
+    if (known) return { slug: s, project: withBriefBase(known, loadBrief(s)) };
     try { const p = resolveProject(ref); return { slug: p.slug, project: p }; } catch { return { slug: s, project: null }; }
   }
   const p = resolveProject(ref);
