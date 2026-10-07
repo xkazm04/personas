@@ -54,10 +54,19 @@ function Tag({ kind, title }: { kind: string; title: string }) {
   );
 }
 
-export function AttentionBeads({ items, onOpen }: { items: WorkItem[]; onOpen: (id: string | null) => void }) {
+export function AttentionBeads({
+  items,
+  onOpen,
+  cap = SHOWN - 1,
+}: {
+  items: WorkItem[];
+  onOpen: (id: string | null) => void;
+  /** How many small beads the rail's height allows under the attention circle. */
+  cap?: number;
+}) {
   const { shouldAnimate } = useMotion();
   const first = items[0] ?? null;
-  const rest = items.slice(1, SHOWN);
+  const rest = items.slice(1, 1 + Math.min(cap, SHOWN - 1));
   const over = items.length - 1 - rest.length;
   const Glyph = first ? KIND_GLYPH[first.kind] : Check;
 

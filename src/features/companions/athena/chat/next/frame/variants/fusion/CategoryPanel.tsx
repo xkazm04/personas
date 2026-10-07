@@ -10,7 +10,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type HTMLAttributes } from 'react';
 import { ArrowUpRight, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
@@ -28,6 +28,7 @@ export function CategoryPanel({
   top,
   focusFirst,
   onClose,
+  zone,
 }: {
   category: ManagedCategory;
   /** The circle's centre, in the rail's coordinates: the panel hangs from it. */
@@ -35,6 +36,8 @@ export function CategoryPanel({
   /** Opened from the keyboard: the first row takes focus. */
   focusFirst: boolean;
   onClose: () => void;
+  /** The upper rail zone's mark and hover/focus handlers: the panel is part of that zone. */
+  zone: HTMLAttributes<HTMLDivElement> & { 'data-fu-zone': string };
 }) {
   const { shouldAnimate } = useMotion();
   const ref = useRef<HTMLDivElement>(null);
@@ -62,6 +65,11 @@ export function CategoryPanel({
       role="region"
       aria-label={c.label}
       data-testid={`companion-fusion-panel-${c.key}`}
+      data-fu-zone={zone['data-fu-zone']}
+      onPointerEnter={zone.onPointerEnter}
+      onPointerLeave={zone.onPointerLeave}
+      onFocus={zone.onFocus}
+      onBlur={zone.onBlur}
       initial={shouldAnimate ? { opacity: 0, x: 18, scale: 0.97 } : { opacity: 0 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={shouldAnimate ? { opacity: 0, x: 18, scale: 0.97 } : { opacity: 0 }}

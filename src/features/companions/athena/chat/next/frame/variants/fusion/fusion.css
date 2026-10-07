@@ -152,15 +152,23 @@
   background: linear-gradient(to bottom, color-mix(in srgb, var(--primary) 0%, transparent), color-mix(in srgb, var(--primary) 35%, transparent) 8%, color-mix(in srgb, var(--primary) 35%, transparent) 92%, color-mix(in srgb, var(--primary) 0%, transparent));
 }
 .fusion .fu-rail {
-  position: relative; pointer-events: auto; display: flex; flex-direction: column; align-items: center; gap: 8px;
-  /* The marks keep a 54px column on the right edge; expanding adds glass to its LEFT
-     (padding + a matching negative margin), so no mark moves and nothing is pushed. */
-  box-sizing: border-box; width: calc(54px + var(--fu-x)); margin-left: calc(-1 * var(--fu-x)); padding: 8px 0 6px var(--fu-x);
-  max-height: 100%; border-radius: 27px; background: var(--fu-glass-strong);
-  transition: width var(--duration-normal) var(--fu-ease), margin-left var(--duration-normal) var(--fu-ease),
-    padding-left var(--duration-normal) var(--fu-ease), box-shadow var(--duration-normal);
+  position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; isolation: isolate;
+  box-sizing: border-box; width: 54px; max-height: 100%; pointer-events: none;
 }
-.fusion .fu-rail-seat.is-expanded .fu-rail {
+/* Two glass zones on the one lit line, each its own hover / focus target: the upper
+   column (count, beads, categories) and the toolset. Each draws its glass as a pseudo
+   BEHIND the line, so the line stays lit across it and a zone can widen its glass leftward
+   without moving a mark (the upper one by --fu-x, the toolset by growing its own content). */
+.fusion .fu-up, .fusion .fu-tools-seat { position: relative; pointer-events: auto; box-sizing: border-box; }
+.fusion .fu-up::before, .fusion .fu-tools-seat::before {
+  content: ''; position: absolute; z-index: -1; top: 0; bottom: 0; right: 0; left: 0; border-radius: 27px; pointer-events: none;
+  background: var(--fu-glass-strong); backdrop-filter: blur(var(--blur-modal)) saturate(1.25);
+  box-shadow: inset 0 0 0 1px var(--fu-rule), inset 0 1px 0 var(--fu-sheen), var(--shadow-elevation-3);
+  transition: left var(--duration-normal) var(--fu-ease), box-shadow var(--duration-normal);
+}
+.fusion .fu-up { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 54px; padding: 8px 0 6px; }
+.fusion .fu-up::before { left: calc(-1 * var(--fu-x)); }
+.fusion .fu-rail-seat.is-expanded .fu-up::before, .fusion .fu-tools-seat.is-grown::before {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent), inset 0 1px 0 var(--fu-sheen), var(--shadow-elevation-4);
 }
 .fusion .fu-line {
@@ -168,7 +176,6 @@
   background: color-mix(in srgb, var(--primary) 75%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--primary) 55%, transparent); z-index: 0;
 }
 /* Everything on the rail sits ON the line: positioned above it, inside the rail's own stacking context. */
-.fusion .fu-rail { isolation: isolate; }
 .fusion .fu-rail :is(button, .fu-over, .fu-rule) { position: relative; z-index: 1; }
 .fusion .fu-rule { flex: none; width: 24px; height: 1px; background: var(--fu-rule); }
 .fusion .fu-count { flex-direction: column; gap: 0; width: 50px; height: auto; padding: 3px 0 4px; justify-content: center; background: var(--fu-knock); border-radius: var(--radius-interactive); }
@@ -225,21 +232,30 @@
 .fusion .fu-cat-n { position: absolute; right: -7px; bottom: -5px; min-width: 17px; padding: 0 4px; text-align: center; color: var(--foreground); background: var(--fu-knock); border-radius: var(--radius-pill); box-shadow: inset 0 0 0 1px var(--fu-rule); line-height: 1.35; }
 .fusion .fu-cat.is-quiet .fu-cat-n { color: var(--muted-foreground); }
 
-/* The toolset: marks on the line, one column (the shared toolbar's own
-   chrome steps aside). Its buttons grow with the rest of the rail. */
-.fusion .fu-tools-seat { display: flex; justify-content: center; }
-.fusion .fu-tools-seat aside { width: 44px; gap: 6px; padding: 2px 0; background: none; border: 0; }
+/* The toolset: marks on the line at rest; on its own hover or keyboard focus (useRailExpand
+   'tools', never the upper column's) a glass panel of its own, double width, growing LEFT,
+   with targets big enough to hit and no words. Same 4px of padding above and below at rest
+   and grown, so nothing above it moves. */
+.fusion .fu-tools-seat {
+  align-self: flex-end; display: flex; justify-content: flex-end; padding: 4px 5px;
+  transition: padding var(--duration-normal) var(--fu-ease);
+}
+.fusion .fu-tools-seat.is-grown { padding-inline: 4px; }
+.fusion .fu-tools-seat aside { width: 44px; gap: 6px; padding: 2px 0; background: none; border: 0; transition: width var(--duration-normal) var(--fu-ease); }
+.fusion .fu-tools-seat.is-grown aside { width: 88px; }
 /* The dividers and the spacer are the docked panel's; on the rail the line is the divider. */
 .fusion .fu-tools-seat aside > div[aria-hidden], .fusion .fu-tools-seat aside > div.flex-1 { display: none; }
 .fusion .fu-tools-seat :is(aside, [role='group']) > button, .fusion .fu-tools-seat :is(aside, [role='group']) > div > button {
   width: 34px; height: 34px; margin: 0; border-radius: 50%; background: var(--fu-knock);
-  transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease), margin var(--duration-normal) var(--fu-ease);
+  transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease);
 }
+.fusion .fu-tools-seat.is-grown :is(aside, [role='group']) > button, .fusion .fu-tools-seat.is-grown :is(aside, [role='group']) > div > button { width: 56px; height: 56px; }
 .fusion .fu-tools-seat :is(aside, [role='group']) > button svg, .fusion .fu-tools-seat :is(aside, [role='group']) > div > button svg {
   width: 18px; height: 18px; transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease);
 }
+.fusion .fu-tools-seat.is-grown :is(aside, [role='group']) > button svg, .fusion .fu-tools-seat.is-grown :is(aside, [role='group']) > div > button svg { width: 26px; height: 26px; }
 
-/* -- the rail read out loud (hover / keyboard focus, `useRailExpand`) -------
+/* -- the upper column read out loud (hover / keyboard focus, `useRailExpand('up')`) --
    Each mark grows IN PLACE: a bigger size paid back by a negative margin, so
    its box (and every mark under it) stays put. Its words fade in beside it,
    right-aligned to one edge just left of the line. No mark moves. */
@@ -253,39 +269,26 @@
 .fusion .fu-rail-seat.is-expanded .fu-cat-badge { right: -1px; top: -1px; }
 .fusion .fu-rail-seat.is-expanded .fu-cat-n { right: -4px; bottom: -2px; }
 .fusion .fu-rail-seat.is-expanded .fu-cat-core svg { width: 17px; height: 17px; }
-.fusion .fu-rail-seat.is-expanded .fu-tools-seat :is(aside, [role='group']) > button,
-.fusion .fu-rail-seat.is-expanded .fu-tools-seat :is(aside, [role='group']) > div > button { width: 40px; height: 40px; margin: -3px; }
-.fusion .fu-rail-seat.is-expanded .fu-tools-seat :is(aside, [role='group']) > button svg,
-.fusion .fu-rail-seat.is-expanded .fu-tools-seat :is(aside, [role='group']) > div > button svg { width: 22px; height: 22px; }
 
-.fusion .fu-tag,
-.fusion .fu-tools-seat aside > button::after, .fusion .fu-tools-seat aside > div > button::after {
+.fusion .fu-tag {
   position: absolute; right: calc(50% + 30px); top: 50%; transform: translateY(-50%);
   white-space: nowrap; text-align: right; pointer-events: none; opacity: 0; visibility: hidden;
   transition: opacity var(--duration-fast), visibility 0s linear var(--duration-fast);
+  display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; width: max-content; max-width: calc(var(--fu-open) - 20px);
 }
-.fusion .fu-tag { display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; width: max-content; max-width: calc(var(--fu-open) - 20px); }
 .fusion .fu-tag.is-two { flex-direction: column; align-items: flex-end; gap: 0; }
 .fusion .fu-tag.is-row { align-items: center; gap: 8px; }
 .fusion .fu-tag-main { flex: none; color: var(--foreground); }
 .fusion .fu-tag-meta { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-weight: 400; color: var(--muted-foreground); }
-/* The shared toolbar's buttons carry their names as aria-labels only: the words are drawn from them. */
-.fusion .fu-tools-seat aside > button::after, .fusion .fu-tools-seat aside > div > button::after {
-  content: attr(aria-label); font-family: var(--font-sans); font-size: calc(var(--type-0) * var(--type-f)); font-weight: 600; line-height: 1.4;
-  color: var(--foreground);
-}
-.fusion .fu-rail-seat.is-expanded .fu-tag,
-.fusion .fu-rail-seat.is-expanded .fu-tools-seat aside > button::after,
-.fusion .fu-rail-seat.is-expanded .fu-tools-seat aside > div > button::after {
+.fusion .fu-rail-seat.is-expanded .fu-tag {
   opacity: 1; visibility: visible; transition: opacity var(--duration-normal) var(--duration-instant), visibility 0s;
 }
 /* A label belongs to its mark: on the expanded rail it is part of the target. */
 .fusion .fu-rail-seat.is-expanded .fu-tag { pointer-events: auto; }
-/* With the connectors column open beside the tools, the tools' words would sit on it. */
-.fusion .fu-tools-seat:has([data-testid='companion-toolbar-connector-column']) aside > button::after,
-.fusion .fu-tools-seat:has([data-testid='companion-toolbar-connector-column']) aside > div > button::after { display: none; }
 /* Reduced motion: the same expansion, instantly. */
-.fusion .fu-rail-seat.is-still *, .fusion .fu-rail-seat.is-still *::after { transition: none; }
+.fusion .fu-rail-seat.is-still *, .fusion .fu-rail-seat.is-still *::before, .fusion .fu-rail-seat.is-still *::after { transition: none; }
+.fusion .fu-rail-seat.is-still .fu-up::before, .fusion .fu-rail-seat.is-still .fu-tools-seat::before { transition: none; }
+@media (prefers-reduced-motion: reduce) { .fusion .fu-up::before, .fusion .fu-tools-seat::before { backdrop-filter: none; background: color-mix(in srgb, var(--background) 97%, transparent); } }
 
 /* A category unfolded beside the rail. */
 .fusion .fu-panel {
