@@ -1046,7 +1046,7 @@ fn resolve_run_dir(root: &Path, personas_repo: &Path, run_dir: &str) -> Result<P
     .filter_map(|p| p.canonicalize().ok())
     .collect();
     if allowed.is_empty() {
-        return Err(AppError::Validation(
+        return Err(AppError::NotFound(
             "No .personas/council/runs directory in this repo yet".into(),
         ));
     }
