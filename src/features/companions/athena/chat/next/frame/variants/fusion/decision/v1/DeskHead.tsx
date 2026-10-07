@@ -3,8 +3,8 @@
  * focus card draws it (`overview/sub_manual-review/components/ReviewFocusFlow.tsx`):
  * a framed avatar of whoever asks, their name in the accent beside a kind
  * badge and a risk badge, a quiet line under it (what the ask is, since when,
- * where), and on the right the queue - "Review 3 of 8" over the dots, the
- * arrow keys as its prev/next - with the fold key in the corner.
+ * where), and on the right the queue as ONE row - "3 of 8", then the
+ * arrows with the kind-coloured dots between them - and the fold key beside it.
  *
  * TODO(prototype, 2026-10-07): athena decision surface round 6 - keep the owner's pick, delete the rest.
  */
@@ -34,7 +34,9 @@ function Queue({ nav }: { nav: QueueNav }) {
   const step = (d: 1 | -1) => nav.onPick(nav.items[(at + d + nav.items.length) % nav.items.length]!.id);
   return (
     <nav className="d1-queue" aria-label={C.review(at + 1, nav.items.length)} data-testid="companion-fusion-d1-queue">
-      <span className="typo-label text-foreground tabular-nums">{C.review(at + 1, nav.items.length)}</span>
+      <span className="d1-count typo-label text-foreground tabular-nums" aria-hidden>
+        {C.position(at + 1, nav.items.length)}
+      </span>
       <span className="d1-queue-row">
         {many && (
           <Tooltip content={C.prev}>
@@ -52,6 +54,7 @@ function Queue({ nav }: { nav: QueueNav }) {
                 variant="ghost"
                 className="d1-dot"
                 style={ink(KIND_VAR[it.kind])}
+                tabIndex={it.id === nav.activeId ? 0 : -1}
                 aria-current={it.id === nav.activeId}
                 aria-label={C.kind[it.kind]}
                 onClick={() => nav.onPick(it.id)}

@@ -46,7 +46,9 @@
 
 .fusion .d1-who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .fusion .d1-who-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0; }
-.fusion .d1-name { white-space: nowrap; }
+.fusion .d1-name { flex: 0 1 auto; min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The question is where focus lands when an item swaps in; it is a target, not a control. */
+.fusion .d1-q:focus { outline: none; }
 .fusion .d1-badge {
   display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; white-space: nowrap;
   border-radius: var(--radius-pill); color: var(--b);
@@ -58,19 +60,21 @@
 .fusion .d1-meta-bit { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .fusion .d1-meta-bit svg { width: 13px; height: 13px; flex: none; }
 
-.fusion .d1-head-end { flex: none; display: flex; align-items: flex-start; gap: 10px; }
-.fusion .d1-queue { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.fusion .d1-head-end { flex: none; display: flex; align-items: center; gap: 10px; min-height: 32px; }
+/* The queue is ONE row: its place, then the arrows with the dots between them. */
+.fusion .d1-queue { display: flex; align-items: center; gap: 8px; }
+.fusion .d1-count { white-space: nowrap; }
 .fusion .d1-queue-row { display: flex; align-items: center; gap: 2px; }
 .fusion .d1-dots { display: flex; align-items: center; gap: 0; padding: 0 2px; }
-.fusion .d1-dot { width: 14px; height: 20px; padding: 0; justify-content: center; background: transparent; border-radius: var(--radius-pill); }
+.fusion .d1-dot { width: 12px; height: 20px; padding: 0; justify-content: center; background: transparent; border-radius: var(--radius-pill); }
 .fusion .d1-dot:hover { background: transparent; }
 .fusion .d1-dot::before {
   content: ''; width: 7px; height: 7px; border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--b) 55%, transparent); transition: width var(--duration-fast), background var(--duration-fast);
 }
 .fusion .d1-dot:hover::before { background: var(--b); }
-.fusion .d1-dot[aria-current='true'] { width: 24px; }
-.fusion .d1-dot[aria-current='true']::before { width: 18px; background: var(--b); box-shadow: 0 0 8px color-mix(in srgb, var(--b) 60%, transparent); }
+.fusion .d1-dot[aria-current='true'] { width: 22px; }
+.fusion .d1-dot[aria-current='true']::before { width: 16px; background: var(--b); box-shadow: 0 0 8px color-mix(in srgb, var(--b) 60%, transparent); }
 
 /* The app's key cap (primary/20 rule over secondary/50), on every control it drives. */
 .fusion .d1-kbd {
@@ -88,8 +92,17 @@
 
 /* ── the ask ───────────────────────────────────────────────────────────── */
 .fusion .d1-body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.fusion .d1-title { margin: 0; max-width: 52ch; text-wrap: balance; overflow-wrap: anywhere; }
-.fusion .d1-prose { margin: 0; max-width: 80ch; overflow-wrap: anywhere; }
+.fusion .d1-body { gap: 12px; }
+/* Three px under `typo-heading-lg` (step 4), still on the text-size factor: a long ask never reads as a banner. */
+.fusion .d1-title { margin: 0; max-width: 64ch; text-wrap: balance; overflow-wrap: anywhere; font-size: calc((var(--type-4) - 0.1875rem) * var(--type-f)); }
+/* The reasoning: its own darker inset panel (dark themes) or tint (light), the width of the card, one step under body. */
+.fusion .d1-desc {
+  --d1-inset: color-mix(in srgb, black 30%, var(--background));
+  display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; border-radius: var(--radius-input);
+  background: var(--d1-inset); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+[data-theme^="light"] .fusion .d1-desc { --d1-inset: color-mix(in srgb, var(--foreground) 5%, var(--background)); }
+.fusion .d1-prose { margin: 0; overflow-wrap: anywhere; white-space: pre-line; text-wrap: pretty; font-size: calc(var(--type-0) * var(--type-f)); }
 .fusion :is(.d1-title, .d1-prose, .d1-opt-title) code { padding: 0 4px; border-radius: var(--radius-interactive); background: color-mix(in srgb, var(--foreground) 8%, transparent); }
 .fusion .d1-details summary { display: inline-flex; align-items: center; gap: 6px; padding: 2px 6px 2px 0; cursor: pointer; list-style: none; border-radius: var(--radius-interactive); }
 .fusion .d1-details summary::-webkit-details-marker { display: none; }
@@ -201,6 +214,7 @@
 /* The review card gives back a little air too, so nine answers and her why fit 1280x800. */
 .fusion .fu-stage-item:has(.d1-answers.is-many) { gap: 10px; }
 .fusion .fu-stage-item:has(.d1-answers.is-many) .d1-q { gap: 10px; padding: 14px 18px 10px; }
+.fusion .fu-stage-item:has(.d1-answers.is-many) .d1-desc { gap: 6px; padding: 8px 12px; }
 .fusion .d1-answers.is-many :is(.d1-opt-title, .d1-opt-hint) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fusion .d1-answers.is-many .is-pick .d1-opt-text { padding-right: 84px; }
 .fusion .d1-corner { position: absolute; top: 10px; right: 10px; display: inline-flex; align-items: center; gap: 6px; }

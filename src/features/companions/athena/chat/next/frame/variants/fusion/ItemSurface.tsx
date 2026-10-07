@@ -26,11 +26,10 @@ import {
   useMcpModel,
   type CardModel,
 } from '../c/bodies/model';
-import { useFlight } from './AnswerCards';
-import { DECISION_SURFACES } from './decision/registry';
-import { useDecisionStyle } from './decision/style';
+import { Answers, Question } from './decision/v1';
 import type { QueueNav } from './DecisionStage';
 import { useAnswerKeys } from './useAnswerKeys';
+import { useFlight } from './useFlight';
 
 function View({ model, item, nav }: { model: CardModel; item: WorkItem; nav: QueueNav }) {
   useAnswerKeys(model);
@@ -40,7 +39,6 @@ function View({ model, item, nav }: { model: CardModel; item: WorkItem; nav: Que
   useEffect(() => {
     if (spoken) announce(spoken);
   }, [spoken, announce]);
-  const { Question, Answers } = DECISION_SURFACES[useDecisionStyle((s) => s.style)];
   return (
     <>
       <Question model={model} item={item} nav={nav} />
@@ -97,7 +95,6 @@ export function ItemSurface({ item, nav, onSend }: { item: WorkItem; nav: QueueN
 }
 
 function NativeItem({ item, nav, onSend }: { item: WorkItem; nav: QueueNav; onSend: (text: string) => void }) {
-  const { Question } = DECISION_SURFACES[useDecisionStyle((s) => s.style)];
   return (
     <>
       <Question model={null} item={item} nav={nav} />

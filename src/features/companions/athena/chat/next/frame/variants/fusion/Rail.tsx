@@ -10,31 +10,38 @@
  *   4. her toolset (`AthenaToolbar dock="single"`).
  * The line takes the theme's own accent (`--primary`), not a fixed hue.
  *
- * The whole rail is ONE expanding wrapper (`useRailExpand`): hovering any of
- * it, or tabbing into it, widens it LEFTWARD over the app as one piece - every
- * circle, bead and tool grows in place and gains its words beside it (the
- * pending count, each bead's kind and title, each category's counts by state,
- * each tool's name). Nothing moves vertically and nothing pushes layout; Esc
- * or leaving folds it. Reduced motion expands it instantly.
+ * Two INDEPENDENT hover and focus zones (`useRailExpand`, one instance each):
+ *   - the upper column (count, beads, categories, an open category panel):
+ *     hovering or tabbing into it widens ITS glass leftward over the app, every
+ *     circle and bead grows in place and gains its words beside it (the pending
+ *     count, each bead's kind and title, each category's counts by state);
+ *   - the toolset: on its own it grows into a glass panel of its own - bigger
+ *     buttons, leftward, no words - and never wakes the upper column.
+ * Nothing above the toolset moves vertically and nothing pushes layout; Esc or
+ * leaving folds a zone. Reduced motion expands instantly.
  *
  * TODO(prototype, 2026-10-07): athena chat fusion - consolidate after the owner picks.
  */
 
 import { AnimatePresence } from 'framer-motion';
 import { useRef, useState } from 'react';
-import { Check, Hand } from 'lucide-react';
+import { Hand } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { AthenaToolbar } from '../../../../../AthenaToolbar';
 import type { WorkItem } from '../../../useWorkforce';
 import { AttentionBeads } from './AttentionBeads';
-import { CategoryCircle } from './CategoryCircle';
+import { CategoryCircle, countText } from './CategoryCircle';
 import { CategoryPanel } from './CategoryPanel';
 import { FUSION_COPY as F } from './copy';
 import type { CategoryKey, ManagedCategory } from './useManaged';
-import { useRailExpand } from './useRailExpand';
+import { useRailExpand, useRailRoom } from './useRailExpand';
 
 const PANEL_MAX = 380;
+/** Beads under the attention circle at most (the rest fold into "+N"). */
+const BEADS = 4;
+/** What the toolset adds in height when it grows (~96px) less the 36px it may take from the stage's foot below the seat. */
+const TOOLS_GROWTH = 56;
 
 export function Rail({
   items,
@@ -50,7 +57,10 @@ export function Rail({
   const [open, setOpen] = useState<{ key: CategoryKey; top: number; keyboard: boolean } | null>(null);
   const active = open ? (categories.find((c) => c.key === open.key) ?? null) : null;
   const n = items.length;
-  const { seatRef, expanded, handlers } = useRailExpand();
+  const up = useRailExpand('up');
+  const tools = useRailExpand('tools');
+  const seatRef = useRef<HTMLDivElement>(null);
+  const beadCap = useRailRoom(seatRef, railRef, BEADS, TOOLS_GROWTH);
   const { shouldAnimate } = useMotion();
 
   const toggle = (key: CategoryKey, keyboard: boolean) => {
@@ -76,35 +86,40 @@ export function Rail({
   return (
     <div
       ref={seatRef}
-      className={`fu-rail-seat${expanded ? ' is-expanded' : ''}${shouldAnimate ? '' : ' is-still'}`}
-      {...handlers}
+      className={`fu-rail-seat${up.expanded ? ' is-expanded' : ''}${shouldAnimate ? '' : ' is-still'}`}
     >
       <nav
         ref={railRef}
-        className="fu-rail fu-glass"
+        className="fu-rail"
         aria-label={F.rail}
         data-testid="companion-fusion-rail"
-        data-companion-fusion-rail-expanded={expanded ? 'true' : 'false'}
+        data-companion-fusion-rail-expanded={up.expanded ? 'true' : 'false'}
+        data-companion-fusion-tools-grown={tools.expanded ? 'true' : 'false'}
       >
         <span className={`fu-line${n ? ' is-waiting' : ''}`} aria-hidden />
-        <Button
-          variant="ghost"
-          className={`fu-count${n ? '' : ' is-quiet'}`}
-          onClick={() => onOpenItem(null)}
-          aria-keyshortcuts="Alt+W"
-          aria-label={`${n ? F.pendingNamed(n) : F.noneWaiting}. ${F.openQueue}`}
-          data-testid="companion-fusion-count"
-        >
-          <span className="typo-data-lg fu-count-n">{n}</span>
-          {/* A glyph, not a word: "waiting" does not fit a 54px rail, and a hand
-              says "on you" without colour. The words stand beside it when the rail expands. */}
-          {n ? <Hand className="fu-count-g" aria-hidden /> : <Check className="fu-count-g" aria-hidden />}
-          <span className="fu-tag is-row" aria-hidden>
-            <span className="typo-label fu-tag-main">{n ? F.pendingLabel(n) : F.noneWaiting}</span>
-            <span className="fu-kbd typo-caption">{F.keyWork}</span>
-          </span>
-        </Button>
-        <AttentionBeads items={items} onOpen={onOpenItem} />
+        <div className="fu-up" {...up.zoneProps} {...up.handlers}>
+        {/* Nothing waiting: no count and no control. The one all-clear mark is the
+            attention circle below, and a quiet rail has nothing to open. */}
+        {n > 0 && (
+          <Button
+            variant="ghost"
+            className="fu-count"
+            onClick={() => onOpenItem(null)}
+            aria-keyshortcuts="Alt+W"
+            aria-label={`${F.pendingNamed(n)}. ${F.openQueue}`}
+            data-testid="companion-fusion-count"
+          >
+            <span className={`typo-data-lg fu-count-n${countText(n).length > 2 ? ' is-wide' : ''}`}>{countText(n)}</span>
+            {/* A glyph, not a word: "waiting" does not fit a 54px rail, and a hand
+                says "on you" without colour. The words stand beside it when the rail expands. */}
+            <Hand className="fu-count-g" aria-hidden />
+            <span className="fu-tag is-row" aria-hidden>
+              <span className="typo-label fu-tag-main">{F.pendingLabel(n)}</span>
+              <span className="fu-kbd typo-caption">{F.keyWork}</span>
+            </span>
+          </Button>
+        )}
+        <AttentionBeads items={items} onOpen={onOpenItem} cap={beadCap} />
         <span className="fu-rule" aria-hidden />
         <div className="fu-cats" data-testid="companion-fusion-categories">
           {categories.map((c) => (
@@ -121,13 +136,25 @@ export function Rail({
             />
           ))}
         </div>
-        <span className="fu-rule" aria-hidden />
-        <div className="fu-tools-seat" data-testid="companion-fusion-tools">
+        </div>
+        <div
+          className={`fu-tools-seat${tools.expanded ? ' is-grown' : ''}`}
+          data-testid="companion-fusion-tools"
+          {...tools.zoneProps}
+          {...tools.handlers}
+        >
           <AthenaToolbar dock="single" className="bg-transparent" />
         </div>
       </nav>
       <AnimatePresence>
-        {active && open && <CategoryPanel key={active.key} category={active} top={open.top} focusFirst={open.keyboard} onClose={close} />}
+        {active && open && <CategoryPanel
+            key={active.key}
+            category={active}
+            top={open.top}
+            focusFirst={open.keyboard}
+            onClose={close}
+            zone={{ ...up.zoneProps, ...up.handlers }}
+          />}
       </AnimatePresence>
     </div>
   );

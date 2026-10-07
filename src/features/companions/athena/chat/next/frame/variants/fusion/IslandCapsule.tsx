@@ -14,8 +14,8 @@
  * TODO(prototype, 2026-10-07): athena chat fusion - consolidate after the owner picks.
  */
 
-import { forwardRef, type KeyboardEvent } from 'react';
-import { motion } from 'framer-motion';
+import { forwardRef, useLayoutEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Hand } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -49,10 +49,28 @@ export function IslandMark({ working, gated, large = false }: { working: boolean
   );
 }
 
+/** True while the label is cut by its width: the full words then ride in the tooltip. */
+function useTruncated(ref: RefObject<HTMLElement | null>, text: string) {
+  const [cut, setCut] = useState(false);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setCut(el.scrollWidth > el.clientWidth + 1);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref, text]);
+  return cut;
+}
+
 export const IslandCapsule = forwardRef<
   HTMLButtonElement,
   { read: CapsuleRead; onOpen: (seed?: string) => void; onOpenGate: () => void }
 >(function IslandCapsule({ read, onOpen, onOpenGate }, ref) {
+  const { shouldAnimate } = useMotion();
+  const labelRef = useRef<HTMLSpanElement>(null);
+  const cut = useTruncated(labelRef, read.label);
   const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
     if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey || e.key === ' ') return;
     e.preventDefault();
@@ -70,31 +88,51 @@ export const IslandCapsule = forwardRef<
       data-testid="companion-fusion-island"
     >
       <IslandMark working={read.working} gated={read.gated > 0} />
-      <span className={`typo-title fu-cap-label${read.working ? '' : ' text-foreground'}`}>{read.label}</span>
+      <span ref={labelRef} className={`typo-title fu-cap-label${read.working ? '' : ' text-foreground'}`}>
+        {read.label}
+      </span>
     </Button>
   );
+  const tip =
+    cut || read.lastWords ? (
+      <span className="block max-w-[52ch]">
+        {cut && <span className="typo-title block text-foreground">{read.label}</span>}
+        {read.lastWords && <span className="typo-body block">{read.lastWords}</span>}
+      </span>
+    ) : null;
   return (
-    <span className="flex items-center gap-1.5 pr-2 h-11">
-      {read.lastWords ? (
-        <Tooltip content={<span className="typo-body block max-w-[52ch]">{read.lastWords}</span>} placement="top" delay={400}>
+    <span className="fu-cap-row">
+      {tip ? (
+        <Tooltip content={tip} placement="top" delay={400}>
           {capsule}
         </Tooltip>
       ) : (
         capsule
       )}
-      {read.gated > 0 && (
-        <Button
-          variant="ghost"
-          className="fu-gate"
-          onClick={onOpenGate}
-          aria-label={`${F.gate(read.gated)}, ${F.keyWork}`}
-          aria-keyshortcuts="Alt+W"
-          data-testid="companion-fusion-island-gate"
-        >
-          <Hand aria-hidden />
-          <span className="typo-data">{read.gated}</span>
-        </Button>
-      )}
+      <AnimatePresence initial={false}>
+        {read.gated > 0 && (
+          <motion.span
+            key="gate"
+            className="fu-gate-wrap"
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: 'auto' }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={{ duration: shouldAnimate ? 0.18 : 0, ease: EASE }}
+          >
+            <Button
+              variant="ghost"
+              className="fu-gate"
+              onClick={onOpenGate}
+              aria-label={`${F.gate(read.gated)}, ${F.keyWork}`}
+              aria-keyshortcuts="Alt+W"
+              data-testid="companion-fusion-island-gate"
+            >
+              <Hand aria-hidden />
+              <span className="typo-data">{read.gated}</span>
+            </Button>
+          </motion.span>
+        )}
+      </AnimatePresence>
       <span className="fu-kbd typo-caption" aria-hidden>
         {F.keyChat}
       </span>

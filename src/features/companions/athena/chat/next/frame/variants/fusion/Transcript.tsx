@@ -87,7 +87,14 @@ export function Transcript({ engine, onOpenWaiting }: { engine: AthenaChatEngine
 
   return (
     <div className="relative flex-1 min-w-0 min-h-0 flex">
-      <div ref={scrollRef} className="fu-scroll" data-testid="companion-fusion-transcript">
+      <div
+        ref={scrollRef}
+        className="fu-scroll"
+        role="log"
+        aria-label={F.transcript}
+        aria-relevant="additions"
+        data-testid="companion-fusion-transcript"
+      >
         <div ref={followRef} className="fu-column athena-exchange">
           {engine.initError && <p className="typo-body text-status-error">{engine.initError}</p>}
           <AthenaChatAlerts onEngage={engine.send} />

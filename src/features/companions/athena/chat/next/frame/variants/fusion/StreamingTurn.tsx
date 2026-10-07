@@ -84,17 +84,17 @@ export function StreamingTurn({
 
   return (
     <section className="fu-turn animate-fade-slide-in" data-testid="companion-fusion-streaming" aria-busy>
-      <span className="fu-who">
+      <span className="fu-who is-sticky">
         <span className="fu-who-her">
           <span className={`fu-face-sm is-live${shouldAnimate ? ' is-moving' : ''}`} aria-hidden />
           <span className="typo-label text-primary">{F.athena}</span>
         </span>
-        {/* The phase sits in the gutter only when her own beat holds the line. */}
-        {beat && <span className="typo-caption fu-when">{phaseLabel}</span>}
       </span>
       <div className="fu-said">
         {recall && <RecallStrip preview={recall} onOpenInBrain={onOpenInBrain} />}
         <div className="fu-beat">
+          {/* The phase leads her beat on the same line; alone, it IS the line. */}
+          {beat && <span className="typo-caption fu-when">{phaseLabel}</span>}
           <span className="typo-body min-w-0">{beat ?? phaseLabel}</span>
           <Button
             variant="ghost"

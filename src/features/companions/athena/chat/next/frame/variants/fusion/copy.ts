@@ -14,8 +14,8 @@ export const FUSION_COPY = {
   reviewing: 'Reviewing',
   using: (tool: string) => `Running ${tool}`,
   quiet: 'All quiet',
+  waitingOnYou: 'Waiting on you',
   openChat: 'Open the conversation',
-  foldChat: 'Fold into the island',
   gate: (n: number) => (n === 1 ? '1 needs you' : `${n} need you`),
   keyChat: 'Alt C',
   keyWork: 'Alt W',
@@ -26,8 +26,10 @@ export const FUSION_COPY = {
   you: 'You',
   athena: 'Athena',
   earlier: (n: number) => (n === 1 ? '1 earlier message' : `${n} earlier messages`),
-  machine: (n: number) => (n === 1 ? '1 thing she looked up or heard' : `${n} things she looked up or heard`),
-  hideMachine: 'Hide what she looked up',
+  steps: (n: number) => (n === 1 ? '1 step' : `${n} steps`),
+  // The fold chip's one stable name (its aria-expanded carries open or closed); it contains the visible "N steps".
+  machine: (n: number) => (n === 1 ? '1 step: something she looked up or heard' : `${n} steps: things she looked up or heard`),
+  transcript: 'Conversation with Athena',
 
   // The rail.
   rail: 'What Athena manages',
@@ -67,16 +69,8 @@ export const FUSION_COPY = {
 
   // Decisions.
   queue: 'Waiting on you',
-  itemOf: (i: number, n: number) => `${i} of ${n}`,
-  askHer: 'Ask Athena',
-  composing: 'She is weighing it',
-  details: 'What it will run',
-  answer: 'Your answer',
-  keys: {
-    choose: 'Answers',
-    aside: 'Set aside',
-    fold: 'Fold back to the app',
-  },
+  // Stepping the queue, said politely: where she is and what the item is.
+  stepped: (i: number, n: number, title: string) => `${i} of ${n}: ${title}`,
   nothingWaiting: 'Nothing waits on you.',
   nothingWaitingSub: 'When she needs a call, the rail lights.',
   aboutThis: (kind: string) => `Re: this ${kind}`,

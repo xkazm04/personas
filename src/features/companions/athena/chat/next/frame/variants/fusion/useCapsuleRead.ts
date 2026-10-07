@@ -47,7 +47,8 @@ export function useCapsuleRead(messages: CompanionMessage[], live: number, waiti
               ? F.thinking
               : C.working;
     } else if (live > 0) label = F.workingOn(live);
-    else label = title ?? F.quiet;
+    // The gate shows beside the label, so the label never claims quiet over it.
+    else label = title ?? (waiting > 0 ? F.waitingOnYou : F.quiet);
     const words = last ? plainWords(stripModelDirectives(last.content)).replace(/\s+/g, ' ').trim() : '';
     return { label, working: streaming, gated: waiting, lastWords: words || null };
   }, [streaming, phase, live, conversations, activeId, last, waiting]);
