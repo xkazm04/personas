@@ -422,6 +422,16 @@ mod tests {
         .id
     }
 
+    /// Set columns on one execution row (a fixture write; propagates, never panics on checkout).
+    fn set_execution(pool: &DbPool, set: &str, id: &str) -> Result<(), AppError> {
+        let conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
+        conn.execute(
+            &format!("UPDATE persona_executions SET {set} WHERE id = ?1"),
+            [id],
+        )?;
+        Ok(())
+    }
+
     /// The status and `code` a refusal answers with.
     fn refusal(r: Refusal) -> (StatusCode, Option<String>) {
         (r.0, r.1 .0.code.clone())
@@ -564,13 +574,7 @@ mod tests {
         let pool = pool();
         let id = persona(&pool, true);
         let exec = exec_repo::create(&pool, &id, None, None, None, None).unwrap();
-        pool.get()
-            .unwrap()
-            .execute(
-                "UPDATE persona_executions SET status = 'completed' WHERE id = ?1",
-                [&exec.id],
-            )
-            .unwrap();
+        set_execution(&pool, "status = 'completed'", &exec.id).unwrap();
         let err = refused(plan_cancel(&pool, &exec.id));
         assert_eq!(
             refusal(err),
