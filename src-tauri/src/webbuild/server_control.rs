@@ -768,10 +768,13 @@ fn normalize_root(raw: &str) -> String {
 
 /// The project name for a folder: its last component.
 fn folder_name(root: &str) -> String {
-    Path::new(root)
-        .file_name()
-        .map(|n| n.to_string_lossy().into_owned())
-        .filter(|n| !n.trim().is_empty())
+    // Split on both separators by hand: `Path::file_name` only knows the host's,
+    // so a Windows root read on another host came back whole.
+    root.trim_end_matches(['/', '\\'])
+        .rsplit(['/', '\\'])
+        .next()
+        .map(str::to_string)
+        .filter(|n| !n.trim().is_empty() && !n.ends_with(':'))
         .unwrap_or_else(|| root.to_string())
 }
 
