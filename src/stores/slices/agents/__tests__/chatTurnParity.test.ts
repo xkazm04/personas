@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fixture from '../../../../../fixtures/chat-turn-input-v1.json';
+import feedbackFixture from '../../../../../fixtures/chat-turn-feedback-input-v1.json';
 import { classifyLine } from '@/lib/utils/terminalColors';
 
 /**
@@ -92,6 +93,35 @@ describe('persona chat turn parity fixture', () => {
   it('holds the reply filter of the production classifyLine', () => {
     for (const l of fixture.lines) {
       expect(classifyLine(l.line) === 'text', JSON.stringify(l.line)).toBe(l.isText);
+    }
+  });
+});
+
+// ---- verbatim from backgroundChatSlice.ts (f64d96ca43), startFeedbackChat ----
+// steps 2-3, before the feedback chat moved onto start_chat_turn (wave 4).
+
+function feedbackTitle(title: string): string {
+  return title.length > 60 ? title.slice(0, 57) + "..." : title;
+}
+
+function feedbackInput(instruction: string): string {
+  return JSON.stringify({
+    _advisory: true,
+    conversation: `Human: ${instruction}`,
+    latest_message: instruction,
+  });
+}
+
+// -----------------------------------------------------------------------------
+
+describe('feedback chat turn parity fixture', () => {
+  it('holds the title and first-turn input the old feedback builder produced', () => {
+    expect(feedbackFixture.cases.length).toBeGreaterThanOrEqual(5);
+    for (const c of feedbackFixture.cases) {
+      expect(
+        { input: feedbackInput(c.instruction), title: feedbackTitle(c.title), chatMode: 'advisory', continuation: null },
+        c.name,
+      ).toEqual(c.expected);
     }
   });
 });

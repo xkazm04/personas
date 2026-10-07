@@ -1,0 +1,60 @@
+{
+  "description": "Feedback (background) chat parity, wave 4. Every expected value was produced by the TypeScript builder backgroundChatSlice.startFeedbackChat used before it moved onto start_chat_turn (steps 2-3 at f64d96ca43: the title cut and the _advisory first-turn input). src-tauri/src/commands/core/chat_turn.rs and src/stores/slices/agents/__tests__/chatTurnParity.test.ts both reproduce every case.",
+  "cases": [
+    {
+      "name": "a real feedback instruction, a real title",
+      "instruction": "[feedback on report high-priority \"Weekly digest\"]\n\nA user is giving you feedback on one of your recent outputs. Use this to understand where your response fell short and how you could improve your approach, configuration, or prompt next time.\n\n## Original output (from 2026-10-06T08:00:00Z)\nRevenue grew 4% week over week; churn held at 1.2%. Top risk: the \"Acme\" renewal.\n\n## User feedback\nToo long, and lead with the risk.\n\n## What I need from you\n1. Acknowledge what the user pointed out.",
+      "title": "Feedback — Weekly digest",
+      "expected": {
+        "input": "{\"_advisory\":true,\"conversation\":\"Human: [feedback on report high-priority \\\"Weekly digest\\\"]\\n\\nA user is giving you feedback on one of your recent outputs. Use this to understand where your response fell short and how you could improve your approach, configuration, or prompt next time.\\n\\n## Original output (from 2026-10-06T08:00:00Z)\\nRevenue grew 4% week over week; churn held at 1.2%. Top risk: the \\\"Acme\\\" renewal.\\n\\n## User feedback\\nToo long, and lead with the risk.\\n\\n## What I need from you\\n1. Acknowledge what the user pointed out.\",\"latest_message\":\"[feedback on report high-priority \\\"Weekly digest\\\"]\\n\\nA user is giving you feedback on one of your recent outputs. Use this to understand where your response fell short and how you could improve your approach, configuration, or prompt next time.\\n\\n## Original output (from 2026-10-06T08:00:00Z)\\nRevenue grew 4% week over week; churn held at 1.2%. Top risk: the \\\"Acme\\\" renewal.\\n\\n## User feedback\\nToo long, and lead with the risk.\\n\\n## What I need from you\\n1. Acknowledge what the user pointed out.\"}",
+        "title": "Feedback — Weekly digest",
+        "chatMode": "advisory",
+        "continuation": null
+      }
+    },
+    {
+      "name": "a title over 60 units is cut to 57 plus ...",
+      "instruction": "Shorter, please.",
+      "title": "Feedback — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expected": {
+        "input": "{\"_advisory\":true,\"conversation\":\"Human: Shorter, please.\",\"latest_message\":\"Shorter, please.\"}",
+        "title": "Feedback — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...",
+        "chatMode": "advisory",
+        "continuation": null
+      }
+    },
+    {
+      "name": "a title of exactly 60 units is kept",
+      "instruction": "ok",
+      "title": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+      "expected": {
+        "input": "{\"_advisory\":true,\"conversation\":\"Human: ok\",\"latest_message\":\"ok\"}",
+        "title": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+        "chatMode": "advisory",
+        "continuation": null
+      }
+    },
+    {
+      "name": "escaping: quotes, backslashes, tabs, control characters",
+      "instruction": "say \"hi\"\n\tthen\u0001 stop",
+      "title": "Feedback — \"quoted\"",
+      "expected": {
+        "input": "{\"_advisory\":true,\"conversation\":\"Human: say \\\"hi\\\"\\n\\tthen\\u0001 stop\",\"latest_message\":\"say \\\"hi\\\"\\n\\tthen\\u0001 stop\"}",
+        "title": "Feedback — \"quoted\"",
+        "chatMode": "advisory",
+        "continuation": null
+      }
+    },
+    {
+      "name": "non-ASCII: accents, CJK, emoji",
+      "instruction": "Příliš dlouhé — 太长了 🙂",
+      "title": "Feedback — Úrok 🙂",
+      "expected": {
+        "input": "{\"_advisory\":true,\"conversation\":\"Human: Příliš dlouhé — 太长了 🙂\",\"latest_message\":\"Příliš dlouhé — 太长了 🙂\"}",
+        "title": "Feedback — Úrok 🙂",
+        "chatMode": "advisory",
+        "continuation": null
+      }
+    }
+  ]
+}

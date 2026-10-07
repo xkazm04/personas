@@ -9,8 +9,10 @@
 //! webview reload mid-turn lost the reply.
 //!
 //! This module is now the ONE turn path. [`start`] does the five steps and
-//! registers a completion hook; the desktop's `sendChatMessage` calls it
-//! through [`start_chat_turn`](super::chat::start_chat_turn) and a paired
+//! registers a completion hook; the desktop's `sendChatMessage` and its
+//! "respond with feedback" background chat (`startFeedbackChat`, which names
+//! the new session after the report through [`ChatTurnOptions::title`]) call
+//! it through [`start_chat_turn`](super::chat::start_chat_turn), and a paired
 //! phone's `chat_send` calls it from `cloud::persona_chat_send`. The streaming
 //! display in the desktop is unchanged: it still comes from the execution's
 //! `execution-output` events, which this module does not touch.
@@ -36,6 +38,14 @@
 //! * The completion write keeps the session's chat mode. The slice's
 //!   completion save omitted it, and the repository's `COALESCE(?, 'ops')`
 //!   reset every session to `ops` after its first answer.
+//!
+//! The feedback chat's first turn is pinned the same way
+//! (`fixtures/chat-turn-feedback-input-v1.json`: its title and its
+//! `_advisory` input). It inherits the differences above, plus one of its
+//! own: its `conversation` line now quotes the STORED message, as the desk
+//! chat's always did, where the old feedback builder quoted the instruction
+//! as typed - the two differ only when a quoted report excerpt holds HTML
+//! tags, which the stored copy strips.
 
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
@@ -347,6 +357,19 @@ pub struct ChatTurnRequest {
     pub mode: Option<ChatTurnMode>,
 }
 
+/// What a caller may set beyond the request. Kept apart from
+/// [`ChatTurnRequest`] so the callers that need none of it build their
+/// request unchanged.
+#[derive(Debug, Clone, Default)]
+pub struct ChatTurnOptions {
+    /// The title of a NEW session, instead of the one derived from its first
+    /// message: the desktop's feedback chat names the session after the
+    /// report it answers. Cut like any title (at most 60 UTF-16 units, 57
+    /// plus `...`, without collapsing whitespace - the feedback slice's rule).
+    /// Ignored on a follow-up: only the first message names a session.
+    pub title: Option<String>,
+}
+
 /// A started turn: what the desktop slice and the remote `chat_send` need.
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
@@ -379,10 +402,24 @@ fn resolve_mode(requested: Option<ChatTurnMode>, stored: Option<&str>) -> ChatTu
     }
 }
 
+/// [`prepare_with`] without options. Only tests call steps 1-3 alone (the
+/// remote-command plane's executor double among them); production goes
+/// through [`start`] / [`start_with`].
+#[cfg(test)]
 pub fn prepare(
     pool: &DbPool,
     persona_id: &str,
     req: &ChatTurnRequest,
+) -> Result<PreparedTurn, AppError> {
+    prepare_with(pool, persona_id, req, &ChatTurnOptions::default())
+}
+
+/// [`prepare`], with the caller's [`ChatTurnOptions`].
+pub fn prepare_with(
+    pool: &DbPool,
+    persona_id: &str,
+    req: &ChatTurnRequest,
+    opts: &ChatTurnOptions,
 ) -> Result<PreparedTurn, AppError> {
     let session_id = req.session_id.clone().unwrap_or_else(new_session_id);
     let stored = repo::get_session_context(pool, &session_id)?;
@@ -417,7 +454,10 @@ pub fn prepare(
         UpsertSessionContextInput {
             session_id: session_id.clone(),
             persona_id: persona_id.to_string(),
-            title: is_first.then(|| derive_title(&req.message)),
+            title: is_first.then(|| match opts.title.as_deref() {
+                Some(title) => shorten_title(title).0,
+                None => derive_title(&req.message),
+            }),
             summary: Some(build_summary(&lines)),
             system_prompt_hash: None,
             working_memory: None,
@@ -465,7 +505,27 @@ pub async fn start(
     req: ChatTurnRequest,
     idempotency_key: String,
 ) -> Result<ChatTurnStarted, AppError> {
-    let prepared = prepare(&state.db, persona_id, &req)?;
+    start_with(
+        state,
+        app,
+        persona_id,
+        req,
+        &ChatTurnOptions::default(),
+        idempotency_key,
+    )
+    .await
+}
+
+/// [`start`], with the caller's [`ChatTurnOptions`].
+pub async fn start_with(
+    state: &Arc<AppState>,
+    app: AppHandle,
+    persona_id: &str,
+    req: ChatTurnRequest,
+    opts: &ChatTurnOptions,
+    idempotency_key: String,
+) -> Result<ChatTurnStarted, AppError> {
+    let prepared = prepare_with(&state.db, persona_id, &req, opts)?;
     // 4. The run. A refusal here (project off, connectors not set up) leaves
     //    the user row in place, as the slice did.
     let exec = crate::commands::execution::executions::execute_persona_inner(
@@ -912,6 +972,62 @@ mod tests {
             Some("What did you do today?"),
             "only the first message names the session"
         );
+    }
+
+    /// The feedback (background) chat's first turn, through the production
+    /// `prepare_with`: the same input JSON and session title the old
+    /// TypeScript builder in `backgroundChatSlice.ts` produced
+    /// (`fixtures/chat-turn-feedback-input-v1.json`, re-derived by vitest
+    /// with a verbatim copy of that builder).
+    #[test]
+    fn the_feedback_chat_turn_matches_the_typescript_builder() {
+        let fx: Value = serde_json::from_str(include_str!(
+            "../../../../fixtures/chat-turn-feedback-input-v1.json"
+        ))
+        .expect("fixture json");
+        let cases = fx["cases"].as_array().expect("cases");
+        assert!(
+            cases.len() >= 5,
+            "the fixture covers the title and escaping cases"
+        );
+        let pool = crate::db::init_test_db().expect("db");
+        let persona = seed_persona(&pool);
+        for (i, case) in cases.iter().enumerate() {
+            let name = case["name"].as_str().expect("name");
+            let session_id = format!("bgchat-1700000000000-{i:08x}");
+            let turn = prepare_with(
+                &pool,
+                &persona,
+                &ChatTurnRequest {
+                    session_id: Some(session_id.clone()),
+                    message: case["instruction"].as_str().expect("instruction").into(),
+                    mode: Some(ChatTurnMode::from_ui("advisory")),
+                },
+                &ChatTurnOptions {
+                    title: Some(case["title"].as_str().expect("title").into()),
+                },
+            )
+            .expect(name);
+            assert_eq!(
+                turn.input.input,
+                case["expected"]["input"].as_str().expect("expected input"),
+                "{name}: input JSON"
+            );
+            assert!(turn.input.continuation.is_none(), "{name}: no continuation");
+            let ctx = repo::get_session_context(&pool, &session_id)
+                .expect("ctx")
+                .expect("saved");
+            assert_eq!(
+                ctx.title.as_deref(),
+                case["expected"]["title"].as_str(),
+                "{name}: title"
+            );
+            assert_eq!(
+                ctx.chat_mode,
+                case["expected"]["chatMode"].as_str().expect("mode"),
+                "{name}: mode"
+            );
+        }
     }
 
     #[test]

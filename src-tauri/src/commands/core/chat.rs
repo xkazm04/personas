@@ -83,8 +83,10 @@ pub fn get_latest_chat_session(
 /// over the execution's `execution-output` events and lands as a row
 /// (`chat-changed`). Starts a paid run, so it is enforced by its
 /// `PRIVILEGED_COMMANDS` entry like `execute_persona` (an async
-/// `#[requires(privileged)]` cannot fail).
+/// `#[requires(privileged)]` cannot fail). `title` names a new session
+/// instead of the title derived from its first message (the feedback chat).
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn start_chat_turn(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
@@ -92,10 +94,11 @@ pub async fn start_chat_turn(
     session_id: String,
     message: String,
     chat_mode: String,
+    title: Option<String>,
     idempotency_key: Option<String>,
 ) -> Result<super::chat_turn::ChatTurnStarted, AppError> {
     require_auth(&state).await?;
-    super::chat_turn::start(
+    super::chat_turn::start_with(
         state.inner(),
         app,
         &persona_id,
@@ -104,6 +107,7 @@ pub async fn start_chat_turn(
             message,
             mode: Some(super::chat_turn::ChatTurnMode::from_ui(&chat_mode)),
         },
+        &super::chat_turn::ChatTurnOptions { title },
         idempotency_key.unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
     )
     .await

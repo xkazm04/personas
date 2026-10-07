@@ -80,12 +80,16 @@ export const getLatestChatSession = (personaId: string) =>
  * when the run completes. Resolves once the run has started; the reply streams
  * over that execution's `execution-output` events and lands as a row
  * (`chat-changed`). The key dedups a double send, as for `executePersona`.
+ * `title` names a NEW session instead of the title derived from its first
+ * message (the feedback chat names it after the report); it is ignored on a
+ * follow-up.
  */
 export const startChatTurn = (input: {
   personaId: string;
   sessionId: string;
   message: string;
   chatMode: string;
+  title?: string;
   idempotencyKey?: string;
 }) => {
   const key = input.idempotencyKey ?? crypto.randomUUID();
@@ -96,6 +100,7 @@ export const startChatTurn = (input: {
       sessionId: input.sessionId,
       message: input.message,
       chatMode: input.chatMode,
+      title: input.title,
       idempotencyKey: key,
     },
     { idempotencyKey: key },
