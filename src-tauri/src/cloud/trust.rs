@@ -327,10 +327,17 @@ pub fn check(
     let (Some(iat), Some(exp)) = (parse_time(&env.iat), parse_time(&env.exp)) else {
         return Trust::Refused(reason::ENVELOPE_MISMATCH);
     };
+    let skew = chrono::Duration::seconds(CLOCK_SKEW_SECS);
+    let max_age = chrono::Duration::seconds(MAX_ENVELOPE_AGE_SECS);
+    //    A signed envelope may not claim an `iat` in this desktop's future
+    //    beyond the skew, nor a lifetime longer than the cap: either would
+    //    let a stale signed row outlive the window the web promises.
+    if iat > now + skew || exp > iat + max_age {
+        return Trust::Refused(reason::ENVELOPE_MISMATCH);
+    }
     //    Expired once `exp` passed or `iat` is more than 5 min old, whichever
     //    comes first.
-    let skew = chrono::Duration::seconds(CLOCK_SKEW_SECS);
-    let valid_until = exp.min(iat + chrono::Duration::seconds(MAX_ENVELOPE_AGE_SECS)) + skew;
+    let valid_until = exp.min(iat + max_age) + skew;
     if now > valid_until {
         return Trust::Expired;
     }
@@ -634,11 +641,11 @@ mod tests {
     }
 
     #[test]
-    fn iat_older_than_five_minutes_is_expired_even_with_a_far_exp() {
+    fn iat_older_than_five_minutes_is_expired_at_the_lifetime_cap() {
         let sk = SigningKey::from_bytes(&[7u8; 32]);
         let pk = URL_SAFE_NO_PAD.encode(sk.verifying_key().to_bytes());
         let env = format!(
-            r#"{{"v":1,"id":"{ID}","dev":"{DEV}","type":"pause_persona","persona":"{PERSONA}","params":{{}},"iat":"2026-10-06T12:00:00.000Z","exp":"2026-10-06T13:00:00.000Z","ctl":"{CTL}"}}"#
+            r#"{{"v":1,"id":"{ID}","dev":"{DEV}","type":"pause_persona","persona":"{PERSONA}","params":{{}},"iat":"2026-10-06T12:00:00.000Z","exp":"2026-10-06T12:05:00.000Z","ctl":"{CTL}"}}"#
         );
         let sig = URL_SAFE_NO_PAD.encode(sk.sign(env.as_bytes()).to_bytes());
         let c = Controller {
@@ -666,6 +673,75 @@ mod tests {
             check(&[c], &r, DEV, at("2026-10-06T12:05:31Z")),
             Trust::Expired
         );
+    }
+
+    /// Sign an envelope with the given iat/exp and run it through `check`.
+    fn check_timed(iat: &str, exp: &str, now: &str) -> Trust {
+        let sk = SigningKey::from_bytes(&[7u8; 32]);
+        let pk = URL_SAFE_NO_PAD.encode(sk.verifying_key().to_bytes());
+        let env = format!(
+            r#"{{"v":1,"id":"{ID}","dev":"{DEV}","type":"pause_persona","persona":"{PERSONA}","params":{{}},"iat":"{iat}","exp":"{exp}","ctl":"{CTL}"}}"#
+        );
+        let sig = URL_SAFE_NO_PAD.encode(sk.sign(env.as_bytes()).to_bytes());
+        let c = Controller {
+            public_key: pk,
+            ..fixture_controller(&vector())
+        };
+        let r = SignedRow {
+            id: ID,
+            command_type: "pause_persona",
+            persona_id: Some(PERSONA),
+            controller_id: Some(CTL),
+            envelope: Some(&env),
+            signature: Some(&sig),
+        };
+        check(&[c], &r, DEV, at(now))
+    }
+
+    #[test]
+    fn an_envelope_dated_in_the_future_is_refused() {
+        // iat 10 min ahead of this desktop's clock, exp inside the cap.
+        assert_eq!(
+            check_timed(
+                "2026-10-06T12:10:00.000Z",
+                "2026-10-06T12:11:00.000Z",
+                "2026-10-06T12:00:00Z"
+            ),
+            Trust::Refused(reason::ENVELOPE_MISMATCH)
+        );
+    }
+
+    #[test]
+    fn an_envelope_with_a_lifetime_over_the_cap_is_refused() {
+        assert_eq!(
+            check_timed(
+                "2026-10-06T12:00:00.000Z",
+                "2026-10-06T13:00:00.000Z",
+                "2026-10-06T12:00:10Z"
+            ),
+            Trust::Refused(reason::ENVELOPE_MISMATCH)
+        );
+    }
+
+    #[test]
+    fn an_honest_sixty_second_envelope_still_verifies() {
+        assert!(matches!(
+            check_timed(
+                "2026-10-06T12:00:00.000Z",
+                "2026-10-06T12:01:00.000Z",
+                "2026-10-06T12:00:10Z"
+            ),
+            Trust::Paired(_)
+        ));
+        // iat 20 s ahead of a slow desktop clock is inside the skew.
+        assert!(matches!(
+            check_timed(
+                "2026-10-06T12:00:20.000Z",
+                "2026-10-06T12:01:20.000Z",
+                "2026-10-06T12:00:00Z"
+            ),
+            Trust::Paired(_)
+        ));
     }
 
     fn ctl_n(i: u8) -> Controller {
