@@ -436,8 +436,10 @@ own gate, independent of the app's mandate.
 - The `plan` doors (POST `/dev-tools/milestones`, `/dev-tools/goals`) are on master since
   `0fe21a3e29`, and the replay was checked against that contract (bodies, `{milestoneId}` /
   `{goalId}`, the goal bound through `dev_milestone_items`). The `council`, `tier` and `report`
-  doors follow the 2026-10-07 brief; those routes did not answer yet (they replay as `route
-  missing (404)` until they do).
+  doors landed on master the same night (`34ec8e5f5a` reports, `61f95dc81c` council ingest +
+  tier, with per-mode council rounds in `e61_council_run_mode`); the replay has not been driven
+  against them on a live app yet. Contract: `docs/development/headless-bridge.md`, "Headless App
+  Master doors".
 - `/council --lite` is not in the council skill linked on 2026-10-07 (v0.3.1); a reviewer told
   to run it stops `blocked` rather than run a full council. Lite and full rounds of one feature
   share the council's on-disk round counter; this skill counts and seeds rounds per mode.
