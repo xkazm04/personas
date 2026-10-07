@@ -103,7 +103,7 @@
 //! re-open it.
 
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
 
@@ -1433,6 +1433,7 @@ mod tests {
     use base64::engine::general_purpose::URL_SAFE_NO_PAD;
     use base64::Engine as _;
     use ed25519_dalek::{Signer, SigningKey};
+    use std::collections::HashSet;
     use std::sync::Mutex as StdMutex;
 
     fn timed_row(requested_at: &str, expires_at: Option<String>) -> CommandRow {
