@@ -2006,13 +2006,14 @@ pub async fn dispatch_review_action(
     action: String,
 ) -> Result<PersonaManualReview, AppError> {
     require_auth_sync(&state)?;
-    let learned = manual_repo::update_status(
+    // The review comes back from the decision's own UPDATE ... RETURNING, so a
+    // failed re-read can no longer skip the side effects of a committed decision.
+    let (review, learned) = manual_repo::update_status_returning(
         &state.db,
         &review_id,
         crate::db::models::ManualReviewStatus::Approved,
         Some(format!("Chose action: {action}")),
     )?;
-    let review = manual_repo::get_by_id(&state.db, &review_id)?;
 
     // Surface the resolution exactly like the plain path (Phase 2 toast + bus).
     let _ = app.emit(
