@@ -1,0 +1,374 @@
+/*
+ * Fusion. One glass family for every piece (the island, the rail, a category
+ * panel, the question, each answer card); one lit line in the theme's accent
+ * down the right; one warm signal (the warning ink) for what waits on you.
+ * Scoped under `.fusion`; layout is free here, type and colour stay tokens
+ * (typo-* on the element, var()/color-mix() here).
+ *
+ * Unlayered on purpose: these rules sit above Tailwind's layered utilities,
+ * so a shared `Button` used as a circle, a pip or a card takes this file's
+ * shape.
+ *
+ * TODO(prototype, 2026-10-07): athena chat fusion - consolidate after the owner picks.
+ */
+
+.fusion {
+  --fu-glass: color-mix(in srgb, var(--background) 82%, transparent);
+  --fu-glass-strong: color-mix(in srgb, var(--background) 93%, transparent);
+  --fu-knock: var(--background);
+  --fu-rule: color-mix(in srgb, var(--foreground) 12%, transparent);
+  --fu-rule-soft: color-mix(in srgb, var(--foreground) 7%, transparent);
+  --fu-sheen: color-mix(in srgb, var(--foreground) 9%, transparent);
+  --fu-warm: var(--status-warning);
+}
+[data-theme^="light"] .fusion {
+  --fu-glass: color-mix(in srgb, var(--background) 90%, transparent);
+  --fu-glass-strong: color-mix(in srgb, var(--background) 97%, transparent);
+  --fu-rule: color-mix(in srgb, var(--foreground) 16%, transparent);
+  --fu-sheen: color-mix(in srgb, var(--background) 70%, transparent);
+}
+
+/* The shared Button wraps its label in one span; on Fusion's laid-out
+   controls that span steps aside so the control's own flex reaches the parts. */
+.fusion :is(.fu-cap, .fu-gate, .fu-count, .fu-attn, .fu-bead, .fu-cat, .fu-ticks) > span { display: contents; }
+
+/* ── the glass ─────────────────────────────────────────────────────────── */
+.fusion .fu-glass {
+  background: var(--fu-glass);
+  backdrop-filter: blur(var(--blur-modal)) saturate(1.25);
+  box-shadow: inset 0 0 0 1px var(--fu-rule), inset 0 1px 0 var(--fu-sheen), var(--shadow-elevation-3);
+}
+.fusion .fu-glass.is-open { background: var(--fu-glass-strong); box-shadow: inset 0 0 0 1px var(--fu-rule), inset 0 1px 0 var(--fu-sheen), var(--shadow-elevation-4); }
+.fusion .fu-kbd {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  min-width: 1.5em; height: 1.55em; padding: 0 0.4em; line-height: 1; border-radius: var(--radius-interactive);
+  box-shadow: inset 0 0 0 1px var(--fu-rule); background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  color: var(--muted-foreground); white-space: nowrap; font-family: var(--font-mono);
+}
+
+/* ── her face: the real portrait, cropped ──────────────────────────────── */
+.fusion .fu-face {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: var(--background) url('/athena/athena_baseline.jpg') 50% 31% / 250% no-repeat;
+  box-shadow: inset 0 0 0 1px var(--fu-rule);
+}
+.fusion .fu-mark { position: relative; flex: none; width: calc(var(--fu-u) * 1.8); height: calc(var(--fu-u) * 1.8); border-radius: 50%; }
+.fusion .fu-mark.is-lg { width: calc(var(--fu-u) * 2.05); height: calc(var(--fu-u) * 2.05); }
+.fusion .fu-ring {
+  position: absolute; inset: -3px; border-radius: 50%;
+  background: conic-gradient(from 0deg, color-mix(in srgb, var(--primary) 0%, transparent), var(--primary) 30%, color-mix(in srgb, var(--primary) 0%, transparent) 31%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), black calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), black calc(100% - 2px));
+  opacity: 0; transition: opacity var(--duration-normal);
+}
+.fusion .fu-mark.is-live .fu-ring { opacity: 1; }
+.fusion .fu-mark.is-live.is-moving .fu-ring { animation: fu-sweep 2.4s linear infinite; }
+.fusion .fu-notch { position: absolute; right: -3px; top: -3px; width: 11px; height: 11px; border-radius: 50%; background: var(--fu-warm); box-shadow: 0 0 0 2px var(--background); }
+.fusion .fu-face-sm { position: relative; display: inline-block; flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--background) url('/athena/athena_baseline.jpg') 50% 31% / 250% no-repeat; box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 45%, transparent); }
+.fusion .fu-face-sm.is-live { box-shadow: 0 0 0 1.5px var(--primary); }
+.fusion .fu-face-sm.is-moving { animation: fu-glow 2s ease-in-out infinite; }
+@keyframes fu-sweep { to { transform: rotate(1turn); } }
+@keyframes fu-glow { 50% { box-shadow: 0 0 0 1.5px var(--primary), 0 0 10px var(--primary); } }
+
+/* ── the island ────────────────────────────────────────────────────────── */
+/* The island's boxes hold text, so they are multiples of ONE type unit (the caption
+   size, which --type-f scales with Settings > Appearance > text size). Island.tsx reads
+   them back through the .fu-probe boxes because framer animates numbers.
+   --fu-island-h is what the decision stage must clear above the dock (the decision row);
+   the stage's bottom rule should read calc(var(--fu-dock-b) + var(--fu-island-h) + 12px). */
+.fusion {
+  --fu-u: calc(1rem * var(--type-f));
+  --fu-cap-h: calc(var(--fu-u) * 2.7);
+  --fu-row-h: calc(var(--fu-u) * 3.75);
+  --fu-island-h: var(--fu-row-h);
+  --fu-dock-b: calc(2rem + 12px);
+}
+.fusion .fu-probe { position: absolute; left: 0; bottom: 0; width: 0; overflow: hidden; visibility: hidden; pointer-events: none; }
+.fusion .fu-probe i { display: block; width: 1px; }
+.fusion .fu-probe i:nth-child(1) { height: var(--fu-cap-h); }
+.fusion .fu-probe i:nth-child(2) { height: var(--fu-row-h); }
+.fusion .fu-probe i:nth-child(3) { height: var(--fu-dock-b); }
+.fusion .fu-probe i:nth-child(4) { height: var(--radius-modal); }
+.fusion .fu-dock { position: absolute; left: 0; right: 0; bottom: var(--fu-dock-b); display: flex; justify-content: center; align-items: flex-end; pointer-events: none; z-index: 5; }
+.fusion .fu-island { position: relative; overflow: hidden; pointer-events: auto; display: flex; flex-direction: column; }
+.fusion .fu-cap-row { display: flex; align-items: center; height: var(--fu-cap-h); padding-right: 0.5rem; }
+.fusion .fu-cap { display: flex; align-items: center; gap: 0.6rem; height: var(--fu-cap-h); width: max-content; padding: 0 0.5rem 0 0.45rem; background: transparent; border-radius: var(--radius-pill); color: var(--foreground); }
+.fusion .fu-cap:hover { background: color-mix(in srgb, var(--foreground) 4%, transparent); }
+.fusion .fu-cap:focus-visible, .fusion .fu-gate:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--focus-ring-color); }
+/* A long thread title ends in an ellipsis at a fixed measure; its full words ride in the tooltip and the aria-label. */
+.fusion .fu-cap-label { white-space: nowrap; min-width: 0; max-width: min(17em, 38vw); overflow: hidden; text-overflow: ellipsis; }
+.fusion .fu-gate-wrap { display: flex; flex: none; overflow: hidden; }
+.fusion .fu-gate-wrap > .fu-gate { margin-left: 0.4rem; }
+.fusion .fu-gate { display: inline-flex; align-items: center; gap: 0.25rem; flex: none; height: calc(var(--fu-u) * 1.65); padding: 0 0.55rem 0 0.45rem; border-radius: var(--radius-pill); background: var(--fu-warm); color: var(--on-fill-gate, var(--background)); }
+/* Ink on the warm fill by the fill's lightness (the rail's --on-fill recipe): unreadable background ink on light themes' yellow. */
+@supports (color: oklch(from red l c h)) {
+  .fusion .fu-gate { --on-fill-gate: oklch(from var(--fu-warm) clamp(0.14, calc((0.58 - l) * 100), 0.98) 0.02 h); }
+}
+.fusion .fu-gate svg { width: calc(var(--fu-u) * 0.875); height: calc(var(--fu-u) * 0.875); }
+.fusion .fu-cap-row > .fu-kbd { margin-left: 0.4rem; }
+.fusion .fu-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px 6px 14px; flex: none; }
+.fusion .fu-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
+.fusion .fu-compose { flex: none; padding: 6px 10px 8px; box-shadow: inset 0 1px 0 var(--fu-rule-soft); }
+.fusion .fu-island.is-row .fu-compose { box-shadow: none; padding: 4px 10px 4px 8px; }
+.fusion .fu-about {
+  display: inline-flex; align-items: center; gap: 6px; flex: none; white-space: nowrap; height: 28px; padding: 0 10px; border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--fu-warm) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fu-warm) 40%, transparent); color: var(--foreground);
+}
+.fusion .fu-flight { position: fixed; z-index: 400; pointer-events: none; margin: 0; color: var(--muted-foreground); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ── the conversation: turns on the x axis ─────────────────────────────── */
+.fusion .fu-scroll {
+  flex: 1 1 auto; min-width: 0; overflow-y: auto; overscroll-behavior: contain; padding: 8px 26px 16px 14px; scroll-padding-bottom: 20px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 18px); mask-image: linear-gradient(to bottom, transparent, black 18px);
+}
+.fusion .fu-column { --fu-gutter: calc(var(--fu-u) * 11); max-width: calc(var(--fu-gutter) + 14px + 82ch); margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+.fusion .fu-turn { display: grid; grid-template-columns: var(--fu-gutter) minmax(0, 1fr); column-gap: 14px; row-gap: 8px; align-items: start; }
+/* Who and when on ONE line, right-aligned in a gutter wide enough never to wrap. Her label sticks just
+   under the top fade while a long reply scrolls (a one-line ask never sticks: it would linger past its words). */
+.fusion .fu-who { display: flex; align-items: baseline; justify-content: flex-end; gap: 0.4em; white-space: nowrap; padding-top: 0.2em; min-width: 0; }
+.fusion .fu-who.is-sticky { position: sticky; top: 1.25rem; }
+.fusion .fu-who-her { display: inline-flex; align-items: center; gap: 0.4rem; }
+.fusion .fu-sep { color: var(--muted-foreground); }
+.fusion .fu-when { color: var(--muted-foreground); white-space: nowrap; }
+.fusion .fu-ask { margin: 0; color: var(--muted-foreground); white-space: pre-wrap; overflow-wrap: anywhere; }
+.fusion .fu-said { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.fusion .fu-aside { margin: 0; padding-left: 10px; border-left: 2px solid var(--fu-rule); font-style: italic; color: var(--muted-foreground); overflow-wrap: anywhere; }
+.fusion .fu-reply { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fusion .fu-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.fusion .fu-meta:empty { display: none; }
+/* The machine fold: a chip that says it in words (chevron, "3 steps"); the coloured ticks are the secondary cue. */
+.fusion .fu-ticks { display: inline-flex; align-items: center; gap: 0.35em; min-height: calc(var(--fu-u) * 1.6); padding: 0 0.6em 0 0.35em; margin-left: -0.35em; border-radius: var(--radius-interactive); color: var(--muted-foreground); }
+.fusion .fu-ticks:hover { background: color-mix(in srgb, var(--foreground) 5%, transparent); }
+.fusion .fu-ticks-chev { width: 1em; height: 1em; flex: none; transition: transform var(--duration-fast); }
+.fusion .fu-ticks[aria-expanded='true'] .fu-ticks-chev { transform: rotate(90deg); }
+.fusion .fu-tickset { display: inline-flex; align-items: center; gap: 0.2em; margin-left: 0.2em; }
+.fusion .fu-ticks i { display: block; width: 0.7em; height: 0.3em; border-radius: 0.15em; background: var(--c); }
+.fusion .fu-ticks-n { color: var(--muted-foreground); }
+.fusion .fu-actions { min-width: 0; margin-top: 2px; }
+.fusion .fu-ticks[aria-expanded='true'] { background: color-mix(in srgb, var(--foreground) 6%, transparent); }
+.fusion .fu-machine-rows { flex-basis: 100%; order: 10; overflow: hidden; display: flex; flex-direction: column; gap: 4px; }
+.fusion .fu-beat { display: flex; align-items: center; gap: 10px; color: var(--muted-foreground); }
+.fusion .fu-caret { display: inline-block; width: 2px; height: 1.05em; margin-left: 2px; vertical-align: -0.15em; background: var(--primary); border-radius: 1px; }
+.fusion .fu-caret.is-moving { animation: fu-blink 1.1s steps(1) infinite; }
+@keyframes fu-blink { 50% { opacity: 0; } }
+.fusion .fu-after { display: flex; flex-direction: column; gap: 8px; }
+
+/* ── the rail: one instrument on one lit line ──────────────────────────── */
+.fusion .fu-rail-seat {
+  position: absolute; right: 6px; top: 6px; bottom: 44px; width: 54px; pointer-events: none; z-index: 6;
+  /* How far the rail reads out loud, leftward over the app; 0 at rest. */
+  --fu-open: 18rem; --fu-x: 0px; --fu-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+.fusion .fu-rail-seat.is-expanded { --fu-x: var(--fu-open); }
+/* The line: the theme's accent, faint the whole height, bright where the rail sits. */
+.fusion .fu-rail-seat::before {
+  content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 1.5px; transform: translateX(-50%);
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--primary) 0%, transparent), color-mix(in srgb, var(--primary) 35%, transparent) 8%, color-mix(in srgb, var(--primary) 35%, transparent) 92%, color-mix(in srgb, var(--primary) 0%, transparent));
+}
+.fusion .fu-rail {
+  position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; isolation: isolate;
+  box-sizing: border-box; width: 54px; max-height: 100%; pointer-events: none;
+}
+/* Two glass zones on the one lit line, each its own hover / focus target: the upper
+   column (count, beads, categories) and the toolset. Each draws its glass as a pseudo
+   BEHIND the line, so the line stays lit across it and a zone can widen its glass leftward
+   without moving a mark (the upper one by --fu-x, the toolset by growing its own content). */
+.fusion .fu-up, .fusion .fu-tools-seat { position: relative; pointer-events: auto; box-sizing: border-box; }
+.fusion .fu-up::before, .fusion .fu-tools-seat::before {
+  content: ''; position: absolute; z-index: -1; top: 0; bottom: 0; right: 0; left: 0; border-radius: 27px; pointer-events: none;
+  background: var(--fu-glass-strong); backdrop-filter: blur(var(--blur-modal)) saturate(1.25);
+  box-shadow: inset 0 0 0 1px var(--fu-rule), inset 0 1px 0 var(--fu-sheen), var(--shadow-elevation-3);
+  transition: left var(--duration-normal) var(--fu-ease), box-shadow var(--duration-normal);
+}
+.fusion .fu-up { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 54px; padding: 8px 0 6px; }
+.fusion .fu-up::before { left: calc(-1 * var(--fu-x)); }
+.fusion .fu-rail-seat.is-expanded .fu-up::before, .fusion .fu-tools-seat.is-grown::before {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent), inset 0 1px 0 var(--fu-sheen), var(--shadow-elevation-4);
+}
+.fusion .fu-line {
+  position: absolute; right: 26px; top: 18px; bottom: 18px; width: 2px; border-radius: var(--radius-pill); pointer-events: none;
+  background: color-mix(in srgb, var(--primary) 75%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--primary) 55%, transparent); z-index: 0;
+}
+/* While something waits on you the line warms from the top, where the attention circle sits,
+   and settles back to the theme's accent below it. */
+.fusion .fu-line.is-waiting {
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--fu-warm) 85%, transparent), color-mix(in srgb, var(--fu-warm) 55%, var(--primary)) 36%, color-mix(in srgb, var(--primary) 75%, transparent) 72%);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--fu-warm) 50%, transparent);
+}
+/* Everything on the rail sits ON the line: positioned above it, inside the rail's own stacking context. */
+.fusion .fu-rail :is(button, .fu-over, .fu-rule, .fu-clear) { position: relative; z-index: 1; }
+.fusion .fu-rule { flex: none; width: 24px; height: 1px; background: var(--fu-rule); }
+.fusion .fu-count { flex-direction: column; gap: 0; width: 50px; height: auto; padding: 3px 0 4px; justify-content: center; background: var(--fu-knock); border-radius: var(--radius-interactive); }
+.fusion .fu-count-n { color: var(--fu-warm); line-height: 1.05; }
+/* "99+" or three digits: a step down the type ladder so the number stays inside the 50px mark at every text size. */
+.fusion .fu-count-n.is-wide { font-size: calc(var(--type-3) * var(--type-f)); }
+.fusion .fu-count-g { width: 14px; height: 14px; color: var(--fu-warm); }
+
+.fusion .fu-beads { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.fusion .fu-attn {
+  width: 30px; height: 30px; margin: 0; padding: 0; justify-content: center; border-radius: 50%;
+  transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease), margin var(--duration-normal) var(--fu-ease);
+  background: var(--c, var(--fu-warm)); color: var(--on-fill);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--fu-warm) 55%, transparent), 0 0 18px 2px color-mix(in srgb, var(--fu-warm) 55%, transparent);
+}
+.fusion .fu-attn:hover, .fusion .fu-attn:focus-visible { filter: brightness(1.12); }
+.fusion .fu-attn svg { width: 16px; height: 16px; }
+.fusion .fu-attn.is-moving { animation: fu-breathe 2.8s ease-in-out infinite; }
+/* The rail's ONE all-clear mark: a still, hollow check; not a control, so no hover and no focus ring. */
+.fusion .fu-clear {
+  display: grid; place-items: center; flex: none; width: 30px; height: 30px; margin: 0; border-radius: 50%;
+  background: var(--fu-knock); color: var(--muted-foreground);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--status-success) 45%, var(--fu-rule));
+  transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease), margin var(--duration-normal) var(--fu-ease);
+}
+.fusion .fu-clear svg { width: 16px; height: 16px; transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease); }
+/* Ink on a coloured fill: near-black on a light fill, near-white on a dark one, from the fill's own
+   lightness (oklch L, threshold where black and white ink meet 4.5:1), so it holds on every theme's
+   warning, error and kind colours. Where relative colour is missing, the theme's background ink stands. */
+.fusion .fu-attn, .fusion .fu-cat-badge { --on-fill: var(--background); }
+@supports (color: oklch(from red l c h)) {
+  .fusion .fu-attn { --on-fill: oklch(from var(--c, var(--fu-warm)) clamp(0.14, calc((0.58 - l) * 100), 0.98) 0.02 h); }
+  .fusion .fu-cat-badge.is-waiting { --on-fill: oklch(from var(--fu-warm) clamp(0.14, calc((0.58 - l) * 100), 0.98) 0.02 h); }
+  .fusion .fu-cat-badge.is-stuck { --on-fill: oklch(from var(--status-error) clamp(0.14, calc((0.58 - l) * 100), 0.98) 0.02 h); }
+}
+@keyframes fu-breathe {
+  50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--fu-warm) 70%, transparent), 0 0 28px 6px color-mix(in srgb, var(--fu-warm) 60%, transparent); }
+}
+.fusion .fu-bead { width: 20px; height: 18px; padding: 0; justify-content: center; border-radius: 50%; background: transparent; }
+.fusion .fu-bead i {
+  display: block; width: 11px; height: 11px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px var(--fu-knock), 0 0 10px color-mix(in srgb, var(--c) 70%, transparent);
+  transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease);
+}
+.fusion .fu-bead:hover i, .fusion .fu-bead:focus-visible i { filter: brightness(1.25); }
+.fusion .fu-over { color: var(--muted-foreground); background: var(--fu-knock); padding: 0 3px; border-radius: var(--radius-interactive); }
+
+/* 8px between circles: a badge hangs 3px above its dial and a count 4px below it, so neither meets the next circle's. */
+.fusion .fu-cats { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.fusion .fu-cat { flex-direction: column; gap: 0; width: 44px; height: auto; padding: 0; justify-content: center; background: transparent; border-radius: var(--radius-interactive); }
+.fusion .fu-cat:hover { background: transparent; }
+.fusion .fu-cat-dial {
+  position: relative; width: 36px; height: 36px; margin: 0; display: grid; place-items: center; border-radius: 50%; background: var(--fu-knock);
+  transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease), margin var(--duration-normal) var(--fu-ease);
+}
+.fusion .fu-cat-ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.fusion .fu-arc-empty { fill: none; stroke: var(--fu-rule); stroke-width: 1.5; }
+.fusion .fu-cat-core {
+  width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--ink) 20%, var(--background)); color: var(--ink);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 55%, transparent);
+  transition: box-shadow var(--duration-fast), filter var(--duration-fast), width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease);
+}
+.fusion .fu-cat-core svg { width: 14px; height: 14px; transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease); }
+.fusion .fu-cat:hover .fu-cat-core, .fusion .fu-cat:focus-visible .fu-cat-core { filter: brightness(1.2); }
+.fusion .fu-cat.is-open .fu-cat-core { box-shadow: inset 0 0 0 1px var(--ink), 0 0 12px color-mix(in srgb, var(--ink) 55%, transparent); }
+.fusion .fu-cat.is-quiet .fu-cat-core { background: var(--background); color: var(--muted-foreground); box-shadow: inset 0 0 0 1px var(--fu-rule); }
+.fusion .fu-cat-badge { position: absolute; right: -3px; top: -3px; width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--fu-knock); color: var(--on-fill); }
+.fusion .fu-cat-badge svg { width: 10px; height: 10px; }
+.fusion .fu-cat-badge.is-waiting { background: var(--fu-warm); }
+.fusion .fu-cat-badge.is-stuck { background: var(--status-error); }
+/* The count's right edge is pinned 4px inside the 54px glass and it grows leftward over the dial, so up to
+   three characters ("99+") and the larger text sizes never leave the glass. */
+.fusion .fu-cat-n { position: absolute; right: -5px; bottom: -4px; min-width: 17px; padding: 0 4px; text-align: center; white-space: nowrap; color: var(--foreground); background: var(--fu-knock); border-radius: var(--radius-pill); box-shadow: inset 0 0 0 1px var(--fu-rule); line-height: 1.35; font-variant-numeric: tabular-nums; }
+
+/* The toolset: marks on the line at rest; on its own hover or keyboard focus (useRailExpand
+   'tools', never the upper column's) a glass panel of its own, double width, growing LEFT,
+   with targets big enough to hit and no words. Same 4px of padding above and below at rest
+   and grown, so nothing above it moves. */
+.fusion .fu-tools-seat {
+  align-self: flex-end; display: flex; justify-content: flex-end; padding: 4px 5px;
+  transition: padding var(--duration-normal) var(--fu-ease);
+}
+.fusion .fu-tools-seat.is-grown { padding-inline: 4px; }
+.fusion .fu-tools-seat aside { width: 44px; gap: 6px; padding: 2px 0; background: none; border: 0; transition: width var(--duration-normal) var(--fu-ease); }
+.fusion .fu-tools-seat.is-grown aside { width: 88px; }
+/* The dividers and the spacer are the docked panel's; on the rail the line is the divider. */
+.fusion .fu-tools-seat aside > div[aria-hidden], .fusion .fu-tools-seat aside > div.flex-1 { display: none; }
+.fusion .fu-tools-seat :is(aside, [role='group']) > button, .fusion .fu-tools-seat :is(aside, [role='group']) > div > button {
+  width: 34px; height: 34px; margin: 0; border-radius: 50%; background: var(--fu-knock);
+  transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease);
+}
+.fusion .fu-tools-seat.is-grown :is(aside, [role='group']) > button, .fusion .fu-tools-seat.is-grown :is(aside, [role='group']) > div > button { width: 56px; height: 56px; }
+.fusion .fu-tools-seat :is(aside, [role='group']) > button svg, .fusion .fu-tools-seat :is(aside, [role='group']) > div > button svg {
+  width: 18px; height: 18px; transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease);
+}
+.fusion .fu-tools-seat.is-grown :is(aside, [role='group']) > button svg, .fusion .fu-tools-seat.is-grown :is(aside, [role='group']) > div > button svg { width: 26px; height: 26px; }
+
+/* -- the upper column read out loud (hover / keyboard focus, `useRailExpand('up')`) --
+   Each mark grows IN PLACE: a bigger size paid back by a negative margin, so
+   its box (and every mark under it) stays put. Its words fade in beside it,
+   right-aligned to one edge just left of the line. No mark moves. */
+.fusion .fu-rail-seat.is-expanded .fu-attn { width: 36px; height: 36px; margin: -3px; }
+.fusion .fu-rail-seat.is-expanded .fu-attn svg { width: 19px; height: 19px; }
+.fusion .fu-rail-seat.is-expanded .fu-clear { width: 36px; height: 36px; margin: -3px; }
+.fusion .fu-rail-seat.is-expanded .fu-clear svg { width: 19px; height: 19px; }
+.fusion .fu-rail-seat.is-expanded .fu-bead i { width: 14px; height: 14px; }
+.fusion .fu-rail-seat.is-expanded .fu-cat-dial { width: 42px; height: 42px; margin: -3px; }
+.fusion .fu-rail-seat.is-expanded .fu-cat-core { width: 30px; height: 30px; }
+/* The dial grows under its badge and count: they stay where they were, so a
+   neighbour's badge never meets them. */
+.fusion .fu-rail-seat.is-expanded .fu-cat-badge { right: 0; top: 0; }
+.fusion .fu-rail-seat.is-expanded .fu-cat-n { right: -2px; bottom: -1px; }
+.fusion .fu-rail-seat.is-expanded .fu-cat-core svg { width: 17px; height: 17px; }
+
+.fusion .fu-tag {
+  position: absolute; right: calc(50% + 30px); top: 50%; transform: translateY(-50%);
+  white-space: nowrap; text-align: right; pointer-events: none; opacity: 0; visibility: hidden;
+  transition: opacity var(--duration-fast), visibility 0s linear var(--duration-fast);
+  display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; width: max-content; max-width: calc(var(--fu-open) - 20px);
+}
+.fusion .fu-tag.is-two { flex-direction: column; align-items: flex-end; gap: 0; }
+.fusion .fu-tag.is-row { align-items: center; gap: 8px; }
+.fusion .fu-tag-main { flex: none; color: var(--foreground); }
+.fusion .fu-tag-meta { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-weight: 400; color: var(--muted-foreground); }
+.fusion .fu-rail-seat.is-expanded .fu-tag {
+  opacity: 1; visibility: visible; transition: opacity var(--duration-normal) var(--duration-instant), visibility 0s;
+}
+/* A label belongs to its mark: on the expanded rail it is part of the target. */
+.fusion .fu-rail-seat.is-expanded .fu-tag { pointer-events: auto; }
+/* Reduced motion: the same expansion, instantly. */
+.fusion .fu-rail-seat.is-still *, .fusion .fu-rail-seat.is-still *::before, .fusion .fu-rail-seat.is-still *::after { transition: none; }
+.fusion .fu-rail-seat.is-still .fu-up::before, .fusion .fu-rail-seat.is-still .fu-tools-seat::before { transition: none; }
+@media (prefers-reduced-motion: reduce) { .fusion .fu-up::before, .fusion .fu-tools-seat::before { backdrop-filter: none; background: color-mix(in srgb, var(--background) 97%, transparent); } }
+
+/* A category unfolded beside the rail. */
+.fusion .fu-panel {
+  /* Hangs off the rail's left edge, wherever the rail's expansion puts it. */
+  position: absolute; right: calc(100% + 10px + var(--fu-x)); transition: right var(--duration-normal) var(--fu-ease); width: 330px; max-height: 380px; pointer-events: auto;
+  display: flex; flex-direction: column; border-radius: var(--radius-card); overflow: hidden; background: var(--fu-glass-strong);
+  box-shadow: inset 0 0 0 1px var(--fu-rule), inset 3px 0 0 var(--ink), var(--shadow-elevation-4);
+}
+.fusion .fu-panel-head { display: flex; align-items: center; gap: 8px; padding: 10px 8px 8px 14px; box-shadow: inset 0 -1px 0 var(--fu-rule-soft); flex: none; }
+.fusion .fu-panel-icon { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--ink) 20%, var(--background)); color: var(--ink); flex: none; }
+.fusion .fu-panel-icon svg { width: 13px; height: 13px; }
+.fusion .fu-panel-count { display: inline-flex; align-items: center; gap: 4px; color: var(--foreground); }
+.fusion .fu-panel-list { list-style: none; margin: 0; padding: 4px 6px 6px; overflow-y: auto; overscroll-behavior: contain; }
+.fusion .fu-panel-none { padding: 14px; color: var(--muted-foreground); }
+.fusion .fu-panel-foot { display: flex; justify-content: flex-end; padding: 4px 8px 8px; flex: none; box-shadow: inset 0 1px 0 var(--fu-rule-soft); }
+.fusion .fu-row { display: grid; grid-template-columns: 12px minmax(0, 1fr) 28px; align-items: center; column-gap: 10px; padding: 5px 4px 5px 8px; border-radius: var(--radius-interactive); }
+.fusion .fu-row:hover { background: color-mix(in srgb, var(--foreground) 5%, transparent); }
+.fusion .fu-row-text { min-width: 0; display: flex; flex-direction: column; }
+.fusion .fu-row-label { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.fusion .fu-row-meta { display: flex; flex-wrap: wrap; gap: 0 6px; color: var(--muted-foreground); }
+.fusion .fu-state { flex: none; display: inline-block; }
+
+/* ── the decision stage ────────────────────────────────────────────────── */
+.fusion .fu-scrim { position: absolute; inset: 0; z-index: 2; pointer-events: auto; background: color-mix(in srgb, var(--background) 52%, transparent); backdrop-filter: blur(3px); }
+.fusion .fu-stage {
+  position: absolute; left: 76px; right: 76px; top: 10px; bottom: calc(var(--fu-dock-b) + var(--fu-island-h) + 12px); z-index: 3;
+  display: flex; flex-direction: column; align-items: center; overflow-y: auto; overscroll-behavior: contain; pointer-events: auto;
+}
+.fusion .fu-stage-item { width: min(900px, 100%); margin-block: auto; display: flex; flex-direction: column; gap: 14px; padding: 2px 2px 6px; }
+.fusion .fu-question { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 14px 20px 10px; border-radius: var(--radius-modal); width: min(900px, 100%); }
+.fusion .fu-native { border-radius: var(--radius-card); background: var(--fu-glass-strong); box-shadow: var(--shadow-elevation-3); }
+
+.fusion .fu-answers { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--n, 2), minmax(0, 1fr)); gap: 12px; }
+.fusion .fu-answer-slot { min-width: 0; will-change: transform; }
+.fusion .fu-answer-slot.is-wide { grid-column: 1 / -1; }
+
+/* ── reduced motion: calm, complete, still ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .fusion .fu-mark.is-moving .fu-ring, .fusion .fu-caret.is-moving, .fusion .fu-attn.is-moving, .fusion .fu-face-sm.is-moving { animation: none; }
+  .fusion .fu-glass, .fusion .fu-glass.is-open, .fusion .fu-scrim { backdrop-filter: none; }
+  .fusion .fu-glass { background: color-mix(in srgb, var(--background) 97%, transparent); }
+}
+:root[data-motion='reduce'] .fusion :is(.fu-ring, .fu-caret, .fu-attn, .fu-face-sm) { animation: none; }
