@@ -7,10 +7,7 @@
  * TODO(prototype, 2026-10-07): athena chat fusion - consolidate after the owner picks.
  */
 
-import { ChevronDown } from 'lucide-react';
-import Button from '@/features/shared/components/buttons/Button';
 import { Collapse } from '@/features/shared/components/display/Collapse';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSystemStore } from '@/stores/systemStore';
 import { BrainViewer } from '../../../../../BrainViewer';
 import { ConversationSwitcher } from '../../../../../ConversationSwitcher';
@@ -54,19 +51,13 @@ export function Conversation({
         <IslandMark large working={streaming} gated={gated} />
         <ConversationSwitcher />
         <span className="flex-1" />
-        <FrameKeys look={FRAME_LOOKS.halo} expanded={tall} onExpand={onToggleTall} />
-        <Tooltip content={`${F.foldChat} · ${F.keyEsc}`}>
-          <Button
-            variant="ghost"
-            size="icon-md"
-            className="!rounded-full"
-            onClick={onFold}
-            aria-label={F.foldChat}
-            aria-keyshortcuts="Escape"
-            data-testid="companion-fusion-fold"
-            icon={<ChevronDown className="w-5 h-5" aria-hidden />}
-          />
-        </Tooltip>
+        <FrameKeys
+          look={FRAME_LOOKS.halo}
+          expanded={tall}
+          onExpand={onToggleTall}
+          onFold={onFold}
+          foldShortcut={{ label: F.keyEsc, aria: 'Escape' }}
+        />
       </div>
       <Collapse open={devAvailable && devMode} unmountWhenClosed className="shrink-0">
         <DevOpLedger />

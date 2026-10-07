@@ -107,6 +107,8 @@
 .fusion .fu-gate svg { width: calc(var(--fu-u) * 0.875); height: calc(var(--fu-u) * 0.875); }
 .fusion .fu-cap-row > .fu-kbd { margin-left: 0.4rem; }
 .fusion .fu-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px 6px 14px; flex: none; }
+/* The header's keys: one halo circle style; the rule sets HIDE apart from the fold beside it. */
+.fusion .fu-keys-sep { align-self: center; flex: none; width: 1px; height: 1.25rem; margin: 0 0.25rem; background: var(--fu-rule); }
 .fusion .fu-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
 .fusion .fu-compose { flex: none; padding: 6px 10px 8px; box-shadow: inset 0 1px 0 var(--fu-rule-soft); }
 .fusion .fu-island.is-row .fu-compose { box-shadow: none; padding: 4px 10px 4px 8px; }
