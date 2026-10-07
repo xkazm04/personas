@@ -104,6 +104,26 @@ test('worktree: path, branch from the LOCAL base tip, node_modules junction, jun
   S.updateRun(run, { state: 'released' });
 });
 
+test('worktree: a top-level package\'s own node_modules is junctioned too, and unlinked before removal', () => {
+  // firetv keeps its packages in desk/node_modules and gates with `cd desk && npm run test:rules`
+  fs.mkdirSync(path.join(root, 'pkg'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'pkg', 'package.json'), '{"name":"pkg"}\n');
+  sh(root, 'add', 'pkg/package.json'); sh(root, 'commit', '-q', '-m', 'pkg');
+  fs.mkdirSync(path.join(root, 'pkg', 'node_modules'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'pkg', 'node_modules', 'marker.txt'), 'pkg deps');
+  assert.deepEqual(WT.nodeModulesDirs(root), ['', 'pkg']);
+  const run = plan();
+  const wt = WT.createWorktree(run, {});
+  const link = path.join(wt.worktree, 'pkg', 'node_modules');
+  assert.equal(fs.lstatSync(link).isSymbolicLink(), true, 'pkg/node_modules must be a junction, not a copy');
+  assert.equal(fs.readFileSync(path.join(link, 'marker.txt'), 'utf8'), 'pkg deps');
+  const res = WT.removeWorktree({ ...run, ...wt });
+  assert.equal(res.removed, true);
+  assert.equal(fs.readFileSync(path.join(root, 'pkg', 'node_modules', 'marker.txt'), 'utf8'), 'pkg deps', 'the real pkg/node_modules survives');
+  assert.equal(fs.readFileSync(path.join(root, 'node_modules', 'marker.txt'), 'utf8'), 'real deps', 'the real root node_modules survives');
+  S.updateRun(run, { state: 'released' });
+});
+
 test('worktree: an unmerged branch is never deleted', () => {
   const run = plan();
   const wt = WT.createWorktree(run, {});

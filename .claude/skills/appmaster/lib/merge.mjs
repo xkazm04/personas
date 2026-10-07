@@ -11,7 +11,7 @@ import { findCouncilRunDir, readCouncilResult, copyCouncilRun, reportPayload, bo
 import { loadBrief, updateRun, raiseAsk, queueOutbox, openAsks, updateAsk } from './store.mjs';
 import { readLimit } from './limits.mjs';
 import { requireRun, pidAlive, runFile, markLimitFromRun, awaitHolder } from './worker.mjs';
-import { git, gitTry, revParse, isAncestor, removeWorktree, withBaseWorktree } from './worktree.mjs';
+import { git, gitTry, revParse, isAncestor, removeWorktree, withBaseWorktree, linkNodeModules } from './worktree.mjs';
 import { acquireGateSlot } from './memory.mjs';
 import { resolveRunGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, failuresAreInherited, testFilesIn, narrowCommand, GATE_TIMEOUT_MS } from './gate.mjs';
 
@@ -104,7 +104,7 @@ function hold(run, reason, verdict) {
 
 function worktreeDirty(wt) {
   // the node_modules junction is ours, not the builder's (a repo that forgot to ignore it lists it)
-  return dirtyPaths(wt).filter((p) => p !== 'node_modules' && !p.startsWith('node_modules/'));
+  return dirtyPaths(wt).filter((p) => !/(^|\/)node_modules(\/|$)/.test(p));
 }
 
 function taskTitle(run) {
@@ -165,6 +165,8 @@ export function rebaseOntoBase(run) {
  */
 export function evaluateGates(run, gates, { timeoutMs = GATE_TIMEOUT_MS } = {}) {
   const env = repoEnv(repoOf(run).root);   // the Personas repo's gates share its one cargo target
+  // idempotent: a worktree cut before a package's node_modules was linked gets it now, so a retry can pass
+  try { linkNodeModules(repoOf(run).root, run.worktree); } catch { /* a gate that needs it fails honestly */ }
   const results = runGates(run.worktree, gates, { timeoutMs, env });
   for (const g of Object.keys(results)) {
     const r = results[g];

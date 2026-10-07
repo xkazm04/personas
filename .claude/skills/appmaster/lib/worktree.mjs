@@ -46,10 +46,28 @@ const lstatOrNull = (p) => { try { return fs.lstatSync(p); } catch { return null
 
 // ---------------------------------------------------------------- node_modules junction
 
-/** Junction <worktree>/node_modules -> <root>/node_modules and PROVE it is a link to the real dir. */
-export function linkNodeModules(root, worktree) {
-  const source = path.join(root, 'node_modules'), link = path.join(worktree, 'node_modules');
-  if (!fs.existsSync(source)) return 'none';
+/**
+ * The package dirs whose node_modules a worktree needs, relative to the root: the root itself, and
+ * each top-level directory holding both a package.json and an installed node_modules (2026-10-07:
+ * firetv's gate is `cd desk && npm run test:rules`, and desk/node_modules was never linked, so every
+ * firetv run failed "Run `npm install` in desk/ first").
+ */
+export function nodeModulesDirs(root) {
+  const rels = [''];
+  let entries = [];
+  try { entries = fs.readdirSync(root, { withFileTypes: true }); } catch { return rels; }
+  for (const e of entries) {
+    if (!e.isDirectory() || e.name.startsWith('.') || e.name === 'node_modules') continue;
+    const dir = path.join(root, e.name);
+    if (fs.existsSync(path.join(dir, 'package.json')) && fs.existsSync(path.join(dir, 'node_modules'))) rels.push(e.name);
+  }
+  return rels;
+}
+
+/** Junction one <worktree>/<rel>/node_modules -> <root>/<rel>/node_modules and PROVE it is a link to the real dir. */
+function linkOne(root, worktree, rel) {
+  const source = path.join(root, rel, 'node_modules'), link = path.join(worktree, rel, 'node_modules');
+  if (!fs.existsSync(source) || !fs.existsSync(path.join(worktree, rel))) return false;
   const st = lstatOrNull(link);
   if (st && !st.isSymbolicLink()) throw new Error(`${link} exists and is not a junction; refusing to replace it`);
   if (!st) fs.symlinkSync(fs.realpathSync(source), link, 'junction');
@@ -58,7 +76,34 @@ export function linkNodeModules(root, worktree) {
     if (after && after.isSymbolicLink()) unlinkJunction(link);
     throw new Error(`node_modules at ${link} is not a junction to ${source}`);
   }
-  return 'junction';
+  return true;
+}
+
+/** Junction every package's node_modules into the worktree (nodeModulesDirs); 'junction' when the root's was linked. */
+export function linkNodeModules(root, worktree) {
+  let rootLinked = false;
+  for (const rel of nodeModulesDirs(root)) {
+    const linked = linkOne(root, worktree, rel);
+    if (rel === '') rootLinked = linked;
+  }
+  return rootLinked ? 'junction' : 'none';
+}
+
+/**
+ * Unlink every node_modules junction in a worktree (the nested ones too), and assert each real
+ * node_modules survived. Always before any `git worktree remove`: a forced remove must never meet a junction.
+ */
+export function unlinkNodeModules(root, worktree) {
+  let any = false;
+  for (const rel of nodeModulesDirs(root)) {
+    const link = path.join(worktree, rel, 'node_modules');
+    const source = path.join(root, rel, 'node_modules');
+    const hadSource = fs.existsSync(source);
+    const st = lstatOrNull(link);
+    if (st && st.isSymbolicLink()) any = unlinkJunction(link) || any;
+    if (hadSource && !fs.existsSync(source)) throw new Error(`the real node_modules at ${source} vanished; stopping before any git removal`);
+  }
+  return any;
 }
 
 /** Remove a junction itself, never what it points at. */
@@ -114,12 +159,7 @@ export function removeWorktree(run) {
   const worktree = run.worktree;
   if (worktree) {
     if (!isUnder(worktree, WORKTREE_ROOT)) throw new Error(`refusing to remove ${worktree}: not under ${WORKTREE_ROOT}`);
-    const source = path.join(root, 'node_modules');
-    const hadSource = fs.existsSync(source);
-    const link = path.join(worktree, 'node_modules');
-    const st = lstatOrNull(link);
-    if (st && st.isSymbolicLink()) out.junction = unlinkJunction(link);
-    if (hadSource && !fs.existsSync(source)) throw new Error(`the real node_modules at ${source} vanished; stopping before any git removal`);
+    out.junction = unlinkNodeModules(root, worktree);
     if (fs.existsSync(worktree)) {
       const r = gitTry(root, ['worktree', 'remove', '--force', worktree]);
       if (!r.ok) throw new Error(`git worktree remove ${worktree}: ${r.err}`);
@@ -145,13 +185,13 @@ export function withBaseWorktree(run, fn) {
   const dir = path.join(WORKTREE_ROOT, run.slug, `base-${shortId(run.runId)}`);
   if (!isUnder(dir, WORKTREE_ROOT)) throw new Error(`base worktree ${dir} is not under ${WORKTREE_ROOT}`);
   fs.mkdirSync(path.dirname(dir), { recursive: true });
-  if (fs.existsSync(dir)) { try { unlinkJunction(path.join(dir, 'node_modules')); } catch { /* none */ } gitTry(root, ['worktree', 'remove', '--force', dir]); }
+  if (fs.existsSync(dir)) { unlinkNodeModules(root, dir); gitTry(root, ['worktree', 'remove', '--force', dir]); }
   git(root, ['worktree', 'add', '--detach', dir, run.baseSha]);
   try {
     linkNodeModules(root, dir);
     return fn(dir);
   } finally {
-    try { unlinkJunction(path.join(dir, 'node_modules')); } catch { /* already gone */ }
+    unlinkNodeModules(root, dir);
     gitTry(root, ['worktree', 'remove', '--force', dir]);
     gitTry(root, ['worktree', 'prune']);
   }
