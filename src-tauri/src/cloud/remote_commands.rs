@@ -1074,6 +1074,17 @@ async fn process_rows(
     prompts
 }
 
+/// Most rows one poll reads. Bounds what a flooded queue costs a tick; the 5 s
+/// cadence drains the rest, oldest first.
+const POLL_BATCH_LIMIT: usize = 50;
+
+/// The poll's GET: this device's pending rows, oldest first, one bounded batch.
+fn poll_path(device: &str) -> String {
+    format!(
+        "pending_commands?status=eq.pending&target_device_id=eq.{device}&order=requested_at.asc&{SELECT}&limit={POLL_BATCH_LIMIT}"
+    )
+}
+
 /// One poll pass: resolve or surface every pending command for this device.
 async fn poll_once(
     app: &AppHandle,
@@ -1088,10 +1099,7 @@ async fn poll_once(
     let pool = state.db.clone();
     let device = cursor::resolve_device_id(&pool);
 
-    let path = format!(
-        "pending_commands?status=eq.pending&target_device_id=eq.{device}&order=requested_at.asc&{SELECT}"
-    );
-    let cmds: Vec<CommandRow> = client.get(&path).await?;
+    let cmds: Vec<CommandRow> = client.get(&poll_path(&device)).await?;
 
     // Web-side unpair requests are honoured BEFORE any signed command of this
     // poll is judged. If that check cannot run, signed rows wait for the next
@@ -1496,6 +1504,14 @@ mod tests {
     fn a_row_that_was_never_shown_is_refused() {
         let shown = HashMap::new();
         assert!(check_unchanged_since_shown(&shown, &card_row()).is_err());
+    }
+
+    #[test]
+    fn the_poll_reads_a_bounded_oldest_first_batch() {
+        let path = poll_path("dev-1");
+        assert!(path.starts_with("pending_commands?status=eq.pending&target_device_id=eq.dev-1"));
+        assert!(path.contains("order=requested_at.asc"));
+        assert!(path.ends_with("&limit=50"), "{path}");
     }
 
     #[test]
