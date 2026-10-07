@@ -677,7 +677,12 @@ if (process.argv[1] && samePath(resolve(process.argv[1]), SELF)) {
   }
   log(`RUSTC_WRAPPER=${result.bin}`);
   if (nothingChanged) log(`no-op: nothing to install, nothing to start`);
-  log(`a child cannot set its parent's env: import ensureSccache() from the process that spawns cargo, or eval \`--env\``);
+  // A child cannot set its parent's env, so this process cannot wrap the cargo that follows it.
+  // That gap is already closed for the normal path: cargo-run.mjs READS the handoff file written
+  // above, so every repo-launched cargo picks the wrapper up with no further wiring. This line is
+  // for anyone invoking cargo outside that wrapper.
+  log(`handoff written — scripts/build/cargo-run.mjs reads it, so every repo-launched cargo is wrapped`);
+  log(`invoking cargo directly instead? a child cannot set its parent's env: import ensureSccache(), or eval \`--env\``);
   process.exit(0);
 }
 

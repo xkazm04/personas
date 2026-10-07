@@ -342,7 +342,7 @@ so that a directory left behind by that experiment, or by a future one, cannot
 become a second unbounded tree.
 
 The sanctioned way to stop every worktree recompiling the same dependencies is
-[sccache](#sccache--one-compilation-cache-every-worktree-shares), below.
+[sccache](#sccache--a-compilation-cache-that-survives-a-wiped-target-dir), below.
 
 A machine-wide `CARGO_TARGET_DIR` remains available per-machine if you build
 worktrees one at a time:
@@ -354,20 +354,44 @@ export CARGO_TARGET_DIR=/c/Users/<you>/.cargo-target/personas
 Note that a target outside the repo is **not** discovered, so it is not counted
 against the budget.
 
-## sccache — one compilation cache every worktree shares
+## sccache — a compilation cache that survives a wiped target dir
 
 `npm run ensure:sccache` (`scripts/build/ensure-sccache.mjs`) provisions
 **sccache 0.18.0**, pinned, SHA-256-verified against both a committed digest and
 the release's published `.sha256` sidecar, into `~/.cargo/bin/`. It then exports
 `RUSTC_WRAPPER`. `scripts/build/cargo-run.mjs` reads that and never clobbers it.
 
-This is the sanctioned answer to the problem a shared
+sccache has no `Fresh`-against-the-wrong-code hole, because it keys on the
+preprocessed input, the compiler binary and the full flag set rather than on an
+mtime.
+
+### It does NOT share across worktrees — measured, 2026-10-07, same day it landed
+
+This was adopted to solve the problem a shared
 [`build.build-dir`](#sharing-build-output-across-worktrees) was rejected for: a
 fresh worktree's first `cargo build --lib` measured **490 s and 7.0 GB**
 ([build-measurement.md](./build-measurement.md)), nearly all of it dependency
-crates an adjacent worktree had compiled minutes earlier. sccache has no
-`Fresh`-against-the-wrong-code hole, because it keys on the preprocessed input,
-the compiler binary and the full flag set rather than on an mtime.
+crates an adjacent worktree had compiled minutes earlier. **It does not solve
+that.** Three runs of `cargo check -p personas-macros` on this host, reading
+`sccache --show-stats` between each:
+
+| second cold build of the identical crates | hits | wall |
+|---|---|---|
+| a **different** `CARGO_TARGET_DIR` path | **0** of 12 | 5.74 s |
+| the **same** path, contents deleted | **6**, 25% | 6.05 s → **2.94 s** |
+
+**sccache's Rust cache key includes the absolute `--extern` paths to the
+dependency rlibs**, so a build in a different target directory misses every
+object. Every worktree here uses its own path (`target-wt`, `target-wt1`, under
+its own parent), which is exactly the case that misses — and the only way to make
+the paths identical is the shared build-dir that was rejected as unsafe.
+
+So what it actually buys, and the claim to make instead: **recovery from a wiped
+or cleaned target dir within one checkout, measured at ~2x on this sample.** That
+is worth having — `clean:ort` is a ~5 min recompile and `clean:rust` ~10 min, and
+this repo reaches for both routinely — but it is not cross-worktree sharing, and
+the 490 s figure above is NOT the number it improves. A cache with a measured 0%
+hit rate is pure cost; that is why this table is here rather than a claim.
 
 ### The budget: 20 GiB, and what prunes it
 
