@@ -2144,8 +2144,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 137,
-        "matches": 277
+        "files": 136,
+        "matches": 276
       },
       "floor": 4000
     },
@@ -5285,8 +5285,8 @@
         "description": "A <button> whose body opens another activator (<button>, <Button>, <a href>) before its own </button>. Invalid HTML: the inner control is not independently reachable by keyboard in several AT/browser combinations, and it survives only on an e.stopPropagation() no test covers. The opening tag is matched with strings and {…} attribute expressions treated as OPAQUE — a bare `>` inside className={cond ? 'a' : 'b'} or onClick={() => i > n} is arithmetic, never a tag close. Fix: make the row a <div> with the affordances as siblings, or hoist the inner control out."
       },
       "baseline": {
-        "files": 6,
-        "matches": 6
+        "files": 5,
+        "matches": 5
       },
       "floor": 1500
     },
@@ -5640,8 +5640,8 @@
         }
       ],
       "baseline": {
-        "files": 843,
-        "matches": 3949
+        "files": 842,
+        "matches": 3945
       },
       "floor": 5000
     },
@@ -5826,8 +5826,8 @@
         }
       ],
       "baseline": {
-        "files": 698,
-        "matches": 1708
+        "files": 697,
+        "matches": 1706
       },
       "floor": 5000
     }
