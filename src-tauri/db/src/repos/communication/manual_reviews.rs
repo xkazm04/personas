@@ -339,7 +339,11 @@ pub fn find_by_report_id(
         // parsed JSON, so a context that merely MENTIONS the id never counts
         // and malformed JSON elsewhere in the table cannot fail the query.
         let mut stmt = conn.prepare(
-            "SELECT * FROM persona_manual_reviews
+            "SELECT id, execution_id, persona_id, title, description, severity,
+                    context_data, suggested_actions, status, reviewer_notes,
+                    resolved_at, created_at, updated_at, use_case_id,
+                    assignment_id, step_id
+             FROM persona_manual_reviews
              WHERE context_data LIKE '%reportId%'
              ORDER BY created_at DESC",
         )?;
