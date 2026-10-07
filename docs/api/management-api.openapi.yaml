@@ -97,6 +97,39 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /api/execute:
+    post:
+      summary: Execute a persona, named in the body (non-blocking)
+      description: |
+        The web dashboard's call shape. Requires broad `personas:execute`; a
+        per-persona grant (`personas:execute:persona:{id}`) is NOT enough here
+        (the path names no persona), so use `/api/execute/{personaId}` for it.
+        Runs the same checks as `/api/execute/{personaId}`, in the same order:
+        404 unknown persona, 400 disabled persona, then the project-binding
+        check. The run's stored input is the raw `prompt` text.
+        Answers `ExecutionAck` `{executionId, status: "queued"}` in the usual
+        envelope.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [personaId, prompt]
+              properties:
+                personaId: { type: string }
+                prompt: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExecutionAckResult" }
+        "400": { description: "`invalid_body` — personaId or prompt missing or empty; or the persona is disabled; or a binding refusal" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Persona not found, or `project_not_found`" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
   /api/execute/{personaId}:
     post:
       summary: Execute a persona (non-blocking)
@@ -1111,6 +1144,19 @@ components:
           properties:
             execution_id: { type: string }
             status: { type: string, example: queued }
+    ExecutionAck:
+      type: object
+      required: [executionId, status]
+      properties:
+        executionId: { type: string }
+        status: { type: string, enum: [queued, cancelled] }
+    ExecutionAckResult:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { $ref: "#/components/schemas/ExecutionAck" }
+        error: { type: string }
+        code: { type: string }
     BuildStart:
       type: object
       properties:

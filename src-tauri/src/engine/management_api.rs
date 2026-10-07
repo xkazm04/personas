@@ -59,6 +59,10 @@ mod kp_gig;
 mod operator;
 /// `/api/dev/*` — the Ship layer (milestones, goals, scope). See `ship.rs`.
 mod ship;
+/// `POST /api/execute` (body form), `POST /api/executions/{id}/cancel` and
+/// `GET /api/status` — the shapes the web dashboard needs. See
+/// `web_dashboard.rs`.
+mod web_dashboard;
 /// `/api/dev/workspaces`, `POST /api/dev/projects`, and the hire `placement`
 /// check — workspaces and projects over HTTP. See `workspaces.rs`.
 mod workspaces;
@@ -89,6 +93,7 @@ pub fn management_router(state: ManagementState) -> Router {
         .route("/api/personas/{persona_id}", get(get_persona))
         // Executions
         .route("/api/execute/{persona_id}", post(execute_persona))
+        .route("/api/execute", post(web_dashboard::post_execute))
         .route("/api/executions", get(list_executions))
         .route("/api/executions/{id}", get(get_execution))
         // Lab
@@ -1197,74 +1202,14 @@ async fn execute_persona(
     Path(persona_id): Path<String>,
     Json(input): Json<ExecuteInput>,
 ) -> impl IntoResponse {
-    let persona = match persona_repo::get_by_id(&state.pool, &persona_id) {
-        Ok(p) => p,
-        Err(_) => return err_json(StatusCode::NOT_FOUND, "Persona not found").into_response(),
-    };
-
-    if !persona.enabled {
-        return err_json(StatusCode::BAD_REQUEST, "Persona is disabled").into_response();
-    }
-
-    // Project-bound execution: `input_data._projectId` names the folder this
-    // run executes in. Checked synchronously, BEFORE anything is queued — the
-    // key that may run this persona may only point it at a project in the
-    // persona's own workspace (`personas_db::execution_project`). The runner
-    // re-checks before it picks the working directory.
-    if let Err(e) = crate::db::execution_project::bound_project_for_input(
-        &state.pool,
-        persona.home_team_id.as_deref(),
-        input.input_data.as_ref(),
-    ) {
-        let status =
-            StatusCode::from_u16(e.http_status()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return err_code(status, e.code(), &e.message()).into_response();
-    }
-
-    // Create execution record
     let input_str = input.input_data.as_ref().map(|v| v.to_string());
-    let execution = match exec_repo::create(&state.pool, &persona_id, None, input_str, None, None) {
-        Ok(e) => e,
-        Err(e) => {
-            return err_json(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                &format!("Failed to create execution: {e}"),
-            )
-            .into_response()
-        }
-    };
-
-    // Get tools
-    let tools = tool_repo::get_tools_for_persona(&state.pool, &persona_id).unwrap_or_default();
-
-    // Start via engine
-    let app_state: tauri::State<'_, Arc<crate::AppState>> = match state.app.try_state() {
-        Some(s) => s,
-        None => {
-            return err_json(StatusCode::INTERNAL_SERVER_ERROR, "App state not available")
-                .into_response()
-        }
-    };
-
-    match app_state
-        .engine
-        .start_execution(
-            state.app.clone(),
-            state.pool.clone(),
-            execution.id.clone(),
-            persona,
-            tools,
-            input.input_data,
-            None,
-        )
-        .await
-    {
-        Ok(()) => ok_json(serde_json::json!({
-            "execution_id": execution.id,
+    match web_dashboard::start_persona_run(&state, &persona_id, input_str, input.input_data).await {
+        Ok(execution_id) => ok_json(serde_json::json!({
+            "execution_id": execution_id,
             "status": "queued",
         }))
         .into_response(),
-        Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+        Err(refusal) => refusal.into_response(),
     }
 }
 
@@ -5421,6 +5366,24 @@ mod tests {
             &scopes(&["personas:read"])
         )
         .is_err());
+    }
+
+    #[test]
+    fn authorize_body_execute_needs_broad_execute_never_a_per_persona_grant() {
+        // `POST /api/execute` names its persona in the body, so the path
+        // carries no persona to match a per-persona grant against: only the
+        // broad scope passes, and the body form can never run a persona
+        // outside a per-persona grant.
+        let per_persona = scopes(&["personas:execute:persona:p1"]);
+        assert!(authorize(&Method::POST, "/api/execute", &per_persona).is_err());
+        assert!(authorize(&Method::POST, "/api/execute", &scopes(&["personas:read"])).is_err());
+        assert!(authorize(&Method::POST, "/api/execute", &[]).is_err());
+        assert!(authorize(
+            &Method::POST,
+            "/api/execute",
+            &scopes(&["personas:execute"])
+        )
+        .is_ok());
     }
 
     /// The exact scope set a kp key holds after one approved hire (§10.8):
