@@ -574,12 +574,18 @@ fn refuse_paused_for_paired(
 }
 
 /// The `error_message` a failure writes: a short token for the conditions
-/// the web renders (`not_found`, `project_off: <name>`), the message otherwise.
+/// the web renders (`not_found`, `project_off: <name>`). Every other error
+/// writes the closed token `internal_error`: its text can carry paths, SQL or
+/// upstream bodies, and the cloud row is readable beyond this machine. The full
+/// error is logged locally.
 fn failure_message(e: &AppError) -> String {
     match e {
         AppError::NotFound(_) => "not_found".to_string(),
         AppError::Validation(m) => m.clone(),
-        other => other.to_string(),
+        other => {
+            tracing::warn!(error = %other, "remote command failed; the cloud row gets `internal_error`");
+            "internal_error".to_string()
+        }
     }
 }
 
@@ -1512,6 +1518,24 @@ mod tests {
         assert!(path.starts_with("pending_commands?status=eq.pending&target_device_id=eq.dev-1"));
         assert!(path.contains("order=requested_at.asc"));
         assert!(path.ends_with("&limit=50"), "{path}");
+    }
+
+    #[test]
+    fn a_failure_writes_a_closed_token_not_the_error_text() {
+        assert_eq!(
+            failure_message(&AppError::NotFound("x".into())),
+            "not_found"
+        );
+        assert_eq!(
+            failure_message(&AppError::Validation("persona_paused".into())),
+            "persona_paused"
+        );
+        let leaky = AppError::Internal("open /home/me/secret.db: no such table".into());
+        assert_eq!(failure_message(&leaky), "internal_error");
+        assert_eq!(
+            failure_message(&AppError::Auth("token abc".into())),
+            "internal_error"
+        );
     }
 
     #[test]
