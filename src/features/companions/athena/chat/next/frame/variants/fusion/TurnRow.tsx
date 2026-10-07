@@ -15,7 +15,7 @@
  * TODO(prototype, 2026-10-07): athena chat fusion - consolidate after the owner picks.
  */
 
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import type { BrainKind } from '@/api/companion';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -35,6 +35,26 @@ import { FUSION_COPY as F } from './copy';
 import { MachineFold } from './MachineFold';
 
 const NO_JOBS: string[] = [];
+
+/** Her reply this long after the ask gets a time of its own; sooner, the ask's time says it. */
+const SLOW_REPLY_MS = 60_000;
+
+/** The gutter: who, and when, on ONE line. */
+function Who({ when, sticky = false, children }: { when: string | null; sticky?: boolean; children: ReactNode }) {
+  return (
+    <span className={`fu-who${sticky ? ' is-sticky' : ''}`}>
+      {children}
+      {when && (
+        <>
+          <span className="fu-sep" aria-hidden>
+            ·
+          </span>
+          <RelativeTime timestamp={when} format="elapsed" className="typo-caption fu-when tabular-nums" />
+        </>
+      )}
+    </span>
+  );
+}
 
 const TRIGGER: Record<Turn['trigger'], string> = {
   user: F.athena,
@@ -93,15 +113,16 @@ export const TurnRow = memo(function TurnRow({
   const summary = useAthenaStore((s) => (last ? s.turnSummaryByEpisodeId[last.id] : undefined));
   const said = turn.asides.length > 0 || turn.replies.length > 0 || turn.machine.length > 0;
   if (!turn.ask && !said) return null;
+  const replyAt = last?.createdAt ?? turn.createdAt;
+  const slow = turn.ask ? Date.parse(replyAt) - Date.parse(turn.ask.createdAt) >= SLOW_REPLY_MS : true;
 
   return (
     <section className="fu-turn animate-fade-slide-in" data-testid="companion-fusion-turn">
       {turn.ask && (
         <>
-          <span className="fu-who">
+          <Who when={turn.ask.createdAt}>
             <span className="typo-label text-accent">{F.you}</span>
-            <RelativeTime timestamp={turn.ask.createdAt} className="typo-caption fu-when tabular-nums" />
-          </span>
+          </Who>
           <p className="fu-ask typo-body-lg" data-fusion-ask="">
             {turn.ask.content}
           </p>
@@ -109,15 +130,14 @@ export const TurnRow = memo(function TurnRow({
       )}
       {said && (
         <>
-          <span className="fu-who">
+          <Who when={slow ? replyAt : null} sticky>
             <span className="fu-who-her">
               <span className="fu-face-sm" aria-hidden />
               <span className={`typo-label ${turn.trigger === 'proactive' ? 'text-brand-purple' : 'text-primary'}`}>
                 {TRIGGER[turn.trigger]}
               </span>
             </span>
-            {!turn.ask && <RelativeTime timestamp={turn.createdAt} className="typo-caption fu-when tabular-nums" />}
-          </span>
+          </Who>
           <div className="fu-said">
             {turn.asides.map((a, i) => (
               <p key={i} className="fu-aside typo-body">

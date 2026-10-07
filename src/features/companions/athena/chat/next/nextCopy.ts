@@ -11,7 +11,7 @@ export const NEXT_COPY = {
   you: 'You',
   athena: 'Athena',
   autonomousTurn: 'On her own',
-  proactiveTurn: 'She reached out',
+  proactiveTurn: 'Reached out',
   fleetTurn: 'Fleet',
   idle: 'Idle',
   working: 'Working',

@@ -27,8 +27,10 @@ export const FUSION_COPY = {
   you: 'You',
   athena: 'Athena',
   earlier: (n: number) => (n === 1 ? '1 earlier message' : `${n} earlier messages`),
-  machine: (n: number) => (n === 1 ? '1 thing she looked up or heard' : `${n} things she looked up or heard`),
-  hideMachine: 'Hide what she looked up',
+  steps: (n: number) => (n === 1 ? '1 step' : `${n} steps`),
+  // The fold chip's one stable name (its aria-expanded carries open or closed); it contains the visible "N steps".
+  machine: (n: number) => (n === 1 ? '1 step: something she looked up or heard' : `${n} steps: things she looked up or heard`),
+  transcript: 'Conversation with Athena',
 
   // The rail.
   rail: 'What Athena manages',

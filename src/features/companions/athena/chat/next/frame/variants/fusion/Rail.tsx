@@ -25,13 +25,13 @@
 
 import { AnimatePresence } from 'framer-motion';
 import { useRef, useState } from 'react';
-import { Hand } from 'lucide-react';
+import { Check, Hand } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { AthenaToolbar } from '../../../../../AthenaToolbar';
 import type { WorkItem } from '../../../useWorkforce';
 import { AttentionBeads } from './AttentionBeads';
-import { CategoryCircle, countText } from './CategoryCircle';
+import { CategoryCircle } from './CategoryCircle';
 import { CategoryPanel } from './CategoryPanel';
 import { FUSION_COPY as F } from './copy';
 import type { CategoryKey, ManagedCategory } from './useManaged';
@@ -98,27 +98,23 @@ export function Rail({
       >
         <span className={`fu-line${n ? ' is-waiting' : ''}`} aria-hidden />
         <div className="fu-up" {...up.zoneProps} {...up.handlers}>
-        {/* Nothing waiting: no count and no control. The one all-clear mark is the
-            attention circle below, and a quiet rail has nothing to open. */}
-        {n > 0 && (
-          <Button
-            variant="ghost"
-            className="fu-count"
-            onClick={() => onOpenItem(null)}
-            aria-keyshortcuts="Alt+W"
-            aria-label={`${F.pendingNamed(n)}. ${F.openQueue}`}
-            data-testid="companion-fusion-count"
-          >
-            <span className={`typo-data-lg fu-count-n${countText(n).length > 2 ? ' is-wide' : ''}`}>{countText(n)}</span>
-            {/* A glyph, not a word: "waiting" does not fit a 54px rail, and a hand
-                says "on you" without colour. The words stand beside it when the rail expands. */}
-            <Hand className="fu-count-g" aria-hidden />
-            <span className="fu-tag is-row" aria-hidden>
-              <span className="typo-label fu-tag-main">{F.pendingLabel(n)}</span>
-              <span className="fu-kbd typo-caption">{F.keyWork}</span>
-            </span>
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          className={`fu-count${n ? '' : ' is-quiet'}`}
+          onClick={() => onOpenItem(null)}
+          aria-keyshortcuts="Alt+W"
+          aria-label={`${n ? F.pendingNamed(n) : F.noneWaiting}. ${F.openQueue}`}
+          data-testid="companion-fusion-count"
+        >
+          <span className="typo-data-lg fu-count-n">{n}</span>
+          {/* A glyph, not a word: "waiting" does not fit a 54px rail, and a hand
+              says "on you" without colour. The words stand beside it when the rail expands. */}
+          {n ? <Hand className="fu-count-g" aria-hidden /> : <Check className="fu-count-g" aria-hidden />}
+          <span className="fu-tag is-row" aria-hidden>
+            <span className="typo-label fu-tag-main">{n ? F.pendingLabel(n) : F.noneWaiting}</span>
+            <span className="fu-kbd typo-caption">{F.keyWork}</span>
+          </span>
+        </Button>
         <AttentionBeads items={items} onOpen={onOpenItem} cap={beadCap} />
         <span className="fu-rule" aria-hidden />
         <div className="fu-cats" data-testid="companion-fusion-categories">

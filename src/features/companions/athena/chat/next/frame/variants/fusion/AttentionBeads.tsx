@@ -5,8 +5,7 @@
  * black knock-out border; it breathes while it waits (gated on reduced
  * motion). The rest queue under it as small beads in their kind's colour.
  * Each bead opens its own item; the big one opens the first. With nothing
- * waiting there is nothing to open: the circle becomes the rail's ONE
- * all-clear mark, a still, hollow check that is not a control. When the
+ * waiting, the circle goes hollow and still with a check inside. When the
  * rail reads out loud, each one grows in place and says its kind and a short
  * label of its title beside it (that label replaces the old tooltip).
  *
@@ -69,31 +68,28 @@ export function AttentionBeads({
   const first = items[0] ?? null;
   const rest = items.slice(1, 1 + Math.min(cap, SHOWN - 1));
   const over = items.length - 1 - rest.length;
-  const Glyph = first ? KIND_GLYPH[first.kind] : null;
+  const Glyph = first ? KIND_GLYPH[first.kind] : Check;
 
   return (
     <div className="fu-beads" data-testid="companion-fusion-beads">
-      {first ? (
-        <Button
-          variant="ghost"
-          className={`fu-attn${shouldAnimate ? ' is-moving' : ''}`}
-          style={{ ['--c' as string]: KIND_VAR[first.kind] }}
-          onClick={() => onOpen(first.id)}
-          aria-label={`${N.kind[first.kind]}: ${first.title}. ${F.openQueue}`}
-          data-testid="companion-fusion-attention"
-          data-fusion-anchor=""
-        >
-          {Glyph && <Glyph aria-hidden />}
+      <Button
+        variant="ghost"
+        className={`fu-attn${first ? '' : ' is-quiet'}${first && shouldAnimate ? ' is-moving' : ''}`}
+        style={first ? { ['--c' as string]: KIND_VAR[first.kind] } : undefined}
+        onClick={() => onOpen(first?.id ?? null)}
+        aria-label={first ? `${N.kind[first.kind]}: ${first.title}. ${F.openQueue}` : F.noneWaiting}
+        data-testid="companion-fusion-attention"
+        data-fusion-anchor=""
+      >
+        <Glyph aria-hidden />
+        {first ? (
           <Tag kind={N.kind[first.kind]} title={first.title} />
-        </Button>
-      ) : (
-        <span className="fu-clear" role="img" aria-label={F.noneWaiting} data-testid="companion-fusion-attention" data-fusion-anchor="">
-          <Check aria-hidden />
+        ) : (
           <span className="fu-tag" aria-hidden>
             <span className="typo-label fu-tag-meta">{F.noneWaiting}</span>
           </span>
-        </span>
-      )}
+        )}
+      </Button>
       {rest.map((it) => (
         <Button
           key={it.id}

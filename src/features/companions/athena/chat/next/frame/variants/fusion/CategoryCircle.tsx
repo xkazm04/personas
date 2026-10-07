@@ -4,8 +4,7 @@
  * items' states as arcs (working, waits on you, stuck, idle - each arc as long
  * as its share), its count beneath. A corner badge carries the urgent state
  * as a SHAPE too: a raised hand when something in it waits on you, a stop
- * sign when something is stuck. A category with nothing in it is quiet: its
- * icon only, no zero pill. Pressing it (click, Enter, Space) unfolds the
+ * sign when something is stuck. Pressing it (click, Enter, Space) unfolds the
  * category's panel beside the rail. When the rail reads out loud (hover or
  * keyboard focus anywhere on it) the circle grows in place and its name and
  * its count by state stand beside it; that label replaces the old tooltip.
@@ -18,11 +17,6 @@ import { Hand, OctagonAlert } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { FUSION_COPY as F } from './copy';
 import { STATE_INK, STATE_ORDER, type ManagedCategory } from './useManaged';
-
-/** The id of a category's unfolded panel: the circle's `aria-controls` points at it. */
-export const panelId = (key: string) => `fu-panel-${key}`;
-/** Three characters at most, so a count never outgrows its pill or the glass. */
-export const countText = (n: number) => (n > 99 ? '99+' : String(n));
 
 const SIZE = 36;
 const R = 16;
@@ -85,7 +79,6 @@ export const CategoryCircle = forwardRef<
         // A keyboard press (detail 0) hands the panel focus; a click leaves it on the circle.
         onClick={(e) => (e.detail === 0 ? onKeyToggle() : onToggle())}
         aria-expanded={open}
-        aria-controls={open ? panelId(c.key) : undefined}
         aria-label={describe(c)}
         data-testid={`companion-fusion-cat-${c.key}`}
       >
@@ -105,7 +98,7 @@ export const CategoryCircle = forwardRef<
               <OctagonAlert />
             </span>
           ) : null}
-          {!quiet && <span className="typo-caption fu-cat-n">{countText(c.items.length)}</span>}
+          <span className="typo-caption fu-cat-n">{c.items.length}</span>
         </span>
         <span className="fu-tag is-two" aria-hidden>
           <span className="typo-label fu-tag-main">{c.label}</span>
