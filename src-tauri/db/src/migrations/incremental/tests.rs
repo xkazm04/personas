@@ -2388,3 +2388,83 @@ fn council_runs_gain_a_mode_and_count_rounds_per_mode() {
         .unwrap();
     assert_eq!(left, (0, 0));
 }
+
+/// A store that took the `mode` step from an intermediate build, without the
+/// decisions reorder, has the runs table newer than the decisions table - and
+/// a decided subject it cannot delete. The ordering step repairs exactly that,
+/// keyed on the order itself.
+#[test]
+fn the_decisions_table_is_moved_after_the_runs_table_when_it_is_not() {
+    let pool = crate::init_test_db().unwrap();
+    let conn = pool.get().unwrap();
+    // Recreate the runs table (already on the new shape) so it is the newest:
+    // what a runs-only rebuild leaves behind.
+    let ddl: String = conn
+        .query_row(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_council_runs'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    conn.execute_batch(&format!(
+        "DROP TABLE dev_council_runs;
+         {};
+         CREATE UNIQUE INDEX IF NOT EXISTS idx_dev_council_runs_run_dir ON dev_council_runs(run_dir);",
+        ddl
+    ))
+    .unwrap();
+    let order = |conn: &Connection| -> Vec<String> {
+        let mut stmt = conn
+            .prepare(
+                "SELECT name FROM sqlite_master WHERE type='table'
+                   AND name IN ('dev_council_runs','dev_council_decisions') ORDER BY rowid",
+            )
+            .unwrap();
+        let rows = stmt.query_map([], |r| r.get::<_, String>(0)).unwrap();
+        rows.collect::<Result<Vec<_>, _>>().unwrap()
+    };
+    assert_eq!(
+        order(&conn),
+        vec!["dev_council_decisions", "dev_council_runs"]
+    );
+
+    conn.execute_batch(
+        "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/council-p1');
+         INSERT INTO dev_council_subjects (id, project_id, kind, slug, title, created_at, updated_at)
+            VALUES ('s1', 'p1', 'architecture', 'store', 'Store', datetime('now'), datetime('now'));
+         INSERT INTO dev_council_runs (id, subject_id, mode, round_no, rubric_version, trust_state,
+                outcome, overall, coverage, head_sha, span_digest, spanned_paths_json,
+                hard_failures_json, must_address_json, summary, run_dir, ingested_at)
+            VALUES ('r1', 's1', 'full', 1, 'architecture-v1', 'uncalibrated', 'ready', 0.8, 1.0,
+                'abc', 'd', '[]', '[]', '[]', 'clean', '/runs/r1', datetime('now'));
+         INSERT INTO dev_council_decisions (id, subject_id, run_id, decision, saw_digest, decided_at)
+            VALUES ('d1', 's1', 'r1', 'approved', 'dig', datetime('now'));",
+    )
+    .unwrap();
+    assert!(
+        conn.execute("DELETE FROM dev_council_subjects WHERE id = 's1'", [])
+            .is_err(),
+        "the broken order trips the RESTRICT - otherwise this test proves nothing"
+    );
+
+    run_incremental(&conn).unwrap();
+    assert_eq!(
+        order(&conn),
+        vec!["dev_council_runs", "dev_council_decisions"]
+    );
+    let kept: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM dev_council_decisions WHERE id = 'd1'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(kept, 1, "the reorder copies the decisions");
+    conn.execute("DELETE FROM dev_council_subjects WHERE id = 's1'", [])
+        .expect("a decided subject is deletable once decisions load after runs");
+    run_incremental(&conn).unwrap();
+    assert_eq!(
+        order(&conn),
+        vec!["dev_council_runs", "dev_council_decisions"]
+    );
+}

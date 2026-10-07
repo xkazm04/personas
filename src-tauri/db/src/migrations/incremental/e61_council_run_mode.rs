@@ -22,16 +22,21 @@
 //! scenario results all reference this table, and dropping it with them on
 //! would cascade (or, for decisions, RESTRICT) through every one.
 //!
-//! **`dev_council_decisions` is rebuilt right after it, unchanged, and that is
-//! load-bearing.** Deleting a subject cascades into BOTH its runs and its
-//! decisions, while a decision pins its run with `ON DELETE RESTRICT`. SQLite
-//! runs a parent's cascade actions newest-child-table first, so the store only
-//! ever worked because `dev_council_decisions` was created after
-//! `dev_council_runs`: the decisions went first and the RESTRICT found nothing
-//! to protect. Recreating the runs table alone made it the newest child, the
-//! runs went first, and deleting a decided subject - or the project above it -
-//! failed on the RESTRICT (caught by `e43_council`'s own test). Recreating the
-//! decisions table after it restores the order the schema depends on.
+//! **A second step keeps `dev_council_decisions` NEWER than `dev_council_runs`,
+//! and that is load-bearing.** Deleting a subject cascades into BOTH its runs
+//! and its decisions, while a decision pins its run with `ON DELETE RESTRICT`.
+//! SQLite runs a parent's cascade actions newest-child-table first (the schema
+//! is loaded in `sqlite_master` order and each foreign key is prepended to its
+//! parent's list), so the store only ever worked because the decisions table
+//! was created after the runs table: the decisions went first and the RESTRICT
+//! found nothing to protect. Recreating the runs table made it the newest
+//! child, the runs went first, and deleting a decided subject - or the project
+//! above it - failed on the RESTRICT (caught by `e43_council`'s own test).
+//!
+//! The second step is its own guarded step, keyed on the ORDER rather than on
+//! the `mode` column, so it also repairs a store that already took the first
+//! step without it (the operator's dev database did, on 2026-10-07, from an
+//! intermediate build of this file).
 
 use rusqlite::Connection;
 
@@ -101,6 +106,22 @@ fn table_ddl(conn: &Connection, table: &str) -> Result<String, AppError> {
     )?)
 }
 
+/// Whether `dev_council_decisions` sits after `dev_council_runs` in
+/// `sqlite_master` - the order the subject cascade depends on (module header).
+/// True when either table is missing: there is nothing to order.
+fn decisions_load_after_runs(conn: &Connection) -> Result<bool, AppError> {
+    let (runs, decisions): (Option<i64>, Option<i64>) = conn.query_row(
+        "SELECT (SELECT rowid FROM sqlite_master WHERE type='table' AND name='dev_council_runs'),
+                (SELECT rowid FROM sqlite_master WHERE type='table' AND name='dev_council_decisions')",
+        [],
+        |r| Ok((r.get(0)?, r.get(1)?)),
+    )?;
+    Ok(match (runs, decisions) {
+        (Some(runs), Some(decisions)) => decisions > runs,
+        _ => true,
+    })
+}
+
 pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     run_step(
         conn,
@@ -117,20 +138,23 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
                     ));
                 }
                 let widened = create_sql.replacen(LEGACY_KEY, MODE_AND_KEY, 1);
-                let mut batch = rebuild_statements(conn, TABLE, STAGED, &widened)?;
-                // See the module header: the decisions table must stay NEWER
-                // than the runs table, or deleting a decided subject trips the
-                // RESTRICT on `dev_council_decisions.run_id`.
-                if has_table(conn, DECISIONS)? {
-                    let decisions_sql = table_ddl(conn, DECISIONS)?;
-                    batch.push_str(&rebuild_statements(
-                        conn,
-                        DECISIONS,
-                        DECISIONS_STAGED,
-                        &decisions_sql,
-                    )?);
-                }
-
+                let batch = rebuild_statements(conn, TABLE, STAGED, &widened)?;
+                let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
+                ddl_step(conn, &batch)
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_council_decisions.after_runs",
+            description:
+                "Council decisions load after runs, so deleting a decided subject cascades",
+            already_applied: |conn| decisions_load_after_runs(conn),
+            apply: |conn| {
+                // Recreated unchanged: only its place in `sqlite_master` moves.
+                let ddl = table_ddl(conn, DECISIONS)?;
+                let batch = rebuild_statements(conn, DECISIONS, DECISIONS_STAGED, &ddl)?;
                 let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
                 ddl_step(conn, &batch)
             },
