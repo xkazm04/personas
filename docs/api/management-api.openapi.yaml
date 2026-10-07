@@ -74,6 +74,14 @@ paths:
                       master probation reviews auto-decide, all recorded as actor
                       `headless_bridge`. An unattended driver VERIFIES the mode here
                       rather than inferring it from a pairing that happened to succeed.
+                  timestamp:
+                    type: integer
+                    description: |
+                      Server time in epoch milliseconds (the web dashboard's
+                      `HealthResponse.timestamp`). `/health` is unauthenticated, so it
+                      carries no activity counts: the web's `workers` and
+                      `hasSubscription` are not served here; the authenticated
+                      `GET /api/status` carries the worker counts.
 
   /api/personas:
     get:
