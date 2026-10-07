@@ -99,6 +99,7 @@ pub fn management_router(state: ManagementState) -> Router {
             post(web_dashboard::post_cancel),
         )
         .route("/api/executions", get(list_executions))
+        .route("/api/status", get(web_dashboard::get_status))
         .route("/api/executions/{id}", get(get_execution))
         // Lab
         .route("/api/lab/arena/{persona_id}", post(start_arena))
@@ -5406,6 +5407,11 @@ mod tests {
         let broad = scopes(&["personas:execute"]);
         assert!(authorize(&Method::POST, "/api/execute", &broad).is_ok());
         assert!(authorize(&Method::POST, "/api/executions/x/cancel", &broad).is_ok());
+    }
+
+    #[test]
+    fn authorize_status_is_a_read_any_valid_key_may_make() {
+        assert!(authorize(&Method::GET, "/api/status", &[]).is_ok());
     }
 
     /// The exact scope set a kp key holds after one approved hire (§10.8):

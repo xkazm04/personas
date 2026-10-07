@@ -97,6 +97,27 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /api/status:
+    get:
+      summary: Engine status in the web dashboard's StatusResponse shape
+      description: |
+        Any valid key (no scope required). `data` is the web's
+        `StatusResponse`. `workers` is always `[]` (the desktop runs
+        executions itself and has no remote workers). `workerCounts.total` is
+        the engine's global max concurrent, `executing` the running total and
+        `idle` their saturating difference; `queueLength` is the queued
+        total. `activeExecutions` lists each running execution with
+        `workerId: "desktop"` and `startedAt` in epoch ms.
+        `hasClaudeToken` is always `false` and `oauth` is always
+        `{connected: false, scopes: [], expiresAt: null}`: the desktop has no
+        honest source for them.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StatusResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   /api/execute:
     post:
       summary: Execute a persona, named in the body (non-blocking)
@@ -1176,6 +1197,39 @@ components:
       properties:
         success: { type: boolean }
         data: { $ref: "#/components/schemas/ExecutionAck" }
+        error: { type: string }
+        code: { type: string }
+    StatusResult:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          type: object
+          required: [workers, workerCounts, queueLength, activeExecutions, hasClaudeToken, oauth]
+          properties:
+            workers: { type: array, items: { type: object } }
+            workerCounts:
+              type: object
+              properties:
+                total: { type: integer }
+                idle: { type: integer }
+                executing: { type: integer }
+            queueLength: { type: integer }
+            activeExecutions:
+              type: array
+              items:
+                type: object
+                properties:
+                  executionId: { type: string }
+                  workerId: { type: string }
+                  startedAt: { type: integer, description: epoch ms }
+            hasClaudeToken: { type: boolean }
+            oauth:
+              type: object
+              properties:
+                connected: { type: boolean }
+                scopes: { type: array, items: { type: string } }
+                expiresAt: { type: [string, "null"] }
         error: { type: string }
         code: { type: string }
     BuildStart:

@@ -250,6 +250,143 @@ pub(super) async fn post_cancel(
     .into_response()
 }
 
+// =============================================================================
+// GET /api/status
+// =============================================================================
+
+/// personas-web `WorkerInfo`. The desktop runs executions itself and has no
+/// remote workers, so `/api/status` never emits one; the type exists so the
+/// wire shape of `workers` is the web's, not a bare `Vec<Value>`.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(not(test), allow(dead_code))]
+pub(super) struct WorkerInfo {
+    pub worker_id: String,
+    pub status: &'static str,
+    pub version: String,
+    pub capabilities: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub current_execution_id: Option<String>,
+    pub connected_at: i64,
+    pub last_heartbeat: i64,
+}
+
+/// personas-web `StatusResponse.workerCounts` (and `HealthResponse.workers`).
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct WorkerCounts {
+    pub total: usize,
+    pub idle: usize,
+    pub executing: usize,
+}
+
+/// One entry of personas-web `StatusResponse.activeExecutions`.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct ActiveExecution {
+    pub execution_id: String,
+    pub worker_id: &'static str,
+    /// Epoch milliseconds.
+    pub started_at: i64,
+}
+
+/// personas-web `StatusResponse.oauth`.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct OauthStatus {
+    pub connected: bool,
+    pub scopes: Vec<String>,
+    pub expires_at: Option<String>,
+}
+
+/// personas-web `StatusResponse`.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct StatusResponse {
+    pub workers: Vec<WorkerInfo>,
+    pub worker_counts: WorkerCounts,
+    pub queue_length: usize,
+    pub active_executions: Vec<ActiveExecution>,
+    pub has_claude_token: bool,
+    pub oauth: OauthStatus,
+}
+
+/// The id every desktop-run execution reports as its worker.
+const DESKTOP_WORKER_ID: &str = "desktop";
+
+/// Epoch milliseconds of a stored timestamp (RFC 3339, as the repo stamps
+/// `started_at`), or 0 when it does not parse — a value the caller can tell
+/// from a real one, never a guess.
+fn epoch_ms(stamp: &str) -> i64 {
+    chrono::DateTime::parse_from_rfc3339(stamp)
+        .map(|t| t.timestamp_millis())
+        .unwrap_or(0)
+}
+
+/// Assemble `StatusResponse` from the engine tracker's counts and the running
+/// executions. Fields with no honest desktop source keep their empty value:
+/// no remote workers, no Claude token held by the app, no OAuth session.
+pub(super) fn build_status(
+    global_max: usize,
+    running: usize,
+    queued: usize,
+    active_executions: Vec<ActiveExecution>,
+) -> StatusResponse {
+    StatusResponse {
+        workers: Vec::new(),
+        worker_counts: WorkerCounts {
+            total: global_max,
+            executing: running,
+            idle: global_max.saturating_sub(running),
+        },
+        queue_length: queued,
+        active_executions,
+        has_claude_token: false,
+        oauth: OauthStatus {
+            connected: false,
+            scopes: Vec::new(),
+            expires_at: None,
+        },
+    }
+}
+
+/// Every execution whose status is `running`, as the web lists them. (The
+/// shared list query leaves out ops-chat runs, as every execution list does.)
+pub(super) fn running_executions(pool: &DbPool) -> Result<Vec<ActiveExecution>, AppError> {
+    let rows = exec_repo::get_all_global(pool, Some(1000), Some("running"), None, None)?;
+    Ok(rows
+        .into_iter()
+        .map(|r| ActiveExecution {
+            started_at: epoch_ms(r.base.started_at.as_deref().unwrap_or(&r.base.created_at)),
+            execution_id: r.base.id,
+            worker_id: DESKTOP_WORKER_ID,
+        })
+        .collect())
+}
+
+pub(super) async fn get_status(AxumState(state): AxumState<Arc<ManagementState>>) -> Response {
+    let active = match running_executions(&state.pool) {
+        Ok(a) => a,
+        Err(e) => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response()
+        }
+    };
+    let Some(app_state) = state.app.try_state::<Arc<crate::AppState>>() else {
+        return err_json(StatusCode::INTERNAL_SERVER_ERROR, "App state not available")
+            .into_response();
+    };
+    // Same tracker read as `tier_usage`.
+    let (global_max, running, queued) = {
+        let tracker = app_state.engine.tracker().lock().await;
+        (
+            tracker.global_max_concurrent(),
+            tracker.total_running(),
+            tracker.total_queued(),
+        )
+    };
+    ok_json(build_status(global_max, running, queued, active)).into_response()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -460,5 +597,122 @@ mod tests {
         let v = serde_json::to_value(&ack).unwrap();
         assert_eq!(v["status"], "cancelled");
         assert_eq!(keys(&ack), ["executionId", "status"]);
+    }
+
+    #[test]
+    fn worker_info_has_exactly_the_web_keys() {
+        let w = WorkerInfo {
+            worker_id: "w".into(),
+            status: "idle",
+            version: "1".into(),
+            capabilities: vec![],
+            current_execution_id: Some("e".into()),
+            connected_at: 1,
+            last_heartbeat: 2,
+        };
+        assert_eq!(
+            keys(&w),
+            [
+                "capabilities",
+                "connectedAt",
+                "currentExecutionId",
+                "lastHeartbeat",
+                "status",
+                "version",
+                "workerId"
+            ]
+        );
+        // currentExecutionId is optional in the web type: absent, not null.
+        let idle = WorkerInfo {
+            current_execution_id: None,
+            ..w
+        };
+        assert!(!keys(&idle).contains(&"currentExecutionId".to_string()));
+    }
+
+    #[test]
+    fn worker_counts_active_execution_and_oauth_have_exactly_the_web_keys() {
+        let c = WorkerCounts {
+            total: 1,
+            idle: 1,
+            executing: 0,
+        };
+        assert_eq!(keys(&c), ["executing", "idle", "total"]);
+        let a = ActiveExecution {
+            execution_id: "e".into(),
+            worker_id: "desktop",
+            started_at: 1,
+        };
+        assert_eq!(keys(&a), ["executionId", "startedAt", "workerId"]);
+        let o = OauthStatus {
+            connected: false,
+            scopes: vec![],
+            expires_at: None,
+        };
+        // expiresAt is `string | null`: present as null, never omitted.
+        assert_eq!(keys(&o), ["connected", "expiresAt", "scopes"]);
+        assert!(serde_json::to_value(&o).unwrap()["expiresAt"].is_null());
+    }
+
+    #[test]
+    fn status_response_has_exactly_the_web_keys_and_empty_placeholders() {
+        let st = build_status(4, 1, 2, vec![]);
+        assert_eq!(
+            keys(&st),
+            [
+                "activeExecutions",
+                "hasClaudeToken",
+                "oauth",
+                "queueLength",
+                "workerCounts",
+                "workers"
+            ]
+        );
+        let v = serde_json::to_value(&st).unwrap();
+        assert_eq!(v["workers"], serde_json::json!([]));
+        assert_eq!(v["hasClaudeToken"], false);
+        assert_eq!(
+            v["oauth"],
+            serde_json::json!({"connected": false, "scopes": [], "expiresAt": null})
+        );
+        assert_eq!(v["queueLength"], 2);
+    }
+
+    #[test]
+    fn idle_is_total_minus_executing_and_never_underflows() {
+        let c = |max, run| {
+            let v = serde_json::to_value(build_status(max, run, 0, vec![])).unwrap();
+            v["workerCounts"].clone()
+        };
+        assert_eq!(
+            c(4, 1),
+            serde_json::json!({"total": 4, "idle": 3, "executing": 1})
+        );
+        // More running than the cap (a lowered cap with runs in flight).
+        assert_eq!(
+            c(2, 5),
+            serde_json::json!({"total": 2, "idle": 0, "executing": 5})
+        );
+    }
+
+    #[test]
+    fn active_executions_list_only_running_runs_with_epoch_ms_start() {
+        let pool = pool();
+        let id = persona(&pool, true);
+        let running = exec_repo::create(&pool, &id, None, None, None, None).unwrap();
+        let _queued = exec_repo::create(&pool, &id, None, None, None, None).unwrap();
+        pool.get()
+            .unwrap()
+            .execute(
+                "UPDATE persona_executions SET status = 'running', \
+                 started_at = '2026-01-02T03:04:05+00:00' WHERE id = ?1",
+                [&running.id],
+            )
+            .unwrap();
+        let active = running_executions(&pool).unwrap();
+        assert_eq!(active.len(), 1);
+        assert_eq!(active[0].execution_id, running.id);
+        assert_eq!(active[0].worker_id, "desktop");
+        assert_eq!(active[0].started_at, 1_767_323_045_000);
     }
 }
