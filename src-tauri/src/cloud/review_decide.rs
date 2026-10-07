@@ -20,6 +20,15 @@
 //!   string of at most [`MAX_NOTES_CHARS`] characters, or null / absent, else
 //!   `invalid_notes`; blank notes are no notes. A `reviewId` of the wrong JSON
 //!   type is `bad_params`.
+//! * Desk only (owner decision, 2026-10-07): an App Master probation packet
+//!   (`context_data.kind == PACKET_KIND`) or an App Master ask
+//!   (`context_data.source == ASK_SOURCE`, every ask kind) is refused
+//!   `desk_only`. The check follows the persona binding (an unknown or foreign
+//!   review still answers `not_found`) and precedes the already-decided check,
+//!   and nothing is written.
+//! * Notes are phone text: they are masked with the sync redactor and cut to
+//!   [`PHONE_NOTES_CAP_CHARS`] characters (ending with the truncation marker)
+//!   before they are stored; the 2000-character bound above is unchanged.
 //! * The review exists here AND its `persona_id` equals the envelope's, else
 //!   `not_found` - the same answer for both, so a phone never learns that an
 //!   id exists under another persona.
@@ -38,6 +47,7 @@
 use serde_json::{json, Value};
 
 use crate::cloud::remote_commands::{Effective, Outcome};
+use crate::cloud::sync::redact::{redact_text, TRUNCATION_MARKER};
 use crate::db::models::{ManualReviewStatus, PersonaManualReview};
 use crate::db::repos::communication::manual_reviews as manual_repo;
 use crate::db::DbPool;
@@ -45,6 +55,36 @@ use crate::error::AppError;
 
 /// The longest reviewer note a phone may send, in characters (PHASE2-SPEC 2.2).
 pub const MAX_NOTES_CHARS: usize = 2000;
+
+/// The most a stored phone note keeps, in characters, marker included.
+pub const PHONE_NOTES_CAP_CHARS: usize = 500;
+
+/// Mask credential-looking tokens, then cut to [`PHONE_NOTES_CAP_CHARS`]
+/// characters (not bytes), ending with the truncation marker when cut.
+fn phone_notes(raw: &str) -> String {
+    let masked = redact_text(raw.trim());
+    if masked.chars().count() <= PHONE_NOTES_CAP_CHARS {
+        return masked;
+    }
+    let keep = PHONE_NOTES_CAP_CHARS - TRUNCATION_MARKER.chars().count();
+    let cut = masked
+        .char_indices()
+        .nth(keep)
+        .map_or(masked.len(), |(i, _)| i);
+    format!("{}{TRUNCATION_MARKER}", &masked[..cut])
+}
+
+/// True when the review is an App Master probation packet or ask, which only
+/// the desk decides. Absent or non-JSON `context_data` is an ordinary review.
+fn is_desk_only(context_data: Option<&str>) -> bool {
+    let Some(ctx) = context_data.and_then(|c| serde_json::from_str::<Value>(c).ok()) else {
+        return false;
+    };
+    ctx.get("kind").and_then(Value::as_str)
+        == Some(crate::engine::app_master_probation::PACKET_KIND)
+        || ctx.get("source").and_then(Value::as_str)
+            == Some(crate::engine::subscription::ASK_SOURCE)
+}
 
 /// What `review_decide` will do, decided from the database alone.
 #[derive(Debug, Clone, PartialEq)]
@@ -68,9 +108,7 @@ pub fn plan(pool: &DbPool, cmd: &Effective) -> Result<ReviewDecidePlan, AppError
     };
     let notes = match cmd.params.get("notes") {
         None | Some(Value::Null) => None,
-        Some(Value::String(n)) if n.chars().count() <= MAX_NOTES_CHARS => {
-            Some(n.trim().to_string())
-        }
+        Some(Value::String(n)) if n.chars().count() <= MAX_NOTES_CHARS => Some(phone_notes(n)),
         Some(_) => return Err(AppError::Validation("invalid_notes".into())),
     };
     let review_id = match cmd.params.get("reviewId") {
@@ -90,6 +128,9 @@ pub fn plan(pool: &DbPool, cmd: &Effective) -> Result<ReviewDecidePlan, AppError
     };
     if cmd.persona_id.as_deref() != Some(review.persona_id.as_str()) {
         return Err(not_found());
+    }
+    if is_desk_only(review.context_data.as_deref()) {
+        return Err(AppError::Validation("desk_only".into()));
     }
     if review.status != ManualReviewStatus::Pending {
         return Ok(ReviewDecidePlan::Settled(outcome(&review, false)));
@@ -406,5 +447,116 @@ mod tests {
         )
         .unwrap_err();
         assert!(matches!(e, AppError::Internal(_)), "{e:?}");
+    }
+
+    fn review_with_context(pool: &DbPool, p: &str, ctx: Option<&str>) -> String {
+        manual_repo::create_unanchored(
+            pool,
+            UnanchoredReviewInput {
+                persona_id: p,
+                title: "Desk matter",
+                description: None,
+                severity: "info",
+                context_data: ctx,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    fn probation_ctx() -> String {
+        json!({ "kind": crate::engine::app_master_probation::PACKET_KIND }).to_string()
+    }
+
+    fn ask_ctx(kind: &str) -> String {
+        json!({ "source": crate::engine::subscription::ASK_SOURCE, "kind": kind }).to_string()
+    }
+
+    #[test]
+    fn a_probation_packet_is_desk_only_and_never_resolved() {
+        let (pool, p, _) = setup();
+        let r = review_with_context(&pool, &p, Some(&probation_ctx()));
+        for decision in ["approved", "rejected"] {
+            let params = json!({ "reviewId": r, "decision": decision });
+            assert_eq!(reason(plan(&pool, &cmd(&p, params.clone()))), "desk_only");
+            let e = execute(&pool, &cmd(&p, params), |_, _, _| {
+                panic!("resolve must not be called")
+            })
+            .unwrap_err();
+            assert!(
+                matches!(&e, AppError::Validation(m) if m == "desk_only"),
+                "{e:?}"
+            );
+        }
+        assert_eq!(
+            manual_repo::get_by_id(&pool, &r).unwrap().status,
+            ManualReviewStatus::Pending
+        );
+    }
+
+    #[test]
+    fn every_app_master_ask_is_desk_only() {
+        let (pool, p, _) = setup();
+        for kind in ["accept_ideas", "something_else"] {
+            let r = review_with_context(&pool, &p, Some(&ask_ctx(kind)));
+            let params = json!({ "reviewId": r, "decision": "approved" });
+            assert_eq!(reason(plan(&pool, &cmd(&p, params))), "desk_only", "{kind}");
+        }
+    }
+
+    #[test]
+    fn another_personas_packet_is_not_found() {
+        let (pool, p, _) = setup();
+        let other = persona(&pool, "Someone else");
+        let r = review_with_context(&pool, &p, Some(&probation_ctx()));
+        let params = json!({ "reviewId": r, "decision": "approved" });
+        assert_eq!(reason(plan(&pool, &cmd(&other, params))), "not_found");
+    }
+
+    #[test]
+    fn other_context_data_is_an_ordinary_review() {
+        let (pool, p, _) = setup();
+        for ctx in [r#"{"reportId":"x","kind":"other"}"#, "not json at all"] {
+            let r = review_with_context(&pool, &p, Some(ctx));
+            let plan = plan_of(&pool, &p, json!({ "reviewId": r, "decision": "approved" }));
+            assert!(matches!(plan, ReviewDecidePlan::Decide { .. }), "{ctx}");
+        }
+    }
+
+    fn notes_of(pool: &DbPool, p: &str, r: &str, notes: &str) -> String {
+        let params = json!({ "reviewId": r, "decision": "approved", "notes": notes });
+        match plan_of(pool, p, params) {
+            ReviewDecidePlan::Decide { notes: Some(n), .. } => n,
+            other => panic!("expected notes: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn phone_notes_are_masked() {
+        let (pool, p, r) = setup();
+        assert_eq!(
+            notes_of(&pool, &p, &r, "Authorization: Bearer abc123 was sent"),
+            "Authorization: Bearer [redacted] was sent"
+        );
+    }
+
+    #[test]
+    fn phone_notes_are_cut_to_the_cap_in_characters() {
+        let (pool, p, r) = setup();
+        for ch in ["a", "é"] {
+            // Spaced words: one 600-character token would be masked as a secret.
+            let out = notes_of(&pool, &p, &r, &format!("{ch}{ch} ").repeat(300));
+            assert!(out.chars().count() <= PHONE_NOTES_CAP_CHARS, "{ch}");
+            assert!(out.ends_with(TRUNCATION_MARKER), "{ch}");
+        }
+        let short = "yy ".repeat(PHONE_NOTES_CAP_CHARS / 3).trim().to_string();
+        assert_eq!(notes_of(&pool, &p, &r, &short), short);
+    }
+
+    #[test]
+    fn notes_above_the_envelope_bound_are_still_invalid() {
+        let (pool, p, r) = setup();
+        let params = json!({ "reviewId": r, "decision": "approved", "notes": "x".repeat(2001) });
+        assert_eq!(reason(plan(&pool, &cmd(&p, params))), "invalid_notes");
     }
 }

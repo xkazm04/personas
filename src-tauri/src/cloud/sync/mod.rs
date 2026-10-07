@@ -19,7 +19,7 @@ pub mod client;
 pub(crate) mod cursor;
 pub(crate) mod notes;
 pub(crate) mod persona_chat;
-mod redact;
+pub(crate) mod redact;
 mod rows;
 
 use std::sync::{Arc, LazyLock};
