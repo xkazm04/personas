@@ -30,7 +30,7 @@
 
 /* The shared Button wraps its label in one span; on Fusion's laid-out
    controls that span steps aside so the control's own flex reaches the parts. */
-.fusion :is(.fu-cap, .fu-gate, .fu-count, .fu-attn, .fu-bead, .fu-cat, .fu-pip, .fu-askher, .fu-answer, .fu-ticks) > span { display: contents; }
+.fusion :is(.fu-cap, .fu-gate, .fu-count, .fu-attn, .fu-bead, .fu-cat, .fu-ticks) > span { display: contents; }
 
 /* ── the glass ─────────────────────────────────────────────────────────── */
 .fusion .fu-glass {
@@ -64,7 +64,6 @@
 .fusion .fu-mark.is-live .fu-ring { opacity: 1; }
 .fusion .fu-mark.is-live.is-moving .fu-ring { animation: fu-sweep 2.4s linear infinite; }
 .fusion .fu-notch { position: absolute; right: -3px; top: -3px; width: 11px; height: 11px; border-radius: 50%; background: var(--fu-warm); box-shadow: 0 0 0 2px var(--background); }
-.fusion .fu-seal { position: relative; display: inline-block; flex: none; border-radius: 50%; box-shadow: 0 0 0 1.5px var(--primary), 0 0 14px color-mix(in srgb, var(--primary) 45%, transparent); }
 .fusion .fu-face-sm { position: relative; display: inline-block; flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--background) url('/athena/athena_baseline.jpg') 50% 31% / 250% no-repeat; box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 45%, transparent); }
 .fusion .fu-face-sm.is-live { box-shadow: 0 0 0 1.5px var(--primary); }
 .fusion .fu-face-sm.is-moving { animation: fu-glow 2s ease-in-out infinite; }
@@ -294,58 +293,11 @@
 }
 .fusion .fu-stage-item { width: min(900px, 100%); margin-block: auto; display: flex; flex-direction: column; gap: 14px; padding: 2px 2px 6px; }
 .fusion .fu-question { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 14px 20px 10px; border-radius: var(--radius-modal); width: min(900px, 100%); }
-.fusion .fu-q-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-.fusion .fu-eyebrow { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--c); }
-.fusion .fu-eyebrow svg { width: 15px; height: 15px; }
-.fusion .fu-q { margin: 2px 0 0; text-wrap: balance; overflow-wrap: anywhere; max-width: 48ch; }
-.fusion .fu-ctx { margin: 0; color: var(--muted-foreground); max-width: 76ch; overflow-wrap: anywhere; }
-.fusion .fu-q code { background: color-mix(in srgb, var(--foreground) 8%, transparent); border-radius: var(--radius-interactive); padding: 0 4px; }
-.fusion .fu-details summary { cursor: pointer; color: var(--muted-foreground); width: fit-content; border-radius: var(--radius-interactive); }
-.fusion .fu-details pre { margin: 6px 0 0; padding: 10px 12px; max-height: 180px; overflow: auto; border-radius: var(--radius-input); background: color-mix(in srgb, var(--foreground) 5%, transparent); color: var(--foreground); white-space: pre-wrap; }
-.fusion .fu-q-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 4px; padding-top: 8px; box-shadow: inset 0 1px 0 var(--fu-rule-soft); }
-.fusion .fu-askher { height: 38px; gap: 10px; padding: 0 10px 0 5px; border-radius: var(--radius-pill); color: var(--foreground); background: color-mix(in srgb, var(--primary) 8%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 40%, transparent); }
-.fusion .fu-askher:hover, .fusion .fu-askher:focus-visible { background: color-mix(in srgb, var(--primary) 15%, transparent); }
-.fusion .fu-verdict { display: flex; align-items: flex-start; gap: 10px; margin: 0; }
-.fusion .fu-pips { display: flex; align-items: center; gap: 2px; }
-.fusion .fu-pip { width: 26px; height: 26px; padding: 0; justify-content: center; border-radius: 50%; background: transparent; color: var(--muted-foreground); }
-.fusion .fu-pip svg { width: 14px; height: 14px; }
-.fusion .fu-pip[aria-current='true'] { color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 55%, transparent); }
-.fusion .fu-of { margin-left: 6px; white-space: nowrap; }
 .fusion .fu-native { border-radius: var(--radius-card); background: var(--fu-glass-strong); box-shadow: var(--shadow-elevation-3); }
 
 .fusion .fu-answers { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--n, 2), minmax(0, 1fr)); gap: 12px; }
-.fusion .fu-answers.is-many { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 .fusion .fu-answer-slot { min-width: 0; will-change: transform; }
 .fusion .fu-answer-slot.is-wide { grid-column: 1 / -1; }
-.fusion .fu-answer {
-  position: relative; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 6px;
-  width: 100%; height: 100%; min-height: 112px; padding: 12px 16px 14px; text-align: left; white-space: normal;
-  border-radius: var(--radius-card); color: var(--foreground); background: var(--fu-glass-strong);
-  transition: box-shadow var(--duration-fast), background var(--duration-fast);
-}
-.fusion .fu-answer:hover, .fusion .fu-answer:focus-visible {
-  outline: none; background: color-mix(in srgb, var(--t) 8%, var(--fu-glass-strong));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--t) 55%, transparent), var(--shadow-elevation-4);
-}
-.fusion .fu-answer:focus-visible { box-shadow: inset 0 0 0 2px var(--focus-ring-color), var(--shadow-elevation-4); }
-.fusion .fu-answer-key { color: var(--t); line-height: 1; }
-.fusion .fu-answer-label { overflow-wrap: anywhere; }
-.fusion .fu-answer-hint { color: var(--muted-foreground); overflow-wrap: anywhere; }
-/* Her pick, once she has given it: her seal, her label, her why, on a branded edge. */
-.fusion .fu-answer.is-pick {
-  background: linear-gradient(165deg, color-mix(in srgb, var(--primary) 16%, var(--fu-glass-strong)), var(--fu-glass-strong) 62%);
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--primary) 80%, transparent), 0 0 34px color-mix(in srgb, var(--primary) 24%, transparent), var(--shadow-elevation-4);
-}
-.fusion .fu-answer.is-pick::before { content: ''; position: absolute; left: 16px; right: 16px; top: 0; height: 2px; border-radius: var(--radius-pill); background: linear-gradient(90deg, transparent, var(--primary), transparent); }
-.fusion .fu-answer.is-safe { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--status-success) 70%, transparent), var(--shadow-elevation-3); }
-.fusion .fu-answer.is-safe .fu-answer-her { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--status-success) 28%, transparent); }
-.fusion .fu-verdict-g { width: 22px; height: 22px; flex: none; color: var(--status-warning); }
-.fusion .fu-answer.is-safe .fu-verdict-g { color: var(--status-success); }
-.fusion .fu-answer-her { display: flex; align-items: flex-start; gap: 10px; width: 100%; margin-top: auto; padding-top: 10px; box-shadow: inset 0 1px 0 color-mix(in srgb, var(--primary) 28%, transparent); }
-.fusion .fu-answer.is-field { cursor: default; gap: 8px; min-height: 0; }
-.fusion .fu-her-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.fusion .fu-keys { display: inline-flex; gap: 3px; margin-left: 4px; }
-.fusion .fu-keybtn > span { display: inline-flex; align-items: center; gap: 8px; }
 
 /* ── reduced motion: calm, complete, still ─────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
@@ -354,6 +306,3 @@
   .fusion .fu-glass { background: color-mix(in srgb, var(--background) 97%, transparent); }
 }
 :root[data-motion='reduce'] .fusion :is(.fu-ring, .fu-caret, .fu-attn, .fu-face-sm) { animation: none; }
-
-/* Round 6 review: the decision-style switch rides above the stage's first block. */
-.fusion .fu-style-tabs { align-self: center; margin-bottom: 8px; pointer-events: auto; }

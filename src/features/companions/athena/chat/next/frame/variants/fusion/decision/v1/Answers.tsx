@@ -14,8 +14,8 @@ import Button from '@/features/shared/components/buttons/Button';
 import { FULLSCREEN_LAYER_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import type { CardField, CardModel } from '../../../c/bodies/model';
-import { useFlight } from '../../AnswerCards';
 import { isTyping } from '../../text';
+import { useFlight } from '../../useFlight';
 import { DESK_COPY as C } from './copy';
 import { OptionCard } from './OptionCard';
 

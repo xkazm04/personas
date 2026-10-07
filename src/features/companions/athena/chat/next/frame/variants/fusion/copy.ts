@@ -67,16 +67,6 @@ export const FUSION_COPY = {
 
   // Decisions.
   queue: 'Waiting on you',
-  itemOf: (i: number, n: number) => `${i} of ${n}`,
-  askHer: 'Ask Athena',
-  composing: 'She is weighing it',
-  details: 'What it will run',
-  answer: 'Your answer',
-  keys: {
-    choose: 'Answers',
-    aside: 'Set aside',
-    fold: 'Fold back to the app',
-  },
   nothingWaiting: 'Nothing waits on you.',
   nothingWaitingSub: 'When she needs a call, the rail lights.',
   aboutThis: (kind: string) => `Re: this ${kind}`,
