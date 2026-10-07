@@ -105,10 +105,10 @@ test('managed set: DEFAULT_MANAGED plus every brief with headless:true; a brief 
   assert.deepEqual(C.DEFAULT_MANAGED, ['pof', 'ascent', 'kp']);
 });
 
-test('caps: two builders per project, eight in all, two dispatches per wake', () => {
+test('caps: two builders per project, sixteen in all, two dispatches per wake', () => {
   assert.equal(C.PER_PROJECT_CAP, 2);
   assert.equal(C.MAX_DISPATCH, C.PER_PROJECT_CAP);
-  assert.equal(C.GLOBAL_CAP, 8);
+  assert.equal(C.GLOBAL_CAP, 16);
   assert.ok(C.MEM.dispatchMinFreeGb > 0 && C.MEM.perBuilderReserveGb > 0, 'the free-memory brake is kept');
 });
 

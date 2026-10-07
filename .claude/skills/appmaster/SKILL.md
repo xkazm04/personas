@@ -46,8 +46,9 @@ Director (this session)    the clock: status -> context -> decide -> dispatch ->
   recursive delete can never reach a checkout.
 - **Numbers** live once in `lib/contract.mjs` (caps, the `MEM` free-memory numbers, quiet and timeout flags,
   wake bounds, the ScheduleWakeup clamp, the models, `REPO_LANES`, `PLAN`, `COUNCIL`, `UX`, the
-  queue reasons). Quote them from there, not from memory. On 2026-10-07: `GLOBAL_CAP` 8,
-  `PER_PROJECT_CAP` 2, `MAX_DISPATCH` 2, Opus `claude-opus-5-5`.
+  queue reasons). Quote them from there, not from memory. On 2026-10-07: `GLOBAL_CAP` 16
+  (8 until midday, when the operator gave the machine to the loop), `PER_PROJECT_CAP` 2,
+  `MAX_DISPATCH` 2, Opus `claude-opus-5-5`.
 - **Two builders per project.** `PER_PROJECT_CAP` builders may run in one project and
   `GLOBAL_CAP` in all, and one decision may dispatch `MAX_DISPATCH`, but two only on disjoint
   declared `paths` (`lib/paths.mjs`, conservative: a glob counts as its whole directory, and no

@@ -221,13 +221,13 @@ test('two builders per project: the context shows each live run\'s model and pat
   });
   assert.match(doc, /aaaaaaaa codebase-security-scan running \(claude-opus-5\).*; paths: src\/auth\/, src\/api\//);
   assert.match(doc, /bbbbbbbb old-run exited .*paths: none declared \(the whole repo\)/);
-  assert.match(doc, new RegExp(`dispatch AT MOST ${C.MAX_DISPATCH} charters \\(${C.PER_PROJECT_CAP} builders per project, ${C.GLOBAL_CAP} in all; running now: 1 here, 3 in all; free slots: 1 here, 5 in all\\)`));
+  assert.match(doc, new RegExp(`dispatch AT MOST ${C.MAX_DISPATCH} charters \\(${C.PER_PROJECT_CAP} builders per project, ${C.GLOBAL_CAP} in all; running now: 1 here, 3 in all; free slots: 1 here, ${C.GLOBAL_CAP - 3} in all\\)`));
   assert.match(doc, /Two at once ONLY when each is independent/);
   assert.match(doc, /MODEL: per dispatch, `model` "opus" for discovery/);
-  assert.match(doc, /1 of 2 in this project \(1 slot\(s\) free\), 3 of 8 across all projects \(5 free\)/);
+  assert.match(doc, new RegExp(`1 of 2 in this project \\(1 slot\\(s\\) free\\), 3 of ${C.GLOBAL_CAP} across all projects \\(${C.GLOBAL_CAP - 3} free\\)`));
   assert.match(doc, /"model":"sonnet\|opus","paths":\[/);
   assert.match(doc, /with two each carries non-empty disjoint paths/);
-  assert.deepEqual(X.freeSlots({ project: 2, global: 9 }), { project: 0, global: 0 });
+  assert.deepEqual(X.freeSlots({ project: 2, global: C.GLOBAL_CAP + 1 }), { project: 0, global: 0 });
 });
 
 test('status --text names each running run\'s model and its paths', async () => {

@@ -107,7 +107,10 @@ export const repoEnv = (root) => ({
 /** Projects this skill manages by default; any other brief.json opts in with `"headless": true`. */
 export const DEFAULT_MANAGED = ['pof', 'ascent', 'kp'];
 
-export const GLOBAL_CAP = 8;          // builders running at once across all projects (ten masters share it; a refused dispatch queues)
+// Builders running at once across all projects (ten masters share it; a refused dispatch queues).
+// 16 since 2026-10-07 midday: the operator gave the machine to this loop ("two threads per app
+// master, at most 16 LLM processes"); it was 8 while sibling sessions shared it. MEM still brakes.
+export const GLOBAL_CAP = 16;
 /**
  * Builders running at once in one project. Two only when their declared `paths` are disjoint from
  * every other live run of the project (dispatch refuses `paths overlap`); the free-memory brake
