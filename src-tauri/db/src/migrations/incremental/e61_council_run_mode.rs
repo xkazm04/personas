@@ -111,10 +111,10 @@ fn table_ddl(conn: &Connection, table: &str) -> Result<String, AppError> {
 /// True when either table is missing: there is nothing to order.
 fn decisions_load_after_runs(conn: &Connection) -> Result<bool, AppError> {
     let (runs, decisions): (Option<i64>, Option<i64>) = conn.query_row(
-        "SELECT (SELECT rowid FROM sqlite_master WHERE type='table' AND name='dev_council_runs'),
-                (SELECT rowid FROM sqlite_master WHERE type='table' AND name='dev_council_decisions')",
+        "SELECT (SELECT rowid FROM sqlite_master WHERE type='table' AND name='dev_council_runs') AS runs_rowid,
+                (SELECT rowid FROM sqlite_master WHERE type='table' AND name='dev_council_decisions') AS decisions_rowid",
         [],
-        |r| Ok((r.get(0)?, r.get(1)?)),
+        |r| Ok((r.get("runs_rowid")?, r.get("decisions_rowid")?)),
     )?;
     Ok(match (runs, decisions) {
         (Some(runs), Some(decisions)) => decisions > runs,

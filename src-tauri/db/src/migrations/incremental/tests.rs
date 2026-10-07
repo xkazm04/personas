@@ -2171,9 +2171,9 @@ fn review_execution_id_becomes_optional_without_losing_rows_or_threads() {
 
     let notnull: i64 = conn
         .query_row(
-            "SELECT \"notnull\" FROM pragma_table_info('persona_manual_reviews') WHERE name = 'execution_id'",
+            "SELECT \"notnull\" AS nn FROM pragma_table_info('persona_manual_reviews') WHERE name = 'execution_id'",
             [],
-            |r| r.get(0),
+            |r| r.get("nn"),
         )
         .unwrap();
     assert_eq!(notnull, 0, "execution_id is nullable after e60");
@@ -2181,16 +2181,16 @@ fn review_execution_id_becomes_optional_without_losing_rows_or_threads() {
         .query_row(
             "SELECT execution_id, use_case_id FROM persona_manual_reviews WHERE id = 'r1'",
             [],
-            |r| Ok((r.get(0)?, r.get(1)?)),
+            |r| Ok((r.get("execution_id")?, r.get("use_case_id")?)),
         )
         .unwrap();
     assert_eq!(exec_id.as_deref(), Some(exec.id.as_str()));
     assert_eq!(uc.as_deref(), Some("uc-1"), "a later column rode the copy");
     let thread: i64 = conn
         .query_row(
-            "SELECT COUNT(*) FROM review_messages WHERE review_id = 'r1'",
+            "SELECT COUNT(*) AS n FROM review_messages WHERE review_id = 'r1'",
             [],
-            |r| r.get(0),
+            |r| r.get("n"),
         )
         .unwrap();
     assert_eq!(
@@ -2222,9 +2222,9 @@ fn review_execution_id_becomes_optional_without_losing_rows_or_threads() {
         .unwrap();
     let left: i64 = conn
         .query_row(
-            "SELECT COUNT(*) FROM persona_manual_reviews WHERE id = 'r1'",
+            "SELECT COUNT(*) AS n FROM persona_manual_reviews WHERE id = 'r1'",
             [],
-            |r| r.get(0),
+            |r| r.get("n"),
         )
         .unwrap();
     assert_eq!(left, 0, "ON DELETE CASCADE survived the rebuild");
@@ -2234,7 +2234,7 @@ fn review_execution_id_becomes_optional_without_losing_rows_or_threads() {
         conn.query_row(
             "SELECT sql FROM sqlite_master WHERE type='table' AND name='persona_manual_reviews'",
             [],
-            |r| r.get(0),
+            |r| r.get("sql"),
         )
         .unwrap()
     };
@@ -2250,9 +2250,9 @@ fn a_fresh_schema_has_an_optional_review_execution_id() {
     let conn = crate::PoolExt::conn(&pool, "test:e60_e61_2250").unwrap();
     let notnull: i64 = conn
         .query_row(
-            "SELECT \"notnull\" FROM pragma_table_info('persona_manual_reviews') WHERE name = 'execution_id'",
+            "SELECT \"notnull\" AS nn FROM pragma_table_info('persona_manual_reviews') WHERE name = 'execution_id'",
             [],
-            |r| r.get(0),
+            |r| r.get("nn"),
         )
         .unwrap();
     assert_eq!(notnull, 0);
@@ -2322,7 +2322,7 @@ fn council_runs_gain_a_mode_and_count_rounds_per_mode() {
         .query_row(
             "SELECT mode FROM dev_council_runs WHERE id = 'r1'",
             [],
-            |r| r.get(0),
+            |r| r.get("mode"),
         )
         .unwrap();
     assert_eq!(
@@ -2331,10 +2331,10 @@ fn council_runs_gain_a_mode_and_count_rounds_per_mode() {
     );
     let children: (i64, i64) = conn
         .query_row(
-            "SELECT (SELECT COUNT(*) FROM dev_council_verdicts WHERE run_id = 'r1'),
-                    (SELECT COUNT(*) FROM dev_council_decisions WHERE run_id = 'r1')",
+            "SELECT (SELECT COUNT(*) FROM dev_council_verdicts WHERE run_id = 'r1') AS verdicts,
+                    (SELECT COUNT(*) FROM dev_council_decisions WHERE run_id = 'r1') AS decisions",
             [],
-            |r| Ok((r.get(0)?, r.get(1)?)),
+            |r| Ok((r.get("verdicts")?, r.get("decisions")?)),
         )
         .unwrap();
     assert_eq!(children, (1, 1), "the swap cascaded nothing");
@@ -2364,7 +2364,7 @@ fn council_runs_gain_a_mode_and_count_rounds_per_mode() {
         conn.query_row(
             "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_council_runs'",
             [],
-            |r| r.get(0),
+            |r| r.get("sql"),
         )
         .unwrap()
     };
@@ -2380,10 +2380,10 @@ fn council_runs_gain_a_mode_and_count_rounds_per_mode() {
         .expect("a decided subject is still deletable after the rebuild");
     let left: (i64, i64) = conn
         .query_row(
-            "SELECT (SELECT COUNT(*) FROM dev_council_runs),
-                    (SELECT COUNT(*) FROM dev_council_decisions)",
+            "SELECT (SELECT COUNT(*) FROM dev_council_runs) AS runs_left,
+                    (SELECT COUNT(*) FROM dev_council_decisions) AS decisions_left",
             [],
-            |r| Ok((r.get(0)?, r.get(1)?)),
+            |r| Ok((r.get("runs_left")?, r.get("decisions_left")?)),
         )
         .unwrap();
     assert_eq!(left, (0, 0));
@@ -2403,7 +2403,7 @@ fn the_decisions_table_is_moved_after_the_runs_table_when_it_is_not() {
         .query_row(
             "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_council_runs'",
             [],
-            |r| r.get(0),
+            |r| r.get("sql"),
         )
         .unwrap();
     conn.execute_batch(&format!(
@@ -2420,7 +2420,7 @@ fn the_decisions_table_is_moved_after_the_runs_table_when_it_is_not() {
                    AND name IN ('dev_council_runs','dev_council_decisions') ORDER BY rowid",
             )
             .unwrap();
-        let rows = stmt.query_map([], |r| r.get::<_, String>(0)).unwrap();
+        let rows = stmt.query_map([], |r| r.get::<_, String>("name")).unwrap();
         rows.collect::<Result<Vec<_>, _>>().unwrap()
     };
     assert_eq!(
@@ -2454,9 +2454,9 @@ fn the_decisions_table_is_moved_after_the_runs_table_when_it_is_not() {
     );
     let kept: i64 = conn
         .query_row(
-            "SELECT COUNT(*) FROM dev_council_decisions WHERE id = 'd1'",
+            "SELECT COUNT(*) AS n FROM dev_council_decisions WHERE id = 'd1'",
             [],
-            |r| r.get(0),
+            |r| r.get("n"),
         )
         .unwrap();
     assert_eq!(kept, 1, "the reorder copies the decisions");
