@@ -1807,6 +1807,10 @@
         {
           "path": "src-tauri/src/commands/infrastructure/schema_vocabulary.rs",
           "reason": "the CREATE TABLE strings here (:224,:225,:226) are INPUT DATA to names_of()'s own test, whose subject IS DDL parsing - it deliberately includes back-ticked, quoted, schema-qualified and VIRTUAL spellings because the parser must handle them. Never executed. hand-rolled-fixture-ddl still counts this file, so the territory is not blind."
+        },
+        {
+          "path": "src-tauri/db/src/migrations/incremental/e60_review_execution_optional.rs",
+          "reason": "the CREATE TABLE strings at :179 and :180 (`CREATE TABLE t (execution_id TEXT)`, `CREATE TABLE t (id TEXT)`) are INPUT DATA to relax_execution_id's own test, an_unexpected_shape_is_refused_not_guessed - DDL handed to the parser to prove it refuses an unexpected shape, never executed against any connection. hand-rolled-fixture-ddl still counts this file, so the territory is not blind."
         }
       ],
       "baseline": {
