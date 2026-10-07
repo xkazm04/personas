@@ -30,11 +30,12 @@
 //!    turn - with Athena (`persona_id = 'athena'`, `cloud::athena_send`) or
 //!    with a persona (its id, `cloud::persona_chat_send`: one persona
 //!    execution, through the same Rust turn the desktop chat uses). A
-//!    persona `chat_send` runs while that persona is paused (M21): pause stops
-//!    the persona's own triggers, schedules and event subscriptions, not an
-//!    explicit ask to chat. A paired `run_persona` on a paused persona is
-//!    still refused `persona_paused` (scan 5e21d618 finding 8, adc3370780):
-//!    a phone may chat with a paused persona but not start a run on one.
+//!    persona `chat_send` and a paired `run_persona` both run while that
+//!    persona is paused (M21, both verbs, operator decision 2026-10-07).
+//!    Pause stops the persona's own triggers, schedules and event
+//!    subscriptions, not an explicit ask. The paired run refusal of scan
+//!    5e21d618 finding 8 (adc3370780) was removed and the finding accepted
+//!    under M21.
 //!    `chat_send` runs only while the
 //!    operator has "Sync chats" on, because its reply reaches the phone as
 //!    synced data. `review_decide` (M20) approves or rejects one pending
@@ -68,8 +69,7 @@
 //!    signed command of the same poll. A command already claimed finishes.
 //!
 //! What a paired phone can NOT do: edit a persona, read or touch credentials,
-//! pick a review's suggested action (it approves or rejects only), start a
-//! run on a paused persona (it may chat with one, M21), use a queue verb
+//! pick a review's suggested action (it approves or rejects only), use a queue verb
 //! without a click here, or send any verb outside rule 2.
 //!
 //! ## Queue verbs
@@ -2172,7 +2172,7 @@ mod tests {
 
     /// M21: pause stops the persona's own role (triggers, schedules, event
     /// subscriptions), not an explicit ask to chat. A paused persona takes the
-    /// turn and stays paused. (A paired `run_persona` is still refused.)
+    /// turn and stays paused.
     #[test]
     fn a_persona_chat_send_to_a_paused_persona_starts_its_turn() {
         let (pool, persona, plane, exec) = persona_chat_harness(true);

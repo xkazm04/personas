@@ -39,9 +39,10 @@
 //! Pause means the persona does not operate in its own role: its triggers,
 //! schedules and event subscriptions stop. A `chat_send` is not the persona
 //! acting on its own; it is the user asking it something, exactly as an
-//! explicit `run_persona` is (which never checked the pause either), and the
-//! desk's own chat runs a paused persona too. So the phone's turn runs, the
-//! persona stays paused, and the two explicit verbs behave the same. The
+//! explicit `run_persona` is. M21 covers both verbs: a paired run on a paused
+//! persona runs too, and the desk's own chat runs a paused persona as well. So
+//! the phone's turn runs, the persona stays paused, and the two explicit verbs
+//! behave the same. The
 //! spend is the same spend M17 already accepts for any paired `chat_send`.
 
 use rusqlite::OptionalExtension;
