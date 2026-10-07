@@ -459,6 +459,26 @@ test('(xviii) narrowCommand and testFilesIn', async () => {
   assert.deepEqual(G.testFilesIn(['FAIL src/__tests__/a.test.tsx > suite > case', 'x/y.test.ts', 'no file here']).sort(), ['src/__tests__/a.test.tsx', 'x/y.test.ts']);
 });
 
+test('(xix) a gate resolves a repo-local script: NoDefaultCurrentDirectoryInExePath is not passed on', async () => {
+  const G = await import('../lib/gate.mjs');
+  const before = process.env.NoDefaultCurrentDirectoryInExePath;
+  process.env.NoDefaultCurrentDirectoryInExePath = '1';
+  try {
+    const env = G.gateEnv({ EXTRA: 'x' });
+    assert.equal(Object.keys(env).some((k) => k.toUpperCase() === 'NODEFAULTCURRENTDIRECTORYINEXEPATH'), false);
+    assert.equal(env.EXTRA, 'x');
+    if (process.platform === 'win32') {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'am-gate-cwd-'));
+      fs.writeFileSync(path.join(dir, 'probe.bat'), '@echo probe-ran\r\n');
+      const r = G.runShell('probe.bat', dir, 30000);
+      assert.equal(r.ok, true, r.tail);
+      assert.match(r.tail, /probe-ran/);
+    }
+  } finally {
+    if (before === undefined) delete process.env.NoDefaultCurrentDirectoryInExePath; else process.env.NoDefaultCurrentDirectoryInExePath = before;
+  }
+});
+
 // ---------------------------------------------------------------- the rest of the state machine
 
 test('a usage limit in the stream -> released (not held, not failed) and the mark is set', () => {

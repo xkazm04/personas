@@ -66,9 +66,15 @@ export function resolveRunGates(run, brief = {}) {
 
 const tail = (text, n = TAIL_LINES) => String(text || '').replace(/\s+$/, '').split(/\r?\n/).slice(-n).join('\n');
 
-function gateEnv(extra = {}) {
+// A gate is the project's own command in its own worktree, so a repo-local script (`gradlew.bat`) must
+// resolve the way it does in the operator's shell. The harness sets NoDefaultCurrentDirectoryInExePath,
+// which stops cmd searching the current directory (2026-10-07: firetv's deathride gate failed with
+// "'gradlew.bat' is not recognized" in a worktree that held the file).
+const GATE_ENV_STRIP = ['NoDefaultCurrentDirectoryInExePath'];
+
+export function gateEnv(extra = {}) {
   const env = { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' };
-  const strip = new Set(ENV_STRIP.map((k) => k.toUpperCase()));
+  const strip = new Set([...ENV_STRIP, ...GATE_ENV_STRIP].map((k) => k.toUpperCase()));
   for (const k of Object.keys(env)) if (strip.has(k.toUpperCase())) delete env[k];
   return { ...env, ...extra };
 }
