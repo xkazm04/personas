@@ -30,9 +30,12 @@
 //!    turn - with Athena (`persona_id = 'athena'`, `cloud::athena_send`) or
 //!    with a persona (its id, `cloud::persona_chat_send`: one persona
 //!    execution, through the same Rust turn the desktop chat uses). A
-//!    persona `chat_send` runs while that persona is paused, as `run_persona`
-//!    does (M21): pause stops the persona's own triggers, schedules and event
-//!    subscriptions, not an explicit ask. `chat_send` runs only while the
+//!    persona `chat_send` runs while that persona is paused (M21): pause stops
+//!    the persona's own triggers, schedules and event subscriptions, not an
+//!    explicit ask to chat. A paired `run_persona` on a paused persona is
+//!    still refused `persona_paused` (scan 5e21d618 finding 8, adc3370780):
+//!    a phone may chat with a paused persona but not start a run on one.
+//!    `chat_send` runs only while the
 //!    operator has "Sync chats" on, because its reply reaches the phone as
 //!    synced data. `review_decide` (M20) approves or rejects one pending
 //!    manual review of the named persona through the desk's own resolution
@@ -65,8 +68,9 @@
 //!    signed command of the same poll. A command already claimed finishes.
 //!
 //! What a paired phone can NOT do: edit a persona, read or touch credentials,
-//! pick a review's suggested action (it approves or rejects only), use a
-//! queue verb without a click here, or send any verb outside rule 2.
+//! pick a review's suggested action (it approves or rejects only), start a
+//! run on a paused persona (it may chat with one, M21), use a queue verb
+//! without a click here, or send any verb outside rule 2.
 //!
 //! ## Queue verbs
 //!
@@ -564,8 +568,9 @@ impl Outcome {
     }
 }
 
-/// A paired phone may not start a run on a paused persona - the rule
-/// `persona_chat_send` applies to a phone's chat turn. An operator-approved
+/// A paired phone may not start a run on a paused persona (scan 5e21d618
+/// finding 8). This is the run's rule only: a phone's chat turn with a paused
+/// persona is allowed (M21, `persona_chat_send`). An operator-approved
 /// run keeps its behaviour (the operator saw the card and chose). An unknown
 /// persona is left to the run's own NotFound.
 fn refuse_paused_for_paired(
@@ -2203,8 +2208,8 @@ mod tests {
     }
 
     /// M21: pause stops the persona's own role (triggers, schedules, event
-    /// subscriptions), not an explicit ask. A paused persona takes the turn,
-    /// as it takes a `run_persona`, and stays paused.
+    /// subscriptions), not an explicit ask to chat. A paused persona takes the
+    /// turn and stays paused. (A paired `run_persona` is still refused.)
     #[test]
     fn a_persona_chat_send_to_a_paused_persona_starts_its_turn() {
         let (pool, persona, plane, exec) = persona_chat_harness(true);
