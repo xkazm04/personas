@@ -1097,6 +1097,28 @@ const registry: EventRegistration[] = [
     },
   },
 
+  // -- Navigation-only deep links (personas://persona/<id>, personas://execution/<id>) --
+  {
+    event: EventName.PERSONA_LINK_OPENED,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.PERSONA_LINK_OPENED, async (payload) => {
+        const { openPersonaFromLink } = await import("@/lib/deepLinks/navigationLinks");
+        await openPersonaFromLink(payload?.personaId);
+      });
+      return [unlisten];
+    },
+  },
+  {
+    event: EventName.EXECUTION_LINK_OPENED,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.EXECUTION_LINK_OPENED, async (payload) => {
+        const { openExecutionFromLink } = await import("@/lib/deepLinks/navigationLinks");
+        openExecutionFromLink(payload?.executionId);
+      });
+      return [unlisten];
+    },
+  },
+
   // -- TitleBar notification (persona message delivery — v3.2 DELIV-04) ------
   {
     event: EventName.TITLEBAR_NOTIFICATION,
