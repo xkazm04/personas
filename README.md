@@ -5,9 +5,7 @@
 [![CI](https://github.com/xkazm04/personas/actions/workflows/ci.yml/badge.svg)](https://github.com/xkazm04/personas/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/xkazm04/personas?display_name=tag&sort=semver)](https://github.com/xkazm04/personas/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](#prerequisites)
-[![Tauri 2](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri)](https://v2.tauri.app/)
-[![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
+[![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](https://github.com/xkazm04/personas/actions/workflows/ci.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](./CONTRIBUTING.md)
 
 Built with **Tauri 2** (Rust) and **React 19** (TypeScript).
