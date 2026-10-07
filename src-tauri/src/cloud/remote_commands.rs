@@ -52,9 +52,10 @@
 //!    paired command runs at most once per envelope here, and a signed row
 //!    that returns after its claim is refused `replayed`.
 //! 6. **Revocation is decided here.** Revoke (or Revoke all) in Settings takes
-//!    effect at the next poll - every 5 s while a phone is paired. A web-side
-//!    "Unpair this phone" is honoured before any signed command of the same
-//!    poll. A command already claimed finishes.
+//!    effect at the next command: the trust list is read again for every row,
+//!    so a revoke made while a poll's batch is being worked refuses the rest
+//!    of that batch. A web-side "Unpair this phone" is honoured before any
+//!    signed command of the same poll. A command already claimed finishes.
 //!
 //! What a paired phone can NOT do: edit a persona, read or touch credentials,
 //! chat with a paused persona, use a queue verb without a click here, or send
@@ -987,6 +988,38 @@ async fn process_row(
     RowOutcome::Handled
 }
 
+/// Route and act on one poll's rows, in order; returns the rows to surface.
+///
+/// The trust list is read again for EACH row, so a Revoke clicked while a
+/// batch is being worked refuses the very next command of that batch (rule
+/// 6), not only the next poll's. A batch is as long as the cloud makes it - a
+/// stolen phone, or script on the web origin, can queue many signed commands
+/// at once - and every auto-run awaits its claim, its execution and its
+/// write, so a list read once before the loop kept trusting a revoked phone
+/// for the rest of the batch.
+async fn process_rows(
+    plane: &dyn CommandPlane,
+    executor: &dyn VerbExecutor,
+    pool: &DbPool,
+    device: &str,
+    rows: Vec<CommandRow>,
+    revocations_known: bool,
+) -> Vec<CommandRow> {
+    let mut prompts = Vec::new();
+    for c in rows {
+        if c.controller_id.is_some() && !revocations_known {
+            continue;
+        }
+        let controllers = trust::load_controllers(pool);
+        if let RowOutcome::Prompt(row) =
+            process_row(plane, executor, &controllers, device, Utc::now(), c).await
+        {
+            prompts.push(*row);
+        }
+    }
+    prompts
+}
+
 /// One poll pass: resolve or surface every pending command for this device.
 async fn poll_once(
     app: &AppHandle,
@@ -1022,23 +1055,12 @@ async fn poll_once(
     }
     memory.last_command_seen = Some(Instant::now());
 
-    let controllers = trust::load_controllers(&pool);
     let plane = CloudPlane {
         client: &client,
         device: device.clone(),
     };
     let executor = AppExecutor { app: app.clone() };
-    let mut prompts = Vec::new();
-    for c in cmds {
-        if c.controller_id.is_some() && !revocations_known {
-            continue;
-        }
-        if let RowOutcome::Prompt(row) =
-            process_row(&plane, &executor, &controllers, &device, Utc::now(), c).await
-        {
-            prompts.push(*row);
-        }
-    }
+    let prompts = process_rows(&plane, &executor, &pool, &device, cmds, revocations_known).await;
 
     let mut surfaced = SURFACED.lock().await;
     for c in prompts {
@@ -2459,6 +2481,64 @@ mod tests {
                 pause_id,
                 "rejected".into(),
                 json!({ "error_message": "replayed" })
+            ))
+        );
+    }
+
+    /// Runs the production test executor, then revokes the test phone: the
+    /// operator clicking Revoke while a batch of its commands is worked.
+    struct RevokeMidBatch<'a> {
+        inner: &'a DbExecutor,
+    }
+
+    #[async_trait::async_trait]
+    impl VerbExecutor for RevokeMidBatch<'_> {
+        async fn execute(
+            &self,
+            cmd: &Effective,
+            authority: &Authority,
+        ) -> Result<Outcome, AppError> {
+            let out = self.inner.execute(cmd, authority).await;
+            trust::revoke_local(&self.inner.pool, Some(CTL), Utc::now()).expect("revoke");
+            out
+        }
+    }
+
+    /// One poll fetched two signed commands; the phone is revoked while the
+    /// first runs. The second is refused `controller_revoked` instead of
+    /// running on the trust list read before the batch.
+    #[test]
+    fn a_revoke_during_a_batch_refuses_the_next_command_of_that_batch() {
+        let (pool, persona, plane, exec) = harness();
+        let phone = Phone::new();
+        trust::add_controller(&pool, phone.controller()).expect("paired");
+        let pause = phone.row("pause_persona", &persona, DEV, Utc::now());
+        let resume = phone.row("resume_persona", &persona, DEV, Utc::now());
+        let resume_id = resume.id.clone();
+
+        let revoking = RevokeMidBatch { inner: &exec };
+        let prompts = block_on(process_rows(
+            &plane,
+            &revoking,
+            &pool,
+            DEV,
+            vec![pause, resume],
+            true,
+        ));
+
+        assert!(prompts.is_empty());
+        assert_eq!(
+            *exec.calls.lock().unwrap(),
+            vec!["pause_persona".to_string()],
+            "nothing ran after the revoke"
+        );
+        assert!(!enabled(&pool, &persona), "the resume did not run");
+        assert_eq!(
+            plane.writes().last(),
+            Some(&Write::Refuse(
+                resume_id,
+                "rejected".into(),
+                json!({ "error_message": "controller_revoked" })
             ))
         );
     }
