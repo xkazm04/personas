@@ -140,8 +140,23 @@ pub fn execute(
         // between the plan and the write. Already decided, no side effects ran.
         Err(e) => match manual_repo::get_by_id(pool, &review_id) {
             Ok(now) if now.status != ManualReviewStatus::Pending => Ok(outcome(&now, false)),
-            _ => Err(e),
+            // Gone since the plan (the desk's Clear all, a persona delete).
+            Err(AppError::NotFound(_)) => {
+                Err(AppError::NotFound(format!("Manual review {review_id}")))
+            }
+            _ => Err(closed(e)),
         },
+    }
+}
+
+/// A resolution failure as the command row may carry it. `failure_message`
+/// copies a `Validation` text verbatim, and the chokepoint's texts are prose
+/// with the review id in them ("Manual review <id> was already resolved ...",
+/// "Invalid status transition: ..."), so they leave as `internal_error`.
+fn closed(e: AppError) -> AppError {
+    match e {
+        AppError::Validation(m) => AppError::Internal(m),
+        other => other,
     }
 }
 
@@ -350,6 +365,34 @@ mod tests {
             o.result,
             json!({ "reviewId": r, "status": "rejected", "changed": false })
         );
+    }
+
+    /// A resolution error never reaches the command row as prose: the
+    /// chokepoint's lost compare-and-swap text names the review id, and
+    /// `failure_message` copies a `Validation` verbatim.
+    #[test]
+    fn a_resolution_error_leaves_as_a_closed_token() {
+        let (pool, p, r) = setup();
+        let cas_text = format!("Manual review {r} was already resolved by a concurrent action");
+        // Still pending: the error is `internal_error`, not the chokepoint's text.
+        let e = execute(
+            &pool,
+            &cmd(&p, json!({ "reviewId": r, "decision": "approved" })),
+            |_, _, _| Err(AppError::Validation(cas_text.clone())),
+        )
+        .unwrap_err();
+        assert!(matches!(e, AppError::Internal(_)), "{e:?}");
+        // Decided and then deleted before the re-read: `not_found`.
+        let e = execute(
+            &pool,
+            &cmd(&p, json!({ "reviewId": r, "decision": "approved" })),
+            |_, _, _| {
+                manual_repo::delete_all(&pool)?;
+                Err(AppError::Validation(cas_text.clone()))
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(e, AppError::NotFound(_)), "{e:?}");
     }
 
     /// A resolution that fails with the review still pending is a failure.
