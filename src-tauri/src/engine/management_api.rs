@@ -94,6 +94,10 @@ pub fn management_router(state: ManagementState) -> Router {
         // Executions
         .route("/api/execute/{persona_id}", post(execute_persona))
         .route("/api/execute", post(web_dashboard::post_execute))
+        .route(
+            "/api/executions/{id}/cancel",
+            post(web_dashboard::post_cancel),
+        )
         .route("/api/executions", get(list_executions))
         .route("/api/executions/{id}", get(get_execution))
         // Lab
@@ -5384,6 +5388,24 @@ mod tests {
             &scopes(&["personas:execute"])
         )
         .is_ok());
+    }
+
+    #[test]
+    fn authorize_cancel_needs_broad_execute_never_a_per_persona_grant() {
+        // The path carries an execution id, not a persona id, so no
+        // per-persona grant can be matched: only broad execute cancels.
+        let per_persona = scopes(&["personas:execute:persona:p1"]);
+        let path = "/api/executions/x/cancel";
+        assert!(authorize(&Method::POST, path, &per_persona).is_err());
+        assert!(authorize(&Method::POST, path, &scopes(&["personas:read"])).is_err());
+        assert!(authorize(&Method::POST, path, &scopes(&["personas:execute"])).is_ok());
+    }
+
+    #[test]
+    fn authorize_broad_execute_passes_both_body_form_routes() {
+        let broad = scopes(&["personas:execute"]);
+        assert!(authorize(&Method::POST, "/api/execute", &broad).is_ok());
+        assert!(authorize(&Method::POST, "/api/executions/x/cancel", &broad).is_ok());
     }
 
     /// The exact scope set a kp key holds after one approved hire (§10.8):

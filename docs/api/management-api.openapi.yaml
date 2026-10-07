@@ -130,6 +130,27 @@ paths:
         "404": { description: "Persona not found, or `project_not_found`" }
         "429": { $ref: "#/components/responses/RateLimited" }
 
+  /api/executions/{id}/cancel:
+    post:
+      summary: Cancel a queued or running execution
+      description: |
+        No body. Requires broad `personas:execute` (the path names no persona,
+        so a per-persona grant cannot match). The owning persona is read from
+        the execution row, never from the request. Cancels through the engine
+        exactly as the desktop's `cancel_execution` command does. Answers
+        `ExecutionAck` `{executionId, status: "cancelled"}`.
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExecutionAckResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "`execution_not_found`" }
+        "409": { description: "`execution_not_running` — the run already finished" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
   /api/execute/{personaId}:
     post:
       summary: Execute a persona (non-blocking)

@@ -17,7 +17,7 @@ use std::sync::Arc;
 
 use axum::{
     body::Bytes,
-    extract::State as AxumState,
+    extract::{Path, State as AxumState},
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
@@ -27,11 +27,12 @@ use serde_json::Value;
 use tauri::Manager;
 
 use super::{err_code, err_json, ok_json, ApiResult, ManagementState};
-use crate::db::models::Persona;
+use crate::db::models::{Persona, PersonaExecution};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
+use crate::error::AppError;
 
 type Refusal = (StatusCode, Json<ApiResult>);
 
@@ -185,6 +186,70 @@ pub(super) async fn post_execute(
     }
 }
 
+// =============================================================================
+// POST /api/executions/{id}/cancel
+// =============================================================================
+
+/// What the cancel route checks before it touches the engine: the execution
+/// exists (404 `execution_not_found`) and is still queued or running (409
+/// `execution_not_running`). The owning persona is read from the returned
+/// row, never from the request.
+pub(super) fn plan_cancel(pool: &DbPool, id: &str) -> Result<PersonaExecution, Refusal> {
+    let execution = exec_repo::get_by_id(pool, id).map_err(|e| match e {
+        AppError::NotFound(_) => err_code(
+            StatusCode::NOT_FOUND,
+            "execution_not_found",
+            "Execution not found",
+        ),
+        other => err_json(StatusCode::INTERNAL_SERVER_ERROR, &other.to_string()),
+    })?;
+    if !matches!(execution.status.as_str(), "queued" | "pending" | "running") {
+        return Err(err_code(
+            StatusCode::CONFLICT,
+            "execution_not_running",
+            "Execution has already finished",
+        ));
+    }
+    Ok(execution)
+}
+
+fn not_running() -> Refusal {
+    err_code(
+        StatusCode::CONFLICT,
+        "execution_not_running",
+        "Execution has already finished",
+    )
+}
+
+pub(super) async fn post_cancel(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Path(id): Path<String>,
+) -> Response {
+    let execution = match plan_cancel(&state.pool, &id) {
+        Ok(e) => e,
+        Err(r) => return r.into_response(),
+    };
+    let Some(app_state) = state.app.try_state::<Arc<crate::AppState>>() else {
+        return err_json(StatusCode::INTERNAL_SERVER_ERROR, "App state not available")
+            .into_response();
+    };
+    // The engine call only, exactly as the `cancel_execution` command makes
+    // it: flag, DB write, process kill, tracker cleanup, abort. The persona
+    // id is the fetched row's.
+    let cancelled = app_state
+        .engine
+        .cancel_execution(&id, &state.pool, Some(&execution.persona_id))
+        .await;
+    if !cancelled {
+        return not_running().into_response();
+    }
+    ok_json(ExecutionAck {
+        execution_id: execution.id,
+        status: "cancelled",
+    })
+    .into_response()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -234,7 +299,7 @@ mod tests {
         }
     }
 
-    fn refused_not<T>(r: Result<T, Refusal>) -> T {
+    fn succeeded<T>(r: Result<T, Refusal>) -> T {
         match r {
             Ok(v) => v,
             Err(_) => panic!("expected success"),
@@ -287,7 +352,7 @@ mod tests {
 
     #[test]
     fn a_valid_body_keeps_the_raw_prompt_text() {
-        let (p, t) = refused_not(parse_execute_body(
+        let (p, t) = succeeded(parse_execute_body(
             br#"{"personaId":"p1","prompt":"  summarise\nthis  "}"#,
         ));
         assert_eq!(p, "p1");
@@ -345,5 +410,55 @@ mod tests {
         let pool = pool();
         let id = persona(&pool, true);
         assert!(check_runnable(&pool, &id, None).is_ok());
+    }
+
+    #[test]
+    fn an_unknown_execution_is_404_execution_not_found() {
+        let pool = pool();
+        let err = refused(plan_cancel(&pool, "no-such-execution"));
+        assert_eq!(
+            refusal(err),
+            (StatusCode::NOT_FOUND, Some("execution_not_found".into()))
+        );
+    }
+
+    #[test]
+    fn a_finished_execution_is_409_execution_not_running() {
+        let pool = pool();
+        let id = persona(&pool, true);
+        let exec = exec_repo::create(&pool, &id, None, None, None, None).unwrap();
+        pool.get()
+            .unwrap()
+            .execute(
+                "UPDATE persona_executions SET status = 'completed' WHERE id = ?1",
+                [&exec.id],
+            )
+            .unwrap();
+        let err = refused(plan_cancel(&pool, &exec.id));
+        assert_eq!(
+            refusal(err),
+            (StatusCode::CONFLICT, Some("execution_not_running".into()))
+        );
+    }
+
+    #[test]
+    fn a_queued_execution_plans_a_cancel_owned_by_its_own_row() {
+        let pool = pool();
+        let id = persona(&pool, true);
+        let exec = exec_repo::create(&pool, &id, None, None, None, None).unwrap();
+        let planned = succeeded(plan_cancel(&pool, &exec.id));
+        assert_eq!(planned.id, exec.id);
+        assert_eq!(planned.persona_id, id);
+    }
+
+    #[test]
+    fn a_cancel_ack_says_cancelled_with_the_web_keys() {
+        let ack = ExecutionAck {
+            execution_id: "e1".into(),
+            status: "cancelled",
+        };
+        let v = serde_json::to_value(&ack).unwrap();
+        assert_eq!(v["status"], "cancelled");
+        assert_eq!(keys(&ack), ["executionId", "status"]);
     }
 }
