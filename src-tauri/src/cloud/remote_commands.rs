@@ -47,7 +47,10 @@
 //!    [`claim_and_execute`]: a compare-and-set `pending -> executing` scoped to
 //!    this device (exactly one caller wins), then one `match` on the verb. A
 //!    queue verb refuses to dispatch under any authority but the operator's
-//!    approval, so no auto path can reach it.
+//!    approval, so no auto path can reach it. The claim alone does not stop a
+//!    replay - the user's JWT can set a finished row back to `pending` - so a
+//!    paired command runs at most once per envelope here, and a signed row
+//!    that returns after its claim is refused `replayed`.
 //! 6. **Revocation is decided here.** Revoke (or Revoke all) in Settings takes
 //!    effect at the next poll - every 5 s while a phone is paired. A web-side
 //!    "Unpair this phone" is honoured before any signed command of the same
@@ -98,7 +101,8 @@
 //! instead of acting on an innocent neighbour. This is settled; do not
 //! re-open it.
 
-use std::collections::HashSet;
+use std::collections::hash_map::Entry;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
 
@@ -435,8 +439,44 @@ impl Effective {
 pub(crate) enum Authority {
     /// The operator clicked Approve on this desktop.
     OperatorApproved,
-    /// A paired controller's verified signature (rule 1).
-    Paired { controller_id: String },
+    /// A paired controller's verified signature (rule 1), valid until
+    /// `valid_until` ([`trust::Verified::valid_until`]).
+    Paired {
+        controller_id: String,
+        valid_until: DateTime<Utc>,
+    },
+}
+
+/// Paired commands this process has claimed, each kept until its envelope
+/// stops verifying.
+///
+/// The cloud claim (`status=eq.pending`) cannot stop a replay on its own: the
+/// user's JWT may UPDATE `pending_commands.status` (RLS `owner_all`, no
+/// transition guard), so anyone holding a web session can set a finished
+/// signed row back to `pending`. Inside the envelope's window the signature
+/// still verifies and the poll would run it again - a second Athena turn, a
+/// pause undone after the phone resumed. The signature binds the command id,
+/// so remembering ids until [`trust::Verified::valid_until`] is enough.
+/// Process-global because the guarantee has to hold for every paired claim,
+/// whoever calls [`claim_and_execute`]. A restart forgets it, which reopens
+/// at most the remaining window of envelopes signed before the restart.
+static PAIRED_CLAIMS: LazyLock<std::sync::Mutex<HashMap<String, DateTime<Utc>>>> =
+    LazyLock::new(|| std::sync::Mutex::new(HashMap::new()));
+
+/// Record a won paired claim. `false` when this id was already claimed here
+/// inside its window: the command is a replay.
+fn first_paired_claim(id: &str, valid_until: DateTime<Utc>, now: DateTime<Utc>) -> bool {
+    // A poisoned map is still the right map: the worst a panic elsewhere left
+    // behind is an extra entry, which refuses rather than runs.
+    let mut claims = PAIRED_CLAIMS.lock().unwrap_or_else(|e| e.into_inner());
+    claims.retain(|_, until| *until >= now);
+    match claims.entry(id.to_ascii_lowercase()) {
+        Entry::Occupied(_) => false,
+        Entry::Vacant(slot) => {
+            slot.insert(valid_until);
+            true
+        }
+    }
 }
 
 /// The queue lane is the operator's alone (queue rule 1): refused under any
@@ -515,7 +555,8 @@ impl Resolution {
 pub(crate) trait CommandPlane: Send + Sync {
     /// Compare-and-set `pending -> executing`. `true` = this caller won.
     async fn claim(&self, id: &str) -> Result<bool, AppError>;
-    /// Terminal write after a claim (`completed` / `failed`).
+    /// Terminal write after a claim (`completed` / `failed`, or `rejected`
+    /// for a replayed paired command).
     async fn finish(&self, id: &str, status: Resolution, fields: Value);
     /// Terminal write on a row never claimed (`rejected` / `expired`).
     async fn refuse(&self, id: &str, status: Resolution, fields: Value);
@@ -551,6 +592,22 @@ pub(crate) async fn claim_and_execute(
         return Err(AppError::Validation(
             "This request is no longer pending".into(),
         ));
+    }
+    // A paired command runs once per envelope, whatever the cloud row says
+    // (see `PAIRED_CLAIMS`). Checked after the claim, so a claim that failed
+    // or lost never marks a command as run.
+    if let Authority::Paired { valid_until, .. } = authority {
+        if !first_paired_claim(&cmd.id, *valid_until, Utc::now()) {
+            tracing::warn!(id = %cmd.id, "remote command: signed command replayed, refusing");
+            plane
+                .finish(
+                    &cmd.id,
+                    Resolution::Rejected,
+                    json!({ "error_message": trust::reason::REPLAYED }),
+                )
+                .await;
+            return Err(AppError::Validation(trust::reason::REPLAYED.into()));
+        }
     }
     match executor.execute(cmd, authority).await {
         Ok(outcome) => {
@@ -918,6 +975,7 @@ async fn process_row(
             let cmd = Effective::from_verified(&verified);
             let authority = Authority::Paired {
                 controller_id: verified.controller_id.clone(),
+                valid_until: verified.valid_until,
             };
             plane.stamp_controller(&verified.controller_id).await;
             if let Err(e) = claim_and_execute(plane, executor, &cmd, &authority).await {
@@ -1376,7 +1434,8 @@ mod tests {
         assert!(is_known_command_type("chat_send"));
         assert!(require_operator_for_queue(&Authority::OperatorApproved).is_ok());
         assert!(require_operator_for_queue(&Authority::Paired {
-            controller_id: "c".into()
+            controller_id: "c".into(),
+            valid_until: Utc::now(),
         })
         .is_err());
     }
@@ -1470,6 +1529,12 @@ mod tests {
     impl FakePlane {
         fn writes(&self) -> Vec<Write> {
             self.writes.lock().unwrap().clone()
+        }
+
+        /// What any holder of the user's JWT can do to a resolved row: set
+        /// its `status` back to `pending`, so the next claim wins again.
+        fn reopen(&self, id: &str) {
+            self.claimed.lock().unwrap().remove(id);
         }
     }
 
@@ -2358,6 +2423,58 @@ mod tests {
             .writes()
             .iter()
             .any(|w| matches!(w, Write::Finish(..))));
+    }
+
+    /// A stolen web session sets a finished signed pause back to `pending`
+    /// after the phone resumed. The envelope is still inside its window, so
+    /// it verifies; the desktop must refuse it from its own memory, or the
+    /// persona the phone just resumed is paused again.
+    #[test]
+    fn a_signed_command_reopened_in_the_cloud_is_refused_replayed() {
+        let (pool, persona, plane, exec) = harness();
+        let phone = Phone::new();
+        let ctl = [phone.controller()];
+        let pause = phone.row("pause_persona", &persona, DEV, Utc::now());
+        let pause_id = pause.id.clone();
+        run(&plane, &exec, &ctl, pause.clone());
+        run(
+            &plane,
+            &exec,
+            &ctl,
+            phone.row("resume_persona", &persona, DEV, Utc::now()),
+        );
+        assert!(enabled(&pool, &persona), "the phone resumed it");
+
+        plane.reopen(&pause_id);
+        run(&plane, &exec, &ctl, pause);
+
+        assert!(enabled(&pool, &persona), "the replayed pause did not run");
+        assert_eq!(
+            *exec.calls.lock().unwrap(),
+            vec!["pause_persona".to_string(), "resume_persona".to_string()]
+        );
+        assert_eq!(
+            plane.writes().last(),
+            Some(&Write::Finish(
+                pause_id,
+                "rejected".into(),
+                json!({ "error_message": "replayed" })
+            ))
+        );
+    }
+
+    /// The spend case: a reopened `chat_send` to Athena does not start a
+    /// second turn.
+    #[test]
+    fn a_reopened_athena_chat_send_starts_one_turn() {
+        let (_pool, plane, exec) = chat_harness(true);
+        let phone = Phone::new();
+        let row = phone.row_with("chat_send", "athena", DEV, Utc::now(), ATHENA_HELLO);
+        let id = row.id.clone();
+        run(&plane, &exec, &[phone.controller()], row.clone());
+        plane.reopen(&id);
+        run(&plane, &exec, &[phone.controller()], row);
+        assert_eq!(exec.calls.lock().unwrap().len(), 1, "one turn");
     }
 
     #[test]

@@ -63,6 +63,10 @@ pub mod reason {
     pub const REVOKED: &str = "controller_revoked";
     pub const BAD_SIGNATURE: &str = "bad_signature";
     pub const ENVELOPE_MISMATCH: &str = "envelope_mismatch";
+    /// A signed command this desktop already claimed came back as `pending`.
+    /// Only a writer other than this desktop can do that (the user's JWT may
+    /// update the row's `status`), so it is refused, never run twice.
+    pub const REPLAYED: &str = "replayed";
 }
 
 // ── the trust list ──────────────────────────────────────────────────────
@@ -221,6 +225,10 @@ pub struct SignedRow<'a> {
 pub struct Verified {
     pub controller_id: String,
     pub envelope: Envelope,
+    /// The last instant [`check`] still accepts this envelope. A replay of
+    /// it is only possible until then, so that is how long the desktop must
+    /// remember having run it.
+    pub valid_until: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -319,14 +327,18 @@ pub fn check(
     let (Some(iat), Some(exp)) = (parse_time(&env.iat), parse_time(&env.exp)) else {
         return Trust::Refused(reason::ENVELOPE_MISMATCH);
     };
+    //    Expired once `exp` passed or `iat` is more than 5 min old, whichever
+    //    comes first.
     let skew = chrono::Duration::seconds(CLOCK_SKEW_SECS);
-    if now > exp + skew || now - iat > chrono::Duration::seconds(MAX_ENVELOPE_AGE_SECS) + skew {
+    let valid_until = exp.min(iat + chrono::Duration::seconds(MAX_ENVELOPE_AGE_SECS)) + skew;
+    if now > valid_until {
         return Trust::Expired;
     }
     // 7. Paired.
     Trust::Paired(Box::new(Verified {
         controller_id: controller.controller_id.clone(),
         envelope: env,
+        valid_until,
     }))
 }
 
@@ -512,6 +524,8 @@ mod tests {
         assert_eq!(ok.envelope.command_type, "pause_persona");
         assert_eq!(ok.envelope.persona.as_deref(), Some(PERSONA));
         assert_eq!(ok.envelope.params, json!({}));
+        // exp (12:01:00) comes before iat + 5 min, plus 30 s of skew.
+        assert_eq!(ok.valid_until, at("2026-10-06T12:01:30Z"));
     }
 
     #[test]
