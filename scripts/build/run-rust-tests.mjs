@@ -53,6 +53,21 @@
 //
 // Anything after `--` is forwarded to the test harness, e.g.
 //   node scripts/build/run-rust-tests.mjs -- --nocapture healing::
+//
+// THROTTLE. The COMPILE goes through scripts/build/cargo-run.mjs, so it runs at
+// below-normal priority with `--jobs max(2, cores - 2)` and behind the
+// one-cargo-at-a-time queue (CARGO_FULL_SEND=1 opts out of both; CARGO_GUARD=off
+// out of the queue only).
+//
+// THE TEST BINARIES ARE NOT THROTTLED, and that is measured, not assumed:
+// runCargo restores this process's priority in its own `finally` (cargo-run.mjs),
+// and the executables are spawned after it returns — so they run at NORMAL
+// priority, with libtest's default `--test-threads` = the core count, while 576
+// fixture call sites each replay the full migration chain. That is the exact
+// shape of the 2026-08-13 incident the wrapper was built for (one test binary,
+// 1,380 CPU-seconds). `-- --test-threads=N` is the only lever today; closing it
+// properly means throttling the exec loop too, which is a deliberate follow-up
+// and not something to discover from a frozen machine.
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
@@ -60,12 +75,18 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { runCargo } from './cargo-run.mjs';
 import { inspectPe } from './inspect-pe-imports.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..', '..');
 const MANIFEST = join(HERE, 'comctl32-v6.manifest');
-const CARGO_TOML = join(REPO_ROOT, 'src-tauri', 'Cargo.toml');
+// RELATIVE on purpose (it was absolute until the cargo-run.mjs routing landed):
+// cargo always runs with cwd = REPO_ROOT, and runCargo spawns under a shell on
+// Windows, where an absolute path containing a space would be split into two
+// arguments. `cwd` is passed as a spawn option and is never shell-quoted, so the
+// relative form is the only one that is safe wherever the repo lives.
+const CARGO_TOML = 'src-tauri/Cargo.toml';
 
 const argv = process.argv.slice(2);
 // `npm run test:rust -- foo` consumes the `--` itself, so by the time argv
@@ -136,12 +157,41 @@ function ensureManifest(exe) {
   return { patched: true, reason: 'embedded comctl32 v6 manifest' };
 }
 
-/** Build without running, and return the test executables cargo produced. */
+/**
+ * Build without running, and return the test executables cargo produced.
+ *
+ * TWO cargo invocations, deliberately, and this is the one call site in the repo
+ * where "every cargo goes through scripts/build/cargo-run.mjs" could not be met
+ * by a single call. `runCargo`'s contract is frozen: it inherits stdio and
+ * returns an exit code, so it cannot hand back cargo's stdout — and the artifact
+ * paths the comctl32 fixup must patch arrive ONLY on stdout, as
+ * `--message-format=json`. Splitting is what keeps both properties:
+ *
+ *   1. THE COMPILE goes through `runCargo`. That is the minutes-long half (one
+ *      rustc peaks at 6,583 MB here) and the half that must be throttled and
+ *      queued. Its inherited stdio also puts cargo's own rustc/lld diagnostics
+ *      straight on the terminal, which is why the hand-rolled diagnostic
+ *      re-emitter the captured-stdout version needed is gone.
+ *   2. THE HARVEST re-runs `--no-run --message-format=json` with stdout piped.
+ *      `--message-format` is a rendering flag and is not part of cargo's unit
+ *      fingerprint, so after step 1 there is nothing left to compile: this is a
+ *      freshness check that prints the artifact stream, seconds not minutes. Its
+ *      stderr is inherited, so if that assumption ever stops holding the rebuild
+ *      is visible rather than silent — and the result is still correct, only
+ *      slower.
+ *
+ * Doing it the other way round — harvest first, compile inside the JSON pass —
+ * would leave the expensive cargo outside the wrapper, which is the whole point.
+ */
 function buildTestExecutables(cargoArgs) {
-  // stdout is captured (it carries the JSON artifact stream) but stderr is
-  // inherited, so cargo's compile progress and diagnostics stay live on the
-  // terminal. Capturing both would leave the user staring at nothing for
-  // several minutes on a cold build.
+  const status = runCargo({ args: [...cargoArgs, '--no-run'], cwd: REPO_ROOT, label: 'test' });
+  if (status !== 0) {
+    process.stderr.write(
+      `\ncargo exited ${status} without producing test binaries. The error above is cargo's own.\n`,
+    );
+    process.exit(status);
+  }
+
   const out = spawnSync(
     'cargo',
     [...cargoArgs, '--no-run', '--message-format=json'],
@@ -163,10 +213,10 @@ function buildTestExecutables(cargoArgs) {
       continue;
     }
     if (msg.reason === 'compiler-artifact' && msg.executable) exes.push(msg.executable);
-    // `--message-format=json` moves compiler diagnostics OUT of stderr and into
-    // this stdout stream, which we capture -- so without re-emitting them a
-    // failed build prints only cargo's one-line summary and the actual error is
-    // invisible. That cost a debugging round the first time it happened.
+    // Kept as insurance for the one case that can still fail here: if step 1
+    // left anything to do, `--message-format=json` pulls the diagnostics off
+    // stderr into this captured stdout, and without re-emitting them a failure
+    // would print only cargo's one-line summary.
     if (msg.reason === 'compiler-message' && msg.message?.level === 'error') {
       diagnostics.push(msg.message.rendered ?? msg.message.message ?? '');
     }
@@ -176,7 +226,7 @@ function buildTestExecutables(cargoArgs) {
     for (const d of diagnostics) process.stderr.write(d.endsWith('\n') ? d : `${d}\n`);
     if (diagnostics.length === 0) {
       process.stderr.write(
-        'Build failed but cargo emitted no error diagnostic. This is usually a LINK\n' +
+        'The artifact-harvest pass failed with no error diagnostic. This is usually a LINK\n' +
           'failure. Re-run without --message-format=json to see it:\n' +
           `  cargo ${cargoArgs.join(' ')} --no-run\n`,
       );

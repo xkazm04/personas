@@ -23,14 +23,42 @@
 // The child is `node <@tauri-apps/cli>/tauri.js dev ...` rather than `npx
 // tauri dev`: same CLI, no shell (so no quoting hazard and no EINVAL spawning a
 // .cmd on Windows), and the PID we signal is tauri itself.
+//
+// CARGO THROTTLE. `tauri dev` spawns cargo ITSELF, so this wrapper cannot route
+// it through scripts/build/cargo-run.mjs the way every other cargo call site in
+// the repo now is. It instead sets the same two things the wrapper sets, by the
+// only two mechanisms that reach a grandchild: `os.setPriority` on this process
+// (children inherit the Windows priority class) and `CARGO_BUILD_JOBS` in the
+// child environment, which is the env form of cargo's `--jobs` and the only way
+// to cap a cargo you do not spawn. CARGO_FULL_SEND=1 skips both; an explicit
+// PERSONAS_CARGO_JOBS or a pre-set CARGO_BUILD_JOBS wins.
 
 import { spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import { createRequire } from "node:module";
+import os from "node:os";
 import path from "node:path";
 import { StringDecoder } from "node:string_decoder";
 import { pathToFileURL } from "node:url";
+// BLOCKED ON A ONE-LINE FIX IN THE IMPORTED FILE, and this import is the only
+// place in the repo that trips it. cargo-run.mjs's CLI entry guard is a SUFFIX
+// match on the entry script's basename:
+//     import.meta.url.endsWith(process.argv[1].split("/").pop())
+// `".../cargo-run.mjs".endsWith("run.mjs")` is TRUE, so merely importing it from a
+// process whose entry is THIS file fires its CLI block, which spawns a real cargo
+// with devlog's own argv and process.exit()s. Measured: `npm run tauri:dev` dies
+// with `error: unexpected argument '--features' found`, and two scripts/devlog
+// tests go red on a byte-identical-output assertion. The same file is imported
+// cleanly by ensure-mcp-sidecar.mjs and run-rust-tests.mjs, whose basenames do
+// not collide — this is purely a name collision, not a contract problem. The fix
+// belongs in cargo-run.mjs and is the guard ensure-mcp-sidecar.mjs:94 already
+// uses: `path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)`.
+// The import is deliberately left correct rather than worked around here: a
+// substring match that answers "does this text appear" instead of "is this the
+// entry module" will misfire again, and papering over it in this file would hide
+// it from the next caller.
+import { BELOW_NORMAL, RESERVED_CORES, envFlag } from "../build/cargo-run.mjs";
 import { makeRecord } from "./lib/envelope.mjs";
 import { REPO_ROOT, resolveLogsDir } from "./lib/paths.mjs";
 import { createLineSplitter, createToolchainParser } from "./lib/toolchain-parser.mjs";
@@ -71,6 +99,68 @@ function killTree(child, signal) {
   } catch {
     /* already gone */
   }
+}
+
+/**
+ * The cargo throttle for a cargo this process does not spawn.
+ *
+ * Returns the environment additions for the child, and lowers THIS process's
+ * priority as a side effect (the child and its cargo/rustc grandchildren inherit
+ * the Windows priority class). Both halves are skipped under CARGO_FULL_SEND.
+ *
+ * `CARGO_BUILD_JOBS` rather than `--jobs` because the cargo being capped is three
+ * processes away: node -> tauri CLI -> cargo. cargo-run.mjs deliberately uses the
+ * ARGUMENT form so the number is visible on the command line; here there is no
+ * command line to put it on, and the env var is cargo's own documented equivalent
+ * (`--jobs` on the CLI still beats it, and `tauri dev` passes none). An explicit
+ * PERSONAS_CARGO_JOBS (the wrapper's own override name) sets the number, and a
+ * CARGO_BUILD_JOBS the operator already exported is left exactly as it is.
+ *
+ * The priority is NOT restored afterwards, unlike in cargo-run.mjs: this process
+ * lives exactly as long as the dev server it is relaying, and everything under it
+ * — cargo, rustc, and the Vite server `beforeDevCommand` starts — should stay
+ * below-normal for that whole time. That is the point.
+ *
+ * @param {object} env the environment the child will be given
+ * @param {(line: string) => void} log one-line reporter
+ * @returns {Record<string, string>} additions for the child env
+ */
+export function cargoThrottleEnv(env = process.env, log = () => {}) {
+  if (envFlag("CARGO_FULL_SEND")) {
+    log("[devlog] CARGO_FULL_SEND set - cargo runs unthrottled at full speed");
+    return {};
+  }
+  // `os.cpus().length` and `max(2, …)` to match cargo-run.mjs's jobCap() exactly:
+  // two commands that claim the same throttle must not report different numbers.
+  const cores = os.cpus().length;
+  // No `??` fallback on the env read: `envFlag` has already decided unset-vs-empty
+  // (an empty string IS absent, per the wrapper's contract), so the override is read
+  // only inside the branch that proved it is there. The census rule
+  // `env-default-conflates-unset-with-empty` fires on the `??` form and is right to.
+  let jobCount = Math.max(2, cores - RESERVED_CORES);
+  if (envFlag("PERSONAS_CARGO_JOBS")) {
+    const n = Number.parseInt(process.env.PERSONAS_CARGO_JOBS.trim(), 10);
+    if (Number.isInteger(n) && n > 0) jobCount = n;
+  }
+  const jobs = String(jobCount);
+
+  let priority = "normal (unchanged)";
+  try {
+    os.setPriority(process.pid, BELOW_NORMAL);
+    priority = "below-normal";
+  } catch (err) {
+    // FAIL OPEN, LOUDLY - cargo-run.mjs's own rule. A developer who cannot launch
+    // the app is a worse outcome than one unthrottled compile.
+    log(`[devlog] could not lower priority (${err?.message ?? err}); staying at normal priority`);
+  }
+
+  const preset = env.CARGO_BUILD_JOBS !== undefined && env.CARGO_BUILD_JOBS !== "";
+  log(
+    `[devlog] cargo throttle: priority ${priority}, CARGO_BUILD_JOBS=` +
+      `${preset ? `${env.CARGO_BUILD_JOBS} (preset, kept)` : jobs} of ${cores} cores ` +
+      `(CARGO_FULL_SEND=1 opts out)`,
+  );
+  return preset ? {} : { CARGO_BUILD_JOBS: jobs };
 }
 
 /**
@@ -150,6 +240,12 @@ export async function runWrapped(opts = {}) {
 
   const [cmd, ...cmdArgs] = childCommand(args, env);
   const childEnv = { ...env, PERSONAS_DEVLOG_SESSION: sessionId };
+  // Skipped when DEVLOG_CHILD replaces the tauri command: that is the test hook,
+  // and a fake child compiles nothing worth throttling (nor should a `node --test`
+  // run quietly drop its own priority).
+  if (!env.DEVLOG_CHILD) {
+    Object.assign(childEnv, cargoThrottleEnv(env, (m) => errOut.write(m + "\n")));
+  }
   if (out.isTTY && env.DEVLOG_COLOR !== "0") {
     const forced = [];
     for (const [key, value] of [["CARGO_TERM_COLOR", "always"], ["FORCE_COLOR", "1"], ["CLICOLOR_FORCE", "1"]]) {

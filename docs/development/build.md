@@ -7,9 +7,10 @@ For day-to-day development workflow, see [development.md](./development.md).
 
 ```bash
 # Develop
-npm run tauri:dev              # full app, all features
-npm run tauri:dev:lite         # fast iteration (no ML/P2P)
-npm run tauri:dev:test         # with test-automation HTTP server on :17320
+npm run tauri:dev              # DEFAULT: lite — 683 crates, no ML/P2P
+npm run tauri:dev:lite         # the same thing, kept as an alias
+npm run tauri:dev:full         # 846 crates: adds ml (ORT/fastembed) + p2p
+npm run tauri:dev:test         # lite + test-automation HTTP server on :17320
 
 # Build
 npm run tauri:build            # canonical: all targets, desktop-full features
@@ -84,6 +85,112 @@ Cargo features in `src-tauri/Cargo.toml`:
 \* `daemon` implies `desktop-full` because of unresolved `#[cfg(feature="desktop")]`
 gaps in four backend modules — see the comment on the `daemon` feature in
 `Cargo.toml` for the cleanup plan.
+
+### The dev variant map — what the cheap default cannot see
+
+**`npm run tauri:dev` is the LITE build.** It was `desktop-full` until this map was
+written, which contradicted `.claude/CLAUDE.md`'s own standing advice ("default to lite
+for daily work") — the advice was right and the default command was wrong. Today's
+`desktop-full` dev build is **`npm run tauri:dev:full`**; `tauri:dev:lite` stays as an
+alias so anything that already types it keeps working.
+
+The release path is untouched: `tauri.conf.json` still declares `desktop-full`, and
+`tauri build` / `tauri:build:stable` still ship ml + p2p. **Do not "simplify" this by
+editing `tauri.conf.json`** — it is the config `tauri build` reads, so a lite value
+there would ship an installer with no vector knowledge base and no P2P, silently.
+
+**The size of the choice, reproducible in seconds (metadata only — compiles nothing):**
+
+```bash
+cd src-tauri
+cargo tree -e normal --no-default-features --features desktop      --prefix none | sort -u | wc -l   # 683
+cargo tree -e normal --no-default-features --features desktop-full --prefix none | sort -u | wc -l   # 846
+```
+
+Measured 2026-10-07: **683 lite / 846 full**, and lite is a strict subset — `comm` over
+the two sorted sets gives **163 entries only in full and 0 only in lite**. The 163 are
+headed by `ort` + `ort-sys` + `fastembed` + `tokenizers` + `ndarray` + `hf-hub` +
+`sqlite-vec` (the `ml` half) and `quinn` + `rcgen` + `ed25519` + `mdns-sd` (the `p2p`
+half). ORT is the expensive one; `clean:ort` exists because of it.
+
+**Which work needs `npm run tauri:dev:full`:**
+
+| Work | Gate | Why lite cannot do it |
+|---|---|---|
+| Vector knowledge base, semantic search | `ml` | sqlite-vec is not linked |
+| Embeddings, fastembed, model download/cache | `ml` | fastembed + hf-hub + tokenizers are absent |
+| ONNX inference, anything touching ORT | `ml` | `ort`/`ort-sys` are absent |
+| P2P pairing, mDNS discovery, QUIC transport | `p2p` | quinn + mdns-sd + rcgen + ed25519 are absent |
+
+**What lite literally cannot exercise — absent, not broken.** Everything behind
+`#[cfg(feature = "ml")]` / `#[cfg(feature = "p2p")]` is *compiled out* of a lite build.
+It cannot throw at runtime, cannot fail a test, and cannot show up in a log: there is no
+code there. So a green lite session is **not evidence about those paths**, and "it works
+on my machine" from a lite build says nothing about the vector KB. Two consequences worth
+knowing:
+
+- A compile error that exists only under `desktop-full` is invisible to every local lite
+  gate. This has already happened: a 2026-08-21 wave deleted ~23 symbols whose only
+  consumers sat behind `ml`, verified under `--features desktop`, and produced **56
+  compile errors under `desktop-full`** with every gate green.
+- `PeriodicTask`, the better of this repo's two background-loop harnesses, lives behind
+  `p2p` — so the best primitive does not compile in the variant most development uses.
+  See [`background-loop.md`](../concepts/golden-paths/background-loop.md).
+
+**CI is the other half of this trade, and it is what keeps the gated code from rotting.**
+The `rust-features` job (`.github/workflows/ci.yml:1000`) is a compile matrix that runs
+`cargo check --workspace --features <shape>` for **`desktop-full`**, `desktop,scraper` and
+`desktop,test-automation` on every push that touches Rust (`push: master` is this
+workflow's primary trigger — development lands directly on master). The three-OS
+`rust-tests` job additionally runs `cargo test --workspace --features desktop`. So the
+code lite skips is still compiled on every Rust push; what CI does **not** do is *run*
+the `ml`/`p2p` paths, which is why a change to the vector KB still deserves one local
+`tauri:dev:full` before it lands.
+
+### Editing a template relinks the binary. That is correct.
+
+Touch any `scripts/templates/<category>/*.json` and the next cargo run recompiles the app
+crate and relinks a **143 MB** debug binary (`personas-desktop.exe`, measured
+143,516,672 bytes). Nothing is wrong: `src-tauri/build.rs` declares
+`cargo:rerun-if-changed=../scripts/templates` (`build.rs:99`) because
+`embed_template_index()` aggregates the catalog into `$OUT_DIR/template_index.json`, which
+`engine::build_session::templates` pulls in with `include_str!`. The catalog has to travel
+*inside* the binary — `tauri.conf.json` bundles only `resources/skills`, so a shipped
+installer carries no `scripts/` directory at all and an on-disk read would find nothing.
+
+**Do not "fix" this** by dropping the `rerun-if-changed` or by reading the catalog off
+disk at runtime. The first makes an edited template silently absent from the running app;
+the second is the defect the embedding was introduced to undo.
+
+### The cargo throttle
+
+Every cargo this repository launches goes through **`scripts/build/cargo-run.mjs`** — the
+sidecar build (`scripts/dev/ensure-mcp-sidecar.mjs`), the Rust test suite
+(`scripts/build/run-rust-tests.mjs`), and anything added later. It lowers this node
+process to **below-normal priority** (Windows children inherit the class at creation, so
+cargo and every rustc under it come up throttled without chasing pids) and caps the build
+at **`max(2, cores - 2)` jobs** — 10 of 12 on this host — then queues: it waits for any
+live `cargo.exe`/`rustc.exe` rather than refusing, because two concurrent cargo runs on
+this machine is the memory failure this repo keeps measuring.
+
+`tauri dev` is the exception, and only because it spawns cargo *itself* three processes
+down (`node` → tauri CLI → cargo), so there is no command line to wrap.
+`scripts/devlog/run.mjs` therefore sets the same two things by the only mechanisms that
+reach a grandchild: `os.setPriority` on itself, and **`CARGO_BUILD_JOBS`** in the child
+environment (cargo's documented env form of `--jobs`). It prints one line saying what it
+set, and it does not restore the priority afterwards — the whole dev session, Vite
+included, should stay below-normal.
+
+| Env | Effect |
+|---|---|
+| `CARGO_FULL_SEND=1` | no throttle, no queue — unattended full speed |
+| `CARGO_GUARD=off` | skip the queue only, keep priority + job cap |
+| `PERSONAS_CARGO_JOBS=<n>` | explicit job count instead of `cores - 2` |
+| `CARGO_BUILD_JOBS=<n>` | honoured as-is by the `tauri dev` path if you export it |
+
+An empty string counts as unset for all of them. **CI does not come through here**: runners
+are dedicated, `.github/workflows/*.yml` calls cargo directly, and that is deliberate —
+throttling a runner would slow every pipeline to protect a desktop that does not exist.
 
 ### What a test build gives the frontend
 
