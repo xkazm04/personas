@@ -124,9 +124,12 @@ use crate::db::DbPool;
 use crate::error::AppError;
 use crate::AppState;
 
-/// Commands already surfaced to the UI this session, so the poll doesn't
-/// re-emit the same prompt every tick.
-static SURFACED: LazyLock<Mutex<HashSet<String>>> = LazyLock::new(|| Mutex::new(HashSet::new()));
+/// Commands already surfaced to the UI this session, each with the
+/// fingerprint of what its approval card showed ([`fingerprint`]). The poll
+/// uses it to avoid re-emitting the same prompt every tick; the approval uses
+/// it to refuse a row that changed after the operator saw it.
+static SURFACED: LazyLock<Mutex<HashMap<String, String>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// The poll loop's own memory, owned by the loop (not process-global): what
 /// drives the adaptive cadence and the revocation-check cadence. Losing it on a
@@ -321,6 +324,37 @@ fn persona_name(pool: &DbPool, id: &str) -> Option<String> {
     crate::db::repos::core::personas::get_by_id(pool, id)
         .ok()
         .map(|p| p.name)
+}
+
+/// A digest of everything an approval would execute: the persona, the verb and
+/// the prompt and params. The card shows the first three; the params travel
+/// with the row into [`Effective::from_row`], so they are bound too.
+fn fingerprint(c: &CommandRow) -> String {
+    use sha2::{Digest, Sha256};
+    let canonical = json!([c.persona_id, c.command_type, c.prompt, c.params]).to_string();
+    hex::encode(Sha256::digest(canonical.as_bytes()))
+}
+
+/// Record what a card showed. `true` = new or changed since last shown, so the
+/// card must be (re)emitted; `false` = the same card is already on screen.
+fn record_surfaced(surfaced: &mut HashMap<String, String>, c: &CommandRow) -> bool {
+    let fp = fingerprint(c);
+    surfaced.insert(c.id.clone(), fp.clone()).as_ref() != Some(&fp)
+}
+
+/// Approval time-of-check/time-of-use: the row re-read at approval must be the
+/// one the operator was shown. No recorded card, or a different fingerprint,
+/// means the request changed (or was never shown) - refuse, run nothing.
+fn check_unchanged_since_shown(
+    surfaced: &HashMap<String, String>,
+    c: &CommandRow,
+) -> Result<(), AppError> {
+    match surfaced.get(&c.id) {
+        Some(shown) if *shown == fingerprint(c) => Ok(()),
+        _ => Err(AppError::Validation(
+            "The request changed after it was shown, refresh".into(),
+        )),
+    }
 }
 
 fn to_remote(c: CommandRow, pool: &DbPool) -> RemoteCommand {
@@ -1064,7 +1098,7 @@ async fn poll_once(
 
     let mut surfaced = SURFACED.lock().await;
     for c in prompts {
-        if surfaced.insert(c.id.clone()) {
+        if record_surfaced(&mut surfaced, &c) {
             let _ = app.emit("remote-command-pending", to_remote(c, &pool));
         }
     }
@@ -1139,11 +1173,14 @@ pub async fn remote_command_list_pending(
     );
     let cmds: Vec<CommandRow> = client.get(&path).await?;
     let now = Utc::now();
-    Ok(cmds
-        .into_iter()
-        .filter(|c| !row_expired(c, now))
-        .map(|c| to_remote(c, &pool))
-        .collect())
+    let shown: Vec<CommandRow> = cmds.into_iter().filter(|c| !row_expired(c, now)).collect();
+    // Every card handed to the UI is what a later approval is checked against.
+    let mut surfaced = SURFACED.lock().await;
+    for c in &shown {
+        record_surfaced(&mut surfaced, c);
+    }
+    drop(surfaced);
+    Ok(shown.into_iter().map(|c| to_remote(c, &pool)).collect())
 }
 
 /// Validate that a remote-command `id` is a canonical UUID before it is
@@ -1194,6 +1231,9 @@ pub async fn remote_command_approve(
             "This request is no longer pending".into(),
         ));
     }
+    // The row must be the one the operator was shown. Refused before anything
+    // is written to the cloud row, so a swapped request stays `pending`.
+    check_unchanged_since_shown(&*SURFACED.lock().await, &cmd)?;
     let plane = CloudPlane {
         client: &client,
         device,
@@ -1375,6 +1415,67 @@ mod tests {
             signature: None,
             expires_at,
         }
+    }
+
+    fn card_row() -> CommandRow {
+        CommandRow {
+            persona_id: Some("p1".into()),
+            prompt: Some("summarise the inbox".into()),
+            id: "6f1d2c3b-4a59-4e68-9d7c-0b1a2c3d4e5f".into(),
+            ..timed_row("2026-10-06T12:00:00Z", None)
+        }
+    }
+
+    #[test]
+    fn an_approval_of_the_row_that_was_shown_passes() {
+        let row = card_row();
+        let mut shown = HashMap::new();
+        assert!(record_surfaced(&mut shown, &row), "first sight emits");
+        assert!(
+            !record_surfaced(&mut shown, &row),
+            "same card is deduplicated"
+        );
+        assert!(check_unchanged_since_shown(&shown, &row).is_ok());
+    }
+
+    #[test]
+    fn a_row_changed_after_it_was_shown_is_refused() {
+        let row = card_row();
+        let mut shown = HashMap::new();
+        record_surfaced(&mut shown, &row);
+        for swapped in [
+            CommandRow {
+                prompt: Some("delete the inbox".into()),
+                ..row.clone()
+            },
+            CommandRow {
+                persona_id: Some("p2".into()),
+                ..row.clone()
+            },
+            CommandRow {
+                command_type: "queue_cancel".into(),
+                ..row.clone()
+            },
+            CommandRow {
+                params: Some(json!({ "sessionId": "other" })),
+                ..row.clone()
+            },
+        ] {
+            let err = check_unchanged_since_shown(&shown, &swapped).expect_err("refused");
+            assert!(matches!(err, AppError::Validation(m) if m.contains("changed after")));
+        }
+        // A changed card is shown again.
+        let edited = CommandRow {
+            prompt: Some("something else".into()),
+            ..row
+        };
+        assert!(record_surfaced(&mut shown, &edited));
+    }
+
+    #[test]
+    fn a_row_that_was_never_shown_is_refused() {
+        let shown = HashMap::new();
+        assert!(check_unchanged_since_shown(&shown, &card_row()).is_err());
     }
 
     #[test]
