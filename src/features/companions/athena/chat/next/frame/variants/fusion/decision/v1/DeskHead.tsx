@@ -54,6 +54,7 @@ function Queue({ nav }: { nav: QueueNav }) {
                 variant="ghost"
                 className="d1-dot"
                 style={ink(KIND_VAR[it.kind])}
+                tabIndex={it.id === nav.activeId ? 0 : -1}
                 aria-current={it.id === nav.activeId}
                 aria-label={C.kind[it.kind]}
                 onClick={() => nav.onPick(it.id)}

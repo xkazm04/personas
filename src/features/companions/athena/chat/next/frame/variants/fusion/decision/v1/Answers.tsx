@@ -55,7 +55,7 @@ function FieldCard({ field }: { field: CardField }) {
   const submit = field.submit;
   return (
     <label className="d1-field" data-testid="companion-fusion-d1-field">
-      <span className="typo-label text-foreground">{field.label || C.choose}</span>
+      <span className="typo-label text-foreground">{field.label || C.yourAnswer}</span>
       <textarea
         className={`${INPUT_FIELD} typo-body`}
         rows={field.multiline ? 3 : 1}

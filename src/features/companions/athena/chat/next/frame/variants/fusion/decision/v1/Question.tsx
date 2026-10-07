@@ -88,6 +88,8 @@ export function Question({ model, item, nav }: { model: CardModel | null; item: 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.32, ease: EASE }}
       aria-label={C.kind[item.kind]}
+      tabIndex={-1}
+      data-fusion-question=""
       data-testid="companion-fusion-d1-question"
     >
       <DeskHead item={item} model={model} nav={nav} aside={model ? undefined : <Aside nav={nav} />} />

@@ -24,6 +24,7 @@ export const DESK_COPY = {
   asideHint: 'Leave it in the queue and look at the next one',
   details: 'What it will run',
   choose: 'Answers',
+  yourAnswer: 'Your answer',
   newLine: 'Shift+Enter for a new line',
   sessionApproval: 'Session approval',
   risk: { low: 'Low risk', elevated: 'Elevated risk' },

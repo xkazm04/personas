@@ -70,6 +70,8 @@ export const FUSION_COPY = {
 
   // Decisions.
   queue: 'Waiting on you',
+  // Stepping the queue, said politely: where she is and what the item is.
+  stepped: (i: number, n: number, title: string) => `${i} of ${n}: ${title}`,
   nothingWaiting: 'Nothing waits on you.',
   nothingWaitingSub: 'When she needs a call, the rail lights.',
   aboutThis: (kind: string) => `Re: this ${kind}`,

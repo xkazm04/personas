@@ -98,5 +98,15 @@ export function isTyping(el: Element | null): boolean {
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (el as HTMLElement).isContentEditable;
 }
 
+/**
+ * A control that owns Space (and Enter) when it has focus: a button, link,
+ * disclosure summary, or an ARIA widget. A surface-wide Space shortcut must
+ * leave these alone so the control activates instead of the shortcut firing.
+ */
+export function isInteractive(el: Element | null): boolean {
+  if (!el || el === document.body) return false;
+  return !!el.closest('button, a[href], summary, select, [role="button"], [role="tab"], [role="checkbox"], [role="switch"], [role="menuitem"], [role="option"]');
+}
+
 /** The product's ease, for every Fusion transition. */
 export const EASE = [0.22, 1, 0.36, 1] as const;
