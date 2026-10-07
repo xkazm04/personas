@@ -308,6 +308,8 @@ export const EventName = {
 
   // Referral (personas://ref/<code> deep link received from OS)
   REFERRAL_RECEIVED: 'referral-received',
+  PERSONA_LINK_OPENED: 'persona-link-opened',
+  EXECUTION_LINK_OPENED: 'execution-link-opened',
 
   // Cloud-app pairing request (personas://pair deep link or POST /pair/request)
   PAIRING_REQUESTED: 'pairing-requested',
@@ -1221,6 +1223,14 @@ export interface EventPayloadMap {
   // Referral (deep link referrer code)
   [EventName.REFERRAL_RECEIVED]: {
     code: string;
+  };
+
+  // Navigation-only deep links (personas://persona/<id>, personas://execution/<id>)
+  [EventName.PERSONA_LINK_OPENED]: {
+    personaId: string;
+  };
+  [EventName.EXECUTION_LINK_OPENED]: {
+    executionId: string;
   };
 
   // Cloud-app pairing request — emitted with the Rust `PendingPairingView`.

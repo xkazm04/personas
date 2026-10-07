@@ -351,6 +351,12 @@ event_names! {
     // Referral (personas://ref/<code> deep link received from OS)
     REFERRAL_RECEIVED          => "referral-received",
 
+    // Open a persona (personas://persona/<id> deep link; navigation only)
+    PERSONA_LINK_OPENED        => "persona-link-opened",
+
+    // Open an execution (personas://execution/<id> deep link; navigation only)
+    EXECUTION_LINK_OPENED      => "execution-link-opened",
+
     // Cloud-app pairing request (personas://pair deep link or POST /pair/request)
     PAIRING_REQUESTED          => "pairing-requested",
 
