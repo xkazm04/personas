@@ -309,7 +309,9 @@ test('replay council / tier / report: 404 keeps each queued, the door + a DB pos
     assert.equal(app.prepare("select tier from dev_use_cases where id = 'uc-org'").get().tier, 'major');
     assert.match((await O.replayEntry(t, { db, doors: d2 })).evidence, /^already applied: org-journey is major/);
 
-    const rep = entry('report', { projectId: IDS.project, title: 'Council ready: org-journey (full council, round 1)', content: '# r', attachments: [], approval: { title: 'Approve org-journey?', description: 'd', severity: 'info' } });
+    // queued before the cap matched the door: 20 attachments go out as the door's 12
+    const twenty = Array.from({ length: 20 }, (_, i) => ({ path: `p${i}.png`, caption: `c${i}` }));
+    const rep = entry('report', { projectId: IDS.project, title: 'Council ready: org-journey (full council, round 1)', content: '# r', attachments: twenty, approval: { title: 'Approve org-journey?', description: 'd', severity: 'info' } });
     r = await O.replayEntry(rep, { db, doors: doors({ missing: ['/reports'] }) });
     assert.deepEqual([r.state, r.evidence], ['queued', 'route missing (404): POST /dev-tools/reports']);
     const d3 = doors();
@@ -317,6 +319,8 @@ test('replay council / tier / report: 404 keeps each queued, the door + a DB pos
     assert.equal(r.state, 'replayed', r.evidence);
     assert.ok(r.created.reportId);
     assert.deepEqual(d3.calls[0][1].approval, { title: 'Approve org-journey?', description: 'd', severity: 'info' });
+    assert.equal(d3.calls[0][1].attachments.length, C.COUNCIL.attachmentsMax, 'never more attachments than the door accepts');
+    assert.equal(C.COUNCIL.attachmentsMax, 12);
     r = await O.replayEntry({ ...rep, created: r.created }, { db, doors: d3 });
     assert.equal(r.state, 'skipped');
     assert.equal(d3.calls.length, 1, 'a report is never posted twice');

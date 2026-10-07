@@ -26,7 +26,7 @@
 //                    (a FULL council `ready`: the human gate. The council never approves.)
 //                    The same 404 rule holds for all three.
 
-import { OUTBOX_STATES, Refusal, nowIso } from './contract.mjs';
+import { COUNCIL, OUTBOX_STATES, Refusal, nowIso } from './contract.mjs';
 import { listSlugs, loadOutbox, updateOutbox } from './store.mjs';
 import { masterPersona, one, openDb, resolveManaged } from './dbread.mjs';
 import * as bridge from './bridge.mjs';
@@ -272,7 +272,9 @@ async function tier(e, { db, doors, dryRun }) {
  * the operator answers. Once the door names a report id it is recorded (`created`) and never posted again.
  */
 async function report(e, { db, doors, dryRun }) {
-  const p = e.payload;
+  // trimmed at send time too, so an entry queued before the cap matched the door's still lands
+  // (2026-10-07: kp's first full-ready report carried 20 and the door refused '20 attachments (cap 12)')
+  const p = { ...e.payload, attachments: (e.payload.attachments ?? []).slice(0, COUNCIL.attachmentsMax) };
   const find = () => one(db, 'select id from persona_reports where title = ? order by created_at desc limit 1', [p.title]);
   const before = e.created?.reportId ? { id: e.created.reportId } : find();
   if (before) return res('skipped', `already applied: report ${id8(before.id)}`, { created: { reportId: before.id } });

@@ -146,7 +146,7 @@ export const COUNCIL = {
   maxRounds: 3,                              // the council refuses round 4 (stalled); decide refuses dispatching it
   mustAddressItems: 3, mustAddressChars: 200,
   reportMax: 20000,                          // the report.md carried in a `report` outbox entry
-  attachmentsMax: 20,
+  attachmentsMax: 12,                        // the reports door's own cap (headless_report.rs MAX_ATTACHMENTS); 20 was refused 400
 };
 export const FEATURE_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 /**
