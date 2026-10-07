@@ -23,7 +23,8 @@
 //!    command executed is the one parsed FROM the signed envelope, never from
 //!    the row's columns.
 //! 2. **The auto-run set is closed**: `run_persona`, `pause_persona`,
-//!    `resume_persona`, `cancel_execution` and `chat_send` ([`auto_verb`]).
+//!    `resume_persona`, `cancel_execution`, `chat_send` and `review_decide`
+//!    ([`auto_verb`]).
 //!    Two of them spend money on the user's plan with no desktop prompt and no
 //!    daily cap (M17): `run_persona`, and `chat_send`, which starts one chat
 //!    turn - with Athena (`persona_id = 'athena'`, `cloud::athena_send`) or
@@ -33,8 +34,12 @@
 //!    does (M21): pause stops the persona's own triggers, schedules and event
 //!    subscriptions, not an explicit ask. `chat_send` runs only while the
 //!    operator has "Sync chats" on, because its reply reaches the phone as
-//!    synced data. The trust boundary
-//!    is the phone's non-extractable key plus revocation from this desk.
+//!    synced data. `review_decide` (M20) approves or rejects one pending
+//!    manual review of the named persona through the desk's own resolution
+//!    (`cloud::review_decide`), with every side effect of the desk's Approve /
+//!    Reject - so an approval can resume a team step the review held, as it
+//!    does at the desk. The trust boundary is the phone's non-extractable
+//!    key plus revocation from this desk.
 //! 3. **Everything else still needs the operator's click.** An unsigned
 //!    `run_persona` (an older web build, or a browser that was never paired)
 //!    surfaces the approval card exactly as before. The queue verbs
@@ -60,7 +65,8 @@
 //!    signed command of the same poll. A command already claimed finishes.
 //!
 //! What a paired phone can NOT do: edit a persona, read or touch credentials,
-//! use a queue verb without a click here, or send any verb outside rule 2.
+//! pick a review's suggested action (it approves or rejects only), use a
+//! queue verb without a click here, or send any verb outside rule 2.
 //!
 //! ## Queue verbs
 //!
@@ -118,6 +124,7 @@ use ts_rs::TS;
 
 use crate::cloud::athena_send;
 use crate::cloud::persona_chat_send;
+use crate::cloud::review_decide;
 use crate::cloud::sync::client::SyncClient;
 use crate::cloud::sync::cursor;
 use crate::cloud::trust::{self, Controller, Trust, Verified};
@@ -219,12 +226,14 @@ const QUEUE_VERBS: &[&str] = &["queue_reorder", "queue_set_lane", "queue_cancel"
 /// The v1 verbs of the mobile command plane (PHASE2-SPEC 2.2), besides
 /// `run_persona`. `chat_send` is served for Athena
 /// ([`athena_send::is_supported_target`]) and for any persona
-/// (`persona_chat_send`).
+/// (`persona_chat_send`); `review_decide` (M20) approves or rejects one
+/// manual review (`review_decide`).
 const V1_VERBS: &[&str] = &[
     "pause_persona",
     "resume_persona",
     "cancel_execution",
     "chat_send",
+    "review_decide",
 ];
 
 /// Everything this desktop will act on. Anything else is refused and recorded.
@@ -865,6 +874,20 @@ impl VerbExecutor for AppExecutor {
                     )
                     .await?;
                     persona_chat_send::outcome(&started)
+                }
+                "review_decide" => {
+                    // The desk's own resolution: status, learned memory and
+                    // every side effect of its Approve / Reject.
+                    let outcome = review_decide::execute(&state.db, cmd, |id, status, notes| {
+                        crate::commands::design::reviews::resolve_manual_review(
+                            &state, &self.app, id, status, notes,
+                        )
+                    })?;
+                    if outcome.result.get("changed").and_then(Value::as_bool) == Some(true) {
+                        // Push the new status now, not at the next periodic tick.
+                        crate::cloud::sync::notify_dirty();
+                    }
+                    outcome
                 }
                 verb if QUEUE_VERBS.contains(&verb) => {
                     require_operator_for_queue(authority)?;
@@ -1595,7 +1618,8 @@ mod tests {
                 "pause_persona",
                 "resume_persona",
                 "cancel_execution",
-                "chat_send"
+                "chat_send",
+                "review_decide"
             ]
         );
         for v in [
@@ -1604,6 +1628,7 @@ mod tests {
             "resume_persona",
             "cancel_execution",
             "chat_send",
+            "review_decide",
         ] {
             assert!(is_known_command_type(v), "{v} must be known");
             assert!(auto_verb(v), "{v} auto-runs for a paired controller");
@@ -1801,6 +1826,16 @@ mod tests {
                         execution_id: run.id,
                     },
                 ));
+            }
+            if cmd.command_type == "review_decide" {
+                // The production plan and decision; the resolution is its
+                // database half (the side effects need a running app).
+                return review_decide::execute(&self.pool, cmd, |id, status, notes| {
+                    crate::commands::design::reviews::record_review_decision(
+                        &self.pool, id, status, notes,
+                    )
+                    .map(|(review, _)| review)
+                });
             }
             if cmd.command_type == "chat_send" {
                 let user_db = &self.user_db;
@@ -2301,6 +2336,167 @@ mod tests {
         };
         assert_eq!(status, "failed");
         assert_eq!(fields, json!({ "error_message": "chat_sync_off" }));
+    }
+
+    /// A pending review of `persona`.
+    fn seed_review(pool: &DbPool, persona: &str) -> String {
+        crate::db::repos::communication::manual_reviews::create_unanchored(
+            pool,
+            crate::db::repos::communication::manual_reviews::UnanchoredReviewInput {
+                persona_id: persona,
+                title: "Send the invoice reminder?",
+                description: None,
+                severity: "info",
+                context_data: None,
+            },
+        )
+        .expect("seed review")
+        .id
+    }
+
+    fn review_status(pool: &DbPool, id: &str) -> (String, Option<String>) {
+        let r =
+            crate::db::repos::communication::manual_reviews::get_by_id(pool, id).expect("review");
+        (r.status.as_str().to_string(), r.reviewer_notes)
+    }
+
+    fn decide_params(review: &str, decision: &str) -> String {
+        json!({ "reviewId": review, "decision": decision, "notes": "From the phone" }).to_string()
+    }
+
+    #[test]
+    fn a_signed_review_decide_approves_and_completes_changed_true() {
+        let (pool, persona, plane, exec) = harness();
+        let review = seed_review(&pool, &persona);
+        let phone = Phone::new();
+        let mut row = phone.row_with(
+            "review_decide",
+            &persona,
+            DEV,
+            Utc::now(),
+            &decide_params(&review, "approved"),
+        );
+        // The row's params column is NOT signed: what runs is the envelope's.
+        row.params = Some(json!({ "reviewId": review, "decision": "rejected", "notes": null }));
+        let id = row.id.clone();
+        run(&plane, &exec, &[phone.controller()], row);
+        assert_eq!(
+            plane.writes(),
+            vec![
+                Write::Stamp(CTL.into()),
+                Write::Claim(id.clone()),
+                Write::Finish(
+                    id,
+                    "completed".into(),
+                    json!({
+                        "result": { "reviewId": review, "status": "approved", "changed": true },
+                        "result_ref": review,
+                    })
+                ),
+            ]
+        );
+        assert_eq!(
+            review_status(&pool, &review),
+            ("approved".to_string(), Some("From the phone".to_string())),
+            "the decision and its notes are written locally"
+        );
+    }
+
+    #[test]
+    fn a_review_decide_for_another_personas_review_fails_not_found() {
+        let (pool, persona, plane, exec) = harness();
+        let other = seed_persona(&pool);
+        let review = seed_review(&pool, &other);
+        let phone = Phone::new();
+        run(
+            &plane,
+            &exec,
+            &[phone.controller()],
+            phone.row_with(
+                "review_decide",
+                &persona,
+                DEV,
+                Utc::now(),
+                &decide_params(&review, "approved"),
+            ),
+        );
+        let Some(Write::Finish(_, status, fields)) = plane.writes().pop() else {
+            panic!("finish")
+        };
+        assert_eq!(status, "failed");
+        assert_eq!(fields, json!({ "error_message": "not_found" }));
+        assert_eq!(review_status(&pool, &review).0, "pending", "untouched");
+    }
+
+    #[test]
+    fn a_review_decide_on_a_decided_review_completes_changed_false() {
+        let (pool, persona, plane, exec) = harness();
+        let review = seed_review(&pool, &persona);
+        let phone = Phone::new();
+        let ctl = [phone.controller()];
+        run(
+            &plane,
+            &exec,
+            &ctl,
+            phone.row_with(
+                "review_decide",
+                &persona,
+                DEV,
+                Utc::now(),
+                &decide_params(&review, "approved"),
+            ),
+        );
+        let again = phone.row_with(
+            "review_decide",
+            &persona,
+            DEV,
+            Utc::now(),
+            &decide_params(&review, "rejected"),
+        );
+        let id = again.id.clone();
+        run(&plane, &exec, &ctl, again);
+        assert_eq!(
+            plane.writes().pop(),
+            Some(Write::Finish(
+                id,
+                "completed".into(),
+                json!({
+                    "result": { "reviewId": review, "status": "approved", "changed": false },
+                    "result_ref": review,
+                })
+            ))
+        );
+        assert_eq!(
+            review_status(&pool, &review).0,
+            "approved",
+            "the first decision stands"
+        );
+    }
+
+    #[test]
+    fn an_unsigned_review_decide_is_rejected_controller_not_paired() {
+        let (pool, persona, plane, exec) = harness();
+        let review = seed_review(&pool, &persona);
+        let mut row = Phone::new().row_with(
+            "review_decide",
+            &persona,
+            DEV,
+            Utc::now(),
+            &decide_params(&review, "approved"),
+        );
+        row.controller_id = None;
+        let id = row.id.clone();
+        run(&plane, &exec, &[], row);
+        assert_eq!(
+            plane.writes(),
+            vec![Write::Refuse(
+                id,
+                "rejected".into(),
+                json!({ "error_message": "controller_not_paired" })
+            )]
+        );
+        assert!(exec.calls.lock().unwrap().is_empty(), "nothing executed");
+        assert_eq!(review_status(&pool, &review).0, "pending");
     }
 
     fn run(
