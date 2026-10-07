@@ -399,6 +399,11 @@ test('(xv) the failure signature is the same for the same test in the branch wor
   assert.deepEqual(branch, base);
   assert.equal(G.failuresAreInherited(branch, base), true);
   assert.equal(G.failuresAreInherited([...branch, 'app/api/c/d.test.ts'], base), false, 'a failure only the branch has is not inherited');
+  // Playwright numbers tests by run order and times them in parentheses: the same failure must match
+  const pwBranch = G.failureSignature('  ✘ 843 [node] › tests/golden-path/kit-catalog.probe.spec.ts:191:7 › kit census › census.json is what the tree measures today (303ms)\n');
+  const pwBase = G.failureSignature('  ✘ 1004 [node] › tests/golden-path/kit-catalog.probe.spec.ts:191:7 › kit census › census.json is what the tree measures today (145ms)\n');
+  assert.deepEqual(pwBranch, pwBase);
+  assert.equal(G.failuresAreInherited(pwBranch, pwBase), true);
 });
 
 test('(xvi) settle with no memory headroom refuses, leaves the run exactly as it was, and a later settle succeeds', () => {

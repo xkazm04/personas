@@ -96,6 +96,11 @@ export function failureSignature(text, cap = 300) {
       .replace(/[A-Za-z]:[\\/][^\s]*?[\\/]worktrees[\\/][^\\/\s]+[\\/][^\\/\s]+[\\/]/g, '')
       .replace(/\\/g, '/')
       .replace(/\(\d+,\d+\)/g, '')              // tsc (line,col)
+      // Playwright's list reporter numbers each test by run order ("✘ 843 [node] › ..."), and the
+      // number differs between the branch and the base run of the SAME failure (2026-10-07: gravitone's
+      // inherited kit-census failures read as the branch's own, so the run was held)
+      .replace(/^([×✗✖✘])\s+\d+\s+/, '$1 ')
+      .replace(/\s*\(\d+(?:\.\d+)?\s?m?s\)$/i, '')  // trailing (303ms)
       .replace(/\s+\d+(?:\.\d+)?\s?m?s$/i, '')    // trailing timing
       .replace(/\s*\[[^\]]*\]\s*$/, '')           // trailing [ ... ] annotation
       .replace(/\s+/g, ' ')
