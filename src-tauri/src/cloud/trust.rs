@@ -167,7 +167,7 @@ pub fn revoke_local(
     for c in list.iter_mut() {
         let selected = match which {
             None => true,
-            Some(id) => id == c.controller_id,
+            Some(id) => same_uuid(id, &c.controller_id),
         };
         if selected && !c.revoked {
             c.revoked = true;
@@ -785,6 +785,18 @@ mod tests {
             load_controllers(&pool).len() <= KEEP_REVOKED,
             "revoked entries pruned"
         );
+    }
+
+    #[test]
+    fn revoke_local_matches_the_id_case_insensitively() {
+        let pool = crate::db::init_test_db().expect("db");
+        let mut c = ctl_n(1);
+        c.controller_id = "0c2b9a8f-7e6d-4c5b-8a49-3827160f5e4d".into();
+        add_controller(&pool, c.clone()).expect("add");
+        let upper = c.controller_id.to_ascii_uppercase();
+        let revoked = revoke_local(&pool, Some(&upper), Utc::now()).expect("revoke");
+        assert_eq!(revoked, vec![c.controller_id.clone()]);
+        assert!(!any_active(&pool), "an upper-cased id must still revoke");
     }
 
     #[test]
