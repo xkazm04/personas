@@ -211,6 +211,41 @@ test('promote respects memory and the global cap: it stops there, and every queu
   assert.equal(Q.queueTable().length, 0);
 });
 
+test('a fresh dispatch never jumps runs waiting for a machine-wide slot: it queues behind them, and the promote serves the head first', () => {
+  reset();
+  const t0 = Date.now() - 3600e3;
+  // a run refused earlier for the global cap; a slot has since freed (its await has not promoted yet)
+  const waiting = planned('alpha', { decidedAt: new Date(t0).toISOString(), paths: ['src/a/'] });
+  Q.enqueue(waiting, 'global cap');
+  const fresh = planned('beta', { paths: ['src/b/'] });
+  const out = W.cmdDispatch({ flags: { run: fresh.runId } });
+  assert.equal(out.state, 'running', 'room for both: the fresh run still starts, after the waiter');
+  assert.deepEqual(out.promotedFirst, [waiting.runId], 'the waiter was dispatched before it');
+  assert.equal(out.awaitCommands[0].runId8, C.shortId(waiting.runId));
+  assert.equal(S.loadRun('alpha', waiting.runId).state, 'running');
+  assert.equal(Q.queueTable().length, 0);
+  // full machine: the fresh run stays queued BEHIND the waiter, and nothing starts
+  reset();
+  process.env.APPMASTER_FAKE_FREE_GB = '64';
+  for (let i = 0; i < C.GLOBAL_CAP; i++) busy(`fill${i}`, [`f${i}/`]);
+  const w2 = planned('alpha', { decidedAt: new Date(t0).toISOString(), paths: ['src/a/'] });
+  Q.enqueue(w2, 'global cap');
+  const f2 = planned('beta', { paths: ['src/b/'] });
+  const e = refusal(() => W.cmdDispatch({ flags: { run: f2.runId } }));
+  assert.equal(e.reason, 'global cap');
+  assert.equal(e.extra.queued, true);
+  assert.equal(e.extra.queuedBehind, 1);
+  assert.equal(e.extra.position, 2);
+  assert.deepEqual(Q.queueTable().map((q) => q.runId), [w2.runId, f2.runId]);
+  // a project-local wait (paths overlap) does NOT hold a fresh run of another project back
+  reset();
+  busy('gamma', ['src/x/']);
+  const local = planned('gamma', { paths: ['src/x/'], charter: 'codebase-security-scan' });
+  assert.equal(refusal(() => W.cmdDispatch({ flags: { run: local.runId } })).reason, 'paths overlap');
+  const free = planned('delta', { paths: ['src/y/'] });
+  assert.equal(W.cmdDispatch({ flags: { run: free.runId } }).state, 'running');
+});
+
 test('promote holds the queue lock: a live foreign holder makes it wait, then refuse `queue busy`', () => {
   reset();
   const holder = { pid: process.ppid || 4, label: 'other', at: C.nowIso() };

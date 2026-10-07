@@ -19,7 +19,8 @@ import { createWorktree, removeWorktree } from './worktree.mjs';
 import { memoryState } from './memory.mjs';
 import { resolveRunGates, splitBoundaries, GATE_NAMES } from './gate.mjs';
 import { overlappingPairs } from './paths.mjs';
-import { enqueue, markQueue, queuedEntry, withQueueLock } from './queue.mjs';
+import { enqueue, loadQueue, markQueue, positionOf, queuedEntry, withQueueLock } from './queue.mjs';
+import { promote } from './promote.mjs';
 import { laneFor, runsHoldingRepos } from './repos.mjs';
 
 // ---------------------------------------------------------------- small helpers
@@ -243,11 +244,41 @@ export const awaitCommandFor = (run) => `node "${path.join(SKILL_DIR, 'appmaster
  * Holds the queue lock, so a dispatch and a promote never take the same slot twice.
  */
 export function cmdDispatch(args = {}) {
-  const run = withQueueLock(() => dispatchOrQueue(args), { label: 'dispatch' });
+  let run;
+  try {
+    run = withQueueLock(() => dispatchOrQueue(args), { label: 'dispatch' });
+  } catch (e) {
+    if (!(e instanceof Refusal) || !e.extra?.queuedBehind) throw e;
+    // it queued behind runs already waiting for a machine-wide slot: serve the queue in order now
+    // (a slot may be free: a builder exited and its await has not settled yet), this run included
+    const p = promote();
+    const me = findRun(e.extra.runId);
+    const others = (p.awaitCommands ?? []).filter((a) => a.runId !== e.extra.runId);
+    if (me?.state === 'running') return { ...me, awaitCommand: awaitCommandFor(me), promotedFirst: others.map((a) => a.runId), awaitCommands: others };
+    throw new Refusal(e.reason, { ...e.extra, position: positionOf(e.extra.runId), promoted: p.promoted, awaitCommands: others });
+  }
   return { ...run, awaitCommand: awaitCommandFor(run) };
 }
 
+/** Refusals that bind every run on the machine: a fresh dispatch never takes such a slot ahead of a waiter. */
+const MACHINE_WIDE = ['global cap', 'memory'];
+
 function dispatchOrQueue(args) {
+  // FIFO across the machine (the queue's promise): a run dispatched by hand while others already wait
+  // for a machine-wide slot joins the queue behind them instead of taking the slot a settling await
+  // would have promoted the head into. Measured 2026-10-07: firetv's dispatch took the slot pof's
+  // exited builder freed, ahead of garden-vr's two queued runs.
+  const asked = requireRun(args.flags?.run);
+  if (asked.state === 'planned' && !queuedEntry(asked.runId)) {
+    const ahead = loadQueue().filter((e) => e.state === 'queued' && e.runId !== asked.runId && MACHINE_WIDE.includes(e.reason));
+    if (ahead.length) {
+      const q = enqueue(asked, 'global cap');
+      throw new Refusal('global cap', {
+        runId: asked.runId, slug: asked.slug, queued: true, queuedBehind: ahead.length, position: q.position, queueLength: q.length,
+        hint: 'runs already waiting for a machine-wide slot go first; the promote that follows serves the queue in order',
+      });
+    }
+  }
   let run;
   try {
     run = dispatchCore(args);
