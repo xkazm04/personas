@@ -185,26 +185,48 @@
   position: absolute; right: 26px; top: 18px; bottom: 18px; width: 2px; border-radius: var(--radius-pill); pointer-events: none;
   background: color-mix(in srgb, var(--primary) 75%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--primary) 55%, transparent); z-index: 0;
 }
+/* While something waits on you the line warms from the top, where the attention circle sits,
+   and settles back to the theme's accent below it. */
+.fusion .fu-line.is-waiting {
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--fu-warm) 85%, transparent), color-mix(in srgb, var(--fu-warm) 55%, var(--primary)) 36%, color-mix(in srgb, var(--primary) 75%, transparent) 72%);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--fu-warm) 50%, transparent);
+}
 /* Everything on the rail sits ON the line: positioned above it, inside the rail's own stacking context. */
-.fusion .fu-rail :is(button, .fu-over, .fu-rule) { position: relative; z-index: 1; }
+.fusion .fu-rail :is(button, .fu-over, .fu-rule, .fu-clear) { position: relative; z-index: 1; }
 .fusion .fu-rule { flex: none; width: 24px; height: 1px; background: var(--fu-rule); }
 .fusion .fu-count { flex-direction: column; gap: 0; width: 50px; height: auto; padding: 3px 0 4px; justify-content: center; background: var(--fu-knock); border-radius: var(--radius-interactive); }
 .fusion .fu-count-n { color: var(--fu-warm); line-height: 1.05; }
-.fusion .fu-count.is-quiet .fu-count-n { color: var(--muted-foreground); }
+/* "99+" or three digits: a step down the type ladder so the number stays inside the 50px mark at every text size. */
+.fusion .fu-count-n.is-wide { font-size: calc(var(--type-3) * var(--type-f)); }
 .fusion .fu-count-g { width: 14px; height: 14px; color: var(--fu-warm); }
-.fusion .fu-count.is-quiet .fu-count-g { color: var(--muted-foreground); }
 
 .fusion .fu-beads { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .fusion .fu-attn {
   width: 30px; height: 30px; margin: 0; padding: 0; justify-content: center; border-radius: 50%;
   transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease), margin var(--duration-normal) var(--fu-ease);
-  background: var(--c, var(--fu-warm)); color: var(--background);
+  background: var(--c, var(--fu-warm)); color: var(--on-fill);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--fu-warm) 55%, transparent), 0 0 18px 2px color-mix(in srgb, var(--fu-warm) 55%, transparent);
 }
 .fusion .fu-attn:hover, .fusion .fu-attn:focus-visible { filter: brightness(1.12); }
 .fusion .fu-attn svg { width: 16px; height: 16px; }
 .fusion .fu-attn.is-moving { animation: fu-breathe 2.8s ease-in-out infinite; }
-.fusion .fu-attn.is-quiet { background: var(--fu-knock); color: var(--muted-foreground); box-shadow: inset 0 0 0 1.5px var(--fu-rule); }
+/* The rail's ONE all-clear mark: a still, hollow check; not a control, so no hover and no focus ring. */
+.fusion .fu-clear {
+  display: grid; place-items: center; flex: none; width: 30px; height: 30px; margin: 0; border-radius: 50%;
+  background: var(--fu-knock); color: var(--muted-foreground);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--status-success) 45%, var(--fu-rule));
+  transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease), margin var(--duration-normal) var(--fu-ease);
+}
+.fusion .fu-clear svg { width: 16px; height: 16px; transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease); }
+/* Ink on a coloured fill: near-black on a light fill, near-white on a dark one, from the fill's own
+   lightness (oklch L, threshold where black and white ink meet 4.5:1), so it holds on every theme's
+   warning, error and kind colours. Where relative colour is missing, the theme's background ink stands. */
+.fusion .fu-attn, .fusion .fu-cat-badge { --on-fill: var(--background); }
+@supports (color: oklch(from red l c h)) {
+  .fusion .fu-attn { --on-fill: oklch(from var(--c, var(--fu-warm)) clamp(0.14, calc((0.58 - l) * 100), 0.98) 0.02 h); }
+  .fusion .fu-cat-badge.is-waiting { --on-fill: oklch(from var(--fu-warm) clamp(0.14, calc((0.58 - l) * 100), 0.98) 0.02 h); }
+  .fusion .fu-cat-badge.is-stuck { --on-fill: oklch(from var(--status-error) clamp(0.14, calc((0.58 - l) * 100), 0.98) 0.02 h); }
+}
 @keyframes fu-breathe {
   50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--fu-warm) 70%, transparent), 0 0 28px 6px color-mix(in srgb, var(--fu-warm) 60%, transparent); }
 }
@@ -216,7 +238,8 @@
 .fusion .fu-bead:hover i, .fusion .fu-bead:focus-visible i { filter: brightness(1.25); }
 .fusion .fu-over { color: var(--muted-foreground); background: var(--fu-knock); padding: 0 3px; border-radius: var(--radius-interactive); }
 
-.fusion .fu-cats { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+/* 8px between circles: a badge hangs 3px above its dial and a count 4px below it, so neither meets the next circle's. */
+.fusion .fu-cats { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .fusion .fu-cat { flex-direction: column; gap: 0; width: 44px; height: auto; padding: 0; justify-content: center; background: transparent; border-radius: var(--radius-interactive); }
 .fusion .fu-cat:hover { background: transparent; }
 .fusion .fu-cat-dial {
@@ -235,12 +258,13 @@
 .fusion .fu-cat:hover .fu-cat-core, .fusion .fu-cat:focus-visible .fu-cat-core { filter: brightness(1.2); }
 .fusion .fu-cat.is-open .fu-cat-core { box-shadow: inset 0 0 0 1px var(--ink), 0 0 12px color-mix(in srgb, var(--ink) 55%, transparent); }
 .fusion .fu-cat.is-quiet .fu-cat-core { background: var(--background); color: var(--muted-foreground); box-shadow: inset 0 0 0 1px var(--fu-rule); }
-.fusion .fu-cat-badge { position: absolute; right: -4px; top: -4px; width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--fu-knock); color: var(--background); }
+.fusion .fu-cat-badge { position: absolute; right: -3px; top: -3px; width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--fu-knock); color: var(--on-fill); }
 .fusion .fu-cat-badge svg { width: 10px; height: 10px; }
 .fusion .fu-cat-badge.is-waiting { background: var(--fu-warm); }
 .fusion .fu-cat-badge.is-stuck { background: var(--status-error); }
-.fusion .fu-cat-n { position: absolute; right: -7px; bottom: -5px; min-width: 17px; padding: 0 4px; text-align: center; color: var(--foreground); background: var(--fu-knock); border-radius: var(--radius-pill); box-shadow: inset 0 0 0 1px var(--fu-rule); line-height: 1.35; }
-.fusion .fu-cat.is-quiet .fu-cat-n { color: var(--muted-foreground); }
+/* The count's right edge is pinned 4px inside the 54px glass and it grows leftward over the dial, so up to
+   three characters ("99+") and the larger text sizes never leave the glass. */
+.fusion .fu-cat-n { position: absolute; right: -5px; bottom: -4px; min-width: 17px; padding: 0 4px; text-align: center; white-space: nowrap; color: var(--foreground); background: var(--fu-knock); border-radius: var(--radius-pill); box-shadow: inset 0 0 0 1px var(--fu-rule); line-height: 1.35; font-variant-numeric: tabular-nums; }
 
 /* The toolset: marks on the line at rest; on its own hover or keyboard focus (useRailExpand
    'tools', never the upper column's) a glass panel of its own, double width, growing LEFT,
@@ -271,13 +295,15 @@
    right-aligned to one edge just left of the line. No mark moves. */
 .fusion .fu-rail-seat.is-expanded .fu-attn { width: 36px; height: 36px; margin: -3px; }
 .fusion .fu-rail-seat.is-expanded .fu-attn svg { width: 19px; height: 19px; }
+.fusion .fu-rail-seat.is-expanded .fu-clear { width: 36px; height: 36px; margin: -3px; }
+.fusion .fu-rail-seat.is-expanded .fu-clear svg { width: 19px; height: 19px; }
 .fusion .fu-rail-seat.is-expanded .fu-bead i { width: 14px; height: 14px; }
 .fusion .fu-rail-seat.is-expanded .fu-cat-dial { width: 42px; height: 42px; margin: -3px; }
 .fusion .fu-rail-seat.is-expanded .fu-cat-core { width: 30px; height: 30px; }
 /* The dial grows under its badge and count: they stay where they were, so a
    neighbour's badge never meets them. */
-.fusion .fu-rail-seat.is-expanded .fu-cat-badge { right: -1px; top: -1px; }
-.fusion .fu-rail-seat.is-expanded .fu-cat-n { right: -4px; bottom: -2px; }
+.fusion .fu-rail-seat.is-expanded .fu-cat-badge { right: 0; top: 0; }
+.fusion .fu-rail-seat.is-expanded .fu-cat-n { right: -2px; bottom: -1px; }
 .fusion .fu-rail-seat.is-expanded .fu-cat-core svg { width: 17px; height: 17px; }
 
 .fusion .fu-tag {

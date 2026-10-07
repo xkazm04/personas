@@ -18,6 +18,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { FULLSCREEN_LAYER_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
+import { panelId } from './CategoryCircle';
 import { FUSION_COPY as F } from './copy';
 import { StateGlyph } from './StateGlyph';
 import { EASE } from './text';
@@ -62,8 +63,9 @@ export function CategoryPanel({
       ref={ref}
       className="fu-panel fu-glass"
       style={{ top, ['--ink' as string]: c.ink }}
+      id={panelId(c.key)}
       role="region"
-      aria-label={c.label}
+      aria-labelledby={`${panelId(c.key)}-title`}
       data-testid={`companion-fusion-panel-${c.key}`}
       data-fu-zone={zone['data-fu-zone']}
       onPointerEnter={zone.onPointerEnter}
@@ -79,12 +81,15 @@ export function CategoryPanel({
         <span className="fu-panel-icon" aria-hidden>
           <Icon />
         </span>
-        <span className="typo-title text-foreground">{c.label}</span>
+        <span id={`${panelId(c.key)}-title`} className="typo-title text-foreground">
+          {c.label}
+        </span>
         <span className="flex-1" />
         {STATE_ORDER.filter((s) => c.counts[s] > 0).map((s) => (
-          <span key={s} className="fu-panel-count typo-caption" aria-label={`${c.counts[s]} ${F.state[s]}`}>
+          <span key={s} className="fu-panel-count typo-caption">
             <StateGlyph state={s} />
-            {c.counts[s]}
+            <span aria-hidden>{c.counts[s]}</span>
+            <span className="sr-only">{`${c.counts[s]} ${F.state[s]}`}</span>
           </span>
         ))}
         <Tooltip content={`${F.fold} · ${F.keyEsc}`}>
