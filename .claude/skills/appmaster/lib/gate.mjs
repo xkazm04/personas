@@ -96,7 +96,12 @@ export function failureSignature(text, cap = 300) {
     // node:test summaries as kp's runner prints them: a bare test-file path, and `\u00b7 test name` under it
     const isNodeTestFile = /^(?:[A-Za-z]:)?[\\/].*\.test\.[cm]?[jt]sx?$/.test(line);
     const isNodeTestName = /^\u00b7\s+\S/.test(line);
-    if (!isTestFail && !isTsError && !isNodeTestFile && !isNodeTestName) continue;
+    // Rust's libtest (`test path::name ... FAILED`), and the census ratchet's drift / structural lines,
+    // which carry the rule's counts, so an identical line on the base means master's own red
+    // (2026-10-07: personas-web's landing was held on census rises its branch did not add)
+    const isRustTestFail = /^test \S+ \.\.\. FAILED$/.test(line);
+    const isCensus = /^\[(?:drift|structural)\]\s/.test(line);
+    if (!isTestFail && !isTsError && !isNodeTestFile && !isNodeTestName && !isRustTestFail && !isCensus) continue;
     const norm = line
       // the SAME test lives at a different absolute path in the branch worktree and in the base worktree
       .replace(/[A-Za-z]:[\\/][^\s]*?[\\/]worktrees[\\/][^\\/\s]+[\\/][^\\/\s]+[\\/]/g, '')

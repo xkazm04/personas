@@ -459,6 +459,28 @@ test('(xviii) narrowCommand and testFilesIn', async () => {
   assert.deepEqual(G.testFilesIn(['FAIL src/__tests__/a.test.tsx > suite > case', 'x/y.test.ts', 'no file here']).sort(), ['src/__tests__/a.test.tsx', 'x/y.test.ts']);
 });
 
+test('(xx) failureSignature reads Rust libtest failures and census drift, so a base with the same lines makes them inherited', async () => {
+  const G = await import('../lib/gate.mjs');
+  const ESC = String.fromCharCode(27);
+  const branch = G.failureSignature([
+    '     Running tests\\bindings.rs (target\\debug\\deps\\bindings-de67bf936a6d770c.exe)',
+    'test checked_in_bindings_match_every_rust_command_event_and_dependency ... FAILED',
+    'test fine_one ... ok',
+    `    ${ESC}[33m[drift]${ESC}[0m files rose 110 -> 113 (+3). New violations of docs/concepts/golden-paths/connection-pool-pragmas.md. Fix them.`,
+    '    [structural] the walk visited 2 files, under the floor of 50',
+  ].join('\n'));
+  assert.deepEqual(branch, [
+    '[drift] files rose 110 -> 113 (+3). New violations of docs/concepts/golden-paths/connection-pool-pragmas.md. Fix them.',
+    '[structural] the walk visited 2 files, under the floor of 50',
+    'test checked_in_bindings_match_every_rust_command_event_and_dependency ... FAILED',
+  ]);
+  const sameOnBase = G.failureSignature('[drift] files rose 110 -> 113 (+3). New violations of docs/concepts/golden-paths/connection-pool-pragmas.md. Fix them.');
+  const branchCensusOnly = G.failureSignature('[drift] files rose 110 -> 113 (+3). New violations of docs/concepts/golden-paths/connection-pool-pragmas.md. Fix them.');
+  assert.equal(G.failuresAreInherited(branchCensusOnly, sameOnBase), true, 'the same drift on the base is master\'s red');
+  const branchRoseMore = G.failureSignature('[drift] files rose 110 -> 114 (+4). New violations of docs/concepts/golden-paths/connection-pool-pragmas.md. Fix them.');
+  assert.equal(G.failuresAreInherited(branchRoseMore, sameOnBase), false, 'a branch that adds a violation is its own red');
+});
+
 test('(xix) a gate resolves a repo-local script: NoDefaultCurrentDirectoryInExePath is not passed on', async () => {
   const G = await import('../lib/gate.mjs');
   const before = process.env.NoDefaultCurrentDirectoryInExePath;

@@ -199,7 +199,12 @@ function gateFailure(results, when = '') {
   if (!gv.ran.length) return `no verifiable gate${when} (every gate was skipped: no command)`;
   if (!gv.failed.length) return null;
   const g = gv.failed[0], r = results[g];
-  return `gate ${g} failed${when} (exit ${r.exit}${r.timedOut ? ', timed out' : ''}): ${lastLines(r.tail, 5)}`;
+  // name what failed when the signature recognised it; the tail's last lines are often build noise
+  // (cargo's `Running ...` on stderr, a test stub's canned output), which misled two masters on 2026-10-07
+  const what = r.failures?.length
+    ? `${r.failures.slice(0, 3).join(' | ')}${r.failures.length > 3 ? ` (+${r.failures.length - 3} more)` : ''}`
+    : lastLines(r.tail, 5);
+  return `gate ${g} failed${when} (exit ${r.exit}${r.timedOut ? ', timed out' : ''}): ${what}`;
 }
 
 // ---------------------------------------------------------------- merge gate
