@@ -531,6 +531,23 @@ test('settle refuses a live worker and an undispatched run; a dirty worktree is 
   assert.match(out.heldReason, /uncommitted changes/);
 });
 
+test('a worktree dirty only in line endings (a CRLF-writing generator) is restored and merges; a real edit still holds', () => {
+  const { root, run, wt } = scenario('eolonly');
+  const tip = commitIn(wt, 'gen.ts', 'export const a = 1;\nexport const b = 2;\n');
+  fs.writeFileSync(path.join(wt, 'gen.ts'), 'export const a = 1;\r\nexport const b = 2;\r\n');
+  const out = settle(run);
+  assert.equal(out.state, 'merged', out.heldReason);
+  assert.deepEqual(out.verdict.eolRestored, ['gen.ts']);
+  assert.equal(sh(root, 'rev-parse', 'HEAD'), tip);
+
+  const second = scenario('eolreal');
+  commitIn(second.wt, 'gen.ts', 'export const a = 1;\n');
+  fs.writeFileSync(path.join(second.wt, 'gen.ts'), 'export const a = 2;\r\n');
+  const held = settle(second.run);
+  assert.equal(held.state, 'held');
+  assert.match(held.heldReason, /uncommitted changes.*gen\.ts/);
+});
+
 test('parsePorcelain: quoted and octal-escaped paths, and the -z form', () => {
   assert.deepEqual(M.parsePorcelain(' M "a b.txt"\n?? "\\303\\251t\\303\\251.md"\nM  plain.txt\n'), ['a b.txt', 'été.md', 'plain.txt']);
   assert.deepEqual(M.parsePorcelain(' M a b.txt\0?? x/y.md\0', { z: true }), ['a b.txt', 'x/y.md']);

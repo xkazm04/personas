@@ -395,6 +395,16 @@ function settleCore({ flags = {} } = {}, slot) {
   if (!run.worktree || !fs.existsSync(run.worktree)) return hold(run, `the worktree ${run.worktree} is gone; nothing to run the gates in`, verdict);
   const wtHead = gitTry(run.worktree, ['rev-parse', 'HEAD']).out;
   if (wtHead !== revParse(root, branchRef)) return hold(run, `the worktree HEAD ${wtHead.slice(0, 10)} is not the branch tip`, verdict);
+  // A generator that rewrites committed files with CRLF only (kp's schemas:gen, 2026-10-07: run 2967d471
+  // held on three *.generated.ts that differed from HEAD in line endings alone) leaves a worktree dirty
+  // in bytes but not in content. Restore exactly those tracked files and record them; anything else holds.
+  const eolOnly = worktreeDirty(run.worktree).filter((f) =>
+    gitTry(run.worktree, ['ls-files', '--error-unmatch', '--', f]).ok
+    && gitTry(run.worktree, ['diff', 'HEAD', '--ignore-cr-at-eol', '--quiet', '--', f]).ok);
+  if (eolOnly.length) {
+    gitTry(run.worktree, ['checkout', 'HEAD', '--', ...eolOnly]);
+    verdict.eolRestored = eolOnly.slice(0, 20);
+  }
   const left = worktreeDirty(run.worktree);
   if (left.length) return hold(run, `the worktree has uncommitted changes, so the gates would not verify the committed tip: ${left.slice(0, 10).join(', ')}`, verdict);
 
