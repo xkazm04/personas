@@ -26,7 +26,7 @@ per-connector grant as a **coarse pre-filter** (`:358-377`) — with the
 comment explaining that the exact connector match needs a DB read, so the
 proxy handler re-checks with the default-deny kernel before any secret is
 resolved. That kernel is `authorize_credential_use`
-(`src-tauri/src/engine/credential_broker.rs:93-116`): exact match only
+(`src-tauri/engine/src/credential_broker.rs:93-116`): exact match only
 ("no substring, no case folding — a mismatch must deny", `:89-92`; pinned
 by tests that `cred-1` does not authorize `cred-10` and `GitHub` does not
 match `github`, `:229-243`), and it returns **which grant authorized** —

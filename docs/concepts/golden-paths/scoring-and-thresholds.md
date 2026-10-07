@@ -760,7 +760,7 @@ truth**"*, and does the right thing across the language boundary — the fronten
 startup from `lab_get_score_weights` rather than hand-copied, with the comment recording that the
 "keep in sync" mirror was the defect.
 
-`src-tauri/src/engine/fitness_driver.rs:337-341` weights **the same three metrics**:
+`src-tauri/engine/src/fitness_driver.rs:337-341` weights **the same three metrics**:
 
 ```rust
 let weighted: Vec<(f64, f64)> = [

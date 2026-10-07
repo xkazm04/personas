@@ -9,7 +9,7 @@
 > §7, §9, §12) per the batched-tail runbook; the quality core is unchanged.
 >
 > **Sweep.** Both stream parsers read in full — `src-tauri/engine/src/parser.rs` (1,577
-> lines, the execution stream) and `src-tauri/src/engine/build_session/parser.rs` (1,233
+> lines, the execution stream) and `src-tauri/engine/src/build_session/parser.rs` (1,233
 > lines, the build stream) — plus `engine/src/cli_process.rs`'s line reader, the runner's
 > `StreamOutput` phase (`src/engine/runner/mod.rs:2100-2600`), `build_session/{runner,fanout}.rs`,
 > and the frontend sink `src/lib/execution/executionSink.ts`.
@@ -484,7 +484,7 @@ said *"`retry-with-backoff`'s §0 was extended today — the `Retry-After` arriv
 parsed … `parser.rs:86`, fixture at `:542`."* `retry-with-backoff.md` contains **zero**
 occurrences of `parser.rs`. The extension lives in
 [`rate-limiting.md`](./rate-limiting.md), at §0.4, §7.J and §12.5, and the file is
-`src-tauri/src/engine/build_session/parser.rs` — the **build** parser, not the execution
+`src-tauri/engine/src/build_session/parser.rs` — the **build** parser, not the execution
 parser I was pointed at. Following the citation as given lands on
 `engine/src/parser.rs:86`, which is the opening line of `parse_stream_line`. Both parsers
 turned out to matter, so the lead was productive; the attribution was wrong.

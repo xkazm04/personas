@@ -11,7 +11,7 @@ techniques:
   - nl-assist-gating
 evidence:
   - src/features/vault/sub_databases/safeModeUtils.ts                 # client mirror: literal-stripped CTE scan, fail-closed on unclosed comment
-  - src-tauri/src/engine/db_query.rs                                  # authoritative guard (is_mutation :383, guard :518, one-statement-in-safe-mode :535), LIMIT n+1 bounding, capability enum :621, parameterized introspection :696-835
+  - src-tauri/engine/src/db_query.rs                                  # authoritative guard (is_mutation :383, guard :518, one-statement-in-safe-mode :535), LIMIT n+1 bounding, capability enum :621, parameterized introspection :696-835
   - src/features/vault/sub_databases/hooks/useQuerySafeMode.ts        # default-on safe mode + consent gate bound to its target connection
   - src/features/vault/sub_databases/introspectionQueries.ts          # frontend SQL builders deleted; connector-family classification remains
   - src-tauri/src/commands/credentials/db_schema.rs                   # the one execute door + introspection commands + cancel registry

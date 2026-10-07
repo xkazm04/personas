@@ -319,6 +319,163 @@ Stack size is bumped to 8 MB on both targets to match Linux/macOS defaults
 — sync Tauri commands deserialize on the main thread, and the default 1 MB
 stack overflows on deeply-nested payloads.
 
+## The crate split — why `app_lib` is the whole memory story
+
+`app_lib` is the crate that sets the memory ceiling for every build in this repo.
+One rustc process chews the whole thing, so the peak follows its size and **no flag
+reaches it** — not `-j`, not `debug`, not the linker settings below. Measured
+2026-10-07 on a 12-core Windows ARM host, `cargo build --lib --features desktop`:
+
+| date | app_lib LOC | peak single rustc |
+|---|---|---|
+| 2026-07-26 | 431k, one crate | 8,872 MB |
+| 2026-07-27 | after `core`/`db`/`engine` were split out | 6,201 MB |
+| 2026-10-07 **before** step 6 | 522,110 | **9,816 MB** |
+| 2026-10-07 **after** step 6 | 502,542 | **9,206 MB** |
+
+The third row is the one to notice: the crate grew back past its pre-split peak, and
+a `cargo check --lib` had reached 6,059 MB — a *check* now costs what a full *build*
+cost in July. On a 16 GB machine it does not finish. **The split is not a one-time
+fix; it is maintenance**, and the only lever that moves the peak is making `app_lib`
+smaller.
+
+Step 6 moved **39 files / 19,594 LOC** into `personas-engine` (96,489 → 116,161 LOC).
+
+### The leverage ratio — use this to price the next move
+
+19,568 LOC is **3.75%** of `app_lib` and bought **6.2%** of the peak (−610 MB).
+Roughly **1.65× superlinear**, because rustc's cost per unit grows with the size of
+the unit. Before planning further extraction, that ratio is the estimate to use —
+and the thing to re-measure, since there is no reason to expect it constant.
+
+Do **not** compare wall-clock across a split like this unless both runs had the same
+cache state. The step-6 pair read 1,298s → 476s and that number is meaningless: the
+first run compiled cold dependencies and the second did not.
+
+### How a module moves, and why no call site changes
+
+`src/engine/mod.rs` ends in `pub use personas_engine::*;`. A module that moves out
+keeps resolving under its old path, so `crate::engine::<name>` is unchanged for every
+consumer — **dropping the local `mod` decl is the whole app_lib edit.** A 20k-LOC move
+touched no callers.
+
+That glob does **not** reach a module whose parent stayed behind, because the parent's
+own `mod <dir>;` shadows it. Nine directories are split that way (`background`,
+`build_session`, `http_engine`, `platforms`, `project_tracking`, `runner`,
+`subscription`, `twin_sample`, `twin_setup`): the engine crate gets a synthesized
+`mod.rs` naming the children that moved, and app_lib's copy re-exports each one
+explicitly.
+
+### What decides whether a module can move
+
+Not what it looks like. Three rules, each learned by getting it wrong:
+
+1. **Most `crate::`-looking paths are already extracted.** `crate::db` is
+   `personas_db`; `crate::error`, `crate::utils` are `personas_core`; and twenty more
+   names are re-exported at `src/engine/mod.rs` lines 24/38/42/44/48/66 — `types`,
+   `url_safety`, `embedder`, `chain`, `run_budget`, `scheduler`, `error_taxonomy`
+   among them. All renames, no work. Counting them as blockers under-measures what is
+   movable by more than half.
+2. **A file moves only if every ENGINE module it names also moves.** This transitive
+   closure, iterated to a fixpoint, is the real constraint — and dropping one file can
+   strand another, including a parent whose child has just been dropped.
+3. **`pub(crate)` is the trap.** It means "visible to app_lib" before the move and
+   "visible to personas-engine" after, so every app_lib call site on such an item
+   breaks with E0603. Step 6 promoted 138 occurrences to `pub`. Widening visibility on an
+   unpublished internal crate changes no behaviour, which keeps the commit code motion.
+
+Two more that cost a compile round each: a build-script artifact (`include!` of
+something in app_lib's `OUT_DIR`) pins a file in place, and a crate used only through
+an inline-qualified path (`urlencoding::encode(...)`, never `use urlencoding`) is
+invisible to a dependency scan anchored on `use`.
+
+### Deleting a `mod` decl: take its attributes with it
+
+`#[cfg(test)] mod circuit_breakers_integration_tests;` — delete only the `mod` line
+and the `#[cfg(test)]` lands on **whatever item comes next**. In step 6 that was
+`mod healing_retry;`, and a live module silently vanished from every non-test build.
+The attributes must also travel *with* the module to the new crate: re-declaring that
+one unconditionally would compile an integration-test module into production builds.
+Neither failure produces a warning.
+
+### Moving code can silently remove it from a census rule
+
+**22 census rules have `roots` narrower than `src-tauri`.** Moving a file from
+`src-tauri/src/` to `src-tauri/engine/src/` takes it out of their scan, and the
+violations it held stop being counted — which the census reports as a **drop**, the
+shape that looks like a fix.
+
+Step 6 hit exactly this: `undiscriminated-credential-rejection` is rooted at
+`src-tauri/src` only, and moving `db_query.rs` took 8 of its 17 matches out of scope
+(17→9 matches, 6→5 files). `npm run census -- --update` would have made it green by
+writing the lost coverage into the ratchet — manufacturing one more of the "gates
+that ran green while checking nothing" this repo keeps finding. **Fix the rule's
+`roots`, not the baseline.** Several rules already name `src-tauri/engine/src`
+because step 5 updated them; check the rest before re-baselining anything. After the
+root fix the census was byte-identical to its pre-move state: 212 rules, 20,599
+violations across 7,940 files, no baseline edits.
+
+### What is left, and the one thing blocking it
+
+142,530 LOC of `src/engine/` is still in `app_lib`, in 155 files. The blockers:
+
+| blocked on | files |
+|---|---|
+| `crate::commands::*` | 63 |
+| `crate::companion::*` | 32 |
+| `AppState` | 31 |
+| `crate::lifecycle` | 24 |
+| `crate::notifications` | 18 |
+| `crate::cloud` | 18 |
+
+Every frontier module was checked individually; **none is blocked by anything except
+these.** `commands` is the one that matters and the one worth inverting — an engine
+that calls into the command layer has its dependency arrow backwards. 11 files are
+blocked by `AppState` alone, so a host-context trait would release those immediately.
+
+### The "portable half" is not portable yet
+
+`engine/src/lib.rs` describes itself as "the portable half … without pulling in a
+windowed `AppHandle`". `engine/Cargo.toml` depends on `tauri`, and
+`engine/src/events.rs` imports `tauri::{AppHandle, Emitter}` unconditionally. The
+crate is **extracted, not portable** — treat the header as intent.
+
+The abstraction that would close it already exists in that same file:
+`ExecutionEventEmitter`, with `TauriEmitter` and `NoOpEmitter` impls and an
+`emit_json` dyn-compatible method. The remaining work is to adopt it at the call
+sites that still take an `AppHandle` only to call `.emit()` on it, then make `tauri`
+an optional dependency. Build a new trait for this and you have duplicated a working
+one — see `.claude/rules/rust-backend.md` on unadopted abstractions.
+
+### Verifying a move: `cargo check` is not enough, and `super::` is a trap
+
+**`cargo check` compiles no `#[cfg(test)]` code.** Both crates reported 0 errors and
+0 warnings on a version of step 6 whose *test* build failed with 377 errors. Use
+`--all-targets` on every crate you touched, every time, before believing a move.
+
+The 377 had one cause, and it is the trap: a blanket `super::` -> `crate::` rewrite
+also rewrites `super::` inside `mod tests { use super::*; }`, where `super` is the
+file's **own** module and not its parent. Every one of those errors was a test
+referring to an item its own file defines. And the rewrite was never needed — in
+`engine/src/foo.rs` a top-level `super::` already means the engine crate root, which
+holds the same modules the app_lib `engine` module did. **Leave `super::` alone;
+rewrite only the names that were re-exports.**
+
+Two more measurement notes from the same pass:
+
+- **The movability closure is mutually recursive.** Dropping a child can strand a
+  parent (`platforms/mod.rs` losing `deploy.rs`) and un-moving a parent can strand a
+  child (`observers.rs` needing `super::ObservationPoint` from `hooks/mod.rs`). Run
+  both conditions to a *joint* fixpoint, and remember that a capitalised `super::X`
+  is an item owned by the parent's `mod.rs`, not a sibling module — filtering those
+  out as "not a module" is how a file survives a check it should fail.
+- **Know which clippy form is gated.** CI runs
+  `cargo clippy --workspace --manifest-path src-tauri/Cargo.toml --features desktop -- -D warnings`
+  — no `--all-targets`, so lib targets only. The `--all-targets` form is gated
+  nowhere and is red in both crates independently of this work (10 errors in step-5
+  engine files, 77 in app_lib `src/commands/**`). Measure against the form that
+  actually gates before concluding you broke or fixed anything.
+
 ## Profiles
 
 Defined in `src-tauri/Cargo.toml`:

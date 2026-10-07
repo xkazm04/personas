@@ -9,7 +9,7 @@ stack: rust
 
 The repo's one outbound door is `execute_api_request` at
 `src-tauri/src/engine/api_proxy.rs:638-996`, fronted by the authorization
-kernel in `src-tauri/src/engine/credential_broker.rs`. External consumers hold
+kernel in `src-tauri/engine/src/credential_broker.rs`. External consumers hold
 revocable `external_api_keys` handles and route every credentialed call
 through the audited proxy route; the credential's plaintext exists only inside
 the door (the module doc at `credential_broker.rs:1-23` states the contract,

@@ -427,7 +427,7 @@ automations that run with no user. See
 | `src-tauri/src/engine/chain.rs` | Chain-trigger condition evaluation |
 | `src-tauri/src/engine/dispatch.rs` | Protocol → DB writes (events, memories, reviews) |
 | `src-tauri/src/engine/parser.rs` | Stdout → protocol messages |
-| `src-tauri/src/engine/automation_runner.rs` | External workflow invocation |
+| `src-tauri/engine/src/automation_runner.rs` | External workflow invocation |
 | `src-tauri/src/db/repos/communication/events.rs` | Event CRUD, claim_pending, dead letter |
 | `src-tauri/src/db/repos/communication/manual_reviews.rs` | Review CRUD + message threads |
 | `src-tauri/src/db/repos/resources/memories.rs` | Memory lifecycle |

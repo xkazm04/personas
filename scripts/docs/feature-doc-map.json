@@ -228,7 +228,8 @@
         "src-tauri/src/engine/discovery.rs",
         "src-tauri/src/engine/connector_strategy.rs",
         "src-tauri/engine/src/template_checksums.rs",
-        "src-tauri/src/engine/build_session/**"
+        "src-tauri/src/engine/build_session/**",
+        "src-tauri/engine/src/build_session/**"
       ],
       "onboardingFlows": [
         "template-picker",
@@ -243,6 +244,7 @@
       "sourceGlobs": [
         "src-tauri/src/commands/execution/**",
         "src-tauri/src/engine/background/**",
+        "src-tauri/engine/src/background/**",
         "src-tauri/engine/src/bus.rs",
         "src-tauri/core/src/scheduler.rs",
         "src-tauri/core/src/cron.rs",
@@ -253,7 +255,7 @@
         "src-tauri/engine/src/parser.rs",
         "src-tauri/core/src/trace.rs",
         "src-tauri/engine/src/cost.rs",
-        "src-tauri/src/engine/automation_runner.rs",
+        "src-tauri/engine/src/automation_runner.rs",
         "src-tauri/src/engine/tool_runner.rs"
       ],
       "onboardingFlows": [
@@ -549,7 +551,7 @@
         "src-tauri/db/src/repos/resources/teams.rs",
         "src-tauri/db/src/repos/orchestration/**",
         "src-tauri/src/engine/team_assignment_orchestrator.rs",
-        "src-tauri/src/engine/team_assignment_matching.rs"
+        "src-tauri/engine/src/team_assignment_matching.rs"
       ],
       "onboardingFlows": [
         "pipeline-project",
