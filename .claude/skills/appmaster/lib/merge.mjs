@@ -10,7 +10,7 @@ import { nowIso, readJson, shortId, Refusal, SELF_REPO, SETTLED_STATES, COUNCIL,
 import { findCouncilRunDir, readCouncilResult, copyCouncilRun, reportPayload, boundedMustAddress, roundOfName } from './council.mjs';
 import { loadBrief, updateRun, raiseAsk, queueOutbox, openAsks, updateAsk } from './store.mjs';
 import { readLimit } from './limits.mjs';
-import { requireRun, pidAlive, runFile, markLimitFromRun, awaitHolder } from './worker.mjs';
+import { requireRun, pidAlive, runFile, markLimitFromRun, awaitHolder, finishedClean, readRunOutput } from './worker.mjs';
 import { git, gitTry, revParse, isAncestor, removeWorktree, withBaseWorktree, linkNodeModules } from './worktree.mjs';
 import { acquireGateSlot } from './memory.mjs';
 import { resolveRunGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, failuresAreInherited, testFilesIn, narrowCommand, GATE_TIMEOUT_MS } from './gate.mjs';
@@ -342,7 +342,9 @@ export function cmdSettle(args = {}) {
 
 function settleCore({ flags = {} } = {}, slot) {
   let run = requireRun(flags.run);
-  if (SETTLED_STATES.includes(run.state)) return run;
+  // `--retry` may reopen a run released for a usage limit that its worker outlived (it finished clean)
+  const outlivedLimit = run.state === 'released' && /^usage limit/.test(run.heldReason || '') && finishedClean(readRunOutput(run).stream);
+  if (SETTLED_STATES.includes(run.state) && !(flags.retry && outlivedLimit)) return run;
   if (run.state === 'held' && !flags.retry) return run;
   if (run.state === 'planned') throw new Refusal('not dispatched', { runId: run.runId });
   // one settler per run: an `await` in another process owns this run until it settles or gives up
@@ -356,8 +358,10 @@ function settleCore({ flags = {} } = {}, slot) {
   run = updateRun(run, { state: 'verifying', verifyStartedAt: nowIso() });
 
   // A usage limit is not a verdict on the work: release, keep everything, let a later pass retake it.
+  // A worker that finished clean after meeting a limit outlived it: its work is settled like any other.
   const standing = readLimit();
-  const mark = run.limitSeenAt ? (standing?.runId === run.runId ? standing : { reason: 'seen by watch' })
+  const mark = finishedClean(readRunOutput(run).stream) ? null
+    : run.limitSeenAt ? (standing?.runId === run.runId ? standing : { reason: 'seen by watch' })
     : markLimitFromRun(run) || (standing?.runId === run.runId ? standing : null);
   if (mark) return updateRun(run, { state: 'released', heldReason: `usage limit: ${mark.reason}`, settledAt: nowIso() });
 

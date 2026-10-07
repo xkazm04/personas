@@ -517,6 +517,39 @@ test('a usage limit in the stream -> released (not held, not failed) and the mar
   L.clearLimit();
 });
 
+// The stream shape measured 2026-10-07 when the subscription changed mid-run: the limit's error result,
+// then the worker carried on and ended on a clean result.
+const outlivedStream = () => [
+  { type: 'system', subtype: 'init' },
+  { type: 'result', subtype: 'success', is_error: true, result: "You've hit your weekly limit · resets Oct 11, 4am (Europe/Prague)" },
+  { type: 'result', subtype: 'success', is_error: false, result: 'done' },
+].map((o) => JSON.stringify(o)).join('\n') + '\n';
+
+test('a usage limit the worker outlived (its last result is clean) -> settled like any run, and no mark is set', () => {
+  const { run, wt } = scenario('outlived');
+  const tip = commitIn(wt, 'c.txt', 'finished after the limit lifted\n');
+  fs.writeFileSync(path.join(C.runDir('outlived', run.runId), 'stream.jsonl'), outlivedStream());
+  const out = settle(run);
+  assert.equal(out.state, 'merged', out.heldReason);
+  assert.equal(out.mergedSha, tip);
+  assert.equal(L.readLimit(), null, 'an outlived limit does not stop the loop');
+});
+
+test('a run released for a limit it outlived re-settles on --retry; one the limit stopped stays released', () => {
+  const { run, wt } = scenario('reopen');
+  const tip = commitIn(wt, 'c.txt', 'work\n');
+  const streamFile = path.join(C.runDir('reopen', run.runId), 'stream.jsonl');
+  S.updateRun(run, { state: 'released', heldReason: 'usage limit: seen by watch', limitSeenAt: C.nowIso() });
+  fs.writeFileSync(streamFile, `${JSON.stringify({ type: 'result', is_error: true, result: 'Claude AI usage limit reached|1760000000' })}\n`);
+  assert.equal(M.cmdSettle({ flags: { run: run.runId, retry: true } }).state, 'released', 'stopped by the limit: retry changes nothing');
+  assert.equal(M.cmdSettle({ flags: { run: run.runId } }).state, 'released', 'outlived, but no --retry: returned as it is');
+  fs.writeFileSync(streamFile, outlivedStream());
+  const out = M.cmdSettle({ flags: { run: run.runId, retry: true } });
+  assert.equal(out.state, 'merged', out.heldReason);
+  assert.equal(out.mergedSha, tip);
+  assert.equal(L.readLimit(), null);
+});
+
 test('settle refuses a live worker and an undispatched run; a dirty worktree is held', () => {
   const { run, wt } = scenario('guards');
   const live = S.updateRun(run, { state: 'running', pid: process.pid });

@@ -98,9 +98,20 @@ export function workerEnv(slug, run = null) {
   return { ...env, ...ENV_SET, PERSONAS_RUN_LABEL: RUN_LABEL_PREFIX + slug, ...(run ? repoEnv(repoOf(run).root) : {}) };
 }
 
+/**
+ * True when the worker's LAST result is not an error. A worker that met a usage limit and then went on
+ * (the subscription changed mid-run and the CLI carried on) ends this way, and its earlier limit banner
+ * is history, not its outcome. A worker the limit stopped ends on the limit's own error result.
+ */
+export function finishedClean(streamText) {
+  const last = parseResult(streamText);
+  return Boolean(last) && !last.isError;
+}
+
 /** If the run's output carries a limit banner and no mark stands for it yet, write the mark. */
 export function markLimitFromRun(run) {
   const { stream, stderr } = readRunOutput(run);
+  if (finishedClean(stream)) return null;
   const surface = limitSurface(stream, stderr);
   if (!detectLimit(surface)) return null;
   const current = readLimit();
