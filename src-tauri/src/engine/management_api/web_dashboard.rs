@@ -143,8 +143,10 @@ struct ExecuteBody {
 /// object, is 400 `invalid_body`.
 pub(super) fn parse_execute_body(body: &[u8]) -> Result<(String, String), Refusal> {
     let invalid = |msg: &str| err_code(StatusCode::BAD_REQUEST, "invalid_body", msg);
-    let parsed: ExecuteBody = serde_json::from_slice(body)
-        .map_err(|_| invalid("body must be a JSON object {personaId, prompt}"))?;
+    let parsed: ExecuteBody = std::str::from_utf8(body)
+        .ok()
+        .and_then(|text| crate::engine::safe_json::from_str_as(text).ok())
+        .ok_or_else(|| invalid("body must be a JSON object {personaId, prompt}"))?;
     let persona_id = parsed.persona_id.filter(|s| !s.trim().is_empty());
     let prompt = parsed.prompt.filter(|s| !s.trim().is_empty());
     match (persona_id, prompt) {
@@ -705,14 +707,12 @@ mod tests {
         let id = persona(&pool, true);
         let running = exec_repo::create(&pool, &id, None, None, None, None).unwrap();
         let _queued = exec_repo::create(&pool, &id, None, None, None, None).unwrap();
-        pool.get()
-            .unwrap()
-            .execute(
-                "UPDATE persona_executions SET status = 'running', \
-                 started_at = '2026-01-02T03:04:05+00:00' WHERE id = ?1",
-                [&running.id],
-            )
-            .unwrap();
+        set_execution(
+            &pool,
+            "status = 'running', started_at = '2026-01-02T03:04:05+00:00'",
+            &running.id,
+        )
+        .unwrap();
         let active = running_executions(&pool).unwrap();
         assert_eq!(active.len(), 1);
         assert_eq!(active[0].execution_id, running.id);
