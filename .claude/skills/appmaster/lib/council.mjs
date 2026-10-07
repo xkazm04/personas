@@ -146,7 +146,7 @@ export function copyCouncilRun(run, dir) {
   return dest;
 }
 
-const ATTACHABLE = /\.(png|jpe?g|gif|webp|svg)$/i;
+const ATTACHABLE = COUNCIL.attachable;
 /** Screenshots and evidence files of a council run directory (copied), bounded: [{path, caption}]. */
 export function reportAttachments(copyDir) {
   const out = [];
@@ -156,7 +156,9 @@ export function reportAttachments(copyDir) {
       if (out.length >= COUNCIL.attachmentsMax) return;
       const abs = path.join(dir, e.name), r = rel ? `${rel}/${e.name}` : e.name;
       if (e.isDirectory()) { if (depth < 3) walk(abs, r, depth + 1); continue; }
-      if (ATTACHABLE.test(e.name) || /(^|\/)(evidence|screenshots)\//i.test(r)) out.push({ path: abs, caption: r });
+      // only types the reports door accepts (2026-10-07: an evidence/gates/.gates-finished marker was refused 400);
+      // the top-level report.md is the report's content already, not an attachment
+      if (ATTACHABLE.test(e.name) && r !== 'report.md') out.push({ path: abs, caption: r });
     }
   };
   walk(copyDir, '', 0);

@@ -162,6 +162,7 @@ test('a FULL council `ready` queues council, tier (major) and report (report.md,
   const run = reviewRun('org-journey', 'full');
   writeCouncil(run.worktree, '2026-10-09-org-journey-r1', RESULT('ready', { overall: 0.81, coverage: 0.93 }), {
     'report.md': '# Council report: org journey\n\nReady.\n', 'screenshot.png': 'png-bytes', 'evidence/log.txt': 'log',
+    'evidence/notes.md': '# notes', 'evidence/gates/.gates-finished': '',
   });
   const out = settle(run);
   assert.equal(out.state, 'reviewed', out.heldReason);
@@ -172,7 +173,8 @@ test('a FULL council `ready` queues council, tier (major) and report (report.md,
   assert.equal(rep.projectId, IDS.project);
   assert.equal(rep.title, 'Council ready: org-journey (full council, round 1)');
   assert.ok(rep.content.startsWith('# Council report: org journey'));
-  assert.deepEqual(rep.attachments.map((a) => a.caption), ['evidence/log.txt', 'screenshot.png']);
+  // only the door's types: a .txt and a dot-file marker are left out, and report.md is the content, not an attachment
+  assert.deepEqual(rep.attachments.map((a) => a.caption), ['evidence/notes.md', 'screenshot.png']);
   assert.ok(rep.attachments.every((a) => a.path.startsWith(out.council.copyPath)), 'attachments point at the durable copy');
   assert.equal(rep.approval.title, 'Approve org-journey?');
   assert.equal(rep.approval.severity, 'info');

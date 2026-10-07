@@ -274,7 +274,7 @@ async function tier(e, { db, doors, dryRun }) {
 async function report(e, { db, doors, dryRun }) {
   // trimmed at send time too, so an entry queued before the cap matched the door's still lands
   // (2026-10-07: kp's first full-ready report carried 20 and the door refused '20 attachments (cap 12)')
-  const p = { ...e.payload, attachments: (e.payload.attachments ?? []).slice(0, COUNCIL.attachmentsMax) };
+  const p = { ...e.payload, attachments: (e.payload.attachments ?? []).filter((a) => COUNCIL.attachable.test(String(a?.path ?? ''))).slice(0, COUNCIL.attachmentsMax) };
   const find = () => one(db, 'select id from persona_reports where title = ? order by created_at desc limit 1', [p.title]);
   const before = e.created?.reportId ? { id: e.created.reportId } : find();
   if (before) return res('skipped', `already applied: report ${id8(before.id)}`, { created: { reportId: before.id } });

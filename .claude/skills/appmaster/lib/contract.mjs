@@ -147,6 +147,8 @@ export const COUNCIL = {
   mustAddressItems: 3, mustAddressChars: 200,
   reportMax: 20000,                          // the report.md carried in a `report` outbox entry
   attachmentsMax: 12,                        // the reports door's own cap (headless_report.rs MAX_ATTACHMENTS); 20 was refused 400
+  // the reports door's accepted types (headless_report.rs check_attachment); any other file is refused 400
+  attachable: /\.(png|jpe?g|gif|webp|mp4|webm|pdf|md|markdown)$/i,
 };
 export const FEATURE_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 /**
