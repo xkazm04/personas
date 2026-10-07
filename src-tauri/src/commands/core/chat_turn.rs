@@ -17,6 +17,15 @@
 //! display in the desktop is unchanged: it still comes from the execution's
 //! `execution-output` events, which this module does not touch.
 //!
+//! The completion hook lives in the process that started the turn. A restart
+//! does not end the run (the engine re-admits a run that was mid-flight, see
+//! `restart_recovery`), but it did end the hook, so the reply was lost. Each
+//! turn's user row now points at its run ([`link_run`]), and at boot
+//! [`reconcile_after_restart`] writes the replies owed for runs that already
+//! completed and re-arms the hook for runs still queued or running. A run the
+//! restart classified `incomplete` is owed nothing. [`finish`] is serialised,
+//! so a reply is written once however many hooks wait on its run.
+//!
 //! # Parity with the TypeScript path it replaces
 //!
 //! The input JSON is byte-identical to what `chatSlice.ts` built
@@ -540,6 +549,20 @@ pub async fn start_with(
         false,
     )
     .await?;
+    // The user row now points at its run, so a reply still owed when this
+    // process dies is found again at the next start ([`reconcile`]). Not
+    // fatal: the hook below still writes the reply in this process.
+    let user_message = match link_run(&state.db, &prepared.user_message, &exec.id) {
+        Ok(linked) => linked,
+        Err(e) => {
+            tracing::warn!(
+                execution_id = %exec.id,
+                error = %e,
+                "chat turn: could not link the user message to its run"
+            );
+            prepared.user_message
+        }
+    };
     // 5. The reply, when the run ends.
     spawn_completion_hook(
         state.clone(),
@@ -550,22 +573,31 @@ pub async fn start_with(
     );
     Ok(ChatTurnStarted {
         session_id: prepared.session_id,
-        user_message: prepared.user_message,
+        user_message,
         execution_id: exec.id,
     })
 }
 
 /// Whether the session already holds the reply of `execution_id`, so a hook
-/// registered twice (a re-delivered request) never writes it twice.
-fn reply_exists(pool: &DbPool, execution_id: &str) -> Result<bool, AppError> {
+/// registered twice (a re-delivered request, or a restart's re-armed hook)
+/// never writes it twice.
+fn reply_exists(pool: &DbPool, session_id: &str, execution_id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let n: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM chat_messages WHERE execution_id = ?1 AND role = 'assistant'",
-        rusqlite::params![execution_id],
+        "SELECT COUNT(*) FROM chat_messages \
+         WHERE session_id = ?1 AND execution_id = ?2 AND role = 'assistant'",
+        rusqlite::params![session_id, execution_id],
         |r| r.get(0),
     )?;
     Ok(n > 0)
 }
+
+/// Serialises [`finish`]'s check-then-insert. Two finishers for one run can
+/// coexist in this process (a re-delivered request's second hook, a hook the
+/// restart reconcile re-armed next to one a new request registered), and
+/// without this both can pass [`reply_exists`] before either inserts. The
+/// work under it is a few row reads and two writes.
+static FINISH_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 /// Step 5, database only: on a COMPLETED run with a non-empty reply, insert
 /// the assistant row and store the summary and the Claude session id for the
@@ -584,7 +616,15 @@ pub fn finish(
         return Ok(None);
     }
     let mut reply = assemble_reply(exec.output_data.as_deref());
-    if reply.is_empty() || reply_exists(pool, &exec.id)? {
+    if reply.is_empty() {
+        return Ok(None);
+    }
+    // A poisoned lock only means another finisher panicked; the guard holds
+    // no state, so the check below is still the whole truth.
+    let _serial = FINISH_LOCK
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    if reply_exists(pool, session_id, &exec.id)? {
         return Ok(None);
     }
     // The repository refuses content above its cap; a long answer is kept
@@ -626,6 +666,132 @@ pub fn finish(
         },
     )?;
     Ok(Some(assistant))
+}
+
+/// Point the turn's user row at its run (what [`reconcile`] finds a turn by
+/// after a restart). Returns the user row as it now reads.
+pub fn link_run(
+    pool: &DbPool,
+    user_message: &ChatMessage,
+    execution_id: &str,
+) -> Result<ChatMessage, AppError> {
+    repo::link_execution(pool, &user_message.id, execution_id)?;
+    let conn = pool.get()?;
+    let linked: Option<String> = conn.query_row(
+        "SELECT execution_id FROM chat_messages WHERE id = ?1",
+        rusqlite::params![user_message.id],
+        |r| r.get(0),
+    )?;
+    Ok(ChatMessage {
+        execution_id: linked,
+        ..user_message.clone()
+    })
+}
+
+/// How far back [`reconcile`] looks for a turn whose reply is still owed.
+pub const RECONCILE_WINDOW_DAYS: i64 = 7;
+
+/// A turn whose reply is still owed: its user row points at its run, and no
+/// assistant row carries that run.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OwedReply {
+    pub persona_id: String,
+    pub session_id: String,
+    pub execution_id: String,
+    pub mode: ChatTurnMode,
+}
+
+/// What [`reconcile`] did.
+#[derive(Debug, Default)]
+pub struct Reconciled {
+    /// Replies written now: their run had completed with no reply row.
+    pub written: Vec<ChatMessage>,
+    /// Turns whose run is still queued or running: a completion hook is owed.
+    pub waiting: Vec<OwedReply>,
+}
+
+/// After a restart: find the turns of the last [`RECONCILE_WINDOW_DAYS`]
+/// whose reply is owed, write the ones whose run already completed, and
+/// return the ones still in flight.
+pub fn reconcile(
+    pool: &DbPool,
+    now: chrono::DateTime<chrono::Utc>,
+) -> Result<Reconciled, AppError> {
+    let since = (now - chrono::Duration::days(RECONCILE_WINDOW_DAYS)).to_rfc3339();
+    // The assistant row always sits in its turn's session, so the NOT EXISTS
+    // probe rides the session index rather than scanning every message.
+    let owed: Vec<(OwedReply, String)> = {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT u.persona_id, u.session_id, u.execution_id, e.status, c.chat_mode \
+             FROM chat_messages u \
+             JOIN persona_executions e ON e.id = u.execution_id \
+             LEFT JOIN chat_session_context c ON c.session_id = u.session_id \
+             WHERE u.role = 'user' AND u.execution_id IS NOT NULL AND u.created_at >= ?1 \
+             AND e.status IN ('queued', 'running', 'completed') \
+             AND NOT EXISTS (SELECT 1 FROM chat_messages a \
+             WHERE a.session_id = u.session_id AND a.execution_id = u.execution_id \
+             AND a.role = 'assistant') \
+             ORDER BY u.created_at ASC",
+        )?;
+        let rows = stmt.query_map(rusqlite::params![since], |r| {
+            let mode: Option<String> = r.get(4)?;
+            Ok((
+                OwedReply {
+                    persona_id: r.get(0)?,
+                    session_id: r.get(1)?,
+                    execution_id: r.get(2)?,
+                    mode: ChatTurnMode::from_stored(mode.as_deref().unwrap_or_default()),
+                },
+                r.get::<_, String>(3)?,
+            ))
+        })?;
+        rows.collect::<Result<_, _>>()?
+    };
+    let mut out = Reconciled::default();
+    for (turn, status) in owed {
+        if status != "completed" {
+            out.waiting.push(turn);
+            continue;
+        }
+        let exec = crate::db::repos::execution::executions::get_by_id(pool, &turn.execution_id)?;
+        if let Some(reply) = finish(pool, &turn.persona_id, &turn.session_id, &exec, turn.mode)? {
+            out.written.push(reply);
+        }
+    }
+    Ok(out)
+}
+
+/// At boot, after the engine has classified and re-admitted the runs the
+/// last process left behind: write every reply that is owed for a run that
+/// already completed, and re-arm the completion hook for every run still
+/// queued or running (a re-admitted run keeps its id, so the hook finds it).
+/// A run the restart classified `incomplete` is owed nothing; its turn shows
+/// the no-reply state.
+pub fn reconcile_after_restart(state: Arc<AppState>) {
+    match reconcile(&state.db, chrono::Utc::now()) {
+        Ok(r) => {
+            if !r.written.is_empty() || !r.waiting.is_empty() {
+                tracing::info!(
+                    written = r.written.len(),
+                    waiting = r.waiting.len(),
+                    "chat turn: replies owed across a restart reconciled"
+                );
+            }
+            for turn in r.waiting {
+                spawn_completion_hook(
+                    state.clone(),
+                    turn.persona_id,
+                    turn.session_id,
+                    turn.execution_id,
+                    turn.mode,
+                );
+            }
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "chat turn: restart reconcile failed");
+        }
+    }
 }
 
 fn is_terminal(status: &str) -> bool {
@@ -699,6 +865,22 @@ fn spawn_completion_hook(
                 execution_id = %execution_id,
                 panic = %crate::utils::extract_panic_message(panic),
                 "chat turn: completion hook panicked"
+            );
+        }
+    });
+}
+
+/// Boot: run [`reconcile_after_restart`] off the startup path. A panic in it
+/// must not vanish with the task: the replies it owed stay owed (the next
+/// start retries), so the log is the record.
+pub fn spawn_reconcile_after_restart(state: &Arc<AppState>) {
+    let state = state.clone();
+    tauri::async_runtime::spawn(async move {
+        let run = AssertUnwindSafe(|| reconcile_after_restart(state));
+        if let Err(panic) = std::panic::catch_unwind(run) {
+            tracing::error!(
+                panic = %crate::utils::extract_panic_message(panic),
+                "chat turn: restart reconcile panicked"
             );
         }
     });
@@ -1026,6 +1208,207 @@ mod tests {
                 ctx.chat_mode,
                 case["expected"]["chatMode"].as_str().expect("mode"),
                 "{name}: mode"
+            );
+        }
+    }
+
+    /// A run row in exactly `status` (unlike [`execution`], `running` is
+    /// left running).
+    fn run_in(pool: &DbPool, persona: &str, status: &str, output: &str) -> PersonaExecution {
+        if status != "running" {
+            return execution(pool, persona, status, output);
+        }
+        let exec =
+            crate::db::repos::execution::executions::create(pool, persona, None, None, None, None)
+                .expect("execution");
+        crate::db::repos::execution::executions::update_status(
+            pool,
+            &exec.id,
+            crate::db::models::UpdateExecutionStatus {
+                status: crate::engine::types::ExecutionState::Running,
+                ..Default::default()
+            },
+        )
+        .expect("running");
+        crate::db::repos::execution::executions::get_by_id(pool, &exec.id).expect("read")
+    }
+
+    /// A turn as `start_with` leaves it: prepared, its run created, the user
+    /// row linked to the run. No completion hook ran.
+    fn started_turn(
+        pool: &DbPool,
+        persona: &str,
+        status: &str,
+        output: &str,
+    ) -> (PreparedTurn, PersonaExecution) {
+        let turn = prepare(
+            pool,
+            persona,
+            &ChatTurnRequest {
+                session_id: None,
+                message: "Summarise the inbox".into(),
+                mode: Some(ChatTurnMode::Agent),
+            },
+        )
+        .expect("turn");
+        let exec = run_in(pool, persona, status, output);
+        link_run(pool, &turn.user_message, &exec.id).expect("link");
+        (turn, exec)
+    }
+
+    fn replies(pool: &DbPool, persona: &str, session: &str) -> Vec<ChatMessage> {
+        repo::get_session_messages(pool, persona, session, None)
+            .expect("messages")
+            .into_iter()
+            .filter(|m| m.role == ChatRole::Assistant)
+            .collect()
+    }
+
+    #[test]
+    fn a_turn_links_its_user_row_to_its_run() {
+        let pool = crate::db::init_test_db().expect("db");
+        let persona = seed_persona(&pool);
+        let (turn, exec) = started_turn(&pool, &persona, "queued", "");
+        let msgs =
+            repo::get_session_messages(&pool, &persona, &turn.session_id, None).expect("messages");
+        assert_eq!(msgs.len(), 1);
+        assert_eq!(msgs[0].execution_id.as_deref(), Some(exec.id.as_str()));
+        // Linking is once: another run never re-points the row.
+        let linked = link_run(&pool, &msgs[0], "another-run").expect("relink");
+        assert_eq!(linked.execution_id.as_deref(), Some(exec.id.as_str()));
+    }
+
+    #[test]
+    fn a_restart_writes_the_owed_reply_of_a_completed_run_exactly_once() {
+        let pool = crate::db::init_test_db().expect("db");
+        let persona = seed_persona(&pool);
+        let (turn, exec) = started_turn(&pool, &persona, "completed", "Three threads need you.\n");
+
+        let first = reconcile(&pool, chrono::Utc::now()).expect("reconcile");
+        assert_eq!(first.written.len(), 1, "the owed reply is written");
+        assert_eq!(first.written[0].content, "Three threads need you.");
+        assert_eq!(
+            first.written[0].execution_id.as_deref(),
+            Some(exec.id.as_str())
+        );
+        assert!(first.waiting.is_empty());
+        let ctx = repo::get_session_context(&pool, &turn.session_id)
+            .expect("ctx")
+            .expect("saved");
+        assert_eq!(ctx.claude_session_id.as_deref(), Some("claude-sess-1"));
+        assert_eq!(ctx.chat_mode, "agent", "the session keeps its mode");
+
+        let again = reconcile(&pool, chrono::Utc::now()).expect("again");
+        assert!(again.written.is_empty() && again.waiting.is_empty());
+        assert_eq!(replies(&pool, &persona, &turn.session_id).len(), 1);
+    }
+
+    #[test]
+    fn a_restart_writes_nothing_when_the_hook_already_did() {
+        let pool = crate::db::init_test_db().expect("db");
+        let persona = seed_persona(&pool);
+        let (turn, exec) = started_turn(&pool, &persona, "completed", "Done.\n");
+        finish(&pool, &persona, &turn.session_id, &exec, turn.mode)
+            .expect("hook")
+            .expect("the hook's reply");
+        let r = reconcile(&pool, chrono::Utc::now()).expect("reconcile");
+        assert!(r.written.is_empty() && r.waiting.is_empty());
+        assert_eq!(replies(&pool, &persona, &turn.session_id).len(), 1);
+    }
+
+    #[test]
+    fn a_restart_rearms_the_hook_for_a_run_still_in_flight_and_skips_the_rest() {
+        let pool = crate::db::init_test_db().expect("db");
+        let persona = seed_persona(&pool);
+        let (queued, queued_run) = started_turn(&pool, &persona, "queued", "");
+        let (running, running_run) = started_turn(&pool, &persona, "running", "");
+        for status in ["failed", "cancelled", "incomplete"] {
+            started_turn(&pool, &persona, status, "partial\n");
+        }
+        // A completed run whose reply is empty is owed nothing.
+        started_turn(&pool, &persona, "completed", "[ERROR] boom\n");
+
+        let r = reconcile(&pool, chrono::Utc::now()).expect("reconcile");
+        assert!(r.written.is_empty(), "{:?}", r.written);
+        let mut waiting = r.waiting.clone();
+        waiting.sort_by(|a, b| a.execution_id.cmp(&b.execution_id));
+        let mut expected = vec![
+            OwedReply {
+                persona_id: persona.clone(),
+                session_id: queued.session_id.clone(),
+                execution_id: queued_run.id.clone(),
+                mode: ChatTurnMode::Agent,
+            },
+            OwedReply {
+                persona_id: persona.clone(),
+                session_id: running.session_id.clone(),
+                execution_id: running_run.id.clone(),
+                mode: ChatTurnMode::Agent,
+            },
+        ];
+        expected.sort_by(|a, b| a.execution_id.cmp(&b.execution_id));
+        assert_eq!(waiting, expected);
+    }
+
+    #[test]
+    fn a_restart_leaves_unlinked_and_old_turns_alone() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db().expect("db");
+        let persona = seed_persona(&pool);
+        // Unlinked: the app died between the user row and the run. Its run
+        // (if any) cannot be told apart from any other, so it is not guessed.
+        prepare(
+            &pool,
+            &persona,
+            &ChatTurnRequest {
+                session_id: None,
+                message: "hello?".into(),
+                mode: None,
+            },
+        )
+        .expect("unlinked turn");
+        execution(&pool, &persona, "completed", "An answer to someone.\n");
+        // Old: outside the window.
+        let (old, _) = started_turn(&pool, &persona, "completed", "Late answer.\n");
+        let stale =
+            (chrono::Utc::now() - chrono::Duration::days(RECONCILE_WINDOW_DAYS + 1)).to_rfc3339();
+        pool.get()?.execute(
+            "UPDATE chat_messages SET created_at = ?1 WHERE session_id = ?2",
+            rusqlite::params![stale, old.session_id],
+        )?;
+        let r = reconcile(&pool, chrono::Utc::now()).expect("reconcile");
+        assert!(r.written.is_empty() && r.waiting.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn concurrent_finishers_write_one_reply() {
+        let pool = crate::db::init_test_db().expect("db");
+        let persona = seed_persona(&pool);
+        for round in 0..5 {
+            let (turn, exec) = started_turn(&pool, &persona, "completed", "Once.\n");
+            let barrier = Arc::new(std::sync::Barrier::new(8));
+            // Kept and joined below, so a finisher's panic fails the test.
+            let mut handles = Vec::new();
+            for _ in 0..8 {
+                let pool = pool.clone();
+                let persona = persona.clone();
+                let session = turn.session_id.clone();
+                let exec = exec.clone();
+                let barrier = barrier.clone();
+                handles.push(std::thread::spawn(move || {
+                    barrier.wait();
+                    finish(&pool, &persona, &session, &exec, ChatTurnMode::Agent).expect("finish")
+                }));
+            }
+            let wrote = handles
+                .into_iter()
+                .filter_map(|h| h.join().expect("join"))
+                .count();
+            assert_eq!(wrote, 1, "round {round}: one finisher writes");
+            assert_eq!(
+                replies(&pool, &persona, &turn.session_id).len(),
+                1,
+                "round {round}"
             );
         }
     }

@@ -131,6 +131,25 @@ pub fn create(pool: &DbPool, input: CreateChatMessageInput) -> Result<ChatMessag
     })
 }
 
+/// Point a message at the execution it started: a chat turn's user row at
+/// its run, which is what lets a reply owed across a restart be found again
+/// (`chat_turn::reconcile`). Only a message that points nowhere yet is
+/// changed; returns whether it was.
+pub fn link_execution(
+    pool: &DbPool,
+    message_id: &str,
+    execution_id: &str,
+) -> Result<bool, AppError> {
+    timed_query!("chat_messages", "chat_messages::link_execution", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE chat_messages SET execution_id = ?2 WHERE id = ?1 AND execution_id IS NULL",
+            params![message_id, execution_id],
+        )?;
+        Ok(n > 0)
+    })
+}
+
 pub fn delete_session(pool: &DbPool, persona_id: &str, session_id: &str) -> Result<i64, AppError> {
     timed_query!("chat_sessions", "chat_sessions::delete_session", {
         let mut conn = pool.get()?;

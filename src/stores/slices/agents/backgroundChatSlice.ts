@@ -17,7 +17,7 @@
  * paired phone's `chat_send`): it inserts the user row, saves the session
  * context (named after the report through `title`), builds the advisory input,
  * starts the run and writes the assistant row when the run completes - also
- * when this webview has reloaded in between. This slice
+ * when this webview has reloaded or the app restarted in between. This slice
  * only drives the display: the slot's status, the reply preview, the
  * activity row and the notifications.
  */
@@ -360,9 +360,10 @@ function setupBackgroundExecListeners(
         const succeeded = parseExecutionState(terminalStatus) === "completed" && fullResponse.length > 0;
 
         // The reply row is not written here: the Rust turn's completion
-        // hook writes it from the execution's output, so a reload of this
-        // webview cannot lose it. The streamed lines only feed the preview
-        // and the notification.
+        // hook writes it from the execution's output (and a restart
+        // re-arms that hook), so neither a reload of this webview nor a
+        // restart loses it. The streamed lines only feed the preview and
+        // the notification.
 
         // Update slice state
         set((s) => {
