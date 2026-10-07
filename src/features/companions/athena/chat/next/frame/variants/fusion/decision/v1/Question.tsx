@@ -3,7 +3,8 @@
  * Personas' own review world: Manual Review's focus card (a modal-radius
  * panel with a 2px ink bar along its top, in the kind's colour, and that
  * colour's soft glow), its persona header (`DeskHead`), the ask as a
- * `typo-heading-lg` title over its reasoning, the machine detail behind the
+ * title (a step under `typo-heading-lg`, only ever the first sentence or clause)
+ * over its reasoning on a darker inset panel, the machine detail behind the
  * app's disclosure (ApprovalCard's "Action parameters"), the gradient rule,
  * then the action zone: the door to Athena's opinion on the left, the ways
  * past the item on the right. With no model (the product's own card is the
@@ -42,11 +43,17 @@ function Body({ model }: { model: CardModel }) {
   const { lead, rest } = splitLead(model.question);
   return (
     <div className="d1-body">
-      <h2 className="d1-title typo-heading-lg text-foreground" data-testid="companion-fusion-d1-title">
-        {inline(lead)}
-      </h2>
-      {rest && <p className="d1-prose typo-body text-foreground">{inline(rest)}</p>}
-      {model.context && <p className="d1-prose typo-caption">{inline(model.context)}</p>}
+      {lead && (
+        <h2 className="d1-title typo-heading-lg text-foreground" data-testid="companion-fusion-d1-title">
+          {inline(lead)}
+        </h2>
+      )}
+      {(rest || model.context) && (
+        <div className="d1-desc" data-testid="companion-fusion-d1-desc">
+          {rest && <p className="d1-prose typo-body text-foreground">{inline(rest)}</p>}
+          {model.context && <p className="d1-prose is-context typo-caption">{inline(model.context)}</p>}
+        </div>
+      )}
       {model.details && (
         <details className="d1-details" data-testid="companion-fusion-d1-details">
           <summary className="typo-caption focus-ring">

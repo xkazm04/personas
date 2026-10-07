@@ -19,18 +19,58 @@ export function plainWords(text: string): string {
     .replace(/^>\s?/gm, '');
 }
 
-/** The first sentence-or-clause of a prompt, as a heading; the rest as context. */
+/** A whole prompt this short is its own heading; a longer one is cut at its first sentence. */
+const WHOLE_LEAD = 120;
+/** The longest a cut-off heading may run (a sentence or a titled clause). */
+export const MAX_LEAD = 140;
+
+/** A sentence or a titled clause: where it ends and how many separator characters follow. */
+interface Cut {
+  end: number;
+  skip: number;
+}
+
+/** The first whole sentence of `line` within the heading budget. */
+function sentenceEnd(line: string): Cut | null {
+  const window = line.slice(0, MAX_LEAD + 1);
+  // ? or ! always ends a sentence; a full stop only when a capital (not an `e.g. foo`) follows.
+  const sentence = /[?!](?=\s)|\.(?=\s+[^\sa-z])/g;
+  for (let m = sentence.exec(window); m; m = sentence.exec(window)) {
+    if (m.index >= 12) return { end: m.index + 1, skip: 1 };
+  }
+  return null;
+}
+
+/** The first titled clause (`Title - detail`, `Title: detail`) within the budget. Never a comma. */
+function clauseEnd(line: string): Cut | null {
+  const window = line.slice(0, MAX_LEAD + 1);
+  for (const sep of [' \u2014 ', ' - ', ': ']) {
+    const i = window.indexOf(sep, 16);
+    if (i > 0) return { end: i, skip: sep.length };
+  }
+  return null;
+}
+
+/**
+ * A prompt as a heading plus its description. The heading is only ever a
+ * whole thought: a short prompt whole, else its first sentence or titled
+ * clause (never more than `MAX_LEAD` characters). Everything after it, line
+ * breaks included, is the description. A long run with nothing to cut at has
+ * no heading at all: the whole text is the description, so a long question
+ * never becomes a giant title and is never cut mid-sentence.
+ */
 export function splitLead(raw: string): { lead: string; rest: string } {
   const text = raw.trim();
-  if (text.length <= 120) return { lead: text, rest: '' };
-  for (const sep of [' — ', ' - ', '? ', '. ', ': ']) {
-    const i = text.indexOf(sep, 16);
-    if (i > 0 && i < 140) {
-      const keep = sep === '? ' || sep === '. ' ? 1 : 0;
-      return { lead: text.slice(0, i + keep).trim(), rest: text.slice(i + sep.length).trim() };
-    }
+  const nl = text.indexOf('\n');
+  const first = (nl >= 0 ? text.slice(0, nl) : text).trim();
+  const after = nl >= 0 ? text.slice(nl + 1).trim() : '';
+  const cut = sentenceEnd(first) ?? (first.length > WHOLE_LEAD ? clauseEnd(first) : null);
+  if (cut) {
+    const tail = first.slice(cut.end + cut.skip).trim();
+    if (tail || after) return { lead: first.slice(0, cut.end).trim(), rest: [tail, after].filter(Boolean).join('\n') };
   }
-  return { lead: text, rest: '' };
+  if (first.length <= WHOLE_LEAD) return { lead: first, rest: after };
+  return { lead: '', rest: text };
 }
 
 /** `**bold**` and `` `code` `` as real marks, never as literal characters. */

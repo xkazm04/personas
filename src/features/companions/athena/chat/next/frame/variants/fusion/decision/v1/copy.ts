@@ -9,6 +9,7 @@ export const DESK_COPY = {
   aSession: 'A session',
   appWide: 'App-wide',
   review: (i: number, n: number) => `Review ${i} of ${n}`,
+  position: (i: number, n: number) => `${i} of ${n}`,
   prev: 'Previous',
   next: 'Next',
   fold: 'Fold back to the app',
