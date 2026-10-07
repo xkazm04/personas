@@ -13,7 +13,7 @@ import {
   ASK_KINDS, COUNCIL, GLOBAL_CAP, MAX_ASKS, MAX_DISPATCH, MEM, PER_PROJECT_CAP, PLAN, REVIEW_CHARTERS, UX, WAKE_MAX, WAKE_MIN,
   LIVE_RUN_STATES, contextDir, briefPath, mintId, nowIso, shortId,
 } from './contract.mjs';
-import { councilJournal, councilEvents, featureState } from './council.mjs';
+import { charactersOf, councilJournal, councilEvents, featureState } from './council.mjs';
 import { loadBrief, loadWakes, saveWake, openAsks, loadAsks, loadChannel, listRuns, loadOutbox } from './store.mjs';
 import {
   openDb, resolveProject, masterPersona, chartersFor, projectSnapshot, pendingReviews,
@@ -337,6 +337,9 @@ export function renderCouncil(c, C) {
   const counts = {};
   for (const f of fs_) counts[f.state] = (counts[f.state] ?? 0) + 1;
   L.push(`- ${fs_.length} feature(s): ${Object.entries(counts).sort((a, b) => (COUNCIL_ORDER[a[0]] ?? 9) - (COUNCIL_ORDER[b[0]] ?? 9)).map(([k, n]) => `${k} ${n}`).join(', ')}`);
+  const cast = c.characters;
+  if (cast?.source) L.push(`- characters: ${cast.count != null ? `${cast.count} tracked under ${cast.source}` : `named in ${cast.source}`} on ${cast.base}; the value member judges against them`);
+  else if (cast && !cast.unknown) L.push(`- characters: NONE tracked on ${cast.base} (no uat/characters/*.md, no .claude/council/config.md with ## Characters). A review worktree carries tracked files only, so value reports unmeasured and every round ends incomplete; council-lite-review and council-review are REFUSED until a delivery adds a tracked .claude/council/config.md (## Characters naming the users, ## Gates naming the repo's checks). Dispatch that delivery first.`);
   const order = [...fs_].sort((a, b) => (b.inFlight?.length ? 1 : 0) - (a.inFlight?.length ? 1 : 0)
     || (COUNCIL_ORDER[a.state] ?? 9) - (COUNCIL_ORDER[b.state] ?? 9) || String(a.slug).localeCompare(String(b.slug)));
   for (const f of order.slice(0, C.features)) {
@@ -438,6 +441,7 @@ export function gatherContext(ref) {
       const flying = runs.filter((r) => LIVE_RUN_STATES.includes(r.state) && r.featureSlug);
       input.council = {
         error: uc.error,
+        characters: project.root ? { ...charactersOf(project.root, project.baseBranch), base: project.baseBranch } : null,
         features: uc.rows.map((f) => ({
           slug: f.slug, name: f.name, tier: f.tier ?? null,
           ...featureState(f.slug, councilEvents(f.slug, journal, dbRuns), decisions),

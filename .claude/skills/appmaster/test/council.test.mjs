@@ -208,6 +208,15 @@ test('decide: featureSlug required for a review, unknown features refused, one c
     return V.cmdDecide({ flags: { project: 'demo', wake: wakeId, file } });
   };
   await assert.rejects(decide(base([lite('no-such-feature')])), (e) => e.extra.errors.some((x) => /feature no-such-feature is not a dev_use_cases slug of demo/.test(x)));
+  // no characters tracked on the base: the value member would report unmeasured, so a review is refused.
+  // An untracked overlay does not count: a review worktree carries tracked files only.
+  assert.deepEqual(Co.charactersOf(env.demoRoot, 'main'), { source: null });
+  await assert.rejects(decide(base([lite('org-journey')])), (e) => e.extra.errors.some((x) => /council-lite-review is refused: demo tracks no characters on main/.test(x)));
+  fs.mkdirSync(path.join(env.demoRoot, 'uat', 'characters'), { recursive: true });
+  fs.writeFileSync(path.join(env.demoRoot, 'uat', 'characters', 'ops-lead.md'), '# Ops lead\n');
+  assert.deepEqual(Co.charactersOf(env.demoRoot, 'main'), { source: null }, 'an untracked character is not on the base');
+  sh(env.demoRoot, 'add', 'uat'); sh(env.demoRoot, 'commit', '-q', '-m', 'characters');
+  assert.deepEqual(Co.charactersOf(env.demoRoot, 'main'), { source: 'uat/characters', count: 1 });
   // three lite rounds already used on billing-flow: a fourth is refused
   for (let i = 1; i <= 2; i++) {
     S.saveRun({ ...S.newRun(project, { wakeId: 'w-old', charterSlug: 'council-lite-review', reason: 'r', brief: 'b', model: 'm', featureSlug: 'billing-flow', councilMode: 'lite' }),

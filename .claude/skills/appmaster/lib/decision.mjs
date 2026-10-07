@@ -10,10 +10,10 @@ import {
   ASK_KINDS, BUILDER_MODEL_CHOICES, COUNCIL, FEATURE_SLUG_RE, LIVE_RUN_STATES, MAX_ASKS, MAX_DISPATCH, MODELS, PLAN, REVIEW_CHARTERS,
   SELF_REPO, UX, VERDICT_STATUSES, WAKE_MAX, WAKE_MIN, Refusal, canonical, isReviewRun, nowIso, resolveModel, shortId,
 } from './contract.mjs';
-import { councilEvents, councilJournal, roundsUsed } from './council.mjs';
+import { charactersOf, councilEvents, councilJournal, roundsUsed } from './council.mjs';
 import { specError, overlappingPairs } from './paths.mjs';
 import { listRuns, loadAsks, loadBrief, loadWake, newRun, queueOutbox, raiseAsk, saveWake } from './store.mjs';
-import { briefCharters, resolveManaged, openDb, q, useCasesOf, councilRunsOf, uxPendingOf } from './dbread.mjs';
+import { briefCharters, resolveManaged, openDb, q, useCasesOf, councilRunsOf, uxPendingOf, withBriefBase } from './dbread.mjs';
 import { brakes } from './brakes.mjs';
 import { queueTable } from './queue.mjs';
 import { repoKeys, resolveRepo, targetRootKey } from './repos.mjs';
@@ -335,9 +335,9 @@ export async function cmdDecide({ flags = {} } = {}) {
   const { slug, project: known } = resolveManaged(flags.project);
   const wake = loadWake(slug, flags.wake);
   if (!wake) throw new Refusal('unknown wake', { slug, wakeId: flags.wake });
-  const project = wake.project ?? known;
-  if (!project?.id) throw new Error(`no project record for ${slug}: run context first`);
   const brief = loadBrief(slug);
+  const project = withBriefBase(wake.project ?? known, brief);
+  if (!project?.id) throw new Error(`no project record for ${slug}: run context first`);
   if (!brief) throw new Error(`no brief for ${slug}: run onboard first`);
 
   let decision;
@@ -377,6 +377,15 @@ export async function cmdDecide({ flags = {} } = {}) {
   // (the council refuses round 4 as stalled; dispatching it would only burn a builder).
   const facts = councilFacts(project.id, decision);
   const journal = councilJournal(slug);
+  // a review reads only tracked files: with no declared users its value member reports `unmeasured`
+  // and the round ends incomplete, so it is refused until a delivery adds the overlay
+  let cast = null;
+  const castOf = () => (cast ??= project.root ? charactersOf(project.root, project.baseBranch) : { source: null, unknown: true });
+  decision.dispatch.forEach((x, i) => {
+    if (REVIEW_CHARTERS[x.charterSlug] && !castOf().source && !castOf().unknown) {
+      clash.push(`dispatch[${i}]: ${x.charterSlug} is refused: ${slug} tracks no characters on ${project.baseBranch} (no uat/characters/*.md, no .claude/council/config.md with ## Characters), so the value member would report unmeasured and the round would end incomplete. Dispatch a delivery that adds a tracked .claude/council/config.md (## Characters, ## Gates) first`);
+    }
+  });
   decision.dispatch.forEach((x, i) => {
     if (!nonEmpty(x.featureSlug)) return;
     if (facts.known && !facts.known.has(x.featureSlug)) clash.push(`dispatch[${i}]: feature ${x.featureSlug} is not a dev_use_cases slug of ${slug}; copy it from the COUNCIL section`);

@@ -12,6 +12,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { COUNCIL, councilDir, readJson, shortId } from './contract.mjs';
 import { listRuns } from './store.mjs';
 
@@ -24,6 +25,28 @@ const escapeRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 export const councilRunDirRe = (featureSlug, mode = 'full') =>
   new RegExp(`^\\d{4}-\\d{2}-\\d{2}-${escapeRe(featureSlug)}${mode === 'lite' ? '-lite' : ''}-r(\\d+)$`);
 export const roundOfName = (name) => Number(/-r(\d+)$/.exec(String(name))?.[1] ?? 0);
+
+/**
+ * Where a review worktree finds the declared users, read from the base branch: tracked
+ * uat/characters/*.md, or a tracked .claude/council/config.md with a `## Characters` section. A worktree
+ * carries tracked files only, so a gitignored overlay counts as none. Measured 2026-10-07: the first lite
+ * round of kp, pof and devsecops each came back incomplete at coverage 0.4 with "value is unmeasured: no
+ * declared characters", one of three rounds burned per feature on a gap the context could have named.
+ * @returns {{source: string|null, count?: number|null, unknown?: true}}
+ */
+export function charactersOf(root, baseBranch) {
+  const git = (args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true });
+  const tracked = (p) => git(['ls-tree', '-r', '--name-only', `refs/heads/${baseBranch}`, '--', p]).split(/\r?\n/).filter(Boolean);
+  try {
+    const md = tracked('uat/characters').filter((f) => /\.md$/i.test(f));
+    if (md.length) return { source: 'uat/characters', count: md.length };
+    if (tracked('.claude/council/config.md').length
+      && /^##\s+Characters\b/m.test(git(['show', `refs/heads/${baseBranch}:.claude/council/config.md`]))) {
+      return { source: '.claude/council/config.md', count: null };
+    }
+    return { source: null };
+  } catch { return { source: null, unknown: true }; }
+}
 const listDirs = (dir) => { try { return fs.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name); } catch { return []; } };
 const keyOf = (p) => (process.platform === 'win32' ? path.resolve(p).toLowerCase() : path.resolve(p));
 function isInside(child, parent) {
