@@ -16,7 +16,6 @@ export const FUSION_COPY = {
   quiet: 'All quiet',
   waitingOnYou: 'Waiting on you',
   openChat: 'Open the conversation',
-  foldChat: 'Fold into the island',
   gate: (n: number) => (n === 1 ? '1 needs you' : `${n} need you`),
   keyChat: 'Alt C',
   keyWork: 'Alt W',
