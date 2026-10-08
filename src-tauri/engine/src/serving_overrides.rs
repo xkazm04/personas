@@ -989,8 +989,8 @@ pub const NON_MEMBERS: [(Family, &str, usize, &str); 10] = [
     (
         Family::PersonaDisabled,
         "src/engine/subscription/attention.rs",
-        1,
-        "test setup inside the inline #[cfg(test)] module, not a serving path",
+        2,
+        "two test setups inside the inline #[cfg(test)] module, not a serving path",
     ),
     (
         Family::AmbientPrepend,

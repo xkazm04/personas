@@ -82,7 +82,9 @@ pub fn pick_chrome(env: &ChromeEnv, exists: impl Fn(&Path) -> bool) -> Option<Pa
     chrome_candidates(env).into_iter().find(|p| exists(p))
 }
 
-/// Extract the default value from `reg query ... /ve` output.
+/// Extract the default value from `reg query ... /ve` output. Only the Windows
+/// registry probe calls it; the parser itself is host-independent and tested.
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn parse_reg_default(output: &str) -> Option<PathBuf> {
     for line in output.lines() {
         let t = line.trim();
