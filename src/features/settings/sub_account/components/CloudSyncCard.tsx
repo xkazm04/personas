@@ -229,7 +229,7 @@ export default function CloudSyncCard() {
           {/* Per-class opt-ins: notes and chats leave this computer only when switched on */}
           {status && <SyncedDataToggles status={status} onChanged={setStatus} />}
 
-          {/* Paired phones: who may command this desktop from personas.so */}
+          {/* Paired phones: who may command this desktop from the paired web app */}
           <PairedPhonesPanel />
 
           {/* Per-table breakdown (collapsible) */}
