@@ -112,4 +112,25 @@ test('caps: two builders per project, sixteen in all, two dispatches per wake', 
   assert.ok(C.MEM.dispatchMinFreeGb > 0 && C.MEM.perBuilderReserveGb > 0, 'the free-memory brake is kept');
 });
 
+test('writeJson retries a rename Windows refuses while another process holds the file, then gives up cleanly', () => {
+  const p = path.join(tmp, 'rename-retry', 'run.json');
+  const real = fs.renameSync;
+  const fail = (code, times) => { let n = 0; fs.renameSync = (a, b) => { if (n++ < times) throw Object.assign(new Error(code), { code }); return real(a, b); }; };
+  const attempts = C.RENAME_RETRY.attempts;
+  C.RENAME_RETRY.attempts = 3; // the give-up path, without waiting out the full budget
+  try {
+    fail('EPERM', 2);
+    C.writeJson(p, { state: 'reviewed' });
+    assert.deepEqual(JSON.parse(fs.readFileSync(p, 'utf8')), { state: 'reviewed' });
+    fail('EBUSY', C.RENAME_RETRY.attempts + 5);
+    const t0 = Date.now();
+    assert.throws(() => C.writeJson(p, { state: 'never' }), { code: 'EBUSY' });
+    assert.ok(Date.now() - t0 >= C.RENAME_RETRY.waitMs, 'it waited between attempts');
+    fail('ENOENT', 1);
+    assert.throws(() => C.writeJson(p, { state: 'never' }), { code: 'ENOENT' }, 'any other error is not retried');
+  } finally { fs.renameSync = real; C.RENAME_RETRY.attempts = attempts; }
+  assert.deepEqual(JSON.parse(fs.readFileSync(p, 'utf8')), { state: 'reviewed' }, 'a failed write leaves the last good file');
+  assert.deepEqual(fs.readdirSync(path.dirname(p)).filter((f) => f.endsWith('.tmp')), [], 'no tmp file is left behind');
+});
+
 test('cleanup', () => { fs.rmSync(tmp, { recursive: true, force: true }); });

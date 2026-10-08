@@ -412,11 +412,27 @@ export class Refusal extends Error {
 export function readJson(p, fallback = null) {
   try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return fallback; }
 }
+/**
+ * Windows refuses a rename onto a file another process holds open without delete sharing (an
+ * indexer, antivirus) with EPERM, EACCES or EBUSY, and the hold clears in milliseconds. On
+ * 2026-10-08 an await died on exactly that rename and left its council run exited and unsettled,
+ * so writeJson retries with a growing wait (50 ms, 100 ms, ... about 10 s over 20 attempts).
+ */
+export const RENAME_RETRY = { attempts: 20, waitMs: 50, codes: ['EPERM', 'EACCES', 'EBUSY'] };
+const sleepSync = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 export function writeJson(p, v) {
   fs.mkdirSync(path.dirname(p), { recursive: true });
   const tmp = `${p}.${process.pid}.tmp`;
   fs.writeFileSync(tmp, JSON.stringify(v, null, 2) + '\n');
-  fs.renameSync(tmp, p);
+  for (let i = 1; ; i++) {
+    try { fs.renameSync(tmp, p); return; } catch (e) {
+      if (!RENAME_RETRY.codes.includes(e.code) || i >= RENAME_RETRY.attempts) {
+        try { fs.unlinkSync(tmp); } catch { /* the tmp may already be gone */ }
+        throw e;
+      }
+      sleepSync(RENAME_RETRY.waitMs * i);
+    }
+  }
 }
 export function appendJsonl(p, v) {
   fs.mkdirSync(path.dirname(p), { recursive: true });
