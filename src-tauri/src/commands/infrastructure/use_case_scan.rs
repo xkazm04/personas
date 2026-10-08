@@ -87,6 +87,13 @@ const JOB_FAILED: &str = "failed";
 /// and a test can assert its ordering (census `anonymous-deadline`).
 const RELINK_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(900);
 
+/// Call class of the use-case scan and relink turns: a repo-exploring agent
+/// task. Model and effort come from the class table
+/// (`personas_core::model_class`); the same route reaches the CLI flags and
+/// the `dev_llm_spend` row.
+const USE_CASE_SCAN_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::AgentTask;
+
 // =============================================================================
 // Protocol
 // =============================================================================
@@ -605,9 +612,10 @@ async fn run_use_case_scan(
             .collect();
 
     let exec_dir = std::path::PathBuf::from(root_path);
-    let mut child = crate::engine::cli_process::spawn_headless_claude(
+    let route = USE_CASE_SCAN_CLASS.route();
+    let mut child = crate::engine::cli_process::spawn_headless_claude_route(
         prompt_text,
-        "claude-sonnet-4-6",
+        route,
         &[],
         Some(&exec_dir),
         true,
@@ -654,7 +662,7 @@ async fn run_use_case_scan(
     let spend_ctx = crate::db::repos::llm_spend::SpendCtx {
         source: "scanner",
         trigger_kind: "use_case_scan",
-        model: Some("claude-sonnet-4-6"),
+        model: Some(route.model),
         project_id: Some(project_id),
         persona_id: None,
     };
@@ -1273,11 +1281,10 @@ async fn run_use_case_relink(
     let exec_dir = std::path::PathBuf::from(root_path);
     // The same spawn chokepoint as the scan - one place decides how a headless
     // claude is configured here.
-    let mut child = crate::engine::cli_process::spawn_headless_claude(
+    let route = USE_CASE_SCAN_CLASS.route();
+    let mut child = crate::engine::cli_process::spawn_headless_claude_route(
         prompt_text,
-        // Named, not spelled: a retirement is then a one-file diff rather than
-        // a tree-wide grep (census `bare-model-id-literal`).
-        personas_core::model_ids::DEFAULT_BALANCED,
+        route,
         &[],
         Some(&exec_dir),
         true,
@@ -1322,7 +1329,7 @@ async fn run_use_case_relink(
     let spend_ctx = crate::db::repos::llm_spend::SpendCtx {
         source: "scanner",
         trigger_kind: "use_case_relink",
-        model: Some(personas_core::model_ids::DEFAULT_BALANCED),
+        model: Some(route.model),
         project_id: Some(project_id),
         persona_id: None,
     };

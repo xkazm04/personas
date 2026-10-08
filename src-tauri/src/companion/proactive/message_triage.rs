@@ -305,8 +305,13 @@ pub async fn triage_unread_messages(
         "message_triage: running batched triage decision"
     );
     let prompt = build_triage_prompt(&batch);
-    let (blob, turn_id) =
-        crate::companion::athena_reaction::cli_text_tracked(prompt, user_db, "msg_triage").await?;
+    let (blob, turn_id) = crate::companion::athena_reaction::cli_text_tracked_on(
+        prompt,
+        user_db,
+        "msg_triage",
+        &crate::companion::model_routing::TRIAGE,
+    )
+    .await?;
     let Some(decision) = parse_message_triage(&blob) else {
         // Poison-batch guard: skip past it rather than re-running the
         // same undecidable batch every tick. The messages simply stay

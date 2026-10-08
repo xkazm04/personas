@@ -22,13 +22,19 @@ use crate::db::repos::resources::{connectors as connector_repo, tools as tool_re
 use crate::engine::design;
 use crate::engine::event_registry::{emit_event_bus, event_name};
 use crate::engine::inflight_guard::InflightGuard;
-use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 use std::sync::LazyLock;
 
 use super::analysis::extract_display_text;
+
+/// Call class of the design-review turns (batch test-case generation and the
+/// single-review rebuild). Model and effort come from the class table
+/// (`personas_core::model_class`). Until 2026-10-08 these spawns passed no
+/// `--model` and rode the CLI account default.
+const REVIEW_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Verdict;
 
 /// Single-flight per design review for rebuilds. The tracking job id is unique
 /// per invocation (so each rebuild's snapshot/status stream is independent),
@@ -317,7 +323,9 @@ pub async fn start_design_review_run(
             );
 
             // Spawn Claude CLI and collect output
-            let cli_args = prompt::build_cli_args(None, None);
+            let route = REVIEW_CLASS.route();
+            let cli_args =
+                crate::engine::cli_process::headless_claude_args(route.model, route.effort, &[]);
             let cli_result =
                 run_cli_for_template(&cli_args, &design_prompt, &app, &run_id_clone, i, &registry)
                     .await;
@@ -800,7 +808,9 @@ pub async fn rebuild_design_review(
         );
 
         // Use the n8n CLI runner with streaming output
-        let cli_args = prompt::build_cli_args(None, None);
+        let route = REVIEW_CLASS.route();
+        let cli_args =
+            crate::engine::cli_process::headless_claude_args(route.model, route.effort, &[]);
         let cli_result =
             run_claude_prompt_text(design_prompt, &cli_args, Some((&app, &rebuild_id))).await;
 

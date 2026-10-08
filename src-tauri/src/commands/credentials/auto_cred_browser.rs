@@ -17,7 +17,6 @@ use ts_rs::TS;
 
 use crate::commands::credentials::ai_artifact_flow::spawn_claude_and_collect;
 use crate::engine::event_registry::event_name;
-use crate::engine::prompt::build_cli_args;
 use crate::engine::types::StreamLineType;
 use crate::error::AppError;
 use crate::AppState;
@@ -29,8 +28,10 @@ const PROGRESS_EVENT: &str = event_name::AUTO_CRED_BROWSER_PROGRESS;
 /// Event emitted when a URL should be opened in the user's browser.
 const OPEN_URL_EVENT: &str = event_name::AUTO_CRED_OPEN_URL;
 
-/// Model for browser automation tasks -- needs tool use capabilities.
-const BROWSER_MODEL: &str = "claude-sonnet-4-6";
+/// Call class of the browser automation task -- a tool-using agent task.
+/// Model and effort come from the class table (`personas_core::model_class`).
+const BROWSER_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::AgentTask;
 
 /// Hard timeout for the browser-automation CLI process (10 minutes). When a
 /// session stalls at a "waiting for user action" auth/login step, the stdout
@@ -770,14 +771,10 @@ pub async fn start_auto_cred_browser(
         AutoCredMode::Guided
     };
 
-    // Build CLI args
-    let mut cli_args = build_cli_args(None, None);
-
-    // Override model
-    if !cli_args.args.iter().any(|a| a == "--model") {
-        cli_args.args.push("--model".to_string());
-        cli_args.args.push(BROWSER_MODEL.to_string());
-    }
+    // Build CLI args on the class route (one `--model`, one `--effort`).
+    let route = BROWSER_CLASS.route();
+    let mut cli_args =
+        crate::engine::cli_process::headless_claude_args(route.model, route.effort, &[]);
 
     // Clean up stale MCP config temp files from any previous crashed sessions
     // before creating a new one.

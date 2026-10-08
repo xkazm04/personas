@@ -23,17 +23,18 @@ use crate::error::AppError;
 
 use super::super::cli_process::{read_line_limited, CliProcessDriver};
 use super::super::event_registry::event_name;
-use super::super::prompt;
 // Aliased to avoid colliding with the sibling `build_session::runner`
 // submodule (which holds `run_session`, not the persona-execution runner).
 use super::super::runner as engine_runner;
 use super::super::tool_runner;
 
-/// Model driving the test-plan composition leg. Named so the same string
-/// reaches both the CLI `--model` flag and the `dev_llm_spend` ledger row
-/// (the ledger's model is only a fallback — the CLI's own `result` envelope
-/// wins — but the two must not be allowed to drift).
-const TEST_PLAN_MODEL: &str = "claude-sonnet-4-6";
+/// Call class of the test-plan composition leg. Model and effort come from
+/// the class table (`personas_core::model_class`); the same route reaches
+/// both the CLI `--model` flag and the `dev_llm_spend` ledger row (the
+/// ledger's model is only a fallback — the CLI's own `result` envelope wins —
+/// but the two must not be allowed to drift).
+const TEST_PLAN_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Build;
 
 /// Call class of the plain-language test-report leg: this pass only rewrites
 /// an already-computed report for a non-technical reader. Model and effort
@@ -654,9 +655,8 @@ async fn compose_test_plan_via_cli(
     persona_id: &str,
     test_prompt: String,
 ) -> Result<Vec<serde_json::Value>, AppError> {
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push(TEST_PLAN_MODEL.to_string());
+    let route = TEST_PLAN_CLASS.route();
+    let cli_args = super::super::cli_process::headless_claude_args(route.model, route.effort, &[]);
 
     let mut driver = CliProcessDriver::spawn_temp(&cli_args, "build-test")
         .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn test CLI: {e}")))?;
@@ -684,7 +684,7 @@ async fn compose_test_plan_via_cli(
                             pool,
                             Some(persona_id),
                             super::events::SPEND_TOOL_TEST,
-                            Some(TEST_PLAN_MODEL),
+                            Some(route.model),
                             &line,
                         );
                         raw_output.push_str(&line);

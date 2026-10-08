@@ -10,15 +10,15 @@ use super::{
     score_result, spawn_cli_and_collect, verdict_status, ScoreResult, TestModelConfig,
     TestRunStatusEvent, TestScenario, TestScores,
 };
-use crate::prompt;
 
-/// Model for the lab/test/evolution tooling (scenario generation, result
-/// summaries, draft + improvement passes). Pinned deliberately — without an
-/// explicit `--model` these headless spawns ride the undeclared account default
-/// (typically Opus 4.8), making cost neither predictable nor aligned with the
-/// rest of the headless tier. Mirrors `DEFAULT_CAPABILITY_MODEL` /
-/// `SYNTHESIS_MODEL` (tiger finding: lab tier rode account-default).
-pub(crate) const LAB_MODEL: &str = personas_core::model_ids::DEFAULT_BALANCED;
+/// Call class of the lab/test/evolution tooling (scenario generation, result
+/// summaries, draft + improvement passes). Routed explicitly — without a
+/// `--model` these headless spawns ride the undeclared account default, making
+/// cost neither predictable nor aligned with the rest of the headless tier.
+/// Model and effort come from the class table (`personas_core::model_class`)
+/// (tiger finding: lab tier rode account-default).
+pub(crate) const LAB_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Verdict;
 
 /// Maximum number of lab cells (model × variant × scenario executions) allowed to
 /// run their CLI child concurrently within a single run. `run_lab_loop` used to
@@ -160,11 +160,12 @@ Rules:
 - Do not repeat the raw numbers — interpret them"#
     );
 
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push(LAB_MODEL.to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
+    let route = LAB_CLASS.route();
+    let cli_args = crate::cli_process::headless_claude_args(
+        route.model,
+        route.effort,
+        &["--max-turns".to_string(), "1".to_string()],
+    );
 
     match spawn_cli_and_collect(
         &cli_args,
@@ -173,7 +174,7 @@ Rules:
         personas_db::repos::llm_spend::SpendCtx {
             source: "evaluator",
             trigger_kind: "lab_summary",
-            model: Some(LAB_MODEL),
+            model: Some(route.model),
             persona_id: None,
             project_id: None,
         },

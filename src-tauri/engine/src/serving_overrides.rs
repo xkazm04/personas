@@ -72,8 +72,8 @@
 //!   which are not persona executions and do not write `persona_executions`.
 //!   A second registry, if that lane ever needs one.
 //! - **Lab / arena / eval lanes.** `commands::execution::lab` measurement runs,
-//!   [`crate::test_runner::lab`]'s `LAB_MODEL`, [`crate::eval`] and
-//!   [`crate::auto_triage`]'s pinned headless `--model` all spawn a real CLI but
+//!   [`crate::test_runner::lab`]'s `LAB_CLASS`, [`crate::eval`] and
+//!   [`crate::auto_triage`]'s class-routed headless `--model` all spawn a real CLI but
 //!   against an ephemeral persona built for measurement. They cannot change what
 //!   an operator's persona serves. (`commands::execution::lab`'s three writes to
 //!   the persona's stored prompt are a different thing and *are* members.)

@@ -25,7 +25,6 @@ use crate::db::models::{ObsidianVaultConfig, RevitalizeRunRecord};
 use crate::db::repos::core::settings as settings_repo;
 use crate::db::repos::resources::obsidian_brain as history_repo;
 use crate::engine::event_registry::event_name;
-use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
@@ -218,6 +217,11 @@ fn u64_field(value: Option<&serde_json::Value>, key: &str) -> u64 {
 
 // ── CLI runner ────────────────────────────────────────────────────────
 
+/// Call class of the vault revitalize pass: vault synthesis. Model and effort
+/// come from the class table (`personas_core::model_class`).
+const REVITALIZE_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Synthesis;
+
 /// Spawn the Claude CLI with the vault as CWD and stream display lines to
 /// `on_line`. Mirrors `n8n_transform::run_claude_prompt_text_inner`, minus
 /// the temp-dir CWD (the vault IS the working set here) and the n8n-specific
@@ -228,9 +232,8 @@ async fn run_claude_in_vault(
     on_line: &(dyn Fn(&str) + Send + Sync),
     timeout_secs: u64,
 ) -> Result<String, String> {
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-sonnet-4-6".to_string());
+    let route = REVITALIZE_CLASS.route();
+    let cli_args = crate::engine::cli_process::headless_claude_args(route.model, route.effort, &[]);
 
     let mut cmd = Command::new(&cli_args.command);
     cmd.args(&cli_args.args)

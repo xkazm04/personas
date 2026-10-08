@@ -122,12 +122,13 @@ use crate::commands::browser::scan_prompt::{build_scan_prompt, FINDING_MARKER};
 /// anything, and a scan still going after this is a scan that got lost.
 const SCAN_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(600);
 
-/// The call class the scan turn runs as: a survey is a reading task with a
-/// fixed output shape (one `site_finding` line). The model and effort come
-/// from the class table (`personas_core::model_class`); a turn that answers
-/// with no well-formed finding escalates once.
+/// The call class the scan turn runs as. A survey drives the browser bridge
+/// for up to [`SCAN_TIMEOUT`] before it emits its one `site_finding` line, so
+/// it is a tool-using task, not text extraction: the 2026-10-08 one-shot bench
+/// calibrated Extract on text alone and says nothing about tool use. The model
+/// and effort come from the class table (`personas_core::model_class`).
 const SCAN_CLASS: personas_core::model_class::CallClass =
-    personas_core::model_class::CallClass::Extract;
+    personas_core::model_class::CallClass::AgentTask;
 
 /// The scan session's principal for one origin.
 fn scan_principal(origin: &str) -> Principal {
@@ -291,8 +292,9 @@ async fn probe_only_scan(origin: &str) -> BrowserSiteScan {
 /// should fall back to the probe.
 ///
 /// A turn that finishes without a well-formed `site_finding` line is a
-/// rejected output and escalates once to the class's `escalate_to` route;
-/// every other failure (no CLI, bridge down, timeout) does not.
+/// rejected output; it escalates once only if the class row names an
+/// `escalate_to` route (AgentTask does not). No other failure (no CLI,
+/// bridge down, timeout) ever escalates.
 async fn run_scan_turn(
     origin: &str,
     label: &str,

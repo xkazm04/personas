@@ -5,8 +5,7 @@ use tokio::sync::Mutex;
 use personas_db::models::{Persona, PersonaToolDefinition};
 use personas_db::DbPool;
 
-use super::{spawn_cli_and_collect, truncate_chars, TestScenario, LAB_MODEL};
-use crate::prompt;
+use super::{spawn_cli_and_collect, truncate_chars, TestScenario, LAB_CLASS};
 
 /// TTL-based in-memory cache for generated scenarios. Key is a hash of
 /// (persona_id, system_prompt, tools, use_case_filter). Avoids re-running
@@ -77,11 +76,12 @@ pub async fn generate_scenarios(
     let coordinator_prompt =
         build_coordinator_prompt(persona, tools, use_case_filter, fixture_inputs);
 
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push(LAB_MODEL.to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
+    let route = LAB_CLASS.route();
+    let cli_args = crate::cli_process::headless_claude_args(
+        route.model,
+        route.effort,
+        &["--max-turns".to_string(), "1".to_string()],
+    );
 
     let output = spawn_cli_and_collect(
         &cli_args,
@@ -90,7 +90,7 @@ pub async fn generate_scenarios(
         personas_db::repos::llm_spend::SpendCtx {
             source: "evaluator",
             trigger_kind: "lab_scenario",
-            model: Some(LAB_MODEL),
+            model: Some(route.model),
             persona_id: Some(&persona.id),
             project_id: None,
         },

@@ -194,14 +194,24 @@ pub const QUALITY_GATE_CONFIG: &str = "quality_gate_config";
 /// Model override for smart search template ranking.
 /// Value: model ID string.
 pub const SMART_SEARCH_MODEL: &str = "smart_search_model";
-/// Default model ID for [`SMART_SEARCH_MODEL`] when unset.
-pub const SMART_SEARCH_MODEL_DEFAULT: &str = personas_core::model_ids::DEFAULT_FAST;
+/// Default model ID for [`SMART_SEARCH_MODEL`] when unset: the `Classify`
+/// class route's model (ranking templates against a query is picking from a
+/// closed set). The user override above is unchanged; only the default comes
+/// from the class table (`personas_core::model_class`).
+pub const SMART_SEARCH_MODEL_DEFAULT: &str = personas_core::model_class::CallClass::Classify
+    .route()
+    .model;
 
 /// Model override for the LLM-assisted semantic vault lint.
 /// Value: model ID string.
 pub const SEMANTIC_LINT_MODEL: &str = "semantic_lint_model";
-/// Default model ID for [`SEMANTIC_LINT_MODEL`] when unset.
-pub const SEMANTIC_LINT_MODEL_DEFAULT: &str = personas_core::model_ids::DEFAULT_FAST;
+/// Default model ID for [`SEMANTIC_LINT_MODEL`] when unset: the `Classify`
+/// class route's model (each finding is a label from the lint's fixed set).
+/// The user override above is unchanged; only the default comes from the
+/// class table (`personas_core::model_class`).
+pub const SEMANTIC_LINT_MODEL_DEFAULT: &str = personas_core::model_class::CallClass::Classify
+    .route()
+    .model;
 
 /// ISO 8601 timestamp of the last completed daily credential healthcheck sweep.
 /// Written by the in-process `CredentialHealthcheckSubscription` to gate the

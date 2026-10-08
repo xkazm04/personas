@@ -677,9 +677,9 @@ pub async fn dev_tools_execute_task(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     task_id: String,
-    // Optional model override for THIS run (e.g. skill adopt/share pins
-    // "claude-sonnet-5"). None keeps the dev-runner default (Sonnet). Effort
-    // stays the app-wide default (medium — see prompt::cli_args::DEFAULT_EFFORT).
+    // Optional model override for THIS run (e.g. skill adopt/share pins a
+    // model). None keeps the dev-runner default (`DEV_TASK_CLASS`'s route).
+    // Effort is always the class route's.
     model: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
@@ -750,7 +750,7 @@ pub(crate) fn start_task_execution(
     let project_name = project.name.clone();
     let goal_id = task.goal_id.clone();
     let title = task.title.clone();
-    let exec_model = model.unwrap_or_else(|| DEFAULT_DEV_TASK_MODEL.to_string());
+    let exec_model = model.unwrap_or_else(|| DEV_TASK_CLASS.route().model.to_string());
 
     let app_handle_for_panic = app_handle.clone();
     let pool_for_panic = pool.clone();
@@ -939,7 +939,7 @@ fn spawn_batch_task(
                 &pool,
                 &project.root_path,
                 prompt_text,
-                DEFAULT_DEV_TASK_MODEL,
+                DEV_TASK_CLASS.route().model,
                 &task.title,
                 &batch_id,
                 &cancel_token,
@@ -1177,10 +1177,13 @@ pub async fn dev_tools_cancel_task_execution(
 // Core task execution logic
 // =============================================================================
 
-/// Dev-runner default model — the app-wide headless Sonnet. A per-run override
-/// (e.g. skill adopt/share → "claude-sonnet-5") is threaded from
-/// `dev_tools_execute_task`; every other caller uses this.
-const DEFAULT_DEV_TASK_MODEL: &str = "claude-sonnet-4-6";
+/// Call class of a dev-runner task: a tool-using task that acts on the
+/// project's tree. Model and effort come from the class table
+/// (`personas_core::model_class`). A per-run MODEL override (e.g. skill
+/// adopt/share) is threaded from `dev_tools_execute_task`; every other caller
+/// uses the route's model. The effort is always the route's.
+const DEV_TASK_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::AgentTask;
 
 // =============================================================================
 // Where a runner task executes (Grand Simulation G12)
@@ -1325,7 +1328,12 @@ fn dev_runner_request(
     model: &str,
     batch_id: &str,
 ) -> DispatchRequest {
-    let extra: Vec<String> = vec!["--model".to_string(), model.to_string()];
+    let extra: Vec<String> = vec![
+        "--model".to_string(),
+        model.to_string(),
+        "--effort".to_string(),
+        DEV_TASK_CLASS.route().effort.to_string(),
+    ];
     DispatchRequest {
         cwd: exec_dir.to_string_lossy().into_owned(),
         name: Some(title.trim().to_string()).filter(|s| !s.is_empty()),
@@ -1890,7 +1898,7 @@ async fn run_one_task_for_auto(
         &pool,
         &project.root_path,
         prompt_text,
-        DEFAULT_DEV_TASK_MODEL,
+        DEV_TASK_CLASS.route().model,
         &task.title,
         &run_id,
         &cancel_token,
@@ -2463,7 +2471,7 @@ mod tests {
                     Path::new("C:/repo/wt"),
                     t,
                     format!("do {i}"),
-                    DEFAULT_DEV_TASK_MODEL,
+                    DEV_TASK_CLASS.route().model,
                     batch,
                 )
             })
@@ -2481,10 +2489,16 @@ mod tests {
             // The task rides behind the marker; the CLI extras follow it.
             assert_eq!(r.args[0], queue::TASK_ARG);
             assert_eq!(r.args[1], format!("do {i}"));
-            assert_eq!(&r.args[2..4], ["--model", DEFAULT_DEV_TASK_MODEL]);
+            let route = DEV_TASK_CLASS.route();
+            assert_eq!(&r.args[2..4], ["--model", route.model]);
+            assert_eq!(&r.args[4..6], ["--effort", route.effort]);
         }
         for r in &requests {
-            assert_eq!(r.args.len(), 4, "the model is the only CLI extra");
+            assert_eq!(
+                r.args.len(),
+                6,
+                "the class route's model and effort are the only CLI extras"
+            );
         }
         // The one-shot classification the reap relies on reads the same label.
         assert!(crate::commands::fleet::classify::is_one_shot_worker_label(
