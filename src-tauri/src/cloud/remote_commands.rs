@@ -593,6 +593,25 @@ fn failure_message(e: &AppError) -> String {
     }
 }
 
+/// The extra columns of a terminal write (finish or refuse) to a row of
+/// `command_type`.
+///
+/// A `channel_say` row's `params` and `envelope` hold the operator's own words,
+/// readable in the cloud for as long as the row lives. Its terminal write also
+/// sets `params` to `{}` and `envelope` to null (both nullable; the update
+/// guard passes a pending or executing row to a terminal state). The web reads
+/// only `id`, `status`, `result` and `error_message` of a sent command. No other
+/// verb's columns are touched.
+fn terminal_fields(command_type: &str, mut fields: Value) -> Value {
+    if command_type == "channel_say" {
+        if let Some(obj) = fields.as_object_mut() {
+            obj.insert("params".into(), json!({}));
+            obj.insert("envelope".into(), Value::Null);
+        }
+    }
+    fields
+}
+
 /// The terminal states this desktop writes to a command row (PHASE2-SPEC
 /// 2.3). `executing` is not here: only the claim writes it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -667,7 +686,10 @@ pub(crate) async fn claim_and_execute(
                 .finish(
                     &cmd.id,
                     Resolution::Rejected,
-                    json!({ "error_message": trust::reason::REPLAYED }),
+                    terminal_fields(
+                        &cmd.command_type,
+                        json!({ "error_message": trust::reason::REPLAYED }),
+                    ),
                 )
                 .await;
             return Err(AppError::Validation(trust::reason::REPLAYED.into()));
@@ -676,7 +698,11 @@ pub(crate) async fn claim_and_execute(
     match executor.execute(cmd, authority).await {
         Ok(outcome) => {
             plane
-                .finish(&cmd.id, Resolution::Completed, outcome.completion_fields())
+                .finish(
+                    &cmd.id,
+                    Resolution::Completed,
+                    terminal_fields(&cmd.command_type, outcome.completion_fields()),
+                )
                 .await;
             Ok(outcome)
         }
@@ -685,7 +711,10 @@ pub(crate) async fn claim_and_execute(
                 .finish(
                     &cmd.id,
                     Resolution::Failed,
-                    json!({ "error_message": failure_message(&e) }),
+                    terminal_fields(
+                        &cmd.command_type,
+                        json!({ "error_message": failure_message(&e) }),
+                    ),
                 )
                 .await;
             Err(e)
@@ -1052,7 +1081,7 @@ async fn process_row(
                 .refuse(
                     &c.id,
                     Resolution::Expired,
-                    json!({ "error_message": EXPIRED_MESSAGE }),
+                    terminal_fields(&c.command_type, json!({ "error_message": EXPIRED_MESSAGE })),
                 )
                 .await;
         }
@@ -1062,7 +1091,7 @@ async fn process_row(
                 .refuse(
                     &c.id,
                     Resolution::Rejected,
-                    json!({ "error_message": reason }),
+                    terminal_fields(&c.command_type, json!({ "error_message": reason })),
                 )
                 .await;
         }
@@ -2537,6 +2566,8 @@ mod tests {
                     json!({
                         "result": { "messageId": id, "changed": true },
                         "result_ref": id,
+                        "params": {},
+                        "envelope": null,
                     })
                 ),
             ]
@@ -2587,7 +2618,10 @@ mod tests {
             panic!("finish")
         };
         assert_eq!(status, "failed");
-        assert_eq!(fields, json!({ "error_message": "not_app_master" }));
+        assert_eq!(
+            fields,
+            json!({ "error_message": "not_app_master", "params": {}, "envelope": null })
+        );
         assert!(operator_says(&pool, &persona).is_empty());
     }
 
@@ -2610,12 +2644,107 @@ mod tests {
             vec![Write::Refuse(
                 id,
                 "rejected".into(),
-                json!({ "error_message": "controller_not_paired" })
+                json!({ "error_message": "controller_not_paired", "params": {}, "envelope": null })
             )]
         );
         assert!(exec.calls.lock().unwrap().is_empty(), "nothing executed");
         assert!(operator_says(&pool, &persona).is_empty());
         assert_eq!(executions(&pool), 0);
+    }
+
+    /// The terminal write's extra columns, for the one write that is terminal.
+    fn terminal_write(plane: &FakePlane) -> (String, Value) {
+        match plane.writes().pop() {
+            Some(Write::Finish(_, status, fields)) | Some(Write::Refuse(_, status, fields)) => {
+                (status, fields)
+            }
+            other => panic!("expected a terminal write, got {other:?}"),
+        }
+    }
+
+    fn clears_the_cloud_copy(fields: &Value) -> bool {
+        fields.get("params") == Some(&json!({})) && fields.get("envelope") == Some(&Value::Null)
+    }
+
+    #[test]
+    fn a_channel_say_terminal_write_clears_the_cloud_copy_and_no_other_verb_does() {
+        let (pool, persona, plane, exec) = harness();
+        crate::cloud::channel_say::tests::charter(&pool, &persona, Some("proj_web"));
+        let phone = Phone::new();
+        let ctl = [phone.controller()];
+        let say = r#"{"message":"the words stay home"}"#;
+
+        // Completed.
+        run(
+            &plane,
+            &exec,
+            &ctl,
+            phone.row_with("channel_say", &persona, DEV, Utc::now(), say),
+        );
+        let (status, fields) = terminal_write(&plane);
+        assert_eq!(status, "completed");
+        assert!(clears_the_cloud_copy(&fields), "{fields}");
+        assert_eq!(fields["result"]["changed"], json!(true));
+
+        // Refused before a claim: signed by nobody this desktop trusts.
+        run(
+            &plane,
+            &exec,
+            &[],
+            phone.row_with("channel_say", &persona, DEV, Utc::now(), say),
+        );
+        let (status, fields) = terminal_write(&plane);
+        assert_eq!(status, "rejected");
+        assert!(clears_the_cloud_copy(&fields), "{fields}");
+
+        // Refused as expired.
+        let stale = Utc::now() - chrono::Duration::seconds(300);
+        run(
+            &plane,
+            &exec,
+            &ctl,
+            phone.row_with("channel_say", &persona, DEV, stale, say),
+        );
+        let (status, fields) = terminal_write(&plane);
+        assert_eq!(status, "expired");
+        assert!(clears_the_cloud_copy(&fields), "{fields}");
+
+        // Failed after a claim.
+        run(
+            &plane,
+            &exec,
+            &ctl,
+            phone.row_with(
+                "channel_say",
+                &persona,
+                DEV,
+                Utc::now(),
+                r#"{"message":"  "}"#,
+            ),
+        );
+        let (status, fields) = terminal_write(&plane);
+        assert_eq!(status, "failed");
+        assert_eq!(fields["error_message"], json!("empty_message"));
+        assert!(clears_the_cloud_copy(&fields), "{fields}");
+
+        // Another verb's completion keeps its columns: neither key is written.
+        let review = seed_review(&pool, &persona);
+        run(
+            &plane,
+            &exec,
+            &ctl,
+            phone.row_with(
+                "review_decide",
+                &persona,
+                DEV,
+                Utc::now(),
+                &decide_params(&review, "approved"),
+            ),
+        );
+        let (status, fields) = terminal_write(&plane);
+        assert_eq!(status, "completed");
+        assert!(fields.get("params").is_none(), "{fields}");
+        assert!(fields.get("envelope").is_none(), "{fields}");
     }
 
     fn run(
