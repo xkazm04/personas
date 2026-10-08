@@ -1,11 +1,10 @@
 //! Consolidator — turns the raw event log for one project into a
 //! stable narrative + named directions + flagged tensions, via a
-//! one-shot Sonnet 4.6 CLI call.
+//! one-shot Sonnet CLI call (the Synthesis class route).
 //!
 //! Pattern mirrors `companion::brain::consolidation::call_claude_oneshot`:
 //! ephemeral CLI invocation, no `--resume`, JSON envelope output.
-//! The differences are model (`claude-sonnet-4-6` per the locked design
-//! decision), shorter timeout (project pulse is much smaller than a
+//! The differences are model (the Synthesis class, Sonnet 5.5), shorter timeout (project pulse is much smaller than a
 //! brain consolidation), and a different envelope shape.
 
 use std::process::Stdio;

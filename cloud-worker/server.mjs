@@ -25,6 +25,10 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
+// Mirrors personas_core::model_ids::SUPERSEDED: ids the operator ruled out
+// ("Sonnet is always 5.5", 2026-10-08), mapped wherever a stored profile names one.
+const SUPERSEDED_MODELS = { 'claude-sonnet-4-6': 'claude-sonnet-5-5' };
+
 // ------------------------------------------------------------------
 // Minimal .env loader (zero-dep). Populates process.env WITHOUT overriding
 // vars already set in the shell. Supports KEY=VALUE, # comments, optional
@@ -148,7 +152,7 @@ function resolveEngine(modelProfile) {
       provider,
       protocol: 'anthropic',
       baseUrl: (mp.base_url || 'https://api.anthropic.com').replace(/\/+$/, ''),
-      model: mp.model || 'claude-sonnet-4-6',
+      model: SUPERSEDED_MODELS[mp.model] || mp.model || 'claude-sonnet-5-5',
       // Fall back to the Qwen key so a "claude" persona pointed at Qwen's
       // Anthropic-compat endpoint works without a separate Anthropic key.
       apiKey: mp.auth_token || process.env.ANTHROPIC_API_KEY || DASHSCOPE_API_KEY || '',

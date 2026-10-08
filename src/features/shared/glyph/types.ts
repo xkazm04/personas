@@ -62,7 +62,7 @@ export interface GlyphRow {
   shared: boolean;
   /** Build-prompt Rule 28 — recommended runtime model for this capability.
    *  Surface as a small badge with `modelRationale` as the tooltip. Bare
-   *  Claude model id (`"claude-sonnet-4-6"`, etc.) or null when the
+   *  Claude model id (`"claude-sonnet-5-5"`, etc.) or null when the
    *  capability inherits the persona default. */
   recommendedModel?: string | null;
   /** One-sentence build-time explanation of the model pick. Empty / absent

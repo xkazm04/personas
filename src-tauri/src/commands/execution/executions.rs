@@ -1034,7 +1034,7 @@ pub fn preview_execution(
     let model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
     let model = model_profile
         .and_then(|mp| mp.model)
-        .unwrap_or_else(|| "claude-sonnet-4-6".to_string());
+        .unwrap_or_else(|| personas_core::model_ids::DEFAULT_BALANCED.to_string());
 
     // Monthly spend
     let monthly_spend =

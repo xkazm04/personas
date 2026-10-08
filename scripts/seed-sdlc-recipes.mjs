@@ -162,7 +162,7 @@ const RECIPES = [
       category: 'development',
       enabled_by_default: true,
       execution_mode: 'e2e',
-      model_override: 'claude-sonnet-4-6',
+      model_override: 'claude-sonnet-5-5',
       suggested_trigger: {
         trigger_type: 'manual',
         config: {},
@@ -216,7 +216,7 @@ const RECIPES = [
       category: 'development',
       enabled_by_default: true,
       execution_mode: 'e2e',
-      model_override: 'claude-sonnet-4-6',
+      model_override: 'claude-sonnet-5-5',
       suggested_trigger: {
         trigger_type: 'manual',
         config: {},
@@ -272,7 +272,7 @@ const RECIPES = [
       category: 'security',
       enabled_by_default: true,
       execution_mode: 'e2e',
-      model_override: 'claude-sonnet-4-6',
+      model_override: 'claude-sonnet-5-5',
       suggested_trigger: {
         trigger_type: 'manual',
         config: {},
@@ -327,7 +327,7 @@ const RECIPES = [
       category: 'development',
       enabled_by_default: true,
       execution_mode: 'e2e',
-      model_override: 'claude-sonnet-4-6',
+      model_override: 'claude-sonnet-5-5',
       suggested_trigger: {
         trigger_type: 'manual',
         config: {},

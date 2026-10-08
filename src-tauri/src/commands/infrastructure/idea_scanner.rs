@@ -29,6 +29,11 @@ use crate::ipc_auth::require_auth;
 use crate::utils::extract_panic_message;
 use crate::AppState;
 
+/// The idea scan explores the repository with tools: an agent task.
+/// Model and effort come from the class table (`personas_core::model_class`).
+const IDEA_SCAN_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::AgentTask;
+
 // =============================================================================
 // Job state
 // =============================================================================
@@ -846,9 +851,9 @@ async fn run_idea_scan(
     IDEA_SCAN_JOBS.emit_line(app, scan_id, "[Milestone] Starting idea scan...");
 
     let exec_dir = std::path::PathBuf::from(root_path);
-    let mut child = crate::engine::cli_process::spawn_headless_claude(
+    let mut child = crate::engine::cli_process::spawn_headless_claude_class(
         prompt_text,
-        "claude-sonnet-4-6",
+        IDEA_SCAN_CLASS,
         &[],
         Some(&exec_dir),
         true,
@@ -891,7 +896,7 @@ async fn run_idea_scan(
     let spend_ctx = crate::db::repos::llm_spend::SpendCtx {
         source: "scanner",
         trigger_kind: "idea_scan",
-        model: Some("claude-sonnet-4-6"),
+        model: Some(IDEA_SCAN_CLASS.route().model),
         project_id: Some(project_id),
         persona_id: None,
     };
@@ -963,7 +968,7 @@ async fn run_idea_scan(
                                 draft.risk = risk;
                                 draft.plan = plan.clone();
                                 draft.provider = Some("claude".to_string());
-                                draft.model = Some("claude-sonnet-4-6".to_string());
+                                draft.model = Some(IDEA_SCAN_CLASS.route().model.to_string());
                                 draft.status = Some("pending".to_string());
                                 draft.dedup_key = Some(dedup_key.clone());
                                 match repo::file_idea(pool, draft) {

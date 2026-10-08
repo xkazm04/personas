@@ -2653,7 +2653,7 @@ fn solo_use_case_model_profile(ir: &crate::db::models::AgentIr) -> Option<String
         return None;
     }
     // Two accepted shapes:
-    //   "claude-sonnet-4-6"          → wrap into {"model": "..."}
+    //   "claude-sonnet-5-5"          → wrap into {"model": "..."}
     //   {"model": "...", "effort":…}  → forward verbatim
     let normalized = match override_val {
         serde_json::Value::String(s) => serde_json::json!({"model": s}),
