@@ -23,8 +23,8 @@
 //!    command executed is the one parsed FROM the signed envelope, never from
 //!    the row's columns.
 //! 2. **The auto-run set is closed**: `run_persona`, `pause_persona`,
-//!    `resume_persona`, `cancel_execution`, `chat_send` and `review_decide`
-//!    ([`auto_verb`]).
+//!    `resume_persona`, `cancel_execution`, `chat_send`, `review_decide` and
+//!    `channel_say` ([`auto_verb`]).
 //!    Two of them spend money on the user's plan with no desktop prompt and no
 //!    daily cap (M17): `run_persona`, and `chat_send`, which starts one chat
 //!    turn - with Athena (`persona_id = 'athena'`, `cloud::athena_send`) or
@@ -42,8 +42,12 @@
 //!    manual review of the named persona through the desk's own resolution
 //!    (`cloud::review_decide`), with every side effect of the desk's Approve /
 //!    Reject - so an approval can resume a team step the review held, as it
-//!    does at the desk. The trust boundary is the phone's non-extractable
-//!    key plus revocation from this desk.
+//!    does at the desk. `channel_say` (operator item E, 2026-10-08) writes one
+//!    operator message, at most 2000 characters and redacted, into an App
+//!    Master's channel (`cloud::channel_say`); one row per command id, and it
+//!    starts no execution - the headless master reads it at its next wake.
+//!    The trust boundary is the phone's non-extractable key plus revocation
+//!    from this desk.
 //! 3. **Everything else still needs the operator's click.** An unsigned
 //!    `run_persona` (an older web build, or a browser that was never paired)
 //!    surfaces the approval card exactly as before. The queue verbs
@@ -70,7 +74,9 @@
 //!
 //! What a paired phone can NOT do: edit a persona, read or touch credentials,
 //! pick a review's suggested action (it approves or rejects only), use a queue verb
-//! without a click here, or send any verb outside rule 2.
+//! without a click here, say into the channel of a persona that is not an App
+//! Master, start a run by saying something (`channel_say` writes the row and
+//! nothing else), or send any verb outside rule 2.
 //!
 //! ## Queue verbs
 //!
@@ -127,6 +133,7 @@ use tokio::sync::Mutex;
 use ts_rs::TS;
 
 use crate::cloud::athena_send;
+use crate::cloud::channel_say;
 use crate::cloud::persona_chat_send;
 use crate::cloud::review_decide;
 use crate::cloud::sync::client::SyncClient;
@@ -231,13 +238,15 @@ const QUEUE_VERBS: &[&str] = &["queue_reorder", "queue_set_lane", "queue_cancel"
 /// `run_persona`. `chat_send` is served for Athena
 /// ([`athena_send::is_supported_target`]) and for any persona
 /// (`persona_chat_send`); `review_decide` (M20) approves or rejects one
-/// manual review (`review_decide`).
+/// manual review (`review_decide`); `channel_say` speaks as the operator into
+/// an App Master's channel (`channel_say`).
 const V1_VERBS: &[&str] = &[
     "pause_persona",
     "resume_persona",
     "cancel_execution",
     "chat_send",
     "review_decide",
+    "channel_say",
 ];
 
 /// Everything this desktop will act on. Anything else is refused and recorded.
@@ -870,6 +879,22 @@ impl VerbExecutor for AppExecutor {
                     if outcome.result.get("changed").and_then(Value::as_bool) == Some(true) {
                         // Push the new status now, not at the next periodic tick.
                         crate::cloud::sync::notify_dirty();
+                    }
+                    outcome
+                }
+                "channel_say" => {
+                    // One operator row and nothing else: no follow-up run
+                    // (the headless master reads it at its next wake).
+                    let outcome = channel_say::execute(&state.db, cmd)?;
+                    if outcome.result.get("changed").and_then(Value::as_bool) == Some(true) {
+                        // The desk's channel view refreshes, as after its own post.
+                        if let Some(persona_id) = cmd.persona_id.as_deref() {
+                            crate::engine::event_registry::emit_event(
+                                &self.app,
+                                personas_core::events::event_name::PERSONA_CHANNEL_MESSAGE,
+                                &json!({ "persona_id": persona_id }),
+                            );
+                        }
                     }
                     outcome
                 }
@@ -1603,7 +1628,8 @@ mod tests {
                 "resume_persona",
                 "cancel_execution",
                 "chat_send",
-                "review_decide"
+                "review_decide",
+                "channel_say"
             ]
         );
         for v in [
@@ -1613,6 +1639,7 @@ mod tests {
             "cancel_execution",
             "chat_send",
             "review_decide",
+            "channel_say",
         ] {
             assert!(is_known_command_type(v), "{v} must be known");
             assert!(auto_verb(v), "{v} auto-runs for a paired controller");
@@ -1820,6 +1847,10 @@ mod tests {
                     )
                     .map(|(review, _)| review)
                 });
+            }
+            if cmd.command_type == "channel_say" {
+                // The production verb whole: it is database-only.
+                return channel_say::execute(&self.pool, cmd);
             }
             if cmd.command_type == "chat_send" {
                 let user_db = &self.user_db;
@@ -2465,6 +2496,132 @@ mod tests {
         );
         assert!(exec.calls.lock().unwrap().is_empty(), "nothing executed");
         assert_eq!(review_status(&pool, &review).0, "pending");
+    }
+
+    /// The headless master's read of the operator's voice
+    /// (`dbread.mjs` `operatorChannelSince`).
+    fn operator_says(pool: &DbPool, persona: &str) -> Vec<(String, String)> {
+        let conn = pool.get().expect("conn");
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, body FROM team_channel_messages                  WHERE persona_id = ?1 AND author_kind = 'user' ORDER BY created_at",
+            )
+            .expect("prepare");
+        stmt.query_map([persona], |r| Ok((r.get(0)?, r.get(1)?)))
+            .expect("query")
+            .map(|r| r.expect("row"))
+            .collect()
+    }
+
+    fn executions(pool: &DbPool) -> i64 {
+        pool.get()
+            .expect("conn")
+            .query_row("SELECT COUNT(*) FROM persona_executions", [], |r| r.get(0))
+            .expect("count")
+    }
+
+    #[test]
+    fn a_signed_channel_say_writes_one_operator_row_and_starts_nothing() {
+        let (pool, persona, plane, exec) = harness();
+        crate::cloud::channel_say::tests::charter(&pool, &persona, Some("proj_web"));
+        let phone = Phone::new();
+        let ctl = [phone.controller()];
+        let mut row = phone.row_with(
+            "channel_say",
+            &persona,
+            DEV,
+            Utc::now(),
+            r#"{"message":"  Ship E before B  "}"#,
+        );
+        // The row's params column is NOT signed: what is said is the envelope's.
+        row.params = Some(json!({ "message": "something else" }));
+        let id = row.id.clone();
+        run(&plane, &exec, &ctl, row);
+        assert_eq!(
+            plane.writes(),
+            vec![
+                Write::Stamp(CTL.into()),
+                Write::Claim(id.clone()),
+                Write::Finish(
+                    id.clone(),
+                    "completed".into(),
+                    json!({
+                        "result": { "messageId": id, "changed": true },
+                        "result_ref": id,
+                    })
+                ),
+            ]
+        );
+        assert_eq!(
+            operator_says(&pool, &persona),
+            vec![(id.clone(), "Ship E before B".to_string())]
+        );
+        assert_eq!(executions(&pool), 0, "a say starts no execution");
+
+        // The same command delivered again (a fresh process, so the replay
+        // memory does not refuse it first) writes no second row.
+        let redelivered = Effective {
+            id: id.clone(),
+            command_type: "channel_say".into(),
+            persona_id: Some(persona.clone()),
+            params: json!({ "message": "Ship E before B" }),
+            prompt: None,
+        };
+        let o = block_on(exec.execute(&redelivered, &Authority::OperatorApproved))
+            .expect("re-delivery");
+        assert_eq!(o.result, json!({ "messageId": id, "changed": false }));
+        assert_eq!(operator_says(&pool, &persona).len(), 1);
+    }
+
+    #[test]
+    fn a_signed_channel_say_to_a_persona_without_a_bound_charter_fails_not_app_master() {
+        let (pool, persona, plane, exec) = harness();
+        let phone = Phone::new();
+        run(
+            &plane,
+            &exec,
+            &[phone.controller()],
+            phone.row_with(
+                "channel_say",
+                &persona,
+                DEV,
+                Utc::now(),
+                r#"{"message":"hello"}"#,
+            ),
+        );
+        let Some(Write::Finish(_, status, fields)) = plane.writes().pop() else {
+            panic!("finish")
+        };
+        assert_eq!(status, "failed");
+        assert_eq!(fields, json!({ "error_message": "not_app_master" }));
+        assert!(operator_says(&pool, &persona).is_empty());
+    }
+
+    #[test]
+    fn an_unsigned_channel_say_is_rejected_controller_not_paired() {
+        let (pool, persona, plane, exec) = harness();
+        crate::cloud::channel_say::tests::charter(&pool, &persona, Some("proj_web"));
+        let mut row = Phone::new().row_with(
+            "channel_say",
+            &persona,
+            DEV,
+            Utc::now(),
+            r#"{"message":"hello"}"#,
+        );
+        row.controller_id = None;
+        let id = row.id.clone();
+        run(&plane, &exec, &[], row);
+        assert_eq!(
+            plane.writes(),
+            vec![Write::Refuse(
+                id,
+                "rejected".into(),
+                json!({ "error_message": "controller_not_paired" })
+            )]
+        );
+        assert!(exec.calls.lock().unwrap().is_empty(), "nothing executed");
+        assert!(operator_says(&pool, &persona).is_empty());
+        assert_eq!(executions(&pool), 0);
     }
 
     fn run(

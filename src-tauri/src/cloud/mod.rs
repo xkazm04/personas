@@ -1,4 +1,5 @@
 pub(crate) mod athena_send;
+pub(crate) mod channel_say;
 pub mod client;
 pub mod config;
 pub mod pairing;
