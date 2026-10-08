@@ -3,6 +3,7 @@ import type { CloudSyncStatus } from '@/lib/bindings/CloudSyncStatus';
 import type { CloudPairingStart } from '@/lib/bindings/CloudPairingStart';
 import type { CloudPairingPoll } from '@/lib/bindings/CloudPairingPoll';
 import type { CloudController } from '@/lib/bindings/CloudController';
+import type { CloudPairingOrigin } from '@/lib/bindings/CloudPairingOrigin';
 import type { SyncDataClass } from '@/lib/bindings/SyncDataClass';
 
 /** Read the current cloud-sync status (enabled flag + last-run telemetry). */
@@ -50,3 +51,12 @@ export const listCloudControllers = () =>
 /** Revoke one phone, or every phone when `controllerId` is null. */
 export const revokeCloudController = (controllerId: string | null) =>
   invokeWithTimeout<number>('cloud_controller_revoke', { controllerId });
+
+/** Where the pairing QR opens (the operator's origin, or the default). */
+export const getCloudPairingOrigin = () =>
+  invokeWithTimeout<CloudPairingOrigin>('cloud_pairing_origin_get');
+
+/** Set the origin the pairing QR opens (`https://host[:port]`), or clear it with
+ *  null. The backend refuses anything but a bare origin. Returns the effective one. */
+export const setCloudPairingOrigin = (origin: string | null) =>
+  invokeWithTimeout<CloudPairingOrigin>('cloud_pairing_origin_set', { origin });

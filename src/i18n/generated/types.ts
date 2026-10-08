@@ -12705,6 +12705,13 @@ export type Translations = {
       cloud_sync_device_name_save: string;
       cloud_sync_device_name_saved: string;
       cloud_sync_device_name_failed: string;
+      cloud_pairing_origin_label: string;
+      cloud_pairing_origin_hint: string;
+      cloud_pairing_origin_opens: string;
+      cloud_pairing_origin_opens_default: string;
+      cloud_pairing_origin_save: string;
+      cloud_pairing_origin_saved: string;
+      cloud_pairing_origin_failed: string;
       cloud_sync_notes_label: string;
       cloud_sync_notes_hint: string;
       cloud_sync_chats_label: string;

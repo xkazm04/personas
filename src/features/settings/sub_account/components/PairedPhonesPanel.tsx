@@ -16,6 +16,7 @@ import {
 import type { CloudController } from '@/lib/bindings/CloudController';
 import type { CloudPairingStart } from '@/lib/bindings/CloudPairingStart';
 import type { CloudPairingState } from '@/lib/bindings/CloudPairingState';
+import PairingOriginField from './PairingOriginField';
 
 /** The ceremony's poll cadence while the QR is up (PHASE2-SPEC 3.2 step 3). */
 const PAIRING_POLL_MS = 2000;
@@ -27,7 +28,8 @@ type RevokeTarget = { id: string | null; name: string };
 /**
  * Paired phones of the mobile command plane, inside Settings > Cloud sync.
  *
- * "Pair a phone" shows a QR the phone scans while signed in to personas.so; the
+ * "Pair a phone" shows a QR the phone scans while signed in on the web; the QR
+ * opens the pairing address shown in the panel (PairingOriginField). The
  * desktop polls every 2 s, verifies the phone's proof and stores its public key.
  * A paired phone's pause / resume / cancel / run commands then run here with no
  * prompt, so the list's Revoke and Revoke all are the operator's brake. Rendered
@@ -135,6 +137,8 @@ export default function PairedPhonesPanel() {
         <p className="typo-heading">{s.cloud_phones_title}</p>
       </div>
       <p className="typo-caption text-foreground">{s.cloud_phones_description}</p>
+
+      <PairingOriginField />
 
       {pairing && qrDataUri ? (
         <div className="flex flex-col gap-3 sm:flex-row">
