@@ -31,8 +31,10 @@ by the 1.1.0 generic rewrite.
 - always: `npm run check`, `npm run test -- --run`
 - when locales/strings touched: `npm run check:i18n:strict`
 - when Rust touched: `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings` + `npm run test:rust`
-- when ts-rs types change: `cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings`,
-  then commit `src/lib/bindings/`
+- when ts-rs types change: on Windows run BOTH `npm run test:rust -- export_bindings` (app_lib types) AND
+  `npm run test:rust:crates -- export_bindings` (`core`/`db`/`engine` models: the first command regenerates NONE of
+  them and looks exactly like "up to date"; check the binding file's mtime), then commit `src/lib/bindings/`. The raw
+  `cargo test --workspace ... export_bindings` form is CI's (Linux). Promoted 2026-10-08 (lifecycle-health: second sighting).
 - builder: **vitest cannot be run whole here** - `src/features/agents/sub_activity/__tests__/activityTabRunsRegion.test.tsx` kills its worker instead of timing out, so `npx vitest run` never terminates (reproduced on master, 2026-09-22, by three builders independently). Shard it: `npx vitest run --reporter=dot --shard=1/4` .. `4/4`, state the passed count per shard, and never report a pass from a run that did not print a count.
 - builder: **never `npm run census -- --update` while a sibling's files are uncommitted** - it re-baselines their drift under your commit. Report drops with their traced cause; the Director ratchets on the clean tree, after tracing each drop to a removal in the branch diff (2026-09-22: six drops, six removals, five minutes).
 - builder: `npm run gate -- --cold` (the worktree delta: tsc, eslint, census vs master - REQUIRED before reporting, and COLD:
@@ -47,6 +49,17 @@ by the 1.1.0 generic rewrite.
   `node scripts/generate-command-names.mjs` has run, so the Director registers them in WP0 and tells the Rust package the crate
   will not compile until it lands. A contract field typed `number` names `i32`/`u32` in the Rust brief (ts-rs emits `bigint` for
   i64/u64/usize); diff the regenerated binding against the frozen one.
+- i18n hooks read the WORKING TREE (`i18n-no-gaps`, `i18n-no-untranslated`): any commit that stages a locale fails while ANY
+  session holds untranslated keys on disk. Translate every in-flight builder's keys before the first locale-staging commit, and
+  commit each package's locale/en/types files as BLOBS with the other packages' keys stripped (`git hash-object -w` +
+  `update-index --cacheinfo` in the isolated index). Budget `docs/i18n/untranslated-allowlist.json` entries for values that are
+  legitimately the same word (code, `Lint`, `Test`, a page name). Promoted 2026-10-08 (lifecycle-health: second sighting of both).
+- Contract freeze (WP0) checklist additions: a new enum variant updates every exhaustive COUNT test over that enum
+  (`ideas.rs` `every_source_files...` asserts the source total); a new TEXT primary key is `TEXT PRIMARY KEY NOT NULL`
+  (census `nullable-text-primary-key`). Both slipped in lifecycle-health WP0.
+- Director shell writes: any text containing backticks goes through the Write/Edit tool, never a double-quoted `node -e`/heredoc
+  argument - an escaped backtick that fails to escape is command substitution, and on 2026-10-08 it launched a full
+  `cargo test --workspace` beside a sibling's running app while writing THIS overlay.
 - Never bare `cargo test` on Windows (the lib unit-test binary dies in the loader, exit 127);
   `npm run test:rust` embeds the comctl32-v6 manifest post-link.
 
@@ -104,6 +117,12 @@ Authority: `.claude/CLAUDE.md` (parallel-safety primitives apply in full).
   (`raw-button-element`; the shared `Button` has NO class merge, so a whole-surface press target is ONE local
   component and a visible +1 baseline on that rule alone: `node scripts/census/run-census.mjs --rule <id> --update`).
   Promoted 2026-10-08 (goals-layers: a hand-written gate list dropped `gate --cold`, 5 census rises reached merge).
+- A client copy of a backend rule (budgets, thresholds, validators) is TETHERED: a parity test that reads the Rust at run time
+  AND an `exclude` entry for `comment-kept-cross-language-mirror` naming it. Rewording the comment so the rule stops matching is
+  forbidden (it hides a real mirror from the census). Better still, ship the effective value on the payload. Promoted 2026-10-08
+  (lifecycle-health: second sighting after server-control).
+- Every wave decision maps to an acceptance bullet in some work package before the go-gate. lifecycle-health's "manual Measure
+  button" (wave 2) was in no brief and shipped with zero callers of `measureLifecycle` until the Director grepped for them.
 - Doc-sync: user-visible changes update the mapped `docs/features/*` (+ onboarding flow / marketing
   module if `scripts/docs/feature-doc-map.json` maps one). Ask the scout in Phase 2 whether the target
   source paths are covered by that map at all.
