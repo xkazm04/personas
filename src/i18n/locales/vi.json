@@ -16118,6 +16118,7 @@
       "cloud_pairing_origin_save": "Lưu địa chỉ",
       "cloud_pairing_origin_saved": "Đã lưu. Mã QR tiếp theo sẽ mở địa chỉ này.",
       "cloud_pairing_origin_failed": "Không thể lưu địa chỉ.",
+      "cloud_pairing_origin_load_failed": "Không thể đọc địa chỉ ghép nối. Hãy lưu lại để thay thế.",
       "cloud_sync_notes_label": "Đồng bộ ghi chú",
       "cloud_sync_notes_hint": "Hiển thị các mục tiêu trong Ghi chú trên điện thoại của bạn. Nội dung ghi chú sẽ rời khỏi máy tính này, mọi thứ trông giống khóa hoặc token đều được che đi. Tắt tùy chọn này sẽ xóa các ghi chú đã đồng bộ.",
       "cloud_sync_chats_label": "Đồng bộ trò chuyện",

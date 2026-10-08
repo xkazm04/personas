@@ -16118,6 +16118,7 @@
       "cloud_pairing_origin_save": "Enregistrer l'adresse",
       "cloud_pairing_origin_saved": "Enregistrée. Le prochain QR ouvrira cette adresse.",
       "cloud_pairing_origin_failed": "Impossible d'enregistrer l'adresse.",
+      "cloud_pairing_origin_load_failed": "Impossible de lire l'adresse d'appairage. Enregistrez-la à nouveau pour la remplacer.",
       "cloud_sync_notes_label": "Synchroniser les notes",
       "cloud_sync_notes_hint": "Affiche vos objectifs des Notes sur votre téléphone. Le texte des notes quitte cet ordinateur, et tout ce qui ressemble à une clé ou à un jeton est masqué. Le désactiver supprime les notes synchronisées.",
       "cloud_sync_chats_label": "Synchroniser les discussions",

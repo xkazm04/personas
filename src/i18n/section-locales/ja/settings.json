@@ -39,6 +39,7 @@
     "cloud_pairing_origin_save": "アドレスを保存",
     "cloud_pairing_origin_saved": "保存しました。次の QR コードはこのアドレスを開きます。",
     "cloud_pairing_origin_failed": "アドレスを保存できませんでした。",
+    "cloud_pairing_origin_load_failed": "ペアリング用アドレスを読み取れませんでした。保存し直すと置き換えられます。",
     "cloud_sync_notes_label": "メモを同期",
     "cloud_sync_notes_hint": "メモの目標をスマートフォンに表示します。メモの本文はこのパソコンの外に送られますが、キーやトークンに見えるものは伏せられます。オフにすると同期済みのメモは削除されます。",
     "cloud_sync_chats_label": "チャットを同期",

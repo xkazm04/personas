@@ -16118,6 +16118,7 @@
       "cloud_pairing_origin_save": "حفظ العنوان",
       "cloud_pairing_origin_saved": "تم الحفظ. سيفتح رمز QR التالي هذا العنوان.",
       "cloud_pairing_origin_failed": "تعذّر حفظ العنوان.",
+      "cloud_pairing_origin_load_failed": "تعذّرت قراءة عنوان الاقتران. احفظه مرة أخرى لاستبداله.",
       "cloud_sync_notes_label": "مزامنة الملاحظات",
       "cloud_sync_notes_hint": "اعرض أهدافك من الملاحظات على هاتفك. يغادر نص الملاحظات هذا الحاسوب، مع إخفاء أي شيء يشبه مفتاحًا أو رمزًا مميزًا. إيقافه يحذف الملاحظات المتزامنة.",
       "cloud_sync_chats_label": "مزامنة المحادثات",

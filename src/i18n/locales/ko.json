@@ -16118,6 +16118,7 @@
       "cloud_pairing_origin_save": "주소 저장",
       "cloud_pairing_origin_saved": "저장했습니다. 다음 QR 코드는 이 주소를 엽니다.",
       "cloud_pairing_origin_failed": "주소를 저장하지 못했습니다.",
+      "cloud_pairing_origin_load_failed": "페어링 주소를 읽지 못했습니다. 다시 저장하면 교체됩니다.",
       "cloud_sync_notes_label": "메모 동기화",
       "cloud_sync_notes_hint": "메모의 목표를 휴대폰에 표시합니다. 메모 내용이 이 컴퓨터 밖으로 전송되며, 키나 토큰처럼 보이는 것은 가려집니다. 끄면 동기화된 메모가 삭제됩니다.",
       "cloud_sync_chats_label": "채팅 동기화",

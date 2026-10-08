@@ -39,6 +39,7 @@
     "cloud_pairing_origin_save": "Adresse speichern",
     "cloud_pairing_origin_saved": "Gespeichert. Der nächste QR-Code öffnet diese Adresse.",
     "cloud_pairing_origin_failed": "Die Adresse konnte nicht gespeichert werden.",
+    "cloud_pairing_origin_load_failed": "Die Kopplungsadresse konnte nicht gelesen werden. Speichere sie erneut, um sie zu ersetzen.",
     "cloud_sync_notes_label": "Notizen synchronisieren",
     "cloud_sync_notes_hint": "Zeigt Ihre Ziele aus den Notizen auf Ihrem Telefon. Der Notiztext verlässt diesen Computer; alles, was wie ein Schlüssel oder Token aussieht, wird maskiert. Beim Ausschalten werden die synchronisierten Notizen gelöscht.",
     "cloud_sync_chats_label": "Chats synchronisieren",

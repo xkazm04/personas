@@ -16118,6 +16118,7 @@
       "cloud_pairing_origin_save": "Simpan alamat",
       "cloud_pairing_origin_saved": "Tersimpan. QR berikutnya membuka alamat ini.",
       "cloud_pairing_origin_failed": "Tidak dapat menyimpan alamat.",
+      "cloud_pairing_origin_load_failed": "Tidak dapat membaca alamat pemasangan. Simpan lagi untuk menggantinya.",
       "cloud_sync_notes_label": "Sinkronkan catatan",
       "cloud_sync_notes_hint": "Tampilkan tujuan dari Catatan di ponsel Anda. Teks catatan keluar dari komputer ini, dengan apa pun yang tampak seperti kunci atau token disamarkan. Menonaktifkannya menghapus catatan yang telah disinkronkan.",
       "cloud_sync_chats_label": "Sinkronkan obrolan",

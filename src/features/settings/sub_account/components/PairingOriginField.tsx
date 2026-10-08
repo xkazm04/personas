@@ -3,7 +3,7 @@ import { FormField } from '@/features/shared/components/forms/FormField';
 import Button from '@/features/shared/components/buttons/Button';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation, interpolate } from '@/i18n/useTranslation';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { getCloudPairingOrigin, setCloudPairingOrigin } from '@/api/cloudSync';
 import type { CloudPairingOrigin } from '@/lib/bindings/CloudPairingOrigin';
@@ -23,6 +23,7 @@ export default function PairingOriginField() {
   const [current, setCurrent] = useState<CloudPairingOrigin | null>(null);
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -32,7 +33,12 @@ export default function PairingOriginField() {
         setCurrent(o);
         setDraft(o.custom ? o.origin : '');
       })
-      .catch(toastCatch('PairingOriginField:load'));
+      .catch((e: unknown) => {
+        // Shown inline: the operator pressed nothing, and the panel must not
+        // look as if it knows where the QR opens when it does not.
+        if (!cancelled) setLoadFailed(true);
+        silentCatch('PairingOriginField:load')(e);
+      });
     return () => {
       cancelled = true;
     };
@@ -40,13 +46,14 @@ export default function PairingOriginField() {
 
   const trimmed = draft.trim();
   const saved = current?.custom ? current.origin : '';
-  const dirty = current !== null && trimmed !== saved;
+  const dirty = (current !== null || loadFailed) && trimmed !== saved;
 
   const save = async () => {
     setSaving(true);
     try {
       const next = await setCloudPairingOrigin(trimmed === '' ? null : trimmed);
       setCurrent(next);
+      setLoadFailed(false);
       setDraft(next.custom ? next.origin : '');
       useToastStore.getState().addToast(s.cloud_pairing_origin_saved, 'success');
     } catch (e) {
@@ -87,6 +94,11 @@ export default function PairingOriginField() {
           {s.cloud_pairing_origin_save}
         </Button>
       </div>
+      {loadFailed && !current && (
+        <p className="typo-caption text-status-error" role="alert">
+          {s.cloud_pairing_origin_load_failed}
+        </p>
+      )}
       {current && (
         <p className="typo-caption text-foreground break-all" data-testid="cloud-pairing-origin-effective">
           {interpolate(current.custom ? s.cloud_pairing_origin_opens : s.cloud_pairing_origin_opens_default, {

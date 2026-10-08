@@ -16118,6 +16118,7 @@
       "cloud_pairing_origin_save": "पता सहेजें",
       "cloud_pairing_origin_saved": "सहेजा गया। अगला QR यह पता खोलेगा।",
       "cloud_pairing_origin_failed": "पता सहेजा नहीं जा सका।",
+      "cloud_pairing_origin_load_failed": "पेयरिंग पता पढ़ा नहीं जा सका। इसे बदलने के लिए फिर से सहेजें।",
       "cloud_sync_notes_label": "नोट्स सिंक करें",
       "cloud_sync_notes_hint": "अपने नोट्स के लक्ष्य फ़ोन पर दिखाएँ। नोट का टेक्स्ट इस कंप्यूटर से बाहर जाता है, और जो कुछ भी कुंजी या टोकन जैसा दिखे, उसे छिपा दिया जाता है। बंद करने पर सिंक किए गए नोट्स हट जाते हैं।",
       "cloud_sync_chats_label": "चैट सिंक करें",

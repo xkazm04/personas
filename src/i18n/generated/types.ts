@@ -12712,6 +12712,7 @@ export type Translations = {
       cloud_pairing_origin_save: string;
       cloud_pairing_origin_saved: string;
       cloud_pairing_origin_failed: string;
+      cloud_pairing_origin_load_failed: string;
       cloud_sync_notes_label: string;
       cloud_sync_notes_hint: string;
       cloud_sync_chats_label: string;

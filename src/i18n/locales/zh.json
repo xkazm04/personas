@@ -16118,6 +16118,7 @@
       "cloud_pairing_origin_save": "保存地址",
       "cloud_pairing_origin_saved": "已保存。下一个二维码将打开此地址。",
       "cloud_pairing_origin_failed": "无法保存地址。",
+      "cloud_pairing_origin_load_failed": "无法读取配对地址。重新保存即可替换它。",
       "cloud_sync_notes_label": "同步笔记",
       "cloud_sync_notes_hint": "在手机上显示笔记中的目标。笔记文本会离开这台电脑，任何看起来像密钥或令牌的内容都会被遮盖。关闭后会删除已同步的笔记。",
       "cloud_sync_chats_label": "同步聊天",

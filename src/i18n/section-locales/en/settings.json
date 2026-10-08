@@ -100,6 +100,7 @@
     "cloud_pairing_origin_save": "Save address",
     "cloud_pairing_origin_saved": "Saved. The next QR opens this address.",
     "cloud_pairing_origin_failed": "Couldn't save the address.",
+    "cloud_pairing_origin_load_failed": "Couldn't read the pairing address. Save it again to replace it.",
     "cloud_sync_notes_label": "Sync notes",
     "cloud_sync_notes_hint": "Show your Notes goals on your phone. Note text leaves this computer, with anything that looks like a key or token masked. Turning it off deletes the synced notes.",
     "cloud_sync_chats_label": "Sync chats",

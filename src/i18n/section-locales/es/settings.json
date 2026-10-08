@@ -39,6 +39,7 @@
     "cloud_pairing_origin_save": "Guardar dirección",
     "cloud_pairing_origin_saved": "Guardada. El próximo QR abrirá esta dirección.",
     "cloud_pairing_origin_failed": "No se pudo guardar la dirección.",
+    "cloud_pairing_origin_load_failed": "No se pudo leer la dirección de emparejamiento. Guárdala de nuevo para reemplazarla.",
     "cloud_sync_notes_label": "Sincronizar notas",
     "cloud_sync_notes_hint": "Muestra en tu teléfono los objetivos de tus Notas. El texto de las notas sale de este ordenador, con todo lo que parezca una clave o un token oculto. Al desactivarlo se borran las notas sincronizadas.",
     "cloud_sync_chats_label": "Sincronizar chats",
