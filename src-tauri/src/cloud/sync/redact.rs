@@ -127,19 +127,69 @@ fn mask_token(tok: &str, forced: bool) -> Option<String> {
     let masked = if core.contains("://") {
         mask_url(core)
     } else {
-        mask_core(core)
+        mask_pairs(core)
     }?;
     Some(format!("{lead}{masked}{trail}"))
+}
+
+/// Split a piece produced by `split_inclusive` into (body, separator).
+fn split_sep<'a>(piece: &'a str, seps: &[char]) -> (&'a str, &'a str) {
+    match piece.char_indices().last() {
+        Some((i, c)) if seps.contains(&c) => piece.split_at(i),
+        _ => (piece, ""),
+    }
+}
+
+/// Pairs joined in one token, `Server=db;Password=x` or `a=1&secret=y`, are
+/// judged pair by pair: judged whole, the name before the LAST `=` runs back
+/// over every pair, so the password stayed and the database name was masked.
+/// The separators and every pair that is not a secret stay byte for byte. A
+/// token with no `key=value` piece is judged whole, as before.
+fn mask_pairs(core: &str) -> Option<String> {
+    const SEPS: [char; 2] = [';', '&'];
+    let bodies = || {
+        core.split_inclusive(SEPS)
+            .map(|p| split_sep(p, &SEPS).0)
+            .filter(|b| !b.is_empty())
+    };
+    if bodies().count() < 2 || !bodies().any(|b| b.contains(['=', ':'])) {
+        return mask_core(core);
+    }
+    let mut out = String::with_capacity(core.len());
+    let mut changed = false;
+    for piece in core.split_inclusive(SEPS) {
+        let (body, sep) = split_sep(piece, &SEPS);
+        match mask_core(body) {
+            Some(m) => {
+                out.push_str(&m);
+                changed = true;
+            }
+            None => out.push_str(body),
+        }
+        out.push_str(sep);
+    }
+    changed.then_some(out)
 }
 
 /// One unwrapped token. `KEY=value`, `token:value`: mask the value and keep
 /// the name, which is what tells the reader what was there. Otherwise the
 /// whole token is judged.
+///
+/// The value of a secret-named key starts at the FIRST separator that ends
+/// the name, so a password that itself holds `=` or `:` (base64 padding,
+/// `user:pass`) goes whole. Any other value is the part after the last one.
 fn mask_core(core: &str) -> Option<String> {
+    for (i, _) in core.match_indices(['=', ':']) {
+        let (name, value) = core.split_at(i + 1);
+        let (vlead, vcore, vtrail) = unwrap_token(value);
+        if !vcore.is_empty() && names_a_secret(name) {
+            return Some(format!("{name}{vlead}{REDACTED}{vtrail}"));
+        }
+    }
     if let Some(i) = core.rfind(['=', ':']) {
         let (name, value) = core.split_at(i + 1);
         let (vlead, vcore, vtrail) = unwrap_token(value);
-        if !vcore.is_empty() && (looks_secret(vcore) || names_a_secret(name)) {
+        if !vcore.is_empty() && looks_secret(vcore) {
             return Some(format!("{name}{vlead}{REDACTED}{vtrail}"));
         }
     }
@@ -215,12 +265,15 @@ pub fn redact_text(s: &str) -> String {
         // `Authorization: Bearer x` keeps its own rule: the word `Bearer` is
         // not itself the credential.
         let forced = after_bearer || (after_secret_key && !is_bearer);
-        match mask_token(tok, forced) {
+        let masked = mask_token(tok, forced);
+        // A key that already masked its own value (`PASSWORD=c2Vj==` ends in
+        // `=` too) does not take the next word with it.
+        after_secret_key = masked.is_none() && core.ends_with(['=', ':']) && names_a_secret(core);
+        match masked {
             Some(masked) => out.push_str(&masked),
             None => out.push_str(tok),
         }
         after_bearer = is_bearer;
-        after_secret_key = core.ends_with(['=', ':']) && names_a_secret(core);
         rest = &rest[end..];
     }
     out
@@ -386,6 +439,27 @@ mod tests {
         let text = "  two  spaces\n\n\ttab and trailing  ";
         assert_eq!(redact_text(text), text);
         assert_eq!(redact_text(""), "");
+    }
+
+    #[test]
+    fn joined_pairs_are_judged_one_by_one() {
+        // Judged whole, the name before the last `=` named a secret, so the
+        // database was masked and the password went out.
+        assert_eq!(
+            redact_text("Server=db;User=sa;Password=hunter2;Database=prod"),
+            "Server=db;User=sa;Password=[redacted];Database=prod"
+        );
+        assert_eq!(
+            redact_text("a=1&client_secret=xyz&b=2"),
+            "a=1&client_secret=[redacted]&b=2"
+        );
+        let plain = "Server=db;Database=prod;Timeout=30 R&D";
+        assert_eq!(redact_text(plain), plain);
+        // A secret-named value runs from its first separator.
+        assert_eq!(
+            redact_text("DB_PASSWORD=c2VjcmV0cGFzcw=="),
+            "DB_PASSWORD=[redacted]"
+        );
     }
 
     /// The shared redaction cases. `personas-web` keeps a byte-identical copy

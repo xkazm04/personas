@@ -145,6 +145,51 @@
       "name": "kept: the empty string",
       "input": "",
       "expected": ""
+    },
+    {
+      "name": "joined pairs: the password in a connection string is masked, every other pair stays",
+      "input": "Server=db;User=sa;Password=hunter2;Database=prod",
+      "expected": "Server=db;User=sa;Password=[redacted];Database=prod"
+    },
+    {
+      "name": "joined pairs: a connection string split by spaces in prose",
+      "input": "use Data Source=db01;Initial Catalog=sales;User ID=svc;Password=Pa55;Encrypt=True now",
+      "expected": "use Data Source=db01;Initial Catalog=sales;User ID=svc;Password=[redacted];Encrypt=True now"
+    },
+    {
+      "name": "joined pairs: a trailing separator after the password stays",
+      "input": "Server=db;Password=hunter2;",
+      "expected": "Server=db;Password=[redacted];"
+    },
+    {
+      "name": "joined pairs: a secret between ampersands outside a URL",
+      "input": "a=1&client_secret=xyz&b=2",
+      "expected": "a=1&client_secret=[redacted]&b=2"
+    },
+    {
+      "name": "kept: joined pairs that are all non-secret",
+      "input": "Server=db;Database=prod;Timeout=30 and page=2&sort=desc&q=rust",
+      "expected": "Server=db;Database=prod;Timeout=30 and page=2&sort=desc&q=rust"
+    },
+    {
+      "name": "kept: an ampersand or a semicolon in prose",
+      "input": "R&D and Q&A; a;b;c then x&y",
+      "expected": "R&D and Q&A; a;b;c then x&y"
+    },
+    {
+      "name": "named value: a password with base64 padding goes whole",
+      "input": "DB_PASSWORD=c2VjcmV0cGFzcw== set",
+      "expected": "DB_PASSWORD=[redacted] set"
+    },
+    {
+      "name": "named value: a password holding a colon goes whole",
+      "input": "DB_PASSWORD=abc:def set",
+      "expected": "DB_PASSWORD=[redacted] set"
+    },
+    {
+      "name": "url: a secret query pair keeps the segment rule",
+      "input": "https://example.com/cb?state=abc&client_secret=xyz&code=1",
+      "expected": "https://example.com/cb?state=abc&client_secret=[redacted]&code=1"
     }
   ]
 }
