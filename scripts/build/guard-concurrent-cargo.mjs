@@ -56,6 +56,17 @@
 // A command that waits for the rustc in front of it is behaving correctly —
 // that overlap is the thing being prevented.
 //
+// REGISTERED TWICE, BEHIND `if` (2026-10-08). Matched on "Bash" alone, this
+// spawned node for every Bash call: 19,122 in 30 days for 112 heavy cargo
+// commands, ~0.3 s each idle, and two recorded runs that stalled past 20 s on
+// commands that were not cargo at all. The harness `if` filter skips the spawn
+// when the command does not match - but `Bash(cargo *)` alone does NOT match
+// `timeout 2400 cargo test`, which is a third of how cargo is actually typed
+// here. Hence the second `Bash(timeout *)` entry. Both were run through the
+// real harness against the transcript's own shapes (env prefix, export &&,
+// cd &&, time (...), subshell): every cargo shape fired, plain commands did
+// not. RE_HEAVY below stays the authority; `if` only decides whether to ask.
+//
 // FAIL-OPEN, LOUDLY. If the payload is unreadable or process enumeration fails
 // we allow the command and say so on stderr. That is a deliberate exception to
 // this repo's "a gate that no-ops is worse than no gate" rule: the cost of a
