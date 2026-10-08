@@ -255,6 +255,61 @@
       "name": "a CERTIFICATE block whose body is not base64 is judged token by token",
       "input": "-----BEGIN CERTIFICATE-----\npassword=hunter2\n-----END CERTIFICATE-----",
       "expected": "-----BEGIN CERTIFICATE-----\npassword=[redacted]\n-----END CERTIFICATE-----"
+    },
+    {
+      "name": "bare cloud key: the AWS documentation example secret access key is masked",
+      "input": "aws_access_key_id AKIAIOSFODNN7EXAMPLE secret wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY ok",
+      "expected": "aws_access_key_id [redacted] secret [redacted] ok"
+    },
+    {
+      "name": "bare cloud key: a 40-character base64 key holding '+' is masked",
+      "input": "use 2gvMStxk49VXRfk3Wafd+l9i04YaAP0M5+OcgLaa here",
+      "expected": "use [redacted] here"
+    },
+    {
+      "name": "bare cloud key: quoted under a key that is not secret-named",
+      "input": "{\"key\": \"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\"}",
+      "expected": "{\"key\": \"[redacted]\"}"
+    },
+    {
+      "name": "kept: a 40-character relative path of mixed case and digits",
+      "input": "open docs/Guides/Setup2/WindowsMacOS/Readme12 first",
+      "expected": "open docs/Guides/Setup2/WindowsMacOS/Readme12 first"
+    },
+    {
+      "name": "kept: a 40-character src/ directory path",
+      "input": "under src/features/overview/components/Metric2 now",
+      "expected": "under src/features/overview/components/Metric2 now"
+    },
+    {
+      "name": "kept: a src/ file path with a line number",
+      "input": "see src-tauri/src/cloud/sync/redact.rs:42 and src/features/agents/AgentEditor.tsx",
+      "expected": "see src-tauri/src/cloud/sync/redact.rs:42 and src/features/agents/AgentEditor.tsx"
+    },
+    {
+      "name": "kept: a 40-character URL path without a scheme",
+      "input": "GET /api/v2/Users/4821/Settings/Profile/Edit returned 200",
+      "expected": "GET /api/v2/Users/4821/Settings/Profile/Edit returned 200"
+    },
+    {
+      "name": "kept: a 40-character git SHA",
+      "input": "merged 9fceb02d0ae598e95dc970b74767f19372d61af8 today",
+      "expected": "merged 9fceb02d0ae598e95dc970b74767f19372d61af8 today"
+    },
+    {
+      "name": "kept: a UUID",
+      "input": "persona 6f1d2c3b-4a59-4e68-9d7c-0b1a2c3d4e5f paused",
+      "expected": "persona 6f1d2c3b-4a59-4e68-9d7c-0b1a2c3d4e5f paused"
+    },
+    {
+      "name": "kept: a 40-character camelCase identifier",
+      "input": "call handleWorkspaceAuthenticationCallbackNow once",
+      "expected": "call handleWorkspaceAuthenticationCallbackNow once"
+    },
+    {
+      "name": "known miss: a short password in prose is kept, no rule tells it from 'the password is wrong'",
+      "input": "the password is hunter2",
+      "expected": "the password is hunter2"
     }
   ]
 }
