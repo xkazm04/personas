@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "name": "prose: a pasted key is masked and the sentence around it survives",
+      "input": "Deploy failed. I used sk-proj-4f8Kq2Lx9Vb7Nm3Zt6Wy1Rc5Hd0Jg2Pa8Se4Uf for the call, then retried twice.",
+      "expected": "Deploy failed. I used [redacted] for the call, then retried twice."
+    },
+    {
+      "name": "prose: quotes, brackets and punctuation around a key stay",
+      "input": "The key (\"ghp_16C7e42F292c6912E7710c838347Ae178B4a\"), see above.",
+      "expected": "The key (\"[redacted]\"), see above."
+    },
+    {
+      "name": "named value: an env assignment keeps its name",
+      "input": "export GITHUB_TOKEN=ghp_16C7e42F292c6912E7710c838347Ae178B4a\nnext line",
+      "expected": "export GITHUB_TOKEN=[redacted]\nnext line"
+    },
+    {
+      "name": "url: a key in the query string is masked, the other pairs stay",
+      "input": "https://api.example.com/v1?access_token=sk-proj-4f8Kq2Lx9Vb7Nm3Zt6Wy1Rc5Hd0Jg2Pa8Se4Uf&page=2",
+      "expected": "https://api.example.com/v1?access_token=[redacted]&page=2"
+    },
+    {
+      "name": "url: a long link without a key is kept",
+      "input": "See https://docs.example.com/guides/getting-started/installation/windows-and-macos#prerequisites now",
+      "expected": "See https://docs.example.com/guides/getting-started/installation/windows-and-macos#prerequisites now"
+    },
+    {
+      "name": "url: a key as a path segment is masked",
+      "input": "https://github.com/ghp_16C7e42F292c6912E7710c838347Ae178B4a/repo",
+      "expected": "https://github.com/[redacted]/repo"
+    },
+    {
+      "name": "bearer: the word after Bearer is masked whatever it looks like",
+      "input": "Authorization: Bearer abc123 was sent",
+      "expected": "Authorization: Bearer [redacted] was sent"
+    },
+    {
+      "name": "dense: a JWT is masked whole",
+      "input": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U",
+      "expected": "[redacted]"
+    },
+    {
+      "name": "dense: a long base64 run is masked",
+      "input": "blob: QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAx",
+      "expected": "blob: [redacted]"
+    },
+    {
+      "name": "kept: short words that share a token prefix",
+      "input": "We use sk-learn and xoxo, AKIA is a name, eyJ alone is nothing.",
+      "expected": "We use sk-learn and xoxo, AKIA is a name, eyJ alone is nothing."
+    },
+    {
+      "name": "named value: a secret-named key in prose masks its value",
+      "input": "set DB_PASSWORD=hunter2 and retry",
+      "expected": "set DB_PASSWORD=[redacted] and retry"
+    },
+    {
+      "name": "named value: a secret-named key with a colon masks the next word",
+      "input": "the password: hunter2 was reused",
+      "expected": "the password: [redacted] was reused"
+    },
+    {
+      "name": "named value: a secret-named JSON key masks its value",
+      "input": "{\"client_secret\":\"abc\"}",
+      "expected": "{\"client_secret\":\"[redacted]\"}"
+    },
+    {
+      "name": "kept: a key that is not secret-named keeps its value",
+      "input": "name=alice mode: fast",
+      "expected": "name=alice mode: fast"
+    },
+    {
+      "name": "url: the password in userinfo is masked",
+      "input": "connect postgres://admin:hunter2@db.internal:5432/app now",
+      "expected": "connect postgres://admin:[redacted]@db.internal:5432/app now"
+    },
+    {
+      "name": "kept: userinfo without a password and a port",
+      "input": "see https://user@example.com/path and https://example.com:8080/x",
+      "expected": "see https://user@example.com/path and https://example.com:8080/x"
+    },
+    {
+      "name": "prefix: a google api key is masked",
+      "input": "key AIzaSyA1b2C3d4E5f6G7h8I9j0KlMnOpQrStUvW end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a npm token is masked",
+      "input": "key npm_aB3dE5gH7jK9mN1pQ3sT5vW7yZ9bC1dE3fG5 end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a hugging face token is masked",
+      "input": "key hf_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789 end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a stripe live restricted key is masked",
+      "input": "key rk_live_4eC39HqLyjWDarjtT1zdp7dc end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a stripe test restricted key is masked",
+      "input": "key rk_test_4eC39HqLyjWDarjtT1zdp7dc end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a webhook signing secret is masked",
+      "input": "key whsec_8f2a1b3c4d5e6f708192a3b4c5d6e7f8 end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a shopify access token is masked",
+      "input": "key shpat_0123456789abcdef0123456789abcdef end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a grafana service account token is masked",
+      "input": "key glsa_AbCdEfGhIjKlMnOpQrStUvWxYz012345_0a1b2c3d end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a slack app token is masked",
+      "input": "key xapp-1-A0123456789-1234567890123-abcdef0123456789 end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "mixed: a 32-character mixed-case run with digits is masked",
+      "input": "value aB3dE5gH7jK9mN1pQ3sT5vW7yZ9bC1dE here",
+      "expected": "value [redacted] here"
+    },
+    {
+      "name": "kept: a UUID, a git SHA, a sha256 and prose",
+      "input": "id 6f1d2c3b-4a59-4e68-9d7c-0b1a2c3d4e5f commit 9fceb02d0ae598e95dc970b74767f19372d61af8 sha e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 and the quick brown fox jumps over the lazy dog, twice daily.",
+      "expected": "id 6f1d2c3b-4a59-4e68-9d7c-0b1a2c3d4e5f commit 9fceb02d0ae598e95dc970b74767f19372d61af8 sha e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 and the quick brown fox jumps over the lazy dog, twice daily."
+    },
+    {
+      "name": "kept: whitespace byte for byte",
+      "input": "  two  spaces\n\n\ttab and trailing  ",
+      "expected": "  two  spaces\n\n\ttab and trailing  "
+    },
+    {
+      "name": "kept: the empty string",
+      "input": "",
+      "expected": ""
+    }
+  ]
+}

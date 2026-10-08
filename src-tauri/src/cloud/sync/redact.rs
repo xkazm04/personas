@@ -388,6 +388,47 @@ mod tests {
         assert_eq!(redact_text(""), "");
     }
 
+    /// The shared redaction cases. `personas-web` keeps a byte-identical copy
+    /// and masks a say with the same rules before it signs it, so a case
+    /// changed here is a change on both sides.
+    const FIXTURE: &str = include_str!("../../../../fixtures/redact-text-v1.json");
+
+    #[test]
+    fn every_shared_fixture_case_holds() {
+        assert!(
+            !FIXTURE.contains('\r'),
+            "the fixture is copied byte for byte: keep it LF"
+        );
+        let doc: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture is JSON");
+        assert_eq!(doc["version"], 1);
+        let cases = doc["cases"].as_array().expect("cases is an array");
+        assert!(!cases.is_empty());
+        let mut names = std::collections::HashSet::new();
+        let mut failures = Vec::new();
+        for case in cases {
+            let field = |k: &str| {
+                case[k]
+                    .as_str()
+                    .unwrap_or_else(|| panic!("case {case} has no string {k:?}"))
+            };
+            let (name, input, expected) = (field("name"), field("input"), field("expected"));
+            assert!(names.insert(name), "duplicate case name {name:?}");
+            let got = redact_text(input);
+            if got != expected {
+                failures.push(format!(
+                    "{name}\n  input:    {input:?}\n  expected: {expected:?}\n  got:      {got:?}"
+                ));
+            }
+        }
+        assert!(
+            failures.is_empty(),
+            "{} of {} fixture cases failed:\n{}",
+            failures.len(),
+            cases.len(),
+            failures.join("\n")
+        );
+    }
+
     #[test]
     fn cap_is_a_no_op_under_the_limit() {
         assert_eq!(cap_bytes("short".into(), 16), "short");
