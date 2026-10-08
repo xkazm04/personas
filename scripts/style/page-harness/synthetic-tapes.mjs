@@ -14,6 +14,8 @@ import { observabilityTapes } from './observabilityTapes.mjs';
 import { factoryTapes } from './factoryTapes.mjs';
 import { homeWelcomeTapes } from './homeWelcomeTapes.mjs';
 import { serverControlTapes } from './serverControlTapes.mjs';
+import { lifecycleTapes } from './lifecycleTapes.mjs';
+import { lifecycleDetailTapes } from './lifecycleDetailTapes.mjs';
 import { homeLearningTapes } from './homeLearningTapes.mjs';
 import { homeCockpitTapes } from './homeCockpitTapes.mjs';
 import { homeSystemCheckTapes } from './homeSystemCheckTapes.mjs';
@@ -346,6 +348,10 @@ const BUILDERS = {
   ...homeWelcomeTapes({ RECORDED_AT, PERSONAS, EVENTS }).builders,
   // Spark server-control, Browser > Server control (serverControlSurfaces.tsx, serverControlTapes.mjs).
   ...serverControlTapes({ RECORDED_AT }).builders,
+  // Spark lifecycle-health, Teams > Lifecycle (lifecycleSurfaces.tsx, lifecycleTapes.mjs).
+  ...lifecycleTapes({ RECORDED_AT }).builders,
+  // Spark lifecycle-health WP4, the Layer-2 step screens (lifecycleSurfaces.tsx, lifecycleDetailTapes.mjs).
+  ...lifecycleDetailTapes({ RECORDED_AT }).builders,
   // Kit batch home-1, Home > Learning (homeLearningSurfaces.tsx, homeLearningTapes.mjs).
   ...homeLearningTapes({ RECORDED_AT }).builders,
   // Kit batch home-2, Home > Cockpit + Athena chat cards + council evidence well (homeCockpitSurfaces.tsx, homeCockpitTapes.mjs).

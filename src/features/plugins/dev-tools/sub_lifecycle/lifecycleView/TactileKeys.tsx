@@ -21,7 +21,7 @@ import type { LifecycleOutcome } from '@/lib/bindings/LifecycleOutcome';
 
 import { OUTCOME_DOT } from '../journey/journeyStyles';
 
-export const LED: Record<LifecycleBindingState, string> = {
+const LED: Record<LifecycleBindingState, string> = {
   live: 'border-t-2 border-solid border-status-success',
   detected: 'border-t border-solid border-status-info',
   pending: 'border-t-2 border-dashed border-status-warning',

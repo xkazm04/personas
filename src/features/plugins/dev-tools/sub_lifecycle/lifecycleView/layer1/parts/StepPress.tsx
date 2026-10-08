@@ -1,0 +1,60 @@
+/**
+ * The one control a step is on the collar rail: a roving-focus Button that
+ * opens the step's Layer-2 screen (`openStep`, which also selects it), carries
+ * the rail's test ids and state attributes, and explains its verdict through
+ * the shared Tooltip. `stretch` spreads its hit area over the nearest
+ * positioned ancestor (the kit's stretched press), so a whole cell or card is
+ * the target while the tab stop stays one element.
+ */
+import type { ReactNode } from 'react';
+
+import { Button } from '@/features/shared/components/buttons';
+import type { ButtonSize } from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+
+import { bindingStateLabel, stepLabel } from '../../../journey/journeyLabels';
+import type { StepRoving } from '../../blocks/useStepRoving';
+import { useLifecycleViewModel } from '../../context';
+import type { HealthStep } from '../healthModel';
+import { healthLabel, reasonLine } from '../layer1Labels';
+
+const STRETCH = "after:absolute after:inset-0 after:rounded-card after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-primary/60";
+
+interface StepPressProps {
+  step: HealthStep;
+  index: number;
+  roving: StepRoving;
+  size?: ButtonSize;
+  stretch?: boolean;
+  className?: string;
+  children: ReactNode;
+}
+
+export function StepPress({ step, index, roving, size = 'icon-lg', stretch = true, className = '', children }: StepPressProps) {
+  const { dl, tx, selected, openStep } = useLifecycleViewModel();
+  const { node } = step;
+  const label = stepLabel(dl, node.id, node.label);
+  const reason = reasonLine(dl, step.health, step.reason);
+  const button = (
+    <Button
+      ref={roving.bind(index)}
+      variant="ghost"
+      size={size}
+      tabIndex={index === roving.activeIndex ? 0 : -1}
+      aria-pressed={node.id === selected?.id}
+      onClick={() => openStep(node.id)}
+      aria-label={tx(dl.lc1_node_label, {
+        step: label,
+        health: healthLabel(dl, step.health),
+        state: bindingStateLabel(dl, node.strongestState),
+      })}
+      data-testid={`lc-node-${node.id}`}
+      data-state={node.strongestState}
+      data-health={step.health}
+      className={`hover:bg-transparent ${stretch ? STRETCH : ''} ${className}`}
+    >
+      {children}
+    </Button>
+  );
+  return reason ? <Tooltip content={reason}>{button}</Tooltip> : button;
+}

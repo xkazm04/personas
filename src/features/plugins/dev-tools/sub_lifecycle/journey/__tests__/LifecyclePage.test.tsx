@@ -3,17 +3,26 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import type { LifecycleSnapshot } from '@/lib/bindings/LifecycleSnapshot';
 
-import { evidenceItem, soloV0, stepView } from './fixtures';
+import { evidenceItem, healthyMix, soloV0, stepView } from './fixtures';
 
 // The page against a stubbed lifecycle API: Solo v0, a snapshot with a
-// missing binding (Install offered), and a failed read (inline banner).
+// missing binding (Install offered), a measured snapshot (the headline by
+// health), Layer 2 opened from the rail, and a failed read (inline banner).
 
 const getLifecycle = vi.hoisted(() => vi.fn());
 const installLifecycle = vi.hoisted(() => vi.fn());
+const getLifecycleStepDetail = vi.hoisted(() => vi.fn());
+const measureLifecycle = vi.hoisted(() => vi.fn());
 const askAthena = vi.hoisted(() => vi.fn());
+const addToast = vi.hoisted(() => vi.fn());
 let activeProjectId: string | null = 'p1';
 
-vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycle, installLifecycle }));
+vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycle, installLifecycle, getLifecycleStepDetail, measureLifecycle }));
+vi.mock('@/stores/toastStore', () => ({
+  useToastStore: Object.assign((selector: (s: Record<string, unknown>) => unknown) => selector({ addToast }), {
+    getState: () => ({ addToast }),
+  }),
+}));
 vi.mock('@/features/companions/athena/useAskAthena', () => ({ useAskAthena: () => askAthena }));
 vi.mock('../../LifecycleProjectPicker', () => ({ LifecycleProjectPicker: () => null }));
 vi.mock('@/stores/systemStore', () => ({
@@ -29,6 +38,7 @@ import LifecyclePage from '../../LifecyclePage';
 beforeEach(() => {
   vi.clearAllMocks();
   activeProjectId = 'p1';
+  getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => ({ stepId, runs: [], docs: [] }));
 });
 
 // Each test uses its own project id so the module warm cache never leaks a
@@ -72,52 +82,83 @@ describe('LifecyclePage', () => {
     fireEvent.click(screen.getByTestId('lc-install'));
     fireEvent.click(await screen.findByTestId('lc-install-confirm-go'));
     await waitFor(() => expect(installLifecycle).toHaveBeenCalledWith('p-missing'));
+    // The result is said inline beside the action, never as a toast.
+    expect((await screen.findByTestId('lc-install-note')).textContent).toBe('Install task started (task-7)');
+    expect(addToast).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByTestId('lc-ask-athena'));
     expect(askAthena).toHaveBeenCalledWith('lifecycle', expect.stringContaining('Acme (id p-missing)'));
   });
 
-  // The owner's note, 2026-10-06: a node click must NOT open a drawer. It
-  // selects, and the state renders inline under the timeline, which is what
-  // makes walking the journey possible.
-  it('renders the selected step inline, with no drawer', async () => {
+  it('names the weakest step by measured health, not by binding', async () => {
+    project('p-health', healthyMix());
+    render(<LifecyclePage />);
+
+    const line = await screen.findByTestId('lc-weakest');
+    // Docs is advisory-only (the weakest BINDING) but measures healthy; Land is red.
+    expect(line.textContent).toBe('Land is the weakest step: failing. Done in 40% of recent changes, 80% needed.');
+    expect(line.getAttribute('data-health')).toBe('red');
+    fireEvent.click(screen.getByTestId('lc-ask-athena'));
+    expect(askAthena).toHaveBeenCalledWith('lifecycle', expect.stringContaining('The weakest step is Land.'));
+  });
+
+  it('says every measured step is healthy when nothing is red, stale, amber or unmeasured', async () => {
+    const mix = healthyMix();
+    project('p-green', { ...mix, health: mix.health.map((h) => (h.health === 'instructed' ? h : { ...h, health: 'green' as const })) });
+    render(<LifecyclePage />);
+    expect((await screen.findByTestId('lc-weakest')).textContent).toBe('Every measured step is healthy.');
+  });
+
+  // The owner's note, 2026-10-06, still holds: a node click must NOT open a
+  // drawer. Since WP4 it opens the step's Layer-2 screen IN PLACE of the rail.
+  it('opens a step in place, with no drawer, and returns', async () => {
     project('p-detail', soloV0());
     render(<LifecyclePage />);
 
-    // The region is pre-seeded with the weakest step, so it has content before
-    // any click: that is what keeps it from shoving the timeline when it appears.
-    const region = await screen.findByTestId('lc-state-region');
-    expect(region.textContent).toBeTruthy();
-
     fireEvent.click(await screen.findByTestId('lc-node-gate'));
-    const state = await screen.findByTestId('lc-step-state');
-    // The panel swaps its body after the previous step's exit settles
-    // (AnimatePresence mode="wait"), so the new step arrives a tick later.
-    await waitFor(() => expect(state.textContent).toContain('Rule for gate.'));
-    expect(state.textContent).toContain('Git hook');
-    expect(screen.getByTestId('lc-node-gate').getAttribute('aria-pressed')).toBe('true');
-    // The retired right-drawer must not be reachable from a node any more.
+    const screenEl = await screen.findByTestId('lc2-screen');
+    expect(screenEl.textContent).toContain('Rule for gate.');
+    expect(screenEl.textContent).toContain('Git hook');
     expect(screen.queryByTestId('lc-step-detail')).toBeNull();
-    // The timeline is still on screen with its selection.
-    expect(screen.getByTestId('lc-journey-track')).toBeTruthy();
+    expect(screen.queryByTestId('lc-journey-track')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('lc2-back'));
+    expect(await screen.findByTestId('lc-journey-track')).toBeTruthy();
+    expect(screen.getByTestId('lc-node-gate').getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('formats the step evidence as a table ledger', async () => {
+  it("lists a step's evidence on its screen", async () => {
     project('p-ledger', soloV0({
       evidence: [
-        evidenceItem('c1', '2026-09-25T10:00:00Z', [['gate', 'skipped']]),
-        evidenceItem('c2', '2026-09-26T10:00:00Z', [['gate', 'done']]),
+        evidenceItem('c1', '2026-09-25T10:00:00Z', [['commit', 'skipped']]),
+        evidenceItem('c2', '2026-09-26T10:00:00Z', [['commit', 'done']]),
       ],
-      steps: [stepView('gate', 'after', [['hook', 'live']], { skipped: 1, done: 1 })],
+      steps: [stepView('commit', 'after', [['hook', 'live']], { skipped: 1, done: 1 })],
     }));
     render(<LifecyclePage />);
 
-    await screen.findByTestId('lc-step-state');
-    // UnifiedTable owns the column header and the rows; both outcomes for the
-    // selected step appear, and the unrelated steps' outcomes do not.
-    expect(screen.getByText('Outcome')).toBeTruthy();
-    expect(screen.getAllByText('Skipped').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Done').length).toBeGreaterThan(0);
+    fireEvent.click(await screen.findByTestId('lc-node-commit'));
+    const evidence = await screen.findByTestId('lc2-evidence');
+    expect(evidence.textContent).toContain('Change c1');
+    expect(evidence.textContent).toContain('Change c2');
+    expect(evidence.querySelector('[data-outcome="skipped"]')).toBeTruthy();
+    expect(evidence.querySelector('[data-outcome="done"]')).toBeTruthy();
+  });
+
+  it('starts a Measure, spins while the snapshot says measuring, and says a refusal inline', async () => {
+    project('p-measure', healthyMix());
+    measureLifecycle.mockRejectedValueOnce(new Error("another project's Measure is running; one runs at a time"));
+    const { unmount } = render(<LifecyclePage />);
+
+    fireEvent.click(await screen.findByTestId('lc-measure'));
+    await waitFor(() => expect(screen.getByTestId('lc-measure-note').textContent).toContain('Measure did not start'));
+    expect(measureLifecycle).toHaveBeenCalledWith('p-measure');
+    expect(addToast).not.toHaveBeenCalled();
+    unmount();
+
+    project('p-measuring', { ...healthyMix(), measuring: true });
+    render(<LifecyclePage />);
+    expect((await screen.findByTestId('lc-measure')).hasAttribute('disabled')).toBe(true);
   });
 
   it('shows an inline error when the read fails', async () => {
@@ -129,6 +170,6 @@ describe('LifecyclePage', () => {
     // The chrome stays (the action row and the banner are permanent); what a
     // failed read must NOT produce is a timeline or a selected step.
     expect(screen.queryByTestId('lc-journey-track')).toBeNull();
-    expect(screen.queryByTestId('lc-step-state')).toBeNull();
+    expect(screen.queryByTestId('lc2-screen')).toBeNull();
   });
 });

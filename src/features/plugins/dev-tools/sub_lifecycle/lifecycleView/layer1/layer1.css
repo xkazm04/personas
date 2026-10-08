@@ -1,0 +1,10 @@
+/* Layer-1 health views: the one surface treatment Tailwind cannot write as a
+ * class - the STALE hatch, a measurement from an older base tip. Colour stays
+ * tokenised (`--status-info` through color-mix). */
+.lc1-hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--status-info) 18%, transparent) 0 2px,
+    transparent 2px 8px
+  );
+}

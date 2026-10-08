@@ -1,7 +1,8 @@
 /**
  * The surface's actions and its one load-failure door: Install into repo (only
  * while a binding is missing) and Ask Athena, plus the inline failure banner
- * that keeps a warm snapshot on screen.
+ * that keeps a warm snapshot on screen. What an install attempt came to is
+ * said here, beside the button that caused it, never in a toast.
  *
  * The "install running" line is a dashed square, not a spinner: this is a
  * background task reported by the backend, not a control the user just pressed.
@@ -15,9 +16,17 @@ import { ConfirmPopover } from '@/features/shared/components/feedback/ConfirmPop
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 
 import { useLifecycleViewModel } from '../context';
+import type { InstallNote } from '../useLifecycleInstall';
+import { MeasureControl } from './MeasureControl';
+
+const NOTE_INK: Record<InstallNote['tone'], string> = {
+  success: 'text-status-success',
+  warning: 'text-status-warning',
+  error: 'text-status-error',
+};
 
 export function LifecycleActions() {
-  const { dl, tx, projectName, snapshot, error, refetch, missingCount, missingText, installing, install, askAthena } =
+  const { dl, tx, projectName, snapshot, error, refetch, missingCount, missingText, installing, install, installNote, askAthena } =
     useLifecycleViewModel();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const installRef = useRef<HTMLButtonElement>(null);
@@ -25,12 +34,20 @@ export function LifecycleActions() {
   return (
     <>
       <ActionRow
-        left={installing ? (
-          <span className="flex items-center gap-1.5 typo-caption text-status-warning" data-testid="lc-install-running">
-            <span className="w-3 h-3 rounded-interactive border-2 border-dashed border-status-warning/80" aria-hidden />
-            {dl.lc_install_running}
+        left={
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {installing && (
+              <span className="flex items-center gap-1.5 typo-body text-status-warning" data-testid="lc-install-running">
+                <span className="w-3 h-3 rounded-interactive border-2 border-dashed border-status-warning/80" aria-hidden />
+                {dl.lc_install_running}
+              </span>
+            )}
+            {/* The live region is always mounted and only its text changes, so the result is announced. */}
+            <span role="status" className={`typo-body ${installNote ? NOTE_INK[installNote.tone] : ''}`} data-testid="lc-install-note">
+              {installNote ? (installNote.cause ? `${installNote.text}: ${installNote.cause}` : installNote.text) : ''}
+            </span>
           </span>
-        ) : undefined}
+        }
       >
         {snapshot && missingCount > 0 && !installing && (
           <Button
@@ -44,6 +61,7 @@ export function LifecycleActions() {
             {dl.lc_install}
           </Button>
         )}
+        <MeasureControl />
         <Button
           variant="accent"
           tone="agent"

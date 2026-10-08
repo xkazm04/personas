@@ -23,6 +23,7 @@ import { KIT_MODULES } from './kitSpecimen';
 import { KIT_OVERVIEW_MODULES } from './kitOverview';
 import { HOME_WELCOME_MODULES } from './homeWelcomeSurfaces';
 import { SERVER_CONTROL_MODULES } from './serverControlSurfaces';
+import { LIFECYCLE_MODULES } from './lifecycleSurfaces';
 import { HOME_LEARNING_MODULES } from './homeLearningSurfaces';
 import { HOME_COCKPIT_MODULES } from './homeCockpitSurfaces';
 import { HOME_SYSTEM_CHECK_MODULES } from './homeSystemCheckSurfaces';
@@ -97,6 +98,8 @@ export const MODULES: Record<string, HarnessModule> = {
   ...HOME_WELCOME_MODULES,
   // Spark server-control, Browser > Server control (serverControlSurfaces.tsx, serverControlTapes.mjs).
   ...SERVER_CONTROL_MODULES,
+  // Spark lifecycle-health, Teams > Lifecycle: Layer-1 collar rail + Layer-2 step screens (lifecycleSurfaces.tsx, lifecycleTapes.mjs, lifecycleDetailTapes.mjs).
+  ...LIFECYCLE_MODULES,
   // Kit batch home-1, Home > Learning (homeLearningSurfaces.tsx, homeLearningTapes.mjs).
   ...HOME_LEARNING_MODULES,
   // Kit batch home-2, Home > Cockpit + Athena chat cards + council evidence well (homeCockpitSurfaces.tsx, homeCockpitTapes.mjs).
