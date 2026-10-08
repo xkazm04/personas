@@ -18,7 +18,7 @@ import { loadBrief, loadWakes, saveWake, openAsks, loadAsks, loadChannel, listRu
 import {
   openDb, resolveProject, masterPersona, chartersFor, projectSnapshot, pendingReviews,
   operatorChannelSince, repoDocs, milestonesOf, planProgress, briefCharters, useCasesOf, councilRunsOf, councilDecisionsOf,
-  uxPendingOf,
+  uxPendingOf, SAY_MAX_CHARS,
 } from './dbread.mjs';
 import { brakes, parseTs, ageText, lastDecided, isDue } from './brakes.mjs';
 import { queueTable } from './queue.mjs';
@@ -51,11 +51,14 @@ const askForText = (a) => (Array.isArray(a) ? a.join('; ') : a) || 'a scope chan
 
 /** List caps per budget level; renderContext steps down a level until the doc fits MAX_CONTEXT_CHARS. */
 // recipeNeed/recipeCore never reach 0: the master works to its charters' recipes at every budget level
+// said/saidChars: every line shown is one the master has not read yet (both sources are filtered to
+// "since the last wake"), and a weekend direction from the phone may run to SAY_MAX_CHARS. So the top two
+// levels show it whole and the master's own lists give way first; a clipped line says so.
 export const BUDGET_LEVELS = [
-  { brief: 400, need: 160, core: 200, note: 260, goals: 10, ideas: 8, pending: 6, branches: 6, kpiNames: 5, asks: 6, said: 5, saidChars: 600, title: 120, features: 14, mustAddress: 3, recipeNeed: 240, recipeCore: 280 },
-  { brief: 300, need: 0, core: 200, note: 220, goals: 8, ideas: 6, pending: 5, branches: 5, kpiNames: 3, asks: 5, said: 4, saidChars: 500, title: 100, features: 10, mustAddress: 2, recipeNeed: 180, recipeCore: 220 },
-  { brief: 200, need: 0, core: 150, note: 160, goals: 5, ideas: 4, pending: 3, branches: 3, kpiNames: 0, asks: 4, said: 3, saidChars: 400, title: 76, features: 6, mustAddress: 1, recipeNeed: 130, recipeCore: 160 },
-  { brief: 110, need: 0, core: 0, note: 120, goals: 3, ideas: 3, pending: 2, branches: 2, kpiNames: 0, asks: 3, said: 2, saidChars: 220, title: 80, features: 4, mustAddress: 1, recipeNeed: 90, recipeCore: 110 },
+  { brief: 400, need: 160, core: 200, note: 260, goals: 10, ideas: 8, pending: 6, branches: 6, kpiNames: 5, asks: 6, said: 12, saidChars: SAY_MAX_CHARS, title: 120, features: 14, mustAddress: 3, recipeNeed: 240, recipeCore: 280 },
+  { brief: 300, need: 0, core: 200, note: 220, goals: 8, ideas: 6, pending: 5, branches: 5, kpiNames: 3, asks: 5, said: 8, saidChars: SAY_MAX_CHARS, title: 100, features: 10, mustAddress: 2, recipeNeed: 180, recipeCore: 220 },
+  { brief: 200, need: 0, core: 150, note: 160, goals: 5, ideas: 4, pending: 3, branches: 3, kpiNames: 0, asks: 4, said: 5, saidChars: 1000, title: 76, features: 6, mustAddress: 1, recipeNeed: 130, recipeCore: 160 },
+  { brief: 110, need: 0, core: 0, note: 120, goals: 3, ideas: 3, pending: 2, branches: 2, kpiNames: 0, asks: 3, said: 3, saidChars: 600, title: 80, features: 4, mustAddress: 1, recipeNeed: 90, recipeCore: 110 },
 ];
 /** COUNCIL section order: what needs the master's hand first. */
 const COUNCIL_ORDER = { rejected: 0, 'lite-fail': 1, 'lite-incomplete': 1, 'full-fail': 2, 'full-incomplete': 2, none: 3, 'lite-ready': 4, 'full-ready': 5, stalled: 6, approved: 7 };
@@ -176,7 +179,11 @@ export function renderAt(input, C) {
     .sort((a, b) => parseTs(b.at) - parseTs(a.at));
   if (said.length) {
     head('WHAT THE OPERATOR SAID (newest first)');
-    for (const c of said.slice(0, C.said)) { L.push(`- ${stampAgeShort(c.at, nowMs)}, ${c.where}:`); L.push(`    ${clip(c.body, C.saidChars)}`); }
+    for (const c of said.slice(0, C.said)) {
+      const whole = clip(c.body, Infinity);
+      const cut = whole.length > C.saidChars ? ` [clipped: ${C.saidChars} of ${whole.length} characters shown]` : '';
+      L.push(`- ${stampAgeShort(c.at, nowMs)}, ${c.where}:`); L.push(`    ${clip(whole, C.saidChars)}${cut}`);
+    }
     L.push(...more(said.length, C.said, '  '));
   }
 

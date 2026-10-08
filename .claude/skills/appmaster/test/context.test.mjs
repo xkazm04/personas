@@ -176,6 +176,30 @@ test('renderContext is pure, steps down its budget, and ends cut lists with +N m
   assert.match(a, /AWAITING A MERGE \(30 unmerged/);
 });
 
+test('a direction from the phone reaches the master whole at the top budget levels; a clipped one says so', () => {
+  const now = '2026-10-08T18:00:00.000Z';
+  const line = `weekend scope: ${'w'.repeat(D.SAY_MAX_CHARS - 40)} END-OF-LINE`;
+  const input = {
+    wakeId: 'w-say', now, project: { slug: 'small', id: 'pid', name: 'Small', root: 'C:/x/small', baseBranch: 'main' }, master: { id: 'm', name: 'App Master Small' },
+    brief: demoBrief([]), lastWake: null, charters: [],
+    asks: { open: [], appPending: [], answered: [] },
+    channel: { journal: [], app: [{ created_at: now, body: line }] },
+    runs: { live: [], recent: [] },
+    snapshot: { goals: [], acceptedNoTask: { count: 0, oldest: [] }, pendingCount: 0, unratedCount: 0, pendingSample: [], kpis: { active: 0, unmeasured: 0, unmeasuredNames: [] }, inFlightTasks: [], gitBranches: { total: 0, branches: [] }, checkout: { branch: 'main', dirty: 0 }, readErrors: [] },
+    machine: { memory: { usedPct: 40, freeGb: 30, totalGb: 64, dispatchNeedGb: 4, stop: false }, limit: { limited: false }, running: { project: 0, global: 0 } },
+    docs: [],
+  };
+  for (const C of X.BUDGET_LEVELS.slice(0, 2)) {
+    const doc = X.renderAt(input, C);
+    assert.ok(doc.includes('END-OF-LINE'), 'the whole line, to its last word');
+    assert.ok(!doc.includes('[clipped'), 'no clip marker on a whole line');
+  }
+  assert.ok(X.renderContext(input).includes('END-OF-LINE'), 'a small doc stays at the top level');
+  const tight = X.renderAt(input, X.BUDGET_LEVELS.at(-1));
+  assert.match(tight, new RegExp(`\\[clipped: 600 of ${line.length} characters shown\\]`));
+  assert.ok(!tight.includes('END-OF-LINE'));
+});
+
 test('limit mark: absent, standing, and expired (reads cleared)', () => {
   assert.equal(B.readLimitMark().limited, false);
   fs.writeFileSync(C.limitPath(), JSON.stringify({ limitedAt: C.nowIso(), reason: 'hit your limit', resetsAt: new Date(Date.now() + 3600e3).toISOString() }));
