@@ -190,6 +190,71 @@
       "name": "url: a secret query pair keeps the segment rule",
       "input": "https://example.com/cb?state=abc&client_secret=xyz&code=1",
       "expected": "https://example.com/cb?state=abc&client_secret=[redacted]&code=1"
+    },
+    {
+      "name": "private key: an RSA block is masked between its markers",
+      "input": "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAzEmzWN92epKTmR3qqozgkjKMNDeVTmF8nEki3/XRe/0u23Uh\n7hHbY5yvkNXiISu6XIgSeKWSFTlaDMfiqGUxKiXwEpt4be2xVSzoaT4liy2JVoXa\ny6U2zZ17nZ2tYNjX8o3ZP3cmrtMMEiyb8jgqEl72panN/oYLdhghQq14ILMfsOA6\nUJTYUpyAcYwosJcnnPq+FjGokIofaLptBNOfAdbfiJvTF/iToJZlfEUIxV2b/HYt\nggN+CBLRSXKwmTpGtE==\n-----END RSA PRIVATE KEY-----",
+      "expected": "-----BEGIN RSA PRIVATE KEY-----\n[redacted]\n-----END RSA PRIVATE KEY-----"
+    },
+    {
+      "name": "private key: an EC block is masked between its markers",
+      "input": "-----BEGIN EC PRIVATE KEY-----\nMHcCAQEEIPdQtPRf0uelyV3LtZChZfanXtI3WCBD70LMlwrknCI2Oablfapvc1OC\n5beLs/5BfeFwxPHzn15DFUaLlwyEQ5uOJW0pEJqTOT9MZiZsGO3BxshZLJaFERuo\nkQ1L28xOfg==\n-----END EC PRIVATE KEY-----",
+      "expected": "-----BEGIN EC PRIVATE KEY-----\n[redacted]\n-----END EC PRIVATE KEY-----"
+    },
+    {
+      "name": "private key: an OPENSSH block is masked between its markers",
+      "input": "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAA5zEqmLM7IamJTt/a+YpZsmklBdiooSTxTxDcVIMw\n4ecvNvQqCP5LUajymw899moAQVlu1VJQo/Swhsn9w9VBy2ZCKCP+XkXGzvi2VO+/\ngcYRKpfPZjsnXlwXWBtjPLnpxOgKUV9mcjcZEfrNXo3HtuufkPueOUw+mvedMi6r\n0JE5pI9PS1ROmNsDZ2fAXE==\n-----END OPENSSH PRIVATE KEY-----",
+      "expected": "-----BEGIN OPENSSH PRIVATE KEY-----\n[redacted]\n-----END OPENSSH PRIVATE KEY-----"
+    },
+    {
+      "name": "private key: a PKCS#8 PRIVATE KEY block is masked between its markers",
+      "input": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCdYHN3VRV5ZZETkhhbE7rLEQKiE8695o0\nTaoLqv6Lxp2CjugukyN6qvz6S1EhMjeM2J4a9nvcoXUZshivQ222fLuzVgTXug/J\n3S3w6PQ/TT8y/DNxGsiD5uXCUpvxNIfCOV4vCaJACYCyYeLToeQxuXVFIxiSxGxV\nr4UVMmW3Yfr0B0DD80gSvkWFyGnj/5NGfYQzVi6I7zYIzAazsSiqoybB+KTvkU97\nkFQIIv==\n-----END PRIVATE KEY-----",
+      "expected": "-----BEGIN PRIVATE KEY-----\n[redacted]\n-----END PRIVATE KEY-----"
+    },
+    {
+      "name": "private key: a PGP private key block is masked between its markers",
+      "input": "-----BEGIN PGP PRIVATE KEY BLOCK-----\n\nlQOYBGUACdssqSuii9UK5Sw8HR7hw/bsypEkKjDNn8ervtM22/WS6cmpbPl/NODK\nYO2XDOVuaEEIOGJj9fACpB6F+krGZmcibWbCGc2ZQoIh4eV01gzItQTFnEH4PBVi\nzlt1USNmds3+lxlrRVy+wTEiS+bgTv8mGOnnXc6hNERFxDG2pGsGRBnLg2t+y5bk\nvxJRtlDU1rThJ+rLLECB==\n=Ab12\n-----END PGP PRIVATE KEY BLOCK-----",
+      "expected": "-----BEGIN PGP PRIVATE KEY BLOCK-----\n\n[redacted]\n-----END PGP PRIVATE KEY BLOCK-----"
+    },
+    {
+      "name": "private key: a block inside prose, the prose before and after survives",
+      "input": "Here is the key, sorry:\n-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCdYHN3VRV5ZZETkhhbE7rLEQKiE8695o0\nTaoLqv6Lxp2CjugukyN6qvz6S1EhMjeM2J4a9nvcoXUZshivQ222fLuzVgTXug/J\n3S3w6PQ/TT8y/DNxGsiD5uXCUpvxNIfCOV4vCaJACYCyYeLToeQxuXVFIxiSxGxV\nr4UVMmW3Yfr0B0DD80gSvkWFyGnj/5NGfYQzVi6I7zYIzAazsSiqoybB+KTvkU97\nkFQIIv==\n-----END PRIVATE KEY-----\nPlease rotate it today.",
+      "expected": "Here is the key, sorry:\n-----BEGIN PRIVATE KEY-----\n[redacted]\n-----END PRIVATE KEY-----\nPlease rotate it today."
+    },
+    {
+      "name": "private key: a block pasted on one line with spaces",
+      "input": "key -----BEGIN RSA PRIVATE KEY----- MIIEowIBAAKCAQEAzEmzWN92epKTmR3qqozgkjKMNDeVTmF8nEki3/XRe/0u23Uh 7hHbY5yvkNXiISu6XIgSeKWSFTlaDMfiqGUxKiXwEpt4be2xVSzoaT4liy2JVoXa y6U2zZ17nZ2tYNjX8o3ZP3cmrtMMEiyb8jgqEl72panN/oYLdhghQq14ILMfsOA6 UJTYUpyAcYwosJcnnPq+FjGokIofaLptBNOfAdbfiJvTF/iToJZlfEUIxV2b/HYt ggN+CBLRSXKwmTpGtE== -----END RSA PRIVATE KEY----- end",
+      "expected": "key -----BEGIN RSA PRIVATE KEY----- [redacted] -----END RSA PRIVATE KEY----- end"
+    },
+    {
+      "name": "private key: a block cut short masks to the end of the text (fail closed)",
+      "input": "cut short:\n-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAzEmzWN92epKTmR3qqozgkjKMNDeVTmF8nEki3/XRe/0u23Uh\n7hHbY5yvkNXiISu6XIgSeKWSFTlaDMfiqGUxKiXwEpt4be2xVSzoaT4liy2JVoXa\nMIIEow",
+      "expected": "cut short:\n-----BEGIN RSA PRIVATE KEY-----\n[redacted]"
+    },
+    {
+      "name": "private key: a block whose END names another label masks to the end (fail closed)",
+      "input": "-----BEGIN RSA PRIVATE KEY-----\nMHcCAQEEIPdQtPRf0uelyV3LtZChZfanXtI3WCBD70LMlwrknCI2Oablfapvc1OC\n5beLs/5BfeFwxPHzn15DFUaLlwyEQ5uOJW0pEJqTOT9MZiZsGO3BxshZLJaFERuo\nkQ1L28xOfg==\n-----END EC PRIVATE KEY-----\nafter",
+      "expected": "-----BEGIN RSA PRIVATE KEY-----\n[redacted]"
+    },
+    {
+      "name": "kept: a CERTIFICATE block is public, its base64 lines stay",
+      "input": "Chain:\n-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIE1vtOunSKz/f1VEbP4A5jMUUn9heDu8GRybh/qd+o1cgz\nNwaUYrtNnwQbRPaOFIuH7fjeDOKiH2pxw3p9M1QJENMsMvICTDCebzq4gE9TU8u0\nKy4UGHXFphpYmnjiqhpYcS8U8O4dEpQNY74/hJfW8WEMtVGbBKJHzgvPHeG9iQTR\nNsFbDGWufXec3TT9DtVMsnR0TMCcAt3Sunp9OU+OgFIWtOyWWaCUcEHoF8Ji+HGT\nO2XXt0YpkWcWPggHkfdEoiLAXj45hodUG3VB9X0FT4yXflnNlcK8nJf5ujH8Qz/4\nDuG6miG5DIQfJ7Ex9FiJRuwYnCfBEy==\n-----END CERTIFICATE-----\nend",
+      "expected": "Chain:\n-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIE1vtOunSKz/f1VEbP4A5jMUUn9heDu8GRybh/qd+o1cgz\nNwaUYrtNnwQbRPaOFIuH7fjeDOKiH2pxw3p9M1QJENMsMvICTDCebzq4gE9TU8u0\nKy4UGHXFphpYmnjiqhpYcS8U8O4dEpQNY74/hJfW8WEMtVGbBKJHzgvPHeG9iQTR\nNsFbDGWufXec3TT9DtVMsnR0TMCcAt3Sunp9OU+OgFIWtOyWWaCUcEHoF8Ji+HGT\nO2XXt0YpkWcWPggHkfdEoiLAXj45hodUG3VB9X0FT4yXflnNlcK8nJf5ujH8Qz/4\nDuG6miG5DIQfJ7Ex9FiJRuwYnCfBEy==\n-----END CERTIFICATE-----\nend"
+    },
+    {
+      "name": "kept: a PUBLIC KEY block is public, its base64 lines stay",
+      "input": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsQdmRaATIoFa7C2Hfequ\nsiBxYtqI3Y1mQ5skz6CUXp9HS3YymKdNuaiySbWmqTof001TS2PnzZSmxz9GQHA+\nDn6cgkDF1TzkgPonHTyS6vSiplvOZuKV2JssRB9jU6ZaxtFdsgZbrvVnY2yywpBD\n8dBIJWKv9nrIfs==\n-----END PUBLIC KEY-----",
+      "expected": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsQdmRaATIoFa7C2Hfequ\nsiBxYtqI3Y1mQ5skz6CUXp9HS3YymKdNuaiySbWmqTof001TS2PnzZSmxz9GQHA+\nDn6cgkDF1TzkgPonHTyS6vSiplvOZuKV2JssRB9jU6ZaxtFdsgZbrvVnY2yywpBD\n8dBIJWKv9nrIfs==\n-----END PUBLIC KEY-----"
+    },
+    {
+      "name": "private key: a bundle keeps the certificate and masks the key",
+      "input": "-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIE1vtOunSKz/f1VEbP4A5jMUUn9heDu8GRybh/qd+o1cgz\nNwaUYrtNnwQbRPaOFIuH7fjeDOKiH2pxw3p9M1QJENMsMvICTDCebzq4gE9TU8u0\nKy4UGHXFphpYmnjiqhpYcS8U8O4dEpQNY74/hJfW8WEMtVGbBKJHzgvPHeG9iQTR\nNsFbDGWufXec3TT9DtVMsnR0TMCcAt3Sunp9OU+OgFIWtOyWWaCUcEHoF8Ji+HGT\nO2XXt0YpkWcWPggHkfdEoiLAXj45hodUG3VB9X0FT4yXflnNlcK8nJf5ujH8Qz/4\nDuG6miG5DIQfJ7Ex9FiJRuwYnCfBEy==\n-----END CERTIFICATE-----\n-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAzEmzWN92epKTmR3qqozgkjKMNDeVTmF8nEki3/XRe/0u23Uh\n7hHbY5yvkNXiISu6XIgSeKWSFTlaDMfiqGUxKiXwEpt4be2xVSzoaT4liy2JVoXa\ny6U2zZ17nZ2tYNjX8o3ZP3cmrtMMEiyb8jgqEl72panN/oYLdhghQq14ILMfsOA6\nUJTYUpyAcYwosJcnnPq+FjGokIofaLptBNOfAdbfiJvTF/iToJZlfEUIxV2b/HYt\nggN+CBLRSXKwmTpGtE==\n-----END RSA PRIVATE KEY-----\n",
+      "expected": "-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIE1vtOunSKz/f1VEbP4A5jMUUn9heDu8GRybh/qd+o1cgz\nNwaUYrtNnwQbRPaOFIuH7fjeDOKiH2pxw3p9M1QJENMsMvICTDCebzq4gE9TU8u0\nKy4UGHXFphpYmnjiqhpYcS8U8O4dEpQNY74/hJfW8WEMtVGbBKJHzgvPHeG9iQTR\nNsFbDGWufXec3TT9DtVMsnR0TMCcAt3Sunp9OU+OgFIWtOyWWaCUcEHoF8Ji+HGT\nO2XXt0YpkWcWPggHkfdEoiLAXj45hodUG3VB9X0FT4yXflnNlcK8nJf5ujH8Qz/4\nDuG6miG5DIQfJ7Ex9FiJRuwYnCfBEy==\n-----END CERTIFICATE-----\n-----BEGIN RSA PRIVATE KEY-----\n[redacted]\n-----END RSA PRIVATE KEY-----\n"
+    },
+    {
+      "name": "a CERTIFICATE block whose body is not base64 is judged token by token",
+      "input": "-----BEGIN CERTIFICATE-----\npassword=hunter2\n-----END CERTIFICATE-----",
+      "expected": "-----BEGIN CERTIFICATE-----\npassword=[redacted]\n-----END CERTIFICATE-----"
     }
   ]
 }

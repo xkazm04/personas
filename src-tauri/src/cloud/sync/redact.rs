@@ -243,10 +243,109 @@ fn mask_userinfo(url: &str) -> Option<String> {
     ))
 }
 
-/// Mask every whitespace-delimited token that looks like a credential
+/// Mask every private key block (`mask_private_key_blocks`) and every
+/// whitespace-delimited token that looks like a credential
 /// ([`value_looks_secret`], with the prose floor above), keeping all other
 /// text and all whitespace byte for byte.
 pub fn redact_text(s: &str) -> String {
+    mask_private_key_blocks(s)
+}
+
+const PEM_BEGIN: &str = "-----BEGIN ";
+const PEM_DASHES: &str = "-----";
+
+/// The next `-----BEGIN <LABEL>-----` marker at or after `from`:
+/// (marker start, marker end, label).
+fn next_pem_begin(s: &str, from: usize) -> Option<(usize, usize, &str)> {
+    let mut at = from;
+    while let Some(i) = s[at..].find(PEM_BEGIN) {
+        let label_start = at + i + PEM_BEGIN.len();
+        let label_len = s[label_start..]
+            .find(|c: char| !(c.is_ascii_uppercase() || c.is_ascii_digit() || c == ' '))
+            .unwrap_or(s.len() - label_start);
+        let label = &s[label_start..label_start + label_len];
+        if !label.trim().is_empty() && s[label_start + label_len..].starts_with(PEM_DASHES) {
+            return Some((at + i, label_start + label_len + PEM_DASHES.len(), label));
+        }
+        at = label_start;
+    }
+    None
+}
+
+/// A PEM body that is only base64 (line breaks allowed, `=` only as the final
+/// padding): what a certificate or public key carries.
+fn is_base64_body(body: &str) -> bool {
+    let mut pad = 0;
+    body.chars().filter(|c| !c.is_whitespace()).all(|c| {
+        if c == '=' {
+            pad += 1;
+            pad <= 2
+        } else {
+            pad == 0 && (c.is_ascii_alphanumeric() || c == '+' || c == '/')
+        }
+    })
+}
+
+/// Replace a private key body with [`REDACTED`], keeping the whitespace that
+/// joins it to its markers.
+fn push_masked_body(out: &mut String, body: &str) {
+    let core = body.trim();
+    if core.is_empty() {
+        out.push_str(body);
+        return;
+    }
+    let lead = body.len() - body.trim_start().len();
+    out.push_str(&body[..lead]);
+    out.push_str(REDACTED);
+    out.push_str(&body[lead + core.len()..]);
+}
+
+/// A key pasted as a PEM block is judged as one unit, not line by line: the
+/// token rule masked its 64-character lines by density and let the short
+/// last line through. A block whose label names a `PRIVATE KEY` keeps its
+/// BEGIN and END markers and loses everything between them; with no matching
+/// END (a paste cut short, or an END naming another label) it masks to the
+/// end of the text. A certificate or public key is not a secret: a block of
+/// any other label whose body is plain base64 is kept whole, and one whose
+/// body is anything else is left to the token rule.
+fn mask_private_key_blocks(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut done = 0; // bytes of `s` already written to `out`
+    let mut from = 0; // where the next marker search starts
+    while let Some((start, body_start, label)) = next_pem_begin(s, from) {
+        let end_marker = format!("-----END {label}-----");
+        let body_end = s[body_start..].find(&end_marker).map(|i| body_start + i);
+        if label.contains("PRIVATE KEY") {
+            out.push_str(&mask_tokens(&s[done..start]));
+            out.push_str(&s[start..body_start]);
+            match body_end {
+                Some(end) => {
+                    push_masked_body(&mut out, &s[body_start..end]);
+                    out.push_str(&end_marker);
+                    done = end + end_marker.len();
+                }
+                None => {
+                    push_masked_body(&mut out, &s[body_start..]);
+                    done = s.len();
+                }
+            }
+            from = done;
+        } else if let Some(end) = body_end.filter(|&e| is_base64_body(&s[body_start..e])) {
+            out.push_str(&mask_tokens(&s[done..start]));
+            done = end + end_marker.len();
+            out.push_str(&s[start..done]);
+            from = done;
+        } else {
+            from = body_start;
+        }
+    }
+    out.push_str(&mask_tokens(&s[done..]));
+    out
+}
+
+/// The token rule: mask every whitespace-delimited token that looks like a
+/// credential, keeping all other text and all whitespace byte for byte.
+fn mask_tokens(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     let mut after_bearer = false;
     let mut after_secret_key = false;
@@ -460,6 +559,29 @@ mod tests {
             redact_text("DB_PASSWORD=c2VjcmV0cGFzcw=="),
             "DB_PASSWORD=[redacted]"
         );
+    }
+
+    #[test]
+    fn a_private_key_block_is_masked_as_one_unit() {
+        let (begin, end) = (
+            "-----BEGIN EC PRIVATE KEY-----",
+            "-----END EC PRIVATE KEY-----",
+        );
+        // The short last line is what the token rule let through.
+        let text = format!("see:\n{begin}\nMHcCAQEEIabc\nxyz==\n{end}\nthanks");
+        assert_eq!(
+            redact_text(&text),
+            format!("see:\n{begin}\n[redacted]\n{end}\nthanks")
+        );
+        // Cut short, it fails closed: everything after the marker goes.
+        let cut = format!("see:\n{begin}\nMHcCAQEEIabc\nthanks");
+        assert_eq!(redact_text(&cut), format!("see:\n{begin}\n[redacted]"));
+        // A certificate is public and stays whole.
+        let cert = format!(
+            "-----BEGIN CERTIFICATE-----\n{}\nAbc+/9==\n-----END CERTIFICATE-----",
+            "A".repeat(64)
+        );
+        assert_eq!(redact_text(&cert), cert);
     }
 
     /// The shared redaction cases. `personas-web` keeps a byte-identical copy
