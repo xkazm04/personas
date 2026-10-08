@@ -187,6 +187,7 @@ export type { CloudExecutionStats } from "./CloudExecutionStats";
 export type { CloudHealthResponse } from "./CloudHealthResponse";
 export type { CloudOAuthAuthorizeResponse } from "./CloudOAuthAuthorizeResponse";
 export type { CloudOAuthStatusResponse } from "./CloudOAuthStatusResponse";
+export type { CloudPairingOrigin } from "./CloudPairingOrigin";
 export type { CloudPairingPoll } from "./CloudPairingPoll";
 export type { CloudPairingStart } from "./CloudPairingStart";
 export type { CloudPairingState } from "./CloudPairingState";

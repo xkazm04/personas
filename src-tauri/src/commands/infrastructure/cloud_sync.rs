@@ -84,12 +84,34 @@ pub async fn cloud_sync_set_data_class(
 #[serde(rename_all = "camelCase")]
 pub struct CloudPairingStart {
     pub pairing_id: String,
-    /// `https://personas.so/dashboard/settings#pair=<pairing_id>.<secret>`.
+    /// `<origin>/dashboard/settings#pair=<pairing_id>.<secret>`, where
+    /// `<origin>` is [`CloudPairingOrigin::origin`].
     pub url: String,
     /// SVG document for the QR of `url`.
     pub qr_svg: String,
     /// Seconds until the secret is forgotten.
     pub expires_in_secs: u32,
+}
+
+/// Where a pairing QR opens, for the Settings panel to show before and while
+/// the QR is up.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CloudPairingOrigin {
+    /// The effective origin, normalised (`https://host[:port]`, no slash).
+    pub origin: String,
+    /// Whether the operator set it (false: the built-in default).
+    pub custom: bool,
+}
+
+impl From<pairing::PairingOrigin> for CloudPairingOrigin {
+    fn from(o: pairing::PairingOrigin) -> Self {
+        Self {
+            origin: o.origin,
+            custom: o.custom,
+        }
+    }
 }
 
 /// Where a pairing stands.
@@ -163,6 +185,29 @@ pub async fn cloud_pair_controller_start(
         qr_svg,
         expires_in_secs: pairing::PAIRING_TTL.as_secs() as u32,
     })
+}
+
+/// The origin the next pairing QR opens. Enforced by its `PRIVILEGED_COMMANDS`
+/// entry, like the paired-phone commands below.
+#[tauri::command]
+pub async fn cloud_pairing_origin_get(
+    state: State<'_, Arc<AppState>>,
+) -> Result<CloudPairingOrigin, AppError> {
+    Ok(pairing::pairing_origin(&state.db)?.into())
+}
+
+/// Set the origin the pairing QR opens (`https://host[:port]`; `http://` only
+/// for localhost), or clear it (`null` / blank) back to the default. The QR
+/// carries the pairing secret, so this is operator-only: written through
+/// `settings::set_operator_only`, never by the generic settings writers, the
+/// management API or a kp key, and enforced by its `PRIVILEGED_COMMANDS` entry
+/// (an async `#[requires(privileged)]` cannot fail; see below).
+#[tauri::command]
+pub async fn cloud_pairing_origin_set(
+    state: State<'_, Arc<AppState>>,
+    origin: Option<String>,
+) -> Result<CloudPairingOrigin, AppError> {
+    Ok(pairing::set_pairing_origin(&state.db, origin.as_deref())?.into())
 }
 
 /// One step of the ceremony; the dialog calls it every 2 s while the QR is up.

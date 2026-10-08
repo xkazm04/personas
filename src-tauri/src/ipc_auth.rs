@@ -149,6 +149,10 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "cloud_sync_set_data_class",
     "cloud_controllers_list",
     "cloud_controller_revoke",
+    // The pairing QR's origin receives the next pairing secret, so moving it
+    // (and reading it, beside the trust list) is privileged.
+    "cloud_pairing_origin_get",
+    "cloud_pairing_origin_set",
     "discover_connector_resources",
     "execute_persona",
     // A persona chat turn starts a paid run exactly as execute_persona does.

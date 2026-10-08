@@ -6,7 +6,8 @@
  */
 export type CloudPairingStart = { pairingId: string, 
 /**
- * `https://personas.so/dashboard/settings#pair=<pairing_id>.<secret>`.
+ * `<origin>/dashboard/settings#pair=<pairing_id>.<secret>`, where
+ * `<origin>` is [`CloudPairingOrigin::origin`].
  */
 url: string, 
 /**

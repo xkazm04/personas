@@ -128,6 +128,8 @@ pub(super) fn shard(
         commands::infrastructure::cloud_sync::cloud_pair_controller_cancel,
         commands::infrastructure::cloud_sync::cloud_controllers_list,
         commands::infrastructure::cloud_sync::cloud_controller_revoke,
+        commands::infrastructure::cloud_sync::cloud_pairing_origin_get,
+        commands::infrastructure::cloud_sync::cloud_pairing_origin_set,
         cloud::remote_commands::remote_command_list_pending,
         cloud::remote_commands::remote_command_approve,
         cloud::remote_commands::remote_command_reject,
