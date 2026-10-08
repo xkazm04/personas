@@ -165,6 +165,11 @@ export function reportAttachments(copyDir) {
   return out;
 }
 
+/** The title of a full-ready council report, and the feature a title names (null for any other title).
+ * dbread reads it back to tie an Approval decided anywhere (the desk or the phone) to its feature. */
+export const reportTitle = (featureSlug, round) => `Council ready: ${featureSlug} (full council, round ${round})`;
+export const featureOfReportTitle = (title) => /^Council ready: (\S+) \(full council, round /.exec(String(title ?? ''))?.[1] ?? null;
+
 /**
  * The `report` outbox payload a FULL council `ready` sends to the human gate: the council's report.md
  * (bounded), its screenshots/evidence as attachments, and an Approval only the operator can answer.
@@ -180,7 +185,7 @@ export function reportPayload(run, result, copyDir) {
   const num = (v) => (typeof v === 'number' ? v.toFixed(2) : 'n/a');
   return {
     projectId: run.project.id,
-    title: `Council ready: ${run.featureSlug} (full council, round ${result.round_no ?? roundOfName(path.basename(copyDir))})`,
+    title: reportTitle(run.featureSlug, result.round_no ?? roundOfName(path.basename(copyDir))),
     content,
     attachments: reportAttachments(copyDir),
     approval: {

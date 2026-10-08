@@ -16,6 +16,7 @@ import { execFileSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
 import { BUILTIN_CHARTERS, DB_PATH, REPO_ROOT, UX, slugOf, slugify } from './contract.mjs';
 import { listSlugs, loadBrief, loadWakes } from './store.mjs';
+import { featureOfReportTitle } from './council.mjs';
 
 export const TEMPLATE_DIR = path.join(REPO_ROOT, 'scripts', 'templates', '_app_master');
 /** In-app caps (attention_decide.rs): goals 12, unmerged branches 10, in-flight tasks 10. */
@@ -367,11 +368,31 @@ export function councilRunsOf(d, projectId) {
                      where s.project_id = ? and s.kind = 'use_case' order by at`, [projectId]);
 }
 
-/** (db, projectId) => {rows:[{slug, decision, reason, decided_at}], error}   a person's decisions at the council's gate */
+/**
+ * (db, projectId) => {rows:[{slug, decision, reason, decided_at, via}], error, approvalsError}
+ * A person's decisions at the council's gate, from two places:
+ *  - `council`: the desk's Council page (dev_council_decisions);
+ *  - `approval`: a full-ready report's Approval, decided at the desk or on the phone (review_decide syncs
+ *    it back), which writes persona_manual_reviews and never dev_council_decisions. Its feature is read
+ *    from the report's title (council.mjs reportTitle). Only approved/rejected count; pending and a
+ *    plain 'resolved' are no verdict.
+ * A failed approvals read (an older DB) never hides the council rows: it is reported as approvalsError.
+ */
 export function councilDecisionsOf(d, projectId) {
-  return tryRows(d, `select s.slug, x.decision, x.reason, x.decided_at
+  const council = tryRows(d, `select s.slug, x.decision, x.reason, x.decided_at
                      from dev_council_decisions x join dev_council_subjects s on s.id = x.subject_id
                      where s.project_id = ? and s.kind = 'use_case' order by x.decided_at`, [projectId]);
+  const approvals = tryRows(d, `select r.title, m.status decision, m.reviewer_notes reason, coalesce(m.resolved_at, m.updated_at) decided_at
+                     from persona_manual_reviews m
+                     join persona_reports r on r.id = (case when json_valid(m.context_data) then json_extract(m.context_data, '$.reportId') end)
+                     where m.status in ('approved', 'rejected')
+                       and m.persona_id in (select persona_id from persona_responsibilities where project_id = ?)`, [projectId]);
+  const fromApprovals = approvals.rows
+    .map((a) => ({ slug: featureOfReportTitle(a.title), decision: a.decision, reason: a.reason ?? null, decided_at: a.decided_at, via: 'approval' }))
+    .filter((a) => a.slug);
+  const rows = [...council.rows.map((r) => ({ ...r, via: 'council' })), ...fromApprovals]
+    .sort((a, b) => String(a.decided_at ?? '').localeCompare(String(b.decided_at ?? '')));
+  return { rows, error: council.error, approvalsError: approvals.error };
 }
 
 /** Repo docs the master and builders should read, by path (never inlined: kp's CLAUDE.md is 23KB). */
