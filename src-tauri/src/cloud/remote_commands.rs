@@ -2541,7 +2541,7 @@ mod tests {
     #[test]
     fn a_signed_channel_say_writes_one_operator_row_and_starts_nothing() {
         let (pool, persona, plane, exec) = harness();
-        crate::cloud::channel_say::tests::charter(&pool, &persona, Some("proj_web"));
+        crate::cloud::channel_say::tests::app_master(&pool, &persona, "proj_web");
         let phone = Phone::new();
         let ctl = [phone.controller()];
         let mut row = phone.row_with(
@@ -2628,7 +2628,7 @@ mod tests {
     #[test]
     fn an_unsigned_channel_say_is_rejected_controller_not_paired() {
         let (pool, persona, plane, exec) = harness();
-        crate::cloud::channel_say::tests::charter(&pool, &persona, Some("proj_web"));
+        crate::cloud::channel_say::tests::app_master(&pool, &persona, "proj_web");
         let mut row = Phone::new().row_with(
             "channel_say",
             &persona,
@@ -2669,7 +2669,7 @@ mod tests {
     #[test]
     fn a_channel_say_terminal_write_clears_the_cloud_copy_and_no_other_verb_does() {
         let (pool, persona, plane, exec) = harness();
-        crate::cloud::channel_say::tests::charter(&pool, &persona, Some("proj_web"));
+        crate::cloud::channel_say::tests::app_master(&pool, &persona, "proj_web");
         let phone = Phone::new();
         let ctl = [phone.controller()];
         let say = r#"{"message":"the words stay home"}"#;

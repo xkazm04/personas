@@ -19,10 +19,13 @@
 //!   than [`MAX_MESSAGE_CHARS`] characters (`chars().count()` after the trim)
 //!   is `message_too_long` - refused, never cut. The bound is on the INPUT:
 //!   masking can make the stored body longer than it.
-//! * Then, in order: the persona exists here, else `not_found`; it is an App
-//!   Master (holds at least one non-retired charter bound to a project or a
-//!   workspace, `engine::subscription::is_app_master`), else
-//!   `not_app_master`.
+//! * Then, in order: the persona exists here, else `not_found`; it is the
+//!   App Master a headless loop reads ([`is_loop_read_master`]: it holds a
+//!   non-retired charter bound to a project, and for at least one such project
+//!   it is the newest persona named `App Master%` with a charter bound there),
+//!   else `not_app_master`. The loop is the engine (operator decision
+//!   2026-10-08) and it reads one persona per project, so a say to any other
+//!   charter holder would be written where nobody reads it.
 //! * A cap per paired controller: when that controller already has
 //!   [`SAY_CAP`] or more says written in the last [`SAY_WINDOW_MINUTES`]
 //!   minutes (counted from the database, any persona, this command's own row
@@ -51,7 +54,7 @@ use serde_json::{json, Value};
 use crate::cloud::remote_commands::{Authority, Effective, Outcome};
 use crate::cloud::sync::redact::redact_text;
 use crate::cloud::trust;
-use crate::db::repos::core::{personas as persona_repo, responsibilities};
+use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::team_channel as channel_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -123,6 +126,40 @@ fn phone_author(
     Ok(Some((controller_id.clone(), label)))
 }
 
+/// Whether `persona_id` is the App Master a headless loop reads for at least
+/// one project.
+///
+/// The headless loop reads ONE persona per project:
+/// `.claude/skills/appmaster/lib/dbread.mjs` `masterPersona` (lines 130-139)
+/// takes the newest persona (`created_at`) whose name is `LIKE 'App Master%'`
+/// among those holding a charter (of any status) bound to the project. This is
+/// that rule, plus the persona's own charter on that project being
+/// non-retired. On an exact `created_at` tie, where `masterPersona`'s pick is
+/// unspecified, each of the tied personas passes.
+pub(crate) fn is_loop_read_master(pool: &DbPool, persona_id: &str) -> Result<bool, AppError> {
+    let read: bool = pool.get()?.query_row(
+        "SELECT EXISTS (
+           SELECT 1
+           FROM persona_responsibilities mine
+           JOIN personas me ON me.id = mine.persona_id
+           WHERE mine.persona_id = ?1
+             AND mine.status != 'retired'
+             AND TRIM(COALESCE(mine.project_id, '')) != ''
+             AND me.name LIKE 'App Master%'
+             AND NOT EXISTS (
+               SELECT 1 FROM personas newer
+               WHERE newer.name LIKE 'App Master%'
+                 AND newer.created_at > me.created_at
+                 AND newer.id IN (
+                   SELECT r.persona_id FROM persona_responsibilities r
+                   WHERE r.project_id = mine.project_id))
+         ) AS is_read",
+        [persona_id],
+        |r| r.get("is_read"),
+    )?;
+    Ok(read)
+}
+
 /// Every precondition of the contract above, from the database alone.
 pub fn plan(
     pool: &DbPool,
@@ -135,9 +172,7 @@ pub fn plan(
         return Err(AppError::NotFound("Persona".into()));
     }
     let persona = persona_repo::get_by_id(pool, persona_id)?;
-    let charters = responsibilities::list_by_persona(pool, &persona.id, false)?;
-    let refs: Vec<_> = charters.iter().collect();
-    if !crate::engine::subscription::is_app_master(&refs) {
+    if !is_loop_read_master(pool, &persona.id)? {
         return Err(AppError::Validation("not_app_master".into()));
     }
     let author = phone_author(pool, cmd, authority)?;
@@ -219,7 +254,7 @@ pub fn execute(pool: &DbPool, cmd: &Effective, authority: &Authority) -> Result<
 pub(crate) mod tests {
     use super::*;
     use crate::db::models::{CreatePersonaInput, ResponsibilityCadence, ResponsibilityOutcome};
-    use crate::db::repos::core::responsibilities::CreateResponsibilityInput;
+    use crate::db::repos::core::responsibilities::{self, CreateResponsibilityInput};
 
     fn cmd(id: &str, persona: &str, params: Value) -> Effective {
         Effective {
@@ -259,6 +294,30 @@ pub(crate) mod tests {
 
     /// One active charter on `persona`, bound to `project` (or unbound).
     pub(crate) fn charter(pool: &DbPool, persona: &str, project: Option<&str>) {
+        charter_in(pool, persona, project, None, "active");
+    }
+
+    /// Make the harness persona `persona` an App Master the loop reads for
+    /// `project`: named `App Master`, with an active charter bound there.
+    pub(crate) fn app_master(pool: &DbPool, persona: &str, project: &str) {
+        pool.get()
+            .unwrap()
+            .execute(
+                "UPDATE personas SET name = 'App Master' WHERE id = ?1",
+                [persona],
+            )
+            .unwrap();
+        charter(pool, persona, Some(project));
+    }
+
+    /// One charter on `persona`, bound as given, in `status`.
+    fn charter_in(
+        pool: &DbPool,
+        persona: &str,
+        project: Option<&str>,
+        workspace: Option<&str>,
+        status: &str,
+    ) {
         let outcomes = vec![ResponsibilityOutcome {
             id: "o1".into(),
             statement: "The project ships".into(),
@@ -279,9 +338,9 @@ pub(crate) mod tests {
                 cadence: &ResponsibilityCadence::default(),
                 budget_monthly_usd: None,
                 tenure: &Default::default(),
-                status: "active",
+                status,
                 project_id: project,
-                workspace_id: None,
+                workspace_id: workspace,
                 source: "operator",
                 connectors: &[],
                 procedure: "",
@@ -381,7 +440,7 @@ pub(crate) mod tests {
     #[test]
     fn an_id_already_held_by_another_message_is_never_adopted() {
         let (pool, p) = setup();
-        let other = persona(&pool, "Other master");
+        let other = persona(&pool, "App Master (other)");
         charter(&pool, &other, Some("proj_other"));
         desk(&pool, &cmd(ID, &other, json!({ "message": "theirs" }))).unwrap();
         let e = desk(&pool, &cmd(ID, &p, json!({ "message": "mine" }))).unwrap_err();
@@ -404,6 +463,71 @@ pub(crate) mod tests {
             "an unbound charter is not enough"
         );
         assert!(operator_rows(&pool, &plain).is_empty());
+    }
+
+    fn born(pool: &DbPool, persona: &str, at: &str) {
+        pool.get()
+            .unwrap()
+            .execute(
+                "UPDATE personas SET created_at = ?1 WHERE id = ?2",
+                [at, persona],
+            )
+            .unwrap();
+    }
+
+    fn says(pool: &DbPool, persona: &str, id: &str) -> String {
+        match desk(pool, &cmd(id, persona, json!({ "message": "hi" }))) {
+            Ok(_) => "accepted".into(),
+            other => reason(other),
+        }
+    }
+
+    #[test]
+    fn only_the_newest_app_master_of_a_project_is_read() {
+        let pool = crate::db::init_test_db().unwrap();
+        let older = persona(&pool, "App Master");
+        let newer = persona(&pool, "App Master v2");
+        charter(&pool, &older, Some("proj_web"));
+        charter(&pool, &newer, Some("proj_web"));
+        born(&pool, &older, "2026-10-01T09:00:00.000Z");
+        born(&pool, &newer, "2026-10-05T09:00:00.000Z");
+
+        assert_eq!(says(&pool, &older, &say_id(1)), "not_app_master");
+        assert!(operator_rows(&pool, &older).is_empty());
+        assert_eq!(says(&pool, &newer, &say_id(2)), "accepted");
+
+        // The older one is still read for a project nobody newer holds.
+        charter(&pool, &older, Some("proj_docs"));
+        assert_eq!(says(&pool, &older, &say_id(3)), "accepted");
+    }
+
+    #[test]
+    fn a_retired_charter_does_not_make_a_persona_read() {
+        let pool = crate::db::init_test_db().unwrap();
+        let p = persona(&pool, "App Master");
+        charter_in(&pool, &p, Some("proj_web"), None, "retired");
+        assert_eq!(says(&pool, &p, &say_id(1)), "not_app_master");
+    }
+
+    #[test]
+    fn a_persona_bound_only_to_a_workspace_is_refused() {
+        let pool = crate::db::init_test_db().unwrap();
+        let p = persona(&pool, "App Master");
+        charter_in(&pool, &p, None, Some("ws_studio"), "active");
+        // The engine's wider rule calls it an App Master; no loop reads it.
+        let charters = responsibilities::list_by_persona(&pool, &p, false).unwrap();
+        let refs: Vec<_> = charters.iter().collect();
+        assert!(crate::engine::subscription::is_app_master(&refs));
+        assert_eq!(says(&pool, &p, &say_id(1)), "not_app_master");
+    }
+
+    #[test]
+    fn a_bound_persona_not_named_app_master_is_refused() {
+        let pool = crate::db::init_test_db().unwrap();
+        let p = persona(&pool, "Release Captain");
+        charter(&pool, &p, Some("proj_web"));
+        assert_eq!(says(&pool, &p, &say_id(1)), "not_app_master");
+        assert!(operator_rows(&pool, &p).is_empty());
     }
 
     #[test]
