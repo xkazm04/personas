@@ -300,14 +300,20 @@ pub(crate) mod tests {
     /// Make the harness persona `persona` an App Master the loop reads for
     /// `project`: named `App Master`, with an active charter bound there.
     pub(crate) fn app_master(pool: &DbPool, persona: &str, project: &str) {
-        pool.get()
-            .unwrap()
-            .execute(
-                "UPDATE personas SET name = 'App Master' WHERE id = ?1",
-                [persona],
-            )
-            .unwrap();
+        write(
+            pool,
+            "UPDATE personas SET name = 'App Master' WHERE id = ?1",
+            &[persona],
+        );
         charter(pool, persona, Some(project));
+    }
+
+    /// One test write straight to the schema.
+    fn write(pool: &DbPool, sql: &str, args: &[&str]) {
+        let run = || -> Result<usize, AppError> {
+            Ok(pool.get()?.execute(sql, rusqlite::params_from_iter(args))?)
+        };
+        run().unwrap();
     }
 
     /// One charter on `persona`, bound as given, in `status`.
@@ -388,14 +394,15 @@ pub(crate) mod tests {
 
     /// The row's `(author_id, author_label)`.
     pub(crate) fn author_of(pool: &DbPool, id: &str) -> (Option<String>, Option<String>) {
-        pool.get()
-            .unwrap()
-            .query_row(
-                "SELECT author_id, author_label FROM team_channel_messages WHERE id = ?1",
-                [id],
-                |r| Ok((r.get("author_id")?, r.get("author_label")?)),
-            )
-            .unwrap()
+        read_author(pool, id).unwrap()
+    }
+
+    fn read_author(pool: &DbPool, id: &str) -> Result<(Option<String>, Option<String>), AppError> {
+        Ok(pool.get()?.query_row(
+            "SELECT author_id, author_label FROM team_channel_messages WHERE id = ?1",
+            [id],
+            |r| Ok((r.get("author_id")?, r.get("author_label")?)),
+        )?)
     }
 
     /// Every `persona_executions` row, whoever wrote it.
@@ -466,13 +473,11 @@ pub(crate) mod tests {
     }
 
     fn born(pool: &DbPool, persona: &str, at: &str) {
-        pool.get()
-            .unwrap()
-            .execute(
-                "UPDATE personas SET created_at = ?1 WHERE id = ?2",
-                [at, persona],
-            )
-            .unwrap();
+        write(
+            pool,
+            "UPDATE personas SET created_at = ?1 WHERE id = ?2",
+            &[at, persona],
+        );
     }
 
     fn says(pool: &DbPool, persona: &str, id: &str) -> String {
@@ -627,13 +632,11 @@ pub(crate) mod tests {
     }
 
     fn backdate(pool: &DbPool, id: &str, modifier: &str) {
-        pool.get()
-            .unwrap()
-            .execute(
-                "UPDATE team_channel_messages SET created_at = datetime('now', ?1) WHERE id = ?2",
-                rusqlite::params![modifier, id],
-            )
-            .unwrap();
+        write(
+            pool,
+            "UPDATE team_channel_messages SET created_at = datetime('now', ?1) WHERE id = ?2",
+            &[modifier, id],
+        );
     }
 
     #[test]
