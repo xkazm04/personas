@@ -122,12 +122,12 @@ use crate::commands::browser::scan_prompt::{build_scan_prompt, FINDING_MARKER};
 /// anything, and a scan still going after this is a scan that got lost.
 const SCAN_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(600);
 
-/// The model the scan turn runs on. A survey is a reading task with a fixed
-/// output shape — the balanced tier, the same one `kpi_scan` picks for the
-/// same reason. Named through `model_ids` rather than spelled inline: a model
-/// retirement is then a one-file diff instead of a tree-wide grep
-/// (census `bare-model-id-literal`).
-const SCAN_MODEL: &str = personas_core::model_ids::DEFAULT_BALANCED;
+/// The call class the scan turn runs as: a survey is a reading task with a
+/// fixed output shape (one `site_finding` line). The model and effort come
+/// from the class table (`personas_core::model_class`); a turn that answers
+/// with no well-formed finding escalates once.
+const SCAN_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Extract;
 
 /// The scan session's principal for one origin.
 fn scan_principal(origin: &str) -> Principal {
@@ -289,11 +289,42 @@ async fn probe_only_scan(origin: &str) -> BrowserSiteScan {
 /// there is none, which the caller files verbatim into `notes`. An `Err`
 /// prefixed `no-cli:` means the machine has no Claude CLI and the caller
 /// should fall back to the probe.
+///
+/// A turn that finishes without a well-formed `site_finding` line is a
+/// rejected output and escalates once to the class's `escalate_to` route;
+/// every other failure (no CLI, bridge down, timeout) does not.
 async fn run_scan_turn(
     origin: &str,
     label: &str,
     tier_hint: Option<u8>,
 ) -> Result<BrowserSiteScan, String> {
+    use crate::engine::cli_process::{with_escalation, AttemptError};
+
+    with_escalation(SCAN_CLASS, |route| async move {
+        match run_scan_attempt(origin, label, tier_hint, route).await {
+            Ok(Some(scan)) => Ok(scan),
+            Ok(None) => Err(AttemptError::BadOutput(
+                "the scan turn answered with no `site_finding` line".to_string(),
+            )),
+            Err(reason) => Err(AttemptError::Fatal(AppError::Internal(reason))),
+        }
+    })
+    .await
+    .map_err(|e| match e {
+        // Carries the attempt's own reason verbatim (incl. the `no-cli:` prefix).
+        AppError::Internal(reason) => reason,
+        other => other.to_string(),
+    })
+}
+
+/// One scan attempt on `route`. `Ok(None)` = the turn finished but produced
+/// no well-formed finding (the output the escalation keys on).
+async fn run_scan_attempt(
+    origin: &str,
+    label: &str,
+    tier_hint: Option<u8>,
+    route: personas_core::model_class::ClassRoute,
+) -> Result<Option<BrowserSiteScan>, String> {
     let token =
         crate::browser_bridge::register_session(scan_principal(origin), AllowPolicy::Whitelist);
     let config = match crate::commands::browser::bridge_mcp_config_json(&token) {
@@ -339,8 +370,8 @@ async fn run_scan_turn(
     ];
     let prompt = build_scan_prompt(origin, label, tier_hint);
 
-    let mut child = match crate::engine::cli_process::spawn_headless_claude(
-        prompt, SCAN_MODEL, &extra, None, true,
+    let mut child = match crate::engine::cli_process::spawn_headless_claude_route(
+        prompt, route, &extra, None, true,
     ) {
         Ok(c) => c,
         Err(e) => {
@@ -387,7 +418,7 @@ async fn run_scan_turn(
             SCAN_TIMEOUT.as_secs()
         ));
     }
-    found.ok_or_else(|| "the scan turn answered with no `site_finding` line".to_string())
+    Ok(found)
 }
 
 /// Start the controllability scan for one whitelisted origin.

@@ -279,7 +279,11 @@ async fn run_schema_proposal(params: RunParams) {
     SCHEMA_PROPOSAL_JOBS.emit_line(&app, &proposal_id, "> Generating schema with AI...");
 
     // Run the AI helper (fast model, single turn -- shared scaffold)
-    let cli_result = ai_helpers::run_single_turn_prompt(system_prompt, Some(&on_line)).await;
+    let cli_result = ai_helpers::run_single_turn_prompt(system_prompt, Some(&on_line), |out| {
+        ai_helpers::extract_fenced_block(out, "sql")
+            .ok_or_else(|| "No SQL block found in AI response".to_string())
+    })
+    .await;
 
     if cancel_token.is_cancelled() {
         SCHEMA_PROPOSAL_JOBS.emit_line(&app, &proposal_id, "> Cancelled.");
@@ -287,56 +291,51 @@ async fn run_schema_proposal(params: RunParams) {
     }
 
     match cli_result {
-        Ok((output, _session_id)) => {
-            // Extract SQL from code block
-            let sql = ai_helpers::extract_fenced_block(&output, "sql");
+        Ok((proposed_sql, output, _session_id)) => {
             let explanation = ai_helpers::extract_explanation(&output);
 
-            match sql {
-                Some(proposed_sql) => {
-                    SCHEMA_PROPOSAL_JOBS.emit_line(
-                        &app,
-                        &proposal_id,
-                        "> Schema proposal generated successfully.",
-                    );
+            SCHEMA_PROPOSAL_JOBS.emit_line(
+                &app,
+                &proposal_id,
+                "> Schema proposal generated successfully.",
+            );
 
-                    SCHEMA_PROPOSAL_JOBS.update_extra(&proposal_id, |extra| {
-                        extra.proposed_sql = Some(proposed_sql.clone());
-                        extra.explanation = explanation.clone();
-                    });
+            SCHEMA_PROPOSAL_JOBS.update_extra(&proposal_id, |extra| {
+                extra.proposed_sql = Some(proposed_sql.clone());
+                extra.explanation = explanation.clone();
+            });
 
-                    // Emit completed status with data
-                    let _ = app.emit(
-                        event_name::SCHEMA_PROPOSAL_STATUS,
-                        serde_json::json!({
-                            "job_id": proposal_id,
-                            "status": "completed",
-                            "error": null,
-                            "proposed_sql": proposed_sql,
-                            "explanation": explanation,
-                        }),
-                    );
+            // Emit completed status with data
+            let _ = app.emit(
+                event_name::SCHEMA_PROPOSAL_STATUS,
+                serde_json::json!({
+                    "job_id": proposal_id,
+                    "status": "completed",
+                    "error": null,
+                    "proposed_sql": proposed_sql,
+                    "explanation": explanation,
+                }),
+            );
 
-                    if let Ok(mut jobs) = SCHEMA_PROPOSAL_JOBS.lock() {
-                        if let Some(job) = jobs.get_mut(&proposal_id) {
-                            job.status = "completed".into();
-                        }
-                    }
-                }
-                None => {
-                    SCHEMA_PROPOSAL_JOBS.emit_line(
-                        &app,
-                        &proposal_id,
-                        "[ERROR] Could not extract SQL from AI response.",
-                    );
-                    SCHEMA_PROPOSAL_JOBS.set_status(
-                        &app,
-                        &proposal_id,
-                        "failed",
-                        Some("No SQL block found in AI response".into()),
-                    );
+            if let Ok(mut jobs) = SCHEMA_PROPOSAL_JOBS.lock() {
+                if let Some(job) = jobs.get_mut(&proposal_id) {
+                    job.status = "completed".into();
                 }
             }
+        }
+        Err(AppError::Validation(reason)) => {
+            tracing::warn!(proposal_id = %proposal_id, "Schema proposal: output rejected: {}", reason);
+            SCHEMA_PROPOSAL_JOBS.emit_line(
+                &app,
+                &proposal_id,
+                "[ERROR] Could not extract SQL from AI response.",
+            );
+            SCHEMA_PROPOSAL_JOBS.set_status(
+                &app,
+                &proposal_id,
+                "failed",
+                Some("No SQL block found in AI response".into()),
+            );
         }
         Err(e) => {
             tracing::warn!(proposal_id = %proposal_id, "Schema proposal CLI failed: {}", e);

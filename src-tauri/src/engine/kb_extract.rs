@@ -22,12 +22,14 @@ use crate::db::models::{
 };
 use crate::db::UserDbPool;
 use crate::engine::ai_helpers;
-use crate::engine::prompt;
+use crate::engine::cli_process::{headless_claude_args, with_escalation, AttemptError};
 use crate::error::AppError;
+use personas_core::model_class::{CallClass, ClassRoute};
 
-/// Model used for both passes. Sonnet is enough for structured extraction and
-/// keeps a full-corpus pass affordable; the schema-inference call is trivial.
-const EXTRACTION_MODEL: &str = "claude-sonnet-4-6";
+/// Call class for both passes: pulling typed facts out of document text into
+/// a schema. The model and effort come from the class table
+/// (`personas_core::model_class`); a parse failure escalates once.
+const EXTRACTION_CLASS: CallClass = CallClass::Extract;
 
 /// Chunks sampled for schema inference. A schema is a shape, not a census —
 /// a spread across the corpus is enough to see the entity types, and keeping
@@ -41,13 +43,12 @@ const EXTRACT_DOC_CHAR_CAP: usize = 24_000;
 
 const PROGRESS_EVENT: &str = crate::engine::event_registry::event_name::KB_EXTRACTION_PROGRESS;
 
-fn build_args() -> crate::engine::types::CliArgs {
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push(EXTRACTION_MODEL.to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
-    cli_args
+fn build_args(route: ClassRoute) -> crate::engine::types::CliArgs {
+    headless_claude_args(
+        route.model,
+        route.effort,
+        &["--max-turns".to_string(), "1".to_string()],
+    )
 }
 
 // ── Pass 1: schema inference ────────────────────────────────────────────────
@@ -80,17 +81,27 @@ pub async fn infer_schema(
          Corpus samples:\n\n{corpus}"
     );
 
-    let (output, _session, _) =
-        run_claude_prompt_text_inner(prompt_text, &build_args(), None, None, None, 120)
+    let schema: KbExtractionSchema = with_escalation(EXTRACTION_CLASS, |route| {
+        let prompt_text = prompt_text.clone();
+        async move {
+            let (output, _session, _) = run_claude_prompt_text_inner(
+                prompt_text,
+                &build_args(route),
+                None,
+                None,
+                None,
+                120,
+            )
             .await
-            .map_err(|e| AppError::Internal(format!("Schema inference call failed: {e}")))?;
-
-    let json = ai_helpers::extract_fenced_block(&output, "json").ok_or_else(|| {
-        AppError::Internal("The model did not return a JSON schema block.".into())
-    })?;
-
-    let schema: KbExtractionSchema = serde_json::from_str(&json)
-        .map_err(|e| AppError::Internal(format!("Proposed schema was not valid: {e}")))?;
+            .map_err(|e| {
+                AttemptError::Fatal(AppError::Internal(format!(
+                    "Schema inference call failed: {e}"
+                )))
+            })?;
+            parse_schema_output(&output).map_err(AttemptError::BadOutput)
+        }
+    })
+    .await?;
 
     if schema.entities.is_empty() {
         return Err(AppError::Validation(
@@ -185,17 +196,41 @@ async fn extract_document(
          Document \"{title}\":\n\n{text}"
     );
 
-    let (output, _session, _) =
-        run_claude_prompt_text_inner(prompt_text, &build_args(), None, None, None, 180)
+    with_escalation(EXTRACTION_CLASS, |route| {
+        let prompt_text = prompt_text.clone();
+        async move {
+            let (output, _session, _) = run_claude_prompt_text_inner(
+                prompt_text,
+                &build_args(route),
+                None,
+                None,
+                None,
+                180,
+            )
             .await
-            .map_err(|e| AppError::Internal(format!("Extraction call failed: {e}")))?;
+            .map_err(|e| {
+                AttemptError::Fatal(AppError::Internal(format!("Extraction call failed: {e}")))
+            })?;
+            parse_extraction_output(&output).map_err(AttemptError::BadOutput)
+        }
+    })
+    .await
+}
 
-    let json = ai_helpers::extract_fenced_block(&output, "json")
-        .ok_or_else(|| AppError::Internal("No JSON block in extraction output.".into()))?;
+/// Pass 1's existing validator: a fenced JSON block that deserializes into a
+/// schema. `Err` is the rejection reason [`with_escalation`] escalates on.
+fn parse_schema_output(output: &str) -> Result<KbExtractionSchema, String> {
+    let json = ai_helpers::extract_fenced_block(output, "json")
+        .ok_or_else(|| "The model did not return a JSON schema block.".to_string())?;
+    serde_json::from_str(&json).map_err(|e| format!("Proposed schema was not valid: {e}"))
+}
 
+/// Pass 2's existing validator: a fenced JSON block of `{"rows": [...]}`.
+fn parse_extraction_output(output: &str) -> Result<Vec<ExtractedRow>, String> {
+    let json = ai_helpers::extract_fenced_block(output, "json")
+        .ok_or_else(|| "No JSON block in extraction output.".to_string())?;
     let parsed: ExtractionResponse = serde_json::from_str(&json)
-        .map_err(|e| AppError::Internal(format!("Extraction output was not valid JSON: {e}")))?;
-
+        .map_err(|e| format!("Extraction output was not valid JSON: {e}"))?;
     Ok(parsed.rows)
 }
 
@@ -437,4 +472,43 @@ struct ExtractedRow {
     page: Option<i32>,
     #[serde(default)]
     confidence: Option<f32>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extraction_validator_rejects_what_the_escalation_keys_on() {
+        assert!(parse_extraction_output("no block here").is_err());
+        assert!(parse_extraction_output(
+            "```json
+{not json
+```"
+        )
+        .is_err());
+        let ok = parse_extraction_output(
+            "```json
+{\"rows\":[{\"entityType\":\"footing\",\"entityKey\":\"F1\",             \"attributes\":{},\"page\":null,\"confidence\":1.0}]}
+```",
+        )
+        .expect("well-formed rows parse");
+        assert_eq!(ok.len(), 1);
+
+        assert!(parse_schema_output("prose only").is_err());
+    }
+
+    #[test]
+    fn both_passes_run_on_the_extract_route() {
+        let route = EXTRACTION_CLASS.route();
+        assert_eq!(EXTRACTION_CLASS, CallClass::Extract);
+        let args = build_args(route).args;
+        assert!(args
+            .windows(2)
+            .any(|w| w[0] == "--model" && w[1] == route.model));
+        assert!(args
+            .windows(2)
+            .any(|w| w[0] == "--effort" && w[1] == route.effort));
+        assert_eq!(args.iter().filter(|a| *a == "--effort").count(), 1);
+    }
 }

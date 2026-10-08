@@ -167,41 +167,68 @@ pub fn extract_explanation(text: &str) -> Option<String> {
 // Single-turn AI-CLI helper scaffold
 // ---------------------------------------------------------------------------
 
-/// Build the CLI args shared by the single-turn DB-query AI helper flows
-/// (nl_query, schema_proposal, query_debug): default persona/provider, pinned
-/// to a fast model, capped at a single turn.
-pub fn build_single_turn_cli_args() -> crate::engine::types::CliArgs {
-    let mut cli_args = crate::engine::prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-sonnet-4-6".to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
-    cli_args
+/// Call class of the single-turn DB-query AI helper flows (nl_query,
+/// schema_proposal, query_debug): write a query from a question and a schema.
+/// The model and effort come from the class table (`personas_core::model_class`).
+pub const SINGLE_TURN_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Sql;
+
+/// Build the CLI args shared by the single-turn DB-query AI helper flows:
+/// default persona/provider, on `route`'s model and effort, capped at a single
+/// turn.
+pub fn build_single_turn_cli_args(
+    route: personas_core::model_class::ClassRoute,
+) -> crate::engine::types::CliArgs {
+    crate::engine::cli_process::headless_claude_args(
+        route.model,
+        route.effort,
+        &["--max-turns".to_string(), "1".to_string()],
+    )
 }
 
-/// Run a single-turn AI helper prompt using the shared model pin, turn limit,
-/// and timeout used by the DB-query AI flows.
+/// Run a single-turn AI helper prompt on [`SINGLE_TURN_CLASS`], with the
+/// shared turn limit and timeout used by the DB-query AI flows.
 ///
-/// Returns `(output_text, claude_session_id)`. Callers that need to resume the
-/// session (e.g. query_debug's fix-and-retry loop) should use
-/// [`build_single_turn_cli_args`] directly alongside
+/// `validate` is the caller's own check on the raw output (e.g. "has a fenced
+/// SQL block"); when it rejects, the call escalates ONCE to the class's
+/// `escalate_to` route. Returns `(validated, output_text, claude_session_id)`.
+/// An output rejected on every route comes back as `AppError::Validation`;
+/// a spawn/timeout/empty-output failure as `AppError::Internal`.
+///
+/// Callers that need to resume the session (e.g. query_debug's fix-and-retry
+/// loop) should use [`build_single_turn_cli_args`] directly alongside
 /// `crate::engine::prompt::build_resume_cli_args`.
-pub async fn run_single_turn_prompt(
+pub async fn run_single_turn_prompt<T, V>(
     prompt_text: String,
     on_line: Option<&(dyn Fn(&str) + Send + Sync)>,
-) -> Result<(String, Option<String>), String> {
-    let cli_args = build_single_turn_cli_args();
-    let (text, session_id, _) =
-        crate::commands::design::n8n_transform::run_claude_prompt_text_inner(
-            prompt_text,
-            &cli_args,
-            on_line,
-            None,
-            None,
-            120,
-        )
-        .await?;
-    Ok((text, session_id))
+    validate: V,
+) -> Result<(T, String, Option<String>), crate::error::AppError>
+where
+    V: Fn(&str) -> Result<T, String>,
+{
+    use crate::engine::cli_process::{with_escalation, AttemptError};
+
+    let validate = &validate;
+    with_escalation(SINGLE_TURN_CLASS, |route| {
+        let prompt_text = prompt_text.clone();
+        async move {
+            let cli_args = build_single_turn_cli_args(route);
+            let (text, session_id, _) =
+                crate::commands::design::n8n_transform::run_claude_prompt_text_inner(
+                    prompt_text,
+                    &cli_args,
+                    on_line,
+                    None,
+                    None,
+                    120,
+                )
+                .await
+                .map_err(|e| AttemptError::Fatal(crate::error::AppError::Internal(e)))?;
+            let validated = validate(&text).map_err(AttemptError::BadOutput)?;
+            Ok((validated, text, session_id))
+        }
+    })
+    .await
 }
 
 // ---------------------------------------------------------------------------
@@ -377,5 +404,29 @@ mod tests {
     fn extract_explanation_none_when_only_whitespace() {
         let text = "```sql\nCREATE TABLE t (id INT);\n```";
         assert_eq!(extract_explanation(text), None);
+    }
+
+    // -- single-turn scaffold: class route ---------------------------------
+
+    #[test]
+    fn single_turn_args_carry_the_sql_route_once() {
+        let route = SINGLE_TURN_CLASS.route();
+        assert_eq!(
+            SINGLE_TURN_CLASS,
+            personas_core::model_class::CallClass::Sql
+        );
+        let args = build_single_turn_cli_args(route).args;
+        let value_of = |flag: &str| {
+            let hits: Vec<_> = args
+                .windows(2)
+                .filter(|w| w[0] == flag)
+                .map(|w| w[1].clone())
+                .collect();
+            assert_eq!(hits.len(), 1, "{flag} must appear exactly once: {args:?}");
+            hits[0].clone()
+        };
+        assert_eq!(value_of("--model"), route.model);
+        assert_eq!(value_of("--effort"), route.effort);
+        assert_eq!(value_of("--max-turns"), "1");
     }
 }

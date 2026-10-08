@@ -29,20 +29,35 @@ pub const MAIN: TurnTier = TurnTier {
 
 /// Aside turns / status summaries (P3b — not yet built): awareness-heavy,
 /// carries NO op grammar. Sonnet@medium scored 100% on awareness, restraint
-/// and format with a 30% p50 latency win over the Opus baseline.
+/// and format with a 30% p50 latency win over the Opus baseline. Re-pinned
+/// 2026-10-08 from the bare `claude-sonnet-5` to the dated
+/// [`SONNET_CURRENT`](personas_core::model_ids::SONNET_CURRENT): the 2026-10-08
+/// Athena bench (`scripts/test/athena-model-bench.mjs`, 46 scenarios x 3 reps)
+/// kept the judgment-bearing lanes on Sonnet 5.5, and an undated alias is a
+/// vendor fact spelled at a call site.
 pub const ASIDE: TurnTier = TurnTier {
-    model: "claude-sonnet-5",
+    model: personas_core::model_ids::SONNET_CURRENT,
     effort: Some("medium"),
 };
 
 /// Headless micro calls — titling, one-shot classifications, digest
-/// summaries, triage legs (`athena_reaction::cli_text*`). Sonnet@low: 40%
-/// p50 win, p90 9.2s vs 19.3s; its bench misses (live-awareness nuance)
-/// don't apply to stateless micro work. Deliberately receives NO
-/// constitution/act-doctrine: reinforcement at low effort regressed
-/// awareness 94→78% (the "emit ops" rule beat the "don't re-spawn
+/// summaries, triage legs (`athena_reaction::cli_text*`). Deliberately
+/// receives NO constitution/act-doctrine: reinforcement at low effort
+/// regressed awareness 94→78% (the "emit ops" rule beat the "don't re-spawn
 /// in-flight work" nuance).
+///
+/// Haiku@low since 2026-10-08. The deterministic one-shot bench
+/// (`scripts/test/oneshot-model-bench.mjs`, 61 tasks x 4 cells x 3 reps;
+/// `docs/tests/model-bench/haiku-5-5.md`) put Haiku 5.5 level with or ahead
+/// of Sonnet 5.5 on naming (97.2% vs 94.4% at low), extraction, structured
+/// JSON and SQL at ~95% lower cost. Haiku's measured Athena gap — memory-write
+/// proposals 0/3 vs 3/3 — does not apply here: micro calls never write
+/// memory. Its OTHER measured gap does reach this tier: triage verdicts on
+/// hard cases scored 92% vs Sonnet's 100%, and the triage legs
+/// (`backlog_triage`, `exec_triage`, `msg_triage`) ride MICRO. Re-measure
+/// before moving this row again. Previously Sonnet@low (40% p50 win over
+/// the Opus baseline, p90 9.2s vs 19.3s).
 pub const MICRO: TurnTier = TurnTier {
-    model: "claude-sonnet-5",
+    model: personas_core::model_ids::HAIKU_CURRENT,
     effort: Some("low"),
 };

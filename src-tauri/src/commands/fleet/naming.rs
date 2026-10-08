@@ -131,8 +131,11 @@ pub fn args_supply_name(args: &[String]) -> bool {
         .any(|w| (w[0] == "--name" || w[0] == "-n") && !w[1].trim().is_empty())
 }
 
-/// Cheap, fast model for the one-shot name — mirrors the smart-search default.
-const NAMING_MODEL: &str = "claude-haiku-4-5-20251001";
+/// The one-shot name is a `Title` call: model and effort come from the class
+/// table (`personas_core::model_class`). No escalation — [`clean_name`] is a
+/// best-effort cleaner, not a validator, and a bad name is simply skipped.
+const NAMING_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Title;
 const NAMING_TIMEOUT_SECS: u64 = 30;
 
 /// Extract a clean, short title from the model's raw reply: first non-empty
@@ -222,11 +225,12 @@ pub fn task_from_args(args: &[String]) -> Option<String> {
 /// (the tile keeps its project label until something better lands).
 pub fn name_session_from_task(app: AppHandle, session_id: String, task: String) {
     tokio::spawn(async move {
-        let mut cli_args = crate::engine::prompt::build_cli_args(None, None);
-        cli_args.args.push("--model".to_string());
-        cli_args.args.push(NAMING_MODEL.to_string());
-        cli_args.args.push("--max-turns".to_string());
-        cli_args.args.push("1".to_string());
+        let route = NAMING_CLASS.route();
+        let cli_args = crate::engine::cli_process::headless_claude_args(
+            route.model,
+            route.effort,
+            &["--max-turns".to_string(), "1".to_string()],
+        );
 
         let prompt = format!(
             "Give a terse 3-5 word Title Case label for this coding/agent session — \

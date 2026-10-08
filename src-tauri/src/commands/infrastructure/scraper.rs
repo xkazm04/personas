@@ -228,33 +228,41 @@ pub async fn scraper_generate_rules(
         sample.as_deref().unwrap_or("(none provided — infer from the description)"),
     );
 
-    let mut cli_args = crate::engine::prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".into());
-    cli_args.args.push("claude-haiku-4-5-20251001".into());
-    cli_args.args.push("--max-turns".into());
-    cli_args.args.push("1".into());
-
-    let res = crate::commands::credentials::ai_artifact_flow::spawn_claude_and_collect(
-        &cli_args,
-        prompt_text,
-        90,
-        |_, _| {},
-        None,
-    )
-    .await
-    .map_err(AppError::ProcessSpawn)?;
-
-    let json_str =
-        crate::commands::design::n8n_transform::cli_runner::extract_first_json_object_matching(
-            &res.text_output,
-            |v| v.is_object(),
-        )
-        .ok_or_else(|| {
-            AppError::Execution(
-                "Claude did not return a JSON ruleset — try a more specific description."
-                    .to_string(),
+    // An `Extract` call: model and effort come from the class table
+    // (`personas_core::model_class`). An answer with no JSON object escalates
+    // once; a spawn/timeout failure does not.
+    use crate::engine::cli_process::{headless_claude_args, with_escalation, AttemptError};
+    let json_str = with_escalation(personas_core::model_class::CallClass::Extract, |route| {
+        let prompt_text = prompt_text.clone();
+        async move {
+            let cli_args = headless_claude_args(
+                route.model,
+                route.effort,
+                &["--max-turns".to_string(), "1".to_string()],
+            );
+            let res = crate::commands::credentials::ai_artifact_flow::spawn_claude_and_collect(
+                &cli_args,
+                prompt_text,
+                90,
+                |_, _| {},
+                None,
             )
-        })?;
+            .await
+            .map_err(|e| AttemptError::Fatal(AppError::ProcessSpawn(e)))?;
+
+            crate::commands::design::n8n_transform::cli_runner::extract_first_json_object_matching(
+                &res.text_output,
+                |v| v.is_object(),
+            )
+            .ok_or_else(|| {
+                AttemptError::BadOutput(
+                    "Claude did not return a JSON ruleset — try a more specific description."
+                        .to_string(),
+                )
+            })
+        }
+    })
+    .await?;
 
     Ok(serde_json::from_str::<Value>(&json_str)?)
 }
