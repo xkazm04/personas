@@ -98,6 +98,12 @@ Authority: `.claude/CLAUDE.md` (parallel-safety primitives apply in full).
   equals the intended count, and `git diff --cached --name-status | grep -c "^D"` is 0 unless deleting on purpose.
 - UI packages prove themselves on the INTEGRATED page: screenshots of the real page shell (`ContentBox` / `ContentHeader` / `ContentBody`) at 1280x800 and 1920x1080, dark and light, committed beside the design reference, and the Director opens them. A full-bleed page uses `<ContentBody flex>` + a `flex-1 min-h-0` child (the default branch is a padded scroller). Only `typo-body-lg` and `typo-heading` are colourless; `typo-caption`, `typo-title` and `typo-section-title` set a colour that beats a sibling `text-*`.
 - Before calling a merge blocked by a sibling's dirty files, compare the working tree with HEAD (`git diff HEAD --stat`; `git cat-file -e HEAD:<path>` per 'untracked' file): isolated-index commits leave the shared index stale, and most of the porcelain can be phantom.
+- UI builder briefs carry the census STYLE rules up front, and the Director pastes `## Gates > builder` verbatim
+  (never a re-derived list): dates and percents render with `useTranslation().language`
+  (`host-locale-date-render`, `locale-blind-percent`), no `title=` (Tooltip), no styled raw `<button>`
+  (`raw-button-element`; the shared `Button` has NO class merge, so a whole-surface press target is ONE local
+  component and a visible +1 baseline on that rule alone: `node scripts/census/run-census.mjs --rule <id> --update`).
+  Promoted 2026-10-08 (goals-layers: a hand-written gate list dropped `gate --cold`, 5 census rises reached merge).
 - Doc-sync: user-visible changes update the mapped `docs/features/*` (+ onboarding flow / marketing
   module if `scripts/docs/feature-doc-map.json` maps one). Ask the scout in Phase 2 whether the target
   source paths are covered by that map at all.
