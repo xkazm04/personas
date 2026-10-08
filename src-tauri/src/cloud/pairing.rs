@@ -4,10 +4,13 @@
 //! **in memory only** for [`PAIRING_TTL`], and shows a QR of
 //! `<origin>/dashboard/settings#pair=<pairing_id>.<secret>`: the secret rides
 //! in the URL *fragment*, which a browser never sends to a server. `<origin>`
-//! is the operator-only `cloud_pairing_origin` setting ([`pairing_origin`]),
-//! else [`DEFAULT_PAIRING_ORIGIN`]. The fragment never leaves the browser, but
-//! the page that origin serves reads it, so the origin is a trust boundary: it
-//! is set only through the privileged desktop IPC and shown in the panel. The phone (signed in to the same account) generates a
+//! is the operator-only `cloud_pairing_origin` setting ([`pairing_origin`]).
+//! There is **no default**: while it is not set, pairing is off and
+//! [`begin_pairing`] refuses, because any built-in address would hand the
+//! secret to whoever controls that domain. The fragment never leaves the
+//! browser, but the page that origin serves reads it, so the origin is a trust
+//! boundary: it is set only through the privileged desktop IPC and shown in the
+//! panel. The phone (signed in to the same account) generates a
 //! non-extractable Ed25519 key and inserts a `command_controllers` row with
 //! `proof = base64url(HMAC-SHA256(secret, "<pairing_id>|<controller_id>|<public_key>"))`.
 //! While the QR is up the dialog polls [`poll_pairing`] every 2 s, which
@@ -48,27 +51,26 @@ use crate::error::AppError;
 /// How long a pairing secret lives in memory.
 pub const PAIRING_TTL: Duration = Duration::from_secs(5 * 60);
 
-/// The QR's origin when the operator has set none (`cloud_pairing_origin`).
-pub const DEFAULT_PAIRING_ORIGIN: &str = "https://personas.so";
-
 /// Appended to the origin. The `pair=` value is `<pairing_id>.<secret>` in
 /// the fragment.
 pub const PAIRING_PATH: &str = "/dashboard/settings#pair=";
 
-/// Where the QR opens: the effective origin, and whether the operator set it.
+/// Where the QR opens: the operator's origin, and whether one is set.
+/// `custom: false` means not set, pairing is off; `origin` is then empty.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PairingOrigin {
     pub origin: String,
     pub custom: bool,
 }
 
-/// The effective pairing origin. A stored value is re-validated on read: one
-/// that no longer normalises to itself (a hand-edited row) fails closed rather
-/// than being sent the secret or silently replaced by the default.
+/// The pairing origin, or the unset state (empty origin, `custom: false`)
+/// when the operator has saved none. A stored value is re-validated on read:
+/// one that no longer normalises to itself (a hand-edited row) fails closed
+/// rather than being sent the secret.
 pub fn pairing_origin(pool: &DbPool) -> Result<PairingOrigin, AppError> {
     match settings::get(pool, settings_keys::CLOUD_PAIRING_ORIGIN)? {
         None => Ok(PairingOrigin {
-            origin: DEFAULT_PAIRING_ORIGIN.to_string(),
+            origin: String::new(),
             custom: false,
         }),
         Some(stored) => {
@@ -88,9 +90,9 @@ pub fn pairing_origin(pool: &DbPool) -> Result<PairingOrigin, AppError> {
     }
 }
 
-/// Set the pairing origin (normalised first), or clear it back to
-/// [`DEFAULT_PAIRING_ORIGIN`] with `None` / blank. Operator-only: the one
-/// caller is the privileged `cloud_pairing_origin_set` command.
+/// Set the pairing origin (normalised first), or clear it with `None` /
+/// blank, which turns pairing off. Operator-only: the one caller is the
+/// privileged `cloud_pairing_origin_set` command.
 pub fn set_pairing_origin(pool: &DbPool, origin: Option<&str>) -> Result<PairingOrigin, AppError> {
     let key = settings_keys::CLOUD_PAIRING_ORIGIN;
     match origin.map(str::trim).filter(|o| !o.is_empty()) {
@@ -140,14 +142,21 @@ pub fn pairing_url(origin: &str, pairing_id: &str, secret: &[u8; 32]) -> String 
 
 /// Mint a pairing id + 32-byte secret, held in memory for [`PAIRING_TTL`].
 /// Refuses when the active cap is already reached, so the operator learns it
-/// before showing a QR rather than after the phone did its half.
+/// before showing a QR rather than after the phone did its half. Also refuses
+/// while no pairing origin is set (pairing is off); either refusal mints no
+/// secret and leaves no pending entry.
 pub fn begin_pairing(pool: &DbPool) -> Result<PairingTicket, AppError> {
     if trust::active_count(&trust::load_controllers(pool)) >= MAX_CONTROLLERS {
         return Err(AppError::Validation(format!(
             "Phone limit reached ({MAX_CONTROLLERS}). Revoke a phone before pairing another."
         )));
     }
-    let origin = pairing_origin(pool)?.origin;
+    let PairingOrigin { origin, custom } = pairing_origin(pool)?;
+    if !custom {
+        return Err(AppError::Validation(
+            "Set a Pairing address in Settings before pairing a phone.".into(),
+        ));
+    }
     let mut secret = [0u8; 32];
     {
         use rand::RngCore;
@@ -350,6 +359,14 @@ mod tests {
 
     const CTL: &str = "0c2b9a8f-7e6d-4c5b-8a49-3827160f5e4d";
 
+    /// Serialises the tests in this module that mint into the process-wide
+    /// [`PENDING`] map, so one can assert exactly what the map holds.
+    static PENDING_TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    fn pending_lock() -> std::sync::MutexGuard<'static, ()> {
+        PENDING_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
     #[test]
     fn pairing_proof_round_trips_and_rejects_any_other_input() {
         let secret = [9u8; 32];
@@ -398,12 +415,12 @@ mod tests {
     #[test]
     fn pairing_url_carries_the_secret_in_the_fragment_only() {
         let url = pairing_url(
-            DEFAULT_PAIRING_ORIGIN,
+            "https://desk.example",
             "5b0c7f2e-2a1d-4c3b-9e8f-7a6b5c4d3e2f",
             &[0xAB; 32],
         );
         let (base, frag) = url.split_once('#').expect("fragment");
-        assert_eq!(base, "https://personas.so/dashboard/settings");
+        assert_eq!(base, "https://desk.example/dashboard/settings");
         let value = frag.strip_prefix("pair=").expect("pair=");
         let (pid, secret) = value.split_once('.').expect("dot");
         assert_eq!(pid, "5b0c7f2e-2a1d-4c3b-9e8f-7a6b5c4d3e2f");
@@ -412,12 +429,14 @@ mod tests {
 
     #[test]
     fn begin_and_end_pairing_hold_the_secret_in_memory_only() {
+        let _serial = pending_lock();
         let pool = crate::db::init_test_db().expect("db");
+        set_pairing_origin(&pool, Some("https://desk.example")).expect("set");
         let t = begin_pairing(&pool).expect("ticket");
         assert!(pairing_secret(&t.pairing_id).is_some());
         assert!(t
             .url
-            .starts_with("https://personas.so/dashboard/settings#pair="));
+            .starts_with("https://desk.example/dashboard/settings#pair="));
         end_pairing(&t.pairing_id);
         assert!(pairing_secret(&t.pairing_id).is_none());
         // Nothing about the ceremony reached the settings table.
@@ -425,15 +444,55 @@ mod tests {
     }
 
     #[test]
-    fn pairing_origin_defaults_to_personas_so_when_unset() {
+    fn an_unset_pairing_origin_is_empty_and_turns_pairing_off() {
         let pool = crate::db::init_test_db().expect("db");
         let o = pairing_origin(&pool).expect("origin");
-        assert_eq!(o.origin, DEFAULT_PAIRING_ORIGIN);
-        assert!(!o.custom);
+        assert_eq!(
+            o,
+            PairingOrigin {
+                origin: String::new(),
+                custom: false,
+            }
+        );
+    }
+
+    #[test]
+    fn begin_pairing_is_refused_while_unset_and_leaves_no_pending_secret() {
+        let _serial = pending_lock();
+        let pool = crate::db::init_test_db().expect("db");
+        let mut before: Vec<String> = pending().keys().cloned().collect();
+        let err = begin_pairing(&pool).expect_err("refused while unset");
+        assert!(
+            matches!(&err, AppError::Validation(m)
+                if m == "Set a Pairing address in Settings before pairing a phone."),
+            "{err:?}"
+        );
+        let mut after: Vec<String> = pending().keys().cloned().collect();
+        before.sort();
+        after.sort();
+        assert_eq!(after, before, "a refused pairing left a pending entry");
+        assert!(trust::load_controllers(&pool).is_empty());
+    }
+
+    #[test]
+    fn begin_pairing_succeeds_once_an_origin_is_set() {
+        let _serial = pending_lock();
+        let pool = crate::db::init_test_db().expect("db");
+        assert!(begin_pairing(&pool).is_err());
+        set_pairing_origin(&pool, Some("https://desk.tail1234.ts.net")).expect("set");
+        let t = begin_pairing(&pool).expect("ticket");
+        assert!(
+            t.url.starts_with("https://desk.tail1234.ts.net/"),
+            "{}",
+            t.url
+        );
+        assert!(pairing_secret(&t.pairing_id).is_some());
+        end_pairing(&t.pairing_id);
     }
 
     #[test]
     fn a_set_origin_is_where_the_qr_opens() {
+        let _serial = pending_lock();
         let pool = crate::db::init_test_db().expect("db");
         let o = set_pairing_origin(&pool, Some(" https://Desk.tail1234.ts.net/ ")).expect("set");
         assert_eq!(o.origin, "https://desk.tail1234.ts.net");
@@ -447,10 +506,11 @@ mod tests {
         );
         end_pairing(&t.pairing_id);
 
-        // Clearing returns to the default.
+        // Clearing turns pairing off.
         let o = set_pairing_origin(&pool, None).expect("clear");
-        assert_eq!(o.origin, DEFAULT_PAIRING_ORIGIN);
+        assert_eq!(o.origin, "");
         assert!(!o.custom);
+        assert!(begin_pairing(&pool).is_err());
         set_pairing_origin(&pool, Some("https://desk.example")).expect("set");
         assert!(
             !set_pairing_origin(&pool, Some("   "))

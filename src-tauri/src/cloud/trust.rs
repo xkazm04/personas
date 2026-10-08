@@ -1,9 +1,10 @@
 //! Paired controllers: the trust anchor of the mobile command plane
 //! (PHASE2-SPEC section 3, owner decisions D1 / M9 / M17).
 //!
-//! A *controller* is a phone (a browser on `personas.so`) that the operator
-//! paired from this desktop's Settings. Its credential is an **Ed25519 key
-//! pair whose private half never leaves the phone**: the cloud only ever
+//! A *controller* is a phone (a browser on the operator's Personas web app,
+//! at the Pairing address set in Settings) that the operator paired from this
+//! desktop's Settings. Its credential is an **Ed25519 key pair whose private
+//! half never leaves the phone**: the cloud only ever
 //! carries signatures, so a stolen web session (JWT) can read synced data but
 //! cannot forge a paired command.
 //!
@@ -762,10 +763,18 @@ mod tests {
             add_controller(&pool, ctl_n(i)).expect("add");
         }
         assert!(add_controller(&pool, ctl_n(8)).is_err(), "ninth refused");
-        assert!(
-            crate::cloud::pairing::begin_pairing(&pool).is_err(),
-            "no QR at the cap"
-        );
+        // The cap is checked before the pairing address, so it is the reason
+        // given whether or not an address is set.
+        for origin in [None, Some("https://desk.example")] {
+            if let Some(o) = origin {
+                crate::cloud::pairing::set_pairing_origin(&pool, Some(o)).expect("set");
+            }
+            let err = crate::cloud::pairing::begin_pairing(&pool).expect_err("no QR at the cap");
+            assert!(
+                matches!(&err, AppError::Validation(m) if m.starts_with("Phone limit reached")),
+                "{err:?}"
+            );
+        }
         let id = ctl_n(3).controller_id;
         assert_eq!(
             revoke_local(&pool, Some(&id), Utc::now()).expect("revoke"),
