@@ -5812,6 +5812,15 @@ export type Translations = {
     portfolio_error_title: string;
     portfolio_error_message: string;
     verdicts_error_message: string;
+    watched_pipelines_title: string;
+    watched_pipelines_desc: string;
+    watched_pipelines_empty: string;
+    watched_pipelines_empty_hint: string;
+    watched_pipelines_progress: string;
+    watched_pipelines_open: string;
+    watched_pipelines_not_sent: string;
+    watched_pipelines_never_measured: string;
+    watched_pipelines_unit: string;
   };
   vault: {
     workspace_connect: string;
@@ -17799,6 +17808,13 @@ export type Translations = {
       lc_empty_title: string;
       lc_empty_subtitle: string;
       lc_load_failed: string;
+      lc_ov_watch: string;
+      lc_ov_unwatch: string;
+      lc_ov_send: string;
+      lc_ov_resend: string;
+      lc_ov_sending: string;
+      lc_ov_sent: string;
+      lc_ov_off_hint: string;
       lc_journey_label: string;
       lc_node_label: string;
       lc_dot_label: string;

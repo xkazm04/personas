@@ -3312,6 +3312,10 @@
         {
           "path": "src-tauri/src/commands/fleet/claude_accounts/rotate.rs",
           "reason": "ClaudeAccountRotateSubscription::tick (:192) is the trait-required () adapter — ReactiveSubscription fixes the signature, same as the attention.rs exclusion. The cycle's outcome is NOT discarded: a rotation lands durably in app settings (claude_accounts.last_rotation, read back by the strip and toasted on change) and every failure is logged at warn with the target; a disabled policy returns before any HTTP, which is the designed no-work outcome."
+        },
+        {
+          "path": "src-tauri/src/engine/subscription/lifecycle_watch.rs",
+          "reason": "LifecycleWatchSubscription::tick (:173) is the trait-required () adapter - ReactiveSubscription fixes the signature, same as the attention.rs and rotate.rs exclusions. The cycle's outcome is NOT discarded: the body is lifecycle_watch_tick, which returns the named LifecycleWatchTick (Disabled / NothingDue / Busy / NothingToMeasure(project) / Started(project) / Failed(reason)), unit-tested in lifecycle_watch_tests.rs, and tick logs it EVERY cycle through log_outcome with an `outcome` field (info; warn for Failed; debug for Disabled, the steady state while the Overseer is off). A Started measure also lands durably as its dev_lifecycle_runs rows, did_not_run for any command that never answered (lifecycle::measure::supervise). Cost of the exemption: a regression that stops logging the outcome goes uncounted here."
         }
       ],
       "baseline": {

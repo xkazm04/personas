@@ -660,7 +660,14 @@
     "lc2_trail_root": "Ciclo de vida",
     "lc2_measure": "Medir",
     "lc2_measuring": "Midiendo",
-    "lc2_measure_failed": "Medir no se inició"
+    "lc2_measure_failed": "Medir no se inició",
+    "lc_ov_off_hint": "La medición automática requiere que Overseer esté activado.",
+    "lc_ov_resend": "Enviar de nuevo a Overseer",
+    "lc_ov_send": "Enviar a Overseer",
+    "lc_ov_sending": "Enviando…",
+    "lc_ov_sent": "Enviado: {filed} elementos nuevos, {open} ya abiertos",
+    "lc_ov_unwatch": "Dejar de vigilar con Overseer",
+    "lc_ov_watch": "Vigilar con Overseer"
   },
   "dev_projects": {
     "active_goals": "objetivos activos",

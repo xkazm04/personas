@@ -4811,7 +4811,16 @@
     "batch_outcome_skipped_unchanged": "前回のレビュー以降 {count} 件が未変更: {names}",
     "portfolio_error_message": "Director の読み取りに失敗しました。これはロスターの実態ではありません。バックエンドの復旧後に再試行してください。",
     "portfolio_error_title": "コーチングのポートフォリオを読み込めませんでした",
-    "verdicts_error_message": "コーチング履歴を読み込めなかったため、以下のレビューは不完全な可能性があります。"
+    "verdicts_error_message": "コーチング履歴を読み込めなかったため、以下のレビューは不完全な可能性があります。",
+    "watched_pipelines_desc": "ライフサイクルページで Overseer 用にスターを付けたプロジェクトです。開くとステップを確認できます。",
+    "watched_pipelines_empty": "監視中のパイプラインはまだありません",
+    "watched_pipelines_empty_hint": "プロジェクトのライフサイクルページでスターを付けると、Overseer に引き渡せます。",
+    "watched_pipelines_never_measured": "未計測",
+    "watched_pipelines_not_sent": "未送信",
+    "watched_pipelines_open": "未完了 {count} 件",
+    "watched_pipelines_progress": "{total} 件中 {green} 件が正常、{instructed} 件は指示のみ",
+    "watched_pipelines_title": "監視中のパイプライン",
+    "watched_pipelines_unit": "{count} ステップ"
   },
   "empty_states": {
     "credentials_subtitle": "APIキーやサービス接続を追加して、エージェントが外部ツールと連携できるようにしてください。",
@@ -11395,7 +11404,14 @@
       "lc2_trail_root": "Lifecycle",
       "lc2_measure": "計測",
       "lc2_measuring": "計測中",
-      "lc2_measure_failed": "Measure を開始できませんでした"
+      "lc2_measure_failed": "Measure を開始できませんでした",
+      "lc_ov_off_hint": "自動計測には Overseer をオンにする必要があります。",
+      "lc_ov_resend": "Overseer に再送信",
+      "lc_ov_send": "Overseer に送信",
+      "lc_ov_sending": "送信中…",
+      "lc_ov_sent": "送信しました: 新規 {filed} 件、既に未完了 {open} 件",
+      "lc_ov_unwatch": "Overseer による監視を停止",
+      "lc_ov_watch": "Overseer で監視"
     },
     "dev_projects": {
       "active_goals": "アクティブなゴール",

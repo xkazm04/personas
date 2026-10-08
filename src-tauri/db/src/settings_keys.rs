@@ -1252,6 +1252,14 @@ pub const APP_MASTER_MANDATE_PREFIX: &str = "app_master_mandate:";
 /// Engine bookkeeping, never user-set, so it is excluded from the settings audit.
 pub const HEADLESS_MASTER_PREFIX: &str = "headless_master:";
 
+/// Per-project **Overseer watch** (the Lifecycle star). Full key:
+/// `lifecycle_overseer_watch:<project_id>`, value ∈ {`true`, `false`}; unwatching
+/// deletes the row. A watched project is auto-measured by the Overseer once per
+/// new base tip (`engine/subscription/lifecycle_watch.rs`) while
+/// [`OVERSEER_ENABLED`] is on. Independent of `personas.starred`, which is the
+/// Overseer's persona roster. An operator choice, so it is audited (autonomy).
+pub const LIFECYCLE_OVERSEER_WATCH_PREFIX: &str = "lifecycle_overseer_watch:";
+
 /// Durable mirror of the webview appearance preferences (JSON-encoded object:
 /// `themeId`, `textScale`, `brightness`, `density`, `timezone`, a11y toggles,
 /// `customTheme`). The render-path authority stays in webview localStorage
@@ -1644,6 +1652,7 @@ const ALLOWED_PREFIXES: &[&str] = &[
     APP_MASTER_MANDATE_PREFIX,
     TEAM_SLACK_BRIDGE_CURSOR_PREFIX,
     HEADLESS_MASTER_PREFIX,
+    LIFECYCLE_OVERSEER_WATCH_PREFIX,
 ];
 
 /// Returns true if `suffix` is a syntactically acceptable persona_id-shaped
@@ -1736,6 +1745,15 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
     // in-app tick run again (the safe direction).
     if key.starts_with(HEADLESS_MASTER_PREFIX) {
         return validate_json_wellformed(key, value);
+    }
+    // Per-project Overseer watch (prefix key) - the canonical boolean pair.
+    if key.starts_with(LIFECYCLE_OVERSEER_WATCH_PREFIX) {
+        return match value {
+            "true" | "false" => Ok(()),
+            _ => Err(format!(
+                "value for '{key}' must be true or false, got {value:?}"
+            )),
+        };
     }
     // Multi-plan Claude login policy + last rotation: JSON blobs whose structs
     // live in app_lib (`commands::fleet::claude_accounts::rotate`), so only
@@ -2322,6 +2340,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         || key.starts_with(AUTO_OPTIMIZE_PREFIX)
         || key.starts_with(AUTOPILOT_MODE_PREFIX)
         || key.starts_with(APP_MASTER_MANDATE_PREFIX)
+        || key.starts_with(LIFECYCLE_OVERSEER_WATCH_PREFIX)
     {
         return Some("autonomy");
     }
@@ -3175,6 +3194,19 @@ mod tests {
         assert!(validate_value(&key, "{\"state\":").is_err());
         // A beat lands on every headless wake; it must never reach History.
         assert_eq!(audit_category(&key), None);
+    }
+
+    #[test]
+    fn lifecycle_overseer_watch_prefix_validates_and_is_audited() {
+        let key = format!("{LIFECYCLE_OVERSEER_WATCH_PREFIX}proj-1");
+        assert!(validate_key(&key).is_ok());
+        assert!(validate_key(LIFECYCLE_OVERSEER_WATCH_PREFIX).is_err());
+        assert!(validate_key(&format!("{LIFECYCLE_OVERSEER_WATCH_PREFIX}a b")).is_err());
+        assert!(validate_value(&key, "true").is_ok());
+        assert!(validate_value(&key, "false").is_ok());
+        assert!(validate_value(&key, "yes").is_err());
+        // The star is an operator choice that turns on unattended measuring.
+        assert_eq!(audit_category(&key), Some("autonomy"));
     }
 
     #[test]

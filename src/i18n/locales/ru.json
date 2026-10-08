@@ -4811,7 +4811,16 @@
     "batch_outcome_skipped_unchanged": "{count} без изменений с прошлой проверки: {names}",
     "portfolio_error_message": "Чтение Director не удалось, поэтому это не картина вашего состава. Повторите, когда бэкенд вернётся.",
     "portfolio_error_title": "Не удалось загрузить портфель коучинга",
-    "verdicts_error_message": "Историю коучинга загрузить не удалось, поэтому проверки ниже могут быть неполными."
+    "verdicts_error_message": "Историю коучинга загрузить не удалось, поэтому проверки ниже могут быть неполными.",
+    "watched_pipelines_desc": "Проекты, отмеченные звездой для Overseer на странице жизненного цикла. Откройте любой, чтобы увидеть его шаги.",
+    "watched_pipelines_empty": "Пока ни один конвейер не отслеживается",
+    "watched_pipelines_empty_hint": "Отметьте проект звездой на его странице жизненного цикла, чтобы передать его Overseer.",
+    "watched_pipelines_never_measured": "Ни разу не измерено",
+    "watched_pipelines_not_sent": "Ещё не отправлено",
+    "watched_pipelines_open": "Открытых задач: {count}",
+    "watched_pipelines_progress": "Зелёных шагов: {green} из {total}, по инструкции: {instructed}",
+    "watched_pipelines_title": "Отслеживаемые конвейеры",
+    "watched_pipelines_unit": "Шагов: {count}"
   },
   "empty_states": {
     "credentials_subtitle": "Добавьте ключи API и подключения к сервисам, чтобы агенты могли взаимодействовать с внешними инструментами.",
@@ -11395,7 +11404,14 @@
       "lc2_trail_root": "Жизненный цикл",
       "lc2_measure": "Измерить",
       "lc2_measuring": "Идёт измерение",
-      "lc2_measure_failed": "Measure не запустился"
+      "lc2_measure_failed": "Measure не запустился",
+      "lc_ov_off_hint": "Для автоизмерения нужно включить Overseer.",
+      "lc_ov_resend": "Отправить Overseer повторно",
+      "lc_ov_send": "Отправить Overseer",
+      "lc_ov_sending": "Отправка…",
+      "lc_ov_sent": "Отправлено: новых задач {filed}, уже открытых {open}",
+      "lc_ov_unwatch": "Прекратить отслеживание через Overseer",
+      "lc_ov_watch": "Отслеживать через Overseer"
     },
     "dev_projects": {
       "active_goals": "активных целей",

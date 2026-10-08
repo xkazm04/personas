@@ -660,7 +660,14 @@
     "lc2_trail_root": "生命周期",
     "lc2_measure": "测量",
     "lc2_measuring": "正在测量",
-    "lc2_measure_failed": "Measure 未能启动"
+    "lc2_measure_failed": "Measure 未能启动",
+    "lc_ov_off_hint": "自动度量需要开启 Overseer。",
+    "lc_ov_resend": "再次发送给 Overseer",
+    "lc_ov_send": "发送给 Overseer",
+    "lc_ov_sending": "发送中…",
+    "lc_ov_sent": "已发送：{filed} 个新项目，{open} 个已处于未完成状态",
+    "lc_ov_unwatch": "停止通过 Overseer 监视",
+    "lc_ov_watch": "通过 Overseer 监视"
   },
   "dev_projects": {
     "active_goals": "活跃目标",

@@ -170,5 +170,14 @@
   "batch_outcome_skipped_unchanged": "{count} tidak berubah sejak tinjauan terakhir: {names}",
   "portfolio_error_message": "Pembacaan Director gagal, jadi ini bukan gambaran roster Anda. Coba lagi setelah backend pulih.",
   "portfolio_error_title": "Portofolio coaching gagal dimuat",
-  "verdicts_error_message": "Riwayat coaching gagal dimuat, jadi tinjauan di bawah mungkin tidak lengkap."
+  "verdicts_error_message": "Riwayat coaching gagal dimuat, jadi tinjauan di bawah mungkin tidak lengkap.",
+  "watched_pipelines_desc": "Proyek yang diberi bintang untuk Overseer di halaman Siklus Hidup. Buka salah satu untuk melihat langkahnya.",
+  "watched_pipelines_empty": "Belum ada pipeline yang dipantau",
+  "watched_pipelines_empty_hint": "Beri bintang pada proyek di halaman Siklus Hidup-nya untuk menyerahkannya ke Overseer.",
+  "watched_pipelines_never_measured": "Belum pernah diukur",
+  "watched_pipelines_not_sent": "Belum dikirim",
+  "watched_pipelines_open": "{count} item terbuka",
+  "watched_pipelines_progress": "{green} dari {total} sehat, {instructed} diinstruksikan",
+  "watched_pipelines_title": "Pipeline yang dipantau",
+  "watched_pipelines_unit": "{count} langkah"
 }

@@ -4811,7 +4811,16 @@
     "batch_outcome_skipped_unchanged": "{count} seit der letzten Prüfung unverändert: {names}",
     "portfolio_error_message": "Der Director-Abruf ist fehlgeschlagen, das hier ist also kein Bild deines Rosters. Versuch es erneut, sobald das Backend wieder da ist.",
     "portfolio_error_title": "Coaching-Portfolio konnte nicht geladen werden",
-    "verdicts_error_message": "Die Coaching-Historie konnte nicht geladen werden, die Bewertungen unten sind daher womöglich unvollständig."
+    "verdicts_error_message": "Die Coaching-Historie konnte nicht geladen werden, die Bewertungen unten sind daher womöglich unvollständig.",
+    "watched_pipelines_desc": "Projekte, die auf ihrer Lifecycle-Seite für Overseer mit einem Stern markiert wurden. Öffnen Sie eines, um seine Schritte zu sehen.",
+    "watched_pipelines_empty": "Noch keine Pipeline wird überwacht",
+    "watched_pipelines_empty_hint": "Markieren Sie ein Projekt auf seiner Lifecycle-Seite mit einem Stern, um es an Overseer zu übergeben.",
+    "watched_pipelines_never_measured": "Nie gemessen",
+    "watched_pipelines_not_sent": "Noch nicht gesendet",
+    "watched_pipelines_open": "{count} offene Punkte",
+    "watched_pipelines_progress": "{green} von {total} grün, {instructed} per Anweisung",
+    "watched_pipelines_title": "Überwachte Pipelines",
+    "watched_pipelines_unit": "{count} Schritte"
   },
   "empty_states": {
     "credentials_subtitle": "Fügen Sie API-Schlüssel und Dienstverbindungen hinzu, damit Ihre Agenten mit externen Werkzeugen interagieren können.",
@@ -11395,7 +11404,14 @@
       "lc2_trail_root": "Lifecycle",
       "lc2_measure": "Messen",
       "lc2_measuring": "Wird gemessen",
-      "lc2_measure_failed": "Messen wurde nicht gestartet"
+      "lc2_measure_failed": "Messen wurde nicht gestartet",
+      "lc_ov_off_hint": "Die automatische Messung setzt voraus, dass Overseer eingeschaltet ist.",
+      "lc_ov_resend": "Erneut an Overseer senden",
+      "lc_ov_send": "An Overseer senden",
+      "lc_ov_sending": "Wird gesendet…",
+      "lc_ov_sent": "Gesendet: {filed} neue Punkte, {open} bereits offen",
+      "lc_ov_unwatch": "Überwachung durch Overseer beenden",
+      "lc_ov_watch": "Mit Overseer überwachen"
     },
     "dev_projects": {
       "active_goals": "aktive Ziele",

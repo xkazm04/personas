@@ -4811,7 +4811,16 @@
     "batch_outcome_skipped_unchanged": "{count} sin cambios desde su última revisión: {names}",
     "portfolio_error_message": "La lectura de Director falló, así que esto no refleja tu plantilla. Reinténtalo cuando el backend vuelva.",
     "portfolio_error_title": "No se pudo cargar el portafolio de coaching",
-    "verdicts_error_message": "No se pudo cargar el historial de coaching, así que las revisiones de abajo pueden estar incompletas."
+    "verdicts_error_message": "No se pudo cargar el historial de coaching, así que las revisiones de abajo pueden estar incompletas.",
+    "watched_pipelines_desc": "Proyectos destacados para Overseer en su página de ciclo de vida. Abre uno para ver sus pasos.",
+    "watched_pipelines_empty": "Aún no se vigila ningún pipeline",
+    "watched_pipelines_empty_hint": "Destaca un proyecto en su página de ciclo de vida para entregárselo a Overseer.",
+    "watched_pipelines_never_measured": "Nunca medido",
+    "watched_pipelines_not_sent": "Aún sin enviar",
+    "watched_pipelines_open": "{count} elementos abiertos",
+    "watched_pipelines_progress": "{green} de {total} en verde, {instructed} por instrucción",
+    "watched_pipelines_title": "Pipelines vigilados",
+    "watched_pipelines_unit": "{count} pasos"
   },
   "empty_states": {
     "credentials_subtitle": "Agregue claves de API y conexiones de servicio para que sus agentes puedan interactuar con herramientas externas.",
@@ -11395,7 +11404,14 @@
       "lc2_trail_root": "Ciclo de vida",
       "lc2_measure": "Medir",
       "lc2_measuring": "Midiendo",
-      "lc2_measure_failed": "Medir no se inició"
+      "lc2_measure_failed": "Medir no se inició",
+      "lc_ov_off_hint": "La medición automática requiere que Overseer esté activado.",
+      "lc_ov_resend": "Enviar de nuevo a Overseer",
+      "lc_ov_send": "Enviar a Overseer",
+      "lc_ov_sending": "Enviando…",
+      "lc_ov_sent": "Enviado: {filed} elementos nuevos, {open} ya abiertos",
+      "lc_ov_unwatch": "Dejar de vigilar con Overseer",
+      "lc_ov_watch": "Vigilar con Overseer"
     },
     "dev_projects": {
       "active_goals": "objetivos activos",

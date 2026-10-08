@@ -660,7 +660,14 @@
     "lc2_trail_root": "Lifecycle",
     "lc2_measure": "Ukur",
     "lc2_measuring": "Sedang mengukur",
-    "lc2_measure_failed": "Measure tidak dimulai"
+    "lc2_measure_failed": "Measure tidak dimulai",
+    "lc_ov_off_hint": "Pengukuran otomatis memerlukan Overseer dalam keadaan aktif.",
+    "lc_ov_resend": "Kirim ulang ke Overseer",
+    "lc_ov_send": "Kirim ke Overseer",
+    "lc_ov_sending": "Mengirim…",
+    "lc_ov_sent": "Terkirim: {filed} item baru, {open} sudah terbuka",
+    "lc_ov_unwatch": "Berhenti memantau dengan Overseer",
+    "lc_ov_watch": "Pantau dengan Overseer"
   },
   "dev_projects": {
     "active_goals": "tujuan aktif",

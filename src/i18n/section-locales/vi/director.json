@@ -170,5 +170,14 @@
   "batch_outcome_skipped_unchanged": "{count} không đổi kể từ lần xem xét trước: {names}",
   "portfolio_error_message": "Không đọc được Director, nên đây không phải bức tranh đội ngũ của bạn. Hãy thử lại khi backend hoạt động trở lại.",
   "portfolio_error_title": "Không tải được danh mục huấn luyện",
-  "verdicts_error_message": "Không tải được lịch sử huấn luyện, nên các đánh giá bên dưới có thể chưa đầy đủ."
+  "verdicts_error_message": "Không tải được lịch sử huấn luyện, nên các đánh giá bên dưới có thể chưa đầy đủ.",
+  "watched_pipelines_desc": "Các dự án được gắn sao cho Overseer trên trang Vòng đời. Mở một dự án để xem các bước của nó.",
+  "watched_pipelines_empty": "Chưa có pipeline nào được theo dõi",
+  "watched_pipelines_empty_hint": "Gắn sao cho một dự án trên trang Vòng đời của nó để giao cho Overseer.",
+  "watched_pipelines_never_measured": "Chưa từng đo",
+  "watched_pipelines_not_sent": "Chưa gửi",
+  "watched_pipelines_open": "{count} mục đang mở",
+  "watched_pipelines_progress": "{green}/{total} ở trạng thái xanh, {instructed} theo chỉ dẫn",
+  "watched_pipelines_title": "Pipeline đang theo dõi",
+  "watched_pipelines_unit": "{count} bước"
 }

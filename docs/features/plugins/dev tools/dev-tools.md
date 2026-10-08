@@ -553,7 +553,58 @@ A project's **lifecycle** is its development practice: the ordered steps that ha
 8. **Layer 1: the collar rail.** **Projects -> Lifecycle** shows the active project (picker in the header) with the preset and version in the subtitle ("Solo practice, v2 by Athena"). A headline plate names the step with the **worst measured verdict** (Failing > Stale > At risk > Not measured; ties by step order) with its reason ("Land is the weakest step: failing. Done in 40% of recent changes, 80% needed."), or says every measured step is healthy; only a snapshot with **no health rows at all** falls back to the older binding sentence (lowest enforcement strength, then skip rate, with "No work has passed through yet." before any evidence). Under it: the Overseer goal as countable units ("3 of 8 measurable steps green, 2 instructed") beside a key of the six verdicts with their counts, then the **Before the task** and **After the task** trays. Each step is a key cap on a groove (its binding state on the cap's indicator strip) wearing a **collar** in its verdict's own stroke and fill: the verdict pill, an arc drawing its main rate with the figure inside, its other numbers as stat chips with `n`, and its recent evidence as beads. The six verdicts read apart without colour (solid, dashed, dotted and hatched strokes, plus a glyph each). One tab stop for the rail; arrows, Home and End walk it. The collar rail is the owner's pick of the 2026-10-08 Layer-1 round; the Orbit and Lane-board directions and their switcher are deleted, as are the Tactile rail's docked state panel and evidence ledger (their content lives on each step's screen). Cold load ghosts the trays under the permanent action row; a return visit paints from a per-project module cache and revalidates; a failed read shows an inline banner with Retry and keeps any snapshot already on screen.
 9. **Layer 2: a step's own screen.** Pressing a key replaces Layer 1 **in the same page** (not a modal, not a route; the 2026-10-06 rule that a drawer reopened per node made walking the journey impossible still holds). The trail **Lifecycle · Gate** returns; **Esc** returns too, with focus back on that step's key; **Left / Right** (or the two neighbour buttons by the trail) walk to the previous or next step's screen without returning. The head shows the step large: its key, name, verdict, reason, when it was measured (and, when stale, what it was), and its **instrument**: the step's icon inside the ring of its main rate, with every other number as a satellite tile around it (median time, pass rate, coverage). Below it the step's **preset**, chosen by step id, then its **rule and bindings**. Gate, Tests and Docs read `dev_tools_lifecycle_step_detail` (run history, newest 30, and per-doc rows), cached per project and step and refetched on `lifecycleRevision`; a failed read is an inline banner over a preset that still draws what the snapshot knows. Every other step reads the snapshot only.
 10. **Presets.** **Gate:** one row per command (`kit/Rows` with declared columns): the command with its kind and median; the latest outcome as a chip where **Timed out** (dotted) and **Did not run** (dashed, colourless) never look like **Failed**; the latest time against its budget, drawn as a bar crossing an upright budget line (the kind's default, or the command's own `budgetMs`); a sparkline of its recent runs with the budget dashed across it; and its pass rate over the runs that answered, with `n`. The slowest command is called out above the rows, each command's first error line opens under its row, and the caption names the endpoints once ("from command start to exit; worktree setup is not included"). The **Commands** editor lists `params.commands` (or says they are auto-detected from the repo's manifests); Edit opens a draft with add, edit, remove and a budget in seconds per command, and Save calls `dev_tools_lifecycle_set_step_params`, which appends a version authored by you. The result is said under the editor. **Tests:** coverage first, its trend over the coverage runs drawn large against the green and amber lines, then the gate rows for the test commands. With no coverage measured, a card says **"Coverage not measured, so Tests cannot be green"** and its button opens the Commands editor with a coverage row ready to fill. **Docs:** "How it is resolved" lists every judged doc as a bullet under its status, worst first (Broken: the references that are gone; Stale: the sources that changed since; Unverifiable; Clean, folded), beside the clean share's make-up as one unit per doc with its `n` and threshold. The **docs change log** lists the changes that recorded a docs outcome; a row opens a modal with the change's title, full source reference, time, what the docs step recorded, and the docs that need work in the latest scan (labelled as that: a change does not record which docs it touched). **Generic** (every other step, custom steps included): the done rate with `n` and the threshold, the tally of recent changes as units (done, skipped, unknown, failed), and the changes themselves, each with its outcome, title, source, time and the step's note in full; an instructed step says it is followed by instruction with nothing to measure. A preset never repeats the ring drawn in the instrument above it; it adds what the ring cannot show (the trend, the make-up, the tally).
-<!-- WP2: Overseer -->
+11. **Star and Send to Overseer.** The page header carries the Overseer's controls next to the
+    project picker (`lifecycleView/blocks/OverseerControls.tsx`).
+    - **Star** ("Watch with Overseer", the Overseer's mark, `aria-pressed`; `dev_tools_lifecycle_set_watch`) marks the project as **watched by the
+      Overseer**. It is a per-project setting, `lifecycle_overseer_watch:<projectId>`
+      (`true`; unstarring deletes the row; audited under `autonomy`). It is NOT the Overseer's
+      persona star (`personas.starred`, which is his coaching scope). A watched project is
+      **auto-measured**: the `lifecycle_watch` subscription
+      (`src-tauri/src/engine/subscription/lifecycle_watch.rs`, every 5 min, 15 min idle)
+      measures at most **one** watched project per tick, and only one whose **base tip has moved**
+      since its last Measure and whose last Measure finished **at least 30 minutes ago**; the
+      least recently measured goes first (never measured first). It runs only while the
+      Overseer is switched on (`overseer_enabled`, Companions > Overseer > Setup); with him off
+      the star still saves and the control says inline that auto-measure needs him on. The
+      Measure is the same one the Measure button runs (`lifecycle::measure::start`), so its
+      process-wide slot applies: when any Measure is running the tick skips. A project with
+      nothing to measure (no gate or test commands, configured or detected) is remembered at
+      that tip and not retried until its tip moves. The manual Measure button always works,
+      watched or not.
+    - **Send to Overseer** (`dev_tools_lifecycle_send_to_overseer`) hands the pipeline to him
+      as **work in the existing backlog**, not as a new runtime. It opens the project's goal
+      **"All steps green"** (or reuses the open one; a closed one is never reopened) and files
+      **one backlog item per measurable step that is not green**: Failing, At risk, Not
+      measured or Stale. Instructed steps (Frame, Recall, `x-*`) and Healthy steps get
+      nothing. Each item goes through the backlog's one door (`file_idea`, origin
+      `lifecycle`, scan type `lifecycle_step`, dedup key
+      `lifecycle:goal:<goalId>:step:<stepId>`) bound to the goal, complete (effort, impact,
+      risk, description, a two-step plan), and is then **accepted** through the triage verdict
+      door with actor `Overseer`. The plan names the step, its measured verdict, reason and
+      metrics with their sample counts, the target ("measured green on the base tip"), and the
+      ways it must **not** be made green: deleting or skipping tests, suppression directives,
+      editing gate configuration or budgets, dependency bumps to satisfy a check. A Not
+      measured step's item is about making it measurable first (for Tests: add a coverage
+      command whose output prints a percentage). Sending again files only what is new; an
+      item still open counts as "already open"; an item the Overseer had closed whose step
+      went non-green again under the same goal is **reopened** (`verify_state = regressed`);
+      an item someone rejected, archived or let expire is left alone. Send also stars the
+      project. The result is said inline ("N new items, M already open"), never as a toast.
+    - **Who does the work.** Nothing new dispatches it. A project with an App Master mandate
+      dispatches accepted items through its charter (forbidden-class scan and merge gate
+      included); without one the items wait in the accepted queue like any other.
+    - **Closed by observation only.** After **every** Measure (watched or not, manual or
+      automatic) the Overseer's follow-up (`lifecycle::overseer::after_measure`, called from
+      the Measure's own follow-up off the IPC thread) checks the newest measure: only when it
+      ran on the **current base tip** does anything close. An open item whose step is now
+      **Healthy** is marked `delivered` with `verify_state = cleared` and the measure as its
+      evidence (`"Lifecycle measure <measureId> on <sha>: <step> green"`); the goal is closed
+      (`done`, 100%, a `lifecycle_measure` goal signal) when every measurable step is Healthy.
+      A builder's or agent's claim of done never closes anything. Without an open goal the
+      follow-up is a no-op.
+    - **The snapshot** carries `goal` (`goalId`, `measurableTotal`, `measurableGreen`,
+      `instructed`, `openItems`; the open goal, else the newest closed one; `null` when none
+      was ever sent) and `watched`.
 
 #### Runtime: how a lifecycle reaches a session
 

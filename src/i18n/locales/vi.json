@@ -4811,7 +4811,16 @@
     "batch_outcome_skipped_unchanged": "{count} không đổi kể từ lần xem xét trước: {names}",
     "portfolio_error_message": "Không đọc được Director, nên đây không phải bức tranh đội ngũ của bạn. Hãy thử lại khi backend hoạt động trở lại.",
     "portfolio_error_title": "Không tải được danh mục huấn luyện",
-    "verdicts_error_message": "Không tải được lịch sử huấn luyện, nên các đánh giá bên dưới có thể chưa đầy đủ."
+    "verdicts_error_message": "Không tải được lịch sử huấn luyện, nên các đánh giá bên dưới có thể chưa đầy đủ.",
+    "watched_pipelines_desc": "Các dự án được gắn sao cho Overseer trên trang Vòng đời. Mở một dự án để xem các bước của nó.",
+    "watched_pipelines_empty": "Chưa có pipeline nào được theo dõi",
+    "watched_pipelines_empty_hint": "Gắn sao cho một dự án trên trang Vòng đời của nó để giao cho Overseer.",
+    "watched_pipelines_never_measured": "Chưa từng đo",
+    "watched_pipelines_not_sent": "Chưa gửi",
+    "watched_pipelines_open": "{count} mục đang mở",
+    "watched_pipelines_progress": "{green}/{total} ở trạng thái xanh, {instructed} theo chỉ dẫn",
+    "watched_pipelines_title": "Pipeline đang theo dõi",
+    "watched_pipelines_unit": "{count} bước"
   },
   "empty_states": {
     "credentials_subtitle": "Thêm khóa API và kết nối dịch vụ để tác tử có thể tương tác với các công cụ bên ngoài.",
@@ -11395,7 +11404,14 @@
       "lc2_trail_root": "Vòng đời",
       "lc2_measure": "Đo",
       "lc2_measuring": "Đang đo",
-      "lc2_measure_failed": "Không thể bắt đầu Measure"
+      "lc2_measure_failed": "Không thể bắt đầu Measure",
+      "lc_ov_off_hint": "Tự động đo cần bật Overseer.",
+      "lc_ov_resend": "Gửi lại cho Overseer",
+      "lc_ov_send": "Gửi cho Overseer",
+      "lc_ov_sending": "Đang gửi…",
+      "lc_ov_sent": "Đã gửi: {filed} mục mới, {open} mục đã mở sẵn",
+      "lc_ov_unwatch": "Ngừng theo dõi bằng Overseer",
+      "lc_ov_watch": "Theo dõi bằng Overseer"
     },
     "dev_projects": {
       "active_goals": "mục tiêu đang hoạt động",

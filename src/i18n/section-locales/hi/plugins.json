@@ -660,7 +660,14 @@
     "lc2_trail_root": "Lifecycle",
     "lc2_measure": "मापें",
     "lc2_measuring": "माप जारी है",
-    "lc2_measure_failed": "Measure शुरू नहीं हुआ"
+    "lc2_measure_failed": "Measure शुरू नहीं हुआ",
+    "lc_ov_off_hint": "स्वतः माप के लिए Overseer चालू होना चाहिए।",
+    "lc_ov_resend": "Overseer को फिर भेजें",
+    "lc_ov_send": "Overseer को भेजें",
+    "lc_ov_sending": "भेजा जा रहा है…",
+    "lc_ov_sent": "भेजा गया: {filed} नए आइटम, {open} पहले से खुले",
+    "lc_ov_unwatch": "Overseer से निगरानी बंद करें",
+    "lc_ov_watch": "Overseer से निगरानी करें"
   },
   "dev_projects": {
     "active_goals": "सक्रिय goals",

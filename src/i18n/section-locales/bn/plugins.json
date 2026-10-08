@@ -660,7 +660,14 @@
     "lc2_trail_root": "লাইফসাইকেল",
     "lc2_measure": "পরিমাপ",
     "lc2_measuring": "পরিমাপ চলছে",
-    "lc2_measure_failed": "পরিমাপ শুরু হয়নি"
+    "lc2_measure_failed": "পরিমাপ শুরু হয়নি",
+    "lc_ov_off_hint": "স্বয়ংক্রিয় পরিমাপের জন্য Overseer চালু থাকতে হবে।",
+    "lc_ov_resend": "Overseer-কে আবার পাঠান",
+    "lc_ov_send": "Overseer-কে পাঠান",
+    "lc_ov_sending": "পাঠানো হচ্ছে…",
+    "lc_ov_sent": "পাঠানো হয়েছে: {filed}টি নতুন আইটেম, {open}টি আগে থেকেই উন্মুক্ত",
+    "lc_ov_unwatch": "Overseer দিয়ে পর্যবেক্ষণ বন্ধ করুন",
+    "lc_ov_watch": "Overseer দিয়ে পর্যবেক্ষণ করুন"
   },
   "dev_projects": {
     "active_goals": "সক্রিয় লক্ষ্য",

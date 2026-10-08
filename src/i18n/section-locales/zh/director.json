@@ -170,5 +170,14 @@
   "batch_outcome_skipped_unchanged": "自上次复核以来 {count} 个未变更：{names}",
   "portfolio_error_message": "Director 读取失败，因此这并不代表你的团队实况。后端恢复后请重试。",
   "portfolio_error_title": "无法加载教练组合",
-  "verdicts_error_message": "无法加载教练历史，因此下方的复核可能不完整。"
+  "verdicts_error_message": "无法加载教练历史，因此下方的复核可能不完整。",
+  "watched_pipelines_desc": "在生命周期页面中为 Overseer 加星的项目。打开其中一个可查看其步骤。",
+  "watched_pipelines_empty": "尚未监视任何流水线",
+  "watched_pipelines_empty_hint": "在项目的生命周期页面加星，即可将其交给 Overseer。",
+  "watched_pipelines_never_measured": "从未度量",
+  "watched_pipelines_not_sent": "尚未发送",
+  "watched_pipelines_open": "{count} 个未完成项",
+  "watched_pipelines_progress": "{total} 个中 {green} 个为绿色，{instructed} 个按指令执行",
+  "watched_pipelines_title": "受监视的流水线",
+  "watched_pipelines_unit": "{count} 个步骤"
 }

@@ -29,6 +29,7 @@ import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/compon
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { LifecycleProjectPicker } from './LifecycleProjectPicker';
+import { OverseerControls } from './lifecycleView/blocks/OverseerControls';
 import { LifecycleViewProvider } from './lifecycleView/context';
 import { LifecycleBody } from './lifecycleView/LifecycleBody';
 import { useLifecycleView } from './lifecycleView/useLifecycleView';
@@ -45,7 +46,14 @@ export default function LifecyclePage() {
           iconColor="violet"
           title={t.plugins.dev_tools.lifecycle_title}
           subtitle={model.subtitle}
-          actions={<LifecycleProjectPicker />}
+          actions={
+            <div className="flex items-start gap-2">
+              <LifecycleProjectPicker />
+              {model.projectId && model.snapshot && (
+                <OverseerControls projectId={model.projectId} watched={model.snapshot.watched} goal={model.snapshot.goal} />
+              )}
+            </div>
+          }
         />
 
         <ContentBody centered>

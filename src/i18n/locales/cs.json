@@ -4811,7 +4811,16 @@
     "batch_outcome_skipped_unchanged": "{count} beze změny od poslední kontroly: {names}",
     "portfolio_error_message": "Čtení Directoru selhalo, takže toto není obraz vašeho týmu. Až bude backend zpět, zkuste to znovu.",
     "portfolio_error_title": "Portfolio koučinku se nepodařilo načíst",
-    "verdicts_error_message": "Historii koučinku se nepodařilo načíst, kontroly níže proto mohou být neúplné."
+    "verdicts_error_message": "Historii koučinku se nepodařilo načíst, kontroly níže proto mohou být neúplné.",
+    "watched_pipelines_desc": "Projekty označené hvězdou pro Overseer na stránce Životní cyklus. Otevřete projekt a uvidíte jeho kroky.",
+    "watched_pipelines_empty": "Zatím se nesleduje žádný pipeline",
+    "watched_pipelines_empty_hint": "Označte projekt hvězdou na stránce Životní cyklus a předejte ho Overseer.",
+    "watched_pipelines_never_measured": "Nikdy neměřeno",
+    "watched_pipelines_not_sent": "Zatím neodesláno",
+    "watched_pipelines_open": "{count} otevřených položek",
+    "watched_pipelines_progress": "{green} z {total} v pořádku, {instructed} řízeno pokyny",
+    "watched_pipelines_title": "Sledované pipeline",
+    "watched_pipelines_unit": "{count} kroků"
   },
   "empty_states": {
     "credentials_subtitle": "Přidej API klíče a připojení ke službám, aby tvoji agenti mohli interagovat s externími nástroji.",
@@ -11395,7 +11404,14 @@
       "lc2_trail_root": "Životní cyklus",
       "lc2_measure": "Měření",
       "lc2_measuring": "Probíhá měření",
-      "lc2_measure_failed": "Měření se nespustilo"
+      "lc2_measure_failed": "Měření se nespustilo",
+      "lc_ov_off_hint": "Automatické měření vyžaduje zapnutého Overseer.",
+      "lc_ov_resend": "Odeslat znovu Overseer",
+      "lc_ov_send": "Odeslat Overseer",
+      "lc_ov_sending": "Odesílání…",
+      "lc_ov_sent": "Odesláno: {filed} nových položek, {open} již otevřených",
+      "lc_ov_unwatch": "Přestat sledovat přes Overseer",
+      "lc_ov_watch": "Sledovat přes Overseer"
     },
     "dev_projects": {
       "active_goals": "aktivních cílů",

@@ -4811,7 +4811,16 @@
     "batch_outcome_skipped_unchanged": "শেষ পর্যালোচনার পর {count} অপরিবর্তিত: {names}",
     "portfolio_error_message": "Director পড়া যায়নি, তাই এটি আপনার দলের প্রকৃত চিত্র নয়। ব্যাকএন্ড ফিরলে আবার চেষ্টা করুন।",
     "portfolio_error_title": "কোচিং পোর্টফোলিও লোড করা যায়নি",
-    "verdicts_error_message": "কোচিং ইতিহাস লোড করা যায়নি, তাই নিচের পর্যালোচনাগুলি অসম্পূর্ণ হতে পারে।"
+    "verdicts_error_message": "কোচিং ইতিহাস লোড করা যায়নি, তাই নিচের পর্যালোচনাগুলি অসম্পূর্ণ হতে পারে।",
+    "watched_pipelines_desc": "লাইফসাইকেল পেজে Overseer-এর জন্য স্টার দেওয়া প্রকল্প। ধাপগুলো দেখতে একটি খুলুন।",
+    "watched_pipelines_empty": "এখনও কোনো পাইপলাইন পর্যবেক্ষণে নেই",
+    "watched_pipelines_empty_hint": "Overseer-কে দিতে লাইফসাইকেল পেজে একটি প্রকল্পে স্টার দিন।",
+    "watched_pipelines_never_measured": "কখনও পরিমাপ হয়নি",
+    "watched_pipelines_not_sent": "এখনও পাঠানো হয়নি",
+    "watched_pipelines_open": "{count}টি উন্মুক্ত আইটেম",
+    "watched_pipelines_progress": "{total}টির মধ্যে {green}টি সুস্থ, {instructed}টি নির্দেশিত",
+    "watched_pipelines_title": "পর্যবেক্ষিত পাইপলাইন",
+    "watched_pipelines_unit": "{count}টি ধাপ"
   },
   "empty_states": {
     "credentials_subtitle": "API কী ও সেবা সংযোগ যোগ করুন যাতে এজেন্ট বাহ্যিক টুল ব্যবহার করতে পারে।",
@@ -11395,7 +11404,14 @@
       "lc2_trail_root": "লাইফসাইকেল",
       "lc2_measure": "পরিমাপ",
       "lc2_measuring": "পরিমাপ চলছে",
-      "lc2_measure_failed": "পরিমাপ শুরু হয়নি"
+      "lc2_measure_failed": "পরিমাপ শুরু হয়নি",
+      "lc_ov_off_hint": "স্বয়ংক্রিয় পরিমাপের জন্য Overseer চালু থাকতে হবে।",
+      "lc_ov_resend": "Overseer-কে আবার পাঠান",
+      "lc_ov_send": "Overseer-কে পাঠান",
+      "lc_ov_sending": "পাঠানো হচ্ছে…",
+      "lc_ov_sent": "পাঠানো হয়েছে: {filed}টি নতুন আইটেম, {open}টি আগে থেকেই উন্মুক্ত",
+      "lc_ov_unwatch": "Overseer দিয়ে পর্যবেক্ষণ বন্ধ করুন",
+      "lc_ov_watch": "Overseer দিয়ে পর্যবেক্ষণ করুন"
     },
     "dev_projects": {
       "active_goals": "সক্রিয় লক্ষ্য",

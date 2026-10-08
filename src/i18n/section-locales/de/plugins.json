@@ -660,7 +660,14 @@
     "lc2_trail_root": "Lifecycle",
     "lc2_measure": "Messen",
     "lc2_measuring": "Wird gemessen",
-    "lc2_measure_failed": "Messen wurde nicht gestartet"
+    "lc2_measure_failed": "Messen wurde nicht gestartet",
+    "lc_ov_off_hint": "Die automatische Messung setzt voraus, dass Overseer eingeschaltet ist.",
+    "lc_ov_resend": "Erneut an Overseer senden",
+    "lc_ov_send": "An Overseer senden",
+    "lc_ov_sending": "Wird gesendet…",
+    "lc_ov_sent": "Gesendet: {filed} neue Punkte, {open} bereits offen",
+    "lc_ov_unwatch": "Überwachung durch Overseer beenden",
+    "lc_ov_watch": "Mit Overseer überwachen"
   },
   "dev_projects": {
     "active_goals": "aktive Ziele",

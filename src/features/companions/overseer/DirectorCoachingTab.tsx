@@ -32,6 +32,7 @@ import { ReviewFilteredAction } from './components/ReviewFilteredAction';
 import { StaleSweepButton } from './components/StaleSweepButton';
 import { BatchOutcomeLine } from './components/BatchOutcomeLine';
 import { CampaignReportPanel } from './components/CampaignReportPanel';
+import { WatchedPipelines } from './components/WatchedPipelines';
 import { filterRoster, type RosterFilter } from './rosterFilter';
 import { describeBatchOutcome } from './batchOutcome';
 import { resolveDirectorSurface } from './directorSurface';
@@ -318,6 +319,7 @@ export default function DirectorCoachingTab() {
 
             {/* Director's Lab — campaign report (batch-3 v1) */}
             <CampaignReportPanel verdicts={d.verdicts} playEntrance={playEntrance} />
+            <WatchedPipelines />
           </div>
         )}
         </div>

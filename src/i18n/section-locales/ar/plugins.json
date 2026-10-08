@@ -660,7 +660,14 @@
     "lc2_trail_root": "دورة الحياة",
     "lc2_measure": "القياس",
     "lc2_measuring": "جارٍ القياس",
-    "lc2_measure_failed": "لم يبدأ القياس"
+    "lc2_measure_failed": "لم يبدأ القياس",
+    "lc_ov_off_hint": "يتطلب القياس التلقائي تشغيل ⁨Overseer⁩.",
+    "lc_ov_resend": "إرسال مجددًا إلى ⁨Overseer⁩",
+    "lc_ov_send": "إرسال إلى ⁨Overseer⁩",
+    "lc_ov_sending": "جارٍ الإرسال…",
+    "lc_ov_sent": "تم الإرسال: {filed} عنصرًا جديدًا، و{open} مفتوحًا مسبقًا",
+    "lc_ov_unwatch": "إيقاف المراقبة عبر ⁨Overseer⁩",
+    "lc_ov_watch": "المراقبة عبر ⁨Overseer⁩"
   },
   "dev_projects": {
     "active_goals": "الأهداف النشطة",

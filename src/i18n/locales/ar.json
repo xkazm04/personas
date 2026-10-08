@@ -4811,7 +4811,16 @@
     "batch_outcome_skipped_unchanged": "{count} دون تغيير منذ آخر مراجعة: {names}",
     "portfolio_error_message": "فشلت قراءة Director، لذا هذه ليست قراءة لفريقك. أعد المحاولة عند عودة الخدمة.",
     "portfolio_error_title": "تعذّر تحميل محفظة التدريب",
-    "verdicts_error_message": "تعذّر تحميل سجل التدريب، لذا قد تكون المراجعات أدناه غير مكتملة."
+    "verdicts_error_message": "تعذّر تحميل سجل التدريب، لذا قد تكون المراجعات أدناه غير مكتملة.",
+    "watched_pipelines_desc": "المشاريع المميزة بنجمة لـ⁨Overseer⁩ في صفحة دورة الحياة. افتح أحدها لعرض خطواته.",
+    "watched_pipelines_empty": "لا توجد مسارات قيد المراقبة بعد",
+    "watched_pipelines_empty_hint": "ميّز مشروعًا بنجمة في صفحة دورة حياته لتسليمه إلى ⁨Overseer⁩.",
+    "watched_pipelines_never_measured": "لم يُقَس قط",
+    "watched_pipelines_not_sent": "لم يُرسَل بعد",
+    "watched_pipelines_open": "العناصر المفتوحة: {count}",
+    "watched_pipelines_progress": "{green} من أصل {total} سليمة، و{instructed} موجَّهة بالتعليمات",
+    "watched_pipelines_title": "المسارات المراقبة",
+    "watched_pipelines_unit": "{count} خطوة"
   },
   "empty_states": {
     "credentials_subtitle": "أضف مفاتيح API واتصالات الخدمات حتى يتمكن وكلاؤك من التفاعل مع الأدوات الخارجية.",
@@ -11395,7 +11404,14 @@
       "lc2_trail_root": "دورة الحياة",
       "lc2_measure": "القياس",
       "lc2_measuring": "جارٍ القياس",
-      "lc2_measure_failed": "لم يبدأ القياس"
+      "lc2_measure_failed": "لم يبدأ القياس",
+      "lc_ov_off_hint": "يتطلب القياس التلقائي تشغيل ⁨Overseer⁩.",
+      "lc_ov_resend": "إرسال مجددًا إلى ⁨Overseer⁩",
+      "lc_ov_send": "إرسال إلى ⁨Overseer⁩",
+      "lc_ov_sending": "جارٍ الإرسال…",
+      "lc_ov_sent": "تم الإرسال: {filed} عنصرًا جديدًا، و{open} مفتوحًا مسبقًا",
+      "lc_ov_unwatch": "إيقاف المراقبة عبر ⁨Overseer⁩",
+      "lc_ov_watch": "المراقبة عبر ⁨Overseer⁩"
     },
     "dev_projects": {
       "active_goals": "الأهداف النشطة",

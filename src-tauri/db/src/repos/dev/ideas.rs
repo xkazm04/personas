@@ -366,6 +366,20 @@ pub fn set_idea_goal(
     })
 }
 
+/// Every idea bound to `goal_id`, in any status, oldest first. The Overseer's
+/// read of the items it filed under a goal (`lifecycle::overseer`).
+pub fn list_ideas_by_goal(pool: &DbPool, goal_id: &str) -> Result<Vec<DevIdea>, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::list_ideas_by_goal", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {IDEA_COLUMNS} FROM dev_ideas WHERE goal_id = ?1 ORDER BY created_at, id"
+        ))?;
+        let rows = stmt.query_map(params![goal_id], row_to_idea)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
 /// What [`bind_idea_goal_if_unset`] did with a filer's goal reference.
 #[derive(Debug, Clone)]
 pub enum IdeaGoalBinding {

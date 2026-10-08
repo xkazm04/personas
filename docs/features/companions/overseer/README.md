@@ -91,6 +91,33 @@ The Director persona itself is **system-owned** (`trust_origin = 'system'`):
 it cannot be deleted (backend `Forbidden` guard + UI guard + excluded from
 batch delete).
 
+## Watched pipelines (Lifecycle) — the second star
+
+Besides coaching starred personas, the Overseer can **own a project's development
+pipeline**. On a project's Lifecycle page the operator stars it for him (a per-project
+setting, `lifecycle_overseer_watch:<projectId>`, independent of `personas.starred`) and can
+**Send to Overseer**: he then owns the project's **"All steps green"** goal and one accepted
+backlog item per measurable step that is not green. He has no runtime of his own for this;
+the work runs through the existing backlog (an App Master mandate dispatches it; otherwise it
+waits accepted). See **Lifecycle › Star and Send to Overseer** in
+`docs/features/plugins/dev tools/dev-tools.md` for the full rules.
+
+- **Auto-measure.** While he is switched on (`overseer_enabled`), the `lifecycle_watch`
+  subscription measures one watched project per tick, once per new base tip and at least
+  30 minutes apart. It spends no LLM budget (the Measure runs the project's own gate and
+  test commands). With him switched off it does nothing; stars stay.
+- **Close by observation.** Items and the goal close only when a Measure on the current base
+  tip **observes** the step green; never on a claim.
+- **The Watched pipelines section** on his page
+  (`src/features/companions/overseer/components/WatchedPipelines.tsx`, mounted in
+  `DirectorCoachingTab.tsx`; data from `dev_tools_overseer_watched_pipelines`) lists every
+  watched project by name: goal progress drawn as a quantity (healthy of measurable steps,
+  plus how many are instructed), open items, and when it was last measured. A project not
+  yet sent shows that; a project deleted since it was starred is left out. Clicking a row
+  opens **Teams › Lifecycle** with that project selected (`setActiveProject`, `setSidebarSection('teams')`,
+  `setTeamsTab('lifecycle')`). It refreshes on `lifecycleRevision`. It renders below the campaign
+  report, inside the page's loaded-portfolio branch.
+
 ## How a review works
 
 The Director **is a persona** whose `system_prompt` is the locked
@@ -273,6 +300,14 @@ created in the first place.
   `src/features/agents/sub_executions/detail/*` (Director tab). All UI strings
   live under the consolidated `t.director.*` i18n namespace
   (`src/i18n/locales/en.json`).
+- Overseer goal, watch, send, close: `src-tauri/src/lifecycle/overseer.rs`
+  (tests `overseer_tests.rs`); called from `lifecycle::snapshot` (goal, watched) and
+  `lifecycle::overseer_after_measure`.
+- Auto-measure loop: `src-tauri/src/engine/subscription/lifecycle_watch.rs`
+  (`LifecycleWatchSubscription`, registered in `src-tauri/src/engine/background/lifecycle.rs`).
+- Commands: `dev_tools_lifecycle_set_watch`, `dev_tools_lifecycle_send_to_overseer`,
+  `dev_tools_overseer_watched_pipelines` in `src-tauri/src/commands/infrastructure/lifecycle.rs`.
+- Setting: `LIFECYCLE_OVERSEER_WATCH_PREFIX` in `src-tauri/db/src/settings_keys.rs`.
 
 ## Testing
 

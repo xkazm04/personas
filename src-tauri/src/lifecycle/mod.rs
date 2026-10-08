@@ -16,6 +16,8 @@
 //! - [`health`] - the measured verdict per step (pure);
 //!   [`detect_commands`] - the commands a step runs when none are configured;
 //!   [`slow`] - over-budget and regressing commands filed as backlog items.
+//! - [`overseer`] - the Overseer's "All steps green" goal: watch, send, and
+//!   close by observation after every Measure.
 //!
 //! [`snapshot`] is the one read model; [`current_doc`] and [`append`] are the
 //! read and write doors every writer (commands, Athena ops) goes through.
@@ -28,6 +30,7 @@ pub mod health;
 pub mod install;
 pub mod land;
 pub mod measure;
+pub mod overseer;
 pub mod presets;
 pub mod slow;
 
@@ -231,6 +234,7 @@ pub fn snapshot(pool: &DbPool, project_id: &str) -> Result<LifecycleSnapshot, Ap
         project.main_branch.as_deref(),
         &steps,
     )?;
+    let goal = overseer::goal_view(pool, project_id, &health)?;
 
     Ok(LifecycleSnapshot {
         project_id: project_id.to_string(),
@@ -247,9 +251,8 @@ pub fn snapshot(pool: &DbPool, project_id: &str) -> Result<LifecycleSnapshot, Ap
         install_task_status,
         evidence: items,
         health,
-        // Filled by the Overseer (spark lifecycle-health WP2).
-        goal: None,
-        watched: false,
+        goal,
+        watched: overseer::is_watched(pool, project_id),
         measuring: measure::measuring(project_id),
     })
 }
@@ -443,10 +446,19 @@ pub fn set_step_params(
     Ok(())
 }
 
-/// Called after every Measure, once its rows are durable. The Overseer's
-/// auto-close lives here. WP2 fills this.
+/// Called after every Measure, once its rows are durable: the Overseer closes
+/// what the measure observed green ([`overseer::after_measure`]). A cheap
+/// no-op when the project has no open "All steps green" goal.
 pub fn overseer_after_measure(pool: &DbPool, project_id: &str) -> Result<(), AppError> {
-    let _ = (pool, project_id);
+    let closed = overseer::after_measure(pool, project_id)?;
+    if closed.closed_items > 0 || closed.goal_closed {
+        tracing::info!(
+            project_id,
+            closed_items = closed.closed_items,
+            goal_closed = closed.goal_closed,
+            "lifecycle overseer: closed by observation"
+        );
+    }
     Ok(())
 }
 

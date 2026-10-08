@@ -170,5 +170,14 @@
   "batch_outcome_skipped_unchanged": "{count} inchangés depuis leur dernier examen : {names}",
   "portfolio_error_message": "La lecture Director a échoué : ceci ne reflète donc pas votre effectif. Réessayez une fois le backend revenu.",
   "portfolio_error_title": "Impossible de charger le portefeuille de coaching",
-  "verdicts_error_message": "L'historique de coaching n'a pas pu être chargé : les revues ci-dessous sont peut-être incomplètes."
+  "verdicts_error_message": "L'historique de coaching n'a pas pu être chargé : les revues ci-dessous sont peut-être incomplètes.",
+  "watched_pipelines_desc": "Projets étoilés pour Overseer sur leur page Cycle de vie. Ouvrez-en un pour voir ses étapes.",
+  "watched_pipelines_empty": "Aucun pipeline surveillé pour l'instant",
+  "watched_pipelines_empty_hint": "Étoilez un projet sur sa page Cycle de vie pour le confier à Overseer.",
+  "watched_pipelines_never_measured": "Jamais mesuré",
+  "watched_pipelines_not_sent": "Pas encore envoyé",
+  "watched_pipelines_open": "{count} éléments ouverts",
+  "watched_pipelines_progress": "{green} sur {total} au vert, {instructed} par instruction",
+  "watched_pipelines_title": "Pipelines surveillés",
+  "watched_pipelines_unit": "{count} étapes"
 }

@@ -4811,7 +4811,16 @@
     "batch_outcome_skipped_unchanged": "पिछली समीक्षा के बाद से {count} अपरिवर्तित: {names}",
     "portfolio_error_message": "Director से डेटा नहीं मिल सका, इसलिए यह आपकी टीम की तस्वीर नहीं है। बैकएंड लौटने पर दोबारा कोशिश करें।",
     "portfolio_error_title": "कोचिंग पोर्टफोलियो लोड नहीं हो सका",
-    "verdicts_error_message": "कोचिंग इतिहास लोड नहीं हो सका, इसलिए नीचे की समीक्षाएं अधूरी हो सकती हैं।"
+    "verdicts_error_message": "कोचिंग इतिहास लोड नहीं हो सका, इसलिए नीचे की समीक्षाएं अधूरी हो सकती हैं।",
+    "watched_pipelines_desc": "लाइफसाइकल पेज पर Overseer के लिए स्टार किए गए प्रोजेक्ट। उनके चरण देखने के लिए कोई एक खोलें।",
+    "watched_pipelines_empty": "अभी कोई पाइपलाइन निगरानी में नहीं है",
+    "watched_pipelines_empty_hint": "किसी प्रोजेक्ट को Overseer को सौंपने के लिए उसके लाइफसाइकल पेज पर स्टार करें।",
+    "watched_pipelines_never_measured": "कभी मापा नहीं गया",
+    "watched_pipelines_not_sent": "अभी भेजा नहीं गया",
+    "watched_pipelines_open": "{count} खुले आइटम",
+    "watched_pipelines_progress": "{total} में से {green} हरे, {instructed} निर्देशित",
+    "watched_pipelines_title": "निगरानी वाली पाइपलाइन",
+    "watched_pipelines_unit": "{count} चरण"
   },
   "empty_states": {
     "credentials_subtitle": "API कुंजियाँ और सेवा कनेक्शन जोड़ें ताकि आपके एजेंट बाहरी टूल के साथ इंटरैक्ट कर सकें।",
@@ -11395,7 +11404,14 @@
       "lc2_trail_root": "Lifecycle",
       "lc2_measure": "मापें",
       "lc2_measuring": "माप जारी है",
-      "lc2_measure_failed": "Measure शुरू नहीं हुआ"
+      "lc2_measure_failed": "Measure शुरू नहीं हुआ",
+      "lc_ov_off_hint": "स्वतः माप के लिए Overseer चालू होना चाहिए।",
+      "lc_ov_resend": "Overseer को फिर भेजें",
+      "lc_ov_send": "Overseer को भेजें",
+      "lc_ov_sending": "भेजा जा रहा है…",
+      "lc_ov_sent": "भेजा गया: {filed} नए आइटम, {open} पहले से खुले",
+      "lc_ov_unwatch": "Overseer से निगरानी बंद करें",
+      "lc_ov_watch": "Overseer से निगरानी करें"
     },
     "dev_projects": {
       "active_goals": "सक्रिय goals",

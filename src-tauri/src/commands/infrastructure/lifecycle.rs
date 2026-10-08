@@ -65,14 +65,10 @@ pub async fn dev_tools_lifecycle_install(
 }
 
 // ---------------------------------------------------------------------------
-// Measured health + Overseer (spark lifecycle-health). Contract frozen in WP0;
-// WP1 built measure, step_detail and set_step_params; the WP2 bodies
-// (set_watch, send_to_overseer, watched_pipelines) are still stubs.
+// Measured health + Overseer (spark lifecycle-health). WP1 built measure,
+// step_detail and set_step_params; WP2 the Overseer's watch, send and watched
+// list (`lifecycle::overseer`).
 // ---------------------------------------------------------------------------
-
-fn not_built(what: &str) -> AppError {
-    AppError::Internal(format!("lifecycle: {what} is not built yet"))
-}
 
 /// Run the project's gate/test/coverage commands on the base-branch tip in a
 /// throwaway worktree, timed, appending `dev_lifecycle_runs`. Returns at once;
@@ -125,25 +121,38 @@ pub async fn dev_tools_lifecycle_set_step_params(
 /// Star / unstar the project for the Overseer. Returns the new state.
 #[tauri::command]
 pub async fn dev_tools_lifecycle_set_watch(
+    app: tauri::AppHandle,
     state: State<'_, Arc<AppState>>,
     project_id: String,
     watched: bool,
 ) -> Result<bool, AppError> {
     require_auth(&state).await?;
-    let _ = (project_id, watched);
-    Err(not_built("watch"))
+    let db = state.db.clone();
+    let now = run_blocking("dev_tools_lifecycle_set_watch", move || {
+        lifecycle::overseer::set_watch(&db, &project_id, watched)
+    })
+    .await?;
+    // A settings row has no lifecycle CDC arm; tell the snapshot readers.
+    lifecycle::measure::emitter(app)();
+    Ok(now)
 }
 
 /// Hand the pipeline to the Overseer: open (or reuse) the "All steps green"
 /// goal and file one accepted backlog item per non-green measurable step.
 #[tauri::command]
 pub async fn dev_tools_lifecycle_send_to_overseer(
+    app: tauri::AppHandle,
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<LifecycleSendResult, AppError> {
     require_auth(&state).await?;
-    let _ = project_id;
-    Err(not_built("send to overseer"))
+    let db = state.db.clone();
+    let sent = run_blocking("dev_tools_lifecycle_send_to_overseer", move || {
+        lifecycle::overseer::send(&db, &project_id)
+    })
+    .await?;
+    lifecycle::measure::emitter(app)();
+    Ok(sent)
 }
 
 /// Every Overseer-watched project with its goal progress and last measure.
@@ -152,5 +161,9 @@ pub async fn dev_tools_overseer_watched_pipelines(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<LifecycleWatchedPipeline>, AppError> {
     require_auth(&state).await?;
-    Err(not_built("watched pipelines"))
+    let db = state.db.clone();
+    run_blocking("dev_tools_overseer_watched_pipelines", move || {
+        lifecycle::overseer::watched_pipelines(&db)
+    })
+    .await
 }

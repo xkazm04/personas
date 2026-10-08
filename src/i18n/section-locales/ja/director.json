@@ -170,5 +170,14 @@
   "batch_outcome_skipped_unchanged": "前回のレビュー以降 {count} 件が未変更: {names}",
   "portfolio_error_message": "Director の読み取りに失敗しました。これはロスターの実態ではありません。バックエンドの復旧後に再試行してください。",
   "portfolio_error_title": "コーチングのポートフォリオを読み込めませんでした",
-  "verdicts_error_message": "コーチング履歴を読み込めなかったため、以下のレビューは不完全な可能性があります。"
+  "verdicts_error_message": "コーチング履歴を読み込めなかったため、以下のレビューは不完全な可能性があります。",
+  "watched_pipelines_desc": "ライフサイクルページで Overseer 用にスターを付けたプロジェクトです。開くとステップを確認できます。",
+  "watched_pipelines_empty": "監視中のパイプラインはまだありません",
+  "watched_pipelines_empty_hint": "プロジェクトのライフサイクルページでスターを付けると、Overseer に引き渡せます。",
+  "watched_pipelines_never_measured": "未計測",
+  "watched_pipelines_not_sent": "未送信",
+  "watched_pipelines_open": "未完了 {count} 件",
+  "watched_pipelines_progress": "{total} 件中 {green} 件が正常、{instructed} 件は指示のみ",
+  "watched_pipelines_title": "監視中のパイプライン",
+  "watched_pipelines_unit": "{count} ステップ"
 }

@@ -660,7 +660,14 @@
     "lc2_trail_root": "Životní cyklus",
     "lc2_measure": "Měření",
     "lc2_measuring": "Probíhá měření",
-    "lc2_measure_failed": "Měření se nespustilo"
+    "lc2_measure_failed": "Měření se nespustilo",
+    "lc_ov_off_hint": "Automatické měření vyžaduje zapnutého Overseer.",
+    "lc_ov_resend": "Odeslat znovu Overseer",
+    "lc_ov_send": "Odeslat Overseer",
+    "lc_ov_sending": "Odesílání…",
+    "lc_ov_sent": "Odesláno: {filed} nových položek, {open} již otevřených",
+    "lc_ov_unwatch": "Přestat sledovat přes Overseer",
+    "lc_ov_watch": "Sledovat přes Overseer"
   },
   "dev_projects": {
     "active_goals": "aktivních cílů",

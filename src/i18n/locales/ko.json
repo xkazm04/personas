@@ -4811,7 +4811,16 @@
     "batch_outcome_skipped_unchanged": "마지막 검토 이후 {count}개 변경 없음: {names}",
     "portfolio_error_message": "Director 읽기에 실패했습니다. 이 화면은 실제 로스터가 아닙니다. 백엔드가 복구되면 다시 시도하세요.",
     "portfolio_error_title": "코칭 포트폴리오를 불러오지 못했습니다",
-    "verdicts_error_message": "코칭 기록을 불러오지 못해 아래 검토 목록이 불완전할 수 있습니다."
+    "verdicts_error_message": "코칭 기록을 불러오지 못해 아래 검토 목록이 불완전할 수 있습니다.",
+    "watched_pipelines_desc": "라이프사이클 페이지에서 Overseer용으로 별표를 표시한 프로젝트입니다. 하나를 열면 단계를 볼 수 있습니다.",
+    "watched_pipelines_empty": "아직 감시 중인 파이프라인이 없습니다",
+    "watched_pipelines_empty_hint": "프로젝트의 라이프사이클 페이지에서 별표를 표시하면 Overseer에게 넘겨집니다.",
+    "watched_pipelines_never_measured": "측정된 적 없음",
+    "watched_pipelines_not_sent": "아직 전송 안 됨",
+    "watched_pipelines_open": "미해결 항목 {count}개",
+    "watched_pipelines_progress": "{total}개 중 {green}개 정상, {instructed}개 지시됨",
+    "watched_pipelines_title": "감시 중인 파이프라인",
+    "watched_pipelines_unit": "{count}단계"
   },
   "empty_states": {
     "credentials_subtitle": "에이전트가 외부 도구와 상호작용할 수 있도록 API 키와 서비스 연결을 추가하세요.",
@@ -11395,7 +11404,14 @@
       "lc2_trail_root": "Lifecycle",
       "lc2_measure": "측정",
       "lc2_measuring": "측정 중",
-      "lc2_measure_failed": "Measure를 시작하지 못했습니다"
+      "lc2_measure_failed": "Measure를 시작하지 못했습니다",
+      "lc_ov_off_hint": "자동 측정을 쓰려면 Overseer를 켜야 합니다.",
+      "lc_ov_resend": "Overseer에 다시 보내기",
+      "lc_ov_send": "Overseer에 보내기",
+      "lc_ov_sending": "보내는 중…",
+      "lc_ov_sent": "전송됨: 새 항목 {filed}개, 이미 열린 항목 {open}개",
+      "lc_ov_unwatch": "Overseer 감시 중지",
+      "lc_ov_watch": "Overseer로 감시"
     },
     "dev_projects": {
       "active_goals": "활성 목표",

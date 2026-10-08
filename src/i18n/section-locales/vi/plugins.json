@@ -660,7 +660,14 @@
     "lc2_trail_root": "Vòng đời",
     "lc2_measure": "Đo",
     "lc2_measuring": "Đang đo",
-    "lc2_measure_failed": "Không thể bắt đầu Measure"
+    "lc2_measure_failed": "Không thể bắt đầu Measure",
+    "lc_ov_off_hint": "Tự động đo cần bật Overseer.",
+    "lc_ov_resend": "Gửi lại cho Overseer",
+    "lc_ov_send": "Gửi cho Overseer",
+    "lc_ov_sending": "Đang gửi…",
+    "lc_ov_sent": "Đã gửi: {filed} mục mới, {open} mục đã mở sẵn",
+    "lc_ov_unwatch": "Ngừng theo dõi bằng Overseer",
+    "lc_ov_watch": "Theo dõi bằng Overseer"
   },
   "dev_projects": {
     "active_goals": "mục tiêu đang hoạt động",

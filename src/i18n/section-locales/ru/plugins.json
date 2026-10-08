@@ -660,7 +660,14 @@
     "lc2_trail_root": "Жизненный цикл",
     "lc2_measure": "Измерить",
     "lc2_measuring": "Идёт измерение",
-    "lc2_measure_failed": "Measure не запустился"
+    "lc2_measure_failed": "Measure не запустился",
+    "lc_ov_off_hint": "Для автоизмерения нужно включить Overseer.",
+    "lc_ov_resend": "Отправить Overseer повторно",
+    "lc_ov_send": "Отправить Overseer",
+    "lc_ov_sending": "Отправка…",
+    "lc_ov_sent": "Отправлено: новых задач {filed}, уже открытых {open}",
+    "lc_ov_unwatch": "Прекратить отслеживание через Overseer",
+    "lc_ov_watch": "Отслеживать через Overseer"
   },
   "dev_projects": {
     "active_goals": "активных целей",

@@ -660,7 +660,14 @@
     "lc2_trail_root": "Lifecycle",
     "lc2_measure": "計測",
     "lc2_measuring": "計測中",
-    "lc2_measure_failed": "Measure を開始できませんでした"
+    "lc2_measure_failed": "Measure を開始できませんでした",
+    "lc_ov_off_hint": "自動計測には Overseer をオンにする必要があります。",
+    "lc_ov_resend": "Overseer に再送信",
+    "lc_ov_send": "Overseer に送信",
+    "lc_ov_sending": "送信中…",
+    "lc_ov_sent": "送信しました: 新規 {filed} 件、既に未完了 {open} 件",
+    "lc_ov_unwatch": "Overseer による監視を停止",
+    "lc_ov_watch": "Overseer で監視"
   },
   "dev_projects": {
     "active_goals": "アクティブなゴール",

@@ -170,5 +170,14 @@
   "batch_outcome_skipped_unchanged": "শেষ পর্যালোচনার পর {count} অপরিবর্তিত: {names}",
   "portfolio_error_message": "Director পড়া যায়নি, তাই এটি আপনার দলের প্রকৃত চিত্র নয়। ব্যাকএন্ড ফিরলে আবার চেষ্টা করুন।",
   "portfolio_error_title": "কোচিং পোর্টফোলিও লোড করা যায়নি",
-  "verdicts_error_message": "কোচিং ইতিহাস লোড করা যায়নি, তাই নিচের পর্যালোচনাগুলি অসম্পূর্ণ হতে পারে।"
+  "verdicts_error_message": "কোচিং ইতিহাস লোড করা যায়নি, তাই নিচের পর্যালোচনাগুলি অসম্পূর্ণ হতে পারে।",
+  "watched_pipelines_desc": "লাইফসাইকেল পেজে Overseer-এর জন্য স্টার দেওয়া প্রকল্প। ধাপগুলো দেখতে একটি খুলুন।",
+  "watched_pipelines_empty": "এখনও কোনো পাইপলাইন পর্যবেক্ষণে নেই",
+  "watched_pipelines_empty_hint": "Overseer-কে দিতে লাইফসাইকেল পেজে একটি প্রকল্পে স্টার দিন।",
+  "watched_pipelines_never_measured": "কখনও পরিমাপ হয়নি",
+  "watched_pipelines_not_sent": "এখনও পাঠানো হয়নি",
+  "watched_pipelines_open": "{count}টি উন্মুক্ত আইটেম",
+  "watched_pipelines_progress": "{total}টির মধ্যে {green}টি সুস্থ, {instructed}টি নির্দেশিত",
+  "watched_pipelines_title": "পর্যবেক্ষিত পাইপলাইন",
+  "watched_pipelines_unit": "{count}টি ধাপ"
 }
