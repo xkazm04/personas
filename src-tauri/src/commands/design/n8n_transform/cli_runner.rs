@@ -707,6 +707,46 @@ pub async fn run_claude_prompt_text(
     Ok((text, session_id))
 }
 
+/// Why a streamed CLI read was abandoned.
+#[derive(Debug, PartialEq, Eq)]
+enum StreamStall {
+    /// No line arrived within the lease.
+    Silent,
+    /// The call kept producing but ran past the hard ceiling.
+    Ceiling,
+}
+
+/// Longest silence tolerated before a streamed call is declared stuck.
+const MAX_SILENCE_LEASE_SECS: u64 = 300;
+/// A producing call may run this many times the caller's `timeout_secs`.
+const LEASE_CEILING_FACTOR: u32 = 3;
+
+fn stream_lease(timeout_secs: u64) -> std::time::Duration {
+    std::time::Duration::from_secs(timeout_secs.min(MAX_SILENCE_LEASE_SECS))
+}
+
+fn lease_ceiling(timeout_secs: u64) -> std::time::Duration {
+    std::time::Duration::from_secs(timeout_secs) * LEASE_CEILING_FACTOR
+}
+
+/// Next line, bounded by time since the last one rather than by total time.
+/// Read errors end the stream, as the loop this replaced did.
+async fn next_line_within<R>(
+    lines: &mut tokio::io::Lines<R>,
+    lease: std::time::Duration,
+    ceiling_at: tokio::time::Instant,
+) -> Result<Option<String>, StreamStall>
+where
+    R: tokio::io::AsyncBufRead + Unpin,
+{
+    let deadline = (tokio::time::Instant::now() + lease).min(ceiling_at);
+    match tokio::time::timeout_at(deadline, lines.next_line()).await {
+        Ok(read) => Ok(read.ok().flatten()),
+        Err(_) if tokio::time::Instant::now() >= ceiling_at => Err(StreamStall::Ceiling),
+        Err(_) => Err(StreamStall::Silent),
+    }
+}
+
 /// Core Claude CLI process spawning with stdout streaming, timeout, line emission,
 /// and optional section-by-section accumulation.
 ///
@@ -806,9 +846,17 @@ pub async fn run_claude_prompt_text_inner(
     let mut last_emitted_line: Option<String> = None;
     let mut captured_session_id: Option<String> = None;
 
-    let timeout_duration = std::time::Duration::from_secs(timeout_secs);
-    let stream_result = tokio::time::timeout(timeout_duration, async {
-        while let Ok(Some(line)) = reader.next_line().await {
+    // `timeout_secs` is a silence lease, not a wall clock: a call that keeps
+    // producing lines is healthy however long it takes, up to a hard ceiling.
+    let lease = stream_lease(timeout_secs);
+    let ceiling_at = tokio::time::Instant::now() + lease_ceiling(timeout_secs);
+    let stream_result = async {
+        loop {
+            let line = match next_line_within(&mut reader, lease, ceiling_at).await {
+                Ok(Some(line)) => line,
+                Ok(None) => break,
+                Err(stall) => return Err(stall),
+            };
             if line.trim().is_empty() {
                 continue;
             }
@@ -860,13 +908,23 @@ pub async fn run_claude_prompt_text_inner(
                 }
             }
         }
-    })
+        Ok(())
+    }
     .await;
 
-    if stream_result.is_err() {
+    if let Err(stall) = stream_result {
         let _ = child.kill().await;
         let _ = child.wait().await;
-        return Err(format!("Claude CLI timed out after {timeout_secs} seconds"));
+        return Err(match stall {
+            StreamStall::Silent => format!(
+                "Claude CLI timed out after {} seconds without output",
+                lease.as_secs()
+            ),
+            StreamStall::Ceiling => format!(
+                "Claude CLI timed out after {} seconds (hard ceiling)",
+                lease_ceiling(timeout_secs).as_secs()
+            ),
+        });
     }
 
     // Flush any remaining buffered section
@@ -1099,4 +1157,87 @@ pub fn parse_persona_output(
         output,
         workflow_name,
     ))
+}
+
+#[cfg(test)]
+mod lease_tests {
+    use super::*;
+    use std::time::Duration;
+    use tokio::io::{duplex, AsyncWriteExt};
+
+    /// Drive the read loop the way `run_claude_prompt_text_inner` does and
+    /// return how many lines arrived and why it stopped.
+    async fn drain(
+        gap: Duration,
+        lines: usize,
+        lease: Duration,
+        ceiling: Duration,
+        stall_after_lines: bool,
+    ) -> (usize, Option<StreamStall>) {
+        let (mut tx, rx) = duplex(1024);
+        tokio::spawn(async move {
+            for _ in 0..lines {
+                tokio::time::sleep(gap).await;
+                if tx.write_all(b"line\n").await.is_err() {
+                    return;
+                }
+            }
+            if stall_after_lines {
+                tokio::time::sleep(Duration::from_secs(30)).await;
+            }
+        });
+        let mut reader = BufReader::new(rx).lines();
+        let ceiling_at = tokio::time::Instant::now() + ceiling;
+        let mut got = 0;
+        loop {
+            match next_line_within(&mut reader, lease, ceiling_at).await {
+                Ok(Some(_)) => got += 1,
+                Ok(None) => return (got, None),
+                Err(stall) => return (got, Some(stall)),
+            }
+        }
+    }
+
+    const GAP: Duration = Duration::from_millis(60);
+    const LEASE: Duration = Duration::from_millis(200);
+
+    // Arm A: ceiling == lease reproduces the absolute cap this replaced.
+    // Arm B: the shipped ceiling factor. Same producer, one variable.
+    #[tokio::test]
+    async fn slow_but_producing_call_dies_under_absolute_cap_and_lives_under_lease() {
+        let a = drain(GAP, 8, LEASE, LEASE, false).await;
+        assert_eq!(
+            a.1,
+            Some(StreamStall::Ceiling),
+            "arm A kills a healthy stream"
+        );
+        assert!(a.0 < 8);
+        let b = drain(GAP, 8, LEASE, LEASE * LEASE_CEILING_FACTOR, false).await;
+        assert_eq!(b, (8, None), "arm B reads the whole stream");
+    }
+
+    // Floor: the failure the cap exists for must still be caught by both arms.
+    #[tokio::test]
+    async fn silent_call_is_still_killed_by_the_lease() {
+        let started = tokio::time::Instant::now();
+        let b = drain(GAP, 3, LEASE, LEASE * LEASE_CEILING_FACTOR, true).await;
+        assert_eq!(b, (3, Some(StreamStall::Silent)));
+        assert!(
+            started.elapsed() < LEASE * LEASE_CEILING_FACTOR,
+            "dead call must not wait for the ceiling"
+        );
+    }
+
+    #[tokio::test]
+    async fn endless_producer_is_stopped_by_the_ceiling() {
+        let b = drain(GAP, 10_000, LEASE, LEASE * LEASE_CEILING_FACTOR, false).await;
+        assert_eq!(b.1, Some(StreamStall::Ceiling));
+    }
+
+    #[test]
+    fn lease_is_capped_but_ceiling_scales_with_the_caller() {
+        assert_eq!(stream_lease(120), Duration::from_secs(120));
+        assert_eq!(stream_lease(600), Duration::from_secs(300));
+        assert_eq!(lease_ceiling(600), Duration::from_secs(1800));
+    }
 }
