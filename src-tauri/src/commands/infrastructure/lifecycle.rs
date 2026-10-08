@@ -10,7 +10,10 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::commands::blocking::run_blocking;
-use crate::db::models::{LifecyclePreset, LifecycleSnapshot};
+use crate::db::models::{
+    LifecycleMeasureStarted, LifecyclePreset, LifecycleSendResult, LifecycleSnapshot,
+    LifecycleStepDetail, LifecycleStepParams, LifecycleWatchedPipeline,
+};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::lifecycle;
@@ -59,4 +62,86 @@ pub async fn dev_tools_lifecycle_install(
 ) -> Result<Option<String>, AppError> {
     require_auth(&state).await?;
     lifecycle::install::dispatch_install(state.inner(), &app, &project_id).await
+}
+
+// ---------------------------------------------------------------------------
+// Measured health + Overseer (spark lifecycle-health). Contract frozen in WP0;
+// bodies land in WP1 (measure, step_detail, set_step_params) and WP2
+// (set_watch, send_to_overseer, watched_pipelines).
+// ---------------------------------------------------------------------------
+
+fn not_built(what: &str) -> AppError {
+    AppError::Internal(format!("lifecycle: {what} is not built yet"))
+}
+
+/// Run the project's gate/test/coverage commands on the base-branch tip in a
+/// throwaway worktree, timed, appending `dev_lifecycle_runs`. Returns at once;
+/// rows land via `DEV_TOOLS_LIFECYCLE_CHANGED`.
+#[tauri::command]
+pub async fn dev_tools_lifecycle_measure(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<LifecycleMeasureStarted, AppError> {
+    require_auth(&state).await?;
+    let _ = project_id;
+    Err(not_built("measure"))
+}
+
+/// Layer-2 data for one step: run history (newest first, <= 30) and doc rows.
+#[tauri::command]
+pub async fn dev_tools_lifecycle_step_detail(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    step_id: String,
+) -> Result<LifecycleStepDetail, AppError> {
+    require_auth(&state).await?;
+    let _ = (project_id, step_id);
+    Err(not_built("step detail"))
+}
+
+/// Replace one step's params (commands, thresholds); appends a version
+/// authored `operator`.
+#[tauri::command]
+pub async fn dev_tools_lifecycle_set_step_params(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    step_id: String,
+    params: LifecycleStepParams,
+) -> Result<LifecycleSnapshot, AppError> {
+    require_auth(&state).await?;
+    let _ = (project_id, step_id, params);
+    Err(not_built("step params"))
+}
+
+/// Star / unstar the project for the Overseer. Returns the new state.
+#[tauri::command]
+pub async fn dev_tools_lifecycle_set_watch(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    watched: bool,
+) -> Result<bool, AppError> {
+    require_auth(&state).await?;
+    let _ = (project_id, watched);
+    Err(not_built("watch"))
+}
+
+/// Hand the pipeline to the Overseer: open (or reuse) the "All steps green"
+/// goal and file one accepted backlog item per non-green measurable step.
+#[tauri::command]
+pub async fn dev_tools_lifecycle_send_to_overseer(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<LifecycleSendResult, AppError> {
+    require_auth(&state).await?;
+    let _ = project_id;
+    Err(not_built("send to overseer"))
+}
+
+/// Every Overseer-watched project with its goal progress and last measure.
+#[tauri::command]
+pub async fn dev_tools_overseer_watched_pipelines(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<LifecycleWatchedPipeline>, AppError> {
+    require_auth(&state).await?;
+    Err(not_built("watched pipelines"))
 }

@@ -189,6 +189,12 @@ pub(super) fn shard(
         commands::infrastructure::lifecycle::dev_tools_get_lifecycle,
         commands::infrastructure::lifecycle::dev_tools_set_lifecycle_preset,
         commands::infrastructure::lifecycle::dev_tools_lifecycle_install,
+        commands::infrastructure::lifecycle::dev_tools_lifecycle_measure,
+        commands::infrastructure::lifecycle::dev_tools_lifecycle_step_detail,
+        commands::infrastructure::lifecycle::dev_tools_lifecycle_set_step_params,
+        commands::infrastructure::lifecycle::dev_tools_lifecycle_set_watch,
+        commands::infrastructure::lifecycle::dev_tools_lifecycle_send_to_overseer,
+        commands::infrastructure::lifecycle::dev_tools_overseer_watched_pipelines,
         // Dev Tools -- Workspaces (a named grouping of dev projects)
         commands::infrastructure::dev_workspaces::dev_tools_workspace_list,
         commands::infrastructure::dev_workspaces::dev_tools_workspace_create,

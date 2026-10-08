@@ -11,6 +11,7 @@ import type { LifecycleStepView } from '@/lib/bindings/LifecycleStepView';
 const PARAMS = {
   lint: null, codeQuality: null, docsRequired: null, landMode: null,
   prBase: null, automergeEnabled: null, automergeTarget: null,
+  commands: null, coverageGreenPct: null, docsCleanPct: null, doneRatePct: null,
 };
 
 export function stepView(
@@ -38,6 +39,10 @@ export function soloV0(overrides: Partial<LifecycleSnapshot> = {}): LifecycleSna
     installTaskId: null,
     installTaskStatus: null,
     evidence: [],
+    health: [],
+    goal: null,
+    watched: false,
+    measuring: false,
     steps: [
       stepView('frame', 'before', [['app', 'live']]),
       stepView('recall', 'before', [['claude_md', 'detected']]),

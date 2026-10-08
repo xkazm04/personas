@@ -172,6 +172,19 @@ pub struct LifecycleStepParams {
     pub automerge_enabled: Option<bool>,
     #[serde(default)]
     pub automerge_target: Option<String>,
+    /// `gate` / `tests`: the commands Measure runs. `null` = auto-detect from
+    /// the repo's manifests (package.json scripts, Cargo.toml).
+    #[serde(default)]
+    pub commands: Option<Vec<LifecycleGateCommand>>,
+    /// `tests`: coverage at or above this is green (default 70; amber down to 50).
+    #[serde(default)]
+    pub coverage_green_pct: Option<u32>,
+    /// `docs`: share of verifiable docs that must be clean (default 90).
+    #[serde(default)]
+    pub docs_clean_pct: Option<u32>,
+    /// Evidence steps: done-rate at or above this is green (default 80).
+    #[serde(default)]
+    pub done_rate_pct: Option<u32>,
 }
 
 /// One step of the practice. Built-in ids: `frame, recall, isolate, link, sync,
@@ -261,7 +274,8 @@ pub struct LifecycleEvidenceItem {
 }
 
 /// Everything the journey and Athena read about a project's lifecycle.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+/// Not `Eq`: `health` carries `f64` metrics.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct LifecycleSnapshot {
@@ -279,4 +293,192 @@ pub struct LifecycleSnapshot {
     pub install_task_status: Option<String>,
     /// Newest first, at most 20.
     pub evidence: Vec<LifecycleEvidenceItem>,
+    /// Measured health, one entry per step, in step order.
+    pub health: Vec<LifecycleStepHealthView>,
+    /// The Overseer's "All steps green" goal; `null` when none was ever sent.
+    pub goal: Option<LifecycleGoalView>,
+    /// The project is starred for the Overseer (auto-measured per base tip).
+    pub watched: bool,
+    /// A Measure is running for this project right now.
+    pub measuring: bool,
+}
+
+// ---------------------------------------------------------------------------
+// Measured health (spark lifecycle-health, 2026-10-08)
+//
+// Green means MEASURED AND PASSING, never "the hook file exists". A step with
+// no sample is `unmeasured` (blocks the goal) unless its type is unobservable
+// by design (`instructed`: frame, recall), which is excluded from the goal.
+// A metric with no sample is `value: null, samples: 0` - never `0.0`.
+// ---------------------------------------------------------------------------
+
+/// One step's measured verdict.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum LifecycleHealth {
+    Green,
+    Amber,
+    Red,
+    /// Measurable, but no sample (or below the sample floor). Never green.
+    Unmeasured,
+    /// Unobservable by design (frame, recall); excluded from the goal.
+    Instructed,
+    /// The last measurement is on an older base tip.
+    Stale,
+}
+
+/// What a gate command is, which picks its default time budget.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum LifecycleGateKind {
+    Lint,
+    Typecheck,
+    Test,
+    Check,
+    Coverage,
+    Other,
+}
+
+/// One command's result. `did_not_run` and `timeout` are never `failed`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum LifecycleRunOutcome {
+    Passed,
+    Failed,
+    DidNotRun,
+    Timeout,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum LifecycleMetricKey {
+    MedianMs,
+    PassRate,
+    CoveragePct,
+    DocsCleanPct,
+    DoneRate,
+}
+
+/// A number drawn beside a step. `value` is `null` when `samples` is 0.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LifecycleMetric {
+    pub key: LifecycleMetricKey,
+    pub value: Option<f64>,
+    pub samples: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LifecycleStepHealthView {
+    pub step_id: String,
+    pub health: LifecycleHealth,
+    /// Why, in one line (e.g. "no coverage command", "tsc 74s over 60s budget").
+    pub reason: Option<String>,
+    pub metrics: Vec<LifecycleMetric>,
+    pub measured_at: Option<String>,
+    pub head_sha: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LifecycleGoalView {
+    pub goal_id: String,
+    pub measurable_total: u32,
+    pub measurable_green: u32,
+    pub instructed: u32,
+    pub open_items: u32,
+}
+
+/// A command Measure runs. `id` is a stable slug (dedup keys and history key on it).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LifecycleGateCommand {
+    pub id: String,
+    pub command: String,
+    pub kind: LifecycleGateKind,
+    /// Overrides the kind's default budget.
+    #[serde(default)]
+    pub budget_ms: Option<u32>,
+}
+
+/// One `dev_lifecycle_runs` row (append-only). `startedAt` = child spawn,
+/// `finishedAt` = child exit; `durationMs` is the wall clock between them, so
+/// worktree setup and dependency linking are excluded.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LifecycleRun {
+    pub id: String,
+    pub project_id: String,
+    pub measure_id: String,
+    pub command_id: String,
+    pub command: String,
+    pub kind: LifecycleGateKind,
+    pub outcome: LifecycleRunOutcome,
+    pub exit_code: Option<i32>,
+    pub duration_ms: u32,
+    pub value_pct: Option<f64>,
+    pub first_error: Option<String>,
+    pub head_sha: String,
+    pub started_at: String,
+    pub finished_at: String,
+}
+
+/// One doc's rot status (from `doc_status`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LifecycleDocRow {
+    pub doc_path: String,
+    /// `broken` | `stale` | `unverifiable` | `clean`
+    pub status: String,
+    pub changed_sources: Vec<String>,
+    pub broken_refs: Vec<String>,
+    pub scanned_at: Option<String>,
+}
+
+/// Layer-2 data for one step: its run history (newest first, at most 30) and,
+/// for `docs`, the per-doc rot rows.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LifecycleStepDetail {
+    pub step_id: String,
+    pub runs: Vec<LifecycleRun>,
+    pub docs: Vec<LifecycleDocRow>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LifecycleMeasureStarted {
+    pub measure_id: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LifecycleSendResult {
+    pub goal_id: String,
+    pub filed: u32,
+    pub already_open: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LifecycleWatchedPipeline {
+    pub project_id: String,
+    pub project_name: String,
+    pub goal: Option<LifecycleGoalView>,
+    pub last_measured_at: Option<String>,
 }

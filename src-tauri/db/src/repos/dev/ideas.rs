@@ -2647,6 +2647,7 @@ mod contract_tests {
             BacklogSource::HeadlessBenchSeed,
             BacklogSource::StaticScan,
             BacklogSource::MemoryReflection,
+            BacklogSource::Lifecycle,
             BacklogSource::Manual,
         ];
         for source in &all {
@@ -2669,6 +2670,7 @@ mod contract_tests {
                 | BacklogSource::HeadlessBenchSeed
                 | BacklogSource::StaticScan
                 | BacklogSource::MemoryReflection
+                | BacklogSource::Lifecycle
                 | BacklogSource::Manual => {}
             }
         }

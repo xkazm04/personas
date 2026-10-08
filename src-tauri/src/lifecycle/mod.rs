@@ -226,6 +226,11 @@ pub fn snapshot(pool: &DbPool, project_id: &str) -> Result<LifecycleSnapshot, Ap
         install_task_id,
         install_task_status,
         evidence: items,
+        // Filled by the measurement engine (spark lifecycle-health WP1/WP2).
+        health: Vec::new(),
+        goal: None,
+        watched: false,
+        measuring: false,
     })
 }
 
