@@ -21,18 +21,34 @@ import { useProgressView } from '../canvasHost';
 import { useMenuKey } from '../rowCanvas';
 import type { ProgressRow } from '../useProgressModel';
 
-export function FilmstripCanvas({ leftWidth }: { leftWidth: number }) {
+/** `onOpenProject` turns each project name into the door to that project's
+ *  milestones - the layered views use the filmstrip as their layer 0. */
+export function FilmstripCanvas({
+  leftWidth,
+  onOpenProject,
+}: {
+  leftWidth: number;
+  onOpenProject?: (projectId: string) => void;
+}) {
   const { model } = useProgressView();
   return (
     <>
       {model.rows.map((row) => (
-        <FilmstripRow key={row.projectId} row={row} leftWidth={leftWidth} />
+        <FilmstripRow key={row.projectId} row={row} leftWidth={leftWidth} onOpenProject={onOpenProject} />
       ))}
     </>
   );
 }
 
-function FilmstripRow({ row, leftWidth }: { row: ProgressRow; leftWidth: number }) {
+function FilmstripRow({
+  row,
+  leftWidth,
+  onOpenProject,
+}: {
+  row: ProgressRow;
+  leftWidth: number;
+  onOpenProject?: (projectId: string) => void;
+}) {
   const { model, canvas, dl, createGoalIn } = useProgressView();
   const { onKeyDown, onContextMenu } = useMenuKey((e) =>
     canvas.openMenu(e, { kind: 'project', projectId: row.projectId, name: row.name }),
@@ -66,7 +82,18 @@ function FilmstripRow({ row, leftWidth }: { row: ProgressRow; leftWidth: number 
         style={{ width: leftWidth }}
       >
         <Tooltip content={row.name}>
-          <span className="typo-body text-foreground truncate">{row.name}</span>
+          {onOpenProject ? (
+            <button
+              type="button"
+              data-testid={`progress-open-project-${row.projectId}`}
+              onClick={() => onOpenProject(row.projectId)}
+              className="typo-body text-foreground truncate text-left rounded-interactive hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              {row.name}
+            </button>
+          ) : (
+            <span className="typo-body text-foreground truncate">{row.name}</span>
+          )}
         </Tooltip>
       </div>
 

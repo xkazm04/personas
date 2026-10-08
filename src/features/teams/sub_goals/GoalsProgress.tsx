@@ -39,6 +39,10 @@ import { ProgressViewProvider, useCanvasHost } from './progress/canvasHost';
 import { useProgressModel, type DoneFilter } from './progress/useProgressModel';
 import { FilmstripCanvas } from './progress/variants/FilmstripCanvas';
 import { LedgerCanvas } from './progress/variants/LedgerCanvas';
+import { ChronologyHeader } from './progress/ChronologyHeader';
+import { TrackLayers } from './progress/layers/track/TrackLayers';
+import { CardsLayers } from './progress/layers/cards/CardsLayers';
+import { BandsLayers } from './progress/layers/bands/BandsLayers';
 
 const LEFT_W = 200;
 
@@ -46,7 +50,7 @@ const LEFT_W = 200;
  *  be enumerated or reviewed; a named constant can be grepped. */
 const SHOW_VARIANT_SWITCHER = import.meta.env.DEV;
 
-type ProgressVariant = 'filmstrip' | 'ledger';
+type ProgressVariant = 'filmstrip' | 'ledger' | 'track' | 'cards' | 'bands';
 
 /**
  * The switcher really does select among mutually exclusive regions, so it
@@ -65,6 +69,12 @@ const VARIANTS: Array<{ id: ProgressVariant; label: string }> = [
   // to keep green.
   { id: 'filmstrip', label: 'Filmstrip' },
   { id: 'ledger', label: 'Ledger' },
+  // Three-layer prototypes (spark goals-layers, 2026-10-08): the filmstrip as
+  // L0, one project's milestones as L1, a milestone's brief note + goals as
+  // L2. They differ only in how L1 is drawn and how the layers hand over.
+  { id: 'track', label: 'Track' },
+  { id: 'cards', label: 'Cards' },
+  { id: 'bands', label: 'Bands' },
 ];
 
 export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } = {}) {
@@ -150,6 +160,9 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
           <div {...segmentedTabPanelProps(VARIANT_TABS_ID, variant)} role="tabpanel">
             {variant === 'filmstrip' && <FilmstripCanvas leftWidth={LEFT_W} />}
             {variant === 'ledger' && <LedgerCanvas />}
+            {variant === 'track' && <TrackLayers leftWidth={LEFT_W} />}
+            {variant === 'cards' && <CardsLayers leftWidth={LEFT_W} />}
+            {variant === 'bands' && <BandsLayers leftWidth={LEFT_W} />}
           </div>
         </ProgressViewProvider>
 
@@ -166,32 +179,6 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
       </div>
 
       {drawer}
-    </div>
-  );
-}
-
-/** The filmstrip's reading direction. Only that layout orders by date, so only
- *  that layout gets the past / today / future rule above its rows. */
-function ChronologyHeader({ leftWidth, label }: { leftWidth: number; label: string }) {
-  const { t } = useTranslation();
-  const dl = t.plugins.dev_lifecycle;
-  return (
-    <div className="flex items-center border-b border-primary/10 bg-secondary/20">
-      <div className="shrink-0 px-3 py-2" style={{ width: leftWidth }}>
-        <span className="typo-caption text-foreground tabular-nums">{label}</span>
-      </div>
-      <div className="flex-1 flex items-center gap-2 px-1 py-2">
-        <span className="typo-caption text-foreground uppercase tracking-wider">{dl.progress_past}</span>
-        <span className="h-px flex-1 bg-gradient-to-r from-primary/20 to-violet-400/40" />
-        <span className="px-1.5 py-px rounded-full border border-violet-500/30 bg-violet-500/10 typo-caption text-violet-300">
-          {dl.progress_today}
-        </span>
-        <span className="h-px flex-1 bg-gradient-to-r from-violet-400/40 to-primary/20" />
-        <span className="typo-caption text-foreground uppercase tracking-wider">{dl.progress_future}</span>
-      </div>
-      <div className="shrink-0 px-3 py-2">
-        <span className="typo-caption text-foreground uppercase tracking-wider">{dl.progress_no_date}</span>
-      </div>
     </div>
   );
 }
