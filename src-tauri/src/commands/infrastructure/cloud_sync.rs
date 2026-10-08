@@ -99,9 +99,11 @@ pub struct CloudPairingStart {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CloudPairingOrigin {
-    /// The effective origin, normalised (`https://host[:port]`, no slash).
+    /// The Pairing address, normalised (`https://host[:port]`, no slash), or
+    /// empty while none is set.
     pub origin: String,
-    /// Whether the operator set it (false: the built-in default).
+    /// Whether a Pairing address is set. False means none is set and pairing
+    /// is off (there is no built-in default since 6edb84e889).
     pub custom: bool,
 }
 
