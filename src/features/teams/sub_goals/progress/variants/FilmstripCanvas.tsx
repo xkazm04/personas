@@ -1,17 +1,18 @@
 /**
- * VARIANT 1 - FILMSTRIP. THESIS: chronology stays the spine; a milestone is a
- * labelled drop zone in the row's own margin and a bound goal flies a flag.
+ * THE FILMSTRIP - layer 0 of the Cards view. Chronology stays the spine; a
+ * milestone is a labelled drop zone in the row's own margin and a bound goal
+ * flies a flag.
  *
- * This is the CURRENT view, kept as the baseline so the other two are compared
- * against the real thing rather than against a description of it. What is new
- * is the second line of each row: the project's milestones as chips, each a
- * drop target, plus the unassigned lane and the button that creates a cut. The
- * frames themselves keep their date order, so the one thing this layout is good
- * at - seeing a whole portfolio's timing at once - is not traded away for scope.
+ * It was its own Progress tab until 2026-10-08; now it is the portfolio layer
+ * the Cards view opens on, and `onOpenProject` turns each project name into
+ * the door to that project's milestone cards. Each row is the project's goals
+ * as frames in date order, then its milestones as chips (each a drop target),
+ * the unassigned lane and the button that creates a cut, so seeing a whole
+ * portfolio's timing at once is not traded away for scope.
  *
  * The cost it accepts: WHICH cut a goal belongs to is not legible at a glance.
  * The flag says "committed", its tone says "planned / cut / shipped", and the
- * name needs the menu. That is the honest limit of a 20px frame.
+ * name needs the menu or layer 1. That is the honest limit of a 20px frame.
  */
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Button } from '@/features/shared/components/buttons';

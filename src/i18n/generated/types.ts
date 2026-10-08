@@ -17539,7 +17539,6 @@ export type Translations = {
       progress_empty_title: string;
       progress_empty_sub: string;
       layers_open_project: string;
-      layers_back: string;
       layers_portfolio: string;
       layers_projects: string;
       layers_milestones_of: string;
@@ -17572,8 +17571,6 @@ export type Translations = {
       layers_athena_needs_brief: string;
       layers_move_to: string;
       layers_move_status: string;
-      layers_accept: string;
-      layers_reject: string;
       layers_handoff: string;
       layers_handoff_stop: string;
       layers_handoff_no_team: string;
@@ -17582,9 +17579,6 @@ export type Translations = {
       layers_ship_gated: string;
       layers_close: string;
       layers_loading: string;
-      layers_now: string;
-      layers_trail_aria: string;
-      layers_open_milestone: string;
       layers_open_goal: string;
       goal_starters_label: string;
       goal_starter_created: string;
