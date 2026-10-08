@@ -223,10 +223,15 @@ export function pendingReviews(d, personaId) {
                where persona_id = ? and status = 'pending' order by created_at`, [personaId]);
 }
 
-/** Operator lines in the master's in-app channel since an ISO instant. */
-export function operatorChannelSince(d, personaId, since, limit = 5) {
+/**
+ * Operator lines in the master's in-app channel since an ISO instant. A line from the phone
+ * (the signed channel_say verb) may be up to SAY_MAX_CHARS long, so the master reads it whole,
+ * and enough of them that a burst of says between two wakes does not push the oldest out of view.
+ */
+export const SAY_MAX_CHARS = 2000;
+export function operatorChannelSince(d, personaId, since, limit = 12) {
   if (!personaId) return [];
-  return q(d, `select id, substr(body, 1, 600) body, created_at from team_channel_messages
+  return q(d, `select id, substr(body, 1, ${SAY_MAX_CHARS}) body, created_at from team_channel_messages
                where persona_id = ? and author_kind = 'user'
                  and datetime(substr(created_at, 1, 19)) > datetime(substr(?, 1, 19))
                order by created_at desc limit ?`, [personaId, since || '1970-01-01T00:00:00Z', limit]);
