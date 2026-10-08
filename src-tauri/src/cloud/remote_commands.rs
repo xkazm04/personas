@@ -884,8 +884,9 @@ impl VerbExecutor for AppExecutor {
                 }
                 "channel_say" => {
                     // One operator row and nothing else: no follow-up run
-                    // (the headless master reads it at its next wake).
-                    let outcome = channel_say::execute(&state.db, cmd)?;
+                    // (the headless master reads it at its next wake). A
+                    // paired controller's says are capped and carry its id.
+                    let outcome = channel_say::execute(&state.db, cmd, authority)?;
                     if outcome.result.get("changed").and_then(Value::as_bool) == Some(true) {
                         // The desk's channel view refreshes, as after its own post.
                         if let Some(persona_id) = cmd.persona_id.as_deref() {
@@ -1803,7 +1804,7 @@ mod tests {
         async fn execute(
             &self,
             cmd: &Effective,
-            _authority: &Authority,
+            authority: &Authority,
         ) -> Result<Outcome, AppError> {
             self.calls.lock().unwrap().push(cmd.command_type.clone());
             if cmd.command_type == "chat_send"
@@ -1850,7 +1851,7 @@ mod tests {
             }
             if cmd.command_type == "channel_say" {
                 // The production verb whole: it is database-only.
-                return channel_say::execute(&self.pool, cmd);
+                return channel_say::execute(&self.pool, cmd, authority);
             }
             if cmd.command_type == "chat_send" {
                 let user_db = &self.user_db;
@@ -2543,6 +2544,11 @@ mod tests {
         assert_eq!(
             operator_says(&pool, &persona),
             vec![(id.clone(), "Ship E before B".to_string())]
+        );
+        // The verified controller is the row's author, which the cap counts.
+        assert_eq!(
+            crate::cloud::channel_say::tests::author_of(&pool, &id),
+            (Some(CTL.into()), Some("phone".into()))
         );
         assert_eq!(executions(&pool), 0, "a say starts no execution");
 

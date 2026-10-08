@@ -17,17 +17,27 @@
 //! * `params` = exactly `{"message": "..."}`. A missing or non-string message
 //!   is `bad_params`. The message is trimmed; empty is `empty_message`; more
 //!   than [`MAX_MESSAGE_CHARS`] characters (`chars().count()` after the trim)
-//!   is `message_too_long` - refused, never cut.
+//!   is `message_too_long` - refused, never cut. The bound is on the INPUT:
+//!   masking can make the stored body longer than it.
 //! * Then, in order: the persona exists here, else `not_found`; it is an App
 //!   Master (holds at least one non-retired charter bound to a project or a
 //!   workspace, `engine::subscription::is_app_master`), else
 //!   `not_app_master`.
+//! * A cap per paired controller: when that controller already has
+//!   [`SAY_CAP`] or more says written in the last [`SAY_WINDOW_MINUTES`]
+//!   minutes (counted from the database, any persona, this command's own row
+//!   excluded), the say is `rate_limited`. A poll reads up to 50 rows, so
+//!   without it one paired key could write 50 operator-voiced rows per poll.
+//!   A say approved at the desk (no controller) is not capped.
 //! * Effect: credential-looking tokens are masked with the sync redactor
 //!   (`cloud::sync::redact::redact_text`, as `review_decide` does for phone
 //!   notes), then ONE row is written through
 //!   `team_channel::create_persona_channel_message` with `author_kind 'user'`,
-//!   no author id or label, no `reply_to`, not failed, and `id` = the command
-//!   id. A re-delivered command writes nothing: if that id is already this
+//!   no `reply_to`, not failed, and `id` = the command id. A phone's row
+//!   carries `author_id` = the controller id and `author_label` = `phone: <the
+//!   trust list's name>` (`phone` when it has none); it is what the cap
+//!   counts. A desk-approved row carries neither. A re-delivered command
+//!   writes nothing: if that id is already this
 //!   persona's user message, the command completes with `changed: false`. The
 //!   desk's channel view is told through `PERSONA_CHANNEL_MESSAGE`.
 //! * It starts NO execution: never `dispatch_channel_followup`, never
@@ -38,8 +48,9 @@
 
 use serde_json::{json, Value};
 
-use crate::cloud::remote_commands::{Effective, Outcome};
+use crate::cloud::remote_commands::{Authority, Effective, Outcome};
 use crate::cloud::sync::redact::redact_text;
+use crate::cloud::trust;
 use crate::db::repos::core::{personas as persona_repo, responsibilities};
 use crate::db::repos::resources::team_channel as channel_repo;
 use crate::db::DbPool;
@@ -47,6 +58,13 @@ use crate::error::AppError;
 
 /// The longest message a phone may say, in characters, after the trim.
 pub const MAX_MESSAGE_CHARS: usize = 2000;
+
+/// The most says one paired controller may have written in the last
+/// [`SAY_WINDOW_MINUTES`]; one more is `rate_limited`.
+pub const SAY_CAP: i64 = 10;
+
+/// The sliding window of [`SAY_CAP`], in minutes.
+pub const SAY_WINDOW_MINUTES: i64 = 10;
 
 /// A validated `channel_say`, ready to write.
 #[derive(Debug, Clone, PartialEq)]
@@ -57,6 +75,10 @@ pub struct ChannelSayPlan {
     pub message_id: String,
     /// The trimmed, masked body.
     pub body: String,
+    /// The paired controller that said it; `None` when approved at the desk.
+    pub author_id: Option<String>,
+    /// `phone: <controller name>` (or `phone`) with a controller, else `None`.
+    pub author_label: Option<String>,
 }
 
 /// The trimmed message, or the refusal token for the params.
@@ -73,8 +95,40 @@ fn message_of(params: &Value) -> Result<String, AppError> {
     Ok(message.to_string())
 }
 
+/// The author of a phone's say, `(controller id, label)`, once its cap allows
+/// one more; `None` for a say approved at the desk, which is never capped.
+fn phone_author(
+    pool: &DbPool,
+    cmd: &Effective,
+    authority: &Authority,
+) -> Result<Option<(String, String)>, AppError> {
+    let Authority::Paired { controller_id, .. } = authority else {
+        return Ok(None);
+    };
+    let said = channel_repo::count_user_messages_by_author_since(
+        pool,
+        controller_id,
+        SAY_WINDOW_MINUTES,
+        &cmd.id,
+    )?;
+    if said >= SAY_CAP {
+        return Err(AppError::Validation("rate_limited".into()));
+    }
+    let label = trust::load_controllers(pool)
+        .into_iter()
+        .find(|c| c.controller_id.eq_ignore_ascii_case(controller_id))
+        .map(|c| c.name.trim().to_string())
+        .filter(|name| !name.is_empty())
+        .map_or_else(|| "phone".to_string(), |name| format!("phone: {name}"));
+    Ok(Some((controller_id.clone(), label)))
+}
+
 /// Every precondition of the contract above, from the database alone.
-pub fn plan(pool: &DbPool, cmd: &Effective) -> Result<ChannelSayPlan, AppError> {
+pub fn plan(
+    pool: &DbPool,
+    cmd: &Effective,
+    authority: &Authority,
+) -> Result<ChannelSayPlan, AppError> {
     let message = message_of(&cmd.params)?;
     let persona_id = cmd.persona_id.as_deref().unwrap_or_default().trim();
     if persona_id.is_empty() {
@@ -86,10 +140,13 @@ pub fn plan(pool: &DbPool, cmd: &Effective) -> Result<ChannelSayPlan, AppError> 
     if !crate::engine::subscription::is_app_master(&refs) {
         return Err(AppError::Validation("not_app_master".into()));
     }
+    let author = phone_author(pool, cmd, authority)?;
     Ok(ChannelSayPlan {
         persona_id: persona.id,
         message_id: cmd.id.clone(),
         body: redact_text(&message),
+        author_label: author.as_ref().map(|(_, label)| label.clone()),
+        author_id: author.map(|(id, _)| id),
     })
 }
 
@@ -118,8 +175,8 @@ fn existing(pool: &DbPool, plan: &ChannelSayPlan) -> Result<Option<bool>, AppErr
 /// Plan, then write the one row. `changed` is false when the command id was
 /// already written (a re-delivered command). The caller emits the refresh
 /// event when `changed` is true; nothing here starts an execution.
-pub fn execute(pool: &DbPool, cmd: &Effective) -> Result<Outcome, AppError> {
-    let plan = plan(pool, cmd)?;
+pub fn execute(pool: &DbPool, cmd: &Effective, authority: &Authority) -> Result<Outcome, AppError> {
+    let plan = plan(pool, cmd, authority)?;
     match existing(pool, &plan)? {
         Some(true) => return Ok(outcome(&plan.message_id, false)),
         Some(false) => {
@@ -136,8 +193,8 @@ pub fn execute(pool: &DbPool, cmd: &Effective) -> Result<Outcome, AppError> {
             id: Some(plan.message_id.clone()),
             persona_id: plan.persona_id.clone(),
             author_kind: "user".into(),
-            author_id: None,
-            author_label: None,
+            author_id: plan.author_id.clone(),
+            author_label: plan.author_label.clone(),
             body: plan.body.clone(),
             reply_to: None,
             failed: false,
@@ -242,6 +299,11 @@ pub(crate) mod tests {
         (pool, p)
     }
 
+    /// A say approved at the desk: no controller, never capped.
+    fn desk(pool: &DbPool, c: &Effective) -> Result<Outcome, AppError> {
+        execute(pool, c, &Authority::OperatorApproved)
+    }
+
     fn reason(r: Result<Outcome, AppError>) -> String {
         match r {
             Err(AppError::Validation(m)) => m,
@@ -265,6 +327,18 @@ pub(crate) mod tests {
         Ok(rows.collect::<Result<_, _>>()?)
     }
 
+    /// The row's `(author_id, author_label)`.
+    pub(crate) fn author_of(pool: &DbPool, id: &str) -> (Option<String>, Option<String>) {
+        pool.get()
+            .unwrap()
+            .query_row(
+                "SELECT author_id, author_label FROM team_channel_messages WHERE id = ?1",
+                [id],
+                |r| Ok((r.get("author_id")?, r.get("author_label")?)),
+            )
+            .unwrap()
+    }
+
     /// Every `persona_executions` row, whoever wrote it.
     pub(crate) fn execution_count(pool: &DbPool) -> Result<i64, AppError> {
         Ok(pool
@@ -277,7 +351,7 @@ pub(crate) mod tests {
     #[test]
     fn a_say_writes_one_operator_row_with_the_command_id() {
         let (pool, p) = setup();
-        let o = execute(
+        let o = desk(
             &pool,
             &cmd(ID, &p, json!({ "message": "  ship E first  " })),
         )
@@ -298,8 +372,8 @@ pub(crate) mod tests {
     fn a_redelivered_say_writes_nothing_and_reports_unchanged() {
         let (pool, p) = setup();
         let c = cmd(ID, &p, json!({ "message": "once" }));
-        execute(&pool, &c).unwrap();
-        let again = execute(&pool, &c).unwrap();
+        desk(&pool, &c).unwrap();
+        let again = desk(&pool, &c).unwrap();
         assert_eq!(again.result, json!({ "messageId": ID, "changed": false }));
         assert_eq!(operator_rows(&pool, &p).len(), 1);
     }
@@ -309,8 +383,8 @@ pub(crate) mod tests {
         let (pool, p) = setup();
         let other = persona(&pool, "Other master");
         charter(&pool, &other, Some("proj_other"));
-        execute(&pool, &cmd(ID, &other, json!({ "message": "theirs" }))).unwrap();
-        let e = execute(&pool, &cmd(ID, &p, json!({ "message": "mine" }))).unwrap_err();
+        desk(&pool, &cmd(ID, &other, json!({ "message": "theirs" }))).unwrap();
+        let e = desk(&pool, &cmd(ID, &p, json!({ "message": "mine" }))).unwrap_err();
         assert!(matches!(e, AppError::Internal(_)), "{e:?}");
         assert!(operator_rows(&pool, &p).is_empty());
     }
@@ -320,12 +394,12 @@ pub(crate) mod tests {
         let pool = crate::db::init_test_db().unwrap();
         let plain = persona(&pool, "Plain");
         assert_eq!(
-            reason(execute(&pool, &cmd(ID, &plain, json!({ "message": "hi" })))),
+            reason(desk(&pool, &cmd(ID, &plain, json!({ "message": "hi" })))),
             "not_app_master"
         );
         charter(&pool, &plain, None);
         assert_eq!(
-            reason(execute(&pool, &cmd(ID, &plain, json!({ "message": "hi" })))),
+            reason(desk(&pool, &cmd(ID, &plain, json!({ "message": "hi" })))),
             "not_app_master",
             "an unbound charter is not enough"
         );
@@ -335,7 +409,7 @@ pub(crate) mod tests {
     #[test]
     fn an_unknown_or_missing_persona_is_not_found() {
         let (pool, _) = setup();
-        let send = |c: Effective| reason(execute(&pool, &c));
+        let send = |c: Effective| reason(desk(&pool, &c));
         assert_eq!(
             send(cmd(ID, "no-such-persona", json!({ "message": "hi" }))),
             "not_found"
@@ -348,7 +422,7 @@ pub(crate) mod tests {
     #[test]
     fn the_params_refuse_with_their_tokens() {
         let (pool, p) = setup();
-        let send = |v: Value| reason(execute(&pool, &cmd(ID, &p, v)));
+        let send = |v: Value| reason(desk(&pool, &cmd(ID, &p, v)));
         for bad in [
             json!({}),
             json!({ "message": 7 }),
@@ -370,20 +444,20 @@ pub(crate) mod tests {
         assert_eq!(at_cap.chars().count(), MAX_MESSAGE_CHARS);
         let over = format!("{at_cap}x");
         assert_eq!(
-            reason(execute(&pool, &cmd(ID, &p, json!({ "message": over })))),
+            reason(desk(&pool, &cmd(ID, &p, json!({ "message": over })))),
             "message_too_long"
         );
         assert!(operator_rows(&pool, &p).is_empty(), "never cut and stored");
         // Surrounding whitespace does not count.
         let padded = format!("   {at_cap}   ");
-        execute(&pool, &cmd(ID, &p, json!({ "message": padded }))).unwrap();
+        desk(&pool, &cmd(ID, &p, json!({ "message": padded }))).unwrap();
         assert_eq!(operator_rows(&pool, &p)[0].1, at_cap);
     }
 
     #[test]
     fn a_bearer_token_is_stored_masked() {
         let (pool, p) = setup();
-        execute(
+        desk(
             &pool,
             &cmd(
                 ID,
@@ -398,10 +472,122 @@ pub(crate) mod tests {
         );
     }
 
+    const CTL: &str = "0c2b9a8f-7e6d-4c5b-8a49-3827160f5e4d";
+
+    /// A say from the paired controller `ctl`.
+    fn phone(pool: &DbPool, c: &Effective, ctl: &str) -> Result<Outcome, AppError> {
+        let authority = Authority::Paired {
+            controller_id: ctl.into(),
+            valid_until: chrono::Utc::now() + chrono::Duration::seconds(60),
+        };
+        execute(pool, c, &authority)
+    }
+
+    fn pair(pool: &DbPool, ctl: &str, name: &str) {
+        trust::add_controller(
+            pool,
+            trust::Controller {
+                controller_id: ctl.into(),
+                name: name.into(),
+                public_key: "unused-by-the-cap".into(),
+                created_at: "2026-10-08T09:00:00Z".into(),
+                revoked: false,
+                revoked_at: None,
+            },
+        )
+        .unwrap();
+    }
+
+    fn say_id(n: usize) -> String {
+        format!("00000000-0000-4000-8000-{n:012}")
+    }
+
+    fn backdate(pool: &DbPool, id: &str, modifier: &str) {
+        pool.get()
+            .unwrap()
+            .execute(
+                "UPDATE team_channel_messages SET created_at = datetime('now', ?1) WHERE id = ?2",
+                rusqlite::params![modifier, id],
+            )
+            .unwrap();
+    }
+
+    #[test]
+    fn a_phone_say_carries_the_controller_as_its_author() {
+        let (pool, p) = setup();
+        pair(&pool, CTL, "  Pixel 9  ");
+        phone(
+            &pool,
+            &cmd(ID, &p, json!({ "message": "from the phone" })),
+            CTL,
+        )
+        .unwrap();
+        assert_eq!(channel_repo::get(&pool, ID).unwrap().author_kind, "user");
+        assert_eq!(
+            author_of(&pool, ID),
+            (Some(CTL.into()), Some("phone: Pixel 9".into()))
+        );
+        // The headless master still reads it as the operator's voice.
+        assert_eq!(operator_rows(&pool, &p).len(), 1);
+
+        // A controller missing from the trust list is labelled plainly.
+        phone(
+            &pool,
+            &cmd(&say_id(1), &p, json!({ "message": "again" })),
+            "c-unlisted",
+        )
+        .unwrap();
+        assert_eq!(author_of(&pool, &say_id(1)).1.as_deref(), Some("phone"));
+
+        // A desk-approved say carries no author at all.
+        desk(&pool, &cmd(&say_id(2), &p, json!({ "message": "desk" }))).unwrap();
+        assert_eq!(author_of(&pool, &say_id(2)), (None, None));
+    }
+
+    #[test]
+    fn a_controller_is_capped_at_ten_says_in_ten_minutes() {
+        let (pool, p) = setup();
+        for n in 0..SAY_CAP as usize {
+            phone(&pool, &cmd(&say_id(n), &p, json!({ "message": "go" })), CTL).unwrap();
+        }
+        let eleventh = cmd(&say_id(99), &p, json!({ "message": "one more" }));
+        assert_eq!(reason(phone(&pool, &eleventh, CTL)), "rate_limited");
+        assert_eq!(
+            operator_rows(&pool, &p).len(),
+            SAY_CAP as usize,
+            "nothing written"
+        );
+
+        // A re-delivery of a say already written still settles unchanged.
+        let o = phone(&pool, &cmd(&say_id(0), &p, json!({ "message": "go" })), CTL).unwrap();
+        assert_eq!(o.result["changed"], json!(false));
+
+        // The cap is per controller, and the desk is never capped.
+        phone(&pool, &eleventh, "another-phone").unwrap();
+        desk(&pool, &cmd(&say_id(98), &p, json!({ "message": "desk" }))).unwrap();
+
+        // The window slides: once a say is older than ten minutes, one more fits.
+        backdate(&pool, &say_id(1), "-11 minutes");
+        phone(
+            &pool,
+            &cmd(&say_id(97), &p, json!({ "message": "later" })),
+            CTL,
+        )
+        .unwrap();
+        assert_eq!(
+            reason(phone(
+                &pool,
+                &cmd(&say_id(96), &p, json!({ "message": "x" })),
+                CTL
+            )),
+            "rate_limited"
+        );
+    }
+
     #[test]
     fn a_say_starts_no_execution() {
         let (pool, p) = setup();
-        execute(&pool, &cmd(ID, &p, json!({ "message": "go" }))).unwrap();
+        desk(&pool, &cmd(ID, &p, json!({ "message": "go" }))).unwrap();
         assert_eq!(execution_count(&pool).unwrap(), 0);
     }
 }
