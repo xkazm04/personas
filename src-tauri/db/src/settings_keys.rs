@@ -1139,6 +1139,78 @@ pub const CLOUD_SYNC_CHATS_ENABLED: &str = "cloud_sync_chats_enabled";
 /// only by `cloud::trust` through `settings::set_operator_only`.
 pub const CLOUD_CONTROLLERS: &str = "cloud_controllers";
 
+/// The web origin a pairing QR opens (`<origin>/dashboard/settings#pair=...`).
+/// Value: an absolute origin in normalised form ([`normalize_pairing_origin`]):
+/// `https://host[:port]`, or `http://` for a loopback host only; no userinfo,
+/// path, query or fragment, no trailing slash. Absent means the built-in
+/// default (`cloud::pairing::DEFAULT_PAIRING_ORIGIN`).
+///
+/// **Operator-only** ([`is_operator_only`]): the QR carries the pairing secret
+/// in its fragment, so whoever serves this origin sees the next secret. No
+/// generic writer - the settings IPC, an import, the management API, a kp key -
+/// may move it. Written only by the `cloud_pairing_origin_set` Tauri command
+/// through `settings::set_operator_only`.
+pub const CLOUD_PAIRING_ORIGIN: &str = "cloud_pairing_origin";
+
+/// Upper bound for a raw [`CLOUD_PAIRING_ORIGIN`] value, in bytes.
+pub const CLOUD_PAIRING_ORIGIN_MAX: usize = 256;
+
+/// Normalise a pairing origin, or say why it is refused. Accepts
+/// `https://host[:port]` (a trailing `/` is tolerated and dropped), and
+/// `http://` only for `localhost`, `127.0.0.1` and `[::1]`. Refuses userinfo,
+/// any path other than `/`, a query, a fragment, and every other scheme. The
+/// result is rebuilt from the parsed origin, so what is stored is exactly what
+/// the QR will open.
+pub fn normalize_pairing_origin(raw: &str) -> Result<String, String> {
+    let v = raw.trim();
+    if v.is_empty() {
+        return Err("the pairing origin must not be empty".into());
+    }
+    if v.len() > CLOUD_PAIRING_ORIGIN_MAX {
+        return Err(format!(
+            "the pairing origin must be at most {CLOUD_PAIRING_ORIGIN_MAX} characters"
+        ));
+    }
+    let lower = v.to_ascii_lowercase();
+    let is_https = lower.starts_with("https://");
+    if !is_https && !lower.starts_with("http://") {
+        return Err("the pairing origin must start with https://".into());
+    }
+    let url = url::Url::parse(v).map_err(|e| format!("the pairing origin is not a URL: {e}"))?;
+    let host = match url.host() {
+        Some(h) => h,
+        None => return Err("the pairing origin needs a host".into()),
+    };
+    if !url.username().is_empty() || url.password().is_some() {
+        return Err("the pairing origin must not carry a user name or password".into());
+    }
+    if url.path() != "/" {
+        return Err("the pairing origin must not carry a path".into());
+    }
+    if url.query().is_some() {
+        return Err("the pairing origin must not carry a query".into());
+    }
+    if url.fragment().is_some() {
+        return Err("the pairing origin must not carry a fragment".into());
+    }
+    if url.scheme() == "http" {
+        let loopback = match host {
+            url::Host::Domain(d) => d == "localhost",
+            url::Host::Ipv4(ip) => ip == std::net::Ipv4Addr::LOCALHOST,
+            url::Host::Ipv6(ip) => ip == std::net::Ipv6Addr::LOCALHOST,
+        };
+        if !loopback {
+            return Err(
+                "the pairing origin must use https:// (http:// is allowed only for localhost)"
+                    .into(),
+            );
+        }
+    } else if url.scheme() != "https" {
+        return Err("the pairing origin must start with https://".into());
+    }
+    Ok(url.origin().ascii_serialization())
+}
+
 /// Per-table incremental sync watermark. Full key: `cloud_sync_cursor:<table>`
 /// (e.g. `cloud_sync_cursor:executions`), value: RFC3339 timestamp.
 pub const CLOUD_SYNC_CURSOR_PREFIX: &str = "cloud_sync_cursor:";
@@ -1384,6 +1456,7 @@ const OPERATOR_ONLY_KEYS: &[&str] = &[
     MANAGEMENT_HTTP_PROJECT_ROOTS,
     KP_GIG_PERSONA_POLICY,
     CLOUD_CONTROLLERS,
+    CLOUD_PAIRING_ORIGIN,
 ];
 
 /// Whether `key` may be written only through the operator path.
@@ -1540,6 +1613,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CLOUD_SYNC_NOTES_ENABLED,
     CLOUD_SYNC_CHATS_ENABLED,
     CLOUD_CONTROLLERS,
+    CLOUD_PAIRING_ORIGIN,
     APPEARANCE_PREFERENCES,
     APP_LANGUAGE,
     CHAIN_MAX_COST_USD,
@@ -1677,6 +1751,18 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         return match serde_json::from_str::<Vec<serde_json::Value>>(value) {
             Ok(_) => Ok(()),
             Err(e) => Err(format!("value for '{key}' must be a JSON array: {e}")),
+        };
+    }
+    // Stored only in normalised form, so the value read back is exactly the
+    // origin the QR opens and the panel shows.
+    if key == CLOUD_PAIRING_ORIGIN {
+        let normal = normalize_pairing_origin(value)?;
+        return if normal == value {
+            Ok(())
+        } else {
+            Err(format!(
+                "value for '{key}' must be stored normalised (expected {normal:?})"
+            ))
         };
     }
     if key == CLOUD_SYNC_DEVICE_NAME {
@@ -2372,6 +2458,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         // they are audited beside the toggle.
         CLOUD_SYNC_ENABLED
         | CLOUD_CONTROLLERS
+        | CLOUD_PAIRING_ORIGIN
         | CLOUD_SYNC_DEVICE_NAME
         | CLOUD_SYNC_NOTES_ENABLED
         | CLOUD_SYNC_CHATS_ENABLED => "sync",
@@ -3105,6 +3192,7 @@ mod tests {
         assert_eq!(audit_category(CLOUD_SYNC_ENABLED), Some("sync"));
         assert_eq!(audit_category(CLOUD_SYNC_NOTES_ENABLED), Some("sync"));
         assert_eq!(audit_category(CLOUD_SYNC_CHATS_ENABLED), Some("sync"));
+        assert_eq!(audit_category(CLOUD_PAIRING_ORIGIN), Some("sync"));
         // Prefix families.
         assert_eq!(audit_category("auto_rollback:persona-1"), Some("autonomy"));
         assert_eq!(audit_category("autopilot_mode:proj-1"), Some("autonomy"));
@@ -3161,5 +3249,70 @@ mod tests {
         assert!(validate_key(DEVTOOLS_ACTIVE_WORKSPACE).is_ok());
         assert!(validate_value(DEVTOOLS_ACTIVE_WORKSPACE, "a-workspace-uuid").is_ok());
         assert_eq!(audit_category(DEVTOOLS_ACTIVE_WORKSPACE), None);
+    }
+
+    #[test]
+    fn pairing_origin_accepts_and_normalises_valid_origins() {
+        let ok = |raw: &str, want: &str| {
+            assert_eq!(normalize_pairing_origin(raw).as_deref(), Ok(want), "{raw}");
+        };
+        ok(
+            "https://desk.tail1234.ts.net",
+            "https://desk.tail1234.ts.net",
+        );
+        ok(
+            "https://desk.tail1234.ts.net/",
+            "https://desk.tail1234.ts.net",
+        );
+        ok(
+            "  HTTPS://Desk.Tail1234.TS.net  ",
+            "https://desk.tail1234.ts.net",
+        );
+        ok("https://desk.example:8443", "https://desk.example:8443");
+        ok("https://desk.example:443", "https://desk.example");
+        ok("http://localhost:3000", "http://localhost:3000");
+        ok("http://127.0.0.1:3000/", "http://127.0.0.1:3000");
+        ok("http://[::1]:3000", "http://[::1]:3000");
+        assert!(validate_key(CLOUD_PAIRING_ORIGIN).is_ok());
+        assert!(is_operator_only(CLOUD_PAIRING_ORIGIN));
+        assert!(validate_value(CLOUD_PAIRING_ORIGIN, "https://desk.tail1234.ts.net").is_ok());
+        assert!(
+            validate_value(CLOUD_PAIRING_ORIGIN, "https://desk.tail1234.ts.net/").is_err(),
+            "only the normalised form is stored"
+        );
+    }
+
+    #[test]
+    fn pairing_origin_refuses_every_unsafe_shape() {
+        let long = format!("https://{}.example", "a".repeat(CLOUD_PAIRING_ORIGIN_MAX));
+        for bad in [
+            "",
+            "   ",
+            "http://desk.tail1234.ts.net",
+            "http://192.168.1.10:3000",
+            "http://localhost.evil.example",
+            "https://user:pass@desk.example",
+            "https://user@desk.example",
+            "https://desk.example/dashboard",
+            "https://desk.example/x/",
+            "https://desk.example?x=1",
+            "https://desk.example/?",
+            "https://desk.example#pair=",
+            "https://desk.example/#",
+            "javascript:alert(1)",
+            "data:text/html,hi",
+            "file:///etc/passwd",
+            "ftp://desk.example",
+            "desk.example",
+            "//desk.example",
+            "https://",
+            long.as_str(),
+        ] {
+            assert!(normalize_pairing_origin(bad).is_err(), "accepted {bad:?}");
+            assert!(
+                validate_value(CLOUD_PAIRING_ORIGIN, bad).is_err(),
+                "stored {bad:?}"
+            );
+        }
     }
 }
