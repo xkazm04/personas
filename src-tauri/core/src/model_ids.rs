@@ -28,7 +28,9 @@ pub const ALIAS_OPUS: &str = "opus";
 
 /// Current dated ids per family. These are what the CLI resolves the aliases
 /// to today; bump them here when the vendor ships a successor.
-pub const HAIKU_CURRENT: &str = "claude-haiku-4-5-20251001";
+/// Haiku 5.5 since 2026-10-08: benched against Sonnet 5.5 on 732 one-shot
+/// calls and 414 Athena turns (`docs/tests/model-bench/haiku-5-5.md`).
+pub const HAIKU_CURRENT: &str = "claude-haiku-5-5";
 pub const SONNET_CURRENT: &str = "claude-sonnet-5-5";
 pub const OPUS_CURRENT: &str = "claude-opus-5";
 

@@ -538,6 +538,118 @@ pub fn spawn_headless_claude_tier(
     Ok(child)
 }
 
+/// [`spawn_headless_claude_tier`] with the model and effort taken from the
+/// call class's row in [`personas_core::model_class`] — the call site names a
+/// class, never a model. For the escalating form wrap the attempt in
+/// [`with_escalation`] and spawn with [`spawn_headless_claude_route`].
+pub fn spawn_headless_claude_class(
+    prompt_text: String,
+    class: personas_core::model_class::CallClass,
+    extra_args: &[String],
+    exec_dir: Option<&std::path::Path>,
+    capture_stderr: bool,
+) -> Result<tokio::process::Child, personas_core::error::AppError> {
+    spawn_headless_claude_route(
+        prompt_text,
+        class.route(),
+        extra_args,
+        exec_dir,
+        capture_stderr,
+    )
+}
+
+/// Spawn on an already-resolved route (what [`with_escalation`] hands each attempt).
+pub fn spawn_headless_claude_route(
+    prompt_text: String,
+    route: personas_core::model_class::ClassRoute,
+    extra_args: &[String],
+    exec_dir: Option<&std::path::Path>,
+    capture_stderr: bool,
+) -> Result<tokio::process::Child, personas_core::error::AppError> {
+    spawn_headless_claude_tier(
+        prompt_text,
+        route.model,
+        route.effort,
+        extra_args,
+        exec_dir,
+        capture_stderr,
+    )
+}
+
+/// How one routed attempt ended, from the caller's point of view.
+#[derive(Debug)]
+pub enum AttemptError {
+    /// The model answered, but the call site's own parser/validator rejected
+    /// the output. The ONLY outcome that escalates.
+    BadOutput(String),
+    /// Spawn failure, timeout, IO — never escalated here; failover owns these.
+    Fatal(personas_core::error::AppError),
+}
+
+/// Run `attempt` on the class's route; if it returns
+/// [`AttemptError::BadOutput`] and the row names an `escalate_to`, run it ONCE
+/// more on that route. A second `BadOutput`, or any `Fatal`, becomes the
+/// error. Each escalation is logged under the `model_routing` target, so the
+/// table can be re-tuned from real runs (callers that book `dev_llm_spend`
+/// book the escalated leg with `trigger_kind = "escalation"` themselves —
+/// the attempt closure receives the route it is running on).
+pub async fn with_escalation<T, F, Fut>(
+    class: personas_core::model_class::CallClass,
+    mut attempt: F,
+) -> Result<T, personas_core::error::AppError>
+where
+    F: FnMut(personas_core::model_class::ClassRoute) -> Fut,
+    Fut: std::future::Future<Output = Result<T, AttemptError>>,
+{
+    let first = class.route();
+    match attempt(first).await {
+        Ok(v) => Ok(v),
+        Err(AttemptError::Fatal(e)) => Err(e),
+        Err(AttemptError::BadOutput(reason)) => {
+            let Some((model, effort)) = first.escalate_to else {
+                return Err(personas_core::error::AppError::Validation(format!(
+                    "{} output rejected on {}: {reason}",
+                    class.as_str(),
+                    first.model
+                )));
+            };
+            tracing::warn!(
+                target: "model_routing",
+                class = class.as_str(),
+                from = first.model,
+                to = model,
+                reason = %reason,
+                "escalating one-shot after rejected output"
+            );
+            let second = personas_core::model_class::ClassRoute {
+                model,
+                effort,
+                escalate_to: None,
+            };
+            match attempt(second).await {
+                Ok(v) => Ok(v),
+                Err(AttemptError::Fatal(e)) => Err(e),
+                Err(AttemptError::BadOutput(reason)) => {
+                    Err(personas_core::error::AppError::Validation(format!(
+                        "{} output rejected on {} after escalation: {reason}",
+                        class.as_str(),
+                        model
+                    )))
+                }
+            }
+        }
+    }
+}
+
+/// True when `route` is an escalation leg (its row had no further escalation
+/// and it is not the class's first route). Lets a caller tag its spend row.
+pub fn is_escalation_leg(
+    class: personas_core::model_class::CallClass,
+    route: personas_core::model_class::ClassRoute,
+) -> bool {
+    route != class.route()
+}
+
 /// Why [`collect_within`] gave up.
 #[derive(Debug)]
 pub enum CollectError {
@@ -1114,6 +1226,71 @@ impl CliProcessDriver {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use personas_core::model_class::CallClass;
+
+    #[tokio::test]
+    async fn bad_output_escalates_once_to_the_rows_target() {
+        let mut seen = Vec::new();
+        let out = with_escalation(CallClass::Extract, |r| {
+            seen.push(r.model);
+            let n = seen.len();
+            async move {
+                if n == 1 {
+                    Err(AttemptError::BadOutput("no json".into()))
+                } else {
+                    Ok(r.model)
+                }
+            }
+        })
+        .await
+        .unwrap();
+        let (to, _) = CallClass::Extract.route().escalate_to.unwrap();
+        assert_eq!(out, to);
+        assert_eq!(seen, vec![CallClass::Extract.route().model, to]);
+    }
+
+    #[tokio::test]
+    async fn fatal_and_unescalatable_rows_never_retry() {
+        let mut calls = 0;
+        let r = with_escalation(CallClass::Extract, |_| {
+            calls += 1;
+            async {
+                Err::<(), _>(AttemptError::Fatal(
+                    personas_core::error::AppError::Internal("spawn".into()),
+                ))
+            }
+        })
+        .await;
+        assert!(r.is_err());
+        assert_eq!(calls, 1, "Fatal belongs to failover, not escalation");
+
+        let mut calls = 0;
+        let r = with_escalation(CallClass::Title, |_| {
+            calls += 1;
+            async { Err::<(), _>(AttemptError::BadOutput("x".into())) }
+        })
+        .await;
+        assert!(matches!(
+            r,
+            Err(personas_core::error::AppError::Validation(_))
+        ));
+        assert_eq!(calls, 1, "Title has no escalate_to");
+    }
+
+    #[test]
+    fn escalation_leg_is_recognised() {
+        let first = CallClass::Sql.route();
+        let (m, e) = first.escalate_to.unwrap();
+        assert!(!is_escalation_leg(CallClass::Sql, first));
+        assert!(is_escalation_leg(
+            CallClass::Sql,
+            personas_core::model_class::ClassRoute {
+                model: m,
+                effort: e,
+                escalate_to: None
+            }
+        ));
+    }
 
     /// A child that outlives its budget is killed, not abandoned.
     #[tokio::test]
