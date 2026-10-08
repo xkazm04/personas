@@ -4,6 +4,11 @@ import type { LifecycleMetric } from "./LifecycleMetric";
 
 export type LifecycleStepHealthView = { stepId: string, health: LifecycleHealth, 
 /**
+ * When `health` is `stale`, the verdict that older measurement gave;
+ * null otherwise.
+ */
+staleOf: LifecycleHealth | null, 
+/**
  * Why, in one line (e.g. "no coverage command", "tsc 74s over 60s budget").
  */
 reason: string | null, metrics: Array<LifecycleMetric>, measuredAt: string | null, headSha: string | null, };

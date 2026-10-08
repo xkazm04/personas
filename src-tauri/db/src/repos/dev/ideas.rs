@@ -2623,7 +2623,7 @@ mod contract_tests {
 
     /// Every variant, with an exhaustiveness guard.
     ///
-    /// The `match` below has no wildcard arm, so a twentieth `BacklogSource`
+    /// The `match` below has no wildcard arm, so a twenty-first `BacklogSource`
     /// fails to COMPILE here rather than quietly escaping the coverage test —
     /// which is the whole difference between a gate that found nothing and a
     /// gate that looked at nothing.
@@ -2684,7 +2684,7 @@ mod contract_tests {
         let pool = pool();
         let pid = project(&pool);
         let sources = all_sources();
-        assert_eq!(sources.len(), 19, "the closed source vocabulary");
+        assert_eq!(sources.len(), 20, "the closed source vocabulary");
 
         for source in sources {
             let draft = IdeaDraft::new(&pid, source, format!("Item from {}", source.as_str()));
@@ -2708,7 +2708,7 @@ mod contract_tests {
         }
 
         let filed = list_ideas(&pool, Some(&pid), None, None, Some(100), None).unwrap();
-        assert_eq!(filed.len(), 19);
+        assert_eq!(filed.len(), 20);
         assert!(
             filed.iter().all(|i| i.origin.is_some()),
             "no row leaves this door without a source"

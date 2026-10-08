@@ -125,6 +125,38 @@ pub fn render(project_name: &str, snap: &LifecycleSnapshot) -> String {
             t.failed
         ));
     }
+    // Measured health: one line per step that is not green (instructed steps
+    // are unobservable by design and stay out of it).
+    let unwell: Vec<String> = snap
+        .health
+        .iter()
+        .filter(|h| {
+            !matches!(
+                h.health,
+                crate::db::models::LifecycleHealth::Green
+                    | crate::db::models::LifecycleHealth::Instructed
+            )
+        })
+        .map(|h| {
+            let verdict = serde_json::to_value(h.health)
+                .ok()
+                .and_then(|v| v.as_str().map(str::to_string))
+                .unwrap_or_default();
+            format!(
+                "- {} {verdict}: {}",
+                h.step_id,
+                clip(h.reason.as_deref().unwrap_or("no reason given"), 100)
+            )
+        })
+        .collect();
+    if !snap.health.is_empty() {
+        if unwell.is_empty() {
+            lines.push("Measured health: every measurable step is green.".into());
+        } else {
+            lines.push("Measured health (not green):".into());
+            lines.extend(unwell);
+        }
+    }
     if snap.evidence.is_empty() {
         lines.push("Newest evidence: none yet.".into());
     } else {

@@ -29,7 +29,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
                 ddl_step(
                     conn,
                     "CREATE TABLE IF NOT EXISTS dev_lifecycle_runs (
-                        id           TEXT PRIMARY KEY,
+                        id           TEXT PRIMARY KEY NOT NULL,
                         project_id   TEXT NOT NULL,
                         measure_id   TEXT NOT NULL,
                         command_id   TEXT NOT NULL,

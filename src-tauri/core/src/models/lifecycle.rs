@@ -364,6 +364,8 @@ pub enum LifecycleMetricKey {
 }
 
 /// A number drawn beside a step. `value` is `null` when `samples` is 0.
+/// Every rate and share (`pass_rate`, `done_rate`, `coverage_pct`,
+/// `docs_clean_pct`) is on a 0-100 scale; `median_ms` is milliseconds.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -379,6 +381,9 @@ pub struct LifecycleMetric {
 pub struct LifecycleStepHealthView {
     pub step_id: String,
     pub health: LifecycleHealth,
+    /// When `health` is `stale`, the verdict that older measurement gave;
+    /// null otherwise.
+    pub stale_of: Option<LifecycleHealth>,
     /// Why, in one line (e.g. "no coverage command", "tsc 74s over 60s budget").
     pub reason: Option<String>,
     pub metrics: Vec<LifecycleMetric>,

@@ -3,5 +3,7 @@ import type { LifecycleMetricKey } from "./LifecycleMetricKey";
 
 /**
  * A number drawn beside a step. `value` is `null` when `samples` is 0.
+ * Every rate and share (`pass_rate`, `done_rate`, `coverage_pct`,
+ * `docs_clean_pct`) is on a 0-100 scale; `median_ms` is milliseconds.
  */
 export type LifecycleMetric = { key: LifecycleMetricKey, value: number | null, samples: number, };

@@ -264,7 +264,10 @@ fn table_to_event(table: &str, action: CdcAction) -> Option<&'static str> {
         // Lifecycle v2: version appends and per-task evidence. Both are low
         // volume (one row per operator/Athena change, one per finished task),
         // so they cannot saturate the channel the way scan tables do.
-        "dev_lifecycle_versions" | "dev_lifecycle_evidence" => {
+        // `dev_lifecycle_runs` is the Measure ledger: one append per command
+        // per measure (a handful per press), so each landing run repaints
+        // the step it belongs to while the measure is still going.
+        "dev_lifecycle_versions" | "dev_lifecycle_evidence" | "dev_lifecycle_runs" => {
             Some(event_name::DEV_TOOLS_LIFECYCLE_CHANGED)
         }
 
@@ -741,7 +744,11 @@ mod tests {
 
     #[test]
     fn lifecycle_tables_map_to_the_lifecycle_event() {
-        for table in ["dev_lifecycle_versions", "dev_lifecycle_evidence"] {
+        for table in [
+            "dev_lifecycle_versions",
+            "dev_lifecycle_evidence",
+            "dev_lifecycle_runs",
+        ] {
             for action in [CdcAction::Insert, CdcAction::Update, CdcAction::Delete] {
                 assert_eq!(
                     table_to_event(table, action),

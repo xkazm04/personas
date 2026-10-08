@@ -66,8 +66,8 @@ pub async fn dev_tools_lifecycle_install(
 
 // ---------------------------------------------------------------------------
 // Measured health + Overseer (spark lifecycle-health). Contract frozen in WP0;
-// bodies land in WP1 (measure, step_detail, set_step_params) and WP2
-// (set_watch, send_to_overseer, watched_pipelines).
+// WP1 built measure, step_detail and set_step_params; the WP2 bodies
+// (set_watch, send_to_overseer, watched_pipelines) are still stubs.
 // ---------------------------------------------------------------------------
 
 fn not_built(what: &str) -> AppError {
@@ -76,15 +76,17 @@ fn not_built(what: &str) -> AppError {
 
 /// Run the project's gate/test/coverage commands on the base-branch tip in a
 /// throwaway worktree, timed, appending `dev_lifecycle_runs`. Returns at once;
-/// rows land via `DEV_TOOLS_LIFECYCLE_CHANGED`.
+/// rows land via `DEV_TOOLS_LIFECYCLE_CHANGED`. Refused (`validation`) while
+/// any Measure runs - one at a time, process-wide.
 #[tauri::command]
 pub async fn dev_tools_lifecycle_measure(
+    app: tauri::AppHandle,
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<LifecycleMeasureStarted, AppError> {
     require_auth(&state).await?;
-    let _ = project_id;
-    Err(not_built("measure"))
+    let notify = lifecycle::measure::emitter(app);
+    lifecycle::measure::start(state.db.clone(), project_id, notify).await
 }
 
 /// Layer-2 data for one step: run history (newest first, <= 30) and doc rows.
@@ -95,8 +97,11 @@ pub async fn dev_tools_lifecycle_step_detail(
     step_id: String,
 ) -> Result<LifecycleStepDetail, AppError> {
     require_auth(&state).await?;
-    let _ = (project_id, step_id);
-    Err(not_built("step detail"))
+    let db = state.db.clone();
+    run_blocking("dev_tools_lifecycle_step_detail", move || {
+        lifecycle::step_detail(&db, &project_id, &step_id)
+    })
+    .await
 }
 
 /// Replace one step's params (commands, thresholds); appends a version
@@ -109,8 +114,12 @@ pub async fn dev_tools_lifecycle_set_step_params(
     params: LifecycleStepParams,
 ) -> Result<LifecycleSnapshot, AppError> {
     require_auth(&state).await?;
-    let _ = (project_id, step_id, params);
-    Err(not_built("step params"))
+    let db = state.db.clone();
+    run_blocking("dev_tools_lifecycle_set_step_params", move || {
+        lifecycle::set_step_params(&db, &project_id, &step_id, params)?;
+        lifecycle::snapshot(&db, &project_id)
+    })
+    .await
 }
 
 /// Star / unstar the project for the Overseer. Returns the new state.

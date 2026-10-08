@@ -221,3 +221,113 @@ fn a_standards_edit_is_a_version_append() -> Result<(), AppError> {
     ));
     Ok(())
 }
+
+fn gate_cmd(id: &str, kind: crate::db::models::LifecycleGateKind) -> LifecycleGateCommand {
+    LifecycleGateCommand {
+        id: id.into(),
+        command: format!("npm run {id}"),
+        kind,
+        budget_ms: None,
+    }
+}
+
+#[test]
+fn set_step_params_validates_then_appends_an_operator_version() -> Result<(), AppError> {
+    use crate::db::models::LifecycleGateKind as K;
+    let pool = crate::db::init_test_db()?;
+    let dir = tempfile::tempdir()?;
+    let p = project(&pool, dir.path())?;
+    let with = |cmds: Vec<LifecycleGateCommand>| LifecycleStepParams {
+        commands: Some(cmds),
+        ..Default::default()
+    };
+    let refused = |step: &str, params: LifecycleStepParams| {
+        matches!(
+            set_step_params(&pool, &p, step, params),
+            Err(AppError::Validation(_))
+        )
+    };
+    assert!(refused(
+        "gate",
+        with(vec![gate_cmd("lint", K::Lint), gate_cmd("lint", K::Check)])
+    ));
+    let mut empty = gate_cmd("lint", K::Lint);
+    empty.command = "  ".into();
+    assert!(refused("gate", with(vec![empty])));
+    let mut zero = gate_cmd("lint", K::Lint);
+    zero.budget_ms = Some(0);
+    assert!(refused("gate", with(vec![zero])));
+    assert!(
+        refused("gate", with(vec![gate_cmd("test", K::Test)])),
+        "a test under gate"
+    );
+    assert!(
+        refused("docs", with(vec![gate_cmd("lint", K::Lint)])),
+        "docs runs no commands"
+    );
+    assert!(refused(
+        "tests",
+        LifecycleStepParams {
+            coverage_green_pct: Some(101),
+            ..Default::default()
+        }
+    ));
+    assert!(matches!(
+        set_step_params(&pool, &p, "nope", LifecycleStepParams::default()),
+        Err(AppError::NotFound(_))
+    ));
+    assert_eq!(current_doc(&pool, &p)?.1, 0, "nothing refused was stored");
+
+    let cmds = vec![gate_cmd("lint", K::Lint), gate_cmd("tsc", K::Typecheck)];
+    set_step_params(&pool, &p, "gate", with(cmds.clone()))?;
+    let (doc, version, row) = current_doc(&pool, &p)?;
+    assert_eq!(version, 1);
+    assert_eq!(row.expect("stored").author, "operator");
+    let gate = doc.steps.iter().find(|s| s.id == "gate").expect("gate");
+    assert_eq!(gate.params.commands.as_deref(), Some(cmds.as_slice()));
+    Ok(())
+}
+
+#[test]
+fn step_detail_carries_runs_for_command_steps_only() -> Result<(), AppError> {
+    use crate::db::models::{LifecycleGateKind as K, LifecycleRun, LifecycleRunOutcome};
+    let pool = crate::db::init_test_db()?;
+    let dir = tempfile::tempdir()?;
+    let p = project(&pool, dir.path())?;
+    for (i, (id, kind)) in [("lint", K::Lint), ("test", K::Test)]
+        .into_iter()
+        .enumerate()
+    {
+        runs_repo::append_run(
+            &pool,
+            &LifecycleRun {
+                id: format!("r{i}"),
+                project_id: p.clone(),
+                measure_id: "m1".into(),
+                command_id: id.into(),
+                command: format!("npm run {id}"),
+                kind,
+                outcome: LifecycleRunOutcome::Passed,
+                exit_code: Some(0),
+                duration_ms: 10,
+                value_pct: None,
+                first_error: None,
+                head_sha: "abc".into(),
+                started_at: format!("2026-10-08T00:00:0{i}.000Z"),
+                finished_at: format!("2026-10-08T00:00:0{i}.500Z"),
+            },
+        )?;
+    }
+    let gate = step_detail(&pool, &p, "gate")?;
+    assert_eq!(gate.runs.len(), 1);
+    assert_eq!(gate.runs[0].command_id, "lint");
+    assert!(gate.docs.is_empty());
+    assert_eq!(step_detail(&pool, &p, "tests")?.runs[0].command_id, "test");
+    let other = step_detail(&pool, &p, "commit")?;
+    assert!(other.runs.is_empty() && other.docs.is_empty());
+    assert!(
+        step_detail(&pool, &p, "docs")?.docs.is_empty(),
+        "never scanned"
+    );
+    Ok(())
+}

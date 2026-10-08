@@ -1939,7 +1939,7 @@ pub fn is_node_package_manager_command(command: &str) -> bool {
 /// if any. `Some(dir)` means the gate is recorded `did_not_run` with reason
 /// `deps_missing:<dir>` — not `failed`, because nothing about the proposal was
 /// ever tested.
-fn deps_missing_for(command: &str, env: &BorrowedEnv) -> Option<&'static str> {
+pub(crate) fn deps_missing_for(command: &str, env: &BorrowedEnv) -> Option<&'static str> {
     if is_node_package_manager_command(command) && !env.present("node_modules") {
         return Some("node_modules");
     }
@@ -2226,6 +2226,12 @@ pub async fn run_baseline_gates(
 /// The shared body: check `branch` out detached in a throwaway worktree, borrow
 /// the source checkout's environment, run every command, record one row each.
 ///
+/// The worktree and per-command execution live in
+/// [`crate::gate_exec::exec_in_worktree`], shared with Lifecycle's Measure;
+/// this function owns only what the App Master's ledger claims: the
+/// three-valued outcome (a timeout is `did_not_run` here), the tip, the kind,
+/// the inherited-red exclusion, and recording each row as it lands.
+///
 /// `kind` decides what the rows claim — the holder's proposal or the
 /// repository's baseline — and `red_on_main` is the exclusion map applied to a
 /// proposal's failures (empty for a baseline).
@@ -2242,108 +2248,93 @@ async fn run_commands_in_worktree(
     kind: GateKind,
     red_on_main: &BTreeSet<String>,
 ) -> GateSweep {
-    let wt_dir = match tempfile::Builder::new()
-        .prefix("personas-app-master-gate-")
-        .tempdir()
-    {
-        Ok(d) => d,
-        Err(e) => {
-            return did_not_run_sweep(
-                pool,
-                project_id,
-                persona_id,
-                branch,
-                tip,
-                commands,
-                source,
-                kind,
-                &format!("could not create a temp dir for the gate worktree: {e}"),
-            )
-        }
-    };
-    let wt_path = wt_dir.path().join("wt");
-    let wt_str = wt_path.to_string_lossy().to_string();
-
-    if let Err(e) = git(root_path, &["worktree", "add", "--detach", &wt_str, branch]).await {
-        return did_not_run_sweep(
-            pool, project_id, persona_id, branch, tip, commands, source, kind, &e,
-        );
-    }
-
-    // The gates must see the repository's own resolved environment, so borrow
-    // it rather than rebuild it.
-    let borrowed = borrow_installed_deps(root_path, &wt_path);
-    if !borrowed.linked.is_empty() {
-        tracing::info!(
-            project_id,
-            branch,
-            mechanism = borrowed.mechanism,
-            "app_master_gates: gate worktree borrowed the source checkout's environment ({}) — not rebuilt",
-            borrowed.linked.join(", ")
-        );
-    }
-
     let timeout = gate_timeout();
+    let plan: Vec<crate::gate_exec::ExecCommand> = commands
+        .iter()
+        .map(|c| crate::gate_exec::ExecCommand {
+            command: c.clone(),
+            timeout,
+        })
+        .collect();
+
     let mut runs: Vec<GateRun> = Vec::new();
-    for cmd in commands {
-        let run = match deps_missing_for(cmd, &borrowed) {
-            // The source checkout has no such dependency either. Installing it
-            // is a different blast radius (network, minutes, a lockfile write)
-            // and is not this instrument's job — so the gate never ran, and
-            // says so.
-            Some(dir) => GateRun::new(
-                project_id,
-                persona_id,
-                branch,
-                cmd,
-                GateOutcome::DidNotRun,
-                None,
-                0,
-                Some(format!(
-                    "deps_missing:{dir} — the source checkout has no {dir}/ to borrow into the \
-                     gate worktree, and nothing was installed. Not a pass and not a failure."
-                )),
-            ),
-            None => run_one_gate(project_id, persona_id, branch, cmd, &wt_path, timeout).await,
-        }
-        .at_tip(tip)
-        .of_kind(kind);
-        // A failure the main branch was already carrying is the repository's,
-        // not this proposal's. `marked_inherited_red` is itself fail-closed —
-        // it only ever stamps a FAILED proposal run.
-        let run = if red_on_main.contains(cmd) {
-            run.marked_inherited_red()
-        } else {
-            run
-        };
-        if let Err(e) = record_gate_run(pool, &run) {
-            tracing::warn!(project_id, branch, error = %e,
-                "app_master_gates: could not record a gate run");
-        }
-        runs.push(run);
-    }
+    let executed = crate::gate_exec::exec_in_worktree(
+        root_path,
+        branch,
+        &plan,
+        "personas-app-master-gate-",
+        |exec| {
+            let run = gate_run_from_exec(project_id, persona_id, branch, exec)
+                .at_tip(tip)
+                .of_kind(kind);
+            // A failure the main branch was already carrying is the
+            // repository's, not this proposal's. `marked_inherited_red` is
+            // itself fail-closed — it only ever stamps a FAILED proposal run.
+            let run = if red_on_main.contains(&exec.command) {
+                run.marked_inherited_red()
+            } else {
+                run
+            };
+            if let Err(e) = record_gate_run(pool, &run) {
+                tracing::warn!(project_id, branch, error = %e,
+                    "app_master_gates: could not record a gate run");
+            }
+            runs.push(run);
+        },
+    )
+    .await;
 
-    // Unlink the borrowed environment BEFORE the worktree is removed. A
-    // recursive delete that walked into a junction would delete the operator's
-    // real `node_modules`; unlinking first means the removal only ever sees an
-    // ordinary tree.
-    for name in &borrowed.linked {
-        unlink_borrowed(&wt_path, name);
+    match executed {
+        Ok(done) => GateSweep {
+            branch: branch.to_string(),
+            source,
+            runs,
+            linked_deps: done.linked_deps,
+            kind,
+        },
+        Err(reason) => did_not_run_sweep(
+            pool, project_id, persona_id, branch, tip, commands, source, kind, &reason,
+        ),
     }
+}
 
-    // Best-effort cleanup — a leaked worktree is a mess, but a failed cleanup
-    // must not lose the readings we just took.
-    let _ = git(root_path, &["worktree", "remove", "--force", &wt_str]).await;
-    let _ = git(root_path, &["worktree", "prune"]).await;
-    drop(wt_dir);
-
-    GateSweep {
-        branch: branch.to_string(),
-        source,
-        runs,
-        linked_deps: borrowed.linked,
-        kind,
-    }
+/// Map one raw execution onto this ledger's three-valued vocabulary. A
+/// timeout is `did_not_run` here, worded exactly as it always was.
+fn gate_run_from_exec(
+    project_id: &str,
+    persona_id: &str,
+    branch: &str,
+    exec: &crate::gate_exec::CommandExec,
+) -> GateRun {
+    use crate::gate_exec::ExecStatus;
+    let duration_ms = exec.duration_ms as i64;
+    let (outcome, exit_code, first_error) = match exec.status {
+        ExecStatus::Passed => (GateOutcome::Passed, exec.exit_code, None),
+        ExecStatus::Failed => (
+            GateOutcome::Failed,
+            exec.exit_code,
+            exec.first_error.clone(),
+        ),
+        ExecStatus::TimedOut => (
+            GateOutcome::DidNotRun,
+            None,
+            Some(format!(
+                "timed out after {}s — recorded as DID NOT RUN, which is not a pass",
+                exec.timeout.as_secs()
+            )),
+        ),
+        ExecStatus::DidNotRun => (GateOutcome::DidNotRun, None, exec.first_error.clone()),
+    };
+    GateRun::new(
+        project_id,
+        persona_id,
+        branch,
+        &exec.command,
+        outcome,
+        exit_code,
+        duration_ms,
+        first_error,
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -2392,116 +2383,6 @@ fn did_not_run_sweep(
         runs,
         linked_deps: Vec::new(),
         kind,
-    }
-}
-
-async fn run_one_gate(
-    project_id: &str,
-    persona_id: &str,
-    branch: &str,
-    command: &str,
-    cwd: &Path,
-    timeout: Duration,
-) -> GateRun {
-    let start = std::time::Instant::now();
-    // The parent environment passes through (that is how the repository's own
-    // toolchain is found), plus `CI=1` so Next/Vite/Jest-style tools take their
-    // non-interactive path instead of asking a question nobody can answer.
-    let spawn = if cfg!(target_os = "windows") {
-        tokio::process::Command::new("cmd")
-            .args(["/C", command])
-            .current_dir(cwd)
-            .env("CI", "1")
-            .stdin(std::process::Stdio::null())
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped())
-            // The timeout drops the child future; without this the timed-out
-            // gate would keep running unattended after we recorded it as
-            // DID NOT RUN.
-            .kill_on_drop(true)
-            .spawn()
-    } else {
-        tokio::process::Command::new("sh")
-            .args(["-c", command])
-            .current_dir(cwd)
-            .env("CI", "1")
-            .stdin(std::process::Stdio::null())
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped())
-            .kill_on_drop(true)
-            .spawn()
-    };
-
-    let child = match spawn {
-        Ok(c) => c,
-        Err(e) => {
-            return GateRun::new(
-                project_id,
-                persona_id,
-                branch,
-                command,
-                GateOutcome::DidNotRun,
-                None,
-                start.elapsed().as_millis() as i64,
-                Some(format!("could not spawn the gate command: {e}")),
-            )
-        }
-    };
-
-    let waited = tokio::time::timeout(timeout, child.wait_with_output()).await;
-    let duration_ms = start.elapsed().as_millis() as i64;
-
-    match waited {
-        Err(_) => GateRun::new(
-            project_id,
-            persona_id,
-            branch,
-            command,
-            GateOutcome::DidNotRun,
-            None,
-            duration_ms,
-            Some(format!(
-                "timed out after {}s — recorded as DID NOT RUN, which is not a pass",
-                timeout.as_secs()
-            )),
-        ),
-        Ok(Err(e)) => GateRun::new(
-            project_id,
-            persona_id,
-            branch,
-            command,
-            GateOutcome::DidNotRun,
-            None,
-            duration_ms,
-            Some(format!("the gate command could not be waited on: {e}")),
-        ),
-        Ok(Ok(out)) => {
-            let stdout = String::from_utf8_lossy(&out.stdout);
-            let stderr = String::from_utf8_lossy(&out.stderr);
-            if out.status.success() {
-                GateRun::new(
-                    project_id,
-                    persona_id,
-                    branch,
-                    command,
-                    GateOutcome::Passed,
-                    out.status.code(),
-                    duration_ms,
-                    None,
-                )
-            } else {
-                GateRun::new(
-                    project_id,
-                    persona_id,
-                    branch,
-                    command,
-                    GateOutcome::Failed,
-                    out.status.code(),
-                    duration_ms,
-                    first_error_line(&stdout, &stderr),
-                )
-            }
-        }
     }
 }
 

@@ -249,7 +249,7 @@ fn tail(s: &str, max_chars: usize) -> String {
 }
 
 /// Parse one number out of command output via a named strategy.
-fn parse_value(output: &str, strategy: &str) -> Option<f64> {
+pub(crate) fn parse_value(output: &str, strategy: &str) -> Option<f64> {
     if strategy == "coverage_pct" {
         // Try the common text-summary shapes (istanbul/vitest/jest), in order.
         for pat in [

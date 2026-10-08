@@ -113,6 +113,7 @@ pub mod failure_signature;
 #[cfg(feature = "desktop")]
 pub mod file_watcher;
 pub mod fix_loop;
+pub mod gate_exec;
 pub mod git_checkpoint;
 pub mod google_oauth;
 pub mod headless;
