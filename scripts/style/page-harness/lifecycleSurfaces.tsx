@@ -9,6 +9,9 @@
  *   plugins/lifecycle/detail        Layer 1 with every step's detail on the tape;
  *                                   shoot a step with --steps "click=[data-testid=lc-node-<id>]"
  *   plugins/lifecycle/detail-nocov  the same with Tests' coverage unmeasured
+ *   plugins/lifecycle/behind        Layer 1 measured 2 days ago, 14 commits behind (the header's warning)
+ *   plugins/lifecycle/loading       the snapshot never answers: header chrome + the Layer-1 ghost
+ *   plugins/lifecycle/regressed     Layer 1 one measure after a bad day: most steps worse than their earlier measure
  *
  * WP4 retired the orbit and lane-board directions and their switcher, so
  * there is no stored variant to seed any more.
@@ -37,4 +40,7 @@ export const LIFECYCLE_MODULES: Record<string, HarnessModule> = {
   'plugins/lifecycle/empty': { load: page, prepare },
   'plugins/lifecycle/detail': { load: page, prepare },
   'plugins/lifecycle/detail-nocov': { load: page, prepare },
+  'plugins/lifecycle/behind': { load: page, prepare },
+  'plugins/lifecycle/loading': { load: page, prepare },
+  'plugins/lifecycle/regressed': { load: page, prepare },
 };

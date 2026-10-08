@@ -4,6 +4,10 @@
  * verdict and its metrics around its icon, then the preset for its kind of
  * step, then its rule and bindings.
  *
+ * Code: this screen and each preset are their own chunks (`stepChunks`), warmed
+ * on intent and in idle time. The header paints as soon as this chunk is in;
+ * the preset suspends into `PresetGhost`, a delayed ghost of one section.
+ *
  * Keyboard: Esc returns to Layer 1 (the page restores focus to the step's
  * key); Left / Right, or the two buttons by the trail, walk to the
  * neighbouring step's screen without returning. Focus lands on the step's
@@ -14,24 +18,29 @@
  * nothing. A detail failure is an inline banner over a preset that still
  * draws everything the snapshot knows.
  */
-import { useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 
 import { Banner } from '@/features/shared/components/feedback/Banner';
 
 import type { JourneyNode } from '../../journey/journeyModel';
 import { useLifecycleViewModel } from '../context';
-import { joinHealth } from '../layer1/healthModel';
-import { DocsPreset } from '../presets/DocsPreset';
-import { GatePreset, type PresetData } from '../presets/GatePreset';
-import { GenericPreset } from '../presets/GenericPreset';
-import { TestsPreset } from '../presets/TestsPreset';
+import { joinHealth, type HealthStep } from '../layer1/healthModel';
+import type { PresetData } from '../presets/presetData';
+import { RHYTHM } from '../system/lcSurface';
+import { LazyDocsPreset, LazyGatePreset, LazyGenericPreset, LazyTestsPreset } from './lazySteps';
 import { StepHeader } from './StepHeader';
 import { StepRule } from './StepRule';
+import { PresetGhost } from './StepScreenGhost';
+import { DETAIL_STEPS } from './stepChunks';
 import { useStepDetail } from './useStepDetail';
 import { useStepKeys } from './useStepKeys';
 
-/** Steps whose preset needs `getLifecycleStepDetail`. */
-const DETAIL_STEPS: ReadonlySet<string> = new Set(['gate', 'tests', 'docs']);
+function StepPreset({ step, node, data }: { step: HealthStep; node: JourneyNode; data: PresetData }) {
+  if (node.id === 'gate') return <LazyGatePreset key={node.id} node={node} data={data} />;
+  if (node.id === 'tests') return <LazyTestsPreset key={node.id} step={step} node={node} data={data} />;
+  if (node.id === 'docs') return <LazyDocsPreset key={node.id} step={step} node={node} data={data} />;
+  return <LazyGenericPreset key={node.id} step={step} node={node} />;
+}
 
 export function StepScreen({ node }: { node: JourneyNode }) {
   const { dl, projectId, snapshot, order, openStep, closeStep } = useLifecycleViewModel();
@@ -53,13 +62,12 @@ export function StepScreen({ node }: { node: JourneyNode }) {
   });
 
   return (
-    <div className="space-y-8" data-testid="lc2-screen" data-step={node.id}>
+    <div className={RHYTHM.section} data-testid="lc2-screen" data-step={node.id}>
       <StepHeader ref={titleRef} step={step} prev={prev} next={next} />
       {error && <Banner severity="error" compact message={dl.lc2_detail_failed} cause={error} onRetry={refetch} />}
-      {node.id === 'gate' && <GatePreset key={node.id} node={node} data={data} />}
-      {node.id === 'tests' && <TestsPreset key={node.id} step={step} node={node} data={data} />}
-      {node.id === 'docs' && <DocsPreset key={node.id} step={step} node={node} data={data} />}
-      {!DETAIL_STEPS.has(node.id) && <GenericPreset key={node.id} step={step} node={node} />}
+      <Suspense fallback={<PresetGhost />}>
+        <StepPreset step={step} node={node} data={data} />
+      </Suspense>
       <StepRule node={node} />
     </div>
   );

@@ -18,7 +18,8 @@ import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch } from '@/lib/silentCatch';
 
 import { useLifecycleViewModel } from '../context';
-import { kindsForStep } from './healthRules';
+import { kindsForStep } from '../system/rules';
+import { useSnapshotRules } from '../system/useSnapshotRules';
 
 export interface DraftCommand {
   /** React key; stable across edits. */
@@ -78,7 +79,7 @@ export function useCommandsEditor(step: LifecycleStep, runs: LifecycleRun[]) {
   const [showProblems, setShowProblems] = useState(false);
   const [result, setResult] = useState<EditorResult | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
-  const kinds = kindsForStep(step.id);
+  const kinds = kindsForStep(useSnapshotRules(), step.id);
 
   const open = useCallback((prefillKind?: LifecycleGateKind) => {
     const base = (step.params.commands ?? seenInRuns(runs)).map(toDraft);

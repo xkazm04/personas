@@ -5,6 +5,10 @@
 // (`useDevToolsLiveStore().lifecycleRevision`, bumped by the eventBridge on
 // DEV_TOOLS_LIFECYCLE_CHANGED). A failure with a warm copy keeps the copy on
 // screen and reports the failure beside it: failure is not empty.
+//
+// `prefetchLifecycleSnapshot` fills the same cache on intent (the sidebar's
+// Lifecycle entry), and a mount that finds that request still in flight joins
+// it instead of asking twice.
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getLifecycle } from '@/api/devTools/lifecycle';
@@ -17,6 +21,35 @@ import { useDevToolsLiveStore } from '@/stores/devToolsLiveStore';
 
 // One entry per project opened this session; the cap names the bound.
 const snapshotCache = createModuleCache<string, LifecycleSnapshot>({ maxSize: 32 });
+// Requests in flight, deleted on settle: bounded by the requests open at once.
+const inFlight = new Map<string, { revision: number; promise: Promise<LifecycleSnapshot> }>();
+// When each project's copy last arrived, so a hover sweep does not refetch a fresh copy.
+const fetchedAt = createModuleCache<string, number>({ maxSize: 32 });
+/** An intent prefetch skips a copy younger than this; a mount always revalidates. */
+const PREFETCH_FRESH_MS = 15_000;
+
+function loadSnapshot(projectId: string, revision: number, force: boolean): Promise<LifecycleSnapshot> {
+  const open = inFlight.get(projectId);
+  if (open && !force && open.revision === revision) return open.promise;
+  const promise = getLifecycle(projectId).then((s) => {
+    snapshotCache.set(projectId, s);
+    fetchedAt.set(projectId, Date.now());
+    return s;
+  });
+  const entry = { revision, promise };
+  inFlight.set(projectId, entry);
+  const settle = () => { if (inFlight.get(projectId) === entry) inFlight.delete(projectId); };
+  promise.then(settle, settle);
+  return promise;
+}
+
+/** Warm a project's snapshot before the page mounts. Quiet: a failure is logged, and the mount retries. */
+export function prefetchLifecycleSnapshot(projectId: string): void {
+  const at = fetchedAt.get(projectId);
+  if (at !== undefined && Date.now() - at < PREFETCH_FRESH_MS) return;
+  const revision = useDevToolsLiveStore.getState().lifecycleRevision;
+  loadSnapshot(projectId, revision, false).catch(silentCatch('lifecycle:prefetchSnapshot'));
+}
 
 export interface UseLifecycleSnapshot {
   /** The freshest snapshot we have: warm cache first, revalidated in place. */
@@ -53,10 +86,10 @@ export function useLifecycleSnapshot(projectId: string | null): UseLifecycleSnap
     }
     const token = latestWins.next();
     setLoading(true);
-    getLifecycle(projectId)
+    // A manual refetch (gen > 0) always asks again; a mount joins a prefetch already on its way.
+    loadSnapshot(projectId, revision, gen > 0)
       .then((s) => {
         if (!latestWins.isCurrent(token)) return;
-        snapshotCache.set(projectId, s);
         setSnapshot(s);
         setError(null);
         setLoading(false);

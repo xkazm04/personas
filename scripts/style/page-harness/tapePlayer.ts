@@ -21,6 +21,8 @@ export interface TapeCall {
   response?: unknown;
   /** When present the call rejects with this value. */
   error?: unknown;
+  /** When true the call never settles: a surface's loading state, shot as it stands. */
+  hang?: boolean;
 }
 
 export interface Tape {
@@ -80,6 +82,7 @@ export function installTape(tape: Tape, log: ReplayLog): void {
   }
 
   const answer = (call: TapeCall): unknown => {
+    if (call.hang) return new Promise(() => {});
     if (call.error !== undefined) return Promise.reject(clone(call.error));
     return clone(call.response ?? null);
   };

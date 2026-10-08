@@ -15,9 +15,10 @@
  */
 import type { LifecycleGateCommand } from '@/lib/bindings/LifecycleGateCommand';
 import type { LifecycleGateKind } from '@/lib/bindings/LifecycleGateKind';
+import type { LifecycleRulesView } from '@/lib/bindings/LifecycleRulesView';
 import type { LifecycleRun } from '@/lib/bindings/LifecycleRun';
 
-import { DEFAULT_BUDGET_MS } from './healthRules';
+import { budgetFor } from '../system/rules';
 
 /** How many runs a row's sparkline draws. */
 export const SPARK_RUNS = 30;
@@ -30,7 +31,8 @@ export interface CommandRow {
   runs: LifecycleRun[];
   /** Null for a configured command that has never run. */
   latest: LifecycleRun | null;
-  budgetMs: number;
+  /** The command's own budget, else its kind's default from the snapshot's rules; null when neither is known. */
+  budgetMs: number | null;
   /** True when the budget is the command's own override, false for the kind's default. */
   budgetOverridden: boolean;
   medianMs: number | null;
@@ -53,7 +55,7 @@ function ranToExit(r: LifecycleRun): boolean {
   return r.outcome === 'passed' || r.outcome === 'failed';
 }
 
-function rowFor(id: string, runs: LifecycleRun[], cmd: LifecycleGateCommand | undefined): CommandRow {
+function rowFor(id: string, runs: LifecycleRun[], cmd: LifecycleGateCommand | undefined, rules: LifecycleRulesView): CommandRow {
   const newest = runs.slice(0, SPARK_RUNS);
   const latest = newest[0] ?? null;
   const kind = cmd?.kind ?? latest?.kind ?? 'other';
@@ -65,7 +67,7 @@ function rowFor(id: string, runs: LifecycleRun[], cmd: LifecycleGateCommand | un
     kind,
     runs: newest,
     latest,
-    budgetMs: cmd?.budgetMs ?? DEFAULT_BUDGET_MS[kind],
+    budgetMs: budgetFor(rules, kind, cmd?.budgetMs ?? null),
     budgetOverridden: cmd?.budgetMs != null,
     medianMs: median(answered.map((r) => r.durationMs)),
     passRate: answered.length ? (passed / answered.length) * 100 : null,
@@ -79,7 +81,11 @@ function rowFor(id: string, runs: LifecycleRun[], cmd: LifecycleGateCommand | un
  * any command seen in the history that the params no longer name (so a
  * removed command's last runs stay visible rather than vanishing).
  */
-export function commandRows(runsNewestFirst: LifecycleRun[], commands: LifecycleGateCommand[] | null): CommandRow[] {
+export function commandRows(
+  runsNewestFirst: LifecycleRun[],
+  commands: LifecycleGateCommand[] | null,
+  rules: LifecycleRulesView,
+): CommandRow[] {
   const byId = new Map<string, LifecycleRun[]>();
   for (const r of runsNewestFirst) {
     const list = byId.get(r.commandId) ?? [];
@@ -87,8 +93,8 @@ export function commandRows(runsNewestFirst: LifecycleRun[], commands: Lifecycle
     byId.set(r.commandId, list);
   }
   const rows: CommandRow[] = [];
-  for (const c of commands ?? []) rows.push(rowFor(c.id, byId.get(c.id) ?? [], c));
-  for (const [id, runs] of byId) if (!rows.some((r) => r.commandId === id)) rows.push(rowFor(id, runs, undefined));
+  for (const c of commands ?? []) rows.push(rowFor(c.id, byId.get(c.id) ?? [], c, rules));
+  for (const [id, runs] of byId) if (!rows.some((r) => r.commandId === id)) rows.push(rowFor(id, runs, undefined, rules));
   return rows;
 }
 

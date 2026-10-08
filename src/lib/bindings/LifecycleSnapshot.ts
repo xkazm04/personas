@@ -3,8 +3,10 @@ import type { LifecycleAuthor } from "./LifecycleAuthor";
 import type { LifecycleEvidenceItem } from "./LifecycleEvidenceItem";
 import type { LifecycleGoalView } from "./LifecycleGoalView";
 import type { LifecyclePreset } from "./LifecyclePreset";
+import type { LifecycleRulesView } from "./LifecycleRulesView";
 import type { LifecycleStepHealthView } from "./LifecycleStepHealthView";
 import type { LifecycleStepView } from "./LifecycleStepView";
+import type { LifecycleTipView } from "./LifecycleTipView";
 
 /**
  * Everything the journey and Athena read about a project's lifecycle.
@@ -38,4 +40,12 @@ watched: boolean,
 /**
  * A Measure is running for this project right now.
  */
-measuring: boolean, };
+measuring: boolean, 
+/**
+ * Base branch freshness; `null` when no base branch resolves (not a repo).
+ */
+tip: LifecycleTipView | null, 
+/**
+ * The judging rules in force (defaults; step params override).
+ */
+rules: LifecycleRulesView, };

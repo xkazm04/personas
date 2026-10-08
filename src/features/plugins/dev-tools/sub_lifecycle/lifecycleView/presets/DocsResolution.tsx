@@ -7,10 +7,13 @@ import { FileCheck, FileQuestion, FileWarning, FileX, type LucideIcon } from 'lu
 
 import { Button } from '@/features/shared/components/buttons';
 import { Collapse } from '@/features/shared/components/display/Collapse';
-import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { LifecycleDocRow } from '@/lib/bindings/LifecycleDocRow';
 
 import { useLifecycleViewModel } from '../context';
+import { RHYTHM } from '../system/lcSurface';
+import { LT } from '../system/lcType';
+import { GLYPH } from '../system/scales';
+import { Count } from '../system/Count';
 import type { DocGroup, DocStatus } from './docsModel';
 
 const LOOK: Record<DocStatus, { glyph: LucideIcon; ink: string }> = {
@@ -45,11 +48,11 @@ function Group({ group }: { group: DocGroup }) {
   const [open, setOpen] = useState(group.status !== 'clean');
   const { glyph: Glyph, ink } = LOOK[group.status];
   return (
-    <div className="space-y-2" data-testid={`lc2-docs-${group.status}`}>
+    <div className={RHYTHM.tight} data-testid={`lc2-docs-${group.status}`}>
       <div className="flex items-center gap-2">
-        <Glyph className={`h-5 w-5 ${ink}`} aria-hidden />
-        <span className={`typo-heading ${ink}`}>{label(group.status)}</span>
-        <Numeric value={group.docs.length} className="typo-data text-foreground" />
+        <Glyph className={`${GLYPH.md} ${ink}`} aria-hidden />
+        <span className={`${LT.title} ${ink}`}>{label(group.status)}</span>
+        <Count value={group.docs.length} />
         {group.status === 'clean' && (
           <Button variant="ghost" size="xs" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
             {open ? dl.lc2_docs_hide_clean : tx(dl.lc2_docs_show_clean, { count: group.docs.length })}
@@ -57,11 +60,11 @@ function Group({ group }: { group: DocGroup }) {
         )}
       </div>
       <Collapse open={open} unmountWhenClosed>
-        <ul className="list-disc space-y-1.5 pl-9 marker:text-foreground">
+        <ul className={`list-disc pl-9 marker:text-foreground ${RHYTHM.tight}`}>
           {group.docs.map((d) => (
             <li key={d.docPath} className="pl-1">
-              <span className="typo-code break-all text-foreground">{d.docPath}</span>
-              <span className="block typo-body text-foreground">{why(group.status, d)}</span>
+              <span className={`break-all ${LT.code}`}>{d.docPath}</span>
+              <span className={`block ${LT.row}`}>{why(group.status, d)}</span>
             </li>
           ))}
         </ul>
@@ -72,7 +75,7 @@ function Group({ group }: { group: DocGroup }) {
 
 export function DocsResolution({ groups }: { groups: DocGroup[] }) {
   return (
-    <div className="space-y-4" data-testid="lc2-docs-resolution">
+    <div className={RHYTHM.block} data-testid="lc2-docs-resolution">
       {groups.map((g) => <Group key={g.status} group={g} />)}
     </div>
   );

@@ -17,6 +17,7 @@
 import type { LifecycleGoalView } from '@/lib/bindings/LifecycleGoalView';
 import type { LifecycleHealth } from '@/lib/bindings/LifecycleHealth';
 import type { LifecycleMetricKey } from '@/lib/bindings/LifecycleMetricKey';
+import type { LifecyclePreviousView } from '@/lib/bindings/LifecyclePreviousView';
 import type { LifecycleStepHealthView } from '@/lib/bindings/LifecycleStepHealthView';
 
 import type { JourneyNode } from '../../journey/journeyModel';
@@ -44,8 +45,14 @@ export interface HealthStep {
   /** The number the step is judged by (drawn large); null for an instructed step. */
   primary: StepMetric | null;
   measuredAt: string | null;
+  /** The base tip that measure ran on; null for evidence steps and when unmeasured. */
+  headSha: string | null;
   /** For a `stale` step, the verdict it had on the older base tip; null otherwise or when unknown. */
   staleOf: LifecycleHealth | null;
+  /** The figure a rail card draws: the first RATE the step carries (a time is never the figure); null when it has none. */
+  figure: StepMetric | null;
+  /** The step as judged one measurement earlier; null when there is none (docs, instructed, custom steps, a first measure). */
+  previous: LifecyclePreviousView | null;
 }
 
 /** The verdict a stale step's older measure gave; no row means "not known". */
@@ -113,7 +120,10 @@ export function joinHealth(nodes: JourneyNode[], health: LifecycleStepHealthView
       metrics,
       primary: metrics[0] ?? null,
       measuredAt: row?.measuredAt ?? null,
+      headSha: row?.headSha ?? null,
       staleOf: verdict === 'stale' ? readStaleOf(row) : null,
+      figure: metrics.find((m) => isRateKey(m.key)) ?? null,
+      previous: row?.previous ?? null,
     };
   });
 }
@@ -146,6 +156,8 @@ export interface VerdictVisual {
   hollow: boolean;
   /** A card's edge band: the verdict as one solid, dashed, hairline or hatched stripe. */
   band: string;
+  /** The solid fill of a drawn quantity in this verdict (a meter, a goal segment); empty when nothing is drawn as a quantity. */
+  fill: string;
 }
 
 /**
@@ -157,26 +169,26 @@ export interface VerdictVisual {
 export const VERDICT: Record<LifecycleHealth, VerdictVisual> = {
   green: {
     tone: 'success', ink: 'text-status-success', outline: 'border-2 border-solid border-status-success/70',
-    wash: 'bg-status-success/10', hatched: false, hollow: false, band: 'bg-status-success',
+    wash: 'bg-status-success/10', hatched: false, hollow: false, band: 'bg-status-success', fill: 'bg-status-success',
   },
   amber: {
     tone: 'warning', ink: 'text-status-warning', outline: 'border-2 border-solid border-status-warning/70',
-    wash: 'bg-status-warning/10', hatched: false, hollow: false, band: 'bg-status-warning',
+    wash: 'bg-status-warning/10', hatched: false, hollow: false, band: 'bg-status-warning', fill: 'bg-status-warning',
   },
   red: {
     tone: 'error', ink: 'text-status-error', outline: 'border-2 border-solid border-status-error/80',
-    wash: 'bg-status-error/10', hatched: false, hollow: false, band: 'bg-status-error',
+    wash: 'bg-status-error/10', hatched: false, hollow: false, band: 'bg-status-error', fill: 'bg-status-error',
   },
   unmeasured: {
     tone: 'neutral', ink: 'text-foreground', outline: 'border-2 border-dashed border-foreground/45',
-    wash: 'bg-transparent', hatched: false, hollow: true, band: 'border-l-4 border-dashed border-foreground/45',
+    wash: 'bg-transparent', hatched: false, hollow: true, band: 'border-l-4 border-dashed border-foreground/45', fill: '',
   },
   instructed: {
     tone: 'neutral', ink: 'text-foreground', outline: 'border border-solid border-primary/15',
-    wash: 'bg-secondary/30', hatched: false, hollow: false, band: 'bg-primary/15',
+    wash: 'bg-secondary/30', hatched: false, hollow: false, band: 'bg-primary/15', fill: '',
   },
   stale: {
     tone: 'info', ink: 'text-status-info', outline: 'border-2 border-dotted border-status-info/70',
-    wash: 'lc1-hatch', hatched: true, hollow: false, band: 'border-l-4 border-dotted border-status-info',
+    wash: 'lc1-hatch', hatched: true, hollow: false, band: 'border-l-4 border-dotted border-status-info', fill: 'bg-status-info',
   },
 };

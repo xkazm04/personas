@@ -16,9 +16,11 @@ import { formatTimestamp } from '@/lib/utils/formatters';
 import { sourceKindGlyph, sourceKindLabel } from '../../journey/journeyLabels';
 import type { EvidenceRow } from '../blocks/evidenceRows';
 import { useLifecycleViewModel } from '../context';
+import { LT } from '../system/lcType';
+import { OutcomePill } from '../system/Pill';
+import { GLYPH } from '../system/scales';
 import { useDocStatusLabel } from './DocsResolution';
 import { docsNeedingWork, type DocStatus } from './docsModel';
-import { OutcomeChip } from './EvidenceRows';
 
 export function DocChangeModal({ row, docs, onClose }: { row: EvidenceRow | null; docs: LifecycleDocRow[]; onClose: () => void }) {
   const { dl } = useLifecycleViewModel();
@@ -34,36 +36,36 @@ export function DocChangeModal({ row, docs, onClose }: { row: EvidenceRow | null
       onClose={onClose}
       titleId={titleId}
       width="md"
-      icon={<Glyph className="h-5 w-5" />}
+      icon={<Glyph className={GLYPH.md} />}
       title={item.title}
       subtitle={sourceKindLabel(dl, item.sourceKind)}
-      status={<OutcomeChip outcome={row.outcome} />}
+      status={<OutcomePill outcome={row.outcome} />}
     >
       <ModalSection label={dl.lc2_change_source}>
         <div className="flex items-center gap-2">
-          <span className="typo-code break-all text-foreground" data-testid="lc2-change-ref">{item.sourceRef}</span>
+          <span className={`break-all ${LT.code}`} data-testid="lc2-change-ref">{item.sourceRef}</span>
           <CopyButton text={item.sourceRef} />
         </div>
       </ModalSection>
       <ModalSection label={dl.lc2_change_when}>
-        <p className="typo-body text-foreground">
+        <p className={LT.row}>
           {formatTimestamp(item.occurredAt)}{' '}
-          <span className="typo-caption">(<RelativeTime timestamp={item.occurredAt} />)</span>
+          <span className={LT.meta}>(<RelativeTime timestamp={item.occurredAt} />)</span>
         </p>
       </ModalSection>
       <ModalSection label={dl.lc2_change_docs_outcome}>
-        <p className="typo-body-lg text-foreground">{row.detail ?? dl.lc2_change_no_detail}</p>
+        <p className={LT.lead}>{row.detail ?? dl.lc2_change_no_detail}</p>
       </ModalSection>
       <ModalSection label={dl.lc2_change_docs_now}>
-        <p className="mb-2 typo-caption">{dl.lc2_change_docs_now_caption}</p>
+        <p className={`mb-2 ${LT.meta}`}>{dl.lc2_change_docs_now_caption}</p>
         {needing.length === 0 ? (
-          <p className="typo-body text-foreground">{dl.lc2_change_docs_all_clean}</p>
+          <p className={LT.row}>{dl.lc2_change_docs_all_clean}</p>
         ) : (
           <ul className="space-y-1">
             {needing.map((d) => (
               <li key={d.docPath} className="flex flex-wrap items-baseline gap-x-3">
-                <span className="typo-label text-foreground">{statusLabel(d.status as DocStatus)}</span>
-                <span className="typo-code break-all text-foreground">{d.docPath}</span>
+                <span className={LT.label}>{statusLabel(d.status as DocStatus)}</span>
+                <span className={`break-all ${LT.code}`}>{d.docPath}</span>
               </li>
             ))}
           </ul>

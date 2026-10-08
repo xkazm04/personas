@@ -12,7 +12,8 @@
  * - `instructed` draws a hairline only;
  * - `stale` draws a dotted track, its share, and a hatched disc.
  *
- * Motion: the share draws in once on mount (skipped under reduced motion).
+ * Motion: the share draws in once on mount (skipped under reduced motion, and
+ * when `still` says the data was already on screen before this mount).
  */
 import { useId, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
@@ -20,20 +21,23 @@ import { motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import type { LifecycleHealth } from '@/lib/bindings/LifecycleHealth';
 
+import { GAUGE, type GaugeSize } from '../../system/scales';
 import { VERDICT } from '../healthModel';
 
 interface ArcGaugeProps {
   health: LifecycleHealth;
   ratio: number | null;
-  /** Outer size in px. */
-  size: number;
-  stroke?: number;
+  /** A size from the module scale (`system/scales.GAUGE`), never a pixel count. */
+  size: GaugeSize;
   shape?: 'ring' | 'arc';
+  /** Draw the share in place, without the one-shot draw-in (cached data, a ghost's twin). */
+  still?: boolean;
   children?: ReactNode;
 }
 
-export function ArcGauge({ health, ratio, size, stroke = 6, shape = 'ring', children }: ArcGaugeProps) {
+export function ArcGauge({ health, ratio, size: sizeName, shape = 'ring', still = false, children }: ArcGaugeProps) {
   const reduced = useReducedMotion();
+  const { size, stroke } = GAUGE[sizeName];
   const hatchId = useId();
   const v = VERDICT[health];
   const r = (size - stroke) / 2 - 1;
@@ -78,7 +82,7 @@ export function ArcGauge({ health, ratio, size, stroke = 6, shape = 'ring', chil
             strokeWidth={stroke}
             strokeLinecap="round"
             className={v.ink}
-            initial={reduced ? false : { pathLength: 0 }}
+            initial={reduced || still ? false : { pathLength: 0 }}
             animate={{ pathLength: share }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           />

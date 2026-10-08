@@ -1,6 +1,7 @@
 // One editable command in the commands editor: the command line, its kind
-// (only the kinds this step measures) and an optional time budget in seconds
-// (empty = the kind's default), with a remove control.
+// (only the kinds this step measures, from the snapshot's rules) and an
+// optional time budget in seconds (empty = the kind's default), with a remove
+// control.
 import { Trash2 } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
@@ -10,16 +11,24 @@ import { inputFieldClass } from '@/lib/utils/designTokens';
 import { formatNumeric } from '@/lib/utils/formatters';
 
 import { useLifecycleViewModel } from '../context';
-import { DEFAULT_BUDGET_MS } from './healthRules';
+import { lcSurface } from '../system/lcSurface';
+import { defaultBudgetMs } from '../system/rules';
+import { GLYPH } from '../system/scales';
+import { useSnapshotRules } from '../system/useSnapshotRules';
 import { draftProblem, type CommandsEditorState, type DraftCommand } from './useCommandsEditor';
 import { useKindLabel } from './useKindLabel';
 
 export function CommandDraftRow({ editor, row, index }: { editor: CommandsEditorState; row: DraftCommand; index: number }) {
   const { dl, tx } = useLifecycleViewModel();
+  const rules = useSnapshotRules();
   const kind = useKindLabel();
   const problem = editor.showProblems ? draftProblem(row) : null;
+  const fallback = defaultBudgetMs(rules, row.kind);
   return (
-    <li className="grid grid-cols-1 items-start gap-3 rounded-card border border-primary/15 bg-background/60 p-3 md:grid-cols-[minmax(0,1fr)_11rem_9rem_auto]" data-testid={`lc2-draft-${index}`}>
+    <li
+      className={`grid grid-cols-1 items-start gap-3 md:grid-cols-[minmax(0,1fr)_11rem_9rem_auto] ${lcSurface('card')}`}
+      data-testid={`lc2-draft-${index}`}
+    >
       <FormField label={dl.lc2_field_command} error={problem === 'command' ? dl.lc2_field_command_required : undefined} forceValidation>
         {(p) => (
           <input
@@ -53,7 +62,7 @@ export function CommandDraftRow({ editor, row, index }: { editor: CommandsEditor
             inputMode="decimal"
             value={row.budgetSec}
             onChange={(e) => editor.update(row.key, { budgetSec: e.target.value })}
-            placeholder={tx(dl.lc2_field_budget_default, { budget: formatNumeric(DEFAULT_BUDGET_MS[row.kind], 'ms') })}
+            placeholder={fallback != null ? tx(dl.lc2_field_budget_default, { budget: formatNumeric(fallback, 'ms') }) : undefined}
             className={inputFieldClass(problem === 'budget')}
             data-testid={`lc2-draft-budget-${index}`}
           />
@@ -67,7 +76,7 @@ export function CommandDraftRow({ editor, row, index }: { editor: CommandsEditor
         onClick={() => editor.remove(row.key)}
         data-testid={`lc2-draft-remove-${index}`}
       >
-        <Trash2 className="h-4 w-4" />
+        <Trash2 className={GLYPH.sm} />
       </Button>
     </li>
   );

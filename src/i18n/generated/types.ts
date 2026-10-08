@@ -17812,7 +17812,6 @@ export type Translations = {
       lc_journey_label: string;
       lc_node_label: string;
       lc_dot_label: string;
-      lc_legend_evidence: string;
       lc_detail_rule: string;
       lc_detail_bindings: string;
       lc_detail_evidence: string;
@@ -17940,6 +17939,28 @@ export type Translations = {
       lc2_change_docs_now: string;
       lc2_change_docs_now_caption: string;
       lc2_change_docs_all_clean: string;
+      lcx1_repo: string;
+      lcx1_fresh_never: string;
+      lcx1_fresh_current: string;
+      lcx1_fresh_behind: string;
+      lcx1_fresh_behind_one: string;
+      lcx1_fresh_measured: string;
+      lcx2_delta_pts: string;
+      lcx2_delta_pts_unit: string;
+      lcx2_delta_spoken: string;
+      lcx2_samples_compact: string;
+      lcx2_by_instruction: string;
+      lcx2_by_instruction_note: string;
+      lcx2_was: string;
+      lcx2_peek_no_earlier: string;
+      lcx2_peek_unchanged: string;
+      lcx2_peek_measured_at: string;
+      lcx2_peek_earlier: string;
+      lcx2_peek_recent: string;
+      lcx2_peek_outcome_count: string;
+      lcx2_peek_enforced: string;
+      lcx2_goal: string;
+      lcx2_filter_label: string;
     };
     dev_projects: {
       bulk_selected_one: string;

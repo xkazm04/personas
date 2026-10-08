@@ -3,7 +3,8 @@
  * commands (or says they are auto-detected from the repo's manifests); Edit
  * opens a draft with add / edit / remove and a time budget per command, and
  * Save appends a new practice version. The outcome is said in a line under
- * the editor, never a toast.
+ * the editor, never a toast. A default budget shown here is the snapshot's
+ * rule for the command's kind.
  */
 import { Pencil, Plus, RotateCcw } from 'lucide-react';
 
@@ -13,25 +14,31 @@ import type { LifecycleGateCommand } from '@/lib/bindings/LifecycleGateCommand';
 import { formatNumeric } from '@/lib/utils/formatters';
 
 import { useLifecycleViewModel } from '../context';
+import { RHYTHM, lcSurface } from '../system/lcSurface';
+import { LT } from '../system/lcType';
+import { defaultBudgetMs } from '../system/rules';
+import { GLYPH } from '../system/scales';
+import { useSnapshotRules } from '../system/useSnapshotRules';
 import { CommandDraftRow } from './CommandDraftRow';
-import { DEFAULT_BUDGET_MS } from './healthRules';
 import type { CommandsEditorState } from './useCommandsEditor';
 import { useKindLabel } from './useKindLabel';
 
 function PinnedList({ commands }: { commands: LifecycleGateCommand[] }) {
   const { dl, tx } = useLifecycleViewModel();
+  const rules = useSnapshotRules();
   const kind = useKindLabel();
+  const budgetLine = (c: LifecycleGateCommand): string | null => {
+    if (c.budgetMs != null) return tx(dl.lc2_budget_own, { budget: formatNumeric(c.budgetMs, 'ms') });
+    const fallback = defaultBudgetMs(rules, c.kind);
+    return fallback != null ? tx(dl.lc2_budget_default, { budget: formatNumeric(fallback, 'ms') }) : null;
+  };
   return (
-    <ul className="space-y-1.5" data-testid="lc2-commands-pinned">
+    <ul className={RHYTHM.tight} data-testid="lc2-commands-pinned">
       {commands.map((c) => (
-        <li key={c.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-card border border-primary/10 bg-background/60 px-4 py-2">
-          <span className="typo-code text-foreground">{c.command}</span>
-          <span className="typo-body text-foreground">{kind(c.kind)}</span>
-          <span className="typo-caption">
-            {c.budgetMs != null
-              ? tx(dl.lc2_budget_own, { budget: formatNumeric(c.budgetMs, 'ms') })
-              : tx(dl.lc2_budget_default, { budget: formatNumeric(DEFAULT_BUDGET_MS[c.kind], 'ms') })}
-          </span>
+        <li key={c.id} className={`flex flex-wrap items-baseline gap-x-4 gap-y-1 ${lcSurface('card')}`}>
+          <span className={LT.code}>{c.command}</span>
+          <span className={LT.row}>{kind(c.kind)}</span>
+          <span className={LT.meta}>{budgetLine(c)}</span>
         </li>
       ))}
     </ul>
@@ -41,7 +48,7 @@ function PinnedList({ commands }: { commands: LifecycleGateCommand[] }) {
 export function CommandsEditor({ editor, commands }: { editor: CommandsEditorState; commands: LifecycleGateCommand[] | null }) {
   const { dl } = useLifecycleViewModel();
   const actions = editor.editing ? undefined : (
-    <Button variant="secondary" size="sm" icon={<Pencil className="h-3.5 w-3.5" />} onClick={() => editor.open()} data-testid="lc2-commands-edit">
+    <Button variant="secondary" size="sm" icon={<Pencil className={GLYPH.sm} />} onClick={() => editor.open()} data-testid="lc2-commands-edit">
       {dl.lc2_commands_edit}
     </Button>
   );
@@ -49,19 +56,19 @@ export function CommandsEditor({ editor, commands }: { editor: CommandsEditorSta
     <div ref={editor.rootRef} className="scroll-mt-6" data-testid="lc2-commands">
       <Section title={dl.lc2_commands_title} level={2} actions={actions} desc={commands ? undefined : dl.lc2_commands_auto}>
         {!editor.editing && commands && commands.length > 0 && <PinnedList commands={commands} />}
-        {!editor.editing && commands && commands.length === 0 && <p className="typo-body text-foreground">{dl.lc2_commands_none}</p>}
+        {!editor.editing && commands && commands.length === 0 && <p className={LT.row}>{dl.lc2_commands_none}</p>}
         {editor.editing && (
-          <div className="space-y-3">
-            <ul className="space-y-2">
+          <div className={RHYTHM.block}>
+            <ul className={RHYTHM.tight}>
               {editor.draft.map((row, i) => <CommandDraftRow key={row.key} editor={editor} row={row} index={i} />)}
             </ul>
             <div className="flex flex-wrap items-center gap-2">
-              <Button variant="secondary" size="sm" icon={<Plus className="h-3.5 w-3.5" />} onClick={editor.add} data-testid="lc2-commands-add">
+              <Button variant="secondary" size="sm" icon={<Plus className={GLYPH.sm} />} onClick={editor.add} data-testid="lc2-commands-add">
                 {dl.lc2_commands_add}
               </Button>
               <span className="flex-1" />
               {commands && (
-                <Button variant="ghost" size="sm" icon={<RotateCcw className="h-3.5 w-3.5" />} onClick={() => void editor.resetToAuto()} disabled={editor.saving}>
+                <Button variant="ghost" size="sm" icon={<RotateCcw className={GLYPH.sm} />} onClick={() => void editor.resetToAuto()} disabled={editor.saving}>
                   {dl.lc2_commands_use_auto}
                 </Button>
               )}
@@ -73,7 +80,11 @@ export function CommandsEditor({ editor, commands }: { editor: CommandsEditorSta
           </div>
         )}
         {/* Always mounted, so a save's result is announced when its text arrives. */}
-        <p role="status" className={`typo-body empty:hidden ${editor.result?.tone === 'error' ? 'text-status-error' : 'text-status-success'} ${editor.result ? 'mt-3' : ''}`} data-testid="lc2-commands-result">
+        <p
+          role="status"
+          className={`${LT.row} empty:hidden ${editor.result?.tone === 'error' ? 'text-status-error' : 'text-status-success'} ${editor.result ? 'mt-3' : ''}`}
+          data-testid="lc2-commands-result"
+        >
           {editor.result?.text ?? ''}
         </p>
       </Section>

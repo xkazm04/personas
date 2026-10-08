@@ -60,7 +60,7 @@ describe('metrics', () => {
 
   it('keeps a metric the table does not expect instead of dropping it', () => {
     const out = stepMetrics('docs', {
-      stepId: 'docs', health: 'green', staleOf: null, reason: null, measuredAt: null, headSha: null,
+      stepId: 'docs', health: 'green', staleOf: null, reason: null, measuredAt: null, headSha: null, previous: null,
       metrics: [{ key: 'median_ms', value: 1200, samples: 4 }, { key: 'docs_clean_pct', value: 92, samples: 38 }],
     });
     expect(out.map((m) => m.key)).toEqual(['docs_clean_pct', 'median_ms']);

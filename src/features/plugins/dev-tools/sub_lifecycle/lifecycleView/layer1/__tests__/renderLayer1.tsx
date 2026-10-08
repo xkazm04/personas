@@ -23,7 +23,7 @@ export function renderLayer1(ui: ReactNode, snapshot: LifecycleSnapshot, initial
     const model: LifecycleViewModel = {
       t, tx, dl: t.plugins.dev_lifecycle,
       projectId: snapshot.projectId, projectName: 'Acme', snapshot,
-      loading: false, error: null, refetch: () => {}, subtitle: '',
+      loading: false, error: null, refetch: () => {}, practice: null, freshness: null,
       lanes, order, evidence: snapshot.evidence,
       selected: order.find((n) => n.id === selectedId) ?? order[0] ?? null,
       select: setSelectedId,

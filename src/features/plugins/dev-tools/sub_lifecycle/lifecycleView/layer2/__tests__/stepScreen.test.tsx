@@ -70,7 +70,8 @@ describe('Layer 2: the step screen', () => {
     renderLayer1(<LifecycleBody />, snap('p-fail'), 'gate');
     await screen.findByText("Could not read this step's run history.");
     expect(screen.getByTestId('lc2-header')).toBeTruthy();
-    expect(screen.getByText('The run history could not be read.')).toBeTruthy();
+    // The preset is its own lazy chunk, so its empty band arrives a tick after the header.
+    expect(await screen.findByText('The run history could not be read.')).toBeTruthy();
   });
 
   it('fetches nothing for a step whose preset reads the snapshot only', async () => {

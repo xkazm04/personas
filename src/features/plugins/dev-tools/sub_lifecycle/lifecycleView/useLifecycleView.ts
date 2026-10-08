@@ -26,6 +26,7 @@ import { authorLabel, bindingKindLabel, presetLabel, stepLabel } from '../journe
 import { buildLanes, installInFlight, missingBindings, weakest } from '../journey/journeyModel';
 import type { JourneyLanes, JourneyNode } from '../journey/journeyModel';
 import { useLifecycleSnapshot } from '../journey/useLifecycleSnapshot';
+import { freshnessOf, type Freshness } from './frame/freshness';
 import { useLifecycleHeadline } from './useLifecycleHeadline';
 import { useLifecycleInstall, type InstallNote } from './useLifecycleInstall';
 
@@ -43,7 +44,10 @@ export interface LifecycleViewModel {
   loading: boolean;
   error: string | null;
   refetch: () => void;
-  subtitle: string;
+  /** "Solo practice, v2 by Athena"; null until the snapshot is in. */
+  practice: string | null;
+  /** How fresh the measurement is against the base branch; null with no snapshot or no base branch. */
+  freshness: Freshness | null;
   lanes: JourneyLanes;
   /** Both lanes in journey order: the one sequence selection and keys walk. */
   order: JourneyNode[];
@@ -110,7 +114,7 @@ export function useLifecycleView(): LifecycleViewModel {
   }, []);
   const closeStep = useCallback(() => setOpenStepId(null), []);
 
-  const subtitle = current
+  const practice = current
     ? current.version === 0
       ? tx(dl.lc_subtitle_default, { preset: presetLabel(dl, current.preset) })
       : tx(dl.lc_subtitle_version, {
@@ -118,7 +122,8 @@ export function useLifecycleView(): LifecycleViewModel {
           version: current.version,
           author: authorLabel(dl, current.author) ?? '',
         })
-    : project?.root_path ?? '';
+    : null;
+  const freshness = useMemo(() => (current ? freshnessOf(current.tip) : null), [current]);
 
   const askAthena = useCallback(() => {
     if (!project) return;
@@ -137,7 +142,8 @@ export function useLifecycleView(): LifecycleViewModel {
     projectName: project?.name ?? null,
     snapshot: current,
     loading, error, refetch,
-    subtitle,
+    practice,
+    freshness,
     lanes, order,
     evidence: current?.evidence ?? [],
     selected, select,

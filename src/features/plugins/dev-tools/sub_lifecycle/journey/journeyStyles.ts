@@ -33,7 +33,6 @@
  * differently draws it in its own directory; it does not add a column here.
  */
 import type { LifecycleBindingState } from '@/lib/bindings/LifecycleBindingState';
-import type { LifecycleOutcome } from '@/lib/bindings/LifecycleOutcome';
 
 /** The colourless half of the ladder: style + width, per state. */
 const STROKE: Record<LifecycleBindingState, string> = {
@@ -77,20 +76,3 @@ export const STATE_CHIP: Record<LifecycleBindingState, string> = {
   missing: `${STROKE.missing} border-status-error`,
   advisory: `${STROKE.advisory} border-foreground/55`,
 };
-
-/** Evidence dots: filled = done, hollow = skipped, dashed ring = unknown, error token = failed. */
-export const OUTCOME_DOT: Record<LifecycleOutcome, string> = {
-  done: 'bg-status-success border border-status-success',
-  skipped: 'bg-transparent border border-foreground/70',
-  unknown: 'bg-transparent border border-dashed border-foreground/40',
-  failed: 'bg-status-error border border-status-error',
-};
-
-export const OUTCOME_TEXT: Record<LifecycleOutcome, string> = {
-  done: 'text-status-success',
-  skipped: 'text-foreground',
-  unknown: 'text-foreground',
-  failed: 'text-status-error',
-};
-
-export const LEGEND_STATES: LifecycleBindingState[] = ['live', 'detected', 'pending', 'missing', 'advisory'];

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildLanes } from '../../journey/journeyModel';
 import { docRow, gateDetail, mixWithEvidence, run } from '../../journey/__tests__/detailFixtures';
-import { healthyMix, soloV0 } from '../../journey/__tests__/fixtures';
+import { DEFAULT_RULES, healthyMix, soloV0 } from '../../journey/__tests__/fixtures';
 import { evidenceRowsFor } from '../blocks/evidenceRows';
 import { reasonBody, weakestByHealth } from '../headline';
 import { joinHealth } from '../layer1/healthModel';
@@ -46,7 +46,7 @@ describe('weakestByHealth', () => {
 
 describe('gateModel', () => {
   it('groups runs per command with median, pass rate over answered runs and the budget', () => {
-    const rows = commandRows(gateDetail().runs, null);
+    const rows = commandRows(gateDetail().runs, null, DEFAULT_RULES);
     const byId = Object.fromEntries(rows.map((r) => [r.commandId, r]));
     expect(rows.map((r) => r.commandId)).toEqual(['tsc', 'eslint', 'check', 'clippy']);
     expect(byId.tsc!.medianMs).toBe(61_000);
@@ -62,12 +62,20 @@ describe('gateModel', () => {
   });
 
   it('keeps a configured command that never ran, and honours a budget override', () => {
-    const rows = commandRows([], [{ id: 'fmt', command: 'cargo fmt --check', kind: 'lint', budgetMs: 5_000 }]);
+    const rows = commandRows([], [{ id: 'fmt', command: 'cargo fmt --check', kind: 'lint', budgetMs: 5_000 }], DEFAULT_RULES);
     expect(rows).toHaveLength(1);
     expect(rows[0]!.latest).toBeNull();
     expect(rows[0]!.budgetMs).toBe(5_000);
     expect(rows[0]!.budgetOverridden).toBe(true);
     expect(slowest(rows)).toBeNull();
+  });
+
+  it('takes a default budget from the snapshot rules, not from a copy', () => {
+    const rules = { ...DEFAULT_RULES, defaultBudgets: [{ kind: 'typecheck' as const, budgetMs: 45_000 }] };
+    const byId = Object.fromEntries(commandRows(gateDetail().runs, null, rules).map((r) => [r.commandId, r]));
+    expect(byId.tsc!.budgetMs).toBe(45_000);
+    // A kind the rules name no budget for draws no budget line, rather than an invented one.
+    expect(byId.eslint!.budgetMs).toBeNull();
   });
 
   it('reads the coverage trend oldest first', () => {

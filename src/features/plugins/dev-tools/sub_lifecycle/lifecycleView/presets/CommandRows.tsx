@@ -15,26 +15,30 @@ import { ListRow, Rows, Section, type RowColumn } from '@/features/shared/compon
 import { formatNumeric } from '@/lib/utils/formatters';
 
 import { useLifecycleViewModel } from '../context';
+import { lcSurface } from '../system/lcSurface';
+import { LT } from '../system/lcType';
+import { RunPill } from '../system/Pill';
+import { GLYPH } from '../system/scales';
 import { slowest, type CommandRow } from './gateModel';
 import { BudgetBar } from './parts/BudgetBar';
-import { RunOutcomeChip } from './parts/RunOutcomeChip';
 import { Sparkline, type SparkPoint } from './parts/Sparkline';
 import { useKindLabel } from './useKindLabel';
 
 function sparkPoints(row: CommandRow): SparkPoint[] {
+  const budget = row.budgetMs;
   return [...row.runs].reverse().map((r) => ({
     value: r.outcome === 'passed' || r.outcome === 'failed' ? r.durationMs : null,
-    tone: r.outcome === 'failed' ? 'error' : r.durationMs > row.budgetMs ? 'warning' : 'success',
+    tone: r.outcome === 'failed' ? 'error' : budget != null && r.durationMs > budget ? 'warning' : 'success',
   }));
 }
 
 function PassRate({ row }: { row: CommandRow }) {
   const { dl, tx } = useLifecycleViewModel();
-  if (row.passRate == null) return <span className="typo-data text-foreground" data-na="true">{dl.lc1_na}</span>;
+  if (row.passRate == null) return <span className={LT.rowNum} data-na="true">{dl.lc1_na}</span>;
   return (
     <span className="flex flex-col items-end">
-      <Numeric value={row.passRate} unit="percent" precision={0} className="typo-data text-foreground" />
-      <span className="typo-caption">{tx(dl.lc1_samples, { count: row.answered })}</span>
+      <Numeric value={row.passRate} unit="percent" precision={0} className={LT.rowNum} />
+      <span className={LT.metaNum}>{tx(dl.lc1_samples, { count: row.answered })}</span>
     </span>
   );
 }
@@ -53,12 +57,17 @@ function CommandLine({ row }: { row: CommandRow }) {
     <>
       <ListRow
         size="l"
-        name={<span className="typo-code text-foreground">{row.command}</span>}
+        name={<span className={LT.code}>{row.command}</span>}
         meta={meta}
         cells={[
-          row.latest ? <RunOutcomeChip outcome={row.latest.outcome} /> : <span className="typo-body text-foreground">{dl.lc2_never_ran}</span>,
+          row.latest ? <RunPill outcome={row.latest.outcome} /> : <span className={LT.row}>{dl.lc2_never_ran}</span>,
           <BudgetBar run={row.latest} budgetMs={row.budgetMs} />,
-          <Sparkline points={sparkPoints(row)} refs={[{ value: row.budgetMs, tone: 'warning' }]} width={112} testId={`lc2-spark-${row.commandId}`} />,
+          <Sparkline
+            points={sparkPoints(row)}
+            refs={row.budgetMs != null ? [{ value: row.budgetMs, tone: 'warning' }] : []}
+            width={112}
+            testId={`lc2-spark-${row.commandId}`}
+          />,
           <PassRate row={row} />,
         ]}
         // Every row carries the toggle's width, so a row with an error lines up with one without.
@@ -71,14 +80,17 @@ function CommandLine({ row }: { row: CommandRow }) {
             onClick={() => setOpen((o) => !o)}
             data-testid={`lc2-error-toggle-${row.commandId}`}
           >
-            <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`${GLYPH.sm} transition-transform ${open ? 'rotate-180' : ''}`} />
           </Button>
         ) : <span aria-hidden className="block h-7 w-7" />}
         testId={`lc2-cmd-${row.commandId}`}
       />
       {row.firstError && (
         <Collapse open={open} unmountWhenClosed>
-          <pre className="mx-4 mb-3 mt-1 overflow-x-auto whitespace-pre-wrap rounded-card border border-status-error/30 bg-status-error/5 px-4 py-3 typo-code text-foreground" data-testid={`lc2-error-${row.commandId}`}>
+          <pre
+            className={`mx-4 mb-3 mt-1 overflow-x-auto whitespace-pre-wrap ${lcSurface('plate', 'border border-status-error/30 bg-status-error/5')} ${LT.code}`}
+            data-testid={`lc2-error-${row.commandId}`}
+          >
             {row.firstError}
           </pre>
         </Collapse>
@@ -105,7 +117,7 @@ export function CommandRows({ rows, loading, unavailable }: { rows: CommandRow[]
       state={loading ? 'loading' : undefined}
     >
       {slow?.latest && (
-        <p className="mb-3 typo-body-lg text-foreground" data-testid="lc2-slowest">
+        <p className={`mb-3 ${LT.lead}`} data-testid="lc2-slowest">
           {tx(dl.lc2_slowest, { command: slow.command, time: formatNumeric(slow.latest.durationMs, 'ms') })}
         </p>
       )}

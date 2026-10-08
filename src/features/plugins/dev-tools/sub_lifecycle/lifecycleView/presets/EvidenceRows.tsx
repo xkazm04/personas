@@ -1,8 +1,9 @@
 /**
  * Changes that passed through a step (tasks, commits, pull requests), one row
- * each: the outcome on the spine and as a chip, the change's title, where it
- * came from, when, and the step's own note for it in full readable text under
- * the row (a null note shows nothing). Rows with `onPress` open the change.
+ * each: the outcome on the spine and as the module's pill, the change's title,
+ * where it came from, when, and the step's own note for it in full readable
+ * text under the row (a null note shows nothing). Rows with `onPress` open the
+ * change.
  */
 import { Fragment, type ReactNode } from 'react';
 
@@ -11,25 +12,18 @@ import { ListRow, Rows, type Glyph, type Tone } from '@/features/shared/componen
 import type { LifecycleOutcome } from '@/lib/bindings/LifecycleOutcome';
 
 import { outcomeLabel, sourceKindLabel } from '../../journey/journeyLabels';
-import { OUTCOME_TEXT } from '../../journey/journeyStyles';
 import type { EvidenceRow } from '../blocks/evidenceRows';
 import { useLifecycleViewModel } from '../context';
+import { LT } from '../system/lcType';
+import { OutcomePill } from '../system/Pill';
 
+/** The spine mark per outcome (the kit's own vocabulary; the pill beside it is the module's). */
 export const OUTCOME_MARK: Record<LifecycleOutcome, { tone: Tone; glyph: Glyph }> = {
   done: { tone: 'success', glyph: 'solid' },
   skipped: { tone: 'warning', glyph: 'hollow' },
   unknown: { tone: 'neutral', glyph: 'empty' },
   failed: { tone: 'error', glyph: 'solid' },
 };
-
-export function OutcomeChip({ outcome }: { outcome: LifecycleOutcome }) {
-  const { dl } = useLifecycleViewModel();
-  return (
-    <span className={`rounded-pill border border-current px-2.5 py-0.5 typo-label ${OUTCOME_TEXT[outcome]}`} data-outcome={outcome}>
-      {outcomeLabel(dl, outcome)}
-    </span>
-  );
-}
 
 interface EvidenceRowsProps {
   rows: EvidenceRow[];
@@ -47,14 +41,14 @@ export function EvidenceRows({ rows, empty, onPress, testId }: EvidenceRowsProps
           <Fragment key={r.key}>
             <ListRow
               name={r.item.title}
-              meta={<><span>{sourceKindLabel(dl, r.item.sourceKind)}</span><span className="typo-code">{r.item.sourceRef}</span></>}
+              meta={<><span>{sourceKindLabel(dl, r.item.sourceKind)}</span><span className={LT.code}>{r.item.sourceRef}</span></>}
               mark={{ ...OUTCOME_MARK[r.outcome], label: outcomeLabel(dl, r.outcome) }}
-              figures={<OutcomeChip outcome={r.outcome} />}
+              figures={<OutcomePill outcome={r.outcome} />}
               time={<RelativeTime timestamp={r.item.occurredAt} />}
               onPress={onPress ? () => onPress(r) : undefined}
               testId={`${testId}-row-${r.key}`}
             />
-            {r.detail && <p className="pb-3 pl-14 pr-4 typo-body text-foreground" data-testid={`${testId}-detail-${r.key}`}>{r.detail}</p>}
+            {r.detail && <p className={`pb-3 pl-14 pr-4 ${LT.row}`} data-testid={`${testId}-detail-${r.key}`}>{r.detail}</p>}
           </Fragment>
         ))}
       </Rows>

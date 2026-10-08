@@ -77,7 +77,10 @@ describe('LifecyclePage', () => {
 
     await screen.findByTestId('lc-install');
     expect(screen.getByText('Solo practice, v2 by Athena')).toBeTruthy();
-    expect(screen.getByTestId('lc-dots-gate').querySelector('[data-outcome="skipped"]')).toBeTruthy();
+    // The recent outcomes live in the card's peek (layer one has no room for 6px beads).
+    fireEvent.focus(screen.getByTestId('lc-node-gate'));
+    expect((await screen.findByTestId('lc-dots-gate')).querySelector('[data-outcome="skipped"]')).toBeTruthy();
+    fireEvent.blur(screen.getByTestId('lc-node-gate'));
 
     fireEvent.click(screen.getByTestId('lc-install'));
     fireEvent.click(await screen.findByTestId('lc-install-confirm-go'));
@@ -159,6 +162,52 @@ describe('LifecyclePage', () => {
     project('p-measuring', { ...healthyMix(), measuring: true });
     render(<LifecyclePage />);
     expect((await screen.findByTestId('lc-measure')).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('heads the page with the project, the practice and how fresh its measurement is', async () => {
+    project('p-head-never', soloV0());
+    const { unmount } = render(<LifecyclePage />);
+    const never = await screen.findByTestId('lc-freshness');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Acme');
+    expect(screen.getByTestId('lc-practice').textContent).toBe('Solo practice, default');
+    expect(never.getAttribute('data-freshness')).toBe('never');
+    expect(never.textContent).toBe('Never measured');
+    unmount();
+
+    project('p-head-current', healthyMix());
+    const second = render(<LifecyclePage />);
+    const current = await screen.findByTestId('lc-freshness');
+    expect(current.getAttribute('data-freshness')).toBe('current');
+    expect(current.textContent).toMatch(/^Measured .+ on a1b2c3d, up to date with master$/);
+    expect(current.className).not.toContain('text-status-warning');
+    second.unmount();
+
+    const mix = healthyMix();
+    project('p-head-behind', { ...mix, tip: { ...mix.tip!, measuredSha: 'ffff0000aaaa', commitsBehind: 14 } });
+    render(<LifecyclePage />);
+    const behind = await screen.findByTestId('lc-freshness');
+    expect(behind.getAttribute('data-freshness')).toBe('behind');
+    expect(behind.textContent).toMatch(/^Measured .+, 14 commits behind master$/);
+    expect(behind.className).toContain('text-status-warning');
+  });
+
+  it('says nothing about freshness when no base branch resolves', async () => {
+    project('p-head-norepo', { ...healthyMix(), tip: null });
+    render(<LifecyclePage />);
+    await screen.findByTestId('lc-practice');
+    expect(screen.queryByTestId('lc-freshness')).toBeNull();
+  });
+
+  it('holds every header control at its place while the snapshot loads', async () => {
+    activeProjectId = 'p-head-loading';
+    getLifecycle.mockReturnValue(new Promise(() => {}));
+    render(<LifecyclePage />);
+    // The cluster is chrome: present, disabled, before any data.
+    expect(screen.getByTestId('lc-measure').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByTestId('lc-overseer-send').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByTestId('lc-ask-athena').hasAttribute('disabled')).toBe(false);
+    expect(screen.getByTestId('lc1-ghost')).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Acme');
   });
 
   it('shows an inline error when the read fails', async () => {

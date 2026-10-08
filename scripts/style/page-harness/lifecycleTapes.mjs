@@ -5,8 +5,11 @@
 // goal), plus a dozen changes of evidence so the beads have something to say.
 // Fixture CODE, no personal data. Keep it in step with the TS fixture.
 //
-//   plugins/lifecycle/collar   Layer 1, the collar rail
-//   plugins/lifecycle/empty    the collar rail with `health: []` (the backend before WP1)
+//   plugins/lifecycle/collar   Layer 1, the collar rail; measured 30 min ago on the base tip
+//   plugins/lifecycle/empty    the collar rail with `health: []` (the backend before WP1), never measured
+//   plugins/lifecycle/behind   the collar rail measured 2 days ago, 14 commits behind the base tip
+//   plugins/lifecycle/loading  the snapshot never answers: the header's chrome and the Layer-1 ghost
+//   plugins/lifecycle/regressed  the rail one measure after a bad day: most steps worse than their earlier measure
 
 export function lifecycleTapes({ RECORDED_AT }) {
   const T0 = Date.parse(RECORDED_AT);
@@ -36,23 +39,51 @@ export function lifecycleTapes({ RECORDED_AT }) {
     step('record', 'after', [['app', 'live']], { done: 12 }),
   ];
 
-  const health = (stepId, verdict, reason, metrics = [], measuredAt = null, staleOf = null) => ({
+  const health = (stepId, verdict, reason, metrics = [], measuredAt = null, staleOf = null, previous = null) => ({
     stepId, health: verdict, staleOf, reason,
     metrics: metrics.map(([key, value, samples]) => ({ key, value, samples })),
-    measuredAt, headSha: measuredAt ? 'a1b2c3d' : null,
+    measuredAt, headSha: measuredAt ? 'a1b2c3d' : null, previous,
+  });
+  // The step as judged one measurement earlier (`previous`, wave 2 of Lifecycle excellence).
+  const prev = (verdict, metrics = [], measuredAt = iso(60 * 50)) => ({
+    health: verdict,
+    metrics: metrics.map(([key, value, samples]) => ({ key, value, samples })),
+    measuredAt, headSha: measuredAt ? '9f8e7d6' : null,
   });
   const at = iso(30);
   const HEALTH = [
     health('frame', 'instructed', null),
     health('recall', 'instructed', null),
-    health('isolate', 'green', null, [['done_rate', 92, 12]]),
+    health('isolate', 'green', null, [['done_rate', 92, 12]], null, null, prev('green', [['done_rate', 86, 12]])),
     health('sync', 'unmeasured', 'Only 3 changes recorded; 5 are needed', [['done_rate', null, 3]]),
-    health('gate', 'amber', 'tsc 74s over 60s budget', [['median_ms', 74000, 10], ['pass_rate', 90, 10]], at),
-    health('tests', 'amber', 'Coverage 63% is under the 70% target', [['coverage_pct', 63, 1], ['median_ms', 182000, 10], ['pass_rate', 100, 10]], at),
+    health('gate', 'amber', 'tsc 74s over 60s budget', [['median_ms', 74000, 10], ['pass_rate', 90, 10]], at, null,
+      prev('green', [['median_ms', 52000, 10], ['pass_rate', 100, 10]])),
+    health('tests', 'amber', 'Coverage 63% is under the 70% target', [['coverage_pct', 63, 1], ['median_ms', 182000, 10], ['pass_rate', 100, 10]], at, null,
+      prev('amber', [['coverage_pct', 61, 1], ['median_ms', 190000, 10], ['pass_rate', 100, 10]])),
     health('docs', 'green', null, [['docs_clean_pct', 92, 38]], at),
-    health('commit', 'stale', 'Last measured on an older base tip', [['done_rate', 85, 12]], iso(60 * 24 * 7), 'green'),
-    health('land', 'red', 'Done in 40% of recent changes, 80% needed', [['done_rate', 40, 12]]),
-    health('record', 'green', null, [['done_rate', 100, 12]]),
+    health('commit', 'stale', 'Last measured on an older base tip', [['done_rate', 85, 12]], iso(60 * 24 * 7), 'green',
+      prev('green', [['done_rate', 85, 12]], iso(60 * 24 * 9))),
+    health('land', 'red', 'Done in 40% of recent changes, 80% needed', [['done_rate', 40, 12]], null, null,
+      prev('amber', [['done_rate', 52, 12]])),
+    health('record', 'green', null, [['done_rate', 100, 12]], null, null, prev('green', [['done_rate', 100, 12]])),
+  ];
+
+  // One measure after a bad day: most steps worse than their earlier measure,
+  // four of them changed verdict; sync measured for the first time (better).
+  const REGRESSED = [
+    health('frame', 'instructed', null),
+    health('recall', 'instructed', null),
+    health('isolate', 'amber', 'Done in 70% of recent changes, 80% needed', [['done_rate', 70, 12]], null, null, prev('green', [['done_rate', 92, 12]])),
+    health('sync', 'green', null, [['done_rate', 85, 7]], null, null, prev('unmeasured', [['done_rate', null, 3]])),
+    health('gate', 'red', 'eslint failed in 4 of 10 runs', [['median_ms', 96000, 10], ['pass_rate', 60, 10]], at, null,
+      prev('amber', [['median_ms', 74000, 10], ['pass_rate', 90, 10]])),
+    health('tests', 'amber', 'Coverage 58% is under the 70% target', [['coverage_pct', 58, 4], ['median_ms', 241000, 10], ['pass_rate', 90, 10]], at, null,
+      prev('green', [['coverage_pct', 74, 3], ['median_ms', 182000, 10], ['pass_rate', 100, 10]])),
+    health('docs', 'amber', '6 of 38 docs out of date', [['docs_clean_pct', 84, 38]], at),
+    health('commit', 'green', null, [['done_rate', 88, 12]], null, null, prev('green', [['done_rate', 95, 12]])),
+    health('land', 'red', 'Done in 30% of recent changes, 80% needed', [['done_rate', 30, 12]], null, null,
+      prev('red', [['done_rate', 40, 12]])),
+    health('record', 'green', null, [['done_rate', 100, 12]], null, null, prev('green', [['done_rate', 100, 12]])),
   ];
 
   // Twelve changes, newest first. `land` is skipped in most of them (its red),
@@ -76,12 +107,27 @@ export function lifecycleTapes({ RECORDED_AT }) {
     };
   });
 
+  // The judging rules the backend ships on every snapshot, at their real defaults.
+  const RULES = {
+    defaultBudgets: [
+      { kind: 'lint', budgetMs: 60000 }, { kind: 'typecheck', budgetMs: 60000 }, { kind: 'test', budgetMs: 300000 },
+      { kind: 'check', budgetMs: 600000 }, { kind: 'coverage', budgetMs: 600000 }, { kind: 'other', budgetMs: 300000 },
+    ],
+    coverageGreenPct: 70, docsCleanPct: 90, doneRatePct: 80, amberFloorPct: 50, minSamples: 5,
+    stepKinds: [
+      { stepId: 'gate', kinds: ['lint', 'typecheck', 'check', 'other'] },
+      { stepId: 'tests', kinds: ['test', 'coverage'] },
+    ],
+  };
+  const TIP_SHA = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678';
+  const TIP = { branch: 'main', sha: TIP_SHA, measuredSha: TIP_SHA, commitsBehind: 0, measuredAt: at };
+
   const snapshot = (overrides = {}) => ({
     projectId: PROJECT_ID, preset: 'solo', version: 0, author: 'default', changeNote: null, createdAt: null,
     installTaskId: null, installTaskStatus: null,
     steps: STEPS, evidence: EVIDENCE, health: HEALTH,
     goal: { goalId: 'goal-1', measurableTotal: 8, measurableGreen: 3, instructed: 2, openItems: 5 },
-    watched: true, measuring: false, ...overrides,
+    watched: true, measuring: false, tip: TIP, rules: RULES, ...overrides,
   });
 
   const PROJECT = {
@@ -97,7 +143,7 @@ export function lifecycleTapes({ RECORDED_AT }) {
     return {
       version: 1, module, source: 'synthetic', recordedAt: RECORDED_AT, note,
       calls: [
-        { cmd: 'dev_tools_get_lifecycle', response: snap },
+        snap === 'hang' ? { cmd: 'dev_tools_get_lifecycle', hang: true } : { cmd: 'dev_tools_get_lifecycle', response: snap },
         { cmd: 'dev_tools_list_projects', response: [PROJECT] },
         { cmd: 'dev_tools_workspace_list', response: [] },
       ],
@@ -109,7 +155,17 @@ export function lifecycleTapes({ RECORDED_AT }) {
     PROJECT,
     builders: {
       'plugins/lifecycle/collar': () => tape('plugins/lifecycle/collar', MIX, snapshot()),
-      'plugins/lifecycle/empty': () => tape('plugins/lifecycle/empty', 'Synthetic: no health rows and no goal (the backend before WP1).', snapshot({ health: [], goal: null, watched: false })),
+      'plugins/lifecycle/empty': () => tape('plugins/lifecycle/empty', 'Synthetic: no health rows and no goal (the backend before WP1), never measured.', snapshot({
+        health: [], goal: null, watched: false, tip: { branch: 'main', sha: TIP_SHA, measuredSha: null, commitsBehind: null, measuredAt: null },
+      })),
+      'plugins/lifecycle/behind': () => tape('plugins/lifecycle/behind', `${MIX} Measured 2 days ago, 14 commits behind main.`, snapshot({
+        tip: { branch: 'main', sha: TIP_SHA, measuredSha: '9f8e7d6c5b4a39281706f5e4d3c2b1a098765432', commitsBehind: 14, measuredAt: iso(60 * 48) },
+      })),
+      'plugins/lifecycle/regressed': () => tape('plugins/lifecycle/regressed', 'Synthetic: one measure after a bad day - most steps worse than their earlier measure, four changed verdict, sync measured for the first time.', snapshot({
+        health: REGRESSED,
+        goal: { goalId: 'goal-1', measurableTotal: 8, measurableGreen: 3, instructed: 2, openItems: 7 },
+      })),
+      'plugins/lifecycle/loading': () => tape('plugins/lifecycle/loading', 'Synthetic: the snapshot never answers, so the page shows its permanent header and the Layer-1 ghost.', 'hang'),
     },
   };
 }

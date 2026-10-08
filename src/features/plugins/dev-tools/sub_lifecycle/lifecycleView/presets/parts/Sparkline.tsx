@@ -6,6 +6,8 @@
 // The drawing is aria-hidden: the caller says what it shows in text.
 import type { Tone } from '@/features/shared/components/kit';
 
+import { LT } from '../../system/lcType';
+
 export interface SparkPoint {
   value: number | null;
   tone: Tone;
@@ -47,7 +49,7 @@ export function Sparkline({ points, max, min = 0, refs = [], width = 132, height
       {refs.map((r) => (
         <g key={`${r.tone}-${r.value}`} className={INK[r.tone] ?? 'text-foreground'}>
           <line x1={0} x2={width} y1={y(r.value)} y2={y(r.value)} stroke="currentColor" strokeWidth={1} strokeDasharray="3 3" />
-          {r.label && <text x={width + 8} y={y(r.value) + 4} fill="currentColor" className="typo-label">{r.label}</text>}
+          {r.label && <text x={width + 8} y={y(r.value) + 4} fill="currentColor" className={LT.label}>{r.label}</text>}
         </g>
       ))}
       {known.length > 1 && <path d={path} fill="none" stroke="currentColor" strokeWidth={big ? 2.5 : 1.5} strokeLinejoin="round" className="text-primary/60" />}

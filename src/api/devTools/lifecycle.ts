@@ -5,6 +5,7 @@
 // (`useDevToolsLiveStore().lifecycleRevision`).
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
+import type { LifecycleHistory } from "@/lib/bindings/LifecycleHistory";
 import type { LifecyclePreset } from "@/lib/bindings/LifecyclePreset";
 import type { LifecycleMeasureStarted } from "@/lib/bindings/LifecycleMeasureStarted";
 import type { LifecycleSendResult } from "@/lib/bindings/LifecycleSendResult";
@@ -29,9 +30,13 @@ export const installLifecycle = (projectId: string) =>
 export const measureLifecycle = (projectId: string) =>
   invoke<LifecycleMeasureStarted>("dev_tools_lifecycle_measure", { projectId });
 
-/** Layer-2 data for one step: run history (newest first, at most 30) and per-doc rot rows. */
+/** Layer-2 data for one step: run history (newest first, at most 30), per-doc rot rows, and the backlog items about the step. */
 export const getLifecycleStepDetail = (projectId: string, stepId: string) =>
   invoke<LifecycleStepDetail>("dev_tools_lifecycle_step_detail", { projectId, stepId });
+
+/** The Measure history: gate and tests judged at each of the newest 20 Measures (newest first), with their runs. */
+export const getLifecycleHistory = (projectId: string) =>
+  invoke<LifecycleHistory>("dev_tools_lifecycle_history", { projectId });
 
 /** Replace one step's params (gate commands, thresholds); appends a version authored `operator`. */
 export const setLifecycleStepParams = (projectId: string, stepId: string, params: LifecycleStepParams) =>
