@@ -65,9 +65,8 @@ fn message_of(params: &Value) -> Result<String, AppError> {
         return Err(AppError::Validation("bad_params".into()));
     };
     let message = raw.trim();
-    if message.is_empty() {
-        return Err(AppError::Validation("empty_message".into()));
-    }
+    personas_core::validation::require_non_empty("message", message)
+        .map_err(|_| AppError::Validation("empty_message".into()))?;
     if message.chars().count() > MAX_MESSAGE_CHARS {
         return Err(AppError::Validation("message_too_long".into()));
     }
@@ -252,18 +251,25 @@ pub(crate) mod tests {
     }
 
     /// The headless master's read (`dbread.mjs` `operatorChannelSince`).
-    fn operator_rows(pool: &DbPool, persona: &str) -> Vec<(String, String)> {
-        let conn = pool.get().unwrap();
-        let mut stmt = conn
-            .prepare(
-                "SELECT id, body FROM team_channel_messages
-                 WHERE persona_id = ?1 AND author_kind = 'user' ORDER BY created_at",
-            )
-            .unwrap();
-        stmt.query_map([persona], |r| Ok((r.get(0)?, r.get(1)?)))
-            .unwrap()
-            .map(Result::unwrap)
-            .collect()
+    pub(crate) fn operator_rows(pool: &DbPool, persona: &str) -> Vec<(String, String)> {
+        read_operator_rows(pool, persona).unwrap()
+    }
+
+    fn read_operator_rows(pool: &DbPool, persona: &str) -> Result<Vec<(String, String)>, AppError> {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, body FROM team_channel_messages
+             WHERE persona_id = ?1 AND author_kind = 'user' ORDER BY created_at",
+        )?;
+        let rows = stmt.query_map([persona], |r| Ok((r.get(0)?, r.get(1)?)))?;
+        Ok(rows.collect::<Result<_, _>>()?)
+    }
+
+    /// Every `persona_executions` row, whoever wrote it.
+    pub(crate) fn execution_count(pool: &DbPool) -> Result<i64, AppError> {
+        Ok(pool
+            .get()?
+            .query_row("SELECT COUNT(*) FROM persona_executions", [], |r| r.get(0))?)
     }
 
     const ID: &str = "8f2b4c1e-5d6a-4e7b-9c0d-1a2b3c4d5e6f";
@@ -396,11 +402,6 @@ pub(crate) mod tests {
     fn a_say_starts_no_execution() {
         let (pool, p) = setup();
         execute(&pool, &cmd(ID, &p, json!({ "message": "go" }))).unwrap();
-        let runs: i64 = pool
-            .get()
-            .unwrap()
-            .query_row("SELECT COUNT(*) FROM persona_executions", [], |r| r.get(0))
-            .unwrap();
-        assert_eq!(runs, 0);
+        assert_eq!(execution_count(&pool).unwrap(), 0);
     }
 }

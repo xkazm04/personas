@@ -2499,25 +2499,13 @@ mod tests {
     }
 
     /// The headless master's read of the operator's voice
-    /// (`dbread.mjs` `operatorChannelSince`).
+    /// (`dbread.mjs` `operatorChannelSince`): the persona's `user` rows.
     fn operator_says(pool: &DbPool, persona: &str) -> Vec<(String, String)> {
-        let conn = pool.get().expect("conn");
-        let mut stmt = conn
-            .prepare(
-                "SELECT id, body FROM team_channel_messages                  WHERE persona_id = ?1 AND author_kind = 'user' ORDER BY created_at",
-            )
-            .expect("prepare");
-        stmt.query_map([persona], |r| Ok((r.get(0)?, r.get(1)?)))
-            .expect("query")
-            .map(|r| r.expect("row"))
-            .collect()
+        crate::cloud::channel_say::tests::operator_rows(pool, persona)
     }
 
     fn executions(pool: &DbPool) -> i64 {
-        pool.get()
-            .expect("conn")
-            .query_row("SELECT COUNT(*) FROM persona_executions", [], |r| r.get(0))
-            .expect("count")
+        crate::cloud::channel_say::tests::execution_count(pool).expect("count")
     }
 
     #[test]
