@@ -127,7 +127,7 @@ release  --run <runId> --reason <text> [--kill]
 say      --project p --file <msg.md>
 asks     [--project p]
 answer   --ask <askId> --choice <label> --notes <text>
-outbox   list|replay [--dry-run] [--project p]
+outbox   list|replay [--dry-run] [--project p] [--kinds council,tier,report,task-complete]
 limit    set|clear|show [--reason <text>] [--resets <iso>]
 onboard  --project p --brief <brief.json> [--force]
 heartbeat [--project p] [--state running|idle|ended]
@@ -369,7 +369,10 @@ and is replayed through the app's own doors when the app is up; replay checks th
 before and after each post. `AM outbox list [--project p]` shows the queue; `AM outbox replay
 --dry-run` shows what would be posted (without the app); `AM outbox replay` posts, and refuses
 with `app is not running` otherwise. Ask raises and the master's own says have no door and
-replay as `skipped`: those live in the journal and the digest only.
+replay as `skipped`: those live in the journal and the digest only. `--kinds a,b` replays only
+those kinds and leaves the rest queued. While the masters run headless with the app as the
+surface, replay `--kinds council,tier,report,task-complete`: a replayed operator `say` posts to
+the persona's channel, and that starts an IN-APP master run beside the headless one.
 
 The kinds added on 2026-10-07 use routes a sibling builds the same night: `plan` (POST
 `/dev-tools/milestones`, then `/dev-tools/goals`), `council` (POST `/dev-tools/council/ingest`),

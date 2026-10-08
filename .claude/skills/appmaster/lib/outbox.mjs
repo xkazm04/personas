@@ -332,7 +332,13 @@ export async function cmdOutbox({ _ = [], flags = {} } = {}, deps = {}) {
   }
   if (sub !== 'replay') throw new Error(`outbox: unknown subcommand ${sub} (list|replay)`);
 
-  const pending = entries.filter((e) => REPLAYABLE.includes(e.state));
+  // --kinds council,tier,report: replay only those kinds; the rest stay queued untouched. The weekend runs
+  // the masters headless with the app as the surface, and a replayed operator `say` posts to the persona's
+  // channel, which starts an in-app master run: a second master on the same backlog.
+  const kinds = flags.kinds && flags.kinds !== true ? String(flags.kinds).split(',').map((k) => k.trim()).filter(Boolean) : null;
+  const unknownKinds = kinds?.filter((k) => !HANDLERS[k]) ?? [];
+  if (unknownKinds.length) throw new Error(`outbox: unknown kind(s) ${unknownKinds.join(', ')} (${Object.keys(HANDLERS).join('|')})`);
+  const pending = entries.filter((e) => REPLAYABLE.includes(e.state) && (!kinds || kinds.includes(e.kind)));
   const dryRun = !!flags['dry-run'];
   if (!pending.length) return { dryRun, replayed: 0, entries: [] };
   if (!dryRun && !(await (deps.appUp ?? bridge.appUp)())) {

@@ -129,6 +129,17 @@ test('outbox list and replay --dry-run with the app down; a real replay is refus
   await assert.rejects(O.cmdOutbox({ _: ['replay'], flags: {} }), (e) => e instanceof C.Refusal && e.reason === 'app is not running' && e.extra.queued === 3);
 });
 
+test('replay --kinds takes only the named kinds; the rest stay queued; an unknown kind is refused', async () => {
+  const bytes = fs.readFileSync(C.outboxPath('demo'), 'utf8');
+  const only = await O.cmdOutbox({ _: ['replay'], flags: { 'dry-run': true, kinds: 'idea-verdict,ask' } });
+  assert.deepEqual(only.entries.map((e) => e.kind).sort(), ['ask', 'idea-verdict'], 'the operator say is left out');
+  await assert.rejects(O.cmdOutbox({ _: ['replay'], flags: { 'dry-run': true, kinds: 'council,sayy' } }), /unknown kind\(s\) sayy/);
+  // a real replay of a kind with nothing queued is not refused for the app being down: nothing to post
+  const none = await O.cmdOutbox({ _: ['replay'], flags: { kinds: 'report' } });
+  assert.equal(none.entries.length, 0);
+  assert.equal(fs.readFileSync(C.outboxPath('demo'), 'utf8'), bytes, 'the filter writes nothing');
+});
+
 test('outbox replay records each entry once: state, attempts+1, evidence; failed entries wait for the next run', async () => {
   const lying = fakeDoors({ apply: false });
   const r1 = await O.cmdOutbox({ _: ['replay'], flags: {} }, { appUp: async () => true, doors: lying, db: ro });
