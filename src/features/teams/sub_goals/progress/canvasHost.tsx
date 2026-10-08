@@ -29,6 +29,9 @@ export interface CanvasHost {
   bindGoal: (goalId: string, milestoneId: string | null) => void;
   deleteMilestone: (milestoneId: string) => void;
   startCreateMilestone: (projectId: string) => void;
+  /** Re-read every lane - for writes made through another door (a note
+   *  promoted to a milestone by the notepad store). */
+  reload: () => void;
 }
 
 export interface ProgressView {
@@ -110,6 +113,7 @@ export function useCanvasHost(opts: {
       bindGoal: onBind,
       deleteMilestone: canvas.deleteMilestone,
       startCreateMilestone: setPendingProject,
+      reload: canvas.reload,
     }),
     [canvas, drag, drop, openMenu, onBind],
   );

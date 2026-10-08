@@ -14,6 +14,8 @@
  * name needs the menu. That is the honest limit of a 20px frame.
  */
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import { AddGoalButton, NODE_PX } from '../../progressShared';
 import { AddLaneButton, CanvasFrame, LaneChip, UnassignedLane } from '../canvasParts';
@@ -50,6 +52,7 @@ function FilmstripRow({
   onOpenProject?: (projectId: string) => void;
 }) {
   const { model, canvas, dl, createGoalIn } = useProgressView();
+  const { tx } = useTranslation();
   const { onKeyDown, onContextMenu } = useMenuKey((e) =>
     canvas.openMenu(e, { kind: 'project', projectId: row.projectId, name: row.name }),
   );
@@ -83,14 +86,14 @@ function FilmstripRow({
       >
         <Tooltip content={row.name}>
           {onOpenProject ? (
-            <button
-              type="button"
+            <Button
+              variant="link"
               data-testid={`progress-open-project-${row.projectId}`}
+              aria-label={tx(dl.layers_open_project, { project: row.name })}
               onClick={() => onOpenProject(row.projectId)}
-              className="typo-body text-foreground truncate text-left rounded-interactive hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
-              {row.name}
-            </button>
+              <span className="typo-body truncate">{row.name}</span>
+            </Button>
           ) : (
             <span className="typo-body text-foreground truncate">{row.name}</span>
           )}
