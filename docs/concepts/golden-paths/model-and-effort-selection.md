@@ -1178,6 +1178,58 @@ Registered 2026-08-25 with §13 below; published here because the index re-deriv
 ```
 
 
+### The class-table rule — `model-literal-outside-class-table`
+
+Registered 2026-10-08 with the CallClass table (`src-tauri/core/src/model_class.rs`, measurement in [`docs/tests/model-bench/haiku-5-5.md`](../../tests/model-bench/haiku-5-5.md)). `bare-model-id-literal` asks *is the id spelled at the door*; this rule asks *does a call site choose its own model at all* — so it also counts `const X_MODEL: &str = model_ids::DEFAULT_BALANCED`, which passes the first rule. The legal fix is `CallClass::<X>.route()`.
+
+```json
+{
+  "rules": [
+    {
+      "id": "model-literal-outside-class-table",
+      "goldenPath": "docs/concepts/golden-paths/model-and-effort-selection.md",
+      "title": "Headless call site declares its own `const *_MODEL: &str` instead of asserting a CallClass",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "const [A-Z_]*MODEL[A-Z_]*: &(?:'static )?str = (?:\"claude-|(?:personas_core::|crate::|super::)?model_ids::(?!CODEX))",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a `const <..>MODEL<..>: &str = ` declaration in src-tauri/**/*.rs whose value is a Claude model id, either as a `\"claude-` literal OR through a `model_ids::` constant (Codex lane constants excluded by the `(?!CODEX)` lookahead). PROXY FOR the stack-free condition: a headless one-shot call site that picks its own model, so re-tuning a class after a new model ships is a tree-wide hunt instead of one row in `personas_core::model_class::route`. DELIBERATELY NOT a duplicate of `bare-model-id-literal`: that rule already counts every `\"claude-<family>-N` literal (including argv `.push(\"claude-` / `\"--model\", \"claude-` shapes and these consts), so this rule targets the declaration shape only — and additionally catches the `= model_ids::DEFAULT_BALANCED` alias form, which `bare-model-id-literal` is blind to because it routes through the id door yet still lets the call site choose. Measured 2026-10-08 at 5defd894d4: 25 declarations in 22 files, 15 of them a `\"claude-` literal (mostly `claude-sonnet-4-6`). The legal fix is `CallClass::<X>.route()` from `src-tauri/core/src/model_class.rs`. Settings-key defaults (`*_MODEL_DEFAULT` in `db/src/settings_keys.rs`) are counted on purpose: they are user-overridable but their default is still a call site choosing a model."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/core/src/model_ids.rs",
+          "reason": "the id door itself — the constants every route resolves to"
+        },
+        {
+          "path": "src-tauri/core/src/model_class.rs",
+          "reason": "the class table itself — the one place that is allowed to name a model per call class"
+        },
+        {
+          "path": "src-tauri/**/tests/**",
+          "reason": "integration-test crates: a fixture pinning a model is a test input, not a routing decision (bare-model-id-literal still counts its literal)"
+        },
+        {
+          "path": "src-tauri/**/tests.rs",
+          "reason": "out-of-line `#[cfg(test)] mod tests` files: same reason as tests/"
+        }
+      ],
+      "baseline": {
+        "files": 22,
+        "matches": 25
+      },
+      "floor": 900
+    }
+  ]
+}
+```
+
+
 ## 12. Corrections to the brief
 
 **1. "`thinking.xhigh` renders as a raw token while the same concept **is** translated under
