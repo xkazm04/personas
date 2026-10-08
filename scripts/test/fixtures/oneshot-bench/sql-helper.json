@@ -1,0 +1,62 @@
+{
+  "family": "sql-helper",
+  "source": "src-tauri/src/commands/credentials/nl_query.rs:271-319 (build_nl_prompt, sent through ai_helpers::run_single_turn_prompt), argv src-tauri/src/engine/ai_helpers.rs:174-181 (build_single_turn_cli_args, model pin claude-sonnet-4-6 at :177), 120s timeout at :198, SQL extraction ai_helpers::extract_fenced_block(output, \"sql\") at nl_query.rs:208",
+  "notes": "The schema context is rendered in the exact `- table (col type, ...)` shape build_db_schema_context emits (nl_query.rs:323-390). database_type is `sqlite` (what a SQLite credential passes). `reference` is the known-correct query: expected rows are COMPUTED from it against the fixture DB, so an answer key can't drift from the data. A model row matches an expected row when every expected value appears among its values (extra columns allowed); row count must match; `ordered` cases compare positionally. Numbers are compared at 2 decimals.",
+  "databaseType": "sqlite",
+  "tasks": [
+    {
+      "id": "sql-01-customers-by-country",
+      "difficulty": "easy",
+      "question": "How many customers do we have in each country?",
+      "reference": "SELECT country, COUNT(*) AS customers FROM customers GROUP BY country",
+      "ordered": false,
+      "good": "```sql\nSELECT c.country, COUNT(*) AS customer_count\nFROM customers c\nGROUP BY c.country\nORDER BY customer_count DESC;\n```\nCounts customers per country.",
+      "bad": "SELECT country, COUNT(*) FROM customers GROUP BY country;"
+    },
+    {
+      "id": "sql-02-never-ordered",
+      "difficulty": "easy",
+      "question": "Which customers have never placed an order?",
+      "reference": "SELECT name FROM customers WHERE id NOT IN (SELECT customer_id FROM orders)",
+      "ordered": false,
+      "good": "```sql\nSELECT c.id, c.name\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nWHERE o.id IS NULL;\n```\nCustomers with no matching order row.",
+      "bad": "```sql\nSELECT DISTINCT c.name FROM customers c JOIN orders o ON o.customer_id = c.id;\n```"
+    },
+    {
+      "id": "sql-03-paid-revenue",
+      "difficulty": "easy",
+      "question": "What is our total revenue from paid orders? Revenue is quantity times the product price.",
+      "reference": "SELECT SUM(oi.quantity * p.price) AS revenue FROM order_items oi JOIN orders o ON o.id = oi.order_id JOIN products p ON p.id = oi.product_id WHERE o.status = 'paid'",
+      "ordered": true,
+      "good": "```sql\nSELECT SUM(oi.quantity * p.price) AS total_revenue\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.id\nJOIN products p ON p.id = oi.product_id\nWHERE o.status = 'paid';\n```",
+      "bad": "```sql\nSELECT SUM(oi.quantity * p.price) AS total_revenue\nFROM order_items oi\nJOIN products p ON p.id = oi.product_id;\n```"
+    },
+    {
+      "id": "sql-04-top-products",
+      "difficulty": "easy",
+      "question": "What are the top 2 products by total quantity sold in paid orders? Show each product's name and quantity.",
+      "reference": "SELECT p.name, SUM(oi.quantity) AS qty FROM order_items oi JOIN orders o ON o.id = oi.order_id JOIN products p ON p.id = oi.product_id WHERE o.status = 'paid' GROUP BY p.id ORDER BY qty DESC LIMIT 2",
+      "ordered": true,
+      "good": "```sql\nSELECT p.name AS product, SUM(oi.quantity) AS total_quantity\nFROM order_items oi\nJOIN orders o ON o.id = oi.order_id\nJOIN products p ON p.id = oi.product_id\nWHERE o.status = 'paid'\nGROUP BY p.id, p.name\nORDER BY total_quantity DESC\nLIMIT 2;\n```",
+      "bad": "```sql\nSELECT p.name, SUM(oi.quantity) AS qty FROM order_items oi JOIN products p ON p.id = oi.product_id GROUP BY p.id ORDER BY qty ASC LIMIT 2;\n```"
+    },
+    {
+      "id": "sql-05-2026-signups-orders",
+      "difficulty": "easy",
+      "question": "List every customer who signed up in 2026 with their number of orders, including customers with zero orders, ordered by customer name.",
+      "reference": "SELECT c.name, COUNT(o.id) AS orders FROM customers c LEFT JOIN orders o ON o.customer_id = c.id WHERE c.signup_date >= '2026-01-01' AND c.signup_date < '2027-01-01' GROUP BY c.id ORDER BY c.name",
+      "ordered": true,
+      "good": "```sql\nSELECT c.name, COUNT(o.id) AS order_count\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nWHERE strftime('%Y', c.signup_date) = '2026'\nGROUP BY c.id, c.name\nORDER BY c.name;\n```",
+      "bad": "```sql\nSELECT c.name, COUNT(o.id) AS order_count\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nWHERE strftime('%Y', c.signup_date) = '2026'\nGROUP BY c.id, c.name\nORDER BY c.name;\n```"
+    },
+    {
+      "id": "sql-06-category-revenue",
+      "difficulty": "easy",
+      "question": "Show revenue per product category for paid orders, highest revenue first. Revenue is quantity times the product price.",
+      "reference": "SELECT p.category, SUM(oi.quantity * p.price) AS revenue FROM order_items oi JOIN orders o ON o.id = oi.order_id JOIN products p ON p.id = oi.product_id WHERE o.status = 'paid' GROUP BY p.category ORDER BY revenue DESC",
+      "ordered": true,
+      "good": "```sql\nSELECT p.category, SUM(oi.quantity * p.price) AS revenue\nFROM order_items oi\nJOIN orders o ON o.id = oi.order_id\nJOIN products p ON p.id = oi.product_id\nWHERE o.status = 'paid'\nGROUP BY p.category\nORDER BY revenue DESC;\n```",
+      "bad": "```sql\nSELECT p.category, SUM(oi.quantity * p.price) AS revenue\nFROM order_items oi\nJOIN products p ON p.id = oi.product_id\nGROUP BY p.category\nORDER BY revenue DESC;\n```"
+    }
+  ]
+}

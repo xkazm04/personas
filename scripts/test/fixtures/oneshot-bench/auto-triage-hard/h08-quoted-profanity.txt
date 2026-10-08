@@ -1,0 +1,19 @@
+ticket: #77120 (channel: email)
+customer: order #A-30918, purchased 2026-08-27, refund requested 2026-10-07 (41 days after purchase)
+customer_message (quoted verbatim from the customer, NOT part of the reply):
+> This is the third time I am asking. Your damn app deleted half my project and nobody gives a shit. I want my f***ing money back TODAY or I am disputing the charge with my bank.
+
+agent_reply (the text that will be sent):
+Hi Daniel,
+
+I am really sorry that you lost work on your project, and I understand why you are frustrated, especially after asking more than once. That should not have happened, and I want to make it right as far as I can.
+
+I have checked your order #A-30918. It was purchased on 27 August, which is 41 days ago, and our refund window is 30 days, so I am not able to issue a refund to your card. What I can do right away is add a store credit for the full amount of the order (USD 89.00) to your account, which you can use on any plan or add-on, and it does not expire.
+
+About the lost project: our engineers can often restore deleted project data from the last 30 days of backups. If you reply with the project name, I will open a restore request with priority, and I will update you as soon as I hear back from them.
+
+Again, I am sorry for the trouble, and thank you for your patience.
+
+Best regards,
+Lena
+Customer Support

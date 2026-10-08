@@ -1,0 +1,73 @@
+[page 1]
+SUPPLIER QUALITY FILE - CERTIFICATION STATUS REVIEW
+Purchasing and Supplier Quality, Brake Systems Division
+Review date: 2 March 2026
+Scope: the three suppliers under review for the 2027 sourcing round (Ferrotech GmbH, Nordic Polymers AB, Castell Coatings S.L.)
+
+1. Purpose
+
+This review records, for each supplier, which management-system certificates are currently valid, as verified directly with the issuing certification bodies. Certificates that have expired, been withdrawn or superseded are listed for traceability but are not valid and must not be used in the supplier approval. Applications that have not yet resulted in a certificate are not certificates. Certificate numbers are quoted exactly as printed; several suppliers have certificates with similar numbers from successive cycles, so the number must be checked against the expiry date.
+
+1a. Background: 2027 sourcing round
+
+The 2027 sourcing round covers the castings, elastomer seals and surface coatings for the new caliper platform, with start of production planned for the third quarter of 2027. Supplier approval requires a valid quality-management certificate, a capability assessment, a production part approval for the platform parts and, for suppliers of coated parts, a valid environmental-management certificate or an agreed roadmap to one. The capability assessments of all three suppliers were carried out between November 2025 and January 2026 and are recorded separately in the supplier development file. Commercial negotiations are led by Purchasing and are outside the scope of this review.
+
+The certification bodies were contacted directly by email; each confirmed the status of the certificates it issued. Confirmations are filed in the supplier quality file under the review date. Where a supplier's own copy of a certificate differed from the certification body's confirmation, the confirmation was taken as authoritative; there was no such case in this review.
+
+2. Ferrotech GmbH (castings, Plant Chemnitz)
+
+2.1 Quality management (ISO 9001)
+
+Ferrotech's previous ISO 9001 certificate, number Q-2291-0437, was issued in 2021 and expired on 30 April 2024. It is superseded and not valid. The recertification audit in March 2024 resulted in a new certificate with a similar number. The currently valid ISO 9001 certificate is number Q-2291-0473, issued by TÜV Nord Cert on 22 April 2024. Verified with the certification body on 26 February 2026: status active, no suspension.
+
+The expiry date printed on certificate Q-2291-0473 is 30 April 2027. The surveillance audit of February 2026 was passed with two minor non-conformities, both closed.
+
+2.2 Environmental management (ISO 14001)
+
+Ferrotech held an ISO 14001 certificate, number E-5512-0090. It lapsed on 31 January 2026 because the recertification audit was not scheduled in time, and it was NOT renewed. Ferrotech has stated that it intends to apply again in the second half of 2026. Ferrotech therefore has no valid ISO 14001 certificate at the date of this review. The division's sourcing policy requires ISO 14001 only for suppliers of coated parts, so this does not by itself block Ferrotech's approval for castings, but it must be reflected in the supplier score.
+
+2.3 Other
+
+Ferrotech's IATF 16949 application was withdrawn by Ferrotech in 2025. There is no IATF 16949 certificate.
+
+[page 2]
+3. Nordic Polymers AB (elastomer seals, Plant Göteborg)
+
+3.1 Quality management (ISO 9001)
+
+Nordic Polymers' ISO 9001 certificate is number 9001-NP-88214, issued by DNV on 16 September 2025 after a recertification audit. A copy of the certificate is in the supplier file. Verified with the certification body on 27 February 2026: status active. For the certificate's expiry date, see section 4 below, which reproduces the validity data for all certificates of Nordic Polymers as confirmed by DNV.
+
+3.2 Automotive quality management (IATF 16949)
+
+Nordic Polymers holds IATF 16949 certificate number IATF-0331-772, issued by DNV. Verified active on 27 February 2026. Its expiry date is 30 November 2027. An earlier IATF 16949 certificate, number IATF-0331-727, expired in 2024 and is superseded.
+
+3.3 Environmental management
+
+Nordic Polymers is not certified to ISO 14001 and does not need to be for seals.
+
+4. Validity data confirmed by DNV for Nordic Polymers AB
+
+DNV confirmed by email on 27 February 2026:
+- Certificate 9001-NP-88214 (ISO 9001:2015): valid until 15 September 2028.
+- Certificate IATF-0331-772 (IATF 16949:2016): valid until 30 November 2027.
+
+5. Castell Coatings S.L. (surface coatings, Plant Valencia)
+
+Castell Coatings applied for ISO 9001 certification with AENOR in November 2025. The stage 1 audit took place in January 2026; the stage 2 audit is scheduled for April 2026. Castell Coatings does not yet hold an ISO 9001 certificate and holds no other management-system certificate. A certificate number has not been issued. Castell Coatings can be approved only after the certificate is issued, and only on condition of an ISO 14001 roadmap because it supplies coated parts.
+
+[page 3]
+6. Summary of currently valid certificates
+
+For the avoidance of doubt, only the following certificates are valid at the review date: Ferrotech's ISO 9001 certificate (section 2.1), and Nordic Polymers' ISO 9001 and IATF 16949 certificates (sections 3.1, 3.2 and 4). All other certificates and applications mentioned in this review are expired, superseded, withdrawn or pending, and must not be entered in the approved-supplier register.
+
+6a. Implications for the supplier score
+
+Under the supplier scoring model, a valid quality-management certificate is a gate, not a score item, so Castell Coatings cannot be scored until its certificate is issued. A missing environmental-management certificate costs 10 points for suppliers of non-coated parts and is a gate for suppliers of coated parts. Ferrotech therefore loses 10 points for the lapsed ISO 14001 certificate. Nordic Polymers is not affected. The capability assessment scores will be combined with these results in the sourcing committee paper for April.
+
+7. Actions
+
+- Supplier Quality to re-verify all valid certificates 60 days before their expiry.
+- Ferrotech to provide its ISO 14001 re-application plan by 30 June 2026.
+- Castell Coatings to send the certificate within one week of issue.
+
+Reviewed by: S. Lindqvist, Supplier Quality Manager. Approved by: M. Brandt, Head of Purchasing.

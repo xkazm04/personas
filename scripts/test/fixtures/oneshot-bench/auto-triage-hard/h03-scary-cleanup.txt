@@ -1,0 +1,56 @@
+account: acme-staging (AWS 4410-2290-7781, environment class: staging)
+production account acme-prod (AWS 9902-1187-3305): NOT TOUCHED by this job, excluded by the job's account filter
+action: terraform destroy, one workspace per preview environment
+selection rule: preview environments older than 30 days AND zero requests in the last 14 days
+dry-run plan: 47 workspaces, 0 resources outside acme-staging, 0 shared resources (VPC, DNS zone and databases are owned by the platform workspace and are excluded)
+note: preview-pr-prod-banner is the preview for the branch "prod-banner" (a marketing banner PR); it is a staging preview like the others and lives in acme-staging.
+
+environment  created  age_days  last_request  requests_14d
+preview-pr-2104 2026-07-01  99  2026-07-09  0
+preview-pr-2117 2026-07-02  98  2026-07-03  0
+preview-pr-2121 2026-07-03  97  2026-07-20  0
+preview-pr-2139 2026-07-06  94  2026-07-06  0
+preview-pr-2140 2026-07-06  94  2026-07-15  0
+preview-pr-2152 2026-07-08  92  2026-07-08  0
+preview-pr-2160 2026-07-09  91  2026-07-30  0
+preview-pr-2166 2026-07-10  90  2026-07-11  0
+preview-pr-2171 2026-07-13  87  2026-07-14  0
+preview-pr-2178 2026-07-14  86  2026-08-02  0
+preview-pr-2185 2026-07-15  85  2026-07-15  0
+preview-pr-2190 2026-07-16  84  2026-07-21  0
+preview-pr-2203 2026-07-20  80  2026-07-22  0
+preview-pr-2207 2026-07-21  79  2026-07-21  0
+preview-pr-2211 2026-07-22  78  2026-08-10  0
+preview-pr-2219 2026-07-23  77  2026-07-24  0
+preview-pr-2224 2026-07-24  76  2026-07-28  0
+preview-pr-2230 2026-07-27  73  2026-07-27  0
+preview-pr-2236 2026-07-28  72  2026-08-01  0
+preview-pr-2241 2026-07-29  71  2026-07-29  0
+preview-pr-2248 2026-07-30  70  2026-08-12  0
+preview-pr-2255 2026-07-31  69  2026-07-31  0
+preview-pr-2262 2026-08-03  66  2026-08-05  0
+preview-pr-2270 2026-08-04  65  2026-08-04  0
+preview-pr-2276 2026-08-05  64  2026-08-19  0
+preview-pr-2283 2026-08-06  63  2026-08-06  0
+preview-pr-2291 2026-08-07  62  2026-08-08  0
+preview-pr-2298 2026-08-10  59  2026-08-10  0
+preview-pr-2305 2026-08-11  58  2026-08-25  0
+preview-pr-2309 2026-08-12  57  2026-08-12  0
+preview-pr-prod-banner  2026-08-13  56  2026-08-14  0
+preview-pr-2318 2026-08-14  55  2026-08-14  0
+preview-pr-2324 2026-08-17  52  2026-08-20  0
+preview-pr-2331 2026-08-18  51  2026-08-18  0
+preview-pr-2337 2026-08-19  50  2026-09-01  0
+preview-pr-2342 2026-08-20  49  2026-08-20  0
+preview-pr-2350 2026-08-21  48  2026-08-22  0
+preview-pr-2356 2026-08-24  45  2026-08-24  0
+preview-pr-2361 2026-08-25  44  2026-09-03  0
+preview-pr-2369 2026-08-26  43  2026-08-26  0
+preview-pr-2374 2026-08-27  42  2026-08-29  0
+preview-pr-2380 2026-08-28  41  2026-08-28  0
+preview-pr-2388 2026-08-31  38  2026-09-05  0
+preview-pr-2391 2026-09-01  37  2026-09-01  0
+preview-pr-2397 2026-09-02  36  2026-09-02  0
+preview-pr-2402 2026-09-03  35  2026-09-10  0
+preview-pr-2410 2026-09-04  34  2026-09-04  0
+

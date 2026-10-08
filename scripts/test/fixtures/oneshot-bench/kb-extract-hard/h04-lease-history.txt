@@ -1,0 +1,75 @@
+[page 1]
+RIVERSIDE ARCADE, NÁBŘEŽÍ 40 - COMMERCIAL LEASE FILE SUMMARY
+Prepared by: Asset Management, Vltava Property Partners
+Prepared for: lender's technical due diligence (facility refinancing 2026)
+Status date of this summary: 1 February 2026
+
+1. How to read this summary
+
+This summary lists, for each commercial unit, the lease documents on file and their status. A document is "executed" only when it has been signed by both the landlord and the tenant; drafts, proposals and unsigned amendments have no legal effect and are listed only so the lender can reconcile them with the data room. The rent figures are monthly, in EUR, excluding VAT and service charges. Indexation clauses are not applied in this summary; the figures are the contractual base rents.
+
+The arcade has eight commercial units. Units 1.01, 1.03, 2.01, 2.02 and 3.05 are let on standard leases with no amendments and are covered by the separate rent roll in the data room (folder 4.2). This summary covers the three units with a non-standard history: 1.02, 2.04 and 3.11.
+
+1a. The building
+
+Riverside Arcade is a four-storey mixed-use building completed in 2008, with retail and food units on the ground and first floors, offices on the second floor and eleven residential flats on the third floor (the flats are let separately and are outside the scope of this summary). The commercial units share a service yard and four loading bays accessed from Vodní street. The building was refurbished in 2019 (new facade glazing and a new heating plant) and holds an energy performance certificate of class C. A fire safety inspection in October 2025 found no defects. The landlord insures the building under a block policy; tenants insure their fit-out and contents.
+
+Service charges are levied on all commercial units in proportion to their floor area and cover cleaning of common areas, security, maintenance of the lifts and the heating plant, and the building's share of the property tax. In 2025 the service charge was EUR 4.10 per m2 per month. Tenants' utility consumption is sub-metered.
+
+2. Unit 1.02 (ground floor, 64 m2)
+
+Original lease: Optika Vize s.r.o., signed 14 March 2019, term 1 April 2019 to 31 March 2029, rent EUR 1,720.
+Early termination agreement: executed 12 December 2024. The lease terminated early on 31 March 2025. The tenant paid a termination fee of EUR 10,320 (six months' rent) on 20 December 2024.
+Current status: vacant since 1 April 2025. Marketing for re-letting is in progress; two viewings in January 2026. There is no lease in force for unit 1.02.
+
+[page 2]
+3. Unit 2.04 (first floor, café with terrace, 118 m2)
+
+3.1 Original lease
+
+Tenant: Kavárna Lípa s.r.o. (company ID 07712345).
+Signed: 2 May 2021. Term: from 1 June 2021 to 31 December 2027. Base rent: EUR 2,150 per month. Permitted use: café and bakery with seating, including the use of the terrace from April to October. Break option: none. Security deposit: three months' rent.
+
+3.2 Amendment No. 1 (not executed)
+
+In September 2023 the landlord proposed Amendment No. 1, which would have raised the rent to EUR 2,400 per month from 1 January 2024 in exchange for the landlord installing a new kitchen extraction system. The tenant did not sign it, because it disagreed with the cost allocation for the extraction system. Amendment No. 1 was never executed and has no effect. The rent was not changed in 2024. The copy in the data room (document 4.3.7) is an unsigned draft.
+
+3.3 Amendment No. 2 (executed)
+
+After a further negotiation, Amendment No. 2 was signed by both parties on 28 November 2025. It provides that:
+(a) the landlord installs the kitchen extraction system at its own cost by 31 March 2026;
+(b) the base rent changes with effect from 1 January 2026;
+(c) the term of the lease is extended.
+
+The new base rent under Amendment No. 2 is EUR 2,310 per month. This reflects a compromise between the original rent and the rent proposed in the unexecuted Amendment No. 1.
+
+Clause 4 of Amendment No. 2 replaces the expiry date of the original lease. Under clause 4, the lease now expires on 31 December 2030. The original expiry date (31 December 2027) no longer applies. All other terms of the original lease, including the permitted use, the terrace rights and the deposit, remain unchanged.
+
+Current status: in force. Rent paid on time throughout 2025. January 2026 rent invoiced at the new rate and paid on 5 January 2026.
+
+4. Unit 3.11 (second floor, 76 m2)
+
+Tenant: Brightpath Tutoring Ltd (UK company, Czech branch registered 2022).
+Lease signed: 15 June 2023. Term: from 1 July 2023 to 30 June 2028. Base rent: EUR 1,480 per month. Permitted use: education and tutoring, opening hours until 21:00.
+
+In 2025 the tenant asked for a rent reduction during the summer months, when its tutoring business is closed. The landlord declined, and no amendment was proposed or signed. The tenant also asked about extending the lease to 2031; the landlord indicated it would consider an extension closer to expiry. No extension has been agreed.
+
+Current status: in force on its original terms. Rent paid on time. One late payment (11 days) in August 2024, with late-payment interest paid.
+
+[page 3]
+5. Reconciliation notes for the lender
+
+- The data room contains the unsigned draft of Amendment No. 1 for unit 2.04. It should not be used for the rent roll. The rent roll should show EUR 2,310 for unit 2.04 from 1 January 2026 and the expiry date of 31 December 2030.
+- The rent roll for 2025 shows unit 1.02 as income-producing until March 2025 only.
+- For unit 3.11, the tenant's request for an extension to 2031 has not been accepted and should not be reflected in the weighted average unexpired lease term.
+- Service charges are reconciled annually in April and are not part of this summary.
+
+5a. Deposits and guarantees
+
+All security deposits are held in a separate escrow account at Česká spořitelna and are reconciled quarterly. For unit 1.02 the deposit of the former tenant was returned on 30 April 2025 after the hand-back inspection, net of EUR 640 for repainting. For the units in force, the deposits on file equal the amounts required by the leases; no bank guarantees are held. The landlord has not drawn on any deposit since 2022.
+
+6. Contacts
+
+Asset manager: Ing. Petra Malá, Vltava Property Partners. Property manager on site: Riverside Facility Services s.r.o.
+
+End of summary.

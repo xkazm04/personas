@@ -1,0 +1,7 @@
+Some context first because this has been a long week. On Monday we shipped the dark mode refresh and the onboarding tour, and both are fine now apart from the tour skipping step 4 on small screens, which Petra is looking at. Tuesday went to the Sentry noise: the "ResizeObserver loop limit exceeded" warning was flooding the issue list and we finally filtered it out in the beforeSend hook. Wednesday I spent mostly on the vault credential rotation reminder, which is now behind a flag.
+
+There is also the open question of whether the overview dashboard should default to the last 7 days or the last 30. Marketing wants 30, support wants 7. I am not deciding that today and neither should you.
+
+Separately, the designers sent new illustrations for the empty states. They are in the shared drive but they are not final, so please do not wire them in yet.
+
+OK, so for THIS session: compliance asked for the audit log table (Settings > Security > Audit log) to get a "Download CSV" button. It should export exactly the rows matching the current filters, with columns timestamp (ISO 8601, UTC), actor, action, target and IP, and the file name should be audit-log-YYYY-MM-DD.csv. Nothing else in this session.

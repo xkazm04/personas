@@ -1,0 +1,28 @@
+destination: public changelog page (changelog.example.app) and in-app "What's new" panel
+version: 4.18.0
+draft:
+
+## 4.18.0 - What's new
+
+### New
+- Scheduled exports: schedule CSV and Parquet exports of any saved report to S3 or Google Drive, daily, weekly or monthly. (PRS-2210)
+- Bulk credential rotation: rotate up to 50 credentials in one action from the vault. Each rotation is logged individually. (PRS-2231)
+- Retry policies per trigger: each trigger can define its own retry count and backoff. (PRS-2244)
+- Dark mode for embedded charts: charts embedded in Notion and Confluence follow the host page's theme. (PRS-2190)
+
+### Improved
+- The overview dashboard loads up to 4x faster on large workspaces by virtualising the execution list. (PRS-2256)
+- The credential catalog search is no longer case-sensitive for connector names. (PRS-2262)
+- Saved filters on the executions page now survive a page reload. (PRS-2268)
+- Persona names that are too long for the sidebar now truncate with a tooltip instead of overflowing. (PRS-2271)
+
+### Fixed
+- Webhook triggers no longer fire twice when the sender retries within 500 ms. (PRS-2275)
+- The schedule picker no longer lists the 02:00-03:00 hour twice on the day clocks go back. (PRS-2280)
+- "Copy as cURL" now escapes single quotes in JSON request bodies. (PRS-2283)
+- CSV exports of reports with more than 10,000 rows are no longer empty.
+- Markdown tables in agent output render with borders again. (PRS-2291)
+- The onboarding tour no longer skips step 4 on narrow screens. (PRS-2295)
+
+### Deprecated
+- The v1 webhooks endpoint now returns a Deprecation header. It will be removed in a future release; see the migration guide. (PRS-2299)
