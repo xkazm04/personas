@@ -14,6 +14,7 @@ import {
   startControllerPairing,
 } from '@/api/cloudSync';
 import type { CloudController } from '@/lib/bindings/CloudController';
+import type { CloudPairingOrigin } from '@/lib/bindings/CloudPairingOrigin';
 import type { CloudPairingStart } from '@/lib/bindings/CloudPairingStart';
 import type { CloudPairingState } from '@/lib/bindings/CloudPairingState';
 import PairingOriginField from './PairingOriginField';
@@ -29,8 +30,9 @@ type RevokeTarget = { id: string | null; name: string };
  * Paired phones of the mobile command plane, inside Settings > Cloud sync.
  *
  * "Pair a phone" shows a QR the phone scans while signed in on the web; the QR
- * opens the pairing address shown in the panel (PairingOriginField). The
- * desktop polls every 2 s, verifies the phone's proof and stores its public key.
+ * opens the pairing address shown in the panel (PairingOriginField), and the
+ * button stays disabled until that address is set (the backend refuses too).
+ * The desktop polls every 2 s, verifies the phone's proof and stores its public key.
  * A paired phone's pause / resume / cancel / run commands then run here with no
  * prompt, so the list's Revoke and Revoke all are the operator's brake. Rendered
  * only while sync is on (the parent gates it).
@@ -42,6 +44,7 @@ export default function PairedPhonesPanel() {
   const [pairing, setPairing] = useState<CloudPairingStart | null>(null);
   const [outcome, setOutcome] = useState<CloudPairingState | null>(null);
   const [starting, setStarting] = useState(false);
+  const [origin, setOrigin] = useState<CloudPairingOrigin | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<RevokeTarget | null>(null);
 
   const refresh = useCallback(async () => {
@@ -138,7 +141,7 @@ export default function PairedPhonesPanel() {
       </div>
       <p className="typo-caption text-foreground">{s.cloud_phones_description}</p>
 
-      <PairingOriginField />
+      <PairingOriginField onOriginChange={setOrigin} />
 
       {pairing && qrDataUri ? (
         <div className="flex flex-col gap-3 sm:flex-row">
@@ -165,7 +168,7 @@ export default function PairedPhonesPanel() {
             size="sm"
             icon={<QrCode className="w-4 h-4" />}
             loading={starting}
-            disabled={starting || atLimit}
+            disabled={starting || atLimit || !origin?.custom}
             onClick={() => {
               void startPairing();
             }}

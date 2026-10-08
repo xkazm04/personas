@@ -14,10 +14,18 @@ const MAX_ORIGIN = 256;
 /**
  * The web address the pairing QR opens. The page served there reads the
  * pairing secret from the URL fragment, so the panel always shows where the
- * next QR goes. Empty clears it back to the default; the backend accepts only
- * a bare `https://host[:port]` origin (`http://` for localhost).
+ * next QR goes. There is no default: empty clears it, which turns pairing off,
+ * and the backend refuses to start a pairing until one is saved. It accepts
+ * only a bare `https://host[:port]` origin (`http://` for localhost).
+ *
+ * `onOriginChange` reports every loaded or saved state (null while unknown),
+ * so the panel can keep Pair a phone disabled until an origin is set.
  */
-export default function PairingOriginField() {
+export default function PairingOriginField({
+  onOriginChange,
+}: {
+  onOriginChange?: (origin: CloudPairingOrigin | null) => void;
+}) {
   const { t } = useTranslation();
   const s = t.settings.account;
   const [current, setCurrent] = useState<CloudPairingOrigin | null>(null);
@@ -31,18 +39,22 @@ export default function PairingOriginField() {
       .then((o) => {
         if (cancelled) return;
         setCurrent(o);
+        onOriginChange?.(o);
         setDraft(o.custom ? o.origin : '');
       })
       .catch((e: unknown) => {
         // Shown inline: the operator pressed nothing, and the panel must not
         // look as if it knows where the QR opens when it does not.
-        if (!cancelled) setLoadFailed(true);
+        if (!cancelled) {
+          setLoadFailed(true);
+          onOriginChange?.(null);
+        }
         silentCatch('PairingOriginField:load')(e);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [onOriginChange]);
 
   const trimmed = draft.trim();
   const saved = current?.custom ? current.origin : '';
@@ -53,6 +65,7 @@ export default function PairingOriginField() {
     try {
       const next = await setCloudPairingOrigin(trimmed === '' ? null : trimmed);
       setCurrent(next);
+      onOriginChange?.(next);
       setLoadFailed(false);
       setDraft(next.custom ? next.origin : '');
       useToastStore.getState().addToast(s.cloud_pairing_origin_saved, 'success');
@@ -99,11 +112,14 @@ export default function PairingOriginField() {
           {s.cloud_pairing_origin_load_failed}
         </p>
       )}
-      {current && (
+      {current?.custom && (
         <p className="typo-caption text-foreground break-all" data-testid="cloud-pairing-origin-effective">
-          {interpolate(current.custom ? s.cloud_pairing_origin_opens : s.cloud_pairing_origin_opens_default, {
-            origin: current.origin,
-          })}
+          {interpolate(s.cloud_pairing_origin_opens, { origin: current.origin })}
+        </p>
+      )}
+      {current && !current.custom && (
+        <p className="typo-caption text-status-warning" data-testid="cloud-pairing-origin-unset">
+          {s.cloud_pairing_origin_unset}
         </p>
       )}
     </div>
