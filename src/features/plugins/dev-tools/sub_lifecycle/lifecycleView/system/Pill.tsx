@@ -15,7 +15,7 @@ import { useLifecycleViewModel } from '../context';
 import { healthLabel } from '../layer1/layer1Labels';
 import { LT } from './lcType';
 import {
-  BINDING_LOOK, OUTCOME_LOOK, PILL_STROKE, PILL_TONE, RUN_LOOK, VERDICT_LOOK, pillFilled, type PillLook,
+  BINDING_LOOK, ITEM_LOOK, OUTCOME_LOOK, PILL_STROKE, PILL_TONE, RUN_LOOK, VERDICT_LOOK, itemStatusOf, pillFilled, type PillLook,
 } from './pillLooks';
 import { GLYPH } from './scales';
 
@@ -81,4 +81,25 @@ export function OutcomePill({ outcome }: { outcome: LifecycleOutcome }) {
 export function BindingPill({ state }: { state: LifecycleBindingState }) {
   const { dl } = useLifecycleViewModel();
   return <Pill look={BINDING_LOOK[state]} label={bindingStateLabel(dl, state)} data={{ 'data-state': state }} />;
+}
+
+type Dl = ReturnType<typeof useLifecycleViewModel>['dl'];
+
+/** A backlog item's status in words; an unknown status is shown as it is stored. */
+export function itemStatusLabel(dl: Dl, status: string): string {
+  const known = itemStatusOf(status);
+  return known === 'unknown' ? status : {
+    pending: dl.lcx5_item_pending,
+    accepted: dl.lcx5_item_accepted,
+    delivered: dl.lcx5_item_delivered,
+    rejected: dl.lcx5_item_rejected,
+    archived: dl.lcx5_item_archived,
+    expired: dl.lcx5_item_expired,
+  }[known];
+}
+
+/** A backlog item's status (an unknown one on the dashed look). */
+export function ItemPill({ status }: { status: string }) {
+  const { dl } = useLifecycleViewModel();
+  return <Pill look={ITEM_LOOK[itemStatusOf(status)]} label={itemStatusLabel(dl, status)} data={{ 'data-status': status }} />;
 }

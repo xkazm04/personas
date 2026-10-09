@@ -6,12 +6,16 @@
  * - Layer 2 (`layer2/StepScreen`, a lazy chunk): one step's own screen, when a
  *   key was pressed. It replaces Layer 1 in place; the page does not navigate.
  *
- * The swap between the layers is one short, calm cross-slide (Layer 2 comes in
- * from the right, Layer 1 back from the left); walking between steps inside
- * Layer 2 does not replay it. Under reduced motion the swap is instant.
+ * The swap between the layers is the pressed KEY becoming the screen: the
+ * layers cross-fade (the outgoing one laid out of the flow over the incoming
+ * one, so both are on screen for the swap) while the step's key flies from its rail card into the
+ * step screen's band, and back on return (a shared layout id,
+ * `TactileKeys.useSharedKeyId`). Walking between steps inside Layer 2 does
+ * not replay it. Under reduced motion the swap is instant and nothing flies.
  *
- * Returning from Layer 2 puts focus back on the key of the step that was open,
- * once Layer 1 is mounted again, so a keyboard reader lands where they left.
+ * Returning from Layer 2 restores the rail's scroll position (the step screen
+ * opens at its head) and puts focus back on the key of the step that was open,
+ * once Layer 1 is mounted again, so a reader lands where they left.
  *
  * One time cursor spans both layers (`history/timeTravel`): a past Measure
  * picked on Layer 1's history or on a Gate / Tests strip is the one the other
@@ -21,42 +25,58 @@
  * chunk suspends into a ghost of its hero band (both delayed, so a warm or
  * prefetched load paints neither).
  */
-import { Suspense, useEffect, useRef, type ReactNode } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { Banner } from '@/features/shared/components/feedback/Banner';
 import { KitHost } from '@/features/shared/components/kit';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
+import type { JourneyNode } from '../journey/journeyModel';
 import { useLifecycleViewModel } from './context';
 import { TimeTravelProvider } from './history/timeTravel';
 import { Layer1 } from './layer1/Layer1';
 import { Layer1Ghost } from './layer1/Layer1Ghost';
 import { LazyStepScreen } from './layer2/lazySteps';
+import { arrivedStepChunk } from './layer2/stepChunks';
 import { MeasureAnnouncer } from './measure/MeasureAnnouncer';
 import { StepScreenGhost } from './layer2/StepScreenGhost';
 import { RHYTHM } from './system/lcSurface';
 import './layer1/layer1.css';
 
-/** Scroll the page's own scroll region back to its top, so a step's screen opens at its head. */
-function scrollRegionToTop(el: HTMLElement | null) {
+/** The page's own scroll region: the nearest ancestor that scrolls. */
+function scrollRegionOf(el: HTMLElement | null): HTMLElement | null {
   for (let node = el?.parentElement ?? null; node; node = node.parentElement) {
     const { overflowY } = getComputedStyle(node);
-    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) {
-      node.scrollTop = 0;
-      return;
-    }
+    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) return node;
   }
+  return null;
 }
 
-/** Runs `onMount` once, after its subtree is in the document (after the exit of the other layer). */
+/**
+ * Runs `onMount` once its subtree is in the document. A passive effect, so it
+ * runs after the page's own layout effect has noted where to return; a press
+ * or a key is a discrete event, so React flushes it before the next paint.
+ */
 function OnMount({ onMount, children }: { onMount: () => void; children: ReactNode }) {
   const ref = useRef(onMount);
   useEffect(() => { ref.current(); }, []);
   return <>{children}</>;
 }
 
-const SWAP = { duration: 0.16, ease: [0.22, 1, 0.36, 1] as const };
+const SWAP = { duration: 0.18, ease: [0.22, 1, 0.36, 1] as const };
+
+/**
+ * The step screen, rendered straight from its chunk when the chunk is already
+ * in (so it mounts in the same commit as the press and the key can fly), else
+ * through its lazy component. The choice is made ONCE per mount: switching
+ * from the lazy component to the module's own would be a different component
+ * type, and React would remount the screen and lose its state.
+ */
+function ScreenHost({ node }: { node: JourneyNode }) {
+  const Direct = useRef(arrivedStepChunk('screen')?.StepScreen ?? null).current;
+  return Direct ? <Direct node={node} /> : <LazyStepScreen node={node} />;
+}
 
 export function LifecycleBody() {
   const { dl, projectId, order, loading, error, refetch, openStepId } = useLifecycleViewModel();
@@ -65,10 +85,17 @@ export function LifecycleBody() {
   const hostRef = useRef<HTMLDivElement>(null);
   const lastOpen = useRef<string | null>(null);
   const returnTo = useRef<string | null>(null);
+  // Where the rail was scrolled when a step opened, restored on the way back.
+  const railScroll = useRef<{ region: HTMLElement; top: number } | null>(null);
 
-  useEffect(() => {
+  // Before paint, so the step screen never shows a frame at the rail's scroll offset.
+  useLayoutEffect(() => {
     if (open) {
-      if (!lastOpen.current) scrollRegionToTop(hostRef.current);
+      if (!lastOpen.current) {
+        const region = scrollRegionOf(hostRef.current);
+        railScroll.current = region ? { region, top: region.scrollTop } : null;
+        if (region) region.scrollTop = 0;
+      }
       lastOpen.current = open.id;
       return;
     }
@@ -76,25 +103,35 @@ export function LifecycleBody() {
     lastOpen.current = null;
   }, [open]);
 
-  const restoreFocus = () => {
+  const restoreRail = () => {
     const back = returnTo.current;
     returnTo.current = null;
-    if (back) hostRef.current?.querySelector<HTMLElement>(`[data-testid="lc-node-${back}"]`)?.focus();
+    const saved = railScroll.current;
+    railScroll.current = null;
+    if (saved) saved.region.scrollTop = saved.top;
+    if (back) hostRef.current?.querySelector<HTMLElement>(`[data-testid="lc-node-${back}"]`)?.focus({ preventScroll: !!saved });
   };
 
-  const slide = (dx: number) => (reduced
+  // The outgoing layer leaves the flow at once (laid over the incoming one at the top of the
+  // host), so the two cross-fade in place and the key can fly between them.
+  const fade = reduced
     ? { initial: false as const, animate: { opacity: 1 }, exit: { opacity: 1, transition: { duration: 0 } } }
-    : { initial: { opacity: 0, x: dx }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -dx / 2 }, transition: SWAP });
+    : {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0, position: 'absolute' as const, top: 0, left: 0, right: 0, pointerEvents: 'none' as const },
+        transition: SWAP,
+      };
 
   const layer = open ? (
-    <motion.div key="l2" {...slide(16)}>
+    <motion.div key="l2" {...fade}>
       <Suspense fallback={<StepScreenGhost />}>
-        <LazyStepScreen node={open} />
+        <ScreenHost node={open} />
       </Suspense>
     </motion.div>
   ) : order.length > 0 ? (
-    <motion.div key="l1" {...slide(-16)}>
-      <OnMount onMount={restoreFocus}><Layer1 /></OnMount>
+    <motion.div key="l1" {...fade}>
+      <OnMount onMount={restoreRail}><Layer1 /></OnMount>
     </motion.div>
   ) : null;
 
@@ -103,14 +140,14 @@ export function LifecycleBody() {
       <TimeTravelProvider projectId={projectId} ready={order.length > 0}>
         {/* The Measure's live region: mounted on either layer, under the time cursor. */}
         <MeasureAnnouncer />
-        <div ref={hostRef} className={`${RHYTHM.block} pb-6`}>
+        <div ref={hostRef} className={`relative ${RHYTHM.block} pb-6`}>
           {error && <Banner severity="error" compact message={dl.lc_load_failed} cause={error} onRetry={refetch} />}
           {/* The ghost -> Layer 1 swap is a plain conditional (law 2: content is never held, and
               AnimatePresence mounts its first child still); only a press or a return between the
               two layers animates. */}
           {!layer && loading
             ? <Layer1Ghost />
-            : <AnimatePresence mode="wait" initial={false}>{layer}</AnimatePresence>}
+            : <AnimatePresence mode={reduced ? 'wait' : 'sync'} initial={false}>{layer}</AnimatePresence>}
         </div>
       </TimeTravelProvider>
     </KitHost>

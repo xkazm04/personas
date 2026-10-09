@@ -11,7 +11,9 @@ import { __resetHistoryCacheForTests } from '../useLifecycleHistory';
 import { historyOf, sixMeasures } from './historyFixtures';
 
 const getLifecycleHistory = vi.hoisted(() => vi.fn());
-vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycleHistory }));
+// A key resting under focus warms that step's detail (every step screen reads one).
+const getLifecycleStepDetail = vi.hoisted(() => vi.fn(async (_p: string, stepId: string) => ({ stepId, runs: [], docs: [], related: [], evidence: [] })));
+vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycleHistory, getLifecycleStepDetail }));
 vi.mock('../../layer2/stepChunks', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../layer2/stepChunks')>()),
   prefetchStepChunksOnIdle: () => () => {},

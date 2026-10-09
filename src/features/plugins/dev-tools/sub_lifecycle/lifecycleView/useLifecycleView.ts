@@ -32,8 +32,26 @@ import { useLifecycleInstall, type InstallNote } from './useLifecycleInstall';
 
 const EMPTY_LANES: JourneyLanes = { before: [], after: [] };
 
-/** A part of a step's screen another surface can ask it to open on arrival. */
-export type StepFocus = 'commands';
+/**
+ * A part of a step's screen another surface (or the screen's own Next panel)
+ * can ask it to open: `commands` the Gate / Tests Commands editor, `coverage`
+ * that editor with a coverage row ready to fill, `run:<commandId>` that
+ * command's row, scrolled to with its first error open.
+ */
+export type StepFocus = 'commands' | 'coverage' | `run:${string}`;
+
+/**
+ * The step last opened per project, this session (module memory, never
+ * persisted): coming back to the page re-selects it on the rail. Bounded by
+ * the projects visited; cleared past the cap.
+ */
+const lastOpened = new Map<string, string>();
+const LAST_OPENED_CAP = 64;
+
+/** Test-only: forget the remembered steps. */
+export function __resetLastOpenedForTests(): void {
+  lastOpened.clear();
+}
 
 export interface LifecycleViewModel {
   t: ReturnType<typeof useTranslation>['t'];
@@ -115,16 +133,20 @@ export function useLifecycleView(): LifecycleViewModel {
   const selected = useMemo(() => {
     if (order.length === 0) return null;
     const hit = selectedId ? order.find((n) => n.id === selectedId) : undefined;
-    const seed = head.headlineStepId ?? weak?.node.id;
+    const seed = (projectId ? lastOpened.get(projectId) : undefined) ?? head.headlineStepId ?? weak?.node.id;
     return hit ?? order.find((n) => n.id === seed) ?? order[0] ?? null;
-  }, [order, selectedId, weak, head.headlineStepId]);
+  }, [order, selectedId, weak, head.headlineStepId, projectId]);
 
   const select = useCallback((stepId: string) => setSelectedId(stepId), []);
   const openStep = useCallback((stepId: string, focus?: StepFocus) => {
+    if (projectId) {
+      if (lastOpened.size >= LAST_OPENED_CAP) lastOpened.clear();
+      lastOpened.set(projectId, stepId);
+    }
     setSelectedId(stepId);
     setOpenStepId(stepId);
     setStepFocus(focus ?? null);
-  }, []);
+  }, [projectId]);
   const closeStep = useCallback(() => {
     setOpenStepId(null);
     setStepFocus(null);

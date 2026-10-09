@@ -14,7 +14,8 @@
  * every step the history does not track dims the same way.
  *
  * The whole card is one press target (the key's stretched hit area); the key
- * is the tab stop. Resting on the card, or focusing its key, opens the peek.
+ * is the tab stop, and pressing it flies the key into the step screen's band
+ * (a shared layout id, `TactileKeys.useSharedKeyId`). Resting on the card, or focusing its key, opens the peek.
  *
  * While a Measure measures the step (`measuring`), the card keeps the verdict
  * it had before the Measure (`useLayer1`), a streak sweeps its meter and its
@@ -38,7 +39,7 @@ import { useEntrance } from '../../system/entrance';
 import { lcShape, lcSurface } from '../../system/lcSurface';
 import { LT } from '../../system/lcType';
 import { GLYPH } from '../../system/scales';
-import { KeyCap } from '../../TactileKeys';
+import { KeyCap, useSharedKeyId } from '../../TactileKeys';
 import { stepChange } from '../delta';
 import { VERDICT, type HealthStep } from '../healthModel';
 import { highlightOf, useHighlight } from '../highlight';
@@ -79,6 +80,7 @@ export function NodeCard({ step, upstream, index, roving, peek, measuring = null
   const v = VERDICT[step.health];
   const change = stepChange(step);
   const Glyph = stepGlyph(node.id);
+  const keyId = useSharedKeyId(node.id);
   const VerdictGlyph = HEALTH_GLYPH[step.health];
   // Every card's outline is 2px, so its rows (and the pipe's line) sit at the same
   // place in every card; an instructed card keeps its quiet colour at that width.
@@ -105,7 +107,7 @@ export function NodeCard({ step, upstream, index, roving, peek, measuring = null
       <span aria-hidden className={`pointer-events-none absolute inset-0 -z-10 ${lcShape('node')} ${v.wash} transition-opacity duration-200 motion-reduce:transition-none ${dim ? 'opacity-0' : 'opacity-100'}`} />
       <div className={CARD_ROW.head} data-row="head">
         <StepPress step={step} index={index} roving={roving} size="icon-sm">
-          <KeyCap state={node.strongestState} pressed={on} size="sm">
+          <KeyCap state={node.strongestState} pressed={on} size="sm" layoutId={keyId}>
             <Glyph className={`${GLYPH.sm} ${v.ink}`} aria-hidden />
           </KeyCap>
         </StepPress>

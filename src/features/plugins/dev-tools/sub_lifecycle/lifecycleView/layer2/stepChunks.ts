@@ -32,9 +32,6 @@ export const STEP_CHUNKS = {
 export type StepChunk = keyof typeof STEP_CHUNKS;
 type ChunkModule<K extends StepChunk> = Awaited<ReturnType<(typeof STEP_CHUNKS)[K]>>;
 
-/** Steps whose preset reads `getLifecycleStepDetail`; every other step reads the snapshot only. */
-export const DETAIL_STEPS: ReadonlySet<string> = new Set(['gate', 'tests', 'docs']);
-
 /** Steps whose screen draws the Measure history as a strip (and whose intent warms it). */
 export const HISTORY_STEPS: ReadonlySet<string> = new Set(['gate', 'tests']);
 
@@ -43,6 +40,8 @@ export const STEP_INTENT_DELAY_MS = 100;
 
 // Bounded by construction: one entry per key of STEP_CHUNKS (five).
 const inFlight: Partial<Record<StepChunk, Promise<unknown>>> = {};
+// The chunks that have arrived, by key (five at most): what a caller can render without suspending.
+const arrived: Partial<{ [K in StepChunk]: ChunkModule<K> }> = {};
 let intentTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Load a chunk now; idempotent. The lazy components call this too, so they share the promise. */
@@ -52,9 +51,21 @@ export function loadStepChunk<K extends StepChunk>(id: K): Promise<ChunkModule<K
   // STEP_CHUNKS[id] is exactly the thunk ChunkModule<K> names; TS cannot narrow an indexed call by K.
   const pending = STEP_CHUNKS[id]() as Promise<ChunkModule<K>>;
   inFlight[id] = pending;
+  pending.then((m) => { (arrived as Record<K, ChunkModule<K>>)[id] = m; }, () => {});
   // A failed import forgets itself so the next request retries; the rejection still reaches the caller.
   pending.then(undefined, () => { if (inFlight[id] === pending) delete inFlight[id]; });
   return pending;
+}
+
+/**
+ * A chunk that has already arrived, or null. The step screen renders from this
+ * when it can: a `React.lazy` component suspends on its first render even when
+ * its chunk is in, and that one-frame suspension is long enough for Layer 1 to
+ * leave before the screen's band mounts, so the pressed key would have nothing
+ * to fly from.
+ */
+export function arrivedStepChunk<K extends StepChunk>(id: K): ChunkModule<K> | null {
+  return (arrived[id] as ChunkModule<K> | undefined) ?? null;
 }
 
 /** The preset chunk a step's screen mounts. */
@@ -71,11 +82,15 @@ function warm(id: StepChunk) {
   loadStepChunk(id).catch(silentCatch('lifecycle:stepChunkPrefetch'));
 }
 
-/** Warm everything opening `stepId` needs: the screen, its preset, its detail data and, for Gate and Tests, the history. */
+/**
+ * Warm everything opening `stepId` needs: the screen, its preset, its detail
+ * data (every step's screen reads it: its runs or docs, its backlog items and
+ * its evidence, behind the Next panel) and, for Gate and Tests, the history.
+ */
 export function prefetchStep(projectId: string | null, stepId: string): void {
   warm('screen');
   warm(presetChunkFor(stepId));
-  if (projectId && DETAIL_STEPS.has(stepId)) prefetchStepDetail(projectId, stepId);
+  if (projectId) prefetchStepDetail(projectId, stepId);
   if (projectId && HISTORY_STEPS.has(stepId)) prefetchLifecycleHistory(projectId);
 }
 
@@ -105,4 +120,5 @@ export function prefetchStepChunksOnIdle(): () => void {
 export function __resetStepChunksForTests(): void {
   cancelStepIntent();
   for (const key of Object.keys(inFlight) as StepChunk[]) delete inFlight[key];
+  for (const key of Object.keys(arrived) as StepChunk[]) delete arrived[key];
 }

@@ -10,7 +10,7 @@ import type { LifecycleSnapshot } from '@/lib/bindings/LifecycleSnapshot';
 
 import { buildLanes } from '../../../journey/journeyModel';
 import { LifecycleViewProvider } from '../../context';
-import type { LifecycleViewModel } from '../../useLifecycleView';
+import type { LifecycleViewModel, StepFocus } from '../../useLifecycleView';
 
 export function renderLayer1(ui: ReactNode, snapshot: LifecycleSnapshot, initialOpen: string | null = null) {
   const openStep = vi.fn();
@@ -18,6 +18,7 @@ export function renderLayer1(ui: ReactNode, snapshot: LifecycleSnapshot, initial
     const { t, tx } = useTranslation();
     const [selectedId, setSelectedId] = useState<string | null>(initialOpen);
     const [openStepId, setOpenStepId] = useState<string | null>(initialOpen);
+    const [stepFocus, setStepFocus] = useState<StepFocus | null>(null);
     const lanes = buildLanes(snapshot);
     const order = [...lanes.before, ...lanes.after];
     const model: LifecycleViewModel = {
@@ -28,9 +29,9 @@ export function renderLayer1(ui: ReactNode, snapshot: LifecycleSnapshot, initial
       selected: order.find((n) => n.id === selectedId) ?? order[0] ?? null,
       select: setSelectedId,
       openStepId,
-      openStep: (id: string) => { setSelectedId(id); setOpenStepId(id); openStep(id); },
+      openStep: (id: string, focus?: StepFocus) => { setSelectedId(id); setOpenStepId(id); setStepFocus(focus ?? null); if (focus) openStep(id, focus); else openStep(id); },
       closeStep: () => setOpenStepId(null),
-      stepFocus: null, clearStepFocus: () => {},
+      stepFocus, clearStepFocus: () => setStepFocus(null),
       headline: '', headlineHealth: null, headlineState: null, missingText: '', missingCount: 0,
       installing: false, install: async () => {}, installNote: null, askAthena: () => {},
     };

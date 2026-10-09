@@ -9,6 +9,14 @@ import { evidenceItem, healthyMix, soloV0, stepView } from './fixtures';
 // missing binding (Install offered), a measured snapshot (the headline by
 // health), Layer 2 opened from the rail, and a failed read (inline banner).
 
+// Reduced motion where a test asserts a layer is GONE: with motion, the step's key flies between
+// the layers (a shared layout animation jsdom cannot finish), so the outgoing layer stays mounted.
+const motion = vi.hoisted(() => ({ reduced: false }));
+vi.mock('@/hooks/utility/interaction/useMotion', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/hooks/utility/interaction/useMotion')>()),
+  useReducedMotion: () => motion.reduced,
+}));
+
 const getLifecycle = vi.hoisted(() => vi.fn());
 const installLifecycle = vi.hoisted(() => vi.fn());
 const getLifecycleStepDetail = vi.hoisted(() => vi.fn());
@@ -38,6 +46,7 @@ import LifecyclePage from '../../LifecyclePage';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  motion.reduced = false;
   activeProjectId = 'p1';
   getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => ({ stepId, runs: [], docs: [], related: [], evidence: [] }));
 });
@@ -116,6 +125,7 @@ describe('LifecyclePage', () => {
   // The owner's note, 2026-10-06, still holds: a node click must NOT open a
   // drawer. Since WP4 it opens the step's Layer-2 screen IN PLACE of the rail.
   it('opens a step in place, with no drawer, and returns', async () => {
+    motion.reduced = true;
     project('p-detail', soloV0());
     render(<LifecyclePage />);
 

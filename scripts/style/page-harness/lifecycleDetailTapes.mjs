@@ -8,7 +8,11 @@
 //   timed-out check and a command that did not run); coverage runs climbing
 //   from 44% to 63%; the doc-rot rows;
 // - notes on a few evidence outcomes, so a step's evidence rows and the docs
-//   change modal have something to say.
+//   change modal have something to say;
+// - (Lifecycle excellence wave 5) every step's `related` backlog items and
+//   `evidence`: a slow-gate item about tsc and an Overseer item on Gate, a
+//   doc-rot item on Docs, and Land's and Record's own change history (Land's
+//   skips carry the notes its Next panel counts; Record is done every time).
 //
 // The shooter opens a step with `--steps "click=[data-testid=lc-node-<id>]"`.
 // Fixture CODE, no personal data. Mirrors journey/__tests__/detailFixtures.ts.
@@ -60,10 +64,34 @@ export function lifecycleDetailTapes({ RECORDED_AT }) {
   const verifiable = docs.filter((d) => d.status !== 'unverifiable').length;
   const cleanPct = Math.round((docs.filter((d) => d.status === 'clean').length / verifiable) * 1000) / 10;
 
+  const item = (id, title, status, source, commandId, minutes) => ({ id, title, status, verifyState: null, source, commandId, createdAt: iso(minutes) });
+  const GATE_RELATED = [
+    item('idea-slow-tsc', 'npx tsc --noEmit runs over its 1m budget', 'accepted', 'slow_gate', 'tsc', 60 * 20),
+    item('idea-ov-gate', 'Bring Gate back to green: eslint fails on VaultPage.tsx', 'accepted', 'overseer', null, 60 * 5),
+    item('idea-slow-check', 'npm run check ran past its 10m budget', 'delivered', 'slow_gate', 'check', 60 * 24 * 6),
+  ];
+  const DOCS_RELATED = [
+    item('idea-rot-vault', 'docs/features/vault/vault.md names files that are gone', 'pending', 'doc_rot', null, 60 * 2),
+    item('idea-rot-fleet', 'docs/features/fleet/fleet.md is behind its sources', 'pending', 'doc_rot', null, 60 * 26),
+  ];
+  // A step's own change history, newest first, each carrying only that step's outcome.
+  const LAND_NOTES = ['Merged locally; the pull request was never opened', 'Pushed straight to main'];
+  const stepEvidence = (stepId, outcomeOf) => Array.from({ length: 12 }, (_, i) => {
+    const [outcome, detail] = outcomeOf(i);
+    return {
+      sourceKind: i % 4 === 0 ? 'task' : 'commit', sourceRef: `c${String(12 - i).padStart(2, '0')}`,
+      title: `Change ${12 - i}`, occurredAt: iso(90 * (i + 1)), outcomes: [{ stepId, outcome, detail }],
+    };
+  });
+  const landEvidence = stepEvidence('land', (i) => (i % 12 < 7 ? ['skipped', i === 6 ? null : LAND_NOTES[i % 3 === 2 ? 1 : 0]] : ['done', null]));
+  const recordEvidence = stepEvidence('record', () => ['done', null]);
+
   const DETAIL = {
-    gate: { stepId: 'gate', runs: gateRuns, docs: [], related: [], evidence: [] },
+    gate: { stepId: 'gate', runs: gateRuns, docs: [], related: GATE_RELATED, evidence: [] },
     tests: { stepId: 'tests', runs: testsRuns, docs: [], related: [], evidence: [] },
-    docs: { stepId: 'docs', runs: [], docs, related: [], evidence: [] },
+    docs: { stepId: 'docs', runs: [], docs, related: DOCS_RELATED, evidence: [] },
+    land: { stepId: 'land', runs: [], docs: [], related: [], evidence: landEvidence },
+    record: { stepId: 'record', runs: [], docs: [], related: [], evidence: recordEvidence },
   };
   const NOTES = {
     'c12:land': 'Merged locally; the pull request was never opened',

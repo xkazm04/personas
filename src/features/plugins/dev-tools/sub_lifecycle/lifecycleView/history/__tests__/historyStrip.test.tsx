@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 import { mixWithEvidence } from '../../../journey/__tests__/detailFixtures';
 import { renderLayer1 } from '../../layer1/__tests__/renderLayer1';
 import { LifecycleBody } from '../../LifecycleBody';
+import { loadStepChunk } from '../../layer2/stepChunks';
 import { __resetHistoryCacheForTests } from '../useLifecycleHistory';
 import { gateDetailByMeasure, sixMeasures } from './historyFixtures';
 
@@ -11,6 +12,11 @@ const getLifecycleHistory = vi.hoisted(() => vi.fn());
 const getLifecycleStepDetail = vi.hoisted(() => vi.fn());
 const setLifecycleStepParams = vi.hoisted(() => vi.fn());
 vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycleHistory, getLifecycleStepDetail, setLifecycleStepParams }));
+
+// The screen and Gate chunks are transformed once, up front: a cold transform is not what these tests time.
+beforeAll(async () => {
+  await Promise.all([loadStepChunk('screen'), loadStepChunk('gate')]);
+}, 30_000);
 
 beforeEach(() => {
   __resetHistoryCacheForTests();
@@ -22,7 +28,7 @@ beforeEach(() => {
 const row = (id: string) => screen.getByTestId(`lc2-cmd-${id}`);
 const selected = (id: string) => (row(id).getAttribute('data-kit-state') ?? '').split(' ').includes('selected');
 
-describe('Layer 2 history strip', () => {
+describe('Layer 2 history strip (in the band)', () => {
   it('draws the step’s verdict row and shows a picked Measure’s runs in the command rows', async () => {
     renderLayer1(<LifecycleBody />, mixWithEvidence({ projectId: 'p-strip' }), 'gate');
     const strip = await screen.findByTestId('lc2-strip');
@@ -39,9 +45,11 @@ describe('Layer 2 history strip', () => {
     expect(row('eslint').querySelector('[data-outcome="failed"]')).not.toBeNull();
     expect(row('clippy').textContent).toContain('Not in that Measure');
     expect(row('tsc').querySelector('[data-mark]')).not.toBeNull();
-    expect(screen.getByTestId('lc2-strip-viewing').textContent).toContain('Showing the runs of the Measure');
+    // The band shows that Measure and says so, with the way back.
+    expect(screen.getByTestId('lc2-band-travel').textContent).toContain('Viewing the Measure from');
+    expect(screen.getByTestId('lc2-header').getAttribute('data-travel')).toBe('then');
 
-    fireEvent.click(screen.getByTestId('lc2-strip-latest'));
+    fireEvent.click(screen.getByTestId('lc2-band-now'));
     await waitFor(() => expect(selected('eslint')).toBe(false));
     expect(row('clippy').textContent).not.toContain('Not in that Measure');
   });

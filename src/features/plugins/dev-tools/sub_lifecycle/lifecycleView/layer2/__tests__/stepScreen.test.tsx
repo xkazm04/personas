@@ -36,25 +36,28 @@ describe('Layer 2: the step screen', () => {
 
     fireEvent.keyDown(window, { key: 'Escape' });
     await screen.findByTestId('lc-journey-track');
-    expect(screen.queryByTestId('lc2-screen')).toBeNull();
+    // The rail is back at once; the step screen fades out over it while the key flies home (a
+    // shared layout animation jsdom cannot finish; stepShell.test.tsx asserts the screen leaves
+    // under reduced motion, where nothing flies).
     expect(document.activeElement).toBe(screen.getByTestId('lc-node-land'));
   });
 
-  it('returns through the trail crumb too', async () => {
+  it('returns through the Lifecycle button too', async () => {
     renderLayer1(<LifecycleBody />, snap('p-crumb'), 'record');
     fireEvent.click(await screen.findByTestId('lc2-back'));
     await screen.findByTestId('lc-journey-track');
     expect(document.activeElement).toBe(screen.getByTestId('lc-node-record'));
   });
 
-  it('walks to the neighbouring steps without returning (buttons and arrow keys)', async () => {
+  it('walks to the neighbouring steps without returning (arrow keys), and past the last step goes nowhere', async () => {
     renderLayer1(<LifecycleBody />, snap('p-walk'), 'land');
-    fireEvent.click(await screen.findByTestId('lc2-next'));
+    await screen.findByTestId('lc2-screen');
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
     expect(screen.getByTestId('lc2-screen').getAttribute('data-step')).toBe('record');
-    // Record is the last step: there is no next.
-    expect(screen.queryByTestId('lc2-next')).toBeNull();
+    // Record is the last step: Right stays.
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(screen.getByTestId('lc2-screen').getAttribute('data-step')).toBe('record');
     fireEvent.keyDown(window, { key: 'ArrowLeft' });
-    expect(screen.getByTestId('lc2-screen').getAttribute('data-step')).toBe('land');
     fireEvent.keyDown(window, { key: 'ArrowLeft' });
     expect(screen.getByTestId('lc2-screen').getAttribute('data-step')).toBe('commit');
   });
@@ -75,10 +78,10 @@ describe('Layer 2: the step screen', () => {
     expect(await screen.findByText('The run history could not be read.')).toBeTruthy();
   });
 
-  it('fetches nothing for a step whose preset reads the snapshot only', async () => {
+  it('reads every step detail: a snapshot-only preset still has backlog items and evidence behind Next', async () => {
     renderLayer1(<LifecycleBody />, snap('p-generic'), 'isolate');
     await screen.findByTestId('lc2-screen');
-    expect(getLifecycleStepDetail).not.toHaveBeenCalled();
+    await waitFor(() => expect(getLifecycleStepDetail).toHaveBeenCalledWith('p-generic', 'isolate'));
   });
 });
 

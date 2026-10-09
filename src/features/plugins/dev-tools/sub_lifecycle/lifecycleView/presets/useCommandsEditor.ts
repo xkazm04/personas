@@ -91,10 +91,11 @@ export function useCommandsEditor(step: LifecycleStep, runs: LifecycleRun[]) {
     rootRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
   }, [step.params.commands, runs]);
 
-  // Arrived from Measure's "nothing to measure": open the editor once, then forget the ask.
+  // Asked to open (Measure's "nothing to measure", the Next panel's "Edit budget" or "Add a
+  // coverage command"): open the editor once, then forget the ask.
   useEffect(() => {
-    if (stepFocus !== 'commands' || openStepId !== step.id) return;
-    open();
+    if ((stepFocus !== 'commands' && stepFocus !== 'coverage') || openStepId !== step.id) return;
+    open(stepFocus === 'coverage' ? 'coverage' : undefined);
     clearStepFocus();
   }, [stepFocus, openStepId, step.id, open, clearStepFocus]);
 

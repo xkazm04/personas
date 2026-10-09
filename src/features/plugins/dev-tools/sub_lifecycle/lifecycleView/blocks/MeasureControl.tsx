@@ -13,49 +13,23 @@
  * other refusal (another Measure running) says the backend's reason. A
  * failed Cancel is said on the same line.
  */
-import { useEffect, useState } from 'react';
 import { Gauge, Settings2 } from 'lucide-react';
 
-import { measureLifecycle } from '@/api/devTools/lifecycle';
 import { AsyncButton, Button } from '@/features/shared/components/buttons';
-import { resolveError } from '@/lib/errors/errorRegistry';
-import { silentCatch } from '@/lib/silentCatch';
-import { isTauriError } from '@/lib/types/tauriError';
 
 import { useLifecycleViewModel } from '../context';
 import { MeasureProgress } from '../measure/MeasureProgress';
-import { isMeasuring, useMeasureSession } from '../measure/measureSession';
 import { useCancelMeasure } from '../measure/useCancelMeasure';
 import { LT } from '../system/lcType';
 import { ReservedLabel } from '../system/ReservedLabel';
 import { GLYPH } from '../system/scales';
 import { NOTE_LINE } from './OverseerControls';
-
-type Refusal = { kind: 'nothing' } | { kind: 'other'; text: string };
+import { useMeasureNow } from './useMeasureNow';
 
 export function MeasureControl() {
-  const { dl, projectId, snapshot, refetch, openStep } = useLifecycleViewModel();
-  const { phase } = useMeasureSession();
+  const { dl, projectId, snapshot, openStep } = useLifecycleViewModel();
   const cancel = useCancelMeasure();
-  const [refusal, setRefusal] = useState<Refusal | null>(null);
-  const running = isMeasuring(phase) || !!snapshot?.measuring;
-
-  // A refusal belongs to the project it was said about.
-  useEffect(() => { setRefusal(null); }, [projectId]);
-
-  const measure = async () => {
-    if (!projectId) return;
-    setRefusal(null);
-    try {
-      await measureLifecycle(projectId);
-      refetch();
-    } catch (err) {
-      silentCatch('lifecycle:measure')(err);
-      // `not_found` is the plan finding no command to run, configured or detected.
-      if (isTauriError(err) && err.kind === 'not_found') setRefusal({ kind: 'nothing' });
-      else setRefusal({ kind: 'other', text: resolveError(isTauriError(err) ? err.error : err instanceof Error ? err.message : String(err)).message });
-    }
-  };
+  const { measure, running, refusal } = useMeasureNow();
 
   const note = refusal?.kind === 'nothing'
     ? dl.lcx4_nothing

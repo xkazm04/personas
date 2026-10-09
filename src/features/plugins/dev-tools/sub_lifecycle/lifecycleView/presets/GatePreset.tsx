@@ -1,14 +1,13 @@
-// GATE preset: the step's history strip (pick a past Measure to see its
-// runs), the step's commands as measured rows (outcome, time against budget,
-// trend, pass rate) and the commands editor under them. `TestsPreset` reuses
-// the body with the coverage panel above it. Budgets come from the snapshot's
-// rules (a command's own budget overrides its kind's default). The rows show
-// the Measure the page's time cursor is on (`history/timeTravel`).
+// GATE preset: the step's commands as measured rows (outcome, time against
+// budget, trend, pass rate) and the commands editor under them. `TestsPreset`
+// reuses the body with the coverage panel above it. Budgets come from the
+// snapshot's rules (a command's own budget overrides its kind's default). The
+// rows show the Measure the page's time cursor is on (`history/timeTravel`),
+// picked on the history strip in the screen's band.
 
 import { useMemo } from 'react';
 
 import type { JourneyNode } from '../../journey/journeyModel';
-import { HistoryStrip } from '../history/HistoryStrip';
 import { useTimeTravel } from '../history/timeTravel';
 import { useSnapshotRules } from '../system/useSnapshotRules';
 import { CommandRows } from './CommandRows';
@@ -33,10 +32,5 @@ export function GateBody({ node, data, editor }: { node: JourneyNode; data: Pres
 
 export function GatePreset({ node, data }: { node: JourneyNode; data: PresetData }) {
   const editor = useCommandsEditor(node.view.step, data.detail?.runs ?? []);
-  return (
-    <>
-      <HistoryStrip stepId={node.id} />
-      <GateBody node={node} data={data} editor={editor} />
-    </>
-  );
+  return <GateBody node={node} data={data} editor={editor} />;
 }

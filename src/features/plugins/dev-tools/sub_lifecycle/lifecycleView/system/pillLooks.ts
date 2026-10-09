@@ -11,8 +11,8 @@
 // dotted, unfilled, with a stopped timer; did-not-run is dashed, unfilled,
 // with a slashed circle.
 import {
-  CircleCheck, CircleDashed, CircleHelp, CircleSlash, Clock, Eye, Hourglass, Info, Lightbulb,
-  OctagonX, PlugZap, SkipForward, TimerOff, TriangleAlert, Unplug, type LucideIcon,
+  Archive, Ban, CircleCheck, CircleDashed, CircleDot, CircleHelp, CircleSlash, Clock, Eye, Hourglass, Info,
+  Lightbulb, OctagonX, PlugZap, SkipForward, TimerOff, TriangleAlert, Unplug, type LucideIcon,
 } from 'lucide-react';
 
 import type { LifecycleBindingState } from '@/lib/bindings/LifecycleBindingState';
@@ -83,3 +83,25 @@ export const BINDING_LOOK: Record<LifecycleBindingState, PillLook> = {
   missing: { tone: 'error', stroke: 'dotted', glyph: Unplug },
   advisory: { tone: 'quiet', stroke: 'hairline', glyph: Lightbulb },
 };
+
+/**
+ * A backlog item's status (`dev_ideas.status`): open (pending, accepted) is
+ * closed-stroked and filled, decided-against is a hairline, done is solid
+ * success, timed out is dotted. An unknown status is dashed and says so.
+ */
+export const ITEM_STATUSES = ['pending', 'accepted', 'delivered', 'rejected', 'archived', 'expired'] as const;
+export type ItemStatus = (typeof ITEM_STATUSES)[number];
+
+export const ITEM_LOOK: Record<ItemStatus | 'unknown', PillLook> = {
+  pending: { tone: 'warning', stroke: 'hairline', glyph: Hourglass },
+  accepted: { tone: 'info', stroke: 'solid', glyph: CircleDot },
+  delivered: { tone: 'success', stroke: 'solid', glyph: CircleCheck },
+  rejected: { tone: 'neutral', stroke: 'hairline', glyph: Ban },
+  archived: { tone: 'quiet', stroke: 'hairline', glyph: Archive },
+  expired: { tone: 'neutral', stroke: 'dotted', glyph: Clock },
+  unknown: { tone: 'neutral', stroke: 'dashed', glyph: CircleHelp },
+};
+
+export function itemStatusOf(status: string): ItemStatus | 'unknown' {
+  return (ITEM_STATUSES as readonly string[]).includes(status) ? (status as ItemStatus) : 'unknown';
+}

@@ -1,6 +1,6 @@
 /**
- * TESTS preset: the step's history strip, coverage, then the test commands
- * (the gate body).
+ * TESTS preset: coverage, then the test commands (the gate body); the step's
+ * history strip is in the screen's band.
  *
  * Coverage is the number Tests is judged by. Its ring is the step's instrument
  * at the top of the screen; here it gets its trend over the coverage runs
@@ -18,7 +18,6 @@ import { formatNumeric } from '@/lib/utils/formatters';
 
 import type { JourneyNode } from '../../journey/journeyModel';
 import { useLifecycleViewModel } from '../context';
-import { HistoryStrip } from '../history/HistoryStrip';
 import { VERDICT, type HealthStep } from '../layer1/healthModel';
 import { ArcGauge } from '../layer1/parts/ArcGauge';
 import { MetricValue, SampleNote } from '../layer1/parts/MetricValue';
@@ -106,7 +105,6 @@ export function TestsPreset({ step, node, data }: { step: HealthStep; node: Jour
   const editor = useCommandsEditor(node.view.step, data.detail?.runs ?? []);
   return (
     <>
-      <HistoryStrip stepId={node.id} />
       <CoveragePanel step={step} node={node} data={data} editor={editor} />
       <GateBody node={node} data={data} editor={editor} />
     </>

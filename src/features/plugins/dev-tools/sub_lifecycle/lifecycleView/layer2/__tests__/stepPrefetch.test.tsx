@@ -49,7 +49,7 @@ describe('step intent prefetch', () => {
     expect(getLifecycleHistory).toHaveBeenCalledWith('p-intent');
   });
 
-  it('drops an intent the pointer abandoned, and fetches no detail for a snapshot-only step', async () => {
+  it('drops an intent the pointer abandoned, and warms a snapshot-preset step detail too', async () => {
     renderLayer1(<CollarView />, mixWithEvidence({ projectId: 'p-sweep' }));
     fireEvent.focus(screen.getByTestId('lc-node-tests'));
     fireEvent.blur(screen.getByTestId('lc-node-tests'));
@@ -57,7 +57,9 @@ describe('step intent prefetch', () => {
     act(() => { vi.advanceTimersByTime(STEP_INTENT_DELAY_MS); });
     expect(stepChunkRequested('tests')).toBe(false);
     expect(stepChunkRequested('generic')).toBe(true);
-    expect(getLifecycleStepDetail).not.toHaveBeenCalled();
+    // Every screen reads its detail (backlog items and evidence behind Next); the abandoned step's is never asked.
+    expect(getLifecycleStepDetail).toHaveBeenCalledTimes(1);
+    expect(getLifecycleStepDetail).toHaveBeenCalledWith('p-sweep', 'land');
     await act(async () => { await Promise.resolve(); });
     expect(getLifecycleHistory).not.toHaveBeenCalledWith('p-sweep');
   });
