@@ -1,0 +1,186 @@
+{
+  "schema": "conform-run/1",
+  "worker": "6e7b7da6-2885-45da-86bc-2e45c441984d",
+  "subject": "cross-provider-benchmark-operations",
+  "evaluatedAt": "2026-10-09T17:25:35Z",
+  "pairs": [
+    {
+      "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/stores/slices/agents/labSlice.ts:138 the run-state vocabulary is completed/failed/cancelled with no partial or cancelling state, so a budget-halted run (finalized Completed at src-tauri/engine/src/test_runner/lab.rs:551, halt never written to the summary) is cached as final at :204 and a cancel flips straight to cancelled at :187 even when the backend refused - partial never reaches the client",
+      "techniques": [
+        {
+          "technique": "async-run-queue-with-cancel",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/agents/labSlice.ts:187 markCancelled runs in finally whether or not the cancel IPC succeeded, and there is no intermediate cancelling state (backend writes Cancelled directly, src-tauri/src/commands/execution/lab.rs:186); live progress IS realized as current/total at labSlice.ts:105; terminal-cancel conflict IS enforced at src-tauri/core/src/models/lab.rs:55"
+        },
+        {
+          "technique": "budget-preflight-and-ceiling",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/agents/labSlice.ts:138 TERMINAL_STATUSES has no partial member and src-tauri/engine/src/test_runner/lab.rs:361 sets halted_by_budget without recording it, so the partial contract cannot survive into any consumer of this slice"
+        }
+      ]
+    },
+    {
+      "context": "97025c06-0d64-4025-8a1f-98b90ba1c233",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:311 buildCompareOutcomeEvent (and ALL_COMPARE_MODELS at :63) has no production caller since d71e0eb948 deleted the A/B compare panel; the context no longer runs or renders a model comparison, and its live remainder is the ANTHROPIC_TIERS price book consumed by the lab-arena preflight, which is judged on that context",
+      "techniques": [
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:311 compare aggregation survives only as dead code with test-only callers"
+        },
+        {
+          "technique": "budget-preflight-and-ceiling",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:51 a model absent from the price book is UNPRICED, not free - the null-never-zero rule the preflight relies on"
+        }
+      ],
+      "registryProposal": "dead-code finding, not this subject: compareHelpers.ts aggregateResultsDetailed/buildCompareStartEvent/buildCompareOutcomeEvent/rowFailure/ALL_COMPARE_MODELS are unreferenced in production after d71e0eb948; FREE_COST labels Ollama Cloud presets (:79) although that tier is a subscription allowance (entitlement-exhaustion-is-not-ill-health territory)"
+    },
+    {
+      "context": "92f6c0fc-8d5c-43a7-bab8-1851973d5198",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 ranks PERSONAS doing different jobs by production health signals (success, health, speed, cost, activity); no shared case set, no provider/model targets - the subject precondition (evidence for which model serves one workload) does not hold, and target-matrix-runs names differing workloads as when-not-to-use",
+      "techniques": [
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 targets are personas with distinct workloads, not provider x model x prompt over the same cases"
+        }
+      ],
+      "registryProposal": "lexical lure: an operational per-agent fleet leaderboard (leaderboard/matrix/quality/cost tokens) matches this subject strongly; the golden path could name it in a when-NOT section so the matcher or a judge routes it to scoring-rubrics / metrics instead"
+    },
+    {
+      "context": "2dcda6bf-9982-422b-b63f-1481c414cdab",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx:2 the matrix is projects x observability connectors (Langfuse/LangSmith/Helicone wiring), not a benchmark target matrix; nothing here runs cases against models or produces a scorecard",
+      "techniques": [
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx:2 assignment matrix of connectors to projects"
+        }
+      ]
+    },
+    {
+      "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/settings/sub_byom/components/ByomRoutingRules.tsx:3 the context edits runtime RoutingRule/TaskComplexity dispatch config - the builder-side routing the golden path explicitly assigns to model-routing (already judged deviation on this context); it produces no benchmark evidence",
+      "techniques": [
+        {
+          "technique": "cheapest-sufficient-configuration",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_byom/components/ByomRoutingRules.tsx:3 a runtime router, which the technique names as when-not-to-use"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "5d538a29-a2bb-4d61-8ec2-c51bcde105fe",
+      "reason": "budget: 5 pairs judged this run; probable-confidence lexical match (cases/spec/settings/matrix tokens) left unread for a later run"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "reason": "budget: 5 pairs judged this run; probable-confidence lexical match (cases/spec/settings/matrix tokens) left unread for a later run"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "0b0ee725-52a2-4656-9e13-07c5204de60e",
+      "reason": "budget: 5 pairs judged this run; probable-confidence lexical match (cases/spec/settings/matrix tokens) left unread for a later run"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "456eb952-9b93-4de4-bad5-79e6f101aeb1",
+      "reason": "budget: 5 pairs judged this run; probable-confidence lexical match (cases/spec/settings/matrix tokens) left unread for a later run"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+      "reason": "budget: 5 pairs judged this run; probable-confidence lexical match (cases/spec/settings/matrix tokens) left unread for a later run"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "b0cf3902-0739-40a8-8c76-ae594f41421b",
+      "reason": "budget: 5 pairs judged this run; probable-confidence lexical match (cases/spec/settings/matrix tokens) left unread for a later run"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "54236947-3775-4d0a-8e14-1a709dd4d8bc",
+      "reason": "budget: 5 pairs judged this run; probable-confidence lexical match (cases/spec/settings/matrix tokens) left unread for a later run"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T17:25:35Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "cross-provider-benchmark-operations"
+      ],
+      "techniques": [
+        "async-run-queue-with-cancel",
+        "budget-preflight-and-ceiling"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T17:25:35Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "cross-provider-benchmark-operations"
+      ],
+      "techniques": [
+        "target-matrix-runs",
+        "budget-preflight-and-ceiling"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T17:25:35Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "cross-provider-benchmark-operations"
+      ],
+      "techniques": [
+        "target-matrix-runs"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T17:25:35Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "cross-provider-benchmark-operations"
+      ],
+      "techniques": [
+        "target-matrix-runs"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T17:25:35Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "cross-provider-benchmark-operations"
+      ],
+      "techniques": [
+        "cheapest-sufficient-configuration"
+      ],
+      "deviations": 0
+    }
+  ]
+}

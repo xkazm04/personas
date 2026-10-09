@@ -1,0 +1,20 @@
+{
+  "schema": "conform-run/1",
+  "worker": "27f93505-4e4f-4528-9f05-fd9963212017",
+  "subject": "telemetry-pii-redaction",
+  "evaluatedAt": "2026-10-09T17:34:41Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "telemetry-pii-redaction",
+      "context": "468953eb-0204-4013-b366-9357b2161138",
+      "reason": "no pair exists: the map (built 2026-10-01T08:52:29Z, 199 subjectIndex keys vs 233 in registry index at b9446491) does not list this subject in any context; worker may not add pairs. Candidate pairing: context holds src-tauri/core/src/redact.rs. Rebuild with node ../ai-registry/scripts/build-registry-map.mjs --project personas, then judge"
+    },
+    {
+      "subject": "telemetry-pii-redaction",
+      "context": "dd45411d-8955-4579-906e-5a3b00ba16da",
+      "reason": "no pair exists (same map lag). Candidate pairing: context holds src-tauri/src/commands/infrastructure/system/crash_telemetry.rs, an outbound crash-telemetry emit site. Also unowned by any context: src/lib/sentry.ts:215 beforeSend + scrubPii, the frontend Sentry scrub door - the primary surface this subject governs"
+    }
+  ],
+  "consults": []
+}

@@ -1,0 +1,63 @@
+{
+  "schema": "conform-run/1",
+  "worker": "4800b8be-7a11-401a-b29d-1ee0166a9c61",
+  "subject": "multi-project",
+  "evaluatedAt": "2026-10-09T16:53:41Z",
+  "pairs": [
+    {
+      "context": "ca705961-f138-494a-b0fe-f882c674d25a",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_mastermind/lib/IdeaScanPopover.tsx:118 a FAILED listContexts is swallowed by silentCatch, leaving contexts=[] so :239 tells the operator \"Run a context scan first to enable scoping\" - the detail level renders could-not-read as never-scanned (portfolio-drill-hierarchy level parity / failure-not-empty-success), steering them into a needless context scan or a costlier whole-project scan",
+      "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
+      "evaluatedRevision": 3,
+      "techniques": [
+        {
+          "technique": "portfolio-drill-hierarchy",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/IdeaScanPopover.tsx:118 fetch failure swallowed, then :239 renders the never-context-scanned hint for it. The rest of the technique holds here: the detail level fetches only its own layer, a bounded page (:116 listContexts(projectId, undefined, CONTEXT_CHIP_CAP)), and KpiListPopover.tsx:73 renders unmeasured as 'unmeasured', never as 0"
+        },
+        {
+          "technique": "project-identity-and-joins",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_mastermind/lib/KpiListPopover.tsx:79 rows keyed by KPI id and :86 emit the id; IdeaScanPopover.tsx:75 projectId is the island slug, which deriveScene.ts:82 takes from identity.slug = meta.project_id (src/features/teams/sub_factory/passport/useAutoRescanOnFleetExit.ts:21). Names appear only at render"
+        },
+        {
+          "technique": "per-project-tabs-and-state",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:75 every surface in this context is a transient overlay list for one already-selected island. There is no persisted working-set strip to judge"
+        },
+        {
+          "technique": "cross-project-comparison",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/KpiListPopover.tsx:31 ranks one project's KPIs worst-first. Nothing in these popovers compares or ranks projects against each other"
+        }
+      ],
+      "registryProposal": "Missing pairing, judged out of scope for this run: the drill-context loss sits in teams-canvas (6e3e06ef-e5d0-4b4d-807f-688123370b14), which the map does not pair with multi-project (it carries canvas-graph, prompt-assembly and pipeline-dag). src/features/teams/sub_mastermind/MastermindPage.tsx:789 drops the kpiId that KpiListPopover emits and lands on the generic project matrix, against portfolio-drill-hierarchy's 'drilling preserves context'. That file also maps fleet sessions to projects by longest cwd/root_path prefix, a path-derived join that project-identity-and-joins forbids. teams-canvas is the canvas page of the portfolio surface and should carry multi-project."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "multi-project",
+      "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b",
+      "reason": "plugins-research-lab-reports is a governance:weak row with lexical-only grounding ('project','projects'). Per the skill, weak pairs are not judged by default; this is a coverage question, not a verdict"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T16:53:41Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "multi-project"
+      ],
+      "techniques": [
+        "portfolio-drill-hierarchy",
+        "project-identity-and-joins",
+        "per-project-tabs-and-state",
+        "cross-project-comparison"
+      ],
+      "deviations": 1
+    }
+  ]
+}

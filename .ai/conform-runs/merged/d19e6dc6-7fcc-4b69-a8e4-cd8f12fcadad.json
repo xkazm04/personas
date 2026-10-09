@@ -1,0 +1,43 @@
+{"schema": "conform-run/1", "worker": "d19e6dc6-7fcc-4b69-a8e4-cd8f12fcadad", "subject": "guided-tours",
+ "evaluatedAt": "2026-10-09T17:00:14Z",
+ "pairs": [
+  {"context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50", "subject": "guided-tours", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/onboarding/components/GuidedTour.tsx:267 Escape only minimizes the panel while tourActive stays true, so the dimming (TourSpotlight.tsx:75) and spotlight stay on screen - the leave gesture is reinterpreted, never a full exit; plus restart resumes getting-started not the user's tour (GuidedTour.tsx:37, TourResumeFooterIcon.tsx:29 via tourSlice.ts:1459)",
+   "techniques": [
+    {"technique": "overlay-precedence", "verdict": "deviation", "evidence": "src/features/onboarding/components/GuidedTour.tsx:267 Escape -> setIsMinimized(true); TourSpotlight.tsx:75 dim layer still renders on tourActive, so escape neither leaves nor restores; the real exit is a separate button (GuidedTour.tsx:495)"},
+    {"technique": "tour-lifecycle", "verdict": "deviation", "evidence": "src/features/onboarding/components/GuidedTour.tsx:37 and src/features/shared/chrome/footer/icons/TourResumeFooterIcon.tsx:29 resume tourActiveTourId, which hydrates to 'getting-started' after restart (tourSlice.ts:1459) - the active tour is not part of the persisted record"},
+    {"technique": "missing-anchor-degradation", "verdict": "deviation", "evidence": "src/features/onboarding/components/TourSpotlight.tsx:32 a missing anchor only sets a session flag (tourSlice.ts:1719); no per-step skip/re-center declaration and no degradation record, so a mostly-degraded run reads as clean. Never-strand holds: overlay is pointer-events-none (TourSpotlight.tsx:75) and patience is bounded (src/hooks/utility/interaction/useTrackedElementRect.ts:41)"},
+    {"technique": "narration-and-pacing", "verdict": "realized", "evidence": "src/features/onboarding/components/useTourNarration.ts:152 stops playback on step change and :165 hard-stops on unmount; narration is gated off while minimized (GuidedTour.tsx:101-105)"}
+   ]},
+  {"context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba", "subject": "guided-tours", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/stores/slices/system/tourSlice.ts:1573 allDone = steps.every(...) is vacuously true when getActiveTourSteps (:1111) returns [] for an unregistered tour, and startTour (:1473) never checks the definition exists, so a dynamic athena-* tour lost from the in-memory registry (:993) after restart is recorded completed (:1637) - zero steps found is scored as success",
+   "techniques": [
+    {"technique": "tour-lifecycle", "verdict": "deviation", "evidence": "src/stores/slices/system/tourSlice.ts:1223 PersistedTourState has no active-tour field (resume is half a pair); :1573 vacuous completion over an empty step list; :1127 one global TOUR_STATE_VERSION wipes every tour's progress at :1243 with no expired-by-retirement outcome instead of per-tour versioning"},
+    {"technique": "action-driven-advancement", "verdict": "realized", "evidence": "src/stores/slices/system/tourSlice.ts:1615 a step completes only when the product emits its declared completeOn event; advanceTour does not mark the step done (skip leaves completion honest, :1573-1580)"},
+    {"technique": "anchor-contracts", "verdict": "realized", "evidence": "src/stores/slices/system/__tests__/tourAnchors.test.ts:19 asserts every tour highlightTestId exists as a data-testid in src/ - a source-derived drift gate (not checked against the production bundle)"}
+   ]},
+  {"context": "b39776f5-3909-41e3-b69f-14c9a6c70bec", "subject": "guided-tours", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/home/sub_learning/HomeLearning.tsx:22 feeds every tour card the LAST ACTIVE tour's step map (passed at :50, counted per card in TourSections.tsx:24); the per-tour progress persisted on disk is never read, so a paused non-active tour renders as fresh after a restart or after another tour runs. Anchor drifted from :243 (file recomposed); the cross-tour count leak is fixed by tourCards.tsx:13",
+   "techniques": [
+    {"technique": "tour-lifecycle", "verdict": "deviation", "evidence": "src/features/home/sub_learning/HomeLearning.tsx:22 progress shown on the tour catalog comes from session state of one tour, not the per-tour persisted ledger; composed-tour retirement is sound (useComposedTours re-validates and marks stale rows)"}
+   ],
+   "registryProposal": "Context-map coverage, not corpus: the code that computes per-card progress (src/features/home/sub_learning/TourSections.tsx, tourCards.tsx, useComposedTours.ts) is absent from this context's path list after the kit recomposition; a rescan should pick it up."},
+  {"context": "b30528dc-8655-4b38-800e-8cb73e96d618", "subject": "guided-tours", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "tests/playwright/getting-started-tour-mock.spec.ts:10 the tour e2e suite guards only the completeOn wiring; no spec in this context removes an anchor (first-step included) to assert never-strand, or opens a modal / presses Escape against a running tour - the subject's most catastrophic failure modes have no fresh-profile coverage",
+   "techniques": [
+    {"technique": "action-driven-advancement", "verdict": "realized", "evidence": "tests/playwright/getting-started-tour-mock.spec.ts:22 drives each step through its real completeOn event, not a tourEmit shortcut"},
+    {"technique": "missing-anchor-degradation", "verdict": "deviation", "evidence": "tests/playwright/athena-guided-walkthrough-topics.spec.ts:25 tolerates a missing target as expected for Athena's glow runner; no guided-tour spec removes an anchor and asserts the exit controls still work"},
+    {"technique": "overlay-precedence", "verdict": "deviation", "evidence": "tests/playwright/getting-started-tour-mock.spec.ts:10 no spec asserts Escape exits or a modal collision during a tour - the Escape-minimizes defect at GuidedTour.tsx:267 passes every e2e here"}
+   ]}
+ ],
+ "declined": [],
+ "consults": [
+  {"ts": "2026-10-09T17:00:14Z", "bundle": "software-engineering", "subjects": ["guided-tours"], "techniques": ["overlay-precedence", "tour-lifecycle", "missing-anchor-degradation", "narration-and-pacing"], "deviations": 3},
+  {"ts": "2026-10-09T17:00:14Z", "bundle": "software-engineering", "subjects": ["guided-tours"], "techniques": ["tour-lifecycle", "action-driven-advancement", "anchor-contracts"], "deviations": 1},
+  {"ts": "2026-10-09T17:00:14Z", "bundle": "software-engineering", "subjects": ["guided-tours"], "techniques": ["tour-lifecycle"], "deviations": 1},
+  {"ts": "2026-10-09T17:00:14Z", "bundle": "software-engineering", "subjects": ["guided-tours"], "techniques": ["action-driven-advancement", "missing-anchor-degradation", "overlay-precedence"], "deviations": 2}
+ ]}

@@ -1,0 +1,65 @@
+{
+  "schema": "conform-run/1",
+  "worker": "0c2e1b05-90f3-4de7-bc4b-8739e02d07f4",
+  "subject": "credential-vault",
+  "evaluatedAt": "2026-10-09T17:04:00Z",
+  "pairs": [
+    {
+      "context": "8b5d1d60-a129-4cd1-9567-d795589bde29",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
+      "evaluatedRevision": 4,
+      "evidence": "src/stores/slices/vault/credentialSlice.ts:363 an unreachable probe returns without recording the attempt in the store, and nothing in src/ reads the backend's persisted healthcheck_last_unreachable_at (src-tauri/src/engine/healthcheck.rs:680), so the last green ages behind a checkmark with no 'could not check since' beside it.",
+      "techniques": [
+        {"technique": "health-probing", "verdict": "deviation", "evidence": "src/stores/slices/vault/credentialSlice.ts:363 verdict is correctly left alone on unreachable (and :389 maps a throw to unreachable), but the attempt is dropped instead of stored as a second fact; the verdict path (:377, and src-tauri/src/engine/healthcheck.rs:692) also never clears a prior unreachable attempt, which rev 4 requires of every verdict writer"},
+        {"technique": "encryption-at-rest", "verdict": "realized", "evidence": "src/stores/slices/vault/credentialSlice.ts:396 preview field values are session-encrypted before they cross IPC"}
+      ],
+      "registryProposal": "Stale conformant (rev 2) flipped by rev 4's 'two facts stored as two + every verdict writer owes the clear' rule: the backend half here is realized (healthcheck.rs:680 writes the attempt) while the frontend half has zero readers, so the attempt exists on disk only. Worth naming in health-probing that a persisted attempt with no consuming surface is the same defect as dropping it."
+    },
+    {
+      "context": "0dabb588-48ce-4c35-b425-c344fd723ce7",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
+      "evaluatedRevision": 4,
+      "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:28 credential events cross into this context only as {id, name}; the one secret it holds (hmacSecret, :62) is an inbound webhook verifier the app owns, not a retained foreign capability, which the golden path places outside this subject.",
+      "techniques": []
+    },
+    {
+      "context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
+      "evaluatedRevision": 4,
+      "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:48 an 'unreachable' result (success:false, cached by useCredentialHealth.ts:165) falls through to 0 and reason 'Healthcheck failing', so one offline probe paints the composite dot (CompositeHealthDot.tsx:16) red; :52 still scores a missing anomaly score 100, including the corrupted-ledger case.",
+      "techniques": [
+        {"technique": "health-probing", "verdict": "deviation", "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:48 healthcheckScore handles verified/unverifiable/failed but not unreachable, collapsing could-not-verify into broken at the scorer (only :45 unverifiable is neutral)"},
+        {"technique": "rotation-and-remediation", "verdict": "deviation", "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:52 absent anomaly evidence (never-tested or corrupted ledger) scores as fully healthy instead of neutral, so the 'Healthcheck data corrupted' reason can never be the worst signal"}
+      ]
+    },
+    {
+      "context": "621caefc-8ae0-42e7-89b6-8e879ad62814",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
+      "evaluatedRevision": 4,
+      "evidence": "src-tauri/db/src/repos/resources/external_api_keys.rs:74 the app mints these keys itself and stores only a hash (:75); it is their issuer and verifier, never a holder of a foreign secret, and the golden path excludes secrets the application mints and owns.",
+      "techniques": [],
+      "registryProposal": "This pair was added by a 2026-08-29 /conform triage as 'precondition governs', but the golden path's own exclusion (app-minted secrets; 'always the holder, never the minter of authority') says the opposite. An issued-API-key lifecycle (mint, one-time reveal at src/features/settings/sub_api_keys/components/CreatedKeyDialog.tsx:4, hash-at-rest, expiry, revoke) is governed by authorization or an issuer-side subject; the corpus may lack an issuer-side 'issued credentials' subject, which is a forge lead rather than a reason to keep this pair."
+    }
+  ],
+  "declined": [
+    {"subject": "credential-vault", "context": "6b3d5224-2f4b-4f60-a8a6-3ac963ba3051", "reason": "vault-credentials-manager is an orchestration shell; its rotation, retirement and acquisition behaviours resolve into the backend strategies and useUndoDelete outside the context. Reading only the shell gave one candidate (useRotateAll.ts:43 drops each rotation error to a bare count) but not the half-of-nine anchors a conformant needs, nor enough to call that drop a technique failure. Left unknown for a run that walks rotate_now end to end."}
+  ],
+  "consults": [
+    {"ts": "2026-10-09T17:04:00Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": ["health-probing", "encryption-at-rest"], "deviations": 1},
+    {"ts": "2026-10-09T17:04:00Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": [], "deviations": 0},
+    {"ts": "2026-10-09T17:04:00Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": ["health-probing", "rotation-and-remediation"], "deviations": 1},
+    {"ts": "2026-10-09T17:04:00Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": [], "deviations": 0}
+  ]
+}

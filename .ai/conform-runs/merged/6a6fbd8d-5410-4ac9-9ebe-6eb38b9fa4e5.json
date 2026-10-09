@@ -1,0 +1,117 @@
+{
+  "schema": "conform-run/1",
+  "worker": "6a6fbd8d-5410-4ac9-9ebe-6eb38b9fa4e5",
+  "subject": "design-tokens",
+  "evaluatedAt": "2026-10-09T16:48:57Z",
+  "pairs": [
+    {
+      "context": "14c7d145-2166-454b-aee5-d69d9d527d79",
+      "subject": "design-tokens",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/styles/globals.css:907 brightness is still a whole-<html> pixel filter, so every contrast gate and the CustomThemeCreator readout (CustomThemeCreator.tsx:33) grade declared colours the screen never shows; unchanged since the 2026-10-03 verdict",
+      "techniques": [
+        {
+          "technique": "density-and-scale-axes",
+          "verdict": "deviation",
+          "evidence": "src/styles/globals.css:907 `filter: brightness(var(--app-brightness)) saturate(...)` on html - the whole-surface-pixel-filter trap, forcing the runtime re-capture list src/stores/themeStore.ts:220 BRIGHTNESS_EXEMPT_TOKENS instead of rebinding the ramp"
+        },
+        {
+          "technique": "token-enforcement",
+          "verdict": "deviation",
+          "evidence": "scripts/check-themes.mjs:469 the rendered-per-brightness-tier model is \"Printed, never graded\" - the graded contrast floor reads declarations, not the filtered pixels that ship (gate-sees-target)"
+        },
+        {
+          "technique": "cross-language-token-parity",
+          "verdict": "deviation",
+          "evidence": "scripts/check-themes.mjs:471 BRIGHTNESS_FILTER hand-copies the six values of src/stores/themeStore.ts:34 DARK_/LIGHT_BRIGHTNESS_LEVELS with only a comment saying they mirror - strategy 4 (hand-sync), no generation or parity check; a retune moves the screen and not the model"
+        }
+      ],
+      "registryProposal": "density-and-scale-axes could name a second, quieter failure seen here: the text-scale axis is realized by overriding enumerated raw utility classes (src/styles/globals.css:651 onward rebinds .text-xs, .text-[10px], .text-[11px] ...) - a deny-list of remembered sizes, the motion-tokens polarity argument on the type axis; a size not on the list silently ignores the axis."
+    },
+    {
+      "context": "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6",
+      "subject": "design-tokens",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/utils/rafAnimationEngine.ts:71 reduced motion reads only the OS media query, never the in-app data-motion=reduce toggle, so rAF springs ignore the app setting; unchanged since 2026-10-03",
+      "techniques": [
+        {
+          "technique": "motion-tokens",
+          "verdict": "deviation",
+          "evidence": "src/lib/utils/rafAnimationEngine.ts:71 matchMedia only (the second signal is documented at src/hooks/utility/interaction/useMotion.ts:10 but not read here), and src/lib/utils/animation/animationPresets.ts:163 hand-enumerates the reduced variants of snappy/smooth/gentle - the deny-list polarity the technique names"
+        },
+        {
+          "technique": "cross-language-token-parity",
+          "verdict": "realized",
+          "evidence": "src/lib/utils/__tests__/motionTokens.parity.test.ts:67 gates MOTION.duration against the --duration-* custom properties parsed from globals.css (strategy 3, with a non-empty assertion at :63)"
+        },
+        {
+          "technique": "token-taxonomy",
+          "verdict": "realized",
+          "evidence": "src/lib/utils/designTokens.ts:41 closed duration ladder instant/fast/normal/slow, springs named per gesture rather than per call site"
+        }
+      ]
+    },
+    {
+      "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65",
+      "subject": "design-tokens",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:127 badges still author colour by hue (orange-500/10, orange-400; :144 emerald with /20 border vs STATUS_PALETTE /30) - skipped layer, and the bg/border half has no gate; unchanged since 2026-09-24",
+      "techniques": [
+        {
+          "technique": "token-taxonomy",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:144 raw bg-emerald-500/10 border-emerald-500/20 text-emerald-400 where STATUS_PALETTE.success exists - already drifted from its border-emerald-500/30 (src/lib/design/statusTokens.ts:30)"
+        },
+        {
+          "technique": "token-enforcement",
+          "verdict": "deviation",
+          "evidence": "scripts/census/rules.json:5650 raw-palette-text-colour ratchets text-* only; no census or ESLint rule sees raw bg-*/border-* palette steps, and the sanctioned token expands to the same raw string (src/lib/design/statusTokens.ts:28 text-emerald-400) - the byte-identical-token blind spot"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-09T16:48:57Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "design-tokens"
+      ],
+      "techniques": [
+        "density-and-scale-axes",
+        "token-enforcement",
+        "cross-language-token-parity"
+      ],
+      "deviations": 3
+    },
+    {
+      "ts": "2026-10-09T16:48:57Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "design-tokens"
+      ],
+      "techniques": [
+        "motion-tokens",
+        "cross-language-token-parity",
+        "token-taxonomy"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T16:48:57Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "design-tokens"
+      ],
+      "techniques": [
+        "token-taxonomy",
+        "token-enforcement"
+      ],
+      "deviations": 2
+    }
+  ]
+}

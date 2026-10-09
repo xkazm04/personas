@@ -1,0 +1,102 @@
+{
+  "schema": "conform-run/1",
+  "worker": "22bdffb0-8096-4d7b-bc7a-69c738fd96ec",
+  "subject": "import-normalization",
+  "evaluatedAt": "2026-10-09T16:32:42Z",
+  "pairs": [
+    {
+      "context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e",
+      "subject": "import-normalization",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:4981ff0ea8a59c1b",
+      "evaluatedRevision": 1,
+      "evidence": "src-tauri/src/commands/design/n8n_transform/confirmation.rs:116 the import commit door writes the persona row by raw INSERT, bypassing persona_repo::create (src-tauri/db/src/repos/core/personas.rs:1006) and its name/structured-prompt/budget/turns validators, so a model-authored foreign import lands unvalidated; and :356 commits a partial import whenever at least one entity succeeds, against review-before-commit atomic commit",
+      "techniques": [
+        {
+          "technique": "import-validation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/confirmation.rs:116 raw INSERT INTO personas skips the creation door (validate_name, validate_structured_prompt, validate_max_budget_usd, validate_max_turns, validate_notification_channels, name-collision suffixing at personas.rs:1006+); triggers were moved through the door at :203 (commit 21ddcf6322) and tool definitions at :265 are still raw INSERTs. Realized parts: caps with one authority src-tauri/src/commands/design/n8n_limits.rs:33, prompt-sink sanitization src-tauri/src/commands/design/n8n_transform/prompts.rs:307, secrets as valueless requirements confirmation.rs:412, channel secrets encrypted confirmation.rs:94"
+        },
+        {
+          "technique": "review-before-commit",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/confirmation.rs:356 rolls back only when EVERY entity failed and otherwise commits with errors as warnings, contradicting its own doc at :42-43 (\"If ANY entity fails ... rolled back\"); :391 the receipt stores only entity_errors, so a clean import enumerates nothing; :252 an incoming tool whose name matches an existing definition silently reuses it, a silent collision default. Staged-first receipt is realized at :58"
+        },
+        {
+          "technique": "adapter-capability-tables",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/prompts.rs:311 (and :417) load platform_rules::builtin_n8n() for every transform; start_n8n_transform_background (cli_runner.rs:40) takes no source-platform argument, so a Zapier/Make/GitHub-Actions import detected client-side is transformed under the n8n credential-consolidation table; NodeTypeMapping (src-tauri/core/src/models/platform_definition.rs:42) has no grade column, so the table cannot feed a loss ledger"
+        },
+        {
+          "technique": "intermediate-representation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/types.rs:4 N8nPersonaOutput, the shape that crosses into the commit door, carries no per-entity provenance (foreign id, source format/version) or conversion grade, so nothing provenance-based (re-import matching, receipt enumeration) is possible downstream"
+        },
+        {
+          "technique": "lossy-conversion-disclosure",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/confirmation.rs:391 no loss ledger reaches the commit layer and the durable receipt records errors only, so \"why does this imported persona lack behavior\" cannot be answered after the wizard closes"
+        }
+      ],
+      "registryProposal": "rust--import-validation.md (verified 2026-08-18) lists the commit door as \"Atomic commit ... Any entity failure rolls back the whole transaction\"; the code at confirmation.rs:349-378 rolls back only on total failure and commits partial imports, and the persona row bypasses the repo creation door. The application should be re-verified and its \"Confirmed\" bullet moved to divergences."
+    },
+    {
+      "context": "2418ddaf-0e6e-446f-968f-28a4bf6e7120",
+      "subject": "import-normalization",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:4981ff0ea8a59c1b",
+      "evaluatedRevision": 1,
+      "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts:38 sends the whole parsedResult to the transform, ignoring the per-entity selection the review step offers (all pre-selected at src/features/templates/sub_n8n/reducers/sessionReducer.ts:60), and :17 does not gate on platformNeedsConfirmation, so a low-confidence format guess proceeds unconfirmed",
+      "techniques": [
+        {
+          "technique": "review-before-commit",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts:38 forwards the full parser result regardless of selectedToolIndices/selectedTriggerIndices, and src/features/templates/sub_n8n/hooks/useN8nWizardLifecycleHandlers.ts:41 commits the whole draft; selections only drive display (useResolvedEntities.ts:44 prefers draft entities), so deselecting an entity at review changes nothing that lands. Realized part: per-entity commit errors and connector follow-ups are rendered immediately (useN8nWizardLifecycleHandlers.ts:49)"
+        },
+        {
+          "technique": "format-detection",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts:17 the transform guard checks parsedResult/transforming/confirming but not platformNeedsConfirmation, so the speculative-parse guess carried in at src/features/templates/sub_n8n/hooks/useWorkflowImport.ts:76 is surfaced as a banner but never required before the pipeline proceeds, the \"mandatory user confirmation\" the escalation is legitimate under"
+        },
+        {
+          "technique": "import-validation",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_n8n/hooks/useWorkflowImport.ts:7 the client-side size cap is imported from the generated mirror of the Rust authority (n8nLimits.generated.ts) and enforced at intake at :96 with a described refusal, the one-authority cross-boundary cap"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-09T16:32:42Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "import-normalization"
+      ],
+      "techniques": [
+        "import-validation",
+        "review-before-commit",
+        "adapter-capability-tables",
+        "intermediate-representation",
+        "lossy-conversion-disclosure"
+      ],
+      "deviations": 5
+    },
+    {
+      "ts": "2026-10-09T16:32:42Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "import-normalization"
+      ],
+      "techniques": [
+        "review-before-commit",
+        "format-detection",
+        "import-validation"
+      ],
+      "deviations": 2
+    }
+  ]
+}

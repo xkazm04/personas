@@ -1,0 +1,18 @@
+{"schema": "conform-run/1", "worker": "fd661b96-9186-42cb-8330-8c68ef7a4374", "subject": "modal-stack",
+ "evaluatedAt": "2026-10-09T17:26:46Z",
+ "pairs": [{"context": "d3346f2c-d747-4d85-b6e6-c1450da57ec9", "subject": "modal-stack", "bundle": "software-engineering",
+  "state": "deviation",
+  "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:310 deletes a template with no confirm or undo and closes before the await, failure only logged (cards/useGalleryActions.ts:208); 3 of 4 applicable techniques also fail (unmount skips focus restore, unguarded credential form, feature-private stack beside the app registry)",
+  "evaluatedAgainst": "sha256-b2:c0c7b5eacfef8679", "evaluatedRevision": 4,
+  "techniques": [
+   {"technique": "destructive-confirmation", "verdict": "deviation", "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:310 onDelete(review.id) fires on one click with no confirm or undo, then onClose() unmounts before the delete settles; src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:208 reports failure to logger only - the user never sees a failed delete"},
+   {"technique": "focus-and-scroll-containment", "verdict": "deviation", "evidence": "src/lib/ui/BaseModal.tsx:231 restores focus only on the isOpen flag-flip branch; src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx:62 (plus RebuildModal.tsx:67, TemplatePreviewModal.tsx:89, RecommendedModal.tsx:22 returning null) close by teardown, so focus is dropped to the document root"},
+   {"technique": "dismissal-semantics", "verdict": "deviation", "evidence": "src/features/templates/sub_generated/gallery/modals/CatalogCredentialModal.tsx:93 puts a typed-credential form in BaseModal, whose backdrop (src/lib/ui/BaseModal.tsx:283 onClick={onClose}) and Escape dismiss with no dirty guard; one stray click discards typed secrets. Escape topmost-only routing is realized at src/lib/ui/BaseModal.tsx:200"},
+   {"technique": "stack-ownership", "verdict": "deviation", "evidence": "src/features/templates/sub_generated/gallery/modals/useModalStack.ts:37 is a feature-private second stack addressed by type, not entry id, and its find at :67 returns the OLDEST match despite the 'most recent' doc; credential (cards/useGalleryActions.ts:175) and compare (cards/GeneratedReviewsTab.tsx:354) modals bypass it with local booleans"}
+  ],
+  "registryProposal": "focus-and-scroll-containment's two-exit-branch rule fires here through a common React idiom - a modal wrapper that returns null when !isOpen hides the teardown branch inside the callee, not the call site. The react application for that technique could name this shape (an early-return guard ahead of a shared BaseModal) as the usual way the restore is skipped."}],
+ "declined": [
+  {"subject": "modal-stack", "context": "d3346f2c-d747-4d85-b6e6-c1450da57ec9", "reason": "technique-level only: anchored-positioning (no anchored popovers among the context's modals) and layering-and-precedence (z scale is owned by src/lib/ui/BaseModal.tsx outside this context) were not judged; the pair verdict rests on the other four"}
+ ],
+ "consults": [{"ts": "2026-10-09T17:26:46Z", "bundle": "software-engineering", "subjects": ["modal-stack"], "techniques": ["stack-ownership", "dismissal-semantics", "focus-and-scroll-containment", "destructive-confirmation"], "deviations": 4}]
+}

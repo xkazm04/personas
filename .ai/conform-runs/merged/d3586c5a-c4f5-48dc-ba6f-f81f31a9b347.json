@@ -1,0 +1,48 @@
+{"schema": "conform-run/1", "worker": "d3586c5a-c4f5-48dc-ba6f-f81f31a9b347", "subject": "test-harness",
+ "evaluatedAt": "2026-10-09T17:37:37Z",
+ "pairs": [
+  {"context": "b30528dc-8655-4b38-800e-8cb73e96d618", "subject": "test-harness", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "tests/playwright/athena-conversation.spec.ts:107 when data-testid=\"tab-memory\" is absent the test pushes a warn annotation and returns green (same at :254), and nothing in src produces that id (src/features/companions/athena/BrainViewer.tsx:250 SegmentedTabs declares no testId though src/features/shared/components/layout/SegmentedTabs.tsx:131 would emit one), so both Phase D tests pass while asserting nothing - live-app-harness makes a missing identifier a breaking change and a missing element a harness failure, never a pass. [re-judged at rev 26: code unchanged since the rev-25 verdict]",
+   "techniques": [
+    {"technique": "live-app-harness", "verdict": "deviation", "evidence": "tests/playwright/athena-conversation.spec.ts:107 absent identifier is reported as a warn annotation and the test returns green; src/features/companions/athena/BrainViewer.tsx:252 the memory tab carries no testId"},
+    {"technique": "isolation-lanes", "verdict": "conformant", "evidence": "playwright.config.ts:56 workers: 1 with the singleton companion session stated as the reason"}
+   ]},
+  {"context": "336089a8-bb18-449c-a62e-ca76b02097fb", "subject": "test-harness", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/test_automation.rs:79 control-surface request structs derive Deserialize only (no ts-rs export), so tests/playwright/companion-bridge.ts:27 hand-redeclares response shapes and its header (tests/playwright/companion-bridge.ts:14) keeps endpoint shapes as quirks \"learned the hard way\" - live-app-harness requires a client typed against shapes shared with the product; drift surfaces as runtime folklore, not a compile error. [re-judged at rev 26: code unchanged since the rev-25 verdict]",
+   "techniques": [
+    {"technique": "live-app-harness", "verdict": "deviation", "evidence": "src-tauri/src/test_automation.rs:79 #[derive(Deserialize)] only; tests/playwright/companion-bridge.ts:27 QueryNode hand-declared on the client side"},
+    {"technique": "live-app-harness", "verdict": "conformant", "evidence": "src-tauri/src/boot/test_bridge.rs:52 the bridge is compiled out of release builds without the test-automation feature (the control-surface gating half of the technique)"},
+    {"technique": "isolation-lanes", "verdict": "conformant", "evidence": "playwright.config.ts:56 workers: 1, serial by the product's singleton session, reason written beside it"}
+   ]},
+  {"context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e", "subject": "test-harness", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/harness/verifier.ts:13 PERSONAS_GATES wires only typecheck/lint/build (plus grep-count custom gates); the module is an autonomous Plan->Execute->Verify codebase-improvement loop (src/lib/harness/orchestrator.ts:3) run from the CLI (src/lib/harness/run-harness.ts:3) that owns no suite, lane, fixture or journey, so the harness machinery this subject governs is absent here. [re-judged at rev 26: only an application file changed; precondition still unmet]",
+   "techniques": [
+    {"technique": "suite-partitioning", "verdict": "not-applicable", "evidence": "src/lib/harness/verifier.ts:13 gates are typecheck/lint/build commands, not test suites"},
+    {"technique": "context-starved-executor", "verdict": "not-applicable", "evidence": "src/lib/harness/orchestrator.ts:3 the loop executes code changes against goals; it does not run prose user journeys against the product"}
+   ]},
+  {"context": "ade5a251-866a-4352-9a03-012d78fe9b74", "subject": "test-harness", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:8 resets only the freshness clock (src/features/teams/sub_mastermind/lib/sceneStore.ts:195), never useSceneStore's own state (src/features/teams/sub_mastermind/lib/sceneStore.ts:205), so every later test inherits earlier tests' scans map, statuses and keyed latest-wins slots - the file is order-coupled where sibling store tests reset per test (src/features/teams/sub_mastermind/__tests__/layoutStore.test.ts:54); isolation-lanes requires a defined reset between serial tests. No false green observed today: each test seeds distinct ids.",
+   "techniques": [
+    {"technique": "isolation-lanes", "verdict": "deviation", "evidence": "src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:8 resets freshness only; src/features/teams/sub_mastermind/__tests__/sceneStoreRunners.test.ts:32 resets only the IPC mock, while store state persists across tests"},
+    {"technique": "suite-partitioning", "verdict": "conformant", "evidence": "vitest.config.ts:17 membership by location; vitest.config.ts:23 e2e excluded so the unit and e2e partitions are disjoint (the 2026-09-22 fix holds)"},
+    {"technique": "fixture-economics", "verdict": "conformant", "evidence": "src/features/teams/sub_mastermind/__tests__/passportFactory.ts:40 in-memory typed factory at the unit tier, a fully-absent baseline dialed up per override rather than the demo scene"},
+    {"technique": "unreached-decisions-pin-nothing", "verdict": "conformant", "evidence": "src/features/teams/sub_mastermind/__tests__/dimActions.test.ts:12 the mocked collaborators are declared in the file that mocks them, and the crossing is a typed module call (the technique's own when-not-to-use)"},
+    {"technique": "negative-control-tests", "verdict": "unknown", "evidence": "src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:8 no mutation probe was run this pass; falsifiability of the latest-wins tests is unverified"},
+    {"technique": "live-app-harness", "verdict": "not-applicable", "evidence": "vitest.config.ts:11 jsdom environment; the context is a pure unit suite with no live product under test"}
+   ],
+   "registryProposal": "isolation-lanes frames the inheritance ledger per lane and per process; the commonest leak in an in-process unit suite is a module-singleton store (zustand/redux) that survives between tests in one file while the runner isolates only per file. A sentence naming module-scope state as 'from the previous test' inheritance, with a reset hatch as the conformant shape, would make this case judgeable without inference."}
+ ],
+ "declined": [
+  {"subject": "test-harness", "context": "cc76d419-f457-4fe4-833c-6869efbc9287", "reason": "strong unknown (hooks-utility-interaction, score 1272.6) left for a later run: budget spent on the three stale verdicts plus mastermind-tests"},
+  {"subject": "test-harness", "context": "12d5948a-76a4-4db1-ac6a-ac554eb12020", "reason": "strong unknown (cockpit-widget-tests, score 1155.9) left for a later run: budget"}
+ ],
+ "consults": [
+  {"ts": "2026-10-09T17:37:37Z", "bundle": "software-engineering", "subjects": ["test-harness"], "techniques": ["live-app-harness", "isolation-lanes"], "deviations": 1},
+  {"ts": "2026-10-09T17:37:37Z", "bundle": "software-engineering", "subjects": ["test-harness"], "techniques": ["live-app-harness", "isolation-lanes"], "deviations": 1},
+  {"ts": "2026-10-09T17:37:37Z", "bundle": "software-engineering", "subjects": ["test-harness"], "techniques": ["suite-partitioning", "context-starved-executor"], "deviations": 0},
+  {"ts": "2026-10-09T17:37:37Z", "bundle": "software-engineering", "subjects": ["test-harness"], "techniques": ["isolation-lanes", "suite-partitioning", "fixture-economics", "unreached-decisions-pin-nothing", "negative-control-tests", "live-app-harness"], "deviations": 1}
+ ]}

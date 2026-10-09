@@ -1,0 +1,50 @@
+{"schema": "conform-run/1", "worker": "e2ae7f03-025d-4529-922e-b913f855c1d5", "subject": "job-coordination",
+ "evaluatedAt": "2026-10-09T16:48:43Z",
+ "evaluatedAgainst": "sha256-b2:68f09609d1498e88",
+ "evaluatedRevision": 17,
+ "pairs": [
+  {"context": "059fdee0-40da-434a-a5cb-874bc9179a31", "subject": "job-coordination", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:68f09609d1498e88", "evaluatedRevision": 17,
+   "evidence": "src-tauri/src/boot/workers.rs:233 recover_orphans runs on EVERY process boot, ahead of the leader-only gate at :246, and blanket-fails every running persona_background_job row (src-tauri/src/engine/persona_jobs.rs:205) - a follower (daemon or second UI, per engine/leadership.rs) booting kills the leader's in-flight job; no state-transition door, no job list surface, and the cancel flag has no writer",
+   "techniques": [
+    {"technique": "terminal-state-recovery", "verdict": "deviation", "evidence": "src-tauri/src/engine/persona_jobs.rs:205 one blanket UPDATE stamps failed on every running row (the named anti-pattern), and src-tauri/src/boot/workers.rs:233 runs it before the is_leader() check at :246, so the sweep - not the conditional claim - caps this system at one executor: rev 17's 'the sweep sets the executor ceiling' case"},
+    {"technique": "job-state-machines", "verdict": "deviation", "evidence": "src-tauri/src/engine/persona_jobs.rs:176 mark_completed (and mark_failed/mark_canceled beside it) write status WHERE id only - no source-state guard, so a terminal verdict can be rewritten; status is a free String (:66), no single transition door, no strict parse"},
+    {"technique": "job-observability", "verdict": "deviation", "evidence": "src-tauri/src/commands/core/persona_jobs.rs:28 the command surface is enqueue/schedule only - no list or get over persona_background_job reaches the operator, so position/holder/age/next-action cannot be read from storage"},
+    {"technique": "job-progress-and-cancellation@background-jobs", "verdict": "deviation", "evidence": "src-tauri/db/src/migrations/incremental/e05_twin_and_memory_review.rs:207 cancel_requested defaults 0 and no code anywhere sets it; src-tauri/src/engine/persona_jobs.rs:239 checks a brake nothing can pull (its comment cites a request_cancel that no longer exists)"},
+    {"technique": "atomic-claiming@delivery-guarantees", "verdict": "partial", "evidence": "src-tauri/src/engine/persona_jobs.rs:156 the claim is a conditional write (WHERE status = 'queued') exactly one caller wins, but it records no holder - only started_at"},
+    {"technique": "terms-travel-permission-does-not", "verdict": "realized", "evidence": "src-tauri/src/engine/persona_jobs.rs:127 params_json is frozen into the row at enqueue and the handler reads its terms (e.g. force) from the record, not from live settings"},
+    {"technique": "step-position-and-resumability", "verdict": "not-applicable", "evidence": "src-tauri/src/engine/persona_jobs.rs:294 every kind is one handler call producing a reviewable proposal; there is no multi-step position to persist"},
+    {"technique": "lease-renewal", "verdict": "unknown", "evidence": "src-tauri/db/src/migrations/incremental/e05_twin_and_memory_review.rs:207 the table carries no holder or heartbeat column; whether minutes-long LLM runs cross the technique's 'hold longer than minutes' threshold was not measured"}
+   ]},
+  {"context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0", "subject": "job-coordination", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:68f09609d1498e88", "evaluatedRevision": 17,
+   "evidence": "src/api/pipeline/scheduler.ts:13 every export is a one-line invokeWithTimeout forward to a Tauri command with no local state; the durable job record this subject governs lives in the Rust engine, not this IPC binding layer",
+   "techniques": []},
+  {"context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50", "subject": "job-coordination", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:68f09609d1498e88", "evaluatedRevision": 17,
+   "evidence": "src/features/onboarding/components/useOnboardingState.ts:70 step position is renderer Zustand state with no durable job record or executor; the golden path routes human-paced step flows to wizard-flows",
+   "techniques": []},
+  {"context": "a4174786-a5fb-4145-a1b3-f02826fac64a", "subject": "job-coordination", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:68f09609d1498e88", "evaluatedRevision": 17,
+   "evidence": "src/features/teams/sub_factory/passport/ProjectsPassportWall.tsx:38 a display component over pre-fetched passport props; it owns no job record, claim, or recovery path",
+   "techniques": []},
+  {"context": "2b61b648-d166-4255-b7b7-5d32ffdd6751", "subject": "job-coordination", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:68f09609d1498e88", "evaluatedRevision": 17,
+   "evidence": "src/features/plugins/gitlab/components/GitLabPipelineViewer.tsx:28 renders GitLab-owned job status from store selectors; GitLab owns the job record, so cicd-monitoring governs, not job-coordination",
+   "techniques": []}
+ ],
+ "declined": [
+  {"subject": "job-coordination", "context": "89d44c76-ec4c-4388-843e-503cf6ca2507", "reason": "progress-transform is governance: weak - /conform never evaluates weak pairs by default; its stale not-applicable stays as carried, and the pairing itself (presentational progress primitives vs a durable-job subject) is a coverage question for the matcher"}
+ ],
+ "consults": [
+  {"ts": "2026-10-09T16:48:43Z", "bundle": "software-engineering", "subjects": ["job-coordination"], "techniques": ["terminal-state-recovery", "job-state-machines", "job-observability", "job-progress-and-cancellation", "atomic-claiming", "terms-travel-permission-does-not", "step-position-and-resumability", "lease-renewal"], "deviations": 1},
+  {"ts": "2026-10-09T16:48:43Z", "bundle": "software-engineering", "subjects": ["job-coordination"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-09T16:48:43Z", "bundle": "software-engineering", "subjects": ["job-coordination"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-09T16:48:43Z", "bundle": "software-engineering", "subjects": ["job-coordination"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-09T16:48:43Z", "bundle": "software-engineering", "subjects": ["job-coordination"], "techniques": [], "deviations": 0}
+ ]}

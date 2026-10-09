@@ -1,0 +1,53 @@
+{"schema": "conform-run/1", "worker": "54c37b07-286c-4378-a077-f14b84e260c0", "subject": "retrieval",
+ "evaluatedAt": "2026-10-09T16:51:50Z",
+ "pairs": [
+  {"context": "dc7c4f48-e819-47d0-80be-6afb942d28fd", "subject": "retrieval", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f", "evaluatedRevision": 17,
+   "evidence": "src-tauri/core/src/retrieval/mod.rs:50 MAX_VECTOR_DISTANCE=1.30 is a felt floor (:48 'calibrate ... if it proves too loose/tight'; src-tauri/src/companion/brain/retrieval.rs:168 says it was set blind) and one constant serves both the context-packing companion (retrieval.rs:309) and the human KB search pane (vector_kb.rs:967), so neither consumer's cost asymmetry set it",
+   "techniques": [
+    {"technique": "relevance-floors", "verdict": "deviation", "evidence": "src-tauri/core/src/retrieval/mod.rs:50 single uncalibrated distance floor, not set from a labeled query set and not per-consumer or per-model; src-tauri/src/companion/brain/retrieval.rs:168 records it was set blind. The honest-empty half IS realized (filter_by_distance_floor returns kept + dropped count)"},
+    {"technique": "embedding-lifecycle", "verdict": "realized", "evidence": "src-tauri/core/src/retrieval/mod.rs:96 filter_by_model drops stamped cross-model hits and returns the excluded count; src-tauri/core/src/models/knowledge_base.rs:16 KB carries an embedding_model stamp"},
+    {"technique": "hybrid-lane-fusion", "verdict": "realized", "evidence": "src-tauri/core/src/retrieval/mod.rs:146 rank_into_lanes dedups on durable id via the exclusion set; :329 the keyword lane returns EMPTY rather than a least-bad MATCH when nothing survives"},
+    {"technique": "ranking-budgets", "verdict": "partial", "evidence": "src-tauri/core/src/retrieval/mod.rs:180 excerpt_with_cut_marker truncates at a word seam and labels the cut (realized); but :116 Lane caps are per-kind quotas fixed before candidates are seen, over one distance axis - the shape the technique names 'quotas waste what budgets allocate'; whether it bites is decided by each consumer's caps, not judged here"},
+    {"technique": "chunking-and-indexing", "verdict": "not-applicable", "evidence": "src-tauri/core/src/models/knowledge_base.rs:45 only the model (content_hash field) lives here; chunking and upsert logic is in src-tauri/src/engine/kb_ingest.rs, outside this context"},
+    {"technique": "retrieval-triggering", "verdict": "not-applicable", "evidence": "src-tauri/core/src/retrieval/mod.rs:11 the module is declared pure post-processing of scored hits; the retrieve-or-skip decision lives at each consumer's call site"}
+   ],
+   "registryProposal": "relevance-floors says 'one knob, two different right answers' but names no failure for the common consolidation move: a SHARED floor constant extracted into a pure module and reused by a context-packing consumer and a human search pane. Worth a sentence: a shared primitive should take the floor as a parameter each consumer owns, not export one constant."},
+  {"context": "0b0ee725-52a2-4656-9e13-07c5204de60e", "subject": "retrieval", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f", "evaluatedRevision": 17,
+   "evidence": "src-tauri/db/src/lib.rs:899 the FTS drift check counts kb_chunks_fts, an EXTERNAL-CONTENT table (:985 content='kb_chunks') whose full scan is answered by kb_chunks itself, so fts_count always equals chunk_count and the rebuild backfill at :907 can never fire - a never-indexed chunk stays invisible to the BM25 lane with no signal (reproduced: empty index gives COUNT=3, MATCH=0)",
+   "techniques": [
+    {"technique": "chunking-and-indexing", "verdict": "deviation", "evidence": "src-tauri/db/src/lib.rs:899 the drift check reads a view the source answers on the index's behalf - the technique's 'the check must read the index's own storage'; fix: count kb_chunks_fts_docsize or run the fts5 integrity-check command. Realized halves: :989 triggers couple FTS writes and deletes to kb_chunks in the same statement; src-tauri/db/src/vector_store.rs:163 delete_vectors_by_chunks takes the caller's connection so vector deletes can join the chunk-delete transaction"},
+    {"technique": "embedding-lifecycle", "verdict": "realized", "evidence": "src-tauri/db/src/embedder.rs:50 model_name exposed for stamping; :107 a failed ONNX load is a named permanent-unavailable error, not a silent empty"},
+    {"technique": "padded-slots-are-misses", "verdict": "realized", "evidence": "src-tauri/db/src/vector_store.rs:132 sqlite-vec KNN returns identity-keyed (chunk_id, distance) rows via ORDER BY distance LIMIT - fewer rows when the index holds fewer than k, no positional lookup"}
+   ],
+   "registryProposal": "Candidate application rust--chunking-and-indexing (SQLite FTS5): an external-content FTS5 table's COUNT(*) / full scan is served by the content table, so a source-vs-index count drift check over it is vacuous by construction. Count the <name>_docsize shadow table or use INSERT INTO t(t, rank) VALUES('integrity-check', 1). Reproducible in four lines of sqlite3; a concrete, stack-specific instance of 'the check must read the index's own storage'."},
+  {"context": "b39776f5-3909-41e3-b69f-14c9a6c70bec", "subject": "retrieval", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f", "evaluatedRevision": 17,
+   "evidence": "src/features/home/sub_releases/roadmapItems.ts:32 the 'lanes' are fixed NOW/NEXT/LATER priority buckets of a small curated roadmap list - no query, no corpus too large to hand over whole, nothing ranked by relevance; the matcher scored the word 'lane'",
+   "techniques": [],
+   "registryProposal": "Lexical resonance: 'lane'/'lanes' in a roadmap UI matched retrieval's lane vocabulary. Not a hole; the subject's precondition (a query over a corpus) is absent."},
+  {"context": "55d6d7cb-b016-4d73-8386-b5c18beafdae", "subject": "retrieval", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f", "evaluatedRevision": 17,
+   "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:31 executeDbQuery runs operator-written SQL verbatim against an external database - an exact predicate query with no relevance ranking, floors or fusion; the governing subject is sql-console, not retrieval",
+   "techniques": [],
+   "registryProposal": "Lexical resonance on 'query'/'queries'/'table': SQL console surfaces will keep matching retrieval; the matcher could down-weight retrieval where sql-console scores strongly on the same context."}
+ ],
+ "declined": [
+  {"subject": "retrieval", "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3", "reason": "stores: over budget; probable pair matched on 'stores/store/slice' - client-state vocabulary, likely not-applicable but unread"},
+  {"subject": "retrieval", "context": "532bbf10-3fd3-4b57-a8ea-95a957645697", "reason": "stores-slices-overview: over budget; probable pair on 'slice/stores/time', unread"},
+  {"subject": "retrieval", "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba", "reason": "stores-slices-system: over budget; its 'project indexing' slices may carry a real code-context search and deserve a proper read, not a guess"},
+  {"subject": "retrieval", "context": "0aded02d-f5c5-4e24-8366-90783fb343b1", "reason": "stores-util: over budget; probable pair on 'stores/slice/store', unread"},
+  {"subject": "retrieval", "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573", "reason": "mastermind-scene-store: over budget; matched on 'relations/store' - could touch relationship-proximity-lane, needs a read"},
+  {"subject": "retrieval", "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7", "reason": "vault-databases-tabs: over budget; sibling of vault-database-shell (judged not-applicable here), likely the same verdict but unread"}
+ ],
+ "consults": [
+  {"ts": "2026-10-09T16:51:50Z", "bundle": "software-engineering", "subjects": ["retrieval"], "techniques": ["relevance-floors", "embedding-lifecycle", "hybrid-lane-fusion", "ranking-budgets", "chunking-and-indexing", "retrieval-triggering"], "deviations": 1},
+  {"ts": "2026-10-09T16:51:50Z", "bundle": "software-engineering", "subjects": ["retrieval"], "techniques": ["chunking-and-indexing", "embedding-lifecycle", "padded-slots-are-misses"], "deviations": 1},
+  {"ts": "2026-10-09T16:51:50Z", "bundle": "software-engineering", "subjects": ["retrieval"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-09T16:51:50Z", "bundle": "software-engineering", "subjects": ["retrieval"], "techniques": [], "deviations": 0}
+ ]}

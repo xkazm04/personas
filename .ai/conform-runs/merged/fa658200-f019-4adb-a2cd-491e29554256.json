@@ -1,0 +1,137 @@
+{
+  "schema": "conform-run/1",
+  "worker": "fa658200-f019-4adb-a2cd-491e29554256",
+  "subject": "scheduling",
+  "evaluatedAt": "2026-10-09T17:55:09.816Z",
+  "pairs": [
+    {
+      "context": "56a0fd55-279d-428b-b2f6-7c89154abd6f",
+      "subject": "scheduling",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:cd982b42588a2de5",
+      "evaluatedRevision": 6,
+      "state": "deviation",
+      "evidence": "src/features/schedules/libs/calendarHelpers.ts:19 past-unknown still collapses skipped/out-of-window/over-budget/offline into one state because the only read, src-tauri/src/commands/tools/triggers.rs:1544, returns real executions with no cause and no represented due time - rev 6 verdict-survives-boundary names this exact shape, so \"why didn't this fire\" stays unanswerable on the calendar",
+      "techniques": [
+        {
+          "technique": "schedule-observability",
+          "verdict": "deviation",
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:19 non-fire reasons the decider writes (src-tauri/src/engine/background/scheduler.rs:649 schedule.skipped.overlap) never reach the calendar; every declined slot renders as an undifferentiated unknown"
+        },
+        {
+          "technique": "next-run-computation",
+          "verdict": "realized",
+          "evidence": "src/features/schedules/libs/useCronPreview.ts:123 forward slots come from the engine's own cron_fire_times_in_range seeded with agent.trigger_id (line 129), so the projected minute matches the H-spread the scheduler fires on"
+        }
+      ],
+      "registryProposal": "Re-judged a stale rev-5 deviation against rev 6: the code is unchanged and the new verdict-survives-boundary decision rule in schedule-observability now describes this repo's defect almost verbatim - the deviation is confirmed, not softened."
+    },
+    {
+      "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
+      "subject": "scheduling",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:cd982b42588a2de5",
+      "evaluatedRevision": 6,
+      "state": "deviation",
+      "evidence": "src/api/pipeline/triggers.ts:273 listRecentScheduleRuns is the IPC surface's only run read and its RecentScheduleRun carries no cause and no represented due time, and no wrapper reads a non-fire ledger - out-of-window skips are only a tracing line (src-tauri/src/engine/background/scheduler.rs:848), so a declined fire cannot be explained through this API",
+      "techniques": [
+        {
+          "technique": "schedule-observability",
+          "verdict": "deviation",
+          "evidence": "src/api/pipeline/triggers.ts:273 run read drops cause + due time; src-tauri/src/engine/background/scheduler.rs:848 active-window skip and :896 over-budget skip write no reason record at all (only schedule.missed.offline/skipped.overlap exist in src-tauri/engine/src/event_vocabulary.rs:118-119)"
+        },
+        {
+          "technique": "next-run-computation",
+          "verdict": "realized",
+          "evidence": "src/api/pipeline/triggers.ts:195 preview_cron_schedule takes the trigger id as seed; src-tauri/core/src/cron.rs:74 parse_cron_seeded is the one deterministic identity-seeded H-spread"
+        },
+        {
+          "technique": "missed-run-semantics",
+          "verdict": "realized",
+          "evidence": "src-tauri/core/src/models/trigger.rs:401 per-item max_backfill (1 = coalesce, N = replay hard-capped at 100); src/api/pipeline/scheduler.ts:40 listScheduleMissedRuns exposes the recorded discarded-while-offline count"
+        },
+        {
+          "technique": "overlap-and-reentrancy",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/background/state.rs:110 generation counter bumped on start and stop retires orphan loops behind src/api/pipeline/scheduler.ts:16 startScheduler"
+        },
+        {
+          "technique": "trigger-matching",
+          "verdict": "realized",
+          "evidence": "src/api/pipeline/triggers.ts:260 dryRunTrigger reports matched subscriptions; src-tauri/engine/src/event_vocabulary.rs:119 closed event-kind registry"
+        }
+      ],
+      "registryProposal": "Coverage gap in THIS repo's context map, not the corpus: the scheduler engine (src-tauri/src/engine/background/scheduler.rs, state.rs) and src-tauri/src/commands/execution/scheduler.rs sit in no context's file_paths, and commands-tools (93359619-794a-4de7-a5bb-c7864e475fe7, which owns src-tauri/src/commands/tools/triggers.rs) carries no scheduling pair - the decider where the non-fire ledger must be written is unjudged by construction. Upward lesson for missed-run-semantics: a single per-item integer cap (max_backfill) expresses coalesce and bounded replay with one knob, but leaves skip unexpressible - worth naming as a common partial shape."
+    },
+    {
+      "context": "4810daf8-0549-4899-95d2-99c81cde6455",
+      "subject": "scheduling",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:cd982b42588a2de5",
+      "evaluatedRevision": 6,
+      "state": "deviation",
+      "evidence": "src/stores/slices/overview/alertSlice.ts:450 alert rules are evaluated level-triggered (fire whenever the condition holds) and suppressed only by a global 1h cooldown at :440 that counts nothing - a siren with a snooze button; a persisting breach re-alerts hourly as if new and \"still failing, N since last notice\" is unrecoverable",
+      "techniques": [
+        {
+          "technique": "cooldown-and-debounce",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/overview/alertSlice.ts:440 cooldown `continue` keeps no suppressed count, :450 no false->true edge or hysteresis, :210 FIRED_COOLDOWN_MS is a code constant not a per-rule window, and no \"in cooldown until T\" is exposed"
+        },
+        {
+          "technique": "overlap-and-reentrancy",
+          "verdict": "realized",
+          "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:38 single-flight drop guard so two ticks cannot race past the cooldown check"
+        }
+      ],
+      "registryProposal": "The alert evaluator is a condition trigger, so scheduling governs it through cooldown-and-debounce only; alerting / breach-alerting-and-attribution likely govern the rest of this context more closely."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "scheduling",
+      "context": "417112d1-004b-41d5-a656-57997a47d818",
+      "reason": "timing-utility-hooks is governance: weak and the pair is lexical-only (scheduling/debounce tokens); judging it would manufacture a deviation - a coverage question, not a verdict"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T17:55:09.816Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "scheduling"
+      ],
+      "techniques": [
+        "schedule-observability",
+        "next-run-computation"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T17:55:09.816Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "scheduling"
+      ],
+      "techniques": [
+        "schedule-observability",
+        "next-run-computation",
+        "missed-run-semantics",
+        "overlap-and-reentrancy",
+        "trigger-matching"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T17:55:09.816Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "scheduling"
+      ],
+      "techniques": [
+        "cooldown-and-debounce",
+        "overlap-and-reentrancy"
+      ],
+      "deviations": 1
+    }
+  ]
+}

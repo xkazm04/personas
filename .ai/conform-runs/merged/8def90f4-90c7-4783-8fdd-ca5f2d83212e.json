@@ -1,0 +1,29 @@
+{"schema": "conform-run/1", "worker": "8def90f4-90c7-4783-8fdd-ca5f2d83212e", "subject": "background-jobs",
+ "evaluatedAt": "2026-10-09T17:40:58Z",
+ "pairs": [{
+  "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
+  "subject": "background-jobs",
+  "bundle": "software-engineering",
+  "state": "deviation",
+  "evaluatedAgainst": "sha256-b2:4a1ddf4af408b961",
+  "evaluatedRevision": 4,
+  "evidence": "src/api/pipeline/workflows.ts:15 cancelWorkflowJob resolves void over a backend that writes the terminal state at once as \"failed\" (src-tauri/src/background_job.rs:684), and the overview projection drops cancel_outcome (src-tauri/src/commands/infrastructure/workflows.rs:69), so this surface cannot show cancelling, and it renders cancelled and failed as the same endpoint",
+  "techniques": [
+   {"technique": "job-progress-and-cancellation", "verdict": "deviation",
+    "evidence": "src-tauri/src/background_job.rs:684 cancel() stamps JobStatus::Failed immediately: no two-step cancelling->cancelled acknowledgement, and the cancelled state collapses into failed (the technique's named failure). src-tauri/src/commands/infrastructure/workflows.rs:69 builds WorkflowJob without cancel_outcome, contradicting its own comment at :134. Status is a free string (src/lib/bindings/WorkflowJob.ts:3) and the only liveness field is elapsed_secs. Realized: re-attach snapshot with a bounded tail (workflows.rs:75 last 20 lines over a 500-line ring, background_job.rs:30), with jobs keyed by job id"},
+   {"technique": "loop-health-telemetry", "verdict": "partial",
+    "evidence": "src/api/pipeline/scheduler.ts:22 exposes a per-loop current-state surface (alive, lastTickAt, intervalMs, consecutivePanics), but its outcome vocabulary is success/panic only (src/lib/bindings/SubscriptionHealth.ts:22 tickCount = successful ticks), with no succeeded-empty/skipped/timed-out. No frontend file calls getSubscriptionHealth or reads subscriptionHealth, so no client vantage point can detect silence"},
+   {"technique": "startup-sweeps", "verdict": "partial",
+    "evidence": "src/api/pipeline/scheduler.ts:85 backfillAllMissedRuns restores the recorded gap sequentially (:80, avoids a thundering herd) and keeps a failed row listed. It is operator-triggered, not a sweep that runs first thing after a gap, and nothing in this context shows whether catch-up runs are recorded separately from live runs"},
+   {"technique": "loop-supervision", "verdict": "unknown",
+    "evidence": "src-tauri/src/commands/execution/scheduler.rs:55 stop_scheduler delegates to background::stop_loops; whether that walks a roster with stop handles and a bounded drain lives in src-tauri/src/engine/background/, outside this context, and was not judged"},
+   {"technique": "tick-isolation", "verdict": "not-applicable",
+    "evidence": "src/api/pipeline/scheduler.ts:16 this context only wraps IPC calls; tick bodies, panic boundaries and deadlines live in src-tauri/src/engine/background/mod.rs, which no context-map context owns"},
+   {"technique": "adaptive-cadence", "verdict": "not-applicable",
+    "evidence": "src/api/pipeline/scheduler.ts:13 one-shot getters with no polling loop in this context; client polling of getSchedulerStatus lives in src/features/schedules/components/SchedulesOverlay.tsx:91, outside it"}
+  ],
+  "registryProposal": "Coverage hole in the consumer map, not the corpus: the runtime this subject governs (src-tauri/src/background_job.rs, the BackgroundJobManager behind 5 job kinds, and src-tauri/src/engine/background/, the scheduler supervisor) belongs to NO context in context-map.json, so the subject's only pairing is this IPC-wrapper context, where 2 of 6 techniques cannot be observed at all. A /project-populate pass should give those files a context, and background-jobs should be paired with it strong. Separately, the persona_background_job queue in context 059fdee0 (judged under job-coordination) also realizes job-progress-and-cancellation and is unpaired with background-jobs. Upward note: background_job.rs carries a cancel_outcome Requested|Reclaimed plus signalled/reaped counters, which is an honest 'did the cancel actually reclaim the task' measure the technique does not name. It is worth an application, but here it is defeated by the IPC projection dropping the field."
+ }],
+ "declined": [],
+ "consults": [{"ts": "2026-10-09T17:40:58Z", "bundle": "software-engineering", "subjects": ["background-jobs"], "techniques": ["job-progress-and-cancellation", "loop-health-telemetry", "startup-sweeps", "loop-supervision", "tick-isolation", "adaptive-cadence"], "deviations": 1}]
+}

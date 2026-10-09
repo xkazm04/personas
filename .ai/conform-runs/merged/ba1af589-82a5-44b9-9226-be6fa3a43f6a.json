@@ -1,0 +1,15 @@
+{
+  "schema": "conform-run/1",
+  "worker": "ba1af589-82a5-44b9-9226-be6fa3a43f6a",
+  "subject": "build-economics",
+  "evaluatedAt": "2026-10-09T16:55:53Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "build-economics",
+      "context": "(none)",
+      "reason": "no-op: .ai/registry-map.json (generatedAt 2026-10-01T08:52:29Z) holds zero build-economics pairs (absent from subjectIndex), and no context in context-map.json (219 contexts) lists any build-toolchain path (src-tauri/Cargo.toml, vite.config, scripts/run-codegen.mjs, scripts/check-build-cache.mjs, scripts/ensure-ort-cache.mjs). The four contexts named *build* (engine-build-session, persona-build-matrix, recipe-build-models, webbuild) are product features that build personas or web apps, not the dev build loop, so pairing them would fail the subject precondition (the cost of iterating). Coverage hole: the subject plainly governs this repo (CLAUDE.md documents the lite/full dev variants, ml/p2p feature gates, extracted crates, the warm gate daemon and clean:ort/clean:rust cache tiers), but the consumer context map has no context for build tooling to pair it with. Fix on the consumer side: a context-scan context for the build toolchain (Cargo.toml + features, package.json scripts, scripts/build, scripts/run-codegen.mjs, scripts/gate), then a map rebuild, after which build-economics, codegen and release-pipeline can be judged there. The 4 deviations that ranked this subject come from other consumers, not this map."
+    }
+  ],
+  "consults": []
+}

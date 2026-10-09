@@ -1,0 +1,77 @@
+{
+  "schema": "conform-run/1",
+  "worker": "760063c7-8119-4702-871b-80a81f313c5f",
+  "subject": "motion",
+  "evaluatedAt": "2026-10-09T17:10:20Z",
+  "pairs": [
+    {
+      "context": "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20",
+      "subject": "motion",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:8d9b3eabe2f3b534",
+      "evaluatedRevision": 10,
+      "evidence": "src/features/plugins/radio/components/TitleCrossfade.tsx:59 overlaps a fading-out old track title with the fading-in new one, the cross-fade of two strangers continuity-across-change names as a failure (an instant switch is the honest form); and src/features/plugins/radio/components/EqualizerBars.tsx:51 runs 16 infinite eq-bounce loops at 0.45-1.1s periods travelling ~32px (globals.css:1520 scaleY 0.2->1 over the h-10 strip), far outside the ambient bound - including the repo's own (motionPresets.ts:16 translate <= 3px, period 3-6s)",
+      "techniques": [
+        {"technique": "continuity-across-change", "verdict": "deviation", "evidence": "src/features/plugins/radio/components/TitleCrossfade.tsx:59 the outgoing title stays mounted under the incoming one for 300ms - two unmatched strings overlapping, not continuity"},
+        {"technique": "taste-budgets", "verdict": "deviation", "evidence": "src/features/plugins/radio/components/EqualizerBars.tsx:51 16 concurrent ambient loops, sub-second periods, ~32px travel on a resting card; the repo's own ambient budget at src/features/shared/components/display/motionPresets.ts:16 is <= 3px over 3-6s"},
+        {"technique": "preset-vocabulary", "verdict": "deviation", "evidence": "src/features/plugins/radio/components/TitleCrossfade.tsx:3 inlines an off-ladder 300ms (ladder is 50/150/250/400ms at src/styles/globals.css:465-468) and EqualizerBars.tsx:51 builds its timing at the call site from random durations; neither is a named preset nor a declared private exception"},
+        {"technique": "reduced-motion-mechanics", "verdict": "deviation", "evidence": "src/features/plugins/radio/components/EqualizerBars.tsx:50 has no designed reduced form; its fallback is improvised by the global kill at src/styles/globals.css:4871 (0.01ms, 1 iteration), which happens to leave static full-height bars - benign here, but undesigned"},
+        {"technique": "loop-pause-governance", "verdict": "conformant", "evidence": "src/styles/globals.css:4931 pauses every CSS loop when the document is hidden, one merged decider at the root; EqualizerBars.tsx:50 reads only the playback (user) decider and stays ignorant of the rest"},
+        {"technique": "unprompted-motion-lifecycle", "verdict": "conformant", "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:626 the loop is bound to playback, which carries a visible labelled play/pause button whose state is shown, the honest visible toggle the technique allows"},
+        {"technique": "performance-discipline", "verdict": "conformant", "evidence": "src/styles/globals.css:1520 eq-bounce animates transform only; TitleCrossfade.tsx:50 animates opacity only; the rAF in RadioFooter drives audio volume, not layout"},
+        {"technique": "engine-selection", "verdict": "conformant", "evidence": "src/features/plugins/radio/components/EqualizerBars.tsx:51 CSS keyframes only, outside the framer MotionConfig global switch at src/App.tsx:386 - every gesture's owner is local and nameable"},
+        {"technique": "content-bearing-degradation", "verdict": "conformant", "evidence": "src/features/plugins/radio/components/TitleCrossfade.tsx:50 the incoming title's fade-in has no fill, so under any reduction the resolved title renders at full opacity; the content-bearing gesture never renders blank"}
+      ],
+      "registryProposal": "taste-budgets' class hierarchy has no slot for a media 'now playing' indicator: an equalizer loop implies activity that IS real (playback), so it passes the honesty rule, yet the ambient travel bound condemns its amplitude, which is its whole semantics. Either name it (a status-carrying loop, budgeted by instance count and bound to a visible stop) or state explicitly that such indicators are ambient and should be a single, small, slow mark."
+    },
+    {
+      "context": "b4439e30-fcff-4095-97dd-d9d7da2247dd",
+      "subject": "motion",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:8d9b3eabe2f3b534",
+      "evaluatedRevision": 10,
+      "evidence": "src/features/settings/sub_portability/components/ExportSelectionModal.tsx:331 keeps ghost rows invisible through a 120ms+ animationDelay window on animate-fade-in, but src/styles/globals.css:4893 (inside the prefers-reduced-motion block, selector at :4884) sets animation: none on .animate-fade-in, deleting the window, so OS reduced-motion users get ghosts flashing on every fast export-list load - the timing-window trap",
+      "techniques": [
+        {"technique": "reduced-motion-mechanics", "verdict": "deviation", "evidence": "src/features/settings/sub_portability/components/ExportSelectionModal.tsx:331 timing-load-bearing appearance delay erased by the global animation:none at src/styles/globals.css:4893; the in-app toggle (globals.css:5502) only shortens duration and keeps the window, so the two reduction paths disagree"},
+        {"technique": "preset-vocabulary", "verdict": "conformant", "evidence": "src/features/settings/sub_portability/components/export-prototype/atoms.tsx:40 and ExportSelectionModal.tsx:330 use the shared .animate-fade-slide-in / .animate-fade-in utilities (src/styles/globals.css:2001, 150ms on the ladder) rather than per-component keyframes"},
+        {"technique": "performance-discipline", "verdict": "conformant", "evidence": "src/styles/globals.css:1506 fade-in is opacity-only; fade-slide-in is opacity + translateY"},
+        {"technique": "taste-budgets", "verdict": "conformant", "evidence": "src/features/settings/sub_portability/components/ExportSelectionModal.tsx:331 five ghosts x 35ms stagger + 150ms completes well inside the ~1s entrance cap"},
+        {"technique": "content-bearing-degradation", "verdict": "conformant", "evidence": "src/styles/globals.css:4908 forces .animate-fade-slide-in visible under reduced motion, so the checkbox check glyph (atoms.tsx:40) never renders blank"},
+        {"technique": "engine-selection", "verdict": "conformant", "evidence": "src/features/settings/sub_portability/components/export-prototype/atoms.tsx:40 CSS utilities only, no library global switch in the path"}
+      ],
+      "registryProposal": "The root cause of this deviation lives in src/styles/globals.css:4884-4893, which belongs to a styles context, not to this one; the same trap recurs in every context using the 120ms-delayed ghost idiom (teams-teamworkspace too). The registry-map join should let a deviation name a shared cause so one fix can retire several pair verdicts."
+    },
+    {
+      "context": "a576c14f-1edd-4da4-8d11-527161a3b5b3",
+      "subject": "motion",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:8d9b3eabe2f3b534",
+      "evaluatedRevision": 10,
+      "evidence": "src/features/teams/sub_teamWorkspace/TeamList.tsx:528 and src/features/teams/sub_teamWorkspace/presetStudio/PresetStudio.tsx:141 hide ghost rows/cards behind a 120ms+ animationDelay whose comments say 'so a fast fetch never paints a ghost', but src/styles/globals.css:4893 sets animation: none on .animate-fade-in under prefers-reduced-motion, so those users see the ghosts flash on every warm load",
+      "techniques": [
+        {"technique": "reduced-motion-mechanics", "verdict": "deviation", "evidence": "src/features/teams/sub_teamWorkspace/TeamList.tsx:528 the appearance-delay invisibility window is erased by src/styles/globals.css:4893 under the OS preference"},
+        {"technique": "preset-vocabulary", "verdict": "deviation", "evidence": "src/features/teams/sub_teamWorkspace/teamStudio/teamStudioShared.tsx:178 and teamStudio/TeamPublishButton.tsx:68 are two call-site copies of one anchored-popover gesture with opposite travel and different timing (framer default vs 0.15s), not a shared preset"},
+        {"technique": "one-shot-guarding", "verdict": "conformant", "evidence": "src/features/teams/sub_teamWorkspace/TeamList.tsx:177 useRevealTracker seen-set with rows keyed by team.id (:254); create/disband never replays already-entered rows"},
+        {"technique": "taste-budgets", "verdict": "conformant", "evidence": "src/features/teams/sub_teamWorkspace/TeamList.tsx:29 CASCADE_ROWS = 14 caps stagger accumulation by count, and the cascade uses the 150ms shared utility"},
+        {"technique": "unprompted-motion-lifecycle", "verdict": "conformant", "evidence": "src/features/teams/sub_teamWorkspace/teamStudio/AssignmentReplay.tsx:52 auto-step starts only on a labelled play press, stops at the last step, and any prev/next/jump interaction stops it - taking control is a stop"},
+        {"technique": "performance-discipline", "verdict": "conformant", "evidence": "src/features/teams/sub_teamWorkspace/teamStudio/teamStudioShared.tsx:178 opacity + y transform only; ghosts use opacity-only fade-in"},
+        {"technique": "engine-selection", "verdict": "conformant", "evidence": "src/App.tsx:386 the framer popovers sit under one known MotionConfig switch whose behaviour is documented at src/features/shared/components/display/motionPresets.ts:9; popovers degrade to instant appearance, no reveal lost"}
+      ]
+    }
+  ],
+  "declined": [
+    {"subject": "motion", "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd", "reason": "already judged deviation against the current digest sha256-b2:8d9b3eabe2f3b534 (rev 10); not stale, re-judging spends budget on a settled verdict"},
+    {"subject": "motion", "context": "ab849301-d5ce-4d91-a12e-0e87a0417585", "reason": "already judged deviation against the current digest; not stale"},
+    {"subject": "motion", "context": "cc76d419-f457-4fe4-833c-6869efbc9287", "reason": "already judged deviation against the current digest; not stale"},
+    {"subject": "motion", "context": "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6", "reason": "already judged deviation against the current digest; not stale"},
+    {"subject": "motion", "context": "36783fec-01fa-40d5-8620-cf65ae691d27", "reason": "already judged deviation against the current digest; not stale"}
+  ],
+  "consults": [
+    {"ts": "2026-10-09T17:10:20Z", "bundle": "software-engineering", "subjects": ["motion"], "techniques": ["continuity-across-change", "taste-budgets", "preset-vocabulary", "reduced-motion-mechanics", "loop-pause-governance", "unprompted-motion-lifecycle", "performance-discipline", "engine-selection", "content-bearing-degradation"], "deviations": 4},
+    {"ts": "2026-10-09T17:10:20Z", "bundle": "software-engineering", "subjects": ["motion"], "techniques": ["reduced-motion-mechanics", "preset-vocabulary", "performance-discipline", "taste-budgets", "content-bearing-degradation", "engine-selection"], "deviations": 1},
+    {"ts": "2026-10-09T17:10:20Z", "bundle": "software-engineering", "subjects": ["motion"], "techniques": ["reduced-motion-mechanics", "preset-vocabulary", "one-shot-guarding", "taste-budgets", "unprompted-motion-lifecycle", "performance-discipline", "engine-selection"], "deviations": 2}
+  ]
+}

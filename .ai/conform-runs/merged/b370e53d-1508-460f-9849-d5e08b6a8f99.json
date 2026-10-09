@@ -1,0 +1,86 @@
+{
+  "schema": "conform-run/1",
+  "worker": "b370e53d-1508-460f-9849-d5e08b6a8f99",
+  "subject": "hitl-approval",
+  "evaluatedAt": "2026-10-09T17:52:30Z",
+  "pairs": [
+    {
+      "context": "ef73ca1c-fc54-4b9c-83ec-390c54929192",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:114 getSevCfg still falls an unrecognized severity through to the Info config with no marker, and it drives the focus view where reviews are decided (ReviewFocusFlow.tsx:360) - the loud resolveReviewSeverity default reached the list and detail panel but not the deciding surface, so one severity vocabulary now has two classifiers that disagree",
+      "evaluatedAgainst": "sha256-b2:bc33acb280c8df96",
+      "evaluatedRevision": 21,
+      "techniques": [
+        {"technique": "fail-loud-classification-default", "verdict": "deviation", "evidence": "src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:114 SEVERITY_CONFIG[severity] ?? SEVERITY_CONFIG.info - unreadable severity spelled as the mildest bucket, no defaulted marker, on the pending-filter focus view"},
+        {"technique": "fail-loud-classification-default", "verdict": "partially-realized", "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:39 resolveReviewSeverity returns the loudest label with a machine-readable defaulted marker - used by ReviewListItem and ReviewDetailPanel, not by ReviewFocusFlow"}
+      ],
+      "registryProposal": "Upward lesson for fail-loud-classification-default: the loud default was built correctly as a shared resolver with a test, and the defect survived because the older quiet classifier for the same vocabulary was never retired, so the surface that actually decides kept using it. The technique could state that the fix is incomplete until the quiet arm is deleted rather than bypassed - one-authority-per-vocabulary applied to the classifier."
+    },
+    {
+      "context": "3f38546e-e970-4837-97f7-f0504aa32daf",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:182 the incident dismiss option swallows a failed companionDismissProactive with silentCatch and does not rethrow, so runDecisionOption (resolveDecision.ts:48-50 keeps a decision pending only on a throw) clears the bubble as resolved while the row stays pending and resurfaces on the next pump with no error shown - a failed decision write spelled as a decision",
+      "evaluatedAgainst": "sha256-b2:bc33acb280c8df96",
+      "evaluatedRevision": 21,
+      "techniques": [
+        {"technique": "review-queues", "verdict": "deviation", "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:182 dismiss swallows the write failure; the forbidden optimistic-removal outcome"},
+        {"technique": "review-queues", "verdict": "realized-elsewhere", "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:169 the sibling resolve option rethrows so runDecisionOption keeps the decision pending and sets decisionError in place (resolveDecision.ts:48)"}
+      ]
+    },
+    {
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:565 the guided (human-performed) credential flow is still run live by a Claude CLI session that asks the user to copy each secret field value to it and returns them as JSON, so the runbook is model-run at execution time and the credential passes through inference (scrub_secrets at :363 redacts logs, not the inference path)",
+      "evaluatedAgainst": "sha256-b2:bc33acb280c8df96",
+      "evaluatedRevision": 21,
+      "techniques": [
+        {"technique": "human-performed-steps", "verdict": "deviation", "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:565 ask them to copy each field value - the technique requires a deterministic runbook and that secrets never reach a model"}
+      ]
+    },
+    {
+      "context": "959baa73-f18f-42c8-8569-466939b9050d",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/dev/milestones.rs:256 the ship verdict the certify dialog commits (NotePlanContext.tsx:182) is a mutable shipped_at column overwritten on re-ship, carrying no decider, no cut version and none of the criteria verdict the dialog showed (ShipCertifyModal.tsx:54); :248 refuses only planned->shipped, so shipped can be walked back and re-stamped with no superseding record, and the only append-only trace (the brief-thread row) is best-effort and can fail while the transition lands (:358)",
+      "evaluatedAgainst": "sha256-b2:bc33acb280c8df96",
+      "evaluatedRevision": 21,
+      "techniques": [
+        {"technique": "decision-records", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/dev/milestones.rs:256 verdict stored as an in-place timestamp: no who / what-version / what-was-shown, edited not superseded; :358 the thread record is warned-about, not atomic with the transition"},
+        {"technique": "gate-state-machines", "verdict": "partially-realized", "evidence": "src-tauri/db/src/repos/dev/milestones.rs:248 cut-before-ship enforced in the substrate; the exit-criteria gate itself is client-side only (comment above :236), and the approval path enforces the DB-answerable subset (src-tauri/src/commands/companion/approvals/approval_exec_ship.rs:1145)"},
+        {"technique": "consent-gates", "verdict": "realized", "evidence": "src/features/notepad/plan/ShipDispatch.tsx:144 the exact Fleet brief is shown and editable before anything spawns - the human decides on the real thing"},
+        {"technique": "review-queues", "verdict": "realized", "evidence": "src/features/notepad/plan/useProjectPlan.ts:348 a failed status write toasts and rethrows so the certify dialog stays open for retry"},
+        {"technique": "oracle-before-gate", "verdict": "realized", "evidence": "src/features/notepad/plan/ShipCertifyModal.tsx:54 the ship confirm states criteria met/total; the criteria render inline beside the cut they measure"},
+        {"technique": "resume-after-decision", "verdict": "realized", "evidence": "src/features/notepad/plan/shipAthena.ts:112 the decompose proposal is an editable card and nothing is written until the operator presses Create"}
+      ]
+    }
+  ],
+  "declined": [
+    {"subject": "hitl-approval", "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f", "reason": "home-cockpit-widgets: strong unknown (conform-added), left for the next run - budget spent on the three stale verdicts and notepad-plan"},
+    {"subject": "hitl-approval", "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60", "reason": "agents-quick-answer: probable unknown, unread this run (budget)"},
+    {"subject": "hitl-approval", "context": "3effd422-2610-4c8a-bc02-53aceafd827c", "reason": "commands-companion: probable unknown, unread this run (budget)"},
+    {"subject": "hitl-approval", "context": "b164f847-45d6-4c9e-85bc-a1308375085d", "reason": "db-repos-communication: probable unknown, unread this run (budget)"},
+    {"subject": "hitl-approval", "context": "942d2449-34ab-4f02-af7e-b130269d10ef", "reason": "fleet-triage-columns: probable unknown with 0 paths in the map row - not judgeable without a path list"},
+    {"subject": "hitl-approval", "context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e", "reason": "lib-harness: probable unknown, unread this run (budget)"},
+    {"subject": "hitl-approval", "context": "ad601e35-b998-4029-97a5-77487f00d561", "reason": "lib-types: probable unknown, unread this run (budget); a types-only context is a likely not-applicable but that was not verified by reading"},
+    {"subject": "hitl-approval", "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50", "reason": "onboarding-components: probable unknown, unread this run (budget)"},
+    {"subject": "hitl-approval", "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757", "reason": "overview-incidents: probable unknown, unread this run (budget)"},
+    {"subject": "hitl-approval", "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91", "reason": "overview-patterns: probable unknown, unread this run (budget)"},
+    {"subject": "hitl-approval", "context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f", "reason": "run-desk: probable unknown, unread this run (budget)"},
+    {"subject": "hitl-approval", "context": "fd961ee9-bf7c-4ec7-90c3-a728045d3d44", "reason": "teams-goals: probable unknown, unread this run (budget)"},
+    {"subject": "hitl-approval", "context": "0dabb588-48ce-4c35-b425-c344fd723ce7", "reason": "triggers-triggers: probable unknown, unread this run (budget)"},
+    {"subject": "hitl-approval", "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7", "reason": "vault-credentials-components-features: probable unknown, unread this run (budget)"}
+  ],
+  "consults": [
+    {"ts": "2026-10-09T17:52:30Z", "bundle": "software-engineering", "subjects": ["hitl-approval"], "techniques": ["fail-loud-classification-default"], "deviations": 1},
+    {"ts": "2026-10-09T17:52:30Z", "bundle": "software-engineering", "subjects": ["hitl-approval"], "techniques": ["review-queues"], "deviations": 1},
+    {"ts": "2026-10-09T17:52:30Z", "bundle": "software-engineering", "subjects": ["hitl-approval"], "techniques": ["human-performed-steps"], "deviations": 1},
+    {"ts": "2026-10-09T17:52:30Z", "bundle": "software-engineering", "subjects": ["hitl-approval"], "techniques": ["decision-records", "gate-state-machines", "consent-gates", "review-queues", "oracle-before-gate", "resume-after-decision"], "deviations": 1}
+  ]
+}

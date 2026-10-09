@@ -1,0 +1,55 @@
+{
+  "schema": "conform-run/1",
+  "worker": "03df5930-ad75-48ae-8ab1-1bed37a18e69",
+  "subject": "quality-regression-gating",
+  "evaluatedAt": "2026-10-09T17:39:00Z",
+  "pairs": [
+    {
+      "context": "92f6c0fc-8d5c-43a7-bab8-1851973d5198",
+      "subject": "quality-regression-gating",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:107 computeLeaderboard ranks personas from live PersonaHealthSignal telemetry (success rate, heartbeat, latency, cost, activity), not from eval runs over a shared case set - no run-vs-run verdict, gate or pairable cases exist here",
+      "techniques": [
+        {
+          "technique": "tested-superiority-claims",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:187 gold/silver/bronze is an argmax over a weighted ops index across personas that do different jobs - not substitutes compared on the same cases, so there is no runner-up pairing to test; the medal is a resonance with the technique, not a claim inside the subject"
+        },
+        {
+          "technique": "paired-per-case-testing",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/overview/personaHealthSlice.ts:23 PersonaHealthSignal carries per-persona aggregates only - no case identifiers or per-case scores to pair"
+        },
+        {
+          "technique": "unverified-vs-regressed-exit-states",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:107 a client-side presentation ranking; nothing here branches a pipeline or deploy on its output"
+        },
+        {
+          "technique": "partial-run-never-green",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:107 input is a rolling telemetry snapshot, not a bounded eval run that can halt partway"
+        }
+      ],
+      "registryProposal": "Matcher pairs this subject on the token \"leaderboard\" with an operational-health ranking (technique-shaped resonance: tested-superiority-claims doctrine resonates with the medal argmax, but the subject precondition - eval runs over a shared case set - fails). Meanwhile the contexts that DO compare eval runs carry no pair: overview-certification (908be532, judge panels + eval runs + gate breaches), lab-arena (a1223fbb, head-to-head on the same prompt), test-runner-lab (6a81750d, scenarios run against model variants), commands-contest (e4b48fb7, prompt-variant races). A 2026-08-27 scan-sweep lead already recorded a tested-superiority-claims deviation on a Lab strategy leaderboard that has no pair in the current map. Consider adding those pairings, and consider a when-not-to-use line in tested-superiority-claims for rankings over non-substitutable entities (a fleet of agents with different jobs)."
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-09T17:39:00Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "quality-regression-gating"
+      ],
+      "techniques": [
+        "tested-superiority-claims",
+        "paired-per-case-testing",
+        "unverified-vs-regressed-exit-states",
+        "partial-run-never-green"
+      ],
+      "deviations": 0
+    }
+  ]
+}

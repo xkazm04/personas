@@ -1,0 +1,156 @@
+{
+  "schema": "conform-run/1",
+  "worker": "f71d1285-f751-40c7-85a7-051bc9079ad8",
+  "subject": "agent-chaining",
+  "evaluatedAt": "2026-10-09T17:23:17Z",
+  "evaluatedAgainst": "sha256-b2:596d59ae9fc2d310",
+  "evaluatedRevision": 12,
+  "pairs": [
+    {
+      "context": "03960450-6979-4412-9de3-35c897fe56d2",
+      "subject": "agent-chaining",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_executions/components/ActiveChainsBadge.tsx:104 shows as chain spend a figure src-tauri/db/src/repos/execution/executions.rs:1752 derives as the MAX of handoff-carried path totals, omitting sibling branches under fan-out, while the detail view (libs/useChainTrace.ts:112) sums every trace - one name, two populations; and useChainTrace.ts:107 turns a failed stop-ledger load into an empty list, so stopped reads as stuck",
+      "techniques": [
+        {
+          "technique": "handoff-figures-carry-their-population",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:1752 acc.cost = acc.cost.max(cost) over path-carried totals, rendered unlabelled at src/features/agents/sub_executions/components/ActiveChainsBadge.tsx:104 while src/features/agents/sub_executions/libs/useChainTrace.ts:112 shows the summed chainCostUsd; rule 4 (one name, one population) fails"
+        },
+        {
+          "technique": "chain-identity-and-rollup",
+          "verdict": "realized-in-guard",
+          "evidence": "src-tauri/db/src/chain.rs:347 the cost ceiling sums recorded spend by chain_trace_id and takes the larger of path and cascade - the right population exists and the badge does not use it"
+        },
+        {
+          "technique": "stop-reason-ledgers",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/libs/useChainTrace.ts:107 a failed getChainStopReasons resolves to [] (best-effort), indistinguishable from a chain with no stop record (failure-not-empty-success)"
+        }
+      ]
+    },
+    {
+      "context": "208f50de-5d3b-4345-9fed-1c106a7a36e9",
+      "subject": "agent-chaining",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_executions/detail/chain/ChainTraceView.tsx:125 renders every ledger row flat under one Why-the-chain-ended heading (:122), dropping link_execution_id, chain_depth and any outcome class, so an informational cas_lost/handoff_suppressed row or one sibling leaf reads as the whole chain having stopped",
+      "techniques": [
+        {
+          "technique": "stop-reason-ledgers",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/chain/ChainTraceView.tsx:125 flat map over stopReasons with only reason_token+detail; the binding carries link_execution_id (src/lib/bindings/ChainStopReason.ts:19) and chain_depth (:42) but neither is rendered, and no outcome class exists to render - the rule requires per-leaf, outcome-classified stop reasons in the chain view"
+        },
+        {
+          "technique": "chain-identity-and-rollup",
+          "verdict": "realized",
+          "evidence": "src/features/agents/sub_executions/libs/useChainTrace.ts:112 the chain view rolls cost up across all traces of the chain id (sumChainCost)"
+        }
+      ]
+    },
+    {
+      "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+      "subject": "agent-chaining",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/i18n/generated/types.ts:15126 the user-facing chain_stop vocabulary (15 tokens, mirroring src-tauri/db/src/chain.rs:47-91) has no success-shaped completed, no cancelled and no condition_unevaluable, so an unknown condition type (chain.rs:1045 Treating as non-matching) is recorded as predicate_unmet (chain.rs:571) like a chain that chose to stop; the fix belongs in the chain.rs authority",
+      "techniques": [
+        {
+          "technique": "stop-reason-ledgers",
+          "verdict": "deviation",
+          "evidence": "src/i18n/generated/types.ts:15126 vocabulary lacks completed/cancelled/condition_unevaluable and carries no outcome class per token"
+        },
+        {
+          "technique": "run-conditions",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/chain.rs:1045 evaluate_predicate returns bool, so an unknown condition type or missing jsonpath collapses into not-fired; unevaluable impersonates a verdict"
+        }
+      ],
+      "registryProposal": "Anchor moved since the 2026-10-05 verdict (types.ts:14958 -> 15126) with no change to the chain_stop block itself: generated-file anchors drift on every i18n regen. The application layer could recommend anchoring vocabulary findings at the producer (chain.rs stop_reason consts) rather than the generated consumer."
+    },
+    {
+      "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc",
+      "subject": "agent-chaining",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:109 commits a drawn persona link by appending a chain trigger with no check for an identical live route (create path checks cycles only, src-tauri/db/src/repos/resources/triggers/definitions.rs:252), so re-drawing a live arrow double-fires the target; and libs/routeCodec.ts:154 maps an unknown condition type to null, labelled Always (libs/studioLabels.ts:17), while chain.rs:1045 never fires it",
+      "techniques": [
+        {
+          "technique": "graph-to-wiring-translation",
+          "verdict": "deviation",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:109 createTrigger appends; no reconcile/dedup against existing wiring, and src-tauri/db/src/repos/resources/triggers/definitions.rs:252 gates cycles only - save twice, wire twice"
+        },
+        {
+          "technique": "run-conditions",
+          "verdict": "deviation",
+          "evidence": "src/features/triggers/sub_studio/libs/routeCodec.ts:154 unknown condition decodes to null and src/features/triggers/sub_studio/libs/studioLabels.ts:17 renders it as condition_always, while src-tauri/db/src/chain.rs:1045 treats it as non-matching - the preview and the evaluator disagree, violating one evaluator for execution and preview"
+        },
+        {
+          "technique": "cycle-and-depth-guards",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/resources/triggers/definitions.rs:252 detect_chain_cycle runs at create time for chain triggers"
+        },
+        {
+          "technique": "handoff-payload-contracts",
+          "verdict": "partial-dry-run-gate",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:111 a drawn persona link is created disabled, dry-run validated and only then enabled, with honest rollback on failure"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-09T17:23:17Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-chaining"
+      ],
+      "techniques": [
+        "handoff-figures-carry-their-population",
+        "chain-identity-and-rollup",
+        "stop-reason-ledgers"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-09T17:23:17Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-chaining"
+      ],
+      "techniques": [
+        "stop-reason-ledgers",
+        "chain-identity-and-rollup"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T17:23:17Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-chaining"
+      ],
+      "techniques": [
+        "stop-reason-ledgers",
+        "run-conditions"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-09T17:23:17Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-chaining"
+      ],
+      "techniques": [
+        "graph-to-wiring-translation",
+        "run-conditions",
+        "cycle-and-depth-guards",
+        "handoff-payload-contracts"
+      ],
+      "deviations": 2
+    }
+  ]
+}
