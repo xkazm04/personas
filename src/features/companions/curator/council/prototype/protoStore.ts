@@ -22,8 +22,8 @@ interface ProtoStore {
   /** The council open full page. Null = the galaxy. */
   openId: string | null;
   filter: QueueFilter;
-  /** Latest rounds by run id. A failed read is recorded as `null`. */
-  details: Record<string, CouncilRunDetail | null>;
+  /** Latest rounds by run id. A failed read is `READ_FAILED`, never an empty round. */
+  details: Record<string, CouncilRunDetail | typeof READ_FAILED>;
   select: (id: string | null) => void;
   open: (id: string | null) => void;
   setFilter: (filter: QueueFilter) => void;
@@ -31,6 +31,9 @@ interface ProtoStore {
 }
 
 const inflight = new Set<string>();
+
+/** A round that could not be read - kept apart from a round that found nothing. */
+export const READ_FAILED = 'read-failed' as const;
 
 export const useProtoStore = create<ProtoStore>((set, get) => ({
   selectedId: null,
@@ -42,25 +45,23 @@ export const useProtoStore = create<ProtoStore>((set, get) => ({
   setFilter: (filter) => set({ filter }),
   loadDetails: async (runIds) => {
     const todo = runIds.filter((id) => !(id in get().details) && !inflight.has(id));
-    for (let i = 0; i < todo.length; i += BATCH) {
-      const slice = todo.slice(i, i + BATCH);
-      slice.forEach((id) => inflight.add(id));
-      const read = await Promise.all(
-        slice.map((id) =>
-          readRound(id).catch((e: unknown) => {
-            silentCatch('council:proto-details')(e);
-            return null;
-          }),
-        ),
-      );
-      slice.forEach((id) => inflight.delete(id));
-      set((s) => {
-        const details = { ...s.details };
-        slice.forEach((id, k) => {
-          details[id] = read[k] ?? null;
-        });
-        return { details };
-      });
-    }
+    todo.forEach((id) => inflight.add(id));
+    // BATCH workers pull from one queue: the width is chosen here, not by
+    // how many councils the list happens to hold.
+    const worker = async () => {
+      for (let id = todo.shift(); id !== undefined; id = todo.shift()) {
+        const runId = id;
+        let value: CouncilRunDetail | typeof READ_FAILED;
+        try {
+          value = await readRound(runId);
+        } catch (e: unknown) {
+          silentCatch('council:proto-details')(e);
+          value = READ_FAILED;
+        }
+        inflight.delete(runId);
+        set((s) => ({ details: { ...s.details, [runId]: value } }));
+      }
+    };
+    await Promise.all([...Array(BATCH).keys()].map(() => worker()));
   },
 }));

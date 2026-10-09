@@ -5,6 +5,7 @@ import type { CouncilRunDetail } from '@/lib/bindings/CouncilRunDetail';
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 
 import { decidable } from '../councilRules';
+import { READ_FAILED } from './protoStore';
 import { queueGroups } from '../bench/queueModel';
 import { resolveRubric, type Rubric } from '../table/rubrics';
 import { seatsOf, type Seat } from '../table/runModel';
@@ -26,8 +27,10 @@ export interface PanelRow {
   /** Only lite rounds exist: readable, never decidable until a full council runs. */
   liteOnly: boolean;
   decidable: boolean;
-  /** Items the council says must be addressed. Null while loading. */
+  /** Items the council says must be addressed. Null while loading or when the read failed. */
   mustAddress: number | null;
+  /** The latest round could not be read: `seats` and `mustAddress` stay null, never empty. */
+  readFailed: boolean;
 }
 
 export function filterCounts(subjects: CouncilSubjectState[]): Record<QueueFilter, number> {
@@ -42,20 +45,25 @@ export function filterCounts(subjects: CouncilSubjectState[]): Record<QueueFilte
  */
 export function panelRows(
   subjects: CouncilSubjectState[],
-  details: Record<string, CouncilRunDetail | null>,
+  details: Record<string, CouncilRunDetail | typeof READ_FAILED>,
   filter: QueueFilter,
 ): PanelRow[] {
   const group = queueGroups(subjects).find((g) => g.key === GROUP_OF[filter]);
   return (group?.rows ?? []).map((subject) => {
-    const detail = subject.latestRunId ? details[subject.latestRunId] : undefined;
+    const entry = subject.latestRunId ? details[subject.latestRunId] : undefined;
+    const readFailed = entry === READ_FAILED;
+    // No run at all is a round with nothing in it; a failed read is NOT.
+    const detail = entry === READ_FAILED ? undefined : entry;
+    const settled = !subject.latestRunId || detail !== undefined;
     const { rubric } = resolveRubric(detail?.run.rubricVersion ?? null, subject.kind);
     return {
       subject,
       rubric,
-      seats: detail === undefined ? null : seatsOf(detail?.run ?? null, subject.kind, detail?.verdicts ?? []),
+      seats: settled ? seatsOf(detail?.run ?? null, subject.kind, detail?.verdicts ?? []) : null,
       liteOnly: subject.mode === 'lite',
       decidable: decidable(subject),
-      mustAddress: detail ? parseMustAddress(detail.run.mustAddressJson).length : detail === null ? 0 : null,
+      mustAddress: detail ? parseMustAddress(detail.run.mustAddressJson).length : settled ? 0 : null,
+      readFailed,
     };
   });
 }

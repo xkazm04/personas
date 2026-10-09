@@ -7,7 +7,6 @@ import { BookOpen, Play } from 'lucide-react';
 
 import { getProject } from '@/api/devTools/devTools';
 import Button from '@/features/shared/components/buttons/Button';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { DispatchChooserModal, type DispatchRequest } from '@/features/shared/dispatch/DispatchChooser';
 import { buildCouncilDispatch } from '@/features/plugins/dev-tools/sub_context/councilDispatch';
 import { toastCatch } from '@/lib/silentCatch';
@@ -16,30 +15,63 @@ import { useCouncilStore } from '../councilStore';
 import { IS_DEV } from '../galaxy/fixture';
 import { PROTO } from './protoStrings';
 import { useProtoStore } from './protoStore';
-import { PAGE_VARIANTS, PANEL_VARIANTS, useProtoVariant, type PageVariant, type PanelVariant } from './protoVariant';
+import { PAGE_VARIANTS, PANEL_VARIANTS, useProtoVariant } from './protoVariant';
+
+/** A row of pressed buttons, not a tab strip: the directions swap regions
+ *  across the whole page, which no single tab panel can declare. */
+function PressGroup<T extends string>({
+  ids,
+  labels,
+  active,
+  onPick,
+  label,
+  testPrefix,
+}: {
+  ids: readonly T[];
+  labels: Record<T, string>;
+  active: T;
+  onPick: (id: T) => void;
+  label: string;
+  testPrefix: string;
+}) {
+  return (
+    <div role="group" aria-label={label} className="flex items-center gap-0.5 rounded-card border border-primary/10 bg-secondary/30 p-0.5">
+      {ids.map((id) => (
+        <Button
+          key={id}
+          size="sm"
+          variant={id === active ? 'secondary' : 'ghost'}
+          aria-pressed={id === active}
+          onClick={() => onPick(id)}
+          data-testid={`${testPrefix}-${id}`}
+        >
+          {labels[id]}
+        </Button>
+      ))}
+    </div>
+  );
+}
 
 export function ProtoSwitches() {
   const { panel, page, setPanel, setPage } = useProtoVariant();
   if (!IS_DEV) return null;
   return (
     <>
-      <SegmentedTabs<PanelVariant>
-        tabs={PANEL_VARIANTS.map((id) => ({ id, label: PROTO.panelVariant[id], testId: `council-proto-panel-${id}` }))}
-        activeTab={panel}
-        onTabChange={setPanel}
-        ariaLabel={PROTO.panelSwitch}
-        idPrefix="council-proto-panel"
-        size="sm"
-        fullWidth={false}
+      <PressGroup
+        ids={PANEL_VARIANTS}
+        labels={PROTO.panelVariant}
+        active={panel}
+        onPick={setPanel}
+        label={PROTO.panelSwitch}
+        testPrefix="council-proto-panel"
       />
-      <SegmentedTabs<PageVariant>
-        tabs={PAGE_VARIANTS.map((id) => ({ id, label: PROTO.pageVariant[id], testId: `council-proto-page-${id}` }))}
-        activeTab={page}
-        onTabChange={setPage}
-        ariaLabel={PROTO.pageSwitch}
-        idPrefix="council-proto-page"
-        size="sm"
-        fullWidth={false}
+      <PressGroup
+        ids={PAGE_VARIANTS}
+        labels={PROTO.pageVariant}
+        active={page}
+        onPick={setPage}
+        label={PROTO.pageSwitch}
+        testPrefix="council-proto-page"
       />
     </>
   );
