@@ -172,7 +172,7 @@ export function evaluateGates(run, gates, { timeoutMs = GATE_TIMEOUT_MS, focus =
   const gatesIn = (dir) => {
     if (!focus || !gates.test) return { gates, focus: null };
     const cmd = focusedTestCommand(focus, dir, files);
-    if (cmd === null) return { gates, focus: 'full: too many changed code files to narrow' };
+    if (cmd === null) return { gates, focus: 'full: a dependency or config file changed, or too many code files to narrow' };
     if (cmd === '') return { gates: { ...gates, test: null }, focus: 'no related tests: the branch changes no code file' };
     return { gates: { ...gates, test: cmd }, focus: 'related' };
   };

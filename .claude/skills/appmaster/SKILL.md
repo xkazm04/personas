@@ -71,8 +71,10 @@ Director (this session)    the clock: status -> context -> decide -> dispatch ->
   (ascent, devsecops, pof, personas-web) runs `npx vitest related --run <changed code files>`;
   a brief's `gates.testFocused` (a command with `{files}`) narrows any other runner; everything
   else (kp, firetv, mage) runs its full test as before. A branch that changes no code file passes
-  `test` as "no related tests"; more than `FOCUS_MAX_FILES` code files runs the full suite.
-  `run.json` records `verdict.testFocus` and each test result's `focus`. The FULL gate is
+  `test` as "no related tests"; more than `FOCUS_MAX_FILES` code files runs the full suite, and
+  so does a branch that touches a dependency or config file (`package.json`, a lockfile,
+  `tsconfig*.json`, a vitest/vite/next/jest config: `WIDE_FILE` in `lib/gate.mjs`), since no
+  import graph shows what a dependency bump breaks. `run.json` records `verdict.testFocus` and each test result's `focus`. The FULL gate is
   `AM verify --project p [--repo key]`: every suite on a throwaway checkout of the base tip with a
   45-minute limit (`FULL_GATE_TIMEOUT_MS`), before any push or release; a red run raises one
   `verify-red` ask (always the operator's). Accepted risk, the operator's: a change can break an

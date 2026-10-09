@@ -14,6 +14,12 @@ export const FULL_GATE_TIMEOUT_MS = 45 * 60 * 1000;
 /** A branch that changes more code files than this is not narrowed: its merge gate runs the full suite. */
 export const FOCUS_MAX_FILES = 150;
 const CODE_EXT = /\.(?:[cm]?[jt]sx?|vue|svelte)$/i;
+/**
+ * Files whose change can break any test without any test importing them: dependencies, the lockfile,
+ * and the compiler and test-runner config. A branch that touches one runs the FULL test suite, so a
+ * dependency bump never passes as "no related tests".
+ */
+const WIDE_FILE = /(?:^|\/)(?:package\.json|package-lock\.json|npm-shrinkwrap\.json|pnpm-lock\.yaml|yarn\.lock|tsconfig[\w.-]*\.json|(?:vitest|vite|jest|babel|next)\.config\.[cm]?[jt]s|\.babelrc|\.npmrc|\.nvmrc)$/i;
 const TAIL_LINES = 40;
 
 /** `.ai/manifest.yaml` capabilities: `  typecheck: { command: "..." }` lines inside `capabilities:`. */
@@ -118,11 +124,13 @@ export function runTestFocus(run, gates, brief = {}) {
  * (focus, dir, files) => string | '' | null
  * The narrowed test command for `files` (repo-relative, the branch's diff) as they exist in `dir`.
  * '' = no code file changed, so no test can be related: the test gate passes as 'no related tests'.
- * null = too many code files to narrow: run the full test command.
+ * null = run the full test command: too many code files to narrow, or a dependency or config file
+ * changed (WIDE_FILE), whose effect no import graph shows.
  */
 export function focusedTestCommand(focus, dir, files) {
-  const code = [...new Set((files || []).map((f) => String(f).replace(/\\/g, '/')))]
-    .filter((f) => CODE_EXT.test(f) && fs.existsSync(path.join(dir, f)));
+  const all = [...new Set((files || []).map((f) => String(f).replace(/\\/g, '/')))];
+  if (all.some((f) => WIDE_FILE.test(f))) return null;
+  const code = all.filter((f) => CODE_EXT.test(f) && fs.existsSync(path.join(dir, f)));
   if (!code.length) return '';
   if (code.length > FOCUS_MAX_FILES) return null;
   const quoted = code.map((f) => `"${f}"`).join(' ');

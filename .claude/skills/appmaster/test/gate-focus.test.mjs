@@ -53,6 +53,12 @@ test('focusedTestCommand: code files that exist, quoted; none means no related t
   assert.equal(G.focusedTestCommand({ kind: 'vitest' }, dir, files), 'npx vitest related --run --passWithNoTests "src/a.ts" "src/b.test.tsx"');
   assert.equal(G.focusedTestCommand({ kind: 'template', template: 'node r.mjs {files} --x' }, dir, ['src/a.ts']), 'node r.mjs "src/a.ts" --x');
   assert.equal(G.focusedTestCommand({ kind: 'vitest' }, dir, ['README.md', 'docs/x.md']), '');
+  // a dependency or config change can break any test without an import: always the full suite
+  for (const wide of ['package.json', 'package-lock.json', 'pnpm-lock.yaml', 'tsconfig.json', 'tsconfig.build.json', 'vitest.config.ts', 'apps/web/next.config.mjs', 'desk/package.json']) {
+    assert.equal(G.focusedTestCommand({ kind: 'vitest' }, dir, ['src/a.ts', wide]), null, wide);
+    assert.equal(G.focusedTestCommand({ kind: 'vitest' }, dir, [wide]), null, `${wide} alone`);
+  }
+  assert.notEqual(G.focusedTestCommand({ kind: 'vitest' }, dir, ['src/a.ts', 'docs/package.json.md']), null, 'a doc named like a config is not one');
   const many = Array.from({ length: G.FOCUS_MAX_FILES + 1 }, (_, i) => `src/m${i}.ts`);
   for (const f of many) fs.writeFileSync(path.join(dir, f), 'x');
   assert.equal(G.focusedTestCommand({ kind: 'vitest' }, dir, many), null);
