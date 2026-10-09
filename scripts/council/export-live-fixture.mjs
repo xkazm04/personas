@@ -23,8 +23,13 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const argDb = process.argv.indexOf('--db');
-const DB =
-  argDb > 0 ? process.argv[argDb + 1] : join(process.env.APPDATA ?? '', 'com.personas.desktop', 'personas.db');
+// An unset and an empty APPDATA are the same thing: no default location.
+const appData = process.env.APPDATA;
+const DB = argDb > 0 ? process.argv[argDb + 1] : appData ? join(appData, 'com.personas.desktop', 'personas.db') : null;
+if (!DB) {
+  console.error('export-live-fixture: APPDATA is not set; pass --db <personas.db>');
+  process.exit(1);
+}
 const OUT = join(ROOT, '.claude', 'council-reference', 'data', 'live', 'council-live.json');
 
 const db = new DatabaseSync(DB, { readOnly: true });
