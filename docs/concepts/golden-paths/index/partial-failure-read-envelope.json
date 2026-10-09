@@ -272,8 +272,8 @@
       "resolved": false
     },
     "reviews.rs": {"count":1,"sections":[7],"lines":["2701-2704"],"contexts":["deleted); `reviews.rs:2701-2704` (two percentage scores whose numerators count only"],"resolved":false},
+    "rules.json": {"count":2,"sections":[9,12],"contexts":["never against the shared `rules.json`; the runner reports **68 matches / 32 files** for the rule and"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["**The mechanism: a census rule.** The runner already exists (`scripts/census/`) and implements the"],"resolved":false,"isDir":true},
-    "scripts/census/rules.json": {"count":2,"sections":[9,12],"contexts":["never against the shared `rules.json`; the runner reports **68 matches / 32 files** for the rule and"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "src-tauri/**": {
       "count": 2,
       "sections": [9,12],

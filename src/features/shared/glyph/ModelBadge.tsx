@@ -12,7 +12,7 @@ import { Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface ModelBadgeProps {
-  /** Bare Claude model id (`"claude-sonnet-4-6"`, etc.) or null. */
+  /** Bare Claude model id (`"claude-sonnet-5-5"`, etc.) or null. */
   model: string | null;
   /** Human-readable rationale; rendered as the title-attribute tooltip. */
   rationale: string | null;

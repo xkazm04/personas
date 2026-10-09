@@ -1,0 +1,11 @@
+Ahoj, potřebuju opravit chybu v trezoru přihlašovacích údajů.
+
+Když se uživatel odhlásí a na stejném počítači se přihlásí jiný uživatel, v seznamu připojení v trezoru se pořád zobrazují připojení předchozího uživatele. Vypadá to, že se při odhlášení nevymaže mezipaměť trezoru (store v src/features/vault/useVaultStore.ts), takže se data načtou z paměti a ne z databáze.
+
+Postup reprodukce:
+1. Přihlásit se jako uživatel A a otevřít Trezor > Připojení.
+2. Odhlásit se.
+3. Přihlásit se jako uživatel B a otevřít Trezor > Připojení.
+4. Uživatel B vidí připojení uživatele A (Gmail, GitHub, Slack).
+
+Oprava: při odhlášení vymazat mezipaměť trezoru a znovu načíst připojení pro nového uživatele. Přidej k tomu jednotkový test.

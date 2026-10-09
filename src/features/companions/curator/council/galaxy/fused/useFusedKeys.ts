@@ -1,11 +1,11 @@
-// The fused HUD's keyboard grammar, registered at the route layer like the
-// classic stage's (the bench's own handler sits above it and wins while the
-// bench is up; `Q` stays the page's).
+// The fused HUD's keyboard grammar, registered at the route layer (`Q`
+// stays the page's; the verdict page's Esc sits above it while open).
 //
 //   M / Shift+M   cycle the instrument: lens, bar, none
 //   S             spread or fold the cross-section (from lens or none it
 //                 raises the bar already spread: S always means all of it)
-//   W             light the next waiting decision's stars, then none
+//   W             select the next council in the lanes (lighting its
+//                 stars), in the order the lanes draw them; then none
 //   F  L  /       fit, the field's magnifier, find
 //   [  ]          step to the previous or next neighbour; the dial turns
 //   Up / Down     rest on a row of the list; it opens in place
@@ -20,15 +20,15 @@ import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeybo
 import { isTypingTarget } from '@/lib/keyboard/KeyboardNavMode';
 
 import { useCouncilStore } from '../../councilStore';
+import { laneWalk } from '../../queue/useQueue';
 import type { EnginePath, GalaxyEngine } from '../engine/GalaxyEngine';
 import type { GalaxyLayout } from '../engine/types';
 import { focusNode, siblingsOf } from './fusedModel';
 import { cycleMode } from './hudMode';
 import { useFusedStore } from './fusedStore';
 import { listKids } from './NestedList';
-import type { Decision } from './fusedModel';
 
-export function useFusedKeys(engine: GalaxyEngine | null, layout: GalaxyLayout | null, path: EnginePath, decisions: Decision[]): void {
+export function useFusedKeys(engine: GalaxyEngine | null, layout: GalaxyLayout | null, path: EnginePath): void {
   const handler = useCallback(
     (e: KeyboardEvent): boolean => {
       if (!engine || !layout) return false;
@@ -62,11 +62,10 @@ export function useFusedKeys(engine: GalaxyEngine | null, layout: GalaxyLayout |
         return true;
       }
       if (lower === 'w') {
-        const focus = useCouncilStore.getState().focus;
-        const at = focus.kind === 'council' ? decisions.findIndex((d) => d.subject.id === focus.subjectId) : -1;
-        const next = decisions[at + 1];
-        if (next) useCouncilStore.getState().focusCouncil(next.subject, null);
-        else useCouncilStore.getState().clearCouncilFocus();
+        const store = useCouncilStore.getState();
+        const rows = laneWalk(store);
+        const at = rows.findIndex((r) => r.subject.id === store.selectedId);
+        store.selectCouncil(rows[at + 1]?.subject ?? null);
         return true;
       }
       if (lower === 'f') engine.reframe();
@@ -92,7 +91,7 @@ export function useFusedKeys(engine: GalaxyEngine | null, layout: GalaxyLayout |
       e.preventDefault();
       return true;
     },
-    [engine, layout, path, decisions],
+    [engine, layout, path],
   );
   useAppKeyboard(handler, { priority: ROUTE_DECISION_PRIORITY });
 }

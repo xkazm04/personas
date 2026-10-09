@@ -20,6 +20,13 @@
 //          --brightness low|mid|high (default: the store default, as a fresh profile gets)
 //          --strict-ipc (fail on IPC commands missing from the tape)
 //          --kit <name> (appends ?kit=<name>, read by a page's dev-only kit switch, e.g. fleet/activity)
+//          --query "<k=v&k2=v2>" (appended to the harness URL as-is, read by the module, e.g.
+//            athena/chat: --query "variant=r5a&bg=none")
+//          --reduced-motion (emulates prefers-reduced-motion: reduce AND sets the in-app toggle, ?motion=reduce)
+//          --steps "click=<css>;press=<key>;wait=<ms>" (run after mount, before the settle; ';'-separated,
+//            e.g. --steps "click=[data-testid=chat-variant-current];wait=600" or "press=Alt+W")
+//   --serve --module <id> also writes that module's synthetic tape to tmp/style-tapes/synthetic/ and
+//   prints a ready URL (the clock is NOT frozen in a served page).
 //
 // Output (per --label): <label>-<W>x<H>-<theme>.png for each size x theme, <label>-report.json
 // (console errors, unknown IPC commands, args mismatches, text length, page dimensions),
@@ -49,7 +56,8 @@ function parseArgs(argv) {
 
 const args = parseArgs(process.argv.slice(2));
 
-async function startServer(preferredPort) {
+/** `live`: watch the tree and hot-reload (the `--serve` case, where a builder edits while looking). */
+async function startServer(preferredPort, { live = false } = {}) {
   const { createServer } = await import('vite');
   for (let port = preferredPort; port < preferredPort + 10; port++) {
     try {
@@ -63,7 +71,7 @@ async function startServer(preferredPort) {
         clearScreen: false,
         optimizeDeps: { entries: [HARNESS_PATH.slice(1)] },
         // forwardConsole off: the report collects the page's console itself.
-        server: { port, strictPort: true, host: '127.0.0.1', hmr: false, watch: null, forwardConsole: false },
+        server: { port, strictPort: true, host: '127.0.0.1', hmr: live, watch: live ? {} : null, forwardConsole: false },
       });
       await server.listen();
       return { server, url: `http://127.0.0.1:${port}` };
@@ -116,8 +124,32 @@ function parseSizes(s) {
   });
 }
 
-async function shootOne(browser, baseUrl, { moduleId, theme, size, tape, settle, tz, brightness, kit }) {
-  const context = await browser.newContext({ viewport: size, deviceScaleFactor: 1, locale: 'en-US', timezoneId: tz });
+/** `click=<css>;press=<key>;wait=<ms>` -> [{ kind, arg }]. */
+function parseSteps(spec) {
+  if (!spec) return [];
+  return String(spec).split(';').map((s) => s.trim()).filter(Boolean).map((s) => {
+    const i = s.indexOf('=');
+    const kind = i < 0 ? s : s.slice(0, i);
+    if (!['click', 'press', 'wait'].includes(kind)) throw new Error(`bad step "${s}" (click=<css> | press=<key> | wait=<ms>)`);
+    return { kind, arg: i < 0 ? '' : s.slice(i + 1) };
+  });
+}
+
+async function runSteps(page, steps, problems) {
+  for (const { kind, arg } of steps) {
+    try {
+      if (kind === 'click') await page.click(arg, { timeout: 5000 });
+      else if (kind === 'press') await page.keyboard.press(arg);
+      else await page.waitForTimeout(Number(arg) || 300);
+      if (kind !== 'wait') await page.waitForTimeout(250);
+    } catch (err) {
+      problems.push(`step ${kind}=${arg} failed: ${String(err?.message ?? err).split('\n')[0]}`);
+    }
+  }
+}
+
+async function shootOne(browser, baseUrl, { moduleId, theme, size, tape, settle, tz, brightness, kit, query, reducedMotion, steps = [] }) {
+  const context = await browser.newContext({ viewport: size, deviceScaleFactor: 1, locale: 'en-US', timezoneId: tz, reducedMotion: reducedMotion ? 'reduce' : 'no-preference' });
   const page = await context.newPage();
   const consoleErrors = [];
   // A script-free sandboxed srcdoc frame (HtmlDocumentFrame) refuses the
@@ -129,7 +161,7 @@ async function shootOne(browser, baseUrl, { moduleId, theme, size, tape, settle,
   page.on('pageerror', (e) => consoleErrors.push(`pageerror: ${String(e?.message ?? e).slice(0, 2000)}`));
   await page.clock.setFixedTime(new Date(tape.recordedAt));
   await page.addInitScript((t) => { window.__PAGE_HARNESS_TAPE__ = t; }, tape);
-  const url = `${baseUrl}${HARNESS_PATH}?module=${encodeURIComponent(moduleId)}&theme=${encodeURIComponent(theme)}${brightness ? `&brightness=${brightness}` : ''}${kit ? `&kit=${encodeURIComponent(kit)}` : ''}`;
+  const url = `${baseUrl}${HARNESS_PATH}?module=${encodeURIComponent(moduleId)}&theme=${encodeURIComponent(theme)}${brightness ? `&brightness=${brightness}` : ''}${kit ? `&kit=${encodeURIComponent(kit)}` : ''}${reducedMotion ? '&motion=reduce' : ''}${query ? `&${query}` : ''}`;
   // 'commit', not 'load': on a cold dep cache Vite holds module requests while
   // it pre-bundles (measured 37 s on the first run), which would trip goto's
   // own timeout before the harness has had a chance to report anything.
@@ -141,6 +173,7 @@ async function shootOne(browser, baseUrl, { moduleId, theme, size, tape, settle,
     consoleErrors.push('harness never reported mounted or error within 180s');
   }
   await page.waitForLoadState('networkidle').catch(() => {});
+  await runSteps(page, steps, consoleErrors);
   await page.waitForTimeout(settle);
   harness = await page.evaluate(() => window.__PAGE_HARNESS__ ?? null);
   const probe = await page.evaluate(() => {
@@ -179,6 +212,9 @@ async function runShoot() {
   const tz = args.tz && args.tz !== true ? args.tz : 'UTC';
   const brightness = args.brightness && args.brightness !== true ? args.brightness : null;
   const kit = args.kit && args.kit !== true ? args.kit : null;
+  const query = args.query && args.query !== true ? String(args.query).replace(/^[?&]/, '') : null;
+  const reducedMotion = !!args['reduced-motion'];
+  const steps = parseSteps(args.steps && args.steps !== true ? args.steps : null);
   mkdirSync(outDir, { recursive: true });
   writeFileSync(join(outDir, 'tape.json'), JSON.stringify(tape, null, 2));
 
@@ -191,10 +227,10 @@ async function runShoot() {
     // differed from the same view in a re-run by 17 px of anti-aliasing in the
     // header icon while every later shot was byte-identical; a throwaway first
     // render makes every kept shot a warm one.
-    await shootOne(browser, url, { moduleId, theme: themes[0], size: sizes[0], tape, settle: 300, tz, brightness, kit });
+    await shootOne(browser, url, { moduleId, theme: themes[0], size: sizes[0], tape, settle: 300, tz, brightness, kit, query, reducedMotion });
     for (const theme of themes) {
       for (const size of sizes) {
-        const r = await shootOne(browser, url, { moduleId, theme, size, tape, settle, tz, brightness, kit });
+        const r = await shootOne(browser, url, { moduleId, theme, size, tape, settle, tz, brightness, kit, query, reducedMotion, steps });
         const file = `${label}-${size.width}x${size.height}-${theme}.png`;
         writeFileSync(join(outDir, file), r.png);
         const problems = [];
@@ -224,7 +260,7 @@ async function runShoot() {
   }
   const unknownCmds = [...new Set(shots.flatMap((s) => s.unknownIpc.map((u) => u.cmd)))];
   const report = {
-    module: moduleId, kit, label, createdAt: new Date().toISOString(), browser: browserVersion,
+    module: moduleId, kit, query, reducedMotion, steps: args.steps && args.steps !== true ? args.steps : null, label, createdAt: new Date().toISOString(), browser: browserVersion,
     tape: { path: tapePath, source: tape.source, recordedAt: tape.recordedAt, calls: tape.calls.length, note: tape.note ?? null },
     ok: shots.every((s) => s.ok), unknownIpcCommands: unknownCmds, shots,
   };
@@ -327,8 +363,19 @@ async function runSelfTest() {
 }
 
 async function runServe() {
-  const { url } = await startServer(Number(args.port) || 1432);
-  console.log(`harness: ${url}${HARNESS_PATH}?module=<id>&theme=<theme>&tape=<url of a tape under the repo, e.g. /tmp/style-tapes/x.json>`);
+  const { url } = await startServer(Number(args.port) || 1432, { live: true });
+  const moduleId = args.module && args.module !== true ? args.module : null;
+  if (!moduleId) {
+    console.log(`harness: ${url}${HARNESS_PATH}?module=<id>&theme=<theme>&tape=<url of a tape under the repo, e.g. /tmp/style-tapes/x.json>`);
+    return;
+  }
+  // A served page fetches its tape by URL, so the synthetic one is written under the repo's tmp/.
+  const rel = `tmp/style-tapes/synthetic/${moduleId.replace(/[^\w.-]+/g, '_')}.json`;
+  mkdirSync(join(REPO, dirname(rel)), { recursive: true });
+  writeFileSync(join(REPO, rel), JSON.stringify(loadTape(args.tape, moduleId).tape, null, 2));
+  const query = args.query && args.query !== true ? `&${String(args.query).replace(/^[?&]/, '')}` : '';
+  const theme = args.themes && args.themes !== true ? String(args.themes).split(',')[0] : 'dark-midnight';
+  console.log(`harness: ${url}${HARNESS_PATH}?module=${encodeURIComponent(moduleId)}&theme=${theme}&tape=/${rel}${query}`);
 }
 
 const main = args['self-test'] ? runSelfTest : args.pair ? runPair : args.serve ? runServe : runShoot;

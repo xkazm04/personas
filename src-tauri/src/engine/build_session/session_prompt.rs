@@ -46,21 +46,21 @@
 /// template, so they are single, not doubled.
 pub(super) const MODEL_TIER_RULE: &str = r###"**Recommend a runtime model PER capability.** Each capability resolution MUST emit `model_override` and `model_rationale`. The runtime uses `model_override` to seed which Claude model executes that capability; `model_rationale` is a one-sentence explanation surfaced in the UI so the user understands the choice.
 
-    **Default: Sonnet** (`claude-sonnet-4-6`). Pick a different model only when there is a clear reason. Defaulting to Sonnet across a multi-capability persona is the right answer most of the time; tier the picks deliberately, not aspirationally.
+    **Default: Sonnet** (`claude-sonnet-5-5`). Pick a different model only when there is a clear reason. Defaulting to Sonnet across a multi-capability persona is the right answer most of the time; tier the picks deliberately, not aspirationally.
 
     **Tier guide:**
-    - **Haiku** (`claude-haiku-4-5-20251001`) — narrow, mostly-deterministic work. Pick when the capability is: a single-tool fetch followed by a templated digest; a simple classifier with a small fixed label set; trivial transformations (reformatting, key extraction, deduplication); a fast notifier that just relays a payload to a channel. Cost is ~5× lower than Sonnet, latency ~3× faster. NEVER pick Haiku when the capability needs to chain 3+ tools, draft natural-sounding prose for an external audience, or reason about ambiguous user intent.
-    - **Sonnet** (`claude-sonnet-4-6`) — the default. Pick when the capability needs solid prose generation (digest summaries, draft replies, meeting notes), multi-tool orchestration of 2–4 tools, or any non-trivial reasoning over an event payload. Sonnet is the right answer for most "monitor + summarize + notify" personas, most ticket-triage personas, and most "research a topic and write a brief" personas.
-    - **Opus** (`claude-opus-5`) — top-tier reasoning, premium price. Pick ONLY when: the capability runs a long agentic loop with branching decisions and self-correction; the capability writes/refactors non-trivial code; the capability does deep research synthesis across 5+ sources where missing a connection is a real failure; the capability handles regulated/compliance-sensitive judgments where misjudgment has high cost. Opus is OVERKILL for digests and notifications — picking it on a daily-summary capability is the most common failure mode.
+    - **Haiku** (`claude-haiku-5-5`) — narrow, mostly-deterministic work. Pick when the capability is: a single-tool fetch followed by a templated digest; a simple classifier with a small fixed label set; trivial transformations (reformatting, key extraction, deduplication); a fast notifier that just relays a payload to a channel. Cost is ~5× lower than Sonnet, latency ~3× faster. NEVER pick Haiku when the capability needs to chain 3+ tools, draft natural-sounding prose for an external audience, or reason about ambiguous user intent.
+    - **Sonnet** (`claude-sonnet-5-5`) — the default. Pick when the capability needs solid prose generation (digest summaries, draft replies, meeting notes), multi-tool orchestration of 2–4 tools, or any non-trivial reasoning over an event payload. Sonnet is the right answer for most "monitor + summarize + notify" personas, most ticket-triage personas, and most "research a topic and write a brief" personas.
+    - **Opus** (`claude-opus-5-5`) — top-tier reasoning, premium price. Pick ONLY when: the capability runs a long agentic loop with branching decisions and self-correction; the capability writes/refactors non-trivial code; the capability does deep research synthesis across 5+ sources where missing a connection is a real failure; the capability handles regulated/compliance-sensitive judgments where misjudgment has high cost. Opus is OVERKILL for digests and notifications — picking it on a daily-summary capability is the most common failure mode.
 
     **Per-capability, not per-persona.** A persona with two capabilities — `uc_classify_email` (label as urgent/followup/fyi) and `uc_draft_reply` (compose a personalized response) — should pick **Haiku** for `uc_classify_email` and **Sonnet** for `uc_draft_reply`. Mixed-tier personas are normal and good.
 
     **Format on `model_override`:** emit a bare model-name string OR a partial `ModelProfile` object. Bare string is simpler and preferred. Examples:
     ```
-    "model_override": "claude-sonnet-4-6"
-    "model_override": "claude-haiku-4-5-20251001"
-    "model_override": "claude-opus-5"
-    "model_override": {"model": "claude-haiku-4-5-20251001", "effort": "low"}
+    "model_override": "claude-sonnet-5-5"
+    "model_override": "claude-haiku-5-5"
+    "model_override": "claude-opus-5-5"
+    "model_override": {"model": "claude-haiku-5-5", "effort": "low"}
     ```
 
     **Format on `model_rationale`:** a single sentence (≤ 160 chars) explaining the pick in user terms — what the capability does and why the chosen tier fits. Examples:

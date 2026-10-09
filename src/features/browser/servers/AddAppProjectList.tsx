@@ -27,7 +27,7 @@ export default function AddAppProjectList({
 
   return (
     <KitHost testId="server-add-projects">
-      <div className="flex flex-col gap-4 max-h-[52vh] overflow-y-auto pr-1">
+      <div className="flex flex-col gap-4">
         {groups.length === 0 && (
           <Rows count={0} empty={{ title: emptyTitle }}>
             {null}

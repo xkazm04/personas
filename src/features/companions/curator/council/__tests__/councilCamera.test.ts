@@ -1,47 +1,17 @@
 /**
- * The bench gives the view back.
+ * The store's share of the queue and the open council, and of fixture
+ * decisions.
  *
- * `Esc` out of the bench must land the reader exactly where they were, which
- * is a promise about a value React never holds: the camera is tweened per
- * frame inside the engine. The store therefore asks the ENGINE for it on the
- * way up and hands it back on the way down. This pins the contract at the
- * store, with a stand-in engine that records what it was told; the pixel
- * proof (camera before == camera after, in a real browser) is in the
- * screenshot harness and reported beside it.
+ * Selecting a council in the lanes lights its stars through the SAME council
+ * focus the field already flies to, and opening one selects it, so the
+ * header CTA, the lanes and the field can never disagree about which council
+ * the reader means.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 
 import { overlayWithFixtureDecisions, useCouncilStore } from '../councilStore';
-import type { CameraState, GalaxyFocus } from '../galaxy/engine/types';
-
-function fakeEngine(camera: CameraState) {
-  const calls: { focus: GalaxyFocus[]; restored: CameraState[]; benchHeight: number[] } = {
-    focus: [],
-    restored: [],
-    benchHeight: [],
-  };
-  const engine = {
-    getCamera: () => ({ ...camera }),
-    setFocus: (focus: GalaxyFocus, fly?: boolean) => {
-      // The bench must hand the focus back WITHOUT a flight, or the engine
-      // would fly to that focus's own altitude and overwrite the camera.
-      expect(fly).toBe(false);
-      calls.focus.push(focus);
-    },
-    restoreCamera: (c: CameraState) => calls.restored.push(c),
-    setBenchHeight: (px: number) => calls.benchHeight.push(px),
-  };
-  return { engine, calls };
-}
-
-const NODE_FOCUS: GalaxyFocus = {
-  kind: 'node',
-  domainSlug: 'software-engineering',
-  categoryId: 'ui-surfaces',
-  subjectSlug: 'table',
-};
 
 function subject(over: Partial<CouncilSubjectState> = {}): CouncilSubjectState {
   return {
@@ -64,6 +34,9 @@ function subject(over: Partial<CouncilSubjectState> = {}): CouncilSubjectState {
     drift: 'none',
     projectName: 'personas',
     registrySubjects: ['table', 'form'],
+    dimensions: [],
+    mustAddressCount: 0,
+    reportPath: null,
     runDir: null,
     finishedAt: null,
     decidedAt: null,
@@ -72,58 +45,27 @@ function subject(over: Partial<CouncilSubjectState> = {}): CouncilSubjectState {
   };
 }
 
-describe('the bench and the camera', () => {
+describe('selecting and opening a council', () => {
   beforeEach(() => {
-    useCouncilStore.setState({
-      engine: null,
-      benchOpen: false,
-      focus: { kind: 'none' },
-      focusBeforeBench: null,
-      cameraBeforeBench: null,
-      tableSubjectId: null,
-      fixtureOn: false,
-      fixtureDecisions: {},
-    });
+    useCouncilStore.setState({ focus: { kind: 'none' }, selectedId: null, openId: null });
   });
 
-  it('takes the camera from the engine on the way up, and gives it back on the way down', () => {
-    const before: CameraState = { x: 1234.5, y: -987.25, k: 0.83125 };
-    const { engine, calls } = fakeEngine(before);
-    // The engine's real type carries the whole canvas surface; the stand-in
-    // implements exactly the four methods the bench is allowed to use, which
-    // is the point of the test.
-    useCouncilStore.setState({
-      engine: engine as unknown as NonNullable<ReturnType<typeof useCouncilStore.getState>['engine']>,
-      focus: NODE_FOCUS,
-    });
+  it('lights the selected council through the council focus, and clears both together', () => {
+    useCouncilStore.getState().selectCouncil(subject());
+    const s = useCouncilStore.getState();
+    expect(s.selectedId).toBe('s1');
+    expect(s.focus).toEqual({ kind: 'council', subjectId: 's1', title: 'A feature', registrySubjects: ['table', 'form'] });
 
-    useCouncilStore.getState().setBenchOpen(true);
-    expect(useCouncilStore.getState().cameraBeforeBench).toEqual(before);
-    expect(useCouncilStore.getState().focusBeforeBench).toBe(NODE_FOCUS);
-
-    // the reader moves somewhere else entirely while the bench is up
-    useCouncilStore.getState().focusCouncil(subject(), null);
-    expect(useCouncilStore.getState().focus.kind).toBe('council');
-
-    useCouncilStore.getState().setBenchOpen(false);
-    expect(useCouncilStore.getState().focus).toBe(NODE_FOCUS);
-    expect(calls.focus).toEqual([NODE_FOCUS]);
-    expect(calls.restored).toEqual([before]);
-    // Byte for byte, not approximately.
-    expect(calls.restored[0]).toStrictEqual(before);
+    useCouncilStore.getState().selectCouncil(null);
+    expect(useCouncilStore.getState().selectedId).toBeNull();
+    expect(useCouncilStore.getState().focus.kind).toBe('none');
   });
 
-  it('drops the bench without an engine rather than throwing', () => {
-    useCouncilStore.setState({ focus: NODE_FOCUS });
-    useCouncilStore.getState().setBenchOpen(true);
-    expect(() => useCouncilStore.getState().setBenchOpen(false)).not.toThrow();
-    expect(useCouncilStore.getState().benchOpen).toBe(false);
-  });
-
-  it('closes the round table when the bench drops', () => {
-    useCouncilStore.setState({ tableSubjectId: 's1' });
-    useCouncilStore.getState().setBenchOpen(false);
-    expect(useCouncilStore.getState().tableSubjectId).toBeNull();
+  it('selects what it opens, and keeps the selection when the council closes', () => {
+    useCouncilStore.getState().openCouncil('s1');
+    expect(useCouncilStore.getState()).toMatchObject({ openId: 's1', selectedId: 's1' });
+    useCouncilStore.getState().openCouncil(null);
+    expect(useCouncilStore.getState()).toMatchObject({ openId: null, selectedId: 's1' });
   });
 });
 

@@ -48,6 +48,13 @@ export interface MilestoneLane {
   targetDate: string | null;
   /** Goal ids bound to this milestone (member rows of kind 'goal'). */
   goalIds: ReadonlySet<string>;
+  /** The cut's position in the project's plan - the layered views order by it. */
+  orderIndex: number;
+  /** The objective as a SHORT title (the Ship heading); `null` when unset. */
+  objective: string | null;
+  description: string | null;
+  cutAt: string | null;
+  shippedAt: string | null;
 }
 
 /** Create a milestone in `planned` state. Cutting and shipping stay in Ship. */
@@ -108,6 +115,11 @@ export async function lanesFor(
       status: m.status,
       targetDate: m.targetDate,
       goalIds,
+      orderIndex: m.orderIndex,
+      objective: m.goal,
+      description: m.description,
+      cutAt: m.cutAt,
+      shippedAt: m.shippedAt,
     };
   });
 }

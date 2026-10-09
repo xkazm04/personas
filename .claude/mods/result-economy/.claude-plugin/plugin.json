@@ -1,0 +1,1 @@
+{ "name": "result-economy", "version": "0.1.0", "description": "Keeps oversized tool output out of the model's context: long shell and search results keep their head and tail with a visible truncation marker, and distinctive secret tokens are redacted before the model reads them" }

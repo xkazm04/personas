@@ -3,6 +3,7 @@ import type { ChatMessage } from "@/lib/bindings/ChatMessage";
 import type { ChatRole } from "@/lib/bindings/ChatRole";
 import type { ChatSession } from "@/lib/bindings/ChatSession";
 import type { ChatSessionContext } from "@/lib/bindings/ChatSessionContext";
+import type { ChatTurnStarted } from "@/lib/bindings/ChatTurnStarted";
 
 export const listChatSessions = (personaId: string, limit?: number) =>
   invoke<ChatSession[]>("list_chat_sessions", {
@@ -71,3 +72,37 @@ export const getChatSessionContext = (sessionId: string) =>
 
 export const getLatestChatSession = (personaId: string) =>
   invoke<ChatSessionContext | null>("get_latest_chat_session", { personaId });
+
+/**
+ * Send one persona chat message: the whole turn runs in Rust
+ * (`start_chat_turn` -> `chat_turn::start`). It inserts the user row, saves the
+ * session context, starts the execution and writes the assistant row itself
+ * when the run completes. Resolves once the run has started; the reply streams
+ * over that execution's `execution-output` events and lands as a row
+ * (`chat-changed`). The key dedups a double send, as for `executePersona`.
+ * `title` names a NEW session instead of the title derived from its first
+ * message (the feedback chat names it after the report); it is ignored on a
+ * follow-up.
+ */
+export const startChatTurn = (input: {
+  personaId: string;
+  sessionId: string;
+  message: string;
+  chatMode: string;
+  title?: string;
+  idempotencyKey?: string;
+}) => {
+  const key = input.idempotencyKey ?? crypto.randomUUID();
+  return invoke<ChatTurnStarted>(
+    "start_chat_turn",
+    {
+      personaId: input.personaId,
+      sessionId: input.sessionId,
+      message: input.message,
+      chatMode: input.chatMode,
+      title: input.title,
+      idempotencyKey: key,
+    },
+    { idempotencyKey: key },
+  );
+};

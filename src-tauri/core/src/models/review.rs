@@ -64,7 +64,9 @@ impl std::fmt::Display for ManualReviewStatus {
 #[ts(export)]
 pub struct PersonaManualReview {
     pub id: String,
-    pub execution_id: String,
+    /// The run that raised this review. NULL for a review raised outside any
+    /// run - the headless App Master's report approval (migration e60).
+    pub execution_id: Option<String>,
     pub persona_id: String,
     pub title: String,
     pub description: Option<String>,

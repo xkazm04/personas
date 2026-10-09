@@ -32,6 +32,8 @@ pub mod cycle_goals;
 /// Server control: `dev_projects.dev_command` / `dev_port` and
 /// `dev_server_runs` (the servers Personas spawned and still owns).
 pub mod dev_servers;
+/// `doc_status` read side - the doc-rot scan's per-doc verdict rows.
+pub mod doc_status;
 /// The Features page's ONE read: every context's role, every feature's council
 /// and scenarios, joined in memory from bulk reads rather than per feature.
 pub mod feature_board;
@@ -46,6 +48,9 @@ pub mod kpis;
 /// `dev_lifecycle_versions` and `dev_lifecycle_evidence` - Lifecycle v2: each
 /// project's versioned development practice and the per-task evidence of it.
 pub mod lifecycle;
+/// `dev_lifecycle_runs` - the append-only ledger of Lifecycle Measure's
+/// gate / test / coverage command runs.
+pub mod lifecycle_runs;
 /// `dev_milestones` and `dev_milestone_items`.
 pub mod milestones;
 /// `dev_note_comments` — the per-note thread (comments, reviews, status milestones).

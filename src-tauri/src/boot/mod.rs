@@ -255,6 +255,15 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     // `app.state()`, so this must follow every `manage` the engine reads.
     workers::spawn_requeue_persisted(app, &engine, &pool);
 
+    // Persona chat replies owed across the restart. The hook that writes a
+    // turn's reply lives in the process that started the turn, so a reply
+    // whose run finished after (or just before) the last exit would be lost:
+    // write those now, and re-arm the hook for the runs re-admitted just
+    // above. `recovery` already classified the mid-run rows, so a run that
+    // will not resume is `incomplete` and owed nothing. Needs the managed
+    // engine (the hook waits on its completion signal), hence here.
+    commands::core::chat_turn::spawn_reconcile_after_restart(&state_arc);
+
     // Build sessions a dead process left in flight: resume a kp hire's
     // one-shot build once, fail the rest with `interrupted_by_restart`, and
     // leave alone any session a live instance still holds a claim on. Needs

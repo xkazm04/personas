@@ -182,6 +182,24 @@ pub const RUBRIC_ARCHITECTURE_V1: [RubricEntry; 4] = [
     },
 ];
 
+/// How a run was judged. `full` is the council: one bounded, blind member per
+/// rubric row. `lite` is ONE pass by the running session over a fixed subset
+/// of the same rubric (registry council 0.4.0) - the council's feedback, never
+/// its verdict. A result with no `mode` is `full`: every result written before
+/// 0.4.0 is one.
+pub const COUNCIL_MODES: [&str; 2] = ["full", "lite"];
+
+/// The rows a LITE pass does not judge, per rubric version - written into the
+/// result as `unmeasured` and named in `skipped_dimensions`. `None` means the
+/// rubric has no lite scope (an architecture redesign always goes to the full
+/// council). Mirrors `LITE_SCOPES` in the skill's `aggregate.mjs`.
+pub fn lite_skipped_dimensions(rubric_version: &str) -> Option<&'static [&'static str]> {
+    match rubric_version {
+        "feature-v1" => Some(&["rivalry", "economics"]),
+        _ => None,
+    }
+}
+
 /// The coverage floor: below this much measured weight a run is `incomplete`
 /// however good the measured part looks.
 pub const COUNCIL_COVERAGE_FLOOR: f64 = 0.60;
@@ -250,6 +268,9 @@ pub struct CouncilSubject {
 pub struct CouncilRun {
     pub id: String,
     pub subject_id: String,
+    /// 'full' | 'lite'. Rounds are counted per mode: a lite round 1 and a full
+    /// round 1 of one subject are two different runs.
+    pub mode: String,
     pub round_no: i32,
     pub supersedes_run_id: Option<String>,
     /// 'feature-v1' | 'architecture-v1'
@@ -315,6 +336,40 @@ pub struct CouncilVerdict {
     pub payload_json: String,
 }
 
+/// One member's mark on a subject's LATEST run, carried by the list
+/// projection so a queue row can draw every member without reading the run.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CouncilDimensionScore {
+    /// 'value' | 'craft' | 'rivalry' | 'robustness' | 'economics' | 'reversibility'
+    pub dimension: String,
+    /// 'mechanical' | 'judged' | 'mixed'
+    pub kind: String,
+    /// 'measured' | 'unmeasured' | 'not_applicable' | 'carried'
+    pub state: String,
+    /// `None` unless `state` is `measured` or `carried`. Never `0.0` as a
+    /// stand-in for "we could not tell".
+    pub score: Option<f64>,
+    pub floor: Option<f64>,
+    pub floor_hit: bool,
+    pub advisory: bool,
+}
+
+impl From<&CouncilVerdict> for CouncilDimensionScore {
+    fn from(v: &CouncilVerdict) -> Self {
+        Self {
+            dimension: v.dimension.clone(),
+            kind: v.kind.clone(),
+            state: v.state.clone(),
+            score: v.score,
+            floor: v.floor,
+            floor_hit: v.floor_hit,
+            advisory: v.advisory,
+        }
+    }
+}
+
 /// A human's verdict on a run. The ONLY row in this whole chain a person
 /// writes, and the only one that can admit anything.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
@@ -362,6 +417,10 @@ pub struct CouncilSubjectState {
     pub state: String,
     /// 'major' | 'standard' for a use case; null for an architecture subject.
     pub tier: Option<String>,
+    /// 'full' | 'lite' - the mode of the run `state` was derived from: the
+    /// newest FULL run, or the newest lite one while no full run exists. A lite
+    /// run never supersedes a full one, and is never decided.
+    pub mode: Option<String>,
     pub round_no: Option<i32>,
     pub latest_run_id: Option<String>,
     /// 'ready' | 'fail' | 'incomplete' | 'stalled' - the latest run's own outcome.
@@ -380,7 +439,16 @@ pub struct CouncilSubjectState {
     /// Registry subject slugs this council lands on: named by its members, else
     /// matched from the feature's contexts. This is what council focus flies to.
     pub registry_subjects: Vec<String>,
+    /// Every member of the latest run, in the order the run stored them. Empty
+    /// when no run exists.
+    pub dimensions: Vec<CouncilDimensionScore>,
+    /// How many items the latest run says must be addressed. 0 when no run exists.
+    pub must_address_count: i32,
     pub run_dir: Option<String>,
+    /// `<run_dir>/report.html` when that file EXISTS at read time (the /council
+    /// skill renders it beside report.md); null otherwise, so the reader is never
+    /// handed a link that opens nothing.
+    pub report_path: Option<String>,
     pub finished_at: Option<String>,
     pub decided_at: Option<String>,
     pub rejection_reason: Option<String>,

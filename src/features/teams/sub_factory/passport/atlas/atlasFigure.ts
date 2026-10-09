@@ -1,11 +1,11 @@
-// Passport Atlas — the contract every portfolio FIGURE honours.
+// Passport Atlas — the contract the portfolio FIGURE honours.
 //
 // The portfolio's chrome (headline figures, lens / search / sort, legend,
 // readout) is kit-governed structure and lives once, in AtlasPortfolioShell.
 // What sits in the middle is a FIGURE: doctrine 6c lets it lay itself out
-// freely, so a variant is composition and styling only and never a second copy
-// of the data model. Every figure reads the same projects, the same lens rows
-// and the same roving coordinate, and opens the same two doors.
+// freely, so its styling is free while the data model stays here. The figure
+// reads the projects, the lens rows and the roving coordinate, and opens the
+// same two doors.
 import type { AppPassport } from '../passportModel';
 import type { AtlasRow } from './atlasModel';
 
@@ -28,6 +28,3 @@ export interface AtlasFigureProps {
   /** Opens that project's passport (the project layer). */
   onOpenProject: (slug: string) => void;
 }
-
-/** The named directions the owner compares. `matrix` is the shipped baseline. */
-export type AtlasFigureKind = 'matrix' | 'ledger' | 'dossier';

@@ -17,6 +17,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { KitHost, Meta, Section, Segmented, Surface } from '@/features/shared/components/kit';
 import { ProjectsPassportWall } from './passport';
 import { PassportAtlas } from './passport/atlas/PassportAtlas';
+import { AtlasFavicons } from './passport/atlas/atlasFavicons';
 import { ATLAS_WORDS } from './passport/atlas/atlasWords';
 import { buildCoverRoadmap, type CoverRoadmapVM } from './passport/CoverRoadmap';
 import type { WarningItem } from './passport/WarningBadge';
@@ -97,8 +98,8 @@ export function ProjectsLayer({
     return () => { alive = false; };
   }, [slugsKey]);
 
-  // R21 — real app favicons for the covers (probed from each project's repo);
-  // covers fall back to the status dot where none exists.
+  // R21 — real app favicons for the covers and the Atlas tiles (probed from
+  // each project's repo); both fall back where none exists.
   const [faviconBySlug, setFaviconBySlug] = useState<Map<string, string>>(new Map());
   // Favicons never change within a session — cache the probe result per
   // root_path at module scope, key the effect on the slug→root signature
@@ -188,12 +189,15 @@ export function ProjectsLayer({
       ) : passports.length > 0 && (
         <ImproveProvider value={improve}>
           {view === 'atlas' ? (
-            <PassportAtlas
-              passports={passports}
-              onOpen={onOpen}
-              rescanningProject={rescanningProject}
-              onRescanProject={rescanProject}
-            />
+            // The Atlas matrix's project tiles read the same probed favicons.
+            <AtlasFavicons.Provider value={faviconBySlug}>
+              <PassportAtlas
+                passports={passports}
+                onOpen={onOpen}
+                rescanningProject={rescanningProject}
+                onRescanProject={rescanProject}
+              />
+            </AtlasFavicons.Provider>
           ) : (
           <ProjectsPassportWall
             passports={passports}

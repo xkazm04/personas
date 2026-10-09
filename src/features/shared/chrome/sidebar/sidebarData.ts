@@ -1,5 +1,5 @@
 import {
-  BarChart3, Zap, Key, Activity, ClipboardCheck, MessageSquare, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu, Network, Database, Compass, Shield, ShieldCheck, HardDriveDownload, Map, Play, Share2, Gauge, Unplug, Webhook, Store, Archive, Layers, GraduationCap, AlertOctagon, Sparkles, Headphones, Wand2, Gauge as GaugeIcon, Bell, Terminal, RefreshCw, FolderOpen, History, MoonStar, Landmark, GitFork, Laptop, Stethoscope, type LucideIcon,
+  BarChart3, Zap, Key, Activity, ClipboardCheck, MessageSquare, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu, Network, Database, Compass, Shield, ShieldCheck, HardDriveDownload, Map, Play, Share2, Gauge, Unplug, Webhook, Store, Archive, Layers, GraduationCap, AlertOctagon, Sparkles, Headphones, Wand2, Gauge as GaugeIcon, Bell, Terminal, RefreshCw, FolderOpen, History, MoonStar, Landmark, GitFork, Laptop, Stethoscope, Radio, type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
 import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav';
@@ -87,6 +87,12 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
   { id: 'manual-review', icon: ClipboardCheck, label: 'Approvals', minTier: TIERS.TEAM },
   { id: 'messages', icon: MessageSquare, label: 'Messages' },
   { id: 'events', icon: Zap, label: 'Events', minTier: TIERS.TEAM },
+  // Timeline — the merged cross-team decision log. Moved here 2026-10-06 from
+  // the PersonaMonitor's header router: the Monitor kept the surfaces you act
+  // on, and a read-only log belongs beside Activity and Events. Pinned LAST in
+  // its group (see `pinLast` in SidebarLevel2) rather than sorted by label,
+  // which is where the operator asked for it.
+  { id: 'timeline', icon: Radio, label: 'Timeline', minTier: TIERS.TEAM },
   // The former single "Knowledge" tab was dissolved on 2026-07-29: its four
   // in-page subtabs are now first-class L2 destinations, so the sidebar IS the
   // navigation (no SegmentedTabs switcher). NOTE the graph id is `memory-graph`,
@@ -214,7 +220,7 @@ export interface SidebarItemGroupDef {
 
 /** Overview → Monitoring / Operations / Memory. */
 export const overviewGroups: SidebarItemGroupDef[] = [
-  { id: 'monitoring', labelKey: 'group_monitoring', itemIds: ['executions', 'events', 'home'] },
+  { id: 'monitoring', labelKey: 'group_monitoring', itemIds: ['executions', 'events', 'home', 'timeline'] },
   { id: 'operations', labelKey: 'group_operations', itemIds: ['manual-review', 'incidents', 'observability', 'messages'] },
   { id: 'memory',     labelKey: 'group_memory',     itemIds: ['memories', 'memory-graph'] },
 ];

@@ -1,9 +1,10 @@
-// KPI dashboard — a DISPATCHER over three overview renderers behind one
+// KPI dashboard — a DISPATCHER over the overview renderers behind one
 // persisted switch (kpi-strategic-map spark, 2026-09-17): map, ledger and
 // river. Every variant reads the same overview model and opens the same
 // in-place Project › Group layer. The other three prototypes (classic, grid,
 // treemap) were deleted on 2026-09-21 after the /contest consolidation round
-// (.contest/Contest/contests/kpi-descent.md).
+// (.contest/Contest/contests/kpi-descent.md), and three more (assay, almanac,
+// console) on 2026-10-06 at the end of a prototype round the owner closed.
 import { Suspense, useState } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';

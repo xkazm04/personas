@@ -10,19 +10,28 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  ASK_KINDS, GLOBAL_CAP, MAX_ASKS, MAX_DISPATCH, MEM, PER_PROJECT_CAP, WAKE_MAX, WAKE_MIN,
+  ASK_KINDS, COUNCIL, GLOBAL_CAP, MAX_ASKS, MAX_DISPATCH, MEM, PER_PROJECT_CAP, PLAN, REVIEW_CHARTERS, UX, WAKE_MAX, WAKE_MIN,
   LIVE_RUN_STATES, contextDir, briefPath, mintId, nowIso, shortId,
 } from './contract.mjs';
-import { loadBrief, loadWakes, saveWake, openAsks, loadAsks, loadChannel, listRuns } from './store.mjs';
+import { charactersOf, councilJournal, councilEvents, featureState } from './council.mjs';
+import { loadBrief, loadWakes, saveWake, openAsks, loadAsks, loadChannel, listRuns, loadOutbox } from './store.mjs';
 import {
   openDb, resolveProject, masterPersona, chartersFor, projectSnapshot, pendingReviews,
-  operatorChannelSince, repoDocs,
+  operatorChannelSince, repoDocs, milestonesOf, planProgress, briefCharters, useCasesOf, councilRunsOf, councilDecisionsOf,
+  uxPendingOf, SAY_MAX_CHARS,
 } from './dbread.mjs';
 import { brakes, parseTs, ageText, lastDecided, isDue } from './brakes.mjs';
+import { queueTable } from './queue.mjs';
+import { briefRepos, laneFor } from './repos.mjs';
 
 export { parseTs, ageText, lastDecided, isDue };
 
-export const MAX_CONTEXT_CHARS = 12000;
+/**
+ * 20000 since 2026-10-07 (12000 before): the plan, council, queue and recipe sections need the room.
+ * Measured on the real DB that day at the fullest budget level: kp 19446, ascent 16782, pof 12602
+ * characters (about 5k tokens at most); at 16000, kp fell to the tightest level (3 goals, 3 ideas).
+ */
+export const MAX_CONTEXT_CHARS = 20000;
 const UNOBSERVED_GAP_MIN = 240;   // attention_decide.rs UNOBSERVED_GAP_MINUTES
 
 // ---------------------------------------------------------------- small pure helpers
@@ -30,17 +39,29 @@ const UNOBSERVED_GAP_MIN = 240;   // attention_decide.rs UNOBSERVED_GAP_MINUTES
 const stampAge = (s, nowMs) => (s ? `${s}${ageText(s, nowMs) ? ` (${ageText(s, nowMs)})` : ''}` : 'never');
 const clip = (s, n) => { const t = String(s ?? '').replace(/\s+/g, ' ').trim(); return t.length > n ? `${t.slice(0, n - 3)}...` : t; };
 const more = (total, shown, indent = '    ') => (total > shown ? [`${indent}+${total - shown} more`] : []);
+const pathsText = (paths) => (Array.isArray(paths) && paths.length ? paths.join(', ') : 'none declared (the whole repo)');
+/** Builder slots still free in this project and in all, from the running counts. */
+export const freeSlots = (running = {}) => ({
+  project: Math.max(0, PER_PROJECT_CAP - (running.project ?? 0)),
+  global: Math.max(0, GLOBAL_CAP - (running.global ?? 0)),
+});
 const askForText = (a) => (Array.isArray(a) ? a.join('; ') : a) || 'a scope change, spending, risk on the money or data path, a conflict between two goals';
 
 // ---------------------------------------------------------------- the renderer (pure)
 
 /** List caps per budget level; renderContext steps down a level until the doc fits MAX_CONTEXT_CHARS. */
+// recipeNeed/recipeCore never reach 0: the master works to its charters' recipes at every budget level
+// said/saidChars: every line shown is one the master has not read yet (both sources are filtered to
+// "since the last wake"), and a weekend direction from the phone may run to SAY_MAX_CHARS. So the top two
+// levels show it whole and the master's own lists give way first; a clipped line says so.
 export const BUDGET_LEVELS = [
-  { brief: 400, need: 160, core: 200, note: 260, goals: 10, ideas: 8, pending: 6, branches: 6, kpiNames: 5, asks: 6, said: 5, saidChars: 600, title: 120 },
-  { brief: 300, need: 0, core: 200, note: 220, goals: 8, ideas: 6, pending: 5, branches: 5, kpiNames: 3, asks: 5, said: 4, saidChars: 500, title: 100 },
-  { brief: 200, need: 0, core: 150, note: 160, goals: 5, ideas: 4, pending: 3, branches: 3, kpiNames: 0, asks: 4, said: 3, saidChars: 400, title: 76 },
-  { brief: 110, need: 0, core: 0, note: 120, goals: 3, ideas: 3, pending: 2, branches: 2, kpiNames: 0, asks: 3, said: 2, saidChars: 220, title: 80 },
+  { brief: 400, need: 160, core: 200, note: 260, goals: 10, ideas: 8, pending: 6, branches: 6, kpiNames: 5, asks: 6, said: 12, saidChars: SAY_MAX_CHARS, title: 120, features: 14, mustAddress: 3, recipeNeed: 240, recipeCore: 280 },
+  { brief: 300, need: 0, core: 200, note: 220, goals: 8, ideas: 6, pending: 5, branches: 5, kpiNames: 3, asks: 5, said: 8, saidChars: SAY_MAX_CHARS, title: 100, features: 10, mustAddress: 2, recipeNeed: 180, recipeCore: 220 },
+  { brief: 200, need: 0, core: 150, note: 160, goals: 5, ideas: 4, pending: 3, branches: 3, kpiNames: 0, asks: 4, said: 5, saidChars: 1000, title: 76, features: 6, mustAddress: 1, recipeNeed: 130, recipeCore: 160 },
+  { brief: 110, need: 0, core: 0, note: 120, goals: 3, ideas: 3, pending: 2, branches: 2, kpiNames: 0, asks: 3, said: 3, saidChars: 600, title: 80, features: 4, mustAddress: 1, recipeNeed: 90, recipeCore: 110 },
 ];
+/** COUNCIL section order: what needs the master's hand first. */
+const COUNCIL_ORDER = { rejected: 0, 'lite-fail': 1, 'lite-incomplete': 1, 'full-fail': 2, 'full-incomplete': 2, none: 3, 'lite-ready': 4, 'full-ready': 5, stalled: 6, approved: 7 };
 /** '2026-09-25T07:54:33.126043600+00:00' -> '2026-09-25 07:54Z' (the age beside it carries the rest). */
 const shortStamp = (s) => { const t = parseTs(s); return Number.isFinite(t) ? `${new Date(t).toISOString().slice(0, 16).replace('T', ' ')}Z` : String(s); };
 const stampAgeShort = (s, nowMs) => (s ? `${shortStamp(s)}${ageText(s, nowMs) ? ` (${ageText(s, nowMs)})` : ''}` : 'never');
@@ -64,6 +85,17 @@ export function renderAt(input, C) {
   const nowMs = parseTs(now);
   const L = [];
   const head = (h) => { L.push(''); L.push(h); };
+  const plan = input.plan ?? {};
+
+  // a project with no plan anywhere opens with the PLAN WAKE: this wake's answer carries one
+  if (plan.wake) {
+    L.push('PLAN WAKE: this project has no plan yet (no plan in your journal, no milestone in the app). This wake, besides your usual decision, return `plan`: the brief\'s key goals broken into an ordered, systematic plan.');
+    L.push(`- ${PLAN.minMilestones}-${PLAN.maxMilestones} milestones, in the order they must land; each {name, goal, targetDate?, goals}. ${PLAN.minGoals}-${PLAN.maxGoals} goals per milestone; each {title, measure, description?}.`);
+    L.push('- Every key goal of the brief lands in some milestone; a measure is something observable (a number, a test, a state the app shows), never "improved".');
+    L.push(`- Bounds: name <= ${PLAN.nameMax} characters, milestone goal <= ${PLAN.goalMax}, goal title <= ${PLAN.titleMax}, measure <= ${PLAN.measureMax}, description <= ${PLAN.descriptionMax}; targetDate YYYY-MM-DD or omitted; names and titles unique.`);
+    L.push('- The plan is queued for the app (milestones, then their goals) and shown back to you on every later wake with its progress. Dispatch as usual this wake too.');
+    L.push('');
+  }
 
   // identity + the standing question
   L.push(`You are the App Master of ${p.name} (slug ${p.slug}); this is your wake ${wakeId}. You hold standing responsibilities (charters) over this project. You run HEADLESS: the Personas app is closed, this document is your whole view, and your answer is one JSON object a terminal session carries out.`);
@@ -79,6 +111,11 @@ export function renderAt(input, C) {
   if (kg.length) { L.push('- key goals, in priority order:'); kg.slice(0, 5).forEach((g, i) => L.push(`  ${i + 1}. ${clip(g.title, C.title)}${g.measure ? ` (measured by: ${clip(g.measure, C.brief / 2)})` : ''}`)); L.push(...more(kg.length, 5, '  ')); }
   if (brief.boundaries?.length) { L.push('- boundaries (no builder may cross these):'); brief.boundaries.forEach((b) => L.push(`  - ${clip(b, C.brief / 2)}`)); }
   if (brief.reportStyle || brief.tone) L.push(`- report style: ${clip(brief.reportStyle || brief.tone, 160)}`);
+  const repos = input.repos ?? [];
+  if (repos.length) {
+    L.push('- repos besides this project\'s own (`self`) that a dispatch may target with `repo`:');
+    for (const r of repos) L.push(`  - ${r.key}: ${r.root} (base ${r.baseBranch}${r.lane != null ? `; at most ${r.lane} live run(s) there across ALL projects` : ''})`);
+  }
   L.push(`- repo docs by path (read before writing a builder brief; not inlined): ${docs.length ? docs.join(' ; ') : 'none at the root'}`);
 
   // RIGHT NOW
@@ -92,13 +129,24 @@ export function renderAt(input, C) {
     L.push('This is your first headless wake: the journal holds no earlier decision.');
   }
 
+  // the plan from the journal, with its progress in the app; else the app's own milestones
+  if (plan.journal) L.push(...renderPlan(plan.journal, C, nowMs));
+  else if (plan.app?.rows?.length) {
+    head(`MILESTONES IN THE APP (${plan.app.rows.length}; your plan is these, not one you wrote)`);
+    for (const m of plan.app.rows.slice(0, PLAN.maxMilestones)) L.push(`- ${clip(m.name, C.title)} (${m.status}${m.target_date ? `, target ${m.target_date}` : ''})`);
+    L.push(...more(plan.app.rows.length, PLAN.maxMilestones, '  '));
+  }
+
   // HOW TO DECIDE
   head('HOW TO DECIDE');
   L.push('- PRIORITY: an explicit priority (1 highest .. 5 lowest) goes ahead of none. No priority is not low priority: the judgment is yours.');
   L.push('- COVERAGE: the coverage and last-run lines and your last note are your memory. Do not re-run what you just ran; do not starve what you keep deferring.');
-  L.push(`- CAPACITY: dispatch AT MOST ${MAX_DISPATCH} charter (one builder per project, ${GLOBAL_CAP} in all; running now: ${machine.running?.project ?? 0} here, ${machine.running?.global ?? 0} in all). A dispatch while this project's builder runs is refused. None is a legitimate answer.`);
+  const slots = freeSlots(machine.running);
+  L.push(`- CAPACITY: dispatch AT MOST ${MAX_DISPATCH} charters (${PER_PROJECT_CAP} builders per project, ${GLOBAL_CAP} in all; running now: ${machine.running?.project ?? 0} here, ${machine.running?.global ?? 0} in all; free slots: ${slots.project} here, ${slots.global} in all). Two at once ONLY when each is independent of the other and their \`paths\` are disjoint from each other AND from every run in flight below. Every dispatch declares \`paths\`: the repo-relative prefixes or globs its builder will touch (none = the whole repo, which leaves no room for a second builder). An overlap is refused. None is a legitimate answer.`);
+  if (repos.length) L.push(`- REPOS: \`repo\` (omit for self, or one of: ${repos.map((r) => r.key).join(', ')}) picks the repo a builder works and merges in. In a shared repo, paths must be disjoint from every OTHER project's runs there too, and its lane caps live runs across all projects; a dispatch that does not fit is queued, not lost.`);
+  L.push('- MODEL: per dispatch, `model` "opus" for discovery (security scan, architecture review, KPI or measure design), "sonnet" for fixing a shape already chosen, delivering a well-specified idea, or a mechanical sweep; omit it for the charter default. A model the brief pins wins.');
   L.push(`- MACHINE: a dispatch is refused while FREE memory is under ${MEM.dispatchMinFreeGb} GB (+${MEM.perBuilderReserveGb} GB per builder already running) and while a usage-limit mark stands. A tripped memory brake clears by itself within minutes: dispatch nothing this wake and choose a SHORT next wake (10 to 20 min); a usage limit needs a long one.`);
-  L.push('- IN FLIGHT: running, exited and verifying runs are not finished; planned is minted, not started. Never re-dispatch a live charter or an idea an in-flight task carries.');
+  L.push('- IN FLIGHT: running, exited and verifying runs are not finished (merged, held, failed, released and reviewed are); planned is minted, not started. A QUEUED run (a dispatch refused for a slot, held and started in order when one frees) is a promise the loop keeps. Never re-dispatch a live or queued charter, or an idea an in-flight or queued task carries.');
   L.push('- THE BUILDER: a fresh builder in an isolated worktree on its own autopilot branch, merged only if the gates pass and no file it touched is dirty in the checkout. Your `brief` is all it knows: what to change, the accepted idea ids it carries (up to 6 of one shape, or none), how it proves done. A delivery brief first checks each id against the base branch; one already there is closed as delivered, not rebuilt.');
   L.push('- IDEA VERDICTS: accept or reject a pending idea named here, with a reason; queued until the app is up.');
   L.push(`- NEXT WAKE: \`nextWakeMinutes\`, integer ${WAKE_MIN}-${WAKE_MAX}, always present. SHORT (${WAKE_MIN}-20) after a dispatch to check on or with work you could not start; LONG (60-${WAKE_MAX}) when all is in flight, nothing is due, or a brake is tripped.`);
@@ -131,7 +179,11 @@ export function renderAt(input, C) {
     .sort((a, b) => parseTs(b.at) - parseTs(a.at));
   if (said.length) {
     head('WHAT THE OPERATOR SAID (newest first)');
-    for (const c of said.slice(0, C.said)) { L.push(`- ${stampAgeShort(c.at, nowMs)}, ${c.where}:`); L.push(`    ${clip(c.body, C.saidChars)}`); }
+    for (const c of said.slice(0, C.said)) {
+      const whole = clip(c.body, Infinity);
+      const cut = whole.length > C.saidChars ? ` [clipped: ${C.saidChars} of ${whole.length} characters shown]` : '';
+      L.push(`- ${stampAgeShort(c.at, nowMs)}, ${c.where}:`); L.push(`    ${clip(whole, C.saidChars)}${cut}`);
+    }
     L.push(...more(said.length, C.said, '  '));
   }
 
@@ -142,8 +194,15 @@ export function renderAt(input, C) {
   for (const c of charters) {
     L.push(`- slug: ${c.slug} · priority ${c.priority ?? 'none declared (your judgment)'}`);
     L.push(`  title: ${clip(c.title, C.title)}${c.dbStatus && c.dbStatus !== 'active' ? ` (in-app status: ${c.dbStatus})` : ''} · text from ${c.source}${c.model ? ` · builder model ${c.model}` : ''}`);
-    if (c.need && C.need) L.push(`  need: ${clip(c.need, C.need)}`);
-    if (c.coreAction && C.core) L.push(`  core action: ${clip(c.coreAction, C.core)}`);
+    // the charter's v3 recipe (recipe_definitions): work to it, not only to the slug
+    if (c.recipe) {
+      L.push(`  recipe "${clip(c.recipe.name, C.title)}" need: ${clip(c.recipe.need || '(the recipe states none)', C.recipeNeed)}`);
+      L.push(`  recipe core action: ${clip(c.recipe.coreAction || '(the recipe states none)', C.recipeCore)}`);
+    } else {
+      L.push(`  recipe: no recipe_definitions row for this slug${c.purpose ? `; its built-in purpose: ${c.purpose}` : ''}`);
+      if (c.need && C.need) L.push(`  need: ${clip(c.need, C.need)}`);
+      if (c.coreAction && C.core) L.push(`  core action: ${clip(c.coreAction, C.core)}`);
+    }
     if (c.lastDecidedAt || c.lastDispatchedAt) L.push(`  in-app: decided ${stampAgeShort(c.lastDecidedAt, nowMs)}, dispatched ${stampAgeShort(c.lastDispatchedAt, nowMs)}`);
     if (c.pacingNote) {
       const seen = firstWithNote.get(c.pacingNote);
@@ -184,6 +243,12 @@ export function renderAt(input, C) {
     for (const i of pend) L.push(`    - ${i.id}: ${clip(i.title, C.title)} (${i.effort ?? '-'}/${i.impact ?? '-'}/${i.risk ?? '-'})`);
   }
   if (s.unratedCount) L.push('  Unrated pending ideas are never auto-accepted; a builder that touches one re-files it with effort, impact and risk (1-5).');
+  if (input.ux) {
+    const n = input.ux.count;
+    L.push(n == null
+      ? `  uxPending (pending ${UX.titlePrefix} ideas): not read (${clip(input.ux.error, 100)}); ${UX.charter} cannot be checked, so defer it this wake`
+      : `  uxPending (pending ${UX.titlePrefix} ideas awaiting the operator): ${n}; ${UX.charter} is ${n > UX.pendingMax ? `REFUSED until the operator reviews them down to ${UX.pendingMax}` : `allowed while there are at most ${UX.pendingMax}`}`);
+  }
   const k = s.kpis ?? {};
   const kn = (k.unmeasuredNames ?? []).slice(0, C.kpiNames);
   L.push(`  KPIs: ${k.active ?? 0} active, ${k.unmeasured ?? 0} never measured${kn.length ? `, e.g. ${kn.map((n) => clip(n, 60)).join('; ')}` : ''}`);
@@ -191,9 +256,17 @@ export function renderAt(input, C) {
   if (!tasks.length) L.push('  in-app tasks in flight: nothing');
   else { L.push(`  in-app tasks in flight (${tasks.length}; DO NOT RE-DISPATCH these):`); for (const t of tasks) L.push(`    - ${clip(t.title, C.title)}${t.source_idea_id ? ` [idea ${t.source_idea_id}]` : ''} (${t.status}${t.started_at ? `, started ${shortStamp(t.started_at)}` : ''})`); }
   const live = runs.live ?? [], recent = runs.recent ?? [];
+  const qd = input.queue ?? { mine: [], total: 0 };
+  const queuedAt = new Map((qd.mine ?? []).map((q) => [q.runId, q]));
   if (!live.length) L.push('  headless runs in flight: nothing');
-  else { L.push('  headless runs in flight:'); for (const r of live) L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${r.branch ? ` on ${r.branch}` : ''} (created ${stampAgeShort(r.createdAt, nowMs)})`); }
-  if (recent.length) { L.push('  recent headless runs:'); for (const r of recent) L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${r.mergedSha ? ` ${String(r.mergedSha).slice(0, 8)}` : ''}${r.heldReason ? `: ${clip(r.heldReason, 140)}` : ''}`); }
+  else {
+    L.push('  headless runs in flight (a new dispatch must not overlap their paths):');
+    for (const r of live) {
+      const q = queuedAt.get(r.runId);
+      L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${q ? `, QUEUED at position ${q.position} of ${qd.total} (waiting ${q.waitedMin ?? '?'} min on ${q.reason})` : ''}${r.model ? ` (${r.model})` : ''}${r.repo && r.repo !== 'self' ? ` in repo ${r.repo}` : ''}${r.branch ? ` on ${r.branch}` : ''} (created ${stampAgeShort(r.createdAt, nowMs)}); paths: ${clip(pathsText(r.paths), 200)}`);
+    }
+  }
+  if (recent.length) { L.push('  recent headless runs:'); for (const r of recent) L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${r.mergedSha ? ` ${String(r.mergedSha).slice(0, 8)}` : ''}${r.council ? ` ${r.featureSlug}: ${r.council.mode} ${r.council.outcome}` : ''}${r.heldReason ? `: ${clip(r.heldReason, 140)}` : ''}`); }
   const gb = s.gitBranches ?? { total: 0, branches: [] };
   if (gb.error) L.push(`  unmerged autopilot branches: not read (${clip(gb.error, 160)})`);
   else if (!gb.total) L.push('  unmerged autopilot branches: none');
@@ -206,19 +279,92 @@ export function renderAt(input, C) {
   }
   if (s.readErrors?.length) L.push(`  app DB reads that failed (those figures are unknown, not zero): ${s.readErrors.map((e) => clip(e, 100)).join('; ')}`);
 
+  // COUNCIL: the quality gate, per feature (only when the brief holds a council charter)
+  if (input.council) L.push(...renderCouncil(input.council, C));
+
   // MACHINE
   head('MACHINE');
   const mem = machine.memory ?? {}, lim = machine.limit ?? {}, run = machine.running ?? {};
   L.push(`- memory: ${mem.freeGb ?? '?'} GB free${mem.totalGb != null ? ` of ${mem.totalGb}` : ''}; a dispatch needs ${mem.dispatchNeedGb ?? MEM.dispatchMinFreeGb} GB free${mem.stop ? ' - TRIPPED NOW' : ''}`);
   L.push(`- usage limit: ${lim.limited ? `LIMITED${lim.reason ? ` (${clip(lim.reason, 120)})` : ''}${lim.resetsAt ? `, resets ${lim.resetsAt}` : ', reset time unknown'} - dispatch is refused` : 'none'}`);
-  L.push(`- running builders: ${run.project ?? 0} of ${PER_PROJECT_CAP} in this project, ${run.global ?? 0} of ${GLOBAL_CAP} across all projects`);
+  const free = freeSlots(run);
+  L.push(`- running builders: ${run.project ?? 0} of ${PER_PROJECT_CAP} in this project (${free.project} slot(s) free), ${run.global ?? 0} of ${GLOBAL_CAP} across all projects (${free.global} free)`);
+  L.push(`- admission queue: ${qd.total ?? 0} run(s) waiting across all projects, ${(qd.mine ?? []).length} of them yours; a refused dispatch queues and starts in order when a slot frees`);
 
   // OUTPUT CONTRACT (schema/decision.schema.json)
   head('ANSWER WITH ONE JSON OBJECT AND NOTHING ELSE - no prose before or after, no code fence:');
-  L.push(`{"wakeId":"${wakeId}","dispatch":[{"charterSlug":"<slug>","reason":"<why this one now>","brief":"<the builder's whole task>","ideaIds":["<accepted idea id>"]}],"defer":[{"charterSlug":"<slug>","reason":"<why it waits>"}],"asks":[{"kind":"<kind>","question":"<the decision you need>","context":"<why the loop needs it>","options":[{"label":"<a choice>","action":"<what you do if chosen>"}]}],"ideaVerdicts":[{"ideaId":"<pending idea id>","status":"accepted|rejected","reason":"<why>"}],"say":"<message to the operator>|null","note":"<coverage note for your next wake>","nextWakeMinutes":<${WAKE_MIN}-${WAKE_MAX}>}`);
-  L.push(`Every key is always present ([] when empty, say null when silent). wakeId is exactly "${wakeId}"; every charter slug exactly once across dispatch and defer, no other slug; dispatch at most ${MAX_DISPATCH}; asks at most ${MAX_ASKS}, 2-4 options each, kind one of ${ASK_KINDS.join(', ')}; nextWakeMinutes an integer; every ideaId copied from this document.`);
+  const planShape = plan.wake ? `,"plan":{"milestones":[{"name":"<milestone>","goal":"<what landing it achieves>","targetDate":"YYYY-MM-DD","goals":[{"title":"<goal>","measure":"<observable proof>","description":"<optional>"}]}]}` : '';
+  L.push(`{"wakeId":"${wakeId}","dispatch":[{"charterSlug":"<slug>","reason":"<why this one now>","brief":"<the builder's whole task>","ideaIds":["<accepted idea id>"],"model":"sonnet|opus","paths":["<repo-relative path prefix or glob it will touch>"]}],"defer":[{"charterSlug":"<slug>","reason":"<why it waits>"}],"asks":[{"kind":"<kind>","question":"<the decision you need>","context":"<why the loop needs it>","options":[{"label":"<a choice>","action":"<what you do if chosen>"}]}],"ideaVerdicts":[{"ideaId":"<pending idea id>","status":"accepted|rejected","reason":"<why>"}],"say":"<message to the operator>|null","note":"<coverage note for your next wake>","nextWakeMinutes":<${WAKE_MIN}-${WAKE_MAX}>${planShape}}`);
+  if (plan.wake) L.push('`plan` is REQUIRED this wake (PLAN WAKE); on any other wake leave it out.');
+  if (input.council) L.push('A dispatch of council-lite-review or council-review REQUIRES "featureSlug":"<a feature slug from COUNCIL>" (and needs no paths); a rework delivery may carry the same featureSlug.');
+  L.push(`Every key is always present ([] when empty, say null when silent). wakeId is exactly "${wakeId}"; every charter slug exactly once across dispatch and defer, no other slug; dispatch at most ${MAX_DISPATCH}, and with two each carries non-empty disjoint paths and no idea in both; model optional${repos.length ? `; repo optional (self, ${repos.map((r) => r.key).join(', ')})` : ''}; asks at most ${MAX_ASKS}, 2-4 options each, kind one of ${ASK_KINDS.join(', ')}; nextWakeMinutes an integer; every ideaId copied from this document.`);
   L.push(`Charter slugs: ${charters.map((c) => c.slug).join(', ') || '(none)'}`);
   return L.join('\n') + '\n';
+}
+
+/**
+ * YOUR PLAN: the plan a plan wake decided, from the journal, with what the app shows of it. An id the
+ * outbox replay created is read back for its status; without one the milestone is "not in the app yet"
+ * and the replay's own evidence says why (e.g. "route missing (404)").
+ */
+export function renderPlan(j, C, nowMs) {
+  const L = ['', `YOUR PLAN (decided ${stampAgeShort(j.at, nowMs)} at wake ${shortId(j.wakeId)}; in the app: ${planAppState(j.entry)})`];
+  const created = j.entry?.created ?? { milestones: {}, goals: {} };
+  const prog = j.progress ?? { milestones: {}, goals: {} };
+  (j.plan?.milestones ?? []).forEach((m, i) => {
+    const mid = created.milestones?.[i];
+    const ms = mid ? (prog.milestones?.[mid]?.status ?? 'created, not read back') : 'not in the app yet';
+    const goals = m.goals ?? [];
+    const done = goals.filter((g, k) => prog.goals?.[created.goals?.[`${i}.${k}`]]?.status === 'done').length;
+    L.push(`${i + 1}. ${clip(m.name, C.title)}${m.targetDate ? ` (target ${m.targetDate})` : ''} - ${ms}; goals done ${done}/${goals.length}: ${clip(m.goal, C.note)}`);
+    goals.forEach((g, k) => {
+      const gr = prog.goals?.[created.goals?.[`${i}.${k}`]];
+      L.push(`   - ${clip(g.title, C.title)} - measure: ${clip(g.measure, 140)}${gr ? ` [${gr.status}${gr.progress != null ? ` ${gr.progress}%` : ''}]` : ''}`);
+    });
+  });
+  L.push('Steer dispatches by this plan: the earliest milestone not done is where the work goes next.');
+  return L;
+}
+const planAppState = (e) => {
+  if (!e) return 'no outbox entry';
+  if (e.state === 'replayed') return 'posted';
+  return `${e.state}${e.evidence ? ` (${clip(e.evidence, 140)})` : ' (the outbox replays it when the app is up)'}`;
+};
+
+/**
+ * COUNCIL: each feature (dev_use_cases) with its council state (journal + app), its latest must-address
+ * lines, the rounds each mode has used, and any review or rework run in flight. What needs the master's
+ * hand comes first; the list is cut by the budget with a count of every state.
+ */
+export function renderCouncil(c, C) {
+  const L = ['', 'COUNCIL (the quality gate. Every feature passes council-lite, reworked until lite-ready; a feature you judge major then gets the full council; a full ready goes to the operator as a Report with an Approval. The council never approves: only the operator does.)'];
+  if (c.error) { L.push(`- features not read (${clip(c.error, 140)}): no council dispatch can be checked against them this wake`); return L; }
+  const fs_ = c.features ?? [];
+  if (!fs_.length) { L.push('- no features (dev_use_cases) in the app for this project: nothing to review yet'); return L; }
+  const counts = {};
+  for (const f of fs_) counts[f.state] = (counts[f.state] ?? 0) + 1;
+  L.push(`- ${fs_.length} feature(s): ${Object.entries(counts).sort((a, b) => (COUNCIL_ORDER[a[0]] ?? 9) - (COUNCIL_ORDER[b[0]] ?? 9)).map(([k, n]) => `${k} ${n}`).join(', ')}`);
+  const cast = c.characters;
+  if (cast?.source) L.push(`- characters: ${cast.count != null ? `${cast.count} tracked under ${cast.source}` : `named in ${cast.source}`} on ${cast.base}; the value member judges against them`);
+  else if (cast && !cast.unknown) L.push(`- characters: NONE tracked on ${cast.base} (no uat/characters/*.md, no .claude/council/config.md with ## Characters). A review worktree carries tracked files only, so value reports unmeasured and every round ends incomplete; council-lite-review and council-review are REFUSED until a delivery adds a tracked .claude/council/config.md (## Characters naming the users, ## Gates naming the repo's checks). Dispatch that delivery first.`);
+  const order = [...fs_].sort((a, b) => (b.inFlight?.length ? 1 : 0) - (a.inFlight?.length ? 1 : 0)
+    || (COUNCIL_ORDER[a.state] ?? 9) - (COUNCIL_ORDER[b.state] ?? 9) || String(a.slug).localeCompare(String(b.slug)));
+  for (const f of order.slice(0, C.features)) {
+    const fly = (f.inFlight ?? []).map((r) => `${r.runId8} ${r.charter} ${r.state}`).join(', ');
+    L.push(`- ${f.slug}${f.tier === 'major' ? ' [major]' : ''}: ${f.state} · rounds lite ${f.rounds?.lite ?? 0}/${COUNCIL.maxRounds}, full ${f.rounds?.full ?? 0}/${COUNCIL.maxRounds}${fly ? ` · in flight: ${fly}` : ''}`);
+    const ma = (f.mustAddress ?? []).slice(0, C.mustAddress);
+    if (ma.length) L.push(`    must address: ${ma.map((m) => clip(m, 160)).join(' | ')}${(f.mustAddress?.length ?? 0) > ma.length ? ` (+${f.mustAddress.length - ma.length} more)` : ''}`);
+  }
+  L.push(...more(order.length, C.features, '  '));
+  L.push(`- To review: dispatch \`council-lite-review\` or \`council-review\` with \`featureSlug\` (no paths: a review writes no code). To rework: dispatch a delivery whose brief carries the must-address lines, with the same \`featureSlug\`; after it merges, a new lite round. A mode has ${COUNCIL.maxRounds} rounds; round ${COUNCIL.maxRounds + 1} is refused (stalled): ask the operator instead.`);
+  return L;
+}
+
+/** The newest decided wake that carried a plan: {wakeId, at, plan}, or null. */
+export function latestPlan(wakes) {
+  return wakes.filter((w) => w.status === 'decided' && w.decision?.plan)
+    .sort((a, b) => String(a.decidedAt ?? a.at).localeCompare(String(b.decidedAt ?? b.at)))
+    .map((w) => ({ wakeId: w.wakeId, at: w.decidedAt ?? w.at, plan: w.decision.plan })).at(-1) ?? null;
 }
 
 // ---------------------------------------------------------------- gathering
@@ -278,6 +424,38 @@ export function gatherContext(ref) {
       machine: b,
       docs: repoDocs(project.root),
     };
+    const table = queueTable(nowMs);
+    input.queue = { mine: table.filter((q) => q.slug === project.slug), total: table.length };
+    input.repos = briefRepos(brief).map((r) => ({ key: r.key, root: r.root, baseBranch: r.baseBranch, lane: laneFor(r.root) }));
+    // PLAN WAKE: no plan in the journal AND the app's dev_milestones is empty for the project. An
+    // unreadable milestones table is not "empty": it never starts a plan wake.
+    const planRec = latestPlan(wakes);
+    const entry = planRec ? loadOutbox(project.slug).find((e) => e.kind === 'plan' && e.source?.wakeId === planRec.wakeId) ?? null : null;
+    const app = milestonesOf(d, project.id);
+    input.plan = {
+      wake: !planRec && !app.error && app.rows.length === 0,
+      journal: planRec ? { ...planRec, entry: entry ? { state: entry.state, evidence: entry.evidence ?? null, created: entry.created ?? null } : null, progress: entry?.created ? planProgress(d, entry.created) : null } : null,
+      app,
+    };
+    // the UX gate: only for a project whose brief holds the ux-proposal charter (pof)
+    if (briefCharters(brief).some((c) => c.slug === UX.charter)) input.ux = uxPendingOf(d, project.id);
+    // COUNCIL: only for a project whose brief holds a council charter (else nothing could act on it)
+    if (briefCharters(brief).some((c) => REVIEW_CHARTERS[c.slug])) {
+      const uc = useCasesOf(d, project.id);
+      const dbRuns = councilRunsOf(d, project.id).rows;
+      const decisions = councilDecisionsOf(d, project.id).rows;
+      const journal = councilJournal(project.slug);
+      const flying = runs.filter((r) => LIVE_RUN_STATES.includes(r.state) && r.featureSlug);
+      input.council = {
+        error: uc.error,
+        characters: project.root ? { ...charactersOf(project.root, project.baseBranch), base: project.baseBranch } : null,
+        features: uc.rows.map((f) => ({
+          slug: f.slug, name: f.name, tier: f.tier ?? null,
+          ...featureState(f.slug, councilEvents(f.slug, journal, dbRuns), decisions),
+          inFlight: flying.filter((r) => r.featureSlug === f.slug).map((r) => ({ runId8: shortId(r.runId), charter: r.charterSlug, state: r.state })),
+        })),
+      };
+    }
     input.due = isDue(wakes, nowMs);
   } finally { d.close(); }
   return input;
@@ -292,14 +470,19 @@ export async function cmdContext({ flags = {} } = {}) {
   const file = path.join(contextDir(project.slug), `${input.wakeId}.md`);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, text);
-  saveWake(project.slug, { wakeId: input.wakeId, slug: project.slug, at: input.now, contextPath: file, status: 'context', project, due: input.due, chars: text.length });
+  // the wake remembers what it asked for: decide requires a plan on a plan wake and refuses one elsewhere
+  saveWake(project.slug, {
+    wakeId: input.wakeId, slug: project.slug, at: input.now, contextPath: file, status: 'context', project, due: input.due, chars: text.length,
+    planWake: input.plan?.wake === true,
+    ...(input.ux ? { uxPending: input.ux.count } : {}),   // decide's fallback when the DB cannot be read then
+  });
   const m = input.machine;
   return {
-    wakeId: input.wakeId, path: file, slug: project.slug, due: input.due, chars: text.length,
+    wakeId: input.wakeId, path: file, slug: project.slug, due: input.due, chars: text.length, planWake: input.plan?.wake === true,
     brakes: {
       memory: { freeGb: m.memory.freeGb, usedPct: m.memory.usedPct, needGb: m.memory.dispatchNeedGb, stop: m.memory.stop },
       limit: { limited: m.limit.limited, resetsAt: m.limit.resetsAt },
-      running: { project: m.running.project, global: m.running.global },
+      running: { project: m.running.project, global: m.running.global, free: freeSlots(m.running) },
     },
   };
 }

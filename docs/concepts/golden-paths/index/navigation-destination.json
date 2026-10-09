@@ -297,16 +297,6 @@
       "resolvedFrom": "basename",
       "verbatim": "sidebarData.ts"
     },
-    "src/features/shared/chrome/useTitleBarTray.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["198"],
-      "contexts": [
-        "| `powerMoves/registry.ts:52-60` — the \"Schedule a delay\" Power Move | `nav: { section: 'schedules' }`, `spotlightTestId: 'schedules-page'` | `launchPowerMove.ts:25` sets the section → Agents renders…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "useTitleBarTray.tsx"
-    },
     "src/features/teams/sub_mastermind/lib/useCanvasControlBridge.ts": {
       "count": 1,
       "sections": [7],
@@ -412,6 +402,15 @@
       "resolvedFrom": "basename",
       "verbatim": "bridge.ts"
     },
-    "types.ts": {"count":3,"sections":[1,4],"contexts":["a new member in a `…Tab` union in `types.ts`, a new `SubNavItem` in `sidebarData.ts`, a"],"resolved":false}
+    "types.ts": {"count":3,"sections":[1,4],"contexts":["a new member in a `…Tab` union in `types.ts`, a new `SubNavItem` in `sidebarData.ts`, a"],"resolved":false},
+    "useTitleBarTray.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["198"],
+      "contexts": [
+        "| `powerMoves/registry.ts:52-60` — the \"Schedule a delay\" Power Move | `nav: { section: 'schedules' }`, `spotlightTestId: 'schedules-page'` | `launchPowerMove.ts:25` sets the section → Agents renders…"
+      ],
+      "resolved": false
+    }
   }
 }

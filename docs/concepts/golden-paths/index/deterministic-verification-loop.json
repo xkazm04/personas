@@ -59,6 +59,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "core/src/crypto.rs"
     },
+    "src-tauri/engine/src/build_session/parser.rs": {"count":1,"sections":[9],"contexts":["payloads (`dispatcher.rs` 29, `build_session/parser.rs` 25, `connector_use.rs`"],"resolvedFrom":"suffix","verbatim":"build_session/parser.rs"},
     "src-tauri/engine/src/failure_signature.rs": {"count":2,"sections":[2],"contexts":["failure-signature breaker (`engine/src/failure_signature.rs`) so an"],"resolvedFrom":"suffix","verbatim":"engine/src/failure_signature.rs"},
     "src-tauri/engine/src/fix_loop.rs": {"count":3,"sections":[0,2],"lines":["23"],"contexts":["`src-tauri/engine/src/fix_loop.rs`, `evals/`), all 963 `.rs` files"]},
     "src-tauri/src/commands/infrastructure/schema_vocabulary.rs": {"count":1,"sections":[9],"lines":["183"],"contexts":["- **1 is a genuine fail-open size gate** — `schema_vocabulary.rs:183`,"],"resolvedFrom":"basename","verbatim":"schema_vocabulary.rs"},
@@ -72,7 +73,6 @@
       "verbatim": "build_session/fix_pass.rs"
     },
     "src-tauri/src/engine/build_session/oneshot.rs": {"count":3,"sections":[0,2],"lines":["392"],"contexts":["loops in the tree (`src/engine/build_session/oneshot.rs`,"],"resolvedFrom":"suffix","verbatim":"src/engine/build_session/oneshot.rs"},
-    "src-tauri/src/engine/build_session/parser.rs": {"count":1,"sections":[9],"contexts":["payloads (`dispatcher.rs` 29, `build_session/parser.rs` 25, `connector_use.rs`"],"resolvedFrom":"suffix","verbatim":"build_session/parser.rs"},
     "src-tauri/src/engine/build_session/tool_tests.rs": {"count":1,"sections":[2],"lines":["1033"],"contexts":["`generate_test_summary` (`tool_tests.rs:1033`) is an LLM that writes a"],"resolvedFrom":"basename","verbatim":"tool_tests.rs"},
     "src-tauri/src/engine/tool_runner.rs": {"count":1,"sections":[7],"lines":["700"],"contexts":["`api_outcome_from_http` (`tool_runner.rs:700`) puts the response body (500 chars)"],"resolvedFrom":"basename","verbatim":"tool_runner.rs"},
     "src-tauri/src/mcp_server/tools.rs": {"count":1,"sections":[9],"contexts":["20, `mcp_server/tools.rs` 16), and nothing in the syntax says which of them"],"resolvedFrom":"suffix","verbatim":"mcp_server/tools.rs"},

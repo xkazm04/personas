@@ -175,6 +175,7 @@
       ],
       "resolved": false
     },
+    "rules.json": {"count":1,"sections":[9],"contexts":["`rules.json`; **re-extracted from this document and re-run, with identical counts** — 44 matches /"],"resolved":false},
     "scan.ts": {
       "count": 2,
       "sections": [6],
@@ -185,7 +186,6 @@
       "resolved": false
     },
     "scripts/census/": {"count":1,"sections":[9],"contexts":["(`scripts/census/`) and implements the fail-loud contract, so this path"],"resolved":false,"isDir":true},
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["`rules.json`; **re-extracted from this document and re-run, with identical counts** — 44 matches /"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "src-tauri/": {"count":2,"sections":[0],"contexts":["**Sweep size.** All **963** `.rs` files under `src-tauri/` and all **4,829** `.ts`/`.tsx` files"],"resolved":false,"isDir":true},
     "src-tauri/core/src/context_fingerprint.rs": {"count":1,"sections":[7],"lines":["93-105"],"contexts":["`src-tauri/core/src/context_fingerprint.rs:93-105` already counts `promise_all_count`,"]},
     "src-tauri/db/src/settings_keys.rs": {
@@ -195,6 +195,14 @@
       "contexts": ["(`settings_keys.rs:576`), and the observed ceiling is 10, not 4, at every scale. The uncapped"],
       "resolvedFrom": "basename",
       "verbatim": "settings_keys.rs"
+    },
+    "src-tauri/engine/src/project_tracking/subscription.rs": {
+      "count": 1,
+      "sections": [1],
+      "lines": ["1451"],
+      "contexts": ["`spawn_subscriptions` (`subscription.rs:1451`) spawns one long-lived loop per subscription — that"],
+      "resolvedFrom": "basename",
+      "verbatim": "subscription.rs"
     },
     "src-tauri/engine/src/queue.rs": {"count":2,"sections":[0],"lines":["10"],"contexts":["`src-tauri/engine/src/test_runner.rs` and `src-tauri/engine/src/queue.rs` read in full."]},
     "src-tauri/engine/src/test_runner.rs": {"count":2,"sections":[6],"lines":["1601-1699"],"contexts":["`src-tauri/engine/src/test_runner.rs` and `src-tauri/engine/src/queue.rs` read in full."],"resolved":false},
@@ -231,14 +239,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "polling.rs"
-    },
-    "src-tauri/src/engine/project_tracking/subscription.rs": {
-      "count": 1,
-      "sections": [1],
-      "lines": ["1451"],
-      "contexts": ["`spawn_subscriptions` (`subscription.rs:1451`) spawns one long-lived loop per subscription — that"],
-      "resolvedFrom": "basename",
-      "verbatim": "subscription.rs"
     },
     "src-tauri/src/ipc_auth.rs": {"count":1,"sections":[6],"contexts":["the frontend. That stampede raced the `x-ipc-token` injection (see `ipc_auth.rs`) and produced"],"resolvedFrom":"basename","verbatim":"ipc_auth.rs"},
     "src/": {"count":4,"sections":[0,9],"contexts":["under `src/` (the census engine's own walk agrees at 4,829). Every `join_all`, `try_join_all`,"],"resolved":false,"isDir":true},

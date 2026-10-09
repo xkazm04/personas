@@ -219,7 +219,7 @@ CREATE INDEX IF NOT EXISTS idx_ce_enabled    ON credential_events(enabled);
 
 CREATE TABLE IF NOT EXISTS persona_manual_reviews (
     id                TEXT PRIMARY KEY,
-    execution_id      TEXT NOT NULL REFERENCES persona_executions(id) ON DELETE CASCADE,
+    execution_id      TEXT REFERENCES persona_executions(id) ON DELETE CASCADE,
     persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
     title             TEXT NOT NULL,
     description       TEXT,

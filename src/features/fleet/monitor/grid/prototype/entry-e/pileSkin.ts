@@ -2,7 +2,7 @@
 // session lines, the Lanes' session cards).
 //
 // THE COLOUR DECISION IS NOT MADE HERE. A persona's pile is the Board's own
-// (`fleetboard/piles.ts` `pileKey`), and a session is folded into the same
+// (`grid/skin/piles.ts` `pileKey`), and a session is folded into the same
 // four piles through the fold the panel filter already speaks
 // (`boardFilter.ts` `sessionBucket`), so a command-bar tag, a line's fill and
 // the Board's tile cannot disagree about one thing:
@@ -12,16 +12,16 @@
 //   resting - idle, queued, hibernated, finished: alive, nothing to do
 //   off     - ended: a clean exit, or a queue row that expired unrun
 //
-// What this module adds is only the SKIN: the Board's `fb-tile` pile classes
+// What this module adds is only the SKIN: the `fb-tile` pile classes
 // with `--fb-tone` from `PILE_VISUAL`, and `ae-pile`, which takes the tile out
 // of the Board's absolute layout and into a list (entryE.css).
 
 import type { CSSProperties } from 'react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { PersonaCardModel } from '../../../monitorModel';
-import { PILE_VISUAL, pileKey, type Pile, type PileKey } from '../../../fleetboard/piles';
+import { PILE_VISUAL, pileKey, type Pile, type PileKey } from '../../skin/piles';
 import { sessionBucket } from './boardFilter';
-import '../../../fleetboard/fleetboard.css';
+import '../../skin/skin.css';
 
 /** A session's pile with its needs tone resolved. */
 export function sessionPileKey(s: Pick<FleetSession, 'state' | 'exitCode'>): PileKey {

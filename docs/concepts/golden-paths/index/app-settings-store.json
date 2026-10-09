@@ -181,6 +181,7 @@
       "resolved": false
     },
     "portfolio.rs": {"count":1,"sections":[5],"lines":["477"],"contexts":["**not** check size. `portfolio.rs:477` writes `dev_tools_cross_project_metadata` through the repo,"],"resolved":false},
+    "redact.rs": {"count":1,"sections":[5],"lines":["34"],"contexts":["- **Declaring the key literal a second time — 10 sites across 8 files.** `redact.rs:34`,"],"resolved":false},
     "resilience.rs": {
       "count": 1,
       "sections": [6],
@@ -190,6 +191,7 @@
       ],
       "resolved": false
     },
+    "runner/mod.rs": {"count":4,"sections":[5,8],"lines":["1468","1232"],"contexts":["`runner/mod.rs:1468` accepts `\"1\"`, a token `validate_value` would have **rejected on write** — so"],"resolved":false},
     "schema.rs": {"count":3,"sections":[5,7],"lines":["595-599","597","595"],"contexts":["(`schema.rs:595-599`) and the settings module has **zero** references to `crypto`, `encrypt` or"],"resolved":false},
     "schemas.ts": {"count":1,"sections":[6],"lines":["278"],"contexts":["`DeploymentCreateSchema` already accepts `maxMonthlyBudgetUsd` (`schemas.ts:278`). Deriving the"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["mechanism already exists at [`scripts/census/`](../../../scripts/census/) and **`npm run census:check`"],"resolved":false,"isDir":true},
@@ -211,7 +213,16 @@
       "resolvedFrom": "suffix",
       "verbatim": "core/src/models/settings_audit_log.rs"
     },
-    "src-tauri/core/src/redact.rs": {"count":2,"sections":[5,7],"lines":["34"],"contexts":["- **Declaring the key literal a second time — 10 sites across 8 files.** `redact.rs:34`,"],"resolvedFrom":"basename","verbatim":"redact.rs"},
+    "src-tauri/core/src/redact.rs": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["34"],
+      "contexts": [
+        "| `core/src/redact.rs:34` + `src/lib.rs:1282-1288` | `REDACT_TRACES_ENABLED_KEY = \"redact_traces_enabled\"` is **not in `ALLOWED_KEYS`**. Grepped across `.rs`/`.ts`/`.tsx`: **3 references total — the…"
+      ],
+      "resolvedFrom": "suffix",
+      "verbatim": "core/src/redact.rs"
+    },
     "src-tauri/db/src": {"count":1,"sections":[9],"contexts":["| renamed registry root (`src-tauri/db/src` → `…/db/srcx`) | **1** |"],"resolved":false,"isDir":true},
     "src-tauri/db/src/repos/core/personas.rs": {
       "count": 1,
@@ -347,14 +358,6 @@
       "contexts": ["right.** The API key goes to `keyring::Entry` via `engine/http_engine/secrets.rs:28-33`; only the"],
       "resolvedFrom": "suffix",
       "verbatim": "engine/http_engine/secrets.rs"
-    },
-    "src-tauri/src/engine/runner/mod.rs": {
-      "count": 4,
-      "sections": [5,8],
-      "lines": ["1468","1232"],
-      "contexts": ["`runner/mod.rs:1468` accepts `\"1\"`, a token `validate_value` would have **rejected on write** — so"],
-      "resolvedFrom": "suffix",
-      "verbatim": "runner/mod.rs"
     },
     "src/**": {"count":1,"sections":[],"contexts":["`src/**` (**4,829 `.ts`/`.tsx`**, `frontend.tsFiles`) · the 1,569-line key registry parsed"],"resolved":false,"isDir":true},
     "src/api/system/settings.ts": {"count":2,"sections":[3,7],"lines":["10"],"contexts":["- **`src/api/system/settings.ts`** — the four IPC wrappers, all through `invokeWithTimeout`."]},

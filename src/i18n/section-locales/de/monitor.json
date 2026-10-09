@@ -227,6 +227,9 @@
   "grid_dock_collapse": "Sendekonsole ausblenden",
   "grid_fleet_exited": "Diese Sitzung ist beendet — ihr Terminal existiert nicht mehr.",
   "grid_fleet_kill": "Sitzung beenden",
+  "terminal_asleep_label": "Warum sie schläft",
+  "terminal_wake_failed": "Diese Sitzung lässt sich nicht aufwecken",
+  "terminal_wake_failed_hint": "Beende die Sitzung, um sie vom Board zu entfernen.",
   "grid_messages_empty": "Noch keine Kanalaktivität.",
   "grid_rail_loading_more": "Weitere werden geladen…",
   "grid_session_recap_ai_title": "Sitzungstitel",
@@ -615,6 +618,14 @@
   "orch_never_served": "nie bedient",
   "orch_refusal_budget": "Monatsbudget aufgebraucht",
   "orch_refusal_concurrency": "Maschine an ihrem Persona-Limit",
+  "orch_refusal_headless": "Ein Terminal-App-Master hält dieses Projekt",
+  "orch_headless_running": "Headless - läuft",
+  "orch_headless_idle": "Headless - untätig",
+  "orch_headless_stale": "Headless - veraltet",
+  "orch_headless_hint": "Der App Master dieses Projekts läuft in einem Terminal (/appmaster). Der Master in der App tritt zurück, solange seine Meldungen aktuell sind.",
+  "orch_headless_next_wake": "Nächstes Aufwachen:",
+  "orch_headless_no_wake": "nicht angekündigt",
+  "orch_headless_reported": "Letzte Meldung:",
   "orch_refusal_daily_cap": "Tageslimit erreicht",
   "orch_refusal_in_flight": "Läuft noch ihren letzten Durchgang",
   "orch_refusal_interval_floor": "Ruht bis zu ihrem Intervall",
@@ -1073,5 +1084,6 @@
   "dc_hub_row_open_aria": "Öffnen: {title}",
   "dc_hub_triage_all_none": "Nichts wartend",
   "dc_hub_triage_all_short": "Alle",
-  "dc_hub_triage_all_walk_tip": "Alle {count} der Reihe nach durchgehen, Dringendstes zuerst"
+  "dc_hub_triage_all_walk_tip": "Alle {count} der Reihe nach durchgehen, Dringendstes zuerst",
+  "grid_rail_triage_modal_aria": "Details der Prüfung"
 }

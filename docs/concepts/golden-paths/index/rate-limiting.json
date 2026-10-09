@@ -115,6 +115,22 @@
       "resolvedFrom": "suffix",
       "verbatim": "db/src/builtin_connectors.rs"
     },
+    "src-tauri/engine/src/automation_runner.rs": {
+      "count": 1,
+      "sections": [0],
+      "lines": ["356-364"],
+      "contexts": ["- **`automation_runner.rs:356-364` names the gap in a code comment**: 429 was added to the retryable"],
+      "resolvedFrom": "basename",
+      "verbatim": "automation_runner.rs"
+    },
+    "src-tauri/engine/src/build_session/parser.rs": {
+      "count": 2,
+      "sections": [0,7],
+      "lines": ["86"],
+      "contexts": ["`build_session/parser.rs:86` matches `\"system\" | \"rate_limit_event\" => return vec![]`, and its own"],
+      "resolvedFrom": "suffix",
+      "verbatim": "build_session/parser.rs"
+    },
     "src-tauri/engine/src/inflight_guard.rs": {
       "count": 2,
       "sections": [3],
@@ -130,6 +146,14 @@
       "contexts": ["`engine/src/p2p/messaging.rs`, `src/engine/api_proxy.rs`, `src/engine/webhook.rs`,"],
       "resolvedFrom": "suffix",
       "verbatim": "engine/src/p2p/messaging.rs"
+    },
+    "src-tauri/engine/src/platforms/github.rs": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["566"],
+      "contexts": ["| mutual exclusion — already in flight | `background_job.rs:233/252/404`, `platforms/github.rs:566`, `team_preset_adopter.rs:235/631` | **6** |"],
+      "resolvedFrom": "suffix",
+      "verbatim": "platforms/github.rs"
     },
     "src-tauri/engine/src/rate_limiter.rs": {
       "count": 9,
@@ -191,22 +215,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/api_proxy.rs"
     },
-    "src-tauri/src/engine/automation_runner.rs": {
-      "count": 3,
-      "sections": [0,6],
-      "lines": ["356-364","352-365"],
-      "contexts": ["`src/engine/smee_relay.rs`, `src/engine/automation_runner.rs`, `src/notifications.rs`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "src/engine/automation_runner.rs"
-    },
-    "src-tauri/src/engine/build_session/parser.rs": {
-      "count": 2,
-      "sections": [0,7],
-      "lines": ["86"],
-      "contexts": ["`build_session/parser.rs:86` matches `\"system\" | \"rate_limit_event\" => return vec![]`, and its own"],
-      "resolvedFrom": "suffix",
-      "verbatim": "build_session/parser.rs"
-    },
     "src-tauri/src/engine/management_api.rs": {
       "count": 6,
       "sections": [0,2,3,6],
@@ -222,14 +230,6 @@
       "contexts": ["`src/engine/management_api.rs`, `src/engine/mcp_tools.rs`, `src/engine/tool_runner.rs`,"],
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/mcp_tools.rs"
-    },
-    "src-tauri/src/engine/platforms/github.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["566"],
-      "contexts": ["| mutual exclusion — already in flight | `background_job.rs:233/252/404`, `platforms/github.rs:566`, `team_preset_adopter.rs:235/631` | **6** |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "platforms/github.rs"
     },
     "src-tauri/src/engine/resource_listing.rs": {
       "count": 1,
@@ -274,6 +274,7 @@
     "src-tauri/{src,engine,core}": {"count":1,"sections":[0],"contexts":["`src-tauri/{src,engine,core}`; every `jitter` hit in `src/` is visual layout or a competition"],"resolved":false,"isDir":true},
     "src/": {"count":2,"sections":[0],"contexts":["963; `shared-facts.json#rust.files` = 963) and all **4,829** `.ts`/`.tsx` under `src/`"],"resolved":false,"isDir":true},
     "src/api/system/tierUsage.ts": {"count":3,"sections":[3,7],"lines":["8"],"contexts":["`src/api/system/tierUsage.ts`, and the two direct third-party clients in `research-lab/sub_literature/`."]},
+    "src/engine/automation_runner.rs": {"count":2,"sections":[6],"lines":["352-365"],"contexts":["`src/engine/smee_relay.rs`, `src/engine/automation_runner.rs`, `src/notifications.rs`,"],"resolved":false},
     "src/features/settings/sub_network/components/NetworkDashboard.tsx": {
       "count": 1,
       "sections": [7],

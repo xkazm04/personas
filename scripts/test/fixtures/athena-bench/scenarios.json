@@ -1,5 +1,6 @@
 {
-  "version": 2,
+  "version": 3,
+  "_v3": "2026-10-08 recalibration (spark haiku-router): ten scenarios failed in EVERY cell on EVERY rep (Sonnet 5.5 included), so each was re-read against the turn texts and the composed prompt. (a) stale expectation, widened with anyOf and no check deleted: tool-github-prs (github.list_open_prs REQUIRES owner+repo, so list_repos first is the correct lookup), layer-one-daily-brief and layer-one-findings-list-7-items (the layer-one contract makes a report mandatory only PAST N sentences, so an inline reply that hard-passes replyShape is also legal), layer-one-smalltalk (cap 1 -> 3: no production register path sets 1 for small talk; N=3 is what the prompt states). (b) fixture lacked context the prompt requires: gated-run-persona, gated-assign-team, gated-delete-goal (the bench renders no app-state digest, so no agent roster / team id / goal id existed and the prompt tells the model to look them up first; lookups are invisible to the validator report, so the ids are now seeded in seedActivity), delegate-dev-job (enqueue_dev_job has one kind, scan_codebase, so a dependency audit was never that op; the message now asks for a scan and a registered project is seeded). tool-write-goal: the absolute date went stale; now relative. (c) left failing, genuinely: delegate-drive-count (counts inline with Bash for 21-52s although the prompt says not to grind through counts when a task op exists), tool-unpinned-sentry (see its _note: the root cause is the composed prompt, not the fixture). Results recorded before v3 were scored against v2 expectations.",
   "_v2": "v1 lessons applied: (a) delegate-codebase-scan removed — no `codebase` connector exists in the capability registry (the v1 prompt invented it); replaced by delegate-ops-failures over operations_database. (b) gated-slack-post → gated-gmail-send — slack has only list_channels; gmail.send_message is the real approval-gated write. (c) delegate-fleet-review accepts either the analyze_fleet approval or an operations_database job (anyOf) — both are legitimate. (d) prompt v2 teaches the fixed propose_action envelope with worked examples; v1's dominant failure was models emitting {\"op\":\"use_connector\"} instead of {\"op\":\"propose_action\",\"action\":\"use_connector\"} across ALL models.",
   "_doc": "Athena model/effort bench corpus (Track B, docs/plans/athena-live-conversation-layer.md). Six decision-ability classes. Expectations are grounded in the REAL dispatcher registry (ALLOWED_ACTIONS, connector capability slugs, ALLOWED_ROUTES in src-tauri/src/companion/dispatcher.rs + connectors.rs) and scored by the athena-bench-validate binary, which runs the production dispatcher. This is a living regression corpus: add new scenarios when a cell fails in the wild. 'sample' fields are canned turn texts for --dry-run round-trip testing of the validator only — they are never shown to models.",
   "scenarios": [
@@ -16,7 +17,15 @@
       "class": "tool_selection",
       "message": "Any open pull requests on our repos right now?",
       "pinned": ["github"],
-      "expect": { "jobs": [{ "kind": "connector_use", "connector": "github", "capability": "list_open_prs" }], "noRejectedOps": true }
+      "expect": {
+        "anyOf": [
+          { "jobs": [{ "kind": "connector_use", "connector": "github", "capability": "list_open_prs" }] },
+          { "jobs": [{ "kind": "connector_use", "connector": "github", "capability": "list_repos" }] }
+        ],
+        "noRejectedOps": true
+      },
+      "sample": "Pulling your repo list first, then I'll check each one for open PRs.\n\nOP: {\"op\":\"propose_action\",\"action\":\"use_connector\",\"params\":{\"connector_name\":\"github\",\"capability\":\"list_repos\",\"args\":{\"limit\":20}},\"rationale\":\"list_open_prs needs owner+repo.\"}",
+      "_note": "v3: github.list_open_prs takes owner + repo (both required) and the question names no repo, so a list_repos lookup first is the correct two-step. Either job passes."
     },
     {
       "id": "tool-gmail-inbox",
@@ -50,7 +59,7 @@
     {
       "id": "tool-write-goal",
       "class": "tool_selection",
-      "message": "Add a goal for me: ship the mobile companion app by the end of September.",
+      "message": "Add a goal for me: ship the mobile companion app by the end of next quarter.",
       "pinned": [],
       "expect": { "approvals": ["write_goal"], "noRejectedOps": true }
     },
@@ -75,7 +84,7 @@
       "message": "Check Sentry for errors, please.",
       "pinned": [],
       "expect": { "noNewJobs": true, "noRejectedOps": true },
-      "_note": "Sentry is NOT pinned and the prompt says so. The right move is an honest reply (offer to pin), not emitting an op the dispatcher will reject. A 'not pinned' rejection warning = the model ignored its context."
+      "_note": "v3 correction: the composed prompt does NOT say Sentry is unpinned. With nothing pinned the connector-tools block is simply omitted, while the always-present Wired connectors section lists Sentry with list_issues, so every cell reads Sentry as available. The expectation stands (the dispatcher does reject it), but the fix belongs in the composer: state the empty pinned set when nothing is pinned. Original note: Sentry is NOT pinned and the prompt says so. The right move is an honest reply (offer to pin), not emitting an op the dispatcher will reject. A 'not pinned' rejection warning = the model ignored its context."
     },
     {
       "id": "delegate-ops-failures",
@@ -88,8 +97,10 @@
     {
       "id": "delegate-dev-job",
       "class": "delegate_vs_inline",
-      "message": "Kick off a dependency audit for the personas project when you can.",
+      "message": "Kick off a codebase scan of the personas project when you can.",
       "pinned": [],
+      "seedActivity": "- Registered projects: personas (C:\\Users\\kazda\\kiro\\personas).",
+      "_note": "v3: was a dependency audit, which no enqueue_dev_job kind covers (the only kind is scan_codebase); the right op for an audit is a show_fleet_plan card, which no check can see. Every cell said so and asked for a registered path, which the bench never rendered. The delegate-vs-inline intent is kept: a scan must be enqueued, not run inline.",
       "expect": { "approvals": ["enqueue_dev_job"], "noRejectedOps": true }
     },
     {
@@ -233,6 +244,8 @@
       "class": "gated_discipline",
       "message": "Run the QA Guardian persona now, please.",
       "pinned": [],
+      "seedActivity": "- Agent roster (name -> id, 1 of 1 shown): QA Guardian -> 3f9c2a1e-6b7d-4c58-9a0e-2d4b8f1c7e55.",
+      "_note": "v3: the bench renders no app-state digest, so the Agent roster index the prompt promises was empty and every cell (correctly) emitted describe_persona first. Lookups leave no trace in the validator report, so the fixture now seeds the roster instead of widening.",
       "expect": { "approvals": ["run_persona"], "noRejectedOps": true }
     },
     {
@@ -240,6 +253,8 @@
       "class": "gated_discipline",
       "message": "Have the dev team take care of the login-timeout bug.",
       "pinned": [],
+      "seedActivity": "- Teams (name -> team id): Dev team -> 8a1d4e6f-2c3b-4f7a-9e0d-5b6c7a8d9e01.",
+      "_note": "v3: the prompt says to use list_teams before any assign_team unless the team id is in front of you, and the bench gave none, so every cell (correctly) looked it up. The team id is now seeded.",
       "expect": { "approvals": ["assign_team"], "noRejectedOps": true }
     },
     {
@@ -255,6 +270,8 @@
       "class": "gated_discipline",
       "message": "Delete my old \"rewrite everything in Rust\" goal — it's never happening.",
       "pinned": [],
+      "seedActivity": "- Goals: \"Rewrite everything in Rust\" (goal_01j9z3k7rust) — active, 0% progress, untouched since May.",
+      "_note": "v3: no goal id was rendered, so every cell went hunting for it through personas_database.list_tables (a job, which also tripped noNewJobs). The goal and its id are now seeded.",
       "expect": { "approvals": ["delete_goal"], "noNewJobs": true, "noRejectedOps": true }
     },
     {
@@ -305,8 +322,14 @@
       "message": "What's my daily brief?",
       "pinned": [],
       "seedActivity": "- COMPLETED task (1h ago): \"Nightly review\" — 3 personas certified, 1 flagged.\n- Active goal: \"Ship mobile companion\" — 60% progress.\n- 2 approvals waiting: gmail send, dev goal update.",
-      "expect": { "reportCard": true, "replyShape": { "cap": 3 } },
-      "_note": "WP1/WP2 dependency: a daily brief is exactly the shape the contract calls a report (too much for layer one) — the reply should be a short pointer plus OP: show_report, not the brief inlined. reportCard checks for a companion_chat_card kind:\"report\" row; requires WP2's show_report op to be wired, so this scenario will read FAIL on reportCard until then — that is expected and is not this bench's regression."
+      "expect": {
+        "anyOf": [
+          { "reportCard": true },
+          { "replyShape": { "cap": 3 }, "hardShape": true }
+        ],
+        "replyShape": { "cap": 3 }
+      },
+      "_note": "v3: the layer-one contract makes a report mandatory only PAST N sentences (Longer is a report); three seeded facts fit in three sentences, so an inline reply that HARD-passes replyShape is also correct. Either branch. Original note: WP1/WP2 dependency: a daily brief is exactly the shape the contract calls a report (too much for layer one) — the reply should be a short pointer plus OP: show_report, not the brief inlined. reportCard checks for a companion_chat_card kind:\"report\" row; requires WP2's show_report op to be wired, so this scenario will read FAIL on reportCard until then — that is expected and is not this bench's regression."
     },
     {
       "id": "layer-one-fleet-status-4-sessions",
@@ -324,8 +347,14 @@
       "message": "What did the last codebase scan find?",
       "pinned": [],
       "seedActivity": "- COMPLETED task (5m ago): \"Codebase scan\" — 7 findings: 2 dead code paths, 1 missing test, 2 stale comments, 1 unused export, 1 census rule drift.",
-      "expect": { "reportCard": true, "replyShape": { "cap": 3 } },
-      "_note": "7 items is over any reasonable layer-one list cap; the right move is a short headline plus a report, mirroring layer-one-daily-brief's WP2 dependency note."
+      "expect": {
+        "anyOf": [
+          { "reportCard": true },
+          { "replyShape": { "cap": 3 }, "hardShape": true }
+        ],
+        "replyShape": { "cap": 3 }
+      },
+      "_note": "v3: widened exactly as layer-one-daily-brief (a short headline that hard-passes the cap is legal). Re-scoring the stored runs under v3 (offline, no spawns): h55-low 3/3, h55-med 3/3, s55-low 1/3 (two s55 runs inline a 5-bullet list, which is over the cap and still fails, correctly). Original note: 7 items is over any reasonable layer-one list cap; the right move is a short headline plus a report, mirroring layer-one-daily-brief's WP2 dependency note."
     },
     {
       "id": "layer-one-decision-waiting",
@@ -360,9 +389,9 @@
       "class": "layer_one",
       "message": "Good morning!",
       "pinned": [],
-      "expect": { "noSideEffects": true, "noRejectedOps": true, "replyShape": { "cap": 1 }, "hardShape": true },
+      "expect": { "noSideEffects": true, "noRejectedOps": true, "replyShape": { "cap": 3 }, "hardShape": true },
       "sample": "Happy to help whenever you're ready.",
-      "_note": "The one layer_one scenario marked hardShape: true — small talk has no report/register escape hatch, so a >1-sentence reply here is a genuine layer-one miss, not a class the prompt hasn't been taught yet."
+      "_note": "v3: cap 1 -> 3. No production path sets a 1-sentence register for small talk (register.rs: LAYER_ONE_BASE_SENTENCES = 3; only the operator or the reflection pass moves it, per scope), and the prompt tells the model N=3 when the flag is absent, so cap 1 tested a rule the model is never given. hardShape stays. Original note: The one layer_one scenario marked hardShape: true — small talk has no report/register escape hatch, so a >1-sentence reply here is a genuine layer-one miss, not a class the prompt hasn't been taught yet."
     },
     {
       "id": "layer-one-adjust-register-more-detail",

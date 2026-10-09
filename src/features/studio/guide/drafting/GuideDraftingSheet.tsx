@@ -10,7 +10,7 @@ import DraftingPage, { type DraftingRegion, type RegionState } from './DraftingP
 import DraftingPen from './DraftingPen';
 import DraftingTitleBlock, { type TitleGoal } from './DraftingTitleBlock';
 import { LETTERING, doneShare, drawingOf, proofFilter, regionForGoal, sheetMoment } from './draftingModel';
-import { useBuildUp } from './useBuildUp';
+import { useBuildUp } from '@/hooks/utility/interaction/useBuildUp';
 import './drafting.css';
 
 /**

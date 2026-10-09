@@ -1,0 +1,111 @@
+{
+  "module": "plugins/lifecycle/overseer-folded",
+  "kit": null,
+  "query": null,
+  "reducedMotion": false,
+  "steps": null,
+  "label": "overseer-folded",
+  "createdAt": "2026-10-09T07:26:04.915Z",
+  "browser": "153.0.8010.12",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 6,
+    "note": "Synthetic: every Overseer item closed or set aside; the goal panel starts folded."
+  },
+  "ok": true,
+  "unknownIpcCommands": [
+    "dev_tools_workspace_set_active"
+  ],
+  "shots": [
+    {
+      "file": "overseer-folded-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1
+      },
+      "stable": true,
+      "textLength": 1170,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Land is the weakest step: failing. D",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "overseer-folded-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1
+      },
+      "stable": true,
+      "textLength": 1264,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Land is the weakest step: fa",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

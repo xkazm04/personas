@@ -18,7 +18,10 @@ use crate::AppState;
 // Constants
 // ============================================================================
 
-const SYNTHESIS_MODEL: &str = "claude-sonnet-4-6";
+/// Team synthesis emits a strict JSON selection; model and effort come from
+/// the class table (`personas_core::model_class`), never from this file.
+const SYNTHESIS_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::StructuredJson;
 const SYNTHESIS_TIMEOUT_SECS: u64 = 120;
 
 /// Max user-request length (chars) after trimming — anti-bloat guard. Generous
@@ -423,6 +426,49 @@ pub async fn synthesize_team_from_templates(
     .await
 }
 
+/// A validated synthesis answer: the parsed response plus each selected
+/// template that names a real one, with its role.
+type ValidatedSynthesis<'t> = (
+    SynthesisResponse,
+    Vec<(&'t crate::db::models::PersonaDesignReview, String)>,
+);
+
+/// The synthesis output's existing validator: a JSON object carrying
+/// `templates` + `connections`, a non-empty selection, and at least one
+/// selected id that names a real template. `Err` is the rejection reason the
+/// escalation keys on.
+fn parse_synthesis_output<'t>(
+    output_text: &str,
+    template_map: &std::collections::HashMap<&str, &'t crate::db::models::PersonaDesignReview>,
+) -> Result<ValidatedSynthesis<'t>, String> {
+    use crate::commands::design::n8n_transform::cli_runner::extract_first_json_object_matching;
+
+    let json_str = extract_first_json_object_matching(output_text, |val| {
+        val.get("templates").is_some() && val.get("connections").is_some()
+    })
+    .ok_or_else(|| "Failed to extract JSON from Claude output for team synthesis".to_string())?;
+
+    let response: SynthesisResponse = serde_json::from_str(&json_str)
+        .map_err(|e| format!("Failed to parse synthesis response: {e}"))?;
+
+    if response.templates.is_empty() {
+        return Err("LLM returned empty template selection".into());
+    }
+
+    let mut valid_templates = Vec::new();
+    for st in &response.templates {
+        if let Some(tmpl) = template_map.get(st.review_id.as_str()) {
+            valid_templates.push((*tmpl, st.role.clone()));
+        }
+    }
+
+    if valid_templates.is_empty() {
+        return Err("None of the selected template IDs matched existing templates".into());
+    }
+
+    Ok((response, valid_templates))
+}
+
 /// Shared synthesis pipeline: one Claude call over `prompt_text`, parse +
 /// validate the selection against `templates`, then assemble personas + team +
 /// members + connections + handoff wiring, with compensating rollback on any
@@ -442,67 +488,50 @@ async fn run_crew_synthesis(
     spend_trigger: &'static str,
 ) -> Result<TeamSynthesisResult, AppError> {
     use crate::commands::credentials::ai_artifact_flow::run_claude_prompt_tracked;
-    use crate::commands::design::n8n_transform::cli_runner::extract_first_json_object_matching;
-    use crate::engine::prompt;
+    use crate::engine::cli_process::{
+        headless_claude_args, is_escalation_leg, with_escalation, AttemptError,
+    };
     use crate::engine::topology_types::compute_dag_layout;
 
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push(SYNTHESIS_MODEL.to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
-
-    // 3. Call Claude
-    let output_text = run_claude_prompt_tracked(
-        prompt_text,
-        &cli_args,
-        SYNTHESIS_TIMEOUT_SECS,
-        "Claude produced no output for team synthesis",
-        &state.db,
-        crate::db::repos::llm_spend::SpendCtx {
-            source: "design",
-            trigger_kind: spend_trigger,
-            model: Some(SYNTHESIS_MODEL),
-            persona_id: None,
-            project_id,
-        },
-    )
-    .await
-    .map_err(AppError::Internal)?;
-
-    // 4. Parse response
-    let json_str = extract_first_json_object_matching(&output_text, |val| {
-        val.get("templates").is_some() && val.get("connections").is_some()
-    })
-    .ok_or_else(|| {
-        AppError::Internal("Failed to extract JSON from Claude output for team synthesis".into())
-    })?;
-
-    let response: SynthesisResponse = serde_json::from_str(&json_str)
-        .map_err(|e| AppError::Internal(format!("Failed to parse synthesis response: {e}")))?;
-
-    if response.templates.is_empty() {
-        return Err(AppError::Internal(
-            "LLM returned empty template selection".into(),
-        ));
-    }
-
-    // 5. Validate selected templates exist
+    // 3-5. Call Claude on the class route, parse, and validate the selection
+    // against the real templates. Any rejection of the OUTPUT escalates once
+    // (see `personas_core::model_class`); spawn/IO failures do not.
     let template_map: std::collections::HashMap<&str, &crate::db::models::PersonaDesignReview> =
         templates.iter().map(|t| (t.id.as_str(), t)).collect();
+    let template_map = &template_map;
+    let (response, valid_templates) = with_escalation(SYNTHESIS_CLASS, |route| {
+        let prompt_text = prompt_text.clone();
+        async move {
+            let cli_args = headless_claude_args(
+                route.model,
+                route.effort,
+                &["--max-turns".to_string(), "1".to_string()],
+            );
+            let output_text = run_claude_prompt_tracked(
+                prompt_text,
+                &cli_args,
+                SYNTHESIS_TIMEOUT_SECS,
+                "Claude produced no output for team synthesis",
+                &state.db,
+                crate::db::repos::llm_spend::SpendCtx {
+                    source: "design",
+                    trigger_kind: if is_escalation_leg(SYNTHESIS_CLASS, route) {
+                        "escalation"
+                    } else {
+                        spend_trigger
+                    },
+                    model: Some(route.model),
+                    persona_id: None,
+                    project_id,
+                },
+            )
+            .await
+            .map_err(|e| AttemptError::Fatal(AppError::Internal(e)))?;
 
-    let mut valid_templates = Vec::new();
-    for st in &response.templates {
-        if let Some(tmpl) = template_map.get(st.review_id.as_str()) {
-            valid_templates.push((*tmpl, st.role.clone()));
+            parse_synthesis_output(&output_text, template_map).map_err(AttemptError::BadOutput)
         }
-    }
-
-    if valid_templates.is_empty() {
-        return Err(AppError::Internal(
-            "None of the selected template IDs matched existing templates".into(),
-        ));
-    }
+    })
+    .await?;
 
     // 6-10. Assemble the team. Synth is non-transactional across these repo
     // calls (each grabs its own pooled connection), so the closure performs the

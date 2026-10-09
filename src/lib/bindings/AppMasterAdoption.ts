@@ -2,6 +2,7 @@
 import type { ActivePersonaHeadroom } from "./ActivePersonaHeadroom";
 import type { AppMasterCharterOutcome } from "./AppMasterCharterOutcome";
 import type { AppMasterOpenAsk } from "./AppMasterOpenAsk";
+import type { HeadlessState } from "./HeadlessState";
 
 /**
  * What the adoption actually did. Every field is a fact; `notes` carries
@@ -46,4 +47,10 @@ lastNote?: string,
  * personas it starts will WAIT, which is a reason to finish work in flight
  * before widening the front, not a reason not to hire.
  */
-activePersonas: ActivePersonaHeadroom, };
+activePersonas: ActivePersonaHeadroom, 
+/**
+ * The project's headless App Master (`/appmaster`), when one has ever
+ * posted a beat for it. `None` on the adopt path, which reports what the
+ * adoption did, not who is running the project.
+ */
+headless?: HeadlessState, };

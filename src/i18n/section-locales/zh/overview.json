@@ -1565,7 +1565,12 @@
     "unknown_persona": "未知",
     "unread": "未读",
     "view_execution": "查看执行",
-    "what_could_be_better": "哪里可以改进？"
+    "what_could_be_better": "哪里可以改进？",
+    "attachment_missing": "文件已不可用",
+    "attachment_open": "打开 {name}",
+    "attachments_cleaned": "决策后截图已移除",
+    "attachments_label": "附件",
+    "linked_report_unavailable": "该报告已不可用"
   },
   "reports": {
     "channel_desktop": "桌面",
@@ -1817,7 +1822,8 @@
     "unknown_persona": "未知智能体",
     "you": "您",
     "load_failed_title": "无法加载审核队列",
-    "row_gone": "该审核已不在队列中。请重新加载后重试。"
+    "row_gone": "该审核已不在队列中。请重新加载后重试。",
+    "view_report": "查看报告"
   },
   "saved_views": {
     "errors": {

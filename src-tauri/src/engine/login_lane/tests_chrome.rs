@@ -87,7 +87,22 @@ fn url(port: u16, path: &str) -> String {
     format!("http://127.0.0.1:{port}{path}")
 }
 
+/// Count Chrome processes whose command line mentions `marker` (the profile
+/// directory name, which only this test's Chrome carries).
+#[cfg(not(windows))]
+fn chrome_procs(marker: &str) -> usize {
+    let out = std::process::Command::new("ps")
+        .args(["-eww", "-o", "args="])
+        .output()
+        .expect("ps");
+    String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .filter(|l| l.contains(marker))
+        .count()
+}
+
 /// Count chrome.exe processes whose command line mentions `marker`.
+#[cfg(windows)]
 fn chrome_procs(marker: &str) -> usize {
     // The marker travels in the environment, never spliced into the script
     // text, so the shell vehicle's argument is a literal.

@@ -131,6 +131,15 @@
     },
     "rate-limit.ts": {"count":1,"sections":[],"lines":["118-121"],"contexts":["**six** parse sites, all clamping to the *smaller* value and test-pinned (`rate-limit.ts:118-121`,"],"resolved":false},
     "run_budget.rs": {"count":3,"sections":[8,9],"lines":["198"],"contexts":["`director_lab.rs` and `run_budget.rs` each re-derive the same read in a different shape. **This is the"],"resolved":false},
+    "runner/mod.rs": {
+      "count": 3,
+      "sections": [5,7],
+      "lines": ["174"],
+      "contexts": [
+        "| **A limit inherited by one reader of four** | `resolve_effective_config` applies a workspace's `default_max_budget_usd` inside the runner (`runner/mod.rs:174`); the admission gate (`executions.rs:3…"
+      ],
+      "resolved": false
+    },
     "scan-credit.ts": {"count":2,"sections":[],"lines":["36-56","62-67"],"contexts":["central doctrine.** `scan-credit.ts:36-56` (`reserveScanCredit` / `refundScanCredit` /"],"resolved":false},
     "scan/route.ts": {"count":1,"sections":[],"lines":["109-110"],"contexts":["report at any age rather than a dead end (`scan/route.ts:109-110`). **This repo's `declined_budget`"],"resolved":false},
     "schema.rs": {
@@ -318,16 +327,6 @@
       "contexts": ["budget-alert message at `engine/mod.rs:2785` has never been written either."],
       "resolvedFrom": "suffix",
       "verbatim": "engine/mod.rs"
-    },
-    "src-tauri/src/engine/runner/mod.rs": {
-      "count": 3,
-      "sections": [5,7],
-      "lines": ["174"],
-      "contexts": [
-        "| **A limit inherited by one reader of four** | `resolve_effective_config` applies a workspace's `default_max_budget_usd` inside the runner (`runner/mod.rs:174`); the admission gate (`executions.rs:3…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "runner/mod.rs"
     },
     "src/": {"count":3,"sections":[7,9],"contexts":["provider-key strings in `src/` are mock fixtures at `mock-dashboard-data.ts:1218,1712`; its 232"],"resolved":false,"isDir":true},
     "src/engine/background.rs": {

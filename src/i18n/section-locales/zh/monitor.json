@@ -227,6 +227,9 @@
   "grid_dock_collapse": "隐藏派发控制台",
   "grid_fleet_exited": "该会话已结束——终端已不存在。",
   "grid_fleet_kill": "终止会话",
+  "terminal_asleep_label": "为何处于休眠",
+  "terminal_wake_failed": "无法唤醒此会话",
+  "terminal_wake_failed_hint": "结束会话即可将其从看板移除。",
   "grid_messages_empty": "暂无频道动态。",
   "grid_rail_loading_more": "正在加载更多…",
   "grid_session_recap_ai_title": "会话标题",
@@ -615,6 +618,14 @@
   "orch_never_served": "从未执行过",
   "orch_refusal_budget": "本月预算已用完",
   "orch_refusal_concurrency": "机器已达 persona 上限",
+  "orch_refusal_headless": "终端中的 App Master 正在掌管此项目",
+  "orch_headless_running": "Headless - 运行中",
+  "orch_headless_idle": "Headless - 空闲",
+  "orch_headless_stale": "Headless - 已过时",
+  "orch_headless_hint": "此项目的 App Master 正在终端中运行 (/appmaster)。在其报告保持新鲜期间，应用内的 master 会让位。",
+  "orch_headless_next_wake": "下次唤醒：",
+  "orch_headless_no_wake": "未公布",
+  "orch_headless_reported": "最近报告：",
   "orch_refusal_daily_cap": "已达每日上限",
   "orch_refusal_in_flight": "上一轮仍在运行中",
   "orch_refusal_interval_floor": "正在等待间隔期结束",
@@ -1073,5 +1084,6 @@
   "dc_hub_row_open_aria": "打开：{title}",
   "dc_hub_triage_all_none": "没有待处理项",
   "dc_hub_triage_all_short": "全部",
-  "dc_hub_triage_all_walk_tip": "按紧急程度依次处理全部 {count} 项"
+  "dc_hub_triage_all_walk_tip": "按紧急程度依次处理全部 {count} 项",
+  "grid_rail_triage_modal_aria": "审核详情"
 }

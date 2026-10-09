@@ -194,14 +194,24 @@ pub const QUALITY_GATE_CONFIG: &str = "quality_gate_config";
 /// Model override for smart search template ranking.
 /// Value: model ID string.
 pub const SMART_SEARCH_MODEL: &str = "smart_search_model";
-/// Default model ID for [`SMART_SEARCH_MODEL`] when unset.
-pub const SMART_SEARCH_MODEL_DEFAULT: &str = personas_core::model_ids::DEFAULT_FAST;
+/// Default model ID for [`SMART_SEARCH_MODEL`] when unset: the `Classify`
+/// class route's model (ranking templates against a query is picking from a
+/// closed set). The user override above is unchanged; only the default comes
+/// from the class table (`personas_core::model_class`).
+pub const SMART_SEARCH_MODEL_DEFAULT: &str = personas_core::model_class::CallClass::Classify
+    .route()
+    .model;
 
 /// Model override for the LLM-assisted semantic vault lint.
 /// Value: model ID string.
 pub const SEMANTIC_LINT_MODEL: &str = "semantic_lint_model";
-/// Default model ID for [`SEMANTIC_LINT_MODEL`] when unset.
-pub const SEMANTIC_LINT_MODEL_DEFAULT: &str = personas_core::model_ids::DEFAULT_FAST;
+/// Default model ID for [`SEMANTIC_LINT_MODEL`] when unset: the `Classify`
+/// class route's model (each finding is a label from the lint's fixed set).
+/// The user override above is unchanged; only the default comes from the
+/// class table (`personas_core::model_class`).
+pub const SEMANTIC_LINT_MODEL_DEFAULT: &str = personas_core::model_class::CallClass::Classify
+    .route()
+    .model;
 
 /// ISO 8601 timestamp of the last completed daily credential healthcheck sweep.
 /// Written by the in-process `CredentialHealthcheckSubscription` to gate the
@@ -1095,6 +1105,112 @@ pub const CLOUD_SYNC_LAST_AT: &str = "cloud_sync_last_at";
 /// Surfaced in the Settings sync panel. Value: a non-negative integer string.
 pub const CLOUD_SYNC_TOTAL_ROWS: &str = "cloud_sync_total_rows";
 
+/// The operator-set name this desktop sends in its cloud heartbeat
+/// (`synced_devices.name`), so a phone can say "Open Personas on *Studio PC*".
+/// Value: free text, at most [`CLOUD_SYNC_DEVICE_NAME_MAX`] characters; absent
+/// means "use the platform label". The hostname is never sent silently.
+pub const CLOUD_SYNC_DEVICE_NAME: &str = "cloud_sync_device_name";
+
+/// Upper bound for [`CLOUD_SYNC_DEVICE_NAME`], in characters.
+pub const CLOUD_SYNC_DEVICE_NAME_MAX: usize = 64;
+
+/// Per-class opt-in: push the Notepad notes (goals) to the cloud
+/// (`synced_notes`). Value: `"true"` / `"false"`. **Default off, also for
+/// users who already sync** (owner decision M19): note text is free text the
+/// user typed, a new class of data leaving the machine. Turning it off deletes
+/// this device's `synced_notes` rows at the next pass.
+pub const CLOUD_SYNC_NOTES_ENABLED: &str = "cloud_sync_notes_enabled";
+
+/// Per-class opt-in: push Athena's conversations to the cloud
+/// (`synced_chat_sessions` / `synced_chat_messages`, `thread_kind = 'athena'`)
+/// and accept a paired phone's `chat_send` to Athena. Value: `"true"` /
+/// `"false"`. **Default off, also for users who already sync** (M19): replies
+/// can quote what agents read through their connectors. Turning it off deletes
+/// this device's chat rows at the next pass.
+pub const CLOUD_SYNC_CHATS_ENABLED: &str = "cloud_sync_chats_enabled";
+
+/// Paired phones ("controllers") of the mobile command plane: a JSON array of
+/// `{controllerId, name, publicKey, createdAt, revoked, revokedAt}`. Public
+/// keys and metadata only, NEVER a secret. Owned by `cloud::trust`.
+///
+/// **Operator-only** ([`is_operator_only`]): it decides which remote commands
+/// run WITHOUT a click at this desk (PHASE2-SPEC D1), so no generic writer -
+/// the settings IPC, an import, the management API - may widen it. Written
+/// only by `cloud::trust` through `settings::set_operator_only`.
+pub const CLOUD_CONTROLLERS: &str = "cloud_controllers";
+
+/// The web origin a pairing QR opens (`<origin>/dashboard/settings#pair=...`).
+/// Value: an absolute origin in normalised form ([`normalize_pairing_origin`]):
+/// `https://host[:port]`, or `http://` for a loopback host only; no userinfo,
+/// path, query or fragment, no trailing slash. Absent means the built-in
+/// default (`cloud::pairing::DEFAULT_PAIRING_ORIGIN`).
+///
+/// **Operator-only** ([`is_operator_only`]): the QR carries the pairing secret
+/// in its fragment, so whoever serves this origin sees the next secret. No
+/// generic writer - the settings IPC, an import, the management API, a kp key -
+/// may move it. Written only by the `cloud_pairing_origin_set` Tauri command
+/// through `settings::set_operator_only`.
+pub const CLOUD_PAIRING_ORIGIN: &str = "cloud_pairing_origin";
+
+/// Upper bound for a raw [`CLOUD_PAIRING_ORIGIN`] value, in bytes.
+pub const CLOUD_PAIRING_ORIGIN_MAX: usize = 256;
+
+/// Normalise a pairing origin, or say why it is refused. Accepts
+/// `https://host[:port]` (a trailing `/` is tolerated and dropped), and
+/// `http://` only for `localhost`, `127.0.0.1` and `[::1]`. Refuses userinfo,
+/// any path other than `/`, a query, a fragment, and every other scheme. The
+/// result is rebuilt from the parsed origin, so what is stored is exactly what
+/// the QR will open.
+pub fn normalize_pairing_origin(raw: &str) -> Result<String, String> {
+    let v = raw.trim();
+    if v.is_empty() {
+        return Err("the pairing origin must not be empty".into());
+    }
+    if v.len() > CLOUD_PAIRING_ORIGIN_MAX {
+        return Err(format!(
+            "the pairing origin must be at most {CLOUD_PAIRING_ORIGIN_MAX} characters"
+        ));
+    }
+    let lower = v.to_ascii_lowercase();
+    let is_https = lower.starts_with("https://");
+    if !is_https && !lower.starts_with("http://") {
+        return Err("the pairing origin must start with https://".into());
+    }
+    let url = url::Url::parse(v).map_err(|e| format!("the pairing origin is not a URL: {e}"))?;
+    let host = match url.host() {
+        Some(h) => h,
+        None => return Err("the pairing origin needs a host".into()),
+    };
+    if !url.username().is_empty() || url.password().is_some() {
+        return Err("the pairing origin must not carry a user name or password".into());
+    }
+    if url.path() != "/" {
+        return Err("the pairing origin must not carry a path".into());
+    }
+    if url.query().is_some() {
+        return Err("the pairing origin must not carry a query".into());
+    }
+    if url.fragment().is_some() {
+        return Err("the pairing origin must not carry a fragment".into());
+    }
+    if url.scheme() == "http" {
+        let loopback = match host {
+            url::Host::Domain(d) => d == "localhost",
+            url::Host::Ipv4(ip) => ip == std::net::Ipv4Addr::LOCALHOST,
+            url::Host::Ipv6(ip) => ip == std::net::Ipv6Addr::LOCALHOST,
+        };
+        if !loopback {
+            return Err(
+                "the pairing origin must use https:// (http:// is allowed only for localhost)"
+                    .into(),
+            );
+        }
+    } else if url.scheme() != "https" {
+        return Err("the pairing origin must start with https://".into());
+    }
+    Ok(url.origin().ascii_serialization())
+}
+
 /// Per-table incremental sync watermark. Full key: `cloud_sync_cursor:<table>`
 /// (e.g. `cloud_sync_cursor:executions`), value: RFC3339 timestamp.
 pub const CLOUD_SYNC_CURSOR_PREFIX: &str = "cloud_sync_cursor:";
@@ -1125,6 +1241,24 @@ pub const AUTOPILOT_MODE_PREFIX: &str = "autopilot_mode:";
 /// truncated record can never be read back as an *empty* (i.e. permissive)
 /// mandate.
 pub const APP_MASTER_MANDATE_PREFIX: &str = "app_master_mandate:";
+
+/// Per-project **headless App Master** state. Full key:
+/// `headless_master:<project_id>`, value = a JSON
+/// `HeadlessMasterBeat` (`commands::infrastructure::headless_master`):
+/// `{ state, note, nextWakeAt, beatAt, runId, source }`. Written by the
+/// `/appmaster` skill through `POST /dev-tools/app-master/{project_id}/heartbeat`
+/// while it runs that project's master from a terminal; read by the App Master
+/// readout and by the attention tick, which stands aside while a beat is fresh.
+/// Engine bookkeeping, never user-set, so it is excluded from the settings audit.
+pub const HEADLESS_MASTER_PREFIX: &str = "headless_master:";
+
+/// Per-project **Overseer watch** (the Lifecycle star). Full key:
+/// `lifecycle_overseer_watch:<project_id>`, value ∈ {`true`, `false`}; unwatching
+/// deletes the row. A watched project is auto-measured by the Overseer once per
+/// new base tip (`engine/subscription/lifecycle_watch.rs`) while
+/// [`OVERSEER_ENABLED`] is on. Independent of `personas.starred`, which is the
+/// Overseer's persona roster. An operator choice, so it is audited (autonomy).
+pub const LIFECYCLE_OVERSEER_WATCH_PREFIX: &str = "lifecycle_overseer_watch:";
 
 /// Durable mirror of the webview appearance preferences (JSON-encoded object:
 /// `themeId`, `textScale`, `brightness`, `density`, `timezone`, a11y toggles,
@@ -1326,7 +1460,12 @@ pub const KP_GIG_PERSONA_POLICY: &str = "kp.gig_persona_policy";
 /// Keys the generic settings writers refuse. They carry a security boundary
 /// the operator alone may move, so they are written only through
 /// `repos::core::settings::set_operator_only`.
-const OPERATOR_ONLY_KEYS: &[&str] = &[MANAGEMENT_HTTP_PROJECT_ROOTS, KP_GIG_PERSONA_POLICY];
+const OPERATOR_ONLY_KEYS: &[&str] = &[
+    MANAGEMENT_HTTP_PROJECT_ROOTS,
+    KP_GIG_PERSONA_POLICY,
+    CLOUD_CONTROLLERS,
+    CLOUD_PAIRING_ORIGIN,
+];
 
 /// Whether `key` may be written only through the operator path.
 pub fn is_operator_only(key: &str) -> bool {
@@ -1478,6 +1617,11 @@ const ALLOWED_KEYS: &[&str] = &[
     CLOUD_SYNC_DEVICE_ID,
     CLOUD_SYNC_LAST_AT,
     CLOUD_SYNC_TOTAL_ROWS,
+    CLOUD_SYNC_DEVICE_NAME,
+    CLOUD_SYNC_NOTES_ENABLED,
+    CLOUD_SYNC_CHATS_ENABLED,
+    CLOUD_CONTROLLERS,
+    CLOUD_PAIRING_ORIGIN,
     APPEARANCE_PREFERENCES,
     APP_LANGUAGE,
     CHAIN_MAX_COST_USD,
@@ -1507,6 +1651,8 @@ const ALLOWED_PREFIXES: &[&str] = &[
     AUTOPILOT_MODE_PREFIX,
     APP_MASTER_MANDATE_PREFIX,
     TEAM_SLACK_BRIDGE_CURSOR_PREFIX,
+    HEADLESS_MASTER_PREFIX,
+    LIFECYCLE_OVERSEER_WATCH_PREFIX,
 ];
 
 /// Returns true if `suffix` is a syntactically acceptable persona_id-shaped
@@ -1593,12 +1739,59 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
     if key.starts_with(APP_MASTER_MANDATE_PREFIX) {
         return validate_json_wellformed(key, value);
     }
+    // Per-project headless App Master beat (prefix key). The struct lives in
+    // app_lib; the write route parses the beat itself, so only well-formedness
+    // is checked here -- an unparseable beat reads as absent, which lets the
+    // in-app tick run again (the safe direction).
+    if key.starts_with(HEADLESS_MASTER_PREFIX) {
+        return validate_json_wellformed(key, value);
+    }
+    // Per-project Overseer watch (prefix key) - the canonical boolean pair.
+    if key.starts_with(LIFECYCLE_OVERSEER_WATCH_PREFIX) {
+        return match value {
+            "true" | "false" => Ok(()),
+            _ => Err(format!(
+                "value for '{key}' must be true or false, got {value:?}"
+            )),
+        };
+    }
     // Multi-plan Claude login policy + last rotation: JSON blobs whose structs
     // live in app_lib (`commands::fleet::claude_accounts::rotate`), so only
     // well-formedness can be checked here -- a truncated policy read as absent
     // would silently switch auto-rotate off.
     if key == CLAUDE_ACCOUNTS_AUTO_ROTATE || key == CLAUDE_ACCOUNTS_LAST_ROTATION {
         return validate_json_wellformed(key, value);
+    }
+    // The paired-phone trust list. Its struct lives in app_lib
+    // (`cloud::trust::Controller`), so the shape checked here is "a JSON
+    // array"; a list that fails to parse is read as EMPTY (trust nobody).
+    if key == CLOUD_CONTROLLERS {
+        return match serde_json::from_str::<Vec<serde_json::Value>>(value) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("value for '{key}' must be a JSON array: {e}")),
+        };
+    }
+    // Stored only in normalised form, so the value read back is exactly the
+    // origin the QR opens and the panel shows.
+    if key == CLOUD_PAIRING_ORIGIN {
+        let normal = normalize_pairing_origin(value)?;
+        return if normal == value {
+            Ok(())
+        } else {
+            Err(format!(
+                "value for '{key}' must be stored normalised (expected {normal:?})"
+            ))
+        };
+    }
+    if key == CLOUD_SYNC_DEVICE_NAME {
+        let n = value.trim().chars().count();
+        return if n == 0 || n > CLOUD_SYNC_DEVICE_NAME_MAX {
+            Err(format!(
+                "value for '{key}' must be 1-{CLOUD_SYNC_DEVICE_NAME_MAX} characters"
+            ))
+        } else {
+            Ok(())
+        };
     }
     match key {
         // A JSON array of persona ids. Refused at write time rather than
@@ -1811,6 +2004,8 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | COMPANION_AUTONOMOUS_MODE
         | COMPANION_DEV_MODE
         | CLOUD_SYNC_ENABLED
+        | CLOUD_SYNC_NOTES_ENABLED
+        | CLOUD_SYNC_CHATS_ENABLED
         | AUTONOMOUS_MESSAGE_TRIAGE
         | AUTONOMOUS_GOAL_ADVANCEMENT
         | AUTONOMOUS_ATTENTION_LOOP
@@ -2111,10 +2306,14 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
 ];
 
 /// Prefix families that are internal bookkeeping (per-table cloud-sync cursors,
-/// per-bridge team -> Slack relay watermarks). These advance on every engine
-/// tick; auditing them would bury real config changes in the History tab.
-const AUDIT_EXCLUDED_PREFIXES: &[&str] =
-    &[CLOUD_SYNC_CURSOR_PREFIX, TEAM_SLACK_BRIDGE_CURSOR_PREFIX];
+/// per-bridge team -> Slack relay watermarks, per-project headless App Master
+/// beats). These advance on every engine tick or headless wake; auditing them
+/// would bury real config changes in the History tab.
+const AUDIT_EXCLUDED_PREFIXES: &[&str] = &[
+    CLOUD_SYNC_CURSOR_PREFIX,
+    TEAM_SLACK_BRIDGE_CURSOR_PREFIX,
+    HEADLESS_MASTER_PREFIX,
+];
 
 /// Map a settings key to its audit CATEGORY, or `None` if the key is internal
 /// bookkeeping that must NOT be audited (see [`AUDIT_EXCLUDED_KEYS`] /
@@ -2141,6 +2340,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         || key.starts_with(AUTO_OPTIMIZE_PREFIX)
         || key.starts_with(AUTOPILOT_MODE_PREFIX)
         || key.starts_with(APP_MASTER_MANDATE_PREFIX)
+        || key.starts_with(LIFECYCLE_OVERSEER_WATCH_PREFIX)
     {
         return Some("autonomy");
     }
@@ -2272,7 +2472,15 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | OBSIDIAN_BRAIN_SAVED_VAULTS
         | DEV_TOOLS_CROSS_PROJECT_METADATA => "integrations",
         // Cloud sync (user-facing toggle only; bookkeeping excluded above).
-        CLOUD_SYNC_ENABLED => "sync",
+        // The paired-phone trust list, the heartbeat name and the per-class
+        // opt-ins are user acts (pair, revoke, rename, share more data), so
+        // they are audited beside the toggle.
+        CLOUD_SYNC_ENABLED
+        | CLOUD_CONTROLLERS
+        | CLOUD_PAIRING_ORIGIN
+        | CLOUD_SYNC_DEVICE_NAME
+        | CLOUD_SYNC_NOTES_ENABLED
+        | CLOUD_SYNC_CHATS_ENABLED => "sync",
         // UI / onboarding state.
         ONBOARDING_QUEST_STATE => "config",
         // Any registered-but-uncategorized key → generic bucket (still audited).
@@ -2978,6 +3186,30 @@ mod tests {
     }
 
     #[test]
+    fn headless_master_prefix_validates_and_is_not_audited() {
+        let key = format!("{HEADLESS_MASTER_PREFIX}proj-1");
+        assert!(validate_key(&key).is_ok());
+        assert!(validate_key(HEADLESS_MASTER_PREFIX).is_err());
+        assert!(validate_value(&key, r#"{"state":"idle"}"#).is_ok());
+        assert!(validate_value(&key, "{\"state\":").is_err());
+        // A beat lands on every headless wake; it must never reach History.
+        assert_eq!(audit_category(&key), None);
+    }
+
+    #[test]
+    fn lifecycle_overseer_watch_prefix_validates_and_is_audited() {
+        let key = format!("{LIFECYCLE_OVERSEER_WATCH_PREFIX}proj-1");
+        assert!(validate_key(&key).is_ok());
+        assert!(validate_key(LIFECYCLE_OVERSEER_WATCH_PREFIX).is_err());
+        assert!(validate_key(&format!("{LIFECYCLE_OVERSEER_WATCH_PREFIX}a b")).is_err());
+        assert!(validate_value(&key, "true").is_ok());
+        assert!(validate_value(&key, "false").is_ok());
+        assert!(validate_value(&key, "yes").is_err());
+        // The star is an operator choice that turns on unattended measuring.
+        assert_eq!(audit_category(&key), Some("autonomy"));
+    }
+
+    #[test]
     fn audit_category_maps_user_facing_keys() {
         assert_eq!(audit_category(OLLAMA_API_KEY), Some("api_keys"));
         assert_eq!(audit_category(CLI_ENGINE), Some("engine"));
@@ -2990,6 +3222,9 @@ mod tests {
         assert_eq!(audit_category(COMPANION_AUTONOMOUS_MODE), Some("autonomy"));
         assert_eq!(audit_category(OBSIDIAN_BRAIN_CONFIG), Some("integrations"));
         assert_eq!(audit_category(CLOUD_SYNC_ENABLED), Some("sync"));
+        assert_eq!(audit_category(CLOUD_SYNC_NOTES_ENABLED), Some("sync"));
+        assert_eq!(audit_category(CLOUD_SYNC_CHATS_ENABLED), Some("sync"));
+        assert_eq!(audit_category(CLOUD_PAIRING_ORIGIN), Some("sync"));
         // Prefix families.
         assert_eq!(audit_category("auto_rollback:persona-1"), Some("autonomy"));
         assert_eq!(audit_category("autopilot_mode:proj-1"), Some("autonomy"));
@@ -3046,5 +3281,70 @@ mod tests {
         assert!(validate_key(DEVTOOLS_ACTIVE_WORKSPACE).is_ok());
         assert!(validate_value(DEVTOOLS_ACTIVE_WORKSPACE, "a-workspace-uuid").is_ok());
         assert_eq!(audit_category(DEVTOOLS_ACTIVE_WORKSPACE), None);
+    }
+
+    #[test]
+    fn pairing_origin_accepts_and_normalises_valid_origins() {
+        let ok = |raw: &str, want: &str| {
+            assert_eq!(normalize_pairing_origin(raw).as_deref(), Ok(want), "{raw}");
+        };
+        ok(
+            "https://desk.tail1234.ts.net",
+            "https://desk.tail1234.ts.net",
+        );
+        ok(
+            "https://desk.tail1234.ts.net/",
+            "https://desk.tail1234.ts.net",
+        );
+        ok(
+            "  HTTPS://Desk.Tail1234.TS.net  ",
+            "https://desk.tail1234.ts.net",
+        );
+        ok("https://desk.example:8443", "https://desk.example:8443");
+        ok("https://desk.example:443", "https://desk.example");
+        ok("http://localhost:3000", "http://localhost:3000");
+        ok("http://127.0.0.1:3000/", "http://127.0.0.1:3000");
+        ok("http://[::1]:3000", "http://[::1]:3000");
+        assert!(validate_key(CLOUD_PAIRING_ORIGIN).is_ok());
+        assert!(is_operator_only(CLOUD_PAIRING_ORIGIN));
+        assert!(validate_value(CLOUD_PAIRING_ORIGIN, "https://desk.tail1234.ts.net").is_ok());
+        assert!(
+            validate_value(CLOUD_PAIRING_ORIGIN, "https://desk.tail1234.ts.net/").is_err(),
+            "only the normalised form is stored"
+        );
+    }
+
+    #[test]
+    fn pairing_origin_refuses_every_unsafe_shape() {
+        let long = format!("https://{}.example", "a".repeat(CLOUD_PAIRING_ORIGIN_MAX));
+        for bad in [
+            "",
+            "   ",
+            "http://desk.tail1234.ts.net",
+            "http://192.168.1.10:3000",
+            "http://localhost.evil.example",
+            "https://user:pass@desk.example",
+            "https://user@desk.example",
+            "https://desk.example/dashboard",
+            "https://desk.example/x/",
+            "https://desk.example?x=1",
+            "https://desk.example/?",
+            "https://desk.example#pair=",
+            "https://desk.example/#",
+            "javascript:alert(1)",
+            "data:text/html,hi",
+            "file:///etc/passwd",
+            "ftp://desk.example",
+            "desk.example",
+            "//desk.example",
+            "https://",
+            long.as_str(),
+        ] {
+            assert!(normalize_pairing_origin(bad).is_err(), "accepted {bad:?}");
+            assert!(
+                validate_value(CLOUD_PAIRING_ORIGIN, bad).is_err(),
+                "stored {bad:?}"
+            );
+        }
     }
 }

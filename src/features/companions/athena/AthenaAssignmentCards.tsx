@@ -28,7 +28,7 @@ export function AthenaAssignmentCards() {
   return (
     <div className="border-b border-primary/10 px-3 py-2 space-y-1.5">
       <div className="flex items-center gap-1.5 typo-caption text-foreground">
-        <ListChecks className="w-3.5 h-3.5 text-orange-400" />
+        <ListChecks className="w-3.5 h-3.5 text-status-processing" />
         {t.athena.athena_assignments_title}
       </div>
       {cards.map((card) => (
@@ -63,39 +63,46 @@ function AssignmentCardRow({
           : CircleDashed;
   const color =
     card.status === 'done'
-      ? 'text-emerald-400'
+      ? 'text-status-success'
       : card.status === 'failed' || card.status === 'aborted' || card.failedSteps > 0
-        ? 'text-rose-400'
+        ? 'text-status-error'
         : card.status === 'running'
-          ? 'text-orange-400'
-          : 'text-foreground/40';
+          ? 'text-status-processing'
+          : 'text-status-neutral';
   const spin = card.status === 'running' || card.status === 'queued';
 
+  // A container with two sibling buttons: nesting the dismiss control inside
+  // the open button is invalid DOM (React logs validateDOMNesting) and makes
+  // the inner control unreachable for assistive tech.
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group w-full flex items-start gap-2 px-2 py-1.5 rounded-card border border-primary/10 hover:border-orange-500/30 hover:bg-secondary/30 transition-colors text-left"
+    <div
+      data-testid={`athena-assignment-card-${card.assignmentId}`}
+      className="group relative flex items-start rounded-card border border-primary/10 hover:border-primary/30 hover:bg-secondary/30 focus-within:border-primary/30 transition-colors"
     >
-      <Icon className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${color} ${spin ? 'animate-spin' : ''}`} />
-      <div className="flex-1 min-w-0">
-        <p className="typo-caption text-foreground/90 truncate">{card.title}</p>
-        <p className="typo-caption text-foreground truncate">
-          {card.doneSteps}/{card.totalSteps} steps
-          {card.failedSteps > 0 ? ` · ${card.failedSteps} failed` : ''}
-        </p>
-      </div>
       <button
         type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDismiss();
-        }}
-        className="flex-shrink-0 opacity-0 group-hover:opacity-100 p-1 rounded-interactive hover:bg-primary/10 text-foreground"
+        onClick={onOpen}
+        data-testid="athena-assignment-open"
+        className="focus-ring flex-1 min-w-0 flex items-start gap-2 pl-2 pr-8 py-1.5 rounded-card text-left"
+      >
+        <Icon className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${color} ${spin ? 'animate-spin' : ''}`} />
+        <span className="flex-1 min-w-0">
+          <span className="block typo-caption text-foreground truncate">{card.title}</span>
+          <span className="block typo-caption text-foreground truncate">
+            {card.doneSteps}/{card.totalSteps} steps
+            {card.failedSteps > 0 ? ` · ${card.failedSteps} failed` : ''}
+          </span>
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={onDismiss}
+        data-testid="athena-assignment-dismiss"
+        className="focus-ring absolute right-1 top-1 p-1 rounded-interactive text-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-primary/10"
         aria-label={t.common.dismiss}
       >
         <X className="w-3 h-3" />
       </button>
-    </button>
+    </div>
   );
 }

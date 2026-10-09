@@ -40,9 +40,12 @@ use tokio::process::Command;
 /// session as Failed instead of blocking forever.
 const FIX_PASS_CLI_TIMEOUT: Duration = Duration::from_secs(300);
 
-/// Model driving the correction. Named so the same string reaches the CLI
-/// `--model` flag and the `dev_llm_spend` ledger row for this leg.
-const FIX_PASS_MODEL: &str = "claude-sonnet-4-6";
+/// Call class of the correction pass. Model and effort come from the class
+/// table (`personas_core::model_class`); the same route reaches the CLI
+/// `--model` / `--effort` flags and the `dev_llm_spend` ledger row for this
+/// leg.
+const FIX_PASS_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::AgentTask;
 
 use crate::db::models::UpdateBuildSession;
 use crate::db::repos::core::build_sessions as build_session_repo;
@@ -189,6 +192,7 @@ async fn invoke_claude_print(
     pool: &DbPool,
     persona_id: Option<&str>,
 ) -> Result<String, AppError> {
+    let route = FIX_PASS_CLASS.route();
     let (cmd_program, mut argv) = crate::companion::session::base_cli_invocation();
     argv.extend([
         "-p".into(),
@@ -197,8 +201,10 @@ async fn invoke_claude_print(
         "json".into(),
         "--dangerously-skip-permissions".into(),
         "--exclude-dynamic-system-prompt-sections".into(),
+        "--effort".into(),
+        route.effort.into(),
         "--model".into(),
-        FIX_PASS_MODEL.into(),
+        route.model.into(),
     ]);
 
     let cwd = dirs::home_dir().unwrap_or_else(std::env::temp_dir);
@@ -317,7 +323,7 @@ async fn invoke_claude_print(
             pool,
             persona_id,
             super::events::SPEND_FIX_PASS,
-            Some(FIX_PASS_MODEL),
+            Some(route.model),
             env,
         );
     }
@@ -661,7 +667,7 @@ The corrected IR is:
         let entry = super::super::events::build_spend_entry(
             Some("persona-1"),
             super::super::events::SPEND_FIX_PASS,
-            Some(FIX_PASS_MODEL),
+            Some(FIX_PASS_CLASS.route().model),
             &envelope,
         )
         .expect("the envelope must produce a ledger row");

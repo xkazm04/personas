@@ -24,6 +24,7 @@
   "citationCount": 85,
   "triggers": [],
   "citations": {
+    "commandNames.generated.ts": {"count":2,"sections":[7],"contexts":["`commandNames.generated.ts`) and row counts replayed against **both** the"],"resolved":false},
     "incremental.rs": {"count":1,"sections":[7],"lines":["3479-3492"],"contexts":["`persona_tombstones` (`incremental.rs:3479-3492`) exists so hard-deletes"],"resolved":false},
     "journal.rs": {
       "count": 17,
@@ -83,7 +84,6 @@
     "src/features/agents/quick-answer/triage/useUnifiedTriage.ts": {"count":1,"sections":[],"lines":["436-437"],"contexts":["(`useUnifiedTriage.ts:436-437`) rather than inventing one."],"resolvedFrom":"basename","verbatim":"useUnifiedTriage.ts"},
     "src/features/agents/quick-answer/triage/{triageDispatch.ts,useUnifiedTriage.ts}": {"count":1,"sections":[],"contexts":["`src/features/agents/quick-answer/triage/{triageDispatch.ts,useUnifiedTriage.ts}`,"],"resolved":false,"isDir":true},
     "src/features/shared/components/modals/ExecutionDetailModal/DataDiffSection.tsx": {"count":9,"sections":[0,2,3,7,12],"lines":["105-116","130","142-152","99","90-100,155-177"],"contexts":["`src/features/shared/components/modals/ExecutionDetailModal/DataDiffSection.tsx`,"]},
-    "src/features/vault/shared/hooks/useUndoDelete.ts": {"count":1,"sections":[5],"contexts":["`vault/shared/hooks/useUndoDelete.ts` is confirm-state only and its exported"],"resolvedFrom":"suffix","verbatim":"vault/shared/hooks/useUndoDelete.ts"},
-    "src/lib/commandNames.generated.ts": {"count":2,"sections":[7],"contexts":["`commandNames.generated.ts`) and row counts replayed against **both** the"],"resolvedFrom":"basename","verbatim":"commandNames.generated.ts"}
+    "src/features/vault/shared/hooks/useUndoDelete.ts": {"count":1,"sections":[5],"contexts":["`vault/shared/hooks/useUndoDelete.ts` is confirm-state only and its exported"],"resolvedFrom":"suffix","verbatim":"vault/shared/hooks/useUndoDelete.ts"}
   }
 }

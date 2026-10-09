@@ -118,7 +118,7 @@ pub(super) fn format_plugins(
                     s.push_str(tracking_pulses);
                     s.push_str(
                         "\n_These pulses are produced once an hour by the project-tracking \
-                         consolidator (Sonnet 4.6) over git commits and the active-runs \
+                         consolidator (Sonnet 5.5) over git commits and the active-runs \
                          ledger. When the user asks 'what's happening on X' or 'what's drifting', \
                          lean on these directions and tensions; cite specifics, don't invent. \
                          For deeper drill-in (recent commits behind a direction), say so and \

@@ -1,0 +1,701 @@
+{
+  "family": "kb-extract",
+  "difficulty": "hard",
+  "source": "same call site as kb-extract.json (engine/kb_extract.rs:167-203); prompt unchanged, documents harder",
+  "notes": "HARD tier. Documents live in kb-extract-hard/*.txt (6.3-8.5k chars each, vs 0.3-0.5k in the easy tier). Each one plants, around facts buried mid-document: near-duplicate distractors with changed numbers or dates (a bid price vs the negotiated value, a superseded data sheet, a withdrawn estimate, a transposed certificate number), a NEGATED instance that must not become a row ('X was NOT adopted / NOT installed / NOT part of this incident'), and at least one fact split across two paragraphs or sections (the entity in one, its value later). The schema `description` carries the rule that decides which instances are real (awarded, installed, adopted, in force, currently valid), so every trap is decidable from the prompt alone. Checks are unchanged: factRecall, noInventedFacts (absentStrings on the lowercased rows JSON; absentPatterns as regexes on the whitespace-squashed, lowercased rows JSON), rowCounts. `traps` names what each `bad` sample (one per trap) falls for.",
+  "tasks": [
+    {
+      "id": "kb-h01-tender-award",
+      "difficulty": "hard",
+      "traps": "negotiated value vs submitted bid price; Lot 3 NOT awarded; lookalike bidder (Lumen City vs Lumen Civic) with a lower price; Lot 2 value stated paragraphs after its award; a voided earlier award date",
+      "title": "Procurement committee minutes 7/2026",
+      "textFile": "kb-extract-hard/h01-tender-award.txt",
+      "schema": [
+        {
+          "entityType": "contract_award",
+          "description": "a contract the committee AWARDED in this meeting, with its final contract value",
+          "fields": [
+            {
+              "name": "lot",
+              "description": "the tender lot"
+            },
+            {
+              "name": "vendor",
+              "description": "the company the contract was awarded to"
+            },
+            {
+              "name": "value_eur",
+              "description": "final contract value in EUR excluding VAT"
+            },
+            {
+              "name": "award_date",
+              "description": "date of the award"
+            },
+            {
+              "name": "duration_months",
+              "description": "contract duration in months"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "label": "Lot 1 vendor",
+          "any": [
+            "stavbymorava"
+          ]
+        },
+        {
+          "label": "Lot 1 final value",
+          "any": [
+            "1247500",
+            "1,247,500",
+            "1.247.500"
+          ]
+        },
+        {
+          "label": "Lot 2 vendor",
+          "any": [
+            "lumencivic"
+          ]
+        },
+        {
+          "label": "Lot 2 value (split paragraph)",
+          "any": [
+            "386900",
+            "386,900",
+            "386.900"
+          ]
+        },
+        {
+          "label": "award date",
+          "any": [
+            "2026-03-12",
+            "12march2026",
+            "march12,2026",
+            "12.03.2026",
+            "12.3.2026",
+            "12/03/2026"
+          ]
+        },
+        {
+          "label": "Lot 2 duration",
+          "any": [
+            "24"
+          ]
+        }
+      ],
+      "absentStrings": [
+        "polar",
+        "zima",
+        "lumen city"
+      ],
+      "absentPatterns": [
+        "1[,.]?284[,.]?000",
+        "512[,.]?000",
+        "379[,.]?400",
+        "lumencity",
+        "2026-03-05",
+        "(^|[^0-9])0?5march",
+        "march0?5([^0-9]|$)"
+      ],
+      "rowCounts": {
+        "contract_award": 2
+      },
+      "good": "```json\n{\"rows\":[{\"entityType\":\"contract_award\",\"entityKey\":\"Lot 1 road resurfacing\",\"attributes\":{\"lot\":\"Lot 1 - Road resurfacing\",\"vendor\":\"Stavby Morava a.s.\",\"value_eur\":1247500,\"award_date\":\"2026-03-12\",\"duration_months\":18},\"page\":2,\"confidence\":1},{\"entityType\":\"contract_award\",\"entityKey\":\"Lot 2 street lighting\",\"attributes\":{\"lot\":\"Lot 2 - Street lighting LED retrofit\",\"vendor\":\"Lumen Civic s.r.o.\",\"value_eur\":386900,\"award_date\":\"2026-03-12\",\"duration_months\":24},\"page\":2,\"confidence\":1}]}\n```",
+      "bad": [
+        "```json\n{\"rows\":[{\"entityType\":\"contract_award\",\"entityKey\":\"Lot 1 road resurfacing\",\"attributes\":{\"lot\":\"Lot 1 - Road resurfacing\",\"vendor\":\"Stavby Morava a.s.\",\"value_eur\":1284000,\"award_date\":\"2026-03-12\",\"duration_months\":18},\"page\":2,\"confidence\":1},{\"entityType\":\"contract_award\",\"entityKey\":\"Lot 2 street lighting\",\"attributes\":{\"lot\":\"Lot 2 - Street lighting LED retrofit\",\"vendor\":\"Lumen Civic s.r.o.\",\"value_eur\":386900,\"award_date\":\"2026-03-12\",\"duration_months\":24},\"page\":2,\"confidence\":1}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"contract_award\",\"entityKey\":\"Lot 1 road resurfacing\",\"attributes\":{\"lot\":\"Lot 1 - Road resurfacing\",\"vendor\":\"Stavby Morava a.s.\",\"value_eur\":1247500,\"award_date\":\"2026-03-12\",\"duration_months\":18},\"page\":2,\"confidence\":1},{\"entityType\":\"contract_award\",\"entityKey\":\"Lot 2 street lighting\",\"attributes\":{\"lot\":\"Lot 2 - Street lighting LED retrofit\",\"vendor\":\"Lumen Civic s.r.o.\",\"value_eur\":386900,\"award_date\":\"2026-03-12\",\"duration_months\":24},\"page\":2,\"confidence\":1},{\"entityType\":\"contract_award\",\"entityKey\":\"Lot 3 winter maintenance\",\"attributes\":{\"lot\":\"Lot 3\",\"vendor\":\"Polar Services s.r.o.\",\"value_eur\":512000,\"award_date\":\"2026-03-12\"},\"page\":3,\"confidence\":0.6}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"contract_award\",\"entityKey\":\"Lot 1 road resurfacing\",\"attributes\":{\"lot\":\"Lot 1 - Road resurfacing\",\"vendor\":\"Stavby Morava a.s.\",\"value_eur\":1247500,\"award_date\":\"2026-03-12\",\"duration_months\":18},\"page\":2,\"confidence\":1},{\"entityType\":\"contract_award\",\"entityKey\":\"Lot 2 street lighting\",\"attributes\":{\"lot\":\"Lot 2 - Street lighting LED retrofit\",\"vendor\":\"Lumen City s.r.o.\",\"value_eur\":379400,\"award_date\":\"2026-03-12\",\"duration_months\":24},\"page\":2,\"confidence\":1}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"contract_award\",\"entityKey\":\"Lot 1 road resurfacing\",\"attributes\":{\"lot\":\"Lot 1 - Road resurfacing\",\"vendor\":\"Stavby Morava a.s.\",\"value_eur\":1247500,\"award_date\":\"2026-03-12\",\"duration_months\":18},\"page\":2,\"confidence\":1},{\"entityType\":\"contract_award\",\"entityKey\":\"Lot 2 street lighting\",\"attributes\":{\"lot\":\"Lot 2 - Street lighting LED retrofit\",\"vendor\":\"Lumen Civic s.r.o.\",\"award_date\":\"2026-03-12\"},\"page\":2,\"confidence\":1}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"contract_award\",\"entityKey\":\"Lot 1 road resurfacing\",\"attributes\":{\"lot\":\"Lot 1 - Road resurfacing\",\"vendor\":\"Stavby Morava a.s.\",\"value_eur\":1247500,\"award_date\":\"2026-03-05\",\"duration_months\":18},\"page\":2,\"confidence\":1},{\"entityType\":\"contract_award\",\"entityKey\":\"Lot 2 street lighting\",\"attributes\":{\"lot\":\"Lot 2 - Street lighting LED retrofit\",\"vendor\":\"Lumen Civic s.r.o.\",\"value_eur\":386900,\"award_date\":\"2026-03-05\",\"duration_months\":24},\"page\":2,\"confidence\":1}]}\n```"
+      ]
+    },
+    {
+      "id": "kb-h02-pump-commissioning",
+      "difficulty": "hard",
+      "traps": "superseded tender data sheet (Appendix A) with different numbers; P-104 removed from scope and NOT installed; P-103 manufacturer and its flow/head in different sections; failed first P-102 test",
+      "title": "Commissioning Report CR-0412 rev 2",
+      "textFile": "kb-extract-hard/h02-pump-commissioning.txt",
+      "schema": [
+        {
+          "entityType": "pump",
+          "description": "a pump installed and commissioned at the station, with its as-built rated values",
+          "fields": [
+            {
+              "name": "tag",
+              "description": "pump tag, e.g. P-101"
+            },
+            {
+              "name": "rated_flow_m3h",
+              "description": "as-built rated flow in m3/h"
+            },
+            {
+              "name": "head_m",
+              "description": "as-built head at the rated flow in metres"
+            },
+            {
+              "name": "motor_kw",
+              "description": "installed motor rating in kW"
+            },
+            {
+              "name": "manufacturer",
+              "description": "pump manufacturer"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "label": "P-101",
+          "any": [
+            "p-101",
+            "p101"
+          ]
+        },
+        {
+          "label": "P-102",
+          "any": [
+            "p-102",
+            "p102"
+          ]
+        },
+        {
+          "label": "P-103",
+          "any": [
+            "p-103",
+            "p103"
+          ]
+        },
+        {
+          "label": "P-101 as-built flow",
+          "any": [
+            "42.8"
+          ]
+        },
+        {
+          "label": "P-101 as-built head",
+          "any": [
+            "36.2"
+          ]
+        },
+        {
+          "label": "P-102 repeat-test head",
+          "any": [
+            "28.4"
+          ]
+        },
+        {
+          "label": "P-103 flow (split section)",
+          "any": [
+            "17.6"
+          ]
+        },
+        {
+          "label": "P-103 head (split section)",
+          "any": [
+            "21.7"
+          ]
+        },
+        {
+          "label": "P-103 manufacturer",
+          "any": [
+            "grundfos"
+          ]
+        }
+      ],
+      "absentStrings": [
+        "lowara"
+      ],
+      "absentPatterns": [
+        "p-?104",
+        "46\\.5",
+        "34\\.0",
+        "18\\.5",
+        "31\\.5",
+        "12\\.3",
+        "18\\.9"
+      ],
+      "rowCounts": {
+        "pump": 3
+      },
+      "good": "```json\n{\"rows\":[{\"entityType\":\"pump\",\"entityKey\":\"P-101 duty pump\",\"attributes\":{\"tag\":\"P-101\",\"rated_flow_m3h\":42.8,\"head_m\":36.2,\"motor_kw\":15,\"manufacturer\":\"KSB\"},\"page\":1,\"confidence\":1},{\"entityType\":\"pump\",\"entityKey\":\"P-102 assist pump\",\"attributes\":{\"tag\":\"P-102\",\"rated_flow_m3h\":38.5,\"head_m\":28.4,\"motor_kw\":11,\"manufacturer\":\"KSB\"},\"page\":2,\"confidence\":1},{\"entityType\":\"pump\",\"entityKey\":\"P-103 standby pump\",\"attributes\":{\"tag\":\"P-103\",\"rated_flow_m3h\":17.6,\"head_m\":21.7,\"motor_kw\":4,\"manufacturer\":\"Grundfos\"},\"page\":2,\"confidence\":1}]}\n```",
+      "bad": [
+        "```json\n{\"rows\":[{\"entityType\":\"pump\",\"entityKey\":\"P-101 duty pump\",\"attributes\":{\"tag\":\"P-101\",\"rated_flow_m3h\":46.5,\"head_m\":34,\"motor_kw\":18.5,\"manufacturer\":\"KSB\"},\"page\":1,\"confidence\":1},{\"entityType\":\"pump\",\"entityKey\":\"P-102 assist pump\",\"attributes\":{\"tag\":\"P-102\",\"rated_flow_m3h\":38.5,\"head_m\":31.5,\"motor_kw\":11,\"manufacturer\":\"KSB\"},\"page\":2,\"confidence\":1},{\"entityType\":\"pump\",\"entityKey\":\"P-103 standby pump\",\"attributes\":{\"tag\":\"P-103\",\"rated_flow_m3h\":17.6,\"head_m\":21.7,\"motor_kw\":4,\"manufacturer\":\"Grundfos\"},\"page\":2,\"confidence\":1}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"pump\",\"entityKey\":\"P-101 duty pump\",\"attributes\":{\"tag\":\"P-101\",\"rated_flow_m3h\":42.8,\"head_m\":36.2,\"motor_kw\":15,\"manufacturer\":\"KSB\"},\"page\":1,\"confidence\":1},{\"entityType\":\"pump\",\"entityKey\":\"P-102 assist pump\",\"attributes\":{\"tag\":\"P-102\",\"rated_flow_m3h\":38.5,\"head_m\":28.4,\"motor_kw\":11,\"manufacturer\":\"KSB\"},\"page\":2,\"confidence\":1},{\"entityType\":\"pump\",\"entityKey\":\"P-103 standby pump\",\"attributes\":{\"tag\":\"P-103\",\"rated_flow_m3h\":17.6,\"head_m\":21.7,\"motor_kw\":4,\"manufacturer\":\"Grundfos\"},\"page\":2,\"confidence\":1},{\"entityType\":\"pump\",\"entityKey\":\"P-104 jockey pump\",\"attributes\":{\"tag\":\"P-104\",\"rated_flow_m3h\":12.3,\"head_m\":18.9,\"motor_kw\":2.2,\"manufacturer\":\"Lowara\"},\"page\":3,\"confidence\":0.7}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"pump\",\"entityKey\":\"P-101 duty pump\",\"attributes\":{\"tag\":\"P-101\",\"rated_flow_m3h\":42.8,\"head_m\":36.2,\"motor_kw\":15,\"manufacturer\":\"KSB\"},\"page\":1,\"confidence\":1},{\"entityType\":\"pump\",\"entityKey\":\"P-102 assist pump\",\"attributes\":{\"tag\":\"P-102\",\"rated_flow_m3h\":38.5,\"head_m\":28.4,\"motor_kw\":11,\"manufacturer\":\"KSB\"},\"page\":2,\"confidence\":1},{\"entityType\":\"pump\",\"entityKey\":\"P-103 standby pump\",\"attributes\":{\"tag\":\"P-103\",\"motor_kw\":4,\"manufacturer\":\"Grundfos\"},\"page\":2,\"confidence\":1}]}\n```"
+      ]
+    },
+    {
+      "id": "kb-h03-board-decisions",
+      "difficulty": "hard",
+      "traps": "heat pumps NOT adopted (4-5) and photovoltaics deferred; budget amended down from the circulated figure; a voted-down fee amendment; bicycle-shelter budget only in the later budget summary",
+      "title": "Board meeting minutes 3/2026",
+      "textFile": "kb-extract-hard/h03-board-decisions.txt",
+      "schema": [
+        {
+          "entityType": "adopted_measure",
+          "description": "a measure the board formally ADOPTED by a vote at this meeting",
+          "fields": [
+            {
+              "name": "measure",
+              "description": "what was adopted"
+            },
+            {
+              "name": "budget_eur",
+              "description": "approved budget in EUR, if any"
+            },
+            {
+              "name": "owner",
+              "description": "person or body responsible"
+            },
+            {
+              "name": "effective_date",
+              "description": "date the measure takes effect or works start"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "label": "insulation",
+          "any": [
+            "insulat"
+          ]
+        },
+        {
+          "label": "insulation amended budget",
+          "any": [
+            "214000",
+            "214,000",
+            "214.000"
+          ]
+        },
+        {
+          "label": "insulation start",
+          "any": [
+            "2026-05-01",
+            "1may2026",
+            "may1,2026",
+            "01.05.2026",
+            "1.5.2026",
+            "01/05/2026"
+          ]
+        },
+        {
+          "label": "parking fee",
+          "any": [
+            "parking"
+          ]
+        },
+        {
+          "label": "adopted fee 38",
+          "any": [
+            "38"
+          ]
+        },
+        {
+          "label": "fee effective",
+          "any": [
+            "2026-07-01",
+            "1july2026",
+            "july1,2026",
+            "01.07.2026",
+            "1.7.2026",
+            "01/07/2026"
+          ]
+        },
+        {
+          "label": "bicycle shelter",
+          "any": [
+            "bicycle",
+            "bike",
+            "cycle"
+          ]
+        },
+        {
+          "label": "shelter budget (split paragraph)",
+          "any": [
+            "9400",
+            "9,400",
+            "9.400"
+          ]
+        },
+        {
+          "label": "shelter owner",
+          "any": [
+            "beneš",
+            "benes",
+            "facilitiesmanager"
+          ]
+        }
+      ],
+      "absentStrings": [
+        "heat pump",
+        "photovolt",
+        "solar",
+        "roof inspection"
+      ],
+      "absentPatterns": [
+        "heatpump",
+        "230[,.]?000",
+        "44[.,]5"
+      ],
+      "rowCounts": {
+        "adopted_measure": 3
+      },
+      "good": "```json\n{\"rows\":[{\"entityType\":\"adopted_measure\",\"entityKey\":\"Facade insulation\",\"attributes\":{\"measure\":\"Facade insulation of buildings 12-18\",\"budget_eur\":214000,\"owner\":\"Technical committee (P. Dvořák)\",\"effective_date\":\"2026-05-01\"},\"page\":1,\"confidence\":1},{\"entityType\":\"adopted_measure\",\"entityKey\":\"Parking fee increase\",\"attributes\":{\"measure\":\"Monthly parking fee raised to EUR 38 per space\",\"owner\":\"Treasurer H. Králová\",\"effective_date\":\"2026-07-01\"},\"page\":2,\"confidence\":1},{\"entityType\":\"adopted_measure\",\"entityKey\":\"Bicycle shelter\",\"attributes\":{\"measure\":\"Bicycle shelter next to building 18\",\"budget_eur\":9400,\"owner\":\"Facilities manager T. Beneš\",\"effective_date\":\"2026-03-18\"},\"page\":2,\"confidence\":1}]}\n```",
+      "bad": [
+        "```json\n{\"rows\":[{\"entityType\":\"adopted_measure\",\"entityKey\":\"Facade insulation\",\"attributes\":{\"measure\":\"Facade insulation of buildings 12-18\",\"budget_eur\":214000,\"owner\":\"Technical committee (P. Dvořák)\",\"effective_date\":\"2026-05-01\"},\"page\":1,\"confidence\":1},{\"entityType\":\"adopted_measure\",\"entityKey\":\"Parking fee increase\",\"attributes\":{\"measure\":\"Monthly parking fee raised to EUR 38 per space\",\"owner\":\"Treasurer H. Králová\",\"effective_date\":\"2026-07-01\"},\"page\":2,\"confidence\":1},{\"entityType\":\"adopted_measure\",\"entityKey\":\"Bicycle shelter\",\"attributes\":{\"measure\":\"Bicycle shelter next to building 18\",\"budget_eur\":9400,\"owner\":\"Facilities manager T. Beneš\",\"effective_date\":\"2026-03-18\"},\"page\":2,\"confidence\":1},{\"entityType\":\"adopted_measure\",\"entityKey\":\"Heat pumps\",\"attributes\":{\"measure\":\"Replace gas boilers with heat pumps\",\"owner\":\"Technical committee\"},\"page\":1,\"confidence\":0.5}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"adopted_measure\",\"entityKey\":\"Facade insulation\",\"attributes\":{\"measure\":\"Facade insulation of buildings 12-18\",\"budget_eur\":230000,\"owner\":\"Technical committee (P. Dvořák)\",\"effective_date\":\"2026-05-01\"},\"page\":1,\"confidence\":1},{\"entityType\":\"adopted_measure\",\"entityKey\":\"Parking fee increase\",\"attributes\":{\"measure\":\"Monthly parking fee raised to EUR 38 per space\",\"owner\":\"Treasurer H. Králová\",\"effective_date\":\"2026-07-01\"},\"page\":2,\"confidence\":1},{\"entityType\":\"adopted_measure\",\"entityKey\":\"Bicycle shelter\",\"attributes\":{\"measure\":\"Bicycle shelter next to building 18\",\"budget_eur\":9400,\"owner\":\"Facilities manager T. Beneš\",\"effective_date\":\"2026-03-18\"},\"page\":2,\"confidence\":1}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"adopted_measure\",\"entityKey\":\"Facade insulation\",\"attributes\":{\"measure\":\"Facade insulation of buildings 12-18\",\"budget_eur\":214000,\"owner\":\"Technical committee (P. Dvořák)\",\"effective_date\":\"2026-05-01\"},\"page\":1,\"confidence\":1},{\"entityType\":\"adopted_measure\",\"entityKey\":\"Parking fee increase\",\"attributes\":{\"measure\":\"Monthly parking fee raised to EUR 44.50 per space\",\"owner\":\"Treasurer H. Králová\",\"effective_date\":\"2026-07-01\"},\"page\":2,\"confidence\":1},{\"entityType\":\"adopted_measure\",\"entityKey\":\"Bicycle shelter\",\"attributes\":{\"measure\":\"Bicycle shelter next to building 18\",\"budget_eur\":9400,\"owner\":\"Facilities manager T. Beneš\",\"effective_date\":\"2026-03-18\"},\"page\":2,\"confidence\":1}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"adopted_measure\",\"entityKey\":\"Facade insulation\",\"attributes\":{\"measure\":\"Facade insulation of buildings 12-18\",\"budget_eur\":214000,\"owner\":\"Technical committee (P. Dvořák)\",\"effective_date\":\"2026-05-01\"},\"page\":1,\"confidence\":1},{\"entityType\":\"adopted_measure\",\"entityKey\":\"Parking fee increase\",\"attributes\":{\"measure\":\"Monthly parking fee raised to EUR 38 per space\",\"owner\":\"Treasurer H. Králová\",\"effective_date\":\"2026-07-01\"},\"page\":2,\"confidence\":1},{\"entityType\":\"adopted_measure\",\"entityKey\":\"Bicycle shelter\",\"attributes\":{\"measure\":\"Bicycle shelter next to building 18\",\"owner\":\"Facilities manager T. Beneš\",\"effective_date\":\"2026-03-18\"},\"page\":2,\"confidence\":1}]}\n```"
+      ]
+    },
+    {
+      "id": "kb-h04-lease-history",
+      "difficulty": "hard",
+      "traps": "unexecuted Amendment No. 1 (EUR 2,400) vs executed No. 2 (EUR 2,310); original rent and expiry replaced; terminated unit 1.02 has no lease in force; new expiry in a clause paragraphs after the rent; a requested-but-refused extension to 2031",
+      "title": "Riverside Arcade lease file summary",
+      "textFile": "kb-extract-hard/h04-lease-history.txt",
+      "schema": [
+        {
+          "entityType": "lease_term",
+          "description": "the lease terms currently in force for a unit, after all EXECUTED amendments",
+          "fields": [
+            {
+              "name": "tenant",
+              "description": "tenant company"
+            },
+            {
+              "name": "unit",
+              "description": "unit number"
+            },
+            {
+              "name": "monthly_rent_eur",
+              "description": "current monthly base rent in EUR"
+            },
+            {
+              "name": "start_date",
+              "description": "lease start date"
+            },
+            {
+              "name": "end_date",
+              "description": "current expiry date"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "label": "unit 2.04",
+          "any": [
+            "2.04"
+          ]
+        },
+        {
+          "label": "2.04 tenant",
+          "any": [
+            "kavárnalípa",
+            "kavarnalipa"
+          ]
+        },
+        {
+          "label": "2.04 executed rent",
+          "any": [
+            "2310",
+            "2,310",
+            "2.310"
+          ]
+        },
+        {
+          "label": "2.04 extended expiry (split clause)",
+          "any": [
+            "2030-12-31",
+            "31december2030",
+            "december31,2030",
+            "31.12.2030",
+            "31.12.2030",
+            "31/12/2030"
+          ]
+        },
+        {
+          "label": "unit 3.11",
+          "any": [
+            "3.11"
+          ]
+        },
+        {
+          "label": "3.11 tenant",
+          "any": [
+            "brightpath"
+          ]
+        },
+        {
+          "label": "3.11 rent",
+          "any": [
+            "1480",
+            "1,480",
+            "1.480"
+          ]
+        },
+        {
+          "label": "3.11 expiry",
+          "any": [
+            "2028-06-30",
+            "30june2028",
+            "june30,2028",
+            "30.06.2028",
+            "30.6.2028",
+            "30/06/2028"
+          ]
+        }
+      ],
+      "absentStrings": [
+        "optika"
+      ],
+      "absentPatterns": [
+        "2[,.]?400",
+        "2[,.]?150",
+        "2027-12-31",
+        "31december2027",
+        "31\\.12\\.2027",
+        "2031",
+        "1[,.]?720"
+      ],
+      "rowCounts": {
+        "lease_term": 2
+      },
+      "good": "```json\n{\"rows\":[{\"entityType\":\"lease_term\",\"entityKey\":\"Unit 2.04 Kavárna Lípa\",\"attributes\":{\"tenant\":\"Kavárna Lípa s.r.o.\",\"unit\":\"2.04\",\"monthly_rent_eur\":2310,\"start_date\":\"2021-06-01\",\"end_date\":\"2030-12-31\"},\"page\":2,\"confidence\":1},{\"entityType\":\"lease_term\",\"entityKey\":\"Unit 3.11 Brightpath\",\"attributes\":{\"tenant\":\"Brightpath Tutoring Ltd\",\"unit\":\"3.11\",\"monthly_rent_eur\":1480,\"start_date\":\"2023-07-01\",\"end_date\":\"2028-06-30\"},\"page\":2,\"confidence\":1}]}\n```",
+      "bad": [
+        "```json\n{\"rows\":[{\"entityType\":\"lease_term\",\"entityKey\":\"Unit 2.04 Kavárna Lípa\",\"attributes\":{\"tenant\":\"Kavárna Lípa s.r.o.\",\"unit\":\"2.04\",\"monthly_rent_eur\":2400,\"start_date\":\"2021-06-01\",\"end_date\":\"2030-12-31\"},\"page\":2,\"confidence\":1},{\"entityType\":\"lease_term\",\"entityKey\":\"Unit 3.11 Brightpath\",\"attributes\":{\"tenant\":\"Brightpath Tutoring Ltd\",\"unit\":\"3.11\",\"monthly_rent_eur\":1480,\"start_date\":\"2023-07-01\",\"end_date\":\"2028-06-30\"},\"page\":2,\"confidence\":1}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"lease_term\",\"entityKey\":\"Unit 2.04 Kavárna Lípa\",\"attributes\":{\"tenant\":\"Kavárna Lípa s.r.o.\",\"unit\":\"2.04\",\"monthly_rent_eur\":2150,\"start_date\":\"2021-06-01\",\"end_date\":\"2027-12-31\"},\"page\":2,\"confidence\":1},{\"entityType\":\"lease_term\",\"entityKey\":\"Unit 3.11 Brightpath\",\"attributes\":{\"tenant\":\"Brightpath Tutoring Ltd\",\"unit\":\"3.11\",\"monthly_rent_eur\":1480,\"start_date\":\"2023-07-01\",\"end_date\":\"2028-06-30\"},\"page\":2,\"confidence\":1}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"lease_term\",\"entityKey\":\"Unit 2.04 Kavárna Lípa\",\"attributes\":{\"tenant\":\"Kavárna Lípa s.r.o.\",\"unit\":\"2.04\",\"monthly_rent_eur\":2310,\"start_date\":\"2021-06-01\",\"end_date\":\"2030-12-31\"},\"page\":2,\"confidence\":1},{\"entityType\":\"lease_term\",\"entityKey\":\"Unit 3.11 Brightpath\",\"attributes\":{\"tenant\":\"Brightpath Tutoring Ltd\",\"unit\":\"3.11\",\"monthly_rent_eur\":1480,\"start_date\":\"2023-07-01\",\"end_date\":\"2028-06-30\"},\"page\":2,\"confidence\":1},{\"entityType\":\"lease_term\",\"entityKey\":\"Unit 1.02 Optika Vize\",\"attributes\":{\"tenant\":\"Optika Vize s.r.o.\",\"unit\":\"1.02\",\"monthly_rent_eur\":1720,\"start_date\":\"2019-04-01\",\"end_date\":\"2025-03-31\"},\"page\":1,\"confidence\":0.6}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"lease_term\",\"entityKey\":\"Unit 2.04 Kavárna Lípa\",\"attributes\":{\"tenant\":\"Kavárna Lípa s.r.o.\",\"unit\":\"2.04\",\"monthly_rent_eur\":2310,\"start_date\":\"2021-06-01\"},\"page\":2,\"confidence\":1},{\"entityType\":\"lease_term\",\"entityKey\":\"Unit 3.11 Brightpath\",\"attributes\":{\"tenant\":\"Brightpath Tutoring Ltd\",\"unit\":\"3.11\",\"monthly_rent_eur\":1480,\"start_date\":\"2023-07-01\",\"end_date\":\"2028-06-30\"},\"page\":2,\"confidence\":1}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"lease_term\",\"entityKey\":\"Unit 2.04 Kavárna Lípa\",\"attributes\":{\"tenant\":\"Kavárna Lípa s.r.o.\",\"unit\":\"2.04\",\"monthly_rent_eur\":2310,\"start_date\":\"2021-06-01\",\"end_date\":\"2030-12-31\"},\"page\":2,\"confidence\":1},{\"entityType\":\"lease_term\",\"entityKey\":\"Unit 3.11 Brightpath\",\"attributes\":{\"tenant\":\"Brightpath Tutoring Ltd\",\"unit\":\"3.11\",\"monthly_rent_eur\":1480,\"start_date\":\"2023-07-01\",\"end_date\":\"2031-06-30\"},\"page\":2,\"confidence\":1}]}\n```"
+      ]
+    },
+    {
+      "id": "kb-h05-postmortem",
+      "difficulty": "hard",
+      "traps": "preliminary 12,000 customers withdrawn for 8,412; status-page detection time 08:10 vs real start 07:52; INC-4468 investigated but NOT part of the incident; INC-4474 end time in a later section",
+      "title": "Postmortem 14 September 2026 outage",
+      "textFile": "kb-extract-hard/h05-postmortem.txt",
+      "schema": [
+        {
+          "entityType": "incident",
+          "description": "a customer-facing incident covered by this postmortem",
+          "fields": [
+            {
+              "name": "incident_id",
+              "description": "incident register id, e.g. INC-1234"
+            },
+            {
+              "name": "start_utc",
+              "description": "start time in UTC"
+            },
+            {
+              "name": "end_utc",
+              "description": "end time in UTC"
+            },
+            {
+              "name": "root_cause",
+              "description": "root cause"
+            },
+            {
+              "name": "customers_affected",
+              "description": "confirmed number of distinct customers affected"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "label": "INC-4471",
+          "any": [
+            "4471"
+          ]
+        },
+        {
+          "label": "INC-4474",
+          "any": [
+            "4474"
+          ]
+        },
+        {
+          "label": "4471 confirmed customers",
+          "any": [
+            "8412",
+            "8,412",
+            "8.412"
+          ]
+        },
+        {
+          "label": "4474 customers",
+          "any": [
+            "1130",
+            "1,130",
+            "1.130"
+          ]
+        },
+        {
+          "label": "4471 cause",
+          "any": [
+            "certificate",
+            "tls"
+          ]
+        },
+        {
+          "label": "4474 cause",
+          "any": [
+            "retry",
+            "retries"
+          ]
+        },
+        {
+          "label": "4471 real start",
+          "any": [
+            "07:52",
+            "7:52"
+          ]
+        },
+        {
+          "label": "4471 end",
+          "any": [
+            "09:31",
+            "9:31"
+          ]
+        },
+        {
+          "label": "4474 end (split section)",
+          "any": [
+            "10:40"
+          ]
+        }
+      ],
+      "absentStrings": [
+        "dns"
+      ],
+      "absentPatterns": [
+        "4468",
+        "(^|[^0-9])12[,.]?000",
+        "08:10"
+      ],
+      "rowCounts": {
+        "incident": 2
+      },
+      "good": "```json\n{\"rows\":[{\"entityType\":\"incident\",\"entityKey\":\"INC-4471 checkout and API outage\",\"attributes\":{\"incident_id\":\"INC-4471\",\"start_utc\":\"2026-09-14T07:52Z\",\"end_utc\":\"2026-09-14T09:31Z\",\"root_cause\":\"Expired TLS certificate on the internal service-mesh gateway\",\"customers_affected\":8412},\"page\":1,\"confidence\":1},{\"entityType\":\"incident\",\"entityKey\":\"INC-4474 webhook degradation\",\"attributes\":{\"incident_id\":\"INC-4474\",\"start_utc\":\"2026-09-14T10:05Z\",\"end_utc\":\"2026-09-14T10:40Z\",\"root_cause\":\"Retry storm in webhook delivery workers (no backoff or jitter)\",\"customers_affected\":1130},\"page\":2,\"confidence\":1}]}\n```",
+      "bad": [
+        "```json\n{\"rows\":[{\"entityType\":\"incident\",\"entityKey\":\"INC-4471 checkout and API outage\",\"attributes\":{\"incident_id\":\"INC-4471\",\"start_utc\":\"2026-09-14T07:52Z\",\"end_utc\":\"2026-09-14T09:31Z\",\"root_cause\":\"Expired TLS certificate on the internal service-mesh gateway\",\"customers_affected\":12000},\"page\":1,\"confidence\":1},{\"entityType\":\"incident\",\"entityKey\":\"INC-4474 webhook degradation\",\"attributes\":{\"incident_id\":\"INC-4474\",\"start_utc\":\"2026-09-14T10:05Z\",\"end_utc\":\"2026-09-14T10:40Z\",\"root_cause\":\"Retry storm in webhook delivery workers (no backoff or jitter)\",\"customers_affected\":1130},\"page\":2,\"confidence\":1}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"incident\",\"entityKey\":\"INC-4471 checkout and API outage\",\"attributes\":{\"incident_id\":\"INC-4471\",\"start_utc\":\"2026-09-14T08:10Z\",\"end_utc\":\"2026-09-14T09:31Z\",\"root_cause\":\"Expired TLS certificate on the internal service-mesh gateway\",\"customers_affected\":8412},\"page\":1,\"confidence\":1},{\"entityType\":\"incident\",\"entityKey\":\"INC-4474 webhook degradation\",\"attributes\":{\"incident_id\":\"INC-4474\",\"start_utc\":\"2026-09-14T10:05Z\",\"end_utc\":\"2026-09-14T10:40Z\",\"root_cause\":\"Retry storm in webhook delivery workers (no backoff or jitter)\",\"customers_affected\":1130},\"page\":2,\"confidence\":1}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"incident\",\"entityKey\":\"INC-4471 checkout and API outage\",\"attributes\":{\"incident_id\":\"INC-4471\",\"start_utc\":\"2026-09-14T07:52Z\",\"end_utc\":\"2026-09-14T09:31Z\",\"root_cause\":\"Expired TLS certificate on the internal service-mesh gateway\",\"customers_affected\":8412},\"page\":1,\"confidence\":1},{\"entityType\":\"incident\",\"entityKey\":\"INC-4474 webhook degradation\",\"attributes\":{\"incident_id\":\"INC-4474\",\"start_utc\":\"2026-09-14T10:05Z\",\"end_utc\":\"2026-09-14T10:40Z\",\"root_cause\":\"Retry storm in webhook delivery workers (no backoff or jitter)\",\"customers_affected\":1130},\"page\":2,\"confidence\":1},{\"entityType\":\"incident\",\"entityKey\":\"INC-4468 DNS\",\"attributes\":{\"incident_id\":\"INC-4468\",\"root_cause\":\"Misconfigured office resolver\"},\"page\":1,\"confidence\":0.5}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"incident\",\"entityKey\":\"INC-4471 checkout and API outage\",\"attributes\":{\"incident_id\":\"INC-4471\",\"start_utc\":\"2026-09-14T07:52Z\",\"end_utc\":\"2026-09-14T09:31Z\",\"root_cause\":\"Expired TLS certificate on the internal service-mesh gateway\",\"customers_affected\":8412},\"page\":1,\"confidence\":1},{\"entityType\":\"incident\",\"entityKey\":\"INC-4474 webhook degradation\",\"attributes\":{\"incident_id\":\"INC-4474\",\"start_utc\":\"2026-09-14T10:05Z\",\"root_cause\":\"Retry storm in webhook delivery workers (no backoff or jitter)\",\"customers_affected\":1130},\"page\":2,\"confidence\":1}]}\n```"
+      ]
+    },
+    {
+      "id": "kb-h06-supplier-certs",
+      "difficulty": "hard",
+      "traps": "superseded certificates with transposed numbers (0437/0473, 727/772); ISO 14001 lapsed and NOT renewed; a pending application that is not a certificate; Nordic ISO 9001 expiry only in a later section",
+      "title": "Supplier certification status review",
+      "textFile": "kb-extract-hard/h06-supplier-certs.txt",
+      "schema": [
+        {
+          "entityType": "certificate",
+          "description": "a management-system certificate that is CURRENTLY VALID at the review date",
+          "fields": [
+            {
+              "name": "supplier",
+              "description": "supplier company"
+            },
+            {
+              "name": "standard",
+              "description": "the standard, e.g. ISO 9001"
+            },
+            {
+              "name": "cert_number",
+              "description": "certificate number exactly as printed"
+            },
+            {
+              "name": "expiry_date",
+              "description": "expiry date"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "label": "Ferrotech 9001 number",
+          "any": [
+            "q-2291-0473"
+          ]
+        },
+        {
+          "label": "Ferrotech 9001 expiry",
+          "any": [
+            "2027-04-30",
+            "30april2027",
+            "april30,2027",
+            "30.04.2027",
+            "30.4.2027",
+            "30/04/2027"
+          ]
+        },
+        {
+          "label": "Nordic 9001 number",
+          "any": [
+            "9001-np-88214"
+          ]
+        },
+        {
+          "label": "Nordic 9001 expiry (split section)",
+          "any": [
+            "2028-09-15",
+            "15september2028",
+            "september15,2028",
+            "15.09.2028",
+            "15.9.2028",
+            "15/09/2028"
+          ]
+        },
+        {
+          "label": "Nordic IATF number",
+          "any": [
+            "iatf-0331-772"
+          ]
+        },
+        {
+          "label": "Nordic IATF expiry",
+          "any": [
+            "2027-11-30",
+            "30november2027",
+            "november30,2027",
+            "30.11.2027",
+            "30.11.2027",
+            "30/11/2027"
+          ]
+        }
+      ],
+      "absentStrings": [
+        "castell",
+        "aenor",
+        "14001"
+      ],
+      "absentPatterns": [
+        "q-2291-0437",
+        "e-5512-0090",
+        "iatf-0331-727"
+      ],
+      "rowCounts": {
+        "certificate": 3
+      },
+      "good": "```json\n{\"rows\":[{\"entityType\":\"certificate\",\"entityKey\":\"Ferrotech ISO 9001\",\"attributes\":{\"supplier\":\"Ferrotech GmbH\",\"standard\":\"ISO 9001\",\"cert_number\":\"Q-2291-0473\",\"expiry_date\":\"2027-04-30\"},\"page\":1,\"confidence\":1},{\"entityType\":\"certificate\",\"entityKey\":\"Nordic Polymers ISO 9001\",\"attributes\":{\"supplier\":\"Nordic Polymers AB\",\"standard\":\"ISO 9001\",\"cert_number\":\"9001-NP-88214\",\"expiry_date\":\"2028-09-15\"},\"page\":2,\"confidence\":1},{\"entityType\":\"certificate\",\"entityKey\":\"Nordic Polymers IATF 16949\",\"attributes\":{\"supplier\":\"Nordic Polymers AB\",\"standard\":\"IATF 16949\",\"cert_number\":\"IATF-0331-772\",\"expiry_date\":\"2027-11-30\"},\"page\":2,\"confidence\":1}]}\n```",
+      "bad": [
+        "```json\n{\"rows\":[{\"entityType\":\"certificate\",\"entityKey\":\"Ferrotech ISO 9001\",\"attributes\":{\"supplier\":\"Ferrotech GmbH\",\"standard\":\"ISO 9001\",\"cert_number\":\"Q-2291-0437\",\"expiry_date\":\"2027-04-30\"},\"page\":1,\"confidence\":1},{\"entityType\":\"certificate\",\"entityKey\":\"Nordic Polymers ISO 9001\",\"attributes\":{\"supplier\":\"Nordic Polymers AB\",\"standard\":\"ISO 9001\",\"cert_number\":\"9001-NP-88214\",\"expiry_date\":\"2028-09-15\"},\"page\":2,\"confidence\":1},{\"entityType\":\"certificate\",\"entityKey\":\"Nordic Polymers IATF 16949\",\"attributes\":{\"supplier\":\"Nordic Polymers AB\",\"standard\":\"IATF 16949\",\"cert_number\":\"IATF-0331-772\",\"expiry_date\":\"2027-11-30\"},\"page\":2,\"confidence\":1}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"certificate\",\"entityKey\":\"Ferrotech ISO 9001\",\"attributes\":{\"supplier\":\"Ferrotech GmbH\",\"standard\":\"ISO 9001\",\"cert_number\":\"Q-2291-0473\",\"expiry_date\":\"2027-04-30\"},\"page\":1,\"confidence\":1},{\"entityType\":\"certificate\",\"entityKey\":\"Nordic Polymers ISO 9001\",\"attributes\":{\"supplier\":\"Nordic Polymers AB\",\"standard\":\"ISO 9001\",\"cert_number\":\"9001-NP-88214\",\"expiry_date\":\"2028-09-15\"},\"page\":2,\"confidence\":1},{\"entityType\":\"certificate\",\"entityKey\":\"Nordic Polymers IATF 16949\",\"attributes\":{\"supplier\":\"Nordic Polymers AB\",\"standard\":\"IATF 16949\",\"cert_number\":\"IATF-0331-772\",\"expiry_date\":\"2027-11-30\"},\"page\":2,\"confidence\":1},{\"entityType\":\"certificate\",\"entityKey\":\"Ferrotech ISO 14001\",\"attributes\":{\"supplier\":\"Ferrotech GmbH\",\"standard\":\"ISO 14001\",\"cert_number\":\"E-5512-0090\",\"expiry_date\":\"2026-01-31\"},\"page\":1,\"confidence\":0.5}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"certificate\",\"entityKey\":\"Ferrotech ISO 9001\",\"attributes\":{\"supplier\":\"Ferrotech GmbH\",\"standard\":\"ISO 9001\",\"cert_number\":\"Q-2291-0473\",\"expiry_date\":\"2027-04-30\"},\"page\":1,\"confidence\":1},{\"entityType\":\"certificate\",\"entityKey\":\"Nordic Polymers ISO 9001\",\"attributes\":{\"supplier\":\"Nordic Polymers AB\",\"standard\":\"ISO 9001\",\"cert_number\":\"9001-NP-88214\",\"expiry_date\":\"2028-09-15\"},\"page\":2,\"confidence\":1},{\"entityType\":\"certificate\",\"entityKey\":\"Nordic Polymers IATF 16949\",\"attributes\":{\"supplier\":\"Nordic Polymers AB\",\"standard\":\"IATF 16949\",\"cert_number\":\"IATF-0331-772\",\"expiry_date\":\"2027-11-30\"},\"page\":2,\"confidence\":1},{\"entityType\":\"certificate\",\"entityKey\":\"Castell ISO 9001\",\"attributes\":{\"supplier\":\"Castell Coatings S.L.\",\"standard\":\"ISO 9001\"},\"page\":2,\"confidence\":0.4}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"certificate\",\"entityKey\":\"Ferrotech ISO 9001\",\"attributes\":{\"supplier\":\"Ferrotech GmbH\",\"standard\":\"ISO 9001\",\"cert_number\":\"Q-2291-0473\",\"expiry_date\":\"2027-04-30\"},\"page\":1,\"confidence\":1},{\"entityType\":\"certificate\",\"entityKey\":\"Nordic Polymers ISO 9001\",\"attributes\":{\"supplier\":\"Nordic Polymers AB\",\"standard\":\"ISO 9001\",\"cert_number\":\"9001-NP-88214\"},\"page\":2,\"confidence\":1},{\"entityType\":\"certificate\",\"entityKey\":\"Nordic Polymers IATF 16949\",\"attributes\":{\"supplier\":\"Nordic Polymers AB\",\"standard\":\"IATF 16949\",\"cert_number\":\"IATF-0331-772\",\"expiry_date\":\"2027-11-30\"},\"page\":2,\"confidence\":1}]}\n```",
+        "```json\n{\"rows\":[{\"entityType\":\"certificate\",\"entityKey\":\"Ferrotech ISO 9001\",\"attributes\":{\"supplier\":\"Ferrotech GmbH\",\"standard\":\"ISO 9001\",\"cert_number\":\"Q-2291-0473\",\"expiry_date\":\"2027-04-30\"},\"page\":1,\"confidence\":1},{\"entityType\":\"certificate\",\"entityKey\":\"Nordic Polymers ISO 9001\",\"attributes\":{\"supplier\":\"Nordic Polymers AB\",\"standard\":\"ISO 9001\",\"cert_number\":\"9001-NP-88214\",\"expiry_date\":\"2028-09-15\"},\"page\":2,\"confidence\":1},{\"entityType\":\"certificate\",\"entityKey\":\"Nordic Polymers IATF 16949\",\"attributes\":{\"supplier\":\"Nordic Polymers AB\",\"standard\":\"IATF 16949\",\"cert_number\":\"IATF-0331-727\",\"expiry_date\":\"2027-11-30\"},\"page\":2,\"confidence\":1}]}\n```"
+      ]
+    }
+  ]
+}

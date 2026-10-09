@@ -14,8 +14,19 @@
 //   ask resolve   -> invoke update_manual_review_status {id, status:'resolved', reviewerNotes}
 //   say           -> invoke post_persona_channel_message {personaId, content, clientId:null}
 //                    for the operator's own words; the master's say has no door (NO_DOOR.masterSay)
+//   plan          -> POST /dev-tools/milestones {projectId, name, goal?, description?, targetDate?} -> {milestoneId}
+//                    per milestone, then POST /dev-tools/goals {projectId, title, description?, targetDate?,
+//                    milestoneId} -> {goalId} per goal. Every id is recorded in the entry's `created` and
+//                    never posted again. Until a route answers, a 404 leaves the entry queued with the
+//                    evidence "route missing (404)" (those routes are new on 2026-10-07).
+//   council       -> POST /dev-tools/council/ingest {projectId, runDir} (runDir: the journal's durable copy)
+//   tier          -> GET /dev-tools/use-cases/{projectId} (the id by slug), then
+//                    POST /dev-tools/use-cases/{useCaseId}/tier {tier}
+//   report        -> POST /dev-tools/reports {projectId, title, content, attachments, approval}
+//                    (a FULL council `ready`: the human gate. The council never approves.)
+//                    The same 404 rule holds for all three.
 
-import { OUTBOX_STATES, Refusal, nowIso } from './contract.mjs';
+import { COUNCIL, OUTBOX_STATES, Refusal, nowIso } from './contract.mjs';
 import { listSlugs, loadOutbox, updateOutbox } from './store.mjs';
 import { masterPersona, one, openDb, resolveManaged } from './dbread.mjs';
 import * as bridge from './bridge.mjs';
@@ -129,7 +140,157 @@ async function say(e, { db, doors, dryRun }) {
   return after ? res('replayed', `db: channel message ${id8(after.id)}`) : res('failed', 'post-check: the message is not in the channel after the door answered');
 }
 
-const HANDLERS = { 'idea-verdict': ideaVerdict, 'task-complete': taskComplete, ask, say };
+/**
+ * A door whose ROUTE is missing (not built yet, or not in this build): an unrouted path answers axum's
+ * EMPTY 404. Not a failure of the entry: it stays queued. A handler's own 404 carries a reason in its
+ * body ("No project registered with id ...", measured on the 2026-10-07 milestones/goals doors) and is
+ * a real failure the operator must see. Without a body to look at (a test door), any 404 counts.
+ */
+export const is404 = (err) => {
+  const status = err?.status ?? (/->\s*404\b/.test(String(err?.message ?? err ?? '')) ? 404 : null);
+  if (status !== 404) return false;
+  return typeof err?.body === 'string' ? !err.body.trim() : true;
+};
+const firstLine = (err) => String(err?.message || err).split('\n')[0].slice(0, 240);
+
+/** The goal's text for the app: its description, then its measure (the goals door has no measure field). */
+export const goalDescription = (g) => [g.description, g.measure ? `Measure: ${g.measure}` : null].filter((s) => typeof s === 'string' && s.trim()).join('\n\n');
+
+/**
+ * plan {projectId, plan}: milestones first (each needs its id for its goals), then goals. Idempotent
+ * three ways: an id in `created` is never posted again; before a post, a milestone of the same name in
+ * the project (or a goal of the same title linked to that milestone) is adopted instead (a crash between
+ * the post and the journal line); after the posts, every created id must read back from the DB.
+ * Progress is returned in `created` on EVERY outcome, so a failure halfway is resumed, not repeated.
+ */
+async function plan(e, { db, doors, dryRun }) {
+  const { projectId, plan: p } = e.payload;
+  const ms = Array.isArray(p?.milestones) ? p.milestones : [];
+  const created = { milestones: { ...(e.created?.milestones ?? {}) }, goals: { ...(e.created?.goals ?? {}) } };
+  const done = (state, evidence) => res(state, evidence, { created });
+  const ids8 = (o) => Object.values(o).map(id8).join(', ');
+  let posted = 0, adopted = 0, wouldPost = 0;
+  const post = async (route, body, what) => {
+    if (typeof doors.devTools !== 'function') return { stop: res('skipped', 'no door: doors.devTools is absent', { created }) };
+    try { return { answer: await doors.devTools(route, body) }; } catch (err) {
+      return { stop: is404(err)
+        ? done('queued', `route missing (404): POST /dev-tools${route} (${posted} posted before it)`)
+        : done('failed', `door error on ${what}: ${firstLine(err)}`) };
+    }
+  };
+  for (let i = 0; i < ms.length; i++) {
+    const m = ms[i];
+    const goals = Array.isArray(m.goals) ? m.goals : [];
+    let mid = created.milestones[i] ?? null;
+    if (!mid) {
+      mid = one(db, 'select id from dev_milestones where project_id = ? and name = ?', [projectId, m.name])?.id ?? null;
+      if (mid) { created.milestones[i] = mid; adopted++; }
+    }
+    if (!mid) {
+      if (dryRun) { wouldPost += 1 + goals.length; continue; }
+      const r = await post('/milestones', { projectId, name: m.name, ...(m.goal ? { goal: m.goal } : {}), ...(m.targetDate ? { targetDate: m.targetDate } : {}) }, `milestone ${i + 1}`);
+      if (r.stop) return r.stop;
+      mid = r.answer?.milestoneId ?? r.answer?.id ?? null;
+      if (!mid) return done('failed', `the milestones door answered without a milestoneId for milestone ${i + 1}`);
+      created.milestones[i] = mid; posted++;
+    }
+    for (let k = 0; k < goals.length; k++) {
+      const g = goals[k], key = `${i}.${k}`;
+      if (created.goals[key]) continue;
+      const found = one(db, `select g.id from dev_goals g join dev_milestone_items mi on mi.item_id = g.id and mi.item_kind = 'goal'
+                             where mi.milestone_id = ? and g.title = ?`, [mid, g.title])?.id ?? null;
+      if (found) { created.goals[key] = found; adopted++; continue; }
+      if (dryRun) { wouldPost++; continue; }
+      const description = goalDescription(g);
+      const r = await post('/goals', { projectId, title: g.title, ...(description ? { description } : {}), milestoneId: mid }, `goal ${key}`);
+      if (r.stop) return r.stop;
+      const gid = r.answer?.goalId ?? r.answer?.id ?? null;
+      if (!gid) return done('failed', `the goals door answered without a goalId for goal ${key}`);
+      created.goals[key] = gid; posted++;
+    }
+  }
+  if (dryRun) return done('queued', wouldPost ? `would POST ${wouldPost} milestone/goal row(s) through /dev-tools/milestones and /dev-tools/goals` : 'nothing left to post');
+  const missing = [
+    ...Object.values(created.milestones).filter((id) => !one(db, 'select id from dev_milestones where id = ?', [id])),
+    ...Object.values(created.goals).filter((id) => !one(db, 'select id from dev_goals where id = ?', [id])),
+  ];
+  if (missing.length) return done('failed', `post-check: ${missing.length} created id(s) not in the app DB: ${missing.map(id8).join(', ')}`);
+  return done('replayed', `db: ${Object.keys(created.milestones).length} milestone(s) [${ids8(created.milestones)}] and ${Object.keys(created.goals).length} goal(s) [${ids8(created.goals)}] (${posted} posted now, ${adopted} found already there)`);
+}
+
+/** POST through the bridge; a 404 becomes {missing}, any other failure throws (replayEntry: failed). */
+async function postOr404(doors, route, body) {
+  if (typeof doors.devTools !== 'function') return { absent: true };
+  try { return { answer: await doors.devTools(route, body) }; } catch (err) { if (is404(err)) return { missing: true }; throw err; }
+}
+const baseName = (p) => String(p ?? '').split(/[\\/]/).filter(Boolean).at(-1) ?? '';
+
+/** council {projectId, runDir, featureSlug, mode, outcome}: the app ingests the durable copy of the run directory. */
+async function council(e, { db, doors, dryRun }) {
+  const { projectId, runDir, featureSlug, mode, outcome } = e.payload;
+  const name = baseName(runDir);
+  const read = () => one(db, 'select id from dev_council_runs where run_dir = ? or run_dir like ?', [runDir, `%${name}`]);
+  const before = read();
+  if (before) return res('skipped', `already applied: council run ${id8(before.id)} holds ${name}`);
+  if (dryRun) return res('queued', `would POST /dev-tools/council/ingest (${mode} ${featureSlug}: ${outcome}, ${name})`);
+  const r = await postOr404(doors, '/council/ingest', { projectId, runDir });
+  if (r.absent) return res('skipped', 'no door: doors.devTools is absent');
+  if (r.missing) return res('queued', 'route missing (404): POST /dev-tools/council/ingest');
+  const after = read();
+  return after
+    ? res('replayed', `db: council run ${id8(after.id)} (${mode} ${featureSlug}: ${outcome})`)
+    : res('failed', `post-check: no dev_council_runs row for ${name} after the door answered`);
+}
+
+/** tier {projectId, featureSlug, tier}: a full council's `ready` marks the feature major. */
+async function tier(e, { db, doors, dryRun }) {
+  const { projectId, featureSlug, tier: want } = e.payload;
+  const row = () => one(db, 'select id, tier from dev_use_cases where project_id = ? and slug = ?', [projectId, featureSlug]);
+  const before = row();
+  if (!before) return res('skipped', `no use case ${featureSlug} for this project in the app DB`);
+  if (before.tier === want) return res('skipped', `already applied: ${featureSlug} is ${want}`);
+  if (dryRun) return res('queued', `would resolve ${featureSlug} through GET /dev-tools/use-cases/${id8(projectId)} and POST its tier ${want}`);
+  if (typeof doors.devTools !== 'function') return res('skipped', 'no door: doors.devTools is absent');
+  let list;
+  try { list = await doors.devTools(`/use-cases/${encodeURIComponent(projectId)}`); } catch (err) {
+    if (is404(err)) return res('queued', 'route missing (404): GET /dev-tools/use-cases/{projectId}');
+    throw err;
+  }
+  const rows = Array.isArray(list) ? list : (list?.useCases ?? list?.items ?? []);
+  const useCaseId = rows.find((u) => u?.slug === featureSlug)?.id ?? null;
+  if (!useCaseId) return res('failed', `GET /dev-tools/use-cases did not list ${featureSlug}`);
+  const r = await postOr404(doors, `/use-cases/${encodeURIComponent(useCaseId)}/tier`, { tier: want });
+  if (r.missing) return res('queued', 'route missing (404): POST /dev-tools/use-cases/{useCaseId}/tier');
+  const after = row();
+  return after?.tier === want
+    ? res('replayed', `db: ${featureSlug} tier ${want}`)
+    : res('failed', `post-check: ${featureSlug} tier is ${after?.tier ?? 'unset'} after the door answered`);
+}
+
+/**
+ * report {projectId, title, content, attachments, approval}: the council's report and an Approval only
+ * the operator answers. Once the door names a report id it is recorded (`created`) and never posted again.
+ */
+async function report(e, { db, doors, dryRun }) {
+  // trimmed at send time too, so an entry queued before the cap matched the door's still lands
+  // (2026-10-07: kp's first full-ready report carried 20 and the door refused '20 attachments (cap 12)')
+  const p = { ...e.payload, attachments: (e.payload.attachments ?? []).filter((a) => COUNCIL.attachable.test(String(a?.path ?? ''))).slice(0, COUNCIL.attachmentsMax) };
+  const find = () => one(db, 'select id from persona_reports where title = ? order by created_at desc limit 1', [p.title]);
+  const before = e.created?.reportId ? { id: e.created.reportId } : find();
+  if (before) return res('skipped', `already applied: report ${id8(before.id)}`, { created: { reportId: before.id } });
+  if (dryRun) return res('queued', `would POST /dev-tools/reports ("${String(p.title).slice(0, 80)}", ${p.attachments?.length ?? 0} attachment(s), approval "${p.approval?.title ?? ''}")`);
+  const r = await postOr404(doors, '/reports', p);
+  if (r.absent) return res('skipped', 'no door: doors.devTools is absent');
+  if (r.missing) return res('queued', 'route missing (404): POST /dev-tools/reports');
+  const after = find();
+  if (after) return res('replayed', `db: report ${id8(after.id)}`, { created: { reportId: after.id } });
+  const answered = r.answer?.reportId ?? r.answer?.id ?? null;
+  return answered
+    ? res('replayed', `the door answered report ${id8(answered)}; no persona_reports row has its title (the route may store it elsewhere)`, { created: { reportId: answered } })
+    : res('failed', 'post-check: no report row and no report id after the door answered');
+}
+
+const HANDLERS = { 'idea-verdict': ideaVerdict, 'task-complete': taskComplete, ask, say, plan, council, tier, report };
 
 /**
  * (entry, {dryRun, doors, db}) => {state, evidence}   // read-only DB check before and after posting.
@@ -171,7 +332,13 @@ export async function cmdOutbox({ _ = [], flags = {} } = {}, deps = {}) {
   }
   if (sub !== 'replay') throw new Error(`outbox: unknown subcommand ${sub} (list|replay)`);
 
-  const pending = entries.filter((e) => REPLAYABLE.includes(e.state));
+  // --kinds council,tier,report: replay only those kinds; the rest stay queued untouched. The weekend runs
+  // the masters headless with the app as the surface, and a replayed operator `say` posts to the persona's
+  // channel, which starts an in-app master run: a second master on the same backlog.
+  const kinds = flags.kinds && flags.kinds !== true ? String(flags.kinds).split(',').map((k) => k.trim()).filter(Boolean) : null;
+  const unknownKinds = kinds?.filter((k) => !HANDLERS[k]) ?? [];
+  if (unknownKinds.length) throw new Error(`outbox: unknown kind(s) ${unknownKinds.join(', ')} (${Object.keys(HANDLERS).join('|')})`);
+  const pending = entries.filter((e) => REPLAYABLE.includes(e.state) && (!kinds || kinds.includes(e.kind)));
   const dryRun = !!flags['dry-run'];
   if (!pending.length) return { dryRun, replayed: 0, entries: [] };
   if (!dryRun && !(await (deps.appUp ?? bridge.appUp)())) {
@@ -190,7 +357,7 @@ export async function cmdOutbox({ _ = [], flags = {} } = {}, deps = {}) {
         continue;
       }
       const r = await replayEntry(e, { doors, db });
-      const updated = updateOutbox(e.slug, e.id, { state: r.state, attempts: (e.attempts ?? 0) + 1, evidence: r.evidence, replayedAt: nowIso() });
+      const updated = updateOutbox(e.slug, e.id, { state: r.state, attempts: (e.attempts ?? 0) + 1, evidence: r.evidence, replayedAt: nowIso(), ...(r.created ? { created: r.created } : {}) });
       out.push(summary(updated));
     }
   } finally { if (own) db.close(); }

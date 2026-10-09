@@ -21,6 +21,7 @@ import {
   markReportRead,
 } from '@/api/overview/reports';
 import { severityBucket, type ReviewBadgeCount } from './monitorModel';
+import { useMonitorVisible } from './monitorVisibility';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { usePersonaMap, useEnrichedRecords } from '@/hooks/utility/data/usePersonaMap';
 import { useReportCreatedListener } from '@/hooks/realtime/useReportCreatedListener';
@@ -38,6 +39,26 @@ const logger = createLogger('persona-monitor');
 
 /** Most recent messages scanned for unread state — unread skews recent. */
 const MESSAGE_SCAN_LIMIT = 300;
+
+/**
+ * The pending-review working set every surface in the overlay deals from.
+ *
+ * `list_manual_reviews` takes no limit, so an unbounded poll re-reads and
+ * re-shapes EVERY pending row on every tick. This is a working set, not an
+ * archive, and the cap is reported ({@link MonitorData.reviewsHasMore}) so a
+ * truncated read can never be presented as a finished queue.
+ *
+ * 100 rather than the command's default 40: a reviewer who opens the deck to
+ * clear a backlog should get the whole backlog in one deal on any realistic
+ * install, and the cap exists to bound a pathological queue rather than to page
+ * a normal one.
+ *
+ * It lives HERE rather than beside the deck because the Monitor and the Quick
+ * Answer popover must bound the read identically: {@link reviewsWarmCache} is
+ * keyed by the bound, so two different caps would be two warm caches for the
+ * same queue and a surface would paint the other one's rows on open.
+ */
+export const MONITOR_REVIEW_LIMIT = 100;
 
 /**
  * A review row with the three columns `PersonaManualReview` carries that the
@@ -229,10 +250,32 @@ export interface MonitorFeeds {
   /**
    * Activity-board path: fetch per-persona pending/unread COUNTS rather than
    * the review and message row dumps. Tiles badge from the maps; the drawer
-   * fetches the selected persona's page. Mutually exclusive with hydrating
-   * {@link MonitorData.reviews} / {@link MonitorData.unreadMessages}.
+   * fetches the selected persona's page.
+   *
+   * COMPOSES WITH {@link MonitorFeeds.reviewLimit} — it used to exclude it.
+   * Counts alone is still counts alone; counts PLUS a limit fetches both in
+   * one round trip, which is what lets the Activity board (tiles, counts) and
+   * the decision rail (rows) share a single engine instead of mounting one
+   * each. Messages have no such pairing: nothing inside the overlay reads the
+   * unread ROWS, so `badgeCounts` still means counts-only for them.
    */
   badgeCounts?: boolean;
+  /**
+   * THIS INSTANCE IS A PLACEHOLDER — a shared engine is already serving the
+   * surface, so do nothing at all: no mount read, no poller, no event refresh.
+   *
+   * It exists because of a shape React forces. A hook cannot be called
+   * conditionally, so a caller that takes the overlay's shared engine when there
+   * is one (`useSharedMonitorData`) and mounts its own when there is not has to
+   * mount the second instance EITHER WAY. Every other flag here narrows what an
+   * instance fetches; this one says the instance is not the one being read, and
+   * is the difference between "the duplicate is quiet" and "the duplicate costs
+   * nothing".
+   *
+   * `loading` is forced false: a dormant instance resolves nothing, and leaving
+   * it true would be a ghost that never ends if anyone ever did read it.
+   */
+  dormant?: boolean;
 }
 
 const ALL_FEEDS: Required<Omit<MonitorFeeds, 'reviewLimit'>> = {
@@ -240,6 +283,7 @@ const ALL_FEEDS: Required<Omit<MonitorFeeds, 'reviewLimit'>> = {
   personaHealth: true,
   reviews: true,
   badgeCounts: false,
+  dormant: false,
 };
 
 /**
@@ -261,6 +305,56 @@ let messageCountsWarmCache: Record<string, number> | null = null;
 
 function reviewsCacheKey(reviewLimit: number | undefined): string {
   return reviewLimit === undefined ? 'all' : `limit:${reviewLimit}`;
+}
+
+/**
+ * A TICK THAT WOULD RE-READ WHAT WAS JUST READ IS NOT A REFRESH.
+ *
+ * `usePolling` fires once the moment it registers a ticker, which is right — a
+ * feed that has just been enabled should not wait out a cadence. It is wrong
+ * twice over in this hook, and both are measured defects rather than theory:
+ *
+ *  • AT MOUNT the effect below reads reviews, messages and summaries, and then
+ *    every `usePolling` registration in the same commit reads the same three
+ *    again. Six IPC round trips open the Monitor where three are wanted.
+ *  • ON REOPEN every feed is gated on {@link useMonitorVisible}, so showing the
+ *    overlay re-enables and therefore re-registers all four at once — a
+ *    thundering refresh of feeds that may have been read two seconds before it
+ *    was hidden.
+ *
+ * So eligibility moves one layer up, the same shape `usePolling` already uses
+ * for backoff (`nextEligibleAt`): each feed records WHEN IT LAST TRIED, and a
+ * ticker that fires inside that window declines. Last-ATTEMPT rather than
+ * last-success on purpose — the mount read is still in flight when the ticker
+ * registers, and a success stamp would not exist yet to decline against.
+ *
+ * The slack is what stops the gate halving the cadence. A bucket tick is not
+ * phase-locked to this ticker's registration, so the tick that lands one
+ * interval later can land a few milliseconds EARLY; without slack it would be
+ * declined and the feed would wait a second full interval.
+ */
+const POLL_DUE_SLACK_MS = 1_000;
+
+function pollIsDue(lastAttemptAt: number, interval: number): boolean {
+  return Date.now() - lastAttemptAt >= interval - POLL_DUE_SLACK_MS;
+}
+
+/**
+ * The health read's verdict, which it does not return.
+ *
+ * `fetchPersonaSummaries` catches internally and resolves either way, so the
+ * only record of a failure is `personaSummariesError` — and it has to be read
+ * from the live store AFTER the await, because the value this hook subscribes
+ * to is a render behind. Guarded on `getState` because a test may mock the
+ * store as a bare selector function; a store with no `getState` means "no
+ * failure signal available", which is the behaviour that existed before and
+ * can never produce a false backoff.
+ */
+function readHealthFailure(): unknown {
+  const getState = (useAgentStore as { getState?: () => { personaSummariesError?: string | null } })
+    .getState;
+  const message = typeof getState === 'function' ? getState().personaSummariesError : null;
+  return message ? new Error(message) : null;
 }
 
 function emptyBadge(): ReviewBadgeCount {
@@ -367,13 +461,15 @@ export interface MonitorData {
    * NOTE — the polling layer's own `lastRefreshed` is the FALLBACK here, not
    * the source, and cannot be the source: `usePolling` stamps it whenever the
    * fetch fn RESOLVES, and both loaders in this hook catch internally and
-   * resolve. For them that timestamp says "we ran", not "we succeeded". The
-   * same property is why `usePolling`'s exponential backoff is structurally
-   * unreachable for these two loaders and for `fetchPersonaSummaries` — they
-   * never reject, so `errorCountRef` never increments and a dead backend is
-   * re-queried at full cadence forever. That is a cross-cutting fix belonging
-   * to the polling context (every caller that catches inside its loader has
-   * it), NOT something to paper over per-caller here.
+   * resolve. For them that timestamp says "we ran", not "we succeeded".
+   *
+   * That same property USED to make `usePolling`'s exponential backoff
+   * structurally unreachable here — a dead backend was re-queried at full
+   * cadence forever. It is reachable now, and the fix did not change the
+   * loaders: they still catch and resolve, and a thin poll wrapper re-throws
+   * what they caught so only the TICKER sees a rejection. See `reviewsFailure`
+   * and `pollReviews`. The loaders' own stamps below are therefore still the
+   * honest source of "when did this last become true".
    */
   lastRefreshed: number | null;
   activeProcesses: Record<string, ActiveProcess>;
@@ -462,11 +558,34 @@ function verdictKey(id: string, intent: string): string {
 }
 
 export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
-  const wantsMessages = feeds.messages ?? ALL_FEEDS.messages;
-  const wantsPersonaHealth = feeds.personaHealth ?? ALL_FEEDS.personaHealth;
-  const wantsReviewPoll = feeds.reviews ?? ALL_FEEDS.reviews;
+  const dormant = feeds.dormant === true;
+  const wantsMessages = (feeds.messages ?? ALL_FEEDS.messages) && !dormant;
+  const wantsPersonaHealth = (feeds.personaHealth ?? ALL_FEEDS.personaHealth) && !dormant;
+  const wantsReviewPoll = (feeds.reviews ?? ALL_FEEDS.reviews) && !dormant;
   const reviewLimit = feeds.reviewLimit;
   const badgeCounts = feeds.badgeCounts === true;
+  /**
+   * Whether this instance hydrates {@link MonitorData.reviews} with ROWS.
+   *
+   * Counts and rows used to be exclusive — `badgeCounts` meant "counts
+   * INSTEAD of rows". That was true while the Activity board was the only
+   * thing reading the Monitor's engine, and false the moment the decision rail
+   * started reading the same one: the rail's triage queue is built from the
+   * rows, and a counts-only engine serves it an empty queue while the tiles
+   * badge a number. Both now compose, on the same read, in one round trip —
+   * ask for counts and name a `reviewLimit` and you get both. Counts alone is
+   * still counts alone, so no existing caller changed.
+   */
+  const wantsReviewRows = !badgeCounts || reviewLimit !== undefined;
+  /**
+   * IS ANYONE LOOKING? The overlay stopped unmounting on close (see
+   * `monitorVisibility.ts`), so "the Monitor is shut" no longer tears these
+   * pollers down — it only stops them being painted. Every feed below is gated
+   * on this, and the default outside the provider is `true`, so the Quick
+   * Answer popover and every test that mounts this hook bare behave exactly as
+   * they did.
+   */
+  const monitorVisible = useMonitorVisible();
   const personas = useAgentStore((s) => s.personas);
   const healthMap = useAgentStore((s) => s.personaHealthMap);
   const fetchPersonaSummaries = useAgentStore((s) => s.fetchPersonaSummaries);
@@ -495,9 +614,11 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const [messageBadgeCounts, setMessageBadgeCounts] = useState<Record<string, number>>(
     () => messageCountsWarmCache ?? {},
   );
-  const [loading, setLoading] = useState(
-    badgeCounts ? reviewCountsWarmCache === null : warm === undefined,
-  );
+  const [loading, setLoading] = useState(() => {
+    if (dormant) return false;
+    if (badgeCounts && reviewCountsWarmCache === null) return true;
+    return wantsReviewRows && warm === undefined;
+  });
   const [messagesError, setMessagesError] = useState<string | null>(null);
   // Per-feed "last SUCCESSFUL read" stamps. See `MonitorData.lastRefreshed` for
   // why the polling layer's own stamp cannot answer this on its own.
@@ -530,13 +651,43 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
     };
   }, []);
 
+  /**
+   * Per-feed eligibility and failure state, on refs rather than in state.
+   *
+   * Both are read SYNCHRONOUSLY from inside a poll wrapper that runs between
+   * renders (exactly like `usePolling`'s own `nextEligibleAtRef`), so a state
+   * copy would always be one commit stale at the moment it is consulted.
+   *
+   * `*Failure` is what makes backoff reachable at all. Every loader in this
+   * hook catches internally and RESOLVES — that is the contract its callers
+   * depend on, and `MonitorData.reviewsError` is how a failure reaches a
+   * surface. But `usePolling` only backs off when the fetch REJECTS, so a dead
+   * backend was re-queried at full cadence forever. The loaders still resolve;
+   * the POLL WRAPPER re-throws what the loader caught, so the ticker learns
+   * about the failure without any caller's success path changing shape.
+   */
+  const reviewsAttemptedAt = useRef(0);
+  const messagesAttemptedAt = useRef(0);
+  const healthAttemptedAt = useRef(0);
+  const cloudAttemptedAt = useRef(0);
+  const reviewsFailure = useRef<unknown>(null);
+  const messagesFailure = useRef<unknown>(null);
+
   const reloadReviews = useCallback(async () => {
+    reviewsAttemptedAt.current = Date.now();
     try {
-      if (badgeCounts) {
-        const rows = await getPendingReviewCountsByPersona();
-        if (mounted.current) {
+      const [counts, page] = await Promise.all([
+        badgeCounts ? getPendingReviewCountsByPersona() : null,
+        wantsReviewRows
+          ? reviewLimit
+            ? listManualReviewsPage({ status: 'pending', limit: reviewLimit })
+            : listManualReviews(undefined, 'pending').then((rows) => ({ rows, hasMore: false }))
+          : null,
+      ]);
+      if (mounted.current) {
+        if (counts) {
           const next: Record<string, ReviewBadgeCount> = {};
-          for (const r of rows) {
+          for (const r of counts) {
             next[r.personaId] = {
               pending: r.pending,
               critical: r.critical,
@@ -549,15 +700,8 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
             reviewCountsWarmCache = kept;
             return kept;
           });
-          setReviewsHasMore(false);
-          setReviewsError(null);
-          setReviewsRefreshedAt(Date.now());
         }
-      } else {
-        const page = reviewLimit
-          ? await listManualReviewsPage({ status: 'pending', limit: reviewLimit })
-          : { rows: await listManualReviews(undefined, 'pending'), hasMore: false };
-        if (mounted.current) {
+        if (page) {
           const shaped = page.rows.map(shapeReview);
           // Keep the array we already have when nothing moved. The rows are equal
           // by value on almost every poll, and the identity is what the whole
@@ -567,22 +711,28 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
             reviewsWarmCache.set(reviewsCacheKey(reviewLimit), { rows: next, hasMore: page.hasMore });
             return next;
           });
-          setReviewsHasMore(page.hasMore);
-          // Clearing on success is what makes the flag self-healing: React bails
-          // out of a set to the identical value, so a healthy poll costs nothing.
-          setReviewsError(null);
-          setReviewsRefreshedAt(Date.now());
         }
+        // A counts-only read has nothing behind it to report.
+        setReviewsHasMore(page ? page.hasMore : false);
+        // Clearing on success is what makes the flag self-healing: React bails
+        // out of a set to the identical value, so a healthy poll costs nothing.
+        setReviewsError(null);
+        setReviewsRefreshedAt(Date.now());
       }
+      reviewsFailure.current = null;
     } catch (err) {
       logger.error('Failed to load manual reviews', { error: err });
       // The log was the ONLY record. A surface cannot render a breadcrumb, so
       // an unreadable queue looked exactly like an empty one.
       if (mounted.current) setReviewsError(extractMessage(err));
+      // Held for the poll wrapper, which re-throws it so the ticker backs off.
+      // This loader still RESOLVES: every other caller (the mount read,
+      // `refreshAttention`, `refreshAfterWrite`) depends on that.
+      reviewsFailure.current = err;
     } finally {
       if (mounted.current) setLoading(false);
     }
-  }, [reviewLimit, badgeCounts]);
+  }, [reviewLimit, badgeCounts, wantsReviewRows]);
 
   /**
    * Coalescing gate for the messages read.
@@ -601,6 +751,7 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const reloadMessagesRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   const loadMessages = useCallback(async () => {
+    messagesAttemptedAt.current = Date.now();
     try {
       if (badgeCounts) {
         const raw = await getUnreadReportCountsByPersona();
@@ -615,6 +766,7 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
         } else {
           messageCountsWarmCache = raw;
         }
+        messagesFailure.current = null;
       } else {
         const raw = await listReports(MESSAGE_SCAN_LIMIT);
         const unread = raw.filter((m) => !m.is_read);
@@ -633,6 +785,7 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
         } else {
           messagesWarmCache = unread;
         }
+        messagesFailure.current = null;
       }
     } catch (err) {
       logger.error('Failed to load messages', { error: err });
@@ -643,6 +796,8 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
       // (`reviewsError` above still stores the raw string; it predates this and
       // is one of that rule's baselined violations, not a shape to copy.)
       if (mounted.current) setMessagesError(resolveError(extractMessage(err)).message);
+      // Held for the poll wrapper — see `reviewsFailure`.
+      messagesFailure.current = err;
     }
   }, [badgeCounts]);
 
@@ -710,13 +865,19 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
    *
    * So the loader identity is the guard, not a boolean: it also re-fires when
    * `reviewLimit` genuinely changes the query, while a mere flag flip does not
-   * touch it. Re-enabling a feed still refreshes at once, through
-   * `usePolling`'s fire-on-register, which is the one place that read belongs.
+   * touch it. Re-enabling a feed still refreshes, through `usePolling`'s
+   * fire-on-register, which is the one place that read belongs — and that read
+   * is now itself filtered by `pollIsDue`, so re-enabling a feed that was read
+   * a second ago costs nothing while a genuinely stale one refreshes at once.
    */
   const ranReviewLoader = useRef<typeof reloadReviews | null>(null);
   const ranMessageLoader = useRef<typeof reloadMessages | null>(null);
   const filledRoster = useRef(false);
   useEffect(() => {
+    // A dormant instance is not serving anybody — see `MonitorFeeds.dormant`.
+    // It owes no warm cache, no `loading` resolution and no roster, because the
+    // shared engine its caller is actually reading owes all three.
+    if (dormant) return;
     // Ungated: `loading` has to resolve and the warm cache has to fill even for
     // a host that currently renders something else (a Monitor opened straight
     // into Timeline still owes the Activity board a queue when it lands there).
@@ -733,10 +894,15 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
     // above). So a cold store is filled once, and only once.
     if (!filledRoster.current && (wantsPersonaHealth || personaCountRef.current === 0)) {
       filledRoster.current = true;
+      healthAttemptedAt.current = Date.now();
       void fetchPersonaSummaries();
     }
-  }, [wantsMessages, wantsPersonaHealth, reloadReviews, reloadMessages, fetchPersonaSummaries]);
-  useEffect(() => { if (isCloudConnected) void fetchCloudReviews(); }, [isCloudConnected, fetchCloudReviews]);
+  }, [dormant, wantsMessages, wantsPersonaHealth, reloadReviews, reloadMessages, fetchPersonaSummaries]);
+  useEffect(() => {
+    if (dormant || !isCloudConnected) return;
+    cloudAttemptedAt.current = Date.now();
+    void fetchCloudReviews();
+  }, [dormant, isCloudConnected, fetchCloudReviews]);
 
   // Reviews/messages aren't event-driven — poll to catch ones created while
   // the Monitor is open. Process activity is already live via the
@@ -746,30 +912,72 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   // whole cadence buckets on `visibilitychange` and fires the eligible ones
   // immediately on regain — so a hidden window costs nothing here and a
   // re-shown one is refreshed rather than left stale. The `enabled` flags are
-  // the other axis: what the MOUNTING SURFACE currently renders.
+  // the other two axes: what the MOUNTING SURFACE currently renders, and
+  // whether that surface is on screen at all (`monitorVisible`). The second one
+  // is new and is the price of the overlay no longer unmounting on close — a
+  // hidden Monitor's React tree is still alive, so a poll that does not ask
+  // whether anyone is looking runs forever behind a blank screen.
   //
   // Named per call site so the shared PollingCoordinator's stats can say which
   // surface is paying for what.
-  const reviewsPoll = usePolling(reloadReviews, {
-    interval: POLLING_CONFIG.dashboardRefresh.interval,
-    enabled: wantsReviewPoll,
+  //
+  // WHAT A POLL WRAPPER ADDS, and why it is not in the loader.
+  //
+  // Two things the loaders deliberately must not do: DECLINE a tick that would
+  // re-read what was just read (see `pollIsDue` — a loader called by
+  // `refreshAttention` or by a drawer write must always run), and REJECT on
+  // failure (see `reviewsFailure` — every direct caller depends on the loader
+  // resolving, and `reviewsError` is how a failure reaches a surface). Both
+  // belong to the ticker, so both live here.
+  const dashboardInterval = POLLING_CONFIG.dashboardRefresh.interval;
+  const cloudInterval = POLLING_CONFIG.cloudReviews.interval;
+
+  const pollReviews = useCallback(async () => {
+    if (!pollIsDue(reviewsAttemptedAt.current, dashboardInterval)) return;
+    await reloadReviews();
+    if (reviewsFailure.current) throw reviewsFailure.current;
+  }, [reloadReviews, dashboardInterval]);
+
+  const pollMessages = useCallback(async () => {
+    if (!pollIsDue(messagesAttemptedAt.current, dashboardInterval)) return;
+    await reloadMessages();
+    if (messagesFailure.current) throw messagesFailure.current;
+  }, [reloadMessages, dashboardInterval]);
+
+  const pollHealth = useCallback(async () => {
+    if (!pollIsDue(healthAttemptedAt.current, dashboardInterval)) return;
+    healthAttemptedAt.current = Date.now();
+    await fetchPersonaSummaries();
+    const failure = readHealthFailure();
+    if (failure) throw failure;
+  }, [fetchPersonaSummaries, dashboardInterval]);
+
+  const pollCloudReviews = useCallback(async () => {
+    if (!pollIsDue(cloudAttemptedAt.current, cloudInterval)) return;
+    cloudAttemptedAt.current = Date.now();
+    await fetchCloudReviews();
+  }, [fetchCloudReviews, cloudInterval]);
+
+  const reviewsPoll = usePolling(pollReviews, {
+    interval: dashboardInterval,
+    enabled: wantsReviewPoll && monitorVisible,
     name: 'monitor:reviews',
   });
-  const messagesPoll = usePolling(reloadMessages, {
-    interval: POLLING_CONFIG.dashboardRefresh.interval,
-    enabled: wantsMessages,
+  const messagesPoll = usePolling(pollMessages, {
+    interval: dashboardInterval,
+    enabled: wantsMessages && monitorVisible,
     name: 'monitor:messages',
   });
-  const healthPoll = usePolling(fetchPersonaSummaries, {
-    interval: POLLING_CONFIG.dashboardRefresh.interval,
-    enabled: wantsPersonaHealth,
+  const healthPoll = usePolling(pollHealth, {
+    interval: dashboardInterval,
+    enabled: wantsPersonaHealth && monitorVisible,
     name: 'monitor:personaHealth',
   });
-  usePolling(fetchCloudReviews, {
-    interval: POLLING_CONFIG.cloudReviews.interval,
+  usePolling(pollCloudReviews, {
+    interval: cloudInterval,
     // Cloud rows land in the same queue as the local ones, so they follow the
     // same gate; the connection is still the outer condition.
-    enabled: isCloudConnected && wantsReviewPoll,
+    enabled: isCloudConnected && wantsReviewPoll && monitorVisible,
     maxBackoff: POLLING_CONFIG.cloudReviews.maxBackoff,
     name: 'monitor:cloudReviews',
   });

@@ -110,6 +110,7 @@
       ],
       "resolved": false
     },
+    "runner/mod.rs": {"count":1,"sections":[5],"lines":["2086"],"contexts":["`runner/mod.rs:2086` Skip). The trigger subscription is not one of them, so a"],"resolved":false},
     "scans-audit.ts": {
       "count": 1,
       "sections": [6],
@@ -161,6 +162,14 @@
       "verbatim": "db/src/repos/communication/events.rs"
     },
     "src-tauri/db/src/repos/resources/triggers.rs": {"count":1,"sections":[7],"lines":["757"],"contexts":["- `src-tauri/db/src/repos/resources/triggers.rs:757` and `:1069` — both pin"],"resolved":false},
+    "src-tauri/engine/src/project_tracking/subscription.rs": {
+      "count": 2,
+      "sections": [7,8],
+      "lines": ["1284","1427"],
+      "contexts": ["`leadership.is_leader()` (`subscription.rs:1284`, default `requires_leadership() = true`),"],
+      "resolvedFrom": "basename",
+      "verbatim": "subscription.rs"
+    },
     "src-tauri/engine/src/scraper.rs": {"count":1,"sections":[7],"lines":["457"],"contexts":["`engine/src/scraper.rs:457` is a third model: `next_fire_time_local` with no"],"resolvedFrom":"suffix","verbatim":"engine/src/scraper.rs"},
     "src-tauri/src/commands/communication/observability/alerts.rs": {
       "count": 2,
@@ -202,16 +211,7 @@
     "src-tauri/src/commands/tools/triggers.rs": {"count":2,"sections":[7],"lines":["867","334"],"contexts":["- `src-tauri/src/commands/tools/triggers.rs:867` (`preview_cron_schedule`) and"]},
     "src-tauri/src/engine/curation_scheduler.rs": {"count":2,"sections":[4,7],"lines":["110"],"contexts":["`curation_scheduler.rs:110` uses the first and every trigger path uses the"],"resolvedFrom":"basename","verbatim":"curation_scheduler.rs"},
     "src-tauri/src/engine/platforms/deploy.rs": {"count":3,"sections":[7,9],"lines":["303"],"contexts":["**P3 — `platforms/deploy.rs:303` INSERTs a column that does not exist.**"],"resolvedFrom":"suffix","verbatim":"platforms/deploy.rs"},
-    "src-tauri/src/engine/project_tracking/subscription.rs": {
-      "count": 2,
-      "sections": [7,8],
-      "lines": ["1284","1427"],
-      "contexts": ["`leadership.is_leader()` (`subscription.rs:1284`, default `requires_leadership() = true`),"],
-      "resolvedFrom": "basename",
-      "verbatim": "subscription.rs"
-    },
     "src-tauri/src/engine/rotation.rs": {"count":1,"sections":[7],"lines":["1173"],"contexts":["- `src-tauri/src/engine/rotation.rs:1173` — credential rotation cron."]},
-    "src-tauri/src/engine/runner/mod.rs": {"count":1,"sections":[5],"lines":["2086"],"contexts":["`runner/mod.rs:2086` Skip). The trigger subscription is not one of them, so a"],"resolvedFrom":"suffix","verbatim":"runner/mod.rs"},
     "src-tauri/src/engine/system_ops.rs": {"count":2,"sections":[7,9],"lines":["157"],"contexts":["- `src-tauri/src/engine/system_ops.rs:157` — `compute_next_run_at`, written as a"]},
     "src-tauri/src/engine/webhook.rs": {"count":1,"sections":[8],"lines":["631"],"contexts":["and cleared it** (`engine/webhook.rs:631` sets `next_trigger_at = NULL`"],"resolvedFrom":"suffix","verbatim":"engine/webhook.rs"},
     "src-tauri/src/main.rs": {

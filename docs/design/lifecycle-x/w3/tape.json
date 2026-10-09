@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "module": "plugins/lifecycle/loading",
+  "source": "synthetic",
+  "recordedAt": "2026-09-22T15:40:00.000Z",
+  "note": "Synthetic: the snapshot never answers, so the page shows its permanent header and the Layer-1 ghost.",
+  "calls": [
+    {
+      "cmd": "dev_tools_get_lifecycle",
+      "hang": true
+    },
+    {
+      "cmd": "dev_tools_list_projects",
+      "response": [
+        {
+          "id": "p-atlas",
+          "name": "Atlas Web",
+          "root_path": "C:/code/atlas",
+          "description": "Atlas Web, a product codebase.",
+          "status": "active",
+          "tech_stack": "TypeScript, React, Vite",
+          "github_url": null,
+          "monitoring_credential_id": null,
+          "monitoring_project_slug": null,
+          "static_scan_config": null,
+          "pr_credential_id": null,
+          "llm_tracking_credential_id": null,
+          "support_credential_id": null,
+          "data_links": null,
+          "test_env_url": null,
+          "test_env_branch": null,
+          "main_branch": "main",
+          "standards_config": null,
+          "team_id": null,
+          "workspace_id": null,
+          "kind": "code",
+          "enabled": true,
+          "created_at": "2026-06-24T15:40:00.000Z",
+          "updated_at": "2026-09-20T15:40:00.000Z"
+        }
+      ]
+    },
+    {
+      "cmd": "dev_tools_workspace_list",
+      "response": []
+    },
+    {
+      "cmd": "dev_tools_lifecycle_history",
+      "response": {
+        "measures": [],
+        "stepIds": [
+          "gate",
+          "tests"
+        ]
+      }
+    }
+  ]
+}

@@ -1,8 +1,7 @@
 use personas_db::models::Persona;
 use personas_db::DbPool;
 
-use super::{spawn_cli_and_collect, truncate_chars, LAB_MODEL};
-use crate::prompt;
+use super::{spawn_cli_and_collect, truncate_chars, LAB_CLASS};
 
 // -- Matrix helpers ---------------------------------------------
 
@@ -140,11 +139,12 @@ pub async fn generate_targeted_improvements(
 ) -> Result<(serde_json::Value, String), String> {
     let improvement_prompt = build_improvement_prompt(persona, run_results_summary, user_feedback);
 
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push(LAB_MODEL.to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
+    let route = LAB_CLASS.route();
+    let cli_args = crate::cli_process::headless_claude_args(
+        route.model,
+        route.effort,
+        &["--max-turns".to_string(), "1".to_string()],
+    );
 
     let output = spawn_cli_and_collect(
         &cli_args,
@@ -153,7 +153,7 @@ pub async fn generate_targeted_improvements(
         personas_db::repos::llm_spend::SpendCtx {
             source: "evaluator",
             trigger_kind: "lab_improve",
-            model: Some(LAB_MODEL),
+            model: Some(route.model),
             persona_id: Some(persona.id.as_str()),
             project_id: None,
         },

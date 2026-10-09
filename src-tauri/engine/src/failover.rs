@@ -635,7 +635,7 @@ pub struct FailoverCandidate {
 /// 2026-06-15 and now returning 404 — so a healthy opus-4-8 persona whose
 /// primary hiccuped was actively failed *over into a guaranteed 404*. Canonical
 /// ids are the same ones `engine::prompt::capabilities::tier_slug_to_model_id`
-/// bakes into recipes/templates (opus→`claude-opus-5`, sonnet→`claude-sonnet-4-6`).
+/// bakes into recipes/templates (opus→`claude-opus-5`, sonnet→`claude-sonnet-5-5`).
 const CLAUDE_MODEL_CHAIN: &[&str] = &[
     personas_core::model_ids::OPUS_CURRENT,
     personas_core::model_ids::SONNET_CURRENT,

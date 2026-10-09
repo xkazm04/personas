@@ -5,9 +5,13 @@
 //   status   [--project p] [--text]
 //   context  --project p
 //   decide   --project p --wake <wakeId> --file <decision.json>
-//   dispatch --run <runId>
+//   dispatch --run <runId>                (a refusal for a slot queues the run: {refused, queued:true, position})
+//   queue    list | move --run <id> --to <n> | drop --run <id> --reason <text>
+//   promote                               (dispatches, in queue order, every queued run that now fits)
 //   watch    [--project p]
 //   settle   --run <runId> [--retry]
+//   verify   --project p [--repo <key>] [--timeout-min N]   (the FULL gate on the base tip: every suite, before a push)
+//   await    --run <runId> | --project p [--timeout-min N]   (blocks until the builder exits, settles it, then promotes)
 //   release  --run <runId> --reason <text> [--kill]
 //   say      --project p --file <msg.md> | --text <message>
 //   asks     [--project p]
@@ -15,6 +19,12 @@
 //   outbox   list|replay [--dry-run] [--project p]
 //   limit    set|clear|show [--reason <text>] [--resets <iso>]
 //   onboard  --project p --brief <brief.json> [--force]
+//   heartbeat [--project p] [--state running|idle|ended]   (no --project: every managed project)
+//
+// After decide, dispatch, watch, settle, await, release, promote and queue succeed (and after an await refusal: its
+// wait may have moved the run to exited), the CLI tells the app the project's
+// state (lib/heartbeat.mjs, best-effort: never throws, ~2 s at most, never changes the output or
+// the exit code; a no-op while the app is down).
 //
 // The table below is the ONLY place a subcommand is bound to its implementation. Each handler
 // is `async (args) => object` where args = { _: positionals after the subcommand, flags }.
@@ -27,8 +37,12 @@ export const COMMANDS = {
   context:  ['./lib/context.mjs', 'cmdContext'],    // WP1
   decide:   ['./lib/decision.mjs', 'cmdDecide'],    // WP1
   dispatch: ['./lib/worker.mjs', 'cmdDispatch'],    // WP2
+  queue:    ['./lib/promote.mjs', 'cmdQueue'],      // the admission queue: list | move | drop
+  promote:  ['./lib/promote.mjs', 'cmdPromote'],    // keep the queue's promise when a slot frees
   watch:    ['./lib/worker.mjs', 'cmdWatch'],       // WP2
   settle:   ['./lib/merge.mjs', 'cmdSettle'],       // WP2
+  verify:   ['./lib/verify.mjs', 'cmdVerify'],      // the full gate (the merge gate tests only the changed area)
+  await:    ['./lib/await.mjs', 'cmdAwait'],        // the exit watcher (watch + settle for one run)
   release:  ['./lib/worker.mjs', 'cmdRelease'],     // WP2
   say:      ['./lib/asks.mjs', 'cmdSay'],           // WP1
   asks:     ['./lib/asks.mjs', 'cmdAsks'],          // WP1
@@ -36,7 +50,22 @@ export const COMMANDS = {
   outbox:   ['./lib/outbox.mjs', 'cmdOutbox'],      // WP1
   limit:    ['./lib/limits.mjs', 'cmdLimit'],       // WP2
   onboard:  ['./lib/onboard.mjs', 'cmdOnboard'],    // WP1
+  heartbeat: ['./lib/heartbeat.mjs', 'cmdHeartbeat'], // the state door
 };
+
+/** Subcommands whose success changes what the app should show for a project. */
+export const BEAT_AFTER = ['decide', 'dispatch', 'watch', 'settle', 'await', 'release', 'promote', 'queue'];
+/** Subcommands that beat after a refusal too (the refusal carries the slug). */
+export const BEAT_AFTER_REFUSAL = ['await'];
+
+/** Tell the app, best-effort. Swallows everything, including a failed import. */
+async function beatAfter(sub, args, result) {
+  if (!BEAT_AFTER.includes(sub)) return;
+  try {
+    const hb = await import('./lib/heartbeat.mjs');
+    await hb.beatAfter(sub, args, result);
+  } catch { /* a notice, never a dependency */ }
+}
 
 export function parseArgs(argv) {
   const out = { _: [], flags: {} };
@@ -60,12 +89,18 @@ export async function run(argv) {
   const [file, fn] = COMMANDS[sub];
   try {
     const mod = await import(file);
-    const result = await mod[fn](parseArgs(rest));
+    const args = parseArgs(rest);
+    const result = await mod[fn](args);
     if (result && typeof result === 'object' && 'text' in result && result.__text) console.log(result.text);
     else console.log(JSON.stringify(result ?? { ok: true }, null, 2));
+    await beatAfter(sub, args, result);
     return EXIT.OK;
   } catch (e) {
-    if (e instanceof Refusal) { console.log(JSON.stringify({ refused: e.reason, ...e.extra }, null, 2)); return EXIT.REFUSED; }
+    if (e instanceof Refusal) {
+      console.log(JSON.stringify({ refused: e.reason, ...e.extra }, null, 2));
+      if (BEAT_AFTER_REFUSAL.includes(sub)) await beatAfter(sub, parseArgs(rest), e.extra);
+      return EXIT.REFUSED;
+    }
     console.error(`[appmaster ${sub}] ${e.message || e}`);
     return EXIT.ERROR;
   }

@@ -1,0 +1,1 @@
+{ "name": "athena-skin", "version": "0.1.0", "description": "Athena's voice and light for the terminal: her words on the spinner and the turn line, a quiet band above the prompt that breathes while a turn runs, and her blue as the one accent", "types": "./types/index.d.ts" }

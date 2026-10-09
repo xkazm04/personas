@@ -1,4 +1,6 @@
-// Synthetic tapes for spark board-monitor (monitorBoardSurfaces.tsx): the
+// Synthetic tapes from spark board-monitor. The Board surface module they
+// were written for was deleted with the Board view (2026-10-06); the fleets
+// they build still feed the Activity and rail harnesses. Originally: the
 // Persona Monitor opened on its Board. Fixture CODE, no personal data.
 //
 // THE REAL-SHAPED FLEET mirrors the operator's database as scouted on

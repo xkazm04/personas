@@ -36,6 +36,11 @@ use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
 
+/// The KPI scan explores the repository with tools: an agent task.
+/// Model and effort come from the class table (`personas_core::model_class`).
+const KPI_SCAN_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::AgentTask;
+
 #[derive(Clone, Default)]
 struct KpiScanExtra;
 
@@ -799,9 +804,9 @@ async fn run_kpi_scan(
             .collect();
 
     let exec_dir = std::path::PathBuf::from(root_path);
-    let mut child = crate::engine::cli_process::spawn_headless_claude(
+    let mut child = crate::engine::cli_process::spawn_headless_claude_class(
         prompt_text,
-        "claude-sonnet-4-6",
+        KPI_SCAN_CLASS,
         &[],
         Some(&exec_dir),
         true,
@@ -831,7 +836,7 @@ async fn run_kpi_scan(
     let spend_ctx = crate::db::repos::llm_spend::SpendCtx {
         source: "scanner",
         trigger_kind: "kpi_scan",
-        model: Some("claude-sonnet-4-6"),
+        model: Some(KPI_SCAN_CLASS.route().model),
         project_id: Some(project_id),
         persona_id: None,
     };

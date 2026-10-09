@@ -33,6 +33,13 @@
     ".claude/worktrees/**": {"count":1,"sections":[],"contexts":["tree), not estimated. `.claude/worktrees/**` excluded."],"resolved":false,"isDir":true},
     "ChannelsAtelier.tsx": {"count":1,"sections":[5],"lines":["381"],"contexts":["`RecipeAdoptionModal.tsx:270`, `ChannelsAtelier.tsx:381`. The user sees that"],"resolved":false},
     "CreatePlaybookModal.tsx": {"count":1,"sections":[8],"lines":["138"],"contexts":["`CreatePlaybookModal.tsx:138` and most call sites — accepts none of"],"resolved":false},
+    "agents/quick-answer/triage/deck/QuestionPanel.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["61"],
+      "contexts": ["| `templates/sub_presets/PresetQuestionnaireForm.tsx:245` · `agents/quick-answer/triage/deck/QuestionPanel.tsx:61` | `QuestionField` ×2 | Two unrelated components with the same name. |"],
+      "resolved": false
+    },
     "agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx": {
       "count": 1,
       "sections": [7],
@@ -131,14 +138,6 @@
     "src/": {"count":2,"sections":[7,8],"contexts":["and imported by zero files in `src/`.** `contract.rs:37-49` throws the"],"resolved":false,"isDir":true},
     "src/**/*.tsx": {"count":1,"sections":[],"contexts":["Every count below was produced by grep over `src/**/*.tsx` (or the named Rust"],"resolved":false},
     "src/features/**": {"count":1,"sections":[5],"contexts":["`src/features/**` contain `<form`. Everything else is a button with `onClick`,"],"resolved":false,"isDir":true},
-    "src/features/agents/quick-answer/triage/deck/QuestionPanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["61"],
-      "contexts": ["| `templates/sub_presets/PresetQuestionnaireForm.tsx:245` · `agents/quick-answer/triage/deck/QuestionPanel.tsx:61` | `QuestionField` ×2 | Two unrelated components with the same name. |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/quick-answer/triage/deck/QuestionPanel.tsx"
-    },
     "src/features/agents/sub_connectors/components/automation/AutomationConditionStep.tsx": {
       "count": 1,
       "sections": [7],

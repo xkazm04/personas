@@ -205,6 +205,17 @@ pub enum AttentionRefusal {
     /// re-enqueued: its cycle goal is closed and the lineage parks here until
     /// the operator (or the next tick's own decision) opens the next one.
     CyclePlanEmpty { goal_id: String, cycle_index: i64 },
+    /// A headless App Master (`/appmaster`, run from a Claude Code session)
+    /// holds a project this persona's charters are bound to, and its last beat
+    /// is still fresh. The in-app master stands aside so two deciders never
+    /// work one backlog; it resumes on its own once the beat goes stale or the
+    /// chair posts `ended`. A DEFERRAL like the concurrency cap: placed before
+    /// the wake request is consumed, so a pending wake survives it.
+    HeadlessMaster {
+        project_id: String,
+        state: String,
+        until: String,
+    },
 }
 
 impl AttentionRefusal {
@@ -218,6 +229,7 @@ impl AttentionRefusal {
             Self::BudgetExhausted { .. } => "budget_exhausted",
             Self::ConcurrencyCap { .. } => "concurrency_cap",
             Self::CyclePlanEmpty { .. } => "cycle_plan_empty",
+            Self::HeadlessMaster { .. } => "headless_master",
         }
     }
 
@@ -255,6 +267,14 @@ impl AttentionRefusal {
                 cycle_index,
             } => format!(
                 "cycle {cycle_index} (goal {goal_id}) finished without filing a next cycle;                  the persona is not re-enqueued until a plan exists"
+            ),
+            Self::HeadlessMaster {
+                project_id,
+                state,
+                until,
+            } => format!(
+                "a headless App Master holds project {project_id} ({state}); the in-app \
+                 master stands aside until {until} or until it ends"
             ),
         }
     }
@@ -457,6 +477,11 @@ mod tests {
             AttentionRefusal::ConcurrencyCap {
                 running: 10,
                 cap: 10,
+            },
+            AttentionRefusal::HeadlessMaster {
+                project_id: "p".into(),
+                state: "idle".into(),
+                until: "t".into(),
             },
         ] {
             let v: serde_json::Value =

@@ -1,0 +1,10 @@
+[2026-03-29 01:59:59] INFO  scheduler: tick ok (14 triggers)
+[2026-03-29 03:00:00] WARN  db: SQLITE_BUSY on wal checkpoint, retrying (1/5)
+[2026-03-29 03:00:00] WARN  db: SQLITE_BUSY on wal checkpoint, retrying (2/5)
+[2026-03-29 03:00:01] INFO  db: wal checkpoint ok after 2 retries
+[2026-10-25 02:00:00] INFO  scheduler: fire trigger=daily-report persona=Finanzbericht
+[2026-10-25 02:00:00] INFO  scheduler: fire trigger=daily-report persona=Finanzbericht
+
+Die SQLITE_BUSY-Warnungen oben sind harmlos und nicht Teil dieser Aufgabe.
+
+Das eigentliche Problem: Zeitgesteuerte Trigger feuern bei der Umstellung von Sommerzeit auf Winterzeit doppelt, weil die Stunde zwischen 02:00 und 03:00 zweimal vorkommt und der Scheduler die lokale Uhrzeit vergleicht. Bitte den Scheduler in src-tauri/engine/src/scheduler/next_fire.rs so umbauen, dass er die nächste Ausführung in UTC berechnet und die Zeitzone nur für die Anzeige verwendet. Dazu Tests für beide Umstellungen (März und Oktober) in Europe/Berlin.

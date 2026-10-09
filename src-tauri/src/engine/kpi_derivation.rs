@@ -346,7 +346,8 @@ pub async fn derive_goal_from_kpi(pool: &DbPool, kpi: &DevKpi) -> Result<Option<
             &crate::db::models::LlmSpendInsert {
                 source: "kpi".to_string(),
                 trigger_kind: "kpi_derivation".to_string(),
-                model: Some("claude-sonnet-4-6".to_string()),
+                // Ran on `cli_text_with_usage`, i.e. the Athena MICRO tier.
+                model: Some(crate::companion::model_routing::MICRO.model.to_string()),
                 input_tokens: u.input_tokens,
                 output_tokens: u.output_tokens,
                 cache_read_tokens: u.cache_read_tokens,

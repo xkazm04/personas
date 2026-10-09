@@ -10,22 +10,28 @@
 //! > configuration reload, an operator's own restart — is indistinguishable
 //! > from a crash.
 //!
-//! Personas is a desktop app the user quits several times a day. Without this
-//! file every one of those quits manufactures a class of rows only a crash
-//! should produce, and the operator learns to dismiss the surface. With it,
-//! only an exit that never reached `RunEvent::Exit` — SIGKILL, power loss, a
-//! Windows force-quit — leaves the marker absent, which is exactly the set of
-//! exits the restart classification is for.
+//! Only an exit that never reached `RunEvent::Exit` — SIGKILL, power loss, a
+//! Windows force-quit — leaves the marker absent.
+//!
+//! # A fact, not a gate
+//!
+//! The marker used to make the boot skip the execution restart sweep. That
+//! sweep is keyed on durable state (`status = 'running'`), not on recency, so
+//! a quit that drained gives it nothing to manufacture — and a quit that did
+//! not drain (the exit path does not drain persona executions) is the crash
+//! case. Skipping it hid exactly those rows. Registry technique
+//! `durable-agent-operations/close-is-a-controlled-crash`: close must leave
+//! what a crash leaves, so recovery is one path. The sweep now runs on every
+//! start (`restart_recovery::reconcile_after_exit` in the db crate) and the
+//! marker only names the kind of exit in the log. The skip in
+//! `stuck-loop-detection` fits a sweep keyed on recency, where a deliberate
+//! restart really is indistinguishable from an interrupted one; a sweep keyed
+//! on in-flight state needs no marker to tell them apart.
 //!
 //! # Fail mode
 //!
-//! Advisory, and it fails toward **sweeping** (registry technique
-//! `session-continuation/advisory-guard-fail-mode`: derive the mode from what
-//! the wrong direction costs). A marker we cannot read or delete is reported
-//! absent, so the classification sweep runs. That direction is recoverable —
-//! at worst a graceful restart classifies rows that were already finished. The
-//! other direction is not: a false "clean shutdown" leaves `running` rows
-//! nobody will ever reconcile, invisible, forever.
+//! A marker we cannot read or delete is reported absent. Since nothing gates
+//! on it, the cost of either error is a misleading log line, nothing more.
 //!
 //! # Ordering
 //!
@@ -49,8 +55,8 @@ pub fn marker_path(app_data_dir: &Path) -> PathBuf {
 /// graceful-exit path, after the work drain, so a crash mid-teardown still
 /// reads as a crash.
 ///
-/// Best-effort: a failure to write means the next boot classifies rows it did
-/// not have to, which is the survivable direction.
+/// Best-effort: a failure to write means the next boot logs this exit as
+/// unclean. Nothing gates on the marker, so that is the whole cost.
 pub fn record_clean_shutdown(app_data_dir: &Path) {
     let path = marker_path(app_data_dir);
     // The content is diagnostic only — presence is the whole signal. An RFC3339
@@ -60,7 +66,7 @@ pub fn record_clean_shutdown(app_data_dir: &Path) {
         tracing::warn!(
             path = %path.display(),
             "Failed to write clean-shutdown marker: {e} - the next boot will \
-             classify mid-run rows as if this were a crash"
+             log this exit as unclean"
         );
     }
 }
@@ -74,8 +80,8 @@ pub fn take_clean_shutdown(app_data_dir: &Path) -> bool {
     if !path.exists() {
         return false;
     }
-    // Delete before reporting: a marker we could not remove would suppress the
-    // sweep on every subsequent boot, including the ones after a real crash.
+    // Delete before reporting: a marker we could not remove would label every
+    // subsequent boot graceful, including the ones after a real crash.
     match std::fs::remove_file(&path) {
         Ok(()) => true,
         Err(e) => {
@@ -83,7 +89,7 @@ pub fn take_clean_shutdown(app_data_dir: &Path) -> bool {
                 path = %path.display(),
                 "Clean-shutdown marker exists but could not be removed: {e} - \
                  treating the previous exit as unclean so the marker cannot \
-                 suppress future sweeps"
+                 mislabel future exits"
             );
             false
         }
@@ -113,7 +119,7 @@ mod tests {
         dir
     }
 
-    /// The graceful path: write, then a boot finds it and skips the sweep.
+    /// The graceful path: write, then a boot finds it once.
     #[test]
     fn a_recorded_shutdown_is_seen_once_and_then_gone() {
         let dir = scratch("graceful");
@@ -148,7 +154,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// A marker left by a *previous* boot must not suppress today's sweep more
+    /// A marker left by a *previous* boot must not be claimed more
     /// than once, even if two boots race for it. Only the boot that removes it
     /// may claim the clean shutdown.
     #[test]

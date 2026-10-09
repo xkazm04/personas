@@ -7,6 +7,7 @@
  * not as a toast, because the operator is looking at the field it is about.
  */
 import { useEffect, useState } from 'react';
+import { Pencil } from 'lucide-react';
 
 import * as api from '@/api/devServers';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
@@ -17,7 +18,7 @@ import type { DevServerView } from '@/lib/bindings/DevServerView';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { extractMessage } from '@/lib/silentCatch';
-import { BaseModal } from '@/lib/ui/BaseModal';
+import { ModalShell } from '@/features/shared/components/modals/ModalShell';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
 import { checkServerConfig, SERVER_COMMAND_MAX } from './serverConfig';
@@ -70,18 +71,40 @@ export default function EditServerModal({ server, onClose }: EditServerModalProp
   };
 
   return (
-    <BaseModal isOpen={server !== null} onClose={onClose} titleId="server-edit-title" size="md" portal>
-      <div className="p-6 space-y-4" data-testid="server-edit-modal">
-        <div className="space-y-1">
-          <h2 id="server-edit-title" className="typo-title-lg">
-            {s.edit_title}
-          </h2>
-          <p className="typo-body text-foreground">
-            <span className="typo-heading text-foreground">{server?.projectName}</span>
-            <span className="font-mono"> {server?.rootPath}</span>
-          </p>
-          <p className="typo-caption">{s.edit_subtitle}</p>
-        </div>
+    <ModalShell
+      isOpen={server !== null}
+      onClose={onClose}
+      titleId="server-edit-title"
+      width="sm"
+      portal
+      icon={<Pencil className="h-5 w-5" />}
+      title={s.edit_title}
+      subtitle={s.edit_subtitle}
+      status={
+        <span className="typo-body text-foreground">
+          <span className="typo-heading text-foreground">{server?.projectName}</span>
+          <span className="font-mono"> {server?.rootPath}</span>
+        </span>
+      }
+      footer={
+        <>
+          <Button size="sm" variant="ghost" onClick={onClose}>
+            {t.common.cancel}
+          </Button>
+          <AsyncButton
+            size="sm"
+            variant="primary"
+            onClick={save}
+            disabled={!valid}
+            disabledReason={commandError ?? portError}
+            data-testid="server-edit-save"
+          >
+            {s.edit_save}
+          </AsyncButton>
+        </>
+      }
+    >
+      <div className="space-y-4" data-testid="server-edit-modal">
 
         <FormField
           label={s.command_label}
@@ -125,22 +148,7 @@ export default function EditServerModal({ server, onClose }: EditServerModalProp
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-2 pt-2">
-          <Button size="sm" variant="ghost" onClick={onClose}>
-            {t.common.cancel}
-          </Button>
-          <AsyncButton
-            size="sm"
-            variant="primary"
-            onClick={save}
-            disabled={!valid}
-            disabledReason={commandError ?? portError}
-            data-testid="server-edit-save"
-          >
-            {s.edit_save}
-          </AsyncButton>
-        </div>
       </div>
-    </BaseModal>
+    </ModalShell>
   );
 }

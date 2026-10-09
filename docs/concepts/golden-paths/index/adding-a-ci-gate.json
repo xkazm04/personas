@@ -87,6 +87,7 @@
       "lines": ["141"],
       "contexts": ["| `eslint.config.js` + `eslint-rules/*.cjs` | the AST host, when the signal is structural or wants an autofix. **Set the severity to `\"error\"`** |"]
     },
+    "feature-doc-map.json": {"count":1,"sections":[7],"contexts":["`feature-doc-map.json` will not parse. Its satisfaction condition is *any*"],"resolved":false},
     "generate-voice-data.mjs": {"count":1,"sections":[],"lines":["18"],"contexts":["`generate-voice-data.mjs:18`), `ascent` 1 (`scripts/leonardo-v2.mjs:20`) —"],"resolved":false},
     "lefthook.yml": {"count":7,"sections":[0,1,3,4,7,8],"lines":["26","71"],"contexts":["`hookText` is the whole of `lefthook.yml`, lowercased, with no notion of"]},
     "maturity-gate.mjs": {
@@ -101,6 +102,7 @@
     "measure-shared-facts.mjs": {"count":1,"sections":[9],"lines":["18"],"contexts":["`measure-shared-facts.mjs:18`); 3 × `const MK = 'C:/Users/kazda/kiro/mk'`"],"resolved":false},
     "package-lock.json": {"count":2,"sections":[0,7],"contexts":["reading `package-lock.json`); it was last committed **2026-07-30**. The"]},
     "package.json": {"count":5,"sections":[1,8],"contexts":["in `package.json`'s `check` script, or add an entry to"]},
+    "rules.json": {"count":1,"sections":[4],"contexts":["registry (`node -e` over `rules.json` prints every id in one line). A rule"],"resolved":false},
     "scripts/": {"count":3,"sections":[9],"contexts":["(`catch {…process.exit(0)}` in `scripts/` + `.ai/`): **1 file, 1 match.** Too"],"resolved":false,"isDir":true},
     "scripts/build/guard-concurrent-cargo.mjs": {
       "count": 2,
@@ -124,7 +126,7 @@
       "contexts": ["| `scripts/census/lib/engine.mjs` — `validateRule` | rejects a malformed rule *before* scanning, so a broken registry cannot scan \"successfully\" |"]
     },
     "scripts/census/merge-published-rules.mjs": {"count":2,"sections":[7,9],"lines":["17"],"contexts":["(`scripts/census/merge-published-rules.mjs:17`,"]},
-    "scripts/census/rules.json": {"count":5,"sections":[1,2,3,4],"contexts":["`scripts/census/rules.json` — you are in this situation."]},
+    "scripts/census/rules.json": {"count":4,"sections":[1,2,3],"contexts":["`scripts/census/rules.json` — you are in this situation."]},
     "scripts/census/self-test.mjs": {
       "count": 1,
       "sections": [6],
@@ -155,7 +157,6 @@
     "scripts/check-unused-bindings.sh": {"count":5,"sections":[0,3,5,7],"contexts":["`scripts/check-unused-bindings.sh` (CI-only, not in `npm run check`, not in"]},
     "scripts/docs/check-doc-map-paths.mjs": {"count":3,"sections":[0,7,9],"lines":["17"],"contexts":["`scripts/docs/check-doc-map-paths.mjs:17` is byte-identical. Replayed with"]},
     "scripts/docs/check-doc-sync.mjs": {"count":3,"sections":[7,9],"lines":["117"],"contexts":["`scripts/docs/check-doc-sync.mjs:117` exits 0 when the transcript yields no"]},
-    "scripts/docs/feature-doc-map.json": {"count":1,"sections":[7],"contexts":["`feature-doc-map.json` will not parse. Its satisfaction condition is *any*"],"resolvedFrom":"basename","verbatim":"feature-doc-map.json"},
     "scripts/docs/measure-shared-facts.mjs": {"count":1,"sections":[7],"lines":["18"],"contexts":["`scripts/docs/measure-shared-facts.mjs:18`), plus six machine-specific paths"],"resolved":false},
     "scripts/generate-connectors.mjs": {"count":1,"sections":[],"lines":["19,147"],"contexts":["recurs.** `personas-web` holds 3 (`scripts/generate-connectors.mjs:19,147`,"],"resolved":false},
     "scripts/i18n/check-coverage.mjs": {"count":1,"sections":[],"contexts":["`check-coverage.mjs`, `check-untranslated.mjs`, `check-error-registry-parity.mjs`,"],"resolvedFrom":"basename","verbatim":"check-coverage.mjs"},

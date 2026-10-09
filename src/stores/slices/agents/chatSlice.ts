@@ -8,13 +8,11 @@ import type { TodoItem } from "@/lib/types/terminalEvents";
 import {
   listChatSessions,
   getChatMessages,
-  createChatMessage,
   deleteChatSession,
   saveChatSessionContext,
   getChatSessionContext,
+  startChatTurn,
 } from "@/api/agents/chat";
-import { executePersona, getExecution } from "@/api/agents/executions";
-import type { Continuation } from "@/lib/bindings/Continuation";
 import { parseExecutionState } from "@/lib/execution/executionState";
 import { en } from "@/i18n/en";
 import { silentCatch } from '@/lib/silentCatch';
@@ -83,6 +81,12 @@ export interface ChatSlice {
   appendChatStreamLine: (line: string) => void;
   finishChatStream: (fullResponse: string, personaId: string, sessionId: string, executionId?: string, status?: string) => Promise<void>;
   /**
+   * Re-read the open session's messages and context from the database (no
+   * write). Driven by `chat-changed`: a turn's reply is written by the Rust
+   * completion hook, and a paired phone's turn lands the same way.
+   */
+  refreshActiveChat: (personaId?: string) => Promise<void>;
+  /**
    * Restore a chat session for a persona. When `sessionId` is omitted, the
    * most-recently-used session is restored (previous behavior). When provided,
    * that exact session is loaded — used by the feedback-chat adoption flow.
@@ -92,21 +96,6 @@ export interface ChatSlice {
 
 /** Maximum in-memory chat messages per session. Older messages are evicted FIFO. */
 const MAX_CHAT_MESSAGES = 500;
-
-/** Derive a short title from the first user message content. */
-function deriveTitle(content: string): string {
-  const clean = content.replace(/\s+/g, ' ').trim();
-  if (clean.length <= 60) return clean;
-  return clean.slice(0, 57) + '...';
-}
-
-/** Build a condensed summary from recent messages (last ~20) for context restoration. */
-function buildSummary(messages: ChatMessage[]): string {
-  const recent = messages.slice(-20);
-  return recent
-    .map((m) => `${m.role === "user" ? "Human" : "Assistant"}: ${m.content.slice(0, 300)}`)
-    .join("\n\n");
-}
 
 export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set, get) => ({
   chatSessions: [],
@@ -182,63 +171,18 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
   },
 
   sendChatMessage: async (personaId, sessionId, content) => {
-    // 1. Persist user message
-    const userMsg = await createChatMessage({
-      personaId,
-      sessionId,
-      role: "user",
-      content,
-    });
-    set((s) => ({ chatMessages: [...s.chatMessages, userMsg].slice(-MAX_CHAT_MESSAGES) }));
-
-    // 2. Save/update session context (title from first message, mode, summary)
-    const allMessages = get().chatMessages;
-    const isFirstMessage = allMessages.length === 1;
-    saveChatSessionContext({
-      sessionId,
-      personaId,
-      chatMode: get().chatMode,
-      ...(isFirstMessage ? { title: deriveTitle(content) } : {}),
-      summary: buildSummary(allMessages),
-    }).then((ctx) => set({ chatSessionContext: ctx })).catch(silentCatch("stores/slices/agents/chatSlice:catch4"));
-
-    // 3. Determine if we can --resume an existing Claude session. Only trust the
-    // context's claudeSessionId when the context actually belongs to the session
-    // we're sending to — chatSessionContext can lag a thread switch, and resuming
-    // a foreign/deleted Claude session would cross-contaminate (or fail). On a
-    // mismatch, fall through to a fresh send with full conversation context.
-    const ctx = get().chatSessionContext;
-    const claudeSessionId = ctx?.sessionId === sessionId ? ctx.claudeSessionId : null;
-    const isAdvisory = get().chatMode === 'advisory';
-
-    let conversationInput: string;
-    let continuation: Continuation | undefined;
-
-    if (claudeSessionId && !isFirstMessage) {
-      // Follow-up message: use --resume to continue the Claude session natively.
-      // On resume, do NOT re-inject _advisory flag — the resumed session already has
-      // the full advisory prompt + diagnostic context from turn 1. Re-injecting would
-      // cause the LLM to restart its analysis instead of continuing the conversation.
-      conversationInput = JSON.stringify({
-        _chat: true,
-        latest_message: content,
-      });
-      continuation = { type: "SessionResume", value: claudeSessionId };
-    } else {
-      // First message or no session ID yet: send full conversation context
-      const contextLines = allMessages.map(
-        (m) => `${m.role === "user" ? "Human" : "Assistant"}: ${m.content}`,
-      );
-      conversationInput = JSON.stringify({
-        ...(isAdvisory ? { _advisory: true } : { _chat: true }),
-        conversation: contextLines.join("\n\n"),
-        latest_message: content,
-      });
-    }
-
-    // 4. Start execution — set executionPersonaId so output consumers can match it.
-    // Clear any prior turn error so a Retry doesn't show a stale error card next
-    // to the new thinking indicator.
+    // The whole turn runs in Rust (`start_chat_turn` -> `chat_turn::start`, the
+    // ONE turn path, shared with a paired phone's `chat_send`): the user row,
+    // the session context (mode, title on the first message, summary), the
+    // input JSON (`{_chat, latest_message}` + SessionResume, or the full
+    // transcript on a first or unresumable turn), the run, and - when the run
+    // completes - the assistant row and the Claude session id for --resume.
+    // This slice drives only the display: the streaming flags and the
+    // execution's output listeners, as before.
+    //
+    // executionPersonaId is set so output consumers can match the run. Clear
+    // any prior turn error so a Retry doesn't show a stale error card next to
+    // the new thinking indicator.
     set({
       chatStreaming: true,
       streamingChatSessionId: sessionId,
@@ -254,26 +198,36 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
       error: null,
     });
     try {
-      const exec = await executePersona(personaId, undefined, conversationInput, undefined, continuation, crypto.randomUUID());
-      if (exec?.id) {
-        set({ activeExecutionId: exec.id });
-        // Register Tauri event listeners for this execution's output + status.
-        // These are needed because the Chat tab doesn't mount usePersonaExecution.
-        setupChatExecListeners(exec.id, personaId, sessionId, set, get);
-      } else {
-        // executePersona resolved but returned no execution id (queue full, throttle,
-        // or a detached spawn that produced no row). No listeners will ever attach,
-        // so without this the composer stays disabled and the indicator spins forever.
-        // Reset the streaming/executing flags and surface the failure.
-        reportError(
-          new Error('Execution did not start: no execution id was returned'),
-          'Failed to send chat message',
-          set,
-          { stateUpdates: { chatStreaming: false, isExecuting: false, activeExecutionId: null } },
-        );
-      }
+      const turn = await startChatTurn({
+        personaId,
+        sessionId,
+        message: content,
+        chatMode: get().chatMode,
+        idempotencyKey: crypto.randomUUID(),
+      });
+      set((s) => ({
+        chatMessages: [...s.chatMessages, turn.userMessage].slice(-MAX_CHAT_MESSAGES),
+        activeExecutionId: turn.executionId,
+      }));
+      getChatSessionContext(turn.sessionId)
+        .then((ctx) => set({ chatSessionContext: ctx }))
+        .catch(silentCatch("stores/slices/agents/chatSlice:catch4"));
+      // Register Tauri event listeners for this execution's output + status.
+      // These are needed because the Chat tab doesn't mount usePersonaExecution.
+      setupChatExecListeners(turn.executionId, personaId, sessionId, set, get);
     } catch (err) {
-      reportError(err, "Failed to send chat message", set, { stateUpdates: { chatStreaming: false, isExecuting: false } });
+      reportError(err, "Failed to send chat message", set, {
+        stateUpdates: {
+          chatStreaming: false,
+          streamingChatSessionId: null,
+          streamingChatPersonaId: null,
+          isExecuting: false,
+          activeExecutionId: null,
+        },
+      });
+      // A refused run (project off, connectors not set up) still left the
+      // user's message in the session, as it always did: show it.
+      void get().refreshActiveChat(personaId);
     }
   },
 
@@ -297,14 +251,15 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
     // This is a no-op; the ChatTab reads executionOutput directly from the store
   },
 
-  finishChatStream: async (fullResponse, personaId, sessionId, executionId, status) => {
+  finishChatStream: async (_fullResponse, personaId, sessionId, _executionId, status) => {
     // Idempotency guard. A single terminal EXECUTION_STATUS event is observed by
     // BOTH chatSlice's per-execution listener AND executionSlice.finishExecution
     // (and cancelExecution is a third entry point). Previously chatStreaming was
-    // only flipped false AFTER the `await createChatMessage` below, so two callers
+    // only flipped false AFTER an awaited assistant-row insert, so two callers
     // entering before that await resolved both saw chatStreaming===true and both
-    // INSERTed an assistant row — permanent duplicate messages (and a doubled
-    // session-id upsert / summary). Flip the flag synchronously here, before any
+    // INSERTed an assistant row — permanent duplicate messages. The insert has
+    // since moved into Rust (which refuses a second reply per execution), but the
+    // flag still makes the finalize run once. Flip it synchronously, before any
     // await, so concurrent callers short-circuit.
     if (!get().chatStreaming) return;
     set({ chatStreaming: false, streamingChatSessionId: null, streamingChatPersonaId: null });
@@ -327,48 +282,35 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
       return;
     }
 
-    if (!fullResponse.trim()) {
-      return;
-    }
+    // A completed turn's reply is written by the Rust completion hook
+    // (`chat_turn::finish`): the assistant row - assembled from the run's
+    // assistant text with the same line filter this slice applied to
+    // `fullResponse` - plus the summary and the Claude session id for the next
+    // turn's --resume. Re-read the session; if the hook has not landed the row
+    // yet, `chat-changed` re-reads it when it does. A reply to a thread the
+    // user has since left stays in that thread's rows (it used to be appended
+    // to whichever thread was open).
+    if (get().activeChatSessionId !== sessionId) return;
+    await get().refreshActiveChat(personaId);
+  },
+
+  refreshActiveChat: async (personaIdHint) => {
+    const { activeChatSessionId: sessionId, chatSessionContext } = get();
+    const personaId =
+      personaIdHint ??
+      (chatSessionContext?.sessionId === sessionId ? chatSessionContext?.personaId : null) ??
+      get().streamingChatPersonaId;
+    if (!sessionId || !personaId) return;
     try {
-      const assistantMsg = await createChatMessage({
-        personaId,
-        sessionId,
-        role: "assistant",
-        content: fullResponse,
-        executionId,
-      });
-      set((s) => ({
-        chatMessages: [...s.chatMessages, assistantMsg].slice(-MAX_CHAT_MESSAGES),
-        chatStreaming: false,
-      }));
-
-      // Capture claude_session_id from the execution for --resume on next message
-      let capturedClaudeSessionId: string | null = null;
-      if (executionId) {
-        try {
-          const exec = await getExecution(executionId, personaId);
-          if (exec.claude_session_id) {
-            capturedClaudeSessionId = exec.claude_session_id;
-          }
-        } catch (err) { silentCatch("stores/slices/agents/chatSlice:catch1")(err); }
-      }
-
-      // Update session context with latest summary and claude_session_id
-      const updatedMessages = get().chatMessages;
-      saveChatSessionContext({
-        sessionId,
-        personaId,
-        summary: buildSummary(updatedMessages),
-        ...(capturedClaudeSessionId ? { claudeSessionId: capturedClaudeSessionId } : {}),
-      }).then((ctx) => set({ chatSessionContext: ctx })).catch(silentCatch("stores/slices/agents/chatSlice:catch5"));
-
-      // Advisory mode was wired to the in-editor chat UI, which has been
-      // retired in favour of companion chat. The slice still exists so legacy
-      // background sessions and execution-stream consumers don't break, but
-      // there is no longer a UI surface that drives advisory operations.
+      const [messages, ctx] = await Promise.all([
+        getChatMessages(personaId, sessionId),
+        getChatSessionContext(sessionId),
+      ]);
+      // The user may have switched threads while this was in flight.
+      if (get().activeChatSessionId !== sessionId) return;
+      set({ chatMessages: messages.slice(-MAX_CHAT_MESSAGES), chatSessionContext: ctx });
     } catch (err) {
-      reportError(err, "Failed to finalize chat stream", set, { stateUpdates: { chatStreaming: false } });
+      silentCatch("stores/slices/agents/chatSlice:refreshActiveChat")(err);
     }
   },
 

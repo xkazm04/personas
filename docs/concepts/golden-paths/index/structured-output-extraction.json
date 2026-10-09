@@ -65,6 +65,7 @@
       "contexts": ["(`divergence.rs:67-80`, every field `#[serde(default)]` including the `bool` the control flow branches on) —"],
       "resolved": false
     },
+    "engine/team_assignment_matching.rs": {"count":1,"sections":[],"contexts":["`engine/kpi_binding.rs`, `engine/team_assignment_matching.rs`, `companion/proactive/{message,execution,backlog}_*.rs`"],"resolved":false},
     "extract.rs": {"count":1,"sections":[],"lines":["443-453"],"contexts":["best-argued policy in the corpus (`extract.rs:443-453`: *\"Real Qwen parse failures are largely STOCHASTIC …"],"resolved":false},
     "faithfulness.rs": {"count":1,"sections":[],"lines":["133"],"contexts":["one straggler (`faithfulness.rs:133`) that reimplements it as `find('{')` + `rfind('}')` — the weaker"],"resolved":false},
     "fileScannerService.ts": {"count":1,"sections":[],"lines":["510"],"contexts":["alone (`fileScannerService.ts:510`). `brainiac`: 1 shared `extract_json_object` used by 4 of 5 sites, with"],"resolved":false},
@@ -81,6 +82,15 @@
     "providers/anthropic.rs": {"count":1,"sections":[],"lines":["70-77"],"contexts":["the system prompt* (`providers/anthropic.rs:70-77`). This repo drives the Claude **CLI**, which offers no"],"resolved":false},
     "retryStrategy.ts": {"count":1,"sections":[],"lines":["56-107"],"contexts":["transport codes (`retryStrategy.ts:56-107`, and that module has **zero import sites**). Same team, adjacent"],"resolved":false},
     "reviewStore.ts": {"count":1,"sections":[],"lines":["35-39"],"contexts":["only one that wrote the rule down: `reviewStore.ts:35-39`, *\"Fail-loud defaults: if JSON.parse throws or"],"resolved":false},
+    "runner/mod.rs": {
+      "count": 7,
+      "sections": [5,7],
+      "lines": ["2515-2518","2759","2517","2154","2506"],
+      "contexts": [
+        "| **Requiring the envelope to be the entire line** | `runner/mod.rs:2515-2518` needs `trimmed.starts_with('{')` **and** the whole line to be exactly one JSON document. Measured on real output: **10 o…"
+      ],
+      "resolved": false
+    },
     "scan.ts": {"count":2,"sections":[],"lines":["385-411","319"],"contexts":["text (`lib/llm/json.ts:140`) — and it is the only sibling with a retry plan (`scan.ts:385-411`,"],"resolved":false},
     "schema.ts": {"count":1,"sections":[],"contexts":["one `schema.ts`). `brainiac` has a `json_mode: bool` that on Anthropic is *literally a sentence appended to"],"resolved":false},
     "scripts/census/rules.json": {"count":2,"sections":[9,12],"contexts":["**Not already gated.** All **98** rules in `scripts/census/rules.json` were read."]},
@@ -92,6 +102,14 @@
       "contexts": [
         "| **`src-tauri/engine/src/auto_triage.rs:187` — `parse_verdict_response(raw) -> Result<AutoTriageDecision, String>`** | Strict, then balanced-object fallback, then a `Result` carrying 500 chars — **a…"
       ]
+    },
+    "src-tauri/engine/src/build_session/parser.rs": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["523"],
+      "contexts": ["so the CLI's own `error_max_turns` cap-out — which `build_session/parser.rs:523` explicitly says *\"used to be"],
+      "resolvedFrom": "suffix",
+      "verbatim": "build_session/parser.rs"
     },
     "src-tauri/engine/src/credential_design.rs": {
       "count": 1,
@@ -137,6 +155,14 @@
       "contexts": ["for this path. Every model-reply parser in the tree enumerated and hand-classified; `engine/src/safe_json.rs`,"],
       "resolvedFrom": "suffix",
       "verbatim": "engine/src/safe_json.rs"
+    },
+    "src-tauri/engine/src/team_assignment_matching.rs": {
+      "count": 3,
+      "sections": [3,4,6],
+      "lines": ["311","530-545","518-545"],
+      "contexts": [
+        "| **`src-tauri/engine/src/team_assignment_matching.rs:311` — `parse_llm_match_response`** + **`:518-545`** | The reference **post-parse validation**: `parse_lenient_json` into a `Result`, then reject…"
+      ]
     },
     "src-tauri/src/": {
       "count": 1,
@@ -292,14 +318,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "build_session/fanout.rs"
     },
-    "src-tauri/src/engine/build_session/parser.rs": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["1213","523"],
-      "contexts": ["`src/engine/build_session/parser.rs:1213` · `src/engine/director.rs:462` · `src/engine/llm_topology.rs:155`."],
-      "resolvedFrom": "suffix",
-      "verbatim": "src/engine/build_session/parser.rs"
-    },
     "src-tauri/src/engine/deliberation.rs": {
       "count": 3,
       "sections": [6,7],
@@ -333,18 +351,11 @@
       "resolvedFrom": "basename",
       "verbatim": "sleep_cycle.rs"
     },
-    "src-tauri/src/engine/runner/mod.rs": {"count":8,"sections":[5,7],"lines":["2515-2518","2759","2517","2154","2506"],"contexts":["and `engine/runner/mod.rs` read in full."],"resolvedFrom":"suffix","verbatim":"engine/runner/mod.rs"},
-    "src-tauri/src/engine/team_assignment_matching.rs": {
-      "count": 4,
-      "sections": [3,4,6],
-      "lines": ["311","530-545","518-545"],
-      "contexts": ["`engine/kpi_binding.rs`, `engine/team_assignment_matching.rs`, `companion/proactive/{message,execution,backlog}_*.rs`"],
-      "resolvedFrom": "suffix",
-      "verbatim": "engine/team_assignment_matching.rs"
-    },
+    "src-tauri/src/engine/runner/mod.rs": {"count":1,"sections":[],"contexts":["and `engine/runner/mod.rs` read in full."],"resolvedFrom":"suffix","verbatim":"engine/runner/mod.rs"},
     "src/commands/infrastructure/{context_generation,idea_scanner}.rs": {"count":1,"sections":[7],"contexts":["`src/commands/infrastructure/{context_generation,idea_scanner}.rs` ×2 ·"],"resolved":false},
     "src/commands/recipes/{execution,generation,versioning}.rs": {"count":1,"sections":[7],"contexts":["`src/commands/credentials/auto_cred_browser.rs` ×2 · `src/commands/recipes/{execution,generation,versioning}.rs` ×3 ·"],"resolved":false},
     "src/companion/proactive/{message,execution,backlog}_*.rs": {"count":1,"sections":[7],"contexts":["`src/companion/proactive/{message,execution,backlog}_*.rs` ×3 · `src/commands/tools/automation_design.rs` ·"],"resolved":false},
+    "src/engine/build_session/parser.rs": {"count":1,"sections":[7],"lines":["1213"],"contexts":["`src/engine/build_session/parser.rs:1213` · `src/engine/director.rs:462` · `src/engine/llm_topology.rs:155`."],"resolved":false},
     "standupGenerator.ts": {"count":1,"sections":[],"lines":["385-390"],"contexts":["Defect: `vibeman` 10 of 25 sites end in a default, including `standupGenerator.ts:385-390` returning"],"resolved":false},
     "vibeman/anthropic-client.ts": {"count":1,"sections":[],"lines":["100-104"],"contexts":["`vibeman/anthropic-client.ts:100-104` shows the worst version: a forced tool's truncated `input` object is"],"resolved":false},
     "vibeman/fileScannerService.ts": {"count":1,"sections":[12],"lines":["510"],"contexts":["siblings are where this bites:** `vibeman/fileScannerService.ts:510` writes model text to a user's source"],"resolved":false},

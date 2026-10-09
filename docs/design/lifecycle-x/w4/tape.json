@@ -1,0 +1,2377 @@
+{
+  "version": 1,
+  "module": "plugins/lifecycle/collar",
+  "source": "synthetic",
+  "recordedAt": "2026-09-22T15:40:00.000Z",
+  "note": "Synthetic: Solo v0 with all six health verdicts, a null metric, the Overseer goal and twelve changes of evidence. Twelve Measures of history.",
+  "calls": [
+    {
+      "cmd": "dev_tools_get_lifecycle",
+      "response": {
+        "projectId": "p-atlas",
+        "preset": "solo",
+        "version": 0,
+        "author": "default",
+        "changeNote": null,
+        "createdAt": null,
+        "installTaskId": null,
+        "installTaskStatus": null,
+        "steps": [
+          {
+            "step": {
+              "id": "frame",
+              "phase": "before",
+              "label": null,
+              "rule": "Rule for frame.",
+              "bindings": [
+                "app"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "app",
+                "state": "live",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 0,
+              "skipped": 0,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "recall",
+              "phase": "before",
+              "label": null,
+              "rule": "Rule for recall.",
+              "bindings": [
+                "claude_md"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "claude_md",
+                "state": "detected",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 0,
+              "skipped": 0,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "isolate",
+              "phase": "before",
+              "label": null,
+              "rule": "Rule for isolate.",
+              "bindings": [
+                "app"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "app",
+                "state": "live",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 11,
+              "skipped": 1,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "sync",
+              "phase": "before",
+              "label": null,
+              "rule": "Rule for sync.",
+              "bindings": [
+                "app"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "app",
+                "state": "live",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 3,
+              "skipped": 0,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "gate",
+              "phase": "after",
+              "label": null,
+              "rule": "Rule for gate.",
+              "bindings": [
+                "hook"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "hook",
+                "state": "detected",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 10,
+              "skipped": 0,
+              "unknown": 0,
+              "failed": 1
+            }
+          },
+          {
+            "step": {
+              "id": "tests",
+              "phase": "after",
+              "label": null,
+              "rule": "Rule for tests.",
+              "bindings": [
+                "advisory"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "advisory",
+                "state": "advisory",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 9,
+              "skipped": 2,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "docs",
+              "phase": "after",
+              "label": null,
+              "rule": "Rule for docs.",
+              "bindings": [
+                "advisory"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "advisory",
+                "state": "advisory",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 8,
+              "skipped": 3,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "commit",
+              "phase": "after",
+              "label": null,
+              "rule": "Rule for commit.",
+              "bindings": [
+                "hook"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "hook",
+                "state": "detected",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 10,
+              "skipped": 2,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "land",
+              "phase": "after",
+              "label": null,
+              "rule": "Rule for land.",
+              "bindings": [
+                "app"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "app",
+                "state": "live",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 5,
+              "skipped": 7,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "record",
+              "phase": "after",
+              "label": null,
+              "rule": "Rule for record.",
+              "bindings": [
+                "app"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "app",
+                "state": "live",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 12,
+              "skipped": 0,
+              "unknown": 0,
+              "failed": 0
+            }
+          }
+        ],
+        "evidence": [
+          {
+            "sourceKind": "task",
+            "sourceRef": "c12",
+            "title": "Change 12",
+            "occurredAt": "2026-09-22T14:10:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c11",
+            "title": "Change 11",
+            "occurredAt": "2026-09-22T12:40:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c10",
+            "title": "Change 10",
+            "occurredAt": "2026-09-22T11:10:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "failed",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c09",
+            "title": "Change 9",
+            "occurredAt": "2026-09-22T09:40:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "task",
+            "sourceRef": "c08",
+            "title": "Change 8",
+            "occurredAt": "2026-09-22T08:10:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c07",
+            "title": "Change 7",
+            "occurredAt": "2026-09-22T06:40:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c06",
+            "title": "Change 6",
+            "occurredAt": "2026-09-22T05:10:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c05",
+            "title": "Change 5",
+            "occurredAt": "2026-09-22T03:40:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "task",
+            "sourceRef": "c04",
+            "title": "Change 4",
+            "occurredAt": "2026-09-22T02:10:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c03",
+            "title": "Change 3",
+            "occurredAt": "2026-09-22T00:40:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c02",
+            "title": "Change 2",
+            "occurredAt": "2026-09-21T23:10:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c01",
+            "title": "Change 1",
+            "occurredAt": "2026-09-21T21:40:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          }
+        ],
+        "health": [
+          {
+            "stepId": "frame",
+            "health": "instructed",
+            "staleOf": null,
+            "reason": null,
+            "metrics": [],
+            "measuredAt": null,
+            "headSha": null,
+            "previous": null
+          },
+          {
+            "stepId": "recall",
+            "health": "instructed",
+            "staleOf": null,
+            "reason": null,
+            "metrics": [],
+            "measuredAt": null,
+            "headSha": null,
+            "previous": null
+          },
+          {
+            "stepId": "isolate",
+            "health": "green",
+            "staleOf": null,
+            "reason": null,
+            "metrics": [
+              {
+                "key": "done_rate",
+                "value": 92,
+                "samples": 12
+              }
+            ],
+            "measuredAt": null,
+            "headSha": null,
+            "previous": {
+              "health": "green",
+              "metrics": [
+                {
+                  "key": "done_rate",
+                  "value": 86,
+                  "samples": 12
+                }
+              ],
+              "measuredAt": "2026-09-20T13:40:00.000Z",
+              "headSha": "9f8e7d6"
+            }
+          },
+          {
+            "stepId": "sync",
+            "health": "unmeasured",
+            "staleOf": null,
+            "reason": "Only 3 changes recorded; 5 are needed",
+            "metrics": [
+              {
+                "key": "done_rate",
+                "value": null,
+                "samples": 3
+              }
+            ],
+            "measuredAt": null,
+            "headSha": null,
+            "previous": null
+          },
+          {
+            "stepId": "gate",
+            "health": "amber",
+            "staleOf": null,
+            "reason": "tsc 74s over 60s budget",
+            "metrics": [
+              {
+                "key": "median_ms",
+                "value": 74000,
+                "samples": 10
+              },
+              {
+                "key": "pass_rate",
+                "value": 90,
+                "samples": 10
+              }
+            ],
+            "measuredAt": "2026-09-22T15:10:00.000Z",
+            "headSha": "a1b2c3d",
+            "previous": {
+              "health": "green",
+              "metrics": [
+                {
+                  "key": "median_ms",
+                  "value": 52000,
+                  "samples": 10
+                },
+                {
+                  "key": "pass_rate",
+                  "value": 100,
+                  "samples": 10
+                }
+              ],
+              "measuredAt": "2026-09-20T13:40:00.000Z",
+              "headSha": "9f8e7d6"
+            }
+          },
+          {
+            "stepId": "tests",
+            "health": "amber",
+            "staleOf": null,
+            "reason": "Coverage 63% is under the 70% target",
+            "metrics": [
+              {
+                "key": "coverage_pct",
+                "value": 63,
+                "samples": 1
+              },
+              {
+                "key": "median_ms",
+                "value": 182000,
+                "samples": 10
+              },
+              {
+                "key": "pass_rate",
+                "value": 100,
+                "samples": 10
+              }
+            ],
+            "measuredAt": "2026-09-22T15:10:00.000Z",
+            "headSha": "a1b2c3d",
+            "previous": {
+              "health": "amber",
+              "metrics": [
+                {
+                  "key": "coverage_pct",
+                  "value": 61,
+                  "samples": 1
+                },
+                {
+                  "key": "median_ms",
+                  "value": 190000,
+                  "samples": 10
+                },
+                {
+                  "key": "pass_rate",
+                  "value": 100,
+                  "samples": 10
+                }
+              ],
+              "measuredAt": "2026-09-20T13:40:00.000Z",
+              "headSha": "9f8e7d6"
+            }
+          },
+          {
+            "stepId": "docs",
+            "health": "green",
+            "staleOf": null,
+            "reason": null,
+            "metrics": [
+              {
+                "key": "docs_clean_pct",
+                "value": 92,
+                "samples": 38
+              }
+            ],
+            "measuredAt": "2026-09-22T15:10:00.000Z",
+            "headSha": "a1b2c3d",
+            "previous": null
+          },
+          {
+            "stepId": "commit",
+            "health": "stale",
+            "staleOf": "green",
+            "reason": "Last measured on an older base tip",
+            "metrics": [
+              {
+                "key": "done_rate",
+                "value": 85,
+                "samples": 12
+              }
+            ],
+            "measuredAt": "2026-09-15T15:40:00.000Z",
+            "headSha": "a1b2c3d",
+            "previous": {
+              "health": "green",
+              "metrics": [
+                {
+                  "key": "done_rate",
+                  "value": 85,
+                  "samples": 12
+                }
+              ],
+              "measuredAt": "2026-09-13T15:40:00.000Z",
+              "headSha": "9f8e7d6"
+            }
+          },
+          {
+            "stepId": "land",
+            "health": "red",
+            "staleOf": null,
+            "reason": "Done in 40% of recent changes, 80% needed",
+            "metrics": [
+              {
+                "key": "done_rate",
+                "value": 40,
+                "samples": 12
+              }
+            ],
+            "measuredAt": null,
+            "headSha": null,
+            "previous": {
+              "health": "amber",
+              "metrics": [
+                {
+                  "key": "done_rate",
+                  "value": 52,
+                  "samples": 12
+                }
+              ],
+              "measuredAt": "2026-09-20T13:40:00.000Z",
+              "headSha": "9f8e7d6"
+            }
+          },
+          {
+            "stepId": "record",
+            "health": "green",
+            "staleOf": null,
+            "reason": null,
+            "metrics": [
+              {
+                "key": "done_rate",
+                "value": 100,
+                "samples": 12
+              }
+            ],
+            "measuredAt": null,
+            "headSha": null,
+            "previous": {
+              "health": "green",
+              "metrics": [
+                {
+                  "key": "done_rate",
+                  "value": 100,
+                  "samples": 12
+                }
+              ],
+              "measuredAt": "2026-09-20T13:40:00.000Z",
+              "headSha": "9f8e7d6"
+            }
+          }
+        ],
+        "goal": {
+          "goalId": "goal-1",
+          "measurableTotal": 8,
+          "measurableGreen": 3,
+          "instructed": 2,
+          "openItems": 5,
+          "items": []
+        },
+        "watched": true,
+        "measuring": false,
+        "progress": null,
+        "tip": {
+          "branch": "main",
+          "sha": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+          "measuredSha": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+          "commitsBehind": 0,
+          "measuredAt": "2026-09-22T15:10:00.000Z"
+        },
+        "rules": {
+          "defaultBudgets": [
+            {
+              "kind": "lint",
+              "budgetMs": 60000
+            },
+            {
+              "kind": "typecheck",
+              "budgetMs": 60000
+            },
+            {
+              "kind": "test",
+              "budgetMs": 300000
+            },
+            {
+              "kind": "check",
+              "budgetMs": 600000
+            },
+            {
+              "kind": "coverage",
+              "budgetMs": 600000
+            },
+            {
+              "kind": "other",
+              "budgetMs": 300000
+            }
+          ],
+          "coverageGreenPct": 70,
+          "docsCleanPct": 90,
+          "doneRatePct": 80,
+          "amberFloorPct": 50,
+          "minSamples": 5,
+          "stepKinds": [
+            {
+              "stepId": "gate",
+              "kinds": [
+                "lint",
+                "typecheck",
+                "check",
+                "other"
+              ]
+            },
+            {
+              "stepId": "tests",
+              "kinds": [
+                "test",
+                "coverage"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "cmd": "dev_tools_list_projects",
+      "response": [
+        {
+          "id": "p-atlas",
+          "name": "Atlas Web",
+          "root_path": "C:/code/atlas",
+          "description": "Atlas Web, a product codebase.",
+          "status": "active",
+          "tech_stack": "TypeScript, React, Vite",
+          "github_url": null,
+          "monitoring_credential_id": null,
+          "monitoring_project_slug": null,
+          "static_scan_config": null,
+          "pr_credential_id": null,
+          "llm_tracking_credential_id": null,
+          "support_credential_id": null,
+          "data_links": null,
+          "test_env_url": null,
+          "test_env_branch": null,
+          "main_branch": "main",
+          "standards_config": null,
+          "team_id": null,
+          "workspace_id": null,
+          "kind": "code",
+          "enabled": true,
+          "created_at": "2026-06-24T15:40:00.000Z",
+          "updated_at": "2026-09-20T15:40:00.000Z"
+        }
+      ]
+    },
+    {
+      "cmd": "dev_tools_workspace_list",
+      "response": []
+    },
+    {
+      "cmd": "dev_tools_lifecycle_history",
+      "response": {
+        "measures": [
+          {
+            "measureId": "m-12",
+            "headSha": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+            "startedAt": "2026-09-22T14:41:00.000Z",
+            "finishedAt": "2026-09-22T15:10:00.000Z",
+            "durationMs": 1713900,
+            "cells": [
+              {
+                "stepId": "gate",
+                "health": "amber",
+                "reason": "tsc 74s over 60s budget",
+                "metrics": [
+                  {
+                    "key": "median_ms",
+                    "value": 74000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 90,
+                    "samples": 10
+                  }
+                ]
+              },
+              {
+                "stepId": "tests",
+                "health": "amber",
+                "reason": "Coverage 63% is under the 70% target",
+                "metrics": [
+                  {
+                    "key": "coverage_pct",
+                    "value": 63,
+                    "samples": 1
+                  },
+                  {
+                    "key": "median_ms",
+                    "value": 182000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              }
+            ],
+            "runs": [
+              {
+                "commandId": "tsc",
+                "kind": "typecheck",
+                "outcome": "passed",
+                "durationMs": 74000,
+                "valuePct": null
+              },
+              {
+                "commandId": "eslint",
+                "kind": "lint",
+                "outcome": "failed",
+                "durationMs": 20100,
+                "valuePct": null
+              },
+              {
+                "commandId": "check",
+                "kind": "check",
+                "outcome": "timeout",
+                "durationMs": 1200000,
+                "valuePct": null
+              },
+              {
+                "commandId": "clippy",
+                "kind": "other",
+                "outcome": "did_not_run",
+                "durationMs": 0,
+                "valuePct": null
+              },
+              {
+                "commandId": "vitest",
+                "kind": "test",
+                "outcome": "passed",
+                "durationMs": 182000,
+                "valuePct": null
+              },
+              {
+                "commandId": "coverage",
+                "kind": "coverage",
+                "outcome": "passed",
+                "durationMs": 237800,
+                "valuePct": 63
+              }
+            ]
+          },
+          {
+            "measureId": "m-11",
+            "headSha": "9f8e7d6c5b4a39281706f5e4d3c2b1a098765432",
+            "startedAt": "2026-09-20T13:25:00.000Z",
+            "finishedAt": "2026-09-20T13:40:00.000Z",
+            "durationMs": 902400,
+            "cells": [
+              {
+                "stepId": "gate",
+                "health": "green",
+                "reason": null,
+                "metrics": [
+                  {
+                    "key": "median_ms",
+                    "value": 52000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              },
+              {
+                "stepId": "tests",
+                "health": "amber",
+                "reason": "Coverage 61% is under the 70% target",
+                "metrics": [
+                  {
+                    "key": "coverage_pct",
+                    "value": 61,
+                    "samples": 1
+                  },
+                  {
+                    "key": "median_ms",
+                    "value": 190000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              }
+            ],
+            "runs": [
+              {
+                "commandId": "tsc",
+                "kind": "typecheck",
+                "outcome": "passed",
+                "durationMs": 52000,
+                "valuePct": null
+              },
+              {
+                "commandId": "eslint",
+                "kind": "lint",
+                "outcome": "passed",
+                "durationMs": 19400,
+                "valuePct": null
+              },
+              {
+                "commandId": "check",
+                "kind": "check",
+                "outcome": "passed",
+                "durationMs": 405000,
+                "valuePct": null
+              },
+              {
+                "commandId": "clippy",
+                "kind": "other",
+                "outcome": "did_not_run",
+                "durationMs": 0,
+                "valuePct": null
+              },
+              {
+                "commandId": "vitest",
+                "kind": "test",
+                "outcome": "passed",
+                "durationMs": 190000,
+                "valuePct": null
+              },
+              {
+                "commandId": "coverage",
+                "kind": "coverage",
+                "outcome": "passed",
+                "durationMs": 236000,
+                "valuePct": 61
+              }
+            ]
+          },
+          {
+            "measureId": "m-10",
+            "headSha": "5c5581d4c6ef36206df7ddcee6d5c492516f78de",
+            "startedAt": "2026-09-19T11:23:00.000Z",
+            "finishedAt": "2026-09-19T11:40:00.000Z",
+            "durationMs": 1032500,
+            "cells": [
+              {
+                "stepId": "gate",
+                "health": "green",
+                "reason": null,
+                "metrics": [
+                  {
+                    "key": "median_ms",
+                    "value": 51000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              },
+              {
+                "stepId": "tests",
+                "health": "amber",
+                "reason": "Coverage 60% is under the 70% target",
+                "metrics": [
+                  {
+                    "key": "coverage_pct",
+                    "value": 60,
+                    "samples": 1
+                  },
+                  {
+                    "key": "median_ms",
+                    "value": 192000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              }
+            ],
+            "runs": [
+              {
+                "commandId": "tsc",
+                "kind": "typecheck",
+                "outcome": "passed",
+                "durationMs": 51000,
+                "valuePct": null
+              },
+              {
+                "commandId": "eslint",
+                "kind": "lint",
+                "outcome": "passed",
+                "durationMs": 18700,
+                "valuePct": null
+              },
+              {
+                "commandId": "check",
+                "kind": "check",
+                "outcome": "passed",
+                "durationMs": 402500,
+                "valuePct": null
+              },
+              {
+                "commandId": "clippy",
+                "kind": "other",
+                "outcome": "passed",
+                "durationMs": 134100,
+                "valuePct": null
+              },
+              {
+                "commandId": "vitest",
+                "kind": "test",
+                "outcome": "passed",
+                "durationMs": 192000,
+                "valuePct": null
+              },
+              {
+                "commandId": "coverage",
+                "kind": "coverage",
+                "outcome": "passed",
+                "durationMs": 234200,
+                "valuePct": 60
+              }
+            ]
+          },
+          {
+            "measureId": "m-09",
+            "headSha": "be1e082328b7bc6fcfc0641d489e4ae1b337ff2d",
+            "startedAt": "2026-09-18T09:23:00.000Z",
+            "finishedAt": "2026-09-18T09:40:00.000Z",
+            "durationMs": 1029600,
+            "cells": [
+              {
+                "stepId": "gate",
+                "health": "green",
+                "reason": null,
+                "metrics": [
+                  {
+                    "key": "median_ms",
+                    "value": 53000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              },
+              {
+                "stepId": "tests",
+                "health": "amber",
+                "reason": "Coverage 58% is under the 70% target",
+                "metrics": [
+                  {
+                    "key": "coverage_pct",
+                    "value": 58,
+                    "samples": 1
+                  },
+                  {
+                    "key": "median_ms",
+                    "value": 193000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              }
+            ],
+            "runs": [
+              {
+                "commandId": "tsc",
+                "kind": "typecheck",
+                "outcome": "passed",
+                "durationMs": 53000,
+                "valuePct": null
+              },
+              {
+                "commandId": "eslint",
+                "kind": "lint",
+                "outcome": "passed",
+                "durationMs": 18000,
+                "valuePct": null
+              },
+              {
+                "commandId": "check",
+                "kind": "check",
+                "outcome": "passed",
+                "durationMs": 400000,
+                "valuePct": null
+              },
+              {
+                "commandId": "clippy",
+                "kind": "other",
+                "outcome": "passed",
+                "durationMs": 133200,
+                "valuePct": null
+              },
+              {
+                "commandId": "vitest",
+                "kind": "test",
+                "outcome": "passed",
+                "durationMs": 193000,
+                "valuePct": null
+              },
+              {
+                "commandId": "coverage",
+                "kind": "coverage",
+                "outcome": "passed",
+                "durationMs": 232400,
+                "valuePct": 58
+              }
+            ]
+          },
+          {
+            "measureId": "m-08",
+            "headSha": "1fe68e728a8042be3188ea6caa66d1301500857c",
+            "startedAt": "2026-09-17T07:23:00.000Z",
+            "finishedAt": "2026-09-17T07:40:00.000Z",
+            "durationMs": 1029500,
+            "cells": [
+              {
+                "stepId": "gate",
+                "health": "green",
+                "reason": null,
+                "metrics": [
+                  {
+                    "key": "median_ms",
+                    "value": 55000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              },
+              {
+                "stepId": "tests",
+                "health": "amber",
+                "reason": "Coverage 57% is under the 70% target",
+                "metrics": [
+                  {
+                    "key": "coverage_pct",
+                    "value": 57,
+                    "samples": 1
+                  },
+                  {
+                    "key": "median_ms",
+                    "value": 194000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              }
+            ],
+            "runs": [
+              {
+                "commandId": "tsc",
+                "kind": "typecheck",
+                "outcome": "passed",
+                "durationMs": 55000,
+                "valuePct": null
+              },
+              {
+                "commandId": "eslint",
+                "kind": "lint",
+                "outcome": "passed",
+                "durationMs": 20100,
+                "valuePct": null
+              },
+              {
+                "commandId": "check",
+                "kind": "check",
+                "outcome": "passed",
+                "durationMs": 397500,
+                "valuePct": null
+              },
+              {
+                "commandId": "clippy",
+                "kind": "other",
+                "outcome": "passed",
+                "durationMs": 132300,
+                "valuePct": null
+              },
+              {
+                "commandId": "vitest",
+                "kind": "test",
+                "outcome": "passed",
+                "durationMs": 194000,
+                "valuePct": null
+              },
+              {
+                "commandId": "coverage",
+                "kind": "coverage",
+                "outcome": "passed",
+                "durationMs": 230600,
+                "valuePct": 57
+              }
+            ]
+          },
+          {
+            "measureId": "m-07",
+            "headSha": "81af14c1ec48c90d935170bb0c2f577f76c90bcb",
+            "startedAt": "2026-09-16T05:23:00.000Z",
+            "finishedAt": "2026-09-16T05:40:00.000Z",
+            "durationMs": 1032600,
+            "cells": [
+              {
+                "stepId": "gate",
+                "health": "amber",
+                "reason": "eslint failed in 2 of 10 runs",
+                "metrics": [
+                  {
+                    "key": "median_ms",
+                    "value": 63000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 80,
+                    "samples": 10
+                  }
+                ]
+              },
+              {
+                "stepId": "tests",
+                "health": "amber",
+                "reason": "Coverage 56% is under the 70% target",
+                "metrics": [
+                  {
+                    "key": "coverage_pct",
+                    "value": 56,
+                    "samples": 1
+                  },
+                  {
+                    "key": "median_ms",
+                    "value": 195000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              }
+            ],
+            "runs": [
+              {
+                "commandId": "tsc",
+                "kind": "typecheck",
+                "outcome": "passed",
+                "durationMs": 63000,
+                "valuePct": null
+              },
+              {
+                "commandId": "eslint",
+                "kind": "lint",
+                "outcome": "failed",
+                "durationMs": 19400,
+                "valuePct": null
+              },
+              {
+                "commandId": "check",
+                "kind": "check",
+                "outcome": "passed",
+                "durationMs": 395000,
+                "valuePct": null
+              },
+              {
+                "commandId": "clippy",
+                "kind": "other",
+                "outcome": "passed",
+                "durationMs": 131400,
+                "valuePct": null
+              },
+              {
+                "commandId": "vitest",
+                "kind": "test",
+                "outcome": "passed",
+                "durationMs": 195000,
+                "valuePct": null
+              },
+              {
+                "commandId": "coverage",
+                "kind": "coverage",
+                "outcome": "passed",
+                "durationMs": 228800,
+                "valuePct": 56
+              }
+            ]
+          },
+          {
+            "measureId": "m-06",
+            "headSha": "e3779b104e114f5cf519f70a6df7ddced891921a",
+            "startedAt": "2026-09-15T03:23:00.000Z",
+            "finishedAt": "2026-09-15T03:40:00.000Z",
+            "durationMs": 1035700,
+            "cells": [
+              {
+                "stepId": "gate",
+                "health": "red",
+                "reason": "eslint failed in 5 of 10 runs",
+                "metrics": [
+                  {
+                    "key": "median_ms",
+                    "value": 71000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 50,
+                    "samples": 10
+                  }
+                ]
+              },
+              {
+                "stepId": "tests",
+                "health": "amber",
+                "reason": "Coverage 54% is under the 70% target",
+                "metrics": [
+                  {
+                    "key": "coverage_pct",
+                    "value": 54,
+                    "samples": 1
+                  },
+                  {
+                    "key": "median_ms",
+                    "value": 196000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              }
+            ],
+            "runs": [
+              {
+                "commandId": "tsc",
+                "kind": "typecheck",
+                "outcome": "passed",
+                "durationMs": 71000,
+                "valuePct": null
+              },
+              {
+                "commandId": "eslint",
+                "kind": "lint",
+                "outcome": "failed",
+                "durationMs": 18700,
+                "valuePct": null
+              },
+              {
+                "commandId": "check",
+                "kind": "check",
+                "outcome": "passed",
+                "durationMs": 392500,
+                "valuePct": null
+              },
+              {
+                "commandId": "clippy",
+                "kind": "other",
+                "outcome": "passed",
+                "durationMs": 130500,
+                "valuePct": null
+              },
+              {
+                "commandId": "vitest",
+                "kind": "test",
+                "outcome": "passed",
+                "durationMs": 196000,
+                "valuePct": null
+              },
+              {
+                "commandId": "coverage",
+                "kind": "coverage",
+                "outcome": "passed",
+                "durationMs": 227000,
+                "valuePct": 54
+              }
+            ]
+          },
+          {
+            "measureId": "m-05",
+            "headSha": "4540215fafd9d5ab56e27d59cfc0641d3a5a1869",
+            "startedAt": "2026-09-14T01:23:00.000Z",
+            "finishedAt": "2026-09-14T01:40:00.000Z",
+            "durationMs": 1025800,
+            "cells": [
+              {
+                "stepId": "gate",
+                "health": "red",
+                "reason": "eslint failed in 4 of 10 runs",
+                "metrics": [
+                  {
+                    "key": "median_ms",
+                    "value": 66000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 60,
+                    "samples": 10
+                  }
+                ]
+              },
+              {
+                "stepId": "tests",
+                "health": "amber",
+                "reason": "Coverage 53% is under the 70% target",
+                "metrics": [
+                  {
+                    "key": "coverage_pct",
+                    "value": 53,
+                    "samples": 1
+                  },
+                  {
+                    "key": "median_ms",
+                    "value": 197000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              }
+            ],
+            "runs": [
+              {
+                "commandId": "tsc",
+                "kind": "typecheck",
+                "outcome": "passed",
+                "durationMs": 66000,
+                "valuePct": null
+              },
+              {
+                "commandId": "eslint",
+                "kind": "lint",
+                "outcome": "failed",
+                "durationMs": 18000,
+                "valuePct": null
+              },
+              {
+                "commandId": "check",
+                "kind": "check",
+                "outcome": "passed",
+                "durationMs": 390000,
+                "valuePct": null
+              },
+              {
+                "commandId": "clippy",
+                "kind": "other",
+                "outcome": "passed",
+                "durationMs": 129600,
+                "valuePct": null
+              },
+              {
+                "commandId": "vitest",
+                "kind": "test",
+                "outcome": "passed",
+                "durationMs": 197000,
+                "valuePct": null
+              },
+              {
+                "commandId": "coverage",
+                "kind": "coverage",
+                "outcome": "passed",
+                "durationMs": 225200,
+                "valuePct": 53
+              }
+            ]
+          },
+          {
+            "measureId": "m-04",
+            "headSha": "a708a7ae11a25bfab8ab03a83188ea6c9c229eb8",
+            "startedAt": "2026-09-12T23:23:00.000Z",
+            "finishedAt": "2026-09-12T23:40:00.000Z",
+            "durationMs": 1016700,
+            "cells": [
+              {
+                "stepId": "gate",
+                "health": "amber",
+                "reason": "eslint failed in 2 of 10 runs",
+                "metrics": [
+                  {
+                    "key": "median_ms",
+                    "value": 58000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 80,
+                    "samples": 10
+                  }
+                ]
+              },
+              {
+                "stepId": "tests",
+                "health": "amber",
+                "reason": "Coverage 51% is under the 70% target",
+                "metrics": [
+                  {
+                    "key": "coverage_pct",
+                    "value": 51,
+                    "samples": 1
+                  },
+                  {
+                    "key": "median_ms",
+                    "value": 199000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              }
+            ],
+            "runs": [
+              {
+                "commandId": "tsc",
+                "kind": "typecheck",
+                "outcome": "passed",
+                "durationMs": 58000,
+                "valuePct": null
+              },
+              {
+                "commandId": "eslint",
+                "kind": "lint",
+                "outcome": "failed",
+                "durationMs": 20100,
+                "valuePct": null
+              },
+              {
+                "commandId": "check",
+                "kind": "check",
+                "outcome": "passed",
+                "durationMs": 387500,
+                "valuePct": null
+              },
+              {
+                "commandId": "clippy",
+                "kind": "other",
+                "outcome": "passed",
+                "durationMs": 128700,
+                "valuePct": null
+              },
+              {
+                "commandId": "vitest",
+                "kind": "test",
+                "outcome": "passed",
+                "durationMs": 199000,
+                "valuePct": null
+              },
+              {
+                "commandId": "coverage",
+                "kind": "coverage",
+                "outcome": "passed",
+                "durationMs": 223400,
+                "valuePct": 51
+              }
+            ]
+          },
+          {
+            "measureId": "m-03",
+            "headSha": "08d12dfd736ae2491a7389f7935170bbfdeb2507",
+            "startedAt": "2026-09-11T21:23:00.000Z",
+            "finishedAt": "2026-09-11T21:40:00.000Z",
+            "durationMs": 1004800,
+            "cells": [
+              {
+                "stepId": "gate",
+                "health": "green",
+                "reason": null,
+                "metrics": [
+                  {
+                    "key": "median_ms",
+                    "value": 50000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              },
+              {
+                "stepId": "tests",
+                "health": "red",
+                "reason": "Coverage 48% is under the 50% floor",
+                "metrics": [
+                  {
+                    "key": "coverage_pct",
+                    "value": 48,
+                    "samples": 1
+                  },
+                  {
+                    "key": "median_ms",
+                    "value": 201000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              }
+            ],
+            "runs": [
+              {
+                "commandId": "tsc",
+                "kind": "typecheck",
+                "outcome": "passed",
+                "durationMs": 50000,
+                "valuePct": null
+              },
+              {
+                "commandId": "eslint",
+                "kind": "lint",
+                "outcome": "passed",
+                "durationMs": 19400,
+                "valuePct": null
+              },
+              {
+                "commandId": "check",
+                "kind": "check",
+                "outcome": "passed",
+                "durationMs": 385000,
+                "valuePct": null
+              },
+              {
+                "commandId": "clippy",
+                "kind": "other",
+                "outcome": "passed",
+                "durationMs": 127800,
+                "valuePct": null
+              },
+              {
+                "commandId": "vitest",
+                "kind": "test",
+                "outcome": "passed",
+                "durationMs": 201000,
+                "valuePct": null
+              },
+              {
+                "commandId": "coverage",
+                "kind": "coverage",
+                "outcome": "passed",
+                "durationMs": 221600,
+                "valuePct": 48
+              }
+            ]
+          },
+          {
+            "measureId": "m-02",
+            "headSha": "6a99b44cd53368987c3c1046f519f70a5fb3ab56",
+            "startedAt": "2026-09-10T19:23:00.000Z",
+            "finishedAt": "2026-09-10T19:40:00.000Z",
+            "durationMs": 999900,
+            "cells": [
+              {
+                "stepId": "gate",
+                "health": "green",
+                "reason": null,
+                "metrics": [
+                  {
+                    "key": "median_ms",
+                    "value": 49000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              },
+              {
+                "stepId": "tests",
+                "health": "red",
+                "reason": "Coverage 46% is under the 50% floor",
+                "metrics": [
+                  {
+                    "key": "coverage_pct",
+                    "value": 46,
+                    "samples": 1
+                  },
+                  {
+                    "key": "median_ms",
+                    "value": 203000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              }
+            ],
+            "runs": [
+              {
+                "commandId": "tsc",
+                "kind": "typecheck",
+                "outcome": "passed",
+                "durationMs": 49000,
+                "valuePct": null
+              },
+              {
+                "commandId": "eslint",
+                "kind": "lint",
+                "outcome": "passed",
+                "durationMs": 18700,
+                "valuePct": null
+              },
+              {
+                "commandId": "check",
+                "kind": "check",
+                "outcome": "passed",
+                "durationMs": 382500,
+                "valuePct": null
+              },
+              {
+                "commandId": "clippy",
+                "kind": "other",
+                "outcome": "passed",
+                "durationMs": 126900,
+                "valuePct": null
+              },
+              {
+                "commandId": "vitest",
+                "kind": "test",
+                "outcome": "passed",
+                "durationMs": 203000,
+                "valuePct": null
+              },
+              {
+                "commandId": "coverage",
+                "kind": "coverage",
+                "outcome": "passed",
+                "durationMs": 219800,
+                "valuePct": 46
+              }
+            ]
+          },
+          {
+            "measureId": "m-01",
+            "headSha": "cc623a9b36fbeee7de04969556e27d59c17c31a5",
+            "startedAt": "2026-09-09T17:23:00.000Z",
+            "finishedAt": "2026-09-09T17:40:00.000Z",
+            "durationMs": 995000,
+            "cells": [
+              {
+                "stepId": "gate",
+                "health": "green",
+                "reason": null,
+                "metrics": [
+                  {
+                    "key": "median_ms",
+                    "value": 48000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              },
+              {
+                "stepId": "tests",
+                "health": "red",
+                "reason": "Coverage 44% is under the 50% floor",
+                "metrics": [
+                  {
+                    "key": "coverage_pct",
+                    "value": 44,
+                    "samples": 1
+                  },
+                  {
+                    "key": "median_ms",
+                    "value": 205000,
+                    "samples": 10
+                  },
+                  {
+                    "key": "pass_rate",
+                    "value": 100,
+                    "samples": 10
+                  }
+                ]
+              }
+            ],
+            "runs": [
+              {
+                "commandId": "tsc",
+                "kind": "typecheck",
+                "outcome": "passed",
+                "durationMs": 48000,
+                "valuePct": null
+              },
+              {
+                "commandId": "eslint",
+                "kind": "lint",
+                "outcome": "passed",
+                "durationMs": 18000,
+                "valuePct": null
+              },
+              {
+                "commandId": "check",
+                "kind": "check",
+                "outcome": "passed",
+                "durationMs": 380000,
+                "valuePct": null
+              },
+              {
+                "commandId": "clippy",
+                "kind": "other",
+                "outcome": "passed",
+                "durationMs": 126000,
+                "valuePct": null
+              },
+              {
+                "commandId": "vitest",
+                "kind": "test",
+                "outcome": "passed",
+                "durationMs": 205000,
+                "valuePct": null
+              },
+              {
+                "commandId": "coverage",
+                "kind": "coverage",
+                "outcome": "passed",
+                "durationMs": 218000,
+                "valuePct": 44
+              }
+            ]
+          }
+        ],
+        "stepIds": [
+          "gate",
+          "tests"
+        ]
+      }
+    }
+  ]
+}

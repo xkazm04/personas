@@ -20,7 +20,6 @@ use crate::background_job::spawn_guarded;
 use crate::commands::design::analysis::extract_display_text;
 use crate::db::models::DevStandard;
 use crate::db::repos::dev_tools as repo;
-use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
@@ -237,6 +236,12 @@ pub async fn dev_tools_list_standards(
 // Runner
 // ----------------------------------------------------------------------------
 
+/// Call class of the standards scan: synthesis of the repo's conventions into
+/// standards. Model and effort come from the class table
+/// (`personas_core::model_class`).
+const STANDARDS_SCAN_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Synthesis;
+
 async fn run_standards_scan(
     pool: &crate::db::DbPool,
     scan_id: &str,
@@ -244,9 +249,8 @@ async fn run_standards_scan(
     root_path: &str,
     prompt_text: String,
 ) -> Result<i32, AppError> {
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-sonnet-4-6".to_string());
+    let route = STANDARDS_SCAN_CLASS.route();
+    let cli_args = crate::engine::cli_process::headless_claude_args(route.model, route.effort, &[]);
 
     let mut cmd = Command::new(&cli_args.command);
     cmd.args(&cli_args.args)
@@ -317,7 +321,7 @@ async fn run_standards_scan(
     let spend_ctx = crate::db::repos::llm_spend::SpendCtx {
         source: "scanner",
         trigger_kind: "standards_scan",
-        model: Some("claude-sonnet-4-6"),
+        model: Some(route.model),
         project_id: Some(project_id),
         persona_id: None,
     };

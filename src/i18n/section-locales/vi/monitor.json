@@ -227,6 +227,9 @@
   "grid_dock_collapse": "Ẩn bảng điều khiển gửi đi",
   "grid_fleet_exited": "Phiên này đã kết thúc — terminal của nó không còn nữa.",
   "grid_fleet_kill": "Kết thúc phiên",
+  "terminal_asleep_label": "Vì sao phiên đang ngủ",
+  "terminal_wake_failed": "Không thể đánh thức phiên này",
+  "terminal_wake_failed_hint": "Hãy kết thúc phiên để xoá nó khỏi bảng.",
   "grid_messages_empty": "Chưa có hoạt động nào trong kênh.",
   "grid_rail_loading_more": "Đang tải thêm…",
   "grid_session_recap_ai_title": "Tiêu đề phiên",
@@ -615,6 +618,14 @@
   "orch_never_served": "chưa từng được phục vụ",
   "orch_refusal_budget": "Đã chi hết ngân sách tháng",
   "orch_refusal_concurrency": "Máy đã đạt giới hạn persona",
+  "orch_refusal_headless": "Một App Master trên terminal đang giữ dự án này",
+  "orch_headless_running": "Headless - đang chạy",
+  "orch_headless_idle": "Headless - nhàn rỗi",
+  "orch_headless_stale": "Headless - đã cũ",
+  "orch_headless_hint": "App Master của dự án này đang chạy từ terminal (/appmaster). Master trong ứng dụng nhường chỗ khi các báo cáo của nó còn mới.",
+  "orch_headless_next_wake": "Lần thức tiếp theo:",
+  "orch_headless_no_wake": "chưa thông báo",
+  "orch_headless_reported": "Báo cáo gần nhất:",
   "orch_refusal_daily_cap": "Đã đạt giới hạn ngày",
   "orch_refusal_in_flight": "Vẫn đang chạy lượt trước",
   "orch_refusal_interval_floor": "Đang nghỉ cho đến khoảng cách quy định",
@@ -1073,5 +1084,6 @@
   "dc_hub_row_open_aria": "Mở: {title}",
   "dc_hub_triage_all_none": "Không có gì đang chờ",
   "dc_hub_triage_all_short": "Tất cả",
-  "dc_hub_triage_all_walk_tip": "Duyệt cả {count} mục theo thứ tự, khẩn cấp nhất trước"
+  "dc_hub_triage_all_walk_tip": "Duyệt cả {count} mục theo thứ tự, khẩn cấp nhất trước",
+  "grid_rail_triage_modal_aria": "Chi tiết duyệt"
 }

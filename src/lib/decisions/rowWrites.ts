@@ -154,9 +154,21 @@ function assertProposalPending(id: string, seenStatus: string | undefined): void
  *  `ManualReviewItem`, `MonitorReviewItem` and `PersonaManualReview` alike. */
 export interface ReviewRowRef {
   id: string;
-  execution_id: string;
+  /** `null` for a review raised outside any run (the headless App Master's
+   *  report approval). Only a cloud row needs it, and a cloud row always has one. */
+  execution_id: string | null;
   /** `'cloud'` rows resolve through the cloud worker; anything else is local. */
   source?: 'local' | 'cloud' | null;
+}
+
+/** The run a cloud review is keyed by. The cloud worker addresses a review by
+ *  its execution, so a cloud row without one cannot be answered - refused
+ *  here rather than sent as an empty id the worker would misroute. */
+function cloudExecutionId(row: ReviewRowRef): string {
+  if (!row.execution_id) {
+    throw new Error(`Cloud review ${row.id} names no execution, so the cloud worker cannot resolve it`);
+  }
+  return row.execution_id;
 }
 
 /**
@@ -175,7 +187,7 @@ export async function resolveReviewRow(
 ): Promise<void> {
   if (row.source === 'cloud') {
     await cloudRespondToReview(
-      row.execution_id,
+      cloudExecutionId(row),
       row.id,
       status === 'approved' ? 'approve' : 'reject',
       notes ?? '',
@@ -194,7 +206,7 @@ export async function resolveReviewRow(
  */
 export async function dispatchReviewRowAction(row: ReviewRowRef, action: string): Promise<void> {
   if (row.source === 'cloud') {
-    await cloudRespondToReview(row.execution_id, row.id, 'approve', action);
+    await cloudRespondToReview(cloudExecutionId(row), row.id, 'approve', action);
     return;
   }
   await dispatchReviewActionApi(row.id, action);

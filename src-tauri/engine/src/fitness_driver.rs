@@ -247,15 +247,23 @@ pub fn build_replay_scenario(index: usize, raw_input: &str) -> TestScenario {
 // Replay executor
 // =============================================================================
 
+/// Call class of the fitness replays the evolution cycle scores candidates
+/// with. Model and effort come from the class table
+/// (`personas_core::model_class`), so a re-tuned `Verdict` row reaches the
+/// evolution cycle without a call-site edit.
+const EVAL_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Verdict;
+
 /// Default evaluation model for fitness replays (matches the evolution cycle).
 pub fn default_eval_model() -> TestModelConfig {
+    let route = EVAL_CLASS.route();
     TestModelConfig {
         id: "sonnet".to_string(),
-        model: Some("claude-sonnet-4-6".to_string()),
+        model: Some(route.model.to_string()),
         provider: "anthropic".to_string(),
         base_url: None,
         auth_token: None,
-        effort: None,
+        effort: Some(route.effort.to_string()),
     }
 }
 

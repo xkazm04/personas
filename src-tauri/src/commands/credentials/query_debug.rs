@@ -306,10 +306,10 @@ async fn run_query_debug(params: RunParams) {
         format!("> Analyzing query for {connector_family} ({service_type})..."),
     );
 
-    // Build CLI args (no persona, default provider, fast model, single turn --
-    // shared scaffold; kept as a value here since the retry loop's fresh-prompt
-    // branch reuses it).
-    let cli_args = ai_helpers::build_single_turn_cli_args();
+    // Build CLI args (no persona, default provider, the Sql class's first
+    // route, single turn -- shared scaffold; kept as a value here since the
+    // retry loop's fresh-prompt branch reuses it).
+    let cli_args = ai_helpers::build_single_turn_cli_args(ai_helpers::SINGLE_TURN_CLASS.route());
 
     let app_clone = app.clone();
     let debug_id_clone = debug_id.clone();
@@ -318,10 +318,32 @@ async fn run_query_debug(params: RunParams) {
     };
 
     // Run the initial prompt
-    let cli_result = ai_helpers::run_single_turn_prompt(prompt, Some(&on_line)).await;
+    // The initial answer must carry a fenced query block (the same check the
+    // retry loop applies below); a rejected answer escalates once.
+    let cli_result = ai_helpers::run_single_turn_prompt(prompt, Some(&on_line), |out| {
+        ai_helpers::extract_fenced_block(out, language)
+            .map(|_| ())
+            .ok_or_else(|| "No code block found in AI response".to_string())
+    })
+    .await;
 
     let (mut output, mut session_id) = match cli_result {
-        Ok((text, sid)) => (text, sid),
+        Ok(((), text, sid)) => (text, sid),
+        Err(AppError::Validation(reason)) => {
+            tracing::warn!(debug_id = %debug_id, "Query debug: output rejected: {}", reason);
+            QUERY_DEBUG_JOBS.emit_line(
+                &app,
+                &debug_id,
+                "[ERROR] Could not extract a query from AI response.",
+            );
+            QUERY_DEBUG_JOBS.set_status(
+                &app,
+                &debug_id,
+                "failed",
+                Some("No code block found in AI response".into()),
+            );
+            return;
+        }
         Err(e) => {
             tracing::warn!(debug_id = %debug_id, "Claude CLI failed: {}", e);
             QUERY_DEBUG_JOBS.emit_line(

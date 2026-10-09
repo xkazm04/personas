@@ -1,0 +1,83 @@
+{
+  "module": "companions/overseer/watched",
+  "kit": null,
+  "query": null,
+  "reducedMotion": false,
+  "steps": null,
+  "label": "overseer-watched",
+  "createdAt": "2026-10-09T07:36:59.616Z",
+  "browser": "153.0.8010.12",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 6,
+    "note": "Synthetic: the Watched pipelines section alone; three pipelines, one never sent."
+  },
+  "ok": true,
+  "unknownIpcCommands": [],
+  "shots": [
+    {
+      "file": "overseer-watched-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_overseer_watched_pipelines": 2
+      },
+      "stable": true,
+      "textLength": 543,
+      "textSample": "Watched pipelines 3 Projects starred for the Overseer on their Lifecycle page. Open one to see its steps. Atlas Web Measured 30 min. ago BEFORE AFTER 1 failing · 2 at risk · 1 stale · 1 not measured ·",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "overseer-watched-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_overseer_watched_pipelines": 2
+      },
+      "stable": true,
+      "textLength": 543,
+      "textSample": "Watched pipelines 3 Projects starred for the Overseer on their Lifecycle page. Open one to see its steps. Atlas Web Measured 30 min. ago BEFORE AFTER 1 failing · 2 at risk · 1 stale · 1 not measured ·",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

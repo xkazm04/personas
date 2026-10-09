@@ -113,6 +113,7 @@
       ],
       "resolved": false
     },
+    "ManualReviewList.tsx": {"count":2,"sections":[7],"lines":["138-140"],"contexts":["`GlobalExecutionList.tsx`, `LlmCallsTable.tsx`, `ManualReviewList.tsx`, `EventLogList.tsx`,"],"resolved":false},
     "MobileBottomNav.tsx": {
       "count": 1,
       "sections": [6],
@@ -269,7 +270,7 @@
       ],
       "resolved": false
     },
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["never against the shared `rules.json`; **the full registry was not run** (doctrine §4)."],"resolvedFrom":"basename","verbatim":"rules.json"},
+    "rules.json": {"count":1,"sections":[9],"contexts":["never against the shared `rules.json`; **the full registry was not run** (doctrine §4)."],"resolved":false},
     "shared-facts.json": {"count":2,"sections":[7],"contexts":["**Shared facts cited:** `shared-facts.json` — 963 Rust files, 4,829"],"resolved":false},
     "src-tauri/**": {
       "count": 1,
@@ -366,12 +367,12 @@
       "verbatim": "EventLogList.tsx"
     },
     "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
-      "count": 4,
-      "sections": [3,6,7],
-      "lines": ["138-152","138-140"],
-      "contexts": ["`GlobalExecutionList.tsx`, `LlmCallsTable.tsx`, `ManualReviewList.tsx`, `EventLogList.tsx`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "ManualReviewList.tsx"
+      "count": 2,
+      "sections": [3,6],
+      "lines": ["138-152"],
+      "contexts": [
+        "| **`src/features/overview/sub_manual-review/components/ManualReviewList.tsx:138-152`** — `statusCounts` | **The filter-tab exemplar**, with the rule stated: *\"Filter-tab badges read the L0 counts (o…"
+      ]
     },
     "src/features/overview/sub_manual-review/components/backlog/BacklogPanel.tsx": {
       "count": 1,

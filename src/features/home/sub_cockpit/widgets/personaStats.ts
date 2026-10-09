@@ -11,7 +11,7 @@ export type ModelTierKey = 'opus' | 'sonnet' | 'haiku' | 'unknown';
 /**
  * Best-effort parse of `persona.model_profile`. The field is a free-form
  * string that conventionally contains the model id ("claude-opus-4-7",
- * "claude-sonnet-4-6", etc.). When the value is missing or unrecognized
+ * "claude-sonnet-5-5", etc.). When the value is missing or unrecognized
  * we return `unknown` so callers can show a neutral fallback.
  */
 export function modelTierKey(profile: string | null | undefined): ModelTierKey {

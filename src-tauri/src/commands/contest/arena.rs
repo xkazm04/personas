@@ -308,8 +308,42 @@ pub struct ContestFile {
     pub vault_subdir: Option<String>,
     pub winner: Option<ContestPick>,
     pub shortlist: Vec<ContestPick>,
+    /// `verdict --combine`: two or more variants kept and fused. The
+    /// instrument deliberately leaves `winner` null for this outcome.
+    pub combined: Vec<ContestPick>,
+    /// `wrap --close`: the family ended on purpose with no winner.
+    pub closed: Option<ContestClosed>,
+    /// `"reveal"` for a round whose verdict lives on its parent.
+    pub kind: Option<String>,
     pub parent: Option<String>,
     pub round: Option<u32>,
+}
+
+impl ContestFile {
+    /// Is this contest's OWN verdict recorded?
+    ///
+    /// The instrument's canonical predicate, ported from the skill's
+    /// `scripts/lib/wrap.mjs`: `!!c.winner || !!c.combined?.length ||
+    /// !!c.closed`. Reading only `winner` is what made every `--combine` and
+    /// every `wrap --close` invisible here, so a contest settled weeks ago sat
+    /// in "Needs your verdict" forever.
+    pub fn is_decided(&self) -> bool {
+        self.winner.is_some() || !self.combined.is_empty() || self.closed.is_some()
+    }
+
+    /// A round the instrument created only to show the parent's winner; its
+    /// verdict is the parent's and it never gets one of its own.
+    pub fn is_reveal(&self) -> bool {
+        self.kind.as_deref() == Some("reveal")
+    }
+}
+
+/// `wrap --close`: why a family ended without a winner, and when.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+pub struct ContestClosed {
+    pub reason: String,
+    pub at: String,
 }
 
 /// `manifest.json` (written by `collect`).
@@ -581,6 +615,10 @@ pub struct PhaseInputs {
     /// Live states of the judge seats' latest sessions.
     pub judge_live: Vec<SeatLive>,
     pub manifest_exists: bool,
+    /// Seats with a `record.json` on disk — they ran to an end.
+    pub records_ran: u32,
+    /// How many of those records ended badly (errored / timed out / cut off).
+    pub records_failed: u32,
 }
 
 /// The one phase derivation (never the UI):
@@ -596,7 +634,15 @@ pub fn derive_phase(i: &PhaseInputs) -> ContestPhase {
     if i.shortlisted {
         return ContestPhase::Shortlisted;
     }
-    if chain == ContestChainStep::Failed {
+    // Every seat that ran ended badly and nothing was collected: the contest
+    // is stalled, not waiting in a queue. Without this, a one-seat contest
+    // whose seat errored read `queued` forever, because a record on disk used
+    // to count as a settled seat regardless of its outcome.
+    let all_records_failed = i.records_ran > 0
+        && i.records_failed == i.records_ran
+        && !any_seat_live
+        && !i.manifest_exists;
+    if chain == ContestChainStep::Failed || all_records_failed {
         return ContestPhase::Failed;
     }
     if chain == ContestChainStep::Judging || i.judge_live.iter().any(live) {
@@ -637,7 +683,11 @@ pub fn build_summary(
     live_of: &dyn Fn(&str) -> Option<SeatLive>,
 ) -> ContestSummary {
     let mut inputs = PhaseInputs {
-        decided: c.winner.is_some(),
+        // A reveal round carries no verdict of its own and never will: the
+        // instrument only creates one once the parent has been decided, and
+        // `wrap` treats it as covered by the parent. Reading it as `review`
+        // parked it in "Needs your verdict" permanently.
+        decided: c.is_decided() || c.is_reveal(),
         shortlisted: !c.shortlist.is_empty(),
         chain: Some(sidecar.chain.step),
         manifest_exists: paths.manifest_json().is_file(),
@@ -652,9 +702,22 @@ pub fn build_summary(
         }
     }
     // A seat the app never launched but whose record is on disk (the CLI ran
-    // it) has run: it counts as settled, so the contest is not a draft.
+    // it) has run: it counts as settled, so the contest is not a draft. The
+    // record's OUTCOME is read too — an errored seat has ended, but it has
+    // not delivered, and a contest where that is the whole story is stalled.
     for p in &c.participants {
-        if !sidecar.seat_sessions.contains_key(&p.id) && paths.record_json(&p.id).is_file() {
+        let record = paths.record_json(&p.id);
+        if !record.is_file() {
+            continue;
+        }
+        inputs.records_ran += 1;
+        let outcome = read_json::<RecordView>(&record)
+            .map(|r| r.outcome)
+            .unwrap_or_default();
+        if matches!(outcome.as_str(), "errored" | "timed-out" | "seat-limit") {
+            inputs.records_failed += 1;
+        }
+        if !sidecar.seat_sessions.contains_key(&p.id) {
             inputs.participant_live.push(SeatLive::Settled);
         }
     }
@@ -808,6 +871,118 @@ mod tests {
         write_text(&paths.manifest_json(), "{}").unwrap();
         let collected = build_summary("p", "P", &paths, &c, &Sidecar::default(), &none);
         assert_eq!(collected.phase, ContestPhase::Review);
+    }
+
+    /// Every verdict shape the instrument writes must settle the contest. The
+    /// scanner used to read `winner` only, so `--combine` and `wrap --close`
+    /// were invisible and the contest stayed in "Needs your verdict" forever.
+    #[test]
+    fn every_recorded_verdict_shape_reads_as_decided() {
+        let pick = || ContestPick {
+            label: "B/1".into(),
+            spec: "claude:opus@high".into(),
+            concept: "Signal Atlas".into(),
+        };
+        assert!(!ContestFile::default().is_decided(), "nothing recorded");
+        assert!(ContestFile {
+            winner: Some(pick()),
+            ..ContestFile::default()
+        }
+        .is_decided());
+        assert!(
+            ContestFile {
+                combined: vec![pick(), pick()],
+                ..ContestFile::default()
+            }
+            .is_decided(),
+            "`verdict --combine` leaves `winner` null on purpose"
+        );
+        assert!(
+            ContestFile {
+                closed: Some(ContestClosed {
+                    reason: "superseded".into(),
+                    at: "2026-10-06".into(),
+                }),
+                ..ContestFile::default()
+            }
+            .is_decided(),
+            "`wrap --close` ends the family with no winner"
+        );
+        assert!(
+            !ContestFile {
+                shortlist: vec![pick()],
+                ..ContestFile::default()
+            }
+            .is_decided(),
+            "a shortlist defers the verdict to a later round"
+        );
+        // A reveal round never carries its own verdict; the parent has it.
+        assert!(ContestFile {
+            kind: Some("reveal".into()),
+            ..ContestFile::default()
+        }
+        .is_reveal());
+        assert!(!ContestFile::default().is_reveal());
+    }
+
+    /// A combine recorded on disk settles the contest even with a manifest
+    /// present (which is what used to pin it to `review`), and a reveal round
+    /// settles with no verdict of its own at all.
+    #[test]
+    fn a_combined_or_reveal_arena_does_not_read_review() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = ArenaPaths::new(tmp.path(), "combined").unwrap();
+        write_text(&paths.manifest_json(), "{}").unwrap();
+        let none = |_: &str| None;
+        let combined = ContestFile {
+            combined: vec![ContestPick::default(), ContestPick::default()],
+            ..ContestFile::default()
+        };
+        assert_eq!(
+            build_summary("p", "P", &paths, &combined, &Sidecar::default(), &none).phase,
+            ContestPhase::Decided
+        );
+        let reveal = ContestFile {
+            kind: Some("reveal".into()),
+            parent: Some("combined".into()),
+            ..ContestFile::default()
+        };
+        assert_eq!(
+            build_summary("p", "P", &paths, &reveal, &Sidecar::default(), &none).phase,
+            ContestPhase::Decided
+        );
+    }
+
+    /// An errored record is an ended seat that delivered nothing. A contest
+    /// that is only that is stalled; it used to read `queued` forever.
+    #[test]
+    fn an_arena_whose_every_record_errored_reads_failed_not_queued() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = ArenaPaths::new(tmp.path(), "stalled").unwrap();
+        let c = ContestFile {
+            participants: vec![ContestParticipant {
+                id: "claude-opus_high".into(),
+                spec: "claude:opus@high".into(),
+            }],
+            ..ContestFile::default()
+        };
+        let none = |_: &str| None;
+        write_text(
+            &paths.record_json("claude-opus_high"),
+            "{\"outcome\":\"errored\",\"errors\":[\"no JSON envelope on stdout\"]}",
+        )
+        .unwrap();
+        assert_eq!(
+            build_summary("p", "P", &paths, &c, &Sidecar::default(), &none).phase,
+            ContestPhase::Failed
+        );
+        // Once something WAS collected, the owner's review outranks the
+        // failure: there is work on the bench to look at.
+        write_text(&paths.manifest_json(), "{}").unwrap();
+        assert_eq!(
+            build_summary("p", "P", &paths, &c, &Sidecar::default(), &none).phase,
+            ContestPhase::Review
+        );
     }
 
     #[test]

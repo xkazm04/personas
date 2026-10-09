@@ -38,7 +38,7 @@ export interface CouncilRunView {
  * live in the store; they are read here, by the same walk, so nothing
  * downstream can tell the two sources apart.
  */
-async function readRound(runId: string): Promise<CouncilRunDetail> {
+export async function readRound(runId: string): Promise<CouncilRunDetail> {
   const { fixtureOn, fixtureRuns } = useCouncilStore.getState();
   if (fixtureOn) {
     const detail = fixtureRuns[runId];

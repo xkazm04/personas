@@ -1,0 +1,224 @@
+{
+  "module": "plugins/lifecycle/evidence",
+  "kit": null,
+  "query": null,
+  "reducedMotion": false,
+  "steps": "click=[data-testid=lc-node-commit];wait=900;click=[data-testid=lc8-legend];wait=300",
+  "label": "commit",
+  "createdAt": "2026-10-09T05:59:47.876Z",
+  "browser": "153.0.8010.12",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 19,
+    "note": "Synthetic: the detail tape with one 64-change history (about eight weeks): Land below target with clear skip reasons, Commit healthy with a dip week, every evidence step derived from the same window."
+  },
+  "ok": true,
+  "unknownIpcCommands": [
+    "dev_tools_workspace_set_active",
+    "companions_status"
+  ],
+  "shots": [
+    {
+      "file": "commit-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 3050,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Docs is the weakest step: failing. 1",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "commit-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 2
+      },
+      "stable": true,
+      "textLength": 2165,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AFTER THE ",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "commit-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 2
+      },
+      "stable": true,
+      "textLength": 2117,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Lifecycle Commit Commit Healthy 85% ",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "commit-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 2
+      },
+      "stable": true,
+      "textLength": 3170,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Docs is the weakest step: failing. 1",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

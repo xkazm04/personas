@@ -1,0 +1,342 @@
+import { eventFamily, type EventFamily } from '@/lib/channel/eventModel';
+import { slackAuthorName } from '@/features/teams/sub_collab/collabRender';
+import type { ChannelKind } from '@/api/pipeline/teamChannel';
+import type { TaggedItem } from '@/features/fleet/monitor/channels/types';
+
+/* ----------------------------------------------------------------------------
+ * LENS MODEL — the Stream's filter vocabulary, shared by every variant.
+ *
+ * The Stream replaces two filter systems that described the same feed in
+ * different words: `feedFilter.ts` (all/signal/alerts + you/athena) and Collab's
+ * inline talk/activity. Both are subsumed here.
+ *
+ * Five composable dimensions, ANDed:
+ *   kind      — which SOURCE (step/event/memory/message/deliberation). Pushed
+ *               down into SQL (P1), so selecting one spends the whole page
+ *               budget on it and it cannot be starved by a chatty neighbour.
+ *   family    — the Red Room's 8 event families, derived from the raw
+ *               `event_type` (which the read-model returns as an event's label).
+ *   callsign  — who spoke. Personas ranked by traffic volume.
+ *   team      — which channels feed the stream.
+ *   search    — free text over body + label + callsign.
+ *
+ * Pure: no React, no store, no IPC.
+ * -------------------------------------------------------------------------- */
+
+export const ALL_KINDS: ChannelKind[] = ['step', 'event', 'memory', 'message', 'deliberation', 'slack'];
+
+/**
+ * The Stream's scope — a DECISION log, not the conversation. Messages and
+ * Slack are talk and belong to Conversations; the Stream keeps what was
+ * decided and what happened: step transitions, bus events, memories written,
+ * deliberation turns. Deliberation is IN by default here (it is the purest
+ * decision record there is), unlike the blended read where it stays opt-in.
+ */
+export const STREAM_KINDS: ChannelKind[] = ['step', 'event', 'memory', 'deliberation'];
+
+export const ALL_FAMILIES: EventFamily[] = [
+  'handoff', 'pr', 'qa', 'release', 'failure', 'build', 'note', 'other',
+];
+
+/** Memory's analytical presentations (D2). Gated: only when memory is the sole
+ *  kind AND a single team is scoped (D8 — a run-diff compares runs of ONE team). */
+export type MemoryMode = 'list' | 'timeline' | 'diff';
+
+export interface LensState {
+  /** Empty = all kinds (the blended conversation). */
+  kinds: Set<ChannelKind>;
+  /** Empty = all families. Only narrows `event` rows. */
+  families: Set<EventFamily>;
+  /** Empty = all speakers. */
+  callsigns: Set<string>;
+  search: string;
+  memoryMode: MemoryMode;
+}
+
+export const EMPTY_LENS: LensState = {
+  kinds: new Set(),
+  families: new Set(),
+  callsigns: new Set(),
+  search: '',
+  memoryMode: 'list',
+};
+
+/** How many lens dimensions are actually narrowing the feed. Drives the
+ *  "N active" affordance and the clear-all button. */
+export function activeLensCount(l: LensState): number {
+  return (
+    (l.kinds.size > 0 ? 1 : 0) +
+    (l.families.size > 0 ? 1 : 0) +
+    (l.callsigns.size > 0 ? 1 : 0) +
+    (l.search.trim() ? 1 : 0)
+  );
+}
+
+/** The family of a row. Memory rows are the 'note' pseudo-family (they have no
+ *  event_type); everything non-event has none. */
+export function rowFamily(item: TaggedItem['item']): EventFamily | null {
+  if (item.kind === 'memory') return 'note';
+  if (item.kind !== 'event') return null;
+  return eventFamily(item.label);
+}
+
+/** Uppercase air-traffic callsign ("T: QA Guardian" → "QA-GUARDIAN"). */
+export function callsign(name: string | undefined): string {
+  if (!name) return 'SYSTEM';
+  return name
+    .replace(/^T:\s*/, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 14);
+}
+
+/** The voices that speak WITHOUT a persona behind them. Mirrors `authorName`
+ *  (collabRender), which the Conversation surface has always used — the Stream
+ *  was the one surface that resolved none of them, so a user directive, an
+ *  Athena post, a Director step-advance and a machine notice all signed
+ *  "SYSTEM" and read as the same speaker repeating himself. */
+const VOICELESS_NAME: Record<string, string> = {
+  directive: 'You',
+  athena: 'Athena',
+  director: 'Director',
+};
+
+/**
+ * WHO SPOKE — the log's callsign for any row.
+ *
+ * A persona name wins when one resolves; a bridged Slack human keeps his own
+ * name; the remaining internal voices come from the row's own `kind`. Only a
+ * genuinely unattributed machine row (a step transition, a memory write, a
+ * `system` notice) falls back to SYSTEM.
+ *
+ * `name` is the resolved persona name — StreamRow passes `persona?.name`, the
+ * lens passes `nameOf(item.personaId)`, so the log and the filters agree on
+ * who is talking.
+ */
+export function rowCallsign(item: TaggedItem['item'], name: string | undefined): string {
+  if (item.kind === 'slack') return callsign(slackAuthorName(item));
+  if (name) return callsign(name);
+  const voice = VOICELESS_NAME[item.kind];
+  if (voice) return callsign(voice);
+  // An author id that no longer resolves is a DELETED persona, not the system.
+  // Signing it SYSTEM is what made the rail list a dozen identical "SYSTEM"
+  // rows told apart only by a hashed colour.
+  return item.personaId ? REMOVED_CALLSIGN : callsign(undefined);
+}
+
+export const REMOVED_CALLSIGN = 'REMOVED';
+
+/** The two synthetic speakers of the callsign facet (never a persona id). */
+export const SPEAKER_SYSTEM = '__system__';
+export const SPEAKER_REMOVED = '__removed__';
+
+/**
+ * WHO SPOKE, as a FILTER KEY. A resolved persona is its own key. Everything
+ * else collapses into one of two honest buckets instead of one row per id:
+ *   SPEAKER_REMOVED — an author id that no longer resolves (a deleted persona;
+ *                     measured on the dev DB: 43 such ids on memories, 18 on
+ *                     deliberation turns, 15 on events).
+ *   SPEAKER_SYSTEM  — a machine row with no persona behind it at all (a step
+ *                     transition, a deliberation notice) — previously absent
+ *                     from the facet, so it could not be filtered.
+ * Voiced kinds (You / Athena / Director) keep their own key; a Slack row's
+ * `personaId` is a Slack user id, so it has none.
+ */
+export function speakerKey(
+  item: TaggedItem['item'],
+  nameOf: (personaId: string | null) => string | undefined,
+): string | null {
+  if (item.kind === 'slack') return null;
+  if (item.personaId) return nameOf(item.personaId) ? item.personaId : SPEAKER_REMOVED;
+  return VOICELESS_NAME[item.kind] ? `__${item.kind}__` : SPEAKER_SYSTEM;
+}
+
+/**
+ * THE MACHINE TOKEN — the badge between the callsign and the summary.
+ *
+ * Events show their raw `event_type` and steps show their raw step kind, because
+ * both are LIFECYCLE rows: one step emits `step_running` then `step_done` (then
+ * maybe `step_failed`, `qa_changes_requested_rework`) and every one of them
+ * carries the same body — the step title. Rendering the lens kind ("step") for
+ * all of them threw away the only field that told them apart, so the log showed
+ * the same line twice. Measured on the dev database: 231 adjacent pairs of
+ * byte-identical rows, 185 of them a `step_done` sitting directly under its own
+ * `step_running`.
+ *
+ * The other kinds are one row per fact, so their kind IS their token.
+ */
+export function rowToken(item: TaggedItem['item']): string {
+  const kind = itemKind(item);
+  if (kind === 'event') return item.label;
+  if (item.kind === 'step') return item.label;
+  return kind;
+}
+
+/**
+ * THE CROSS-TEAM MERGE — every subscribed team's page flattened into one
+ * newest-first log, ranked by the same (at, id) comparator the server pages on.
+ *
+ * Deduped by row id, because the per-team caches are NOT disjoint: the read
+ * model scopes `persona_events` by team MEMBERSHIP (`persona_team_members`,
+ * a many-to-many), so one bus event authored by a persona who belongs to two
+ * teams is returned — correctly, and under the SAME `pe-<id>` — in both teams'
+ * pages. Concatenating them rendered that one fact twice. Two rows sharing an
+ * id are always the same fact: ids are namespaced per source (`tae-` / `pe-` /
+ * `tm-` / `tcm-`) and unique within it.
+ */
+export function mergeTaggedRows(groups: TaggedItem[][]): TaggedItem[] {
+  const flat: TaggedItem[] = [];
+  const seen = new Set<string>();
+  for (const group of groups) {
+    for (const row of group) {
+      if (seen.has(row.item.id)) continue;
+      seen.add(row.item.id);
+      flat.push(row);
+    }
+  }
+  // Same comparator the server ranks by — (at, id) desc. The merge must sort
+  // identically or paging would interleave wrongly.
+  flat.sort((a, b) => b.item.at.localeCompare(a.item.at) || b.item.id.localeCompare(a.item.id));
+  return flat;
+}
+
+/**
+ * The kind lens is enforced SERVER-side (it decides which source queries run).
+ * Family / callsign / search narrow within whatever came back, so they apply
+ * here. Keeping the kind check too makes this a total predicate — safe to run
+ * over a cache that was fetched blended.
+ */
+export function matchesLens(
+  row: TaggedItem,
+  lens: LensState,
+  nameOf: (personaId: string | null) => string | undefined,
+): boolean {
+  const { item } = row;
+
+  if (lens.kinds.size > 0 && !lens.kinds.has(itemKind(item))) return false;
+
+  if (lens.families.size > 0) {
+    const fam = rowFamily(item);
+    if (!fam || !lens.families.has(fam)) return false;
+  }
+
+  if (lens.callsigns.size > 0) {
+    const key = speakerKey(item, nameOf);
+    if (!key || !lens.callsigns.has(key)) return false;
+  }
+
+  const q = lens.search.trim().toLowerCase();
+  if (q) {
+    // assignmentId is in the haystack so the row's assignment chip can filter
+    // by setting the search to the full id — and so a pasted id just works.
+    const hay = `${item.body ?? ''} ${item.label} ${rowCallsign(item, nameOf(item.personaId))} ${item.assignmentId ?? ''}`.toLowerCase();
+    if (!hay.includes(q)) return false;
+  }
+
+  return true;
+}
+
+/** Map a read-model row's `kind` onto the lens vocabulary. The backend returns
+ *  author kinds (directive/persona/athena/director/slack) for channel messages;
+ *  the lens collapses the internal voices to `message` and keeps `slack` — an
+ *  external human — as its own lens.
+ *
+ *  The `default` arm is a deliberate catch-all for internal author kinds we may
+ *  add later: an unknown kind reads as a message rather than vanishing. Any kind
+ *  that must render differently (as `slack` does) needs an explicit case here
+ *  AND an entry in every `Record<ChannelKind, …>` — the typed records are what
+ *  make that completeness checkable. */
+export function itemKind(item: TaggedItem['item']): ChannelKind {
+  switch (item.kind) {
+    case 'step':
+      return 'step';
+    case 'event':
+      return 'event';
+    case 'memory':
+      return 'memory';
+    case 'slack':
+      return item.deliberationId ? 'deliberation' : 'slack';
+    default:
+      return item.deliberationId ? 'deliberation' : 'message';
+  }
+}
+
+export interface Facet<T> {
+  key: T;
+  count: number;
+}
+
+/**
+ * Facet counts for the rail. Each dimension is counted against the rows that
+ * survive the OTHER dimensions — so a count tells you "selecting this adds N
+ * rows to what you're already looking at", not a misleading global total.
+ *
+ * SINGLE PASS (C3). The original ran `matchesLens` under three lens variants
+ * as three full filter passes plus 14 per-value `filter().length` scans —
+ * O(14·N) over the whole merged history on every lens or data change. Each
+ * per-dimension predicate is independent, so one walk computes the four match
+ * bits per row and feeds all three tallies. Semantics are identical.
+ */
+export function facetCounts(
+  rows: TaggedItem[],
+  lens: LensState,
+  nameOf: (personaId: string | null) => string | undefined,
+) {
+  const kindTally = new Map<ChannelKind, number>();
+  const famTally = new Map<EventFamily, number>();
+  const signTally = new Map<string, number>();
+  const q = lens.search.trim().toLowerCase();
+
+  for (const r of rows) {
+    const { item } = r;
+    const k = itemKind(item);
+    const fam = rowFamily(item);
+
+    const mKind = lens.kinds.size === 0 || lens.kinds.has(k);
+    const mFam = lens.families.size === 0 || (fam !== null && lens.families.has(fam));
+    const key = speakerKey(item, nameOf);
+    const mSign = lens.callsigns.size === 0 || (!!key && lens.callsigns.has(key));
+    let mSearch = true;
+    if (q) {
+      const hay =
+        `${item.body ?? ''} ${item.label} ${rowCallsign(item, nameOf(item.personaId))} ${item.assignmentId ?? ''}`.toLowerCase();
+      mSearch = hay.includes(q);
+    }
+
+    // Each dimension counts against the rows surviving the OTHER dimensions.
+    if (mFam && mSign && mSearch) kindTally.set(k, (kindTally.get(k) ?? 0) + 1);
+    if (fam && mKind && mSign && mSearch) famTally.set(fam, (famTally.get(fam) ?? 0) + 1);
+    // Keyed by speakerKey, so every deleted persona lands in ONE bucket and a
+    // Slack row (whose personaId is a Slack user id) in none.
+    if (key && mKind && mFam && mSearch) {
+      signTally.set(key, (signTally.get(key) ?? 0) + 1);
+    }
+  }
+
+  const kinds: Facet<ChannelKind>[] = ALL_KINDS.map((k) => ({
+    key: k,
+    count: kindTally.get(k) ?? 0,
+  }));
+  const families: Facet<EventFamily>[] = ALL_FAMILIES.map((f) => ({
+    key: f,
+    count: famTally.get(f) ?? 0,
+  }));
+  const callsigns: Facet<string>[] = [...signTally.entries()]
+    .sort((a, b) => b[1] - a[1]) // ranked by traffic volume (the Red Room's rule)
+    .map(([key, count]) => ({ key, count }));
+
+  return { kinds, families, callsigns };
+}
+
+/** Memory's analytical modes are only coherent for one team's memories (D2/D8). */
+export function memoryModesAvailable(lens: LensState, selectedTeamCount: number): boolean {
+  return lens.kinds.size === 1 && lens.kinds.has('memory') && selectedTeamCount === 1;
+}
+
+/** The kinds to ASK THE SERVER for. Never the blended read: an empty kind
+ *  lens means every STREAM kind, so talk (messages, Slack) is never fetched
+ *  and never spends the page budget. */
+export function fetchKinds(lens: LensState): ChannelKind[] {
+  return lens.kinds.size > 0 ? [...lens.kinds] : STREAM_KINDS;
+}

@@ -1,0 +1,2003 @@
+{
+  "module": "plugins/lifecycle/gate",
+  "kit": null,
+  "query": null,
+  "reducedMotion": false,
+  "steps": "click=[data-testid=lc-node-gate];wait=900",
+  "label": "gate",
+  "createdAt": "2026-10-09T10:37:48.839Z",
+  "browser": "153.0.8010.12",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 22,
+    "note": "Synthetic: the Layer-2 detail tape with a slowing tsc, a flaky eslint and every run’s stored output."
+  },
+  "ok": true,
+  "unknownIpcCommands": [
+    "dev_tools_workspace_set_active"
+  ],
+  "shots": [
+    {
+      "file": "gate-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2328,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Lifecycle Gate Gate At risk was Heal",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "gate-1600x900-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1600,
+        "height": 900
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1600,
+          "height": 900
+        },
+        "main": {
+          "width": 1272,
+          "height": 852,
+          "scrollWidth": 1272,
+          "scrollHeight": 852
+        }
+      }
+    },
+    {
+      "file": "gate-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "gate-2560x1440-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 2560,
+        "height": 1440
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 2
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 2560,
+          "height": 1440
+        },
+        "main": {
+          "width": 2232,
+          "height": 1392,
+          "scrollWidth": 2232,
+          "scrollHeight": 1392
+        }
+      }
+    },
+    {
+      "file": "gate-1280x800-dark-cyan.png",
+      "theme": "dark-cyan",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2328,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Lifecycle Gate Gate At risk was Heal",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "gate-1600x900-dark-cyan.png",
+      "theme": "dark-cyan",
+      "size": {
+        "width": 1600,
+        "height": 900
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1600,
+          "height": 900
+        },
+        "main": {
+          "width": 1272,
+          "height": 852,
+          "scrollWidth": 1272,
+          "scrollHeight": 852
+        }
+      }
+    },
+    {
+      "file": "gate-1920x1080-dark-cyan.png",
+      "theme": "dark-cyan",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "gate-2560x1440-dark-cyan.png",
+      "theme": "dark-cyan",
+      "size": {
+        "width": 2560,
+        "height": 1440
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 2
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 2560,
+          "height": 1440
+        },
+        "main": {
+          "width": 2232,
+          "height": 1392,
+          "scrollWidth": 2232,
+          "scrollHeight": 1392
+        }
+      }
+    },
+    {
+      "file": "gate-1280x800-dark-bronze.png",
+      "theme": "dark-bronze",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2328,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Lifecycle Gate Gate At risk was Heal",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "gate-1600x900-dark-bronze.png",
+      "theme": "dark-bronze",
+      "size": {
+        "width": 1600,
+        "height": 900
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1600,
+          "height": 900
+        },
+        "main": {
+          "width": 1272,
+          "height": 852,
+          "scrollWidth": 1272,
+          "scrollHeight": 852
+        }
+      }
+    },
+    {
+      "file": "gate-1920x1080-dark-bronze.png",
+      "theme": "dark-bronze",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "gate-2560x1440-dark-bronze.png",
+      "theme": "dark-bronze",
+      "size": {
+        "width": 2560,
+        "height": 1440
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 2
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 2560,
+          "height": 1440
+        },
+        "main": {
+          "width": 2232,
+          "height": 1392,
+          "scrollWidth": 2232,
+          "scrollHeight": 1392
+        }
+      }
+    },
+    {
+      "file": "gate-1280x800-dark-frost.png",
+      "theme": "dark-frost",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2328,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Lifecycle Gate Gate At risk was Heal",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "gate-1600x900-dark-frost.png",
+      "theme": "dark-frost",
+      "size": {
+        "width": 1600,
+        "height": 900
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1600,
+          "height": 900
+        },
+        "main": {
+          "width": 1272,
+          "height": 852,
+          "scrollWidth": 1272,
+          "scrollHeight": 852
+        }
+      }
+    },
+    {
+      "file": "gate-1920x1080-dark-frost.png",
+      "theme": "dark-frost",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "gate-2560x1440-dark-frost.png",
+      "theme": "dark-frost",
+      "size": {
+        "width": 2560,
+        "height": 1440
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 2
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 2560,
+          "height": 1440
+        },
+        "main": {
+          "width": 2232,
+          "height": 1392,
+          "scrollWidth": 2232,
+          "scrollHeight": 1392
+        }
+      }
+    },
+    {
+      "file": "gate-1280x800-dark-purple.png",
+      "theme": "dark-purple",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2328,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Lifecycle Gate Gate At risk was Heal",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "gate-1600x900-dark-purple.png",
+      "theme": "dark-purple",
+      "size": {
+        "width": 1600,
+        "height": 900
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1600,
+          "height": 900
+        },
+        "main": {
+          "width": 1272,
+          "height": 852,
+          "scrollWidth": 1272,
+          "scrollHeight": 852
+        }
+      }
+    },
+    {
+      "file": "gate-1920x1080-dark-purple.png",
+      "theme": "dark-purple",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "gate-2560x1440-dark-purple.png",
+      "theme": "dark-purple",
+      "size": {
+        "width": 2560,
+        "height": 1440
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 2
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 2560,
+          "height": 1440
+        },
+        "main": {
+          "width": 2232,
+          "height": 1392,
+          "scrollWidth": 2232,
+          "scrollHeight": 1392
+        }
+      }
+    },
+    {
+      "file": "gate-1280x800-dark-pink.png",
+      "theme": "dark-pink",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2328,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Lifecycle Gate Gate At risk was Heal",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "gate-1600x900-dark-pink.png",
+      "theme": "dark-pink",
+      "size": {
+        "width": 1600,
+        "height": 900
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1600,
+          "height": 900
+        },
+        "main": {
+          "width": 1272,
+          "height": 852,
+          "scrollWidth": 1272,
+          "scrollHeight": 852
+        }
+      }
+    },
+    {
+      "file": "gate-1920x1080-dark-pink.png",
+      "theme": "dark-pink",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "gate-2560x1440-dark-pink.png",
+      "theme": "dark-pink",
+      "size": {
+        "width": 2560,
+        "height": 1440
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 2
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 2560,
+          "height": 1440
+        },
+        "main": {
+          "width": 2232,
+          "height": 1392,
+          "scrollWidth": 2232,
+          "scrollHeight": 1392
+        }
+      }
+    },
+    {
+      "file": "gate-1280x800-dark-red.png",
+      "theme": "dark-red",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2328,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Lifecycle Gate Gate At risk was Heal",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "gate-1600x900-dark-red.png",
+      "theme": "dark-red",
+      "size": {
+        "width": 1600,
+        "height": 900
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1600,
+          "height": 900
+        },
+        "main": {
+          "width": 1272,
+          "height": 852,
+          "scrollWidth": 1272,
+          "scrollHeight": 852
+        }
+      }
+    },
+    {
+      "file": "gate-1920x1080-dark-red.png",
+      "theme": "dark-red",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "gate-2560x1440-dark-red.png",
+      "theme": "dark-red",
+      "size": {
+        "width": 2560,
+        "height": 1440
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 2
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 2560,
+          "height": 1440
+        },
+        "main": {
+          "width": 2232,
+          "height": 1392,
+          "scrollWidth": 2232,
+          "scrollHeight": 1392
+        }
+      }
+    },
+    {
+      "file": "gate-1280x800-dark-matrix.png",
+      "theme": "dark-matrix",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2328,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Lifecycle Gate Gate At risk was Heal",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "gate-1600x900-dark-matrix.png",
+      "theme": "dark-matrix",
+      "size": {
+        "width": 1600,
+        "height": 900
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1600,
+          "height": 900
+        },
+        "main": {
+          "width": 1272,
+          "height": 852,
+          "scrollWidth": 1272,
+          "scrollHeight": 852
+        }
+      }
+    },
+    {
+      "file": "gate-1920x1080-dark-matrix.png",
+      "theme": "dark-matrix",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "gate-2560x1440-dark-matrix.png",
+      "theme": "dark-matrix",
+      "size": {
+        "width": 2560,
+        "height": 1440
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 2
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 2560,
+          "height": 1440
+        },
+        "main": {
+          "width": 2232,
+          "height": 1392,
+          "scrollWidth": 2232,
+          "scrollHeight": 1392
+        }
+      }
+    },
+    {
+      "file": "gate-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2328,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Lifecycle Gate Gate At risk was Heal",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "gate-1600x900-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1600,
+        "height": 900
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1600,
+          "height": 900
+        },
+        "main": {
+          "width": 1272,
+          "height": 852,
+          "scrollWidth": 1272,
+          "scrollHeight": 852
+        }
+      }
+    },
+    {
+      "file": "gate-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "gate-2560x1440-light.png",
+      "theme": "light",
+      "size": {
+        "width": 2560,
+        "height": 1440
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 2
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 2560,
+          "height": 1440
+        },
+        "main": {
+          "width": 2232,
+          "height": 1392,
+          "scrollWidth": 2232,
+          "scrollHeight": 1392
+        }
+      }
+    },
+    {
+      "file": "gate-1280x800-light-ice.png",
+      "theme": "light-ice",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2328,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Lifecycle Gate Gate At risk was Heal",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "gate-1600x900-light-ice.png",
+      "theme": "light-ice",
+      "size": {
+        "width": 1600,
+        "height": 900
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1600,
+          "height": 900
+        },
+        "main": {
+          "width": 1272,
+          "height": 852,
+          "scrollWidth": 1272,
+          "scrollHeight": 852
+        }
+      }
+    },
+    {
+      "file": "gate-1920x1080-light-ice.png",
+      "theme": "light-ice",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "gate-2560x1440-light-ice.png",
+      "theme": "light-ice",
+      "size": {
+        "width": 2560,
+        "height": 1440
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 2
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 2560,
+          "height": 1440
+        },
+        "main": {
+          "width": 2232,
+          "height": 1392,
+          "scrollWidth": 2232,
+          "scrollHeight": 1392
+        }
+      }
+    },
+    {
+      "file": "gate-1280x800-light-news.png",
+      "theme": "light-news",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2328,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Lifecycle Gate Gate At risk was Heal",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "gate-1600x900-light-news.png",
+      "theme": "light-news",
+      "size": {
+        "width": 1600,
+        "height": 900
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1600,
+          "height": 900
+        },
+        "main": {
+          "width": 1272,
+          "height": 852,
+          "scrollWidth": 1272,
+          "scrollHeight": 852
+        }
+      }
+    },
+    {
+      "file": "gate-1920x1080-light-news.png",
+      "theme": "light-news",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 1
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "gate-2560x1440-light-news.png",
+      "theme": "light-news",
+      "size": {
+        "width": 2560,
+        "height": 1440
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1,
+        "dev_tools_lifecycle_step_detail": 2
+      },
+      "stable": true,
+      "textLength": 2386,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer Ask Athena Lifecycle BEFORE THE TASK AF",
+      "dims": {
+        "document": {
+          "width": 2560,
+          "height": 1440
+        },
+        "main": {
+          "width": 2232,
+          "height": 1392,
+          "scrollWidth": 2232,
+          "scrollHeight": 1392
+        }
+      }
+    }
+  ]
+}

@@ -166,7 +166,7 @@ impl CustomizeConnection<rusqlite::Connection, rusqlite::Error> for CdcCustomize
         conn.update_hook(Some(
             move |action: Action, _db: &str, table: &str, rowid: i64| {
                 // Only capture tables we care about
-                if table_to_event(table, action.into()).is_some() {
+                if is_captured(table, action.into()) {
                     let event = CdcEvent {
                         action: action.into(),
                         table: table.to_owned(),
@@ -264,9 +264,18 @@ fn table_to_event(table: &str, action: CdcAction) -> Option<&'static str> {
         // Lifecycle v2: version appends and per-task evidence. Both are low
         // volume (one row per operator/Athena change, one per finished task),
         // so they cannot saturate the channel the way scan tables do.
-        "dev_lifecycle_versions" | "dev_lifecycle_evidence" => {
+        // `dev_lifecycle_runs` is the Measure ledger: one append per command
+        // per measure (a handful per press), so each landing run repaints
+        // the step it belongs to while the measure is still going.
+        "dev_lifecycle_versions" | "dev_lifecycle_evidence" | "dev_lifecycle_runs" => {
             Some(event_name::DEV_TOOLS_LIFECYCLE_CHANGED)
         }
+
+        // Persona chat: a message or a session's context. Low volume (a few
+        // rows per turn). The turn runs in Rust, so the reply - and a turn a
+        // paired phone started - lands as a row; the open chat refetches on
+        // this event, and the cloud mirror is nudged (`notify_cloud_dirty`).
+        "chat_messages" | "chat_session_context" => Some(event_name::CHAT_CHANGED),
 
         _ => None,
     }
@@ -293,6 +302,30 @@ pub struct CdcHooks {
     /// Called on `persona_events` INSERT to wake the subscription event bus
     /// rather than waiting for its next poll tick.
     pub wake_event_bus: fn(),
+    /// Called when a Notepad note or a note-thread entry changes
+    /// ([`is_cloud_notes_table`]), so the cloud mirror can push notes. A hook
+    /// of its own because notes take a longer debounce than the other synced
+    /// tables (the pad saves every 500 ms while the operator types), and the
+    /// receiver no-ops unless the operator opted into syncing notes.
+    pub notify_cloud_notes_dirty: fn(),
+}
+
+/// Whether the update hook forwards a write to the drain task: the tables with
+/// a frontend event, plus the notes tables, whose only consumer is the cloud
+/// nudge. Until 2026-10-06 the hook asked [`table_to_event`] alone, so a note
+/// edit never reached the drain and `notify_cloud_notes_dirty` could not fire
+/// (notes still synced, on the 45 s tick).
+fn is_captured(table: &str, action: CdcAction) -> bool {
+    table_to_event(table, action).is_some() || is_cloud_notes_table(table)
+}
+
+/// Tables whose changes reach the cloud mirror's NOTES projection
+/// (`synced_notes`): the notes themselves and their thread, which feeds the
+/// open-review and unread counts. Deliberately not in [`table_to_event`]: the
+/// pad already has its own events for the frontend, and this nudge is for the
+/// sync loop only, so it adds no event nobody listens to.
+pub fn is_cloud_notes_table(table: &str) -> bool {
+    matches!(table, "dev_notes" | "dev_note_comments")
 }
 
 /// Spawns a background tokio task that drains CDC events from the sync channel
@@ -370,6 +403,11 @@ pub fn spawn_cdc_drain_task(
 
         // Async consumer
         while let Some(event) = rx.recv().await {
+            // Before the event-name lookup: the notes tables have no frontend
+            // event of their own here, only the cloud nudge.
+            if is_cloud_notes_table(&event.table) {
+                (hooks.notify_cloud_notes_dirty)();
+            }
             let event_name = match table_to_event(&event.table, event.action) {
                 Some(name) => name,
                 None => continue,
@@ -380,7 +418,12 @@ pub fn spawn_cdc_drain_task(
             // and no-ops when sync is disabled, so this is cheap.
             if matches!(
                 event.table.as_str(),
-                "personas" | "persona_executions" | "persona_events" | "persona_reports"
+                "personas"
+                    | "persona_executions"
+                    | "persona_events"
+                    | "persona_reports"
+                    | "chat_messages"
+                    | "chat_session_context"
             ) {
                 (hooks.notify_cloud_dirty)();
             }
@@ -626,6 +669,33 @@ mod tests {
     // --- table_to_event mapping --------------------------------------------
 
     #[test]
+    fn the_notes_tables_nudge_the_cloud_and_emit_no_frontend_event() {
+        for table in ["dev_notes", "dev_note_comments"] {
+            assert!(is_cloud_notes_table(table));
+            assert_eq!(table_to_event(table, CdcAction::Update), None);
+            // ...and the hook still forwards them, or the nudge never fires.
+            assert!(is_captured(table, CdcAction::Update), "{table}");
+        }
+        assert!(!is_captured("dev_note_runs", CdcAction::Insert));
+        assert!(!is_cloud_notes_table("dev_goals"));
+        assert!(!is_cloud_notes_table("dev_note_runs"));
+    }
+
+    #[test]
+    fn persona_chat_tables_map_to_the_chat_event() {
+        for table in ["chat_messages", "chat_session_context"] {
+            for action in [CdcAction::Insert, CdcAction::Update, CdcAction::Delete] {
+                assert_eq!(
+                    table_to_event(table, action),
+                    Some(event_name::CHAT_CHANGED),
+                    "{table} / {action:?}"
+                );
+                assert!(is_captured(table, action));
+            }
+        }
+    }
+
+    #[test]
     fn table_to_event_maps_known_and_unknown_tables() {
         assert_eq!(
             table_to_event("persona_events", CdcAction::Insert),
@@ -674,7 +744,11 @@ mod tests {
 
     #[test]
     fn lifecycle_tables_map_to_the_lifecycle_event() {
-        for table in ["dev_lifecycle_versions", "dev_lifecycle_evidence"] {
+        for table in [
+            "dev_lifecycle_versions",
+            "dev_lifecycle_evidence",
+            "dev_lifecycle_runs",
+        ] {
             for action in [CdcAction::Insert, CdcAction::Update, CdcAction::Delete] {
                 assert_eq!(
                     table_to_event(table, action),

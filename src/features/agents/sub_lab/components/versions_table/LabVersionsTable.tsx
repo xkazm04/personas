@@ -33,9 +33,9 @@ const REGRESSION_DROP = 5;
  * suffix is added here, table-local). Update when the model family rolls.
  */
 const MODEL_VERSION_LABEL: Record<string, string> = {
-  haiku: 'Haiku 4.5',
-  sonnet: 'Sonnet 4.6',
-  opus: 'Opus 4.8',
+  haiku: 'Haiku 5.5',
+  sonnet: 'Sonnet 5.5',
+  opus: 'Opus 5',
 };
 
 /** Mean prompt + completion tokens for a measured row; 0 when never measured. */

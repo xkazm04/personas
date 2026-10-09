@@ -1,0 +1,1157 @@
+{
+  "version": 1,
+  "module": "plugins/lifecycle/setup",
+  "source": "synthetic",
+  "recordedAt": "2026-09-22T15:40:00.000Z",
+  "note": "Synthetic: never measured; detection found npm lint / tsc / test and cargo clippy / test, no coverage command.",
+  "calls": [
+    {
+      "cmd": "dev_tools_get_lifecycle",
+      "response": {
+        "projectId": "p-atlas",
+        "preset": "solo",
+        "version": 0,
+        "author": "default",
+        "changeNote": null,
+        "createdAt": null,
+        "installTaskId": null,
+        "installTaskStatus": null,
+        "steps": [
+          {
+            "step": {
+              "id": "frame",
+              "phase": "before",
+              "label": null,
+              "rule": "Rule for frame.",
+              "bindings": [
+                "app"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "app",
+                "state": "live",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 0,
+              "skipped": 0,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "recall",
+              "phase": "before",
+              "label": null,
+              "rule": "Rule for recall.",
+              "bindings": [
+                "claude_md"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "claude_md",
+                "state": "detected",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 0,
+              "skipped": 0,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "isolate",
+              "phase": "before",
+              "label": null,
+              "rule": "Rule for isolate.",
+              "bindings": [
+                "app"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "app",
+                "state": "live",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 11,
+              "skipped": 1,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "sync",
+              "phase": "before",
+              "label": null,
+              "rule": "Rule for sync.",
+              "bindings": [
+                "app"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "app",
+                "state": "live",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 3,
+              "skipped": 0,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "gate",
+              "phase": "after",
+              "label": null,
+              "rule": "Rule for gate.",
+              "bindings": [
+                "hook"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "hook",
+                "state": "detected",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 10,
+              "skipped": 0,
+              "unknown": 0,
+              "failed": 1
+            }
+          },
+          {
+            "step": {
+              "id": "tests",
+              "phase": "after",
+              "label": null,
+              "rule": "Rule for tests.",
+              "bindings": [
+                "advisory"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "advisory",
+                "state": "advisory",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 9,
+              "skipped": 2,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "docs",
+              "phase": "after",
+              "label": null,
+              "rule": "Rule for docs.",
+              "bindings": [
+                "advisory"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "advisory",
+                "state": "advisory",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 8,
+              "skipped": 3,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "commit",
+              "phase": "after",
+              "label": null,
+              "rule": "Rule for commit.",
+              "bindings": [
+                "hook"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "hook",
+                "state": "detected",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 10,
+              "skipped": 2,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "land",
+              "phase": "after",
+              "label": null,
+              "rule": "Rule for land.",
+              "bindings": [
+                "app"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "app",
+                "state": "live",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 5,
+              "skipped": 7,
+              "unknown": 0,
+              "failed": 0
+            }
+          },
+          {
+            "step": {
+              "id": "record",
+              "phase": "after",
+              "label": null,
+              "rule": "Rule for record.",
+              "bindings": [
+                "app"
+              ],
+              "params": {
+                "lint": null,
+                "codeQuality": null,
+                "docsRequired": null,
+                "landMode": null,
+                "prBase": null,
+                "automergeEnabled": null,
+                "automergeTarget": null,
+                "commands": null,
+                "coverageGreenPct": null,
+                "docsCleanPct": null,
+                "doneRatePct": null
+              }
+            },
+            "bindingViews": [
+              {
+                "kind": "app",
+                "state": "live",
+                "detail": null
+              }
+            ],
+            "evidence": {
+              "done": 12,
+              "skipped": 0,
+              "unknown": 0,
+              "failed": 0
+            }
+          }
+        ],
+        "evidence": [
+          {
+            "sourceKind": "task",
+            "sourceRef": "c12",
+            "title": "Change 12",
+            "occurredAt": "2026-09-22T14:10:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c11",
+            "title": "Change 11",
+            "occurredAt": "2026-09-22T12:40:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c10",
+            "title": "Change 10",
+            "occurredAt": "2026-09-22T11:10:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "failed",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c09",
+            "title": "Change 9",
+            "occurredAt": "2026-09-22T09:40:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "task",
+            "sourceRef": "c08",
+            "title": "Change 8",
+            "occurredAt": "2026-09-22T08:10:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c07",
+            "title": "Change 7",
+            "occurredAt": "2026-09-22T06:40:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c06",
+            "title": "Change 6",
+            "occurredAt": "2026-09-22T05:10:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c05",
+            "title": "Change 5",
+            "occurredAt": "2026-09-22T03:40:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "task",
+            "sourceRef": "c04",
+            "title": "Change 4",
+            "occurredAt": "2026-09-22T02:10:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c03",
+            "title": "Change 3",
+            "occurredAt": "2026-09-22T00:40:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c02",
+            "title": "Change 2",
+            "occurredAt": "2026-09-21T23:10:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          },
+          {
+            "sourceKind": "commit",
+            "sourceRef": "c01",
+            "title": "Change 1",
+            "occurredAt": "2026-09-21T21:40:00.000Z",
+            "outcomes": [
+              {
+                "stepId": "isolate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "gate",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "tests",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "docs",
+                "outcome": "skipped",
+                "detail": null
+              },
+              {
+                "stepId": "commit",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "land",
+                "outcome": "done",
+                "detail": null
+              },
+              {
+                "stepId": "record",
+                "outcome": "done",
+                "detail": null
+              }
+            ]
+          }
+        ],
+        "health": [],
+        "goal": null,
+        "watched": false,
+        "measuring": false,
+        "progress": null,
+        "tip": {
+          "branch": "main",
+          "sha": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+          "measuredSha": null,
+          "commitsBehind": null,
+          "measuredAt": null
+        },
+        "rules": {
+          "defaultBudgets": [
+            {
+              "kind": "lint",
+              "budgetMs": 60000
+            },
+            {
+              "kind": "typecheck",
+              "budgetMs": 60000
+            },
+            {
+              "kind": "test",
+              "budgetMs": 300000
+            },
+            {
+              "kind": "check",
+              "budgetMs": 600000
+            },
+            {
+              "kind": "coverage",
+              "budgetMs": 600000
+            },
+            {
+              "kind": "other",
+              "budgetMs": 300000
+            }
+          ],
+          "coverageGreenPct": 70,
+          "docsCleanPct": 90,
+          "doneRatePct": 80,
+          "amberFloorPct": 50,
+          "minSamples": 5,
+          "stepKinds": [
+            {
+              "stepId": "gate",
+              "kinds": [
+                "lint",
+                "typecheck",
+                "check",
+                "other"
+              ]
+            },
+            {
+              "stepId": "tests",
+              "kinds": [
+                "test",
+                "coverage"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "cmd": "dev_tools_list_projects",
+      "response": [
+        {
+          "id": "p-atlas",
+          "name": "Atlas Web",
+          "root_path": "C:/code/atlas",
+          "description": "Atlas Web, a product codebase.",
+          "status": "active",
+          "tech_stack": "TypeScript, React, Vite",
+          "github_url": null,
+          "monitoring_credential_id": null,
+          "monitoring_project_slug": null,
+          "static_scan_config": null,
+          "pr_credential_id": null,
+          "llm_tracking_credential_id": null,
+          "support_credential_id": null,
+          "data_links": null,
+          "test_env_url": null,
+          "test_env_branch": null,
+          "main_branch": "main",
+          "standards_config": null,
+          "team_id": null,
+          "workspace_id": null,
+          "kind": "code",
+          "enabled": true,
+          "created_at": "2026-06-24T15:40:00.000Z",
+          "updated_at": "2026-09-20T15:40:00.000Z"
+        }
+      ]
+    },
+    {
+      "cmd": "dev_tools_workspace_list",
+      "response": []
+    },
+    {
+      "cmd": "dev_tools_lifecycle_history",
+      "response": {
+        "measures": [],
+        "stepIds": [
+          "gate",
+          "tests"
+        ]
+      }
+    },
+    {
+      "cmd": "dev_tools_lifecycle_send_preview",
+      "response": {
+        "goalId": "goal-1",
+        "willFile": [
+          {
+            "stepId": "sync",
+            "health": "unmeasured",
+            "reason": "Only 3 changes recorded; 5 are needed",
+            "itemId": null
+          }
+        ],
+        "alreadyOpen": [
+          {
+            "stepId": "gate",
+            "health": "amber",
+            "reason": "tsc 74s over 60s budget",
+            "itemId": "idea-ov-gate"
+          },
+          {
+            "stepId": "tests",
+            "health": "amber",
+            "reason": "Coverage 63% is under the 70% target",
+            "itemId": "idea-ov-tests"
+          }
+        ],
+        "willReopen": [
+          {
+            "stepId": "land",
+            "health": "red",
+            "reason": "Done in 40% of recent changes, 80% needed",
+            "itemId": "idea-ov-land"
+          }
+        ],
+        "skipped": [
+          {
+            "stepId": "frame",
+            "health": "instructed",
+            "reason": null,
+            "itemId": null
+          },
+          {
+            "stepId": "recall",
+            "health": "instructed",
+            "reason": null,
+            "itemId": null
+          },
+          {
+            "stepId": "isolate",
+            "health": "green",
+            "reason": null,
+            "itemId": null
+          },
+          {
+            "stepId": "docs",
+            "health": "green",
+            "reason": null,
+            "itemId": null
+          },
+          {
+            "stepId": "commit",
+            "health": "stale",
+            "reason": "its item was rejected; that decision stands",
+            "itemId": "idea-ov-commit"
+          },
+          {
+            "stepId": "record",
+            "health": "green",
+            "reason": null,
+            "itemId": null
+          }
+        ]
+      }
+    },
+    {
+      "cmd": "companions_status",
+      "response": {
+        "companions": [
+          {
+            "id": "athena",
+            "enabled": true,
+            "eligible": true,
+            "onboarded": true,
+            "detail": {}
+          },
+          {
+            "id": "overseer",
+            "enabled": true,
+            "eligible": true,
+            "onboarded": true,
+            "detail": {}
+          },
+          {
+            "id": "curator",
+            "enabled": false,
+            "eligible": true,
+            "onboarded": true,
+            "detail": {}
+          }
+        ]
+      }
+    },
+    {
+      "cmd": "dev_tools_lifecycle_detect_commands",
+      "response": [
+        {
+          "id": "lint",
+          "command": "npm run lint",
+          "kind": "lint",
+          "budgetMs": null
+        },
+        {
+          "id": "tsc",
+          "command": "npm run tsc",
+          "kind": "typecheck",
+          "budgetMs": null
+        },
+        {
+          "id": "cargo-clippy",
+          "command": "cargo clippy --manifest-path src-tauri/Cargo.toml",
+          "kind": "lint",
+          "budgetMs": null
+        },
+        {
+          "id": "test",
+          "command": "npm run test",
+          "kind": "test",
+          "budgetMs": null
+        },
+        {
+          "id": "cargo-test",
+          "command": "cargo test --manifest-path src-tauri/Cargo.toml",
+          "kind": "test",
+          "budgetMs": null
+        }
+      ]
+    }
+  ]
+}

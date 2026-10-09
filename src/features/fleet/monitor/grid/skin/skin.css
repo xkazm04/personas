@@ -1,0 +1,116 @@
+/* The fleet's TILE SKIN: the four-pile vocabulary of `piles.ts`, drawn.
+ *
+ * RELOCATED 2026-10-06 from `fleetboard/fleetboard.css`, trimmed to what still
+ * has a consumer. The Board view this was written for is gone; its skin is
+ * not, because Activity's persona and session lines wear it as a line
+ * (`grid/prototype/entry-e/`, `.ae-pile` composed onto `.fb-tile`) and the
+ * Decision rail wears its row and ink (`grid/rail/RailRowView`). Everything
+ * that only ever drew the Board's full-frame picture - `.fb-root` and its
+ * grid, the strips, the field and its bays, the large tile's figures
+ * (`.fb-runs`, `.fb-spark`, `.fb-bar`), the board-sizing container queries and
+ * the ambient sweep/halo that only ran inside `.fb-root` - went with it.
+ *
+ * WHY THE CLASSES ARE STILL `fb-`. The prefix is the one thing here that is
+ * not honest any more, and it is deliberate: these names are asserted by name
+ * in `pileSkin.test.ts` and `railRowView.test.tsx`, composed with `ae-*` in
+ * `entryE.css`, and set as inline custom properties (`--fb-tone`, `--fb-sd`)
+ * from three TSX files. Renaming them is a rename, not a move, and it would
+ * change nothing a user can see. Read `fb-` as "fleet board skin" - the skin
+ * outlived the board.
+ *
+ * Layout is free here; type and colour are not. Every size of text is a
+ * typo-* class on the element; every colour is a token or a color-mix over
+ * one. A tile's pile colour arrives as --fb-tone (piles.ts PILE_VISUAL, the
+ * one authority). */
+
+/* The warning pile's colour role. The status token is tuned for TEXT, and on a
+ * light theme that is a deep brown (#92400e) - right for an amber word on a
+ * pale canvas, wrong for the fill of the loudest line on screen (and the light
+ * brightness tier dims it further). Light themes lift the SAME token to a
+ * fill: its own hue, at a fill's lightness and at least an amber's chroma
+ * (no new hue; --status-warning-raw is re-seated to the same brown on light,
+ * and --brand-amber is grey on light-news), with dark ink on it (below), so a
+ * needs line stays the warmest, loudest thing in the fleet in every theme.
+ *
+ * These tokens are global on purpose: Activity's lines, session and queue
+ * cards and the DecisionDock rail rows all wear the skin (monitor UI fuse). */
+:root { --fb-warning: var(--status-warning); --fb-glass: color-mix(in oklab, var(--foreground) 4%, transparent); }
+@supports (color: oklch(from red l c h)) {
+  [data-theme^="light"] { --fb-warning: oklch(from var(--status-warning) 0.8 max(c, 0.16) h); }
+}
+[data-theme^="light"] .fb-tile.is-needs:not(.is-critical) { color: var(--foreground); }
+
+/* ── Tiles ──────────────────────────────────────────────────────────── */
+.fb-tile {
+  position: absolute;
+  overflow: hidden;
+  container-type: size;
+  border-radius: var(--radius-input);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: left 0.45s ease, top 0.45s ease, width 0.45s ease, height 0.45s ease, background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+.fb-tile:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; z-index: 6; }
+.fb-tile.is-lit { outline: 2px solid var(--foreground); outline-offset: 2px; z-index: 5; }
+.fb-tile.is-selected { outline: 2px solid var(--primary); outline-offset: 2px; z-index: 5; }
+
+.fb-tile.is-resting {
+  background: var(--fb-glass);
+  border-color: color-mix(in oklab, var(--foreground) 13%, transparent);
+  color: var(--muted);
+}
+.fb-tile.is-off {
+  background: repeating-linear-gradient(135deg, color-mix(in oklab, var(--foreground) 8%, transparent) 0 2px, transparent 2px 8px);
+  border-color: color-mix(in oklab, var(--foreground) 8%, transparent);
+  color: var(--muted);
+}
+.fb-tile.is-working {
+  background: color-mix(in oklab, var(--fb-tone) 13%, var(--background));
+  border-color: color-mix(in oklab, var(--fb-tone) 62%, transparent);
+  color: color-mix(in oklab, var(--fb-tone) 50%, var(--foreground));
+  box-shadow: 0 0 16px color-mix(in oklab, var(--fb-tone) 20%, transparent);
+}
+/* Static fallback for the sweep: a lit band that does not move. The moving
+   one is `ae-sweep` in `entryE.css`, which reshapes this same ::after. */
+.fb-tile.is-working::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--fb-tone) 16%, transparent), transparent 60%);
+}
+.fb-tile.is-needs {
+  z-index: 2;
+  background: var(--fb-tone);
+  border-color: var(--fb-tone);
+  color: var(--background);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--fb-tone) 35%, transparent), 0 0 22px color-mix(in oklab, var(--fb-tone) 45%, transparent);
+}
+.fb-glyph { width: clamp(18px, 60cqmin, 40px); height: clamp(18px, 60cqmin, 40px); flex-shrink: 0; stroke-width: 2.5; }
+.fb-glyph-md { width: 22px; height: 22px; flex-shrink: 0; stroke-width: 2.5; }
+.fb-glyph-lg { width: 30px; height: 30px; flex-shrink: 0; stroke-width: 2.5; }
+/* The persona's face sits on a puck of the page colour, so it reads on any pile. */
+.fb-face { flex-shrink: 0; border-radius: var(--radius-input); background: color-mix(in oklab, var(--background) 85%, transparent); }
+
+/* A working line's run age, drawn: a bar along its foot (log scale, full at 4h). */
+.fb-age { position: absolute; left: 0; bottom: 0; height: 4px; border-radius: 0 2px 2px 0; background: var(--fb-tone); box-shadow: 0 0 8px var(--fb-tone); }
+
+/* ── Rail rows ──────────────────────────────────────────────────────── */
+.fb-rail__row {
+  display: grid;
+  grid-template-columns: 4px auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 9px;
+  height: 100%;
+  padding: 0 10px 0 6px;
+  border-radius: var(--radius-input);
+  cursor: pointer;
+}
+.fb-rail__row:hover, .fb-rail__row.is-lit { background: var(--fb-glass); }
+.fb-rail__row:focus-visible { outline: 2px solid var(--foreground); outline-offset: -2px; }
+.fb-rail__bar { width: 4px; height: 70%; border-radius: 2px; background: var(--fb-tone); }
+.fb-ink { color: color-mix(in oklab, var(--fb-tone) 70%, var(--foreground)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .fb-tile { transition: none; }
+}

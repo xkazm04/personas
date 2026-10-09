@@ -1565,7 +1565,12 @@
     "unknown_persona": "Inconnu",
     "unread": "Non lu",
     "view_execution": "Voir l'exécution",
-    "what_could_be_better": "Qu'est-ce qui pourrait être amélioré ?"
+    "what_could_be_better": "Qu'est-ce qui pourrait être amélioré ?",
+    "attachment_missing": "Fichier plus disponible",
+    "attachment_open": "Ouvrir {name}",
+    "attachments_cleaned": "Captures d'écran supprimées après la décision",
+    "attachments_label": "Pièces jointes",
+    "linked_report_unavailable": "Ce rapport n'est plus disponible"
   },
   "reports": {
     "channel_desktop": "Bureau",
@@ -1817,7 +1822,8 @@
     "unknown_persona": "Persona inconnu",
     "you": "Vous",
     "load_failed_title": "Impossible de charger la file d'attente de revue",
-    "row_gone": "Cette revue n'est plus dans la file. Rechargez la page puis réessayez."
+    "row_gone": "Cette revue n'est plus dans la file. Rechargez la page puis réessayez.",
+    "view_report": "Voir le rapport"
   },
   "saved_views": {
     "errors": {

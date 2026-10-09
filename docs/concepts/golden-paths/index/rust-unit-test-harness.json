@@ -52,6 +52,7 @@
     "crates/brainiac-store/tests/store_pg.rs": {"count":1,"sections":[],"lines":["33-37"],"contexts":["(`crates/brainiac-store/tests/store_pg.rs:33-37`), so a local `cargo test --workspace`"],"resolved":false},
     "desktop_bridges.rs": {"count":1,"sections":[7],"contexts":["`desktop_bridges.rs` — so the module is half-alive, which is why nobody noticed the other"],"resolved":false},
     "external_api_keys.rs": {"count":1,"sections":[7],"lines":["240"],"contexts":["three files (`external_api_keys.rs:240`, `api_key_audit.rs:104`, `broker_edges.rs:208,219,228`)"],"resolved":false},
+    "http_engine/mod.rs": {"count":1,"sections":[7],"lines":["120,141,186"],"contexts":["(`http_engine/mod.rs:120,141,186`, `context_consolidate.rs:1246,1271,1309`)."],"resolved":false},
     "lefthook.yml": {"count":2,"sections":[9],"lines":["20"],"contexts":["`lefthook.yml` and `package.json`."]},
     "migrations/*.sql": {"count":2,"sections":[9],"contexts":["files (`brainiac`: **zero** `CREATE TABLE` in any `.rs`, all 46 in `migrations/*.sql`), or"],"resolved":false},
     "migrations/gone.rs": {"count":1,"sections":[9],"contexts":["| stale `exclude` (`migrations/gone.rs`) | **1** | `[structural] exclude \"…/gone.rs\" matched no file. The exemption is stale…` |"],"resolved":false},
@@ -343,30 +344,6 @@
       "verbatim": "src/companion/turn_ledger.rs"
     },
     "src-tauri/src/daemon_bin.rs": {"count":2,"sections":[7],"contexts":["**B2 — the 5 tests in `src/daemon_bin.rs` run in NO lane anywhere, CI included.** The"],"resolvedFrom":"suffix","verbatim":"src/daemon_bin.rs"},
-    "src-tauri/src/engine/build_session/gates.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["406"],
-      "contexts": ["| `src/engine/build_session/gates.rs:406` `intent_is_simple_periodic_report` | 3 | |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "src/engine/build_session/gates.rs"
-    },
-    "src-tauri/src/engine/db_query.rs": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["3561,3578,3590"],
-      "contexts": ["- **`#[ignore]` with no reason string.** 3 of 15 (`src/engine/db_query.rs:3561,3578,3590`)"],
-      "resolvedFrom": "suffix",
-      "verbatim": "src/engine/db_query.rs"
-    },
-    "src-tauri/src/engine/http_engine/mod.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["120,141,186"],
-      "contexts": ["(`http_engine/mod.rs:120,141,186`, `context_consolidate.rs:1246,1271,1309`)."],
-      "resolvedFrom": "suffix",
-      "verbatim": "http_engine/mod.rs"
-    },
     "src-tauri/src/engine/kb_scan.rs": {
       "count": 3,
       "sections": [5,7],
@@ -409,6 +386,8 @@
     "src/companion/brain/sleep_cycle.rs": {"count":1,"sections":[7],"lines":["684"],"contexts":["| `src/companion/brain/sleep_cycle.rs:684` `run_sleep_cycle` | 2 | |"],"resolved":false},
     "src/companion/dispatcher.rs": {"count":1,"sections":[7],"lines":["3845"],"contexts":["| `src/companion/dispatcher.rs:3845` | `personas` | 8 | 42 |"],"resolved":false},
     "src/companion/prompt.rs": {"count":1,"sections":[7],"lines":["2475"],"contexts":["| `src/companion/prompt.rs:2475` | `personas` | 7 | 42 |"],"resolved":false},
+    "src/engine/build_session/gates.rs": {"count":1,"sections":[7],"lines":["406"],"contexts":["| `src/engine/build_session/gates.rs:406` `intent_is_simple_periodic_report` | 3 | |"],"resolved":false},
+    "src/engine/db_query.rs": {"count":2,"sections":[5,7],"lines":["3561,3578,3590"],"contexts":["- **`#[ignore]` with no reason string.** 3 of 15 (`src/engine/db_query.rs:3561,3578,3590`)"],"resolved":false},
     "src/lib/bindings/": {"count":1,"sections":[6],"contexts":["directory while `src/lib/bindings/` drifted 26 files behind. A test harness bug that"],"resolved":false,"isDir":true},
     "test_support.rs": {"count":2,"sections":[],"lines":["26-29"],"contexts":["taken as a plain `[dev-dependencies]` by four crates) and by putting `test_support.rs`"],"resolved":false},
     "tests/": {"count":1,"sections":[8],"contexts":["reaches only `tests/` integration targets; the catch-all `rustc-link-arg` also hits"],"resolved":false,"isDir":true},

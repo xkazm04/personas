@@ -895,6 +895,13 @@ pub struct DispatchPreviewRow {
     /// The lane the tick would take (`arrivals` / `advance` / `improve` /
     /// `decide` / `maintenance`), when admitted with work.
     pub lane: Option<String>,
+    /// The project's headless App Master (`/appmaster`), when this persona is
+    /// that project's App Master and a beat was ever posted for it. Filled
+    /// whatever the persona's own switch says: a switched-off in-app master
+    /// whose project a terminal is running must not read only "Switched off".
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub headless: Option<crate::commands::infrastructure::headless_master::HeadlessState>,
 }
 
 /// The next tick as the loop would plan it right now, without planning it.
@@ -957,6 +964,7 @@ pub(crate) fn preview_tick(
         .collect();
     // Personas homed in a switched-off project (e32): previewed as disabled.
     let project_off = crate::db::repos::dev::projects::personas_in_disabled_projects(pool)?;
+    let headless = headless_by_persona(pool)?;
 
     let mut rows = Vec::with_capacity(order.len());
     let mut scratch = TickCounts::default();
@@ -1041,6 +1049,7 @@ pub(crate) fn preview_tick(
             charters: persona_charters.len() as u32,
             verdict,
             lane,
+            headless: headless.get(pid).cloned(),
         });
     }
     Ok(DispatchPreview {
@@ -1049,6 +1058,27 @@ pub(crate) fn preview_tick(
         waiting,
         rows,
     })
+}
+
+/// Every posted headless beat, keyed by the persona it describes: the
+/// project's App Master under the adopt door's rule (design-context pin + the
+/// App Master name prefix). A beat for a project with no such persona yet
+/// (pof before adoption) maps to nobody and shows once the persona exists.
+fn headless_by_persona(
+    pool: &DbPool,
+) -> Result<
+    HashMap<String, crate::commands::infrastructure::headless_master::HeadlessState>,
+    AppError,
+> {
+    use crate::commands::infrastructure::{app_master_adopt, headless_master};
+    let now = chrono::Utc::now();
+    let mut out = HashMap::new();
+    for (project_id, beat) in headless_master::all_heartbeats(pool)? {
+        if let Some(p) = app_master_adopt::app_master_persona(pool, &project_id)? {
+            out.insert(p.id, headless_master::state_of(&beat, now));
+        }
+    }
+    Ok(out)
 }
 
 /// The tick's roster in dispatch order: one row per persona holding an
@@ -1363,6 +1393,32 @@ fn admit_persona(
     counts: &mut TickCounts,
     probe: bool,
 ) -> Result<Admission, AppError> {
+    // (0) A HEADLESS App Master holds this persona's project. `/appmaster`
+    // runs the project's master from a Claude Code session and posts a beat
+    // (`commands::infrastructure::headless_master`); while that beat is fresh
+    // the in-app master stands aside, so two deciders never work one backlog.
+    // Top of the ladder and, like the concurrency cap, BEFORE the wake request
+    // is consumed: the persona keeps its wake for when the headless chair lets
+    // go. One rung here covers the live tick and the probing preview alike.
+    // v1 holds the TICK only; a channel reply or a manual wake is not stopped.
+    let project_ids = charters.iter().filter_map(|c| c.project_id.as_deref());
+    if let Some((project_id, beat)) =
+        crate::commands::infrastructure::headless_master::fresh_beat_for_projects(
+            pool,
+            project_ids,
+            chrono::Utc::now(),
+        )?
+    {
+        let until = crate::commands::infrastructure::headless_master::fresh_until(&beat)
+            .map(|t| t.to_rfc3339_opts(chrono::SecondsFormat::Secs, true))
+            .unwrap_or_default();
+        return Ok(Admission::Refused(AttentionRefusal::HeadlessMaster {
+            project_id,
+            state: beat.state,
+            until,
+        }));
+    }
+
     // (a) in-flight: a young open row refuses; stale open rows are noted.
     for row in attention_ledger::list_open(pool, persona_id, KIND_ATTENTION)? {
         match minutes_since_ts(&row.started_at) {
@@ -9640,6 +9696,153 @@ mod attention_tests {
         Ok(())
     }
 
+    // -- The headless App Master state door --------------------------------
+
+    fn post_beat(pool: &DbPool, project_id: &str, state: &str) {
+        use crate::commands::infrastructure::headless_master as hm;
+        hm::record_heartbeat_at(
+            pool,
+            project_id,
+            &hm::HeadlessHeartbeatInput {
+                state: state.to_string(),
+                note: Some("Wake 7.".into()),
+                next_wake_at: None,
+                run_id: None,
+            },
+            chrono::Utc::now(),
+        )
+        .unwrap();
+    }
+
+    /// While `/appmaster` runs a project from a terminal, the in-app master
+    /// bound to that project stands aside: refused with `headless_master`, and
+    /// its pending wake is NOT spent. `ended` hands the project back at once.
+    #[test]
+    fn a_fresh_headless_beat_holds_the_in_app_master_aside() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "am")?;
+        seed_project_charter(&pool, "am", "Own the codebase", "proj_1");
+        request_wake(&pool, "am");
+        post_beat(&pool, "proj_1", "idle");
+
+        let (counts, dispatch) = plan_tick_with_budget(&pool, 4)?;
+        assert!(dispatch.is_empty(), "the headless chair owns the project");
+        assert_eq!(counts.refused, 1);
+        assert_eq!(counts.woke, 0);
+        assert_eq!(
+            read_wake_requests(&pool),
+            vec!["am".to_string()],
+            "the wake is still owed for when the headless chair lets go"
+        );
+        let refusal = ledger_rows(&pool, "am")
+            .into_iter()
+            .find(|r| r.verdict == "refused")
+            .expect("the stand-aside is on the record");
+        let reason: serde_json::Value = serde_json::from_str(&refusal.reason).unwrap();
+        assert_eq!(reason["kind"], "headless_master");
+        assert_eq!(reason["project_id"], "proj_1");
+
+        // The chair ends: the in-app master decides on the very next tick.
+        post_beat(&pool, "proj_1", "ended");
+        let (counts, dispatch) = plan_tick_with_budget(&pool, 4)?;
+        assert_eq!(counts.woke, 1);
+        assert!(matches!(
+            dispatch.first().map(|d| &d.work),
+            Some(DispatchWork::Decide { .. })
+        ));
+        Ok(())
+    }
+
+    /// A beat past its hard cap (a Director that died without `ended`) no
+    /// longer suppresses anything, and a beat for ANOTHER project never did.
+    #[test]
+    fn a_stale_or_unrelated_headless_beat_dispatches_as_before() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "am")?;
+        seed_project_charter(&pool, "am", "Own the codebase", "proj_1");
+        request_wake(&pool, "am");
+        post_beat(&pool, "proj_other", "running");
+        let seven_hours_ago = (chrono::Utc::now() - chrono::Duration::hours(7))
+            .to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+        crate::db::repos::core::settings::set(
+            &pool,
+            "headless_master:proj_1",
+            &serde_json::json!({
+                "state": "running", "note": "", "nextWakeAt": null,
+                "beatAt": seven_hours_ago, "runId": null, "source": "appmaster"
+            })
+            .to_string(),
+        )?;
+
+        let (counts, dispatch) = plan_tick_with_budget(&pool, 4)?;
+        assert_eq!(counts.refused, 0);
+        assert_eq!(counts.woke, 1);
+        assert_eq!(dispatch.len(), 1, "a stale beat holds nobody aside");
+        Ok(())
+    }
+
+    /// The preview carries the headless state for the project's App Master
+    /// even when that persona is switched off: a terminal running the project
+    /// must not read as only "Switched off" on the board.
+    #[test]
+    fn the_preview_shows_the_headless_state_of_a_switched_off_master() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        for pid in ["am_off", "am_on"] {
+            seed_persona(&pool, pid)?;
+        }
+        seed_project_charter(&pool, "am_off", "Own the codebase", "proj_1");
+        seed_project_charter(&pool, "am_on", "Own the codebase", "proj_2");
+        pool.get()?.execute(
+            "UPDATE personas SET enabled = 0, name = 'App Master pof',
+                    design_context = '{\"devProjectId\":\"proj_1\"}'
+              WHERE id = 'am_off'",
+            params![],
+        )?;
+        pool.get()?.execute(
+            "UPDATE personas SET name = 'App Master kp',
+                    design_context = '{\"devProjectId\":\"proj_2\"}'
+              WHERE id = 'am_on'",
+            params![],
+        )?;
+        post_beat(&pool, "proj_1", "running");
+        post_beat(&pool, "proj_2", "idle");
+
+        let preview = preview_tick(&pool, 4)?;
+        let off = preview
+            .rows
+            .iter()
+            .find(|r| r.persona_id == "am_off")
+            .expect("listed");
+        assert_eq!(off.verdict, DispatchVerdict::Disabled);
+        let h = off
+            .headless
+            .as_ref()
+            .expect("headless state despite the switch");
+        assert_eq!(h.state, "running");
+        assert!(h.fresh);
+        assert_eq!(h.note, "Wake 7.");
+
+        let on = preview
+            .rows
+            .iter()
+            .find(|r| r.persona_id == "am_on")
+            .expect("listed");
+        assert_eq!(on.headless.as_ref().map(|h| h.state.as_str()), Some("idle"));
+        assert!(matches!(
+            &on.verdict,
+            DispatchVerdict::Refused { refusal, .. } if refusal == "headless_master"
+        ));
+        assert_eq!(
+            read_wake_requests(&pool),
+            Vec::<String>::new(),
+            "the preview spends nothing"
+        );
+        Ok(())
+    }
+
     /// The old rule refused the ENABLE. A large roster is now free, and only
     /// running work costs anything.
     #[test]
@@ -12416,7 +12619,11 @@ mod attention_tests {
         let rows = pending_reviews(&pool, "p1");
         assert_eq!(rows.len(), 1);
         let row = &rows[0];
-        assert_eq!(row.execution_id, exec.id, "anchored to a real run");
+        assert_eq!(
+            row.execution_id,
+            Some(exec.id.clone()),
+            "anchored to a real run"
+        );
         assert_eq!(
             row.title,
             "App Master Ascent: 27 ideas are waiting on your triage"

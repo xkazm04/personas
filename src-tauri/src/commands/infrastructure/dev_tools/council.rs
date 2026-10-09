@@ -288,16 +288,27 @@ pub async fn dev_tools_set_use_case_tier(
     tier: String,
 ) -> Result<DevUseCase, AppError> {
     require_auth(&state).await?;
-    if !USE_CASE_TIERS.contains(&tier.as_str()) {
-        return Err(AppError::Validation(format!(
-            "Unknown tier `{tier}` (expected major or standard)"
-        )));
-    }
-    let updated = use_case_repo::set_use_case_tier(&state.db, &use_case_id, &tier)?;
+    let updated = set_use_case_tier_checked(&state.db, &use_case_id, &tier)?;
     // The tier is an INPUT to the derived state (`machine_pass` is ready plus
     // standard), so a promotion moves the ledger even though no council ran.
     emit_council_changed(&app, &updated.project_id);
     Ok(updated)
+}
+
+/// Body of [`dev_tools_set_use_case_tier`] minus auth and the emit, shared
+/// with `POST /dev-tools/use-cases/{id}/tier`. An unknown tier is a
+/// `Validation`, an unknown feature a `NotFound`.
+pub(crate) fn set_use_case_tier_checked(
+    pool: &personas_db::DbPool,
+    use_case_id: &str,
+    tier: &str,
+) -> Result<DevUseCase, AppError> {
+    if !USE_CASE_TIERS.contains(&tier) {
+        return Err(AppError::Validation(format!(
+            "Unknown tier `{tier}` (expected major or standard)"
+        )));
+    }
+    use_case_repo::set_use_case_tier(pool, use_case_id, tier)
 }
 
 /// Record a human's verdict on a council run.
@@ -389,6 +400,16 @@ pub(crate) fn decide_council(
     if detail.run.subject_id != subject_id {
         return Err(AppError::Validation(format!(
             "Run {run_id} does not belong to subject {subject_id}"
+        )));
+    }
+    // A lite pass is the council's feedback, never its verdict: one session
+    // judged part of the rubric, so it has nothing a person can approve. Its
+    // `ready` is the ticket to the full council, not a way past it.
+    if detail.run.mode != "full" {
+        return Err(AppError::Validation(format!(
+            "Run {run_id} is a {} pass - one session over part of the rubric, never the \
+             council's verdict. Run the full council on this subject to reach your decision",
+            detail.run.mode
         )));
     }
     // The compare-and-swap. Both halves are needed: the digest catches a run
@@ -635,6 +656,7 @@ mod tests {
     fn a_run(subject_id: &str, round: i32, outcome: &str, dir: &str) -> NewRun {
         NewRun {
             subject_id: subject_id.to_string(),
+            mode: "full".into(),
             round_no: round,
             supersedes_run_id: None,
             rubric_version: "feature-v1".into(),
@@ -806,6 +828,70 @@ mod tests {
             .unwrap_err()
             .to_string();
         assert!(err.contains("outcome is `fail`"), "{err}");
+    }
+
+    /// A lite `ready` on a major feature is refused at the gate with a reason a
+    /// person can act on; a full `ready` beside it still decides, and the lite
+    /// round that lands after does not move the decision.
+    #[test]
+    fn a_lite_run_is_never_decided_and_a_full_ready_still_is() {
+        let (pool, _p, subject_id, full_id) = gate_ready();
+        let lite = council_repo::insert_run(
+            &pool,
+            &NewRun {
+                mode: "lite".into(),
+                coverage: 0.7,
+                ..a_run(&subject_id, 1, "ready", "/runs/lite-r1")
+            },
+            &[],
+        )
+        .unwrap();
+        let d = digest(&pool, &lite.id);
+        let err = decide(&pool, &subject_id, &lite.id, "approved", None, &d)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("lite pass"), "{err}");
+        assert!(err.contains("full council"), "{err}");
+
+        let d = digest(&pool, &full_id);
+        let recorded = decide(&pool, &subject_id, &full_id, "approved", None, &d).unwrap();
+        assert_eq!(recorded.run_id, full_id);
+
+        council_repo::insert_run(
+            &pool,
+            &NewRun {
+                mode: "lite".into(),
+                ..a_run(&subject_id, 2, "fail", "/runs/lite-r2")
+            },
+            &[],
+        )
+        .unwrap();
+        let states = council_repo::list_subject_states(&pool, None).unwrap();
+        assert_eq!(
+            states[0].state, "approved",
+            "a lite round never supersedes it"
+        );
+        assert_eq!(states[0].mode.as_deref(), Some("full"));
+    }
+
+    #[test]
+    fn the_tier_door_validates_and_finds_the_feature() {
+        let (pool, _p, subject_id, _run) = gate_ready();
+        let uc_id = council_repo::get_subject(&pool, &subject_id)
+            .unwrap()
+            .unwrap()
+            .use_case_id
+            .unwrap();
+        let updated = set_use_case_tier_checked(&pool, &uc_id, "standard").unwrap();
+        assert_eq!(updated.tier, "standard");
+        assert!(matches!(
+            set_use_case_tier_checked(&pool, &uc_id, "huge"),
+            Err(AppError::Validation(_))
+        ));
+        assert!(matches!(
+            set_use_case_tier_checked(&pool, "no-such-feature", "major"),
+            Err(AppError::NotFound(_))
+        ));
     }
 
     #[test]

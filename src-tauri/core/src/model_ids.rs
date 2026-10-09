@@ -28,7 +28,9 @@ pub const ALIAS_OPUS: &str = "opus";
 
 /// Current dated ids per family. These are what the CLI resolves the aliases
 /// to today; bump them here when the vendor ships a successor.
-pub const HAIKU_CURRENT: &str = "claude-haiku-4-5-20251001";
+/// Haiku 5.5 since 2026-10-08: benched against Sonnet 5.5 on 732 one-shot
+/// calls and 414 Athena turns (`docs/tests/model-bench/haiku-5-5.md`).
+pub const HAIKU_CURRENT: &str = "claude-haiku-5-5";
 pub const SONNET_CURRENT: &str = "claude-sonnet-5-5";
 pub const OPUS_CURRENT: &str = "claude-opus-5";
 
@@ -82,6 +84,21 @@ pub const RETIRED: &[&str] = &[
     "claude-opus-4-8",
 ];
 
+/// Ids still served but superseded by policy, with the id they resolve to.
+/// Unlike [`RETIRED`] these do not 404 — the operator ruled them out:
+/// "never use 4-6; Sonnet is always 5.5" (2026-10-08). [`canonical`] maps
+/// them at spawn time, so a `model_profile` stored in a DB row, a recipe, an
+/// imported bundle or an LLM-proposed draft cannot bring one back.
+pub const SUPERSEDED: &[(&str, &str)] = &[("claude-sonnet-4-6", SONNET_CURRENT)];
+
+/// `model`, or its successor when it is in [`SUPERSEDED`].
+pub fn canonical(model: &str) -> &str {
+    SUPERSEDED
+        .iter()
+        .find(|(old, _)| *old == model)
+        .map_or(model, |(_, new)| new)
+}
+
 /// True when `model` is a dated id the vendor no longer serves.
 pub fn is_retired(model: &str) -> bool {
     RETIRED.contains(&model)
@@ -95,6 +112,17 @@ pub fn is_alias(model: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn superseded_ids_resolve_to_a_current_id() {
+        assert_eq!(canonical("claude-sonnet-4-6"), SONNET_CURRENT);
+        assert_eq!(canonical(SONNET_CURRENT), SONNET_CURRENT);
+        assert_eq!(canonical(HAIKU_CURRENT), HAIKU_CURRENT);
+        for (old, new) in SUPERSEDED {
+            assert_ne!(old, new);
+            assert!(!is_retired(new) && SUPERSEDED.iter().all(|(o, _)| o != new));
+        }
+    }
 
     #[test]
     fn tier_defaults_are_current_ids_not_retired_ones() {

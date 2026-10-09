@@ -288,6 +288,13 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
         }),
+        // Overseer auto-measure (spark lifecycle-health) - one watched project
+        // per tick, once per new base tip, >= 30 min apart; off while the
+        // Overseer is switched off. Runs the project's own commands, no LLM.
+        Box::new(subscription::LifecycleWatchSubscription::new(
+            pool.clone(),
+            app.clone(),
+        )),
         // Athena channel reactions — Athena watches each goal-managed team's
         // delivery stream and posts a genuine react/decline decision into the
         // team channel at reaction-worthy moments (cap-out escalations, QA

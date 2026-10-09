@@ -32,6 +32,7 @@
     "brainiac-server/src/alerts.rs": {"count":1,"sections":[],"lines":["51"],"contexts":["(`brainiac-server/src/alerts.rs:51`, plus `console.rs:112,536,561` and 6 more files) — **20 of"],"resolved":false},
     "brainiac/crates/brainiac-server/src/console.rs": {"count":1,"sections":[],"contexts":["- **One file eats the transport surface.** `brainiac/crates/brainiac-server/src/console.rs` is"],"resolved":false},
     "census-cmd-placement-b47e91.json": {"count":1,"sections":[9],"contexts":["from a scratchpad file named `census-cmd-placement-b47e91.json`, unique to this composition):"],"resolved":false},
+    "commandNames.generated.ts": {"count":1,"sections":[1],"contexts":["the registered *name* is the bare `fn` ident, and `commandNames.generated.ts` emits only that."],"resolved":false},
     "commands/core/data_portability.rs": {"count":1,"sections":[7],"contexts":["| `commands/core/data_portability.rs` | **12,705** | 9 | 1,412 |"],"resolved":false},
     "commands/infrastructure/live_roadmap.rs": {"count":1,"sections":[9],"contexts":["respectively, including `commands/infrastructure/live_roadmap.rs` — a dead glob that has silently"],"resolved":false},
     "companion/approvals/approval_exec_{core,knowledge,dev}.rs": {"count":1,"sections":[5],"contexts":["`fleet/stale.rs` (1,810), `companion/approvals/approval_exec_{core,knowledge,dev}.rs` (3,451"],"resolved":false},
@@ -43,6 +44,7 @@
     "dev_tools.rs": {"count":1,"sections":[7],"contexts":["`dev_tools.rs` (70 cmds), `twin.rs` (46), `cloud.rs` (37), `dev_workspaces.rs` (33),"],"resolved":false},
     "dev_workspaces.rs": {"count":1,"sections":[7],"contexts":["`dev_tools.rs` (70 cmds), `twin.rs` (46), `cloud.rs` (37), `dev_workspaces.rs` (33),"],"resolved":false},
     "eslint.config.mjs": {"count":2,"sections":[9],"lines":["60"],"contexts":["this with a custom AST rule (`eslint.config.mjs:60`, `custom-quality/max-tsx-lines` at 200) —"],"resolved":false},
+    "feature-doc-map.json": {"count":2,"sections":[7],"contexts":["(`docs/features/companions/athena/README.md`, mapped at `feature-doc-map.json` via"],"resolved":false},
     "infrastructure/dev_tools/competitions.rs": {"count":1,"sections":[7],"contexts":["`design/reviews.rs` (6), `infrastructure/dev_tools/competitions.rs` (6)."],"resolved":false},
     "infrastructure/research_lab.rs": {"count":1,"sections":[7],"contexts":["`infrastructure/research_lab.rs` individually. **When your product map has to name files because"],"resolved":false},
     "lib.rs": {"count":4,"sections":[1,4,6,9],"lines":["1805","3838"],"contexts":["Verified: the `generate_handler![]` list at `lib.rs:1805` registers by fully-qualified path but"],"resolved":false},
@@ -60,7 +62,7 @@
     "registry.rs": {"count":1,"sections":[7],"contexts":["zero-command files, 4,297 LOC) and `commands/fleet/` (`registry.rs` 1,902, `stale.rs` 1,810,"],"resolved":false},
     "research_lab.rs": {"count":1,"sections":[7],"contexts":["`research_lab.rs` (27) — are five separate products, each with its own feature doc."],"resolved":false},
     "scripts/check-literal-parity.mjs": {"count":1,"sections":[9],"contexts":["`src-tauri/src/commands/` are `scripts/check-literal-parity.mjs` (a one-off audit of `require_*`"]},
-    "scripts/docs/feature-doc-map.json": {"count":6,"sections":[3,4,7,9],"contexts":["(`docs/features/companions/athena/README.md`, mapped at `feature-doc-map.json` via"],"resolvedFrom":"basename","verbatim":"feature-doc-map.json"},
+    "scripts/docs/feature-doc-map.json": {"count":4,"sections":[3,4,7,9],"contexts":["- **`scripts/docs/feature-doc-map.json`** (37 entries) and **`docs/architecture/codebase-map.md`**"]},
     "scripts/security-audit.sh": {"count":1,"sections":[9],"contexts":["literals), `scripts/security-audit.sh` (scoped to `credentials/`), and the registration test at"]},
     "shared-facts.json": {"count":1,"sections":[],"contexts":["### ✅ `shared-facts.json` is correct — verified, not merely cited"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["`.rs` files under `src-tauri/` — the **1,661** `#[tauri::command]` attribute sites, the **299**"],"resolved":false,"isDir":true},
@@ -254,13 +256,6 @@
       "resolved": false
     },
     "src/features/sharing": {"count":1,"sections":[7],"contexts":["`src/features/pipeline`, `src/features/sharing`, `src/api/pipeline/triggers`,"],"resolved":false,"isDir":true},
-    "src/lib/commandNames.generated.ts": {
-      "count": 1,
-      "sections": [1],
-      "contexts": ["the registered *name* is the bare `fn` ident, and `commandNames.generated.ts` emits only that."],
-      "resolvedFrom": "basename",
-      "verbatim": "commandNames.generated.ts"
-    },
     "src/lib/server/": {"count":1,"sections":[],"contexts":["`src/lib/server/` and still calls Supabase inline in 6 of 11 routes"],"resolved":false,"isDir":true},
     "twin.rs": {"count":1,"sections":[7],"contexts":["`dev_tools.rs` (70 cmds), `twin.rs` (46), `cloud.rs` (37), `dev_workspaces.rs` (33),"],"resolved":false}
   }

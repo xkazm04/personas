@@ -14,6 +14,8 @@
 // tooltip, which is where its explanation already lived.
 
 import { useState } from 'react';
+import { useProgressiveReveal, useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { ArrowLeftRight, RefreshCw, RotateCw, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatPercent } from '@/lib/utils/formatters';
@@ -125,13 +127,30 @@ function ProviderPlate({ provider, usage }: { provider: ProviderModel; usage: Us
   );
 }
 
-export function PlanPlates({ usage }: { usage: UsageFeed }) {
+/**
+ * The surface's identity for the entrance system. CONSTANT on purpose: the
+ * reveal must key on WHERE you are, never on what the plates currently say, or
+ * a refreshed window would replay the cascade. The module-scoped seen-set
+ * behind `surfaceKey` is what makes a return silent while a genuinely new
+ * provider still enters alone.
+ */
+const USAGE_SURFACE = 'activity-usage';
+
+export function PlanPlates({ usage, revealEnabled = true }: { usage: UsageFeed; revealEnabled?: boolean }) {
   const { t } = useTranslation();
   const m = t.monitor;
   const [draft, setDraft] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const rotate = usage.autoRotate;
   const shown = draft ?? rotate?.thresholdPct ?? 80;
+  const providers = usage.model.providers;
+  // One plate at a time, the whole column inside 200ms however many plans are
+  // stored. `revealEnabled` is false on a warm open, where everything is in.
+  const reveal = useProgressiveReveal(providers.length, {
+    initialCount: 1, targetMs: 200, intervalMs: 60, minChunk: 1,
+    enabled: revealEnabled, resetKey: USAGE_SURFACE,
+  });
+  const enter = useRevealTracker(USAGE_SURFACE, USAGE_SURFACE);
 
   return (
     <section className="ae-plate flex flex-col gap-3 rounded-card p-3" aria-label={m.usage_aria} data-testid="entry-e-usage">
@@ -154,7 +173,11 @@ export function PlanPlates({ usage }: { usage: UsageFeed }) {
           </Tooltip>
         </span>
       </header>
-      {usage.model.providers.map((p) => <ProviderPlate key={p.id} provider={p} usage={usage} />)}
+      {providers.slice(0, reveal.count).map((p, i) => (
+        <RevealItem key={p.id} revealId={p.id} order={i - reveal.newSince} {...enter}>
+          <ProviderPlate provider={p} usage={usage} />
+        </RevealItem>
+      ))}
       {rotate && (
         /* ONE ROW (2026-10-04): the switch, its icon in place of the words,
            and the threshold. The label the icon replaced is the tooltip, with

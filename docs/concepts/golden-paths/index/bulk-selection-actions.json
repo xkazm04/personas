@@ -50,6 +50,7 @@
       "resolved": false
     },
     "KnowledgeTree.tsx": {"count":5,"sections":[0,5,7],"lines":["197-204","83"],"contexts":["`KnowledgeTree.tsx`, `ManualReviewList.tsx`, `useLayeredList.ts`, `useManualReviewQueue.ts`,"],"resolved":false},
+    "ManualReviewList.tsx": {"count":5,"sections":[0,5,7],"lines":["168","246","249"],"contexts":["`KnowledgeTree.tsx`, `ManualReviewList.tsx`, `useLayeredList.ts`, `useManualReviewQueue.ts`,"],"resolved":false},
     "MonitorChannelGrid.tsx": {"count":1,"sections":[9],"contexts":["`MonitorChannelGrid.tsx` (a channel *view* filter with no action) and `CreateApiKeyDialog.tsx`"],"resolved":false},
     "PracticeApply.tsx": {
       "count": 1,
@@ -159,14 +160,6 @@
       "contexts": ["(`BulkActionBar.tsx:26`) are gated on pending, so the surface is unreachable today. It is latent"],
       "resolvedFrom": "basename",
       "verbatim": "BulkActionBar.tsx"
-    },
-    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
-      "count": 5,
-      "sections": [0,5,7],
-      "lines": ["168","246","249"],
-      "contexts": ["`KnowledgeTree.tsx`, `ManualReviewList.tsx`, `useLayeredList.ts`, `useManualReviewQueue.ts`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "ManualReviewList.tsx"
     },
     "src/features/overview/sub_manual-review/components/ReviewInboxPanel.tsx": {
       "count": 1,

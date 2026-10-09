@@ -14,8 +14,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
-import { DB_PATH, REPO_ROOT, slugOf, slugify } from './contract.mjs';
-import { listSlugs, loadWakes } from './store.mjs';
+import { BUILTIN_CHARTERS, DB_PATH, REPO_ROOT, UX, slugOf, slugify } from './contract.mjs';
+import { listSlugs, loadBrief, loadWakes } from './store.mjs';
+import { featureOfReportTitle } from './council.mjs';
 
 export const TEMPLATE_DIR = path.join(REPO_ROOT, 'scripts', 'templates', '_app_master');
 /** In-app caps (attention_decide.rs): goals 12, unmerged branches 10, in-flight tasks 10. */
@@ -75,6 +76,20 @@ export function baseBranchOf(row) {
   return { baseBranch: found, baseBranchNote: `dev_projects.main_branch is ${row.main_branch ?? 'null'}; the checkout has ${found}, not ${declared}` };
 }
 
+/**
+ * A brief's `baseBranch` names the project's own trunk when the app row does not (2026-10-07:
+ * personas-web works on revamp/stage-fit while its row says master, so a scan was cut from a base
+ * 200 commits behind and its merge refused). It wins only when that branch exists in the checkout.
+ */
+export function withBriefBase(ctx, brief) {
+  const b = typeof brief?.baseBranch === 'string' ? brief.baseBranch.trim() : '';
+  if (!ctx || !b || b === ctx.baseBranch) return ctx;
+  if (ctx.root && fs.existsSync(ctx.root) && !branchExists(ctx.root, b)) {
+    return { ...ctx, baseBranchNote: `the brief names ${b}, which does not exist in ${ctx.root}; using ${ctx.baseBranch}` };
+  }
+  return { ...ctx, baseBranch: b, baseBranchNote: `the brief names ${b}; the app row resolves to ${ctx.baseBranch}` };
+}
+
 /** (ref: string, db?) => ProjectCtx   // id | name | root | slug; throws on no match */
 export function resolveProject(ref, d) {
   if (!ref || ref === true) throw new Error('--project <id|name|root|slug> is required');
@@ -89,7 +104,7 @@ export function resolveProject(ref, d) {
       || rows.find((p) => slugify(p.name) === slugify(r));
     if (!hit) throw new Error(`no dev_projects row matches "${ref}"`);
     const ctx = { slug: slugOf(hit.name, hit.root_path), id: hit.id, name: hit.name, root: hit.root_path, ...baseBranchOf(hit) };
-    return ctx;
+    return withBriefBase(ctx, loadBrief(ctx.slug));
   } finally { if (own) d.close(); }
 }
 
@@ -103,7 +118,7 @@ export function resolveManaged(ref) {
   const s = slugify(ref);
   if (listSlugs().includes(s)) {
     const known = loadWakes(s).filter((w) => w.project).at(-1)?.project;
-    if (known) return { slug: s, project: known };
+    if (known) return { slug: s, project: withBriefBase(known, loadBrief(s)) };
     try { const p = resolveProject(ref); return { slug: p.slug, project: p }; } catch { return { slug: s, project: null }; }
   }
   const p = resolveProject(ref);
@@ -133,12 +148,40 @@ export const briefCharters = (brief) => (brief?.charters ?? [])
   .filter((c) => c.slug);
 
 /**
- * (db, projectId, brief) => Array<{slug,title,priority,need,coreAction,pacingNote,source:"db"|"template"|"slug-only"}>
+ * (db, slugs) => Map<slug, {name, need, coreAction}>   The v3 recipe of each charter slug, from
+ * recipe_definitions (read-only), matched by `prompt_template.$.slug`; the newest row wins when a slug
+ * has several. A failed read (an older DB) is an empty map: the context then says "no recipe row".
+ */
+export function recipesBySlug(d, slugs) {
+  const want = [...new Set((slugs ?? []).filter(Boolean))];
+  const out = new Map();
+  if (!d || !want.length) return out;
+  const marks = want.map(() => '?').join(', ');
+  const rows = tryRows(d, `select json_extract(prompt_template, '$.slug') slug, name,
+                                  json_extract(prompt_template, '$.description.need') need,
+                                  json_extract(prompt_template, '$.description.coreAction') coreAction
+                           from recipe_definitions
+                           where json_valid(prompt_template) and json_extract(prompt_template, '$.slug') in (${marks})
+                           order by updated_at desc`, want).rows;
+  for (const r of rows) if (!out.has(r.slug)) out.set(r.slug, { name: r.name ?? r.slug, need: r.need ?? null, coreAction: r.coreAction ?? null });
+  return out;
+}
+
+/**
+ * (db, projectId, brief) => Array<{slug,title,priority,need,coreAction,pacingNote,source:"db"|"template"|"builtin"|"slug-only",recipe,purpose}>
  * The brief decides WHICH charters exist; their text comes from the master persona's
  * persona_responsibilities spec (description.need/coreAction, pacing.coverageNote, recipeRef.slug),
- * else scripts/templates/_app_master/<slug>.json, else the slug alone.
+ * else scripts/templates/_app_master/<slug>.json, else BUILTIN_CHARTERS, else the slug alone. Each also
+ * carries its v3 `recipe` ({name, need, coreAction} from recipe_definitions, or null) and, for a
+ * built-in charter, its one-line `purpose`.
  */
 export function chartersFor(d, projectId, brief) {
+  const recipes = recipesBySlug(d, briefCharters(brief).map((c) => c.slug));
+  const withRecipe = (c) => ({ ...c, recipe: recipes.get(c.slug) ?? null, purpose: BUILTIN_CHARTERS[c.slug]?.purpose ?? null });
+  return chartersText(d, projectId, brief).map(withRecipe);
+}
+
+function chartersText(d, projectId, brief) {
   const m = d && projectId ? masterPersona(d, projectId) : null;
   const rows = m ? q(d, `select id, title, status, spec, updated_at from persona_responsibilities
                          where persona_id = ? order by case status when 'active' then 0 else 1 end, updated_at desc`, [m.id]) : [];
@@ -164,6 +207,10 @@ export function chartersFor(d, projectId, brief) {
       return { slug, title: t.title ?? slug, priority, need: t.description?.need ?? null, coreAction: t.description?.coreAction ?? null,
         pacingNote: null, lastDecidedAt: null, lastDispatchedAt: null, dbStatus: null, source: 'template' };
     }
+    if (BUILTIN_CHARTERS[slug]) {
+      return { slug, title: BUILTIN_CHARTERS[slug].title, priority, need: null, coreAction: null, pacingNote: null,
+        lastDecidedAt: null, lastDispatchedAt: null, dbStatus: null, source: 'builtin' };
+    }
     return { slug, title: slug, priority, need: null, coreAction: null, pacingNote: null,
       lastDecidedAt: null, lastDispatchedAt: null, dbStatus: null, source: 'slug-only' };
   });
@@ -176,10 +223,15 @@ export function pendingReviews(d, personaId) {
                where persona_id = ? and status = 'pending' order by created_at`, [personaId]);
 }
 
-/** Operator lines in the master's in-app channel since an ISO instant. */
-export function operatorChannelSince(d, personaId, since, limit = 5) {
+/**
+ * Operator lines in the master's in-app channel since an ISO instant. A line from the phone
+ * (the signed channel_say verb) may be up to SAY_MAX_CHARS long, so the master reads it whole,
+ * and enough of them that a burst of says between two wakes does not push the oldest out of view.
+ */
+export const SAY_MAX_CHARS = 2000;
+export function operatorChannelSince(d, personaId, since, limit = 12) {
   if (!personaId) return [];
-  return q(d, `select id, substr(body, 1, 600) body, created_at from team_channel_messages
+  return q(d, `select id, substr(body, 1, ${SAY_MAX_CHARS}) body, created_at from team_channel_messages
                where persona_id = ? and author_kind = 'user'
                  and datetime(substr(created_at, 1, 19)) > datetime(substr(?, 1, 19))
                order by created_at desc limit ?`, [personaId, since || '1970-01-01T00:00:00Z', limit]);
@@ -263,6 +315,89 @@ export function projectSnapshot(d, project) {
     checkout: { branch: currentBranch(project.root), dirty: dirtyCount(project.root) },
     readErrors: dbErrors(d),
   };
+}
+
+/**
+ * (db, projectId) => {rows:[{id,name,status,target_date}], error:string|null}   The project's milestones.
+ * A failed read (an older DB without the table, a locked file) is an `error`, never an empty list:
+ * "no milestones" is what triggers a PLAN WAKE, and an unreadable table must not.
+ */
+export function milestonesOf(d, projectId) {
+  try {
+    const rows = d.prepare(`select id, name, status, target_date from dev_milestones where project_id = ? order by order_index, created_at`)
+      .all(projectId).map((r) => ({ ...r }));
+    return { rows, error: null };
+  } catch (e) { return { rows: [], error: String(e.message || e).split('\n')[0] }; }
+}
+
+/** (db, created:{milestones:{i:id}, goals:{"i.j":id}}) => {milestones:{id:{status}}, goals:{id:{status,progress}}} */
+export function planProgress(d, created) {
+  const mIds = Object.values(created?.milestones ?? {}).filter(Boolean);
+  const gIds = Object.values(created?.goals ?? {}).filter(Boolean);
+  const byId = (rows) => Object.fromEntries(rows.map((r) => [r.id, r]));
+  const marks = (n) => Array(n).fill('?').join(', ');
+  return {
+    milestones: mIds.length ? byId(q(d, `select id, status from dev_milestones where id in (${marks(mIds.length)})`, mIds)) : {},
+    goals: gIds.length ? byId(q(d, `select id, status, progress from dev_goals where id in (${marks(gIds.length)})`, gIds)) : {},
+  };
+}
+
+/**
+ * (db, projectId) => {count, error}   pending ideas of the project whose title starts with UX.titlePrefix
+ * (leading whitespace ignored). `count` is null when the read fails: an unknown is never a zero.
+ */
+export function uxPendingOf(d, projectId) {
+  try {
+    const r = d.prepare(`select count(*) n from dev_ideas where project_id = ? and status = 'pending' and substr(ltrim(title), 1, ?) = ?`)
+      .get(projectId, UX.titlePrefix.length, UX.titlePrefix);
+    return { count: Number(r?.n ?? 0), error: null };
+  } catch (e) { return { count: null, error: String(e.message || e).split('\n')[0] }; }
+}
+
+/** Rows of a read that may hit a table an older DB lacks: {rows, error} instead of a silent []. */
+function tryRows(d, sql, params) {
+  try { return { rows: d.prepare(sql).all(...params).map((r) => ({ ...r })), error: null }; } catch (e) { return { rows: [], error: String(e.message || e).split('\n')[0] }; }
+}
+
+/** (db, projectId) => {rows:[{id,name,slug,status,tier}], error}   The project's features (not archived). */
+export function useCasesOf(d, projectId) {
+  const r = tryRows(d, `select id, name, slug, status, tier from dev_use_cases where project_id = ? and status <> 'archived' order by name`, [projectId]);
+  if (!r.error || !/no such column: tier/.test(r.error)) return r;
+  return tryRows(d, `select id, name, slug, status, null tier from dev_use_cases where project_id = ? and status <> 'archived' order by name`, [projectId]);
+}
+
+/** (db, projectId) => {rows:[{slug, round_no, outcome, overall, coverage, must_address_json, run_dir, at}], error}   council runs the app holds */
+export function councilRunsOf(d, projectId) {
+  return tryRows(d, `select s.slug, r.round_no, r.outcome, r.overall, r.coverage, r.must_address_json, r.run_dir, coalesce(r.finished_at, r.ingested_at) at
+                     from dev_council_runs r join dev_council_subjects s on s.id = r.subject_id
+                     where s.project_id = ? and s.kind = 'use_case' order by at`, [projectId]);
+}
+
+/**
+ * (db, projectId) => {rows:[{slug, decision, reason, decided_at, via}], error, approvalsError}
+ * A person's decisions at the council's gate, from two places:
+ *  - `council`: the desk's Council page (dev_council_decisions);
+ *  - `approval`: a full-ready report's Approval, decided at the desk or on the phone (review_decide syncs
+ *    it back), which writes persona_manual_reviews and never dev_council_decisions. Its feature is read
+ *    from the report's title (council.mjs reportTitle). Only approved/rejected count; pending and a
+ *    plain 'resolved' are no verdict.
+ * A failed approvals read (an older DB) never hides the council rows: it is reported as approvalsError.
+ */
+export function councilDecisionsOf(d, projectId) {
+  const council = tryRows(d, `select s.slug, x.decision, x.reason, x.decided_at
+                     from dev_council_decisions x join dev_council_subjects s on s.id = x.subject_id
+                     where s.project_id = ? and s.kind = 'use_case' order by x.decided_at`, [projectId]);
+  const approvals = tryRows(d, `select r.title, m.status decision, m.reviewer_notes reason, coalesce(m.resolved_at, m.updated_at) decided_at
+                     from persona_manual_reviews m
+                     join persona_reports r on r.id = (case when json_valid(m.context_data) then json_extract(m.context_data, '$.reportId') end)
+                     where m.status in ('approved', 'rejected')
+                       and m.persona_id in (select persona_id from persona_responsibilities where project_id = ?)`, [projectId]);
+  const fromApprovals = approvals.rows
+    .map((a) => ({ slug: featureOfReportTitle(a.title), decision: a.decision, reason: a.reason ?? null, decided_at: a.decided_at, via: 'approval' }))
+    .filter((a) => a.slug);
+  const rows = [...council.rows.map((r) => ({ ...r, via: 'council' })), ...fromApprovals]
+    .sort((a, b) => String(a.decided_at ?? '').localeCompare(String(b.decided_at ?? '')));
+  return { rows, error: council.error, approvalsError: approvals.error };
 }
 
 /** Repo docs the master and builders should read, by path (never inlined: kp's CLAUDE.md is 23KB). */

@@ -26,6 +26,11 @@ use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
 
+/// Context generation explores the repository with tools: an agent task.
+/// Model and effort come from the class table (`personas_core::model_class`).
+const CONTEXT_GEN_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::AgentTask;
+
 /// Per-project single-flight guard for context-map scans. Two concurrent
 /// rescans of one project interleave `clear_project_context_map` (a full DELETE
 /// of the project's contexts + groups) with each other's freshly-written rows,
@@ -1621,9 +1626,9 @@ async fn run_context_generation(
     // Spawn CLI in the project root so Claude can explore it. Subscription
     // auth is enforced unconditionally by spawn_headless_claude.
     let exec_dir = std::path::PathBuf::from(root_path);
-    let mut child = crate::engine::cli_process::spawn_headless_claude(
+    let mut child = crate::engine::cli_process::spawn_headless_claude_class(
         prompt_text,
-        "claude-sonnet-4-6",
+        CONTEXT_GEN_CLASS,
         &[],
         Some(&exec_dir),
         true,
@@ -1743,7 +1748,7 @@ async fn run_context_generation(
     let spend_ctx = crate::db::repos::llm_spend::SpendCtx {
         source: "scanner",
         trigger_kind: "context_gen",
-        model: Some("claude-sonnet-4-6"),
+        model: Some(CONTEXT_GEN_CLASS.route().model),
         project_id: Some(project_id),
         persona_id: None,
     };

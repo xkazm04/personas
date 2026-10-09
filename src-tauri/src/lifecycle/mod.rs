@@ -11,27 +11,50 @@
 //! - [`evidence`] - per-step outcomes read from git.
 //! - [`install`] - "Install into repo" as a Run Desk task.
 //! - [`land`] - a finished task's evidence row and the Solo auto-land.
+//! - [`measure`] - Measure: the gate/test/coverage commands run on the base
+//!   tip in a throwaway worktree, timed, into `dev_lifecycle_runs`.
+//! - [`health`] - the measured verdict per step (pure);
+//!   [`detect_commands`] - the commands a step runs when none are configured;
+//!   [`slow`] - over-budget and regressing commands filed as backlog items.
+//! - [`progress`] - the running Measure command by command, derived on read;
+//!   [`related`] - the backlog items about one step; [`detail`] - a step's
+//!   layer-2 data, one run's output, and the auto-detection preview.
+//! - [`overseer`] - the Overseer's "All steps green" goal: watch, send, and
+//!   close by observation after every Measure.
 //!
 //! [`snapshot`] is the one read model; [`current_doc`] and [`append`] are the
 //! read and write doors every writer (commands, Athena ops) goes through.
 
 pub mod contract;
+pub mod detail;
 pub mod detect;
+pub mod detect_commands;
 pub mod evidence;
+pub mod health;
 pub mod install;
 pub mod land;
+pub mod measure;
+pub mod overseer;
 pub mod presets;
+pub mod progress;
+pub mod related;
+pub mod slow;
 
 pub use contract::{contract_for_project, ContractContext};
+pub use detail::step_detail;
 
+use std::collections::HashSet;
 use std::path::Path;
 
 use crate::db::models::{
-    LifecycleAuthor, LifecycleDoc, LifecycleEvidenceItem, LifecycleOutcome, LifecyclePreset,
-    LifecycleSnapshot, LifecycleSourceKind, LifecycleStepOutcome, LifecycleStepTally,
-    LifecycleStepView,
+    LifecycleAuthor, LifecycleDoc, LifecycleEvidenceItem, LifecycleGateCommand, LifecycleHistory,
+    LifecycleOutcome, LifecyclePreset, LifecycleSnapshot, LifecycleSourceKind,
+    LifecycleStepHealthView, LifecycleStepOutcome, LifecycleStepParams, LifecycleStepTally,
+    LifecycleStepView, LifecycleTipView,
 };
+use crate::db::repos::dev::doc_status::{self as doc_status_repo, DocStatusRow};
 use crate::db::repos::dev::lifecycle::{self as repo, VersionRow};
+use crate::db::repos::dev::lifecycle_runs as runs_repo;
 use crate::db::repos::dev::{projects as project_repo, tasks as task_repo};
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -163,8 +186,13 @@ pub fn snapshot(pool: &DbPool, project_id: &str) -> Result<LifecycleSnapshot, Ap
     let root = Path::new(&project.root_path);
     // The recorded branch when it exists, else main/master: a repo whose default
     // is `master` and whose row records none must still show its commits.
-    let base = evidence::resolve_base(root, project.main_branch.as_deref())
-        .unwrap_or_else(|| "main".to_string());
+    let resolved = evidence::resolve_base(root, project.main_branch.as_deref());
+    let base = resolved.clone().unwrap_or_else(|| "main".to_string());
+    // The base tip, resolved once: the stale check and the tip view share it.
+    // No tip (not a repo, git missing) means no stale check, not a stale step.
+    let current_tip = resolved
+        .as_deref()
+        .and_then(|b| measure::branch_tip(root, b).ok());
 
     let install_task_id = row.as_ref().and_then(|r| r.install_task_id.clone());
     let install_task_status = install_task_id
@@ -178,30 +206,13 @@ pub fn snapshot(pool: &DbPool, project_id: &str) -> Result<LifecycleSnapshot, Ap
 
     let bindings = detect::detect_bindings(root, &doc, version, install_pending);
 
-    let mut items: Vec<LifecycleEvidenceItem> =
-        repo::list_task_evidence(pool, project_id, EVIDENCE_LIMIT)?
-            .into_iter()
-            .map(|e| LifecycleEvidenceItem {
-                source_kind: LifecycleSourceKind::Task,
-                outcomes: serde_json::from_str::<Vec<LifecycleStepOutcome>>(&e.outcomes_json)
-                    .unwrap_or_else(|err| {
-                        tracing::warn!(
-                            task_id = %e.source_ref,
-                            error = %err,
-                            "unreadable lifecycle evidence outcomes; showing none"
-                        );
-                        Vec::new()
-                    }),
-                source_ref: e.source_ref,
-                title: e.title,
-                occurred_at: e.occurred_at,
-            })
-            .collect();
-    items.extend(evidence::commit_evidence(root, &base, &doc, EVIDENCE_LIMIT));
-    items.sort_by(|a, b| b.occurred_at.cmp(&a.occurred_at));
+    // One change past the window, so `previous` (the window without its newest
+    // change) is as long as the window itself.
+    let mut items = evidence_items(pool, project_id, root, &base, &doc, EVIDENCE_LIMIT + 1)?;
+    let previous_evidence = previous_evidence(&items, &doc);
     items.truncate(EVIDENCE_LIMIT);
 
-    let steps = doc
+    let steps: Vec<LifecycleStepView> = doc
         .steps
         .iter()
         .zip(bindings)
@@ -211,6 +222,25 @@ pub fn snapshot(pool: &DbPool, project_id: &str) -> Result<LifecycleSnapshot, Ap
             binding_views,
         })
         .collect();
+    // One Measure more than the window is loaded, so `previous` is judged
+    // over a full window from the same rows; the running Measure's progress
+    // (its finished rows and every command's ETA) reads the same rows.
+    let runs = runs_repo::list_recent_measure_runs(pool, project_id, health::HISTORY_MEASURES + 1)?;
+    let health = measured_health(
+        pool,
+        project_id,
+        current_tip.as_deref(),
+        &steps,
+        previous_evidence.as_ref(),
+        &runs,
+    )?;
+    let progress = measure::active_measure(project_id)
+        .and_then(|active| progress::progress_view(&active, &runs));
+    let goal = overseer::goal_view(pool, project_id, &health)?;
+    let tip = match (resolved, current_tip) {
+        (Some(branch), Some(sha)) => Some(tip_view(pool, project_id, root, branch, sha)?),
+        _ => None,
+    };
 
     Ok(LifecycleSnapshot {
         project_id: project_id.to_string(),
@@ -226,7 +256,256 @@ pub fn snapshot(pool: &DbPool, project_id: &str) -> Result<LifecycleSnapshot, Ap
         install_task_id,
         install_task_status,
         evidence: items,
+        health,
+        goal,
+        watched: overseer::is_watched(pool, project_id),
+        measuring: measure::measuring(project_id),
+        tip,
+        rules: health::rules_view(),
+        progress,
     })
+}
+
+/// The newest `limit` changes of the project, newest first: stored task
+/// evidence and the base branch's commits (PR merges for Team), merged. Runs
+/// git (through [`evidence::commit_evidence`]); call it off the IPC thread.
+pub(crate) fn evidence_items(
+    pool: &DbPool,
+    project_id: &str,
+    root: &Path,
+    base: &str,
+    doc: &LifecycleDoc,
+    limit: usize,
+) -> Result<Vec<LifecycleEvidenceItem>, AppError> {
+    let mut items: Vec<LifecycleEvidenceItem> = repo::list_task_evidence(pool, project_id, limit)?
+        .into_iter()
+        .map(|e| LifecycleEvidenceItem {
+            source_kind: LifecycleSourceKind::Task,
+            outcomes: serde_json::from_str::<Vec<LifecycleStepOutcome>>(&e.outcomes_json)
+                .unwrap_or_else(|err| {
+                    tracing::warn!(
+                        task_id = %e.source_ref,
+                        error = %err,
+                        "unreadable lifecycle evidence outcomes; showing none"
+                    );
+                    Vec::new()
+                }),
+            source_ref: e.source_ref,
+            title: e.title,
+            occurred_at: e.occurred_at,
+        })
+        .collect();
+    items.extend(evidence::commit_evidence(root, base, doc, limit));
+    items.sort_by(|a, b| b.occurred_at.cmp(&a.occurred_at));
+    items.truncate(limit);
+    Ok(items)
+}
+
+/// The base branch against the newest Measure. `sha` is the tip the caller
+/// already resolved; at most one more git call (`rev-list --count`).
+fn tip_view(
+    pool: &DbPool,
+    project_id: &str,
+    root: &Path,
+    branch: String,
+    sha: String,
+) -> Result<LifecycleTipView, AppError> {
+    let latest = runs_repo::latest_measure(pool, project_id)?.filter(|m| !m.head_sha.is_empty());
+    let commits_behind = latest
+        .as_ref()
+        .and_then(|m| measure::commits_since(root, &m.head_sha, &sha));
+    let (measured_sha, measured_at) = match latest {
+        Some(m) => (Some(m.head_sha), Some(m.finished_at)),
+        None => (None, None),
+    };
+    Ok(LifecycleTipView {
+        branch,
+        sha,
+        measured_sha,
+        commits_behind,
+        measured_at,
+    })
+}
+
+/// The evidence window one change earlier: `items` (newest first, up to one
+/// past the window) without the newest change. `None` when there is no
+/// evidence at all.
+fn previous_evidence(
+    items: &[LifecycleEvidenceItem],
+    doc: &LifecycleDoc,
+) -> Option<health::PreviousEvidence> {
+    let earlier = items.get(1..)?;
+    Some(health::PreviousEvidence {
+        tallies: doc
+            .steps
+            .iter()
+            .map(|s| (s.id.clone(), tally(earlier, &s.id)))
+            .collect(),
+        measured_at: earlier.first().map(|i| i.occurred_at.clone()),
+    })
+}
+
+/// The measured verdict of every step, in step order (see [`health`]).
+/// `current_tip` is the base tip now; `None` skips the stale check. `runs`
+/// are the newest [`health::HISTORY_MEASURES`] + 1 Measures' rows.
+fn measured_health(
+    pool: &DbPool,
+    project_id: &str,
+    current_tip: Option<&str>,
+    steps: &[LifecycleStepView],
+    previous_evidence: Option<&health::PreviousEvidence>,
+    runs: &[crate::db::models::LifecycleRun],
+) -> Result<Vec<LifecycleStepHealthView>, AppError> {
+    let budgets = health::command_budgets(steps.iter().map(|v| &v.step));
+    let docs = doc_tally(&doc_status_repo::list_doc_status(pool, project_id)?);
+    Ok(health::step_health(&health::HealthInput {
+        steps,
+        runs,
+        current_tip,
+        budgets: &budgets,
+        docs: &docs,
+        previous_evidence,
+    }))
+}
+
+/// The project's Measure history (see [`health::history`]): the current
+/// document's command steps judged at each of the newest
+/// [`health::HISTORY_COLUMNS`] Measures. Database only - one document read
+/// and one runs query; safe to call on every `lifecycleRevision`.
+pub fn history(pool: &DbPool, project_id: &str) -> Result<LifecycleHistory, AppError> {
+    let (doc, _, _) = current_doc(pool, project_id)?;
+    let runs = runs_repo::list_recent_measure_runs(
+        pool,
+        project_id,
+        health::HISTORY_COLUMNS + health::HISTORY_MEASURES - 1,
+    )?;
+    let budgets = health::command_budgets(&doc.steps);
+    Ok(health::history(&doc.steps, &runs, &budgets))
+}
+
+/// A doc row's verdict, named by the doc-rot scan's own label function.
+fn doc_status_of(row: &DocStatusRow) -> (&'static str, Vec<String>) {
+    let broken: Vec<String> = row
+        .broken_refs
+        .as_deref()
+        .and_then(|j| serde_json::from_str(j).ok())
+        .unwrap_or_default();
+    let status = crate::commands::infrastructure::doc_rot::doc_status_label(
+        row.coupled_scope.is_none(),
+        row.dirty_since.is_some(),
+        &broken,
+    );
+    (status, broken)
+}
+
+fn doc_tally(rows: &[DocStatusRow]) -> health::DocTally {
+    let mut t = health::DocTally::default();
+    for row in rows {
+        t.total += 1;
+        match doc_status_of(row).0 {
+            "broken" => t.broken += 1,
+            "unverifiable" => t.unverifiable += 1,
+            "clean" => t.clean += 1,
+            _ => {}
+        }
+        if t.scanned_at.as_deref() < Some(row.scanned_at.as_str()) {
+            t.scanned_at = Some(row.scanned_at.clone());
+        }
+    }
+    t
+}
+
+/// Commands a step's params may carry: non-empty, unique ids, a positive
+/// budget, and a kind that belongs to the step (Lint/Typecheck/Check/Other
+/// under `gate`, Test/Coverage under `tests`) - the kind decides which step a
+/// run is judged under, so a mismatch would measure it in the wrong place.
+pub fn validate_commands(step_id: &str, cmds: &[LifecycleGateCommand]) -> Result<(), AppError> {
+    if !matches!(step_id, "gate" | "tests") {
+        return Err(AppError::Validation(format!(
+            "step {step_id} runs no commands; only gate and tests do"
+        )));
+    }
+    let kinds = detect_commands::kinds_of(step_id);
+    let mut seen = HashSet::new();
+    for c in cmds {
+        personas_core::validation::require_non_empty("Command id", &c.id)?;
+        personas_core::validation::require_non_empty("Command", &c.command)?;
+        if !seen.insert(c.id.as_str()) {
+            return Err(AppError::Validation(format!(
+                "command id {} is used twice",
+                c.id
+            )));
+        }
+        if c.budget_ms == Some(0) {
+            return Err(AppError::Validation(format!(
+                "command {} needs a budget above zero",
+                c.id
+            )));
+        }
+        if !kinds.contains(&c.kind) {
+            return Err(AppError::Validation(format!(
+                "command {} is {:?}, which is measured under {}, not {step_id}",
+                c.id,
+                c.kind,
+                detect_commands::step_of(c.kind)
+            )));
+        }
+    }
+    Ok(())
+}
+
+/// Replace one step's params in the current document and append it as a new
+/// version authored `operator`. Commands are validated ([`validate_commands`])
+/// and so are the percentage targets (0-100).
+pub fn set_step_params(
+    pool: &DbPool,
+    project_id: &str,
+    step_id: &str,
+    params: LifecycleStepParams,
+) -> Result<(), AppError> {
+    if let Some(cmds) = &params.commands {
+        validate_commands(step_id, cmds)?;
+    }
+    for (name, pct) in [
+        ("coverageGreenPct", params.coverage_green_pct),
+        ("docsCleanPct", params.docs_clean_pct),
+        ("doneRatePct", params.done_rate_pct),
+    ] {
+        if pct.is_some_and(|p| p > 100) {
+            return Err(AppError::Validation(format!("{name} must be 0-100")));
+        }
+    }
+    let (mut doc, _, _) = current_doc(pool, project_id)?;
+    let step = doc
+        .steps
+        .iter_mut()
+        .find(|s| s.id == step_id)
+        .ok_or_else(|| AppError::NotFound(format!("lifecycle step {step_id}")))?;
+    step.params = params;
+    append(
+        pool,
+        project_id,
+        &doc,
+        Some(&format!("Step {step_id} settings edited")),
+        LifecycleAuthor::Operator,
+    )?;
+    Ok(())
+}
+
+/// Called after every Measure, once its rows are durable: the Overseer closes
+/// what the measure observed green ([`overseer::after_measure`]). A cheap
+/// no-op when the project has no open "All steps green" goal.
+pub fn overseer_after_measure(pool: &DbPool, project_id: &str) -> Result<(), AppError> {
+    let closed = overseer::after_measure(pool, project_id)?;
+    if closed.closed_items > 0 || closed.goal_closed {
+        tracing::info!(
+            project_id,
+            closed_items = closed.closed_items,
+            goal_closed = closed.goal_closed,
+            "lifecycle overseer: closed by observation"
+        );
+    }
+    Ok(())
 }
 
 /// Outcome counts for one step over the snapshot's evidence window.

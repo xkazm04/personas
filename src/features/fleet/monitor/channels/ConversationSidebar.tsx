@@ -3,6 +3,7 @@ import { Radio } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { channelKey, countUnread, EMPTY_CHANNEL } from '@/stores/slices/pipeline/channelSlice';
@@ -15,31 +16,36 @@ import { derivePresence, deriveLastSeen, type PresenceStatus } from '@/features/
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { memberColor } from '@/lib/channel/eventModel';
 import { cleanName } from '../grid/fleetGridModel';
+import { useMonitorVisible } from '../monitorVisibility';
 import type { StreamTeam } from './types';
 
 /* ----------------------------------------------------------------------------
  * PROJECTS SIDEBAR — the messenger's conversation list.
  *
- * One row per team, read straight out of the shared channel cache: last message
- * preview, its time, the UNREAD BADGE (the D6 watermark built in P0, which had
- * no consumer until now), the member heartbeat strip (one dot per persona —
- * working pulses, waiting holds amber, idle dims by silence), and a pulse when
- * the team has a live deliberation.
+ * TWO LINES PER ROW, and no third (Q2, 2026-10-06). Line 1 is the channel's
+ * name, a pulse when a deliberation is live, and the UNREAD BADGE pushed
+ * right. Line 2 is the member heartbeat strip — one dot per persona, working
+ * pulses, waiting holds a ring, idle dims — with the working count and the
+ * LAST MESSAGE'S TIME pushed right. The identity crest (two initials in the
+ * team colour) and the last-message PREVIEW LINE are both gone: the preview
+ * spent a whole row restating what opening the channel shows in full, and the
+ * crest restated the name sitting beside it.
  *
- * C2: each row is its own memo'd component with a per-key store selector and
- * memoized derivations. The previous shape derived unread/presence/lastSeen
- * for EVERY team inline in the parent's render, against a whole-map selector —
- * so any team's poll recomputed the whole sidebar. Now a quiet poll re-renders
- * nothing, and a busy team re-renders one row.
+ * C2: each row is its own memo'd component with a per-key store selector. The
+ * previous shape derived unread/presence/lastSeen for EVERY team inline in the
+ * parent's render, against a whole-map selector — so any team's poll
+ * recomputed the whole sidebar. Now a quiet poll re-renders nothing, and a
+ * busy team re-renders one row.
+ *
+ * Those derivations really are memoized now (`useMemo` on the items array's
+ * identity). The header claimed it from C2 onward while the code ran four bare
+ * inline calls per render; the claim mattered because the minute clock below
+ * re-renders every row on purpose, and under the fiction that tick re-derived
+ * everything rather than only the one thing that ages.
  * -------------------------------------------------------------------------- */
 
-function previewOf(body: string | null | undefined): string {
-  if (!body) return '—';
-  return body.replace(/\s+/g, ' ').slice(0, 60);
-}
-
 /** Tooltip line for a member dot: "QA Guardian · Working" /
- *  "QA Guardian · Idle · last seen 3d ago". Plain string — title attr. */
+ *  "QA Guardian · Idle · last seen 3d ago". */
 function memberTitle(
   t: Translations,
   name: string,
@@ -59,84 +65,69 @@ function memberTitle(
   return `${name} · ${status}${seen}`;
 }
 
+const ROW_CLASS = 'w-full px-2 py-2 rounded-card text-left transition-colors';
+const UNREAD_CLASS =
+  'ml-auto flex-shrink-0 min-w-[1.25rem] px-1 h-5 rounded-full bg-primary/25 text-foreground typo-caption tabular-nums flex items-center justify-center';
+
 const SidebarTeamRow = memo(function SidebarTeamRow({
-  tm, active, onSelect, presenceTick,
+  tm, active, onSelect, presenceNow,
 }: {
   tm: StreamTeam;
   active: boolean;
   onSelect: (teamId: string) => void;
-  /** Coarse minute counter — presence has a staleness window, so the row must
-   *  re-derive it even when no new rows arrive. */
-  presenceTick: number;
+  /** Coarse minute clock — presence has a staleness window, so the row must
+   *  re-derive it even when no new rows arrive. A TIMESTAMP rather than a
+   *  counter so it is a real argument to `derivePresence`, which keeps the
+   *  memo below honest instead of needing a `void` to silence the dep rule. */
+  presenceNow: number;
 }) {
   const { t, tx } = useTranslation();
   const st = usePipelineStore((s) => s.channels[channelKey(tm.teamId)]) ?? EMPTY_CHANNEL;
+  const items = st.items;
 
   // All derivations hang off the items array's identity (stable across quiet
-  // refreshes since C1) plus the minute tick that ages presence out.
-  const newest = st.items[0];
-  const unread = countUnread(st);
-  const presence = derivePresence(st.items);
-  const lastSeen = deriveLastSeen(st.items);
-  let working = 0;
-  for (const p of presence.values()) if (p === 'working') working++;
-  const hasDeliberation = st.items.some((i) => i.deliberationId);
-  void presenceTick;
+  // refreshes since C1). Only presence also takes the minute clock, because
+  // only presence ages out on its own.
+  const newest = items[0];
+  const unread = useMemo(() => countUnread(st), [st]);
+  const presence = useMemo(() => derivePresence(items, presenceNow), [items, presenceNow]);
+  const lastSeen = useMemo(() => deriveLastSeen(items), [items]);
+  const hasDeliberation = useMemo(() => items.some((i) => i.deliberationId), [items]);
+  const working = useMemo(() => {
+    let n = 0;
+    for (const p of presence.values()) if (p === 'working') n++;
+    return n;
+  }, [presence]);
 
   return (
     <button
       type="button"
       onClick={() => onSelect(tm.teamId)}
       aria-current={active}
-      className={`w-full flex items-start gap-2.5 px-2 py-2 rounded-card text-left transition-colors ${
-        active ? 'bg-primary/12' : 'hover:bg-secondary/30'
-      }`}
+      className={`${ROW_CLASS} ${active ? 'bg-primary/12' : 'hover:bg-secondary/30'}`}
     >
-      {/* Crest — the channel's identity colour, per plan §5.2 */}
-      <span
-        className="mt-0.5 flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center typo-caption"
-        style={{ backgroundColor: `${tm.teamColor}22`, color: tm.teamColor, border: `1px solid ${tm.teamColor}55` }}
-      >
-        {cleanName(tm.teamName).slice(0, 2).toUpperCase()}
+      <span className="flex items-center gap-1.5">
+        <span className="typo-body truncate text-foreground">{cleanName(tm.teamName)}</span>
+        {hasDeliberation && (
+          <Radio
+            className="w-3 h-3 flex-shrink-0 text-role-agent animate-pulse"
+            aria-label={t.monitor.conv_deliberation_active}
+          />
+        )}
+        {unread > 0 && <span className={UNREAD_CLASS}>{unread > 99 ? '99+' : unread}</span>}
       </span>
-
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5">
-          <span className={`typo-body truncate ${active ? 'text-foreground' : 'text-foreground'}`}>
-            {cleanName(tm.teamName)}
-          </span>
-          {hasDeliberation && (
-            <Radio className="w-3 h-3 flex-shrink-0 text-violet-300 animate-pulse" aria-label={t.monitor.conv_deliberation_active} />
-          )}
-          {newest && (
-            <span className="ml-auto flex-shrink-0 typo-caption text-foreground opacity-45">
-              <RelativeTime timestamp={newest.at} />
-            </span>
-          )}
-        </span>
-        <span className="flex items-center gap-1.5 mt-0.5">
-          <span className="typo-caption text-foreground opacity-55 truncate">
-            {previewOf(newest?.body)}
-          </span>
-          {unread > 0 && (
-            <span className="ml-auto flex-shrink-0 min-w-[1.25rem] px-1 h-5 rounded-full bg-primary/25 text-foreground typo-caption tabular-nums flex items-center justify-center">
-              {unread > 99 ? '99+' : unread}
-            </span>
-          )}
-        </span>
-        {/* Member heartbeat strip — one dot per persona. Working
-            pulses at full colour, waiting holds a steady ring, idle
-            dims. The title carries name · status · last-seen, so the
-            roster's health is readable without opening the channel. */}
-        {tm.members.length > 0 && (
-          <span className="mt-1 flex items-center gap-1">
-            {tm.members.slice(0, 10).map((m) => {
-              const p = presence.get(m.personaId);
-              const color = m.color ?? memberColor(undefined, m.personaId);
-              return (
+      {/* Member heartbeat strip — one dot per persona. Working pulses at full
+          colour, waiting holds a steady ring, idle dims. The tip carries
+          name · status · last-seen, so the roster's health is readable without
+          opening the channel; the last message's time closes the line. */}
+      {(tm.members.length > 0 || newest) && (
+        <span className="mt-1 flex items-center gap-1">
+          {tm.members.slice(0, 10).map((m) => {
+            const p = presence.get(m.personaId);
+            const color = m.color ?? memberColor(undefined, m.personaId);
+            return (
+              <Tooltip key={m.memberId} content={memberTitle(t, m.name, p, lastSeen.get(m.personaId))}>
                 <span
-                  key={m.memberId}
-                  title={memberTitle(t, m.name, p, lastSeen.get(m.personaId))}
                   className={`w-2 h-2 rounded-full flex-shrink-0 ${
                     p === 'working'
                       ? 'animate-pulse'
@@ -146,19 +137,26 @@ const SidebarTeamRow = memo(function SidebarTeamRow({
                   }`}
                   style={{ backgroundColor: color }}
                 />
-              );
-            })}
-            {tm.members.length > 10 && (
-              <span className="typo-caption text-foreground opacity-40">+{tm.members.length - 10}</span>
-            )}
+              </Tooltip>
+            );
+          })}
+          {tm.members.length > 10 && (
+            <span className="typo-caption text-foreground">+{tm.members.length - 10}</span>
+          )}
+          <span className="ml-auto flex-shrink-0 flex items-center gap-2">
             {working > 0 && (
-              <span className="ml-auto inline-flex items-center gap-1 typo-caption text-status-info">
+              <span className="inline-flex items-center gap-1 typo-caption text-status-info">
                 {tx(t.monitor.conv_working, { count: working })}
               </span>
             )}
+            {newest && (
+              <span className="typo-caption text-foreground">
+                <RelativeTime timestamp={newest.at} />
+              </span>
+            )}
           </span>
-        )}
-      </span>
+        </span>
+      )}
     </button>
   );
 });
@@ -171,6 +169,13 @@ const SidebarTeamRow = memo(function SidebarTeamRow({
  * (`loadPersonaChannelPreviews`) — cheap, one-shot, refreshed by the
  * PERSONA_CHANNEL_MESSAGE push — so an empty channel never renders a dead row
  * and nothing here joins the full poll loop.
+ *
+ * ONE LINE, and the avatar STAYS. The team crest was two initials restating
+ * the name beside it; `PersonaIcon` is the persona's own chosen mark and
+ * colour, the same identity the roster, the grid and the chat header all
+ * render, and it is the only thing on this row that is not text. A persona row
+ * has no member strip to carry the last message's time, so the time and the
+ * unread badge share the right end of the single line.
  * -------------------------------------------------------------------------- */
 
 const SidebarPersonaRow = memo(function SidebarPersonaRow({
@@ -200,33 +205,20 @@ const SidebarPersonaRow = memo(function SidebarPersonaRow({
       type="button"
       onClick={() => onSelect(persona.id)}
       aria-current={active}
-      className={`w-full flex items-start gap-2.5 px-2 py-2 rounded-card text-left transition-colors ${
-        active ? 'bg-primary/12' : 'hover:bg-secondary/30'
-      }`}
+      className={`${ROW_CLASS} flex items-center gap-2.5 ${active ? 'bg-primary/12' : 'hover:bg-secondary/30'}`}
     >
-      <span className="mt-0.5 flex-shrink-0">
+      <span className="flex-shrink-0">
         <PersonaIcon icon={persona.icon} color={persona.color} display="framed" frameSize="sm" />
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5">
-          <span className={`typo-body truncate ${active ? 'text-foreground' : 'text-foreground'}`}>
-            {name}
-          </span>
+      <span className="min-w-0 flex-1 flex items-center gap-1.5">
+        <span className="typo-body truncate text-foreground">{name}</span>
+        <span className="ml-auto flex-shrink-0 flex items-center gap-2">
           {newest && (
-            <span className="ml-auto flex-shrink-0 typo-caption text-foreground opacity-45">
+            <span className="typo-caption text-foreground">
               <RelativeTime timestamp={newest.at} />
             </span>
           )}
-        </span>
-        <span className="flex items-center gap-1.5 mt-0.5">
-          <span className="typo-caption text-foreground opacity-55 truncate">
-            {previewOf(newest?.body ?? newest?.title)}
-          </span>
-          {unread > 0 && (
-            <span className="ml-auto flex-shrink-0 min-w-[1.25rem] px-1 h-5 rounded-full bg-primary/25 text-foreground typo-caption tabular-nums flex items-center justify-center">
-              {unread > 99 ? '99+' : unread}
-            </span>
-          )}
+          {unread > 0 && <span className={UNREAD_CLASS}>{unread > 99 ? '99+' : unread}</span>}
         </span>
       </span>
     </button>
@@ -245,6 +237,7 @@ export const ConversationSidebar = memo(function ConversationSidebar({
   onSelectPersona?: (personaId: string) => void;
 }) {
   const { t } = useTranslation();
+  const monitorVisible = useMonitorVisible();
 
   const loadPreviews = usePipelineStore((s) => s.loadPersonaChannelPreviews);
   const previews = usePipelineStore((s) => s.personaChannelPreviews);
@@ -273,13 +266,23 @@ export const ConversationSidebar = memo(function ConversationSidebar({
 
   // Presence has a staleness window (PRESENCE_WORK_WINDOW_MS): with no new
   // rows arriving nothing re-renders, so a "working" dot could outlive its
-  // window. A coarse minute tick keeps the strip honest while costing one
+  // window. A coarse minute clock keeps the strip honest while costing one
   // sidebar render per minute.
-  const [presenceTick, setPresenceTick] = useState(0);
+  //
+  // GATED ON VISIBILITY. The monitor stopped unmounting on close
+  // (`monitorVisibility.ts`), so without this gate the sidebar would re-render
+  // every team row once a minute for as long as the app is open, behind a
+  // `content-visibility: hidden` subtree nobody is looking at. Re-reading the
+  // clock on the way back in is the same "refresh a STALE feed on reopen" move
+  // `useMonitorData` makes — presence is correct the moment the overlay is
+  // shown again, rather than up to a minute after.
+  const [presenceNow, setPresenceNow] = useState(() => Date.now());
   useEffect(() => {
-    const id = setInterval(() => setPresenceTick((n) => n + 1), 60_000);
+    if (!monitorVisible) return;
+    setPresenceNow(Date.now());
+    const id = setInterval(() => setPresenceNow(Date.now()), 60_000);
     return () => clearInterval(id);
-  }, []);
+  }, [monitorVisible]);
 
   return (
     <div className="h-full flex flex-col min-h-0 border-r border-border bg-foreground/[0.012]">
@@ -293,7 +296,7 @@ export const ConversationSidebar = memo(function ConversationSidebar({
             tm={tm}
             active={tm.teamId === activeId}
             onSelect={onSelect}
-            presenceTick={presenceTick}
+            presenceNow={presenceNow}
           />
         ))}
 

@@ -51,6 +51,18 @@ test('resolveProject: by name, slug and id; base branch falls back to the branch
   assert.throws(() => D.resolveProject('nope'), /no dev_projects row/);
 });
 
+test('withBriefBase: a brief baseBranch that exists wins over the app row; a phantom one is noted, not used', () => {
+  const p = D.resolveProject('demo');
+  const moved = D.withBriefBase(p, { baseBranch: 'autopilot/x-1' });
+  assert.equal(moved.baseBranch, 'autopilot/x-1');
+  assert.match(moved.baseBranchNote, /the brief names autopilot\/x-1; the app row resolves to main/);
+  const phantom = D.withBriefBase(p, { baseBranch: 'revamp/nowhere' });
+  assert.equal(phantom.baseBranch, 'main');
+  assert.match(phantom.baseBranchNote, /revamp\/nowhere, which does not exist/);
+  assert.equal(D.withBriefBase(p, {}), p);
+  assert.equal(D.withBriefBase(p, { baseBranch: 'main' }), p);
+});
+
 test('chartersFor: brief decides which; text from db, then template, then the slug alone', () => {
   const d = D.openDb();
   try {
@@ -164,6 +176,30 @@ test('renderContext is pure, steps down its budget, and ends cut lists with +N m
   assert.match(a, /AWAITING A MERGE \(30 unmerged/);
 });
 
+test('a direction from the phone reaches the master whole at the top budget levels; a clipped one says so', () => {
+  const now = '2026-10-08T18:00:00.000Z';
+  const line = `weekend scope: ${'w'.repeat(D.SAY_MAX_CHARS - 40)} END-OF-LINE`;
+  const input = {
+    wakeId: 'w-say', now, project: { slug: 'small', id: 'pid', name: 'Small', root: 'C:/x/small', baseBranch: 'main' }, master: { id: 'm', name: 'App Master Small' },
+    brief: demoBrief([]), lastWake: null, charters: [],
+    asks: { open: [], appPending: [], answered: [] },
+    channel: { journal: [], app: [{ created_at: now, body: line }] },
+    runs: { live: [], recent: [] },
+    snapshot: { goals: [], acceptedNoTask: { count: 0, oldest: [] }, pendingCount: 0, unratedCount: 0, pendingSample: [], kpis: { active: 0, unmeasured: 0, unmeasuredNames: [] }, inFlightTasks: [], gitBranches: { total: 0, branches: [] }, checkout: { branch: 'main', dirty: 0 }, readErrors: [] },
+    machine: { memory: { usedPct: 40, freeGb: 30, totalGb: 64, dispatchNeedGb: 4, stop: false }, limit: { limited: false }, running: { project: 0, global: 0 } },
+    docs: [],
+  };
+  for (const C of X.BUDGET_LEVELS.slice(0, 2)) {
+    const doc = X.renderAt(input, C);
+    assert.ok(doc.includes('END-OF-LINE'), 'the whole line, to its last word');
+    assert.ok(!doc.includes('[clipped'), 'no clip marker on a whole line');
+  }
+  assert.ok(X.renderContext(input).includes('END-OF-LINE'), 'a small doc stays at the top level');
+  const tight = X.renderAt(input, X.BUDGET_LEVELS.at(-1));
+  assert.match(tight, new RegExp(`\\[clipped: 600 of ${line.length} characters shown\\]`));
+  assert.ok(!tight.includes('END-OF-LINE'));
+});
+
 test('limit mark: absent, standing, and expired (reads cleared)', () => {
   assert.equal(B.readLimitMark().limited, false);
   fs.writeFileSync(C.limitPath(), JSON.stringify({ limitedAt: C.nowIso(), reason: 'hit your limit', resetsAt: new Date(Date.now() + 3600e3).toISOString() }));
@@ -193,6 +229,64 @@ test('status: per project record, stream age, and a text digest where quiet proj
   assert.match(txt.text, /Running [0-9a-f]{8} project-kpi-stewardship \(claude-sonnet-5-5\), last output 0 min ago/);
   const one = await G.cmdStatus({ flags: { project: 'Demo' } });
   assert.deepEqual(one.projects.map((p) => p.slug), ['demo']);
+});
+
+test('two builders per project: the context shows each live run\'s model and paths, the free slots, and the paths/model contract', () => {
+  const now = '2026-10-06T10:00:00.000Z';
+  const doc = X.renderContext({
+    wakeId: 'w-two', now, project: { slug: 'two', id: 'pid', name: 'Two', root: 'C:/x/two', baseBranch: 'main' }, master: { id: 'm' },
+    brief: demoBrief([]), lastWake: null, charters: [{ slug: 'accepted-idea-delivery', title: 'Delivery', priority: 1, source: 'template' }],
+    runs: { live: [
+      { runId: 'aaaaaaaa-1111', charterSlug: 'codebase-security-scan', state: 'running', model: 'claude-opus-5', paths: ['src/auth/', 'src/api/'], createdAt: now },
+      { runId: 'bbbbbbbb-2222', charterSlug: 'old-run', state: 'exited', createdAt: now },
+    ], recent: [] },
+    snapshot: { checkout: { branch: 'main', dirty: 0 } },
+    machine: { memory: { freeGb: 30, dispatchNeedGb: 5.5 }, limit: { limited: false }, running: { project: 1, global: 3 } },
+  });
+  assert.match(doc, /aaaaaaaa codebase-security-scan running \(claude-opus-5\).*; paths: src\/auth\/, src\/api\//);
+  assert.match(doc, /bbbbbbbb old-run exited .*paths: none declared \(the whole repo\)/);
+  assert.match(doc, new RegExp(`dispatch AT MOST ${C.MAX_DISPATCH} charters \\(${C.PER_PROJECT_CAP} builders per project, ${C.GLOBAL_CAP} in all; running now: 1 here, 3 in all; free slots: 1 here, ${C.GLOBAL_CAP - 3} in all\\)`));
+  assert.match(doc, /Two at once ONLY when each is independent/);
+  assert.match(doc, /MODEL: per dispatch, `model` "opus" for discovery/);
+  assert.match(doc, new RegExp(`1 of 2 in this project \\(1 slot\\(s\\) free\\), 3 of ${C.GLOBAL_CAP} across all projects \\(${C.GLOBAL_CAP - 3} free\\)`));
+  assert.match(doc, /"model":"sonnet\|opus","paths":\[/);
+  assert.match(doc, /with two each carries non-empty disjoint paths/);
+  assert.deepEqual(X.freeSlots({ project: 2, global: C.GLOBAL_CAP + 1 }), { project: 0, global: 0 });
+});
+
+test('status --text names each running run\'s model and its paths', async () => {
+  const run = S.newRun(D.resolveProject('demo'), { wakeId: 'w2', charterSlug: 'accepted-idea-delivery', reason: 'r', brief: 'b', model: C.MODELS.master, paths: ['src/x/'] });
+  S.updateRun(run, { state: 'running' });
+  const st = await G.cmdStatus({ flags: {} });
+  assert.deepEqual(st.projects.find((p) => p.slug === 'demo').running.find((r) => r.runId8 === C.shortId(run.runId)).paths, ['src/x/']);
+  const txt = await G.cmdStatus({ flags: { text: true } });
+  assert.match(txt.text, new RegExp(`Running ${C.shortId(run.runId)} accepted-idea-delivery \\(${C.MODELS.master}\\).*; paths src/x/\\.`));
+});
+
+test('recipes: each charter quotes its v3 recipe need and core action; a charter with none says so, built-ins give their purpose', async () => {
+  const d = D.openDb();
+  try {
+    const m = D.recipesBySlug(d, ['project-kpi-stewardship', 'accepted-idea-delivery', 'council-review']);
+    assert.deepEqual(m.get('project-kpi-stewardship'), { name: 'Project KPI and coverage stewardship', need: 'RECIPE-NEED-KPI', coreAction: 'RECIPE-CORE-KPI' }, 'the newest row of a slug wins');
+    assert.equal(m.has('council-review'), false);
+    // council-review has an app-master template on disk (and, in the real DB, a recipe row): its text
+    // comes from there; ux-proposal has neither and is built in. Both carry the built-in purpose, which
+    // the context prints only when no recipe row exists.
+    const cs = D.chartersFor(d, IDS.project, demoBrief([{ slug: 'council-review', priority: null }, { slug: 'ux-proposal', priority: null }]));
+    assert.deepEqual(cs.map((c) => [c.source, c.recipe, Boolean(c.purpose)]), [['template', null, true], ['builtin', null, true]]);
+  } finally { d.close(); }
+  S.saveBrief('demo', demoBrief([...CHARTERS, { slug: 'council-lite-review', priority: null }, { slug: 'ux-proposal', priority: null }]));
+  const r = await X.cmdContext({ flags: { project: 'demo' } });
+  const doc = fs.readFileSync(r.path, 'utf8');
+  assert.match(doc, /- slug: project-kpi-stewardship[\s\S]*?recipe "Project KPI and coverage stewardship" need: RECIPE-NEED-KPI\n  recipe core action: RECIPE-CORE-KPI/);
+  assert.match(doc, /recipe "Accepted idea delivery to the main branch" need: RECIPE-NEED-DELIVERY/);
+  assert.ok(!doc.includes('OLD-NEED'), 'an older recipe row is not quoted');
+  assert.match(doc, /- slug: made-up-charter[\s\S]*?recipe: no recipe_definitions row for this slug\n/);
+  assert.match(doc, /- slug: council-lite-review[\s\S]*?title: Council-lite review of one feature · text from builtin[\s\S]*?recipe: no recipe_definitions row for this slug; its built-in purpose: Run the lite council on one feature/);
+  assert.match(doc, /- slug: ux-proposal[\s\S]*?its built-in purpose: File one \[UX\] idea/);
+  // every budget level keeps the recipe quote: the master works to it even in a crowded context
+  for (const C of X.BUDGET_LEVELS) assert.ok(C.recipeNeed > 0 && C.recipeCore > 0);
+  assert.ok(doc.length <= X.MAX_CONTEXT_CHARS);
 });
 
 test('cleanup', () => { fixture.close(); fs.rmSync(env.tmp, { recursive: true, force: true }); });

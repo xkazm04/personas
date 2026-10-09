@@ -270,7 +270,7 @@ desktop-full = ["desktop", "ml", "p2p"]
 # Vector Knowledge Base: sqlite-vec + local embeddings (ONNX)
 ml = ["dep:sqlite-vec", "dep:fastembed", "dep:ort", "dep:pdf-extract", "personas-core/ml", "personas-db/ml", "personas-engine/ml"]
 # P2P / LAN Discovery & Transport (Invisible Apps)
-p2p = ["personas-core/p2p", "personas-db/p2p", "personas-engine/p2p", "dep:ed25519-dalek", "dep:bs58", "dep:mdns-sd", "dep:quinn", "dep:rcgen", "dep:rmp-serde", "dep:socket2"]
+p2p = ["personas-core/p2p", "personas-db/p2p", "personas-engine/p2p", "dep:bs58", "dep:mdns-sd", "dep:quinn", "dep:rcgen", "dep:rmp-serde", "dep:socket2"]
 # mobile feature is activated automatically by Tauri v2 when targeting Android/iOS
 mobile = []
 # Enables test automation HTTP server on localhost:17320 for MCP-driven UI testing.
@@ -457,8 +457,12 @@ ort = { version = "2.0.0-rc.9", optional = true }
 # throw that away.
 pdf-extract = { workspace = true, optional = true }
 
+# Ed25519 signatures. Non-optional since the mobile command plane (2026-10-06):
+# `cloud::trust` verifies every paired-phone command envelope with it, and the
+# lite `desktop` build ships that path too (PHASE2-SPEC 3.2 dependency note).
+# The P2P identity (Invisible Apps) uses the same crate.
+ed25519-dalek = { workspace = true }
 # P2P / Identity (Phase 1: Invisible Apps)
-ed25519-dalek = { workspace = true, optional = true }
 bs58 = { workspace = true, optional = true }
 
 # P2P / LAN Discovery & Transport (Phase 2: Invisible Apps)

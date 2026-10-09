@@ -37,6 +37,8 @@
 //!   Claude now?" gate (quota stop, memory stop, enabled, codex_mode,
 //!   concurrency cap) for every autonomous spender outside the attention loop.
 //! - [`watchdogs`] — the always-on, spend-free stall detectors.
+//! - [`lifecycle_watch`] — the Overseer's auto-measure of watched projects,
+//!   once per new base tip (spark lifecycle-health).
 //!
 //! Everything stays reachable as `crate::engine::subscription::X`; the glob
 //! re-exports below preserve the pre-split surface exactly.
@@ -56,6 +58,7 @@ mod autonomy_kpi;
 mod autonomy_reviews;
 mod builtin;
 mod desktop;
+mod lifecycle_watch;
 mod runner;
 pub use personas_engine::subscription::traits;
 /// `pub(crate)`: the Activity board's `fleet_autopilot_status` command reads
@@ -84,6 +87,7 @@ pub use autonomy_kpi::*;
 pub use autonomy_reviews::*;
 pub use builtin::*;
 pub use desktop::*;
+pub use lifecycle_watch::LifecycleWatchSubscription;
 pub use runner::*;
 pub use traits::*;
 pub use wake::*;

@@ -1,7 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { memo, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowDown } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 
 /* ----------------------------------------------------------------------------
  * VIRTUAL CONVERSATION — the chat list, windowed.
@@ -30,6 +32,24 @@ import { useTranslation } from '@/i18n/useTranslation';
  * arriving reply adds. The pose is therefore a legitimate bottom the whole
  * time: follow-to-bottom stays armed, the suppression is one-shot, and when the
  * replies have filled the reserve the list is an ordinary chat again.
+ *
+ * THE ENTRANCE (`.claude/rules/ui.md`: a row entrance is `RevealItem` +
+ * `useRevealTracker`, not a hand-rolled fade). A row fades in ONCE, the first
+ * time this surface ever shows it; the tracker's seen-set is what makes that
+ * true, so a poll re-delivering the same sixty rows animates nothing and the
+ * one message that just arrived animates alone. `order` is the row's position
+ * among the rows entering IN THIS FRAME, not its index in the list — a lone
+ * arrival at the bottom of a long conversation is wave position 0 and enters
+ * immediately, while a cold first paint still ripples (capped by RevealItem at
+ * 8 x 35ms). Reduced motion: `RevealItem` renders no animation class at all and
+ * marks every id entered on mount, so everything is simply there.
+ *
+ * `useProgressiveReveal` is deliberately NOT used here, though it is the other
+ * half of that pair. It governs how many rows are HANDED to the renderer, from
+ * index 0 upward; a chat is read from its END and this list scrolls itself to
+ * the bottom on mount, so slicing the head would animate the wrong rows and
+ * move the scroll anchor while it did it. The virtualizer already solves the
+ * problem that hook exists for — only the visible window ever mounts.
  * -------------------------------------------------------------------------- */
 
 const ESTIMATE = 64;
@@ -37,11 +57,15 @@ const ESTIMATE = 64;
 // Generic over the row type — the team conversation renders `ConversationRow`,
 // the persona conversation `PersonaConversationRow`; the virtualizer only ever
 // touches `key`.
-export function VirtualConversation<R extends { key: string }>({
-  rows, renderRow, onTopReached, hasMore, pinKey = null,
+function VirtualConversationInner<R extends { key: string }>({
+  rows, renderRow, onTopReached, hasMore, pinKey = null, revealKey,
 }: {
   rows: R[];
   renderRow: (row: R) => ReactNode;
+  /** Identity of WHICH conversation is open. Changing it forgets the entrance
+   *  seen-set, so switching channels replays the cascade for the new thread
+   *  instead of showing it fully formed. */
+  revealKey?: string;
   /** Fired when the top scrolls into view — pages older history. */
   onTopReached?: () => void;
   hasMore?: boolean;
@@ -51,6 +75,7 @@ export function VirtualConversation<R extends { key: string }>({
   pinKey?: string | null;
 }) {
   const { t, tx } = useTranslation();
+  const enter = useRevealTracker(revealKey);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
   const prevCount = useRef(rows.length);
@@ -170,20 +195,36 @@ export function VirtualConversation<R extends { key: string }>({
             width: '100%',
           }}
         >
-          {virtualizer.getVirtualItems().map((v) => {
-            const row = rows[v.index];
-            if (!row) return null;
-            return (
-              <div
-                key={row.key}
-                data-index={v.index}
-                ref={virtualizer.measureElement}
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${v.start}px)` }}
-              >
-                {renderRow(row)}
-              </div>
-            );
-          })}
+          {/* `wave` counts only the rows ENTERING in this frame, so the stagger
+              is relative to the entrance and not to the scroll position. */}
+          {(() => {
+            let wave = 0;
+            return virtualizer.getVirtualItems().map((v) => {
+              const row = rows[v.index];
+              if (!row) return null;
+              const order = enter.hasEntered(row.key) ? 0 : wave++;
+              return (
+                <div
+                  key={row.key}
+                  data-index={v.index}
+                  ref={virtualizer.measureElement}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${v.start}px)` }}
+                >
+                  {/* Inside the positioned wrapper on purpose: `animate-fade-in`
+                      is opacity-only, so the measured box never moves and the
+                      virtualizer's own transform stays uncontested. */}
+                  <RevealItem
+                    revealId={row.key}
+                    order={order}
+                    hasEntered={enter.hasEntered}
+                    markEntered={enter.markEntered}
+                  >
+                    {renderRow(row)}
+                  </RevealItem>
+                </div>
+              );
+            });
+          })()}
         </div>
       </div>
 
@@ -200,3 +241,18 @@ export function VirtualConversation<R extends { key: string }>({
     </div>
   );
 }
+
+/**
+ * Memoized, and only now worth it.
+ *
+ * Until `reconcileRows` preserved row identity, `rows` was a new array on every
+ * poll and this boundary would have bailed on nothing. With it, a quiet refresh
+ * hands back the SAME array and the same `renderRow`, so opening the detail
+ * modal, toggling a rail tab or any other parent state change no longer walks
+ * the conversation at all.
+ *
+ * The cast is the standard generic-memo idiom: `memo` erases the type
+ * parameter, and restoring it is the only thing this assertion does — the
+ * runtime value is exactly the component above it.
+ */
+export const VirtualConversation = memo(VirtualConversationInner) as typeof VirtualConversationInner;

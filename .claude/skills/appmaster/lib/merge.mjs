@@ -6,13 +6,14 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { nowIso, readJson, shortId, Refusal } from './contract.mjs';
+import { nowIso, readJson, shortId, Refusal, SELF_REPO, SETTLED_STATES, COUNCIL, repoOf, repoEnv, isReviewRun } from './contract.mjs';
+import { findCouncilRunDir, readCouncilResult, copyCouncilRun, reportPayload, boundedMustAddress, roundOfName } from './council.mjs';
 import { loadBrief, updateRun, raiseAsk, queueOutbox, openAsks, updateAsk } from './store.mjs';
 import { readLimit } from './limits.mjs';
-import { requireRun, pidAlive, runFile, markLimitFromRun } from './worker.mjs';
-import { git, gitTry, revParse, isAncestor, removeWorktree, withBaseWorktree } from './worktree.mjs';
+import { requireRun, pidAlive, runFile, markLimitFromRun, awaitHolder, finishedClean, readRunOutput } from './worker.mjs';
+import { git, gitTry, revParse, isAncestor, removeWorktree, withBaseWorktree, linkNodeModules } from './worktree.mjs';
 import { acquireGateSlot } from './memory.mjs';
-import { resolveGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, failuresAreInherited, testFilesIn, narrowCommand, GATE_TIMEOUT_MS } from './gate.mjs';
+import { resolveRunGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, failuresAreInherited, testFilesIn, narrowCommand, GATE_TIMEOUT_MS, runTestFocus, focusedTestCommand } from './gate.mjs';
 
 const lines = (s) => String(s || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 const keyOf = (p) => (process.platform === 'win32' ? p.toLowerCase() : p);
@@ -58,18 +59,23 @@ const HELD_OPTIONS = (branch) => [
   { label: 'Discard the branch', action: 'release run; the branch is kept for the operator to delete' },
   { label: 'Re-dispatch after I commit', action: 'wait for a clean tree' },
 ];
+/** A held council review has nothing to merge: discard it, or settle it again once its cause is fixed. */
+const REVIEW_HELD_OPTIONS = () => [
+  { label: 'Discard the review', action: 'release run; the master may dispatch a fresh review next wake' },
+  { label: 'Settle again', action: 'settle --retry once what held it is fixed' },
+];
 
 /**
  * A run that was held, then merged on a retry, leaves its merge-held asks open: nothing closed them
  * (2026-10-05: four stale asks after two merged retries). The hold question starts `Run <id8> `, so
  * close this run's open merge-gate asks, saying why.
  */
-export function closeHeldAsks(run, sha) {
+export function closeHeldAsks(run, sha, notes = null) {
   const prefix = `Run ${shortId(run.runId)} `;
   const closed = [];
   for (const a of openAsks(run.slug)) {
     if (a.source !== 'merge-gate' || !String(a.question || '').startsWith(prefix)) continue;
-    updateAsk(run.slug, a.askId, { state: 'answered', answer: { choice: '(closed by settle)', notes: `run merged ${String(sha).slice(0, 10)} on a later settle; nothing left to decide`, at: nowIso() } });
+    updateAsk(run.slug, a.askId, { state: 'answered', answer: { choice: '(closed by settle)', notes: notes ?? `run merged ${String(sha).slice(0, 10)} on a later settle; nothing left to decide`, at: nowIso() } });
     closed.push(a.askId);
   }
   return closed;
@@ -77,7 +83,12 @@ export function closeHeldAsks(run, sha) {
 
 function hold(run, reason, verdict) {
   const id8 = shortId(run.runId);
-  const question = `Run ${id8} (${run.charterSlug}) in ${run.slug} is held and was not merged: ${reason}. What should happen to branch ${run.branch}?`;
+  const target = repoOf(run);
+  const where = target.key === SELF_REPO ? run.slug : `${run.slug} (its ${target.key} repo, ${target.root})`;
+  const review = isReviewRun(run);
+  const question = review
+    ? `Run ${id8} (${run.charterSlug} of ${run.featureSlug}) in ${where} is held and its council verdict was not used: ${reason}. What should happen to it?`
+    : `Run ${id8} (${run.charterSlug}) in ${where} is held and was not merged: ${reason}. What should happen to branch ${run.branch}?`;
   const context = [
     `Task: ${String(run.brief || '').split('\n')[0].slice(0, 200)}`,
     `Branch ${run.branch} (${verdict?.commits?.length ?? 0} commit(s) on top of ${String(run.baseSha || '').slice(0, 10)}), worktree ${run.worktree}.`,
@@ -85,7 +96,7 @@ function hold(run, reason, verdict) {
     verdict?.dirtyOverlap?.length ? `Uncommitted in the checkout and touched by the branch: ${verdict.dirtyOverlap.join(', ')}` : null,
     verdict?.boundaryHits?.length ? `Boundary hits: ${verdict.boundaryHits.map((h) => `${h.file} (${h.glob})`).join(', ')}` : null,
   ].filter(Boolean).join('\n');
-  const options = HELD_OPTIONS(run.branch);
+  const options = review ? REVIEW_HELD_OPTIONS() : HELD_OPTIONS(run.branch);
   const ask = raiseAsk(run.slug, { wakeId: run.wakeId, source: 'merge-gate', kind: 'merge-held', question, context, options });
   queueOutbox(run.slug, run.project.id, 'ask', { askId: ask.askId, question, context, options }, { runId: run.runId });
   return updateRun(run, { state: 'held', heldReason: reason, verdict, askId: ask.askId, settledAt: nowIso() });
@@ -93,7 +104,7 @@ function hold(run, reason, verdict) {
 
 function worktreeDirty(wt) {
   // the node_modules junction is ours, not the builder's (a repo that forgot to ignore it lists it)
-  return dirtyPaths(wt).filter((p) => p !== 'node_modules' && !p.startsWith('node_modules/'));
+  return dirtyPaths(wt).filter((p) => !/(^|\/)node_modules(\/|$)/.test(p));
 }
 
 function taskTitle(run) {
@@ -102,18 +113,130 @@ function taskTitle(run) {
   return t.length > 120 ? `${t.slice(0, 117)}...` : t;
 }
 
-// ---------------------------------------------------------------- merge gate
+// ---------------------------------------------------------------- a moved base: rebase in the worktree
 
 const IN_PROGRESS = ['MERGE_HEAD', 'rebase-merge', 'rebase-apply', 'CHERRY_PICK_HEAD', 'REVERT_HEAD'];
 
 /**
- * (run: Run, verdict) => {ok:boolean, reason?:string, sha?:string, dirtyOverlap?:string[], rebased?:boolean}
- * (a) checkout on baseBranch, no merge/rebase/cherry-pick in progress; (b) checkout dirty paths
- * do not intersect the branch's diff; (c) a moved base means a clean worktree rebase + typecheck;
- * (d) `merge --ff-only` and HEAD == branch tip afterwards. Mutates `verdict` with what it measured.
+ * (run) => {ok, rebased, onto, from?, restored?, reason?}
+ * With two builders per project the second to settle finds the base moved (the first merged), and
+ * the operator may commit at any time. When the base tip is not an ancestor of the run branch,
+ * rebase the branch onto that tip INSIDE the run's worktree (the checkout is never touched). On a
+ * conflict the rebase is aborted and the result measured: worktree clean, no rebase in progress,
+ * branch tip unchanged. Never forced; a failure is returned for a hold. The worktree must be clean
+ * on entry (settle checks it before calling).
  */
-export function mergeGate(run, verdict = {}, { gates, timeoutMs = GATE_TIMEOUT_MS } = {}) {
-  const { root, baseBranch } = run.project;
+export function rebaseOntoBase(run) {
+  const { root, baseBranch } = repoOf(run);
+  const branchRef = `refs/heads/${run.branch}`;
+  const onto = revParse(root, `refs/heads/${baseBranch}`);
+  if (isAncestor(root, onto, branchRef)) return { ok: true, rebased: false, onto };
+  const tipBefore = revParse(root, branchRef);
+  const r = gitTry(run.worktree, ['rebase', onto]);
+  if (r.ok) return { ok: true, rebased: true, onto, from: run.baseSha };
+  const abort = gitTry(run.worktree, ['rebase', '--abort']);
+  const tipAfter = gitTry(root, ['rev-parse', branchRef]).out;
+  const inProgress = ['rebase-merge', 'rebase-apply']
+    .some((m) => fs.existsSync(path.resolve(run.worktree, git(run.worktree, ['rev-parse', '--git-path', m]))));
+  const left = worktreeDirty(run.worktree);
+  const restored = abort.ok && tipAfter === tipBefore && !inProgress && !left.length;
+  const why = lastLines(r.err || r.out, 3);
+  return {
+    ok: false, rebased: false, onto, restored,
+    reason: restored
+      ? `the base moved and rebasing onto ${onto.slice(0, 10)} conflicts (the rebase was aborted; the branch is unchanged): ${why}`
+      : `the base moved and rebasing onto ${onto.slice(0, 10)} conflicts, and the abort did NOT restore the worktree (abort ${abort.ok ? 'ok' : 'failed'}, tip ${String(tipAfter).slice(0, 10)} was ${tipBefore.slice(0, 10)}, ${inProgress ? 'a rebase is still in progress' : 'no rebase in progress'}, ${left.length} dirty path(s)): ${why}`,
+  };
+}
+
+// ---------------------------------------------------------------- the project's gates, with settle's reprieves
+
+/**
+ * (run, gates, {timeoutMs}) => {results, sideEffects}
+ * Runs the gates in the run's worktree. A gate that fails on the branch is the BRANCH's failure only
+ * if the base (run.baseSha) does not fail the same way: these repos carry red tests of their own
+ * (measured 2026-10-05: a docs-only ascent branch and a test-clock pin in pof were held by tests
+ * neither could have touched). Each failed gate is re-run once on the base; failures that are all
+ * inherited are recorded, not blocking. A failure only the branch shows may still be load
+ * flakiness (2026-10-05, pof: a mermaid click test failed in the full run, passed alone): the newly
+ * failing test files re-run once alone, and a pass clears them. Then anything the gates left dirty
+ * (vitest rewrote snapshots in both first runs, 2026-10-05) is recorded and reverted, so the
+ * worktree is the committed tip again for a retry, a rebase and the merge.
+ */
+export function evaluateGates(run, gates, { timeoutMs = GATE_TIMEOUT_MS, focus = null, files = [] } = {}) {
+  const env = repoEnv(repoOf(run).root);   // the Personas repo's gates share its one cargo target
+  // idempotent: a worktree cut before a package's node_modules was linked gets it now, so a retry can pass
+  try { linkNodeModules(repoOf(run).root, run.worktree); } catch { /* a gate that needs it fails honestly */ }
+  // The focused merge gate (gate.mjs testFocus): `test` runs only what the branch's changed files reach,
+  // measured in each directory it runs in, so the base re-run asks the same question of the base.
+  const gatesIn = (dir) => {
+    if (!focus || !gates.test) return { gates, focus: null };
+    const cmd = focusedTestCommand(focus, dir, files);
+    if (cmd === null) return { gates, focus: 'full: a dependency or config file changed, or too many code files to narrow' };
+    if (cmd === '') return { gates: { ...gates, test: null }, focus: 'no related tests: the branch changes no code file' };
+    return { gates: { ...gates, test: cmd }, focus: 'related' };
+  };
+  const mine = gatesIn(run.worktree);
+  const results = runGates(run.worktree, mine.gates, { timeoutMs, env });
+  if (mine.focus && results.test) {
+    // nothing to relate is a pass on purpose (the operator's accepted risk); `verify` runs the full suite
+    if (mine.gates.test === null) results.test = { ok: true, command: null, noRelatedTests: true };
+    results.test.focus = mine.focus;
+    results.test.fullCommand = gates.test;
+  }
+  for (const g of Object.keys(results)) {
+    const r = results[g];
+    if (r.skipped || r.ok || r.timedOut || !r.failures?.length || !run.baseSha) continue;
+    try {
+      const base = withBaseWorktree(run, (dir) => runGates(dir, gatesIn(dir).gates, { timeoutMs, only: [g], env })[g]);
+      r.base = { ok: base.ok, exit: base.exit, failures: base.failures?.length ?? 0, failureList: (base.failures || []).slice(0, 100) };
+      if (!base.ok && failuresAreInherited(r.failures, base.failures)) r.inherited = true;
+    } catch (e) { r.base = { error: String(e.message || e).split('\n')[0] }; }
+    if (!r.inherited) {
+      const baseSet = new Set(r.base?.failureList || []);
+      const fresh = (r.failures || []).filter((f) => !baseSet.has(f));
+      const files = testFilesIn(fresh).slice(0, 12);
+      if (files.length && g === 'test') {
+        const again = runGates(run.worktree, { [g]: narrowCommand(gates[g], files) }, { timeoutMs, only: [g], env })[g];
+        r.rerun = { files, ok: again.ok, exit: again.exit };
+        if (again.ok) { r.flaky = files; r.inherited = true; }
+      }
+    }
+  }
+  const effects = worktreeDirty(run.worktree);
+  if (effects.length) {
+    gitTry(run.worktree, ['checkout', '--', '.']);
+    gitTry(run.worktree, ['clean', '-fdq', '-e', 'node_modules']);
+  }
+  return { results, sideEffects: effects.slice(0, 20) };
+}
+
+/** The hold reason for a gate verdict, or null when it may merge. */
+function gateFailure(results, when = '') {
+  const gv = gatesVerdict(results);
+  if (!gv.ran.length) return `no verifiable gate${when} (every gate was skipped: no command)`;
+  if (!gv.failed.length) return null;
+  const g = gv.failed[0], r = results[g];
+  // name what failed when the signature recognised it; the tail's last lines are often build noise
+  // (cargo's `Running ...` on stderr, a test stub's canned output), which misled two masters on 2026-10-07
+  const what = r.failures?.length
+    ? `${r.failures.slice(0, 3).join(' | ')}${r.failures.length > 3 ? ` (+${r.failures.length - 3} more)` : ''}`
+    : lastLines(r.tail, 5);
+  return `gate ${g} failed${when} (exit ${r.exit}${r.timedOut ? ', timed out' : ''}): ${what}`;
+}
+
+// ---------------------------------------------------------------- merge gate
+
+/**
+ * (run: Run, verdict) => {ok:boolean, reason?:string, sha?:string, dirtyOverlap?:string[], rebased?:boolean, rebasedOnto?:string}
+ * (a) checkout on baseBranch, no merge/rebase/cherry-pick in progress; (b) a base that moved WHILE
+ * the gates ran means a clean worktree rebase and the FULL gates again on the rebased tip (the
+ * pre-gate rebase in settle covers a base that moved before); (c) checkout dirty paths do not
+ * intersect the branch's diff; (d) `merge --ff-only` and HEAD == branch tip afterwards. Mutates
+ * `verdict` with what it measured. `rebasedOnto` tells settle to record the branch's new base.
+ */
+export function mergeGate(run, verdict = {}, { gates, timeoutMs = GATE_TIMEOUT_MS, focus = null } = {}) {
+  const { root, baseBranch } = repoOf(run);   // the target repo's checkout: a second repo merges into ITS base
   const branchRef = `refs/heads/${run.branch}`;
 
   const head = gitTry(root, ['rev-parse', '--abbrev-ref', 'HEAD']);
@@ -132,39 +255,97 @@ export function mergeGate(run, verdict = {}, { gates, timeoutMs = GATE_TIMEOUT_M
   }
 
   let baseNow = revParse(root, `refs/heads/${baseBranch}`);
-  let rebased = false;
-  if (baseNow !== run.baseSha && !isAncestor(root, baseNow, branchRef)) {
-    const r = gitTry(run.worktree, ['rebase', baseNow]);
-    if (!r.ok) {
-      gitTry(run.worktree, ['rebase', '--abort']);
-      return { ok: false, reason: `the base moved and rebasing onto ${baseNow.slice(0, 10)} conflicts: ${lastLines(r.err || r.out, 3)}` };
+  let rebased = false, rebasedOnto;
+  if (!isAncestor(root, baseNow, branchRef)) {
+    const rb = rebaseOntoBase(run);
+    if (!rb.ok) return { ok: false, reason: rb.reason };
+    if (rb.rebased) {
+      rebased = true; rebasedOnto = rb.onto; baseNow = rb.onto;
+      verdict.rebasedOnto = rb.onto;
+      const g = gates || resolveRunGates(run, loadBrief(run.slug) || {});
+      const files = lines(git(root, ['diff', '--name-only', '--no-renames', `${rb.onto}..${branchRef}`]));
+      const ev = evaluateGates({ ...run, baseSha: rb.onto }, g, { timeoutMs, focus, files });
+      verdict.gatesAfterRebase = ev.results;
+      if (ev.sideEffects.length) verdict.gateSideEffectsAfterRebase = ev.sideEffects;
+      const fail = gateFailure(ev.results, ' after rebasing onto the moved base');
+      if (fail) return { ok: false, rebased, rebasedOnto, reason: fail };
+      verdict.commits = lines(git(root, ['rev-list', '--reverse', `${baseNow}..${branchRef}`]));
     }
-    rebased = true;
-    const g = gates || resolveGates(root, loadBrief(run.slug) || {});
-    const tc = runGates(run.worktree, g, { timeoutMs, only: ['typecheck'] });
-    verdict.gatesAfterRebase = tc;
-    if (!tc.typecheck.skipped && !tc.typecheck.ok) {
-      return { ok: false, rebased, reason: `typecheck fails after rebasing onto the moved base (exit ${tc.typecheck.exit}): ${lastLines(tc.typecheck.tail, 5)}` };
-    }
-    verdict.commits = lines(git(root, ['rev-list', '--reverse', `${baseNow}..${branchRef}`]));
   }
-  verdict.rebased = rebased;
+  verdict.rebased = Boolean(verdict.rebased || rebased);
   verdict.files = lines(git(root, ['diff', '--name-only', '--no-renames', `${baseNow}..${branchRef}`]));
 
   const dirty = new Set(dirtyPaths(root).map(keyOf));
   const overlap = verdict.files.filter((f) => dirty.has(keyOf(f)));
   verdict.dirtyOverlap = overlap;
-  if (overlap.length) return { ok: false, rebased, dirtyOverlap: overlap, reason: `uncommitted changes in the checkout overlap the branch: ${overlap.join(', ')}` };
+  if (overlap.length) return { ok: false, rebased, rebasedOnto, dirtyOverlap: overlap, reason: `uncommitted changes in the checkout overlap the branch: ${overlap.join(', ')}` };
 
   const tip = revParse(root, branchRef);
   const m = gitTry(root, ['merge', '--ff-only', branchRef]);
-  if (!m.ok) return { ok: false, rebased, reason: `merge --ff-only refused: ${lastLines(m.err || m.out, 3)}` };
+  if (!m.ok) return { ok: false, rebased, rebasedOnto, reason: `merge --ff-only refused: ${lastLines(m.err || m.out, 3)}` };
   const after = git(root, ['rev-parse', 'HEAD']);
-  if (after !== tip) return { ok: false, rebased, reason: `after the merge HEAD is ${after.slice(0, 10)}, not the branch tip ${tip.slice(0, 10)}` };
-  return { ok: true, sha: tip, rebased, dirtyOverlap: [] };
+  if (after !== tip) return { ok: false, rebased, rebasedOnto, reason: `after the merge HEAD is ${after.slice(0, 10)}, not the branch tip ${tip.slice(0, 10)}` };
+  return { ok: true, sha: tip, rebased, rebasedOnto, dirtyOverlap: [] };
+}
+
+// ---------------------------------------------------------------- a council review: reviewed | held
+
+/**
+ * (run, verdict) => Run   // reviewed | held(+ask)
+ * A review run must not change code, so a branch with a commit is held. It must leave the council's
+ * run directory (named by its claim or found by convention, never one that was there before it ran)
+ * with a result.json that parses; else held. Then: copy that directory into the journal (durable), queue
+ * `council` (the app ingests it), and for a FULL council whose outcome is `ready` also `tier` (the
+ * feature is major) and `report` (the council report plus an Approval: the human gate); record the
+ * outcome on the run as `reviewed`; remove the worktree. Uncommitted edits outside the council's own
+ * directory are recorded (`touchedOutsideCouncil`), not held: they die with the worktree.
+ */
+function settleReview(run, verdict) {
+  const { root } = repoOf(run);
+  const branchRef = `refs/heads/${run.branch}`;
+  verdict.review = { mode: run.councilMode, featureSlug: run.featureSlug };
+  verdict.commits = lines(git(root, ['rev-list', '--reverse', `${run.baseSha}..${branchRef}`]));
+  if (verdict.commits.length) {
+    verdict.files = lines(git(root, ['diff', '--name-only', '--no-renames', `${run.baseSha}..${branchRef}`]));
+    return hold(run, `a review run must not change code, and its branch carries ${verdict.commits.length} commit(s) (${verdict.files.slice(0, 5).join(', ')}${verdict.files.length > 5 ? ', ...' : ''})`, verdict);
+  }
+  if (!run.worktree || !fs.existsSync(run.worktree)) return hold(run, `the worktree ${run.worktree} is gone; there is no council run directory to read`, verdict);
+  const found = findCouncilRunDir(run, verdict.claim);
+  if (!found) return hold(run, `no council run directory for ${run.featureSlug} was written in the worktree (expected ${COUNCIL.runsRel}/<YYYY-MM-DD>-${run.featureSlug}-r<n>/ beside the ${run.councilSeeded?.length ?? 0} that were there before)`, verdict);
+  verdict.councilRunDir = found.dir; verdict.councilRunDirFrom = found.from;
+  const read = readCouncilResult(found.dir);
+  if (read.error) return hold(run, `the council run directory ${path.basename(found.dir)} has ${read.error}`, verdict);
+  const result = read.result;
+  const touched = worktreeDirty(run.worktree).filter((p) => !p.startsWith('.personas/'));
+  if (touched.length) verdict.touchedOutsideCouncil = touched.slice(0, 20);
+
+  const copy = copyCouncilRun(run, found.dir);
+  const mode = run.councilMode;
+  const name = path.basename(found.dir);
+  const pid = run.project.id;
+  const src = { runId: run.runId };
+  const outbox = [queueOutbox(run.slug, pid, 'council', { projectId: pid, runDir: copy, featureSlug: run.featureSlug, mode, outcome: result.outcome }, src).id];
+  if (mode === 'full' && result.outcome === 'ready') {
+    outbox.push(queueOutbox(run.slug, pid, 'tier', { projectId: pid, featureSlug: run.featureSlug, tier: 'major' }, src).id);
+    outbox.push(queueOutbox(run.slug, pid, 'report', reportPayload(run, result, copy), src).id);
+  }
+  const council = {
+    mode, featureSlug: run.featureSlug, runDirName: name, copyPath: copy, outcome: result.outcome,
+    overall: typeof result.overall === 'number' ? result.overall : null, coverage: typeof result.coverage === 'number' ? result.coverage : null,
+    round: Number.isInteger(result.round_no) ? result.round_no : roundOfName(name),
+    mustAddress: boundedMustAddress(result.must_address), summary: String(result.summary ?? '').slice(0, 600), outbox,
+  };
+  closeHeldAsks(run, '', `review ${shortId(run.runId)} settled on a later try (${mode} ${result.outcome}); nothing left to decide`);
+  run = updateRun(run, { state: 'reviewed', council, verdict, endedAt: run.endedAt || nowIso(), settledAt: nowIso() });
+  let cleanup;
+  try { cleanup = removeWorktree(run); } catch (e) { cleanup = { error: e.message }; }
+  return updateRun(run, { cleanup });
 }
 
 // ---------------------------------------------------------------- settle
+
+/** The run once its branch sits on a new base: baseSha follows, the cut-time base is kept once. */
+const rebasedRun = (run, onto) => updateRun(run, { baseSha: onto, originalBaseSha: run.originalBaseSha ?? run.baseSha, rebasedAt: nowIso() });
 
 /**
  * (args) => Run   // --run id [--retry]   merged | held(+ask queued) | failed | released
@@ -178,9 +359,14 @@ export function cmdSettle(args = {}) {
 
 function settleCore({ flags = {} } = {}, slot) {
   let run = requireRun(flags.run);
-  if (['merged', 'failed', 'released'].includes(run.state)) return run;
+  // `--retry` may reopen a run released for a usage limit that its worker outlived (it finished clean)
+  const outlivedLimit = run.state === 'released' && /^usage limit/.test(run.heldReason || '') && finishedClean(readRunOutput(run).stream);
+  if (SETTLED_STATES.includes(run.state) && !(flags.retry && outlivedLimit)) return run;
   if (run.state === 'held' && !flags.retry) return run;
   if (run.state === 'planned') throw new Refusal('not dispatched', { runId: run.runId });
+  // one settler per run: an `await` in another process owns this run until it settles or gives up
+  const awaiter = awaitHolder(run);
+  if (awaiter && awaiter.pid !== process.pid) throw new Refusal('awaited', { runId: run.runId, slug: run.slug, awaitPid: awaiter.pid, since: awaiter.at, hint: 'an `await` is already settling this run; let it finish, never settle beside it' });
   if (run.state === 'running') {
     if (pidAlive(run.pid)) throw new Refusal('still running', { runId: run.runId, pid: run.pid });
     run = updateRun(run, { state: 'exited', endedAt: run.endedAt || nowIso() });
@@ -189,18 +375,23 @@ function settleCore({ flags = {} } = {}, slot) {
   run = updateRun(run, { state: 'verifying', verifyStartedAt: nowIso() });
 
   // A usage limit is not a verdict on the work: release, keep everything, let a later pass retake it.
+  // A worker that finished clean after meeting a limit outlived it: its work is settled like any other.
   const standing = readLimit();
-  const mark = run.limitSeenAt ? (standing?.runId === run.runId ? standing : { reason: 'seen by watch' })
+  const mark = finishedClean(readRunOutput(run).stream) ? null
+    : run.limitSeenAt ? (standing?.runId === run.runId ? standing : { reason: 'seen by watch' })
     : markLimitFromRun(run) || (standing?.runId === run.runId ? standing : null);
   if (mark) return updateRun(run, { state: 'released', heldReason: `usage limit: ${mark.reason}`, settledAt: nowIso() });
 
-  const { root } = run.project;
+  const { root } = repoOf(run);
   const brief = loadBrief(run.slug) || {};
   const branchRef = `refs/heads/${run.branch}`;
   const verdict = { commits: [], files: [], gates: {}, boundaryHits: [], dirtyOverlap: [] };
   verdict.claim = readJson(runFile(run, 'result.json'), null);
 
   if (!run.branch || !gitTry(root, ['rev-parse', '--verify', '--quiet', branchRef]).ok) return hold(run, `branch ${run.branch} does not exist`, verdict);
+
+  // a council review is settled by what the council wrote, never merged (no gates, no gate slot)
+  if (isReviewRun(run)) return settleReview(run, verdict);
 
   // 1. the claim, from git
   verdict.commits = lines(git(root, ['rev-list', '--reverse', `${run.baseSha}..${branchRef}`]));
@@ -214,10 +405,27 @@ function settleCore({ flags = {} } = {}, slot) {
   verdict.files = lines(git(root, ['diff', '--name-only', '--no-renames', `${run.baseSha}..${branchRef}`]));
   verdict.boundaryHits = boundaryHits(verdict.files, splitBoundaries(brief.boundaries).globs);
   if (verdict.boundaryHits.length) return hold(run, `the branch touches boundary paths: ${verdict.boundaryHits.map((h) => h.file).join(', ')}`, verdict);
+  // what the builder touched beyond the paths it declared: recorded for the master, not a hold
+  // (the declaration keeps two builders apart; a rebase conflict is what actually stops a collision)
+  if (Array.isArray(run.paths) && run.paths.length) {
+    const inside = new Set(boundaryHits(verdict.files, run.paths).map((h) => h.file));
+    const outside = verdict.files.filter((f) => !inside.has(f));
+    if (outside.length) verdict.outsidePaths = outside.slice(0, 20);
+  }
 
   if (!run.worktree || !fs.existsSync(run.worktree)) return hold(run, `the worktree ${run.worktree} is gone; nothing to run the gates in`, verdict);
   const wtHead = gitTry(run.worktree, ['rev-parse', 'HEAD']).out;
   if (wtHead !== revParse(root, branchRef)) return hold(run, `the worktree HEAD ${wtHead.slice(0, 10)} is not the branch tip`, verdict);
+  // A generator that rewrites committed files with CRLF only (kp's schemas:gen, 2026-10-07: run 2967d471
+  // held on three *.generated.ts that differed from HEAD in line endings alone) leaves a worktree dirty
+  // in bytes but not in content. Restore exactly those tracked files and record them; anything else holds.
+  const eolOnly = worktreeDirty(run.worktree).filter((f) =>
+    gitTry(run.worktree, ['ls-files', '--error-unmatch', '--', f]).ok
+    && gitTry(run.worktree, ['diff', 'HEAD', '--ignore-cr-at-eol', '--quiet', '--', f]).ok);
+  if (eolOnly.length) {
+    gitTry(run.worktree, ['checkout', 'HEAD', '--', ...eolOnly]);
+    verdict.eolRestored = eolOnly.slice(0, 20);
+  }
   const left = worktreeDirty(run.worktree);
   if (left.length) return hold(run, `the worktree has uncommitted changes, so the gates would not verify the committed tip: ${left.slice(0, 10).join(', ')}`, verdict);
 
@@ -229,61 +437,41 @@ function settleCore({ flags = {} } = {}, slot) {
     throw e;
   }
 
-  // 2b. run them
-  const gates = resolveGates(root, brief);
-  const timeoutMs = Number(process.env.APPMASTER_GATE_TIMEOUT_MS) || GATE_TIMEOUT_MS;
-  verdict.gates = runGates(run.worktree, gates, { timeoutMs });
-  verdict.gateSources = gates.sources;
-  // A gate that fails on the branch is the BRANCH's failure only if the base does not fail the same
-  // way: these repos carry red tests of their own (measured 2026-10-05: a docs-only ascent branch and
-  // a test-clock pin in pof were held by tests neither could have touched). Re-run each failed gate
-  // once on the base commit; failures that are all inherited are recorded, not blocking.
-  for (const g of Object.keys(verdict.gates)) {
-    const r = verdict.gates[g];
-    if (r.skipped || r.ok || r.timedOut || !r.failures?.length || !run.baseSha) continue;
-    try {
-      const base = withBaseWorktree(run, (dir) => runGates(dir, gates, { timeoutMs, only: [g] })[g]);
-      r.base = { ok: base.ok, exit: base.exit, failures: base.failures?.length ?? 0, failureList: (base.failures || []).slice(0, 100) };
-      if (!base.ok && failuresAreInherited(r.failures, base.failures)) r.inherited = true;
-    } catch (e) { r.base = { error: String(e.message || e).split('\n')[0] }; }
-    // Not inherited: a failure only the BRANCH shows may still be load flakiness (measured 2026-10-05 in
-    // pof: a mermaid click test failed in the full run, passed alone, and the failing set differed on
-    // every run). Re-run just the newly failing test files once on the branch; a pass clears them.
-    if (!r.inherited) {
-      const baseSet = new Set(r.base?.failureList || []);
-      const fresh = (r.failures || []).filter((f) => !baseSet.has(f));
-      const files = testFilesIn(fresh).slice(0, 12);
-      if (files.length && g === 'test') {
-        const again = runGates(run.worktree, { [g]: narrowCommand(gates[g], files) }, { timeoutMs, only: [g] })[g];
-        r.rerun = { files, ok: again.ok, exit: again.exit };
-        if (again.ok) { r.flaky = files; r.inherited = true; }
-      }
-    }
-  }
-  // The gates ran in a worktree that was clean before them, so anything dirty now is THEIR side effect
-  // (vitest rewrote snapshot files in both first runs, 2026-10-05). Record it and revert it: a retry,
-  // the rebase and the merge gate all need the committed tip, not the tip plus a test run's leftovers.
-  const effects = worktreeDirty(run.worktree);
-  if (effects.length) {
-    verdict.gateSideEffects = effects.slice(0, 20);
-    gitTry(run.worktree, ['checkout', '--', '.']);
-    gitTry(run.worktree, ['clean', '-fdq', '-e', 'node_modules']);
-  }
-  const gv = gatesVerdict(verdict.gates);
-  if (!gv.ran.length) return hold(run, 'no verifiable gate (every gate was skipped: no command)', verdict);
-  if (gv.failed.length) {
-    const g = gv.failed[0], r = verdict.gates[g];
-    return hold(run, `gate ${g} failed (exit ${r.exit}${r.timedOut ? ', timed out' : ''}): ${lastLines(r.tail, 5)}`, verdict);
+  // 2a. a base that moved since the cut (another builder of this project merged first, or the
+  // operator committed): rebase onto its tip NOW, under the gate slot (merges only happen under it),
+  // so the gates below verify exactly what would merge. A conflict aborts and holds.
+  const rb = rebaseOntoBase(run);
+  if (!rb.ok) return hold(run, rb.reason, verdict);
+  if (rb.rebased) {
+    run = rebasedRun(run, rb.onto);
+    verdict.rebased = true; verdict.rebasedOnto = rb.onto; verdict.rebasedFrom = rb.from;
+    verdict.commits = lines(git(root, ['rev-list', '--reverse', `${rb.onto}..${branchRef}`]));
+    verdict.files = lines(git(root, ['diff', '--name-only', '--no-renames', `${rb.onto}..${branchRef}`]));
+    if (!verdict.commits.length) return hold(run, `rebasing onto the moved base ${rb.onto.slice(0, 10)} left no commits: every change of the branch is already in the base`, verdict);
   }
 
+  // 2b. run them (the target repo's gates: a second repo has its own)
+  const gates = resolveRunGates(run, brief);
+  const timeoutMs = Number(process.env.APPMASTER_GATE_TIMEOUT_MS) || GATE_TIMEOUT_MS;
+  const focus = runTestFocus(run, gates, brief);   // the merge gate tests the changed area; `verify` runs everything
+  const ev = evaluateGates(run, gates, { timeoutMs, focus, files: verdict.files || [] });
+  verdict.gates = ev.results;
+  verdict.gateSources = gates.sources;
+  if (focus) verdict.testFocus = focus.kind;
+  if (ev.sideEffects.length) verdict.gateSideEffects = ev.sideEffects;
+  const fail = gateFailure(verdict.gates);
+  if (fail) return hold(run, fail, verdict);
+
   // 3. the merge gate
-  const mg = mergeGate(run, verdict, { gates, timeoutMs });
+  const mg = mergeGate(run, verdict, { gates, timeoutMs, focus });
+  if (mg.rebasedOnto) run = rebasedRun(run, mg.rebasedOnto);
   if (!mg.ok) return hold(run, mg.reason, verdict);
 
   // queue BEFORE recording merged: the entry is idempotent, and a crash in between leaves a
   // `verifying` run whose re-settle finds the branch already in base and queues the same id again
+  const repoKey = repoOf(run).key;
   queueOutbox(run.slug, run.project.id, 'task-complete',
-    { ideaIds: run.ideaIds || [], sha: mg.sha, title: taskTitle(run), runId: run.runId, branch: run.branch }, { runId: run.runId });
+    { ideaIds: run.ideaIds || [], sha: mg.sha, title: taskTitle(run), runId: run.runId, branch: run.branch, ...(repoKey !== SELF_REPO ? { repo: repoKey } : {}) }, { runId: run.runId });
   closeHeldAsks(run, mg.sha);
   run = updateRun(run, { state: 'merged', mergedSha: mg.sha, verdict, endedAt: run.endedAt || nowIso(), settledAt: nowIso() });
   let cleanup;

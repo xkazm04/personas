@@ -6,7 +6,7 @@ use crate::db::models::{
 };
 use crate::db::repos::communication::chat as repo;
 use crate::error::AppError;
-use crate::ipc_auth::require_auth_sync;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 #[tauri::command]
@@ -74,4 +74,41 @@ pub fn get_latest_chat_session(
 ) -> Result<Option<ChatSessionContext>, AppError> {
     require_auth_sync(&state)?;
     repo::get_latest_session(&state.db, &persona_id)
+}
+
+/// Send one message in a persona chat: the whole turn, in Rust
+/// ([`super::chat_turn::start`]). Inserts the user row, saves the session
+/// context, starts the execution and registers the hook that writes the reply
+/// when the run completes. Returns once the run has started; the reply streams
+/// over the execution's `execution-output` events and lands as a row
+/// (`chat-changed`). Starts a paid run, so it is enforced by its
+/// `PRIVILEGED_COMMANDS` entry like `execute_persona` (an async
+/// `#[requires(privileged)]` cannot fail). `title` names a new session
+/// instead of the title derived from its first message (the feedback chat).
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub async fn start_chat_turn(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    persona_id: String,
+    session_id: String,
+    message: String,
+    chat_mode: String,
+    title: Option<String>,
+    idempotency_key: Option<String>,
+) -> Result<super::chat_turn::ChatTurnStarted, AppError> {
+    require_auth(&state).await?;
+    super::chat_turn::start_with(
+        state.inner(),
+        app,
+        &persona_id,
+        super::chat_turn::ChatTurnRequest {
+            session_id: Some(session_id),
+            message,
+            mode: Some(super::chat_turn::ChatTurnMode::from_ui(&chat_mode)),
+        },
+        &super::chat_turn::ChatTurnOptions { title },
+        idempotency_key.unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
+    )
+    .await
 }

@@ -79,6 +79,58 @@ test('decision schema parses and names the contract fields', () => {
   assert.equal(schema.properties.nextWakeMinutes.maximum, C.WAKE_MAX);
   assert.equal(schema.properties.asks.maxItems, C.MAX_ASKS);
   assert.equal(schema.properties.dispatch.maxItems, C.MAX_DISPATCH);
+  const item = schema.properties.dispatch.items.properties;
+  assert.deepEqual(item.model.enum.filter((m) => m !== null).sort(), [...C.BUILDER_MODEL_CHOICES].sort(), 'the schema names the models contract.mjs knows');
+  assert.ok(item.model.enum.includes(null));
+  assert.equal(item.paths.type, 'array');
+  assert.ok(!schema.properties.dispatch.items.required.includes('paths'), 'paths is optional for one dispatch (required for two by validateDecision)');
+});
+
+test('models: Opus is claude-opus-5-5; the retired claude-opus-5 resolves to it; sonnet and opus resolve', () => {
+  assert.equal(C.MODELS.master, 'claude-opus-5-5');
+  assert.equal(C.resolveModel('claude-opus-5'), 'claude-opus-5-5');
+  assert.equal(C.resolveModel('opus'), 'claude-opus-5-5');
+  assert.equal(C.resolveModel('sonnet'), C.MODELS.builder);
+  assert.ok(Object.values(C.MODELS.builderByCharter).every((m) => m === C.MODELS.master));
+});
+
+test('managed set: DEFAULT_MANAGED plus every brief with headless:true; a brief without it is never woken', () => {
+  for (const [slug, brief] of [['bank-ledger', { charters: [], headless: true }], ['bank-other', { charters: [] }], ['garden-vr', { charters: [], headless: true }]]) {
+    fs.mkdirSync(path.dirname(C.briefPath(slug)), { recursive: true });
+    fs.writeFileSync(C.briefPath(slug), JSON.stringify(brief));
+  }
+  const managed = S.listSlugs();
+  assert.ok(managed.includes('bank-ledger') && managed.includes('garden-vr'), 'headless:true opts any project in, bank-* included');
+  assert.ok(!managed.includes('bank-other') && !managed.includes('firetv'), 'without headless:true it stays out (firetv, bank-*)');
+  assert.deepEqual(C.DEFAULT_MANAGED, ['pof', 'ascent', 'kp']);
+});
+
+test('caps: two builders per project, sixteen in all, two dispatches per wake', () => {
+  assert.equal(C.PER_PROJECT_CAP, 2);
+  assert.equal(C.MAX_DISPATCH, C.PER_PROJECT_CAP);
+  assert.equal(C.GLOBAL_CAP, 16);
+  assert.ok(C.MEM.dispatchMinFreeGb > 0 && C.MEM.perBuilderReserveGb > 0, 'the free-memory brake is kept');
+});
+
+test('writeJson retries a rename Windows refuses while another process holds the file, then gives up cleanly', () => {
+  const p = path.join(tmp, 'rename-retry', 'run.json');
+  const real = fs.renameSync;
+  const fail = (code, times) => { let n = 0; fs.renameSync = (a, b) => { if (n++ < times) throw Object.assign(new Error(code), { code }); return real(a, b); }; };
+  const attempts = C.RENAME_RETRY.attempts;
+  C.RENAME_RETRY.attempts = 3; // the give-up path, without waiting out the full budget
+  try {
+    fail('EPERM', 2);
+    C.writeJson(p, { state: 'reviewed' });
+    assert.deepEqual(JSON.parse(fs.readFileSync(p, 'utf8')), { state: 'reviewed' });
+    fail('EBUSY', C.RENAME_RETRY.attempts + 5);
+    const t0 = Date.now();
+    assert.throws(() => C.writeJson(p, { state: 'never' }), { code: 'EBUSY' });
+    assert.ok(Date.now() - t0 >= C.RENAME_RETRY.waitMs, 'it waited between attempts');
+    fail('ENOENT', 1);
+    assert.throws(() => C.writeJson(p, { state: 'never' }), { code: 'ENOENT' }, 'any other error is not retried');
+  } finally { fs.renameSync = real; C.RENAME_RETRY.attempts = attempts; }
+  assert.deepEqual(JSON.parse(fs.readFileSync(p, 'utf8')), { state: 'reviewed' }, 'a failed write leaves the last good file');
+  assert.deepEqual(fs.readdirSync(path.dirname(p)).filter((f) => f.endsWith('.tmp')), [], 'no tmp file is left behind');
 });
 
 test('cleanup', () => { fs.rmSync(tmp, { recursive: true, force: true }); });

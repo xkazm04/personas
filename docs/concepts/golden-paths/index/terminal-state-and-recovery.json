@@ -119,6 +119,13 @@
     },
     "registry-terminal-state-composer.json": {"count":1,"sections":[9],"contexts":["(`registry-terminal-state-composer.json` — a filename unique to this composer,"],"resolved":false},
     "runPersona.ts": {"count":1,"sections":[7],"contexts":["`incomplete` through; make `runPersona.ts` import `TERMINAL_STATUS_SET`."],"resolved":false},
+    "runner/mod.rs": {
+      "count": 4,
+      "sections": [0,13],
+      "lines": ["3030","58","2832"],
+      "contexts": ["| \"did this run finish?\" before posting output | `runner/mod.rs:3030` | `('completed','failed','cancelled')` |"],
+      "resolved": false
+    },
     "scanQueue.core.repository.ts": {
       "count": 1,
       "sections": [6],
@@ -212,6 +219,14 @@
       "resolvedFrom": "suffix",
       "verbatim": "db/src/repos/resources/automations.rs"
     },
+    "src-tauri/engine/src/build_session/parser.rs": {
+      "count": 1,
+      "sections": [13],
+      "lines": ["104-117"],
+      "contexts": ["from a clean finish. `build_session/parser.rs:104-117` had already fixed exactly this for the build"],
+      "resolvedFrom": "suffix",
+      "verbatim": "build_session/parser.rs"
+    },
     "src-tauri/engine/src/parser.rs": {
       "count": 1,
       "sections": [13],
@@ -262,14 +277,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "background/executions.rs"
     },
-    "src-tauri/src/engine/build_session/parser.rs": {
-      "count": 1,
-      "sections": [13],
-      "lines": ["104-117"],
-      "contexts": ["from a clean finish. `build_session/parser.rs:104-117` had already fixed exactly this for the build"],
-      "resolvedFrom": "suffix",
-      "verbatim": "build_session/parser.rs"
-    },
     "src-tauri/src/engine/leadership.rs": {
       "count": 6,
       "sections": [0,3,6,7],
@@ -294,14 +301,7 @@
       "resolvedFrom": "basename",
       "verbatim": "process_session.rs"
     },
-    "src-tauri/src/engine/runner/mod.rs": {
-      "count": 5,
-      "sections": [0,7,13],
-      "lines": ["3030","58","2832"],
-      "contexts": ["| \"did this run finish?\" before posting output | `runner/mod.rs:3030` | `('completed','failed','cancelled')` |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "runner/mod.rs"
-    },
+    "src-tauri/src/engine/runner/mod.rs": {"count":1,"sections":[7],"lines":["3030"],"contexts":["`src/engine/runner/mod.rs:3030`. The compliant 8 are"],"resolvedFrom":"suffix","verbatim":"src/engine/runner/mod.rs"},
     "src-tauri/src/tray.rs": {"count":1,"sections":[7],"lines":["222"],"contexts":["`tray.rs:222`), and the two `update_status(…, Queued)` call sites are both tests"],"resolvedFrom":"basename","verbatim":"tray.rs"},
     "src-tauri/tests/": {"count":1,"sections":[8],"contexts":["R4 measured that `src-tauri/tests/` contains **zero** matches for"],"resolved":false,"isDir":true},
     "src/**": {"count":1,"sections":[7],"contexts":["`src/**`. The primitive is good; adoption is 13%."],"resolved":false,"isDir":true},

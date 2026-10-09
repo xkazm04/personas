@@ -7,16 +7,75 @@
 
 import fs from 'node:fs';
 import {
-  ASK_KINDS, MAX_ASKS, MAX_DISPATCH, MODELS, VERDICT_STATUSES, WAKE_MAX, WAKE_MIN,
-  Refusal, canonical, nowIso,
+  ASK_KINDS, BUILDER_MODEL_CHOICES, COUNCIL, FEATURE_SLUG_RE, LIVE_RUN_STATES, MAX_ASKS, MAX_DISPATCH, MODELS, PLAN, REVIEW_CHARTERS,
+  SELF_REPO, UX, VERDICT_STATUSES, WAKE_MAX, WAKE_MIN, Refusal, canonical, isReviewRun, nowIso, resolveModel, shortId,
 } from './contract.mjs';
+import { charactersOf, councilEvents, councilJournal, roundsUsed } from './council.mjs';
+import { specError, overlappingPairs } from './paths.mjs';
 import { listRuns, loadAsks, loadBrief, loadWake, newRun, queueOutbox, raiseAsk, saveWake } from './store.mjs';
-import { briefCharters, resolveManaged, openDb, q } from './dbread.mjs';
+import { briefCharters, resolveManaged, openDb, q, useCasesOf, councilRunsOf, uxPendingOf, withBriefBase } from './dbread.mjs';
 import { brakes } from './brakes.mjs';
+import { queueTable } from './queue.mjs';
+import { repoKeys, resolveRepo, targetRootKey } from './repos.mjs';
 
-const TOP_KEYS = ['wakeId', 'dispatch', 'defer', 'asks', 'ideaVerdicts', 'say', 'note', 'nextWakeMinutes'];
+const STARTED_STATES = LIVE_RUN_STATES.filter((s) => s !== 'planned');
+const TOP_KEYS =['wakeId', 'dispatch', 'defer', 'asks', 'ideaVerdicts', 'say', 'note', 'nextWakeMinutes'];
+/** Optional top-level keys: absent (or null) unless the wake asks for them. */
+const OPTIONAL_KEYS = ['plan'];
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const nonEmpty = (v) => typeof v === 'string' && v.trim().length > 0;
+
+// ---------------------------------------------------------------- the plan (PLAN WAKE)
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const validDate = (s) => typeof s === 'string' && ISO_DATE.test(s) && Number.isFinite(Date.parse(s)) && new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s;
+function bounded(v, max, where, errors, required) {
+  if (!required && (v === undefined || v === null)) return;
+  if (typeof v !== 'string' || (required && !v.trim())) { errors.push(`${where} must be a ${required ? 'non-empty ' : ''}string`); return; }
+  if (v.length > max) errors.push(`${where} is ${v.length} characters; at most ${max}`);
+}
+
+/**
+ * (plan, errors) => void   // PLAN bounds: 1..5 milestones {name, goal, targetDate?, goals}, 1..5 goals each
+ * {title, measure, description?}, every string bounded, names and goal titles unique (replay finds an
+ * earlier post by them, so two of one name would collapse into one row).
+ */
+export function validatePlan(plan, errors) {
+  if (!isObj(plan)) { errors.push('plan must be an object {milestones:[...]}'); return; }
+  checkKeys(plan, ['milestones'], 'plan', errors);
+  const ms = plan.milestones;
+  if (!Array.isArray(ms)) { errors.push('plan.milestones must be an array'); return; }
+  if (ms.length < PLAN.minMilestones || ms.length > PLAN.maxMilestones) errors.push(`plan.milestones has ${ms.length}; ${PLAN.minMilestones}-${PLAN.maxMilestones} required`);
+  const names = new Set(), titles = new Set();
+  ms.forEach((m, i) => {
+    const w = `plan.milestones[${i}]`;
+    if (!isObj(m)) { errors.push(`${w} must be an object {name, goal, targetDate?, goals}`); return; }
+    checkKeys(m, ['name', 'goal', 'targetDate', 'goals'], w, errors);
+    bounded(m.name, PLAN.nameMax, `${w}.name`, errors, true);
+    bounded(m.goal, PLAN.goalMax, `${w}.goal`, errors, true);
+    if (m.targetDate !== undefined && m.targetDate !== null && !validDate(m.targetDate)) errors.push(`${w}.targetDate must be a date YYYY-MM-DD, or omitted`);
+    if (nonEmpty(m.name)) {
+      const k = m.name.trim().toLowerCase();
+      if (names.has(k)) errors.push(`${w}.name "${m.name}" repeats an earlier milestone's name`);
+      names.add(k);
+    }
+    if (!Array.isArray(m.goals)) { errors.push(`${w}.goals must be an array`); return; }
+    if (m.goals.length < PLAN.minGoals || m.goals.length > PLAN.maxGoals) errors.push(`${w}.goals has ${m.goals.length}; ${PLAN.minGoals}-${PLAN.maxGoals} required`);
+    m.goals.forEach((g, j) => {
+      const gw = `${w}.goals[${j}]`;
+      if (!isObj(g)) { errors.push(`${gw} must be an object {title, measure, description?}`); return; }
+      checkKeys(g, ['title', 'measure', 'description'], gw, errors);
+      bounded(g.title, PLAN.titleMax, `${gw}.title`, errors, true);
+      bounded(g.measure, PLAN.measureMax, `${gw}.measure`, errors, true);
+      bounded(g.description, PLAN.descriptionMax, `${gw}.description`, errors, false);
+      if (nonEmpty(g.title)) {
+        const k = g.title.trim().toLowerCase();
+        if (titles.has(k)) errors.push(`${gw}.title "${g.title}" repeats an earlier goal's title`);
+        titles.add(k);
+      }
+    });
+  });
+}
 
 // ---------------------------------------------------------------- extraction
 
@@ -58,27 +117,77 @@ function checkArray(d, key, errors) {
   return d[key];
 }
 
-/** (decision, {slug, wakeId, brief}) => {ok:boolean, errors:string[]}   // pure */
-export function validateDecision(decision, { slug, wakeId, brief } = {}) {
+/** (decision, {slug, wakeId, brief, planWake}) => {ok:boolean, errors:string[]}   // pure */
+export function validateDecision(decision, { slug, wakeId, brief, planWake = false } = {}) {
   const errors = [];
   if (!isObj(decision)) return { ok: false, errors: ['the decision must be a JSON object'] };
   const d = decision;
   for (const k of TOP_KEYS) if (!(k in d)) errors.push(`missing required key "${k}"`);
-  checkKeys(d, TOP_KEYS, 'decision', errors);
+  checkKeys(d, [...TOP_KEYS, ...OPTIONAL_KEYS], 'decision', errors);
+  if (d.plan !== undefined && d.plan !== null) {
+    if (!planWake) errors.push('plan is accepted only on a PLAN WAKE (this project already has a plan, or milestones in the app): drop it');
+    else validatePlan(d.plan, errors);
+  } else if (planWake) {
+    errors.push(`this is a PLAN WAKE: plan is required ({milestones:[...]}, ${PLAN.minMilestones}-${PLAN.maxMilestones} milestones of ${PLAN.minGoals}-${PLAN.maxGoals} goals each)`);
+  }
 
   if (!nonEmpty(d.wakeId)) errors.push('wakeId must be a non-empty string');
   else if (wakeId && d.wakeId !== wakeId) errors.push(`wakeId "${d.wakeId}" does not match the wake "${wakeId}"${slug ? ` of ${slug}` : ''}`);
 
   const dispatch = checkArray(d, 'dispatch', errors);
   if (dispatch.length > MAX_DISPATCH) errors.push(`dispatch has ${dispatch.length} entries; at most ${MAX_DISPATCH} per wake`);
+  const several = dispatch.length > 1;
+  const seenDispatchIdeas = new Map();
   dispatch.forEach((x, i) => {
     const w = `dispatch[${i}]`;
     if (!isObj(x)) { errors.push(`${w} must be an object`); return; }
-    checkKeys(x, ['charterSlug', 'reason', 'brief', 'ideaIds'], w, errors);
+    checkKeys(x, ['charterSlug', 'reason', 'brief', 'ideaIds', 'model', 'paths', 'repo', 'featureSlug'], w, errors);
+    if (x.repo !== undefined && x.repo !== null && !(typeof x.repo === 'string' && repoKeys(brief).includes(x.repo))) {
+      errors.push(`${w}.repo ${JSON.stringify(x.repo)} is not a repo of this project (one of: ${repoKeys(brief).join(', ')}; omit it for self)`);
+    }
+    // a council review names the feature it reviews and runs in the project's own repo; a rework
+    // delivery may name the feature too, so the council section can show it in flight
+    const review = Boolean(REVIEW_CHARTERS[x.charterSlug]);
+    if (review && !nonEmpty(x.featureSlug)) errors.push(`${w}.featureSlug is required for ${x.charterSlug}: the dev_use_cases slug of the feature to review`);
+    if (review && x.repo !== undefined && x.repo !== null && x.repo !== SELF_REPO) errors.push(`${w}.repo: a council review runs in the project's own repo; omit repo`);
+    if (x.featureSlug !== undefined && x.featureSlug !== null && !(typeof x.featureSlug === 'string' && FEATURE_SLUG_RE.test(x.featureSlug) && x.featureSlug.length <= 100)) {
+      errors.push(`${w}.featureSlug ${JSON.stringify(x.featureSlug)} must be a kebab-case feature slug copied from the context`);
+    }
     for (const k of ['charterSlug', 'reason', 'brief']) if (!nonEmpty(x[k])) errors.push(`${w}.${k} must be a non-empty string`);
     if (!Array.isArray(x.ideaIds)) errors.push(`${w}.ideaIds must be an array (use [] when none)`);
-    else x.ideaIds.forEach((id, j) => { if (!nonEmpty(id)) errors.push(`${w}.ideaIds[${j}] must be a non-empty string`); });
+    else x.ideaIds.forEach((id, j) => {
+      if (!nonEmpty(id)) { errors.push(`${w}.ideaIds[${j}] must be a non-empty string`); return; }
+      if (seenDispatchIdeas.has(id) && seenDispatchIdeas.get(id) !== i) errors.push(`${w}: idea ${id} is already carried by dispatch[${seenDispatchIdeas.get(id)}]; one builder per idea`);
+      else seenDispatchIdeas.set(id, i);
+    });
+    if (x.model !== undefined && x.model !== null && !BUILDER_MODEL_CHOICES.includes(x.model)) {
+      errors.push(`${w}.model "${x.model}" is not one of ${BUILDER_MODEL_CHOICES.join(', ')} (or null for the charter default)`);
+    }
+    // a review commits nothing, so it needs no paths and collides with nothing
+    if (x.paths === undefined || x.paths === null) {
+      if (several && !review) errors.push(`${w}.paths is required when a wake dispatches ${dispatch.length}: name the path prefixes or globs this builder will touch`);
+    } else if (!Array.isArray(x.paths)) errors.push(`${w}.paths must be an array of repo-relative path prefixes or globs`);
+    else {
+      if (!x.paths.length && several && !review) errors.push(`${w}.paths is empty; with ${dispatch.length} dispatches each must name what it touches`);
+      x.paths.forEach((p, j) => { const e = specError(p); if (e) errors.push(`${w}.paths[${j}] ${JSON.stringify(p)} ${e}`); });
+    }
   });
+  // two builders at once only on disjoint paths (conservative: an unprovable pair overlaps); two that
+  // target different repos cannot collide (each repo's own runs are checked at dispatch)
+  for (let i = 0; i < dispatch.length; i++) {
+    for (let j = i + 1; j < dispatch.length; j++) {
+      const a = dispatch[i], b = dispatch[j];
+      if (!isObj(a) || !isObj(b)) continue;
+      if (REVIEW_CHARTERS[a.charterSlug] && REVIEW_CHARTERS[b.charterSlug] && nonEmpty(a.featureSlug) && a.featureSlug === b.featureSlug) {
+        errors.push(`dispatch[${i}] and dispatch[${j}] both review ${a.featureSlug}; one council at a time per feature`);
+      }
+      if (REVIEW_CHARTERS[a.charterSlug] || REVIEW_CHARTERS[b.charterSlug]) continue;
+      if (!Array.isArray(a.paths) || !Array.isArray(b.paths) || !a.paths.length || !b.paths.length) continue;
+      if (targetRootKey(brief, a.repo) !== targetRootKey(brief, b.repo)) continue;
+      const pairs = overlappingPairs(a.paths, b.paths);
+      if (pairs.length) errors.push(`dispatch[${i}] and dispatch[${j}] have overlapping paths (${pairs.slice(0, 4).map(([x, y]) => `${x} ~ ${y}`).join('; ')}); two builders in one wake need disjoint paths, or dispatch one and defer the other`);
+    }
+  }
 
   const defer = checkArray(d, 'defer', errors);
   defer.forEach((x, i) => {
@@ -150,8 +259,27 @@ export function validateDecision(decision, { slug, wakeId, brief } = {}) {
 
 /** brief.models.byCharter[slug] ?? MODELS.builderByCharter[slug] ?? brief.models.builder ?? MODELS.builder */
 export function builderModel(brief, charterSlug) {
+  return chooseBuilderModel(brief, charterSlug).model;
+}
+
+/**
+ * (brief, charterSlug, choice?) => {model, source: 'brief'|'decision'|'contract', overridden?}
+ * The operator's word wins: a brief that pins a model (models.byCharter for this charter, or
+ * models.builder, which onboarding writes only for "Opus everywhere") keeps it, and the master's
+ * `choice` is reported as overridden. Otherwise the master's choice overrides the contract's
+ * per-charter default; without one, the old order holds.
+ */
+export function chooseBuilderModel(brief, charterSlug, choice = null) {
   const m = brief?.models ?? {};
-  return m.byCharter?.[charterSlug] ?? MODELS.builderByCharter[charterSlug] ?? m.builder ?? MODELS.builder;
+  const pinned = m.byCharter?.[charterSlug] ?? null;
+  if (pinned || m.builder) {
+    const model = pinned ?? MODELS.builderByCharter[charterSlug] ?? m.builder;
+    const out = { model, source: pinned || !MODELS.builderByCharter[charterSlug] ? 'brief' : 'contract' };
+    if (choice && resolveModel(choice) !== model) out.overridden = resolveModel(choice);
+    return out;
+  }
+  if (choice) return { model: resolveModel(choice), source: 'decision' };
+  return { model: MODELS.builderByCharter[charterSlug] ?? MODELS.builder, source: 'contract' };
 }
 
 /**
@@ -173,6 +301,33 @@ export function unknownIdeaIds(projectId, decision) {
   return [...named].filter((id) => !known.has(id));
 }
 
+/**
+ * What the app knows about the features a decision names (read-only): {named, known:Set|null, dbRuns}.
+ * `known` is null when dev_use_cases cannot be read: no check, never a block (as unknownIdeaIds).
+ */
+export function councilFacts(projectId, decision) {
+  const named = (decision.dispatch ?? []).map((x) => x.featureSlug).filter((s) => typeof s === 'string' && s.trim());
+  if (!named.length) return { named, known: null, dbRuns: [] };
+  let d; try { d = openDb(); } catch { return { named, known: null, dbRuns: [] }; }
+  try {
+    const uc = useCasesOf(d, projectId);
+    const runs = councilRunsOf(d, projectId);
+    return { named, known: uc.error ? null : new Set(uc.rows.map((r) => r.slug)), dbRuns: runs.error ? [] : runs.rows };
+  } finally { try { d.close(); } catch { /* already closed */ } }
+}
+
+/**
+ * The UX gate's count now: pending `[UX]` ideas of the project (read-only), else the count the wake's
+ * context recorded, else null (nothing to check against: decide then refuses the ux-proposal).
+ */
+export function uxPendingFor(projectId, wake) {
+  let d; try { d = openDb(); } catch { d = null; }
+  if (d) {
+    try { const r = uxPendingOf(d, projectId); if (r.count != null) return { count: r.count, source: 'db' }; } finally { try { d.close(); } catch { /* already closed */ } }
+  }
+  return Number.isInteger(wake?.uxPending) ? { count: wake.uxPending, source: 'wake' } : { count: null, source: null };
+}
+
 /** (args) => {wakeId, runIds:string[], outbox:string[], asks:string[], nextWakeAt}   // mints runIds BEFORE writing; Refusal on invalid */
 export async function cmdDecide({ flags = {} } = {}) {
   if (!flags.wake || flags.wake === true) throw new Error('--wake <wakeId> is required');
@@ -180,9 +335,9 @@ export async function cmdDecide({ flags = {} } = {}) {
   const { slug, project: known } = resolveManaged(flags.project);
   const wake = loadWake(slug, flags.wake);
   if (!wake) throw new Refusal('unknown wake', { slug, wakeId: flags.wake });
-  const project = wake.project ?? known;
-  if (!project?.id) throw new Error(`no project record for ${slug}: run context first`);
   const brief = loadBrief(slug);
+  const project = withBriefBase(wake.project ?? known, brief);
+  if (!project?.id) throw new Error(`no project record for ${slug}: run context first`);
   if (!brief) throw new Error(`no brief for ${slug}: run onboard first`);
 
   let decision;
@@ -194,24 +349,86 @@ export async function cmdDecide({ flags = {} } = {}) {
     if (wake.decision && canonical(wake.decision) === canonical(decision) && wake.result) return { ...wake.result, repeated: true };
     throw new Refusal('wake already decided', { slug, wakeId: wake.wakeId, decidedAt: wake.decidedAt ?? null });
   }
-  const v = validateDecision(decision, { slug, wakeId: wake.wakeId, brief });
+  const v = validateDecision(decision, { slug, wakeId: wake.wakeId, brief, planWake: wake.planWake === true });
   if (!v.ok) throw new Refusal('invalid decision', { errors: v.errors });
   const unknown = unknownIdeaIds(project.id, decision);
   if (unknown.length) throw new Refusal('invalid decision', { errors: unknown.map((id) => `idea ${id} is not a dev_ideas row of ${slug}; copy the full id from the context document, never retype it`) });
 
+  // A charter already in flight from an earlier wake is not dispatched beside itself (one builder per
+  // charter, as when the project cap was one), and neither is an idea a started run carries. A QUEUED
+  // planned run (its dispatch was refused for a slot) is a promise the loop keeps, so it counts as in
+  // flight too. A never-started, never-queued `planned` run is intent only (decided, dispatch never
+  // tried): the context tells the master about it, and it does not block here.
+  const all = listRuns(slug);
+  const prior = all.filter((r) => r.wakeId === wake.wakeId);
+  const queued = new Map(queueTable().map((e) => [e.runId, e]));
+  const live = all.filter((r) => (STARTED_STATES.includes(r.state) || (r.state === 'planned' && queued.has(r.runId))) && r.wakeId !== wake.wakeId);
+  const stateOf = (r) => (queued.has(r.runId) ? `queued at position ${queued.get(r.runId).position}` : r.state);
+  const clash = [];
+  decision.dispatch.forEach((x, i) => {
+    const same = live.find((r) => r.charterSlug === x.charterSlug);
+    if (same) clash.push(`dispatch[${i}]: charter ${x.charterSlug} already has live run ${shortId(same.runId)} (${stateOf(same)}); defer it until that run settles`);
+    for (const id of x.ideaIds ?? []) {
+      const carrier = live.find((r) => (r.ideaIds ?? []).includes(id));
+      if (carrier) clash.push(`dispatch[${i}]: idea ${id} is already carried by live run ${shortId(carrier.runId)} (${stateOf(carrier)})`);
+    }
+  });
+  // The council lane: the feature exists, no council of it is in flight, and its mode has a round left
+  // (the council refuses round 4 as stalled; dispatching it would only burn a builder).
+  const facts = councilFacts(project.id, decision);
+  const journal = councilJournal(slug);
+  // a review reads only tracked files: with no declared users its value member reports `unmeasured`
+  // and the round ends incomplete, so it is refused until a delivery adds the overlay
+  let cast = null;
+  const castOf = () => (cast ??= project.root ? charactersOf(project.root, project.baseBranch) : { source: null, unknown: true });
+  decision.dispatch.forEach((x, i) => {
+    if (REVIEW_CHARTERS[x.charterSlug] && !castOf().source && !castOf().unknown) {
+      clash.push(`dispatch[${i}]: ${x.charterSlug} is refused: ${slug} tracks no characters on ${project.baseBranch} (no uat/characters/*.md, no .claude/council/config.md with ## Characters), so the value member would report unmeasured and the round would end incomplete. Dispatch a delivery that adds a tracked .claude/council/config.md (## Characters, ## Gates) first`);
+    }
+  });
+  decision.dispatch.forEach((x, i) => {
+    if (!nonEmpty(x.featureSlug)) return;
+    if (facts.known && !facts.known.has(x.featureSlug)) clash.push(`dispatch[${i}]: feature ${x.featureSlug} is not a dev_use_cases slug of ${slug}; copy it from the COUNCIL section`);
+    const mode = REVIEW_CHARTERS[x.charterSlug];
+    if (!mode) return;
+    const reviewing = live.find((r) => isReviewRun(r) && r.featureSlug === x.featureSlug);
+    if (reviewing) clash.push(`dispatch[${i}]: feature ${x.featureSlug} already has a council run in flight: ${shortId(reviewing.runId)} ${reviewing.charterSlug} (${stateOf(reviewing)})`);
+    const used = roundsUsed(councilEvents(x.featureSlug, journal, facts.dbRuns))[mode];
+    if (used >= COUNCIL.maxRounds) clash.push(`dispatch[${i}]: feature ${x.featureSlug} has used ${used} ${mode} council round(s); round ${used + 1} is refused (stalled): raise it with the operator instead`);
+  });
+  // The UX gate, machine-enforced: no new UX proposal while more than UX.pendingMax await the operator.
+  const uxAt = decision.dispatch.findIndex((x) => x.charterSlug === UX.charter);
+  if (uxAt >= 0) {
+    const ux = uxPendingFor(project.id, wake);
+    if (ux.count == null) clash.push(`dispatch[${uxAt}]: ${UX.charter} cannot be checked against the UX gate (the app DB is unreadable and this wake recorded no uxPending); defer it`);
+    else if (ux.count > UX.pendingMax) clash.push(`dispatch[${uxAt}]: ${UX.charter} is refused while ${ux.count} ${UX.titlePrefix} ideas are pending review (more than ${UX.pendingMax}); defer it until the operator reviews them`);
+  }
+  if (clash.length) throw new Refusal('invalid decision', { errors: clash });
+
   // (1) identity before effect: one planned run per dispatch. A re-submission after a crash
   // finds the run this wake already minted for the charter instead of minting a second one.
-  const prior = listRuns(slug).filter((r) => r.wakeId === wake.wakeId);
-  const runs = decision.dispatch.map((x) => prior.find((r) => r.charterSlug === x.charterSlug)
-    ?? newRun(project, {
+  const warnings = [];
+  const runs = decision.dispatch.map((x, i) => {
+    const found = prior.find((r) => r.charterSlug === x.charterSlug);
+    if (found) return found;
+    const chosen = chooseBuilderModel(brief, x.charterSlug, x.model ?? null);
+    if (chosen.overridden) warnings.push(`dispatch[${i}].model ${x.model} ignored: the brief pins ${chosen.model} for ${x.charterSlug}`);
+    return newRun(project, {
       wakeId: wake.wakeId, charterSlug: x.charterSlug, reason: x.reason, brief: x.brief,
-      ideaIds: x.ideaIds, model: builderModel(brief, x.charterSlug),
-    }));
+      ideaIds: x.ideaIds, model: chosen.model, modelSource: chosen.source, paths: Array.isArray(x.paths) ? x.paths : [],
+      ...resolveRepo(project, brief, x.repo ?? undefined),   // validated above: never null here
+      ...(nonEmpty(x.featureSlug) ? { featureSlug: x.featureSlug } : {}),
+      // a review commits nothing: no paths to hold (it collides with no builder), its council's mode
+      ...(REVIEW_CHARTERS[x.charterSlug] ? { councilMode: REVIEW_CHARTERS[x.charterSlug], paths: [] } : {}),
+    });
+  });
 
   // (2) the outbox (idempotent by kind+payload) and the asks (deduped per wake + question)
   const src = { wakeId: wake.wakeId };
   const outbox = [];
   for (const x of decision.ideaVerdicts) outbox.push(queueOutbox(slug, project.id, 'idea-verdict', { ideaId: x.ideaId, status: x.status, reason: x.reason }, src).id);
+  // ONE entry for the whole plan: replay posts its milestones, then their goals, recording each id it creates
+  if (decision.plan) outbox.push(queueOutbox(slug, project.id, 'plan', { projectId: project.id, plan: decision.plan }, src).id);
   if (decision.say !== null && decision.say.trim()) outbox.push(queueOutbox(slug, project.id, 'say', { message: decision.say, from: 'master' }, src).id);
   const raised = loadAsks(slug).filter((a) => a.wakeId === wake.wakeId && a.source === 'master');
   const askIds = [];
@@ -227,7 +444,6 @@ export async function cmdDecide({ flags = {} } = {}) {
   const nextWakeAt = new Date(Date.parse(decidedAt) + decision.nextWakeMinutes * 60000).toISOString();
   const result = { wakeId: wake.wakeId, runIds: runs.map((r) => r.runId), outbox, asks: askIds, nextWakeAt };
   const b = brakes(slug);
-  const warnings = [];
   if (runs.length && b.memory.stop) warnings.push(`memory ${b.memory.freeGb} GB free (a dispatch needs ${b.memory.dispatchNeedGb}): dispatch will refuse until it recovers`);
   if (runs.length && b.limit.limited) warnings.push(`usage limit marked${b.limit.resetsAt ? ` until ${b.limit.resetsAt}` : ''}: dispatch will refuse`);
   saveWake(slug, { wakeId: wake.wakeId, status: 'decided', decision, runIds: result.runIds, nextWakeAt, note: decision.note, decidedAt, result });

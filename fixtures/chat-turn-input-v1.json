@@ -1,0 +1,533 @@
+{
+  "description": "Persona chat turn parity (PHASE2-SPEC 5.3). Every expected value was produced by the TypeScript builder the Rust chat turn replaced (chatSlice.ts sendChatMessage steps 3-4, deriveTitle, buildSummary) and by classifyLine. src-tauri/src/commands/core/chat_turn.rs and src/stores/slices/agents/__tests__/chatTurnParity.test.ts both reproduce every case.",
+  "inputs": [
+    {
+      "name": "first turn, advisory",
+      "chatMode": "advisory",
+      "isFirstMessage": true,
+      "claudeSessionId": null,
+      "transcript": [
+        {
+          "role": "user",
+          "content": "Hello there"
+        }
+      ],
+      "message": "Hello there",
+      "expected": {
+        "input": "{\"_advisory\":true,\"conversation\":\"Human: Hello there\",\"latest_message\":\"Hello there\"}",
+        "continuation": null
+      }
+    },
+    {
+      "name": "first turn, agent",
+      "chatMode": "agent",
+      "isFirstMessage": true,
+      "claudeSessionId": null,
+      "transcript": [
+        {
+          "role": "user",
+          "content": "Hello there"
+        }
+      ],
+      "message": "Hello there",
+      "expected": {
+        "input": "{\"_chat\":true,\"conversation\":\"Human: Hello there\",\"latest_message\":\"Hello there\"}",
+        "continuation": null
+      }
+    },
+    {
+      "name": "resumed turn, agent",
+      "chatMode": "agent",
+      "isFirstMessage": false,
+      "claudeSessionId": "sess-abc-123",
+      "transcript": [
+        {
+          "role": "user",
+          "content": "Hello there"
+        },
+        {
+          "role": "assistant",
+          "content": "Hi! How can I help?"
+        },
+        {
+          "role": "user",
+          "content": "Summarise my inbox"
+        }
+      ],
+      "message": "Summarise my inbox",
+      "expected": {
+        "input": "{\"_chat\":true,\"latest_message\":\"Summarise my inbox\"}",
+        "continuation": {
+          "type": "SessionResume",
+          "value": "sess-abc-123"
+        }
+      }
+    },
+    {
+      "name": "resumed turn, advisory is not re-flagged",
+      "chatMode": "advisory",
+      "isFirstMessage": false,
+      "claudeSessionId": "sess-abc-123",
+      "transcript": [
+        {
+          "role": "user",
+          "content": "Hello there"
+        },
+        {
+          "role": "assistant",
+          "content": "Hi! How can I help?"
+        },
+        {
+          "role": "user",
+          "content": "Summarise my inbox"
+        }
+      ],
+      "message": "Summarise my inbox",
+      "expected": {
+        "input": "{\"_chat\":true,\"latest_message\":\"Summarise my inbox\"}",
+        "continuation": {
+          "type": "SessionResume",
+          "value": "sess-abc-123"
+        }
+      }
+    },
+    {
+      "name": "follow-up with no Claude session yet, advisory",
+      "chatMode": "advisory",
+      "isFirstMessage": false,
+      "claudeSessionId": null,
+      "transcript": [
+        {
+          "role": "user",
+          "content": "Hello there"
+        },
+        {
+          "role": "assistant",
+          "content": "Hi! How can I help?"
+        },
+        {
+          "role": "system",
+          "content": "context note"
+        },
+        {
+          "role": "user",
+          "content": "Summarise my inbox"
+        }
+      ],
+      "message": "Summarise my inbox",
+      "expected": {
+        "input": "{\"_advisory\":true,\"conversation\":\"Human: Hello there\\n\\nAssistant: Hi! How can I help?\\n\\nAssistant: context note\\n\\nHuman: Summarise my inbox\",\"latest_message\":\"Summarise my inbox\"}",
+        "continuation": null
+      }
+    },
+    {
+      "name": "follow-up with no Claude session yet, agent",
+      "chatMode": "agent",
+      "isFirstMessage": false,
+      "claudeSessionId": null,
+      "transcript": [
+        {
+          "role": "user",
+          "content": "Hello there"
+        },
+        {
+          "role": "assistant",
+          "content": "Hi! How can I help?"
+        },
+        {
+          "role": "user",
+          "content": "Summarise my inbox"
+        }
+      ],
+      "message": "Summarise my inbox",
+      "expected": {
+        "input": "{\"_chat\":true,\"conversation\":\"Human: Hello there\\n\\nAssistant: Hi! How can I help?\\n\\nHuman: Summarise my inbox\",\"latest_message\":\"Summarise my inbox\"}",
+        "continuation": null
+      }
+    },
+    {
+      "name": "first message wins over a stored Claude session",
+      "chatMode": "agent",
+      "isFirstMessage": true,
+      "claudeSessionId": "sess-stale",
+      "transcript": [
+        {
+          "role": "user",
+          "content": "Hello there"
+        }
+      ],
+      "message": "Hello there",
+      "expected": {
+        "input": "{\"_chat\":true,\"conversation\":\"Human: Hello there\",\"latest_message\":\"Hello there\"}",
+        "continuation": null
+      }
+    },
+    {
+      "name": "an empty Claude session id does not resume",
+      "chatMode": "agent",
+      "isFirstMessage": false,
+      "claudeSessionId": "",
+      "transcript": [
+        {
+          "role": "user",
+          "content": "Hello there"
+        },
+        {
+          "role": "assistant",
+          "content": "Hi! How can I help?"
+        },
+        {
+          "role": "user",
+          "content": "Summarise my inbox"
+        }
+      ],
+      "message": "Summarise my inbox",
+      "expected": {
+        "input": "{\"_chat\":true,\"conversation\":\"Human: Hello there\\n\\nAssistant: Hi! How can I help?\\n\\nHuman: Summarise my inbox\",\"latest_message\":\"Summarise my inbox\"}",
+        "continuation": null
+      }
+    },
+    {
+      "name": "escaping: quotes, backslashes, control characters, non-ASCII",
+      "chatMode": "agent",
+      "isFirstMessage": false,
+      "claudeSessionId": null,
+      "transcript": [
+        {
+          "role": "user",
+          "content": "Hello there"
+        },
+        {
+          "role": "assistant",
+          "content": "Quote \" back\\slash\nnew line\ttab \u0001 ctrl  del café 😀 </script>   sep"
+        },
+        {
+          "role": "user",
+          "content": "Quote \" back\\slash\nnew line\ttab \u0001 ctrl  del café 😀 </script>   sep"
+        }
+      ],
+      "message": "Quote \" back\\slash\nnew line\ttab \u0001 ctrl  del café 😀 </script>   sep",
+      "expected": {
+        "input": "{\"_chat\":true,\"conversation\":\"Human: Hello there\\n\\nAssistant: Quote \\\" back\\\\slash\\nnew line\\ttab \\u0001 ctrl  del café 😀 </script>   sep\\n\\nHuman: Quote \\\" back\\\\slash\\nnew line\\ttab \\u0001 ctrl  del café 😀 </script>   sep\",\"latest_message\":\"Quote \\\" back\\\\slash\\nnew line\\ttab \\u0001 ctrl  del café 😀 </script>   sep\"}",
+        "continuation": null
+      }
+    },
+    {
+      "name": "escaping on resume",
+      "chatMode": "agent",
+      "isFirstMessage": false,
+      "claudeSessionId": "sess-abc-123",
+      "transcript": [
+        {
+          "role": "user",
+          "content": "Hello there"
+        },
+        {
+          "role": "assistant",
+          "content": "Hi! How can I help?"
+        },
+        {
+          "role": "user",
+          "content": "Quote \" back\\slash\nnew line\ttab \u0001 ctrl  del café 😀 </script>   sep"
+        }
+      ],
+      "message": "Quote \" back\\slash\nnew line\ttab \u0001 ctrl  del café 😀 </script>   sep",
+      "expected": {
+        "input": "{\"_chat\":true,\"latest_message\":\"Quote \\\" back\\\\slash\\nnew line\\ttab \\u0001 ctrl  del café 😀 </script>   sep\"}",
+        "continuation": {
+          "type": "SessionResume",
+          "value": "sess-abc-123"
+        }
+      }
+    },
+    {
+      "name": "latest_message is the typed text, the transcript the stored text",
+      "chatMode": "agent",
+      "isFirstMessage": true,
+      "claudeSessionId": null,
+      "transcript": [
+        {
+          "role": "user",
+          "content": "see bold"
+        }
+      ],
+      "message": "see <b>bold</b>",
+      "expected": {
+        "input": "{\"_chat\":true,\"conversation\":\"Human: see bold\",\"latest_message\":\"see <b>bold</b>\"}",
+        "continuation": null
+      }
+    }
+  ],
+  "titles": [
+    {
+      "content": "Hello there",
+      "expected": "Hello there"
+    },
+    {
+      "content": "   spaced \n\t out   words   ",
+      "expected": "spaced out words"
+    },
+    {
+      "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expected": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+      "content": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+      "expected": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy..."
+    },
+    {
+      "content": "A long first message that keeps going well past the sixty character limit of a title",
+      "expected": "A long first message that keeps going well past the sixty..."
+    },
+    {
+      "content": "a😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+      "expected": "a😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀..."
+    },
+    {
+      "content": "café   non breaking　spaces",
+      "expected": "café non breaking spaces"
+    }
+  ],
+  "summaries": [
+    {
+      "name": "short session",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Hello there"
+        },
+        {
+          "role": "assistant",
+          "content": "Hi! How can I help?"
+        }
+      ],
+      "expected": "Human: Hello there\n\nAssistant: Hi! How can I help?"
+    },
+    {
+      "name": "only the last 20 messages",
+      "messages": [
+        {
+          "role": "user",
+          "content": "message 0"
+        },
+        {
+          "role": "assistant",
+          "content": "message 1"
+        },
+        {
+          "role": "user",
+          "content": "message 2"
+        },
+        {
+          "role": "assistant",
+          "content": "message 3"
+        },
+        {
+          "role": "user",
+          "content": "message 4"
+        },
+        {
+          "role": "assistant",
+          "content": "message 5"
+        },
+        {
+          "role": "user",
+          "content": "message 6"
+        },
+        {
+          "role": "assistant",
+          "content": "message 7"
+        },
+        {
+          "role": "user",
+          "content": "message 8"
+        },
+        {
+          "role": "assistant",
+          "content": "message 9"
+        },
+        {
+          "role": "user",
+          "content": "message 10"
+        },
+        {
+          "role": "assistant",
+          "content": "message 11"
+        },
+        {
+          "role": "user",
+          "content": "message 12"
+        },
+        {
+          "role": "assistant",
+          "content": "message 13"
+        },
+        {
+          "role": "user",
+          "content": "message 14"
+        },
+        {
+          "role": "assistant",
+          "content": "message 15"
+        },
+        {
+          "role": "user",
+          "content": "message 16"
+        },
+        {
+          "role": "assistant",
+          "content": "message 17"
+        },
+        {
+          "role": "user",
+          "content": "message 18"
+        },
+        {
+          "role": "assistant",
+          "content": "message 19"
+        },
+        {
+          "role": "user",
+          "content": "message 20"
+        },
+        {
+          "role": "assistant",
+          "content": "message 21"
+        },
+        {
+          "role": "user",
+          "content": "message 22"
+        }
+      ],
+      "expected": "Assistant: message 3\n\nHuman: message 4\n\nAssistant: message 5\n\nHuman: message 6\n\nAssistant: message 7\n\nHuman: message 8\n\nAssistant: message 9\n\nHuman: message 10\n\nAssistant: message 11\n\nHuman: message 12\n\nAssistant: message 13\n\nHuman: message 14\n\nAssistant: message 15\n\nHuman: message 16\n\nAssistant: message 17\n\nHuman: message 18\n\nAssistant: message 19\n\nHuman: message 20\n\nAssistant: message 21\n\nHuman: message 22"
+    },
+    {
+      "name": "contents cut at 300 UTF-16 units, system reads as assistant",
+      "messages": [
+        {
+          "role": "user",
+          "content": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "role": "system",
+          "content": "context note"
+        },
+        {
+          "role": "assistant",
+          "content": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+        }
+      ],
+      "expected": "Human: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n\nAssistant: context note\n\nAssistant: éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+    }
+  ],
+  "lines": [
+    {
+      "line": "Plain answer text",
+      "isText": true
+    },
+    {
+      "line": "",
+      "isText": true
+    },
+    {
+      "line": "[ERROR] boom",
+      "isText": false
+    },
+    {
+      "line": "[TIMEOUT] slow",
+      "isText": false
+    },
+    {
+      "line": "[WARN] careful",
+      "isText": false
+    },
+    {
+      "line": "[SUMMARY]{\"status\":\"completed\"}",
+      "isText": false
+    },
+    {
+      "line": "[System] note",
+      "isText": false
+    },
+    {
+      "line": "> Using tool: Read",
+      "isText": false
+    },
+    {
+      "line": "  Tool result: ok",
+      "isText": false
+    },
+    {
+      "line": "  subagent: reviewer said hi",
+      "isText": false
+    },
+    {
+      "line": "> Analyzing",
+      "isText": false
+    },
+    {
+      "line": "> Attempt 2",
+      "isText": false
+    },
+    {
+      "line": "> Resuming",
+      "isText": false
+    },
+    {
+      "line": "> Query succeeded",
+      "isText": false
+    },
+    {
+      "line": "> Max retries hit",
+      "isText": false
+    },
+    {
+      "line": "> Cancelled by user",
+      "isText": false
+    },
+    {
+      "line": "> quoted line",
+      "isText": false
+    },
+    {
+      "line": "> _underscore",
+      "isText": true
+    },
+    {
+      "line": ">no space",
+      "isText": true
+    },
+    {
+      "line": "Session started",
+      "isText": false
+    },
+    {
+      "line": "Completed in 3s",
+      "isText": false
+    },
+    {
+      "line": "Cost: $0.01",
+      "isText": false
+    },
+    {
+      "line": "=== header",
+      "isText": false
+    },
+    {
+      "line": "Process exited 0",
+      "isText": false
+    },
+    {
+      "line": "[FAILOVER] Trying Codex...",
+      "isText": true
+    },
+    {
+      "line": "# Heading",
+      "isText": true
+    },
+    {
+      "line": "- bullet",
+      "isText": true
+    }
+  ]
+}

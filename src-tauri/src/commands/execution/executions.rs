@@ -23,8 +23,9 @@ use personas_core::types::ExecutionState;
 use personas_core::utils::sanitization::sanitize_secrets;
 use personas_macros::requires;
 
-/// Verify that the execution belongs to the expected persona.
-fn verify_execution_owner(
+/// Verify that the execution belongs to the expected persona. Also the owner
+/// rule of the remote `cancel_execution` verb (`cloud::remote_commands`).
+pub(crate) fn verify_execution_owner(
     exec: &PersonaExecution,
     caller_persona_id: &str,
 ) -> Result<(), AppError> {
@@ -1033,7 +1034,7 @@ pub fn preview_execution(
     let model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
     let model = model_profile
         .and_then(|mp| mp.model)
-        .unwrap_or_else(|| "claude-sonnet-4-6".to_string());
+        .unwrap_or_else(|| personas_core::model_ids::DEFAULT_BALANCED.to_string());
 
     // Monthly spend
     let monthly_spend =

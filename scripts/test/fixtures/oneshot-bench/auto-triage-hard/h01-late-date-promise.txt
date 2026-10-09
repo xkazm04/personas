@@ -1,0 +1,29 @@
+to: m.keller@hollandfreight.nl
+subject: Re: Shipment sync failures since Monday (ticket #58213)
+channel: email (external customer, Enterprise plan, monthly fee EUR 4,200)
+
+Dear Martin,
+
+Thank you for your patience while we looked into this, and I am sorry that the sync failures have disrupted your team's week. I know how much your dispatchers rely on the shipment board being current, and a board that silently stops updating is worse than one that is visibly down. You were right to escalate it.
+
+Here is what happened. On Monday at 06:40 CET we rolled out a change to the way our connector authenticates against carrier APIs. The new flow refreshes OAuth tokens in the background instead of on demand. For most carriers this worked as intended. For two carriers that issue tokens with a shorter lifetime than the documented one (DHL Freight and one regional carrier you use, Van der Berg Logistiek), the background refresh fired after the token had already expired. The connector then treated the resulting 401 as a permanent credential failure and paused the sync for those carriers instead of retrying. That is why about a third of your shipments stopped updating while the rest looked normal, which made it harder for your team to spot.
+
+What we have done so far:
+
+1. On Tuesday evening we reverted the refresh change for the two affected carriers. Your shipments from those carriers have been syncing again since 21:15 CET on Tuesday.
+2. We replayed every status event the carriers had queued during the gap, so the history on each shipment is complete. Your team should see the missing "out for delivery" and "delivered" events back on the board, with their original timestamps.
+3. We added an alert that fires when any carrier sync is paused for more than ten minutes, so a pause like this one pages our on-call engineer instead of waiting for a customer to notice.
+
+What is still open: the underlying bug in how the connector classifies a 401 after a background refresh is not fixed yet. The revert protects you today, but we do not want to re-enable background refresh for these carriers until the classification is correct and covered by tests against each carrier's real token lifetime. Our integrations team has picked it up as their top priority this sprint.
+
+As a gesture for the disruption, we have applied the standard service credit of 10% of your monthly fee (EUR 420) to your next invoice. You do not need to do anything to claim it; it will appear as a separate line.
+
+I also want to be straightforward about the timeline, because I know your operations lead will ask. I can promise you that the permanent fix will be deployed to your account by Friday 14 November, and I will personally confirm with you that day once it is live.
+
+In the meantime, if your dispatchers see any shipment that looks stale, they can use the "Force refresh" action on the shipment card, which bypasses the background job and pulls the latest status from the carrier directly. If that ever fails, please reply to this thread and it will come straight to me.
+
+Thank you again for flagging this so clearly, and for the detailed examples your team sent, which made the diagnosis much faster.
+
+Kind regards,
+Sofia Brandt
+Customer Success, Enterprise accounts

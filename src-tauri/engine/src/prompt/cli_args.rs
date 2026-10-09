@@ -121,7 +121,9 @@ pub(super) fn build_cli_args_inner(
         if let Some(ref model) = profile.model {
             if !model.is_empty() {
                 args.push("--model".to_string());
-                args.push(model.clone());
+                // A superseded id stored anywhere upstream resolves to its
+                // successor here, the door every CLI spawn passes.
+                args.push(personas_core::model_ids::canonical(model).to_string());
             }
         }
     }
@@ -357,7 +359,9 @@ pub(super) fn build_resume_cli_args_inner(
         if let Some(ref model) = profile.model {
             if !model.is_empty() {
                 args.push("--model".to_string());
-                args.push(model.clone());
+                // A superseded id stored anywhere upstream resolves to its
+                // successor here, the door every CLI spawn passes.
+                args.push(personas_core::model_ids::canonical(model).to_string());
             }
         }
     }

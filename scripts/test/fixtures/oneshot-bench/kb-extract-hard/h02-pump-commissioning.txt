@@ -1,0 +1,81 @@
+[page 1]
+NORTH QUAY WATER TREATMENT WORKS - RAW WATER PUMPING STATION UPGRADE
+Commissioning Report CR-0412, revision 2
+Prepared by: Hydrotec Commissioning Services for North Quay Water Ltd.
+Date of issue: 24 June 2026
+
+1. Purpose and scope
+
+This report records the commissioning of the duty, assist and standby pumps installed in the raw water pumping station as part of contract NQ-2025-08. It records the as-built and as-tested characteristics of each pump, the witnessed performance tests, and the outstanding items at handover. The report supersedes revision 1 (issued 11 June 2026), which was based partly on the tender data sheets because the witnessed tests for two of the pumps had not yet been completed.
+
+The values in Appendix A (tender data sheets) are reproduced for traceability only. They describe the pumps as offered at tender in 2025 and were superseded by the final selection after the hydraulic model was re-run with the updated demand forecast. Where Appendix A and the body of this report differ, the body of this report is authoritative.
+
+2. Scope changes during construction
+
+The original design included four pumps, P-101 to P-104. Change order CO-7, approved on 3 February 2026, removed P-104 (the low-flow jockey pump) from the scope after the client decided to meet night-time demand with variable-speed operation of P-103. P-104 was NOT installed, its plinth was not built, and it is not part of this commissioning. Any reference to P-104 in drawings issued before CO-7 should be disregarded.
+
+Change order CO-9 replaced the soft starters of P-101 and P-102 with variable-frequency drives. This does not affect the rated duty point of either pump, but it does change the motor protection settings, which are recorded in section 6.
+
+3. Installed pumps
+
+3.1 P-101 (duty pump)
+
+P-101 is a horizontal split-case pump manufactured by KSB, installed on plinth 1 and connected to the 300 mm suction header. Rated duty point as tested: flow 42.8 m3/h at a head of 36.2 m. Motor rating 15 kW, 4-pole, IE3. The pump was tested on 2 June 2026 in the presence of the client's engineer (witness certificate WC-17). Vibration readings at the duty point were within ISO 10816-7 zone A. Bearing temperatures stabilised after 90 minutes at 48 °C (drive end) and 45 °C (non-drive end).
+
+3.2 P-102 (assist pump)
+
+P-102 is identical in type to P-101 and is also manufactured by KSB. It is installed on plinth 2. During the first witnessed test on 2 June the measured head at the rated flow was below the guaranteed value because a temporary strainer had been left in the suction line. The strainer was removed and the test was repeated on 9 June 2026 (witness certificate WC-19).
+
+[page 2]
+The repeated test established the following rated duty point for P-102: flow 38.5 m3/h at a head of 28.4 m. The lower head compared with P-101 is by design: P-102 discharges into the low-level main, which has a lower static lift. Motor rating 11 kW, 4-pole, IE3. All other test results (vibration, noise, bearing temperatures, leakage at the mechanical seal) were within the specified limits.
+
+3.3 P-103 (standby and night-time pump)
+
+P-103 is a vertical multistage pump manufactured by Grundfos, installed on plinth 3 with its own suction connection to allow independent isolation. Following CO-7, P-103 also covers night-time demand at reduced speed, so the drive was configured for a minimum speed of 55%.
+
+The witnessed test of P-103 was delayed because the variable-speed drive had to be reprogrammed for the extended speed range. The test is reported in section 4.
+
+Motor rating 4 kW, 2-pole, IE3.
+
+4. Witnessed tests
+
+The witnessed performance test of P-103 was carried out on 3 June 2026 (witness certificate WC-18). At full speed, its rated flow, confirmed at that test, is 17.6 m3/h at a head of 21.7 m. At 55% speed the pump delivered 9.1 m3/h, which meets the night-time demand of 8.5 m3/h with margin. The minimum-flow protection operated correctly when the discharge valve was throttled.
+
+Summary of witnessed tests:
+- WC-17, 2 June 2026, P-101: passed.
+- WC-18, 3 June 2026, P-103: passed.
+- WC-19, 9 June 2026, P-102: passed (repeat test after removal of the temporary strainer).
+
+5. Control and instrumentation
+
+The pumps are controlled by the station PLC in duty, assist and standby mode, with automatic rotation of the duty pump every 168 operating hours. Rotation was demonstrated on 10 June. Each pump has a discharge pressure transmitter, a flow switch and a seal-leak detector wired to the PLC. The common discharge flowmeter (electromagnetic, DN300) was verified against a portable ultrasonic meter and agreed within 1.2%.
+
+Alarms tested: high and low suction level, pump trip, seal leak, VFD fault, loss of communication with the SCADA outstation. All alarms were received at the control room.
+
+[page 3]
+6. Electrical and protection settings
+
+Motor protection settings for the VFDs of P-101 and P-102 were set according to the motor data plates. Overcurrent and thermal settings for P-103 are on its VFD. Insulation resistance of all three motors exceeded 100 MΩ at 1000 V.
+
+7. Outstanding items at handover
+
+1. Permanent labels for the isolating valves on the suction header (cosmetic, by 15 July).
+2. Final as-built drawings to be reissued without P-104 (drawing set rev F).
+3. Operator training session 2 of 2 (scheduled 1 July).
+
+None of the outstanding items affects the operation or the rated performance of the installed pumps.
+
+8. Conclusion
+
+The three installed pumps P-101, P-102 and P-103 have been commissioned and are ready for handover. The ratings in section 3 and section 4 are the as-built ratings to be used for operation and for the asset register.
+
+Appendix B - Site conditions and test instrumentation
+
+Ambient temperature during the tests ranged from 14 °C to 19 °C. Raw water temperature was 11-12 °C and turbidity was below 4 NTU on all test days, so no correction of the measured head for water density was necessary. The suction level in the wet well was held between 2.10 m and 2.35 m above the pump centreline by throttling the inlet penstock. Flow was measured with the station's permanent electromagnetic flowmeter, verified as described in section 5, and cross-checked with a clamp-on ultrasonic meter (calibration certificate UC-2026-114, valid to December 2026). Suction and discharge pressures were measured with calibrated digital gauges (class 0.25) installed on the test tappings. Power was measured at the VFD output with a three-phase power analyser. Vibration was measured with a portable analyser at the bearing housings in three axes. Noise was measured at 1 m from the pump-motor set; all readings were below 82 dB(A). Test data sheets signed by both parties are filed in the handover dossier, volume 3.
+
+Appendix A - Tender data sheets (2025, SUPERSEDED, for traceability only)
+
+P-101 (tender offer): flow 46.5 m3/h, head 34.0 m, motor 18.5 kW.
+P-102 (tender offer): flow 38.5 m3/h, head 31.5 m, motor 11 kW.
+P-103 (tender offer): flow 17.6 m3/h, head 21.7 m, motor 4 kW.
+P-104 (tender offer, removed by CO-7): flow 12.3 m3/h, head 18.9 m, motor 2.2 kW, manufacturer Lowara.

@@ -18,6 +18,7 @@
   "executions": "Activity",
   "manual_review": "Approvals",
   "messages": "Reports",
+  "timeline": "Timeline",
   "knowledge": "Knowledge",
   "sla": "Reliability",
   "cron_agents": "Scheduled Agents",

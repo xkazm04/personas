@@ -15,7 +15,7 @@ import sys
 from playwright.sync_api import sync_playwright
 
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:1428"
-URL = f"{BASE}/src/features/companions/curator/council/__shots__/harness.html?variant=fused&theme=dark"
+URL = f"{BASE}/src/features/companions/curator/council/__shots__/harness.html?theme=dark"
 results = []
 
 
@@ -139,16 +139,17 @@ with sync_playwright() as p:
     restored = pg.evaluate("() => document.querySelectorAll('[data-role=hud-care-cell]').length")
     check("the rejected chip filters the care cells", after < before and restored == before, f"{before} -> {after} -> {restored}")
 
-    # 5. W lights the waiting subjects.
+    # 5. W selects the lanes' councils in order and lights their stars.
     pg.mouse.move(2, 790)
     pg.keyboard.press("w")
     settle(pg)
-    lit = pg.evaluate("() => { const s = window.__councilStore.getState(); return [s.focus.kind, s.counts.lit, !!document.querySelector('[data-role=hud-decision].on')]; }")
-    check("W lights a waiting decision's stars", lit[0] == "council" and lit[1] > 0 and lit[2], json.dumps(lit))
-    pg.keyboard.press("w")
-    pg.keyboard.press("w")
+    lit = pg.evaluate("() => { const s = window.__councilStore.getState(); return [s.focus.kind, s.counts.lit, !!document.querySelector('[data-testid=council-lanes] [role=option][aria-selected=true]')]; }")
+    check("W selects a council in the lanes and lights its stars", lit[0] == "council" and lit[1] > 0 and lit[2], json.dumps(lit))
+    rows = pg.evaluate("() => document.querySelectorAll('[data-testid=council-lanes] [role=option]').length")
+    for _ in range(rows):
+        pg.keyboard.press("w")
     settle(pg)
-    check("W cycles back to no decision", pg.evaluate("() => window.__councilStore.getState().focus.kind") == "none")
+    check("W cycles back to no council", pg.evaluate("() => window.__councilStore.getState().focus.kind") == "none")
 
     # 6. In lens mode the arrows turn the dial and the field flies.
     pg.keyboard.press("Shift+M")

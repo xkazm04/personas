@@ -1,14 +1,16 @@
 /**
  * FrameKeys — the top edge's icon-only mode keys, the same set the Current
- * header carries (the autonomy option, dev mode, sleep cycle, reset, close)
- * plus expand. Every key names itself through the shared Tooltip and
+ * header carries (the autonomy option, dev mode, sleep cycle, reset) plus
+ * what the island needs: expand (taller sheet), FOLD (back to the capsule, Esc)
+ * and, set apart at the end, HIDE (turns Athena's panel off entirely: a
+ * different glyph and words so it never reads as a second fold). Every key names itself through the shared Tooltip and
  * aria-label; the look decides its shape. Autonomy, cadence and boldness sit
  * behind the one option key; reset and the sleep cycle confirm through the
  * shared anchored `ConfirmPopover`; saving the log lives in the dev ledger row.
  */
 
 import type { ComponentType } from 'react';
-import { Maximize2, Minimize2, Wrench, X } from 'lucide-react';
+import { ChevronDown, CodeXml, EyeOff, Maximize2, Minimize2 } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
@@ -27,6 +29,7 @@ function Key({
   active,
   onClick,
   testId,
+  shortcut,
 }: {
   look: FrameLook;
   icon: ComponentType<{ className?: string; strokeWidth?: number }>;
@@ -34,14 +37,17 @@ function Key({
   active?: boolean;
   onClick: () => void;
   testId?: string;
+  /** Shown beside the name in the tooltip and announced as aria-keyshortcuts. */
+  shortcut?: { label: string; aria: string };
 }) {
   return (
-    <Tooltip content={label}>
+    <Tooltip content={shortcut ? `${label} · ${shortcut.label}` : label}>
       <button
         type="button"
         onClick={onClick}
         aria-label={label}
         aria-pressed={active}
+        aria-keyshortcuts={shortcut?.aria}
         data-testid={testId}
         className={`grid place-items-center shrink-0 transition-colors focus-ring ${look.icon.button} ${active ? look.icon.active : ''}`}
       >
@@ -55,10 +61,14 @@ export function FrameKeys({
   look,
   expanded,
   onExpand,
+  onFold,
+  foldShortcut,
 }: {
   look: FrameLook;
   expanded: boolean;
   onExpand: () => void;
+  onFold: () => void;
+  foldShortcut: { label: string; aria: string };
 }) {
   const { t } = useTranslation();
   const c = t.athena;
@@ -79,7 +89,7 @@ export function FrameKeys({
         <>
           <Key
             look={look}
-            icon={Wrench}
+            icon={CodeXml}
             label={devMode ? c.dev_toggle_off : c.dev_toggle_on}
             active={devMode}
             onClick={() => setDevMode(!devMode)}
@@ -95,11 +105,21 @@ export function FrameKeys({
         label={expanded ? C.collapseConversation : C.expandConversation}
         active={expanded}
         onClick={onExpand}
+        testId="companion-fusion-expand"
       />
       <Key
         look={look}
-        icon={X}
-        label={t.common.close}
+        icon={ChevronDown}
+        label={C.foldConversation}
+        shortcut={foldShortcut}
+        onClick={onFold}
+        testId="companion-fusion-fold"
+      />
+      <span className="fu-keys-sep" aria-hidden />
+      <Key
+        look={look}
+        icon={EyeOff}
+        label={orbEnabled ? C.minimizeAthena : C.hideAthena}
         onClick={() => useAthenaStore.getState().setState(orbEnabled ? 'minimized' : 'collapsed')}
         testId="companion-close"
       />

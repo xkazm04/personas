@@ -55,6 +55,11 @@ use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
+/// KPI composition writes and test-runs a measurement in the repo: an agent
+/// task. Model and effort come from the class table (`personas_core::model_class`).
+const KPI_COMPOSE_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::AgentTask;
+
 /// Job extra: the single composed result envelope (`{"kpi_measure"|"kpi_proposal": …}`).
 #[derive(Clone, Default)]
 struct ComposeExtra {
@@ -595,9 +600,9 @@ async fn run_compose(
     KPI_COMPOSE_JOBS.emit_line(app, task_id, "[Milestone] Composing & testing measurement…");
 
     let exec_dir = std::path::PathBuf::from(root_path);
-    let mut child = crate::engine::cli_process::spawn_headless_claude(
+    let mut child = crate::engine::cli_process::spawn_headless_claude_class(
         prompt_text,
-        "claude-sonnet-4-6",
+        KPI_COMPOSE_CLASS,
         &[],
         Some(&exec_dir),
         true,
@@ -634,7 +639,7 @@ async fn run_compose(
                         &crate::db::repos::llm_spend::SpendCtx {
                             source: "kpi",
                             trigger_kind: cs.trigger_kind,
-                            model: Some("claude-sonnet-4-6"),
+                            model: Some(KPI_COMPOSE_CLASS.route().model),
                             project_id: cs.project_id.as_deref(),
                             persona_id: None,
                         },

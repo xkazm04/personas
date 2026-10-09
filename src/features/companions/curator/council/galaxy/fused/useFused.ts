@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { decidable } from '../../councilRules';
+import { awaitsYou } from '../../councilRules';
 import { effectiveSubject } from '../../bench/queueModel';
 import { useCouncilStore } from '../../councilStore';
 import type { EnginePath, GalaxyEngine } from '../engine/GalaxyEngine';
@@ -29,7 +29,7 @@ export function useFusedData(): FusedData {
     useShallow((s) => ({ layout: s.layout, galaxy: s.galaxy, subjects: s.subjects, fixtureDecisions: s.fixtureDecisions })),
   );
   return useMemo(() => {
-    const waiting = subjects.map((s) => effectiveSubject(s, fixtureDecisions)).filter(decidable);
+    const waiting = subjects.map((s) => effectiveSubject(s, fixtureDecisions)).filter(awaitsYou);
     const decisions = decisionsOf(layout, waiting);
     const waitingStars = new Set(decisions.flatMap((d) => d.stars.map((s) => s.slug)));
     const laws = new Map<string, { statement: string; techniques: string[] }>();

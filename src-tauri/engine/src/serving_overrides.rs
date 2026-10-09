@@ -72,8 +72,8 @@
 //!   which are not persona executions and do not write `persona_executions`.
 //!   A second registry, if that lane ever needs one.
 //! - **Lab / arena / eval lanes.** `commands::execution::lab` measurement runs,
-//!   [`crate::test_runner::lab`]'s `LAB_MODEL`, [`crate::eval`] and
-//!   [`crate::auto_triage`]'s pinned headless `--model` all spawn a real CLI but
+//!   [`crate::test_runner::lab`]'s `LAB_CLASS`, [`crate::eval`] and
+//!   [`crate::auto_triage`]'s class-routed headless `--model` all spawn a real CLI but
 //!   against an ephemeral persona built for measurement. They cannot change what
 //!   an operator's persona serves. (`commands::execution::lab`'s three writes to
 //!   the persona's stored prompt are a different thing and *are* members.)
@@ -350,6 +350,9 @@ pub enum Mechanism {
     BootReadmissionSessionResume,
     /// AI healing resumes the original CLI session.
     HealingSessionResume,
+    /// A persona chat turn (desk or paired phone) resumes the stored Claude
+    /// session once the chat has one and this is not its first turn.
+    ChatTurnSessionResume,
 
     // ---- Suppression ------------------------------------------------------
     /// The persona breaker disables a persona after five consecutive failures.
@@ -373,7 +376,7 @@ pub enum Mechanism {
 impl Mechanism {
     /// Every mechanism. [`Self::assert_all_covered`] proves this covers the
     /// enum at compile time.
-    pub const ALL: [Mechanism; 49] = [
+    pub const ALL: [Mechanism; 50] = [
         Mechanism::ByomPolicySubstitution,
         Mechanism::FailoverCandidateModel,
         Mechanism::RemoteHttpEngineBypass,
@@ -419,6 +422,7 @@ impl Mechanism {
         Mechanism::ApiErrorResumeDrain,
         Mechanism::BootReadmissionSessionResume,
         Mechanism::HealingSessionResume,
+        Mechanism::ChatTurnSessionResume,
         Mechanism::PersonaFailureBreaker,
         Mechanism::NoDeliveryBreaker,
         Mechanism::KnowledgeHintOverridesRetry,
@@ -478,6 +482,7 @@ impl Mechanism {
                 Mechanism::ApiErrorResumeDrain => {}
                 Mechanism::BootReadmissionSessionResume => {}
                 Mechanism::HealingSessionResume => {}
+                Mechanism::ChatTurnSessionResume => {}
                 Mechanism::PersonaFailureBreaker => {}
                 Mechanism::NoDeliveryBreaker => {}
                 Mechanism::KnowledgeHintOverridesRetry => {}
@@ -541,6 +546,7 @@ impl Mechanism {
                 "boot re-admission resumes a mid-flight run's session"
             }
             Self::HealingSessionResume => "AI healing resumes the original session",
+            Self::ChatTurnSessionResume => "a persona chat turn resumes the chat's stored session",
             Self::PersonaFailureBreaker => "the failure breaker disables the persona",
             Self::NoDeliveryBreaker => "the no-delivery breaker disables the persona",
             Self::KnowledgeHintOverridesRetry => "a KB hint suppresses or re-times the retry",
@@ -595,7 +601,8 @@ impl Mechanism {
             Self::WarmPoolSessionReuse
             | Self::ApiErrorResumeDrain
             | Self::BootReadmissionSessionResume
-            | Self::HealingSessionResume => Dimension::Session,
+            | Self::HealingSessionResume
+            | Self::ChatTurnSessionResume => Dimension::Session,
             Self::PersonaFailureBreaker
             | Self::NoDeliveryBreaker
             | Self::KnowledgeHintOverridesRetry
@@ -895,6 +902,11 @@ impl Mechanism {
                 marker: "Some(types::Continuation::SessionResume(session_id))",
                 family: Some((Family::ContinuationProduced, 1)),
             }],
+            Self::ChatTurnSessionResume => &[Site {
+                file: "src/commands/core/chat_turn.rs",
+                marker: "continuation: Some(Continuation::SessionResume(resume.to_string()))",
+                family: Some((Family::ContinuationProduced, 1)),
+            }],
             Self::PersonaFailureBreaker => &[Site {
                 file: "src/engine/healing_retry.rs",
                 marker: "Circuit breaker tripped: disabling persona after",
@@ -928,7 +940,7 @@ const _: () = Mechanism::assert_all_covered();
 /// ratchet, not an ignore file.
 ///
 /// `(family, file relative to src-tauri/, occurrences, why it is not a member)`
-pub const NON_MEMBERS: [(Family, &str, usize, &str); 9] = [
+pub const NON_MEMBERS: [(Family, &str, usize, &str); 10] = [
     (
         Family::ModelProfileSubstitution,
         "src/engine/runner/mod.rs",
@@ -943,6 +955,12 @@ pub const NON_MEMBERS: [(Family, &str, usize, &str); 9] = [
         "read side: the runner matching on a continuation it was handed. The one \
          producing-shaped occurrence in this file is claimed by \
          Mechanism::ResumeSuppressesRecallBlocks",
+    ),
+    (
+        Family::ContinuationProduced,
+        "src/commands/core/chat_turn.rs",
+        1,
+        "assertion inside an inline #[cfg(test)] module; the production site is claimed by \n         Mechanism::ChatTurnSessionResume",
     ),
     (
         Family::ModelProfileSubstitution,
@@ -971,8 +989,8 @@ pub const NON_MEMBERS: [(Family, &str, usize, &str); 9] = [
     (
         Family::PersonaDisabled,
         "src/engine/subscription/attention.rs",
-        1,
-        "test setup inside the inline #[cfg(test)] module, not a serving path",
+        2,
+        "two test setups inside the inline #[cfg(test)] module, not a serving path",
     ),
     (
         Family::AmbientPrepend,

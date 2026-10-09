@@ -16,8 +16,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex, OnceLock};
 
 use crate::models::{
-    CouncilDecision, CouncilOverlay, CouncilOverlaySubject, CouncilRun, CouncilRunDetail,
-    CouncilSubject, CouncilSubjectState, CouncilVerdict,
+    CouncilDecision, CouncilDimensionScore, CouncilOverlay, CouncilOverlaySubject, CouncilRun,
+    CouncilRunDetail, CouncilSubject, CouncilSubjectState, CouncilVerdict,
 };
 use crate::DbPool;
 use personas_core::error::AppError;
@@ -33,7 +33,7 @@ const SUBJECT_COLUMNS: &str = "id, project_id, kind, use_case_id, slug, title, d
 /// comparison is made on every read instead. An architecture subject has no
 /// description stored anywhere, so the flag is false for it by construction -
 /// `NULL AND ...` is 0 in SQLite, never NULL.
-const RUN_SELECT: &str = "SELECT r.id, r.subject_id, r.round_no, r.supersedes_run_id, \
+const RUN_SELECT: &str = "SELECT r.id, r.subject_id, r.mode, r.round_no, r.supersedes_run_id, \
      r.rubric_version, r.trust_state, r.outcome, r.overall, r.coverage, r.head_sha, \
      r.span_digest, r.spanned_paths_json, r.hard_failures_json, r.must_address_json, \
      r.summary, r.run_dir, r.started_at, r.finished_at, r.ingested_at, \
@@ -66,6 +66,7 @@ fn row_to_run(row: &Row) -> rusqlite::Result<CouncilRun> {
     Ok(CouncilRun {
         id: row.get("id")?,
         subject_id: row.get("subject_id")?,
+        mode: row.get("mode")?,
         round_no: row.get("round_no")?,
         supersedes_run_id: row.get("supersedes_run_id")?,
         rubric_version: row.get("rubric_version")?,
@@ -313,6 +314,8 @@ pub struct NewVerdict {
 #[derive(Debug, Clone, PartialEq)]
 pub struct NewRun {
     pub subject_id: String,
+    /// 'full' | 'lite'. `round_no` is the round WITHIN this mode.
+    pub mode: String,
     pub round_no: i32,
     pub supersedes_run_id: Option<String>,
     pub rubric_version: String,
@@ -374,8 +377,8 @@ pub fn insert_run_full(
                 (id, subject_id, round_no, supersedes_run_id, rubric_version, trust_state,
                  outcome, overall, coverage, head_sha, span_digest, spanned_paths_json,
                  hard_failures_json, must_address_json, summary, run_dir, started_at,
-                 finished_at, ingested_at)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19)",
+                 finished_at, ingested_at, mode)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20)",
             params![
                 id,
                 run.subject_id,
@@ -395,7 +398,8 @@ pub fn insert_run_full(
                 run.run_dir,
                 run.started_at,
                 run.finished_at,
-                now
+                now,
+                run.mode
             ],
         )?;
         for v in verdicts {
@@ -475,16 +479,49 @@ pub fn get_run_by_dir(pool: &DbPool, run_dir: &str) -> Result<Option<CouncilRun>
     })
 }
 
-/// The subject's newest round. Ordered by `round_no`, not by time: the round
-/// number is the sequence, and a re-ingest of an older run dir must not become
-/// the latest simply because it landed last.
+/// The run that GOVERNS the subject: its newest FULL round, or - while no full
+/// council has run - its newest lite round. Every derived surface (the state,
+/// the overlay, the gate's `is_latest`) reads this one.
+///
+/// Full first, because a lite pass is the council's feedback and never its
+/// verdict (registry council 0.4.0): a lite run landing after a full one must
+/// not supersede that run's decision or return the subject to a lite outcome.
+/// Within a mode the order is `round_no`, not time: the round number is the
+/// sequence, and a re-ingest of an older run dir must not become the latest
+/// simply because it landed last.
 pub fn latest_run(pool: &DbPool, subject_id: &str) -> Result<Option<CouncilRun>, AppError> {
     timed_query!("dev_council_runs", "council::latest_run", {
         let conn = pool.get()?;
         Ok(conn
             .query_row(
-                &format!("{RUN_SELECT} WHERE r.subject_id = ?1 ORDER BY r.round_no DESC LIMIT 1"),
+                &format!(
+                    "{RUN_SELECT} WHERE r.subject_id = ?1 \
+                     ORDER BY (r.mode = 'full') DESC, r.round_no DESC LIMIT 1"
+                ),
                 params![subject_id],
+                row_to_run,
+            )
+            .ok())
+    })
+}
+
+/// The subject's newest round in ONE mode - what a new round of that mode
+/// follows and supersedes. Rounds are counted per mode, so a lite round never
+/// advances the full council's count (or its round-4 cap), and vice versa.
+pub fn latest_run_in_mode(
+    pool: &DbPool,
+    subject_id: &str,
+    mode: &str,
+) -> Result<Option<CouncilRun>, AppError> {
+    timed_query!("dev_council_runs", "council::latest_run_in_mode", {
+        let conn = pool.get()?;
+        Ok(conn
+            .query_row(
+                &format!(
+                    "{RUN_SELECT} WHERE r.subject_id = ?1 AND r.mode = ?2 \
+                     ORDER BY r.round_no DESC LIMIT 1"
+                ),
+                params![subject_id, mode],
                 row_to_run,
             )
             .ok())
@@ -902,6 +939,21 @@ pub fn list_subject_states(
                 Some(r) => list_verdicts(pool, &r.id)?,
                 None => Vec::new(),
             };
+            // Same tolerance as `hard_failures` below: an unparseable or
+            // non-array value counts as nothing rather than failing the list.
+            let must_address_count: i32 = run
+                .as_ref()
+                .and_then(|r| serde_json::from_str::<serde_json::Value>(&r.must_address_json).ok())
+                .and_then(|v| v.as_array().map(|a| a.len() as i32))
+                .unwrap_or(0);
+            // Only a report that EXISTS is linked; the run dir is used as
+            // stored (a `\\?\` prefix included) - `Path::join` handles it.
+            let report_path = run.as_ref().and_then(|r| {
+                let p = std::path::Path::new(&r.run_dir).join("report.html");
+                p.is_file().then(|| p.to_string_lossy().into_owned())
+            });
+            let dimensions: Vec<CouncilDimensionScore> =
+                verdicts.iter().map(CouncilDimensionScore::from).collect();
             let (floor_hits, hard_failures): (i32, i32) = match run.as_ref() {
                 Some(r) => {
                     let hits = verdicts
@@ -962,6 +1014,7 @@ pub fn list_subject_states(
                 title: s.title.clone(),
                 state,
                 tier,
+                mode: run.as_ref().map(|r| r.mode.clone()),
                 round_no: run.as_ref().map(|r| r.round_no),
                 latest_run_id: run.as_ref().map(|r| r.id.clone()),
                 outcome: run.as_ref().map(|r| r.outcome.clone()),
@@ -973,7 +1026,10 @@ pub fn list_subject_states(
                 drift: s.drift.clone(),
                 project_name: identity.name,
                 registry_subjects,
+                dimensions,
+                must_address_count,
                 run_dir: run.as_ref().map(|r| r.run_dir.clone()),
+                report_path,
                 finished_at: run.as_ref().and_then(|r| r.finished_at.clone()),
                 decided_at,
                 rejection_reason,
@@ -1174,8 +1230,9 @@ pub fn approved_subjects_for_drift(
             AND p.root_path IS NOT NULL AND p.root_path != ''
             AND d.decided_at = (SELECT MAX(d2.decided_at) FROM dev_council_decisions d2
                                  WHERE d2.subject_id = s.id)
+            AND r.mode = 'full'
             AND r.round_no = (SELECT MAX(r2.round_no) FROM dev_council_runs r2
-                               WHERE r2.subject_id = s.id)",
+                               WHERE r2.subject_id = s.id AND r2.mode = 'full')",
             )?;
             let rows = stmt.query_map([], |r| {
                 Ok((
@@ -1345,6 +1402,7 @@ mod tests {
     fn a_run(subject_id: &str, round: i32, outcome: &str, dir: &str) -> NewRun {
         NewRun {
             subject_id: subject_id.to_string(),
+            mode: "full".into(),
             round_no: round,
             supersedes_run_id: None,
             rubric_version: "feature-v1".into(),
@@ -2028,6 +2086,126 @@ mod tests {
         assert_eq!(states[0].project_name, "P");
     }
 
+    /// The list projection carries every member's mark and the must-address
+    /// count, so a queue row never has to open the run to draw them.
+    #[test]
+    fn the_state_list_carries_every_members_mark_and_the_must_address_count() {
+        let (pool, project_id, uc_id) = seeded();
+        let (subject, _) = upsert_subject(
+            &pool,
+            &project_id,
+            "use_case",
+            "checkout",
+            "Checkout",
+            Some(&uc_id),
+        )
+        .unwrap();
+        let mut run = a_run(&subject.id, 1, "ready", "/runs/marks");
+        run.must_address_json = r#"["a","b","c"]"#.into();
+        let mut craft = a_verdict("craft", None, false);
+        craft.kind = "mechanical".into();
+        craft.floor = None;
+        craft.advisory = false;
+        let stored =
+            insert_run(&pool, &run, &[a_verdict("value", Some(0.8), true), craft]).unwrap();
+
+        let states = list_subject_states(&pool, Some(&project_id)).unwrap();
+        let verdicts = list_verdicts(&pool, &stored.id).unwrap();
+        assert_eq!(states[0].dimensions.len(), 2);
+        // Stored order, field for field - no re-sorting, no re-deriving.
+        for (d, v) in states[0].dimensions.iter().zip(verdicts.iter()) {
+            assert_eq!(d.dimension, v.dimension);
+            assert_eq!(d.kind, v.kind);
+            assert_eq!(d.state, v.state);
+            assert_eq!(d.score, v.score);
+            assert_eq!(d.floor, v.floor);
+            assert_eq!(d.floor_hit, v.floor_hit);
+            assert_eq!(d.advisory, v.advisory);
+        }
+        let craft = states[0]
+            .dimensions
+            .iter()
+            .find(|d| d.dimension == "craft")
+            .unwrap();
+        assert_eq!(craft.score, None, "unmeasured stays null, never zero");
+        assert_eq!(craft.kind, "mechanical");
+        assert_eq!(states[0].must_address_count, 3);
+
+        // An unparseable must-address value counts as nothing, like hard failures.
+        let mut bad = a_run(&subject.id, 2, "ready", "/runs/marks-2");
+        bad.must_address_json = "not json".into();
+        insert_run(&pool, &bad, &[a_verdict("value", Some(0.9), false)]).unwrap();
+        let states = list_subject_states(&pool, Some(&project_id)).unwrap();
+        assert_eq!(states[0].must_address_count, 0);
+        assert_eq!(
+            states[0].dimensions.len(),
+            1,
+            "the LATEST run's members only"
+        );
+    }
+
+    /// The report link is handed over only when the file is there to open.
+    #[test]
+    fn the_report_path_is_set_only_when_report_html_exists() {
+        let (pool, project_id, uc_id) = seeded();
+        let (subject, _) = upsert_subject(
+            &pool,
+            &project_id,
+            "use_case",
+            "checkout",
+            "Checkout",
+            Some(&uc_id),
+        )
+        .unwrap();
+        let dir = std::env::temp_dir().join(format!(
+            "council-report-{}-{}",
+            std::process::id(),
+            chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let dir_str = dir.to_string_lossy().into_owned();
+        insert_run(
+            &pool,
+            &a_run(&subject.id, 1, "ready", &dir_str),
+            &[a_verdict("value", Some(0.8), false)],
+        )
+        .unwrap();
+
+        let states = list_subject_states(&pool, Some(&project_id)).unwrap();
+        assert_eq!(states[0].run_dir.as_deref(), Some(dir_str.as_str()));
+        assert_eq!(states[0].report_path, None, "no report.html, no link");
+
+        let report = dir.join("report.html");
+        std::fs::write(&report, "<html></html>").unwrap();
+        let states = list_subject_states(&pool, Some(&project_id)).unwrap();
+        assert_eq!(
+            states[0].report_path.as_deref(),
+            Some(report.to_string_lossy().as_ref())
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// No run: the absent-value convention, not an invented zero row.
+    #[test]
+    fn a_subject_with_no_run_has_no_marks_no_count_and_no_report() {
+        let (pool, project_id, uc_id) = seeded();
+        upsert_subject(
+            &pool,
+            &project_id,
+            "use_case",
+            "checkout",
+            "Checkout",
+            Some(&uc_id),
+        )
+        .unwrap();
+        let states = list_subject_states(&pool, Some(&project_id)).unwrap();
+        assert!(states[0].dimensions.is_empty());
+        assert_eq!(states[0].must_address_count, 0);
+        assert_eq!(states[0].report_path, None);
+        assert_eq!(states[0].run_dir, None);
+    }
+
     #[test]
     fn set_drift_stamps_when_it_looked() {
         let (pool, project_id, uc_id) = seeded();
@@ -2048,5 +2226,65 @@ mod tests {
         assert_eq!(get_subject(&pool, &subject.id).unwrap().unwrap(), after);
         // A subject that is not there is an error, not a quiet success.
         assert!(set_drift(&pool, "no-such-subject", "none").is_err());
+    }
+
+    /// The governing run is the newest FULL round; a lite round only governs
+    /// while no full council exists, and never supersedes a full decision.
+    #[test]
+    fn a_lite_run_never_supersedes_a_full_one() {
+        let (pool, project_id, use_case_id) = seeded();
+        let (subject, _) = upsert_subject(
+            &pool,
+            &project_id,
+            "use_case",
+            "checkout",
+            "Checkout",
+            Some(&use_case_id),
+        )
+        .unwrap();
+        let lite = |round: i32, dir: &str| NewRun {
+            mode: "lite".into(),
+            coverage: 0.7,
+            ..a_run(&subject.id, round, "ready", dir)
+        };
+
+        let l1 = insert_run(&pool, &lite(1, "/runs/lite-r1"), &[]).unwrap();
+        assert_eq!(l1.mode, "lite");
+        assert_eq!(
+            latest_run(&pool, &subject.id).unwrap().unwrap().id,
+            l1.id,
+            "a lite run governs while no full council exists"
+        );
+
+        let f1 = insert_run(&pool, &a_run(&subject.id, 1, "ready", "/runs/r1"), &[]).unwrap();
+        assert_eq!(f1.mode, "full");
+        insert_decision(&pool, &subject.id, &f1.id, "approved", None, "dig").unwrap();
+
+        // A later lite round 2 lands after the approval.
+        let l2 = insert_run(&pool, &lite(2, "/runs/lite-r2"), &[]).unwrap();
+        assert_eq!(latest_run(&pool, &subject.id).unwrap().unwrap().id, f1.id);
+        assert_eq!(
+            latest_run_in_mode(&pool, &subject.id, "lite")
+                .unwrap()
+                .unwrap()
+                .id,
+            l2.id
+        );
+        assert_eq!(
+            latest_run_in_mode(&pool, &subject.id, "full")
+                .unwrap()
+                .unwrap()
+                .id,
+            f1.id
+        );
+        let states = list_subject_states(&pool, None).unwrap();
+        assert_eq!(
+            states[0].state, "approved",
+            "the lite round did not undo it"
+        );
+        assert_eq!(states[0].mode.as_deref(), Some("full"));
+        assert_eq!(states[0].round_no, Some(1));
+        assert!(get_run_detail(&pool, &f1.id).unwrap().is_latest);
+        assert!(!get_run_detail(&pool, &l2.id).unwrap().is_latest);
     }
 }

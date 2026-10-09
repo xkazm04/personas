@@ -23,6 +23,15 @@ pub mod dev_tools;
 pub mod dev_tools_http;
 pub mod dev_workspaces;
 pub mod feed_impact;
+/// The headless App Master's write doors: milestones, goals, workspace
+/// assignment, council ingest and tier (the routes live in `dev_tools_http`).
+pub mod headless_doors;
+/// The headless App Master state door: `/appmaster`'s beat, read by the App
+/// Master readout and by the attention tick, which stands aside while it is fresh.
+pub mod headless_master;
+/// `POST /dev-tools/reports`: a headless App Master's report, its attachment
+/// copies and the approval it raises.
+pub mod headless_report;
 /// The `/note-task` skill's one gated door back into the app (the Notepad).
 pub mod notepad_ingest;
 pub mod replay_queue;

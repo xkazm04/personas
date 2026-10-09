@@ -41,6 +41,7 @@
       "contexts": ["| container cursor | `GlobalExecutionList.tsx:429`, `IncidentsInbox.tsx:494`, `MessageList.tsx:339`, `UnifiedTable.tsx:572` | — | n/a | n/a |"],
       "resolved": false
     },
+    "agents/quick-answer/triage/deck/useDeckDialog.tsx": {"count":1,"sections":[7],"lines":["112"],"contexts":["| `scrollTo({ top: 0 … })` | **1** — `agents/quick-answer/triage/deck/useDeckDialog.tsx:112` (the `Home` key) |"],"resolved":false},
     "hooks/utility/interaction/{useScrollRestoration,useScrollShadow}.ts": {"count":1,"sections":[],"contexts":["`hooks/utility/interaction/{useScrollRestoration,useScrollShadow}.ts`,"],"resolved":false},
     "overview/sub_patterns/graph/useGraphCanvas.ts": {"count":1,"sections":[7],"lines":["130"],"contexts":["`overview/sub_patterns/graph/useGraphCanvas.ts:130`,"],"resolved":false},
     "plugins/artist/sub_gallery/Gallery2D.tsx": {"count":1,"sections":[7],"lines":["281"],"contexts":["`plugins/artist/sub_gallery/Gallery2D.tsx:281`, `plugins/companion/orb/athenaOrbGesture.ts:65`,"],"resolved":false},
@@ -68,14 +69,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "ExecutionMiniPlayer.tsx"
-    },
-    "src/features/agents/quick-answer/triage/deck/useDeckDialog.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["112"],
-      "contexts": ["| `scrollTo({ top: 0 … })` | **1** — `agents/quick-answer/triage/deck/useDeckDialog.tsx:112` (the `Home` key) |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/quick-answer/triage/deck/useDeckDialog.tsx"
     },
     "src/features/agents/sub_executions/components/runner/ExecutionTerminal.tsx": {
       "count": 3,

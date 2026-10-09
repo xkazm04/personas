@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { PersonaReport } from '@/lib/bindings/PersonaReport';
 import type { PersonaCardModel } from '../../../monitorModel';
-import { PILE_VISUAL } from '../../../fleetboard/piles';
+import { PILE_VISUAL } from '../../skin/piles';
 import { sessionBucket } from './boardFilter';
 import { personaLinePileKey, pileOfKey, pileSkin, sessionPileKey } from './pileSkin';
 

@@ -458,12 +458,21 @@ pub fn duplicate_persona(
     })
 }
 
+/// Sidebar/Monitor summary for every persona (trigger count, last run, health).
+/// Async over a blocking task: the Monitor calls this on mount and every 30s,
+/// and the read is several aggregates over `persona_executions` - it must not
+/// hold the IPC worker (`.claude/rules/rust-backend.md`: "A sync command must
+/// not touch rusqlite").
 #[tauri::command]
 #[requires(auth)]
-pub fn get_persona_summaries(
+pub async fn get_persona_summaries(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<PersonaSummary>, AppError> {
-    repo::get_summaries(&state.db)
+    let db = state.db.clone();
+    crate::commands::blocking::run_blocking("get_persona_summaries", move || {
+        repo::get_summaries(&db)
+    })
+    .await
 }
 
 /// Runs per hour per persona over the last `hours` UTC hours (see

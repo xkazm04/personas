@@ -697,24 +697,27 @@ function selfCheck(cssText, typoText, typeThemes) {
       .filter((f) => f.theme === 'light' && f.a === 'role-highlight' && f.b === 'status-info');
     cases.push({ name: `light role-highlight := status-info (${info})`, caught: caught.length > 0, detail: caught });
   }
-  // Seed 1b: the palette half's new blind spot, pushed until it breaks.
-  // `--muted-foreground` is a `color-mix` fraction of `--foreground` since
-  // 2026-10-03; take it to 25% and the two hard-fail muted rows must go red.
-  // If a future refactor drops `parseMixes`, this seed fails instead of the
-  // gate silently printing `n/a` (which the output code scores as a pass).
-  const rootBlock = extractBlock(cssText, ':root');
-  const mixedRootVars = rootBlock ? parseMixes(rootBlock) : {};
-  if (!('muted-foreground' in mixedRootVars)) {
-    problems.push('seed 1b: :root --muted-foreground is no longer a color-mix — re-point this seed');
+  // Seed 1b: the palette half's blind spot, pushed until it breaks.
+  // Drive EVERY `--muted-foreground` declaration - the `:root` default and each
+  // theme's own override - down to a near-canvas grey, and all eleven muted rows
+  // must go red. Seeding only `:root` would prove nothing once a theme overrides
+  // it, which is the shape this token has whenever the per-theme supporting hues
+  // are in force. Written to accept BOTH shapes (a hex or a `color-mix`
+  // fraction), so neither direction of that decision silently un-points it.
+  // If a future refactor drops the parser, this seed fails rather than letting
+  // the gate print `n/a`, which the output code scores as a pass.
+  const mutedDecls = cssText.match(/--muted-foreground\s*:\s*[^;]+;/g) ?? [];
+  if (mutedDecls.length === 0) {
+    problems.push('seed 1b: no --muted-foreground declaration found - re-point this seed');
   } else {
-    const seeded = cssText.replace(rootBlock, rootBlock.replace(
-      /--muted-foreground\s*:\s*color-mix\([^;]*\);/,
-      '--muted-foreground: color-mix(in srgb, var(--foreground) 25%, transparent);'));
+    const seeded = cssText.replace(
+      /--muted-foreground\s*:\s*[^;]+;/g,
+      '--muted-foreground: color-mix(in srgb, var(--foreground) 18%, transparent);');
     const themes = resolveThemes(seeded);
     const caught = themes.filter((t) => !t.error
       && contrastRatio(t.effective['muted-foreground'], t.effective.background) < 4.5);
     cases.push({
-      name: '--muted-foreground mixed down to 25% foreground (AA floor 4.5:1)',
+      name: `--muted-foreground driven to 18% foreground in all ${mutedDecls.length} declarations (AA floor 4.5:1)`,
       caught: caught.length === themes.length,
       detail: caught.slice(0, 2).map((t) => ({
         theme: t.id, a: 'muted-foreground', b: 'background', de: null,

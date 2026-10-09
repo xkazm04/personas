@@ -1,6 +1,12 @@
+pub(crate) mod athena_send;
+pub(crate) mod channel_say;
 pub mod client;
 pub mod config;
+pub mod pairing;
+pub(crate) mod persona_chat_send;
 pub mod persona_projection;
 pub mod remote_commands;
+pub(crate) mod review_decide;
 pub mod runner;
 pub mod sync;
+pub mod trust;

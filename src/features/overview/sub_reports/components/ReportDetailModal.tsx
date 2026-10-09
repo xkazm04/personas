@@ -25,6 +25,7 @@ import {
   ReportDeliverySection,
   ReportDecisionsSection,
 } from './ReportDetailSections';
+import { ReportAttachmentsSection } from './ReportAttachments';
 import type { PersonaReport } from '@/lib/types/types';
 
 interface MessageDetailModalProps {
@@ -40,9 +41,10 @@ interface MessageDetailModalProps {
  * Message detail modal — editorial reading layout with operational hooks.
  *
  * This component is the SHELL only: chrome, navigation, and the order of the
- * four sections. Every piece of markup lives in `ReportDetailSections.tsx` and
- * every piece of data/IO in `../libs/` — see those files' headers for why the
- * markup is one file rather than nine.
+ * four sections (plus the attachments block between Content and Improve agent,
+ * which is not numbered because most reports have none). Every piece of markup
+ * lives in `ReportDetailSections.tsx` and every piece of data/IO in `../libs/` —
+ * see those files' headers for why the markup is one file rather than nine.
  *
  * Sections:
  *   I.  Content        — large reading surface + per-content actions row
@@ -201,6 +203,8 @@ export function ReportDetailModal({
               onClose();
             }}
           />
+
+          <ReportAttachmentsSection metadata={message.metadata} />
 
           <ReportFeedbackSection
             t={t}

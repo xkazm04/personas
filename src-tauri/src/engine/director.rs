@@ -86,22 +86,27 @@ const DIRECTOR_DESCRIPTION: &str = "Watches every persona and suggests practical
 const DIRECTOR_ICON: &str = "agent-icon:director";
 const DIRECTOR_COLOR: &str = "#8b5cf6";
 
-/// Model the Director is pinned to. Mirrors the eval judge's deliberate pin
-/// (`engine::eval::LLM_EVAL_MODEL` — the 2026 tiger finding that a scoring
-/// judge riding the undeclared account default, typically opus-4-8[1m], makes
-/// its scores drift). The Director is the same kind of surface: a coaching /
-/// 0-5 scoring meta-persona whose verdicts must stay comparable across time,
-/// so its model must be STABLE, not "whatever the CLI account defaults to
-/// this month". Same family/tier as the eval judge (sonnet) for the same
-/// reason — a capable-but-consistent judge beats a top-tier-but-moving one.
-const DIRECTOR_MODEL: &str = "claude-sonnet-4-6";
+/// Call class the Director is pinned to. Mirrors the eval judge's deliberate
+/// pin (`engine::eval::LLM_EVAL_CLASS` — the 2026 tiger finding that a
+/// scoring judge riding the undeclared account default makes its scores
+/// drift). The Director is the same kind of surface: a coaching / 0-5 scoring
+/// meta-persona whose verdicts must stay comparable across time, so its model
+/// must be STABLE, not "whatever the CLI account defaults to this month".
+/// `CallClass::Director` is its own row so it moves only by explicit decision
+/// (`personas_core::model_class`), never as a side effect of re-tuning the
+/// judge rows.
+const DIRECTOR_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Director;
 
-/// The Director's pinned `model_profile` JSON (see [`DIRECTOR_MODEL`]). Stored
+/// The Director's pinned `model_profile` JSON (see [`DIRECTOR_CLASS`]). Stored
 /// verbatim on the persona row; it carries no `auth_token`, so the persona
 /// repo's encrypt/decrypt passes are both no-ops and the engine reads the
-/// `{ "model": … }` shape directly via `prompt::parse_model_profile`.
+/// `{ "model": … }` shape directly via `prompt::parse_model_profile`. Only the
+/// route's MODEL is pinned: effort on a persona execution is resolved by the
+/// charter cascade (`prompt::resolve_charter_model_choice`), where a profile
+/// effort would outrank the cascade rule.
 fn director_model_profile() -> String {
-    format!(r#"{{"model":"{DIRECTOR_MODEL}"}}"#)
+    format!(r#"{{"model":"{}"}}"#, DIRECTOR_CLASS.route().model)
 }
 
 /// Locked best-practice rubric. Consumed by the Phase 2 LLM evaluator as the
@@ -2334,8 +2339,9 @@ mod tests {
                 .model_profile
                 .as_deref()
                 .unwrap_or_default()
-                .contains(DIRECTOR_MODEL),
-            "fresh Director seed must pin {DIRECTOR_MODEL}, got {:?}",
+                .contains(DIRECTOR_CLASS.route().model),
+            "fresh Director seed must pin {}, got {:?}",
+            DIRECTOR_CLASS.route().model,
             seeded.model_profile,
         );
 
@@ -2380,7 +2386,7 @@ mod tests {
                 .model_profile
                 .as_deref()
                 .unwrap_or_default()
-                .contains(DIRECTOR_MODEL),
+                .contains(DIRECTOR_CLASS.route().model),
             "a NULL model_profile must be backfilled with the pin, got {:?}",
             backfilled.model_profile,
         );

@@ -1,5 +1,5 @@
 // The evidence ledger's row model: the snapshot's evidence window joined to ONE
-// step. Pure, so the three variants and the unit test read the same join.
+// step. Pure, so the ledger and the unit test read the same join.
 import type { LifecycleEvidenceItem } from '@/lib/bindings/LifecycleEvidenceItem';
 import type { LifecycleOutcome } from '@/lib/bindings/LifecycleOutcome';
 

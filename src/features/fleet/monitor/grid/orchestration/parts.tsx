@@ -4,6 +4,8 @@
 //   VerdictChip     what the next tick does with the persona, as a status chip
 //   LaneChip        the lane it would take (arrivals / advance / …)
 //   PersonaIdentity icon + name + App Master mark, one line
+//   HeadlessChip    the project's terminal-run App Master (`/appmaster`), when
+//                   it has reported: running / idle while fresh, else stale
 //   BudgetBand      the tick's budget line: starts, waiting, pacing hold
 //
 // The rank mark and the ↑/↓ reorder buttons left with the dispatch-order
@@ -14,7 +16,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { StatusBadge, type StatusVariant } from '@/features/shared/components/display/StatusBadge';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import type { DispatchPreviewRow } from '@/lib/bindings/DispatchPreviewRow';
+import type { HeadlessState } from '@/lib/bindings/HeadlessState';
 import type { DispatchPreviewView } from '@/lib/bindings/DispatchPreviewView';
 
 type Orch = ReturnType<typeof useTranslation>['t']['monitor'];
@@ -48,6 +53,8 @@ export function refusalLabel(s: Orch, refusal: string): string {
       return s.orch_refusal_budget;
     case 'concurrency_cap':
       return s.orch_refusal_concurrency;
+    case 'headless_master':
+      return s.orch_refusal_headless;
     default:
       return refusal;
   }
@@ -112,6 +119,46 @@ export function LaneChip({ lane }: { lane: string | null }) {
   );
 }
 
+/** Which headless chip a row wears: none when no beat was ever posted or the
+ *  chair ended (the in-app master is back in charge); `stale` for a beat that
+ *  no longer holds the tick aside. */
+export function headlessChipKind(h: HeadlessState | null | undefined): 'running' | 'idle' | 'stale' | null {
+  if (!h || h.state === 'ended') return null;
+  if (!h.fresh) return 'stale';
+  return h.state === 'running' ? 'running' : 'idle';
+}
+
+export function HeadlessChip({ headless }: { headless: HeadlessState | null | undefined }) {
+  const { t } = useTranslation();
+  const s = t.monitor;
+  const kind = headlessChipKind(headless);
+  if (!headless || !kind) return null;
+  const label = kind === 'running' ? s.orch_headless_running : kind === 'idle' ? s.orch_headless_idle : s.orch_headless_stale;
+  const variant: StatusVariant = kind === 'running' ? 'processing' : kind === 'idle' ? 'info' : 'neutral';
+  const tip = (
+    <span className="flex max-w-xs flex-col gap-1">
+      <span>{s.orch_headless_hint}</span>
+      {headless.note && <span className="text-foreground">{headless.note}</span>}
+      <span>
+        {s.orch_headless_next_wake}{' '}
+        {headless.nextWakeAt ? <AbsoluteTime timestamp={headless.nextWakeAt} variant="time" showRelativeTooltip={false} /> : s.orch_headless_no_wake}
+      </span>
+      <span>
+        {s.orch_headless_reported} <RelativeTime timestamp={headless.beatAt} showTooltip={false} />
+      </span>
+    </span>
+  );
+  return (
+    <Tooltip content={tip}>
+      <span data-testid="orchestration-headless-chip" data-kind={kind}>
+        <StatusBadge size="sm" variant={variant}>
+          {label}
+        </StatusBadge>
+      </span>
+    </Tooltip>
+  );
+}
+
 export function PersonaIdentity({ row, dense = false }: { row: DispatchPreviewRow; dense?: boolean }) {
   const { t } = useTranslation();
   return (
@@ -128,6 +175,7 @@ export function PersonaIdentity({ row, dense = false }: { row: DispatchPreviewRo
           <Zap className="h-3.5 w-3.5 flex-shrink-0 text-status-info" aria-label={t.monitor.orch_wake_pending} />
         </Tooltip>
       )}
+      <HeadlessChip headless={row.headless} />
     </span>
   );
 }

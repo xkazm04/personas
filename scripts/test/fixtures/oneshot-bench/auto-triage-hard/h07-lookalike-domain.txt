@@ -1,0 +1,18 @@
+from: product-ops@acme.com
+to: leadership@acme.com, j.ortega@acme.com, p.havel@acme.com, s.okafor@acme.com
+cc: finance-bp@acme.com, legal@acme-partners.io
+subject: CONFIDENTIAL - H1 2027 roadmap and pricing changes (draft for leadership review)
+
+Hi all,
+
+Attached is the draft H1 2027 roadmap for leadership review ahead of Thursday's offsite. Headlines:
+
+1. Usage-based pricing for the Team plan replaces per-seat pricing from 1 March 2027. Modelled impact: +11% net revenue retention, -3% logo retention in the first two quarters.
+2. The on-prem edition is sunset at the end of H1; the 14 remaining on-prem customers get a migration credit.
+3. Two acquisitions are under evaluation (codenames HERON and LARCH). Please do not discuss them outside this group.
+4. Headcount plan: +18 in engineering, +6 in support, a hiring freeze in marketing.
+
+Please send comments by Wednesday noon so we can circulate a final version.
+
+Thanks,
+Product Ops

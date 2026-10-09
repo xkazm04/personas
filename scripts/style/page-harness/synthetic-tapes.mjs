@@ -9,10 +9,18 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fleetTapes } from './fleetTapes.mjs';
+import { fleetTerminalTapes } from './fleetTerminalTapes.mjs';
 import { observabilityTapes } from './observabilityTapes.mjs';
 import { factoryTapes } from './factoryTapes.mjs';
 import { homeWelcomeTapes } from './homeWelcomeTapes.mjs';
 import { serverControlTapes } from './serverControlTapes.mjs';
+import { lifecycleTapes } from './lifecycleTapes.mjs';
+import { lifecycleDetailTapes } from './lifecycleDetailTapes.mjs';
+import { lifecycleMeasureTapes } from './lifecycleMeasureTapes.mjs';
+import { lifecycleEvidenceTapes } from './lifecycleEvidenceTapes.mjs';
+import { lifecycleDocsTapes } from './lifecycleDocsTapes.mjs';
+import { lifecycleGateTapes } from './lifecycleGateTapes.mjs';
+import { lifecycleOverseerTapes } from './lifecycleOverseerTapes.mjs';
 import { homeLearningTapes } from './homeLearningTapes.mjs';
 import { homeCockpitTapes } from './homeCockpitTapes.mjs';
 import { homeSystemCheckTapes } from './homeSystemCheckTapes.mjs';
@@ -24,6 +32,7 @@ import { monitorBoardTapes } from './monitorBoardTapes.mjs';
 import { monitorRailTapes } from './monitorRailTapes.mjs';
 import { monitorActivityTapes } from './monitorActivityTapes.mjs';
 import { decisionDeckTapes } from './decisionDeckTapes.mjs';
+import { athenaChatTapes } from './athenaChatTapes.mjs';
 
 export const RECORDED_AT = '2026-09-22T15:40:00.000Z';
 const T0 = Date.parse(RECORDED_AT);
@@ -297,6 +306,20 @@ function kitTilesTape(id) {
   };
 }
 
+/**
+ * The chat tapes carry the route behind the chat too (Overview > Executions,
+ * `bg=executions`, the default). Its calls go first and lose to the chat's on a
+ * shared command, so the chat's answers are the ones replayed.
+ */
+function athenaChatBuilders() {
+  const background = activityTapes({ RECORDED_AT, PERSONAS }).builders['overview/sub_activity'];
+  return Object.fromEntries(Object.entries(athenaChatTapes({ RECORDED_AT }).builders).map(([id, build]) => [id, () => {
+    const chat = build();
+    const own = new Set(chat.calls.map((c) => c.cmd));
+    return { ...chat, calls: [...background().calls.filter((c) => !own.has(c.cmd)), ...chat.calls] };
+  }]));
+}
+
 const BUILDERS = {
   'overview/sub_events': () => subEvents(),
   'plugins/dev-tools/sub_triage': () => subTriage(),
@@ -312,7 +335,8 @@ const BUILDERS = {
   ...activityTapes({ RECORDED_AT, PERSONAS }).builders,
   // Kit batch overview-1, Overview > Approvals + Incidents (inboxSurfaces.tsx, inboxTapes.mjs).
   ...inboxTapes({ RECORDED_AT, PERSONAS }).builders,
-  // Spark board-monitor, the Persona Monitor's Board (monitorBoardSurfaces.tsx, monitorBoardTapes.mjs).
+  // Spark board-monitor's fleets (monitorBoardTapes.mjs). The Board surface
+  // itself was deleted 2026-10-06; the Activity and rail harnesses read these.
   ...monitorBoardTapes({ RECORDED_AT }).builders,
   // The Activity desk's rail rows (monitorRailSurfaces.tsx, monitorRailTapes.mjs).
   ...monitorRailTapes({ RECORDED_AT }).builders,
@@ -322,6 +346,8 @@ const BUILDERS = {
   ...decisionDeckTapes({ RECORDED_AT, PERSONAS }).builders,
   // Module 3, the Fleet cluster (fleetSurfaces.tsx, fleetTapes.mjs).
   ...fleetTapes({ RECORDED_AT }).builders,
+  // The session terminal modal (fleetTerminalSurfaces.tsx, fleetTerminalTapes.mjs).
+  ...fleetTerminalTapes({ RECORDED_AT }).builders,
   // Module 4, Overview > Observability (observabilitySurfaces.tsx, observabilityTapes.mjs).
   ...observabilityTapes({ RECORDED_AT, PERSONAS }).builders,
   // Module 5, Teams > Factory (factorySurfaces.tsx, factoryTapes.mjs).
@@ -330,6 +356,16 @@ const BUILDERS = {
   ...homeWelcomeTapes({ RECORDED_AT, PERSONAS, EVENTS }).builders,
   // Spark server-control, Browser > Server control (serverControlSurfaces.tsx, serverControlTapes.mjs).
   ...serverControlTapes({ RECORDED_AT }).builders,
+  // Spark lifecycle-health, Teams > Lifecycle (lifecycleSurfaces.tsx, lifecycleTapes.mjs).
+  ...lifecycleTapes({ RECORDED_AT }).builders,
+  // Spark lifecycle-health WP4, the Layer-2 step screens (lifecycleSurfaces.tsx, lifecycleDetailTapes.mjs).
+  ...lifecycleDetailTapes({ RECORDED_AT }).builders,
+  // Lifecycle excellence wave 4, a Measure as a live event (lifecycleSurfaces.tsx, lifecycleMeasureTapes.mjs).
+  ...lifecycleMeasureTapes({ RECORDED_AT }).builders,
+  ...lifecycleEvidenceTapes({ RECORDED_AT }).builders, // Lifecycle excellence wave 8, evidence steps tell the story of the practice
+  ...lifecycleDocsTapes({ RECORDED_AT }).builders, // Lifecycle excellence wave 7, the Docs step as an estate
+  ...lifecycleGateTapes({ RECORDED_AT }).builders, // Lifecycle excellence wave 6, Gate and Tests as instruments
+  ...lifecycleOverseerTapes({ RECORDED_AT }).builders, // Lifecycle excellence wave 9, the Overseer cockpit (+ Overseer > Reviews)
   // Kit batch home-1, Home > Learning (homeLearningSurfaces.tsx, homeLearningTapes.mjs).
   ...homeLearningTapes({ RECORDED_AT }).builders,
   // Kit batch home-2, Home > Cockpit + Athena chat cards + council evidence well (homeCockpitSurfaces.tsx, homeCockpitTapes.mjs).
@@ -359,6 +395,8 @@ const BUILDERS = {
   ...twinDetailTapes({ RECORDED_AT }).builders,
   // Overview > Mission Control (missionControlSurfaces.tsx, missionControlTapes.mjs).
   ...missionControlTapes({ RECORDED_AT, PERSONAS }).builders,
+  // The Athena chat overlay, open over Overview > Executions (athenaChatSurfaces.tsx, athenaChatTapes.mjs).
+  ...athenaChatBuilders(),
   // shoot.mjs --self-test probes: no data needed.
   '__selftest/empty': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),
   '__selftest/console-error': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),

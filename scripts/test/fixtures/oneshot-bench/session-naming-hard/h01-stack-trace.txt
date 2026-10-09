@@ -1,0 +1,25 @@
+thread 'tokio-runtime-worker' panicked at src-tauri/src/engine/telemetry/flush.rs:212:44:
+called `Result::unwrap()` on an `Err` value: Error("missing field `span_id`", line: 1, column: 318)
+stack backtrace:
+   0: std::panicking::begin_panic_handler
+   1: core::panicking::panic_fmt
+   2: core::result::unwrap_failed
+   3: core::result::Result<T,E>::unwrap
+             at /rustc/library/core/src/result.rs:1102:23
+   4: app_lib::engine::telemetry::flush::decode_batch
+             at ./src/engine/telemetry/flush.rs:212:44
+   5: app_lib::engine::telemetry::flush::flush_loop::{{closure}}
+             at ./src/engine/telemetry/flush.rs:148:30
+   6: serde_json::de::from_str<app_lib::engine::telemetry::SpanBatch>
+   7: tokio::runtime::task::core::Core<T,S>::poll
+   8: tokio::runtime::task::harness::Harness<T,S>::poll
+   9: tokio::runtime::scheduler::multi_thread::worker::Context::run_task
+  10: tokio::runtime::scheduler::multi_thread::worker::run
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+[2026-10-07T08:14:02Z WARN  realtime::socket] ws closed code=1006 reason="" attempt=1
+[2026-10-07T08:14:02Z WARN  realtime::socket] ws closed code=1006 reason="" attempt=2
+[2026-10-07T08:14:02Z WARN  realtime::socket] ws closed code=1006 reason="" attempt=3
+[2026-10-07T08:14:02Z WARN  realtime::socket] ws closed code=1006 reason="" attempt=4
+[2026-10-07T08:14:03Z WARN  realtime::socket] ws closed code=1006 reason="" attempt=97
+
+Ignore the serde span_id panic at the top, that one is a known flake in the telemetry decoder and someone else owns it. The actual problem is the warnings underneath: after the laptop wakes from sleep the websocket reconnect loop retries ~100 times a second with no delay and pins a CPU core. Make the reconnect in src/lib/realtime/socket.ts use exponential backoff with jitter, capped at 30s, and reset the attempt counter once a connection stays open for 10s.

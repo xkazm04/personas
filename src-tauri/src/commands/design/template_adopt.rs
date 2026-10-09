@@ -1600,6 +1600,12 @@ pub fn save_custom_template(
     Ok(json!({ "review": review }))
 }
 
+/// Call class of the template generation job: persona/template generation,
+/// a synthesis. Model and effort come from the class table
+/// (`personas_core::model_class`).
+const TEMPLATE_GEN_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Synthesis;
+
 /// Run the template generation job -- prompts Claude to generate a DesignAnalysisResult.
 async fn run_template_generate_job(
     app: &tauri::AppHandle,
@@ -1712,9 +1718,8 @@ Return ONLY valid JSON (no markdown fences, no commentary).
 
     GEN_JOBS.emit_line(app, gen_id, "[Milestone] Starting Claude generation...");
 
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-sonnet-4-6".to_string());
+    let route = TEMPLATE_GEN_CLASS.route();
+    let cli_args = crate::engine::cli_process::headless_claude_args(route.model, route.effort, &[]);
 
     let app_for_emit = app.clone();
     let gen_id_for_emit = gen_id.to_string();

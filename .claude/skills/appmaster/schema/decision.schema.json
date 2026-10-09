@@ -2,14 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "appmaster/decision",
   "title": "App Master wake decision",
-  "description": "The master subagent's whole answer to one wake. Parity with the in-app contract (attention_decide.rs: dispatch/defer/asks/say/note/nextWakeMinutes) so a later replay is lossless. ABSENT-VALUE CONVENTION: every array is present (empty []), say is null when silent; nothing is omitted. Cross-field rules the schema cannot say (enforced by lib/decision.mjs validateDecision): every charter slug of the brief appears exactly once across dispatch and defer; dispatch has at most 1 entry; asks has at most 3; nextWakeMinutes is an integer 10..240; wakeId equals the wake the context was rendered for.",
+  "description": "The master subagent's whole answer to one wake. Parity with the in-app contract (attention_decide.rs: dispatch/defer/asks/say/note/nextWakeMinutes) so a later replay is lossless. ABSENT-VALUE CONVENTION: every array is present (empty []), say is null when silent; nothing is omitted. Cross-field rules the schema cannot say (enforced by lib/decision.mjs validateDecision): every charter slug of the brief appears exactly once across dispatch and defer; dispatch has at most 2 entries, and with 2 every entry carries a non-empty `paths` and the two are pairwise disjoint (lib/paths.mjs: conservative, an unprovable pair overlaps); no idea id in two dispatches; asks has at most 3; nextWakeMinutes is an integer 10..240; wakeId equals the wake the context was rendered for.",
   "type": "object",
   "additionalProperties": false,
   "required": ["wakeId", "dispatch", "defer", "asks", "ideaVerdicts", "say", "note", "nextWakeMinutes"],
   "properties": {
     "wakeId": { "type": "string", "minLength": 1 },
     "dispatch": {
-      "type": "array", "maxItems": 1,
+      "type": "array", "maxItems": 2,
       "items": {
         "type": "object", "additionalProperties": false,
         "required": ["charterSlug", "reason", "brief", "ideaIds"],
@@ -17,7 +17,11 @@
           "charterSlug": { "type": "string", "minLength": 1 },
           "reason": { "type": "string", "minLength": 1 },
           "brief": { "type": "string", "minLength": 1, "description": "The task text for the builder: what to do, in this project's terms." },
-          "ideaIds": { "type": "array", "items": { "type": "string" } }
+          "ideaIds": { "type": "array", "items": { "type": "string" } },
+          "model": { "enum": ["sonnet", "opus", "claude-sonnet-5-5", "claude-opus-5-5", "claude-opus-5", null], "description": "Optional builder model (contract.mjs BUILDER_MODEL_CHOICES); overrides the charter default unless the brief pins a model. null or absent = the charter default. claude-opus-5 is the retired id, accepted as an alias of claude-opus-5-5." },
+          "paths": { "type": "array", "items": { "type": "string", "minLength": 1, "pattern": "^[^\\s]+$" }, "description": "Repo-relative path prefixes or globs the builder will touch. Optional for a single dispatch; REQUIRED and non-empty on every entry when there are two (a council review needs none), and the two must be disjoint when they target the same repo. dispatch refuses `paths overlap` against any live run targeting the same repo root, in any project; absent means the whole repo." },
+          "repo": { "type": ["string", "null"], "description": "The repo the builder works and merges in: `self` (the default) or a key of the brief's `repos`. decide refuses an unknown key; a council review runs in `self` only." },
+          "featureSlug": { "type": ["string", "null"], "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$", "maxLength": 100, "description": "The dev_use_cases slug a council review (council-lite-review / council-review: REQUIRED) or a rework delivery (optional) is about." }
         }
       }
     },
@@ -63,6 +67,37 @@
     },
     "say": { "type": ["string", "null"] },
     "note": { "type": "string", "minLength": 1, "description": "The coverage note: what this wake covered and left. The next wake's context quotes it." },
-    "nextWakeMinutes": { "type": "integer", "minimum": 10, "maximum": 240 }
+    "nextWakeMinutes": { "type": "integer", "minimum": 10, "maximum": 240 },
+    "plan": {
+      "description": "OPTIONAL top-level key: REQUIRED on a PLAN WAKE (the context opens with a PLAN WAKE section; the wake line carries planWake: true), refused on any other wake (lib/decision.mjs validatePlan; bounds in contract.mjs PLAN). Names and goal titles are unique. Queued as ONE outbox entry `plan`.",
+      "type": ["object", "null"], "additionalProperties": false,
+      "required": ["milestones"],
+      "properties": {
+        "milestones": {
+          "type": "array", "minItems": 1, "maxItems": 5,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["name", "goal", "goals"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+              "goal": { "type": "string", "minLength": 1, "maxLength": 500 },
+              "targetDate": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+              "goals": {
+                "type": "array", "minItems": 1, "maxItems": 5,
+                "items": {
+                  "type": "object", "additionalProperties": false,
+                  "required": ["title", "measure"],
+                  "properties": {
+                    "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+                    "measure": { "type": "string", "minLength": 1, "maxLength": 300 },
+                    "description": { "type": ["string", "null"], "maxLength": 1000 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }

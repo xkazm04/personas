@@ -395,28 +395,13 @@ pub(crate) async fn execute_resolve_human_review(
     // the event bus via the SHARED helper so the signal is symmetric with the
     // user-driven path (P1b — previously this path emitted nothing, so an
     // Athena-resolved review was invisible to downstream subscribers).
-    manual_repo::update_status(&state.db, &review_id, status, comment.clone())?;
-    match manual_repo::get_by_id(&state.db, &review_id) {
-        Ok(review) => {
-            crate::commands::design::reviews::publish_review_decision(&state.db, app, &review);
-            // Resume-loop (Phase 1) — same reaction as the user path.
-            crate::commands::design::reviews::react_to_review_decision(state, app, &review);
-        }
-        Err(e) => {
-            // The status update committed, but we couldn't re-load the review
-            // to publish review_decision.* or run the resume-loop. Don't let
-            // those side effects vanish silently — an Athena-resolved review
-            // would then look done while downstream subscribers and the resume
-            // loop never fired. Log loudly so the dropped propagation is
-            // diagnosable.
-            tracing::warn!(
-                review_id = %review_id,
-                error = %e,
-                "resolve_human_review: status updated but review re-load failed — \
-                 decision event + resume-loop were NOT fired"
-            );
-        }
-    }
+    // The review comes back from the decision's own UPDATE ... RETURNING, so
+    // there is no re-load that could drop the publish + resume-loop below.
+    let (review, _learned) =
+        manual_repo::update_status_returning(&state.db, &review_id, status, comment.clone())?;
+    crate::commands::design::reviews::publish_review_decision(&state.db, app, &review);
+    // Resume-loop (Phase 1) — same reaction as the user path.
+    crate::commands::design::reviews::react_to_review_decision(state, app, &review);
 
     Ok(ExecuteResult::message(format!(
         "Human Review `{review_id}` marked `{}`{comment_note}.",

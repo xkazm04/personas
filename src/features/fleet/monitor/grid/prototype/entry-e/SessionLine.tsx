@@ -19,7 +19,7 @@ import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Button } from '@/features/shared/components/buttons';
-import { runAgeFraction } from '../../../fleetboard/Tile';
+import { runAgeFraction } from '../../skin/tileState';
 import type { QueueItem } from '../../board/queue/useQueueModel';
 import { useSessionFacts } from '../shared';
 import { compactAge } from './tone';

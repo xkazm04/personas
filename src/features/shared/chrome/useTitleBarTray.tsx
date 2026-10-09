@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo } from 'react';
+import { lazy, Suspense, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import { useOverviewStore } from '@/stores/overviewStore';
@@ -178,11 +178,48 @@ export function useTitleBarTray() {
  * motion root (already chunk-loaded by then) receives the exit signal through
  * PresenceContext — the same proven contract the dispatch overlay below has
  * always used, so lazification does not skip the fade-out.
+ *
+ * The Monitor is the one exception and sits OUTSIDE AnimatePresence: it is
+ * summoned once and then persists for the app session, animating on a
+ * `visible` prop instead of on presence. See the latch below.
  */
 export function TrayOverlays() {
   const { t } = useTranslation();
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
   const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
+  const monitorOpen = headerOverlay === 'monitor';
+  /**
+   * THE MONITOR IS SUMMONED ONCE AND NEVER TORN DOWN AGAIN.
+   *
+   * It used to sit inside the `AnimatePresence` below as
+   * `{headerOverlay === 'monitor' && ...}`, so closing it unmounted a 212-module
+   * tree, disposed about twelve poll registrations and re-ran every mount
+   * effect; the warm caches in `useMonitorData` exist to paper over exactly
+   * that. It now renders from the first open onward and HIDES itself instead
+   * (`PersonaMonitor` takes `visible` and applies the same `inert` +
+   * `content-visibility: hidden` suspension `App.tsx` applies to the shell
+   * underneath it — see its "C5 — SHELL SUSPENSION" comment).
+   *
+   * A render-time latch, not state: `monitorOpen` already re-renders this
+   * component, so a `useEffect` + `useState` pair would only add one empty
+   * commit before the first open and one more chance for the two to disagree.
+   * It never resets, which is the whole point.
+   *
+   * FIRST OPEN STAYS LAZY. Nothing below is reached until the latch flips, so
+   * the `import('@/features/fleet/monitor')` above is still requested by the
+   * operator's first click and by nothing else.
+   *
+   * NOT inside `AnimatePresence`. Presence animates mount/unmount, and there is
+   * no longer an unmount to animate — the 0.16s enter/exit fade moved onto the
+   * monitor's own `visible` prop, where it plays identically. Leaving it in
+   * would make `AnimatePresence` track a child that never leaves.
+   */
+  const monitorSummoned = useRef(false);
+  if (monitorOpen) monitorSummoned.current = true;
+  // Stable, because the Monitor's Escape effect depends on it and that effect
+  // is now permanent: an inline arrow would re-subscribe the window listener
+  // on every render of this tray, which re-renders on four store slices.
+  const closeMonitor = useCallback(() => setHeaderOverlay('none'), [setHeaderOverlay]);
   return (
     /* NO-DRAG HOST. TrayOverlays is mounted inside TitleBarDock, i.e. inside
        `.titlebar`, whose `-webkit-app-region: drag` is INHERITED by computed
@@ -201,15 +238,18 @@ export function TrayOverlays() {
       <div className="pointer-events-none fixed right-3 top-[calc(var(--titlebar-height,40px)+0.5rem)] z-40 w-80 max-w-[calc(100vw-1.5rem)] [&>*]:pointer-events-auto">
         <CircuitBreakerIndicator />
       </div>
+    {monitorSummoned.current && (
+      /* The chunk fallback only ever paints on the FIRST open: by the second
+         the chunk is warm and this subtree is already mounted. Suppressed
+         while closed so a cold chunk that resolves after the operator has
+         closed the monitor again cannot flash an opaque shell over the app. */
+      <Suspense
+        fallback={monitorOpen ? <OverlayChunkFallback topClass="top-[var(--titlebar-height,40px)]" /> : null}
+      >
+        <PersonaMonitor visible={monitorOpen} onClose={closeMonitor} />
+      </Suspense>
+    )}
     <AnimatePresence>
-      {headerOverlay === 'monitor' && (
-        <Suspense
-          key="monitor"
-          fallback={<OverlayChunkFallback topClass="top-[var(--titlebar-height,40px)]" />}
-        >
-          <PersonaMonitor onClose={() => setHeaderOverlay('none')} />
-        </Suspense>
-      )}
       {headerOverlay === 'schedules' && (
         <FullScreenOverlay
           key="schedules"

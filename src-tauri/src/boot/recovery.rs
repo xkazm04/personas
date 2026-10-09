@@ -48,28 +48,23 @@ pub fn recover_interrupted_work(
         return;
     }
 
-    // A graceful quit is a fact, and it has to be recorded — otherwise every
-    // deliberate restart (an upgrade, a settings reload, the user closing the
-    // window) is indistinguishable from a crash, and the classification below
-    // manufactures a class of rows that only a crash should produce. The
-    // marker is written last on the exit path (`lib.rs`, `RunEvent::Exit`) and
-    // consumed here. Registry technique
-    // `session-continuation/stuck-loop-detection`, "A clean shutdown is a
-    // fact": absence of the marker IS the crash signal.
+    // A graceful quit is a fact and it is recorded (the marker `lib.rs` writes
+    // last on `RunEvent::Exit`), but it no longer gates the classification.
+    // The gate assumed a graceful exit leaves no run in flight; the exit path
+    // drains preview servers and warm CLI sessions, not persona executions, so
+    // a quit mid-run leaves the row `running` exactly as a crash does — and
+    // behind the gate that row skipped the resume and the unresolved-recovery
+    // surface and waited for the zombie sweep instead. Registry technique
+    // `durable-agent-operations/close-is-a-controlled-crash`: a graceful path
+    // that leaves different state than a crash is a second recovery path.
+    // The sweep is keyed on `status = 'running'`, so a quit that drained
+    // produces zero rows and nothing is manufactured. The marker is consumed
+    // inside the call and only names the kind of exit in the log.
     //
-    // Scoped to the execution sweep on purpose. The four sibling sweeps below
-    // still declare blind, and widening the gate to them before their rows are
-    // classified would only make their wrong verdicts rarer, not righter.
-    if personas_core::shutdown_marker::take_clean_shutdown(app_data_dir) {
-        tracing::info!(
-            "Startup: previous exit was graceful - skipping mid-run execution \
-             classification (no run was interrupted)"
-        );
-        st.checkpoint("stale_execution_recovery_skipped_clean");
-    } else {
-        engine::ExecutionEngine::classify_stale_executions(pool);
-        st.checkpoint("stale_execution_recovery");
-    }
+    // The four sibling sweeps below still declare blind and never read the
+    // marker; classifying their rows is the next context to fix.
+    engine::ExecutionEngine::classify_stale_executions(app_data_dir, pool);
+    st.checkpoint("stale_execution_recovery");
 
     // Mark n8n transform sessions interrupted by app exit as failed
     // and clear their in-memory job entries (dead cancellation tokens,

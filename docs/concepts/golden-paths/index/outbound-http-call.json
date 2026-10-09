@@ -59,6 +59,15 @@
     "console/src/security/csp.ts": {"count":2,"sections":[7],"lines":["63-73"],"contexts":["(`console/src/security/csp.ts:63-73`), plus a `CSP_REPORT_ONLY` escape hatch at"],"resolved":false},
     "crossrefClient.ts": {"count":3,"sections":[0,6,7],"lines":["90"],"contexts":["`crossrefClient.ts:90` fetches `https://api.crossref.org`. `connect-src` in"],"resolved":false},
     "desktop_bridges.rs": {"count":5,"sections":[2,7],"lines":["800-826","800-809","828","841"],"contexts":["guards in the same function (`desktop_bridges.rs:800-826`)."],"resolved":false},
+    "engine/db_query.rs": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["1428,1471","1021,1107"],
+      "contexts": [
+        "| `engine/db_query.rs:1428,1471` | `Neon-Connection-String` | `SSRF_SAFE_HTTP` (follow 5, public only) | host is `extract_pg_host(connection_string)` — **derived from the credential itself** |"
+      ],
+      "resolved": false
+    },
     "http_clients.rs": {
       "count": 5,
       "sections": [0,4,6],
@@ -110,7 +119,54 @@
       "verbatim": "url_safety.rs"
     },
     "src-tauri/engine/Cargo.toml": {"count":2,"sections":[],"lines":["70"],"contexts":["`core/Cargo.toml:68`, `engine/Cargo.toml:70` (`db` and `macros` do not have it)."],"resolvedFrom":"suffix","verbatim":"engine/Cargo.toml"},
+    "src-tauri/engine/src/automation_runner.rs": {
+      "count": 6,
+      "sections": [0,4,7],
+      "lines": ["568","350-359","353-357","353","76-107"],
+      "contexts": ["`automation_runner.rs:568` (10 MB), both by looping `resp.chunk()`. The other"],
+      "resolvedFrom": "basename",
+      "verbatim": "automation_runner.rs"
+    },
+    "src-tauri/engine/src/db_query.rs": {
+      "count": 2,
+      "sections": [5],
+      "lines": ["1428","1415"],
+      "contexts": [
+        "| **A whole connection string in a header** | `db_query.rs:1428`, `:1471` put the Postgres connection string — password included — in `Neon-Connection-String`, and derive the destination host *from t…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "db_query.rs"
+    },
+    "src-tauri/engine/src/http_engine/openai.rs": {"count":3,"sections":[7],"lines":["92","125"],"contexts":["`http_engine/` BYOM lane (`openai.rs`, `tools.rs`) is a real model call over"],"resolvedFrom":"basename","verbatim":"openai.rs"},
     "src-tauri/engine/src/ollama.rs": {"count":1,"sections":[7],"lines":["193"],"contexts":["caps bytes: `ollama.rs:193`, `persona_icon_gen.rs:426`, `setup.rs:289`,"],"resolvedFrom":"basename","verbatim":"ollama.rs"},
+    "src-tauri/engine/src/platforms/github.rs": {
+      "count": 3,
+      "sections": [7,9],
+      "lines": ["72"],
+      "contexts": [
+        "| SSRF resolver **and** redirect policy | **28** | `desktop_bridges.rs:828` · `gallery.rs:47` · `persona_icon_gen.rs:181` · `mcp_tools.rs:41` · `cloud.rs:385`, `:454` · `setup.rs:266`, `:324` · `live…"
+      ],
+      "resolvedFrom": "suffix",
+      "verbatim": "platforms/github.rs"
+    },
+    "src-tauri/engine/src/platforms/n8n.rs": {
+      "count": 3,
+      "sections": [7],
+      "lines": ["141,171,199,243,278","142,172,201,245,280","76-88"],
+      "contexts": ["| `platforms/n8n.rs:141,171,199,243,278` | `X-N8N-API-KEY` | `SHARED_HTTP` | **user-supplied `base_url`**; scheme-checked at `:103-109`, **no private-IP check** |"],
+      "resolvedFrom": "suffix",
+      "verbatim": "platforms/n8n.rs"
+    },
+    "src-tauri/engine/src/platforms/zapier.rs": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["12"],
+      "contexts": [
+        "| SSRF resolver **and** redirect policy | **28** | `desktop_bridges.rs:828` · `gallery.rs:47` · `persona_icon_gen.rs:181` · `mcp_tools.rs:41` · `cloud.rs:385`, `:454` · `setup.rs:266`, `:324` · `live…"
+      ],
+      "resolvedFrom": "suffix",
+      "verbatim": "platforms/zapier.rs"
+    },
     "src-tauri/src/cloud/client.rs": {"count":1,"sections":[7],"lines":["416"],"contexts":["| `cloud/client.rs:416` | `X-User-Token` | `SHARED_HTTP` | cloud endpoint |"],"resolvedFrom":"suffix","verbatim":"cloud/client.rs"},
     "src-tauri/src/cloud/sync/client.rs": {
       "count": 1,
@@ -290,14 +346,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/api_proxy.rs"
     },
-    "src-tauri/src/engine/automation_runner.rs": {
-      "count": 8,
-      "sections": [0,3,4,7],
-      "lines": ["568","350-359","76-107","565-575","353-357","353"],
-      "contexts": ["`automation_runner.rs:568` (10 MB), both by looping `resp.chunk()`. The other"],
-      "resolvedFrom": "basename",
-      "verbatim": "automation_runner.rs"
-    },
     "src-tauri/src/engine/connector_strategy.rs": {
       "count": 3,
       "sections": [6,7],
@@ -305,16 +353,6 @@
       "contexts": ["| `apply_auth` | `connector_strategy.rs` | header | cross-host `302` |"],
       "resolvedFrom": "basename",
       "verbatim": "connector_strategy.rs"
-    },
-    "src-tauri/src/engine/db_query.rs": {
-      "count": 4,
-      "sections": [5,7],
-      "lines": ["1428","1428,1471","1021,1107","1415"],
-      "contexts": [
-        "| **A whole connection string in a header** | `db_query.rs:1428`, `:1471` put the Postgres connection string — password included — in `Neon-Connection-String`, and derive the destination host *from t…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "db_query.rs"
     },
     "src-tauri/src/engine/discord_poller.rs": {
       "count": 1,
@@ -326,7 +364,6 @@
       "resolvedFrom": "basename",
       "verbatim": "discord_poller.rs"
     },
-    "src-tauri/src/engine/http_engine/openai.rs": {"count":3,"sections":[7],"lines":["92","125"],"contexts":["`http_engine/` BYOM lane (`openai.rs`, `tools.rs`) is a real model call over"],"resolvedFrom":"basename","verbatim":"openai.rs"},
     "src-tauri/src/engine/http_engine/tools.rs": {
       "count": 1,
       "sections": [7],
@@ -336,34 +373,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "http_engine/tools.rs"
-    },
-    "src-tauri/src/engine/platforms/github.rs": {
-      "count": 3,
-      "sections": [7,9],
-      "lines": ["72"],
-      "contexts": [
-        "| SSRF resolver **and** redirect policy | **28** | `desktop_bridges.rs:828` · `gallery.rs:47` · `persona_icon_gen.rs:181` · `mcp_tools.rs:41` · `cloud.rs:385`, `:454` · `setup.rs:266`, `:324` · `live…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "platforms/github.rs"
-    },
-    "src-tauri/src/engine/platforms/n8n.rs": {
-      "count": 3,
-      "sections": [7],
-      "lines": ["141,171,199,243,278","142,172,201,245,280","76-88"],
-      "contexts": ["| `platforms/n8n.rs:141,171,199,243,278` | `X-N8N-API-KEY` | `SHARED_HTTP` | **user-supplied `base_url`**; scheme-checked at `:103-109`, **no private-IP check** |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "platforms/n8n.rs"
-    },
-    "src-tauri/src/engine/platforms/zapier.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["12"],
-      "contexts": [
-        "| SSRF resolver **and** redirect policy | **28** | `desktop_bridges.rs:828` · `gallery.rs:47` · `persona_icon_gen.rs:181` · `mcp_tools.rs:41` · `cloud.rs:385`, `:454` · `setup.rs:266`, `:324` · `live…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "platforms/zapier.rs"
     },
     "src-tauri/src/engine/polling.rs": {
       "count": 3,
@@ -438,6 +447,7 @@
     },
     "src/api/system/managementApiAuth.ts": {"count":2,"sections":[7],"lines":["35-44"],"contexts":["**RESOLVED — `src/api/system/managementApiAuth.ts` no longer exists.** It was deleted in"],"resolved":false},
     "src/async_impl/client.rs": {"count":1,"sections":[],"lines":["299-314"],"contexts":["`Config::default` (`src/async_impl/client.rs:299-314`) gives"],"resolved":false},
+    "src/engine/automation_runner.rs": {"count":2,"sections":[3],"lines":["76-107","565-575"],"contexts":["- **`src/engine/automation_runner.rs:76-107`** — the only retry loop in the HTTP"],"resolved":false},
     "src/features/agents/sub_deployment/components/cloud/ApiPlayground.tsx": {"count":1,"sections":[6],"lines":["41"],"contexts":["sample rendered as a string at `ApiPlayground.tsx:41`.)"],"resolvedFrom":"basename","verbatim":"ApiPlayground.tsx"},
     "src/features/plugins/research-lab/sub_literature/AddSourceForm.tsx": {
       "count": 1,

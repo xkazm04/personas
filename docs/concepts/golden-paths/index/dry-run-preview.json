@@ -69,6 +69,7 @@
       ],
       "resolved": false
     },
+    "ManualReviewList.tsx": {"count":1,"sections":[7],"lines":["509"],"contexts":["`ManualReviewList.tsx:509` reads `reviewQueue.counts?.total ?? 0` — a server `GROUP BY` — and"],"resolved":false},
     "MessageList.tsx": {"count":1,"sections":[7],"lines":["404"],"contexts":["matches `DELETE FROM persona_manual_reviews` exactly (194 : 194). `MessageList.tsx:404` reads"],"resolved":false},
     "RepoSegmentsPanel.tsx": {
       "count": 1,
@@ -181,6 +182,15 @@
       ],
       "resolved": false
     },
+    "engine/platforms/github.rs": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["598-612"],
+      "contexts": [
+        "| `engine/platforms/github.rs:598-612` | **The dry run returns the same struct as the action**, so it names the resulting value (`new_tag`) rather than a count — and the flag is a required `bool`. |"
+      ],
+      "resolved": false
+    },
     "executions.rs": {"count":4,"sections":[3,7],"lines":["520-900","851","851-905","541-548"],"contexts":["`executions.rs:520-900`, `MemoriesPageDense.tsx`, `StorageUsageSection.tsx`,"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"contexts":["`npm run check` **and** as the `golden-path-census` **pre-push** job in `lefthook.yml`. That matters:"]},
     "memories.rs": {"count":1,"sections":[7],"lines":["1367-1373"],"contexts":["not — `memories.rs:1367-1373` forwards to v2 with the same scope constructor. And I expected its"],"resolved":false},
@@ -200,6 +210,15 @@
       "lines": ["80"],
       "contexts": [
         "| 2 | **A preview and its action computed by different code will diverge** | **PHYSICS — independently reproduced, with the divergence measured** | `vibeman/src/lib/triage/triageRulesEngine.ts:115` (…"
+      ],
+      "resolved": false
+    },
+    "runner/mod.rs": {
+      "count": 2,
+      "sections": [5,7],
+      "lines": ["852-853"],
+      "contexts": [
+        "| **A preview that ignores a parameter it accepts** | `preview_execution(persona_id, input_data, _use_case_id)` — the third argument is typed, exposed over IPC, passed by the caller (`ExecutionPrevie…"
       ],
       "resolved": false
     },
@@ -224,6 +243,14 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "db/src/repos/core/memories.rs"
+    },
+    "src-tauri/engine/src/platforms/github.rs": {
+      "count": 2,
+      "sections": [3],
+      "lines": ["545-630"],
+      "contexts": ["`data_portability.rs` `export_*`, `director_memory.rs`, `platforms/github.rs`,"],
+      "resolvedFrom": "suffix",
+      "verbatim": "platforms/github.rs"
     },
     "src-tauri/src": {"count":1,"sections":[],"contexts":["**Sweep size.** All **1,111** `.rs` files under `src-tauri/` (**564** under `src-tauri/src`, the"],"resolved":false,"isDir":true},
     "src-tauri/src/**/*.rs": {
@@ -299,24 +326,6 @@
       "verbatim": "director_memory.rs"
     },
     "src-tauri/src/engine/dry_run.rs": {"count":2,"sections":[6],"contexts":["silences**. Lineage checked: **no textual overlap** — none of `dry_run.rs`'s identifiers,"],"resolvedFrom":"basename","verbatim":"dry_run.rs"},
-    "src-tauri/src/engine/platforms/github.rs": {
-      "count": 3,
-      "sections": [3,6],
-      "lines": ["545-630","598-612"],
-      "contexts": ["`data_portability.rs` `export_*`, `director_memory.rs`, `platforms/github.rs`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "platforms/github.rs"
-    },
-    "src-tauri/src/engine/runner/mod.rs": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["852-853"],
-      "contexts": [
-        "| **A preview that ignores a parameter it accepts** | `preview_execution(persona_id, input_data, _use_case_id)` — the third argument is typed, exposed over IPC, passed by the caller (`ExecutionPrevie…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "runner/mod.rs"
-    },
     "src/": {"count":3,"sections":[0],"contexts":["command tree and the census root) and all **4,829** `.ts`/`.tsx` under `src/`. Every one of the"],"resolved":false,"isDir":true},
     "src/api/agents/executions.ts": {
       "count": 1,
@@ -359,14 +368,6 @@
       "contexts": ["makes the point better: `PersonaSettingsTab.tsx:220-234` renders a per-persona *\"Execution"],
       "resolvedFrom": "basename",
       "verbatim": "PersonaSettingsTab.tsx"
-    },
-    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["509"],
-      "contexts": ["`ManualReviewList.tsx:509` reads `reviewQueue.counts?.total ?? 0` — a server `GROUP BY` — and"],
-      "resolvedFrom": "basename",
-      "verbatim": "ManualReviewList.tsx"
     },
     "src/features/overview/sub_memories/components/MemoriesPageDense.tsx": {"count":2,"sections":[5],"lines":["392"],"contexts":["`executions.rs:520-900`, `MemoriesPageDense.tsx`, `StorageUsageSection.tsx`,"],"resolvedFrom":"basename","verbatim":"MemoriesPageDense.tsx"},
     "src/features/plugins/dev-tools/sub_context/ContextMapHealth.tsx": {

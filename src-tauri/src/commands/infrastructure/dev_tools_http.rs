@@ -60,6 +60,11 @@
 //!   POST /repair-cross-refs                 → re-point cross_refs orphaned by past consolidations { project_id, apply } — DRY RUN unless `apply`
 //!   POST /app-master/adopt                  → adopt an App Master for a project { project, recipes[], model?, maxConcurrent?, scopeRung?, enabled?, name? }
 //!   GET  /app-master/{project_id}           → the project's current App Master adoption, or `null`
+//!   POST /app-master/{project_id}/heartbeat → the headless App Master's state { state: running|idle|ended,
+//!                                             note?, nextWakeAt?, runId? } → the stored beat + `suppressing`.
+//!                                             Written by `/appmaster`; while fresh, the in-app master's tick
+//!                                             stands aside (`headless_master`). A bad state, an unparseable
+//!                                             nextWakeAt or an absurd note is a 400; `ended` releases at once.
 //!   POST /architect/adopt                   → adopt an Architect for a WORKSPACE { workspace, recipes[], model?, maxConcurrent?, scopeRung?, enabled?, name? }
 //!   GET  /architect/{workspace}             → the workspace's current Architect adoption, or `null`
 //!   POST /hire                              → ask kp to compose a role from a need and dispatch
@@ -96,6 +101,37 @@
 //! walks the KPI proposals through the operator in waves. Everything it writes
 //! lands through the same repo functions the UI uses, so a triaged proposal is
 //! indistinguishable from one accepted on the Factory Overview cards.
+//!
+//! Headless App Master doors (`headless_doors`) — the app-owned writes an
+//! `/appmaster` outbox replays. JSON is camelCase; an absent optional key means
+//! "not set". 400 = malformed, 404 = an id or name resolves to nothing, 409 =
+//! things exist but do not belong together:
+//!   POST /milestones                        → { projectId, name, goal?, description?, targetDate? } → { milestoneId }
+//!   POST /goals                             → { projectId, title, description?, targetDate?, parentGoalId?,
+//!                                               milestoneId? } → { goalId }. With `milestoneId` the goal is
+//!                                             also bound into that milestone (`goal`, bucket `core`); a
+//!                                             milestone of another project is a 409 and writes nothing.
+//!   POST /projects/{project_id}/workspace   → { workspaceId? | workspaceName? } → { workspaceId } (null when
+//!                                             cleared). Exactly one key assigns, neither clears; a name must
+//!                                             match an existing workspace exactly (404, never created; 409
+//!                                             when two share it). A blank value is a 400, not a clear.
+//!   POST /reports                           → { projectId, personaId?, title, content, attachments?: [{ path,
+//!                                               caption? }], approval?: { title, description?, severity? } }
+//!                                             → { reportId, reviewId? } (`headless_report`). Files under the
+//!                                             ~/.personas tree or a registered project root, at most 12 and
+//!                                             8 MB each, image/video/pdf/markdown, COPIED to `<app data
+//!                                             dir>/reports/<reportId>/NN-<name>`. `personaId` defaults to the
+//!                                             project's App Master (409 when it has none). Deciding the
+//!                                             approval deletes the copies and flips `attachmentsCleaned`.
+//!   POST /council/ingest                    → { projectId, runDir } → the `dev_tools_council_ingest` summary.
+//!                                             `runDir` sits under the project's `.personas/council/runs/` or
+//!                                             the headless App Master's durable copy
+//!                                             `<personas repo>/.claude/master/<slug>/headless/council/<run>/`
+//!                                             (`<slug>` = the project root's last segment). 404 unknown
+//!                                             project, 400 outside both roots, 422 a run the door read and
+//!                                             refused (body = the summary, reason in `refused`); an
+//!                                             already-ingested run is a 200 with `runsSkipped: 1`.
+//!   POST /use-cases/{use_case_id}/tier      → { tier: major|standard } → { useCaseId, tier }
 
 use std::sync::Arc;
 
@@ -115,6 +151,9 @@ use crate::commands::infrastructure::context_generation::{
     confine_to_project_root, launch_context_scan, list_scans_json, scan_status_json,
 };
 use crate::commands::infrastructure::context_map_export::write_context_map_artifacts;
+use crate::commands::infrastructure::headless_doors;
+use crate::commands::infrastructure::headless_master;
+use crate::commands::infrastructure::headless_report;
 use crate::commands::infrastructure::kpi_scan::{
     kpi_scan_prompt, kpi_scan_status_json, launch_kpi_scan,
 };
@@ -174,6 +213,10 @@ pub fn router(app: AppHandle) -> Router {
         .route("/kpi-sim/ingest", post(kpi_sim_ingest))
         .route("/app-master/adopt", post(app_master_adopt_route))
         .route("/app-master/{project_id}", get(app_master_state))
+        .route(
+            "/app-master/{project_id}/heartbeat",
+            post(app_master_heartbeat_route),
+        )
         .route("/architect/adopt", post(architect_adopt_route))
         .route("/architect/{workspace}", get(architect_state))
         .route("/hire", post(hire_route))
@@ -186,6 +229,16 @@ pub fn router(app: AppHandle) -> Router {
         .route("/goals/{project_id}", get(list_goals_route))
         .route("/goals/{goal_id}/amend", post(amend_goal_route))
         .route("/goals/{goal_id}/items/{item_id}", post(goal_item_route))
+        // Headless App Master doors (see the module header).
+        .route("/milestones", post(create_milestone_route))
+        .route("/goals", post(create_goal_route))
+        .route(
+            "/projects/{project_id}/workspace",
+            post(assign_workspace_route),
+        )
+        .route("/reports", post(post_report_route))
+        .route("/council/ingest", post(council_ingest_route))
+        .route("/use-cases/{use_case_id}/tier", post(use_case_tier_route))
         .with_state(DevToolsHttp { app })
 }
 
@@ -1691,6 +1744,20 @@ where
         .map_err(status_for)
 }
 
+/// The headless App Master's beat (`/appmaster`). Same blocking shape as the
+/// write-back routes; a refused payload is a `Validation` and so a 400.
+async fn app_master_heartbeat_route(
+    State(s): State<DevToolsHttp>,
+    Path(project_id): Path<String>,
+    Json(b): Json<headless_master::HeadlessHeartbeatInput>,
+) -> Result<Json<headless_master::HeadlessHeartbeatResult>, (StatusCode, String)> {
+    let pool = db(&s)?;
+    writeback("headless heartbeat", move || {
+        headless_master::record_heartbeat(&pool, &project_id, &b)
+    })
+    .await
+}
+
 async fn idea_outcome_route(
     State(s): State<DevToolsHttp>,
     Path(idea_id): Path<String>,
@@ -1782,6 +1849,155 @@ async fn measure_kpi_route(
         app_master_writeback::record_kpi_reading(&pool, &kpi_id, &b)
     })
     .await
+}
+
+// ============================================================================
+// Headless App Master doors — the writes an `/appmaster` outbox replays
+// ============================================================================
+//
+// Same blocking shape as the write-back routes above, with one more status:
+// `headless_doors::DoorError` carries a 409 the shared `status_for` cannot
+// express (a milestone of another project, an ambiguous workspace name).
+
+/// The status a [`headless_doors::DoorError`] deserves.
+fn door_status(e: headless_doors::DoorError) -> (StatusCode, String) {
+    use headless_doors::DoorError as D;
+    let code = match &e {
+        D::BadRequest(_) => StatusCode::BAD_REQUEST,
+        D::NotFound(_) => StatusCode::NOT_FOUND,
+        D::Conflict(_) => StatusCode::CONFLICT,
+        D::Unprocessable(_) => StatusCode::UNPROCESSABLE_ENTITY,
+        D::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    };
+    (code, e.message().to_string())
+}
+
+/// Run one blocking door and map both failure shapes.
+async fn door<T, F>(op_name: &'static str, f: F) -> Result<Json<T>, (StatusCode, String)>
+where
+    T: Send + 'static,
+    F: FnOnce() -> Result<T, headless_doors::DoorError> + Send + 'static,
+{
+    tokio::task::spawn_blocking(f)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("{op_name}: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(door_status)
+}
+
+async fn create_milestone_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<headless_doors::CreateMilestoneInput>,
+) -> Result<Json<headless_doors::MilestoneCreated>, (StatusCode, String)> {
+    let pool = db(&s)?;
+    door("create milestone", move || {
+        headless_doors::create_milestone(&pool, &b)
+    })
+    .await
+}
+
+async fn create_goal_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<headless_doors::CreateGoalInput>,
+) -> Result<Json<headless_doors::GoalCreated>, (StatusCode, String)> {
+    let pool = db(&s)?;
+    door("create goal", move || {
+        headless_doors::create_goal(&pool, &b)
+    })
+    .await
+}
+
+async fn assign_workspace_route(
+    State(s): State<DevToolsHttp>,
+    Path(project_id): Path<String>,
+    Json(b): Json<headless_doors::AssignWorkspaceInput>,
+) -> Result<Json<headless_doors::WorkspaceAssigned>, (StatusCode, String)> {
+    let pool = db(&s)?;
+    door("assign workspace", move || {
+        headless_doors::assign_workspace(&pool, &project_id, &b)
+    })
+    .await
+}
+
+/// One council run dir through the council door. The durable headless root
+/// is resolved against the source checkout this binary was built from.
+async fn council_ingest_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<headless_doors::CouncilIngestInput>,
+) -> Result<Json<personas_core::models::CouncilIngestSummary>, (StatusCode, String)> {
+    let pool = db(&s)?;
+    let project_id = b.project_id.clone();
+    let personas_repo = crate::companion::dev_mode::repo_root();
+    let out = door("council ingest", move || {
+        headless_doors::ingest_council_run(&pool, &b, &personas_repo)
+    })
+    .await?;
+    if out.0.runs_ingested > 0 {
+        crate::commands::infrastructure::dev_tools::council_ingest::emit_council_changed(
+            &s.app,
+            &project_id,
+        );
+    }
+    Ok(out)
+}
+
+async fn use_case_tier_route(
+    State(s): State<DevToolsHttp>,
+    Path(use_case_id): Path<String>,
+    Json(b): Json<headless_doors::SetTierInput>,
+) -> Result<Json<headless_doors::TierSet>, (StatusCode, String)> {
+    let pool = db(&s)?;
+    let out = door("set use-case tier", move || {
+        headless_doors::set_use_case_tier(&pool, &use_case_id, &b)
+    })
+    .await?;
+    // The tier is an input to the derived council state, same as the command.
+    crate::commands::infrastructure::dev_tools::council_ingest::emit_council_changed(
+        &s.app,
+        &out.0.project_id,
+    );
+    Ok(out)
+}
+
+/// The copies go under Tauri's `app_data_dir` (where the database lives), the
+/// tree the asset protocol already serves to the Reports UI; attachments are
+/// read from the `~/.personas` tree or a registered project root.
+async fn post_report_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<headless_report::PostReportInput>,
+) -> Result<Json<headless_report::ReportPosted>, (StatusCode, String)> {
+    use tauri::Emitter;
+    let pool = db(&s)?;
+    let app_data_dir = s.app.path().app_data_dir().map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("post report: app data directory unavailable: {e}"),
+        )
+    })?;
+    let roots = headless_report::ReportRoots {
+        app_data_dir,
+        personas_home: dirs::home_dir().map(|h| h.join(".personas")),
+    };
+    let posted = door("post report", move || {
+        headless_report::post_report(&pool, &b, &roots)
+    })
+    .await?;
+    // An open Reports list hears about it the way it hears about a run's
+    // report; a replay that found the report already there emits nothing.
+    if let Some(row) = posted.0.created.as_ref() {
+        if let Err(e) = s
+            .app
+            .emit(personas_core::events::event_name::REPORT_CREATED, row)
+        {
+            tracing::warn!(report_id = %row.id, error = %e, "post report: report-created emit failed");
+        }
+    }
+    Ok(posted)
 }
 
 /// `Some((scan_id, reason))` when the project's most recent **context** scan

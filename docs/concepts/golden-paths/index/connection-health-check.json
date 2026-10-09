@@ -69,6 +69,14 @@
       "verbatim": "core/src/models/credential_ledger.rs"
     },
     "src-tauri/db/src/repos/resources/credentials.rs": {"count":1,"sections":[],"contexts":["`db/src/repos/resources/credentials.rs`, the run-time auth paths in"],"resolvedFrom":"suffix","verbatim":"db/src/repos/resources/credentials.rs"},
+    "src-tauri/engine/src/project_tracking/subscription.rs": {
+      "count": 1,
+      "sections": [12],
+      "lines": ["933-941"],
+      "contexts": ["(`subscription.rs:933-941`, 600 s interval, 24 h gate inside the tick) driven by the"],
+      "resolvedFrom": "basename",
+      "verbatim": "subscription.rs"
+    },
     "src-tauri/src/commands/credentials/crud.rs": {
       "count": 1,
       "sections": [7],
@@ -110,14 +118,6 @@
       "contexts": ["`src/engine/oauth_refresh.rs` (1,149), the two persistence doors in"],
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/oauth_refresh.rs"
-    },
-    "src-tauri/src/engine/project_tracking/subscription.rs": {
-      "count": 1,
-      "sections": [12],
-      "lines": ["933-941"],
-      "contexts": ["(`subscription.rs:933-941`, 600 s interval, 24 h gate inside the tick) driven by the"],
-      "resolvedFrom": "basename",
-      "verbatim": "subscription.rs"
     },
     "src-tauri/src/engine/tool_runner.rs": {
       "count": 7,

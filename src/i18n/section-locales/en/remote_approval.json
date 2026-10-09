@@ -9,5 +9,8 @@
   "prompt_label": "Prompt",
   "no_prompt": "No prompt provided.",
   "from_dashboard": "Requested from the web dashboard",
+  "applied_paused": "{name} was paused from your phone.",
+  "applied_resumed": "{name} was resumed from your phone.",
+  "applied_cancelled": "A run of {name} was stopped from your phone.",
   "later": "Decide later"
 }

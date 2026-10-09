@@ -366,6 +366,20 @@ pub fn set_idea_goal(
     })
 }
 
+/// Every idea bound to `goal_id`, in any status, oldest first. The Overseer's
+/// read of the items it filed under a goal (`lifecycle::overseer`).
+pub fn list_ideas_by_goal(pool: &DbPool, goal_id: &str) -> Result<Vec<DevIdea>, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::list_ideas_by_goal", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {IDEA_COLUMNS} FROM dev_ideas WHERE goal_id = ?1 ORDER BY created_at, id"
+        ))?;
+        let rows = stmt.query_map(params![goal_id], row_to_idea)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
 /// What [`bind_idea_goal_if_unset`] did with a filer's goal reference.
 #[derive(Debug, Clone)]
 pub enum IdeaGoalBinding {
@@ -450,6 +464,71 @@ pub fn find_idea_by_dedup_key(
         ))?;
         stmt.query_row(params![project_id, dedup_key], row_to_idea)
             .optional()
+            .map_err(AppError::Database)
+    })
+}
+
+/// What [`list_ideas_matching`] selects: an idea qualifies when ANY clause
+/// matches it. Every clause empty selects nothing.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct IdeaMatch {
+    /// Exact `dedup_key`s.
+    pub dedup_keys: Vec<String>,
+    /// `dedup_key LIKE` patterns under `ESCAPE '\'`: escape every literal part
+    /// with [`crate::repos::utils::escape_like`].
+    pub dedup_key_like: Vec<String>,
+    /// `origin` tokens ([`BacklogSource::as_str`]).
+    pub origins: Vec<String>,
+}
+
+impl IdeaMatch {
+    fn is_empty(&self) -> bool {
+        self.dedup_keys.is_empty() && self.dedup_key_like.is_empty() && self.origins.is_empty()
+    }
+}
+
+/// The project's ideas `m` selects, in any status: open (`pending`,
+/// `accepted`) before closed, newest first within each, at most `limit`.
+pub fn list_ideas_matching(
+    pool: &DbPool,
+    project_id: &str,
+    m: &IdeaMatch,
+    limit: usize,
+) -> Result<Vec<DevIdea>, AppError> {
+    if m.is_empty() || limit == 0 {
+        return Ok(Vec::new());
+    }
+    timed_query!("dev_ideas", "dev_ideas::list_ideas_matching", {
+        let mut qb = QueryBuilder::new();
+        qb.where_eq("project_id", project_id.to_string());
+        let mut any: Vec<String> = Vec::new();
+        for key in &m.dedup_keys {
+            any.push(format!("dedup_key = {}", qb.push_param(key.clone())));
+        }
+        for pattern in &m.dedup_key_like {
+            any.push(format!(
+                "dedup_key LIKE {} ESCAPE '\\'",
+                qb.push_param(pattern.clone())
+            ));
+        }
+        for origin in &m.origins {
+            any.push(format!("origin = {}", qb.push_param(origin.clone())));
+        }
+        qb.where_raw(|_| format!("({})", any.join(" OR ")), Vec::new());
+        qb.order_by_multiple(&[
+            (
+                "CASE WHEN status IN ('pending', 'accepted') THEN 0 ELSE 1 END",
+                "ASC",
+            ),
+            ("created_at", "DESC"),
+            ("id", "DESC"),
+        ]);
+        qb.limit(i64::try_from(limit).unwrap_or(i64::MAX));
+        let conn = pool.get()?;
+        let mut stmt =
+            conn.prepare(&qb.build_select(&format!("SELECT {IDEA_COLUMNS} FROM dev_ideas")))?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_idea)?;
+        rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
     })
 }
@@ -2058,6 +2137,10 @@ fn set_idea_evidence(pool: &DbPool, id: &str, evidence: &str) -> Result<DevIdea,
 mod backlog_memory_tests;
 
 #[cfg(test)]
+#[path = "ideas_match_tests.rs"]
+mod match_tests;
+
+#[cfg(test)]
 mod bench_decoration_tests {
     use super::strip_bench_decoration;
 
@@ -2623,7 +2706,7 @@ mod contract_tests {
 
     /// Every variant, with an exhaustiveness guard.
     ///
-    /// The `match` below has no wildcard arm, so a twentieth `BacklogSource`
+    /// The `match` below has no wildcard arm, so a twenty-first `BacklogSource`
     /// fails to COMPILE here rather than quietly escaping the coverage test —
     /// which is the whole difference between a gate that found nothing and a
     /// gate that looked at nothing.
@@ -2647,6 +2730,7 @@ mod contract_tests {
             BacklogSource::HeadlessBenchSeed,
             BacklogSource::StaticScan,
             BacklogSource::MemoryReflection,
+            BacklogSource::Lifecycle,
             BacklogSource::Manual,
         ];
         for source in &all {
@@ -2669,6 +2753,7 @@ mod contract_tests {
                 | BacklogSource::HeadlessBenchSeed
                 | BacklogSource::StaticScan
                 | BacklogSource::MemoryReflection
+                | BacklogSource::Lifecycle
                 | BacklogSource::Manual => {}
             }
         }
@@ -2682,7 +2767,7 @@ mod contract_tests {
         let pool = pool();
         let pid = project(&pool);
         let sources = all_sources();
-        assert_eq!(sources.len(), 19, "the closed source vocabulary");
+        assert_eq!(sources.len(), 20, "the closed source vocabulary");
 
         for source in sources {
             let draft = IdeaDraft::new(&pid, source, format!("Item from {}", source.as_str()));
@@ -2706,7 +2791,7 @@ mod contract_tests {
         }
 
         let filed = list_ideas(&pool, Some(&pid), None, None, Some(100), None).unwrap();
-        assert_eq!(filed.len(), 19);
+        assert_eq!(filed.len(), 20);
         assert!(
             filed.iter().all(|i| i.origin.is_some()),
             "no row leaves this door without a source"

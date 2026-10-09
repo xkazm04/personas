@@ -25,6 +25,7 @@
     "MastermindHexMosaic.tsx": {"count":3,"sections":[7],"lines":["12"],"contexts":["(→ `RadioPage.tsx:54`), `MastermindHexMosaic.tsx` (→ `MastermindPage.tsx:841`),"],"resolved":false},
     "MosaicIsland.tsx": {"count":2,"sections":[7],"contexts":["`MosaicIsland.tsx` (→ `MastermindHexMosaic.tsx:12`), `TriageDeckVariant.tsx`"],"resolved":false},
     "PrototypeTabs.tsx": {"count":6,"sections":[7],"lines":["11-16","33","44"],"contexts":["- **What a type can do.** `PrototypeVariant` (`PrototypeTabs.tsx:11-16`) declares"],"resolved":false},
+    "QuickAnswerPopover.tsx": {"count":1,"sections":[7],"lines":["104"],"contexts":["(→ `QuickAnswerPopover.tsx:104`). **Each has exactly one importer and no"],"resolved":false},
     "ResearchLabPage.tsx": {"count":2,"sections":[5,7],"lines":["11-18","12-13"],"contexts":["`lazy()` route that fully unmounts on nav-away (`ResearchLabPage.tsx:11-18`), and"],"resolved":false},
     "ResearchProjectList.tsx": {
       "count": 3,
@@ -35,6 +36,7 @@
     },
     "ResearchProjectListCartograph.tsx": {"count":2,"sections":[0,7],"contexts":["- **A variant can quietly lose a feature.** `ResearchProjectListCartograph.tsx`"],"resolved":false},
     "TonePage.tsx": {"count":5,"sections":[0,7],"lines":["5-7"],"contexts":["selected. `TonePage.tsx` — 21 lines — shows the fix and already uses it."],"resolved":false},
+    "TriageDeckVariant.tsx": {"count":1,"sections":[7],"contexts":["`MosaicIsland.tsx` (→ `MastermindHexMosaic.tsx:12`), `TriageDeckVariant.tsx`"],"resolved":false},
     "TwinVariantTabs.tsx": {"count":10,"sections":[7,12],"lines":["35-41","7","49-51","37,45","76"],"contexts":["6. **Validate on rehydrate.** `TwinVariantTabs.tsx:35-41` reads `localStorage`,"],"resolved":false},
     "brainiac/console/src/design/PrototypeSwitcher.tsx": {"count":1,"sections":[],"contexts":["**The independent reinvention: `brainiac/console/src/design/PrototypeSwitcher.tsx`,"],"resolved":false},
     "console/src/design/PrototypeSwitcher.tsx": {"count":1,"sections":[0],"contexts":["`console/src/design/PrototypeSwitcher.tsx` independently reinvented the same"],"resolved":false},
@@ -52,9 +54,6 @@
     "scripts/check-scaffolding-expiry.mjs": {"count":1,"sections":[],"contexts":["- **Mechanism.** `scripts/check-scaffolding-expiry.mjs`, run in"],"resolved":false},
     "scripts/check-themes.mjs": {"count":2,"sections":[12],"contexts":["of `check-themes.mjs`; a locale-catalog count across all 14 languages; and a"],"resolvedFrom":"basename","verbatim":"check-themes.mjs"},
     "src/": {"count":4,"sections":[5,7],"contexts":["**G. \"Throwaway\" with no date.** The word appears in **7 files** in `src/`; in 5"],"resolved":false,"isDir":true},
-    "src/features/agents/quick-answer/QuickAnswerPopover.tsx": {"count":1,"sections":[7],"lines":["104"],"contexts":["(→ `QuickAnswerPopover.tsx:104`). **Each has exactly one importer and no"],"resolvedFrom":"basename","verbatim":"QuickAnswerPopover.tsx"},
-    "src/features/agents/quick-answer/triage/TriageDeckVariant.tsx": {"count":1,"sections":[7],"contexts":["`MosaicIsland.tsx` (→ `MastermindHexMosaic.tsx:12`), `TriageDeckVariant.tsx`"],"resolvedFrom":"basename","verbatim":"TriageDeckVariant.tsx"},
-    "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx": {"count":1,"sections":[],"contexts":["`factoryModel.ts`, a throwaway id in `useDeckControls.tsx`, a test fixture, a"],"resolvedFrom":"basename","verbatim":"useDeckControls.tsx"},
     "src/features/companions/athena/sub_voice/audioToReferenceWav.ts": {"count":1,"sections":[],"contexts":["unrelated — a throwaway buffer in `audioToReferenceWav.ts`, a throwaway object in"],"resolvedFrom":"basename","verbatim":"audioToReferenceWav.ts"},
     "src/features/plugins/radio/components/RadioConsoleVariant.tsx": {"count":1,"sections":[7],"contexts":["`TrendVariant.tsx` (→ `FactoryPage.tsx:25`), `RadioConsoleVariant.tsx`"],"resolvedFrom":"basename","verbatim":"RadioConsoleVariant.tsx"},
     "src/features/plugins/radio/components/RadioPage.tsx": {"count":1,"sections":[7],"lines":["54"],"contexts":["(→ `RadioPage.tsx:54`), `MastermindHexMosaic.tsx` (→ `MastermindPage.tsx:841`),"],"resolvedFrom":"basename","verbatim":"RadioPage.tsx"},
@@ -89,6 +88,7 @@
     "src/features/templates/sub_generated/adoption/ucPicker/ucTimeCard.tsx": {"count":1,"sections":[7],"lines":["7"],"contexts":["(→ `ucTimeCard.tsx:7`), `TeamStudioSplitVariant.tsx` (→ `TeamCanvas.tsx:41`),"],"resolvedFrom":"basename","verbatim":"ucTimeCard.tsx"},
     "src/i18n/locales/*.json": {"count":2,"sections":[3],"contexts":["| `useTranslation` + `t.twin.variantTabs.*` | the label/hint shape, already translated ×14 | `src/i18n/locales/*.json` |"],"resolved":false},
     "src/i18n/locales/en.json": {"count":1,"sections":[],"contexts":["5. **Put the labels in `en.json`** under one section, and run the translation"],"resolvedFrom":"basename","verbatim":"en.json"},
-    "src/styles/globals.css": {"count":3,"sections":[12],"lines":["916-934"],"contexts":["per-theme CSS custom-property sets in `globals.css` (5,554 lines); a full read"],"resolvedFrom":"basename","verbatim":"globals.css"}
+    "src/styles/globals.css": {"count":3,"sections":[12],"lines":["916-934"],"contexts":["per-theme CSS custom-property sets in `globals.css` (5,554 lines); a full read"],"resolvedFrom":"basename","verbatim":"globals.css"},
+    "useDeckControls.tsx": {"count":1,"sections":[],"contexts":["`factoryModel.ts`, a throwaway id in `useDeckControls.tsx`, a test fixture, a"],"resolved":false}
   }
 }

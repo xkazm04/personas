@@ -11,6 +11,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { PublishPresetButton } from './PublishPresetButton';
 import { ForkTeamButton } from './ForkTeamButton';
 import { TeamSlackBridgePanel } from './slackBridge/TeamSlackBridgePanel';
+import { MODEL_OPTIONS } from './modelOptions';
 import type { UpdateTeamInput } from '@/lib/bindings/UpdateTeamInput';
 
 /**
@@ -22,13 +23,6 @@ import type { UpdateTeamInput } from '@/lib/bindings/UpdateTeamInput';
  * (their plain Option<Option> serde default), so this saves ONLY the
  * workspace facet without disturbing name/description/canvas/etc.
  */
-
-const MODEL_OPTIONS = [
-  { key: 'inherit', model: null },
-  { key: 'haiku', model: 'claude-haiku-4-5-20251001' },
-  { key: 'sonnet', model: 'claude-sonnet-4-6' },
-  { key: 'opus', model: 'claude-opus-4-8' },
-] as const;
 
 function modelKeyFromProfile(profile: string | null): string {
   if (!profile) return 'inherit';

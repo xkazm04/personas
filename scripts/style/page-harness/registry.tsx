@@ -16,12 +16,15 @@ import { TONE_MODULES } from './toneSurfaces';
 import { TRIAGE_MODULES } from './triageSurfaces';
 import { DATAGRID_MODULES } from './datagridSurfaces';
 import { FLEET_MODULES } from './fleetSurfaces';
+import { FLEET_TERMINAL_MODULES } from './fleetTerminalSurfaces';
 import { OBSERVABILITY_MODULES } from './observabilitySurfaces';
 import { FACTORY_MODULES } from './factorySurfaces';
 import { KIT_MODULES } from './kitSpecimen';
 import { KIT_OVERVIEW_MODULES } from './kitOverview';
 import { HOME_WELCOME_MODULES } from './homeWelcomeSurfaces';
 import { SERVER_CONTROL_MODULES } from './serverControlSurfaces';
+import { LIFECYCLE_MODULES } from './lifecycleSurfaces';
+import { OVERSEER_MODULES } from './overseerSurfaces';
 import { HOME_LEARNING_MODULES } from './homeLearningSurfaces';
 import { HOME_COCKPIT_MODULES } from './homeCockpitSurfaces';
 import { HOME_SYSTEM_CHECK_MODULES } from './homeSystemCheckSurfaces';
@@ -32,10 +35,10 @@ import { TWIN_DETAIL_MODULES } from './twinDetailSurfaces';
 import { MISSION_CONTROL_MODULES } from './missionControlSurfaces';
 import { ACTIVITY_MODULES } from './activitySurfaces';
 import { INBOX_MODULES } from './inboxSurfaces';
-import { MONITOR_BOARD_MODULES } from './monitorBoardSurfaces';
 import { MONITOR_RAIL_MODULES } from './monitorRailSurfaces';
 import { MONITOR_ACTIVITY_MODULES } from './monitorActivitySurfaces';
 import { DECISION_DECK_MODULES } from './decisionDeckSurfaces';
+import { ATHENA_CHAT_MODULES } from './athenaChatSurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -80,7 +83,9 @@ export const MODULES: Record<string, HarnessModule> = {
   ...ACTIVITY_MODULES,
   // Kit batch overview-1, Overview > Approvals + Incidents (inboxSurfaces.tsx, inboxTapes.mjs).
   ...INBOX_MODULES,
-  ...MONITOR_BOARD_MODULES,
+  // MONITOR_BOARD_MODULES went with the Board view (2026-10-06). Its tapes
+  // survive in `monitorBoardTapes.mjs` because the Activity and rail
+  // harnesses build their fleets from them.
   ...MONITOR_RAIL_MODULES,
   ...MONITOR_ACTIVITY_MODULES,
   // The live Decision Deck (decisionDeckSurfaces.tsx, decisionDeckTapes.mjs).
@@ -89,12 +94,18 @@ export const MODULES: Record<string, HarnessModule> = {
   ...TRIAGE_MODULES,
   ...DATAGRID_MODULES,
   ...FLEET_MODULES,
+  // The Monitor's session terminal modal, its no-terminal states (fleetTerminalSurfaces.tsx).
+  ...FLEET_TERMINAL_MODULES,
   ...OBSERVABILITY_MODULES,
   ...FACTORY_MODULES,
   // Kit batch home-1, Home > Welcome (homeWelcomeSurfaces.tsx, homeWelcomeTapes.mjs).
   ...HOME_WELCOME_MODULES,
   // Spark server-control, Browser > Server control (serverControlSurfaces.tsx, serverControlTapes.mjs).
   ...SERVER_CONTROL_MODULES,
+  // Spark lifecycle-health, Teams > Lifecycle: Layer-1 collar rail + Layer-2 step screens (lifecycleSurfaces.tsx, lifecycleTapes.mjs, lifecycleDetailTapes.mjs).
+  ...LIFECYCLE_MODULES,
+  // Lifecycle excellence wave 9, Overseer > Reviews with its Watched pipelines (overseerSurfaces.tsx, lifecycleOverseerTapes.mjs).
+  ...OVERSEER_MODULES,
   // Kit batch home-1, Home > Learning (homeLearningSurfaces.tsx, homeLearningTapes.mjs).
   ...HOME_LEARNING_MODULES,
   // Kit batch home-2, Home > Cockpit + Athena chat cards + council evidence well (homeCockpitSurfaces.tsx, homeCockpitTapes.mjs).
@@ -113,6 +124,8 @@ export const MODULES: Record<string, HarnessModule> = {
   ...TWIN_DETAIL_MODULES,
   // Overview > Mission Control (missionControlSurfaces.tsx, missionControlTapes.mjs).
   ...MISSION_CONTROL_MODULES,
+  // The Athena chat overlay, open, per scenario; variant and background are URL params (athenaChatSurfaces.tsx, athenaChatTapes.mjs).
+  ...ATHENA_CHAT_MODULES,
   // Probes for `shoot.mjs --self-test`: each must make the shooter exit non-zero.
   '__selftest/empty': {
     load: async () => ({ default: () => <div /> }),

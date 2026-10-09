@@ -22,10 +22,49 @@ export function docWidth(stageW: number, navW: number): number {
   return Math.round(Math.max(460, Math.min(800, (stageW - navW) * 0.6)));
 }
 
-/** The insets one mode asks for. The lens leans left when there is slack. */
-export function insetsFor(mode: HudMode, size: { w: number; h: number }, navW: number, dockH: number, docW: number): StageInsets {
-  if (mode === 'lens') return { l: navW, r: docW || Math.min(100, Math.max(0, size.w - navW - size.h)), b: 0 };
-  return { l: navW - 22, r: docW, b: mode === 'bar' ? dockH : 0 };
+/**
+ * The insets one mode asks for. The queue panel docked top right (`panelW`:
+ * the stretch it covers from the stage's right edge) is reserved in every
+ * mode, so the field is framed BESIDE it, not under it. The technique
+ * document slides in over the panel, so the two share one right inset.
+ * The lens leans left when the room beside the panel still has slack.
+ */
+export function insetsFor(
+  mode: HudMode,
+  size: { w: number; h: number },
+  navW: number,
+  dockH: number,
+  docW: number,
+  panelW = 0,
+): StageInsets {
+  if (mode === 'lens') {
+    const lean = Math.min(100, Math.max(0, size.w - navW - panelW - size.h));
+    return { l: navW, r: docW ? Math.max(docW, panelW) : panelW + lean, b: 0 };
+  }
+  return { l: navW - 22, r: Math.max(docW, panelW), b: mode === 'bar' ? dockH : 0 };
+}
+
+/**
+ * How far the docked panel reaches in from the stage's right edge, kept
+ * current as either box resizes. Zero while there is no panel.
+ */
+function usePanelReach(stageRef: RefObject<HTMLElement | null>, panelRef: RefObject<HTMLElement | null> | undefined): number {
+  const [reach, setReach] = useState(0);
+  useLayoutEffect(() => {
+    const stage = stageRef.current;
+    const panel = panelRef?.current;
+    if (!stage || !panel) return;
+    const read = () => {
+      const next = Math.max(0, Math.round(stage.getBoundingClientRect().right - panel.getBoundingClientRect().left));
+      setReach((prev) => (prev === next ? prev : next));
+    };
+    read();
+    const ro = new ResizeObserver(read);
+    ro.observe(stage);
+    ro.observe(panel);
+    return () => ro.disconnect();
+  }, [stageRef, panelRef]);
+  return reach;
 }
 
 export function useStageSize(stageRef: RefObject<HTMLElement | null>): { w: number; h: number } {
@@ -46,12 +85,15 @@ interface FrameArgs {
   engine: GalaxyEngine | null;
   stageRef: RefObject<HTMLElement | null>;
   navRef: RefObject<HTMLElement | null>;
+  /** The queue panel docked top right; its box is reserved on the right. */
+  panelRef?: RefObject<HTMLElement | null>;
   size: { w: number; h: number };
   /** The dock's height when it is up: folded or spread. */
   dockH: number;
 }
 
-export function useStageFrame({ engine, stageRef, navRef, size, dockH }: FrameArgs): void {
+export function useStageFrame({ engine, stageRef, navRef, panelRef, size, dockH }: FrameArgs): void {
+  const panelW = usePanelReach(stageRef, panelRef);
   const mode = useFusedStore((s) => s.mode);
   const technique = useFusedStore((s) => s.technique);
   const initStage = useFusedStore((s) => s.initStage);
@@ -75,8 +117,8 @@ export function useStageFrame({ engine, stageRef, navRef, size, dockH }: FrameAr
     stageRef.current?.style.setProperty('--doc-w', `${docWidth(size.w, navW)}px`);
     // Inside the glass a focus is framed to the glass, not to the stage.
     engine.setFrameFill(mode === 'lens' ? glassFill : null);
-    engine.setInsets(insetsFor(mode, size, navW, dockH, docW));
-  }, [engine, ready, mode, technique, size, dockH, navRef, stageRef]);
+    engine.setInsets(insetsFor(mode, size, navW, dockH, docW, panelW));
+  }, [engine, ready, mode, technique, size, dockH, panelW, navRef, stageRef]);
 
   // Read back every frame: the dock shows exactly the bottom inset the flight
   // has eased to, and the column ends where the dock begins.

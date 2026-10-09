@@ -14,7 +14,6 @@
 use crate::cli_process::CliProcessDriver;
 use crate::genome::{PersonaGenome, PromptSegment};
 use crate::parser;
-use crate::prompt;
 use personas_core::types::StreamLineType;
 use personas_db::models::{ExecutionKnowledge, Persona};
 use personas_db::repos::execution::knowledge as knowledge_repo;
@@ -59,7 +58,7 @@ pub async fn mutate_via_critique(
             &personas_db::repos::llm_spend::SpendCtx {
                 source: "evaluator",
                 trigger_kind: "genome_critique",
-                model: Some(CRITIQUE_MODEL),
+                model: Some(CRITIQUE_CLASS.route().model),
                 persona_id: Some(&persona.id),
                 project_id: None,
             },
@@ -152,21 +151,24 @@ No prose outside the JSON. No code fences. The first character of your response 
     )
 }
 
-/// Model for the genome prompt-critique pass. Pinned deliberately so prompt
-/// rewriting runs on a consistent, capable model rather than the undeclared
-/// account default (typically Opus 4.8). (tiger finding: lab/evolution tier
-/// rode account-default.)
-const CRITIQUE_MODEL: &str = "claude-sonnet-4-6";
+/// Call class of the genome prompt-critique pass: a `Verdict` (it critiques
+/// and rewrites another prompt's segments), so it runs on a consistent,
+/// capable model rather than the undeclared account default. Model and effort
+/// come from the class table (`personas_core::model_class`). (tiger finding:
+/// lab/evolution tier rode account-default.)
+const CRITIQUE_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Verdict;
 
 /// Spawn the Claude CLI in single-turn print mode and pipe the critique
 /// prompt to stdin. Returns the assistant's text response (or an error on
 /// timeout / spawn failure).
 async fn run_critique_cli(critique_prompt: &str) -> Result<(String, Option<String>), String> {
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push(CRITIQUE_MODEL.to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
+    let route = CRITIQUE_CLASS.route();
+    let cli_args = crate::cli_process::headless_claude_args(
+        route.model,
+        route.effort,
+        &["--max-turns".to_string(), "1".to_string()],
+    );
 
     let mut driver = CliProcessDriver::spawn_temp_no_stderr(&cli_args, "personas-genome-critique")
         .map_err(|e| format!("Failed to spawn critique CLI: {e}"))?;

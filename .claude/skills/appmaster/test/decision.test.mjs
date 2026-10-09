@@ -47,6 +47,14 @@ function writeFile(name, content) {
   return p;
 }
 const ctx = (wakeId) => ({ slug: 'demo', wakeId, brief });
+/** A two-dispatch decision (kpi + architecture), paths given per entry (undefined = absent). */
+const two = (pathsA, pathsB, overA = {}, overB = {}, wakeId = 'w') => valid(wakeId, {
+  dispatch: [
+    { charterSlug: 'project-kpi-stewardship', reason: 'r', brief: 'measure', ideaIds: [], ...(pathsA ? { paths: pathsA } : {}), ...overA },
+    { charterSlug: 'codebase-architecture-review', reason: 'r', brief: 'review', ideaIds: [], ...(pathsB ? { paths: pathsB } : {}), ...overB },
+  ],
+  defer: [{ charterSlug: 'technical-decision-capture', reason: 'nothing new' }],
+});
 
 test('validateDecision accepts a well-formed decision', () => {
   assert.deepEqual(V.validateDecision(valid('w'), ctx('w')), { ok: true, errors: [] });
@@ -56,7 +64,16 @@ test('validateDecision rejects each rule the schema and the cross-field contract
   const cases = {
     'skipped charter': [valid('w', { defer: [{ charterSlug: 'project-kpi-stewardship', reason: 'r' }] }), /"technical-decision-capture" is missing/],
     'duplicated charter': [valid('w', { defer: [...valid('w').defer, { charterSlug: 'codebase-architecture-review', reason: 'r' }] }), /appears 2 times/],
-    'two dispatches': [valid('w', { dispatch: [valid('w').dispatch[0], { charterSlug: 'project-kpi-stewardship', reason: 'r', brief: 'b', ideaIds: [] }], defer: [{ charterSlug: 'technical-decision-capture', reason: 'r' }] }), /at most 1 per wake/],
+    'three dispatches': [valid('w', { dispatch: CHARTERS.map((c, i) => ({ charterSlug: c.slug, reason: 'r', brief: 'b', ideaIds: [], paths: [`dir${i}/`] })), defer: [] }), /dispatch has 3 entries; at most 2 per wake/],
+    'two dispatches without paths': [two(), /dispatch\[0\]\.paths is required when a wake dispatches 2/],
+    'two dispatches, one path list empty': [two(['src/a/'], []), /dispatch\[1\]\.paths is empty/],
+    'two dispatches, overlapping paths': [two(['src/app/'], ['src/app/org/page.tsx']), /overlapping paths \(src\/app\/ ~ src\/app\/org\/page\.tsx\)/],
+    'two dispatches, a glob that may cover the other': [two(['src/app*'], ['src/apple/x.ts']), /overlapping paths/],
+    'two dispatches, the same idea': [two(['a/'], ['b/'], { ideaIds: ['idea-9'] }, { ideaIds: ['idea-9'] }), /idea idea-9 is already carried by dispatch\[0\]; one builder per idea/],
+    'absolute path': [valid('w', { dispatch: [{ ...valid('w').dispatch[0], paths: ['C:/repo/src'] }] }), /must be repo-relative/],
+    'climbing path': [valid('w', { dispatch: [{ ...valid('w').dispatch[0], paths: ['src/../../etc'] }] }), /must not climb out/],
+    'paths not an array': [valid('w', { dispatch: [{ ...valid('w').dispatch[0], paths: 'src/' }] }), /paths must be an array/],
+    'unknown model': [valid('w', { dispatch: [{ ...valid('w').dispatch[0], model: 'gpt-9' }] }), /model "gpt-9" is not one of sonnet, opus/],
     'four asks': [valid('w', { asks: [1, 2, 3, 4].map((i) => ({ kind: 'scope', question: `q${i}`, context: '', options: opts })) }), /asks has 4 entries; at most 3/],
     'nextWakeMinutes 9': [valid('w', { nextWakeMinutes: 9 }), /nextWakeMinutes must be an integer 10\.\.240, got 9/],
     'nextWakeMinutes 241': [valid('w', { nextWakeMinutes: 241 }), /got 241/],
@@ -93,6 +110,34 @@ test('builderModel: brief byCharter, then the contract default by charter, then 
   assert.equal(V.builderModel({}, 'project-kpi-stewardship'), C.MODELS.builder);
   assert.equal(V.builderModel({ models: { builder: 'b-x' } }, 'project-kpi-stewardship'), 'b-x');
   assert.equal(V.builderModel({ models: { byCharter: { 'codebase-architecture-review': 'm-y' } } }, 'codebase-architecture-review'), 'm-y');
+});
+
+test('validateDecision accepts two dispatches on disjoint paths, each with its own model', () => {
+  const d = two(['src/kpi/', 'docs/kpi.md'], ['src/app/**/*.ts'], { model: 'sonnet' }, { model: 'opus' });
+  assert.deepEqual(V.validateDecision(d, ctx('w')), { ok: true, errors: [] });
+  assert.deepEqual(V.validateDecision(two(['src/a.ts'], ['src/a.tsx'], { model: null }), ctx('w')).ok, true, 'two different files are disjoint; a null model is the default');
+  const one = valid('w', { dispatch: [{ ...valid('w').dispatch[0], model: C.MODELS.builder }] });
+  assert.deepEqual(V.validateDecision(one, ctx('w')).ok, true, 'one dispatch needs no paths; a full model id is a valid choice');
+});
+
+test('the examples in roles/app-master.md are valid decisions (the role and the validator cannot drift)', () => {
+  const md = fs.readFileSync(new URL('../roles/app-master.md', import.meta.url), 'utf8');
+  const examples = [...md.matchAll(/### Example[^\n]*\n[\s\S]*?```\n(\{[\s\S]*?\})\n```/g)].map((m) => JSON.parse(m[1]));
+  assert.ok(examples.length >= 2, 'the matcher found the examples');
+  assert.ok(examples.some((d) => d.dispatch.length === 2), 'one example shows two dispatches');
+  const charters = ['project-kpi-stewardship', 'accepted-idea-delivery', 'codebase-security-scan', 'codebase-static-analysis-sweep', 'codebase-architecture-review', 'technical-decision-capture'].map((slug) => ({ slug, priority: null }));
+  for (const d of examples) assert.deepEqual(V.validateDecision(d, { wakeId: d.wakeId, brief: { charters } }), { ok: true, errors: [] }, d.wakeId);
+});
+
+test('chooseBuilderModel: the master overrides the contract default; a model the brief pins wins', () => {
+  assert.deepEqual(V.chooseBuilderModel({}, 'codebase-security-scan', 'sonnet'), { model: C.MODELS.builder, source: 'decision' });
+  assert.deepEqual(V.chooseBuilderModel({}, 'accepted-idea-delivery', 'opus'), { model: C.MODELS.master, source: 'decision' });
+  assert.deepEqual(V.chooseBuilderModel({}, 'codebase-security-scan'), { model: C.MODELS.builderByCharter['codebase-security-scan'], source: 'contract' });
+  assert.deepEqual(V.chooseBuilderModel({ models: { builder: 'claude-opus-5' } }, 'accepted-idea-delivery', 'sonnet'),
+    { model: 'claude-opus-5', source: 'brief', overridden: C.MODELS.builder }, '"Opus everywhere" is the operator\'s word');
+  assert.deepEqual(V.chooseBuilderModel({ models: { byCharter: { 'accepted-idea-delivery': 'm-x' } } }, 'accepted-idea-delivery', 'opus').model, 'm-x');
+  assert.equal(C.resolveModel('opus'), C.MODELS.master);
+  assert.equal(C.resolveModel(C.MODELS.builder), C.MODELS.builder);
 });
 
 test('decide: mints the run, queues the outbox, raises the ask, decides the wake', async () => {
@@ -232,6 +277,34 @@ test('unknownIdeaIds: a retyped idea id is refused against dev_ideas; no DB mean
     assert.deepEqual(V.unknownIdeaIds(F.IDS.project, { ...named([]), ideaVerdicts: [{ ideaId: retyped, status: 'accepted', reason: 'r' }] }), [retyped]);
     assert.deepEqual(V.unknownIdeaIds(F.IDS.bare, named([F.IDS.ideaAccepted])), [F.IDS.ideaAccepted], 'an id of another project is unknown here');
   } finally { fs.rmSync(env.dbPath, { force: true }); }
+});
+
+test('decide: two dispatches mint two runs carrying their paths and chosen models', async () => {
+  const w = newWake();
+  const file = writeFile('d-two.json', two(['src/kpi/'], ['src/app/'], { model: 'opus' }, { model: 'sonnet' }, w));
+  const r = await V.cmdDecide({ flags: { project: 'demo', wake: w, file } });
+  assert.equal(r.runIds.length, 2);
+  const [a, b] = r.runIds.map((id) => S.loadRun('demo', id));
+  assert.deepEqual([a.charterSlug, a.model, a.modelSource, a.paths], ['project-kpi-stewardship', C.MODELS.master, 'decision', ['src/kpi/']]);
+  assert.deepEqual([b.charterSlug, b.model, b.modelSource, b.paths], ['codebase-architecture-review', C.MODELS.builder, 'decision', ['src/app/']],
+    'sonnet overrides the Opus default of architecture review');
+  for (const run of [a, b]) S.updateRun(run, { state: 'released' });
+});
+
+test('decide refuses to dispatch a charter (or an idea) a started run of an earlier wake still carries', async () => {
+  const running = S.saveRun({ ...S.newRun(project, { wakeId: 'w-earlier', charterSlug: 'project-kpi-stewardship', reason: 'r', brief: 'b', ideaIds: ['idea-live'], model: 'm' }), state: 'running' });
+  const w = newWake();
+  const counts = () => [S.loadOutbox('demo').length, S.loadAsks('demo').length, S.listRuns('demo').length];
+  const before = counts();
+  const file = writeFile('d-clash.json', two(['a/'], ['b/'], {}, { ideaIds: ['idea-live'] }, w));
+  await assert.rejects(V.cmdDecide({ flags: { project: 'demo', wake: w, file } }), (e) => {
+    assert.equal(e.reason, 'invalid decision');
+    assert.ok(e.extra.errors.some((x) => /charter project-kpi-stewardship already has live run/.test(x)), JSON.stringify(e.extra.errors));
+    assert.ok(e.extra.errors.some((x) => /idea idea-live is already carried by live run/.test(x)));
+    return true;
+  });
+  assert.deepEqual(counts(), before, 'a refused decision writes nothing');
+  S.updateRun(running, { state: 'released' });
 });
 
 test('cleanup', () => { fs.rmSync(env.tmp, { recursive: true, force: true }); });

@@ -1,11 +1,10 @@
 //! Consolidator — turns the raw event log for one project into a
 //! stable narrative + named directions + flagged tensions, via a
-//! one-shot Sonnet 4.6 CLI call.
+//! one-shot Sonnet CLI call (the Synthesis class route).
 //!
 //! Pattern mirrors `companion::brain::consolidation::call_claude_oneshot`:
 //! ephemeral CLI invocation, no `--resume`, JSON envelope output.
-//! The differences are model (`claude-sonnet-4-6` per the locked design
-//! decision), shorter timeout (project pulse is much smaller than a
+//! The differences are model (the Synthesis class, Sonnet 5.5), shorter timeout (project pulse is much smaller than a
 //! brain consolidation), and a different envelope shape.
 
 use std::process::Stdio;
@@ -76,11 +75,13 @@ fn flatten_untrusted(raw: &str, cap: usize) -> String {
 /// Sonnet endpoint.
 const CONSOLIDATOR_TIMEOUT: Duration = Duration::from_secs(90);
 
-/// Locked-design choice: Sonnet 4.6 for the consolidator. The "carry
-/// forward / replace / retire" reasoning over directions matters more
-/// here than raw speed, and Sonnet handles that materially better than
-/// Haiku.
-const CONSOLIDATOR_MODEL: &str = "claude-sonnet-4-6";
+/// Call class of the consolidator: `Synthesis`. The "carry forward /
+/// replace / retire" reasoning over directions matters more here than raw
+/// speed, and Sonnet handles that materially better than Haiku (locked
+/// design; it rode Sonnet 4.6 until 2026-10-08). Model and effort come from
+/// the class table (`personas_core::model_class`).
+const CONSOLIDATOR_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Synthesis;
 
 /// Tauri event emitted after a successful upsert. Companion's brain
 /// integration (Phase 5) listens for this to ingest the new pulse into
@@ -434,6 +435,7 @@ async fn call_sonnet_oneshot(prompt: &str) -> Result<PulseEnvelope, AppError> {
         }
         None => std::env::temp_dir(),
     };
+    let route = CONSOLIDATOR_CLASS.route();
     let (cmd_program, mut argv) = base_cli_invocation();
     argv.extend([
         "-p".into(),
@@ -443,8 +445,10 @@ async fn call_sonnet_oneshot(prompt: &str) -> Result<PulseEnvelope, AppError> {
         "--verbose".into(),
         "--dangerously-skip-permissions".into(),
         "--exclude-dynamic-system-prompt-sections".into(),
+        "--effort".into(),
+        route.effort.into(),
         "--model".into(),
-        CONSOLIDATOR_MODEL.into(),
+        route.model.into(),
     ]);
 
     let mut cmd = Command::new(&cmd_program);
