@@ -34,7 +34,7 @@ function council(over: Partial<CouncilSubjectState> = {}): CouncilSubjectState {
     id: 's1', projectId: 'p1', kind: 'use_case', useCaseId: 'f1', slug: 'f1', title: 'F1',
     state: 'ready', tier: 'major', roundNo: 1, latestRunId: 'r1', outcome: 'ready',
     overall: 0.74, coverage: 1, trustState: 'uncalibrated', floorHits: 0, hardFailures: 0,
-    drift: 'none', projectName: 'P', registrySubjects: [], runDir: null,
+    drift: 'none', projectName: 'P', registrySubjects: [], dimensions: [], mustAddressCount: 0, runDir: null, reportPath: null,
     finishedAt: null, decidedAt: null, rejectionReason: null,
     ...over,
   };

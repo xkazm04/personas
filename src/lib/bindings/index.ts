@@ -273,6 +273,7 @@ export type { ContractReport } from "./ContractReport";
 export type { ConversationRow } from "./ConversationRow";
 export type { CorrelatedEvent } from "./CorrelatedEvent";
 export type { CouncilDecision } from "./CouncilDecision";
+export type { CouncilDimensionScore } from "./CouncilDimensionScore";
 export type { CouncilIngestSummary } from "./CouncilIngestSummary";
 export type { CouncilMedia } from "./CouncilMedia";
 export type { CouncilOverlay } from "./CouncilOverlay";

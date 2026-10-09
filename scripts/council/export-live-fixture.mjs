@@ -17,7 +17,7 @@
 // `registrySubjects` carries only the subjects the members NAMED (the Rust
 // reader's keyword fallback needs the repo's context map and is skipped).
 import { DatabaseSync } from 'node:sqlite';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -100,6 +100,15 @@ function namedSubjects(verdicts) {
   return [...out].sort();
 }
 
+function countArray(json) {
+  try {
+    const v = JSON.parse(json);
+    return Array.isArray(v) ? v.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
 const outSubjects = [];
 const runs = {};
 for (const s of subjects) {
@@ -140,12 +149,7 @@ for (const s of subjects) {
   const tier = s.kind === 'use_case' ? (s.tier ?? null) : null;
   const outcome = latest?.outcome ?? null;
   const state = !outcome ? 'none' : outcome === 'ready' && tier === 'standard' ? 'machine_pass' : outcome;
-  let hardFailures = 0;
-  try {
-    hardFailures = latest ? JSON.parse(latest.hard_failures_json).length : 0;
-  } catch {
-    hardFailures = 0;
-  }
+  const hardFailures = latest ? countArray(latest.hard_failures_json) : 0;
   outSubjects.push({
     id: s.id,
     projectId: s.project_id,
@@ -167,7 +171,23 @@ for (const s of subjects) {
     drift: s.drift,
     projectName: s.project_name,
     registrySubjects: latestDetail ? namedSubjects(latestDetail.verdicts) : [],
+    dimensions: latestDetail
+      ? latestDetail.verdicts.map((v) => ({
+          dimension: v.dimension,
+          kind: v.kind,
+          state: v.state,
+          score: v.score,
+          floor: v.floor,
+          floorHit: v.floorHit,
+          advisory: v.advisory,
+        }))
+      : [],
+    mustAddressCount: latestDetail ? countArray(latestDetail.run.mustAddressJson) : 0,
     runDir: latestDetail?.run.runDir ?? null,
+    reportPath:
+      latestDetail && existsSync(join(latestDetail.run.runDir, 'report.html'))
+        ? join(latestDetail.run.runDir, 'report.html')
+        : null,
     finishedAt: latest?.finished_at ?? null,
     decidedAt: null,
     rejectionReason: null,

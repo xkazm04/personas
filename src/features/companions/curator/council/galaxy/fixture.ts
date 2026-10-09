@@ -264,10 +264,34 @@ export async function loadReferenceFixture(): Promise<FixtureBundle> {
       hardFailures: 0,
       drift: row.drift,
       registrySubjects: row.registry_subjects,
+      // The list projection's member marks, read off the subject's latest
+      // fixture round so the queue draws what the round table would.
+      dimensions: (runs[row.latest_run_id ?? '']?.verdicts ?? []).map((v) => ({
+        dimension: v.dimension,
+        kind: v.kind,
+        state: v.state,
+        score: v.score,
+        floor: v.floor,
+        floorHit: v.floorHit,
+        advisory: v.advisory,
+      })),
+      mustAddressCount: mustAddressCountOf(runs[row.latest_run_id ?? '']?.run.mustAddressJson),
       runDir: null,
+      reportPath: null,
       finishedAt: null,
       decidedAt: row.decided_at ?? null,
       rejectionReason: row.rejection_reason ?? null,
     })),
   };
+}
+
+/** Lines in a run's `must_address_json`; 0 for no run or an unreadable list. */
+function mustAddressCountOf(json: string | undefined): number {
+  if (!json) return 0;
+  try {
+    const v: unknown = JSON.parse(json);
+    return Array.isArray(v) ? v.length : 0;
+  } catch {
+    return 0;
+  }
 }
