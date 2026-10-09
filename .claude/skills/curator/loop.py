@@ -2219,10 +2219,14 @@ class Pool:
             return True
         return usage_limited(r.stdout or "", r.stderr or "", r.returncode)
 
-    def hold(self, why: str) -> None:
-        if why != self.last_hold:
+    def hold(self, why: str, key: str | None = None) -> None:
+        """Log a hold once per KIND of hold. `key` names the kind when `why` carries a
+        changing figure: keyed on the text, a memory hold logged every poll as free memory
+        moved (seen live on 2026-10-09, a line every 15 s)."""
+        key = key or why
+        if key != self.last_hold:
             self.log("held", why=why, running=len(self.running))
-            self.last_hold = why
+            self.last_hold = key
 
     def admit(self, c: sqlite3.Connection, root: pathlib.Path, skills: dict) -> str | None:
         """Claim and spawn at most one worker. Returns a reason to STOP the pool, or None."""
@@ -2259,7 +2263,8 @@ class Pool:
         free = sample_free_gb()
         n = workers_allowed(free, self.a.max)
         if len(self.running) >= n:
-            self.hold(f"{len(self.running)} running of {n} allowed ({free if free is None else round(free, 1)} GB free)")
+            self.hold(f"{len(self.running)} running of {n} allowed ({free if free is None else round(free, 1)} GB free)",
+                      key=f"memory:{len(self.running)}/{n}")
             return None
         # The registry checkout has at most one writer: while it does, only parallel-safe work.
         lanes, engines = admission_filters(self.lanes, self.engines,
