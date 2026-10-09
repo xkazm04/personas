@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "cases": [
     {
       "name": "prose: a pasted key is masked and the sentence around it survives",
@@ -310,6 +310,51 @@
       "name": "known miss: a short password in prose is kept, no rule tells it from 'the password is wrong'",
       "input": "the password is hunter2",
       "expected": "the password is hunter2"
+    },
+    {
+      "name": "already masked: env assignment",
+      "input": "DB_PASSWORD=[redacted]",
+      "expected": "DB_PASSWORD=[redacted]"
+    },
+    {
+      "name": "already masked: secret name with colon and space",
+      "input": "password: [redacted]",
+      "expected": "password: [redacted]"
+    },
+    {
+      "name": "already masked: after Bearer",
+      "input": "Bearer [redacted]",
+      "expected": "Bearer [redacted]"
+    },
+    {
+      "name": "already masked: JSON key",
+      "input": "{\"client_secret\":\"[redacted]\"}",
+      "expected": "{\"client_secret\":\"[redacted]\"}"
+    },
+    {
+      "name": "already masked: joined pairs",
+      "input": "Server=db;User=sa;Password=[redacted];Database=prod",
+      "expected": "Server=db;User=sa;Password=[redacted];Database=prod"
+    },
+    {
+      "name": "already masked: URL query pair",
+      "input": "?access_token=[redacted]&page=2",
+      "expected": "?access_token=[redacted]&page=2"
+    },
+    {
+      "name": "already masked: URL userinfo",
+      "input": "postgres://admin:[redacted]@db.internal:5432/app",
+      "expected": "postgres://admin:[redacted]@db.internal:5432/app"
+    },
+    {
+      "name": "marker only by shape: no brackets is still masked",
+      "input": "DB_PASSWORD=redacted",
+      "expected": "DB_PASSWORD=[redacted]"
+    },
+    {
+      "name": "marker only by shape: extra characters after it are masked",
+      "input": "DB_PASSWORD=[redacted]hunter2",
+      "expected": "DB_PASSWORD=[[redacted]"
     }
   ]
 }

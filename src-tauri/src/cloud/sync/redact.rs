@@ -60,6 +60,21 @@ fn is_wrapper(c: char) -> bool {
     )
 }
 
+/// Whether a value is already the [`REDACTED`] marker, so masking it again
+/// would only nest it (`[[redacted]]`). The rule, in plain sentences: after the
+/// value's wrappers are split off, the core is exactly the word `redacted`, and
+/// the leading wrappers end with `[`. The trailing wrappers are not looked at,
+/// because an outer unwrap may already have taken the closing `]` (in
+/// `{"client_secret":"[redacted]"}` the value reaches this check as
+/// `"[redacted`). `redacted` with no bracket, or with any other character
+/// stuck to it (`[redacted]hunter2` has the core `redacted]hunter2`), is not
+/// the marker and is masked as before. The check applies wherever `REDACTED`
+/// would replace a value: both branches of `mask_core` and the forced branch
+/// of `mask_token`. A value that is the marker stays byte for byte.
+fn is_marker(lead: &str, core: &str) -> bool {
+    core == "redacted" && lead.ends_with('[')
+}
+
 /// Split `tok` into (leading wrappers, core, trailing wrappers).
 fn unwrap_token(tok: &str) -> (&str, &str, &str) {
     let start = tok.len() - tok.trim_start_matches(is_wrapper).len();
@@ -163,6 +178,9 @@ fn mask_token(tok: &str, forced: bool) -> Option<String> {
         return None;
     }
     if forced {
+        if is_marker(lead, core) {
+            return None;
+        }
         return Some(format!("{lead}{REDACTED}{trail}"));
     }
     let masked = if core.contains("://") {
@@ -224,13 +242,16 @@ fn mask_core(core: &str) -> Option<String> {
         let (name, value) = core.split_at(i + 1);
         let (vlead, vcore, vtrail) = unwrap_token(value);
         if !vcore.is_empty() && names_a_secret(name) {
+            if is_marker(vlead, vcore) {
+                return None;
+            }
             return Some(format!("{name}{vlead}{REDACTED}{vtrail}"));
         }
     }
     if let Some(i) = core.rfind(['=', ':']) {
         let (name, value) = core.split_at(i + 1);
         let (vlead, vcore, vtrail) = unwrap_token(value);
-        if !vcore.is_empty() && looks_secret(vcore) {
+        if !vcore.is_empty() && looks_secret(vcore) && !is_marker(vlead, vcore) {
             return Some(format!("{name}{vlead}{REDACTED}{vtrail}"));
         }
     }
@@ -645,7 +666,7 @@ mod tests {
     /// The shared redaction cases. `personas-web` keeps a byte-identical copy
     /// and masks a say with the same rules before it signs it, so a case
     /// changed here is a change on both sides.
-    const FIXTURE: &str = include_str!("../../../../fixtures/redact-text-v1.json");
+    const FIXTURE: &str = include_str!("../../../../fixtures/redact-text-v2.json");
 
     #[test]
     fn every_shared_fixture_case_holds() {
@@ -654,7 +675,7 @@ mod tests {
             "the fixture is copied byte for byte: keep it LF"
         );
         let doc: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture is JSON");
-        assert_eq!(doc["version"], 1);
+        assert_eq!(doc["version"], 2);
         let cases = doc["cases"].as_array().expect("cases is an array");
         assert!(!cases.is_empty());
         let mut names = std::collections::HashSet::new();
@@ -681,6 +702,50 @@ mod tests {
             cases.len(),
             failures.join("\n")
         );
+    }
+
+    #[test]
+    fn every_fixture_expected_is_a_fixed_point() {
+        let doc: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture is JSON");
+        for case in doc["cases"].as_array().expect("cases is an array") {
+            let expected = case["expected"].as_str().expect("expected is a string");
+            assert_eq!(
+                redact_text(expected),
+                expected,
+                "case {} is not a fixed point",
+                case["name"]
+            );
+        }
+    }
+
+    #[test]
+    fn a_value_that_is_already_the_marker_is_kept() {
+        for same in [
+            "DB_PASSWORD=[redacted]",
+            "password: [redacted]",
+            "Authorization: Bearer [redacted]",
+            r#"{"client_secret":"[redacted]"}"#,
+            "?access_token=[redacted]&page=2",
+        ] {
+            assert_eq!(redact_text(same), same);
+        }
+    }
+
+    #[test]
+    fn the_forced_branch_keeps_a_marker_and_masks_anything_else() {
+        assert_eq!(redact_text("Bearer [redacted]."), "Bearer [redacted].");
+        assert_eq!(redact_text("Bearer hunter2"), "Bearer [redacted]");
+        assert_eq!(redact_text("password: hunter2"), "password: [redacted]");
+    }
+
+    #[test]
+    fn a_near_marker_is_still_masked() {
+        assert_eq!(
+            redact_text("DB_PASSWORD=redacted"),
+            "DB_PASSWORD=[redacted]"
+        );
+        let out = redact_text("DB_PASSWORD=[redacted]hunter2");
+        assert!(!out.contains("hunter2"), "{out}");
     }
 
     #[test]
