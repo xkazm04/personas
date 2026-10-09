@@ -8,6 +8,29 @@ by Personas' context scan and is overwritten on every scan; this paragraph sits 
 markers so the scan keeps it. The canonical source is also declared in `.ai/manifest.yaml`
 (`guidance.canonical`).
 
+## Commands
+
+Generated from `.ai/manifest.yaml`; change a command there, then run
+`node .ai/project-commands.mjs --write`. Like the paragraph above, it sits outside the
+context-map markers, so a context scan keeps it.
+
+<!-- ai:commands:begin -->
+<!-- GENERATED from .ai/manifest.yaml (capabilities, guidance.doneGate) by node .ai/project-commands.mjs --write. Edit the manifest, not this block: --check, and src/__tests__/structural/guidanceCommands.test.ts, fail when it is stale. -->
+
+| Capability | Command |
+|---|---|
+| build | `npm run build` |
+| test | `npm test` |
+| lint | `npm run lint` |
+| typecheck | `npx tsc --noEmit` |
+| scan-secrets | `node scripts/secret-scan.mjs` |
+| evals | `npm run test:evals` |
+
+Before you report done: `npm run gate -- --cold`.
+
+- **typecheck**: the portable form. `npm run check` and `npm run build` typecheck through `npm run typecheck:native` (the TS 7 native compiler, same tsconfig), and `npm run gate` answers tsc from a warm daemon. All three are the same typecheck, not three different ones.
+<!-- ai:commands:end -->
+
 <!-- personas:context-map:start -->
 ## Project Context Map
 

@@ -20,7 +20,7 @@ capabilities:
   build: { command: "npm run build", verified: false }
   test: { command: "npm test", verified: false }
   lint: { command: "npm run lint", verified: false }
-  typecheck: { command: "npx tsc --noEmit", verified: false }
+  typecheck: { command: "npx tsc --noEmit", verified: false, note: "the portable form. `npm run check` and `npm run build` typecheck through `npm run typecheck:native` (the TS 7 native compiler, same tsconfig), and `npm run gate` answers tsc from a warm daemon. All three are the same typecheck, not three different ones." }
   scan-secrets: { command: "node scripts/secret-scan.mjs", verified: false }
   evals: { command: "npm run test:evals", verified: false }
 

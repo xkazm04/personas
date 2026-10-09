@@ -1,7 +1,8 @@
 # AGENTS.md
 
 Instruction sources for any agent harness (Codex, Grok, Claude Code, others). This file points; it
-does not restate. Where a pointed-to file and this one disagree, the pointed-to file wins.
+does not restate, except for the command table under "Commands", which is generated and checked.
+Where a pointed-to file and this one disagree, the pointed-to file wins.
 
 ## Read before you change anything
 
@@ -28,10 +29,30 @@ to the session that made it: `git commit --trailer "Agent-Session: <your active-
 (add `--trailer "Work-Package: <item id>"` when the work has one). `node scripts/git/by-session.mjs`
 lists history by these and by the harness's `Claude-Session:` trailer.
 
+## Commands
+
+Generated from `.ai/manifest.yaml`; change a command there, then run
+`node .ai/project-commands.mjs --write`.
+
+<!-- ai:commands:begin -->
+<!-- GENERATED from .ai/manifest.yaml (capabilities, guidance.doneGate) by node .ai/project-commands.mjs --write. Edit the manifest, not this block: --check, and src/__tests__/structural/guidanceCommands.test.ts, fail when it is stale. -->
+
+| Capability | Command |
+|---|---|
+| build | `npm run build` |
+| test | `npm test` |
+| lint | `npm run lint` |
+| typecheck | `npx tsc --noEmit` |
+| scan-secrets | `node scripts/secret-scan.mjs` |
+| evals | `npm run test:evals` |
+
+Before you report done: `npm run gate -- --cold`.
+
+- **typecheck**: the portable form. `npm run check` and `npm run build` typecheck through `npm run typecheck:native` (the TS 7 native compiler, same tsconfig), and `npm run gate` answers tsc from a warm daemon. All three are the same typecheck, not three different ones.
+<!-- ai:commands:end -->
+
 ## Gates to run before you report done
 
-- `npm run gate -- --cold`: tsc, eslint on changed files and the golden-path census, cold. Its
-  typecheck step is the same `npx tsc --noEmit` that `.claude/CLAUDE.md` lists under Common
-  Commands; run that alone when only types are in question.
+- The done gate above runs tsc, eslint on changed files and the golden-path census, cold.
 - `npm run check`: the full pre-push chain. Style rules in ESLint are warn and fail nothing; the
   census ratchets in `scripts/census/rules.json` are what fail a style slip.
