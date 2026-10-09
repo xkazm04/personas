@@ -190,16 +190,28 @@ fn send_files_one_accepted_item_per_non_green_measurable_step() -> Result<(), Ap
     assert!(is_watched(&pool, &p), "send also sets watch");
 
     let snap = super::super::snapshot(&pool, &p)?;
+    let view = snap.goal.expect("goal view");
     assert_eq!(
-        snap.goal,
-        Some(LifecycleGoalView {
+        LifecycleGoalView {
+            items: Vec::new(),
+            ..view.clone()
+        },
+        LifecycleGoalView {
             goal_id: goal.id.clone(),
             measurable_total: 8,
             measurable_green: 2,
             instructed: 2,
             open_items: 6,
-        })
+            items: Vec::new(),
+        }
     );
+    let mut item_steps: Vec<&str> = view.items.iter().map(|i| i.step_id.as_str()).collect();
+    item_steps.sort_unstable();
+    assert_eq!(
+        item_steps,
+        ["commit", "docs", "isolate", "land", "record", "sync"]
+    );
+    assert!(view.items.iter().all(|i| i.status == "accepted"));
 
     let again = send(&pool, &p)?;
     assert_eq!(again.goal_id, goal.id, "the open goal is reused");
@@ -395,5 +407,191 @@ fn due_project_picks_one_new_tip_spaced_and_least_recently_measured() -> Result<
         set_watch(&pool, id, false)?;
     }
     assert_eq!(due_project(&pool, now, &none, &tip_of)?, None);
+    Ok(())
+}
+
+// --- goal items, preview, watched steps ------------------------------------
+
+#[test]
+fn goal_items_list_open_first_then_newest() -> Result<(), AppError> {
+    let pool = crate::db::init_test_db()?;
+    let dir = tempfile::tempdir()?;
+    let p = project(&pool, dir.path())?;
+    only_steps(&pool, &p, &["isolate", "sync", "commit"])?;
+    let sent = send(&pool, &p)?;
+    assert_eq!(sent.filed, 3);
+    let mut ideas = idea_repo::list_ideas_by_goal(&pool, &sent.goal_id)?;
+    // Give each a distinct filing time and close the newest one.
+    for (n, idea) in ideas.iter_mut().enumerate() {
+        idea.created_at = format!("2026-10-0{}T00:00:00Z", n + 1);
+        idea.updated_at = idea.created_at.clone();
+    }
+    let newest = ideas.len() - 1;
+    ideas[newest].status = "delivered".into();
+    ideas[newest].verify_state = Some("cleared".into());
+    ideas[newest].updated_at = "2026-10-09T00:00:00Z".into();
+    // An item of another producer under the same goal is not the Overseer's.
+    let mut foreign = ideas[0].clone();
+    foreign.origin = Some("doc_rot".into());
+    ideas.push(foreign);
+
+    let items = goal_items(&sent.goal_id, &ideas);
+    let order: Vec<(&str, &str)> = items
+        .iter()
+        .map(|i| (i.status.as_str(), i.created_at.as_str()))
+        .collect();
+    assert_eq!(
+        order,
+        [
+            ("accepted", "2026-10-02T00:00:00Z"),
+            ("accepted", "2026-10-01T00:00:00Z"),
+            ("delivered", "2026-10-03T00:00:00Z"),
+        ]
+    );
+    assert_eq!(items[2].verify_state.as_deref(), Some("cleared"));
+    assert_eq!(items[2].updated_at.as_deref(), Some("2026-10-09T00:00:00Z"));
+    assert!(items[0].updated_at.is_none(), "never changed after filing");
+    // The snapshot carries them on the goal view.
+    let view = super::super::snapshot(&pool, &p)?.goal.expect("goal");
+    assert_eq!(view.items.len(), 3);
+    Ok(())
+}
+
+fn ids(steps: &[LifecycleSendPreviewStep]) -> Vec<&str> {
+    steps.iter().map(|s| s.step_id.as_str()).collect()
+}
+
+/// Preview, then send: every bucket of the preview is exactly what send did,
+/// and a second preview has nothing left to file or reopen.
+fn preview_then_send_agree(pool: &DbPool, p: &str) -> Result<LifecycleSendPreview, AppError> {
+    let before = preview(pool, p)?;
+    let (result, applied) = send_applied(pool, p)?;
+    let did = |want: Applied| -> Vec<&str> {
+        applied
+            .iter()
+            .filter(|(_, a)| *a == want)
+            .map(|(s, _)| s.as_str())
+            .collect()
+    };
+    assert_eq!(ids(&before.will_file), did(Applied::Filed), "will_file");
+    assert_eq!(
+        ids(&before.will_reopen),
+        did(Applied::Reopened),
+        "will_reopen"
+    );
+    assert_eq!(
+        ids(&before.already_open),
+        did(Applied::AlreadyOpen),
+        "already_open"
+    );
+    assert_eq!(ids(&before.skipped), did(Applied::Skipped), "skipped");
+    if let Some(goal) = &before.goal_id {
+        assert_eq!(goal, &result.goal_id, "the open goal is the one reused");
+    }
+    assert_eq!(
+        result.filed as usize,
+        before.will_file.len() + before.will_reopen.len()
+    );
+    assert_eq!(result.already_open as usize, before.already_open.len());
+    let after = preview(pool, p)?;
+    assert!(after.will_file.is_empty() && after.will_reopen.is_empty());
+    Ok(before)
+}
+
+#[test]
+fn preview_is_what_send_then_does_on_a_fresh_project() -> Result<(), AppError> {
+    let pool = crate::db::init_test_db()?;
+    let dir = tempfile::tempdir()?;
+    let p = project(&pool, dir.path())?;
+    gate(&pool, &p, "m1", false, "abc", "2026-10-08T10:00:00.000Z")?;
+    tests(&pool, &p, "m1", 80.0, "abc", "2026-10-08T10:00:00.000Z")?;
+    let before = preview_then_send_agree(&pool, &p)?;
+    assert!(before.goal_id.is_none(), "no goal yet: send opens one");
+    assert_eq!(
+        ids(&before.will_file),
+        ["isolate", "sync", "gate", "docs", "commit", "land", "record"]
+    );
+    assert_eq!(ids(&before.skipped), ["frame", "recall", "tests"]);
+    let gate_step = &before.will_file[2];
+    assert_eq!(gate_step.health, LifecycleHealth::Red);
+    assert!(gate_step
+        .reason
+        .as_deref()
+        .unwrap_or("")
+        .starts_with("lint failed"));
+    assert!(before.skipped.iter().all(|s| s.item_id.is_none()));
+    Ok(())
+}
+
+#[test]
+fn preview_is_what_send_then_does_across_open_reopened_and_decided_items() -> Result<(), AppError> {
+    let Some((repo, tip)) = repo() else {
+        return Ok(());
+    };
+    let pool = crate::db::init_test_db()?;
+    let p = project(&pool, repo.path())?;
+    only_steps(&pool, &p, &["frame", "gate", "tests", "docs"])?;
+    gate(&pool, &p, "m1", false, &tip, "2026-10-08T10:00:00.000Z")?;
+    tests(&pool, &p, "m1", 30.0, &tip, "2026-10-08T10:00:00.000Z")?;
+    let first = preview_then_send_agree(&pool, &p)?;
+    assert_eq!(ids(&first.will_file), ["gate", "tests", "docs"]);
+    let goal_id = open_goal(&pool, &p)?.expect("open goal").id;
+
+    // gate closes green, then regresses; someone rejects the docs item.
+    gate(&pool, &p, "m2", true, &tip, "2026-10-08T11:00:00.000Z")?;
+    assert_eq!(after_measure(&pool, &p)?.closed_items, 1);
+    let docs = item(&pool, &p, &goal_id, "docs").expect("docs item");
+    idea_repo::decide_idea_cas(&pool, &docs.id, &docs.status, "rejected", None)?;
+    gate(&pool, &p, "m3", false, &tip, "2026-10-08T12:00:00.000Z")?;
+
+    let mixed = preview_then_send_agree(&pool, &p)?;
+    assert_eq!(mixed.goal_id.as_deref(), Some(goal_id.as_str()));
+    assert!(mixed.will_file.is_empty());
+    assert_eq!(ids(&mixed.will_reopen), ["gate"]);
+    assert_eq!(ids(&mixed.already_open), ["tests"]);
+    assert_eq!(ids(&mixed.skipped), ["frame", "docs"]);
+    let decided = &mixed.skipped[1];
+    assert_eq!(decided.item_id.as_deref(), Some(docs.id.as_str()));
+    assert!(decided.reason.as_deref().unwrap_or("").contains("rejected"));
+    let gate_item = item(&pool, &p, &goal_id, "gate").expect("gate item");
+    assert_eq!(
+        mixed.will_reopen[0].item_id.as_deref(),
+        Some(gate_item.id.as_str())
+    );
+    assert_eq!(gate_item.verify_state.as_deref(), Some("regressed"));
+
+    // gate and tests green: nothing to file; docs stays unmeasured, but its
+    // rejected item still stands.
+    gate(&pool, &p, "m4", true, &tip, "2026-10-08T13:00:00.000Z")?;
+    tests(&pool, &p, "m4", 80.0, &tip, "2026-10-08T13:00:00.000Z")?;
+    let green = preview_then_send_agree(&pool, &p)?;
+    assert_eq!(ids(&green.skipped), ["frame", "gate", "tests", "docs"]);
+    Ok(())
+}
+
+#[test]
+fn watched_pipelines_carry_every_steps_health_in_order() -> Result<(), AppError> {
+    let pool = crate::db::init_test_db()?;
+    let dir = tempfile::tempdir()?;
+    let p = project(&pool, dir.path())?;
+    gate(&pool, &p, "m1", false, "abc", "2026-10-08T10:00:00.000Z")?;
+    set_watch(&pool, &p, true)?;
+    let listed = watched_pipelines(&pool)?;
+    assert_eq!(listed.len(), 1);
+    let snap = super::super::snapshot(&pool, &p)?;
+    let rail: Vec<(String, LifecycleHealth)> = listed[0]
+        .steps
+        .iter()
+        .map(|s| (s.step_id.clone(), s.health))
+        .collect();
+    let health: Vec<(String, LifecycleHealth)> = snap
+        .health
+        .iter()
+        .map(|h| (h.step_id.clone(), h.health))
+        .collect();
+    assert_eq!(rail, health);
+    assert_eq!(rail.len(), snap.steps.len());
+    assert_eq!(rail[0], ("frame".to_string(), LifecycleHealth::Instructed));
+    assert!(rail.contains(&("gate".to_string(), LifecycleHealth::Red)));
     Ok(())
 }

@@ -5,9 +5,11 @@
 // (`useDevToolsLiveStore().lifecycleRevision`).
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
+import type { LifecycleGateCommand } from "@/lib/bindings/LifecycleGateCommand";
 import type { LifecycleHistory } from "@/lib/bindings/LifecycleHistory";
 import type { LifecyclePreset } from "@/lib/bindings/LifecyclePreset";
 import type { LifecycleMeasureStarted } from "@/lib/bindings/LifecycleMeasureStarted";
+import type { LifecycleSendPreview } from "@/lib/bindings/LifecycleSendPreview";
 import type { LifecycleSendResult } from "@/lib/bindings/LifecycleSendResult";
 import type { LifecycleSnapshot } from "@/lib/bindings/LifecycleSnapshot";
 import type { LifecycleStepDetail } from "@/lib/bindings/LifecycleStepDetail";
@@ -34,7 +36,7 @@ export const measureLifecycle = (projectId: string) =>
 export const cancelLifecycleMeasure = (projectId: string) =>
   invoke<boolean>("dev_tools_lifecycle_cancel_measure", { projectId });
 
-/** Layer-2 data for one step: run history (newest first, at most 30), per-doc rot rows, and the backlog items about the step. */
+/** Layer-2 data for one step: run history (the newest 30 runs per command, newest first), per-doc rot rows, the backlog items about the step, and its evidence history (newest 200 changes, this step's outcome only). */
 export const getLifecycleStepDetail = (projectId: string, stepId: string) =>
   invoke<LifecycleStepDetail>("dev_tools_lifecycle_step_detail", { projectId, stepId });
 
@@ -57,3 +59,15 @@ export const sendLifecycleToOverseer = (projectId: string) =>
 /** Every Overseer-watched project with goal progress and last measure. */
 export const listOverseerWatchedPipelines = () =>
   invoke<LifecycleWatchedPipeline[]>("dev_tools_overseer_watched_pipelines", {});
+
+/** One run's stored output tail (at most 16 KiB; `--- stdout ---` then `--- stderr ---`). `null` = nothing captured (did not run, timed out); `""` = ran silently. Rejects `not_found` for another project's run. */
+export const getLifecycleRunOutput = (projectId: string, runId: string) =>
+  invoke<string | null>("dev_tools_lifecycle_run_output", { projectId, runId });
+
+/** Dry run of Send to Overseer: the steps that would get a new item, are already open, would be reopened, or are left alone. */
+export const previewLifecycleSend = (projectId: string) =>
+  invoke<LifecycleSendPreview>("dev_tools_lifecycle_send_preview", { projectId });
+
+/** The commands auto-detection finds in the project's manifests right now, whatever the steps configure. */
+export const detectLifecycleCommands = (projectId: string) =>
+  invoke<LifecycleGateCommand[]>("dev_tools_lifecycle_detect_commands", { projectId });

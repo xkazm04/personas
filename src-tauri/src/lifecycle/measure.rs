@@ -39,7 +39,9 @@ use crate::db::models::{
     LifecycleDoc, LifecycleGateCommand, LifecycleGateKind, LifecycleMeasureStarted, LifecycleRun,
     LifecycleRunOutcome,
 };
-use crate::db::repos::dev::lifecycle_runs::{append_run, list_runs, RunQuery};
+use crate::db::repos::dev::lifecycle_runs::{
+    append_run, append_run_with_output, list_runs, RunQuery,
+};
 use crate::db::repos::dev::projects as project_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -341,6 +343,70 @@ fn row_from_exec(
     }
 }
 
+/// Most bytes of command output a run row keeps (`output_tail`).
+pub const OUTPUT_TAIL_BYTES: usize = 16 * 1024;
+const STDOUT_LABEL: &str = "--- stdout ---\n";
+const STDERR_LABEL: &str = "--- stderr ---\n";
+
+/// The `output_tail` a run row stores: at most [`OUTPUT_TAIL_BYTES`], cut on
+/// char boundaries. The stdout tail under [`STDOUT_LABEL`], then the stderr
+/// tail under [`STDERR_LABEL`]; a stream that printed nothing gets no label.
+/// When both printed, stderr keeps at most half the room and stdout takes the
+/// rest (a stream shorter than its half leaves the remainder to the other),
+/// so a long test log cannot push the compiler's error out, nor the reverse.
+///
+/// `None` = nothing captured: the command did not run, or was killed at its
+/// timeout (the runner keeps no output for an abandoned child). `Some("")` =
+/// it ran and printed nothing.
+pub fn stored_output(outcome: LifecycleRunOutcome, exec: &CommandExec) -> Option<String> {
+    if matches!(
+        outcome,
+        LifecycleRunOutcome::DidNotRun | LifecycleRunOutcome::Timeout
+    ) {
+        return None;
+    }
+    let tail = exec.output_tail.as_str();
+    let split = exec.stdout_len.min(tail.len());
+    let (out, err) = match (tail.get(..split), tail.get(split..)) {
+        (Some(o), Some(e)) => (o, e.strip_prefix('\n').unwrap_or(e)),
+        // A split off a char boundary cannot come from the runner; keep it all.
+        _ => (tail, ""),
+    };
+    Some(compose_output(out, err))
+}
+
+fn compose_output(out: &str, err: &str) -> String {
+    let labels = if out.is_empty() {
+        0
+    } else {
+        STDOUT_LABEL.len()
+    } + if err.is_empty() {
+        0
+    } else {
+        STDERR_LABEL.len() + 1
+    };
+    let room = OUTPUT_TAIL_BYTES.saturating_sub(labels);
+    let out_room = out
+        .len()
+        .min((room / 2).max(room.saturating_sub(err.len())));
+    let err_room = err.len().min(room - out_room);
+    let out = gate_exec::tail_bytes(out, out_room);
+    let err = gate_exec::tail_bytes(err, err_room);
+    let mut s = String::with_capacity(labels + out.len() + err.len());
+    if !out.is_empty() {
+        s.push_str(STDOUT_LABEL);
+        s.push_str(out);
+    }
+    if !err.is_empty() {
+        if !s.is_empty() && !s.ends_with('\n') {
+            s.push('\n');
+        }
+        s.push_str(STDERR_LABEL);
+        s.push_str(err);
+    }
+    s
+}
+
 /// Record `did_not_run` with `reason` for every planned command this measure
 /// has no row for yet. The durable answer for every path that could not run.
 pub fn record_missing(
@@ -448,7 +514,9 @@ pub async fn run(
             ExecEvent::Started { index, at } => (control.on_start)(index, rfc3339(at)),
             ExecEvent::Finished { index, exec } => {
                 if let Some(cmd) = plan.commands.get(index) {
-                    if let Err(e) = append_run(pool, &row_from_exec(plan, measure_id, cmd, exec)) {
+                    let row = row_from_exec(plan, measure_id, cmd, exec);
+                    let output = stored_output(row.outcome, exec);
+                    if let Err(e) = append_run_with_output(pool, &row, output.as_deref()) {
                         tracing::warn!(project_id = %plan.project_id, error = %e,
                             "lifecycle measure: could not record a run");
                         write_error.get_or_insert(e);

@@ -17,7 +17,8 @@
 //!   [`detect_commands`] - the commands a step runs when none are configured;
 //!   [`slow`] - over-budget and regressing commands filed as backlog items.
 //! - [`progress`] - the running Measure command by command, derived on read;
-//!   [`related`] - the backlog items about one step.
+//!   [`related`] - the backlog items about one step; [`detail`] - a step's
+//!   layer-2 data, one run's output, and the auto-detection preview.
 //! - [`overseer`] - the Overseer's "All steps green" goal: watch, send, and
 //!   close by observation after every Measure.
 //!
@@ -25,6 +26,7 @@
 //! read and write doors every writer (commands, Athena ops) goes through.
 
 pub mod contract;
+pub mod detail;
 pub mod detect;
 pub mod detect_commands;
 pub mod evidence;
@@ -39,19 +41,20 @@ pub mod related;
 pub mod slow;
 
 pub use contract::{contract_for_project, ContractContext};
+pub use detail::step_detail;
 
 use std::collections::HashSet;
 use std::path::Path;
 
 use crate::db::models::{
-    LifecycleAuthor, LifecycleDoc, LifecycleDocRow, LifecycleEvidenceItem, LifecycleGateCommand,
-    LifecycleHistory, LifecycleOutcome, LifecyclePreset, LifecycleSnapshot, LifecycleSourceKind,
-    LifecycleStepDetail, LifecycleStepHealthView, LifecycleStepOutcome, LifecycleStepParams,
-    LifecycleStepTally, LifecycleStepView, LifecycleTipView,
+    LifecycleAuthor, LifecycleDoc, LifecycleEvidenceItem, LifecycleGateCommand, LifecycleHistory,
+    LifecycleOutcome, LifecyclePreset, LifecycleSnapshot, LifecycleSourceKind,
+    LifecycleStepHealthView, LifecycleStepOutcome, LifecycleStepParams, LifecycleStepTally,
+    LifecycleStepView, LifecycleTipView,
 };
 use crate::db::repos::dev::doc_status::{self as doc_status_repo, DocStatusRow};
 use crate::db::repos::dev::lifecycle::{self as repo, VersionRow};
-use crate::db::repos::dev::lifecycle_runs::{self as runs_repo, RunQuery};
+use crate::db::repos::dev::lifecycle_runs as runs_repo;
 use crate::db::repos::dev::{projects as project_repo, tasks as task_repo};
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -205,33 +208,7 @@ pub fn snapshot(pool: &DbPool, project_id: &str) -> Result<LifecycleSnapshot, Ap
 
     // One change past the window, so `previous` (the window without its newest
     // change) is as long as the window itself.
-    let mut items: Vec<LifecycleEvidenceItem> =
-        repo::list_task_evidence(pool, project_id, EVIDENCE_LIMIT + 1)?
-            .into_iter()
-            .map(|e| LifecycleEvidenceItem {
-                source_kind: LifecycleSourceKind::Task,
-                outcomes: serde_json::from_str::<Vec<LifecycleStepOutcome>>(&e.outcomes_json)
-                    .unwrap_or_else(|err| {
-                        tracing::warn!(
-                            task_id = %e.source_ref,
-                            error = %err,
-                            "unreadable lifecycle evidence outcomes; showing none"
-                        );
-                        Vec::new()
-                    }),
-                source_ref: e.source_ref,
-                title: e.title,
-                occurred_at: e.occurred_at,
-            })
-            .collect();
-    items.extend(evidence::commit_evidence(
-        root,
-        &base,
-        &doc,
-        EVIDENCE_LIMIT + 1,
-    ));
-    items.sort_by(|a, b| b.occurred_at.cmp(&a.occurred_at));
-    items.truncate(EVIDENCE_LIMIT + 1);
+    let mut items = evidence_items(pool, project_id, root, &base, &doc, EVIDENCE_LIMIT + 1)?;
     let previous_evidence = previous_evidence(&items, &doc);
     items.truncate(EVIDENCE_LIMIT);
 
@@ -287,6 +264,41 @@ pub fn snapshot(pool: &DbPool, project_id: &str) -> Result<LifecycleSnapshot, Ap
         rules: health::rules_view(),
         progress,
     })
+}
+
+/// The newest `limit` changes of the project, newest first: stored task
+/// evidence and the base branch's commits (PR merges for Team), merged. Runs
+/// git (through [`evidence::commit_evidence`]); call it off the IPC thread.
+pub(crate) fn evidence_items(
+    pool: &DbPool,
+    project_id: &str,
+    root: &Path,
+    base: &str,
+    doc: &LifecycleDoc,
+    limit: usize,
+) -> Result<Vec<LifecycleEvidenceItem>, AppError> {
+    let mut items: Vec<LifecycleEvidenceItem> = repo::list_task_evidence(pool, project_id, limit)?
+        .into_iter()
+        .map(|e| LifecycleEvidenceItem {
+            source_kind: LifecycleSourceKind::Task,
+            outcomes: serde_json::from_str::<Vec<LifecycleStepOutcome>>(&e.outcomes_json)
+                .unwrap_or_else(|err| {
+                    tracing::warn!(
+                        task_id = %e.source_ref,
+                        error = %err,
+                        "unreadable lifecycle evidence outcomes; showing none"
+                    );
+                    Vec::new()
+                }),
+            source_ref: e.source_ref,
+            title: e.title,
+            occurred_at: e.occurred_at,
+        })
+        .collect();
+    items.extend(evidence::commit_evidence(root, base, doc, limit));
+    items.sort_by(|a, b| b.occurred_at.cmp(&a.occurred_at));
+    items.truncate(limit);
+    Ok(items)
 }
 
 /// The base branch against the newest Measure. `sha` is the tip the caller
@@ -401,67 +413,6 @@ fn doc_tally(rows: &[DocStatusRow]) -> health::DocTally {
         }
     }
     t
-}
-
-/// Most runs a step detail carries.
-pub const STEP_DETAIL_RUNS: usize = 30;
-
-/// Layer-2 data for one step: `gate` / `tests` get their command runs (newest
-/// first, at most [`STEP_DETAIL_RUNS`]), `docs` gets the per-doc rot rows,
-/// every other step two empty lists. Every step gets its related backlog
-/// items ([`related`]), empty when none.
-pub fn step_detail(
-    pool: &DbPool,
-    project_id: &str,
-    step_id: &str,
-) -> Result<LifecycleStepDetail, AppError> {
-    let kinds = detect_commands::kinds_of(step_id);
-    let runs = if kinds.is_empty() {
-        Vec::new()
-    } else {
-        runs_repo::list_runs(
-            pool,
-            &RunQuery {
-                project_id,
-                kinds,
-                limit: Some(STEP_DETAIL_RUNS),
-                ..Default::default()
-            },
-        )?
-    };
-    let docs = if step_id == "docs" {
-        doc_status_repo::list_doc_status(pool, project_id)?
-            .into_iter()
-            .map(|row| {
-                let (status, broken_refs) = doc_status_of(&row);
-                LifecycleDocRow {
-                    status: status.to_string(),
-                    broken_refs,
-                    changed_sources: row
-                        .changed_sources
-                        .as_deref()
-                        .and_then(|j| serde_json::from_str(j).ok())
-                        .unwrap_or_default(),
-                    scanned_at: Some(row.scanned_at),
-                    doc_path: row.doc_path,
-                }
-            })
-            .collect()
-    } else {
-        Vec::new()
-    };
-    let related = related::related_items(
-        pool,
-        project_id,
-        step_id,
-        runs.iter().map(|r| r.command_id.clone()),
-    )?;
-    Ok(LifecycleStepDetail {
-        step_id: step_id.to_string(),
-        runs,
-        docs,
-        related,
-    })
 }
 
 /// Commands a step's params may carry: non-empty, unique ids, a positive

@@ -11,8 +11,9 @@ use tauri::State;
 
 use crate::commands::blocking::run_blocking;
 use crate::db::models::{
-    LifecycleHistory, LifecycleMeasureStarted, LifecyclePreset, LifecycleSendResult,
-    LifecycleSnapshot, LifecycleStepDetail, LifecycleStepParams, LifecycleWatchedPipeline,
+    LifecycleGateCommand, LifecycleHistory, LifecycleMeasureStarted, LifecyclePreset,
+    LifecycleSendPreview, LifecycleSendResult, LifecycleSnapshot, LifecycleStepDetail,
+    LifecycleStepParams, LifecycleWatchedPipeline,
 };
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
@@ -103,8 +104,9 @@ pub async fn dev_tools_lifecycle_cancel_measure(
     Ok(asked)
 }
 
-/// Layer-2 data for one step: run history (newest first, <= 30), doc rows and
-/// the backlog items about the step.
+/// Layer-2 data for one step: run history (the newest 30 runs per command,
+/// newest first), doc rows, the backlog items about the step and its evidence
+/// history (newest 200 changes).
 #[tauri::command]
 pub async fn dev_tools_lifecycle_step_detail(
     state: State<'_, Arc<AppState>>,
@@ -198,6 +200,56 @@ pub async fn dev_tools_overseer_watched_pipelines(
     let db = state.db.clone();
     run_blocking("dev_tools_overseer_watched_pipelines", move || {
         lifecycle::overseer::watched_pipelines(&db)
+    })
+    .await
+}
+
+/// The stored tail of one run's output (at most 16 KiB, stdout then stderr,
+/// each labelled): `null` when nothing was captured (did not run, timed
+/// out), `""` when it ran silently. `not_found` unless the run belongs to
+/// the project.
+#[tauri::command]
+pub async fn dev_tools_lifecycle_run_output(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    run_id: String,
+) -> Result<Option<String>, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    run_blocking("dev_tools_lifecycle_run_output", move || {
+        lifecycle::detail::run_output(&db, &project_id, &run_id)
+    })
+    .await
+}
+
+/// A dry run of Send to Overseer: which steps would get a new item, which
+/// are already open, which would be reopened and which are left alone.
+/// Built by the same decision function the send applies.
+#[tauri::command]
+pub async fn dev_tools_lifecycle_send_preview(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<LifecycleSendPreview, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    run_blocking("dev_tools_lifecycle_send_preview", move || {
+        lifecycle::overseer::preview(&db, &project_id)
+    })
+    .await
+}
+
+/// What auto-detection finds in the project's manifests right now (the
+/// commands Measure would run for a step with none configured), whatever the
+/// steps are configured to run.
+#[tauri::command]
+pub async fn dev_tools_lifecycle_detect_commands(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<Vec<LifecycleGateCommand>, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    run_blocking("dev_tools_lifecycle_detect_commands", move || {
+        lifecycle::detail::detected_commands(&db, &project_id)
     })
     .await
 }

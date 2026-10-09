@@ -90,6 +90,7 @@ mod e60_review_execution_optional;
 mod e61_council_run_mode;
 mod e62_chat_session_tombstones;
 mod e63_dev_lifecycle_runs;
+mod e64_lifecycle_run_output;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -176,6 +177,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e61_council_run_mode::run(conn)?;
     e62_chat_session_tombstones::run(conn)?;
     e63_dev_lifecycle_runs::run(conn)?;
+    e64_lifecycle_run_output::run(conn)?;
 
     Ok(())
 }

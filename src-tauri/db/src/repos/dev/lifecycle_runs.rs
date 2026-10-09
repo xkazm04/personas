@@ -108,14 +108,27 @@ impl RunRow {
     }
 }
 
-/// Append one run. The caller owns `id`, `measure_id` and the timestamps.
+/// Append one run with no captured output. The caller owns `id`,
+/// `measure_id` and the timestamps.
 pub fn append_run(pool: &DbPool, run: &LifecycleRun) -> Result<(), AppError> {
+    append_run_with_output(pool, run, None)
+}
+
+/// Append one run and the tail of its output (`output_tail`, migration
+/// `e64_lifecycle_run_output`): `None` = nothing captured, `Some("")` = the
+/// command ran and printed nothing. The output never rides [`LifecycleRun`];
+/// read it back with [`run_output`].
+pub fn append_run_with_output(
+    pool: &DbPool,
+    run: &LifecycleRun,
+    output: Option<&str>,
+) -> Result<(), AppError> {
     timed_query!("dev_lifecycle_runs", "dev_lifecycle_runs::append_run", {
         let conn = pool.get()?;
         conn.execute(
             &format!(
-                "INSERT INTO dev_lifecycle_runs ({RUN_COLUMNS})
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)"
+                "INSERT INTO dev_lifecycle_runs ({RUN_COLUMNS}, output_tail)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)"
             ),
             params![
                 run.id,
@@ -132,10 +145,86 @@ pub fn append_run(pool: &DbPool, run: &LifecycleRun) -> Result<(), AppError> {
                 run.head_sha,
                 run.started_at,
                 run.finished_at,
+                output,
             ],
         )?;
         Ok(())
     })
+}
+
+struct OutputRow {
+    output_tail: Option<String>,
+}
+
+row_mapper!(row_to_output -> OutputRow { output_tail });
+
+/// The stored output of run `run_id`, only when it belongs to `project_id`.
+/// `None` = no such run in that project; `Some(None)` = the run exists but
+/// nothing was captured.
+pub fn run_output(
+    pool: &DbPool,
+    project_id: &str,
+    run_id: &str,
+) -> Result<Option<Option<String>>, AppError> {
+    timed_query!("dev_lifecycle_runs", "dev_lifecycle_runs::run_output", {
+        let conn = pool.get()?;
+        let row = conn
+            .query_row(
+                "SELECT output_tail FROM dev_lifecycle_runs WHERE id = ?1 AND project_id = ?2",
+                params![run_id, project_id],
+                row_to_output,
+            )
+            .optional()?;
+        Ok(row.map(|r| r.output_tail))
+    })
+}
+
+/// The newest `per_command` runs of EACH command of `kinds` (empty = every
+/// kind) in one project, all merged newest first. Ties read in reverse
+/// insertion order, as [`list_recent_measure_runs`] does.
+pub fn list_runs_per_command(
+    pool: &DbPool,
+    project_id: &str,
+    kinds: &[LifecycleGateKind],
+    per_command: usize,
+) -> Result<Vec<LifecycleRun>, AppError> {
+    timed_query!(
+        "dev_lifecycle_runs",
+        "dev_lifecycle_runs::list_runs_per_command",
+        {
+            let kind_filter = if kinds.is_empty() {
+                String::new()
+            } else {
+                let marks: Vec<String> = (0..kinds.len()).map(|i| format!("?{}", i + 3)).collect();
+                format!(" AND kind IN ({})", marks.join(", "))
+            };
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {RUN_COLUMNS} FROM (
+                     SELECT {RUN_COLUMNS}, rowid AS rid, ROW_NUMBER() OVER (
+                         PARTITION BY command_id
+                         ORDER BY finished_at DESC, started_at DESC, rowid DESC) AS rn
+                     FROM dev_lifecycle_runs WHERE project_id = ?1{kind_filter})
+                 WHERE rn <= ?2
+                 ORDER BY finished_at DESC, started_at DESC, rid DESC"
+            ))?;
+            let limit = i64::try_from(per_command).unwrap_or(i64::MAX);
+            let mut values: Vec<Box<dyn rusqlite::ToSql>> =
+                vec![Box::new(project_id.to_string()), Box::new(limit)];
+            values.extend(
+                kinds
+                    .iter()
+                    .map(|k| Box::new(kind_token(*k)) as Box<dyn rusqlite::ToSql>),
+            );
+            let rows = stmt
+                .query_map(
+                    rusqlite::params_from_iter(values.iter().map(|v| v.as_ref())),
+                    row_to_run,
+                )?
+                .collect::<rusqlite::Result<Vec<_>>>()?;
+            Ok(rows.into_iter().map(RunRow::into_run).collect())
+        }
+    )
 }
 
 /// A filter over one project's runs. Empty `kinds` = every kind.
@@ -428,6 +517,101 @@ mod tests {
             .map(|r| r.command_id)
             .collect();
         assert_eq!(ids, ["c", "b", "a"]);
+        Ok(())
+    }
+
+    #[test]
+    fn output_is_stored_apart_and_read_only_by_the_owning_project() -> Result<(), AppError> {
+        let pool = crate::init_test_db()?;
+        let p = project(&pool)?;
+        let other = create_project(&pool, "other", "/tmp/other", None, None, None, None, None)?.id;
+        let at = "2026-10-01T00:00:00.000Z";
+        let ran = run(
+            &p,
+            "m1",
+            "lint",
+            LifecycleGateKind::Lint,
+            LifecycleRunOutcome::Failed,
+            at,
+        );
+        append_run_with_output(&pool, &ran, Some("--- stdout ---\nboom"))?;
+        let silent = run(
+            &p,
+            "m1",
+            "tsc",
+            LifecycleGateKind::Typecheck,
+            LifecycleRunOutcome::DidNotRun,
+            at,
+        );
+        append_run(&pool, &silent)?;
+
+        assert_eq!(
+            run_output(&pool, &p, &ran.id)?,
+            Some(Some("--- stdout ---\nboom".to_string()))
+        );
+        assert_eq!(run_output(&pool, &p, &silent.id)?, Some(None));
+        assert_eq!(run_output(&pool, &other, &ran.id)?, None, "not its run");
+        assert_eq!(run_output(&pool, &p, "no-such-run")?, None);
+        // The list payload is unchanged by the column.
+        let listed = list_runs(
+            &pool,
+            &RunQuery {
+                project_id: &p,
+                command_id: Some("lint"),
+                ..Default::default()
+            },
+        )?;
+        assert_eq!(listed, vec![ran]);
+        Ok(())
+    }
+
+    #[test]
+    fn runs_per_command_cap_each_command_not_the_total() -> Result<(), AppError> {
+        let pool = crate::init_test_db()?;
+        let p = project(&pool)?;
+        use LifecycleGateKind as K;
+        use LifecycleRunOutcome as O;
+        // `lint` runs every measure (5x), `tsc` once long ago, `test` is another step.
+        for i in 0..5 {
+            let at = format!("2026-10-0{}T00:00:00.000Z", i + 2);
+            append_run(
+                &pool,
+                &run(&p, &format!("m{i}"), "lint", K::Lint, O::Passed, &at),
+            )?;
+            append_run(
+                &pool,
+                &run(&p, &format!("m{i}"), "test", K::Test, O::Passed, &at),
+            )?;
+        }
+        append_run(
+            &pool,
+            &run(
+                &p,
+                "m-old",
+                "tsc",
+                K::Typecheck,
+                O::Failed,
+                "2026-10-01T00:00:00.000Z",
+            ),
+        )?;
+
+        let gate = list_runs_per_command(&pool, &p, &[K::Lint, K::Typecheck], 3)?;
+        let ids: Vec<(&str, &str)> = gate
+            .iter()
+            .map(|r| (r.command_id.as_str(), r.measure_id.as_str()))
+            .collect();
+        assert_eq!(
+            ids,
+            [
+                ("lint", "m4"),
+                ("lint", "m3"),
+                ("lint", "m2"),
+                ("tsc", "m-old")
+            ],
+            "three newest lint runs, and the one tsc run survives the cap"
+        );
+        assert_eq!(list_runs_per_command(&pool, &p, &[], 1)?.len(), 3);
+        assert!(list_runs_per_command(&pool, &p, &[K::Coverage], 30)?.is_empty());
         Ok(())
     }
 

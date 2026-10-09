@@ -87,6 +87,10 @@ pub struct CommandExec {
     /// Tail of stdout followed by the tail of stderr (see the byte bounds
     /// above). Empty when the command produced nothing or never ran.
     pub output_tail: String,
+    /// Where stdout ends in `output_tail`: `output_tail[..stdout_len]` is
+    /// stdout's tail; the rest, after one `\n` separator, is stderr's tail
+    /// (nothing when stderr was empty).
+    pub stdout_len: usize,
 }
 
 /// What one worktree run produced.
@@ -207,6 +211,7 @@ where
                     )),
                     timeout: cmd.timeout,
                     output_tail: String::new(),
+                    stdout_len: 0,
                 }
             }
             // The cancel arm drops the child's future, which is the timeout
@@ -281,7 +286,7 @@ async fn exec_one(command: &str, cwd: &Path, timeout: Duration) -> CommandExec {
     let finish = |status: ExecStatus,
                   exit_code: Option<i32>,
                   first_error: Option<String>,
-                  output_tail: String| CommandExec {
+                  (output_tail, stdout_len): (String, usize)| CommandExec {
         command: command.to_string(),
         status,
         exit_code,
@@ -291,6 +296,7 @@ async fn exec_one(command: &str, cwd: &Path, timeout: Duration) -> CommandExec {
         first_error,
         timeout,
         output_tail,
+        stdout_len,
     };
 
     let child = match spawn {
@@ -300,7 +306,7 @@ async fn exec_one(command: &str, cwd: &Path, timeout: Duration) -> CommandExec {
                 ExecStatus::DidNotRun,
                 None,
                 Some(format!("could not spawn the gate command: {e}")),
-                String::new(),
+                (String::new(), 0),
             )
         }
     };
@@ -310,31 +316,37 @@ async fn exec_one(command: &str, cwd: &Path, timeout: Duration) -> CommandExec {
             ExecStatus::TimedOut,
             None,
             Some(format!("timed out after {}s", timeout.as_secs())),
-            String::new(),
+            (String::new(), 0),
         ),
         Ok(Err(e)) => finish(
             ExecStatus::DidNotRun,
             None,
             Some(format!("the gate command could not be waited on: {e}")),
-            String::new(),
+            (String::new(), 0),
         ),
         Ok(Ok(out)) => {
             let stdout = String::from_utf8_lossy(&out.stdout);
             let stderr = String::from_utf8_lossy(&out.stderr);
             let mut tail = tail_bytes(&stdout, STDOUT_TAIL_BYTES).to_string();
+            let stdout_len = tail.len();
             let err_tail = tail_bytes(&stderr, STDERR_TAIL_BYTES);
             if !err_tail.is_empty() {
                 tail.push('\n');
                 tail.push_str(err_tail);
             }
             if out.status.success() {
-                finish(ExecStatus::Passed, out.status.code(), None, tail)
+                finish(
+                    ExecStatus::Passed,
+                    out.status.code(),
+                    None,
+                    (tail, stdout_len),
+                )
             } else {
                 finish(
                     ExecStatus::Failed,
                     out.status.code(),
                     first_error_line(&stdout, &stderr),
-                    tail,
+                    (tail, stdout_len),
                 )
             }
         }
@@ -342,7 +354,7 @@ async fn exec_one(command: &str, cwd: &Path, timeout: Duration) -> CommandExec {
 }
 
 /// The last `max` bytes of `s`, cut forward to a char boundary.
-fn tail_bytes(s: &str, max: usize) -> &str {
+pub fn tail_bytes(s: &str, max: usize) -> &str {
     if s.len() <= max {
         return s;
     }
@@ -425,6 +437,26 @@ mod tests {
         assert_eq!(r[2].status, ExecStatus::TimedOut);
         assert!(r[2].exit_code.is_none());
         assert!(r[2].duration_ms >= 900, "timed at the child, not at setup");
+    }
+
+    #[tokio::test]
+    async fn stdout_len_marks_where_stderr_begins() {
+        let Some(repo) = repo() else { return };
+        let run = exec_in_worktree(
+            repo.path(),
+            "main",
+            &[cmd("echo to-out&& echo to-err 1>&2", 60), cmd("exit 0", 60)],
+            "personas-gate-exec-test-",
+            |_| {},
+        )
+        .await
+        .expect("worktree");
+        let both = &run.results[0];
+        let (out, err) = both.output_tail.split_at(both.stdout_len);
+        assert!(out.contains("to-out") && !out.contains("to-err"), "{out:?}");
+        assert!(err.starts_with('\n') && err.contains("to-err"), "{err:?}");
+        let silent = &run.results[1];
+        assert_eq!(silent.stdout_len, silent.output_tail.len());
     }
 
     #[tokio::test]

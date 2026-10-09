@@ -104,7 +104,7 @@ async fn a_measure_records_passed_failed_and_timeout_rows() -> Result<(), AppErr
         &pool,
         repo.path(),
         vec![
-            cmd("ok", "exit 0", LifecycleGateKind::Lint),
+            cmd("ok", "echo fine", LifecycleGateKind::Lint),
             cmd("bad", "exit 1", LifecycleGateKind::Check),
             cmd("slow", stall, LifecycleGateKind::Other),
         ],
@@ -144,6 +144,13 @@ async fn a_measure_records_passed_failed_and_timeout_rows() -> Result<(), AppErr
     assert!(rows.iter().all(|r| r.finished_at >= r.started_at));
     assert!(rows[2].duration_ms >= 900, "timed at the child");
     assert!(rows[0].started_at.ends_with('Z'), "{}", rows[0].started_at);
+    // The output is stored beside each row: labelled, empty for a silent
+    // command, and nothing for a child killed at its timeout.
+    let output = |r: &LifecycleRun| crate::lifecycle::detail::run_output(&pool, &p, &r.id);
+    let ok_out = output(&rows[0])?.unwrap_or_default();
+    assert!(ok_out.starts_with("--- stdout ---\nfine"), "{ok_out:?}");
+    assert_eq!(output(&rows[1])?.as_deref(), Some(""));
+    assert_eq!(output(&rows[2])?, None);
 
     // The snapshot reads it back as measured health: the gate is red, and
     // names the failing command.
@@ -355,6 +362,71 @@ fn null_params_fall_back_to_detected_commands_per_step() {
         cmds.iter().map(|c| c.id.as_str()).collect::<Vec<_>>(),
         ["tsc", "test"]
     );
+}
+
+fn exec_with(output_tail: &str, stdout_len: usize) -> CommandExec {
+    let now = chrono::Utc::now();
+    CommandExec {
+        command: "x".into(),
+        status: gate_exec::ExecStatus::Failed,
+        exit_code: Some(1),
+        started_at: now,
+        finished_at: now,
+        duration_ms: 0,
+        first_error: None,
+        timeout: DEFAULT_TIMEOUT,
+        output_tail: output_tail.to_string(),
+        stdout_len,
+    }
+}
+
+#[test]
+fn stored_output_labels_each_stream_and_drops_unrun_ones() {
+    use LifecycleRunOutcome as O;
+    let both = exec_with("compiled\nerror: boom", "compiled".len());
+    assert_eq!(
+        stored_output(O::Failed, &both).as_deref(),
+        Some("--- stdout ---\ncompiled\n--- stderr ---\nerror: boom")
+    );
+    let out_only = exec_with("ok\n", 3);
+    assert_eq!(
+        stored_output(O::Passed, &out_only).as_deref(),
+        Some("--- stdout ---\nok\n")
+    );
+    let err_only = exec_with("\nwarn", 0);
+    assert_eq!(
+        stored_output(O::Passed, &err_only).as_deref(),
+        Some("--- stderr ---\nwarn")
+    );
+    assert_eq!(
+        stored_output(O::Passed, &exec_with("", 0)).as_deref(),
+        Some("")
+    );
+    assert_eq!(stored_output(O::DidNotRun, &both), None);
+    assert_eq!(stored_output(O::Timeout, &both), None);
+}
+
+#[test]
+fn stored_output_is_bounded_char_safe_and_keeps_both_ends() {
+    use LifecycleRunOutcome as O;
+    // 40 KiB of two-byte chars on stdout, 12 KiB on stderr: both overflow.
+    let out = format!("{}OUT-END", "é".repeat(20 * 1024));
+    let err = format!("{}ERR-END", "ж".repeat(6 * 1024));
+    let tail = format!("{out}\n{err}");
+    let stored = stored_output(O::Failed, &exec_with(&tail, out.len())).expect("ran");
+    assert!(stored.len() <= OUTPUT_TAIL_BYTES, "{}", stored.len());
+    assert!(stored.len() > OUTPUT_TAIL_BYTES - 64, "the room is used");
+    let (head, rest) = stored.split_once("--- stderr ---\n").expect("stderr label");
+    assert!(head.starts_with("--- stdout ---\n"));
+    assert!(head.trim_end().ends_with("OUT-END"), "stdout keeps its END");
+    assert!(rest.ends_with("ERR-END"), "stderr keeps its END");
+    assert!(rest.len() <= OUTPUT_TAIL_BYTES / 2, "stderr at most half");
+
+    // A short stderr leaves its unused half to stdout.
+    let short = format!("{out}\nfatal");
+    let stored = stored_output(O::Failed, &exec_with(&short, out.len())).expect("ran");
+    assert!(stored.ends_with("--- stderr ---\nfatal"));
+    assert!(stored.len() > OUTPUT_TAIL_BYTES - 64);
 }
 
 #[test]

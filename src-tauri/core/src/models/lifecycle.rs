@@ -530,6 +530,65 @@ pub struct LifecycleGoalView {
     pub measurable_green: u32,
     pub instructed: u32,
     pub open_items: u32,
+    /// The Overseer's items under this goal, one per step it was ever filed
+    /// for: open (`pending`, `accepted`) first, then newest filed first.
+    pub items: Vec<LifecycleGoalItem>,
+}
+
+/// One Overseer backlog item under the "All steps green" goal.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LifecycleGoalItem {
+    /// The `dev_ideas` id.
+    pub id: String,
+    /// The step the item is about (read from its dedup key).
+    pub step_id: String,
+    pub title: String,
+    /// The idea status token (`pending`, `accepted`, `rejected`, `archived`,
+    /// `delivered`, `expired`).
+    pub status: String,
+    /// `cleared` once a Measure observed the step green, `regressed` when a
+    /// send reopened it; null before either.
+    pub verify_state: Option<String>,
+    pub created_at: String,
+    /// Null when the item was never changed after it was filed.
+    pub updated_at: Option<String>,
+}
+
+/// What [`LifecycleSendPreview`] says send would do for one step.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LifecycleSendPreviewStep {
+    pub step_id: String,
+    pub health: LifecycleHealth,
+    /// The measured reason (as on the step's health). For a `skipped` step
+    /// whose item was decided by someone, why send leaves it alone.
+    pub reason: Option<String>,
+    /// The existing item send reuses or reopens (`alreadyOpen`, `willReopen`)
+    /// or the decided item it leaves alone (`skipped`); null otherwise.
+    pub item_id: Option<String>,
+}
+
+/// A dry run of "Send to Overseer", built by the same decision function the
+/// send applies, so the two cannot disagree. Each list is in step order.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LifecycleSendPreview {
+    /// The open goal send would reuse; null when send would open a new one.
+    pub goal_id: Option<String>,
+    /// Not-green measurable steps that get a new accepted item.
+    pub will_file: Vec<LifecycleSendPreviewStep>,
+    /// Not-green steps whose item under the open goal is still open.
+    pub already_open: Vec<LifecycleSendPreviewStep>,
+    /// Not-green steps whose item was closed green and has since regressed:
+    /// send reopens it (accepted, `verifyState: regressed`).
+    pub will_reopen: Vec<LifecycleSendPreviewStep>,
+    /// Green and instructed steps, and not-green steps whose item someone
+    /// rejected, archived or let expire (that decision stands; `itemId` set).
+    pub skipped: Vec<LifecycleSendPreviewStep>,
 }
 
 /// A command Measure runs. `id` is a stable slug (dedup keys and history key on it).
@@ -581,19 +640,28 @@ pub struct LifecycleDocRow {
     pub scanned_at: Option<String>,
 }
 
-/// Layer-2 data for one step: its run history (newest first, at most 30) and,
-/// for `docs`, the per-doc rot rows.
+/// Layer-2 data for one step: its run history, for `docs` the per-doc rot
+/// rows, the backlog items about it and its evidence history.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct LifecycleStepDetail {
     pub step_id: String,
+    /// `gate` / `tests`: the newest 30 runs PER COMMAND of the step's kinds
+    /// (so a command run every Measure cannot crowd out one run rarely),
+    /// all commands merged newest first. Empty for every other step. A run's
+    /// output is not here: fetch it with `dev_tools_lifecycle_run_output`.
     pub runs: Vec<LifecycleRun>,
     pub docs: Vec<LifecycleDocRow>,
     /// Backlog items about this step: slow-gate items for its commands, the
     /// Overseer's items for the step, doc-rot items (docs step). Newest first,
     /// open before closed, at most 20.
     pub related: Vec<LifecycleRelatedItem>,
+    /// This step's evidence: the newest 200 changes (tasks, base-branch
+    /// commits, PR merges) that carry an outcome for the step, newest first.
+    /// Each item's `outcomes` holds only this step's outcome. (The snapshot
+    /// keeps its own 20 across all steps.)
+    pub evidence: Vec<LifecycleEvidenceItem>,
 }
 
 /// Which producer filed a [`LifecycleRelatedItem`].
@@ -693,4 +761,16 @@ pub struct LifecycleWatchedPipeline {
     pub project_name: String,
     pub goal: Option<LifecycleGoalView>,
     pub last_measured_at: Option<String>,
+    /// Every step's measured verdict, in step order (a mini rail). The same
+    /// health the project's snapshot shows.
+    pub steps: Vec<LifecycleWatchedStep>,
+}
+
+/// One step of a watched pipeline's mini rail.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LifecycleWatchedStep {
+    pub step_id: String,
+    pub health: LifecycleHealth,
 }

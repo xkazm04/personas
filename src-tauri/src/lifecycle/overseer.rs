@@ -13,7 +13,9 @@
 //!   and files one item per measurable step that is not green (`red`,
 //!   `amber`, `unmeasured`, `stale`) through the backlog's one door, then
 //!   accepts it through the triage verdict door. `instructed` and `green`
-//!   steps get nothing. Send also sets watch.
+//!   steps get nothing. Send also sets watch. It is [`decide`] then
+//!   `apply`; [`preview`] is [`decide`] alone, so the dry run the UI shows
+//!   and what send then does cannot disagree.
 //! - **Close by observation only** ([`after_measure`]): after a Measure whose
 //!   base tip IS the current base tip, an open item whose step is now `green`
 //!   is marked delivered with `verify_state = cleared` and the measure as its
@@ -28,8 +30,9 @@ use chrono::{DateTime, Utc};
 use crate::commands::infrastructure::dev_tools::{apply_idea_verdict_by, IdeaVerdict};
 use crate::db::models::{
     BacklogSource, DevGoal, DevIdea, DevProject, IdeaDraft, IdeaPlan, IdeaStatus,
-    LifecycleGoalView, LifecycleHealth, LifecycleMetric, LifecycleMetricKey, LifecycleSendResult,
-    LifecycleStepHealthView, LifecycleWatchedPipeline, PlanStep,
+    LifecycleGoalItem, LifecycleGoalView, LifecycleHealth, LifecycleMetric, LifecycleMetricKey,
+    LifecycleSendPreview, LifecycleSendPreviewStep, LifecycleSendResult, LifecycleStepHealthView,
+    LifecycleWatchedPipeline, LifecycleWatchedStep, PlanStep,
 };
 use crate::db::repos::core::settings as settings_repo;
 use crate::db::repos::dev::goals as goal_repo;
@@ -173,6 +176,39 @@ fn open_items<'a>(goal_id: &str, ideas: &'a [DevIdea]) -> Vec<(&'a DevIdea, &'a 
         .collect()
 }
 
+/// Every Overseer item under the goal as the goal view lists it: open first,
+/// then newest filed first. Pure.
+fn goal_items(goal_id: &str, ideas: &[DevIdea]) -> Vec<LifecycleGoalItem> {
+    let mut items: Vec<(bool, LifecycleGoalItem)> = ideas
+        .iter()
+        .filter(|i| i.origin.as_deref() == Some(BacklogSource::Lifecycle.as_str()))
+        .filter_map(|i| {
+            let step_id = step_of(goal_id, i)?.to_string();
+            let updated_at = (!i.updated_at.is_empty() && i.updated_at != i.created_at)
+                .then(|| i.updated_at.clone());
+            Some((
+                is_open(i),
+                LifecycleGoalItem {
+                    id: i.id.clone(),
+                    step_id,
+                    title: i.title.clone(),
+                    status: i.status.clone(),
+                    verify_state: i.verify_state.clone(),
+                    created_at: i.created_at.clone(),
+                    updated_at,
+                },
+            ))
+        })
+        .collect();
+    items.sort_by(|(a_open, a), (b_open, b)| {
+        b_open
+            .cmp(a_open)
+            .then_with(|| b.created_at.cmp(&a.created_at))
+            .then_with(|| b.id.cmp(&a.id))
+    });
+    items.into_iter().map(|(_, item)| item).collect()
+}
+
 /// Counts over the measured health. Pure.
 fn counts(health: &[LifecycleStepHealthView]) -> (u32, u32, u32) {
     let mut measurable = 0;
@@ -204,6 +240,7 @@ pub fn goal_view(
     let (measurable_total, measurable_green, instructed) = counts(health);
     Ok(Some(LifecycleGoalView {
         open_items: open_items(&goal.id, &ideas).len() as u32,
+        items: goal_items(&goal.id, &ideas),
         goal_id: goal.id,
         measurable_total,
         measurable_green,
@@ -403,9 +440,198 @@ fn accept(pool: &DbPool, idea: &DevIdea) -> Result<(), AppError> {
     apply_idea_verdict_by(pool, &idea.id, IdeaVerdict::Accept, ACTOR).map(|_| ())
 }
 
+/// What send does with one step, decided before anything is written.
+#[derive(Debug, Clone)]
+pub enum SendAction {
+    /// Green or instructed: nothing to do.
+    Skip,
+    /// File a new item and accept it.
+    File,
+    /// The step's item under the open goal is still open: count it.
+    AlreadyOpen(DevIdea),
+    /// The item was closed green and the step regressed: reopen it.
+    Reopen(DevIdea),
+    /// Someone rejected, archived or let the item expire: that stands.
+    Decided(DevIdea),
+}
+
+/// One step's decision, in step order.
+#[derive(Debug, Clone)]
+pub struct SendDecision {
+    pub health: LifecycleStepHealthView,
+    pub action: SendAction,
+}
+
+/// The action for one step, given the goal send would file under (`None`
+/// when send would open a new goal, which has no items yet). Reads only.
+fn decide_step(
+    pool: &DbPool,
+    project_id: &str,
+    goal_id: Option<&str>,
+    h: &LifecycleStepHealthView,
+) -> Result<SendAction, AppError> {
+    if !needs_item(h.health) {
+        return Ok(SendAction::Skip);
+    }
+    let Some(goal_id) = goal_id else {
+        return Ok(SendAction::File);
+    };
+    // The backlog's door dedups on the key in ANY status, so the existing row
+    // decides: none files, open counts, delivered reopens, decided stands.
+    let key = dedup_key(goal_id, &h.step_id);
+    Ok(
+        match idea_repo::find_idea_by_dedup_key(pool, project_id, &key)? {
+            None => SendAction::File,
+            Some(idea) if is_open(&idea) => SendAction::AlreadyOpen(idea),
+            Some(idea) if idea.status == IdeaStatus::Delivered.as_str() => SendAction::Reopen(idea),
+            Some(idea) => SendAction::Decided(idea),
+        },
+    )
+}
+
+/// What send would do for every step of `health` under `goal_id`. Reads
+/// only; [`preview`] and [`send`] both start here.
+pub fn decide(
+    pool: &DbPool,
+    project_id: &str,
+    goal_id: Option<&str>,
+    health: &[LifecycleStepHealthView],
+) -> Result<Vec<SendDecision>, AppError> {
+    health
+        .iter()
+        .map(|h| {
+            Ok(SendDecision {
+                action: decide_step(pool, project_id, goal_id, h)?,
+                health: h.clone(),
+            })
+        })
+        .collect()
+}
+
+/// What `apply` did with one step.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Applied {
+    Skipped,
+    Filed,
+    AlreadyOpen,
+    Reopened,
+}
+
+/// Carry out `decisions` under `goal`. A `File` that loses the dedup race to
+/// another filer is decided again from the row that won.
+fn apply(
+    pool: &DbPool,
+    project_id: &str,
+    goal: &DevGoal,
+    root: &Path,
+    rules: &HashMap<&str, &str>,
+    decisions: Vec<SendDecision>,
+) -> Result<Vec<(String, Applied)>, AppError> {
+    let mut out = Vec::with_capacity(decisions.len());
+    for SendDecision { health: h, action } in decisions {
+        let action = match action {
+            SendAction::File => {
+                let rule = rules.get(h.step_id.as_str()).copied();
+                if let Some(idea) =
+                    idea_repo::file_idea(pool, draft(project_id, &goal.id, root, rule, &h))?
+                {
+                    accept(pool, &idea)?;
+                    out.push((h.step_id, Applied::Filed));
+                    continue;
+                }
+                match decide_step(pool, project_id, Some(&goal.id), &h)? {
+                    // The door said "spent" yet no row reads back: count nothing.
+                    SendAction::File => SendAction::Skip,
+                    other => other,
+                }
+            }
+            other => other,
+        };
+        let applied = match action {
+            SendAction::Skip | SendAction::File => Applied::Skipped,
+            SendAction::AlreadyOpen(_) => Applied::AlreadyOpen,
+            SendAction::Reopen(existing) => {
+                reopen(pool, &existing, &h)?;
+                Applied::Reopened
+            }
+            SendAction::Decided(existing) => {
+                tracing::debug!(
+                    idea_id = %existing.id, status = %existing.status,
+                    "lifecycle overseer: a decided item is not refiled"
+                );
+                Applied::Skipped
+            }
+        };
+        out.push((h.step_id, applied));
+    }
+    Ok(out)
+}
+
+/// Closed by an observation that no longer holds: the step regressed under
+/// the same goal. Reopen it rather than file a twin.
+fn reopen(pool: &DbPool, existing: &DevIdea, h: &LifecycleStepHealthView) -> Result<(), AppError> {
+    idea_repo::decide_idea_cas(
+        pool,
+        &existing.id,
+        &existing.status,
+        IdeaStatus::Accepted.as_str(),
+        None,
+    )?;
+    let evidence = serde_json::json!({
+        "observed_by": SIGNAL_TYPE,
+        "step_id": h.step_id,
+        "health": health_word(h.health),
+        "summary": measured(h),
+    })
+    .to_string();
+    idea_repo::set_finding_verify_state(pool, &existing.id, "regressed", Some(&evidence))
+}
+
+/// A dry run of [`send`]: the same snapshot and the same [`decide`], nothing
+/// written. Reads the snapshot (files and git): call it off the IPC thread.
+pub fn preview(pool: &DbPool, project_id: &str) -> Result<LifecycleSendPreview, AppError> {
+    let snap = super::snapshot(pool, project_id)?;
+    let goal_id = open_goal(pool, project_id)?.map(|g| g.id);
+    let decisions = decide(pool, project_id, goal_id.as_deref(), &snap.health)?;
+    let mut out = LifecycleSendPreview {
+        goal_id,
+        will_file: Vec::new(),
+        already_open: Vec::new(),
+        will_reopen: Vec::new(),
+        skipped: Vec::new(),
+    };
+    for SendDecision { health: h, action } in decisions {
+        let step = |reason: Option<String>, item_id: Option<String>| LifecycleSendPreviewStep {
+            step_id: h.step_id.clone(),
+            health: h.health,
+            reason,
+            item_id,
+        };
+        match action {
+            SendAction::Skip => out.skipped.push(step(h.reason.clone(), None)),
+            SendAction::File => out.will_file.push(step(h.reason.clone(), None)),
+            SendAction::AlreadyOpen(i) => out.already_open.push(step(h.reason.clone(), Some(i.id))),
+            SendAction::Reopen(i) => out.will_reopen.push(step(h.reason.clone(), Some(i.id))),
+            SendAction::Decided(i) => out.skipped.push(step(
+                Some(format!("its item was {}; that decision stands", i.status)),
+                Some(i.id),
+            )),
+        }
+    }
+    Ok(out)
+}
+
 /// Hand the pipeline to the Overseer (see the module docs). Reads the
 /// snapshot (files and git): call it off the IPC thread.
 pub fn send(pool: &DbPool, project_id: &str) -> Result<LifecycleSendResult, AppError> {
+    send_applied(pool, project_id).map(|(result, _)| result)
+}
+
+/// [`send`], also returning what `apply` did per step (step order).
+pub(crate) fn send_applied(
+    pool: &DbPool,
+    project_id: &str,
+) -> Result<(LifecycleSendResult, Vec<(String, Applied)>), AppError> {
     let project = project_repo::get_project_by_id(pool, project_id)?;
     let snap = super::snapshot(pool, project_id)?;
     let goal = match open_goal(pool, project_id)? {
@@ -429,66 +655,20 @@ pub fn send(pool: &DbPool, project_id: &str) -> Result<LifecycleSendResult, AppE
         .iter()
         .map(|v| (v.step.id.as_str(), v.step.rule.as_str()))
         .collect();
+    let decisions = decide(pool, project_id, Some(&goal.id), &snap.health)?;
     let root = Path::new(&project.root_path);
-    let mut result = LifecycleSendResult {
+    let applied = apply(pool, project_id, &goal, root, &rules, decisions)?;
+    let count = |want: &[Applied]| applied.iter().filter(|(_, a)| want.contains(a)).count() as u32;
+    let result = LifecycleSendResult {
         goal_id: goal.id.clone(),
-        filed: 0,
-        already_open: 0,
+        filed: count(&[Applied::Filed, Applied::Reopened]),
+        already_open: count(&[Applied::AlreadyOpen]),
     };
-    for h in snap.health.iter().filter(|h| needs_item(h.health)) {
-        let d = draft(
-            project_id,
-            &goal.id,
-            root,
-            rules.get(h.step_id.as_str()).copied(),
-            h,
-        );
-        let key = d.dedup_key.clone().unwrap_or_default();
-        if let Some(idea) = idea_repo::file_idea(pool, d)? {
-            accept(pool, &idea)?;
-            result.filed += 1;
-            continue;
-        }
-        match idea_repo::find_idea_by_dedup_key(pool, project_id, &key)? {
-            Some(existing) if is_open(&existing) => result.already_open += 1,
-            // Closed by an observation that no longer holds: the step regressed
-            // under the same goal. Reopen it rather than file a twin.
-            Some(existing) if existing.status == IdeaStatus::Delivered.as_str() => {
-                idea_repo::decide_idea_cas(
-                    pool,
-                    &existing.id,
-                    &existing.status,
-                    IdeaStatus::Accepted.as_str(),
-                    None,
-                )?;
-                let evidence = serde_json::json!({
-                    "observed_by": SIGNAL_TYPE,
-                    "step_id": h.step_id,
-                    "health": health_word(h.health),
-                    "summary": measured(h),
-                })
-                .to_string();
-                idea_repo::set_finding_verify_state(
-                    pool,
-                    &existing.id,
-                    "regressed",
-                    Some(&evidence),
-                )?;
-                result.filed += 1;
-            }
-            // Rejected, archived or expired by someone: that decision stands.
-            Some(existing) => tracing::debug!(
-                idea_id = %existing.id, status = %existing.status,
-                "lifecycle overseer: a decided item is not refiled"
-            ),
-            None => {}
-        }
-    }
     set_watch(pool, project_id, true)?;
     // The same observation rule as after a measure: a send whose steps the
     // newest measure (on the current tip) already sees green closes at once.
     after_measure(pool, project_id)?;
-    Ok(result)
+    Ok((result, applied))
 }
 
 // ---------------------------------------------------------------------------
@@ -605,9 +785,11 @@ fn close_item(
 // The watched list and the auto-measure pick
 // ---------------------------------------------------------------------------
 
-/// Every watched project with its goal progress and last measure, by name.
-/// A project deleted since it was starred is left out. Reads each project's
-/// snapshot (files and git): call it off the IPC thread.
+/// Every watched project with its goal progress, last measure and every
+/// step's health (its mini rail), by name. A project deleted since it was
+/// starred is left out. Costs ONE snapshot per watched project (manifests,
+/// git and one health computation each), the same read the project's own
+/// page makes; the list is short by nature. Call it off the IPC thread.
 pub fn watched_pipelines(pool: &DbPool) -> Result<Vec<LifecycleWatchedPipeline>, AppError> {
     let mut out = Vec::new();
     for project_id in watched_project_ids(pool)? {
@@ -616,12 +798,20 @@ pub fn watched_pipelines(pool: &DbPool) -> Result<Vec<LifecycleWatchedPipeline>,
             Err(AppError::NotFound(_)) => continue,
             Err(e) => return Err(e),
         };
-        let goal = super::snapshot(pool, &project_id)?.goal;
+        let snap = super::snapshot(pool, &project_id)?;
         out.push(LifecycleWatchedPipeline {
             last_measured_at: latest_measure(pool, &project_id)?.map(|m| m.finished_at),
             project_name: project.name,
             project_id,
-            goal,
+            goal: snap.goal,
+            steps: snap
+                .health
+                .into_iter()
+                .map(|h| LifecycleWatchedStep {
+                    step_id: h.step_id,
+                    health: h.health,
+                })
+                .collect(),
         });
     }
     out.sort_by(|a, b| a.project_name.cmp(&b.project_name));
