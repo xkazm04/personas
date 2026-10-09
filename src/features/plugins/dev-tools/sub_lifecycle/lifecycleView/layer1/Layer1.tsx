@@ -2,7 +2,10 @@
  * LAYER 1 - the whole practice at a glance, sized to fit above the fold at
  * 1280x800: the STATUS BAND (the weakest step's sentence, the goal as a drawn
  * quantity, the verdict counts that filter the rail) over the RAIL (two
- * stacked lanes of equal step cards joined by the pipe).
+ * stacked lanes of equal step cards joined by the pipe), then the HISTORY (the
+ * last Measures as one figure; picking a past one travels the whole layer to
+ * it, `history/timeTravel`). The history is read on idle, after the rail has
+ * painted, into a frame that already holds its height.
  *
  * Pressing a card opens that step's Layer-2 screen in place of this one. Once
  * this layer has painted, the Layer-2 chunks are drained in idle time
@@ -15,6 +18,7 @@
 import { useEffect } from 'react';
 
 import { useLifecycleViewModel } from '../context';
+import { HistorySection } from '../history/HistorySection';
 import { prefetchStepChunksOnIdle } from '../layer2/stepChunks';
 import { EntranceProvider, useFirstEntrance } from '../system/entrance';
 import { RAIL } from '../system/lcSurface';
@@ -38,6 +42,7 @@ export function Layer1() {
           <div data-testid="lc1-collar">
             <Rail data={data} />
           </div>
+          <HistorySection />
         </div>
       </HighlightProvider>
     </EntranceProvider>

@@ -2,10 +2,11 @@
 // Layer-2 step screens (lifecycleSurfaces.tsx). Built ON the WP3 Layer-1 tape
 // (lifecycleTapes.mjs, the `collar` builder, unchanged) plus:
 //
-// - `dev_tools_lifecycle_step_detail` answers per step (args-matched): a gate
-//   history with a passing-but-over-budget tsc, a failed eslint with its first
-//   error, a timed-out check and a command that did not run; a tests history
-//   with coverage runs; the doc-rot rows;
+// - `dev_tools_lifecycle_step_detail` answers per step (args-matched): the
+//   gate and tests runs of the twelve Measures of history (wave 3; the newest
+//   with a passing-but-over-budget tsc, a failed eslint with its first error, a
+//   timed-out check and a command that did not run); coverage runs climbing
+//   from 44% to 63%; the doc-rot rows;
 // - notes on a few evidence outcomes, so a step's evidence rows and the docs
 //   change modal have something to say.
 //
@@ -22,35 +23,28 @@ export function lifecycleDetailTapes({ RECORDED_AT }) {
   const PROJECT_ID = 'p-atlas';
   const base = lifecycleTapes({ RECORDED_AT }).builders['plugins/lifecycle/collar'];
 
-  let n = 0;
-  const run = (commandId, command, kind, outcome, durationMs, extra = {}) => {
-    n += 1;
-    const at = iso(45 + n * 90);
-    return {
-      id: `run-${n}`, projectId: PROJECT_ID, measureId: `m-${Math.ceil(n / 4)}`, commandId, command, kind, outcome,
-      exitCode: outcome === 'passed' ? 0 : outcome === 'failed' ? 1 : null, durationMs, valuePct: null,
-      firstError: null, headSha: 'a1b2c3d', startedAt: at, finishedAt: at, ...extra,
-    };
+
+  // The gate and tests runs ARE the history's runs (lifecycleHistoryTape.mjs), newest Measure
+  // first, so a Measure picked on a step's strip finds its runs by `measureId`. The newest
+  // Measure keeps the old shot's story: tsc over budget, eslint failed with its first error, a
+  // timed-out check and a clippy that did not run (also the Measure before it).
+  const { HISTORY } = lifecycleTapes({ RECORDED_AT });
+  const COMMAND = {
+    tsc: 'npx tsc --noEmit', eslint: 'npm run lint', check: 'npm run check', clippy: 'cargo clippy -- -D warnings',
+    vitest: 'npx vitest run', coverage: 'npx vitest run --coverage',
   };
-
-  const gateRuns = [];
-  const tscTimes = [74000, 71000, 66000, 61000, 58000, 57000, 55000, 52000];
-  const lintTimes = [21000, 19500, 20100, 18700, 19900, 18100, 17800, 18300];
-  for (let i = 0; i < 8; i++) {
-    gateRuns.push(run('tsc', 'npx tsc --noEmit', 'typecheck', 'passed', tscTimes[i]));
-    gateRuns.push(run('eslint', 'npm run lint', 'lint', i === 0 ? 'failed' : 'passed', lintTimes[i], i === 0
-      ? { firstError: "src/features/vault/VaultPage.tsx:41:7  error  'draft' is assigned a value but never used  @typescript-eslint/no-unused-vars" }
-      : {}));
-    gateRuns.push(run('check', 'npm run check', 'check', i === 0 ? 'timeout' : 'passed', i === 0 ? 1_200_000 : 412000 - i * 3000));
-    gateRuns.push(run('clippy', 'cargo clippy -- -D warnings', 'other', i < 2 ? 'did_not_run' : 'passed', i < 2 ? 0 : 128000 + i * 900));
-  }
-
-  const testsRuns = [];
-  const cov = [63, 61, 60, 58, 57, 55, 52, 50];
-  for (let i = 0; i < 8; i++) {
-    testsRuns.push(run('vitest', 'npx vitest run', 'test', 'passed', 182000 - i * 1500));
-    testsRuns.push(run('coverage', 'npx vitest run --coverage', 'coverage', 'passed', 240000 - i * 2000, { valuePct: cov[i] }));
-  }
+  const ESLINT_ERROR = "src/features/vault/VaultPage.tsx:41:7  error  'draft' is assigned a value but never used  @typescript-eslint/no-unused-vars";
+  const runsOf = (kinds) => HISTORY.measures.flatMap((col) => col.runs
+    .filter((r) => kinds.includes(r.kind))
+    .map((r) => ({
+      id: `${col.measureId}-${r.commandId}`, projectId: PROJECT_ID, measureId: col.measureId, commandId: r.commandId,
+      command: COMMAND[r.commandId] ?? r.commandId, kind: r.kind, outcome: r.outcome,
+      exitCode: r.outcome === 'passed' ? 0 : r.outcome === 'failed' ? 1 : null, durationMs: r.durationMs, valuePct: r.valuePct,
+      firstError: r.outcome === 'failed' && r.commandId === 'eslint' ? ESLINT_ERROR : null,
+      headSha: col.headSha.slice(0, 7), startedAt: col.startedAt, finishedAt: col.finishedAt,
+    })));
+  const gateRuns = runsOf(['typecheck', 'lint', 'check', 'other']);
+  const testsRuns = runsOf(['test', 'coverage']);
 
   const doc = (docPath, status, extra = {}) => ({ docPath, status, changedSources: [], brokenRefs: [], scannedAt: iso(120), ...extra });
   const docs = [
@@ -67,9 +61,9 @@ export function lifecycleDetailTapes({ RECORDED_AT }) {
   const cleanPct = Math.round((docs.filter((d) => d.status === 'clean').length / verifiable) * 1000) / 10;
 
   const DETAIL = {
-    gate: { stepId: 'gate', runs: gateRuns, docs: [] },
-    tests: { stepId: 'tests', runs: testsRuns, docs: [] },
-    docs: { stepId: 'docs', runs: [], docs },
+    gate: { stepId: 'gate', runs: gateRuns, docs: [], related: [] },
+    tests: { stepId: 'tests', runs: testsRuns, docs: [], related: [] },
+    docs: { stepId: 'docs', runs: [], docs, related: [] },
   };
   const NOTES = {
     'c12:land': 'Merged locally; the pull request was never opened',
@@ -98,7 +92,7 @@ export function lifecycleDetailTapes({ RECORDED_AT }) {
       tape.calls.push({
         cmd: 'dev_tools_lifecycle_step_detail',
         args: { projectId: PROJECT_ID, stepId },
-        response: details[stepId] ?? { stepId, runs: [], docs: [] },
+        response: details[stepId] ?? { stepId, runs: [], docs: [], related: [] },
       });
     }
     return tape;
@@ -112,7 +106,7 @@ export function lifecycleDetailTapes({ RECORDED_AT }) {
         snap.health = snap.health.map((h) => (h.stepId === 'tests'
           ? { ...h, health: 'unmeasured', reason: 'No coverage command', metrics: h.metrics.map((m) => (m.key === 'coverage_pct' ? { ...m, value: null, samples: 0 } : m)) }
           : h));
-      }, { ...DETAIL, tests: { stepId: 'tests', runs: testsRuns.filter((r) => r.kind !== 'coverage'), docs: [] } }),
+      }, { ...DETAIL, tests: { stepId: 'tests', runs: testsRuns.filter((r) => r.kind !== 'coverage'), docs: [], related: [] } }),
     },
   };
 }

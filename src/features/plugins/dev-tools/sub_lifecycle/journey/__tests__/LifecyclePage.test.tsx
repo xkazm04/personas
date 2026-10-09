@@ -17,7 +17,8 @@ const askAthena = vi.hoisted(() => vi.fn());
 const addToast = vi.hoisted(() => vi.fn());
 let activeProjectId: string | null = 'p1';
 
-vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycle, installLifecycle, getLifecycleStepDetail, measureLifecycle }));
+const getLifecycleHistory = vi.hoisted(() => vi.fn(async () => ({ measures: [], stepIds: ['gate', 'tests'] })));
+vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycle, installLifecycle, getLifecycleStepDetail, measureLifecycle, getLifecycleHistory }));
 vi.mock('@/stores/toastStore', () => ({
   useToastStore: Object.assign((selector: (s: Record<string, unknown>) => unknown) => selector({ addToast }), {
     getState: () => ({ addToast }),
@@ -38,7 +39,7 @@ import LifecyclePage from '../../LifecyclePage';
 beforeEach(() => {
   vi.clearAllMocks();
   activeProjectId = 'p1';
-  getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => ({ stepId, runs: [], docs: [] }));
+  getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => ({ stepId, runs: [], docs: [], related: [] }));
 });
 
 // Each test uses its own project id so the module warm cache never leaks a

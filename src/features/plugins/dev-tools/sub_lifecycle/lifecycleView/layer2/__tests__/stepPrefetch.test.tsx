@@ -16,13 +16,14 @@ function CollarView() {
 }
 
 const getLifecycleStepDetail = vi.hoisted(() => vi.fn());
-vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycleStepDetail }));
+const getLifecycleHistory = vi.hoisted(() => vi.fn(async () => ({ measures: [], stepIds: ['gate', 'tests'] })));
+vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycleStepDetail, getLifecycleHistory }));
 
 beforeEach(() => {
   vi.useFakeTimers();
   __resetStepChunksForTests();
   getLifecycleStepDetail.mockReset();
-  getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => ({ stepId, runs: [], docs: [] }));
+  getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => ({ stepId, runs: [], docs: [], related: [] }));
 });
 
 afterEach(() => {
@@ -31,7 +32,7 @@ afterEach(() => {
 });
 
 describe('step intent prefetch', () => {
-  it('requests the screen chunk, the preset chunk and the detail after a short rest on a key', () => {
+  it('requests the screen chunk, the preset chunk, the detail and the history after a short rest on a key', async () => {
     renderLayer1(<CollarView />, mixWithEvidence({ projectId: 'p-intent' }));
     fireEvent.focus(screen.getByTestId('lc-node-gate'));
     // Not yet: intent needs a rest, so a sweep along the rail fetches nothing.
@@ -43,9 +44,12 @@ describe('step intent prefetch', () => {
     expect(stepChunkRequested('gate')).toBe(true);
     expect(stepChunkRequested('docs')).toBe(false);
     expect(getLifecycleStepDetail).toHaveBeenCalledWith('p-intent', 'gate');
+    // Gate's screen draws the Measure history as a strip: its intent warms that too.
+    await act(async () => { await Promise.resolve(); });
+    expect(getLifecycleHistory).toHaveBeenCalledWith('p-intent');
   });
 
-  it('drops an intent the pointer abandoned, and fetches no detail for a snapshot-only step', () => {
+  it('drops an intent the pointer abandoned, and fetches no detail for a snapshot-only step', async () => {
     renderLayer1(<CollarView />, mixWithEvidence({ projectId: 'p-sweep' }));
     fireEvent.focus(screen.getByTestId('lc-node-tests'));
     fireEvent.blur(screen.getByTestId('lc-node-tests'));
@@ -54,6 +58,8 @@ describe('step intent prefetch', () => {
     expect(stepChunkRequested('tests')).toBe(false);
     expect(stepChunkRequested('generic')).toBe(true);
     expect(getLifecycleStepDetail).not.toHaveBeenCalled();
+    await act(async () => { await Promise.resolve(); });
+    expect(getLifecycleHistory).not.toHaveBeenCalledWith('p-sweep');
   });
 
   it('asks for a step detail once, however often the key is hovered', () => {

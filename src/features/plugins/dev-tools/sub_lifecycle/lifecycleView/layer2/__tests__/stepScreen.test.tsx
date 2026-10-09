@@ -9,13 +9,14 @@ import { LifecycleBody } from '../../LifecycleBody';
 
 const getLifecycleStepDetail = vi.hoisted(() => vi.fn());
 const setLifecycleStepParams = vi.hoisted(() => vi.fn());
-vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycleStepDetail, setLifecycleStepParams }));
+const getLifecycleHistory = vi.hoisted(() => vi.fn(async () => ({ measures: [], stepIds: ['gate', 'tests'] })));
+vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycleStepDetail, setLifecycleStepParams, getLifecycleHistory }));
 
 const DETAILS: Record<string, () => unknown> = { gate: gateDetail, tests: testsDetail, docs: docsDetail };
 
 beforeEach(() => {
   vi.clearAllMocks();
-  getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => DETAILS[stepId]?.() ?? { stepId, runs: [], docs: [] });
+  getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => DETAILS[stepId]?.() ?? { stepId, runs: [], docs: [], related: [] });
 });
 
 // The detail cache is module-scoped and keyed by project, so each test names its own project.

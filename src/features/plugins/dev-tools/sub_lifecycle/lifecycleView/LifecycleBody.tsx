@@ -13,6 +13,10 @@
  * Returning from Layer 2 puts focus back on the key of the step that was open,
  * once Layer 1 is mounted again, so a keyboard reader lands where they left.
  *
+ * One time cursor spans both layers (`history/timeTravel`): a past Measure
+ * picked on Layer 1's history or on a Gate / Tests strip is the one the other
+ * layer shows. Its history is read once Layer 1 has something to paint.
+ *
  * Loading: a cold first load ghosts Layer 1 in its real geometry; the Layer-2
  * chunk suspends into a ghost of its hero band (both delayed, so a warm or
  * prefetched load paints neither).
@@ -25,6 +29,7 @@ import { KitHost } from '@/features/shared/components/kit';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
 import { useLifecycleViewModel } from './context';
+import { TimeTravelProvider } from './history/timeTravel';
 import { Layer1 } from './layer1/Layer1';
 import { Layer1Ghost } from './layer1/Layer1Ghost';
 import { LazyStepScreen } from './layer2/lazySteps';
@@ -53,7 +58,7 @@ function OnMount({ onMount, children }: { onMount: () => void; children: ReactNo
 const SWAP = { duration: 0.16, ease: [0.22, 1, 0.36, 1] as const };
 
 export function LifecycleBody() {
-  const { dl, order, loading, error, refetch, openStepId } = useLifecycleViewModel();
+  const { dl, projectId, order, loading, error, refetch, openStepId } = useLifecycleViewModel();
   const reduced = useReducedMotion();
   const open = openStepId ? order.find((n) => n.id === openStepId) ?? null : null;
   const hostRef = useRef<HTMLDivElement>(null);
@@ -94,15 +99,17 @@ export function LifecycleBody() {
 
   return (
     <KitHost testId="lc-journey">
-      <div ref={hostRef} className={`${RHYTHM.block} pb-6`}>
-        {error && <Banner severity="error" compact message={dl.lc_load_failed} cause={error} onRetry={refetch} />}
-        {/* The ghost -> Layer 1 swap is a plain conditional (law 2: content is never held, and
-            AnimatePresence mounts its first child still); only a press or a return between the
-            two layers animates. */}
-        {!layer && loading
-          ? <Layer1Ghost />
-          : <AnimatePresence mode="wait" initial={false}>{layer}</AnimatePresence>}
-      </div>
+      <TimeTravelProvider projectId={projectId} ready={order.length > 0}>
+        <div ref={hostRef} className={`${RHYTHM.block} pb-6`}>
+          {error && <Banner severity="error" compact message={dl.lc_load_failed} cause={error} onRetry={refetch} />}
+          {/* The ghost -> Layer 1 swap is a plain conditional (law 2: content is never held, and
+              AnimatePresence mounts its first child still); only a press or a return between the
+              two layers animates. */}
+          {!layer && loading
+            ? <Layer1Ghost />
+            : <AnimatePresence mode="wait" initial={false}>{layer}</AnimatePresence>}
+        </div>
+      </TimeTravelProvider>
     </KitHost>
   );
 }

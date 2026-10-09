@@ -9,16 +9,20 @@
  * dotted for stale, a quiet line for instructed) over its wash. Selection RAISES
  * the card (elevation + ring), never reflows it. Under a verdict highlight a
  * card outside it dims its SURFACE (outline, wash, depth) and its drawing;
- * its text keeps full contrast.
+ * its text keeps full contrast. Viewing a past Measure (`history/timeTravel`),
+ * Gate and Tests show that Measure and carry the history glyph by their name;
+ * every step the history does not track dims the same way.
  *
  * The whole card is one press target (the key's stretched hit area); the key
  * is the tab stop. Resting on the card, or focusing its key, opens the peek.
  */
 import { motion } from 'framer-motion';
+import { History } from 'lucide-react';
 
 import { stepGlyph, stepLabel } from '../../../journey/journeyLabels';
 import type { StepRoving } from '../../blocks/useStepRoving';
 import { useLifecycleViewModel } from '../../context';
+import { isUntracked, useTimeTravel } from '../../history/timeTravel';
 import { enterDelay } from '../../railShared';
 import { useEntrance } from '../../system/entrance';
 import { lcShape, lcSurface } from '../../system/lcSurface';
@@ -51,7 +55,11 @@ export function NodeCard({ step, upstream, index, roving, peek }: NodeCardProps)
   const { node } = step;
   const on = node.id === selected?.id;
   const lit = highlightOf(active, step.health);
-  const dim = lit === 'off';
+  const travel = useTimeTravel();
+  // Viewing a past Measure: a step the history does not track is drawn as it is now, dimmed.
+  const untracked = isUntracked(travel, node.id);
+  const then = travel.viewing !== null && !untracked;
+  const dim = lit === 'off' || untracked;
   const v = VERDICT[step.health];
   const change = stepChange(step);
   const Glyph = stepGlyph(node.id);
@@ -73,6 +81,7 @@ export function NodeCard({ step, upstream, index, roving, peek }: NodeCardProps)
       onBlur={peek.hide}
       data-selected={on || undefined}
       data-highlight={lit}
+      data-travel={untracked ? 'untracked' : then ? 'then' : undefined}
       data-card={node.id}
     >
       <span aria-hidden className={`pointer-events-none absolute inset-0 -z-10 ${lcShape('node')} ${v.wash} transition-opacity duration-200 motion-reduce:transition-none ${dim ? 'opacity-0' : 'opacity-100'}`} />
@@ -85,6 +94,7 @@ export function NodeCard({ step, upstream, index, roving, peek }: NodeCardProps)
         <span className={`min-w-0 flex-1 truncate ${LT.title} ${on ? 'text-primary' : ''}`}>
           {stepLabel(dl, node.id, node.label)}
         </span>
+        {then && <History className={`${GLYPH.sm} shrink-0 text-primary`} aria-hidden data-then />}
       </div>
       <CardFigure
         step={step}

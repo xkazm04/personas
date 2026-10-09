@@ -1,7 +1,8 @@
 // Layer 1's cold-load ghost (docs/design/overview-loading.md §C), drawn from
 // the SAME shells as the real layer - the status band's class, the `Lane`
 // tray and its columns, a card of the same five rows (`rail/cardRows`) per
-// step, every text line one line of its real type role tall (`GhostLine`) -
+// step, the history frame in its own ghost state (`history/HistorySection`),
+// every text line one line of its real type role tall (`GhostLine`) -
 // so the swap to data moves nothing. Shown only into emptiness (no cached
 // snapshot), under the permanent header; invisible for its first 150ms, so a
 // warm or fast load never paints it. No pulse.
@@ -9,6 +10,7 @@ import type { CSSProperties } from 'react';
 
 import { Ghost } from '@/features/shared/components/kit';
 
+import { HistorySection } from '../history/HistorySection';
 import { GhostLine } from '../system/GhostLine';
 import { RAIL, lcShape, lcSurface } from '../system/lcSurface';
 import { KEY, METER } from '../system/scales';
@@ -63,6 +65,7 @@ export function Layer1Ghost() {
           {Array.from({ length: n }, (_, i) => <GhostCard key={i} i={lane * 4 + i} />)}
         </Lane>
       ))}
+      <HistorySection ghost />
     </div>
   );
 }

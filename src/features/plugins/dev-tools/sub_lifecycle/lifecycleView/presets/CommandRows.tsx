@@ -4,14 +4,22 @@
  * sparkline), and its pass rate with n. The slowest command is called out
  * above the rows, and each command's first error opens under its own row.
  * Speed figures name their endpoints once, in the section's caption.
+ *
+ * With a past Measure picked (`measureId`, the page's time cursor), each row
+ * shows THAT Measure's run instead of the latest (matched by `measureId`):
+ * its outcome and time, its point ringed on the trend, the row raised; the
+ * first such row is scrolled into view. A command with no run in that Measure
+ * says so.
  */
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
 import { Collapse } from '@/features/shared/components/display/Collapse';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { ListRow, Rows, Section, type RowColumn } from '@/features/shared/components/kit';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import type { LifecycleRun } from '@/lib/bindings/LifecycleRun';
 import { formatNumeric } from '@/lib/utils/formatters';
 
 import { useLifecycleViewModel } from '../context';
@@ -43,10 +51,22 @@ function PassRate({ row }: { row: CommandRow }) {
   );
 }
 
-function CommandLine({ row }: { row: CommandRow }) {
+/** The run a row shows: the latest, or the picked Measure's (null when the command did not run in it). */
+function shownRun(row: CommandRow, measureId: string | null): LifecycleRun | null {
+  return measureId ? row.runs.find((r) => r.measureId === measureId) ?? null : row.latest;
+}
+
+function CommandLine({ row, measureId }: { row: CommandRow; measureId: string | null }) {
   const { dl, tx } = useLifecycleViewModel();
   const kind = useKindLabel();
   const [open, setOpen] = useState(false);
+  const run = shownRun(row, measureId);
+  const hit = measureId !== null && run !== null;
+  const points = sparkPoints(row);
+  const mark = run ? points.length - 1 - row.runs.indexOf(run) : undefined;
+  const latest = run
+    ? <RunPill outcome={run.outcome} />
+    : <span className={LT.row}>{measureId ? dl.lcx3_not_in_measure : dl.lc2_never_ran}</span>;
   const meta: ReactNode = (
     <>
       <span>{kind(row.kind)}</span>
@@ -59,11 +79,13 @@ function CommandLine({ row }: { row: CommandRow }) {
         size="l"
         name={<span className={LT.code}>{row.command}</span>}
         meta={meta}
+        state={hit ? 'selected' : undefined}
         cells={[
-          row.latest ? <RunPill outcome={row.latest.outcome} /> : <span className={LT.row}>{dl.lc2_never_ran}</span>,
-          <BudgetBar run={row.latest} budgetMs={row.budgetMs} />,
+          latest,
+          <BudgetBar run={run} budgetMs={row.budgetMs} />,
           <Sparkline
-            points={sparkPoints(row)}
+            points={points}
+            mark={hit ? mark : undefined}
             refs={row.budgetMs != null ? [{ value: row.budgetMs, tone: 'warning' }] : []}
             width={112}
             testId={`lc2-spark-${row.commandId}`}
@@ -99,11 +121,26 @@ function CommandLine({ row }: { row: CommandRow }) {
   );
 }
 
-export function CommandRows({ rows, loading, unavailable }: { rows: CommandRow[]; loading: boolean; unavailable: boolean }) {
+interface CommandRowsProps {
+  rows: CommandRow[];
+  loading: boolean;
+  unavailable: boolean;
+  /** The picked past Measure whose runs the rows show; null = the latest runs. */
+  measureId?: string | null;
+}
+
+export function CommandRows({ rows, loading, unavailable, measureId = null }: CommandRowsProps) {
   const { dl, tx } = useLifecycleViewModel();
+  const reduced = useReducedMotion();
+  const host = useRef<HTMLDivElement>(null);
   const slow = slowest(rows);
+  useEffect(() => {
+    if (!measureId) return;
+    // `?.()`: a DOM without layout (a test's) has no scrollIntoView.
+    host.current?.querySelector('[data-kit-state~="selected"]')?.scrollIntoView?.({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
+  }, [measureId, reduced]);
   const columns: RowColumn[] = [
-    { head: dl.lc2_col_latest, width: '8.5rem' },
+    { head: measureId ? dl.lcx3_col_viewed : dl.lc2_col_latest, width: '8.5rem' },
     { head: dl.lc2_col_time, width: '11rem' },
     { head: dl.lc2_col_trend, width: '7.5rem', collapse: true },
     { head: dl.lc2_col_pass, width: '5rem', align: 'end' },
@@ -121,14 +158,16 @@ export function CommandRows({ rows, loading, unavailable }: { rows: CommandRow[]
           {tx(dl.lc2_slowest, { command: slow.command, time: formatNumeric(slow.latest.durationMs, 'ms') })}
         </p>
       )}
-      <Rows
-        count={rows.length}
-        columns={columns}
-        nameHead={dl.lc2_col_command}
-        empty={{ title: unavailable ? dl.lc2_runs_unavailable : dl.lc2_runs_empty, hint: unavailable ? undefined : dl.lc2_runs_empty_hint }}
-      >
-        {rows.map((r) => <CommandLine key={r.commandId} row={r} />)}
-      </Rows>
+      <div ref={host} data-measure-focus={measureId ?? undefined}>
+        <Rows
+          count={rows.length}
+          columns={columns}
+          nameHead={dl.lc2_col_command}
+          empty={{ title: unavailable ? dl.lc2_runs_unavailable : dl.lc2_runs_empty, hint: unavailable ? undefined : dl.lc2_runs_empty_hint }}
+        >
+          {rows.map((r) => <CommandLine key={r.commandId} row={r} measureId={measureId} />)}
+        </Rows>
+      </div>
     </Section>
   );
 }

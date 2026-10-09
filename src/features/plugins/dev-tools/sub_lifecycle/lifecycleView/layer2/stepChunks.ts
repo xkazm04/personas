@@ -7,8 +7,9 @@
  *
  * Three signals warm a step before it is opened:
  * - expressed intent: a pointer or focus resting ~100ms on a step's key
- *   (`prefetchStepOnIntent`) fetches the screen, that step's preset chunk and
- *   its detail data (`useStepDetail`'s module cache); leaving cancels it;
+ *   (`prefetchStepOnIntent`) fetches the screen, that step's preset chunk,
+ *   its detail data (`useStepDetail`'s module cache) and, for Gate and Tests,
+ *   the Measure history their strip draws; leaving cancels it;
  * - idle: once Layer 1 has painted, the screen and every preset chunk are
  *   drained through `idlePrefetch`, one per idle slice (`prefetchStepChunksOnIdle`);
  * - dedupe: the first request for a chunk keeps its promise; later ones reuse
@@ -17,6 +18,7 @@
 import { idlePrefetch } from '@/lib/idlePrefetch';
 import { silentCatch } from '@/lib/silentCatch';
 
+import { prefetchLifecycleHistory } from '../history/useLifecycleHistory';
 import { prefetchStepDetail } from './useStepDetail';
 
 export const STEP_CHUNKS = {
@@ -32,6 +34,9 @@ type ChunkModule<K extends StepChunk> = Awaited<ReturnType<(typeof STEP_CHUNKS)[
 
 /** Steps whose preset reads `getLifecycleStepDetail`; every other step reads the snapshot only. */
 export const DETAIL_STEPS: ReadonlySet<string> = new Set(['gate', 'tests', 'docs']);
+
+/** Steps whose screen draws the Measure history as a strip (and whose intent warms it). */
+export const HISTORY_STEPS: ReadonlySet<string> = new Set(['gate', 'tests']);
 
 /** Rest time before a hover or focus counts as intent. */
 export const STEP_INTENT_DELAY_MS = 100;
@@ -66,11 +71,12 @@ function warm(id: StepChunk) {
   loadStepChunk(id).catch(silentCatch('lifecycle:stepChunkPrefetch'));
 }
 
-/** Warm everything opening `stepId` needs: the screen, its preset, and its detail data. */
+/** Warm everything opening `stepId` needs: the screen, its preset, its detail data and, for Gate and Tests, the history. */
 export function prefetchStep(projectId: string | null, stepId: string): void {
   warm('screen');
   warm(presetChunkFor(stepId));
   if (projectId && DETAIL_STEPS.has(stepId)) prefetchStepDetail(projectId, stepId);
+  if (projectId && HISTORY_STEPS.has(stepId)) prefetchLifecycleHistory(projectId);
 }
 
 /** Prefetch after a pointer or focus has rested on a step's key; a sweep along the rail fetches only where it stops. */

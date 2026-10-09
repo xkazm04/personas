@@ -5,14 +5,20 @@
  * which tip; the earlier verdict and figure; the step's recent outcomes as
  * labelled marks; and what enforces it. Inert like every tip (nothing in it
  * takes focus); Enter or a click on the card opens the step's own screen.
+ * Viewing a past Measure, a step the history does not track says it is shown
+ * as it is now.
  */
+import { History } from 'lucide-react';
+
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 
 import { stepLabel } from '../../../journey/journeyLabels';
 import { useLifecycleViewModel } from '../../context';
 import { fillTemplate } from '../../frame/fillTemplate';
+import { isUntracked, useTimeTravel } from '../../history/timeTravel';
 import { LT } from '../../system/lcType';
 import { VerdictPill } from '../../system/Pill';
+import { GLYPH } from '../../system/scales';
 import { stepChange, type MetricDelta } from '../delta';
 import type { HealthStep } from '../healthModel';
 import { metricLabel, reasonLine } from '../layer1Labels';
@@ -43,12 +49,19 @@ export function PeekBody({ step }: { step: HealthStep }) {
   const reason = reasonLine(dl, step.health, step.reason);
   const prev = step.previous;
   const prevFigure = step.figure && prev ? prev.metrics.find((m) => m.key === step.figure!.key) ?? null : null;
+  const untracked = isUntracked(useTimeTravel(), step.node.id);
   return (
     <div className="flex w-[26rem] max-w-full flex-col gap-2 py-1" data-testid="lc1-peek" data-step={step.node.id}>
       <div className="flex items-center justify-between gap-3">
         <span className={`truncate ${LT.title}`}>{stepLabel(dl, step.node.id, step.node.label)}</span>
         <VerdictPill health={step.health} />
       </div>
+      {untracked && (
+        <p className={`flex items-center gap-1.5 text-primary ${LT.meta}`} data-testid="lc1-peek-untracked">
+          <History className={`${GLYPH.sm} shrink-0`} aria-hidden />
+          {dl.lcx3_not_tracked}
+        </p>
+      )}
       {reason && <p className={LT.row}>{reason}</p>}
       {step.metrics.length > 0 && (
         <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-3 gap-y-1">

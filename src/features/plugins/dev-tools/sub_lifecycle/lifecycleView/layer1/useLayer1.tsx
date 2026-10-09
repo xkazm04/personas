@@ -5,6 +5,8 @@ import { useMemo, type ReactNode } from 'react';
 
 import { useStepRoving, type StepRoving } from '../blocks/useStepRoving';
 import { useLifecycleViewModel } from '../context';
+import { travelHealth } from '../history/historyModel';
+import { useTimeTravel } from '../history/timeTravel';
 import { joinHealth, type HealthStep } from './healthModel';
 
 export interface Layer1Data {
@@ -16,7 +18,14 @@ export interface Layer1Data {
 
 export function useLayer1(): Layer1Data {
   const { snapshot, lanes, order, selected, select } = useLifecycleViewModel();
-  const health = snapshot?.health;
+  const { columns, viewedIndex, history } = useTimeTravel();
+  // Viewing a past Measure: Gate and Tests as judged then (with the Measure before it as their
+  // `previous`), every other step as it is now. Nothing is refetched.
+  const health = useMemo(() => {
+    const now = snapshot?.health;
+    if (!now || viewedIndex === null || !history) return now;
+    return travelHealth(now, columns, viewedIndex, history.stepIds);
+  }, [snapshot?.health, columns, viewedIndex, history]);
   const before = useMemo(() => joinHealth(lanes.before, health ?? []), [lanes.before, health]);
   const after = useMemo(() => joinHealth(lanes.after, health ?? []), [lanes.after, health]);
   const all = useMemo(() => [...before, ...after], [before, after]);

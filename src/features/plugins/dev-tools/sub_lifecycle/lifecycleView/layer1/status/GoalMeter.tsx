@@ -10,6 +10,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { LifecycleHealth } from '@/lib/bindings/LifecycleHealth';
 
 import { useLifecycleViewModel } from '../../context';
+import { useTimeTravel } from '../../history/timeTravel';
 import { LT } from '../../system/lcType';
 import { VERDICT, goalParts, healthCounts, type HealthStep } from '../healthModel';
 
@@ -24,10 +25,12 @@ function segmentClass(h: LifecycleHealth): string {
 
 export function GoalMeter({ steps }: { steps: HealthStep[] }) {
   const { snapshot, dl, tx } = useLifecycleViewModel();
+  const { viewing } = useTimeTravel();
   const goal = snapshot?.goal;
   if (!goal) return null;
-  const p = goalParts(goal);
   const counts = healthCounts(steps);
+  // Viewing a past Measure, the green count is the rail's own (its Gate and Tests as judged then).
+  const p = viewing ? { ...goalParts(goal), green: Math.min(counts.green, goal.measurableTotal) } : goalParts(goal);
   const groups = BAR_ORDER.map((h) => ({ h, n: counts[h] })).filter((g) => g.n > 0);
   const sentence = tx(dl.lc1_goal_progress, { green: p.green, total: goal.measurableTotal, instructed: p.instructed });
   return (

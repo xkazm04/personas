@@ -10,6 +10,12 @@
 //   plugins/lifecycle/behind   the collar rail measured 2 days ago, 14 commits behind the base tip
 //   plugins/lifecycle/loading  the snapshot never answers: the header's chrome and the Layer-1 ghost
 //   plugins/lifecycle/regressed  the rail one measure after a bad day: most steps worse than their earlier measure
+//   plugins/lifecycle/history-failed  the collar, with the Measure history read failing (wave 3)
+//
+// Every tape answers `dev_tools_lifecycle_history` (wave 3): twelve Measures
+// (lifecycleHistoryTape.mjs) whose newest two are the collar's Gate and Tests;
+// `empty` and `loading` answer an empty history.
+import { lifecycleHistory } from './lifecycleHistoryTape.mjs';
 
 export function lifecycleTapes({ RECORDED_AT }) {
   const T0 = Date.parse(RECORDED_AT);
@@ -127,7 +133,7 @@ export function lifecycleTapes({ RECORDED_AT }) {
     installTaskId: null, installTaskStatus: null,
     steps: STEPS, evidence: EVIDENCE, health: HEALTH,
     goal: { goalId: 'goal-1', measurableTotal: 8, measurableGreen: 3, instructed: 2, openItems: 5 },
-    watched: true, measuring: false, tip: TIP, rules: RULES, ...overrides,
+    watched: true, measuring: false, progress: null, tip: TIP, rules: RULES, ...overrides,
   });
 
   const PROJECT = {
@@ -139,13 +145,19 @@ export function lifecycleTapes({ RECORDED_AT }) {
     created_at: iso(60 * 24 * 90), updated_at: iso(60 * 24 * 2),
   };
 
-  function tape(module, note, snap) {
+  const HISTORY = lifecycleHistory({ iso, TIP_SHA });
+  const NO_HISTORY = { measures: [], stepIds: ['gate', 'tests'] };
+
+  function tape(module, note, snap, history = HISTORY) {
     return {
       version: 1, module, source: 'synthetic', recordedAt: RECORDED_AT, note,
       calls: [
         snap === 'hang' ? { cmd: 'dev_tools_get_lifecycle', hang: true } : { cmd: 'dev_tools_get_lifecycle', response: snap },
         { cmd: 'dev_tools_list_projects', response: [PROJECT] },
         { cmd: 'dev_tools_workspace_list', response: [] },
+        history === 'fail'
+          ? { cmd: 'dev_tools_lifecycle_history', error: 'database is locked' }
+          : { cmd: 'dev_tools_lifecycle_history', response: history },
       ],
     };
   }
@@ -153,11 +165,13 @@ export function lifecycleTapes({ RECORDED_AT }) {
   const MIX = 'Synthetic: Solo v0 with all six health verdicts, a null metric, the Overseer goal and twelve changes of evidence.';
   return {
     PROJECT,
+    HISTORY,
     builders: {
-      'plugins/lifecycle/collar': () => tape('plugins/lifecycle/collar', MIX, snapshot()),
+      'plugins/lifecycle/collar': () => tape('plugins/lifecycle/collar', `${MIX} Twelve Measures of history.`, snapshot()),
+      'plugins/lifecycle/history-failed': () => tape('plugins/lifecycle/history-failed', `${MIX} The Measure history read fails.`, snapshot(), 'fail'),
       'plugins/lifecycle/empty': () => tape('plugins/lifecycle/empty', 'Synthetic: no health rows and no goal (the backend before WP1), never measured.', snapshot({
         health: [], goal: null, watched: false, tip: { branch: 'main', sha: TIP_SHA, measuredSha: null, commitsBehind: null, measuredAt: null },
-      })),
+      }), NO_HISTORY),
       'plugins/lifecycle/behind': () => tape('plugins/lifecycle/behind', `${MIX} Measured 2 days ago, 14 commits behind main.`, snapshot({
         tip: { branch: 'main', sha: TIP_SHA, measuredSha: '9f8e7d6c5b4a39281706f5e4d3c2b1a098765432', commitsBehind: 14, measuredAt: iso(60 * 48) },
       })),
@@ -165,7 +179,7 @@ export function lifecycleTapes({ RECORDED_AT }) {
         health: REGRESSED,
         goal: { goalId: 'goal-1', measurableTotal: 8, measurableGreen: 3, instructed: 2, openItems: 7 },
       })),
-      'plugins/lifecycle/loading': () => tape('plugins/lifecycle/loading', 'Synthetic: the snapshot never answers, so the page shows its permanent header and the Layer-1 ghost.', 'hang'),
+      'plugins/lifecycle/loading': () => tape('plugins/lifecycle/loading', 'Synthetic: the snapshot never answers, so the page shows its permanent header and the Layer-1 ghost.', 'hang', NO_HISTORY),
     },
   };
 }

@@ -12,6 +12,10 @@
  *   plugins/lifecycle/behind        Layer 1 measured 2 days ago, 14 commits behind (the header's warning)
  *   plugins/lifecycle/loading       the snapshot never answers: header chrome + the Layer-1 ghost
  *   plugins/lifecycle/regressed     Layer 1 one measure after a bad day: most steps worse than their earlier measure
+ *   plugins/lifecycle/history-failed  the collar with the Measure history read failing (its inline banner)
+ *
+ * Every tape carries the Measure history (wave 3); time travel is shot with
+ * --steps "click=[data-testid=lc-history-col-<i>];wait=600" (oldest = 0).
  *
  * WP4 retired the orbit and lane-board directions and their switcher, so
  * there is no stored variant to seed any more.
@@ -43,4 +47,5 @@ export const LIFECYCLE_MODULES: Record<string, HarnessModule> = {
   'plugins/lifecycle/behind': { load: page, prepare },
   'plugins/lifecycle/loading': { load: page, prepare },
   'plugins/lifecycle/regressed': { load: page, prepare },
+  'plugins/lifecycle/history-failed': { load: page, prepare },
 };

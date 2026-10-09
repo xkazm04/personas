@@ -68,6 +68,7 @@ export function soloV0(overrides: Partial<LifecycleSnapshot> = {}): LifecycleSna
     goal: null,
     watched: false,
     measuring: false,
+    progress: null,
     tip: { branch: 'master', sha: 'a1b2c3d4e5f6', measuredSha: null, commitsBehind: null, measuredAt: null },
     rules: DEFAULT_RULES,
     steps: [

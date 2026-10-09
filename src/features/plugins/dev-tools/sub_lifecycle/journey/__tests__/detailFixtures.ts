@@ -45,6 +45,7 @@ export function gateDetail(): LifecycleStepDetail {
   return {
     stepId: 'gate',
     docs: [],
+    related: [],
     runs: [
       run('tsc', 'typecheck', 'passed', 74_000),
       run('eslint', 'lint', 'failed', 21_000, { firstError: "src/app.tsx:12:3  error  'x' is defined but never used" }),
@@ -62,6 +63,7 @@ export function testsDetail(): LifecycleStepDetail {
   return {
     stepId: 'tests',
     docs: [],
+    related: [],
     runs: [
       run('coverage', 'coverage', 'passed', 240_000, { valuePct: 63 }),
       run('vitest', 'test', 'passed', 182_000),
@@ -79,6 +81,7 @@ export function docsDetail(): LifecycleStepDetail {
   return {
     stepId: 'docs',
     runs: [],
+    related: [],
     docs: [
       docRow('docs/features/vault.md', 'broken', { brokenRefs: ['src/vault/old.ts', 'src/vault/gone.ts'] }),
       docRow('docs/features/fleet.md', 'stale', { changedSources: ['src/fleet/grid.tsx'] }),

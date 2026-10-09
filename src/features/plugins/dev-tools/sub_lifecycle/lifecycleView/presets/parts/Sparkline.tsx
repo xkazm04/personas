@@ -33,9 +33,11 @@ interface SparklineProps {
   width?: number;
   height?: number;
   testId?: string;
+  /** A point to ring in the accent (the picked Measure's run). */
+  mark?: number;
 }
 
-export function Sparkline({ points, max, min = 0, refs = [], width = 132, height = 36, testId }: SparklineProps) {
+export function Sparkline({ points, max, min = 0, refs = [], width = 132, height = 36, testId, mark }: SparklineProps) {
   // A chart-sized line (a trend panel) draws heavier marks than a row-sized one.
   const big = height >= 60;
   const pad = big ? 8 : 4;
@@ -59,6 +61,18 @@ export function Sparkline({ points, max, min = 0, refs = [], width = 132, height
         ) : (
           <circle key={i} cx={x(i)} cy={y(p.value)} r={(i === points.length - 1 ? 1 : 0) + (big ? 4.5 : 2.5)} fill="currentColor" className={INK[p.tone] ?? 'text-foreground'} />
         ),
+      )}
+      {mark != null && points[mark] && (
+        <circle
+          cx={x(mark)}
+          cy={points[mark]!.value == null ? height - pad : y(points[mark]!.value!)}
+          r={big ? 8 : 5.5}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          className="text-primary"
+          data-mark={mark}
+        />
       )}
     </svg>
   );

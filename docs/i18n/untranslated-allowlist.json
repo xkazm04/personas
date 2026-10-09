@@ -52,6 +52,7 @@
   "*:plugins.dev_lifecycle.lc_author_athena",
   "*:plugins.dev_lifecycle.lcx2_peek_outcome_count",
   "*:plugins.dev_lifecycle.lcx2_samples_compact",
+  "*:plugins.dev_lifecycle.lcx3_changed_verdict",
   "*:plugins.dev_tools.ctx_indicator_kpis",
   "*:plugins.dev_tools.monitoring_modal_title",
   "*:plugins.dev_tools.skills_args_label",
