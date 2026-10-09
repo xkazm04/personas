@@ -2203,8 +2203,9 @@ mod spend_model_tests {
 
     #[test]
     fn resolution_spend_rows_name_the_model_the_session_spawns_on() {
-        let args = crate::engine::cli_process::headless_claude_args("claude-haiku-5-5", "low", &[]);
-        assert_eq!(cli_model(&args).as_deref(), Some("claude-haiku-5-5"));
+        let haiku = personas_core::model_ids::HAIKU_CURRENT;
+        let args = crate::engine::cli_process::headless_claude_args(haiku, "low", &[]);
+        assert_eq!(cli_model(&args).as_deref(), Some(haiku));
         let bare = crate::engine::prompt::build_cli_args(None, None);
         assert_eq!(cli_model(&bare), None);
     }

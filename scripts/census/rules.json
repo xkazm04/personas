@@ -3976,6 +3976,10 @@
         {
           "path": "src/features/browser/servers/__tests__/serverConfigParity.test.ts",
           "reason": "this file IS the agreement mechanism for serverConfig.ts (see that exclude); its comment names the Rust validator because it reads it"
+        },
+        {
+          "path": "src/features/teams/sub_teamWorkspace/teamStudio/modelOptions.ts",
+          "reason": "the mirror is TETHERED, not comment-kept: the team studio picker's concrete model ids are gated by teamStudio/__tests__/modelOptionsParity.test.ts, which reads HAIKU_CURRENT / SONNET_CURRENT / OPUS_CURRENT out of src-tauri/core/src/model_ids.rs at run time and fails when an option's id differs (the webhookPatternParity precedent). Extracted from TeamWorkspacePane.tsx so the exclusion covers the four-line list, not a component"
         }
       ],
       "baseline": {
