@@ -129,7 +129,7 @@ Authority: `.claude/CLAUDE.md` (parallel-safety primitives apply in full).
 - New Rust types with ts-rs: run the `export_bindings` gate above and commit `src/lib/bindings/`.
 - File edits from scripts on Windows: never Python text-mode `open(p,'w').write` (it writes CRLF into LF-tracked files;
   sighted twice, 2026-09 and 2026-10-05 devlog-doctor). Use the Edit tool, or read and write BYTES (`'rb'`/`'wb'`).
-  Before deleting an IPC command, `git grep` its name over the WHOLE tree, `index.html` included. When you commit a
+  Before deleting an IPC command - or ANY module - `git grep` its name over the WHOLE tree (`index.html`, `scripts/style/page-harness/*`, generated manifests such as `tourAnchorManifest.json` included), and in Phase 2, before the wave that offers the deletion, not in the builder's brief (promoted 2026-10-09, council-readout: the Features page, a style-harness surface and the tour-anchor manifest held surfaces slated for deletion). When you commit a
   file another session has STAGED (`git status` shows `MM`), apply your hunk to their staged blob too, or their next
   commit reverts yours. Promoted 2026-10-05 (devlog-doctor).
 - Incremental migration numbers collide across machines and sibling sessions (three collisions
