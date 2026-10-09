@@ -12,19 +12,20 @@
  * Two layouts read the same model (`progress/useProgressModel`) and the same
  * canvas (`progress/canvasHost`), behind a dev-only switcher:
  *
- *   CARDS      the default, three layers deep (spark goals-layers, 2026-10-08):
- *              the filmstrip across every project as layer 0, one project's
- *              milestones as Notes-style brief cards whose border is their
- *              progress as layer 1, and a milestone opened as its brief note
- *              plus its goals as layer 2. The milestone is the unit the Notepad
- *              and the filmstrip already share, so neither is copied.
+ *   NOTES      the default, three layers deep (spark goals-layers): the
+ *              filmstrip across every project as layer 0; the Notepad's own
+ *              QuestRoom for one project, banded by milestone (each cut's brief
+ *              card beside its goals), as layer 1; the Notepad's editor
+ *              (NotePlanPane for a brief) as layer 2. Ported, not re-drawn, so
+ *              everything the Notepad does comes along.
  *   LEDGER     one dense `UnifiedTable` row per goal grouped by project, the cut
  *              as a sortable column. Best for working the backlog; shows you
  *              rows rather than shape.
  *
- * Filmstrip (as its own tab), Track and Bands were deleted on 2026-10-08 (the
- * owner's call); Swimlane on 2026-10-06. The filmstrip survives as Cards'
- * layer 0.
+ * Deleted, the owner's calls: Swimlane (2026-10-06); the Filmstrip tab, Track
+ * and Bands (2026-10-08); Cards (2026-10-09), whose milestone cards and
+ * re-drawn detail lost features the Notepad already had. The filmstrip
+ * survives as Notes' layer 0.
  *
  * The switcher is declared as a named constant rather than an
  * `import.meta.env.DEV` test inside the JSX, and its state is session-scoped:
@@ -42,7 +43,6 @@ import { ProgressLegend, ProgressEmpty, ProgressGhost, useGoalDrawer } from './p
 import { ProgressViewProvider, useCanvasHost } from './progress/canvasHost';
 import { useProgressModel, type DoneFilter } from './progress/useProgressModel';
 import { LedgerCanvas } from './progress/variants/LedgerCanvas';
-import { CardsLayers } from './progress/layers/cards/CardsLayers';
 import { NotesLayers } from './progress/layers/notes/NotesLayers';
 
 const LEFT_W = 200;
@@ -51,7 +51,7 @@ const LEFT_W = 200;
  *  be enumerated or reviewed; a named constant can be grepped. */
 const SHOW_VARIANT_SWITCHER = import.meta.env.DEV;
 
-type ProgressVariant = 'cards' | 'notes' | 'ledger';
+type ProgressVariant = 'notes' | 'ledger';
 
 /**
  * The switcher really does select among mutually exclusive regions, so it
@@ -65,12 +65,8 @@ type ProgressVariant = 'cards' | 'notes' | 'ledger';
 const VARIANT_TABS_ID = 'goals-progress-variant';
 
 const VARIANTS: Array<{ id: ProgressVariant; label: string }> = [
-  // Cards and Ledger survive for a later session to fuse with the Notepad
-  // into one universal surface; every other layout was deleted rather than
-  // kept alive "to decide between" (owner's call, 2026-10-08).
-  { id: 'cards', label: 'Cards' },
-  // Cards with layers 1 and 2 ported from the Notepad (QuestRoom + its editor)
-  // rather than re-drawn - so the Notepad's features come along (2026-10-09).
+  // Notes and Ledger survive; every other layout was deleted rather than kept
+  // alive "to decide between" (owner's calls, 2026-10-06 to 2026-10-09).
   { id: 'notes', label: 'Notes' },
   { id: 'ledger', label: 'Ledger' },
 ];
@@ -79,7 +75,7 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const model = useProgressModel(projectScope);
-  const [variant, setVariant] = useState<ProgressVariant>('cards');
+  const [variant, setVariant] = useState<ProgressVariant>('notes');
   const { openGoal, createGoalIn, drawer } = useGoalDrawer(model.allGoals ?? [], model.refresh);
 
   const projectIds = useMemo(() => model.rows.map((r) => r.projectId), [model.rows]);
@@ -154,7 +150,6 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
           <div {...segmentedTabPanelProps(VARIANT_TABS_ID, variant)} role="tabpanel">
             {variant === 'notes' && <NotesLayers leftWidth={LEFT_W} />}
             {variant === 'ledger' && <LedgerCanvas />}
-            {variant === 'cards' && <CardsLayers leftWidth={LEFT_W} />}
           </div>
         </ProgressViewProvider>
 

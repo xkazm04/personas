@@ -1,11 +1,11 @@
 /**
- * THE FILMSTRIP - layer 0 of the Cards view. Chronology stays the spine; a
+ * THE FILMSTRIP - layer 0 of the Notes view. Chronology stays the spine; a
  * milestone is a labelled drop zone in the row's own margin and a bound goal
  * flies a flag.
  *
  * It was its own Progress tab until 2026-10-08; now it is the portfolio layer
- * the Cards view opens on, and `onOpenProject` turns each project name into
- * the door to that project's milestone cards. Each row is the project's goals
+ * the Notes view opens on, and `onOpenProject` turns each project name into
+ * the door to that project's room. Each row is the project's goals
  * as frames in date order, then its milestones as chips (each a drop target),
  * the unassigned lane and the button that creates a cut, so seeing a whole
  * portfolio's timing at once is not traded away for scope.

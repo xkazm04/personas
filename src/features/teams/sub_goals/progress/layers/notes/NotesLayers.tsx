@@ -1,16 +1,16 @@
 /**
- * LAYERED PROTOTYPE - NOTES. Derived from Cards, with layers 1 and 2 ported
- * from the Notepad instead of re-drawn, so nothing the Notepad already does is
- * lost on the way in:
+ * THE NOTES VIEW - the Progress default. Layers 1 and 2 are ported from the
+ * Notepad instead of re-drawn, so nothing the Notepad already does is lost on
+ * the way in:
  *
- *   L0  the filmstrip, exactly as Cards opens on it.
+ *   L0  the filmstrip, every project as a row.
  *   L1  the Notepad's QuestRoom for the project - the same `NoteDeskCard`s with
  *       their rail, menu, thread bubble and presence - extended with milestone
  *       bands: each cut's brief card beside its goals.
  *   L2  the Notepad's editor for the opened note (`NoteEditorPane`): NotePlanPane
  *       for a milestone's brief, the workbench for a brainstorm note.
  *
- * Transition - Cards' split: the portfolio squeezes into the left rail while a
+ * Transition - split: the portfolio squeezes into the left rail while a
  * project is open. Escape: the room closes itself (its own key, one rung above
  * the desk's); in the editor, `useLayerNav` steps back to the room. The nav's
  * milestone slot carries the OPEN NOTE's id here - layer 2 is a note.
@@ -27,7 +27,7 @@ import { deleteNote, patchNote } from '@/features/notepad/notepadStore';
 import { ChronologyHeader } from '../../ChronologyHeader';
 import { useProgressView } from '../../canvasHost';
 import { FilmstripCanvas } from '../../variants/FilmstripCanvas';
-import { ProjectRail } from '../cards/ProjectRail';
+import { ProjectRail } from './ProjectRail';
 import { useLayerNav, useProjectLayer } from '../useLayers';
 import { useMilestoneGroups } from './MilestoneBands';
 import { NoteEditorPane } from './NoteEditorPane';

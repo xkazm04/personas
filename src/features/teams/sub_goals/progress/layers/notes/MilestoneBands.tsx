@@ -1,7 +1,7 @@
 /**
  * The milestone bands the Notes variant hands to the Notepad's QuestRoom: one
  * per milestone in plan order, each a header (the milestone's, drawn here) plus
- * its goals (the same `GoalList` layer 2 of Cards uses). The brief card itself
+ * its goals (`GoalList`). The brief card itself
  * is the room's - `NoteDeskCard` with every verb the desk has - so this file
  * never draws a note. A milestone without a brief gets the "Start brief" door;
  * goals bound to no milestone close the list as their own band.
@@ -16,9 +16,9 @@ import { useProgressView } from '../../canvasHost';
 import type { MilestoneCard, ProjectLayer } from '../layerModel';
 import { milestoneMeta } from '../milestoneMeta';
 import { formatPct, formatTarget } from '../layerFormat';
-import { NoBrief } from '../detail/BriefSection';
-import { GoalList } from '../detail/GoalList';
-import { GoalSegments } from '../detail/ProgressFigure';
+import { GoalList } from './GoalList';
+import { GoalSegments } from './goalFigures';
+import { StartBrief } from './StartBrief';
 
 export const UNASSIGNED_BAND = 'unassigned';
 
@@ -34,7 +34,7 @@ export function useMilestoneGroups(layer: ProjectLayer | null): QuestMilestoneGr
       id: card.lane.id,
       header: <BandHeader card={card} />,
       brief: card.brief,
-      emptyBrief: <NoBrief card={card} projectId={layer.projectId} />,
+      emptyBrief: <StartBrief card={card} projectId={layer.projectId} />,
       aside: goals(card.goals),
     }));
     if (layer.unassigned.length > 0) {

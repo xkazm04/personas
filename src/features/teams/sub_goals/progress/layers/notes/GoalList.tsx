@@ -14,7 +14,7 @@ import { useProgressView } from '../../canvasHost';
 import { Section } from '../../../goalDetail/parts';
 import { goalStatusLabel, goalStatusMeta } from '../../../goalStatus';
 import { goalWeight } from '../layerModel';
-import { GoalBar } from './detailParts';
+import { GoalBar } from './goalFigures';
 
 // The row is a Button so it carries the shared focus ring and press response;
 // its label slot is stretched into the row's content column.
