@@ -24,6 +24,8 @@ import { useRegistryRoot } from '../useRegistryRoot';
 import { BezelLens } from './BezelLens';
 import { CrossSectionDock } from './CrossSectionDock';
 import { DecisionsPanel } from './DecisionsPanel';
+import { PanelHost } from '../../prototype/PanelHost';
+import { useProtoVariant } from '../../prototype/protoVariant';
 import { FieldTip } from './FieldTip';
 import { Finder } from './Finder';
 import { FusedCanvas } from './FusedCanvas';
@@ -59,6 +61,7 @@ export function FusedStage({ bench }: { bench?: ReactNode }) {
   const mode = useFusedStore((s) => s.mode);
   const spread = useFusedStore((s) => s.spread);
   const setCursor = useFusedStore((s) => s.setCursor);
+  const protoPanel = useProtoVariant((s) => s.panel);
 
   useEffect(() => {
     if (fixtureOn) return;
@@ -124,7 +127,11 @@ export function FusedStage({ bench }: { bench?: ReactNode }) {
         />
       ) : null}
       <NavColumn engine={engine} path={path} data={data} navRef={navRef} />
-      <DecisionsPanel decisions={data.decisions} fold={fold} beaconRef={beaconRef} />
+      {protoPanel === 'current' ? (
+        <DecisionsPanel decisions={data.decisions} fold={fold} beaconRef={beaconRef} />
+      ) : (
+        <PanelHost variant={protoPanel} rootRef={beaconRef} />
+      )}
       {layout ? (
         <CrossSectionDock
           engine={engine}

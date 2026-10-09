@@ -26,6 +26,10 @@ import { useCouncilStore } from './councilStore';
 import { GalaxyStage } from './galaxy/GalaxyStage';
 import { FusedStage } from './galaxy/fused/FusedStage';
 import { COUNCIL_VARIANTS, COUNCIL_VARIANT_TAB_PREFIX, useCouncilVariant, type CouncilVariant } from './councilVariant';
+import { PageHost } from './prototype/PageHost';
+import { ProtoCta, ProtoSwitches } from './prototype/ProtoHeader';
+import { useProtoStore } from './prototype/protoStore';
+import { useProtoVariant } from './prototype/protoVariant';
 
 export default function CouncilPage() {
   const { t, tx } = useTranslation();
@@ -56,6 +60,15 @@ export default function CouncilPage() {
       (e: KeyboardEvent) => {
         if (isTypingTarget(e.target)) return false;
         if (e.key !== 'q' && e.key !== 'Q') return false;
+        // PROTOTYPE ROUND: with a new direction on, Q opens the selected
+        // council full page (and closes it again) instead of the bench.
+        const proto = useProtoStore.getState();
+        const { panel, page } = useProtoVariant.getState();
+        if (panel !== 'current' && page !== 'current') {
+          if (proto.openId) proto.open(null);
+          else if (proto.selectedId) proto.open(proto.selectedId);
+          return true;
+        }
         setBenchOpen(!useCouncilStore.getState().benchOpen);
         return true;
       },
@@ -121,6 +134,12 @@ export default function CouncilPage() {
   /* One element type per variant, chosen before render so React mounts a
      fresh stage (and a fresh engine) when the switch flips. */
   const Stage = variant === 'fused' ? FusedStage : GalaxyStage;
+  // PROTOTYPE ROUND: the full-page council replaces the stage while open.
+  const protoPage = useProtoVariant((s) => s.page);
+  const protoOpenId = useProtoStore((s) => s.openId);
+  const protoOpen = useProtoStore((s) => s.open);
+  const protoSubject =
+    protoPage !== 'current' && protoOpenId ? (rawSubjects.find((s) => s.id === protoOpenId) ?? null) : null;
 
   const aim = useCallback(
     (subject: CouncilSubjectState) => focusCouncil(subject, null),
@@ -135,7 +154,9 @@ export default function CouncilPage() {
         title={t.sidebar.council}
         fitWidth
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+          <ProtoCta />
+          <ProtoSwitches />
           <SegmentedTabs<CouncilVariant>
             tabs={COUNCIL_VARIANTS.map((id) => ({
               id,
@@ -187,6 +208,13 @@ export default function CouncilPage() {
           className="relative flex min-h-0 flex-1 flex-col"
           data-variant={variant}
         >
+          {protoSubject && protoPage !== 'current' ? (
+            <PageHost
+              variant={protoPage}
+              subject={effectiveSubject(protoSubject, fixtureDecisions)}
+              onBack={() => protoOpen(null)}
+            />
+          ) : (
           <Stage
             bench={
               /* The bench RISES. It is a drawer taking two thirds of the
@@ -227,6 +255,7 @@ export default function CouncilPage() {
               </AnimatePresence>
             }
           />
+          )}
         </div>
       </ContentBody>
     </ContentBox>

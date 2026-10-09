@@ -47,6 +47,31 @@ await preloadSectionsAsync('en', ['council', 'sidebar', 'common', 'empty_states'
 // `?fixture=0` leaves the registry unpaired, which is a STATE of this page
 // and has to be shot like any other.
 if (params.get('fixture') !== '0') await useCouncilStore.getState().loadFixture();
+// `?live=1` (prototype round, spark council-readout): the reference galaxy
+// stays, the councils are swapped for the local app database's real ones as
+// frozen by `node scripts/council/export-live-fixture.mjs` (gitignored).
+if (params.get('live') === '1') {
+  const raw = (await import(/* @vite-ignore */ '/.claude/council-reference/data/live/council-live.json?raw')) as {
+    default: string;
+  };
+  // Shapes are the ts-rs bindings, written by the export script from the
+  // same columns the Rust reader maps; a mismatch shows as a broken shot.
+  const live = JSON.parse(raw.default) as {
+    subjects: ReturnType<typeof useCouncilStore.getState>['subjects'];
+    runs: ReturnType<typeof useCouncilStore.getState>['fixtureRuns'];
+  };
+  useCouncilStore.setState({ subjects: live.subjects, fixtureRuns: live.runs, subjectsStatus: 'loaded' });
+}
+// `?select=<slug>` arms the header CTA on that council; `?open=<slug>` also
+// opens it full page in the `?page=` direction.
+{
+  const { useProtoStore } = await import('../prototype/protoStore');
+  const bySlug = (slug: string | null) =>
+    slug ? (useCouncilStore.getState().subjects.find((s) => s.slug === slug)?.id ?? null) : null;
+  const selected = bySlug(params.get('open') ?? params.get('select'));
+  if (selected) useProtoStore.getState().select(selected);
+  if (params.get('open') && selected) useProtoStore.getState().open(selected);
+}
 
 window.__councilStore = useCouncilStore;
 useCouncilStore.subscribe((s) => {
