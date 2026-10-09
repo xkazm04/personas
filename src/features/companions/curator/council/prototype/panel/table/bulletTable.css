@@ -1,0 +1,134 @@
+/* PROTOTYPE ROUND (spark council-readout), direction C - Bullet-chart table.
+ * Layout is free here; type comes from typo-* on the elements and every
+ * colour from a theme variable (or a color-mix over one). */
+
+/* ---------------------------------------------------------------- the docked panel */
+.fz .bt {
+  position: absolute; top: 12px; right: 12px; bottom: calc(var(--dock-h) + 12px);
+  width: min(52%, 900px); z-index: 6;
+  display: flex; flex-direction: column; min-height: 0;
+  color: var(--foreground);
+  border-radius: var(--radius-card);
+  background: var(--panel);
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
+  box-shadow: var(--shadow-elevation-2);
+  backdrop-filter: blur(8px);
+}
+.fz.fz-wide .bt { width: min(46%, 900px); }
+
+.bt-head {
+  flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 10px 12px; padding: 10px 12px 4px;
+}
+.bt-count { margin-left: 8px; }
+
+.bt-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 4px 6px; scrollbar-width: thin; }
+
+/* ---------------------------------------------------------------- the kit table, given more air */
+.bt .k-host { --spine-x: 3px; --band-x: 0px; --gutter: 12px; }
+.bt .k-table thead th {
+  position: sticky; top: 0; z-index: 2; padding: 12px 8px 8px;
+  /* Opaque: rows scroll under the head, and --panel is translucent. */
+  background: linear-gradient(var(--panel), var(--panel)), var(--background);
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
+  font-size: calc(var(--type-1) * var(--type-f)); font-weight: 400;
+}
+/* The kit's sort head is set at the label step; this panel keeps nothing under body. */
+.bt .k-th-sort__btn { font-size: calc(var(--type-1) * var(--type-f)); padding: 12px 8px 8px; }
+.bt .k-table thead th.k-th-sort { padding: 0; }
+.bt .k-table th.k-th-sort:first-child .k-th-sort__btn { padding-left: var(--gutter); }
+.bt .k-table thead th:first-child { padding-left: var(--gutter); }
+.bt .k-table td { height: 64px; padding: 9px 8px; }
+.bt .k-table td:first-child { padding-left: var(--gutter); }
+.bt .k-table tbody tr:focus-visible { outline-offset: -3px; }
+
+.bt-titlecell { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bt-title { overflow-wrap: anywhere; line-height: 1.3; color: var(--foreground); }
+.bt-title.is-on { color: var(--primary); }
+.bt-where { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; line-height: 1.35; }
+.bt-where__round {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
+  color: color-mix(in srgb, var(--foreground) 78%, transparent);
+}
+.bt-eyebrow {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px;
+  color: color-mix(in srgb, var(--foreground) 78%, transparent); line-height: 1.35;
+}
+.bt-eyebrow > span:not(.bt-lite) + span:not(.bt-lite)::before { content: '\00B7'; margin-right: 10px; }
+
+.bt-lite {
+  display: inline-flex; align-items: center; padding: 0 6px; line-height: 1.4;
+  border: 1.5px dashed color-mix(in srgb, var(--foreground) 55%, transparent);
+  border-radius: var(--radius-pill);
+  color: color-mix(in srgb, var(--foreground) 85%, transparent);
+}
+.bt-round { display: inline-flex; align-items: center; gap: 8px; }
+
+/* ---------------------------------------------------------------- the bullet chart */
+.bt-overall { display: inline-flex; align-items: center; gap: 12px; }
+.bt-num { min-width: 3ch; text-align: right; }
+.bt-num.is-pass { color: var(--status-success); }
+.bt-num.is-near { color: var(--primary); }
+.bt-num.is-far { color: var(--status-warning); }
+
+.bt-fig { display: block; flex: none; overflow: visible; }
+.bt-fig__hatchline { stroke: color-mix(in srgb, var(--foreground) 24%, transparent); stroke-width: 1.5; }
+.bt-fig__rest { stroke: color-mix(in srgb, var(--foreground) 18%, transparent); stroke-width: 1; }
+.bt-fig__band { fill: color-mix(in srgb, var(--foreground) 17%, var(--panel)); }
+.bt-fig__bar { stroke-width: 0; }
+.bt-fig__bar.is-pass { fill: var(--status-success); stroke: var(--status-success); }
+.bt-fig__bar.is-near { fill: var(--primary); stroke: var(--primary); }
+.bt-fig__bar.is-far { fill: var(--status-warning); stroke: var(--status-warning); }
+.bt-fig__bar.is-lite { stroke-width: 1.75; stroke-dasharray: 4 3; }
+.bt-fig__bar.is-lite.is-pass { fill: color-mix(in srgb, var(--status-success) 22%, transparent); }
+.bt-fig__bar.is-lite.is-near { fill: color-mix(in srgb, var(--primary) 22%, transparent); }
+.bt-fig__bar.is-lite.is-far { fill: color-mix(in srgb, var(--status-warning) 22%, transparent); }
+.bt-fig__tick { stroke: var(--foreground); stroke-width: 3; stroke-linecap: round; }
+
+/* ---------------------------------------------------------------- the member dots */
+.bt-dots { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; }
+.bt-dot {
+  display: inline-block; flex: none; width: 20px; height: 20px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent);
+}
+.bt-dot.r0 { background: color-mix(in oklab, var(--primary) 10%, var(--background)); }
+.bt-dot.r1 { background: color-mix(in oklab, var(--primary) 30%, var(--background)); }
+.bt-dot.r2 { background: color-mix(in oklab, var(--primary) 54%, var(--background)); }
+.bt-dot.r3 { background: color-mix(in oklab, var(--primary) 78%, var(--background)); }
+.bt-dot.r4 { background: var(--primary); }
+.bt-dot.is-unmeasured {
+  background: transparent; box-shadow: none;
+  border: 2px dashed color-mix(in srgb, var(--foreground) 55%, transparent);
+}
+.bt-dot.is-na { background: transparent; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--foreground) 22%, transparent); }
+.bt-dot.is-none { visibility: hidden; }
+.bt-dot.is-ghost { background: var(--ghost); box-shadow: none; }
+.bt-dot.is-floor {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 0 2px var(--panel), 0 0 0 4px var(--status-error);
+}
+.bt-dots--head { gap: 6px; }
+.bt-dothead { display: inline-block; width: 20px; text-align: center; font-weight: inherit; }
+
+/* ---------------------------------------------------------------- the key */
+.bt-key {
+  flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px;
+  padding: 10px 16px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  color: color-mix(in srgb, var(--foreground) 82%, transparent);
+}
+.bt-key__item { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+/* A narrow panel keeps the key on one line; the members head already names the dots. */
+.bt:not(.is-wide) .bt-key__ramp { display: none; }
+.bt-key .bt-dot { width: 16px; height: 16px; }
+.bt-ramp { display: inline-flex; gap: 3px; }
+.bt-sw { display: inline-block; flex: none; }
+.bt-sw--tick { width: 3px; height: 20px; border-radius: 2px; background: var(--foreground); }
+.bt-sw--hatch {
+  width: 24px; height: 16px; border-radius: 3px;
+  background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--foreground) 26%, transparent) 0 1.5px, transparent 1.5px 6px);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--foreground) 18%, transparent);
+}
+
+/* An empty filter: the panel shrinks to its tabs and the empty state. */
+.fz .bt.is-empty { bottom: auto; }
+.bt.is-empty .bt-scroll { flex: none; padding-bottom: 16px; }
