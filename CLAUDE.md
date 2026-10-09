@@ -1,5 +1,13 @@
 # Project Guidance
 
+**Repo law lives in [`.claude/CLAUDE.md`](.claude/CLAUDE.md)** (the canonical source): commands, the
+gates to run before you report done (`npm run gate -- --cold`, then `npm run check`), the git
+policy for a checkout other sessions commit to, and the conventions. [`AGENTS.md`](AGENTS.md) is the
+harness-neutral index into the same law. This file is a projection: the block below is generated
+by Personas' context scan and is overwritten on every scan; this paragraph sits outside its
+markers so the scan keeps it. The canonical source is also declared in `.ai/manifest.yaml`
+(`guidance.canonical`).
+
 <!-- personas:context-map:start -->
 ## Project Context Map
 

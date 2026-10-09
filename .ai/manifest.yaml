@@ -24,6 +24,15 @@ capabilities:
   scan-secrets: { command: "node scripts/secret-scan.mjs", verified: false }
   evals: { command: "npm run test:evals", verified: false }
 
+# Agent guidance — ONE canonical source; every other guidance file points to it and restates
+# nothing. Root CLAUDE.md is the generated context-map projection (its pointer paragraph sits
+# outside the scan's markers); AGENTS.md is the harness-neutral index. Where a projection and the
+# canonical file disagree, the canonical file wins (AGENTS.md says the same).
+guidance:
+  canonical: .claude/CLAUDE.md
+  projections: [AGENTS.md, CLAUDE.md]
+  doneGate: "npm run gate -- --cold"
+
 # Pointers — these subsystems can change format underneath without breaking this contract.
 paths:
   contextIndex: .ai/context-index.json

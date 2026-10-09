@@ -17,74 +17,25 @@
  * Exempted files:
  *   - globals.css, designTokens.ts (token definitions)
  *   - src/lib/** (utility / design-system files)
+ *
+ * The className walk (literals, templates, cn()/clsx(), join, ternaries) is
+ * shared with the other design-token rules: see _classname-strings.cjs.
  */
+const { createRawClassRule } = require("./_classname-strings.cjs");
 
 /** @type {import('eslint').Rule.RuleModule} */
-module.exports = {
-  meta: {
-    type: "suggestion",
-    docs: {
-      description:
-        "Enforce shadow-elevation-* tokens instead of raw Tailwind shadow scale classes",
-    },
-    messages: {
-      rawShadowClass:
-        'Use an elevation token instead of "{{ raw }}". ' +
-        "Mapping: shadow-sm → shadow-elevation-1, shadow-md → shadow-elevation-2, " +
-        "shadow-lg → shadow-elevation-3, shadow-xl → shadow-elevation-3, " +
-        "shadow-2xl → shadow-elevation-4.",
-    },
-    schema: [],
-  },
-  create(context) {
-    const filename = context.filename || context.getFilename();
-    const norm = filename.replace(/\\/g, "/");
-
-    // Skip token definitions and shared primitives
-    if (
-      norm.includes("designTokens") ||
-      norm.includes("globals.css") ||
-      norm.includes("src/lib/")
-    ) {
-      return {};
-    }
-
-    // Matches raw Tailwind shadow scale classes, with optional variant prefixes.
-    // Does NOT match: drop-shadow-*, shadow-none, shadow-inner, shadow-elevation-*,
-    // shadow-black, shadow-white, etc.
-    const RAW_SHADOW_RE =
-      /(?:^|\s)((?:[a-z][a-z0-9-]*:)*shadow-(?:sm|md|lg|xl|2xl))(?:\s|$|")/;
-
-    function extractStrings(node) {
-      if (!node) return [];
-      if (node.type === "Literal" && typeof node.value === "string") {
-        return [{ value: node.value, node }];
-      }
-      if (node.type === "TemplateLiteral") {
-        return node.quasis.map((q) => ({ value: q.value.raw, node: q }));
-      }
-      if (node.type === "JSXExpressionContainer") {
-        return extractStrings(node.expression);
-      }
-      return [];
-    }
-
-    return {
-      JSXAttribute(node) {
-        if (node.name.name !== "className") return;
-
-        const parts = extractStrings(node.value);
-        for (const { value, node: reportNode } of parts) {
-          const match = RAW_SHADOW_RE.exec(value);
-          if (match) {
-            context.report({
-              node: reportNode,
-              messageId: "rawShadowClass",
-              data: { raw: match[1] },
-            });
-          }
-        }
-      },
-    };
-  },
-};
+module.exports = createRawClassRule({
+  description: "Enforce shadow-elevation-* tokens instead of raw Tailwind shadow scale classes",
+  messageId: "rawShadowClass",
+  message:
+    'Use an elevation token instead of "{{ raw }}". ' +
+    "Mapping: shadow-sm → shadow-elevation-1, shadow-md → shadow-elevation-2, " +
+    "shadow-lg → shadow-elevation-3, shadow-xl → shadow-elevation-3, " +
+    "shadow-2xl → shadow-elevation-4.",
+  // Matches raw Tailwind shadow scale classes, with optional variant prefixes.
+  // Does NOT match: drop-shadow-*, shadow-none, shadow-inner, shadow-elevation-*,
+  // shadow-black, shadow-white, etc.
+  pattern: /(?:^|\s)((?:[a-z][a-z0-9-]*:)*shadow-(?:sm|md|lg|xl|2xl))(?:\s|$|")/,
+  raw: (m) => m[1],
+  exemptPaths: ["designTokens", "globals.css", "src/lib/"],
+});

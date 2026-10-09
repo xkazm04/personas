@@ -11,6 +11,7 @@ does not restate. Where a pointed-to file and this one disagree, the pointed-to 
 | `src/**/*.tsx`, `src/**/*.css` (any UI) | `.claude/rules/ui.md`, then `.claude/Design.md` as the full reference |
 | user-facing strings, `src/i18n/**` | `.claude/rules/i18n.md` |
 | `src-tauri/**` | `.claude/rules/rust-backend.md` |
+| "why is it this way?" | `docs/decisions.md` (generated index over every decision store) |
 
 Claude Code loads the `.claude/rules/*.md` files by their `paths:` frontmatter. Other harnesses do
 not, so open the one that matches your change yourself.
@@ -22,8 +23,15 @@ Never `--no-verify`, never `git stash` work that is not yours, stage explicit pa
 sessions commit to this checkout at the same time: see "Parallel-safety primitives" in
 `.claude/CLAUDE.md` before your first commit.
 
+Because several sessions commit here at once, name yours in a trailer so a regression can be traced
+to the session that made it: `git commit --trailer "Agent-Session: <your active-runs slug>@<date>"`
+(add `--trailer "Work-Package: <item id>"` when the work has one). `node scripts/git/by-session.mjs`
+lists history by these and by the harness's `Claude-Session:` trailer.
+
 ## Gates to run before you report done
 
-- `npm run gate -- --cold`: tsc, eslint on changed files and the golden-path census, cold.
+- `npm run gate -- --cold`: tsc, eslint on changed files and the golden-path census, cold. Its
+  typecheck step is the same `npx tsc --noEmit` that `.claude/CLAUDE.md` lists under Common
+  Commands; run that alone when only types are in question.
 - `npm run check`: the full pre-push chain. Style rules in ESLint are warn and fail nothing; the
   census ratchets in `scripts/census/rules.json` are what fail a style slip.
