@@ -56,3 +56,11 @@ Before you report done: `npm run gate -- --cold`.
 - The done gate above runs tsc, eslint on changed files and the golden-path census, cold.
 - `npm run check`: the full pre-push chain. Style rules in ESLint are warn and fail nothing; the
   census ratchets in `scripts/census/rules.json` are what fail a style slip.
+
+## Adding or editing a workflow
+
+`src/__tests__/structural/workflowSupplyChain.test.ts` (in `npm test`) fails when a workflow in
+`.github/workflows/` has no `permissions:` (start from a top-level `contents: read` and grant write
+on the one job that needs it), grants write at the top level, or references a new action by a tag
+or branch instead of a full commit SHA (`owner/repo@<40-hex> # vN`). Its allowlists name what is
+still owed in the existing workflows and only shrink: when you fix one, delete its entry.
