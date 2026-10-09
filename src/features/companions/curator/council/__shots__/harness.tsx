@@ -13,11 +13,11 @@ import ReactDOM from 'react-dom/client';
 
 import { AppKeyboardProvider } from '@/lib/keyboard/AppKeyboardProvider';
 import { preloadSectionsAsync } from '@/i18n/useTranslation';
-import { safeLocalSet } from '@/lib/safeLocalStorage';
 import { useThemeStore } from '@/stores/themeStore';
 import '@/styles/globals.css';
 
 import CouncilPage from '../CouncilPage';
+import { decidable } from '../councilRules';
 import { useCouncilStore } from '../councilStore';
 import type { GalaxyEngine } from '../galaxy/engine/GalaxyEngine';
 
@@ -36,10 +36,6 @@ declare global {
 
 const params = new URLSearchParams(window.location.search);
 useThemeStore.getState().setTheme(params.get('theme') === 'light' ? 'light' : 'dark-midnight');
-// `?variant=classic|fused` pins the persisted switch before the page reads it,
-// so a shot names the stage it shows.
-const variant = params.get('variant');
-if (variant) safeLocalSet('council-variant', variant, 'council:variant');
 
 // The council strings and the chrome the page borrows. `sidebar` carries the
 // page's own title through `ContentHeader`.
@@ -47,9 +43,9 @@ await preloadSectionsAsync('en', ['council', 'sidebar', 'common', 'empty_states'
 // `?fixture=0` leaves the registry unpaired, which is a STATE of this page
 // and has to be shot like any other.
 if (params.get('fixture') !== '0') await useCouncilStore.getState().loadFixture();
-// `?live=1` (prototype round, spark council-readout): the reference galaxy
-// stays, the councils are swapped for the local app database's real ones as
-// frozen by `node scripts/council/export-live-fixture.mjs` (gitignored).
+// `?live=1`: the reference galaxy stays, the councils are swapped for the
+// local app database's real ones as frozen by
+// `node scripts/council/export-live-fixture.mjs` (gitignored).
 if (params.get('live') === '1') {
   const raw = (await import(/* @vite-ignore */ '/.claude/council-reference/data/live/council-live.json?raw')) as {
     default: string;
@@ -62,15 +58,21 @@ if (params.get('live') === '1') {
   };
   useCouncilStore.setState({ subjects: live.subjects, fixtureRuns: live.runs, subjectsStatus: 'loaded' });
 }
-// `?select=<slug>` arms the header CTA on that council; `?open=<slug>` also
-// opens it full page in the `?page=` direction.
+// `?select=<slug>` selects that council (its row, its stars, the header CTA);
+// `?open=<slug>` also opens it as the verdict page.
 {
-  const { useProtoStore } = await import('../prototype/protoStore');
-  const bySlug = (slug: string | null) =>
-    slug ? (useCouncilStore.getState().subjects.find((s) => s.slug === slug)?.id ?? null) : null;
-  const selected = bySlug(params.get('open') ?? params.get('select'));
-  if (selected) useProtoStore.getState().select(selected);
-  if (params.get('open') && selected) useProtoStore.getState().open(selected);
+  const store = useCouncilStore.getState();
+  const slug = params.get('open') ?? params.get('select');
+  const selected = slug ? store.subjects.find((s) => s.slug === slug) : undefined;
+  if (selected) {
+    // A lite council lives in the machine-pass list; show the list that holds it.
+    const filter = selected.state === 'approved' || selected.state === 'approved_drifted' || selected.state === 'rejected'
+      ? 'decided'
+      : decidable(selected) ? 'waiting' : 'machine';
+    store.setQueueFilter(filter);
+    store.selectCouncil(selected);
+    if (params.get('open')) store.openCouncil(selected.id);
+  }
 }
 
 window.__councilStore = useCouncilStore;

@@ -69,7 +69,7 @@ export function CouncilGateBay({
           reason: reason ?? undefined,
         });
         addToast(decision === 'approved' ? g.approved_toast : g.rejected_toast, 'success');
-        // The bench row moves and the stars repaint on the way back up.
+        // The queue row moves and the stars repaint on the way back up.
         await refreshCouncils();
         onReload();
       } catch (err) {

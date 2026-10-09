@@ -1,11 +1,12 @@
 // The queue: three groups, one ordering, one headline count.
 //
-// The headline counts ONLY decidable rows. A `machine_pass` is not waiting
+// "Yours" holds every row that waits on the person (`awaitsYou`): decidable
+// ones and lite-only ones that wait for a full council. A `machine_pass` is not waiting
 // on anybody and never appears in the number, which is the rule the shared
 // `decidable()` predicate exists to keep true in three places at once.
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 
-import { decidable } from '../councilRules';
+import { awaitsYou } from '../councilRules';
 
 export type QueueGroupKey = 'yours' | 'machine' | 'decided';
 
@@ -73,7 +74,7 @@ export function queueGroups(subjects: CouncilSubjectState[]): QueueGroup[] {
   const machine: CouncilSubjectState[] = [];
   const done: CouncilSubjectState[] = [];
   for (const s of subjects) {
-    if (decidable(s)) yours.push(s);
+    if (awaitsYou(s)) yours.push(s);
     else if (DECIDED.has(s.state)) done.push(s);
     else machine.push(s);
   }

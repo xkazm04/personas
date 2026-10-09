@@ -5,13 +5,28 @@ import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 
 import type { CouncilMark } from './galaxy/engine/types';
 
+type GateSubject = Pick<CouncilSubjectState, 'state' | 'tier' | 'kind' | 'mode'>;
+
 /**
- * THE rule: only a `ready` subject that is a MAJOR feature or an architecture
- * redesign reaches a person. Everything else shows a closed gate with one
- * sentence saying why. `machine_pass` is not waiting on anybody.
+ * Whether a council WAITS ON the person: a `ready` subject that is a MAJOR
+ * feature or an architecture redesign. This is the "Waiting on you" list.
+ * It includes a subject whose only round is LITE: that one waits on the
+ * person too - to run a full council - and the page offers exactly that.
+ * `machine_pass` is not waiting on anybody.
  */
-export function decidable(subject: Pick<CouncilSubjectState, 'state' | 'tier' | 'kind'>): boolean {
+export function awaitsYou(subject: Omit<GateSubject, 'mode'>): boolean {
   return subject.state === 'ready' && (subject.tier === 'major' || subject.kind === 'architecture');
+}
+
+/**
+ * THE gate rule: a subject a person may DECIDE now - it waits on them AND
+ * its state comes from a full round. A lite pass is the council's feedback,
+ * never its verdict, and the decide door refuses it
+ * (`a_lite_run_is_never_decided_and_a_full_ready_still_is`), so a gate that
+ * opened on one would offer an Approve the backend turns down.
+ */
+export function decidable(subject: GateSubject): boolean {
+  return awaitsYou(subject) && subject.mode !== 'lite';
 }
 
 /** How many councils are waiting on the person right now. */

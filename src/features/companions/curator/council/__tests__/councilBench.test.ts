@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 
-import { decidable, decidableCount } from '../councilRules';
+import { awaitsYou, decidable, decidableCount } from '../councilRules';
 import { effectiveSubject, queueFlat, queueGroups } from '../bench/queueModel';
 import { gateOf, whyLine } from '../table/councilCopy';
 import { FEATURE_V1 } from '../table/rubrics';
@@ -25,6 +25,7 @@ function subject(over: Partial<CouncilSubjectState>): CouncilSubjectState {
     title: 'A feature',
     state: 'ready',
     tier: 'major',
+    mode: 'full',
     roundNo: 1,
     latestRunId: 'r1',
     outcome: 'ready',
@@ -46,6 +47,27 @@ function subject(over: Partial<CouncilSubjectState>): CouncilSubjectState {
     ...over,
   };
 }
+
+describe('a lite-only council waits on you but never opens the gate', () => {
+  // The decide door refuses a lite run (`a_lite_run_is_never_decided_and_a_full_ready_still_is`),
+  // so a gate that opened here would offer an Approve the backend turns down.
+  it('stays in "waiting on you" and is not decidable', () => {
+    const lite = subject({ mode: 'lite' });
+    expect(awaitsYou(lite)).toBe(true);
+    expect(decidable(lite)).toBe(false);
+    expect(queueGroups([lite])[0]?.rows).toEqual([lite]);
+  });
+
+  it('closes the gate with the lite sentence', () => {
+    const gate = gateOf(subject({ mode: 'lite' }), FEATURE_V1, pct);
+    expect(gate.open).toBe(false);
+    expect(gate.key).toBe('why_lite');
+  });
+
+  it('a standard lite pass still reads as a machine pass, not a lite gate', () => {
+    expect(gateOf(subject({ mode: 'lite', tier: 'standard' }), FEATURE_V1, pct).key).toBe('why_ready_standard');
+  });
+});
 
 describe('only a decidable subject opens the gate', () => {
   it('opens for ready + major', () => {
