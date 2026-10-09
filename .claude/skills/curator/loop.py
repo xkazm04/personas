@@ -2208,10 +2208,12 @@ class Pool:
 
     # ---- admission
     def probe_limit(self) -> bool:
-        """True while the usage limit still holds. A one-line prompt, no claim, no row."""
+        """True while the usage limit still holds. A one-line prompt, no claim, no row.
+        Run from the pool's own directory, so the probe loads no project's instructions."""
         try:
+            self.dir.mkdir(parents=True, exist_ok=True)
             r = subprocess.run([claude_bin(), "--print", "Reply with the single word OK."],
-                               cwd=str(PERSONAS_ROOT), env=worker_env(), stdin=subprocess.DEVNULL,
+                               cwd=str(self.dir), env=worker_env(), stdin=subprocess.DEVNULL,
                                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=180)
         except subprocess.TimeoutExpired:
             return True
@@ -2252,7 +2254,7 @@ class Pool:
             if not out.get("ok"):
                 return f"the re-projection failed: {out.get('error')}"
             self.need_replan = False
-            self.log("reprojected", **{k: out.get(k) for k in ("plan_run", "items", "head") if k in out})
+            self.log("reprojected", **{k: out.get(k) for k in ("run_id", "items", "changed") if k in out})
             return None
         free = sample_free_gb()
         n = workers_allowed(free, self.a.max)
