@@ -3962,6 +3962,10 @@
           "reason": "the mirror is TETHERED, not comment-kept: patternMatches is gated by libs/__tests__/webhookPatternParity.test.ts, which parses every assert!(!?pattern_matches(..)) line out of src-tauri/src/engine/webhook_notifier.rs at run time and fails when TS disagrees or the parse finds fewer than 8 (the chainStopReasons.parity precedent). The condition this leaf counts - two implementations with no mechanism asserting they agree - is absent"
         },
         {
+          "path": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/presets/evidence/adherence.ts",
+          "reason": "the mirror is TETHERED, not comment-kept: doneRate (the done rate per week the adherence figure draws, which the snapshot cannot ship because it is per bucket) is gated by presets/evidence/__tests__/adherence.test.ts, which reads src-tauri/src/lifecycle/health.rs at run time and fails when evidence_step stops counting done + skipped + failed or stops dividing done by that count. The verdict itself stays the backend's (the snapshot's done_rate metric); the client copy only draws history"
+        },
+        {
           "path": "src/features/settings/sub_notifications/libs/__tests__/webhookPatternParity.test.ts",
           "reason": "this file IS the agreement mechanism for webhookMatch.ts (see that exclude); its comment names the Rust matcher because it reads it"
         },

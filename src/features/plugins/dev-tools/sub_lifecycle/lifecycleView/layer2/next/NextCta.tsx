@@ -18,6 +18,7 @@ import { stepLabel } from '../../../journey/journeyLabels';
 import type { JourneyNode } from '../../../journey/journeyModel';
 import { useMeasureNow } from '../../blocks/useMeasureNow';
 import { useLifecycleViewModel } from '../../context';
+import { fixDocsPrompt } from '../../presets/docs/docsAsk';
 import { ReservedLabel } from '../../system/ReservedLabel';
 import { GLYPH } from '../../system/scales';
 import type { NextAction } from './nextModel';
@@ -72,7 +73,7 @@ export function NextCta({ action: a, node }: { action: NextAction; node: Journey
       const docs = [...a.broken, ...a.stale];
       return (
         <AskCta
-          text={tx(dl.lcx5_ask_docs, { name, id, docs: docs.join(', ') })}
+          text={fixDocsPrompt({ dl, tx }, { name, id }, docs)}
           label={docs.length === 1 ? dl.lcx5_next_fix_docs_one : tx(dl.lcx5_next_fix_docs, { count: docs.length })}
           testId="lc2-next-docs"
         />

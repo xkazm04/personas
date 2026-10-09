@@ -17,6 +17,9 @@ import { serverControlTapes } from './serverControlTapes.mjs';
 import { lifecycleTapes } from './lifecycleTapes.mjs';
 import { lifecycleDetailTapes } from './lifecycleDetailTapes.mjs';
 import { lifecycleMeasureTapes } from './lifecycleMeasureTapes.mjs';
+import { lifecycleEvidenceTapes } from './lifecycleEvidenceTapes.mjs';
+import { lifecycleDocsTapes } from './lifecycleDocsTapes.mjs';
+import { lifecycleGateTapes } from './lifecycleGateTapes.mjs';
 import { homeLearningTapes } from './homeLearningTapes.mjs';
 import { homeCockpitTapes } from './homeCockpitTapes.mjs';
 import { homeSystemCheckTapes } from './homeSystemCheckTapes.mjs';
@@ -355,6 +358,9 @@ const BUILDERS = {
   ...lifecycleDetailTapes({ RECORDED_AT }).builders,
   // Lifecycle excellence wave 4, a Measure as a live event (lifecycleSurfaces.tsx, lifecycleMeasureTapes.mjs).
   ...lifecycleMeasureTapes({ RECORDED_AT }).builders,
+  ...lifecycleEvidenceTapes({ RECORDED_AT }).builders, // Lifecycle excellence wave 8, evidence steps tell the story of the practice
+  ...lifecycleDocsTapes({ RECORDED_AT }).builders, // Lifecycle excellence wave 7, the Docs step as an estate
+  ...lifecycleGateTapes({ RECORDED_AT }).builders, // Lifecycle excellence wave 6, Gate and Tests as instruments
   // Kit batch home-1, Home > Learning (homeLearningSurfaces.tsx, homeLearningTapes.mjs).
   ...homeLearningTapes({ RECORDED_AT }).builders,
   // Kit batch home-2, Home > Cockpit + Athena chat cards + council evidence well (homeCockpitSurfaces.tsx, homeCockpitTapes.mjs).

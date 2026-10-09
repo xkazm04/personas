@@ -6,24 +6,22 @@ import type { LifecycleEvidenceItem } from '@/lib/bindings/LifecycleEvidenceItem
 import type { LifecycleMeasureColumn } from '@/lib/bindings/LifecycleMeasureColumn';
 
 import { cellOf } from '../../history/historyModel';
+import { clusterReasons } from '../../presets/evidence/reasons';
 
 /**
- * The most common note on the changes that skipped or failed this step, and
- * how many carried it. A tie goes to the newest note; no note at all is null.
+ * The most common reason the changes that skipped or failed this step gave,
+ * as written, and how many gave it: the top cluster of `clusterReasons` (the
+ * one grouping, shared with the step screen's "Why it was skipped"). A tie
+ * goes to the newer reason; no note at all is null with the count of misses.
  */
 export function commonSkipReason(evidence: LifecycleEvidenceItem[], stepId: string): { reason: string | null; count: number } {
-  const counts = new Map<string, number>();
-  let missed = 0;
-  for (const item of evidence) {
+  const inputs = evidence.flatMap((item) => {
     const o = item.outcomes.find((x) => x.stepId === stepId);
-    if (!o || (o.outcome !== 'skipped' && o.outcome !== 'failed')) continue;
-    missed += 1;
-    const note = o.detail?.trim();
-    if (note) counts.set(note, (counts.get(note) ?? 0) + 1);
-  }
-  let best: string | null = null;
-  for (const [note, n] of counts) if (best === null || n > counts.get(best)!) best = note;
-  return { reason: best, count: best ? counts.get(best)! : missed };
+    return o ? [{ outcome: o.outcome, detail: o.detail }] : [];
+  });
+  const { clusters, missed } = clusterReasons(inputs);
+  const top = clusters[0];
+  return top ? { reason: top.label, count: top.count } : { reason: null, count: missed };
 }
 
 /** How many Measures (newest back) a tracked step has been green; null when history does not track it. */

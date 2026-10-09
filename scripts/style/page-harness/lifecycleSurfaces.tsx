@@ -70,4 +70,7 @@ export const LIFECYCLE_MODULES: Record<string, HarnessModule> = {
   'plugins/lifecycle/measuring-over': { load: page, prepare },
   'plugins/lifecycle/cancelling': { load: page, prepare },
   'plugins/lifecycle/measured': { load: page, prepare: prepareMeasured },
+  'plugins/lifecycle/evidence': { load: page, prepare }, // wave 8: evidence steps tell the story of the practice (lifecycleEvidenceTapes.mjs)
+  'plugins/lifecycle/docs': { load: page, prepare }, // wave 7: the Docs step as an estate (lifecycleDocsTapes.mjs)
+  'plugins/lifecycle/gate': { load: page, prepare }, // wave 6: Gate and Tests as instruments, with run outputs (lifecycleGateTapes.mjs)
 };

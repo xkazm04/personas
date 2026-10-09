@@ -3,17 +3,20 @@
  * history strip is in the screen's band.
  *
  * Coverage is the number Tests is judged by. Its ring is the step's instrument
- * at the top of the screen; here it gets its trend over the coverage runs
- * against the two thresholds (the step's own, else the snapshot's rules),
- * drawn large. When coverage was never measured the panel says so plainly -
- * Tests cannot be green without it - and offers to add the coverage command,
- * which opens the commands editor below with a coverage row ready to fill.
+ * at the top of the screen; here it gets the latest reading large with how far
+ * it is from green and how it moved, beside its chart over the coverage runs
+ * (`gate/CoverageChart`: the three zones, the two thresholds from the step's
+ * params or the snapshot's rules, each run a point to peek or open). When
+ * coverage was never measured the panel says so plainly - Tests cannot be
+ * green without it - and offers to add the coverage command, which opens the
+ * commands editor below with a coverage row ready to fill.
  */
 import { Plus } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
 import { Section } from '@/features/shared/components/kit';
-import type { LifecycleHealth } from '@/lib/bindings/LifecycleHealth';
+import { useTranslation } from '@/i18n/useTranslation';
+import type { LifecycleRun } from '@/lib/bindings/LifecycleRun';
 import { formatNumeric } from '@/lib/utils/formatters';
 
 import type { JourneyNode } from '../../journey/journeyModel';
@@ -26,15 +29,11 @@ import { LT } from '../system/lcType';
 import { thresholdsFor } from '../system/rules';
 import { GLYPH } from '../system/scales';
 import { useSnapshotRules } from '../system/useSnapshotRules';
+import { CoverageChart } from './gate/CoverageChart';
+import { coverageChange, coveragePoints, coverageZone } from './gate/coverageModel';
 import { GateBody } from './GatePreset';
-import { coverageTrend } from './gateModel';
-import { Sparkline } from './parts/Sparkline';
 import type { PresetData } from './presetData';
 import { useCommandsEditor, type CommandsEditorState } from './useCommandsEditor';
-
-function coverageHealth(value: number, green: number, amber: number): LifecycleHealth {
-  return value >= green ? 'green' : value >= amber ? 'amber' : 'red';
-}
 
 function NotMeasured({ editor }: { editor: CommandsEditorState }) {
   const { dl } = useLifecycleViewModel();
@@ -54,42 +53,46 @@ function NotMeasured({ editor }: { editor: CommandsEditorState }) {
   );
 }
 
-function CoveragePanel({ step, node, data, editor }: { step: HealthStep; node: JourneyNode; data: PresetData; editor: CommandsEditorState }) {
+interface CoverageProps {
+  step: HealthStep;
+  node: JourneyNode;
+  data: PresetData;
+  editor: CommandsEditorState;
+  onOpen: (run: LifecycleRun) => void;
+  measureId: string | null;
+}
+
+function CoveragePanel({ step, node, data, editor, onOpen, measureId }: CoverageProps) {
   const { dl, tx } = useLifecycleViewModel();
+  const { language } = useTranslation();
   const { coverageGreenPct: green, amberFloorPct: amber } = thresholdsFor(useSnapshotRules(), node.view.step.params);
   const metric = step.metrics.find((m) => m.key === 'coverage_pct') ?? null;
-  const trend = coverageTrend(data.detail?.runs ?? []);
-  const caption = tx(dl.lc2_coverage_thresholds, { green, amber });
-  // The ring is drawn once, in the step's instrument above; this panel adds what the ring cannot say: where it is going.
-  // Zoom to the band the readings and both thresholds live in, so a few points of movement show.
-  const floor = Math.max(0, Math.min(amber, ...trend) - 10);
-  const ceiling = Math.min(100, Math.max(green, ...trend) + 10);
+  const points = coveragePoints(data.detail?.runs ?? []);
+  const change = coverageChange(points);
+  const marked = measureId ? points.find((p) => p.run.measureId === measureId)?.run.id ?? null : null;
+  const fmt = (v: number) => formatNumeric(v, 'plain', { precision: 0, language });
   return (
-    <Section title={dl.lc2_coverage_title} level={2} desc={caption}>
+    <Section title={dl.lc2_coverage_title} level={2} desc={tx(dl.lc2_coverage_thresholds, { green, amber })}>
       {!metric || metric.value == null ? <NotMeasured editor={editor} /> : (
-        <div className={`flex flex-wrap items-center ${RHYTHM.inlineWide}`} data-testid="lc2-coverage">
-          <div className="flex flex-col gap-1">
+        <div className="grid grid-cols-1 items-center gap-x-8 gap-y-4 md:grid-cols-[12rem_minmax(0,1fr)]" data-testid="lc2-coverage">
+          <div className={`flex flex-col gap-1 ${lcSurface('card')}`}>
             <span className={LT.label}>{dl.lc2_coverage_now}</span>
-            <MetricValue metric={metric} className={`${LT.stat} ${VERDICT[coverageHealth(metric.value, green, amber)].ink}`} />
+            <MetricValue metric={metric} className={`${LT.stat} ${VERDICT[coverageZone(metric.value, green, amber)].ink}`} />
+            <span className={LT.row} data-testid="lc6-cov-to-green">
+              {metric.value >= green ? dl.lcx6_cov_at_green : tx(dl.lcx6_cov_to_green, { points: fmt(green - metric.value) })}
+            </span>
+            {change != null && (
+              <span className={`${LT.delta} ${change > 0 ? 'text-status-success' : change < 0 ? 'text-status-error' : ''}`} data-testid="lc6-cov-change">
+                {tx(dl.lcx6_cov_over_runs, { change: `${change > 0 ? '+' : ''}${fmt(change)}` })}
+              </span>
+            )}
             <SampleNote metric={metric} />
           </div>
           <div className={`min-w-0 ${RHYTHM.tight}`}>
-            <span className={LT.label}>{dl.lc2_coverage_trend}</span>
-            {trend.length > 0 ? (
+            {points.length > 0 ? (
               <>
-                <Sparkline
-                  points={trend.map((v) => ({ value: v, tone: v >= green ? 'success' : v >= amber ? 'warning' : 'error' }))}
-                  min={floor}
-                  max={ceiling}
-                  refs={[
-                    { value: green, tone: 'success', label: formatNumeric(green, 'percent', { precision: 0 }) },
-                    { value: amber, tone: 'warning', label: formatNumeric(amber, 'percent', { precision: 0 }) },
-                  ]}
-                  width={480}
-                  height={120}
-                  testId="lc2-coverage-trend"
-                />
-                <p className={LT.meta}>{tx(dl.lc2_coverage_runs, { count: trend.length })}</p>
+                <CoverageChart points={points} green={green} amber={amber} markRunId={marked} onOpen={onOpen} />
+                <p className={LT.meta}>{tx(dl.lc2_coverage_runs, { count: points.length })}</p>
               </>
             ) : (
               <p className={LT.row}>{dl.lc2_coverage_no_trend}</p>
@@ -104,9 +107,11 @@ function CoveragePanel({ step, node, data, editor }: { step: HealthStep; node: J
 export function TestsPreset({ step, node, data }: { step: HealthStep; node: JourneyNode; data: PresetData }) {
   const editor = useCommandsEditor(node.view.step, data.detail?.runs ?? []);
   return (
-    <>
-      <CoveragePanel step={step} node={node} data={data} editor={editor} />
-      <GateBody node={node} data={data} editor={editor} />
-    </>
+    <GateBody
+      node={node}
+      data={data}
+      editor={editor}
+      lead={(onOpen, measureId) => <CoveragePanel step={step} node={node} data={data} editor={editor} onOpen={onOpen} measureId={measureId} />}
+    />
   );
 }

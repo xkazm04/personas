@@ -168,11 +168,12 @@ describe('presets', () => {
     expect(screen.getByText('Docs that need work now')).toBeTruthy();
   });
 
-  it('generic: done rate, the tally as units, and the evidence with its notes', async () => {
+  it('generic: done rate, the tally as the filter chips, and the evidence with its notes', async () => {
     renderLayer1(<LifecycleBody />, snap('p-land'), 'land');
     expect((await screen.findByTestId('lc2-done-rate')).textContent).toContain('40%');
-    const tally = screen.getByTestId('lc2-tally');
-    expect(tally.querySelector('[data-kit="UnitStrip"]')).toBeTruthy();
+    const chips = screen.getByTestId('lc8-timeline').querySelector('[data-kit="ChipRow"]')!;
+    expect(chips.textContent).toContain('Skipped');
+    expect(chips.textContent).toContain('Failed');
     const evidence = screen.getByTestId('lc2-evidence');
     expect(evidence.textContent).toContain('Merged locally without a pull request');
     expect(evidence.textContent).toContain('The merge was reverted');

@@ -1,86 +1,78 @@
 /**
- * GENERIC preset (isolate, link, sync, commit, land, record and custom
- * `x-*` steps): the done rate with its n against the threshold (the step's
- * own, else the snapshot's rules; its ring is the step's instrument above),
- * the tally of recent changes as countable units, and the changes themselves.
- * An instructed step (frame, recall, custom) has nothing to measure and says
- * so on the sentence plate; its rule is in the section below.
+ * GENERIC preset (isolate, link, sync, commit, land, record and custom `x-*`
+ * steps): the story of the practice told by its own record, top to bottom:
+ *
+ * - how it measures: the done rate now with its n and its move, and the rate
+ *   over time against the target (`evidence/AdherenceSection`);
+ * - why it was skipped: the notes of the misses, grouped and ranked, each one
+ *   a question for Athena (`evidence/ReasonsSection`);
+ * - by source: the outcomes per kind of change (`evidence/SourcesSection`);
+ * - the changes themselves by day, filterable, each opening a drawer with
+ *   what it did on every step (`evidence/ChangeTimeline`).
+ *
+ * The record is the step detail's (up to 200 changes) joined with the
+ * snapshot's newest window, so the screen draws at once and fills in. An
+ * instructed step (frame, recall) has nothing to measure and says so on its
+ * calm plate; a custom `x-*` step is instructed too, and when changes record
+ * it anyway the plate leads its record.
  */
-import { useMemo } from 'react';
 import { Info } from 'lucide-react';
 
-import { Section, UnitStrip } from '@/features/shared/components/kit';
+import { Section } from '@/features/shared/components/kit';
 
-import { outcomeLabel } from '../../journey/journeyLabels';
 import type { JourneyNode } from '../../journey/journeyModel';
-import { evidenceRowsFor } from '../blocks/evidenceRows';
 import { useLifecycleViewModel } from '../context';
-import { VERDICT, type HealthStep } from '../layer1/healthModel';
-import { MetricValue, SampleNote } from '../layer1/parts/MetricValue';
-import { OUTCOMES } from '../railShared';
-import { Count } from '../system/Count';
-import { RHYTHM, lcSurface } from '../system/lcSurface';
+import type { HealthStep } from '../layer1/healthModel';
+import { lcSurface } from '../system/lcSurface';
 import { LT } from '../system/lcType';
 import { thresholdsFor } from '../system/rules';
 import { GLYPH } from '../system/scales';
 import { useSnapshotRules } from '../system/useSnapshotRules';
-import { EvidenceRows, OUTCOME_MARK } from './EvidenceRows';
+import { AdherenceSection } from './evidence/AdherenceSection';
+import { ChangeTimeline } from './evidence/ChangeTimeline';
+import { ReasonsSection } from './evidence/ReasonsSection';
+import { SourcesSection } from './evidence/SourcesSection';
+import { useStepEvidence } from './evidence/useStepEvidence';
+import type { PresetData } from './presetData';
 
-function Tally({ node }: { node: JourneyNode }) {
-  const { dl, tx } = useLifecycleViewModel();
-  const t = node.tally;
+function InstructedNote({ custom }: { custom: boolean }) {
+  const { dl } = useLifecycleViewModel();
   return (
-    <div className={RHYTHM.tight} data-testid="lc2-tally">
-      <UnitStrip
-        size="l"
-        label={tx(dl.lc_detail_tally, { ...t })}
-        segments={OUTCOMES.map((o) => ({ n: t[o], tone: OUTCOME_MARK[o].tone, glyph: OUTCOME_MARK[o].glyph }))}
-      />
-      <div className="flex flex-wrap gap-x-5 gap-y-1">
-        {OUTCOMES.map((o) => (
-          <span key={o} className={`flex items-center gap-1.5 ${LT.row}`} data-tally={o}>
-            <Count value={t[o]} />
-            {outcomeLabel(dl, o)}
-          </span>
-        ))}
-      </div>
-    </div>
+    <p className={`flex items-center gap-3 ${lcSurface('plate')} ${LT.lead}`} data-testid="lc2-instructed">
+      <Info className={`${GLYPH.md} shrink-0 text-primary`} aria-hidden />
+      {custom ? dl.lcx8_custom_evidence : dl.lc1_reason_instructed}
+    </p>
   );
 }
 
-export function GenericPreset({ step, node }: { step: HealthStep; node: JourneyNode }) {
-  const { dl, tx, evidence } = useLifecycleViewModel();
+export function GenericPreset({ step, node, data }: { step: HealthStep; node: JourneyNode; data?: PresetData }) {
+  const { dl, projectId } = useLifecycleViewModel();
   const rules = useSnapshotRules();
-  const rows = useMemo(() => evidenceRowsFor(node.id, evidence).filter((r) => r.outcome !== 'unknown' || r.detail), [node.id, evidence]);
-  const done = step.metrics.find((m) => m.key === 'done_rate') ?? null;
-  const { doneRatePct, amberFloorPct } = thresholdsFor(rules, node.view.step.params);
+  const ev = useStepEvidence(node.id, data);
+  const thresholds = thresholdsFor(rules, node.view.step.params);
+  const instructed = step.health === 'instructed';
+  const custom = instructed && node.id.startsWith('x-') && ev.rows.length > 0;
 
+  if (instructed && !custom) {
+    return (
+      <Section title={dl.lc2_measure_title} level={2}>
+        <InstructedNote custom={false} />
+      </Section>
+    );
+  }
   return (
     <>
-      {step.health === 'instructed' ? (
-        <Section title={dl.lc2_measure_title} level={2}>
-          <p className={`flex items-center gap-3 ${lcSurface('plate')} ${LT.lead}`} data-testid="lc2-instructed">
-            <Info className={`${GLYPH.md} shrink-0 text-primary`} aria-hidden />
-            {dl.lc1_reason_instructed}
-          </p>
-        </Section>
-      ) : (
-        <Section title={dl.lc2_measure_title} level={2} desc={tx(dl.lc2_done_threshold, { green: doneRatePct, amber: amberFloorPct })}>
-          <div className={`flex flex-wrap items-center ${RHYTHM.inlineWide}`}>
-            {done && (
-              <div className="flex flex-col gap-1" data-testid="lc2-done-rate">
-                <span className={LT.label}>{dl.lc1_metric_done_rate}</span>
-                <MetricValue metric={done} className={`${LT.stat} ${VERDICT[step.health].ink}`} />
-                <SampleNote metric={done} />
-              </div>
-            )}
-            <Tally node={node} />
-          </div>
-        </Section>
-      )}
-      <Section title={dl.lc_detail_evidence} level={2} count={rows.length || undefined}>
-        <EvidenceRows rows={rows} empty={dl.lc_detail_no_evidence} testId="lc2-evidence" />
-      </Section>
+      <AdherenceSection
+        step={step}
+        series={ev.series}
+        thresholds={thresholds}
+        stepKey={`${projectId}:${node.id}`}
+        loading={ev.loading}
+        lead={custom ? <InstructedNote custom /> : null}
+      />
+      <ReasonsSection reasons={ev.reasons} node={node} />
+      <SourcesSection sources={ev.sources} />
+      <ChangeTimeline rows={ev.rows} stepId={node.id} loading={ev.loading} />
     </>
   );
 }

@@ -14,6 +14,7 @@ import type { LifecycleGateCommand } from '@/lib/bindings/LifecycleGateCommand';
 import { formatNumeric } from '@/lib/utils/formatters';
 
 import { useLifecycleViewModel } from '../context';
+import { KIND_GLYPH } from '../measure/kindGlyph';
 import { RHYTHM, lcSurface } from '../system/lcSurface';
 import { LT } from '../system/lcType';
 import { defaultBudgetMs } from '../system/rules';
@@ -22,6 +23,11 @@ import { useSnapshotRules } from '../system/useSnapshotRules';
 import { CommandDraftRow } from './CommandDraftRow';
 import type { CommandsEditorState } from './useCommandsEditor';
 import { useKindLabel } from './useKindLabel';
+
+function KindGlyph({ kind }: { kind: LifecycleGateCommand['kind'] }) {
+  const Glyph = KIND_GLYPH[kind];
+  return <Glyph aria-hidden className={`${GLYPH.sm} shrink-0 text-primary`} />;
+}
 
 function PinnedList({ commands }: { commands: LifecycleGateCommand[] }) {
   const { dl, tx } = useLifecycleViewModel();
@@ -36,7 +42,10 @@ function PinnedList({ commands }: { commands: LifecycleGateCommand[] }) {
     <ul className={RHYTHM.tight} data-testid="lc2-commands-pinned">
       {commands.map((c) => (
         <li key={c.id} className={`flex flex-wrap items-baseline gap-x-4 gap-y-1 ${lcSurface('card')}`}>
-          <span className={LT.code}>{c.command}</span>
+          <span className="flex min-w-0 items-center gap-2">
+            <KindGlyph kind={c.kind} />
+            <span className={LT.code}>{c.command}</span>
+          </span>
           <span className={LT.row}>{kind(c.kind)}</span>
           <span className={LT.meta}>{budgetLine(c)}</span>
         </li>

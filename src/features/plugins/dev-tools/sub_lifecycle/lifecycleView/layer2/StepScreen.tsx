@@ -51,7 +51,7 @@ function StepPreset({ step, node, data }: { step: HealthStep; node: JourneyNode;
   if (node.id === 'gate') return <LazyGatePreset key={node.id} node={node} data={data} />;
   if (node.id === 'tests') return <LazyTestsPreset key={node.id} step={step} node={node} data={data} />;
   if (node.id === 'docs') return <LazyDocsPreset key={node.id} step={step} node={node} data={data} />;
-  return <LazyGenericPreset key={node.id} step={step} node={node} />;
+  return <LazyGenericPreset key={node.id} step={step} node={node} data={data} />;
 }
 
 export function StepScreen({ node }: { node: JourneyNode }) {

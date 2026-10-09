@@ -41,7 +41,8 @@ function toDraft(c: LifecycleGateCommand): DraftCommand {
   return { key: nextKey(), id: c.id, command: c.command, kind: c.kind, budgetSec: c.budgetMs == null ? '' : String(c.budgetMs / 1000) };
 }
 
-function seenInRuns(runs: LifecycleRun[]): LifecycleGateCommand[] {
+/** The commands the run history shows, in first-seen order: what auto-detection was running. */
+export function seenInRuns(runs: LifecycleRun[]): LifecycleGateCommand[] {
   const out: LifecycleGateCommand[] = [];
   for (const r of runs) if (!out.some((c) => c.id === r.commandId)) out.push({ id: r.commandId, command: r.command, kind: r.kind, budgetMs: null });
   return out;
