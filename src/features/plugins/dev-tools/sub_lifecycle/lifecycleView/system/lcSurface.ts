@@ -8,7 +8,7 @@
 // the hero band); its shape and padding never change with it, so a verdict
 // recolours a card without resizing it.
 
-export type SurfaceRole = 'panel' | 'band' | 'lane' | 'node' | 'card' | 'action' | 'plate' | 'strip' | 'chip' | 'pin';
+export type SurfaceRole = 'panel' | 'band' | 'lane' | 'node' | 'card' | 'action' | 'plate' | 'status' | 'chip' | 'pin';
 
 /** Radius per role. */
 const SHAPE: Record<SurfaceRole, string> = {
@@ -19,7 +19,7 @@ const SHAPE: Record<SurfaceRole, string> = {
   card: 'rounded-card',
   action: 'rounded-card',
   plate: 'rounded-card',
-  strip: 'rounded-card',
+  status: 'rounded-card',
   chip: 'rounded-interactive',
   pin: 'rounded-interactive',
 };
@@ -28,12 +28,12 @@ const SHAPE: Record<SurfaceRole, string> = {
 const PAD: Record<SurfaceRole, string> = {
   panel: 'px-5 py-4',
   band: 'px-5 py-3',
-  lane: 'px-2 py-2.5',
+  lane: 'px-2 pb-2.5 pt-2',
   node: 'px-2.5 py-2',
   card: 'px-3 py-3',
   action: 'px-3 py-2',
   plate: 'px-4 py-3',
-  strip: 'px-3 py-1.5',
+  status: 'px-4 py-2.5',
   chip: 'px-2.5 py-1.5',
   pin: 'px-1 py-0.5',
 };
@@ -44,16 +44,17 @@ const PAD: Record<SurfaceRole, string> = {
  * - band: the step screen's head, a panel padded tighter vertically so the
  *   step, its history and its instrument fit one band ~130px tall at 1920;
  * - lane: the rail's recessed tray, padded tighter than a panel so six cards
- *   keep their figure on one line at 1280 wide;
+ *   keep their figure on one line at 1280 wide (and a step tighter on top,
+ *   under its eyebrow, so both lanes fit 1280x800 under a two-row status plate);
  * - node: a step's card on the rail: a card with a 2px outline (the verdict's
  *   stroke) and tighter padding, so a lane of six fits 1280 wide;
  * - card: a raised object that sits ON a panel (a rail card, a satellite, an editor row);
  * - action: a card holding one thing to do and its control (the Next panel),
  *   padded tighter vertically so two lines and a button stay one compact row;
  * - plate: a flat label plate for a sentence (the headline, a rule, an error line);
- * - strip: a plate ONE control tall, for a line that sits between the status
- *   band and the rail without pushing the rail off a 1280x800 screen (the
- *   Overseer's goal);
+ * - status: Layer 1's status plate, a plate padded a step tighter vertically
+ *   because it holds two rows (the sentence; the verdict counts beside the
+ *   Overseer's goal) and the whole rail under it must still fit 1280x800;
  * - chip: a small raised stat inside a card;
  * - pin: a step on the step screen's mini-map, a key-sized press target.
  */
@@ -65,7 +66,7 @@ const FILL: Record<SurfaceRole, string> = {
   card: 'border border-primary/15 bg-background shadow-elevation-1',
   action: 'border border-primary/15 bg-background shadow-elevation-1',
   plate: 'border border-primary/15 bg-secondary/40',
-  strip: 'border border-role-agent/25 bg-secondary/40',
+  status: 'border border-primary/15 bg-secondary/40',
   chip: 'bg-background shadow-elevation-1',
   pin: 'border border-primary/15 bg-background',
 };

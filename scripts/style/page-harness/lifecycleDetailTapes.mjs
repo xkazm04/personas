@@ -74,7 +74,8 @@ export function lifecycleDetailTapes({ RECORDED_AT }) {
     item('idea-rot-vault', 'docs/features/vault/vault.md names files that are gone', 'pending', 'doc_rot', null, 60 * 2),
     item('idea-rot-fleet', 'docs/features/fleet/fleet.md is behind its sources', 'pending', 'doc_rot', null, 60 * 26),
   ];
-  // A step's own change history, newest first, each carrying only that step's outcome.
+  // A step's own change history, newest first. `build` gives each change every other step's
+  // outcome from the snapshot's window (the same changes), as detail.rs ships them since wave 10.
   const LAND_NOTES = ['Merged locally; the pull request was never opened', 'Pushed straight to main'];
   const stepEvidence = (stepId, outcomeOf) => Array.from({ length: 12 }, (_, i) => {
     const [outcome, detail] = outcomeOf(i);
@@ -116,11 +117,16 @@ export function lifecycleDetailTapes({ RECORDED_AT }) {
       ? { ...h, health: 'red', reason: '1 doc names files that are gone', metrics: [{ key: 'docs_clean_pct', value: cleanPct, samples: verifiable }] }
       : h));
     mutate?.(snap);
+    // A change in a step's history carries every step's outcome: the step's own, the rest as the window has them.
+    const whole = (items) => items.map((it, i) => {
+      const own = it.outcomes[0];
+      return { ...it, outcomes: [own, ...(snap.evidence[i]?.outcomes ?? []).filter((o) => o.stepId !== own.stepId)] };
+    });
     for (const stepId of ['frame', 'recall', 'isolate', 'sync', 'gate', 'tests', 'docs', 'commit', 'land', 'record']) {
       tape.calls.push({
         cmd: 'dev_tools_lifecycle_step_detail',
         args: { projectId: PROJECT_ID, stepId },
-        response: details[stepId] ?? { stepId, runs: [], docs: [], related: [], evidence: [] },
+        response: details[stepId] ? { ...details[stepId], evidence: whole(details[stepId].evidence) } : { stepId, runs: [], docs: [], related: [], evidence: [] },
       });
     }
     return tape;

@@ -36,7 +36,7 @@ export const measureLifecycle = (projectId: string) =>
 export const cancelLifecycleMeasure = (projectId: string) =>
   invoke<boolean>("dev_tools_lifecycle_cancel_measure", { projectId });
 
-/** Layer-2 data for one step: run history (the newest 30 runs per command, newest first), per-doc rot rows, the backlog items about the step, and its evidence history (newest 200 changes, this step's outcome only). */
+/** Layer-2 data for one step: run history (the newest 30 runs per command, newest first), per-doc rot rows, the backlog items about the step, and its evidence history (the newest 200 changes that recorded the step, each with every step's outcome). */
 export const getLifecycleStepDetail = (projectId: string, stepId: string) =>
   invoke<LifecycleStepDetail>("dev_tools_lifecycle_step_detail", { projectId, stepId });
 

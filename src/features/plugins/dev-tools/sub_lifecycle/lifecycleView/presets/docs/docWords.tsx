@@ -21,8 +21,12 @@ export function useDocWhy() {
   return (row: LifecycleDocRow): string => {
     const list = (xs: string[]) => xs.slice(0, 3).join(', ') + (xs.length > 3 ? tx(dl.lc2_and_more, { count: xs.length - 3 }) : '');
     switch (asDocStatus(row.status)) {
-      case 'broken': return tx(dl.lc2_doc_why_broken, { count: row.brokenRefs.length, refs: list(row.brokenRefs) });
-      case 'stale': return tx(dl.lc2_doc_why_stale, { count: row.changedSources.length, sources: list(row.changedSources) });
+      case 'broken': return row.brokenRefs.length === 1
+        ? tx(dl.lc2_doc_why_broken_one, { refs: list(row.brokenRefs) })
+        : tx(dl.lc2_doc_why_broken, { count: row.brokenRefs.length, refs: list(row.brokenRefs) });
+      case 'stale': return row.changedSources.length === 1
+        ? tx(dl.lc2_doc_why_stale_one, { sources: list(row.changedSources) })
+        : tx(dl.lc2_doc_why_stale, { count: row.changedSources.length, sources: list(row.changedSources) });
       case 'unverifiable': return dl.lc2_doc_why_unverifiable;
       case 'clean': return dl.lc2_doc_why_clean;
     }

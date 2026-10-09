@@ -5,6 +5,10 @@
  * title, where it came from, its status as the module's pill, when it was
  * filed - and pressing a row opens the item (`relatedItem`). No items, no
  * section: an empty list says nothing worth a heading.
+ *
+ * The Docs step draws its doc-rot items in its own Fix panel
+ * (`presets/docs/FixPanel`), tied to their docs, so the foot leaves them out
+ * there rather than list them twice (`footItems`).
  */
 import { ArrowUpRight, FileWarning, Gauge, Radar, type LucideIcon } from 'lucide-react';
 
@@ -61,9 +65,15 @@ function Row({ item }: { item: LifecycleRelatedItem }) {
   );
 }
 
-export function RelatedItems({ items }: { items: LifecycleRelatedItem[] }) {
+/** The items the foot lists for a step: on Docs, every source but doc rot. */
+export function footItems(stepId: string, related: readonly LifecycleRelatedItem[]): LifecycleRelatedItem[] {
+  return related.filter((i) => !(stepId === 'docs' && i.source === 'doc_rot'));
+}
+
+export function RelatedItems({ stepId, items: related }: { stepId: string; items: LifecycleRelatedItem[] }) {
   const { dl } = useLifecycleViewModel();
   const { openBacklog } = useRelatedItem();
+  const items = footItems(stepId, related);
   if (items.length === 0) return null;
   const actions = (
     <Button variant="ghost" size="sm" iconRight={<ArrowUpRight className={GLYPH.sm} />} onClick={openBacklog} data-testid="lc2-related-backlog">

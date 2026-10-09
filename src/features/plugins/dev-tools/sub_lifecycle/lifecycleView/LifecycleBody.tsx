@@ -25,7 +25,7 @@
  * chunk suspends into a ghost of its hero band (both delayed, so a warm or
  * prefetched load paints neither).
  */
-import { Suspense, useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
+import { memo, Suspense, useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { Banner } from '@/features/shared/components/feedback/Banner';
@@ -33,7 +33,7 @@ import { KitHost } from '@/features/shared/components/kit';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
 import type { JourneyNode } from '../journey/journeyModel';
-import { useLifecycleViewModel } from './context';
+import { LifecycleViewProvider, useLifecycleViewModel } from './context';
 import { TimeTravelProvider } from './history/timeTravel';
 import { Layer1 } from './layer1/Layer1';
 import { Layer1Ghost } from './layer1/Layer1Ghost';
@@ -78,8 +78,10 @@ function ScreenHost({ node }: { node: JourneyNode }) {
   return Direct ? <Direct node={node} /> : <LazyStepScreen node={node} />;
 }
 
-export function LifecycleBody() {
-  const { dl, projectId, order, loading, error, refetch, openStepId } = useLifecycleViewModel();
+/** Memoised (no props): it re-renders on the view model, never because the page's shell did. */
+export const LifecycleBody = memo(function LifecycleBody() {
+  const model = useLifecycleViewModel();
+  const { dl, projectId, order, loading, error, refetch, openStepId } = model;
   const reduced = useReducedMotion();
   const open = openStepId ? order.find((n) => n.id === openStepId) ?? null : null;
   const hostRef = useRef<HTMLDivElement>(null);
@@ -87,6 +89,15 @@ export function LifecycleBody() {
   const returnTo = useRef<string | null>(null);
   // Where the rail was scrolled when a step opened, restored on the way back.
   const railScroll = useRef<{ region: HTMLElement; top: number } | null>(null);
+
+  const restoreRail = () => {
+    const back = returnTo.current;
+    returnTo.current = null;
+    const saved = railScroll.current;
+    railScroll.current = null;
+    if (saved) saved.region.scrollTop = saved.top;
+    if (back) hostRef.current?.querySelector<HTMLElement>(`[data-testid="lc-node-${back}"]`)?.focus({ preventScroll: !!saved });
+  };
 
   // Before paint, so the step screen never shows a frame at the rail's scroll offset.
   useLayoutEffect(() => {
@@ -101,16 +112,10 @@ export function LifecycleBody() {
     }
     returnTo.current = lastOpen.current;
     lastOpen.current = null;
+    // A return before the rail's own exit finished (Esc pressed at once) gets the SAME rail back,
+    // which never remounts: restore it now. A remounted rail is restored by its `OnMount`.
+    if (returnTo.current && hostRef.current?.querySelector(`[data-testid="lc-node-${returnTo.current}"]`)) restoreRail();
   }, [open]);
-
-  const restoreRail = () => {
-    const back = returnTo.current;
-    returnTo.current = null;
-    const saved = railScroll.current;
-    railScroll.current = null;
-    if (saved) saved.region.scrollTop = saved.top;
-    if (back) hostRef.current?.querySelector<HTMLElement>(`[data-testid="lc-node-${back}"]`)?.focus({ preventScroll: !!saved });
-  };
 
   // The outgoing layer leaves the flow at once (laid over the incoming one at the top of the
   // host), so the two cross-fade in place and the key can fly between them.
@@ -123,15 +128,22 @@ export function LifecycleBody() {
         transition: SWAP,
       };
 
+  // Each layer carries the model it was rendered under. The outgoing layer is the element
+  // AnimatePresence kept, so it keeps that model while it fades: opening a step does not re-render
+  // the whole rail on its way out (nor closing one, the screen), measured with lifecycle-perf.mjs.
   const layer = open ? (
     <motion.div key="l2" {...fade}>
-      <Suspense fallback={<StepScreenGhost />}>
-        <ScreenHost node={open} />
-      </Suspense>
+      <LifecycleViewProvider model={model}>
+        <Suspense fallback={<StepScreenGhost />}>
+          <ScreenHost node={open} />
+        </Suspense>
+      </LifecycleViewProvider>
     </motion.div>
   ) : order.length > 0 ? (
     <motion.div key="l1" {...fade}>
-      <OnMount onMount={restoreRail}><Layer1 /></OnMount>
+      <LifecycleViewProvider model={model}>
+        <OnMount onMount={restoreRail}><Layer1 /></OnMount>
+      </LifecycleViewProvider>
     </motion.div>
   ) : null;
 
@@ -140,7 +152,7 @@ export function LifecycleBody() {
       <TimeTravelProvider projectId={projectId} ready={order.length > 0}>
         {/* The Measure's live region: mounted on either layer, under the time cursor. */}
         <MeasureAnnouncer />
-        <div ref={hostRef} className={`relative ${RHYTHM.block} pb-6`}>
+        <div ref={hostRef} className={`lcx-inks relative ${RHYTHM.block} pb-6`}>
           {error && <Banner severity="error" compact message={dl.lc_load_failed} cause={error} onRetry={refetch} />}
           {/* The ghost -> Layer 1 swap is a plain conditional (law 2: content is never held, and
               AnimatePresence mounts its first child still); only a press or a return between the
@@ -152,4 +164,4 @@ export function LifecycleBody() {
       </TimeTravelProvider>
     </KitHost>
   );
-}
+});

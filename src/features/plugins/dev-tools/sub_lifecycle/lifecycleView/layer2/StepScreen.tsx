@@ -88,7 +88,7 @@ export function StepScreen({ node }: { node: JourneyNode }) {
           </Suspense>
         </div>
         <StepRule node={node} />
-        <RelatedItems items={detail?.related ?? []} />
+        <RelatedItems stepId={node.id} items={detail?.related ?? []} />
       </div>
     </RelatedItemProvider>
   );

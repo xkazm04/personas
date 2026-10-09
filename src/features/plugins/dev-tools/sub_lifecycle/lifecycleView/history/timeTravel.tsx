@@ -25,6 +25,7 @@ import { useLifecycleHistory } from './useLifecycleHistory';
 
 export interface TimeTravel {
   history: LifecycleHistory | null;
+  /** A first read with nothing to show yet (a revalidation behind a shown history is not loading). */
   loading: boolean;
   error: string | null;
   refetch: () => void;
@@ -66,10 +67,13 @@ export function TimeTravelProvider({ projectId, ready, children }: { projectId: 
     return true;
   }, { enabled: viewedIndex !== null });
 
+  // Only a first read with nothing to show is "loading" to a reader: a revalidation must not
+  // change the value (every rail card reads it).
+  const cold = loading && !history;
   const value = useMemo<TimeTravel>(() => ({
-    history, loading, error, refetch, columns, tracked,
+    history, loading: cold, error, refetch, columns, tracked,
     viewedIndex, viewing: viewedIndex !== null ? columns[viewedIndex] ?? null : null, travel,
-  }), [history, loading, error, refetch, columns, tracked, viewedIndex, travel]);
+  }), [history, cold, error, refetch, columns, tracked, viewedIndex, travel]);
 
   return <TimeTravelContext.Provider value={value}>{children}</TimeTravelContext.Provider>;
 }

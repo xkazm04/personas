@@ -1,7 +1,8 @@
 // Evidence histories for the evidence-step screens (Lifecycle excellence wave
-// 8): a step detail's own changes, newest first, each reduced to that step's
-// outcome (as `detail.rs` `project_step` ships them), and the snapshot window
-// with every step's outcomes for the newest of them. Deterministic: the same
+// 8): a step detail's own changes, newest first, each with EVERY step's
+// outcome (as `detail.rs` `project_step` ships them since wave 10: this
+// step's as shaped and first, Isolate and Record done, Gate failed on the newest), and
+// the snapshot window: the newest of the same changes. Deterministic: the same
 // index always gives the same change. Mirrored for the page harness by
 // `scripts/style/page-harness/lifecycleEvidenceTapes.mjs`.
 import type { LifecycleEvidenceItem } from '@/lib/bindings/LifecycleEvidenceItem';
@@ -29,12 +30,20 @@ export interface Change {
 
 function item(stepId: string, i: number, spacingH: number, c: Change): LifecycleEvidenceItem {
   const ref = c.kind === 'commit' ? `${(0x9f8e7d0 + i * 4099).toString(16)}aa${i}` : c.kind === 'pr' ? String(400 - i) : `task-${300 - i}`;
+  const other = (id: string, outcome: LifecycleOutcome, detail: string | null = null) =>
+    (id === stepId ? [] : [{ stepId: id, outcome, detail }]);
   return {
     sourceKind: c.kind,
     sourceRef: ref,
     title: `Change ${300 - i}`,
     occurredAt: new Date(NEWEST - i * spacingH * HOUR).toISOString(),
-    outcomes: [{ stepId, outcome: c.outcome, detail: c.detail }],
+    // The step's own outcome first, so `outcomes[0]` is the step's in a reader that wants only it.
+    outcomes: [
+      { stepId, outcome: c.outcome, detail: c.detail },
+      ...other('isolate', 'done'),
+      ...other('gate', i === 0 ? 'failed' : 'done', i === 0 ? 'eslint failed on VaultPage.tsx' : null),
+      ...other('record', 'done'),
+    ],
   };
 }
 
@@ -72,22 +81,7 @@ export function stepDetail(stepId: string, evidence: LifecycleEvidenceItem[]): L
   return { stepId, runs: [], docs: [], related: [], evidence };
 }
 
-/**
- * healthyMix whose evidence window is the newest `window` changes of `detail`,
- * each with EVERY step's outcome (this step's as in the detail, the rest done,
- * gate failed on the newest) - as the snapshot ships them.
- */
+/** healthyMix whose evidence window is the newest `window` changes of `detail`, as the snapshot ships them. */
 export function snapshotOver(detail: LifecycleEvidenceItem[], window = 20, overrides: Partial<LifecycleSnapshot> = {}): LifecycleSnapshot {
-  return healthyMix({
-    evidence: detail.slice(0, window).map((d, i) => ({
-      ...d,
-      outcomes: [
-        { stepId: 'isolate', outcome: 'done' as const, detail: null },
-        { stepId: 'gate', outcome: i === 0 ? 'failed' as const : 'done' as const, detail: i === 0 ? 'eslint failed on VaultPage.tsx' : null },
-        ...d.outcomes,
-        { stepId: 'record', outcome: 'done' as const, detail: null },
-      ],
-    })),
-    ...overrides,
-  });
+  return healthyMix({ evidence: detail.slice(0, window), ...overrides });
 }

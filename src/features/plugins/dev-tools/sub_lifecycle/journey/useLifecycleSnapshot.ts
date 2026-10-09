@@ -9,6 +9,11 @@
 // `prefetchLifecycleSnapshot` fills the same cache on intent (the sidebar's
 // Lifecycle entry), and a mount that finds that request still in flight joins
 // it instead of asking twice.
+//
+// A refetch that returns the SAME data hands back the SAME object (compared by
+// its JSON): most backend events change nothing this page draws, and an
+// unchanged object lets React skip the whole page (wave 10, measured with
+// scripts/style/lifecycle-perf.mjs).
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getLifecycle } from '@/api/devTools/lifecycle';
@@ -23,6 +28,8 @@ import { useDevToolsLiveStore } from '@/stores/devToolsLiveStore';
 const snapshotCache = createModuleCache<string, LifecycleSnapshot>({ maxSize: 32 });
 // Requests in flight, deleted on settle: bounded by the requests open at once.
 const inFlight = new Map<string, { revision: number; promise: Promise<LifecycleSnapshot> }>();
+// Each cached copy's JSON, so an identical reply keeps the cached object.
+const snapshotJson = createModuleCache<string, string>({ maxSize: 32 });
 // When each project's copy last arrived, so a hover sweep does not refetch a fresh copy.
 const fetchedAt = createModuleCache<string, number>({ maxSize: 32 });
 /** An intent prefetch skips a copy younger than this; a mount always revalidates. */
@@ -32,8 +39,12 @@ function loadSnapshot(projectId: string, revision: number, force: boolean): Prom
   const open = inFlight.get(projectId);
   if (open && !force && open.revision === revision) return open.promise;
   const promise = getLifecycle(projectId).then((s) => {
-    snapshotCache.set(projectId, s);
     fetchedAt.set(projectId, Date.now());
+    const json = JSON.stringify(s);
+    const kept = snapshotCache.get(projectId);
+    if (kept && snapshotJson.get(projectId) === json) return kept;
+    snapshotCache.set(projectId, s);
+    snapshotJson.set(projectId, json);
     return s;
   });
   const entry = { revision, promise };

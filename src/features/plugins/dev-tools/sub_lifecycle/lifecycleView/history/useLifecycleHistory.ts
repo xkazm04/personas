@@ -26,6 +26,9 @@ import { createLatestWins } from '@/stores/util/latestWins';
 
 // One entry per project opened this session; the cap names the bound.
 const historyCache = createModuleCache<string, LifecycleHistory>({ maxSize: 32 });
+// Each cached copy's JSON: a reread that returns the same history keeps the cached object, so a
+// revision that changed nothing here re-renders nothing that reads it.
+const historyJson = createModuleCache<string, string>({ maxSize: 32 });
 // Requests in flight, deleted on settle: bounded by the requests open at once.
 const inFlight = new Map<string, { revision: number; promise: Promise<LifecycleHistory> }>();
 
@@ -40,7 +43,11 @@ function loadHistory(projectId: string, revision: number, force: boolean): Promi
     .then(() => getLifecycleHistory(projectId))
     .then((h) => {
       const history = h?.measures ? h : EMPTY;
+      const json = JSON.stringify(history);
+      const kept = historyCache.get(projectId);
+      if (kept && historyJson.get(projectId) === json) return kept;
       historyCache.set(projectId, history);
+      historyJson.set(projectId, json);
       return history;
     });
   const entry = { revision, promise };
@@ -121,5 +128,6 @@ export function useLifecycleHistory(projectId: string | null, enabled = true): U
 /** Test-only: forget every cached and in-flight history. */
 export function __resetHistoryCacheForTests(): void {
   historyCache.clear();
+  historyJson.clear();
   inFlight.clear();
 }

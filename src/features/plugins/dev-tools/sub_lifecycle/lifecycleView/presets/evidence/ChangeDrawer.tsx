@@ -21,10 +21,9 @@ import { LT } from '../../system/lcType';
 import { OutcomePill } from '../../system/Pill';
 import { GLYPH } from '../../system/scales';
 import { DrawerOutcomes } from './DrawerOutcomes';
-import { wholeChange } from './evidenceModel';
 
 export function ChangeDrawer({ row, stepId, onClose }: { row: EvidenceRow | null; stepId: string; onClose: () => void }) {
-  const { t, dl, evidence, openStep } = useLifecycleViewModel();
+  const { t, dl, openStep } = useLifecycleViewModel();
   const { language } = useTranslation();
   const titleId = useId();
   const item = row?.item;
@@ -63,7 +62,7 @@ export function ChangeDrawer({ row, stepId, onClose }: { row: EvidenceRow | null
               <p className={`break-words ${LT.lead}`} data-testid="lc8-drawer-note">{row.detail ?? dl.lcx8_drawer_no_note}</p>
             </ModalSection>
             <ModalSection label={dl.lcx8_drawer_others}>
-              <DrawerOutcomes whole={wholeChange(row, evidence)} stepId={stepId} onOpenStep={toStep} />
+              <DrawerOutcomes whole={item} stepId={stepId} onOpenStep={toStep} />
             </ModalSection>
           </div>
         </div>

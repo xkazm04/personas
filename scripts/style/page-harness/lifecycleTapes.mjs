@@ -11,6 +11,10 @@
 //   plugins/lifecycle/loading  the snapshot never answers: the header's chrome and the Layer-1 ghost
 //   plugins/lifecycle/regressed  the rail one measure after a bad day: most steps worse than their earlier measure
 //   plugins/lifecycle/history-failed  the collar, with the Measure history read failing (wave 3)
+//   plugins/lifecycle/setup    never measured: the first-run setup (wave 10) over what detection found -
+//                              npm lint / tsc / test and cargo clippy / test, no coverage command (so the
+//                              Vitest, Jest and cargo-llvm-cov suggestions show)
+//   plugins/lifecycle/setup-none  never measured, and detection found nothing: the setup's empty state
 //
 // Every tape answers `dev_tools_lifecycle_history` (wave 3): twelve Measures
 // (lifecycleHistoryTape.mjs) whose newest two are the collar's Gate and Tests;
@@ -188,10 +192,21 @@ export function lifecycleTapes({ RECORDED_AT }) {
     created_at: iso(60 * 24 * 90), updated_at: iso(60 * 24 * 2),
   };
 
+  // What `dev_tools_lifecycle_detect_commands` finds in a TypeScript + Tauri repo (detect_commands.rs order:
+  // gate kinds first, then test kinds).
+  const DETECTED = [
+    { id: 'lint', command: 'npm run lint', kind: 'lint', budgetMs: null },
+    { id: 'tsc', command: 'npm run tsc', kind: 'typecheck', budgetMs: null },
+    { id: 'cargo-clippy', command: 'cargo clippy --manifest-path src-tauri/Cargo.toml', kind: 'lint', budgetMs: null },
+    { id: 'test', command: 'npm run test', kind: 'test', budgetMs: null },
+    { id: 'cargo-test', command: 'cargo test --manifest-path src-tauri/Cargo.toml', kind: 'test', budgetMs: null },
+  ];
+  const NEVER = { health: [], goal: null, watched: false, tip: { branch: 'main', sha: TIP_SHA, measuredSha: null, commitsBehind: null, measuredAt: null } };
+
   const HISTORY = lifecycleHistory({ iso, TIP_SHA });
   const NO_HISTORY = { measures: [], stepIds: ['gate', 'tests'] };
 
-  function tape(module, note, snap, history = HISTORY) {
+  function tape(module, note, snap, history = HISTORY, detected = DETECTED) {
     return {
       version: 1, module, source: 'synthetic', recordedAt: RECORDED_AT, note,
       calls: [
@@ -203,6 +218,7 @@ export function lifecycleTapes({ RECORDED_AT }) {
           : { cmd: 'dev_tools_lifecycle_history', response: history },
         { cmd: 'dev_tools_lifecycle_send_preview', response: PREVIEW },
         { cmd: 'companions_status', response: companionsStatus(true) },
+        { cmd: 'dev_tools_lifecycle_detect_commands', response: detected },
       ],
     };
   }
@@ -219,9 +235,9 @@ export function lifecycleTapes({ RECORDED_AT }) {
     builders: {
       'plugins/lifecycle/collar': () => tape('plugins/lifecycle/collar', `${MIX} Twelve Measures of history.`, snapshot()),
       'plugins/lifecycle/history-failed': () => tape('plugins/lifecycle/history-failed', `${MIX} The Measure history read fails.`, snapshot(), 'fail'),
-      'plugins/lifecycle/empty': () => tape('plugins/lifecycle/empty', 'Synthetic: no health rows and no goal (the backend before WP1), never measured.', snapshot({
-        health: [], goal: null, watched: false, tip: { branch: 'main', sha: TIP_SHA, measuredSha: null, commitsBehind: null, measuredAt: null },
-      }), NO_HISTORY),
+      'plugins/lifecycle/empty': () => tape('plugins/lifecycle/empty', 'Synthetic: no health rows and no goal (the backend before WP1), never measured.', snapshot(NEVER), NO_HISTORY),
+      'plugins/lifecycle/setup': () => tape('plugins/lifecycle/setup', 'Synthetic: never measured; detection found npm lint / tsc / test and cargo clippy / test, no coverage command.', snapshot(NEVER), NO_HISTORY),
+      'plugins/lifecycle/setup-none': () => tape('plugins/lifecycle/setup-none', 'Synthetic: never measured, and detection found no command.', snapshot(NEVER), NO_HISTORY, []),
       'plugins/lifecycle/behind': () => tape('plugins/lifecycle/behind', `${MIX} Measured 2 days ago, 14 commits behind main.`, snapshot({
         tip: { branch: 'main', sha: TIP_SHA, measuredSha: '9f8e7d6c5b4a39281706f5e4d3c2b1a098765432', commitsBehind: 14, measuredAt: iso(60 * 48) },
       })),

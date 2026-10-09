@@ -44,9 +44,13 @@ describe('useLifecycleHistory', () => {
     await waitFor(() => expect(again.result.current.loading).toBe(false));
     const calls = getLifecycleHistory.mock.calls.length;
 
+    const shown = again.result.current.history;
     act(() => { useDevToolsLiveStore.setState((s) => ({ lifecycleRevision: s.lifecycleRevision + 1 })); });
     await waitFor(() => expect(getLifecycleHistory.mock.calls.length).toBe(calls + 1));
+    await waitFor(() => expect(again.result.current.loading).toBe(false));
     expect(again.result.current.history?.measures).toHaveLength(6);
+    // The same history read again is the same object: nothing that draws it re-renders (wave 10).
+    expect(again.result.current.history).toBe(shown);
   });
 
   it('joins a prefetch already in flight instead of asking twice', async () => {

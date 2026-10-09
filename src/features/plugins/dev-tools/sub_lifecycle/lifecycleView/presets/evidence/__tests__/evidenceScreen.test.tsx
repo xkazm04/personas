@@ -139,11 +139,20 @@ describe('a custom step', () => {
 });
 
 describe('the change drawer', () => {
-  it('a change older than the snapshot window says only this step is known', async () => {
+  it('a change older than the snapshot window still shows what it did on the other steps', async () => {
     const detail = landHistory();
     const snap = snapshotOver(detail, 20, { projectId: 'p-ev-older' });
     const old = evidenceRowsFor('land', detail)[45]!;
     renderLayer1(<ChangeDrawer row={old} stepId="land" onClose={() => {}} />, snap);
-    expect((await screen.findByTestId('lc8-drawer-others-unknown')).textContent).toContain('only this step');
+    expect(await screen.findByTestId('lc8-drawer-other-record')).toBeTruthy();
+    expect(screen.queryByTestId('lc8-drawer-others-none')).toBeNull();
+  });
+
+  it('a change no other step recorded says so', async () => {
+    const [first] = landHistory(1);
+    const lone = { ...first!, outcomes: first!.outcomes.filter((o) => o.stepId === 'land') };
+    const snap = snapshotOver([lone], 20, { projectId: 'p-ev-lone' });
+    renderLayer1(<ChangeDrawer row={evidenceRowsFor('land', [lone])[0]!} stepId="land" onClose={() => {}} />, snap);
+    expect((await screen.findByTestId('lc8-drawer-others-none')).textContent).toBe('No other step recorded this change.');
   });
 });

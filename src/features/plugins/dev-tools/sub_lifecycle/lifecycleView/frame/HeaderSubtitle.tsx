@@ -5,6 +5,8 @@
 // in flight the line is a calm delayed bar of the same height, so the title
 // above it never moves. While a Measure runs, the freshness segment says that
 // instead: the tip it runs on and the time it has left (`measure/MeasuringLine`).
+import { memo } from 'react';
+
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 
@@ -30,7 +32,8 @@ function FreshnessText({ f }: { f: Freshness }) {
   }
 }
 
-export function HeaderSubtitle() {
+/** Memoised (no props): it re-renders on the view model, never because the page's shell did. */
+export const HeaderSubtitle = memo(function HeaderSubtitle() {
   const { practice, freshness, loading } = useLifecycleViewModel();
   const { phase } = useMeasureSession();
   if (!practice) {
@@ -60,4 +63,4 @@ export function HeaderSubtitle() {
       )}
     </span>
   );
-}
+});

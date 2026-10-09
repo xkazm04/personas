@@ -30,7 +30,9 @@ export function VerdictFilter({ steps }: { steps: HealthStep[] }) {
       {HEALTH_ORDER.map((h) => {
         const Glyph = HEALTH_GLYPH[h];
         const on = pinned === h;
-        const label = tx(dl.lcx2_filter_label, { verdict: healthLabel(dl, h), count: counts[h] });
+        const label = counts[h] === 1
+          ? tx(dl.lcx2_filter_label_one, { verdict: healthLabel(dl, h) })
+          : tx(dl.lcx2_filter_label, { verdict: healthLabel(dl, h), count: counts[h] });
         const button = (
           <Button
             variant={on ? 'accent' : 'ghost'}

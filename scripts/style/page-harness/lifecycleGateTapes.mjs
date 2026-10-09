@@ -21,6 +21,7 @@
 // Fixture CODE, no personal data. The unit tests use journey/__tests__/gateFixtures.ts.
 //
 //   plugins/lifecycle/gate   the detail tape with the wave-6 gate runs and run outputs
+//   plugins/lifecycle/perf   the same tape, the page under a Profiler (wave 10, scripts/style/lifecycle-perf.mjs)
 import { lifecycleDetailTapes } from './lifecycleDetailTapes.mjs';
 
 const PROJECT_ID = 'p-atlas';
@@ -66,5 +67,12 @@ export function lifecycleGateTapes({ RECORDED_AT }) {
     return tape;
   }
 
-  return { builders: { 'plugins/lifecycle/gate': build } };
+  function perf() {
+    const tape = build();
+    tape.module = 'plugins/lifecycle/perf';
+    tape.note = `${tape.note} The page under a React Profiler.`;
+    return tape;
+  }
+
+  return { builders: { 'plugins/lifecycle/gate': build, 'plugins/lifecycle/perf': perf } };
 }

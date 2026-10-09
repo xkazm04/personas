@@ -10,9 +10,9 @@
 // - Commit healthy with one dip week (days 14-20 back, --no-verify skips);
 // - Isolate, Sync and Record mostly done, each with its own skip note.
 //
-// Each step's detail is that history reduced to its own outcome (as
-// detail.rs project_step ships it); the snapshot's evidence is the newest 20
-// with every step's outcome, and the evidence steps' verdicts, tallies and
+// Each step's detail is the changes that history holds for it, every step's
+// outcome kept (as detail.rs project_step ships it since wave 10); the
+// snapshot's evidence is the newest 20, and the evidence steps' verdicts, tallies and
 // earlier windows are derived from that window the way health.rs derives them
 // (done / (done + skipped + failed), 5 changes before a verdict, green at 80%,
 // at risk from 50%). Fixture CODE, no personal data. Mirrors
@@ -75,7 +75,7 @@ export function lifecycleEvidenceTapes({ RECORDED_AT }) {
       outcomes: outcomes(i, at),
     };
   });
-  const project = (stepId) => HISTORY.map((h) => ({ ...h, outcomes: h.outcomes.filter((o) => o.stepId === stepId) }));
+  const project = (stepId) => HISTORY.filter((h) => h.outcomes.some((o) => o.stepId === stepId));
 
   // health.rs evidence_step over a window.
   function judge(window, stepId) {

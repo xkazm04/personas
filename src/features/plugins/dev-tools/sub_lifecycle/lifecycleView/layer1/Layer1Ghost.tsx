@@ -1,5 +1,7 @@
 // Layer 1's cold-load ghost (docs/design/overview-loading.md §C), drawn from
-// the SAME shells as the real layer - the status band's class, the `Lane`
+// the SAME shells as the real layer - the status plate's class and its second
+// row (with the Overseer's goal line on it when this project's last snapshot
+// had a goal, `status/goalHint`), the `Lane`
 // tray and its columns, a card of the same five rows (`rail/cardRows`) per
 // step, the history frame in its own ghost state (`history/HistorySection`),
 // every text line one line of its real type role tall (`GhostLine`) -
@@ -10,13 +12,16 @@ import type { CSSProperties } from 'react';
 
 import { Ghost } from '@/features/shared/components/kit';
 
+import { useLifecycleViewModel } from '../context';
+
 import { HistorySection } from '../history/HistorySection';
 import { GhostLine } from '../system/GhostLine';
 import { RAIL, lcShape, lcSurface } from '../system/lcSurface';
 import { KEY, METER } from '../system/scales';
 import { CARD_ROW, CARD_ROW_GAP, lineSlot } from './rail/cardRows';
 import { Lane } from './rail/Lane';
-import { STATUS_BAND } from './status/StatusBand';
+import { hadGoal } from './status/goalHint';
+import { STATUS_BAND, STATUS_ROW } from './status/StatusBand';
 
 /** The default practice's two lanes (before / after the task): the likeliest geometry. */
 const LANES = [4, 6] as const;
@@ -46,12 +51,22 @@ function GhostCard({ i }: { i: number }) {
   );
 }
 
+/** A row of buttons, ghosted: a button's padding and border around one line of its label's role. */
+function GhostControls({ width }: { width: string }) {
+  return <span className="flex max-w-full border border-transparent py-1"><GhostLine role="title" width={width} /></span>;
+}
+
 export function Layer1Ghost() {
+  const { projectId } = useLifecycleViewModel();
+  const goal = hadGoal(projectId);
   return (
     <div className={`animate-fade-in ${RAIL.laneGap}`} style={{ animationDelay: '150ms' }} aria-hidden data-testid="lc1-ghost">
       <div className={STATUS_BAND}>
-        <div className="min-w-0 flex-[1_1_22rem]"><GhostLine role="row" width="70%" /></div>
-        <span className="block h-9 w-[22rem] max-w-full"><Ghost width="100%" height="100%" /></span>
+        <GhostLine role="row" width="55%" />
+        <div className={STATUS_ROW}>
+          <GhostControls width="19rem" />
+          {goal && <span className="ml-auto flex" data-testid="lc1-ghost-goal"><GhostControls width="28rem" /></span>}
+        </div>
       </div>
       {LANES.map((n, lane) => (
         <Lane

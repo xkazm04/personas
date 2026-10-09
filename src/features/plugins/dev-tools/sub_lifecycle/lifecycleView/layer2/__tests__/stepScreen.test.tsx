@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 import type { LifecycleSnapshot } from '@/lib/bindings/LifecycleSnapshot';
@@ -6,6 +6,7 @@ import type { LifecycleSnapshot } from '@/lib/bindings/LifecycleSnapshot';
 import { docsDetail, gateDetail, mixWithEvidence, testsDetail } from '../../../journey/__tests__/detailFixtures';
 import { renderLayer1 } from '../../layer1/__tests__/renderLayer1';
 import { LifecycleBody } from '../../LifecycleBody';
+import { loadStepChunk } from '../stepChunks';
 
 const getLifecycleStepDetail = vi.hoisted(() => vi.fn());
 const setLifecycleStepParams = vi.hoisted(() => vi.fn());
@@ -13,6 +14,12 @@ const getLifecycleHistory = vi.hoisted(() => vi.fn(async () => ({ measures: [], 
 vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycleStepDetail, setLifecycleStepParams, getLifecycleHistory }));
 
 const DETAILS: Record<string, () => unknown> = { gate: gateDetail, tests: testsDetail, docs: docsDetail };
+
+// The screen and preset chunks are transformed once, up front: under a full parallel run a cold
+// transform outlasted the tests' one-second waits (the lazy screen suspended past them).
+beforeAll(async () => {
+  await Promise.all([loadStepChunk('screen'), loadStepChunk('gate'), loadStepChunk('tests'), loadStepChunk('docs'), loadStepChunk('generic')]);
+}, 30_000);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -30,7 +37,9 @@ describe('Layer 2: the step screen', () => {
     fireEvent.click(screen.getByTestId('lc-node-land'));
     const screenEl = await screen.findByTestId('lc2-screen');
     expect(screenEl.getAttribute('data-step')).toBe('land');
-    expect(screen.queryByTestId('lc-journey-track')).toBeNull();
+    // With the chunk in, the screen mounts in the press's own commit while the rail cross-fades out
+    // under it and the key flies (a shared layout animation jsdom cannot finish, so the rail's exit
+    // never completes here; LifecyclePage.test.tsx asserts the rail is gone under reduced motion).
     expect(screen.getByTestId('lc2-title').textContent).toBe('Land');
     expect(document.activeElement).toBe(screen.getByTestId('lc2-title'));
 
@@ -151,7 +160,7 @@ describe('presets', () => {
     const broken = await screen.findByTestId('lc2-docs-broken');
     expect(broken.textContent).toContain('docs/features/vault.md');
     expect(broken.textContent).toContain('2 broken references');
-    expect(screen.getByTestId('lc2-docs-stale').textContent).toContain('1 changed sources');
+    expect(screen.getByTestId('lc2-docs-stale').textContent).toContain('1 changed source since it was written');
     // The clean group starts folded.
     expect(screen.getByTestId('lc2-docs-clean').textContent).not.toContain('README.md');
     expect(screen.getByTestId('lc2-docs-clean').textContent).toContain('Show 2 clean docs');

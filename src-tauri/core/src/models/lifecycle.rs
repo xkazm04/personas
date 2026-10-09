@@ -659,8 +659,8 @@ pub struct LifecycleStepDetail {
     pub related: Vec<LifecycleRelatedItem>,
     /// This step's evidence: the newest 200 changes (tasks, base-branch
     /// commits, PR merges) that carry an outcome for the step, newest first.
-    /// Each item's `outcomes` holds only this step's outcome. (The snapshot
-    /// keeps its own 20 across all steps.)
+    /// Each item keeps every step's outcome, so a change can say what it did
+    /// on the other steps. (The snapshot keeps its own 20.)
     pub evidence: Vec<LifecycleEvidenceItem>,
 }
 

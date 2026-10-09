@@ -7,6 +7,7 @@
 // disabled until the snapshot is in; what a control says (a result, a refusal,
 // the install running) is a note line that wraps BELOW the row
 // (`NOTE_LINE`), so a message never moves a control.
+import { memo } from 'react';
 import { Sparkles } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
@@ -19,7 +20,8 @@ import { useLifecycleViewModel } from '../context';
 import { LC_RULE } from '../system/lcSurface';
 import { GLYPH } from '../system/scales';
 
-export function HeaderToolbar() {
+/** Memoised (no props): it re-renders on the view model, never because the page's shell did. */
+export const HeaderToolbar = memo(function HeaderToolbar() {
   const { dl, projectId, projectName, snapshot, askAthena } = useLifecycleViewModel();
   return (
     <div className={`flex flex-wrap items-center gap-2 border-t px-5 py-2.5 ${LC_RULE}`} data-testid="lc-header-cluster">
@@ -46,4 +48,4 @@ export function HeaderToolbar() {
       <InstallControl />
     </div>
   );
-}
+});

@@ -22,8 +22,8 @@ interface LaneProps {
 export function Lane({ label, head, count, steps, testId, as: List = 'ol', children }: LaneProps) {
   const n = Math.max(1, steps);
   return (
-    <div role={label ? 'group' : undefined} aria-label={label} className={`flex flex-col gap-2 ${lcSurface('lane')}`} data-testid={testId}>
-      <div className="flex h-6 items-center justify-between gap-3 px-1">
+    <div role={label ? 'group' : undefined} aria-label={label} className={`flex flex-col gap-1.5 ${lcSurface('lane')}`} data-testid={testId}>
+      <div className="flex h-5 items-center justify-between gap-3 px-1">
         {head}
         {count}
       </div>

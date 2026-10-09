@@ -41,8 +41,13 @@ function gateWithItems() {
 }
 
 // The screen and preset chunks are transformed once, up front: a cold transform is not what these tests time.
+// So is the dev-tools API an item press imports on demand (`related/relatedItem`): under a full
+// parallel run its first import outlasted waitFor's one second.
 beforeAll(async () => {
-  await Promise.all([loadStepChunk('screen'), loadStepChunk('gate'), loadStepChunk('docs'), loadStepChunk('generic'), loadStepChunk('tests')]);
+  await Promise.all([
+    loadStepChunk('screen'), loadStepChunk('gate'), loadStepChunk('docs'), loadStepChunk('generic'), loadStepChunk('tests'),
+    import('@/api/devTools/devTools'),
+  ]);
 }, 30_000);
 
 beforeEach(() => {

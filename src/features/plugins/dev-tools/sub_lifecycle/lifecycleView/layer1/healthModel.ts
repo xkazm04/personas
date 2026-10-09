@@ -106,26 +106,47 @@ export function stepMetrics(stepId: string, row: LifecycleStepHealthView | undef
   return out;
 }
 
-/** Join `health` to the journey's nodes by step id. A step with no row is unmeasured (instructed for frame/recall/x-*). */
+/**
+ * Join `health` to the journey's nodes by step id. A step with no row is
+ * unmeasured (instructed for frame/recall/x-*).
+ *
+ * One joined step per (node, health row) pair, kept while both objects live: a
+ * re-join over the same objects (a time-travel switch moves only Gate and
+ * Tests, a revision that brought the same snapshot back moves nothing) hands
+ * back the SAME step objects, so a memoised rail card skips its render.
+ */
+const joined = new WeakMap<JourneyNode, WeakMap<object, HealthStep>>();
+const NO_ROW = {};
+
 export function joinHealth(nodes: JourneyNode[], health: LifecycleStepHealthView[]): HealthStep[] {
   const byId = new Map(health.map((h) => [h.stepId, h]));
   return nodes.map((node) => {
     const row = byId.get(node.id);
-    const verdict: LifecycleHealth = row?.health ?? (isInstructedStep(node.id) ? 'instructed' : 'unmeasured');
-    const metrics = verdict === 'instructed' && !row?.metrics.length ? [] : stepMetrics(node.id, row);
-    return {
-      node,
-      health: verdict,
-      reason: row?.reason ?? null,
-      metrics,
-      primary: metrics[0] ?? null,
-      measuredAt: row?.measuredAt ?? null,
-      headSha: row?.headSha ?? null,
-      staleOf: verdict === 'stale' ? readStaleOf(row) : null,
-      figure: metrics.find((m) => isRateKey(m.key)) ?? null,
-      previous: row?.previous ?? null,
-    };
+    let perNode = joined.get(node);
+    if (!perNode) { perNode = new WeakMap(); joined.set(node, perNode); }
+    const kept = perNode.get(row ?? NO_ROW);
+    if (kept) return kept;
+    const step = joinOne(node, row);
+    perNode.set(row ?? NO_ROW, step);
+    return step;
   });
+}
+
+function joinOne(node: JourneyNode, row: LifecycleStepHealthView | undefined): HealthStep {
+  const verdict: LifecycleHealth = row?.health ?? (isInstructedStep(node.id) ? 'instructed' : 'unmeasured');
+  const metrics = verdict === 'instructed' && !row?.metrics.length ? [] : stepMetrics(node.id, row);
+  return {
+    node,
+    health: verdict,
+    reason: row?.reason ?? null,
+    metrics,
+    primary: metrics[0] ?? null,
+    measuredAt: row?.measuredAt ?? null,
+    headSha: row?.headSha ?? null,
+    staleOf: verdict === 'stale' ? readStaleOf(row) : null,
+    figure: metrics.find((m) => isRateKey(m.key)) ?? null,
+    previous: row?.previous ?? null,
+  };
 }
 
 export function healthCounts(steps: HealthStep[]): Record<LifecycleHealth, number> {

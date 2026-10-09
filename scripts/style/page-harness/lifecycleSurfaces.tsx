@@ -20,6 +20,11 @@
  *                                     (lifecycleMeasureTapes.mjs; `prepare` steps the revision twice)
  *   plugins/lifecycle/overseer-off    the collar with the Overseer switched off (lifecycleOverseerTapes.mjs)
  *   plugins/lifecycle/overseer-folded every Overseer item closed: his goal panel folded
+ *   plugins/lifecycle/setup           never measured: the first-run setup over what detection found (wave 10)
+ *   plugins/lifecycle/setup-none      never measured, detection found nothing: the setup's empty state
+ *   plugins/lifecycle/perf            the collar under a React Profiler: every commit lands in
+ *                                     `window.__LC_PROFILE__` and the live store is on
+ *                                     `window.__LC_LIVE__` (scripts/style/lifecycle-perf.mjs)
  *
  * The collar's snapshot carries the Overseer's goal with every item state (wave 9); its Send
  * preview is shot with --steps "click=[data-testid=lc-overseer-send];wait=700".
@@ -30,6 +35,8 @@
  * WP4 retired the orbit and lane-board directions and their switcher, so
  * there is no stored variant to seed any more.
  */
+import { Profiler, type ProfilerOnRenderCallback } from 'react';
+
 import { useDevToolsLiveStore } from '@/stores/devToolsLiveStore';
 import { useSystemStore } from '@/stores/systemStore';
 import type { HarnessModule } from './registry';
@@ -62,6 +69,35 @@ async function prepareMeasured() {
   setTimeout(step, 1800);
 }
 
+/** One React commit, as the perf driver reads it. */
+interface ProfileEntry { id: string; phase: string; actual: number; base: number; start: number; commit: number }
+
+declare global {
+  interface Window {
+    __LC_PROFILE__?: ProfileEntry[];
+    __LC_LIVE__?: typeof useDevToolsLiveStore;
+    /** The recorder, for a nested <Profiler> added while investigating a cost. */
+    __LC_RECORD__?: ProfilerOnRenderCallback;
+  }
+}
+
+const record: ProfilerOnRenderCallback = (id, phase, actual, base, start, commit) => {
+  (window.__LC_PROFILE__ ??= []).push({ id, phase, actual, base, start, commit });
+};
+
+/** The page under one Profiler, for scripts/style/lifecycle-perf.mjs. */
+const profiledPage = () => page().then(({ default: Page }) => ({
+  default: function ProfiledLifecycle() {
+    return <Profiler id="lifecycle" onRender={record}><Page /></Profiler>;
+  },
+}));
+
+async function preparePerf() {
+  window.__LC_LIVE__ = useDevToolsLiveStore;
+  window.__LC_RECORD__ = record;
+  await prepare();
+}
+
 export const LIFECYCLE_MODULES: Record<string, HarnessModule> = {
   'plugins/lifecycle/collar': { load: page, prepare },
   'plugins/lifecycle/empty': { load: page, prepare },
@@ -80,4 +116,7 @@ export const LIFECYCLE_MODULES: Record<string, HarnessModule> = {
   'plugins/lifecycle/gate': { load: page, prepare }, // wave 6: Gate and Tests as instruments, with run outputs (lifecycleGateTapes.mjs)
   'plugins/lifecycle/overseer-off': { load: page, prepare }, // wave 9: the Overseer switched off (lifecycleOverseerTapes.mjs)
   'plugins/lifecycle/overseer-folded': { load: page, prepare }, // wave 9: every Overseer item closed, the goal panel folded
+  'plugins/lifecycle/setup': { load: page, prepare }, // wave 10: the first-run setup (lifecycleTapes.mjs)
+  'plugins/lifecycle/setup-none': { load: page, prepare }, // wave 10: the first-run setup, nothing detected
+  'plugins/lifecycle/perf': { load: profiledPage, prepare: preparePerf }, // wave 10: the collar under a Profiler (lifecycle-perf.mjs)
 };

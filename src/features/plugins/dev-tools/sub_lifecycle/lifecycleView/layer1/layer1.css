@@ -1,6 +1,6 @@
-/* Layer-1 health views: the one surface treatment Tailwind cannot write as a
- * class - the STALE hatch, a measurement from an older base tip. Colour stays
- * tokenised (`--status-info` through color-mix). */
+/* Layer-1 health views: what Tailwind cannot write as a class - the STALE
+ * hatch (a measurement from an older base tip) and the light themes' deeper
+ * inks (below). Colour stays tokenised (color-mix over the theme's variables). */
 .lc1-hatch {
   background-image: repeating-linear-gradient(
     135deg,
@@ -8,3 +8,25 @@
     transparent 2px 8px
   );
 }
+
+/* Light themes: the module's status inks and accent text, a step deeper.
+ *
+ * The app dims a light theme by default (`--app-brightness` 0.82, "Dimmer"),
+ * and the module sets its verdict words on their own verdict washes. Measured
+ * through that filter (scripts/style/lifecycle-a11y.mjs, 2026-10-09) the inks
+ * fell under AA on light, light-ice and light-news: a card's "Healthy" 4.17,
+ * the step band's "At risk" pill 3.66-3.95, an info pill 4.3, the accent
+ * eyebrow 4.3. Mixed a quarter toward the theme's own foreground they clear it,
+ * and stay the same hue. Dark themes are untouched. Scoped to the page's host
+ * (`.lcx-inks`, LifecycleBody). */
+[data-theme^="light"] .lcx-inks .text-status-success { color: color-mix(in srgb, var(--status-success) 74%, var(--foreground)); }
+[data-theme^="light"] .lcx-inks .text-status-warning { color: color-mix(in srgb, var(--status-warning) 70%, var(--foreground)); }
+[data-theme^="light"] .lcx-inks .text-status-error { color: color-mix(in srgb, var(--status-error) 78%, var(--foreground)); }
+[data-theme^="light"] .lcx-inks .text-status-info { color: color-mix(in srgb, var(--status-info) 74%, var(--foreground)); }
+[data-theme^="light"] .lcx-inks .text-primary { color: color-mix(in srgb, var(--primary) 80%, var(--foreground)); }
+
+/* Red (a reserved-accent dark theme): its deep red accent is the one dark
+ * accent too deep for accent TEXT on the module's trays; the step screen's
+ * "History" eyebrow measured 3.68. A third toward the foreground lifts it over
+ * AA while staying the theme's red. */
+[data-theme="dark-red"] .lcx-inks .text-primary { color: color-mix(in srgb, var(--primary) 66%, var(--foreground)); }

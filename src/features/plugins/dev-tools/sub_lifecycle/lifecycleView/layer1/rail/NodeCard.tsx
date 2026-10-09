@@ -23,7 +23,13 @@
  * verdict line says "Measuring, 1 of 3" (`MeasuringVerdict`). When the
  * Measure's last run lands and the verdict changed (`settle`), the card rings
  * once and the new verdict line comes in; under reduced motion it just changes.
+ *
+ * Memoised: its lane hands it stable props (the joined step objects are kept
+ * per health row, `healthModel.joinHealth`; the time cursor arrives as
+ * `travel`, not through context), so a time-travel switch re-renders Gate's
+ * and Tests' cards only and a peek re-renders none.
  */
+import { memo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { History } from 'lucide-react';
 
@@ -33,7 +39,6 @@ import { stepGlyph, stepLabel } from '../../../journey/journeyLabels';
 import type { StepRoving } from '../../blocks/useStepRoving';
 import { useLifecycleViewModel } from '../../context';
 import { OverseerBadge } from '../../overseer/OverseerBadge';
-import { isUntracked, useTimeTravel } from '../../history/timeTravel';
 import type { Tally } from '../../measure/measureModel';
 import '../../measure/measure.css';
 import { enterDelay } from '../../railShared';
@@ -64,9 +69,11 @@ interface NodeCardProps {
   measuring?: Tally | null;
   /** The Measure that just ended changed this step's verdict: animate it once. */
   settle?: boolean;
+  /** A past Measure is viewed: `then` draws this step as judged then, `untracked` as now, dimmed. */
+  travel?: 'then' | 'untracked' | null;
 }
 
-export function NodeCard({ step, upstream, index, roving, peek, measuring = null, settle = false }: NodeCardProps) {
+export const NodeCard = memo(function NodeCard({ step, upstream, index, roving, peek, measuring = null, settle = false, travel = null }: NodeCardProps) {
   const { dl, tx, selected } = useLifecycleViewModel();
   const entering = useEntrance();
   const reduced = useReducedMotion();
@@ -74,10 +81,9 @@ export function NodeCard({ step, upstream, index, roving, peek, measuring = null
   const { node } = step;
   const on = node.id === selected?.id;
   const lit = highlightOf(active, step.health);
-  const travel = useTimeTravel();
   // Viewing a past Measure: a step the history does not track is drawn as it is now, dimmed.
-  const untracked = isUntracked(travel, node.id);
-  const then = travel.viewing !== null && !untracked;
+  const untracked = travel === 'untracked';
+  const then = travel === 'then';
   const dim = lit === 'off' || untracked;
   const v = VERDICT[step.health];
   const change = stepChange(step);
@@ -153,4 +159,4 @@ export function NodeCard({ step, upstream, index, roving, peek, measuring = null
       )}
     </motion.li>
   );
-}
+});

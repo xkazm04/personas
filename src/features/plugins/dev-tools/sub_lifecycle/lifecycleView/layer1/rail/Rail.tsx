@@ -8,6 +8,7 @@
 import { AnchoredTooltip } from '@/features/shared/components/display/Tooltip';
 
 import type { StepRoving } from '../../blocks/useStepRoving';
+import { isUntracked, useTimeTravel } from '../../history/timeTravel';
 import { useLifecycleViewModel } from '../../context';
 import { Count } from '../../system/Count';
 import { RAIL } from '../../system/lcSurface';
@@ -28,6 +29,8 @@ function LaneOf({ title, steps, offset, testId, roving, peek, data }: {
   peek: PeekControl;
   data: Pick<Layer1Data, 'measuring' | 'settled'>;
 }) {
+  const time = useTimeTravel();
+  const travelOf = (id: string) => (time.viewing === null ? null : isUntracked(time, id) ? 'untracked' : 'then');
   return (
     <Lane label={title} head={<span className={LT.eyebrow}>{title}</span>} count={<Count value={steps.length} />} steps={steps.length} testId={testId}>
       {steps.map((s, i) => (
@@ -40,6 +43,7 @@ function LaneOf({ title, steps, offset, testId, roving, peek, data }: {
           peek={peek}
           measuring={data.measuring.get(s.node.id) ?? null}
           settle={data.settled.has(s.node.id)}
+          travel={travelOf(s.node.id)}
         />
       ))}
     </Lane>

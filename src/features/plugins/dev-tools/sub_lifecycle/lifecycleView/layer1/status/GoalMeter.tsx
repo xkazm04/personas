@@ -5,8 +5,8 @@
 // (not measured is a dashed hollow, stale is hatched). The sentence behind it
 // ("3 of 8 measurable steps green, 2 instructed") is what a reader hears and
 // what the bar's tip says. Renders nothing while the project has no goal.
-// It sits in the Overseer's goal strip (`overseer/GoalPanel`), one control
-// tall: the strip names the goal and counts his items, so the meter is the
+// It sits on the Overseer's goal line in the status plate (`overseer/GoalPanel`), one control
+// tall: the line names the goal and counts his items, so the meter is the
 // figure at row size and the bar, nothing else.
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';

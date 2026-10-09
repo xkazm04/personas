@@ -21,6 +21,17 @@ const card = (id: string) => document.querySelector<HTMLElement>(`[data-card="${
 
 afterEach(() => { vi.useRealTimers(); });
 
+describe('Layer-1 names a reader hears (wave 10)', () => {
+  it('a key says the step, its verdict, its figure and its binding; a count of one is singular', () => {
+    renderLayer1(<Layer1 />, healthyMix());
+    expect(screen.getByTestId('lc-node-land').getAttribute('aria-label')).toBe('Land: Failing, Done rate 40%, Live');
+    // An instructed step has no figure: the name says what it has.
+    expect(screen.getByTestId('lc-node-frame').getAttribute('aria-label')).toBe('Frame: Instructed, Live');
+    expect(document.querySelector('[data-legend="red"]')!.getAttribute('aria-label')).toBe('Failing: 1 step. Press to highlight it on the rail');
+    expect(document.querySelector('[data-legend="green"]')!.getAttribute('aria-label')).toBe('Healthy: 3 steps. Press to highlight them on the rail');
+  });
+});
+
 describe('Layer-1 rail', () => {
   it('draws all six verdicts, each on its own card, in two lanes', () => {
     renderLayer1(<Layer1 />, healthyMix());

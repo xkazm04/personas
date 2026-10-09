@@ -110,9 +110,10 @@ fn step_evidence_is_the_steps_own_newest_first_and_bounded() -> Result<(), AppEr
     assert!(gate
         .windows(2)
         .all(|w| w[0].occurred_at >= w[1].occurred_at));
-    assert!(gate
-        .iter()
-        .all(|i| i.outcomes.len() == 1 && i.outcomes[0].step_id == "gate"));
+    // Every step's outcome rides along: the change drawer shows the other steps.
+    assert!(gate.iter().all(|i| i.outcomes.len() == 2
+        && i.outcomes.iter().any(|o| o.step_id == "gate")
+        && i.outcomes.iter().any(|o| o.step_id == "commit")));
     assert!(gate.iter().all(|i| i.source_ref.as_str() >= "task-010"));
     let commit = step_detail(&pool, &p, "commit")?.evidence;
     assert_eq!(commit.len(), STEP_DETAIL_EVIDENCE);
@@ -121,7 +122,7 @@ fn step_evidence_is_the_steps_own_newest_first_and_bounded() -> Result<(), AppEr
 }
 
 #[test]
-fn project_step_keeps_only_that_steps_outcome() {
+fn project_step_keeps_every_outcome_of_a_change_the_step_recorded() {
     let item = LifecycleEvidenceItem {
         source_kind: crate::db::models::LifecycleSourceKind::Commit,
         source_ref: "abc".into(),
@@ -135,7 +136,10 @@ fn project_step_keeps_only_that_steps_outcome() {
     let docs = project_step(item.clone(), "docs").expect("docs outcome");
     assert_eq!(
         docs.outcomes,
-        vec![outcome("docs", LifecycleOutcome::Skipped)]
+        vec![
+            outcome("gate", LifecycleOutcome::Done),
+            outcome("docs", LifecycleOutcome::Skipped),
+        ]
     );
     assert!(project_step(item, "land").is_none());
 }

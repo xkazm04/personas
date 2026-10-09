@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 import { _setDocumentHiddenForTests, _tickerStateForTests } from '@/hooks/utility/timing/relativeTimeTicker';
@@ -34,6 +34,11 @@ vi.mock('@/stores/systemStore', () => ({
 }));
 
 import LifecyclePage from '../../../LifecyclePage';
+import { loadStepChunk } from '../../layer2/stepChunks';
+
+// The Gate screen's chunks are transformed once, up front: under a full parallel run a cold
+// transform outlasted a one-second wait for the screen.
+beforeAll(async () => { await Promise.all([loadStepChunk('screen'), loadStepChunk('gate')]); }, 30_000);
 
 const ESLINT_ERROR = "src/a.ts:4:1  error  'x' is never used";
 
@@ -179,7 +184,8 @@ describe('a Measure on the page', () => {
     project('p-m-ticker', measuring());
     render(<LifecyclePage />);
     await screen.findByTestId('lc-measure-progress');
-    expect(_tickerStateForTests().running).toBe(true);
+    // The ticker subscribes in a passive effect: under a full parallel run it can land a beat after the DOM.
+    await waitFor(() => expect(_tickerStateForTests().running).toBe(true));
     act(() => _setDocumentHiddenForTests(true));
     expect(_tickerStateForTests().running).toBe(false);
     act(() => _setDocumentHiddenForTests(false));

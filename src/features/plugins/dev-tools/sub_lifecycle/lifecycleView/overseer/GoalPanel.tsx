@@ -1,32 +1,36 @@
 /**
- * The Overseer's goal on Layer 1, between the status band and the rail: the
- * goal as HIS WORK.
+ * The Overseer's goal on Layer 1: the goal as HIS WORK, the second row of the
+ * status plate (`layer1/status/StatusBand`), beside the verdict counts.
  *
- * Layer one is ONE line, a strip one control tall (`lcSurface('strip')`), so
- * the rail under it still fits a 1280x800 screen: his mark, the goal's name,
- * the items he still owes as chips (`OpenItemChips`, each opens its item in
- * place), the goal drawn (green of the measurable steps, `GoalMeter`), what is
- * closed and set aside, and the fold. Nothing he owes is ever folded away.
+ * Wave 10 folded the wave-9 strip into the plate, so the rail under it fits a
+ * 1280x800 screen again with a goal: one row, `GoalLine` - his mark, the
+ * goal's name, the items he still owes as chips (`OpenItemChips`, each opens
+ * its item in place), the goal drawn (green of the measurable steps,
+ * `GoalMeter`), what is closed and set aside, and the fold. The plate is a
+ * size container (`status`): below 72rem the goal's name is said to a reader
+ * and drawn as the mark only (its tooltip names it), below 64rem the closed /
+ * set-aside count is said to a reader only (the fold lists them). Nothing he
+ * owes is ever folded away: the chips always show.
  *
- * The fold opens the detail with motion: every item under the goal as a kit
- * row (`GoalItemRow`) - the open ones first, each set in step order - with the
- * step it is about, what last happened ("Closed by Measure 3 h ago") and its
- * status. It starts folded; the reader's own fold is remembered per project
- * for the session, so coming back from a step screen keeps it. No goal, no
- * strip.
+ * The fold opens the detail with motion (`GoalItems`, under the plate's rows):
+ * every item under the goal as a kit row (`GoalItemRow`) - the open ones
+ * first, each set in step order - with the step it is about, what last
+ * happened ("Closed by Measure 3 h ago") and its status. It starts folded; the
+ * reader's own fold is remembered per project for the session, so coming back
+ * from a step screen keeps it. No goal, no row.
  */
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Meta, Rows } from '@/features/shared/components/kit';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
 import { useLifecycleViewModel } from '../context';
 import type { HealthStep } from '../layer1/healthModel';
 import { GoalMeter } from '../layer1/status/GoalMeter';
-import { lcSurface } from '../system/lcSurface';
 import { LT } from '../system/lcType';
 import { GLYPH } from '../system/scales';
 import { GoalItemRow } from './GoalItemRow';
@@ -46,16 +50,16 @@ export function __resetGoalFoldsForTests(): void {
 /** Rows shown before the list offers "Show all". */
 const ROW_CAP = 6;
 
-export function GoalPanel({ steps }: { steps: HealthStep[] }) {
-  const { snapshot, dl, tx, projectId, order } = useLifecycleViewModel();
-  const reduced = useReducedMotion();
-  const bodyId = useId();
-  const headingId = useId();
+export interface GoalFold {
+  open: boolean;
+  toggle: () => void;
+}
+
+/** The goal's fold for the active project: shared by the line's toggle and the items it opens. */
+export function useGoalFold(): GoalFold {
+  const { projectId } = useLifecycleViewModel();
   // Re-render on a fold; the fold itself lives in `folds`.
   const [, setTick] = useState(0);
-  const goal = snapshot?.goal ?? null;
-  if (!goal) return null;
-
   const open = (projectId ? folds.get(projectId) : undefined) ?? false;
   const toggle = () => {
     if (!projectId) return;
@@ -63,6 +67,14 @@ export function GoalPanel({ steps }: { steps: HealthStep[] }) {
     folds.set(projectId, !open);
     setTick((n) => n + 1);
   };
+  return { open, toggle };
+}
+
+/** The goal's one line, in the plate's second row. Renders nothing without a goal. */
+export function GoalLine({ steps, fold, headingId, bodyId }: { steps: HealthStep[]; fold: GoalFold; headingId: string; bodyId: string }) {
+  const { snapshot, dl, tx, order } = useLifecycleViewModel();
+  const goal = snapshot?.goal ?? null;
+  if (!goal) return null;
   const items = orderedItems(goal.items, order.map((n) => n.id));
   const owed = items.filter(isOpenItem);
   const tally = goalTally(goal.items);
@@ -72,60 +84,73 @@ export function GoalPanel({ steps }: { steps: HealthStep[] }) {
     tally.closed > 0 && tx(dl.lcx9_goal_closed_n, { count: tally.closed }),
     tally.decided > 0 && tx(dl.lcx9_goal_decided_n, { count: tally.decided }),
   ];
-
   return (
-    <section
+    <div
+      role="group"
       aria-labelledby={headingId}
-      className={`@container/goal ${lcSurface('strip')}`}
+      className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1.5"
       data-testid="lc9-goal-panel"
-      data-open={open ? 'true' : 'false'}
+      data-open={fold.open ? 'true' : 'false'}
     >
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-        <h2 id={headingId} className="flex shrink-0 items-center gap-2">
-          <OverseerMark size="sm" />
-          <span className="sr-only">{dl.lcx9_goal_eyebrow}: </span>
-          <span className={LT.title}>{dl.lcx9_goal_name}</span>
-        </h2>
-        <OpenItemChips items={owed} />
-        <span className="ml-auto flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1">
-          <GoalMeter steps={steps} />
-          {counts.some(Boolean) && (
-            <span className={`flex items-center gap-1.5 ${LT.meta}`} data-testid="lc9-goal-tally"><Meta parts={counts} /></span>
-          )}
-          <Button
-            variant="ghost"
-            size="xs"
-            iconRight={<ChevronDown className={`${GLYPH.sm} transition-transform duration-200 motion-reduce:transition-none ${open ? 'rotate-180' : ''}`} />}
-            aria-expanded={open}
-            aria-controls={bodyId}
-            onClick={toggle}
-            data-testid="lc9-goal-toggle"
+      <h2 id={headingId} className="flex shrink-0 items-center gap-2">
+        <Tooltip content={dl.lcx9_goal_name}>
+          <span className="inline-flex"><OverseerMark size="sm" /></span>
+        </Tooltip>
+        <span className="sr-only">{dl.lcx9_goal_eyebrow}: </span>
+        <span className={`sr-only @[72rem]/status:not-sr-only ${LT.title}`}>{dl.lcx9_goal_name}</span>
+      </h2>
+      <OpenItemChips items={owed} />
+      <span className="ml-auto flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1">
+        <GoalMeter steps={steps} />
+        {counts.some(Boolean) && (
+          <span className={`sr-only items-center gap-1.5 @[64rem]/status:not-sr-only @[64rem]/status:flex ${LT.meta}`} data-testid="lc9-goal-tally">
+            <Meta parts={counts} />
+          </span>
+        )}
+        <Button
+          variant="ghost"
+          size="xs"
+          iconRight={<ChevronDown className={`${GLYPH.sm} transition-transform duration-200 motion-reduce:transition-none ${fold.open ? 'rotate-180' : ''}`} />}
+          aria-expanded={fold.open}
+          aria-controls={bodyId}
+          onClick={fold.toggle}
+          data-testid="lc9-goal-toggle"
+        >
+          {fold.open ? dl.lcx9_goal_hide : tx(dl.lcx9_goal_show, { count: items.length })}
+        </Button>
+      </span>
+    </div>
+  );
+}
+
+/** The goal's items, opened by the fold under the plate's rows. Its host is always mounted (the toggle controls it). */
+export function GoalItems({ fold, bodyId }: { fold: GoalFold; bodyId: string }) {
+  const { snapshot, dl, order } = useLifecycleViewModel();
+  const reduced = useReducedMotion();
+  const goal = snapshot?.goal ?? null;
+  if (!goal) return null;
+  const items = orderedItems(goal.items, order.map((n) => n.id));
+  return (
+    <div id={bodyId}>
+      <AnimatePresence initial={false}>
+        {fold.open && (
+          <motion.div
+            key="items"
+            className="overflow-hidden"
+            initial={reduced ? false : { height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={reduced ? { opacity: 0, transition: { duration: 0 } } : { height: 0, opacity: 0 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            data-testid="lc9-goal-items"
           >
-            {open ? dl.lcx9_goal_hide : tx(dl.lcx9_goal_show, { count: items.length })}
-          </Button>
-        </span>
-      </div>
-      <div id={bodyId}>
-        <AnimatePresence initial={false}>
-          {open && (
-            <motion.div
-              key="items"
-              className="overflow-hidden"
-              initial={reduced ? false : { height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={reduced ? { opacity: 0, transition: { duration: 0 } } : { height: 0, opacity: 0 }}
-              transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-              data-testid="lc9-goal-items"
-            >
-              <div className="pb-1.5 pt-2.5">
-                <Rows count={items.length} cap={ROW_CAP} empty={{ title: dl.lcx9_goal_no_items }}>
-                  {items.map((item) => <GoalItemRow key={item.id} item={item} />)}
-                </Rows>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </section>
+            <div className="pb-0.5 pt-2.5">
+              <Rows count={items.length} cap={ROW_CAP} empty={{ title: dl.lcx9_goal_no_items }}>
+                {items.map((item) => <GoalItemRow key={item.id} item={item} />)}
+              </Rows>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

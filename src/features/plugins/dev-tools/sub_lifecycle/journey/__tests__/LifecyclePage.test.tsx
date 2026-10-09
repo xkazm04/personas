@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import type { LifecycleSnapshot } from '@/lib/bindings/LifecycleSnapshot';
@@ -26,7 +26,8 @@ const addToast = vi.hoisted(() => vi.fn());
 let activeProjectId: string | null = 'p1';
 
 const getLifecycleHistory = vi.hoisted(() => vi.fn(async () => ({ measures: [], stepIds: ['gate', 'tests'] })));
-vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycle, installLifecycle, getLifecycleStepDetail, measureLifecycle, getLifecycleHistory }));
+const detectLifecycleCommands = vi.hoisted(() => vi.fn(async () => [{ id: 'lint', command: 'npm run lint', kind: 'lint', budgetMs: null }]));
+vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycle, installLifecycle, getLifecycleStepDetail, measureLifecycle, getLifecycleHistory, detectLifecycleCommands }));
 vi.mock('@/stores/toastStore', () => ({
   useToastStore: Object.assign((selector: (s: Record<string, unknown>) => unknown) => selector({ addToast }), {
     getState: () => ({ addToast }),
@@ -43,6 +44,13 @@ vi.mock('@/stores/systemStore', () => ({
 }));
 
 import LifecyclePage from '../../LifecyclePage';
+import { loadStepChunk } from '../../lifecycleView/layer2/stepChunks';
+
+// The step screen's chunks are transformed once, up front: under a full parallel run a cold
+// transform outlasted a one-second wait for the screen.
+beforeAll(async () => {
+  await Promise.all([loadStepChunk('screen'), loadStepChunk('gate'), loadStepChunk('generic')]);
+}, 30_000);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -68,7 +76,9 @@ describe('LifecyclePage', () => {
     expect(screen.getByTestId('lc-lane-before').querySelectorAll('[data-testid^="lc-node-"]')).toHaveLength(4);
     expect(screen.getByTestId('lc-lane-after').querySelectorAll('[data-testid^="lc-node-"]')).toHaveLength(6);
     expect(screen.getByTestId('lc-node-tests').getAttribute('data-state')).toBe('advisory');
-    expect(screen.getByTestId('lc-weakest').textContent).toContain('No work has passed through yet.');
+    // Never measured: the first-run setup holds the status slot, over what detection found.
+    expect(await screen.findByTestId('lc10-setup-row-lint')).toBeTruthy();
+    expect(screen.queryByTestId('lc-weakest')).toBeNull();
     expect(screen.queryByTestId('lc-install')).toBeNull();
   });
 

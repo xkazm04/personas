@@ -1,9 +1,9 @@
 /**
  * What else one change did: its outcome on every OTHER step of the practice,
  * in journey order, each with its note and a way to that step's screen. The
- * step detail keeps only the open step's outcome per change, so the whole
- * record comes from the snapshot's newest window; an older change says that
- * only this step's outcome is known instead of drawing an empty list.
+ * change carries every step's outcome (the step detail ships them whole since
+ * wave 10), so this reads the same for all 200 changes; a change no other step
+ * recorded says so instead of drawing an empty list.
  */
 import { ArrowRight } from 'lucide-react';
 
@@ -17,11 +17,11 @@ import { LT } from '../../system/lcType';
 import { OutcomePill } from '../../system/Pill';
 import { GLYPH } from '../../system/scales';
 
-export function DrawerOutcomes({ whole, stepId, onOpenStep }: { whole: LifecycleEvidenceItem | null; stepId: string; onOpenStep: (id: string) => void }) {
+export function DrawerOutcomes({ whole, stepId, onOpenStep }: { whole: LifecycleEvidenceItem; stepId: string; onOpenStep: (id: string) => void }) {
   const { dl, tx, order } = useLifecycleViewModel();
-  if (!whole) return <p className={LT.row} data-testid="lc8-drawer-others-unknown">{dl.lcx8_drawer_others_unknown}</p>;
   const rank = (id: string) => { const i = order.findIndex((n) => n.id === id); return i < 0 ? order.length : i; };
   const others = whole.outcomes.filter((o) => o.stepId !== stepId).sort((a, b) => rank(a.stepId) - rank(b.stepId));
+  if (others.length === 0) return <p className={LT.row} data-testid="lc8-drawer-others-none">{dl.lcx10_drawer_others_none}</p>;
   return (
     <ul className={`divide-y ${LC_RULE}`} data-testid="lc8-drawer-others">
       {others.map((o) => {

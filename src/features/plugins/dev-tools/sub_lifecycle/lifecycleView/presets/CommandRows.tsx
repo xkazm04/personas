@@ -12,11 +12,16 @@
  *
  * A budget saved in place is announced on the line under the rows, which is
  * always mounted so the result is heard when its text arrives.
+ *
+ * The run chart's share of the row follows the LIST's width: on a list under
+ * `NARROW_LIST_PX` (a 1440-wide window and below) the chart gives the command
+ * the room to say its name and median in full; wider, the chart takes more.
  */
 import { useEffect, useRef } from 'react';
 
 import { Button } from '@/features/shared/components/buttons';
 import { Rows, Section, type RowColumn } from '@/features/shared/components/kit';
+import { useElementSize } from '@/hooks/utility/interaction/useElementSize';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import type { LifecycleRun } from '@/lib/bindings/LifecycleRun';
 import { formatNumeric } from '@/lib/utils/formatters';
@@ -42,10 +47,14 @@ interface CommandRowsProps {
   onOpen: (row: InstrumentRow, run: LifecycleRun) => void;
 }
 
+/** Below this list width the run chart yields to the command's name (a 1440 px window gives ~1070). */
+const NARROW_LIST_PX = 1100;
+
 export function CommandRows({ rows, loading, unavailable, measureId = null, view, onView, budget, onOpen }: CommandRowsProps) {
   const { dl, tx } = useLifecycleViewModel();
   const reduced = useReducedMotion();
   const host = useRef<HTMLDivElement>(null);
+  const { width } = useElementSize(host);
   const slow = slowest(rows);
   const shown = viewRows(rows, view);
   const counts = filterCounts(rows);
@@ -58,7 +67,7 @@ export function CommandRows({ rows, loading, unavailable, measureId = null, view
   }, [measureId, reduced]);
   const columns: RowColumn[] = [
     { head: measureId ? dl.lcx3_col_viewed : dl.lc2_col_latest, width: '9rem' },
-    { head: dl.lcx6_col_runs, width: '1.25fr', collapse: true },
+    { head: dl.lcx6_col_runs, width: width < NARROW_LIST_PX ? '0.7fr' : '1.25fr', collapse: true },
     { head: dl.lcx6_col_time, width: '9rem' },
     { head: dl.lc2_col_pass, width: '4.5rem', align: 'end' },
   ];

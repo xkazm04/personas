@@ -14,13 +14,18 @@ import { RATE_SCALE, type StepMetric } from '../healthModel';
 
 const formats = new Map<string, Intl.NumberFormat>();
 
-function percentFormat(language: string): Intl.NumberFormat {
+export function percentFormat(language: string): Intl.NumberFormat {
   let f = formats.get(language);
   if (!f) {
     f = new Intl.NumberFormat(language, { style: 'percent', maximumFractionDigits: 0 });
     formats.set(language, f);
   }
   return f;
+}
+
+/** The figure as words for a reader ("40%"), or null when it is unknown. */
+export function figureWords(metric: StepMetric, language: string): string | null {
+  return metric.value == null ? null : percentFormat(language).format(metric.value / RATE_SCALE);
 }
 
 export function FigureValue({ metric }: { metric: StepMetric }) {

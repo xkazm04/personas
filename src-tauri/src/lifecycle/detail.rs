@@ -82,7 +82,8 @@ pub fn step_detail(
 
 /// The step's evidence: of the newest [`STEP_DETAIL_EVIDENCE`] changes (the
 /// snapshot's sources, see [`super::evidence_items`]), those carrying an
-/// outcome for `step_id`, each reduced to that one outcome. Newest first.
+/// outcome for `step_id`, each with EVERY step's outcome (the step screen's
+/// change drawer shows what a change did on the other steps). Newest first.
 fn step_evidence(
     pool: &DbPool,
     project: &DevProject,
@@ -100,13 +101,13 @@ fn step_evidence(
     )
 }
 
-/// `item` with only `step_id`'s outcome; `None` when it has none. Pure.
-pub fn project_step(
-    mut item: LifecycleEvidenceItem,
-    step_id: &str,
-) -> Option<LifecycleEvidenceItem> {
-    item.outcomes.retain(|o| o.step_id == step_id);
-    (!item.outcomes.is_empty()).then_some(item)
+/// `item` when it carries an outcome for `step_id` (all of its outcomes
+/// kept); `None` when it has none. Pure.
+pub fn project_step(item: LifecycleEvidenceItem, step_id: &str) -> Option<LifecycleEvidenceItem> {
+    item.outcomes
+        .iter()
+        .any(|o| o.step_id == step_id)
+        .then_some(item)
 }
 
 /// The stored output of run `run_id`: `None` when nothing was captured,

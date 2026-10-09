@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, within } from '@testing-library/react';
 
 import { useAthenaStore } from '@/features/companions/athena/athenaStore';
@@ -6,10 +6,15 @@ import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { estateDetail, estateSnapshot } from '../../../../journey/__tests__/docsFixtures';
 import { renderLayer1 } from '../../../layer1/__tests__/renderLayer1';
 import { LifecycleBody } from '../../../LifecycleBody';
+import { loadStepChunk } from '../../../layer2/stepChunks';
 
 const getLifecycleStepDetail = vi.hoisted(() => vi.fn());
 const getLifecycleHistory = vi.hoisted(() => vi.fn(async () => ({ measures: [], stepIds: ['gate', 'tests'] })));
 vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycleStepDetail, setLifecycleStepParams: vi.fn(), getLifecycleHistory }));
+
+// The screen and the Docs chunk are transformed once, up front: under a full parallel run the first
+// test's cold import outlasted its five-second budget.
+beforeAll(async () => { await Promise.all([loadStepChunk('screen'), loadStepChunk('docs')]); }, 30_000);
 
 beforeEach(() => {
   vi.clearAllMocks();

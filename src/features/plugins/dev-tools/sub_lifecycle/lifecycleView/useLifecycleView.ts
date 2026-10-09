@@ -11,6 +11,11 @@
  * - `openStepId` is the step whose Layer-2 screen replaces Layer 1 in the same
  *   page (not a modal, not a route). Opening a step also selects it, so
  *   closing returns the cursor to the key that was opened.
+ *
+ * The model is ONE memoised object: every block reads it through one context,
+ * so a page render that changed nothing in it (a revalidation that brought the
+ * same snapshot back) re-renders no block. `loading` is the FIRST load only,
+ * for the same reason.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -31,6 +36,7 @@ import { useLifecycleHeadline } from './useLifecycleHeadline';
 import { useLifecycleInstall, type InstallNote } from './useLifecycleInstall';
 
 const EMPTY_LANES: JourneyLanes = { before: [], after: [] };
+const NO_EVIDENCE: LifecycleEvidenceItem[] = [];
 
 /**
  * A part of a step's screen another surface (or the screen's own Next panel)
@@ -62,6 +68,7 @@ export interface LifecycleViewModel {
   projectName: string | null;
   /** The snapshot for the ACTIVE project only; a stale project's copy reads null. */
   snapshot: LifecycleSnapshot | null;
+  /** A first load is in flight with nothing to show (a revalidation behind a shown snapshot is not loading). */
   loading: boolean;
   error: string | null;
   refetch: () => void;
@@ -153,7 +160,7 @@ export function useLifecycleView(): LifecycleViewModel {
   }, []);
   const clearStepFocus = useCallback(() => setStepFocus(null), []);
 
-  const practice = current
+  const practice = useMemo(() => (current
     ? current.version === 0
       ? tx(dl.lc_subtitle_default, { preset: presetLabel(dl, current.preset) })
       : tx(dl.lc_subtitle_version, {
@@ -161,7 +168,7 @@ export function useLifecycleView(): LifecycleViewModel {
           version: current.version,
           author: authorLabel(dl, current.author) ?? '',
         })
-    : null;
+    : null), [current, dl, tx]);
   const freshness = useMemo(() => (current ? freshnessOf(current.tip) : null), [current]);
 
   const askAthena = useCallback(() => {
@@ -175,26 +182,37 @@ export function useLifecycleView(): LifecycleViewModel {
     ask('lifecycle', text);
   }, [project, head.headlineStepId, order, tx, dl, ask]);
 
-  return {
+  const cold = loading && !current;
+  const missingText = useMemo(
+    () => missing.map((m) => `${stepLabel(dl, m.stepId, m.label)} (${bindingKindLabel(dl, m.kind)})`).join(', '),
+    [missing, dl],
+  );
+  const installing = forcePending || (current ? installInFlight(current) : false);
+  const projectName = project?.name ?? null;
+  return useMemo<LifecycleViewModel>(() => ({
     t, tx, dl,
     projectId,
-    projectName: project?.name ?? null,
+    projectName,
     snapshot: current,
-    loading, error, refetch,
+    loading: cold, error, refetch,
     practice,
     freshness,
     lanes, order,
-    evidence: current?.evidence ?? [],
+    evidence: current?.evidence ?? NO_EVIDENCE,
     selected, select,
     openStepId, openStep, closeStep, stepFocus, clearStepFocus,
     headline: head.headline,
     headlineHealth: head.headlineHealth,
     headlineState: head.headlineState,
-    missingText: missing.map((m) => `${stepLabel(dl, m.stepId, m.label)} (${bindingKindLabel(dl, m.kind)})`).join(', '),
+    missingText,
     missingCount: missing.length,
-    installing: forcePending || (current ? installInFlight(current) : false),
+    installing,
     install,
     installNote,
     askAthena,
-  };
+  }), [
+    t, tx, dl, projectId, projectName, current, cold, error, refetch, practice, freshness, lanes, order,
+    selected, select, openStepId, openStep, closeStep, stepFocus, clearStepFocus, head, missingText, missing.length,
+    installing, install, installNote, askAthena,
+  ]);
 }

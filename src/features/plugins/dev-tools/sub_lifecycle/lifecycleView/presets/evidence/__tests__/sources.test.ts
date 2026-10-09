@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { commitHistory, landHistory, snapshotOver } from '../../../../journey/__tests__/evidenceFixtures';
 import { evidenceRowsFor } from '../../../blocks/evidenceRows';
-import { stepEvidenceRows, wholeChange } from '../evidenceModel';
+import { stepEvidenceRows } from '../evidenceModel';
 import { sourceBreakdown, sourceContrast } from '../sources';
 
 describe('sourceBreakdown', () => {
@@ -35,8 +35,8 @@ describe('stepEvidenceRows', () => {
     expect(rows[0]!.item.occurredAt > rows[59]!.item.occurredAt).toBe(true);
     // Before the detail answers, the snapshot's window is on screen.
     expect(stepEvidenceRows('land', [], snap.evidence)).toHaveLength(20);
-    // A change the snapshot holds carries every step's outcome; an older one is only this step's.
-    expect(wholeChange(rows[0]!, snap.evidence)!.outcomes.map((o) => o.stepId)).toEqual(['isolate', 'gate', 'land', 'record']);
-    expect(wholeChange(rows[40]!, snap.evidence)).toBeNull();
+    // Every change carries every step's outcome, older than the snapshot window too.
+    expect(rows[0]!.item.outcomes.map((o) => o.stepId)).toEqual(['land', 'isolate', 'gate', 'record']);
+    expect(rows[40]!.item.outcomes.map((o) => o.stepId)).toEqual(['land', 'isolate', 'gate', 'record']);
   });
 });

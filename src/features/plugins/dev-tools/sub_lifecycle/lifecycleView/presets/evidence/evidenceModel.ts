@@ -1,7 +1,7 @@
 // One step's evidence, the rows every evidence section draws: the step
-// detail's own history (up to 200 changes, each reduced to this step's
-// outcome) joined with the snapshot's newest window (every step's outcomes),
-// deduplicated by change and ordered newest first. The snapshot's rows are on
+// detail's own history (up to 200 changes this step recorded, each with every
+// step's outcome) joined with the snapshot's newest window, deduplicated by
+// change and ordered newest first. The snapshot's rows are on
 // screen before the detail read answers, so a slow read never hides them; the
 // detail then adds the older changes. Pure: no React, no i18n, no IO.
 import type { LifecycleEvidenceItem } from '@/lib/bindings/LifecycleEvidenceItem';
@@ -42,11 +42,3 @@ export function outcomeCounts(rows: readonly Pick<EvidenceRow, 'outcome'>[]): Ou
   return c;
 }
 
-/**
- * The same change as the snapshot window holds it, with EVERY step's outcome;
- * null when the change is older than that window (the step detail keeps only
- * this step's outcome for each change).
- */
-export function wholeChange(row: EvidenceRow, snapshot: readonly LifecycleEvidenceItem[]): LifecycleEvidenceItem | null {
-  return snapshot.find((s) => changeKey(s) === row.key) ?? null;
-}
