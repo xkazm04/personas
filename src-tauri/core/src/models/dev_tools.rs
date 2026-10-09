@@ -509,6 +509,10 @@ pub struct DevMilestone {
     /// carry `added_after_cut` and surface as scope creep.
     pub cut_at: Option<String>,
     pub shipped_at: Option<String>,
+    /// 'milestone' | 'deadline'. A deadline is a cut whose `target_date` is a
+    /// commitment, not an aim: it always carries one, and the repo refuses to
+    /// create a deadline without a date or to clear the date later.
+    pub kind: String,
     pub created_at: String,
     pub updated_at: String,
 }

@@ -20,6 +20,9 @@ pub fn dev_tools_list_milestones(
     repo::list_milestones_by_project(&state.db, &project_id)
 }
 
+// One argument per column a creation may set, for the same reason as
+// `dev_tools_update_milestone` below.
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub fn dev_tools_create_milestone(
     state: State<'_, Arc<AppState>>,
@@ -29,9 +32,11 @@ pub fn dev_tools_create_milestone(
     description: Option<String>,
     status: Option<String>,
     target_date: Option<String>,
+    // 'milestone' (default) | 'deadline' - a deadline requires `target_date`.
+    kind: Option<String>,
 ) -> Result<DevMilestone, AppError> {
     require_auth_sync(&state)?;
-    repo::create_milestone(
+    repo::create_milestone_of_kind(
         &state.db,
         &project_id,
         &name,
@@ -39,6 +44,7 @@ pub fn dev_tools_create_milestone(
         description.as_deref(),
         status.as_deref(),
         target_date.as_deref(),
+        kind.as_deref(),
     )
 }
 

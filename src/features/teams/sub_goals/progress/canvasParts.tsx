@@ -10,7 +10,7 @@
  * ACCELERATOR for a move that is already reachable without a pointer, which is
  * the only shape in which drag-and-drop is allowed to be the headline gesture.
  */
-import { Flag, Plus } from 'lucide-react';
+import { Flag, Hourglass, Plus } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -19,7 +19,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { GoalSquare, NODE_PX, type DevLifecycleT } from '../progressShared';
 import { useProgressView } from './canvasHost';
 import type { MilestoneLane } from './milestoneOps';
-import { laneTone, useMenuKey } from './rowCanvas';
+import { isDeadlineMissed, laneToneOf, useMenuKey, type LaneLookInput } from './rowCanvas';
 import type { ProgressNode } from './useProgressModel';
 
 /**
@@ -35,22 +35,22 @@ export function CanvasFrame({
   projectId,
   dl,
   bound,
-  laneStatus,
+  lane,
 }: {
   node: ProgressNode;
   projectId: string;
   dl: DevLifecycleT;
   /** Bound to at least one milestone - drawn as a flag on the frame. */
   bound: boolean;
-  /** Cut state of the milestone it is bound to, for the flag's tone. */
-  laneStatus: string | null;
-  }) {
+  /** The milestone it is bound to, for the flag's tone (kind-aware). */
+  lane: LaneLookInput | null;
+}) {
   const { canvas, openGoal } = useProgressView();
   const { onKeyDown, onContextMenu } = useMenuKey((e) =>
     canvas.openMenu(e, { kind: 'goal', goalId: node.goal.id, projectId, name: node.goal.title }),
   );
   const dragging = canvas.drag.draggingId === node.goal.id;
-  const tone = bound ? laneTone(laneStatus ?? 'planned') : null;
+  const tone = bound ? laneToneOf(lane ?? { status: 'planned', kind: 'milestone', targetDate: null }) : null;
 
   return (
     <span
@@ -100,7 +100,7 @@ export function LaneChip({
   const { onKeyDown, onContextMenu } = useMenuKey((e) =>
     canvas.openMenu(e, { kind: 'milestone', milestoneId: lane.id, name: lane.name }),
   );
-  const tone = laneTone(lane.status);
+  const tone = laneToneOf(lane);
   const over = canvas.drop.overKey === lane.id;
   return (
     <span
@@ -115,11 +115,44 @@ export function LaneChip({
         over ? `${tone.bg} ring-1 ring-inset ${tone.border}` : 'bg-card/40'
       } ${dense ? '' : 'px-2.5 py-1'}`}
     >
-      <Flag className={`w-3 h-3 shrink-0 ${tone.text}`} aria-hidden />
+      <LaneGlyph lane={lane} className={tone.text} />
       <span className={`typo-caption truncate ${dense ? 'max-w-[11rem]' : 'max-w-[14rem]'} ${tone.text}`}>
         {lane.name}
       </span>
+      {lane.kind === 'deadline' && <DeadlineDate lane={lane} className={tone.text} />}
       <span className="typo-caption text-foreground tabular-nums">{count}</span>
+    </span>
+  );
+}
+
+/**
+ * The milestone's mark: a flag for an ordinary cut, an hourglass for a
+ * DEADLINE. The icon is the kind; the colour (`laneToneOf`) is the state - so a
+ * deadline reads as one even in a monochrome screenshot or to a colour-blind
+ * eye, and the tooltip names it for a screen reader.
+ */
+export function LaneGlyph({ lane, className = '' }: { lane: LaneLookInput; className?: string }) {
+  const { t } = useTranslation();
+  if (lane.kind !== 'deadline') return <Flag className={`w-3 h-3 shrink-0 ${className}`} aria-hidden />;
+  const label = isDeadlineMissed(lane) ? t.athena.ship_milestone_deadline_missed : t.athena.ship_milestone_deadline_badge;
+  return (
+    <Tooltip content={label}>
+      <Hourglass className={`w-3 h-3 shrink-0 ${className}`} role="img" aria-label={label} />
+    </Tooltip>
+  );
+}
+
+/** A deadline's day, short form. A deadline's date is what it IS, so a chip
+ *  that names one shows it. */
+export function DeadlineDate({ lane, className = '' }: { lane: LaneLookInput; className?: string }) {
+  const { tx, t, language } = useTranslation();
+  if (!lane.targetDate) return null;
+  const day = new Date(`${lane.targetDate.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(day.getTime())) return null;
+  const date = day.toLocaleDateString(language, { month: 'short', day: 'numeric' });
+  return (
+    <span className={`typo-caption tabular-nums shrink-0 ${className}`}>
+      {tx(t.athena.ship_milestone_deadline_due, { date })}
     </span>
   );
 }

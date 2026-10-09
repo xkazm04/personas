@@ -69,7 +69,7 @@ function FilmstripRow({
         projectId={row.projectId}
         dl={dl}
         bound={boundIds.has(n.goal.id)}
-        laneStatus={laneOf(n.goal.id)?.status ?? null}
+        lane={laneOf(n.goal.id) ?? null}
       />
     ));
 

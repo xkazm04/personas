@@ -29,4 +29,10 @@ status: string, orderIndex: number, targetDate: string | null,
  * When the scope was cut (certified) — members added after this stamp
  * carry `added_after_cut` and surface as scope creep.
  */
-cutAt: string | null, shippedAt: string | null, createdAt: string, updatedAt: string, };
+cutAt: string | null, shippedAt: string | null,
+/**
+ * 'milestone' | 'deadline'. A deadline is a cut whose `target_date` is a
+ * commitment, not an aim: it always carries one, and the repo refuses to
+ * create a deadline without a date or to clear the date later.
+ */
+kind: string, createdAt: string, updatedAt: string, };

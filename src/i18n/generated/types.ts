@@ -20323,6 +20323,13 @@ export type Translations = {
     ship_milestone_confirm: string;
     ship_milestone_cancel: string;
     ship_milestone_planned_note: string;
+    ship_milestone_deadline_toggle: string;
+    ship_milestone_deadline_hint: string;
+    ship_milestone_deadline_date_label: string;
+    ship_milestone_deadline_date_required: string;
+    ship_milestone_deadline_badge: string;
+    ship_milestone_deadline_missed: string;
+    ship_milestone_deadline_due: string;
     ship_milestone_created: string;
     dev_self_review: string;
     dev_self_review_failed: string;

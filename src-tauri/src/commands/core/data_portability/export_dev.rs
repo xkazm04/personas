@@ -502,7 +502,7 @@ pub(crate) fn collect_dev_project_exports(
         let milestones = query_rows(
             &conn,
             "SELECT id, name, goal, status, order_index, target_date, cut_at, shipped_at, \
-                    created_at, updated_at \
+                    created_at, updated_at, kind \
              FROM dev_milestones WHERE project_id = ?1 ORDER BY order_index",
             pid,
             |r| {
@@ -517,6 +517,7 @@ pub(crate) fn collect_dev_project_exports(
                     shipped_at: r.get(7)?,
                     created_at: r.get(8)?,
                     updated_at: r.get(9)?,
+                    kind: r.get("kind")?,
                 })
             },
         )?;

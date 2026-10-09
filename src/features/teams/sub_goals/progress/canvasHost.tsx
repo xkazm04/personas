@@ -91,8 +91,8 @@ export function useCanvasHost(opts: {
         isOpen={pendingProject !== null}
         projectName={pendingProject ? (opts.projectNames.get(pendingProject) ?? '') : ''}
         onCancel={() => setPendingProject(null)}
-        onConfirm={(name) => {
-          if (pendingProject) canvas.createMilestone(pendingProject, name);
+        onConfirm={(name, deadline) => {
+          if (pendingProject) canvas.createMilestone(pendingProject, name, deadline);
           setPendingProject(null);
         }}
       />

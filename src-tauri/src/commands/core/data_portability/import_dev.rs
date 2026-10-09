@@ -880,8 +880,8 @@ pub(crate) fn insert_project_children(
         exec_row(
             tx,
             "INSERT INTO dev_milestones (id, project_id, name, goal, status, order_index, \
-                 target_date, cut_at, shipped_at, created_at, updated_at) \
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
+                 target_date, cut_at, shipped_at, created_at, updated_at, kind) \
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)",
             rusqlite::params![
                 remap_req(map, &m.id),
                 project_id,
@@ -894,6 +894,7 @@ pub(crate) fn insert_project_children(
                 m.shipped_at,
                 m.created_at,
                 m.updated_at,
+                m.kind,
             ],
             &format!("Project '{pname}' milestone '{}'", m.name),
             warnings,

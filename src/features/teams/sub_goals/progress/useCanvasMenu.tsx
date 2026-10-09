@@ -12,7 +12,7 @@
  */
 import { useCallback, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { CircleOff, Flag, Plus, Target, Trash2 } from 'lucide-react';
+import { CircleOff, Flag, Hourglass, Plus, Target, Trash2 } from 'lucide-react';
 
 import { ContextMenu, type ContextMenuItem } from '@/features/shared/components/overlays/ContextMenu';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -96,7 +96,8 @@ export function useCanvasMenu(h: CanvasMenuHandlers): CanvasMenu {
       .map((lane, i) => ({
         id: `bind-${lane.id}`,
         label: lane.name,
-        icon: <Target className="w-3.5 h-3.5" />,
+        // A deadline keeps its hourglass here too, so the destination says what it is.
+        icon: lane.kind === 'deadline' ? <Hourglass className="w-3.5 h-3.5" /> : <Target className="w-3.5 h-3.5" />,
         separatorBefore: i === 0,
         onSelect: () => h.onBindGoal(target.goalId, lane.id),
       }));

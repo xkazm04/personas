@@ -7,12 +7,13 @@
  * goals bound to no milestone close the list as their own band.
  */
 import { useMemo } from 'react';
-import { CalendarClock } from 'lucide-react';
+import { CalendarClock, Hourglass } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import type { QuestMilestoneGroup } from '@/features/notepad/overview/questlog/QuestRoomBands';
 
 import { useProgressView } from '../../canvasHost';
+import { isDeadlineMissed, laneToneOf } from '../../rowCanvas';
 import type { MilestoneCard, ProjectLayer } from '../layerModel';
 import { milestoneMeta } from '../milestoneMeta';
 import { formatPct, formatTarget } from '../layerFormat';
@@ -50,11 +51,15 @@ export function useMilestoneGroups(layer: ProjectLayer | null): QuestMilestoneGr
 }
 
 function BandHeader({ card }: { card: MilestoneCard }) {
-  const { tx, language } = useTranslation();
+  const { t, tx, language } = useTranslation();
   const { dl } = useProgressView();
   const { lane, goals, progress, doneCount } = card;
   const meta = milestoneMeta(dl, lane.status);
   const target = formatTarget(lane.targetDate, language);
+  // A deadline wears its own hue and mark (see `laneToneOf`); its date is the
+  // commitment, so it is said as "Due …" in that hue rather than as a target.
+  const deadline = lane.kind === 'deadline';
+  const deadlineTone = laneToneOf(lane);
   return (
     <header className="flex items-center gap-4 flex-wrap" data-testid={`layers-notes-band-head-${lane.id}`}>
       <div className="min-w-0 flex flex-col">
@@ -66,11 +71,20 @@ function BandHeader({ card }: { card: MilestoneCard }) {
       >
         {meta.label}
       </span>
+      {deadline && (
+        <span
+          className={`inline-flex items-center gap-1 h-6 px-2 rounded-full border typo-label ${deadlineTone.bg} ${deadlineTone.border} ${deadlineTone.text}`}
+          data-testid={`layers-notes-band-deadline-${lane.id}`}
+        >
+          <Hourglass className="w-3.5 h-3.5" aria-hidden />
+          {isDeadlineMissed(lane) ? t.athena.ship_milestone_deadline_missed : t.athena.ship_milestone_deadline_badge}
+        </span>
+      )}
       <div className="ml-auto flex items-center gap-4">
         {target && (
-          <span className="inline-flex items-center gap-1.5 typo-body text-foreground">
-            <CalendarClock className="w-4 h-4" aria-hidden />
-            {tx(dl.layers_target, { date: target })}
+          <span className={`inline-flex items-center gap-1.5 typo-body ${deadline ? deadlineTone.text : 'text-foreground'}`}>
+            {deadline ? <Hourglass className="w-4 h-4" aria-hidden /> : <CalendarClock className="w-4 h-4" aria-hidden />}
+            {deadline ? tx(t.athena.ship_milestone_deadline_due, { date: target }) : tx(dl.layers_target, { date: target })}
           </span>
         )}
         <GoalSegments goals={goals} />
