@@ -209,6 +209,9 @@ export default function DirectorCoachingTab() {
              its own darker, bordered surface — the copy reads against a flat
              field instead of whatever the photo happens to be behind it. No
              backdrop-blur (WebView2 flicker; see the ContentHeader note). */
+          /* His watched pipelines are not personas: they render under the
+             empty scope too. */
+          <div className="flex-1 flex flex-col gap-8 pb-6">
           <div className="flex-1 flex items-center justify-center">
             <EmptyState
               glyph={COACHING_GLYPH}
@@ -221,6 +224,8 @@ export default function DirectorCoachingTab() {
                 {t.director.empty_subtitle}
               </p>
             </EmptyState>
+          </div>
+          <WatchedPipelines />
           </div>
         ) : !p ? null : (
           <div className="space-y-4 pb-6">

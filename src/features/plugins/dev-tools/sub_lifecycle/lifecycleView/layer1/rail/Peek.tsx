@@ -3,8 +3,8 @@
  * leaving the rail. The step's verdict and why; every metric with its sample
  * count and its change since the earlier measure; when it was measured and on
  * which tip; the earlier verdict and figure; the step's recent outcomes as
- * labelled marks; and what enforces it. Inert like every tip (nothing in it
- * takes focus); Enter or a click on the card opens the step's own screen.
+ * labelled marks; the Overseer's open items for it; and what enforces it.
+ * Inert like every tip (nothing in it takes focus); Enter or a click on the card opens the step's own screen.
  * Viewing a past Measure, a step the history does not track says it is shown
  * as it is now.
  */
@@ -16,6 +16,7 @@ import { stepLabel } from '../../../journey/journeyLabels';
 import { useLifecycleViewModel } from '../../context';
 import { fillTemplate } from '../../frame/fillTemplate';
 import { isUntracked, useTimeTravel } from '../../history/timeTravel';
+import { OverseerPeek } from '../../overseer/OverseerBadge';
 import { LT } from '../../system/lcType';
 import { VerdictPill } from '../../system/Pill';
 import { GLYPH } from '../../system/scales';
@@ -92,6 +93,7 @@ export function PeekBody({ step }: { step: HealthStep }) {
           </span>
         </div>
       )}
+      <OverseerPeek stepId={step.node.id} />
       <PeekEvidence step={step} />
     </div>
   );

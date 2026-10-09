@@ -1,0 +1,353 @@
+{
+  "version": 1,
+  "module": "companions/overseer/watched",
+  "source": "synthetic",
+  "recordedAt": "2026-09-22T15:40:00.000Z",
+  "note": "Synthetic: the Watched pipelines section alone; three pipelines, one never sent.",
+  "calls": [
+    {
+      "cmd": "get_director_portfolio",
+      "response": {
+        "rollup": {
+          "periodDays": 30,
+          "totalExecutions": 184,
+          "assessedExecutions": 160,
+          "valueDelivered": 112,
+          "partial": 26,
+          "preconditionFailed": 9,
+          "noInputAvailable": 6,
+          "unknown": 7,
+          "valueDeliveredRate": 0.7,
+          "totalCostUsd": 41.3,
+          "costPerValueDelivered": 0.37,
+          "models": [
+            {
+              "model": "claude-sonnet",
+              "executions": 140,
+              "costUsd": 30.1,
+              "valueDelivered": 92
+            },
+            {
+              "model": "claude-haiku",
+              "executions": 44,
+              "costUsd": 11.2,
+              "valueDelivered": 20
+            }
+          ]
+        },
+        "roster": [
+          {
+            "personaId": "p-triage",
+            "name": "Inbox Triage",
+            "icon": null,
+            "color": "#06b6d4",
+            "latestScore": 7,
+            "scoreTrend": [
+              6,
+              7,
+              7
+            ],
+            "valueDeliveredRate": 0.74,
+            "totalExecutions": 96,
+            "lastReviewedAt": "2026-09-21T19:40:00.000Z",
+            "latestReviewUnscored": false
+          },
+          {
+            "personaId": "p-release",
+            "name": "Release Notes Writer",
+            "icon": null,
+            "color": "#06b6d4",
+            "latestScore": 5,
+            "scoreTrend": [
+              4,
+              5,
+              5
+            ],
+            "valueDeliveredRate": 0.58,
+            "totalExecutions": 88,
+            "lastReviewedAt": "2026-09-21T09:40:00.000Z",
+            "latestReviewUnscored": false
+          }
+        ],
+        "scoreDistribution": [
+          {
+            "score": 5,
+            "count": 1
+          },
+          {
+            "score": 7,
+            "count": 1
+          }
+        ],
+        "inScope": 2,
+        "reviewed": 2,
+        "unreviewed": 0,
+        "avgScore": 6,
+        "periodDays": 30
+      }
+    },
+    {
+      "cmd": "list_director_verdicts",
+      "response": []
+    },
+    {
+      "cmd": "get_director_brain_enabled",
+      "response": false
+    },
+    {
+      "cmd": "dev_tools_overseer_watched_pipelines",
+      "response": [
+        {
+          "projectId": "p-atlas",
+          "projectName": "Atlas Web",
+          "goal": {
+            "goalId": "goal-1",
+            "measurableTotal": 8,
+            "measurableGreen": 3,
+            "instructed": 2,
+            "openItems": 2,
+            "items": []
+          },
+          "lastMeasuredAt": "2026-09-22T15:10:00.000Z",
+          "steps": [
+            {
+              "stepId": "frame",
+              "phase": "before",
+              "label": null,
+              "health": "instructed"
+            },
+            {
+              "stepId": "recall",
+              "phase": "before",
+              "label": null,
+              "health": "instructed"
+            },
+            {
+              "stepId": "isolate",
+              "phase": "before",
+              "label": null,
+              "health": "green"
+            },
+            {
+              "stepId": "sync",
+              "phase": "before",
+              "label": null,
+              "health": "unmeasured"
+            },
+            {
+              "stepId": "gate",
+              "phase": "after",
+              "label": null,
+              "health": "amber"
+            },
+            {
+              "stepId": "tests",
+              "phase": "after",
+              "label": null,
+              "health": "amber"
+            },
+            {
+              "stepId": "docs",
+              "phase": "after",
+              "label": null,
+              "health": "green"
+            },
+            {
+              "stepId": "commit",
+              "phase": "after",
+              "label": null,
+              "health": "stale"
+            },
+            {
+              "stepId": "land",
+              "phase": "after",
+              "label": null,
+              "health": "red"
+            },
+            {
+              "stepId": "record",
+              "phase": "after",
+              "label": null,
+              "health": "green"
+            }
+          ]
+        },
+        {
+          "projectId": "p-beacon",
+          "projectName": "Beacon API",
+          "goal": {
+            "goalId": "goal-2",
+            "measurableTotal": 8,
+            "measurableGreen": 7,
+            "instructed": 2,
+            "openItems": 1,
+            "items": []
+          },
+          "lastMeasuredAt": "2026-09-22T10:40:00.000Z",
+          "steps": [
+            {
+              "stepId": "frame",
+              "phase": "before",
+              "label": null,
+              "health": "instructed"
+            },
+            {
+              "stepId": "recall",
+              "phase": "before",
+              "label": null,
+              "health": "instructed"
+            },
+            {
+              "stepId": "isolate",
+              "phase": "before",
+              "label": null,
+              "health": "green"
+            },
+            {
+              "stepId": "sync",
+              "phase": "before",
+              "label": null,
+              "health": "green"
+            },
+            {
+              "stepId": "gate",
+              "phase": "after",
+              "label": null,
+              "health": "green"
+            },
+            {
+              "stepId": "tests",
+              "phase": "after",
+              "label": null,
+              "health": "amber"
+            },
+            {
+              "stepId": "docs",
+              "phase": "after",
+              "label": null,
+              "health": "green"
+            },
+            {
+              "stepId": "commit",
+              "phase": "after",
+              "label": null,
+              "health": "green"
+            },
+            {
+              "stepId": "land",
+              "phase": "after",
+              "label": null,
+              "health": "green"
+            },
+            {
+              "stepId": "record",
+              "phase": "after",
+              "label": null,
+              "health": "green"
+            }
+          ]
+        },
+        {
+          "projectId": "p-comet",
+          "projectName": "Comet Docs",
+          "goal": null,
+          "lastMeasuredAt": null,
+          "steps": [
+            {
+              "stepId": "frame",
+              "phase": "before",
+              "label": null,
+              "health": "instructed"
+            },
+            {
+              "stepId": "recall",
+              "phase": "before",
+              "label": null,
+              "health": "instructed"
+            },
+            {
+              "stepId": "isolate",
+              "phase": "before",
+              "label": null,
+              "health": "unmeasured"
+            },
+            {
+              "stepId": "sync",
+              "phase": "before",
+              "label": null,
+              "health": "unmeasured"
+            },
+            {
+              "stepId": "gate",
+              "phase": "after",
+              "label": null,
+              "health": "unmeasured"
+            },
+            {
+              "stepId": "tests",
+              "phase": "after",
+              "label": null,
+              "health": "unmeasured"
+            },
+            {
+              "stepId": "docs",
+              "phase": "after",
+              "label": null,
+              "health": "stale"
+            },
+            {
+              "stepId": "commit",
+              "phase": "after",
+              "label": null,
+              "health": "unmeasured"
+            },
+            {
+              "stepId": "land",
+              "phase": "after",
+              "label": null,
+              "health": "unmeasured"
+            },
+            {
+              "stepId": "record",
+              "phase": "after",
+              "label": null,
+              "health": "unmeasured"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "cmd": "list_projects",
+      "response": []
+    },
+    {
+      "cmd": "companions_status",
+      "response": {
+        "companions": [
+          {
+            "id": "athena",
+            "enabled": true,
+            "eligible": true,
+            "onboarded": true,
+            "detail": {}
+          },
+          {
+            "id": "overseer",
+            "enabled": true,
+            "eligible": true,
+            "onboarded": true,
+            "detail": {}
+          },
+          {
+            "id": "curator",
+            "enabled": false,
+            "eligible": true,
+            "onboarded": true,
+            "detail": {}
+          }
+        ]
+      }
+    }
+  ]
+}

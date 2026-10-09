@@ -593,5 +593,18 @@ fn watched_pipelines_carry_every_steps_health_in_order() -> Result<(), AppError>
     assert_eq!(rail.len(), snap.steps.len());
     assert_eq!(rail[0], ("frame".to_string(), LifecycleHealth::Instructed));
     assert!(rail.contains(&("gate".to_string(), LifecycleHealth::Red)));
+    // Each step carries its lane, so the mini rail draws before and after apart.
+    let phases: Vec<(String, LifecyclePhase)> = listed[0]
+        .steps
+        .iter()
+        .map(|s| (s.step_id.clone(), s.phase))
+        .collect();
+    let lanes: Vec<(String, LifecyclePhase)> = snap
+        .steps
+        .iter()
+        .map(|s| (s.step.id.clone(), s.step.phase))
+        .collect();
+    assert_eq!(phases, lanes);
+    assert!(listed[0].steps.iter().all(|s| s.label.is_none()));
     Ok(())
 }

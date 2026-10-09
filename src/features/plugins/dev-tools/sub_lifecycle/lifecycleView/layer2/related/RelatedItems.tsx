@@ -10,14 +10,14 @@ import { ArrowUpRight, FileWarning, Gauge, Radar, type LucideIcon } from 'lucide
 
 import { Button } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { ListRow, Rows, Section, type Tone } from '@/features/shared/components/kit';
+import { ListRow, Rows, Section } from '@/features/shared/components/kit';
 import type { LifecycleRelatedItem } from '@/lib/bindings/LifecycleRelatedItem';
 import type { LifecycleRelatedSource } from '@/lib/bindings/LifecycleRelatedSource';
 
 import { useLifecycleViewModel } from '../../context';
 import { LT } from '../../system/lcType';
 import { ItemPill, itemStatusLabel } from '../../system/Pill';
-import { ITEM_LOOK, itemStatusOf, type PillTone } from '../../system/pillLooks';
+import { ITEM_LOOK, MARK_TONE, itemStatusOf } from '../../system/pillLooks';
 import { GLYPH } from '../../system/scales';
 import { useRelatedItem } from './relatedItem';
 import { RelatedNote } from './RelatedNote';
@@ -27,9 +27,6 @@ export const SOURCE_GLYPH: Record<LifecycleRelatedSource, LucideIcon> = {
   overseer: Radar,
   doc_rot: FileWarning,
 };
-
-/** The spine mark per item status: the kit's tone for the pill's tone. */
-const MARK_TONE: Record<PillTone, Tone> = { success: 'success', warning: 'warning', error: 'error', info: 'info', neutral: 'neutral', quiet: 'neutral' };
 
 export function useSourceLabel() {
   const { dl } = useLifecycleViewModel();

@@ -31,8 +31,8 @@ use crate::commands::infrastructure::dev_tools::{apply_idea_verdict_by, IdeaVerd
 use crate::db::models::{
     BacklogSource, DevGoal, DevIdea, DevProject, IdeaDraft, IdeaPlan, IdeaStatus,
     LifecycleGoalItem, LifecycleGoalView, LifecycleHealth, LifecycleMetric, LifecycleMetricKey,
-    LifecycleSendPreview, LifecycleSendPreviewStep, LifecycleSendResult, LifecycleStepHealthView,
-    LifecycleWatchedPipeline, LifecycleWatchedStep, PlanStep,
+    LifecyclePhase, LifecycleSendPreview, LifecycleSendPreviewStep, LifecycleSendResult,
+    LifecycleStepHealthView, LifecycleWatchedPipeline, LifecycleWatchedStep, PlanStep,
 };
 use crate::db::repos::core::settings as settings_repo;
 use crate::db::repos::dev::goals as goal_repo;
@@ -799,19 +799,23 @@ pub fn watched_pipelines(pool: &DbPool) -> Result<Vec<LifecycleWatchedPipeline>,
             Err(e) => return Err(e),
         };
         let snap = super::snapshot(pool, &project_id)?;
+        let step_of = |id: &str| snap.steps.iter().find(|s| s.step.id == id);
+        let steps = snap
+            .health
+            .iter()
+            .map(|h| LifecycleWatchedStep {
+                phase: step_of(&h.step_id).map_or(LifecyclePhase::After, |s| s.step.phase),
+                label: step_of(&h.step_id).and_then(|s| s.step.label.clone()),
+                step_id: h.step_id.clone(),
+                health: h.health,
+            })
+            .collect();
         out.push(LifecycleWatchedPipeline {
             last_measured_at: latest_measure(pool, &project_id)?.map(|m| m.finished_at),
             project_name: project.name,
             project_id,
             goal: snap.goal,
-            steps: snap
-                .health
-                .into_iter()
-                .map(|h| LifecycleWatchedStep {
-                    step_id: h.step_id,
-                    health: h.health,
-                })
-                .collect(),
+            steps,
         });
     }
     out.sort_by(|a, b| a.project_name.cmp(&b.project_name));

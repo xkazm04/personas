@@ -8,7 +8,7 @@
 // the hero band); its shape and padding never change with it, so a verdict
 // recolours a card without resizing it.
 
-export type SurfaceRole = 'panel' | 'band' | 'lane' | 'node' | 'card' | 'action' | 'plate' | 'chip' | 'pin';
+export type SurfaceRole = 'panel' | 'band' | 'lane' | 'node' | 'card' | 'action' | 'plate' | 'strip' | 'chip' | 'pin';
 
 /** Radius per role. */
 const SHAPE: Record<SurfaceRole, string> = {
@@ -19,6 +19,7 @@ const SHAPE: Record<SurfaceRole, string> = {
   card: 'rounded-card',
   action: 'rounded-card',
   plate: 'rounded-card',
+  strip: 'rounded-card',
   chip: 'rounded-interactive',
   pin: 'rounded-interactive',
 };
@@ -32,6 +33,7 @@ const PAD: Record<SurfaceRole, string> = {
   card: 'px-3 py-3',
   action: 'px-3 py-2',
   plate: 'px-4 py-3',
+  strip: 'px-3 py-1.5',
   chip: 'px-2.5 py-1.5',
   pin: 'px-1 py-0.5',
 };
@@ -49,6 +51,9 @@ const PAD: Record<SurfaceRole, string> = {
  * - action: a card holding one thing to do and its control (the Next panel),
  *   padded tighter vertically so two lines and a button stay one compact row;
  * - plate: a flat label plate for a sentence (the headline, a rule, an error line);
+ * - strip: a plate ONE control tall, for a line that sits between the status
+ *   band and the rail without pushing the rail off a 1280x800 screen (the
+ *   Overseer's goal);
  * - chip: a small raised stat inside a card;
  * - pin: a step on the step screen's mini-map, a key-sized press target.
  */
@@ -60,6 +65,7 @@ const FILL: Record<SurfaceRole, string> = {
   card: 'border border-primary/15 bg-background shadow-elevation-1',
   action: 'border border-primary/15 bg-background shadow-elevation-1',
   plate: 'border border-primary/15 bg-secondary/40',
+  strip: 'border border-role-agent/25 bg-secondary/40',
   chip: 'bg-background shadow-elevation-1',
   pin: 'border border-primary/15 bg-background',
 };

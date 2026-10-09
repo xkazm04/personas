@@ -51,7 +51,7 @@ export function Layer1Ghost() {
     <div className={`animate-fade-in ${RAIL.laneGap}`} style={{ animationDelay: '150ms' }} aria-hidden data-testid="lc1-ghost">
       <div className={STATUS_BAND}>
         <div className="min-w-0 flex-[1_1_22rem]"><GhostLine role="row" width="70%" /></div>
-        <span className="block h-9 w-[34rem] max-w-full"><Ghost width="100%" height="100%" /></span>
+        <span className="block h-9 w-[22rem] max-w-full"><Ghost width="100%" height="100%" /></span>
       </div>
       {LANES.map((n, lane) => (
         <Lane

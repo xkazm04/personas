@@ -1,9 +1,9 @@
 // The status band: the whole practice in one band above the rail. The weakest
 // step's sentence leads (it takes the room that is left and wraps before
-// anything else does); then the goal as a drawn quantity with its open items;
-// then the verdict counts that double as the rail's highlight filter. One row
-// at 1920 wide, two at 1280 (the goal and the counts drop under the sentence
-// together), never more.
+// anything else does); then the verdict counts that double as the rail's
+// highlight filter. One row at 1280 wide and up. The Overseer's goal is not
+// here: it is his work, drawn on its own panel under the band
+// (`overseer/GoalPanel`).
 //
 // While a past Measure is viewed (`history/timeTravel`) the band says so: its
 // outline turns to the accent, the lead names the Measure and the way back
@@ -17,7 +17,6 @@ import { useTimeTravel } from '../../history/timeTravel';
 import { TravelLead } from '../../history/TravelLead';
 import { lcSurface } from '../../system/lcSurface';
 import type { HealthStep } from '../healthModel';
-import { GoalMeter } from './GoalMeter';
 import { VerdictFilter } from './VerdictFilter';
 import { WeakestLine } from './WeakestLine';
 
@@ -50,10 +49,7 @@ export function StatusBand({ steps }: { steps: HealthStep[] }) {
           </motion.div>
         </AnimatePresence>
       </div>
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
-        <GoalMeter steps={steps} />
-        <VerdictFilter steps={steps} />
-      </div>
+      <VerdictFilter steps={steps} />
     </section>
   );
 }

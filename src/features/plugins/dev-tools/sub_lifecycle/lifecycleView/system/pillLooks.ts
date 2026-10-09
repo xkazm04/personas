@@ -12,9 +12,10 @@
 // with a slashed circle.
 import {
   Archive, Ban, CircleCheck, CircleDashed, CircleDot, CircleHelp, CircleSlash, Clock, Eye, Hourglass, Info,
-  Lightbulb, OctagonX, PlugZap, SkipForward, TimerOff, TriangleAlert, Unplug, type LucideIcon,
+  Lightbulb, OctagonX, PlugZap, RotateCcw, SkipForward, TimerOff, TriangleAlert, Unplug, type LucideIcon,
 } from 'lucide-react';
 
+import type { Tone } from '@/features/shared/components/kit';
 import type { LifecycleBindingState } from '@/lib/bindings/LifecycleBindingState';
 import type { LifecycleHealth } from '@/lib/bindings/LifecycleHealth';
 import type { LifecycleOutcome } from '@/lib/bindings/LifecycleOutcome';
@@ -105,3 +106,9 @@ export const ITEM_LOOK: Record<ItemStatus | 'unknown', PillLook> = {
 export function itemStatusOf(status: string): ItemStatus | 'unknown' {
   return (ITEM_STATUSES as readonly string[]).includes(status) ? (status as ItemStatus) : 'unknown';
 }
+
+/** A pill's tone as the kit's status mark on a row's spine (`ListRow mark`): quiet reads neutral there. */
+export const MARK_TONE: Record<PillTone, Tone> = { success: 'success', warning: 'warning', error: 'error', info: 'info', neutral: 'neutral', quiet: 'neutral' };
+
+/** An Overseer item a send reopened because its step went bad after a Measure closed it. */
+export const REGRESSED_LOOK: PillLook = { tone: 'warning', stroke: 'solid', glyph: RotateCcw };

@@ -11,7 +11,8 @@
  * card outside it dims its SURFACE (outline, wash, depth) and its drawing;
  * its text keeps full contrast. Viewing a past Measure (`history/timeTravel`),
  * Gate and Tests show that Measure and carry the history glyph by their name;
- * every step the history does not track dims the same way.
+ * every step the history does not track dims the same way. A step the
+ * Overseer owes an item carries his mark after its name (`overseer/OverseerBadge`).
  *
  * The whole card is one press target (the key's stretched hit area); the key
  * is the tab stop, and pressing it flies the key into the step screen's band
@@ -31,6 +32,7 @@ import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { stepGlyph, stepLabel } from '../../../journey/journeyLabels';
 import type { StepRoving } from '../../blocks/useStepRoving';
 import { useLifecycleViewModel } from '../../context';
+import { OverseerBadge } from '../../overseer/OverseerBadge';
 import { isUntracked, useTimeTravel } from '../../history/timeTravel';
 import type { Tally } from '../../measure/measureModel';
 import '../../measure/measure.css';
@@ -115,6 +117,7 @@ export function NodeCard({ step, upstream, index, roving, peek, measuring = null
           {stepLabel(dl, node.id, node.label)}
         </span>
         {then && <History className={`${GLYPH.sm} shrink-0 text-primary`} aria-hidden data-then />}
+        <OverseerBadge stepId={node.id} />
       </div>
       <CardFigure
         step={step}

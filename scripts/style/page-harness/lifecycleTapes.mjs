@@ -128,11 +128,54 @@ export function lifecycleTapes({ RECORDED_AT }) {
   const TIP_SHA = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678';
   const TIP = { branch: 'main', sha: TIP_SHA, measuredSha: TIP_SHA, commitsBehind: 0, measuredAt: at };
 
+  // The Overseer's goal as his work (Lifecycle excellence wave 9), every item state once:
+  // Gate reopened by a send (regressed), Tests accepted - the two he still owes; Land closed
+  // by a Measure a day ago and red again since (the next send reopens it); Isolate and
+  // Record closed by Measure; Commit's item rejected (that decision stands). Sync has no
+  // item yet (the next send files one). Mirrored by journey/__tests__/overseerFixtures.ts.
+  const goalItem = (id, stepId, title, status, verifyState, filedMin, updatedMin = null) => ({
+    id, stepId, title, status, verifyState, createdAt: iso(filedMin), updatedAt: updatedMin === null ? null : iso(updatedMin),
+  });
+  const GOAL = {
+    goalId: 'goal-1', measurableTotal: 8, measurableGreen: 3, instructed: 2, openItems: 2,
+    items: [
+      goalItem('idea-ov-gate', 'gate', 'Bring Gate back to green: eslint fails on VaultPage.tsx', 'accepted', 'regressed', 60 * 30, 60 * 2),
+      goalItem('idea-ov-tests', 'tests', 'Turn lifecycle step `tests` green (measured amber)', 'accepted', null, 60 * 26),
+      goalItem('idea-ov-land', 'land', 'Turn lifecycle step `land` green (measured red)', 'delivered', 'cleared', 60 * 30, 60 * 22),
+      goalItem('idea-ov-isolate', 'isolate', 'Turn lifecycle step `isolate` green (measured amber)', 'delivered', 'cleared', 60 * 30, 60 * 3),
+      goalItem('idea-ov-record', 'record', 'Make lifecycle step `record` measurable', 'delivered', 'cleared', 60 * 52, 60 * 28),
+      goalItem('idea-ov-commit', 'commit', 'Re-measure lifecycle step `commit` green on the base tip', 'rejected', null, 60 * 52, 60 * 40),
+    ],
+  };
+  // What "Send to Overseer" would do on this snapshot (`dev_tools_lifecycle_send_preview`):
+  // every group present.
+  const previewStep = (stepId, verdict, reason, itemId = null) => ({ stepId, health: verdict, reason, itemId });
+  const PREVIEW = {
+    goalId: 'goal-1',
+    willFile: [previewStep('sync', 'unmeasured', 'Only 3 changes recorded; 5 are needed')],
+    alreadyOpen: [
+      previewStep('gate', 'amber', 'tsc 74s over 60s budget', 'idea-ov-gate'),
+      previewStep('tests', 'amber', 'Coverage 63% is under the 70% target', 'idea-ov-tests'),
+    ],
+    willReopen: [previewStep('land', 'red', 'Done in 40% of recent changes, 80% needed', 'idea-ov-land')],
+    skipped: [
+      previewStep('frame', 'instructed', null), previewStep('recall', 'instructed', null),
+      previewStep('isolate', 'green', null), previewStep('docs', 'green', null),
+      previewStep('commit', 'stale', 'its item was rejected; that decision stands', 'idea-ov-commit'),
+      previewStep('record', 'green', null),
+    ],
+  };
+  // `companions_status`: the Overseer switched on (or off, for the off chip).
+  const companion = (id, enabled) => ({ id, enabled, eligible: true, onboarded: true, detail: {} });
+  const companionsStatus = (overseerOn) => ({
+    companions: [companion('athena', true), companion('overseer', overseerOn), companion('curator', false)],
+  });
+
   const snapshot = (overrides = {}) => ({
     projectId: PROJECT_ID, preset: 'solo', version: 0, author: 'default', changeNote: null, createdAt: null,
     installTaskId: null, installTaskStatus: null,
     steps: STEPS, evidence: EVIDENCE, health: HEALTH,
-    goal: { goalId: 'goal-1', measurableTotal: 8, measurableGreen: 3, instructed: 2, openItems: 5, items: [] },
+    goal: GOAL,
     watched: true, measuring: false, progress: null, tip: TIP, rules: RULES, ...overrides,
   });
 
@@ -158,6 +201,8 @@ export function lifecycleTapes({ RECORDED_AT }) {
         history === 'fail'
           ? { cmd: 'dev_tools_lifecycle_history', error: 'database is locked' }
           : { cmd: 'dev_tools_lifecycle_history', response: history },
+        { cmd: 'dev_tools_lifecycle_send_preview', response: PREVIEW },
+        { cmd: 'companions_status', response: companionsStatus(true) },
       ],
     };
   }
@@ -166,6 +211,11 @@ export function lifecycleTapes({ RECORDED_AT }) {
   return {
     PROJECT,
     HISTORY,
+    GOAL,
+    PREVIEW,
+    companionsStatus,
+    snapshot,
+    tape,
     builders: {
       'plugins/lifecycle/collar': () => tape('plugins/lifecycle/collar', `${MIX} Twelve Measures of history.`, snapshot()),
       'plugins/lifecycle/history-failed': () => tape('plugins/lifecycle/history-failed', `${MIX} The Measure history read fails.`, snapshot(), 'fail'),
@@ -177,7 +227,7 @@ export function lifecycleTapes({ RECORDED_AT }) {
       })),
       'plugins/lifecycle/regressed': () => tape('plugins/lifecycle/regressed', 'Synthetic: one measure after a bad day - most steps worse than their earlier measure, four changed verdict, sync measured for the first time.', snapshot({
         health: REGRESSED,
-        goal: { goalId: 'goal-1', measurableTotal: 8, measurableGreen: 3, instructed: 2, openItems: 7, items: [] },
+        goal: { ...GOAL, openItems: 2 },
       })),
       'plugins/lifecycle/loading': () => tape('plugins/lifecycle/loading', 'Synthetic: the snapshot never answers, so the page shows its permanent header and the Layer-1 ghost.', 'hang', NO_HISTORY),
     },

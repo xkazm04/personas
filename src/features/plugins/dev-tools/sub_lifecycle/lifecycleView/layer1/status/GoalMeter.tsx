@@ -5,6 +5,9 @@
 // (not measured is a dashed hollow, stale is hatched). The sentence behind it
 // ("3 of 8 measurable steps green, 2 instructed") is what a reader hears and
 // what the bar's tip says. Renders nothing while the project has no goal.
+// It sits in the Overseer's goal strip (`overseer/GoalPanel`), one control
+// tall: the strip names the goal and counts his items, so the meter is the
+// figure at row size and the bar, nothing else.
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { LifecycleHealth } from '@/lib/bindings/LifecycleHealth';
@@ -34,10 +37,9 @@ export function GoalMeter({ steps }: { steps: HealthStep[] }) {
   const groups = BAR_ORDER.map((h) => ({ h, n: counts[h] })).filter((g) => g.n > 0);
   const sentence = tx(dl.lc1_goal_progress, { green: p.green, total: goal.measurableTotal, instructed: p.instructed });
   return (
-    <div className="flex shrink-0 items-center gap-3" data-testid="lc1-goal">
-      <span className={LT.label}>{dl.lcx2_goal}</span>
+    <div className="flex shrink-0 items-center gap-2" data-testid="lc1-goal">
       <span aria-hidden className="flex items-baseline gap-1">
-        <Numeric value={p.green} className={`${LT.stat} text-status-success`} />
+        <Numeric value={p.green} className={`${LT.rowNum} text-status-success`} />
         <span className={LT.metaNum}>/</span>
         <Numeric value={goal.measurableTotal} className={LT.metaNum} />
       </span>
@@ -49,7 +51,6 @@ export function GoalMeter({ steps }: { steps: HealthStep[] }) {
         </span>
       </Tooltip>
       <span className="sr-only">{sentence}</span>
-      {goal.openItems > 0 && <span className={`whitespace-nowrap ${LT.meta}`}>{tx(dl.lc1_goal_open, { count: goal.openItems })}</span>}
     </div>
   );
 }

@@ -60,6 +60,8 @@
   "*:plugins.dev_lifecycle.lcx5_item_with_status",
   "*:plugins.dev_lifecycle.lcx5_map_pin",
   "*:plugins.dev_lifecycle.lcx5_source_overseer",
+  "*:plugins.dev_lifecycle.lcx9_chip_label",
+  "*:plugins.dev_lifecycle.lcx9_group",
   "*:plugins.dev_tools.ctx_indicator_kpis",
   "*:plugins.dev_tools.monitoring_modal_title",
   "*:plugins.dev_tools.skills_args_label",

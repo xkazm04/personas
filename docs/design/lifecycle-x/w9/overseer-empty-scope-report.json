@@ -1,0 +1,105 @@
+{
+  "module": "companions/overseer/empty-scope",
+  "kit": null,
+  "query": null,
+  "reducedMotion": false,
+  "steps": null,
+  "label": "overseer-empty-scope",
+  "createdAt": "2026-10-09T07:32:19.143Z",
+  "browser": "153.0.8010.12",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 6,
+    "note": "Synthetic: no agent in the coaching scope; three watched pipelines, one never sent."
+  },
+  "ok": true,
+  "unknownIpcCommands": [
+    "obsidian_available"
+  ],
+  "shots": [
+    {
+      "file": "overseer-empty-scope-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "obsidian_available",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "get_director_portfolio": 1,
+        "list_director_verdicts": 1,
+        "get_director_brain_enabled": 1,
+        "obsidian_available": 1,
+        "dev_tools_overseer_watched_pipelines": 2
+      },
+      "stable": true,
+      "textLength": 863,
+      "textSample": "DIRECTOR No personas starred — star one to put it in scope Refresh Add to scope Review all in scope No agents in the Director's scope Star an agent on the Agents page to put it under the Director's co",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "overseer-empty-scope-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "obsidian_available",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "get_director_portfolio": 1,
+        "list_director_verdicts": 1,
+        "get_director_brain_enabled": 1,
+        "obsidian_available": 1,
+        "dev_tools_overseer_watched_pipelines": 2
+      },
+      "stable": true,
+      "textLength": 863,
+      "textSample": "DIRECTOR No personas starred — star one to put it in scope Refresh Add to scope Review all in scope No agents in the Director's scope Star an agent on the Agents page to put it under the Director's co",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

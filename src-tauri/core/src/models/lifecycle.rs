@@ -772,5 +772,10 @@ pub struct LifecycleWatchedPipeline {
 #[serde(rename_all = "camelCase")]
 pub struct LifecycleWatchedStep {
     pub step_id: String,
+    /// The lane the step sits in, so the mini rail draws before and after the
+    /// task apart, as the project's own rail does.
+    pub phase: LifecyclePhase,
+    /// A custom step's own label; null for a built-in step (the client names those).
+    pub label: Option<String>,
     pub health: LifecycleHealth,
 }

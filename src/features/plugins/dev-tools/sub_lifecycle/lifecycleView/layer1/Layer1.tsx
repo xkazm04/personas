@@ -1,11 +1,15 @@
 /**
  * LAYER 1 - the whole practice at a glance, sized to fit above the fold at
- * 1280x800: the STATUS BAND (the weakest step's sentence, the goal as a drawn
- * quantity, the verdict counts that filter the rail) over the RAIL (two
+ * 1280x800: the STATUS BAND (the weakest step's sentence and the verdict
+ * counts that filter the rail) over the RAIL (two
  * stacked lanes of equal step cards joined by the pipe), then the HISTORY (the
  * last Measures as one figure; picking a past one travels the whole layer to
  * it, `history/timeTravel`). The history is read on idle, after the rail has
  * painted, into a frame that already holds its height.
+ *
+ * When the Overseer holds a goal for the project, his goal panel sits between
+ * the band and the rail (`overseer/GoalPanel`): his items, opened in place
+ * through the same item opener a step screen uses.
  *
  * Pressing a card opens that step's Layer-2 screen in place of this one. Once
  * this layer has painted, the Layer-2 chunks are drained in idle time
@@ -26,6 +30,8 @@ import { motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
 import { useLifecycleViewModel } from '../context';
+import { RelatedItemProvider } from '../layer2/related/relatedItem';
+import { GoalPanel } from '../overseer/GoalPanel';
 import { HistorySection } from '../history/HistorySection';
 import { prefetchStepChunksOnIdle } from '../layer2/stepChunks';
 import { MeasurePanel } from '../measure/MeasurePanel';
@@ -38,7 +44,7 @@ import { StatusBand } from './status/StatusBand';
 import { useLayer1 } from './useLayer1';
 
 export function Layer1() {
-  const { projectId } = useLifecycleViewModel();
+  const { projectId, refetch } = useLifecycleViewModel();
   const play = useFirstEntrance(projectId);
   const data = useLayer1();
   const { open } = useMeasureSession();
@@ -54,20 +60,23 @@ export function Layer1() {
   return (
     <EntranceProvider play={play}>
       <HighlightProvider>
-        <div className={RAIL.laneGap} data-testid="lc1-layer1">
-          <motion.div
-            key={open ? 'measure' : 'band'}
-            initial={enter}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {open ? <MeasurePanel /> : <StatusBand steps={data.all} />}
-          </motion.div>
-          <div data-testid="lc1-collar">
-            <Rail data={data} />
+        <RelatedItemProvider onDecided={refetch}>
+          <div className={RAIL.laneGap} data-testid="lc1-layer1">
+            <motion.div
+              key={open ? 'measure' : 'band'}
+              initial={enter}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {open ? <MeasurePanel /> : <StatusBand steps={data.all} />}
+            </motion.div>
+            <GoalPanel steps={data.all} />
+            <div data-testid="lc1-collar">
+              <Rail data={data} />
+            </div>
+            <HistorySection />
           </div>
-          <HistorySection />
-        </div>
+        </RelatedItemProvider>
       </HighlightProvider>
     </EntranceProvider>
   );

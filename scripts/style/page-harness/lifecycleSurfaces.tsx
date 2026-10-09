@@ -18,6 +18,11 @@
  *   plugins/lifecycle/cancelling      the same with a cancel on its way
  *   plugins/lifecycle/measured        a Measure walked to its end while shot: the panel's summary
  *                                     (lifecycleMeasureTapes.mjs; `prepare` steps the revision twice)
+ *   plugins/lifecycle/overseer-off    the collar with the Overseer switched off (lifecycleOverseerTapes.mjs)
+ *   plugins/lifecycle/overseer-folded every Overseer item closed: his goal panel folded
+ *
+ * The collar's snapshot carries the Overseer's goal with every item state (wave 9); its Send
+ * preview is shot with --steps "click=[data-testid=lc-overseer-send];wait=700".
  *
  * Every tape carries the Measure history (wave 3); time travel is shot with
  * --steps "click=[data-testid=lc-history-col-<i>];wait=600" (oldest = 0).
@@ -73,4 +78,6 @@ export const LIFECYCLE_MODULES: Record<string, HarnessModule> = {
   'plugins/lifecycle/evidence': { load: page, prepare }, // wave 8: evidence steps tell the story of the practice (lifecycleEvidenceTapes.mjs)
   'plugins/lifecycle/docs': { load: page, prepare }, // wave 7: the Docs step as an estate (lifecycleDocsTapes.mjs)
   'plugins/lifecycle/gate': { load: page, prepare }, // wave 6: Gate and Tests as instruments, with run outputs (lifecycleGateTapes.mjs)
+  'plugins/lifecycle/overseer-off': { load: page, prepare }, // wave 9: the Overseer switched off (lifecycleOverseerTapes.mjs)
+  'plugins/lifecycle/overseer-folded': { load: page, prepare }, // wave 9: every Overseer item closed, the goal panel folded
 };
