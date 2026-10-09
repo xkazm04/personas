@@ -1,0 +1,141 @@
+/* PROTOTYPE ROUND (spark council-readout). Dossier layout. Layout is free;
+   every colour is a token mix, every type size is a typo-* class on the element. */
+
+/* The kit host carries the kit's variables; here it also has to fill the stage. */
+.k-host:has(> .dz) { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+
+.dz {
+  flex: 1 1 auto;
+  --dz-ink: var(--foreground);
+  --dz-rule: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --dz-wash: color-mix(in srgb, var(--foreground) 4%, transparent);
+  --dz-track: color-mix(in srgb, var(--foreground) 13%, transparent);
+  --dz-hatch-ink: color-mix(in srgb, var(--foreground) 24%, transparent);
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr) 396px;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+}
+@media (min-width: 1600px) {
+  .dz { grid-template-columns: 288px minmax(0, 1fr) 440px; }
+}
+
+/* ---- left: the contents rail ---- */
+.dz-rail {
+  min-height: 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--dz-rule);
+  padding: 16px 12px 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.dz-rail ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.dz-rail__link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 6px;
+  padding: 8px 10px 8px 14px;
+  border-left: 3px solid transparent;
+  border-radius: 0 var(--radius-interactive, 6px) var(--radius-interactive, 6px) 0;
+  color: var(--foreground);
+  text-decoration: none;
+}
+.dz-rail__link:hover { background: color-mix(in srgb, var(--primary) 7%, transparent); }
+.dz-rail__link[aria-current='location'] {
+  border-left-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+.dz-rail__link .dz-track { grid-column: 1 / -1; }
+.dz-rail__sub { padding-left: 14px; }
+
+/* ---- centre: the reading column ---- */
+.dz-main { min-height: 0; overflow-y: auto; scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { .dz-main { scroll-behavior: auto; } }
+.dz-col { max-width: 76ch; margin: 0 auto; padding: 22px 32px 120px; display: flex; flex-direction: column; gap: 44px; }
+.dz-col > section { scroll-margin-top: 16px; }
+.dz-h2 { display: flex; align-items: baseline; gap: 12px; margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid var(--dz-rule); }
+
+/* ---- right: the sticky score panel and the gate ---- */
+.dz-side {
+  min-height: 0;
+  border-left: 1px solid var(--dz-rule);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  overflow-y: auto;
+  background: var(--dz-wash);
+}
+.dz-side__figure { flex: none; }
+.dz-side__gate { flex: none; margin-top: auto; }
+/* The shipped gate lays out icon | sentence | buttons on one row. In a 372px
+   panel that leaves the sentence ~90px, so here the buttons take their own row. */
+.dz-side__gate [data-testid='council-gate'][data-gate-open='true'] { grid-template-columns: auto minmax(0, 1fr); }
+.dz-side__gate [data-testid='council-gate'][data-gate-open='true'] > :nth-child(3) { grid-column: 1 / -1; justify-content: stretch; }
+.dz-side__gate [data-testid='council-gate'][data-gate-open='true'] > :nth-child(3) > * { flex: 1 1 0; justify-content: center; }
+
+/* ---- the track ---- */
+.dz-track { border-radius: 999px; background: var(--dz-track); }
+.dz-hatch {
+  background: repeating-linear-gradient(135deg, var(--dz-hatch-ink) 0 5px, transparent 5px 10px);
+  box-shadow: inset 0 0 0 1px var(--dz-hatch-ink);
+}
+.dz-track__fill { border-radius: 999px; background: linear-gradient(to right, color-mix(in srgb, var(--primary) 55%, transparent), var(--primary)); }
+.dz-track__fill.is-hit { background: var(--status-error); }
+.dz-track__gap {
+  border: 2px dashed color-mix(in srgb, var(--status-warning) 75%, transparent);
+  border-left: 0;
+  border-radius: 0 999px 999px 0;
+  background: color-mix(in srgb, var(--status-warning) 10%, transparent);
+}
+.dz-track__bar { top: -6px; bottom: -6px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--foreground); }
+.dz-track__floor { top: -3px; bottom: -3px; width: 0; border-left: 2px solid var(--status-error); margin-left: -1px; }
+.dz-track__floor.is-advisory { border-left-style: dotted; border-left-color: var(--muted); }
+
+/* ---- findings ---- */
+.dz-finding { border-left: 4px solid var(--dz-rule); padding: 4px 0 4px 18px; }
+.dz-finding.is-high { border-left-color: var(--status-error); }
+.dz-finding.is-med { border-left-color: var(--status-warning); }
+.dz-finding.is-low { border-left-color: color-mix(in srgb, var(--foreground) 30%, transparent); }
+.dz-clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+.dz-ref {
+  font-family: var(--font-mono);
+  border: 1px solid var(--dz-rule);
+  background: var(--dz-wash);
+  border-radius: var(--radius-interactive, 6px);
+  padding: 1px 8px;
+  overflow-wrap: anywhere;
+}
+
+/* ---- the weight figure ---- */
+.dz-wbar { display: grid; grid-template-columns: 96px minmax(0, 1fr) 52px; align-items: stretch; column-gap: 10px; text-decoration: none; color: var(--foreground); }
+.dz-wbar:hover .dz-wbar__plate { background: color-mix(in srgb, var(--primary) 9%, transparent); }
+.dz-wbar__plate { position: relative; border-radius: 6px; background: var(--dz-wash); overflow: visible; }
+.dz-wbar__fill { position: absolute; inset: 3px auto 3px 0; border-radius: 0 6px 6px 0; background: linear-gradient(to right, color-mix(in srgb, var(--primary) 30%, transparent), color-mix(in srgb, var(--primary) 80%, transparent)); }
+.dz-wbar__fill.is-hit { background: color-mix(in srgb, var(--status-error) 80%, transparent); }
+.dz-wbar__plate.dz-hatch { border-radius: 6px; background: repeating-linear-gradient(135deg, var(--dz-hatch-ink) 0 5px, transparent 5px 10px); }
+.dz-wbar__bar { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--foreground); }
+
+/* ---- the verdict claim ---- */
+.dz-claim {
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+  border-radius: var(--radius-modal, 16px);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 9%, transparent), transparent 70%);
+  padding: 22px 26px 22px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 28px;
+  row-gap: 14px;
+  align-items: center;
+}
+.dz-claim.is-fail { border-color: color-mix(in srgb, var(--status-error) 35%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--status-error) 8%, transparent), transparent 70%); }
+.dz-claim__full { grid-column: 1 / -1; }
+/* A lite round is read, never decided: drawn hollow, as the queue draws it. */
+.dz-claim.is-lite { border-style: dashed; border-width: 2px; background: none; }
+.dz-bigscore { font-variant-numeric: tabular-nums lining-nums; line-height: 1; }

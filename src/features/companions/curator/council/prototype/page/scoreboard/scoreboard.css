@@ -1,0 +1,102 @@
+/* PROTOTYPE ROUND (spark council-readout). Scoreboard layout. Layout is free;
+   every colour is a token mix, every type size is a typo-* class on the element. */
+
+/* The kit host carries the kit's variables; here it also has to fill the stage. */
+.k-host:has(> .sb) { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+
+.sb {
+  --sb-rule: color-mix(in srgb, var(--foreground) 11%, transparent);
+  --sb-wash: color-mix(in srgb, var(--foreground) 4%, transparent);
+  --sb-hatch-ink: color-mix(in srgb, var(--foreground) 22%, transparent);
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.sb-top { flex: none; display: flex; align-items: center; gap: 20px; padding: 12px 24px; border-bottom: 1px solid var(--sb-rule); }
+.sb-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 20px 24px 40px; display: flex; flex-direction: column; gap: 22px; }
+.sb-foot { flex: none; border-top: 1px solid var(--sb-rule); padding: 10px 24px 12px; background: color-mix(in srgb, var(--background) 92%, var(--primary)); }
+
+/* ---- the band ---- */
+.sb-band { display: grid; grid-template-columns: minmax(240px, 1.2fr) repeat(var(--sb-n, 5), minmax(0, 1fr)); grid-template-rows: repeat(6, auto); column-gap: 12px; row-gap: 6px; }
+/* The columns share the band's rows (subgrid), so every water level starts at the same y and
+   the bar reads as ONE dashed line across the band. */
+.sb-tile {
+  position: relative;
+  display: grid;
+  grid-row: 1 / span 6;
+  grid-template-rows: subgrid;
+  align-content: start;
+  align-items: center;
+  row-gap: 6px;
+  padding: 14px 16px 14px;
+  border: 1px solid var(--sb-rule);
+  border-radius: var(--radius-card);
+  background: var(--sb-wash);
+  color: var(--foreground);
+  text-align: left;
+  min-width: 0;
+  cursor: pointer;
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast), background-color var(--duration-fast);
+}
+.sb-tile:hover { border-color: color-mix(in srgb, var(--primary) 45%, transparent); }
+.sb-tile[aria-selected='true'] {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  box-shadow: 0 0 0 1px var(--primary), 0 0 24px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+/* The notch that points the selected column at the drill below it. */
+.sb-tile[aria-selected='true']::after {
+  content: ''; position: absolute; left: 50%; bottom: -9px; width: 16px; height: 16px; margin-left: -8px;
+  transform: rotate(45deg); background: var(--background); border-right: 2px solid var(--primary); border-bottom: 2px solid var(--primary);
+}
+.sb-tile.is-anchor { background: linear-gradient(160deg, color-mix(in srgb, var(--primary) 12%, transparent), var(--sb-wash) 70%); }
+.sb-tile.is-hollow { border-style: dashed; }
+
+/* ---- the water level: 0 at the bottom, 1 at the top, the bar as one dashed rule ---- */
+.sb-level { position: relative; height: 104px; border-radius: 8px; background: color-mix(in srgb, var(--foreground) 6%, transparent); overflow: visible; margin-top: 4px; }
+.sb-level.is-hatch { background: repeating-linear-gradient(135deg, var(--sb-hatch-ink) 0 5px, transparent 5px 10px); box-shadow: inset 0 0 0 1px var(--sb-hatch-ink); }
+.sb-level__fill {
+  position: absolute; left: 0; right: 0; bottom: 0; border-radius: 0 0 8px 8px;
+  background: linear-gradient(to top, color-mix(in srgb, var(--primary) 70%, transparent), color-mix(in srgb, var(--primary) 30%, transparent));
+  border-top: 3px solid var(--primary);
+}
+.sb-level__fill.is-hit { background: linear-gradient(to top, color-mix(in srgb, var(--status-error) 70%, transparent), color-mix(in srgb, var(--status-error) 25%, transparent)); border-top-color: var(--status-error); }
+.sb-level__bar { position: absolute; left: -6px; right: -6px; height: 0; border-top: 2px dashed var(--foreground); }
+/* The floor: a dotted rule across the level, red when it binds; the bar stays the one dashed line. */
+.sb-level__floor { position: absolute; left: 0; right: 0; height: 0; border-top: 3px dotted var(--status-error); }
+.sb-level__floor.is-advisory { border-top-color: var(--muted); }
+.sb-level__tag { position: absolute; right: 6px; transform: translateY(-115%); }
+
+/* ---- severity squares: one per finding ---- */
+.sb-squares { display: flex; flex-wrap: wrap; gap: 3px; min-height: 12px; }
+.sb-squares i { width: 12px; height: 12px; border-radius: 3px; }
+.sb-sq-high { background: var(--status-error); }
+.sb-sq-med { background: var(--status-warning); }
+.sb-sq-low { background: color-mix(in srgb, var(--foreground) 35%, transparent); }
+
+.sb-pips { display: inline-flex; align-items: flex-end; gap: 2px; height: 16px; }
+.sb-pips i { width: 5px; border-radius: 1px; background: color-mix(in srgb, var(--foreground) 22%, transparent); }
+.sb-pips i.is-on { background: var(--foreground); }
+
+/* ---- drill ---- */
+.sb-drill { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); gap: 28px; align-items: start; }
+@media (min-width: 1600px) { .sb-drill { grid-template-columns: minmax(0, 92ch) minmax(380px, 1fr); gap: 48px; } }
+.sb-drill__aside { position: sticky; top: 0; max-height: calc(100vh - 120px); overflow-y: auto; }
+.sb-finding { border-left: 4px solid var(--sb-rule); padding: 2px 0 2px 18px; }
+.sb-finding.is-high { border-left-color: var(--status-error); }
+.sb-finding.is-med { border-left-color: var(--status-warning); }
+.sb-finding.is-low { border-left-color: color-mix(in srgb, var(--foreground) 30%, transparent); }
+.sb-clamp { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.sb-ref {
+  font-family: var(--font-mono);
+  border: 1px solid var(--sb-rule);
+  background: var(--sb-wash);
+  border-radius: var(--radius-interactive);
+  padding: 1px 8px;
+  overflow-wrap: anywhere;
+}
+
+/* The shipped gate in a footer: no card inside a bar. */
+.sb-foot [data-testid='council-gate'] { box-shadow: none; padding-top: 10px; padding-bottom: 10px; }
