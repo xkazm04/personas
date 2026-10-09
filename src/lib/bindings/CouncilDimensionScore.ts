@@ -4,19 +4,19 @@
  * One member's mark on a subject's LATEST run, carried by the list
  * projection so a queue row can draw every member without reading the run.
  */
-export type CouncilDimensionScore = {
+export type CouncilDimensionScore = { 
 /**
  * 'value' | 'craft' | 'rivalry' | 'robustness' | 'economics' | 'reversibility'
  */
-dimension: string,
+dimension: string, 
 /**
  * 'mechanical' | 'judged' | 'mixed'
  */
-kind: string,
+kind: string, 
 /**
  * 'measured' | 'unmeasured' | 'not_applicable' | 'carried'
  */
-state: string,
+state: string, 
 /**
  * `None` unless `state` is `measured` or `carried`. Never `0.0` as a
  * stand-in for "we could not tell".

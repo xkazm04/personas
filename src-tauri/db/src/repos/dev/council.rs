@@ -16,8 +16,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex, OnceLock};
 
 use crate::models::{
-    CouncilDecision, CouncilOverlay, CouncilOverlaySubject, CouncilRun, CouncilRunDetail,
-    CouncilSubject, CouncilSubjectState, CouncilVerdict,
+    CouncilDecision, CouncilDimensionScore, CouncilOverlay, CouncilOverlaySubject, CouncilRun,
+    CouncilRunDetail, CouncilSubject, CouncilSubjectState, CouncilVerdict,
 };
 use crate::DbPool;
 use personas_core::error::AppError;
@@ -939,6 +939,21 @@ pub fn list_subject_states(
                 Some(r) => list_verdicts(pool, &r.id)?,
                 None => Vec::new(),
             };
+            // Same tolerance as `hard_failures` below: an unparseable or
+            // non-array value counts as nothing rather than failing the list.
+            let must_address_count: i32 = run
+                .as_ref()
+                .and_then(|r| serde_json::from_str::<serde_json::Value>(&r.must_address_json).ok())
+                .and_then(|v| v.as_array().map(|a| a.len() as i32))
+                .unwrap_or(0);
+            // Only a report that EXISTS is linked; the run dir is used as
+            // stored (a `\\?\` prefix included) - `Path::join` handles it.
+            let report_path = run.as_ref().and_then(|r| {
+                let p = std::path::Path::new(&r.run_dir).join("report.html");
+                p.is_file().then(|| p.to_string_lossy().into_owned())
+            });
+            let dimensions: Vec<CouncilDimensionScore> =
+                verdicts.iter().map(CouncilDimensionScore::from).collect();
             let (floor_hits, hard_failures): (i32, i32) = match run.as_ref() {
                 Some(r) => {
                     let hits = verdicts
@@ -1011,7 +1026,10 @@ pub fn list_subject_states(
                 drift: s.drift.clone(),
                 project_name: identity.name,
                 registry_subjects,
+                dimensions,
+                must_address_count,
                 run_dir: run.as_ref().map(|r| r.run_dir.clone()),
+                report_path,
                 finished_at: run.as_ref().and_then(|r| r.finished_at.clone()),
                 decided_at,
                 rejection_reason,
@@ -2066,6 +2084,126 @@ mod tests {
         let states = list_subject_states(&pool, Some(&project_id)).unwrap();
         assert!(states[0].registry_subjects.is_empty());
         assert_eq!(states[0].project_name, "P");
+    }
+
+    /// The list projection carries every member's mark and the must-address
+    /// count, so a queue row never has to open the run to draw them.
+    #[test]
+    fn the_state_list_carries_every_members_mark_and_the_must_address_count() {
+        let (pool, project_id, uc_id) = seeded();
+        let (subject, _) = upsert_subject(
+            &pool,
+            &project_id,
+            "use_case",
+            "checkout",
+            "Checkout",
+            Some(&uc_id),
+        )
+        .unwrap();
+        let mut run = a_run(&subject.id, 1, "ready", "/runs/marks");
+        run.must_address_json = r#"["a","b","c"]"#.into();
+        let mut craft = a_verdict("craft", None, false);
+        craft.kind = "mechanical".into();
+        craft.floor = None;
+        craft.advisory = false;
+        let stored =
+            insert_run(&pool, &run, &[a_verdict("value", Some(0.8), true), craft]).unwrap();
+
+        let states = list_subject_states(&pool, Some(&project_id)).unwrap();
+        let verdicts = list_verdicts(&pool, &stored.id).unwrap();
+        assert_eq!(states[0].dimensions.len(), 2);
+        // Stored order, field for field - no re-sorting, no re-deriving.
+        for (d, v) in states[0].dimensions.iter().zip(verdicts.iter()) {
+            assert_eq!(d.dimension, v.dimension);
+            assert_eq!(d.kind, v.kind);
+            assert_eq!(d.state, v.state);
+            assert_eq!(d.score, v.score);
+            assert_eq!(d.floor, v.floor);
+            assert_eq!(d.floor_hit, v.floor_hit);
+            assert_eq!(d.advisory, v.advisory);
+        }
+        let craft = states[0]
+            .dimensions
+            .iter()
+            .find(|d| d.dimension == "craft")
+            .unwrap();
+        assert_eq!(craft.score, None, "unmeasured stays null, never zero");
+        assert_eq!(craft.kind, "mechanical");
+        assert_eq!(states[0].must_address_count, 3);
+
+        // An unparseable must-address value counts as nothing, like hard failures.
+        let mut bad = a_run(&subject.id, 2, "ready", "/runs/marks-2");
+        bad.must_address_json = "not json".into();
+        insert_run(&pool, &bad, &[a_verdict("value", Some(0.9), false)]).unwrap();
+        let states = list_subject_states(&pool, Some(&project_id)).unwrap();
+        assert_eq!(states[0].must_address_count, 0);
+        assert_eq!(
+            states[0].dimensions.len(),
+            1,
+            "the LATEST run's members only"
+        );
+    }
+
+    /// The report link is handed over only when the file is there to open.
+    #[test]
+    fn the_report_path_is_set_only_when_report_html_exists() {
+        let (pool, project_id, uc_id) = seeded();
+        let (subject, _) = upsert_subject(
+            &pool,
+            &project_id,
+            "use_case",
+            "checkout",
+            "Checkout",
+            Some(&uc_id),
+        )
+        .unwrap();
+        let dir = std::env::temp_dir().join(format!(
+            "council-report-{}-{}",
+            std::process::id(),
+            chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let dir_str = dir.to_string_lossy().into_owned();
+        insert_run(
+            &pool,
+            &a_run(&subject.id, 1, "ready", &dir_str),
+            &[a_verdict("value", Some(0.8), false)],
+        )
+        .unwrap();
+
+        let states = list_subject_states(&pool, Some(&project_id)).unwrap();
+        assert_eq!(states[0].run_dir.as_deref(), Some(dir_str.as_str()));
+        assert_eq!(states[0].report_path, None, "no report.html, no link");
+
+        let report = dir.join("report.html");
+        std::fs::write(&report, "<html></html>").unwrap();
+        let states = list_subject_states(&pool, Some(&project_id)).unwrap();
+        assert_eq!(
+            states[0].report_path.as_deref(),
+            Some(report.to_string_lossy().as_ref())
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// No run: the absent-value convention, not an invented zero row.
+    #[test]
+    fn a_subject_with_no_run_has_no_marks_no_count_and_no_report() {
+        let (pool, project_id, uc_id) = seeded();
+        upsert_subject(
+            &pool,
+            &project_id,
+            "use_case",
+            "checkout",
+            "Checkout",
+            Some(&uc_id),
+        )
+        .unwrap();
+        let states = list_subject_states(&pool, Some(&project_id)).unwrap();
+        assert!(states[0].dimensions.is_empty());
+        assert_eq!(states[0].must_address_count, 0);
+        assert_eq!(states[0].report_path, None);
+        assert_eq!(states[0].run_dir, None);
     }
 
     #[test]

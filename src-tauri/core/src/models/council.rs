@@ -336,6 +336,40 @@ pub struct CouncilVerdict {
     pub payload_json: String,
 }
 
+/// One member's mark on a subject's LATEST run, carried by the list
+/// projection so a queue row can draw every member without reading the run.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CouncilDimensionScore {
+    /// 'value' | 'craft' | 'rivalry' | 'robustness' | 'economics' | 'reversibility'
+    pub dimension: String,
+    /// 'mechanical' | 'judged' | 'mixed'
+    pub kind: String,
+    /// 'measured' | 'unmeasured' | 'not_applicable' | 'carried'
+    pub state: String,
+    /// `None` unless `state` is `measured` or `carried`. Never `0.0` as a
+    /// stand-in for "we could not tell".
+    pub score: Option<f64>,
+    pub floor: Option<f64>,
+    pub floor_hit: bool,
+    pub advisory: bool,
+}
+
+impl From<&CouncilVerdict> for CouncilDimensionScore {
+    fn from(v: &CouncilVerdict) -> Self {
+        Self {
+            dimension: v.dimension.clone(),
+            kind: v.kind.clone(),
+            state: v.state.clone(),
+            score: v.score,
+            floor: v.floor,
+            floor_hit: v.floor_hit,
+            advisory: v.advisory,
+        }
+    }
+}
+
 /// A human's verdict on a run. The ONLY row in this whole chain a person
 /// writes, and the only one that can admit anything.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
@@ -405,7 +439,16 @@ pub struct CouncilSubjectState {
     /// Registry subject slugs this council lands on: named by its members, else
     /// matched from the feature's contexts. This is what council focus flies to.
     pub registry_subjects: Vec<String>,
+    /// Every member of the latest run, in the order the run stored them. Empty
+    /// when no run exists.
+    pub dimensions: Vec<CouncilDimensionScore>,
+    /// How many items the latest run says must be addressed. 0 when no run exists.
+    pub must_address_count: i32,
     pub run_dir: Option<String>,
+    /// `<run_dir>/report.html` when that file EXISTS at read time (the /council
+    /// skill renders it beside report.md); null otherwise, so the reader is never
+    /// handed a link that opens nothing.
+    pub report_path: Option<String>,
     pub finished_at: Option<String>,
     pub decided_at: Option<String>,
     pub rejection_reason: Option<String>,
