@@ -66,6 +66,18 @@ Director (this session)    the clock: status -> context -> decide -> dispatch ->
   branch unchanged, and holds the run with a `merge-held` ask; nothing is ever forced. A base
   that moves again WHILE the gates run is rebased again at the merge gate and the full gates
   re-run.
+- **Two gates (operator, 2026-10-09).** The MERGE gate runs typecheck and lint as before, but
+  narrows `test` to the branch's changed area: a repo whose test gate is plain `vitest run`
+  (ascent, devsecops, pof, personas-web) runs `npx vitest related --run <changed code files>`;
+  a brief's `gates.testFocused` (a command with `{files}`) narrows any other runner; everything
+  else (kp, firetv, mage) runs its full test as before. A branch that changes no code file passes
+  `test` as "no related tests"; more than `FOCUS_MAX_FILES` code files runs the full suite.
+  `run.json` records `verdict.testFocus` and each test result's `focus`. The FULL gate is
+  `AM verify --project p [--repo key]`: every suite on a throwaway checkout of the base tip with a
+  45-minute limit (`FULL_GATE_TIMEOUT_MS`), before any push or release; a red run raises one
+  `verify-red` ask (always the operator's). Accepted risk, the operator's: a change can break an
+  unrelated feature and still merge; `verify` catches it before anything leaves the machine.
+  `APPMASTER_GATE_FOCUS=off` turns narrowing off everywhere.
 - **Managed projects**: the managed set is `DEFAULT_MANAGED` (`pof`, `ascent`, `kp`) plus every
   project whose `brief.json` says `"headless": true` (for 2026-10-07: gravitone-gcloud,
   personas-web, firetv, garden-vr, mage-arena-vr, paypal, devsecops once their briefs say so).
@@ -122,6 +134,7 @@ queue    list | move --run <id> --to <n> | drop --run <id> --reason <text>
 promote
 watch    [--project p]
 settle   --run <runId> [--retry]
+verify   --project p [--repo <key>] [--timeout-min N]
 await    --run <runId> | --project p [--timeout-min N]
 release  --run <runId> --reason <text> [--kill]
 say      --project p --file <msg.md>
@@ -274,7 +287,8 @@ are used here, in this session, and never inside a master subagent.
    "<why>"`; the Director never drops a queued run on its own judgment.
 8. **Asks.** `AM asks`. An ask is the operator's when its kind matches the brief's `askFor`
    (scope change -> `scope`, spending -> `spend`, money or data path risk -> `risk`, two goals
-   in conflict -> `goal-conflict`, a recipe failing -> `recipe-failing`) and always when it is
+   in conflict -> `goal-conflict`, a recipe failing -> `recipe-failing`), always when it is
+   `verify-red` (the full gate failed on the base tip: `AM verify`), and always when it is
    `merge-held`. Present each of the operator's asks as ONE `AskUserQuestion` whose options are
    the master's own labels, then `AM answer --ask <askId> --choice <label> --notes "<the
    operator's words>"`. When the operator answers through the built-in `Other`, pass

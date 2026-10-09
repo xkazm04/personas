@@ -13,7 +13,7 @@ import { readLimit } from './limits.mjs';
 import { requireRun, pidAlive, runFile, markLimitFromRun, awaitHolder, finishedClean, readRunOutput } from './worker.mjs';
 import { git, gitTry, revParse, isAncestor, removeWorktree, withBaseWorktree, linkNodeModules } from './worktree.mjs';
 import { acquireGateSlot } from './memory.mjs';
-import { resolveRunGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, failuresAreInherited, testFilesIn, narrowCommand, GATE_TIMEOUT_MS } from './gate.mjs';
+import { resolveRunGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, failuresAreInherited, testFilesIn, narrowCommand, GATE_TIMEOUT_MS, runTestFocus, focusedTestCommand } from './gate.mjs';
 
 const lines = (s) => String(s || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 const keyOf = (p) => (process.platform === 'win32' ? p.toLowerCase() : p);
@@ -163,16 +163,32 @@ export function rebaseOntoBase(run) {
  * (vitest rewrote snapshots in both first runs, 2026-10-05) is recorded and reverted, so the
  * worktree is the committed tip again for a retry, a rebase and the merge.
  */
-export function evaluateGates(run, gates, { timeoutMs = GATE_TIMEOUT_MS } = {}) {
+export function evaluateGates(run, gates, { timeoutMs = GATE_TIMEOUT_MS, focus = null, files = [] } = {}) {
   const env = repoEnv(repoOf(run).root);   // the Personas repo's gates share its one cargo target
   // idempotent: a worktree cut before a package's node_modules was linked gets it now, so a retry can pass
   try { linkNodeModules(repoOf(run).root, run.worktree); } catch { /* a gate that needs it fails honestly */ }
-  const results = runGates(run.worktree, gates, { timeoutMs, env });
+  // The focused merge gate (gate.mjs testFocus): `test` runs only what the branch's changed files reach,
+  // measured in each directory it runs in, so the base re-run asks the same question of the base.
+  const gatesIn = (dir) => {
+    if (!focus || !gates.test) return { gates, focus: null };
+    const cmd = focusedTestCommand(focus, dir, files);
+    if (cmd === null) return { gates, focus: 'full: too many changed code files to narrow' };
+    if (cmd === '') return { gates: { ...gates, test: null }, focus: 'no related tests: the branch changes no code file' };
+    return { gates: { ...gates, test: cmd }, focus: 'related' };
+  };
+  const mine = gatesIn(run.worktree);
+  const results = runGates(run.worktree, mine.gates, { timeoutMs, env });
+  if (mine.focus && results.test) {
+    // nothing to relate is a pass on purpose (the operator's accepted risk); `verify` runs the full suite
+    if (mine.gates.test === null) results.test = { ok: true, command: null, noRelatedTests: true };
+    results.test.focus = mine.focus;
+    results.test.fullCommand = gates.test;
+  }
   for (const g of Object.keys(results)) {
     const r = results[g];
     if (r.skipped || r.ok || r.timedOut || !r.failures?.length || !run.baseSha) continue;
     try {
-      const base = withBaseWorktree(run, (dir) => runGates(dir, gates, { timeoutMs, only: [g], env })[g]);
+      const base = withBaseWorktree(run, (dir) => runGates(dir, gatesIn(dir).gates, { timeoutMs, only: [g], env })[g]);
       r.base = { ok: base.ok, exit: base.exit, failures: base.failures?.length ?? 0, failureList: (base.failures || []).slice(0, 100) };
       if (!base.ok && failuresAreInherited(r.failures, base.failures)) r.inherited = true;
     } catch (e) { r.base = { error: String(e.message || e).split('\n')[0] }; }
@@ -219,7 +235,7 @@ function gateFailure(results, when = '') {
  * intersect the branch's diff; (d) `merge --ff-only` and HEAD == branch tip afterwards. Mutates
  * `verdict` with what it measured. `rebasedOnto` tells settle to record the branch's new base.
  */
-export function mergeGate(run, verdict = {}, { gates, timeoutMs = GATE_TIMEOUT_MS } = {}) {
+export function mergeGate(run, verdict = {}, { gates, timeoutMs = GATE_TIMEOUT_MS, focus = null } = {}) {
   const { root, baseBranch } = repoOf(run);   // the target repo's checkout: a second repo merges into ITS base
   const branchRef = `refs/heads/${run.branch}`;
 
@@ -247,7 +263,8 @@ export function mergeGate(run, verdict = {}, { gates, timeoutMs = GATE_TIMEOUT_M
       rebased = true; rebasedOnto = rb.onto; baseNow = rb.onto;
       verdict.rebasedOnto = rb.onto;
       const g = gates || resolveRunGates(run, loadBrief(run.slug) || {});
-      const ev = evaluateGates({ ...run, baseSha: rb.onto }, g, { timeoutMs });
+      const files = lines(git(root, ['diff', '--name-only', '--no-renames', `${rb.onto}..${branchRef}`]));
+      const ev = evaluateGates({ ...run, baseSha: rb.onto }, g, { timeoutMs, focus, files });
       verdict.gatesAfterRebase = ev.results;
       if (ev.sideEffects.length) verdict.gateSideEffectsAfterRebase = ev.sideEffects;
       const fail = gateFailure(ev.results, ' after rebasing onto the moved base');
@@ -436,15 +453,17 @@ function settleCore({ flags = {} } = {}, slot) {
   // 2b. run them (the target repo's gates: a second repo has its own)
   const gates = resolveRunGates(run, brief);
   const timeoutMs = Number(process.env.APPMASTER_GATE_TIMEOUT_MS) || GATE_TIMEOUT_MS;
-  const ev = evaluateGates(run, gates, { timeoutMs });
+  const focus = runTestFocus(run, gates, brief);   // the merge gate tests the changed area; `verify` runs everything
+  const ev = evaluateGates(run, gates, { timeoutMs, focus, files: verdict.files || [] });
   verdict.gates = ev.results;
   verdict.gateSources = gates.sources;
+  if (focus) verdict.testFocus = focus.kind;
   if (ev.sideEffects.length) verdict.gateSideEffects = ev.sideEffects;
   const fail = gateFailure(verdict.gates);
   if (fail) return hold(run, fail, verdict);
 
   // 3. the merge gate
-  const mg = mergeGate(run, verdict, { gates, timeoutMs });
+  const mg = mergeGate(run, verdict, { gates, timeoutMs, focus });
   if (mg.rebasedOnto) run = rebasedRun(run, mg.rebasedOnto);
   if (!mg.ok) return hold(run, mg.reason, verdict);
 

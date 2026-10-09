@@ -10,6 +10,7 @@
 //   promote                               (dispatches, in queue order, every queued run that now fits)
 //   watch    [--project p]
 //   settle   --run <runId> [--retry]
+//   verify   --project p [--repo <key>] [--timeout-min N]   (the FULL gate on the base tip: every suite, before a push)
 //   await    --run <runId> | --project p [--timeout-min N]   (blocks until the builder exits, settles it, then promotes)
 //   release  --run <runId> --reason <text> [--kill]
 //   say      --project p --file <msg.md> | --text <message>
@@ -40,6 +41,7 @@ export const COMMANDS = {
   promote:  ['./lib/promote.mjs', 'cmdPromote'],    // keep the queue's promise when a slot frees
   watch:    ['./lib/worker.mjs', 'cmdWatch'],       // WP2
   settle:   ['./lib/merge.mjs', 'cmdSettle'],       // WP2
+  verify:   ['./lib/verify.mjs', 'cmdVerify'],      // the full gate (the merge gate tests only the changed area)
   await:    ['./lib/await.mjs', 'cmdAwait'],        // the exit watcher (watch + settle for one run)
   release:  ['./lib/worker.mjs', 'cmdRelease'],     // WP2
   say:      ['./lib/asks.mjs', 'cmdSay'],           // WP1

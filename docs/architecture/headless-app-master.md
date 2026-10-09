@@ -140,7 +140,8 @@ checkout, or the second repo its dispatch named), and a council review never rea
    passed to the builder as a rule, not checked here);
 3. the project's own gates (per gate: brief `gates{}`, else `.ai/manifest.yaml` capabilities,
    else the `package.json` script; typecheck / lint / test) exit 0 in a clean worktree whose
-   HEAD is the branch tip, and at least one of them ran (a skipped gate is not a pass);
+   HEAD is the branch tip, and at least one of them ran (a skipped gate is not a pass). Since
+   2026-10-09 `test` is FOCUSED (see "Two gates" below);
 4. the project checkout is on its base branch;
 5. it has no merge, rebase, cherry-pick or revert in progress;
 6. no path in `git status --porcelain --no-renames` of the checkout is in the branch's diff;
@@ -156,6 +157,27 @@ Any failed condition leaves the run `held`, keeps the branch and worktree, and r
 after a commit), also queued in the outbox. `settle --retry` takes a held run through the gate
 again once the operator has cleaned the checkout. The gate never stashes, checks out, resets or `git add -A`s in a
 project checkout: all three carry foreign uncommitted work, which is why condition 6 exists.
+
+### Two gates: a focused merge gate and a full gate (2026-10-09)
+
+Measured the night of 10-08: with about ten builders on the machine, ascent's and devsecops'
+full test suites outran the 15-minute gate limit, and three runs were held on a TIMEOUT (exit
+null), not on a failing test. Retries merged them only once the machine was quieter. The operator
+chose to split the gate rather than raise the limit:
+
+- **Merge gate** (every settle, 15 minutes): typecheck and lint unchanged; `test` narrowed to what
+  the branch's changed code files reach (`lib/gate.mjs` `testFocus` / `focusedTestCommand`). A test
+  gate that is plain `vitest run` becomes `npx vitest related --run --passWithNoTests <files>`; a
+  brief's `gates.testFocused` template (`{files}`) narrows any other runner; anything else runs
+  full. The base re-run that tells an inherited failure from the branch's own asks the same
+  narrowed question of the base. A branch with no changed code file passes `test` as "no related
+  tests"; a branch past `FOCUS_MAX_FILES` code files runs the full suite.
+- **Full gate** (`AM verify`, 45 minutes): every gate, full test command, on a throwaway checkout
+  of the base tip, under the gate slot. One line per run in `headless/verify.jsonl`; red raises one
+  `verify-red` ask per repo, which a later green closes. Run it before any push or release.
+
+The accepted risk is the operator's: a change that breaks a feature its import graph does not
+reach can merge; `verify` is where that is caught, before anything leaves the machine.
 
 ## What it deliberately does not do
 

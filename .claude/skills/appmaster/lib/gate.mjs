@@ -9,6 +9,11 @@ import { ENV_STRIP, SELF_REPO, repoOf } from './contract.mjs';
 
 export const GATE_NAMES = ['typecheck', 'lint', 'test'];
 export const GATE_TIMEOUT_MS = 15 * 60 * 1000;
+/** The full gate (`verify`): every suite, run before a push or release, so it gets room a busy machine needs. */
+export const FULL_GATE_TIMEOUT_MS = 45 * 60 * 1000;
+/** A branch that changes more code files than this is not narrowed: its merge gate runs the full suite. */
+export const FOCUS_MAX_FILES = 150;
+const CODE_EXT = /\.(?:[cm]?[jt]sx?|vue|svelte)$/i;
 const TAIL_LINES = 40;
 
 /** `.ai/manifest.yaml` capabilities: `  typecheck: { command: "..." }` lines inside `capabilities:`. */
@@ -62,6 +67,68 @@ export function resolveRunGates(run, brief = {}) {
   if (r.key === SELF_REPO) return resolveGates(r.root, brief);
   const entry = (Array.isArray(brief?.repos) ? brief.repos : []).find((x) => x?.key === r.key);
   return resolveGates(r.root, entry?.gates && typeof entry.gates === 'object' ? { gates: entry.gates } : {});
+}
+
+// ---------------------------------------------------------------- the focused merge gate
+//
+// Two gates (operator, 2026-10-09). The MERGE gate narrows `test` to the branch's changed area; the
+// FULL gate (`verify`) runs every suite before a push or release. Why: under a loaded machine ascent's and
+// devsecops' full suites outran the 15-minute gate and held three runs overnight on a timeout, not on a
+// failing test. Accepted risk, the operator's: a change can break an unrelated feature and still merge;
+// the full gate catches it before anything leaves the machine.
+
+/** The script behind `npm run <name>` in `root`'s package.json, or null. */
+function npmScriptOf(root, command) {
+  const m = /^npm run ([\w:.-]+)$/.exec(String(command || '').trim());
+  return m ? (packageScripts(root)[m[1]] ?? null) : null;
+}
+
+/**
+ * (root, gates, gateBrief) => {kind:'template', template} | {kind:'vitest'} | null
+ * How the merge gate narrows `test`, or null to run the full test command as before.
+ * - gateBrief.gates.testFocused, a command with a `{files}` placeholder, wins; an explicit empty
+ *   `testFocused` opts the repo out.
+ * - Else a test gate that is plain `vitest run` (directly or through `npm run <script>`) becomes
+ *   `vitest related`, which runs the tests whose import graph reaches a changed file.
+ * - Anything else (kp's node:test runner, firetv's rule suites, a Rust or Gradle gate) stays full.
+ * APPMASTER_GATE_FOCUS=off turns narrowing off everywhere.
+ */
+export function testFocus(root, gates, gateBrief = {}) {
+  if (String(process.env.APPMASTER_GATE_FOCUS || '').toLowerCase() === 'off') return null;
+  const bg = (gateBrief && typeof gateBrief.gates === 'object' && gateBrief.gates) || {};
+  if (Object.prototype.hasOwnProperty.call(bg, 'testFocused')) {
+    const tpl = bg.testFocused;
+    return typeof tpl === 'string' && tpl.includes('{files}') ? { kind: 'template', template: tpl } : null;
+  }
+  const cmd = String(gates?.test || '').trim();
+  if (!cmd) return null;
+  const script = npmScriptOf(root, cmd) ?? cmd.replace(/^npx\s+/, '');
+  return /^vitest run\s*$/.test(String(script).trim()) ? { kind: 'vitest' } : null;
+}
+
+/** The focus for the repo a run targets: the brief's own gates for self, that repo's entry otherwise (as resolveRunGates). */
+export function runTestFocus(run, gates, brief = {}) {
+  const r = repoOf(run);
+  if (r.key === SELF_REPO) return testFocus(r.root, gates, brief);
+  const entry = (Array.isArray(brief?.repos) ? brief.repos : []).find((x) => x?.key === r.key);
+  return testFocus(r.root, gates, entry?.gates && typeof entry.gates === 'object' ? { gates: entry.gates } : {});
+}
+
+/**
+ * (focus, dir, files) => string | '' | null
+ * The narrowed test command for `files` (repo-relative, the branch's diff) as they exist in `dir`.
+ * '' = no code file changed, so no test can be related: the test gate passes as 'no related tests'.
+ * null = too many code files to narrow: run the full test command.
+ */
+export function focusedTestCommand(focus, dir, files) {
+  const code = [...new Set((files || []).map((f) => String(f).replace(/\\/g, '/')))]
+    .filter((f) => CODE_EXT.test(f) && fs.existsSync(path.join(dir, f)));
+  if (!code.length) return '';
+  if (code.length > FOCUS_MAX_FILES) return null;
+  const quoted = code.map((f) => `"${f}"`).join(' ');
+  return focus.kind === 'template'
+    ? focus.template.split('{files}').join(quoted)
+    : `npx vitest related --run --passWithNoTests ${quoted}`;
 }
 
 const tail = (text, n = TAIL_LINES) => String(text || '').replace(/\s+$/, '').split(/\r?\n/).slice(-n).join('\n');
