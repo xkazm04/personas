@@ -16,6 +16,7 @@ import { homeWelcomeTapes } from './homeWelcomeTapes.mjs';
 import { serverControlTapes } from './serverControlTapes.mjs';
 import { lifecycleTapes } from './lifecycleTapes.mjs';
 import { lifecycleDetailTapes } from './lifecycleDetailTapes.mjs';
+import { lifecycleMeasureTapes } from './lifecycleMeasureTapes.mjs';
 import { homeLearningTapes } from './homeLearningTapes.mjs';
 import { homeCockpitTapes } from './homeCockpitTapes.mjs';
 import { homeSystemCheckTapes } from './homeSystemCheckTapes.mjs';
@@ -352,6 +353,8 @@ const BUILDERS = {
   ...lifecycleTapes({ RECORDED_AT }).builders,
   // Spark lifecycle-health WP4, the Layer-2 step screens (lifecycleSurfaces.tsx, lifecycleDetailTapes.mjs).
   ...lifecycleDetailTapes({ RECORDED_AT }).builders,
+  // Lifecycle excellence wave 4, a Measure as a live event (lifecycleSurfaces.tsx, lifecycleMeasureTapes.mjs).
+  ...lifecycleMeasureTapes({ RECORDED_AT }).builders,
   // Kit batch home-1, Home > Learning (homeLearningSurfaces.tsx, homeLearningTapes.mjs).
   ...homeLearningTapes({ RECORDED_AT }).builders,
   // Kit batch home-2, Home > Cockpit + Athena chat cards + council evidence well (homeCockpitSurfaces.tsx, homeCockpitTapes.mjs).

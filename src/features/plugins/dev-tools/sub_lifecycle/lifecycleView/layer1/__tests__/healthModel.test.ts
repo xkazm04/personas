@@ -69,7 +69,7 @@ describe('metrics', () => {
 
 describe('goalParts', () => {
   it('splits the goal into green, measurable-not-green and instructed', () => {
-    expect(goalParts({ goalId: 'g', measurableTotal: 8, measurableGreen: 3, instructed: 2, openItems: 5 }))
+    expect(goalParts({ goalId: 'g', measurableTotal: 8, measurableGreen: 3, instructed: 2, openItems: 5, items: [] }))
       .toEqual({ green: 3, notGreen: 5, instructed: 2 });
   });
 });

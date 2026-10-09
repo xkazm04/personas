@@ -90,7 +90,7 @@ describe('OverseerControls', () => {
   });
 
   it('offers to send again once a goal exists', () => {
-    const goal = { goalId: 'g1', measurableTotal: 5, measurableGreen: 2, instructed: 1, openItems: 3 };
+    const goal = { goalId: 'g1', measurableTotal: 5, measurableGreen: 2, instructed: 1, openItems: 3, items: [] };
     render(<OverseerControls projectId="p1" watched goal={goal} />);
     expect(screen.getByTestId('lc-overseer-send').textContent).toContain(dl.lc_ov_resend);
   });

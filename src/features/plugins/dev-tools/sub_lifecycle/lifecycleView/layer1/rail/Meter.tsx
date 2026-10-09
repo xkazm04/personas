@@ -12,11 +12,15 @@
  * it, by instruction). A stale fill is hatched. The fill grows in once, on the
  * project's first entrance (`system/entrance`). Drawn parts only: the meter is
  * `aria-hidden`, the figure beside it is what a reader hears.
+ *
+ * While a Measure measures the step (`measuring`), a streak sweeps the track
+ * (`measure/Streak`; a static stripe under reduced motion).
  */
 import { motion } from 'framer-motion';
 
 import type { LifecycleHealth } from '@/lib/bindings/LifecycleHealth';
 
+import { Streak } from '../../measure/Streak';
 import { useEntrance } from '../../system/entrance';
 import { METER } from '../../system/scales';
 import { VERDICT, metricRatio, type StepMetric } from '../healthModel';
@@ -30,11 +34,12 @@ interface MeterProps {
   greenLine: number | null;
   /** Dim the drawing (the card is outside the verdict highlight). */
   dim?: boolean;
+  measuring?: boolean;
 }
 
 const pct = (ratio: number) => `${Math.round(Math.max(0, Math.min(1, ratio)) * 10_000) / 100}%`;
 
-export function Meter({ health, figure, previous, greenLine, dim = false }: MeterProps) {
+export function Meter({ health, figure, previous, greenLine, dim = false, measuring = false }: MeterProps) {
   const entering = useEntrance();
   const v = VERDICT[health];
   const fade = `transition-opacity duration-200 motion-reduce:transition-none ${dim ? 'opacity-40' : 'opacity-100'}`;
@@ -61,6 +66,7 @@ export function Meter({ health, figure, previous, greenLine, dim = false }: Mete
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         />
       )}
+      {measuring && <span className={`absolute inset-x-0 top-1/2 block -translate-y-1/2 ${METER.track}`} data-mark="measuring"><Streak /></span>}
       {line != null && (
         <span
           className={`absolute top-1/2 block w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-pill bg-foreground/70 ${METER.mark}`}

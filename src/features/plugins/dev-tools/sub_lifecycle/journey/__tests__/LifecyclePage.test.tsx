@@ -39,7 +39,7 @@ import LifecyclePage from '../../LifecyclePage';
 beforeEach(() => {
   vi.clearAllMocks();
   activeProjectId = 'p1';
-  getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => ({ stepId, runs: [], docs: [], related: [] }));
+  getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => ({ stepId, runs: [], docs: [], related: [], evidence: [] }));
 });
 
 // Each test uses its own project id so the module warm cache never leaks a

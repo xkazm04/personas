@@ -23,7 +23,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   __resetStepChunksForTests();
   getLifecycleStepDetail.mockReset();
-  getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => ({ stepId, runs: [], docs: [], related: [] }));
+  getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => ({ stepId, runs: [], docs: [], related: [], evidence: [] }));
 });
 
 afterEach(() => {

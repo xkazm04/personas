@@ -8,6 +8,8 @@
  *      the tape and the latest answer is the state the page settled on);
  *   2. an entry with no `args` field (a synthetic wildcard);
  *   3. the last entry for that command (logged as an args mismatch).
+ * An entry with `responses` answers its calls IN ORDER, repeating the last one
+ * (a surface whose data moves while it is shot: a Measure starting, then ending).
  * A command absent from the tape is logged and answered with a neutral default
  * (`[]` for list-shaped commands, `0` for counts, otherwise `null`); it never
  * throws, because an unknown command must show up in the report, not as a crash.
@@ -19,6 +21,8 @@ export interface TapeCall {
   /** Omit for a wildcard that answers any args. */
   args?: unknown;
   response?: unknown;
+  /** Answers in order, one per call, the last repeating; takes precedence over `response`. */
+  responses?: unknown[];
   /** When present the call rejects with this value. */
   error?: unknown;
   /** When true the call never settles: a surface's loading state, shot as it stands. */
@@ -81,9 +85,15 @@ export function installTape(tape: Tape, log: ReplayLog): void {
     byCmd.set(call.cmd, list);
   }
 
+  const served = new Map<TapeCall, number>();
   const answer = (call: TapeCall): unknown => {
     if (call.hang) return new Promise(() => {});
     if (call.error !== undefined) return Promise.reject(clone(call.error));
+    if (call.responses && call.responses.length > 0) {
+      const n = served.get(call) ?? 0;
+      served.set(call, n + 1);
+      return clone(call.responses[Math.min(n, call.responses.length - 1)] ?? null);
+    }
     return clone(call.response ?? null);
   };
 

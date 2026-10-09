@@ -1,0 +1,50 @@
+/* A running Measure's surface treatments, the ones Tailwind cannot write as a
+ * class. Colour stays tokenised (color-mix over the theme's variables); the
+ * motion is the app's shared `animate-phase-shimmer` (globals.css) on the
+ * streak, gated by the app's reduced-motion rules, and the module swaps the
+ * streak for `lcx-stripes` itself when `useReducedMotion()` says so. */
+
+/* The light streak that sweeps a running bar (the panel's rows, a measuring
+ * card's meter). Transparent ends keep the loop reset invisible. */
+.lcx-streak {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--foreground) 45%, transparent) 50%,
+    transparent 100%
+  );
+}
+
+/* Reduced motion: the same "in progress" said by a static diagonal stripe. */
+.lcx-stripes {
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--foreground) 28%, transparent) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+/* A rail card whose verdict a Measure just changed: one calm ring pulse. */
+@keyframes lcx-settle {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 55%, transparent);
+  }
+
+  100% {
+    box-shadow: 0 0 0 10px color-mix(in srgb, var(--primary) 0%, transparent);
+  }
+}
+
+.lcx-settle {
+  animation: lcx-settle 0.9s ease-out 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lcx-settle {
+    animation: none;
+  }
+}
+
+html[data-motion="reduce"] .lcx-settle {
+  animation: none;
+}

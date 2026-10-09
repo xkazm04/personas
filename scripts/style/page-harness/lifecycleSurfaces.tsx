@@ -13,6 +13,11 @@
  *   plugins/lifecycle/loading       the snapshot never answers: header chrome + the Layer-1 ghost
  *   plugins/lifecycle/regressed     Layer 1 one measure after a bad day: most steps worse than their earlier measure
  *   plugins/lifecycle/history-failed  the collar with the Measure history read failing (its inline banner)
+ *   plugins/lifecycle/measuring       a Measure running: the header's live control, the panel, Gate and Tests measuring
+ *   plugins/lifecycle/measuring-over  the same with the running command past 1.5x its median
+ *   plugins/lifecycle/cancelling      the same with a cancel on its way
+ *   plugins/lifecycle/measured        a Measure walked to its end while shot: the panel's summary
+ *                                     (lifecycleMeasureTapes.mjs; `prepare` steps the revision twice)
  *
  * Every tape carries the Measure history (wave 3); time travel is shot with
  * --steps "click=[data-testid=lc-history-col-<i>];wait=600" (oldest = 0).
@@ -20,6 +25,7 @@
  * WP4 retired the orbit and lane-board directions and their switcher, so
  * there is no stored variant to seed any more.
  */
+import { useDevToolsLiveStore } from '@/stores/devToolsLiveStore';
 import { useSystemStore } from '@/stores/systemStore';
 import type { HarnessModule } from './registry';
 
@@ -39,6 +45,18 @@ async function prepare() {
 
 const page = () => import('@/features/plugins/dev-tools/sub_lifecycle/LifecyclePage');
 
+/**
+ * The `measured` tape replays three snapshots (collar, measuring, ended); a
+ * `dev_lifecycle_*` change is what makes the page read the next one, so this
+ * steps the revision as the backend's events would: the Measure starts, then ends.
+ */
+async function prepareMeasured() {
+  await prepare();
+  const step = () => useDevToolsLiveStore.getState().markLifecycleChanged();
+  setTimeout(step, 900);
+  setTimeout(step, 1800);
+}
+
 export const LIFECYCLE_MODULES: Record<string, HarnessModule> = {
   'plugins/lifecycle/collar': { load: page, prepare },
   'plugins/lifecycle/empty': { load: page, prepare },
@@ -48,4 +66,8 @@ export const LIFECYCLE_MODULES: Record<string, HarnessModule> = {
   'plugins/lifecycle/loading': { load: page, prepare },
   'plugins/lifecycle/regressed': { load: page, prepare },
   'plugins/lifecycle/history-failed': { load: page, prepare },
+  'plugins/lifecycle/measuring': { load: page, prepare },
+  'plugins/lifecycle/measuring-over': { load: page, prepare },
+  'plugins/lifecycle/cancelling': { load: page, prepare },
+  'plugins/lifecycle/measured': { load: page, prepare: prepareMeasured },
 };

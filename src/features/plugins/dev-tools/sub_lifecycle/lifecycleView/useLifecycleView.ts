@@ -32,6 +32,9 @@ import { useLifecycleInstall, type InstallNote } from './useLifecycleInstall';
 
 const EMPTY_LANES: JourneyLanes = { before: [], after: [] };
 
+/** A part of a step's screen another surface can ask it to open on arrival. */
+export type StepFocus = 'commands';
+
 export interface LifecycleViewModel {
   t: ReturnType<typeof useTranslation>['t'];
   tx: ReturnType<typeof useTranslation>['tx'];
@@ -57,8 +60,15 @@ export interface LifecycleViewModel {
   select: (stepId: string) => void;
   /** The step whose Layer-2 screen is showing, or null for Layer 1. */
   openStepId: string | null;
-  /** Show a step's Layer-2 screen in place of Layer 1 (and select it). */
-  openStep: (stepId: string) => void;
+  /**
+   * Show a step's Layer-2 screen in place of Layer 1 (and select it). `focus`
+   * asks the screen to open one of its parts on arrival (`commands`: the
+   * Gate / Tests Commands editor, from Measure's "nothing to measure").
+   */
+  openStep: (stepId: string, focus?: StepFocus) => void;
+  /** The part the open screen was asked to open on arrival; null once it did (`clearStepFocus`). */
+  stepFocus: StepFocus | null;
+  clearStepFocus: () => void;
   /** Back to Layer 1; the page restores focus to the step's key. */
   closeStep: () => void;
   /** The weakest-step sentence (by measured health), or the fallback / all-green line. */
@@ -85,6 +95,7 @@ export function useLifecycleView(): LifecycleViewModel {
   const { snapshot, loading, error, refetch } = useLifecycleSnapshot(projectId);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [openStepId, setOpenStepId] = useState<string | null>(null);
+  const [stepFocus, setStepFocus] = useState<StepFocus | null>(null);
 
   const current = snapshot && snapshot.projectId === projectId ? snapshot : null;
   const { forcePending, note: installNote, install } = useLifecycleInstall(dl, tx, projectId, current, refetch);
@@ -98,6 +109,7 @@ export function useLifecycleView(): LifecycleViewModel {
   useEffect(() => {
     setSelectedId(null);
     setOpenStepId(null);
+    setStepFocus(null);
   }, [projectId]);
 
   const selected = useMemo(() => {
@@ -108,11 +120,16 @@ export function useLifecycleView(): LifecycleViewModel {
   }, [order, selectedId, weak, head.headlineStepId]);
 
   const select = useCallback((stepId: string) => setSelectedId(stepId), []);
-  const openStep = useCallback((stepId: string) => {
+  const openStep = useCallback((stepId: string, focus?: StepFocus) => {
     setSelectedId(stepId);
     setOpenStepId(stepId);
+    setStepFocus(focus ?? null);
   }, []);
-  const closeStep = useCallback(() => setOpenStepId(null), []);
+  const closeStep = useCallback(() => {
+    setOpenStepId(null);
+    setStepFocus(null);
+  }, []);
+  const clearStepFocus = useCallback(() => setStepFocus(null), []);
 
   const practice = current
     ? current.version === 0
@@ -147,7 +164,7 @@ export function useLifecycleView(): LifecycleViewModel {
     lanes, order,
     evidence: current?.evidence ?? [],
     selected, select,
-    openStepId, openStep, closeStep,
+    openStepId, openStep, closeStep, stepFocus, clearStepFocus,
     headline: head.headline,
     headlineHealth: head.headlineHealth,
     headlineState: head.headlineState,

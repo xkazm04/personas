@@ -132,7 +132,7 @@ export function lifecycleTapes({ RECORDED_AT }) {
     projectId: PROJECT_ID, preset: 'solo', version: 0, author: 'default', changeNote: null, createdAt: null,
     installTaskId: null, installTaskStatus: null,
     steps: STEPS, evidence: EVIDENCE, health: HEALTH,
-    goal: { goalId: 'goal-1', measurableTotal: 8, measurableGreen: 3, instructed: 2, openItems: 5 },
+    goal: { goalId: 'goal-1', measurableTotal: 8, measurableGreen: 3, instructed: 2, openItems: 5, items: [] },
     watched: true, measuring: false, progress: null, tip: TIP, rules: RULES, ...overrides,
   });
 
@@ -177,7 +177,7 @@ export function lifecycleTapes({ RECORDED_AT }) {
       })),
       'plugins/lifecycle/regressed': () => tape('plugins/lifecycle/regressed', 'Synthetic: one measure after a bad day - most steps worse than their earlier measure, four changed verdict, sync measured for the first time.', snapshot({
         health: REGRESSED,
-        goal: { goalId: 'goal-1', measurableTotal: 8, measurableGreen: 3, instructed: 2, openItems: 7 },
+        goal: { goalId: 'goal-1', measurableTotal: 8, measurableGreen: 3, instructed: 2, openItems: 7, items: [] },
       })),
       'plugins/lifecycle/loading': () => tape('plugins/lifecycle/loading', 'Synthetic: the snapshot never answers, so the page shows its permanent header and the Layer-1 ghost.', 'hang', NO_HISTORY),
     },

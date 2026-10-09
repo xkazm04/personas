@@ -45,6 +45,8 @@ interface CardFigureProps {
   /** The pipe entering this card from the upstream one, drawn on the meter's line. */
   pipe?: ReactNode;
   dim?: boolean;
+  /** A Measure is measuring the step: a streak sweeps the meter. */
+  measuring?: boolean;
 }
 
 /** The step's other numbers, one chip each (glyph + value), on one clipped line. */
@@ -66,7 +68,7 @@ function Chips({ metrics }: { metrics: StepMetric[] }) {
   );
 }
 
-export function CardFigure({ step, change, pipe, dim = false }: CardFigureProps) {
+export function CardFigure({ step, change, pipe, dim = false, measuring = false }: CardFigureProps) {
   const { dl, tx, snapshot } = useLifecycleViewModel();
   const { figure } = step;
   const instructed = step.health === 'instructed' || !figure;
@@ -93,7 +95,7 @@ export function CardFigure({ step, change, pipe, dim = false }: CardFigureProps)
       </div>
       <div className={CARD_ROW.meter} data-row="meter">
         {pipe}
-        <Meter health={step.health} figure={figure} previous={before} greenLine={greenLine} dim={dim} />
+        <Meter health={step.health} figure={figure} previous={before} greenLine={greenLine} dim={dim} measuring={measuring} />
       </div>
       <div className={CARD_ROW.label} data-row="label">
         <span className="max-w-full shrink-0 truncate">

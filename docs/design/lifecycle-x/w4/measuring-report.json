@@ -1,0 +1,220 @@
+{
+  "module": "plugins/lifecycle/measuring",
+  "kit": null,
+  "query": null,
+  "reducedMotion": false,
+  "steps": null,
+  "label": "measuring",
+  "createdAt": "2026-10-09T01:09:21.025Z",
+  "browser": "153.0.8010.12",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 14,
+    "note": "Synthetic: the collar mix with a Measure running on the base tip (5 commands of Gate and Tests). 2 done, vitest 40 s of a 60 s median, 2 waiting."
+  },
+  "ok": true,
+  "unknownIpcCommands": [
+    "dev_tools_workspace_set_active",
+    "companions_status"
+  ],
+  "shots": [
+    {
+      "file": "measuring-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1
+      },
+      "stable": true,
+      "textLength": 1156,
+      "textSample": "Atlas Web Solo practice, default · Measuring a1b2c3d, about 6m 40s left, plus 1 with no estimate All projects / Atlas Web no repo 2 of 5 Send again to Overseer Ask Athena Measure started: 5 commands. ",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "measuring-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1
+      },
+      "stable": true,
+      "textLength": 1250,
+      "textSample": "Atlas Web Solo practice, default · Measuring a1b2c3d, about 6m 40s left, plus 1 with no estimate All projects / Atlas Web no repo 2 of 5 Send again to Overseer Ask Athena Measure started: 5 commands. ",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "measuring-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1
+      },
+      "stable": true,
+      "textLength": 1156,
+      "textSample": "Atlas Web Solo practice, default · Measuring a1b2c3d, about 6m 40s left, plus 1 with no estimate All projects / Atlas Web no repo 2 of 5 Send again to Overseer Ask Athena Measure started: 5 commands. ",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "measuring-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1
+      },
+      "stable": true,
+      "textLength": 1250,
+      "textSample": "Atlas Web Solo practice, default · Measuring a1b2c3d, about 6m 40s left, plus 1 with no estimate All projects / Atlas Web no repo 2 of 5 Send again to Overseer Ask Athena Measure started: 5 commands. ",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

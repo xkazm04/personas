@@ -61,9 +61,9 @@ export function lifecycleDetailTapes({ RECORDED_AT }) {
   const cleanPct = Math.round((docs.filter((d) => d.status === 'clean').length / verifiable) * 1000) / 10;
 
   const DETAIL = {
-    gate: { stepId: 'gate', runs: gateRuns, docs: [], related: [] },
-    tests: { stepId: 'tests', runs: testsRuns, docs: [], related: [] },
-    docs: { stepId: 'docs', runs: [], docs, related: [] },
+    gate: { stepId: 'gate', runs: gateRuns, docs: [], related: [], evidence: [] },
+    tests: { stepId: 'tests', runs: testsRuns, docs: [], related: [], evidence: [] },
+    docs: { stepId: 'docs', runs: [], docs, related: [], evidence: [] },
   };
   const NOTES = {
     'c12:land': 'Merged locally; the pull request was never opened',
@@ -92,7 +92,7 @@ export function lifecycleDetailTapes({ RECORDED_AT }) {
       tape.calls.push({
         cmd: 'dev_tools_lifecycle_step_detail',
         args: { projectId: PROJECT_ID, stepId },
-        response: details[stepId] ?? { stepId, runs: [], docs: [], related: [] },
+        response: details[stepId] ?? { stepId, runs: [], docs: [], related: [], evidence: [] },
       });
     }
     return tape;
@@ -106,7 +106,7 @@ export function lifecycleDetailTapes({ RECORDED_AT }) {
         snap.health = snap.health.map((h) => (h.stepId === 'tests'
           ? { ...h, health: 'unmeasured', reason: 'No coverage command', metrics: h.metrics.map((m) => (m.key === 'coverage_pct' ? { ...m, value: null, samples: 0 } : m)) }
           : h));
-      }, { ...DETAIL, tests: { stepId: 'tests', runs: testsRuns.filter((r) => r.kind !== 'coverage'), docs: [], related: [] } }),
+      }, { ...DETAIL, tests: { stepId: 'tests', runs: testsRuns.filter((r) => r.kind !== 'coverage'), docs: [], related: [], evidence: [] } }),
     },
   };
 }

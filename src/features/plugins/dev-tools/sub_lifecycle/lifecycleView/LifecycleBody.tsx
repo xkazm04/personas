@@ -33,6 +33,7 @@ import { TimeTravelProvider } from './history/timeTravel';
 import { Layer1 } from './layer1/Layer1';
 import { Layer1Ghost } from './layer1/Layer1Ghost';
 import { LazyStepScreen } from './layer2/lazySteps';
+import { MeasureAnnouncer } from './measure/MeasureAnnouncer';
 import { StepScreenGhost } from './layer2/StepScreenGhost';
 import { RHYTHM } from './system/lcSurface';
 import './layer1/layer1.css';
@@ -100,6 +101,8 @@ export function LifecycleBody() {
   return (
     <KitHost testId="lc-journey">
       <TimeTravelProvider projectId={projectId} ready={order.length > 0}>
+        {/* The Measure's live region: mounted on either layer, under the time cursor. */}
+        <MeasureAnnouncer />
         <div ref={hostRef} className={`${RHYTHM.block} pb-6`}>
           {error && <Banner severity="error" compact message={dl.lc_load_failed} cause={error} onRetry={refetch} />}
           {/* The ghost -> Layer 1 swap is a plain conditional (law 2: content is never held, and

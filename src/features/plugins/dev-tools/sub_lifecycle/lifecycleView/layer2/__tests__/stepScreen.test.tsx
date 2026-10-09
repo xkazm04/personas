@@ -16,7 +16,7 @@ const DETAILS: Record<string, () => unknown> = { gate: gateDetail, tests: testsD
 
 beforeEach(() => {
   vi.clearAllMocks();
-  getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => DETAILS[stepId]?.() ?? { stepId, runs: [], docs: [], related: [] });
+  getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => DETAILS[stepId]?.() ?? { stepId, runs: [], docs: [], related: [], evidence: [] });
 });
 
 // The detail cache is module-scoped and keyed by project, so each test names its own project.

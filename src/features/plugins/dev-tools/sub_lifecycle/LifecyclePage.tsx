@@ -17,6 +17,11 @@
  * modal reopened on every node made walking the journey impossible still
  * holds, so Layer 2 walks too (Left / Right).
  *
+ * A running Measure is one session for the whole page (`measure/measureSession`):
+ * the header's Measure control turns into its live progress and its subtitle
+ * says the time left, Layer 1 shows the Measure panel in the status band's
+ * slot, and Gate and Tests hold their verdict until the last run lands.
+ *
  * Loading pattern v2: a cold first load ghosts Layer 1 in its real geometry
  * under the permanent header; a warm remount paints from the module cache in
  * useLifecycleSnapshot and revalidates; a failure shows an inline banner and
@@ -32,6 +37,7 @@ import { LifecycleViewProvider } from './lifecycleView/context';
 import { HeaderSubtitle } from './lifecycleView/frame/HeaderSubtitle';
 import { HeaderToolbar } from './lifecycleView/frame/HeaderToolbar';
 import { LifecycleBody } from './lifecycleView/LifecycleBody';
+import { MeasureSessionProvider } from './lifecycleView/measure/measureSession';
 import { GLYPH } from './lifecycleView/system/scales';
 import { useLifecycleView } from './lifecycleView/useLifecycleView';
 
@@ -41,25 +47,27 @@ export default function LifecyclePage() {
 
   return (
     <LifecycleViewProvider model={model}>
-      <ContentBox>
-        <ContentHeader
-          compact
-          icon={<GitBranch className={`${GLYPH.md} text-primary`} />}
-          iconColor="primary"
-          title={model.projectName ?? t.plugins.dev_tools.lifecycle_title}
-          subtitle={model.projectId ? <HeaderSubtitle /> : undefined}
-        >
-          <HeaderToolbar />
-        </ContentHeader>
+      <MeasureSessionProvider>
+        <ContentBox>
+          <ContentHeader
+            compact
+            icon={<GitBranch className={`${GLYPH.md} text-primary`} />}
+            iconColor="primary"
+            title={model.projectName ?? t.plugins.dev_tools.lifecycle_title}
+            subtitle={model.projectId ? <HeaderSubtitle /> : undefined}
+          >
+            <HeaderToolbar />
+          </ContentHeader>
 
-        <ContentBody centered>
-          {!model.projectId ? (
-            <EmptyState icon={GitBranch} title={model.dl.lc_empty_title} subtitle={model.dl.lc_empty_subtitle} />
-          ) : (
-            <LifecycleBody />
-          )}
-        </ContentBody>
-      </ContentBox>
+          <ContentBody centered>
+            {!model.projectId ? (
+              <EmptyState icon={GitBranch} title={model.dl.lc_empty_title} subtitle={model.dl.lc_empty_subtitle} />
+            ) : (
+              <LifecycleBody />
+            )}
+          </ContentBody>
+        </ContentBox>
+      </MeasureSessionProvider>
     </LifecycleViewProvider>
   );
 }

@@ -166,7 +166,7 @@ export function healthyMix(overrides: Partial<LifecycleSnapshot> = {}): Lifecycl
         prev('amber', [['done_rate', 52, 12]])),
       health('record', 'green', null, [['done_rate', 100, 12]], null, null, prev('green', [['done_rate', 100, 12]])),
     ],
-    goal: { goalId: 'goal-1', measurableTotal: 8, measurableGreen: 3, instructed: 2, openItems: 5 },
+    goal: { goalId: 'goal-1', measurableTotal: 8, measurableGreen: 3, instructed: 2, openItems: 5, items: [] },
     watched: true,
     tip: { branch: 'master', sha: 'a1b2c3d4e5f6', measuredSha: 'a1b2c3d4e5f6', commitsBehind: 0, measuredAt: at },
     ...overrides,

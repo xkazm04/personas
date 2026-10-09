@@ -104,10 +104,20 @@ export function whatChanged(columns: LifecycleMeasureColumn[], index: number, st
   const column = columns[index];
   const before = columns[index - 1];
   if (!column || !before) return null;
+  return changeFragments(stepIds.map((stepId) => cellRow(column, before, stepId)));
+}
+
+/**
+ * The fragments of "what changed" for health rows that each carry their own
+ * earlier measure (`previous`): the one builder behind the history's line and
+ * the Measure panel's summary (`measure/measureModel.measureChange`). A row
+ * with no `previous` says nothing.
+ */
+export function changeFragments(rows: (LifecycleStepHealthView | null)[]): ChangeFragment[] {
   const out: ChangeFragment[] = [];
-  for (const stepId of stepIds) {
-    const row = cellRow(column, before, stepId);
+  for (const row of rows) {
     if (!row) continue;
+    const { stepId } = row;
     const metrics = stepMetrics(stepId, row);
     const change = stepChange({ health: row.health, metrics, figure: metrics.find((m) => isRateKey(m.key)) ?? null, previous: row.previous, staleOf: null });
     if (!change) continue;

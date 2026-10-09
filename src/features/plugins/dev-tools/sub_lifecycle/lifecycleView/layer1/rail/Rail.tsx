@@ -19,18 +19,28 @@ import { NodeCard } from './NodeCard';
 import { PeekBody } from './Peek';
 import { usePeek, type PeekControl } from './usePeek';
 
-function LaneOf({ title, steps, offset, testId, roving, peek }: {
+function LaneOf({ title, steps, offset, testId, roving, peek, data }: {
   title: string;
   steps: HealthStep[];
   offset: number;
   testId: string;
   roving: StepRoving;
   peek: PeekControl;
+  data: Pick<Layer1Data, 'measuring' | 'settled'>;
 }) {
   return (
     <Lane label={title} head={<span className={LT.eyebrow}>{title}</span>} count={<Count value={steps.length} />} steps={steps.length} testId={testId}>
       {steps.map((s, i) => (
-        <NodeCard key={s.node.id} step={s} upstream={steps[i - 1] ?? null} index={offset + i} roving={roving} peek={peek} />
+        <NodeCard
+          key={s.node.id}
+          step={s}
+          upstream={steps[i - 1] ?? null}
+          index={offset + i}
+          roving={roving}
+          peek={peek}
+          measuring={data.measuring.get(s.node.id) ?? null}
+          settle={data.settled.has(s.node.id)}
+        />
       ))}
     </Lane>
   );
@@ -44,8 +54,8 @@ export function Rail({ data }: { data: Layer1Data }) {
   return (
     <>
       <StepTrack roving={roving} className={RAIL.laneGap}>
-        <LaneOf title={dl.lc_lane_before} steps={before} offset={0} testId="lc-lane-before" roving={roving} peek={control} />
-        <LaneOf title={dl.lc_lane_after} steps={after} offset={before.length} testId="lc-lane-after" roving={roving} peek={control} />
+        <LaneOf title={dl.lc_lane_before} steps={before} offset={0} testId="lc-lane-before" roving={roving} peek={control} data={data} />
+        <LaneOf title={dl.lc_lane_after} steps={after} offset={before.length} testId="lc-lane-after" roving={roving} peek={control} data={data} />
       </StepTrack>
       <AnchoredTooltip anchor={peeked && peek ? peek.anchor : null} content={peeked ? <PeekBody step={peeked} /> : null} placement="bottom" />
     </>

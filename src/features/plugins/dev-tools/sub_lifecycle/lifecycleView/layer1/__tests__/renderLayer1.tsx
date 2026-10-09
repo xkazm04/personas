@@ -30,6 +30,7 @@ export function renderLayer1(ui: ReactNode, snapshot: LifecycleSnapshot, initial
       openStepId,
       openStep: (id: string) => { setSelectedId(id); setOpenStepId(id); openStep(id); },
       closeStep: () => setOpenStepId(null),
+      stepFocus: null, clearStepFocus: () => {},
       headline: '', headlineHealth: null, headlineState: null, missingText: '', missingCount: 0,
       installing: false, install: async () => {}, installNote: null, askAthena: () => {},
     };

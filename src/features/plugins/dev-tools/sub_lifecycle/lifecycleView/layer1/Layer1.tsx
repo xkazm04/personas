@@ -14,12 +14,22 @@
  * Motion: the cards ripple in on the project's FIRST entrance this session
  * only (`system/entrance`); a warm remount or a return from a step screen
  * paints still.
+ *
+ * A running Measure takes the status band's slot (`measure/MeasurePanel`):
+ * the band yields while the panel is open and comes back, re-judged, when it
+ * closes. One slot, so the rail under it moves by the difference of two
+ * heights, never by a whole panel, and stays above the fold at 1280x800.
  */
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
 import { useLifecycleViewModel } from '../context';
 import { HistorySection } from '../history/HistorySection';
 import { prefetchStepChunksOnIdle } from '../layer2/stepChunks';
+import { MeasurePanel } from '../measure/MeasurePanel';
+import { useMeasureSession } from '../measure/measureSession';
 import { EntranceProvider, useFirstEntrance } from '../system/entrance';
 import { RAIL } from '../system/lcSurface';
 import { HighlightProvider } from './highlight';
@@ -31,6 +41,13 @@ export function Layer1() {
   const { projectId } = useLifecycleViewModel();
   const play = useFirstEntrance(projectId);
   const data = useLayer1();
+  const { open } = useMeasureSession();
+  const reduced = useReducedMotion();
+  // The band and the panel share one slot: the incoming one settles in, the outgoing one leaves at
+  // once, so the slot never holds both. What is there on the first paint is painted still.
+  const painted = useRef(false);
+  useEffect(() => { painted.current = true; }, []);
+  const enter = painted.current && !reduced ? { opacity: 0, y: -6 } : false;
 
   useEffect(() => prefetchStepChunksOnIdle(), []);
 
@@ -38,7 +55,14 @@ export function Layer1() {
     <EntranceProvider play={play}>
       <HighlightProvider>
         <div className={RAIL.laneGap} data-testid="lc1-layer1">
-          <StatusBand steps={data.all} />
+          <motion.div
+            key={open ? 'measure' : 'band'}
+            initial={enter}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {open ? <MeasurePanel /> : <StatusBand steps={data.all} />}
+          </motion.div>
           <div data-testid="lc1-collar">
             <Rail data={data} />
           </div>

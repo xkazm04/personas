@@ -16,7 +16,7 @@ beforeEach(() => {
   __resetHistoryCacheForTests();
   vi.clearAllMocks();
   getLifecycleHistory.mockImplementation(async () => sixMeasures());
-  getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => (stepId === 'gate' ? gateDetailByMeasure() : { stepId, runs: [], docs: [], related: [] }));
+  getLifecycleStepDetail.mockImplementation(async (_p: string, stepId: string) => (stepId === 'gate' ? gateDetailByMeasure() : { stepId, runs: [], docs: [], related: [], evidence: [] }));
 });
 
 const row = (id: string) => screen.getByTestId(`lc2-cmd-${id}`);

@@ -46,10 +46,11 @@ describe('WatchedPipelines', () => {
       {
         projectId: 'p1',
         projectName: 'Acme',
-        goal: { goalId: 'g1', measurableTotal: 6, measurableGreen: 4, instructed: 2, openItems: 3 },
+        goal: { goalId: 'g1', measurableTotal: 6, measurableGreen: 4, instructed: 2, openItems: 3, items: [] },
         lastMeasuredAt: new Date().toISOString(),
+        steps: [],
       },
-      { projectId: 'p2', projectName: 'Beta', goal: null, lastMeasuredAt: null },
+      { projectId: 'p2', projectName: 'Beta', goal: null, lastMeasuredAt: null, steps: [] },
     ]);
     render(<WatchedPipelines />);
 
@@ -66,7 +67,7 @@ describe('WatchedPipelines', () => {
 
   it('opens Lifecycle on the pressed project', async () => {
     listOverseerWatchedPipelines.mockResolvedValue([
-      { projectId: 'p2', projectName: 'Beta', goal: null, lastMeasuredAt: null },
+      { projectId: 'p2', projectName: 'Beta', goal: null, lastMeasuredAt: null, steps: [] },
     ]);
     render(<WatchedPipelines />);
 

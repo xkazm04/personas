@@ -15,14 +15,24 @@
  *
  * The whole card is one press target (the key's stretched hit area); the key
  * is the tab stop. Resting on the card, or focusing its key, opens the peek.
+ *
+ * While a Measure measures the step (`measuring`), the card keeps the verdict
+ * it had before the Measure (`useLayer1`), a streak sweeps its meter and its
+ * verdict line says "Measuring, 1 of 3" (`MeasuringVerdict`). When the
+ * Measure's last run lands and the verdict changed (`settle`), the card rings
+ * once and the new verdict line comes in; under reduced motion it just changes.
  */
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { History } from 'lucide-react';
+
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
 import { stepGlyph, stepLabel } from '../../../journey/journeyLabels';
 import type { StepRoving } from '../../blocks/useStepRoving';
 import { useLifecycleViewModel } from '../../context';
 import { isUntracked, useTimeTravel } from '../../history/timeTravel';
+import type { Tally } from '../../measure/measureModel';
+import '../../measure/measure.css';
 import { enterDelay } from '../../railShared';
 import { useEntrance } from '../../system/entrance';
 import { lcShape, lcSurface } from '../../system/lcSurface';
@@ -35,6 +45,7 @@ import { highlightOf, useHighlight } from '../highlight';
 import { HEALTH_GLYPH, healthLabel } from '../layer1Labels';
 import { StepPress } from '../parts/StepPress';
 import { CardFigure } from './CardFigure';
+import { MeasuringVerdict } from './MeasuringVerdict';
 import { CARD_ROW, CARD_ROW_GAP } from './cardRows';
 import { Pipe } from './Pipe';
 import type { PeekControl } from './usePeek';
@@ -46,11 +57,16 @@ interface NodeCardProps {
   index: number;
   roving: StepRoving;
   peek: PeekControl;
+  /** A running Measure is measuring this step: its commands' tally. */
+  measuring?: Tally | null;
+  /** The Measure that just ended changed this step's verdict: animate it once. */
+  settle?: boolean;
 }
 
-export function NodeCard({ step, upstream, index, roving, peek }: NodeCardProps) {
+export function NodeCard({ step, upstream, index, roving, peek, measuring = null, settle = false }: NodeCardProps) {
   const { dl, tx, selected } = useLifecycleViewModel();
   const entering = useEntrance();
+  const reduced = useReducedMotion();
   const { active } = useHighlight();
   const { node } = step;
   const on = node.id === selected?.id;
@@ -71,7 +87,7 @@ export function NodeCard({ step, upstream, index, roving, peek }: NodeCardProps)
   const raise = on ? '-translate-y-0.5 shadow-elevation-3 ring-2 ring-primary/60 ring-offset-2 ring-offset-background' : '';
   return (
     <motion.li
-      className={`@container/card relative isolate flex min-w-0 flex-col ${CARD_ROW_GAP} transition-[box-shadow,transform,border-color] duration-200 motion-reduce:transition-none ${lcSurface('node', `bg-background ${surface}`)} ${raise}`}
+      className={`@container/card relative isolate flex min-w-0 flex-col ${CARD_ROW_GAP} transition-[box-shadow,transform,border-color] duration-200 motion-reduce:transition-none ${lcSurface('node', `bg-background ${surface}`)} ${raise} ${settle && !reduced ? 'lcx-settle' : ''}`}
       initial={entering ? { opacity: 0, y: 8 } : false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 420, damping: 32, delay: enterDelay(index, 0.04) }}
@@ -83,6 +99,8 @@ export function NodeCard({ step, upstream, index, roving, peek }: NodeCardProps)
       data-highlight={lit}
       data-travel={untracked ? 'untracked' : then ? 'then' : undefined}
       data-card={node.id}
+      data-measuring={measuring ? 'true' : undefined}
+      data-settle={settle || undefined}
     >
       <span aria-hidden className={`pointer-events-none absolute inset-0 -z-10 ${lcShape('node')} ${v.wash} transition-opacity duration-200 motion-reduce:transition-none ${dim ? 'opacity-0' : 'opacity-100'}`} />
       <div className={CARD_ROW.head} data-row="head">
@@ -100,19 +118,34 @@ export function NodeCard({ step, upstream, index, roving, peek }: NodeCardProps)
         step={step}
         change={change}
         dim={dim}
+        measuring={!!measuring}
         pipe={upstream ? <Pipe downstream={step.health} upstream={upstream.health} dim={dim} /> : null}
       />
-      <div className={CARD_ROW.verdict} data-row="verdict" data-testid={`lc1-verdict-${node.id}`}>
-        <VerdictGlyph className={`${GLYPH.sm} shrink-0 ${v.ink}`} aria-hidden />
-        {/* On a narrow card a changed verdict keeps its glyph and says what it WAS;
-            the word for what it is returns when the card has room. */}
-        <span className={`shrink-0 ${v.ink} ${change?.was ? 'hidden @[11.5rem]/card:inline' : ''}`}>{healthLabel(dl, step.health)}</span>
-        {change?.was && (
-          <span className="min-w-0 truncate" data-was={change.was}>
-            {tx(dl.lcx2_was, { verdict: healthLabel(dl, change.was) })}
-          </span>
-        )}
-      </div>
+      {measuring ? (
+        <MeasuringVerdict tally={measuring} />
+      ) : (
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={settle ? step.health : 'still'}
+            className={CARD_ROW.verdict}
+            initial={settle && !reduced ? { opacity: 0, y: 4 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            data-row="verdict"
+            data-testid={`lc1-verdict-${node.id}`}
+          >
+            <VerdictGlyph className={`${GLYPH.sm} shrink-0 ${v.ink}`} aria-hidden />
+            {/* On a narrow card a changed verdict keeps its glyph and says what it WAS;
+                the word for what it is returns when the card has room. */}
+            <span className={`shrink-0 ${v.ink} ${change?.was ? 'hidden @[11.5rem]/card:inline' : ''}`}>{healthLabel(dl, step.health)}</span>
+            {change?.was && (
+              <span className="min-w-0 truncate" data-was={change.was}>
+                {tx(dl.lcx2_was, { verdict: healthLabel(dl, change.was) })}
+              </span>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      )}
     </motion.li>
   );
 }

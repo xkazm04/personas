@@ -7,7 +7,7 @@
  * Editing from that state starts from the commands the run history shows, so
  * pinning the list never silently drops what detection was already running.
  */
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { setLifecycleStepParams } from '@/api/devTools/lifecycle';
 import type { LifecycleGateCommand } from '@/lib/bindings/LifecycleGateCommand';
@@ -72,7 +72,7 @@ export function draftToCommands(draft: DraftCommand[]): LifecycleGateCommand[] {
 }
 
 export function useCommandsEditor(step: LifecycleStep, runs: LifecycleRun[]) {
-  const { dl, projectId } = useLifecycleViewModel();
+  const { dl, projectId, openStepId, stepFocus, clearStepFocus } = useLifecycleViewModel();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<DraftCommand[]>([]);
   const [saving, setSaving] = useState(false);
@@ -90,6 +90,13 @@ export function useCommandsEditor(step: LifecycleStep, runs: LifecycleRun[]) {
     setResult(null);
     rootRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
   }, [step.params.commands, runs]);
+
+  // Arrived from Measure's "nothing to measure": open the editor once, then forget the ask.
+  useEffect(() => {
+    if (stepFocus !== 'commands' || openStepId !== step.id) return;
+    open();
+    clearStepFocus();
+  }, [stepFocus, openStepId, step.id, open, clearStepFocus]);
 
   const add = () => setDraft((d) => [...d, { key: nextKey(), id: '', command: '', kind: kinds[0] ?? 'other', budgetSec: '' }]);
   const update = (key: string, patch: Partial<DraftCommand>) => setDraft((d) => d.map((c) => (c.key === key ? { ...c, ...patch } : c)));

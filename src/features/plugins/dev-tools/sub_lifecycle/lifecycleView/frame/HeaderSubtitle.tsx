@@ -3,11 +3,14 @@
 // a1b2c3d, up to date with master" / "Measured 2 days ago, 14 commits behind
 // master" in the warning tone / "Never measured"). While the first snapshot is
 // in flight the line is a calm delayed bar of the same height, so the title
-// above it never moves.
+// above it never moves. While a Measure runs, the freshness segment says that
+// instead: the tip it runs on and the time it has left (`measure/MeasuringLine`).
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 
 import { useLifecycleViewModel } from '../context';
+import { isMeasuring, useMeasureSession } from '../measure/measureSession';
+import { MeasuringLine } from '../measure/MeasuringLine';
 import { LT } from '../system/lcType';
 import { fillTemplate } from './fillTemplate';
 import type { Freshness } from './freshness';
@@ -29,6 +32,7 @@ function FreshnessText({ f }: { f: Freshness }) {
 
 export function HeaderSubtitle() {
   const { practice, freshness, loading } = useLifecycleViewModel();
+  const { phase } = useMeasureSession();
   if (!practice) {
     return loading
       ? <span aria-hidden className="inline-block h-[1em] w-72 max-w-full animate-fade-in rounded-interactive bg-primary/[0.06] align-middle" style={{ animationDelay: '150ms' }} />
@@ -37,7 +41,12 @@ export function HeaderSubtitle() {
   return (
     <span data-testid="lc-subtitle">
       <span data-testid="lc-practice">{practice}</span>
-      {freshness && (
+      {isMeasuring(phase) ? (
+        <>
+          <span aria-hidden>{' · '}</span>
+          <MeasuringLine />
+        </>
+      ) : freshness && (
         <>
           <span aria-hidden>{' · '}</span>
           <span
