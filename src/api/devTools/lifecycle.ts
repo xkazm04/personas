@@ -30,6 +30,10 @@ export const installLifecycle = (projectId: string) =>
 export const measureLifecycle = (projectId: string) =>
   invoke<LifecycleMeasureStarted>("dev_tools_lifecycle_measure", { projectId });
 
+/** Ask the project's running Measure to stop. Resolves `true` when one was running; unfinished commands land as `did_not_run`. */
+export const cancelLifecycleMeasure = (projectId: string) =>
+  invoke<boolean>("dev_tools_lifecycle_cancel_measure", { projectId });
+
 /** Layer-2 data for one step: run history (newest first, at most 30), per-doc rot rows, and the backlog items about the step. */
 export const getLifecycleStepDetail = (projectId: string, stepId: string) =>
   invoke<LifecycleStepDetail>("dev_tools_lifecycle_step_detail", { projectId, stepId });

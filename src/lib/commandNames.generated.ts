@@ -538,6 +538,7 @@ export type CommandName =
   | "dev_tools_kpi_matching_credentials"
   | "dev_tools_kpi_sim_ingest"
   | "dev_tools_kpi_sim_prepare"
+  | "dev_tools_lifecycle_cancel_measure"
   | "dev_tools_lifecycle_history"
   | "dev_tools_lifecycle_install"
   | "dev_tools_lifecycle_measure"

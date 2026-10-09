@@ -180,7 +180,8 @@ pub fn list_runs(pool: &DbPool, q: &RunQuery<'_>) -> Result<Vec<LifecycleRun>, A
 }
 
 /// Every run of the project's newest `measures` measures (by each measure's
-/// last `finished_at`), newest first.
+/// last `finished_at`), newest first; ties in reverse insertion order, so a
+/// reader walking the list backwards sees one measure's runs as planned.
 pub fn list_recent_measure_runs(
     pool: &DbPool,
     project_id: &str,
@@ -196,7 +197,7 @@ pub fn list_recent_measure_runs(
                  WHERE project_id = ?1 AND measure_id IN (
                      SELECT measure_id FROM dev_lifecycle_runs WHERE project_id = ?1
                      GROUP BY measure_id ORDER BY MAX(finished_at) DESC LIMIT ?2)
-                 ORDER BY finished_at DESC, started_at DESC"
+                 ORDER BY finished_at DESC, started_at DESC, rowid DESC"
             ))?;
             let limit = i64::try_from(measures).unwrap_or(i64::MAX);
             let rows = stmt
@@ -403,6 +404,30 @@ mod tests {
         let latest = latest_measure(&pool, &p)?.expect("measured");
         assert_eq!(latest.measure_id, "m3");
         assert_eq!(latest.head_sha, "sha-m3");
+        Ok(())
+    }
+
+    #[test]
+    fn recent_measure_ties_read_in_reverse_insertion_order() -> Result<(), AppError> {
+        let pool = crate::init_test_db()?;
+        let p = project(&pool)?;
+        let at = "2026-10-01T00:00:00.000Z";
+        for id in ["a", "b", "c"] {
+            let r = run(
+                &p,
+                "m1",
+                id,
+                LifecycleGateKind::Lint,
+                LifecycleRunOutcome::DidNotRun,
+                at,
+            );
+            append_run(&pool, &r)?;
+        }
+        let ids: Vec<String> = list_recent_measure_runs(&pool, &p, 1)?
+            .into_iter()
+            .map(|r| r.command_id)
+            .collect();
+        assert_eq!(ids, ["c", "b", "a"]);
         Ok(())
     }
 

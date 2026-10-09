@@ -149,6 +149,16 @@ pub fn render(project_name: &str, snap: &LifecycleSnapshot) -> String {
             )
         })
         .collect();
+    if let Some(tip) = &snap.tip {
+        lines.push(match (&tip.measured_sha, tip.commits_behind) {
+            (None, _) => format!("Base branch {}: never measured", tip.branch),
+            (Some(_), Some(n)) => format!("Base branch {}: measured {n} commits ago", tip.branch),
+            (Some(_), None) => format!(
+                "Base branch {}: measured, commits since unknown",
+                tip.branch
+            ),
+        });
+    }
     if !snap.health.is_empty() {
         if unwell.is_empty() {
             lines.push("Measured health: every measurable step is green.".into());

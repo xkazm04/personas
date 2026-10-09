@@ -23,11 +23,21 @@
 //! Timing endpoints: `started_at` is taken immediately before the child is
 //! spawned and `finished_at` when it exits (or is abandoned at the timeout),
 //! so `duration_ms` excludes worktree creation and dependency linking.
+//!
+//! **Observed and cancellable** ([`exec_in_worktree_with`]): a caller that
+//! shows progress is told as each command starts and finishes, and a caller
+//! that lets a person stop the run passes a [`CancellationToken`]. Cancel is
+//! checked before each command and raced against the running child; the child
+//! is abandoned exactly as at a timeout (its future is dropped and
+//! `kill_on_drop` kills it), and the worktree is still cleaned up. Nothing is
+//! reported for the abandoned command or the ones after it: the caller records
+//! them. [`exec_in_worktree`] is the unobserved, never-cancelled form.
 
 use std::path::Path;
 use std::time::{Duration, Instant};
 
 use chrono::{DateTime, Utc};
+use tokio_util::sync::CancellationToken;
 
 use crate::app_master_gates::{
     borrow_installed_deps, deps_missing_for, first_error_line, git, unlink_borrowed,
@@ -84,13 +94,26 @@ pub struct CommandExec {
 pub struct WorktreeExec {
     /// Names linked or copied in from the source checkout.
     pub linked_deps: Vec<String>,
-    /// One result per command, in input order.
+    /// One result per command that ran to an answer, in input order. Shorter
+    /// than the input only when `cancelled`.
     pub results: Vec<CommandExec>,
+    /// The run was cancelled: the command at `results.len()` was abandoned
+    /// (or never started) and no command after it ran.
+    pub cancelled: bool,
+}
+
+/// What [`exec_in_worktree_with`] reports as the run goes.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ExecEvent<'a> {
+    /// Command `index` (input order) is about to run.
+    Started { index: usize, at: DateTime<Utc> },
+    /// Command `index` answered; sent before the next command starts.
+    Finished { index: usize, exec: &'a CommandExec },
 }
 
 /// Run `commands` against `rev` in a throwaway detached worktree of
 /// `root_path`. `on_result` is called as each command finishes, before the
-/// next one starts, so a caller can persist row by row.
+/// next one starts, so a caller can persist row by row. Never cancelled.
 ///
 /// `Err(reason)` means the worktree itself could not be created and NOTHING
 /// ran; the caller records every command as not run with that reason.
@@ -103,6 +126,35 @@ pub async fn exec_in_worktree<F>(
 ) -> Result<WorktreeExec, String>
 where
     F: FnMut(&CommandExec),
+{
+    exec_in_worktree_with(
+        root_path,
+        rev,
+        commands,
+        temp_prefix,
+        &CancellationToken::new(),
+        |event| {
+            if let ExecEvent::Finished { exec, .. } = event {
+                on_result(exec);
+            }
+        },
+    )
+    .await
+}
+
+/// [`exec_in_worktree`], observed and cancellable: `on_event` hears each
+/// command start and finish, and `cancel` stops the run (see the module doc).
+/// A cancelled run returns `Ok` with `cancelled: true`.
+pub async fn exec_in_worktree_with<F>(
+    root_path: &Path,
+    rev: &str,
+    commands: &[ExecCommand],
+    temp_prefix: &str,
+    cancel: &CancellationToken,
+    mut on_event: F,
+) -> Result<WorktreeExec, String>
+where
+    F: FnMut(ExecEvent<'_>),
 {
     let wt_dir = tempfile::Builder::new()
         .prefix(temp_prefix)
@@ -126,7 +178,16 @@ where
     }
 
     let mut results = Vec::with_capacity(commands.len());
-    for cmd in commands {
+    let mut cancelled = false;
+    for (index, cmd) in commands.iter().enumerate() {
+        if cancel.is_cancelled() {
+            cancelled = true;
+            break;
+        }
+        on_event(ExecEvent::Started {
+            index,
+            at: Utc::now(),
+        });
         let result = match deps_missing_for(&cmd.command, &borrowed) {
             // The source checkout has no such dependency either. Installing it
             // is a different blast radius (network, minutes, a lockfile write),
@@ -148,9 +209,25 @@ where
                     output_tail: String::new(),
                 }
             }
-            None => exec_one(&cmd.command, &wt_path, cmd.timeout).await,
+            // The cancel arm drops the child's future, which is the timeout
+            // path's kill (`kill_on_drop`). A finished command wins a tie.
+            None => {
+                let answered = tokio::select! {
+                    biased;
+                    exec = exec_one(&cmd.command, &wt_path, cmd.timeout) => Some(exec),
+                    _ = cancel.cancelled() => None,
+                };
+                let Some(exec) = answered else {
+                    cancelled = true;
+                    break;
+                };
+                exec
+            }
         };
-        on_result(&result);
+        on_event(ExecEvent::Finished {
+            index,
+            exec: &result,
+        });
         results.push(result);
     }
 
@@ -170,6 +247,7 @@ where
     Ok(WorktreeExec {
         linked_deps: borrowed.linked,
         results,
+        cancelled,
     })
 }
 
@@ -347,6 +425,97 @@ mod tests {
         assert_eq!(r[2].status, ExecStatus::TimedOut);
         assert!(r[2].exit_code.is_none());
         assert!(r[2].duration_ms >= 900, "timed at the child, not at setup");
+    }
+
+    #[tokio::test]
+    async fn every_command_is_announced_before_it_answers() {
+        let Some(repo) = repo() else { return };
+        let mut events: Vec<(char, usize)> = Vec::new();
+        let run = exec_in_worktree_with(
+            repo.path(),
+            "main",
+            &[cmd("exit 0", 60), cmd("exit 2", 60)],
+            "personas-gate-exec-test-",
+            &CancellationToken::new(),
+            |e| match e {
+                ExecEvent::Started { index, .. } => events.push(('s', index)),
+                ExecEvent::Finished { index, .. } => events.push(('f', index)),
+            },
+        )
+        .await
+        .expect("worktree");
+        assert_eq!(events, vec![('s', 0), ('f', 0), ('s', 1), ('f', 1)]);
+        assert!(!run.cancelled);
+        assert_eq!(run.results.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn a_cancel_abandons_the_running_command_and_runs_no_more() {
+        let Some(repo) = repo() else { return };
+        let stall = if cfg!(target_os = "windows") {
+            "ping -n 30 127.0.0.1 > NUL"
+        } else {
+            "sleep 30"
+        };
+        let cancel = CancellationToken::new();
+        // Raised when the stalled command starts; the canceller waits on it.
+        let stalled = tokio::sync::Notify::new();
+        let mut started: Vec<usize> = Vec::new();
+        let mut finished: Vec<usize> = Vec::new();
+        let begun = Instant::now();
+        let plan = [cmd("exit 0", 60), cmd(stall, 60), cmd("exit 0", 60)];
+        let runner = exec_in_worktree_with(
+            repo.path(),
+            "main",
+            &plan,
+            "personas-gate-exec-test-",
+            &cancel,
+            |e| match e {
+                ExecEvent::Started { index, .. } => {
+                    started.push(index);
+                    if index == 1 {
+                        stalled.notify_one();
+                    }
+                }
+                ExecEvent::Finished { index, .. } => finished.push(index),
+            },
+        );
+        let canceller = async {
+            stalled.notified().await;
+            tokio::time::sleep(Duration::from_millis(300)).await;
+            cancel.cancel();
+        };
+        let (run, ()) = tokio::join!(runner, canceller);
+        let run = run.expect("worktree");
+        assert!(run.cancelled);
+        assert_eq!(started, vec![0, 1], "the third command never started");
+        assert_eq!(finished, vec![0], "the abandoned command reports nothing");
+        assert_eq!(run.results.len(), 1);
+        assert!(
+            begun.elapsed() < Duration::from_secs(20),
+            "the stalled child was not waited out"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_cancel_before_the_first_command_runs_nothing() {
+        let Some(repo) = repo() else { return };
+        let cancel = CancellationToken::new();
+        cancel.cancel();
+        let mut seen = 0;
+        let run = exec_in_worktree_with(
+            repo.path(),
+            "main",
+            &[cmd("exit 0", 60)],
+            "personas-gate-exec-test-",
+            &cancel,
+            |_| seen += 1,
+        )
+        .await
+        .expect("worktree");
+        assert!(run.cancelled);
+        assert!(run.results.is_empty());
+        assert_eq!(seen, 0);
     }
 
     #[tokio::test]

@@ -468,6 +468,71 @@ pub fn find_idea_by_dedup_key(
     })
 }
 
+/// What [`list_ideas_matching`] selects: an idea qualifies when ANY clause
+/// matches it. Every clause empty selects nothing.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct IdeaMatch {
+    /// Exact `dedup_key`s.
+    pub dedup_keys: Vec<String>,
+    /// `dedup_key LIKE` patterns under `ESCAPE '\'`: escape every literal part
+    /// with [`crate::repos::utils::escape_like`].
+    pub dedup_key_like: Vec<String>,
+    /// `origin` tokens ([`BacklogSource::as_str`]).
+    pub origins: Vec<String>,
+}
+
+impl IdeaMatch {
+    fn is_empty(&self) -> bool {
+        self.dedup_keys.is_empty() && self.dedup_key_like.is_empty() && self.origins.is_empty()
+    }
+}
+
+/// The project's ideas `m` selects, in any status: open (`pending`,
+/// `accepted`) before closed, newest first within each, at most `limit`.
+pub fn list_ideas_matching(
+    pool: &DbPool,
+    project_id: &str,
+    m: &IdeaMatch,
+    limit: usize,
+) -> Result<Vec<DevIdea>, AppError> {
+    if m.is_empty() || limit == 0 {
+        return Ok(Vec::new());
+    }
+    timed_query!("dev_ideas", "dev_ideas::list_ideas_matching", {
+        let mut qb = QueryBuilder::new();
+        qb.where_eq("project_id", project_id.to_string());
+        let mut any: Vec<String> = Vec::new();
+        for key in &m.dedup_keys {
+            any.push(format!("dedup_key = {}", qb.push_param(key.clone())));
+        }
+        for pattern in &m.dedup_key_like {
+            any.push(format!(
+                "dedup_key LIKE {} ESCAPE '\\'",
+                qb.push_param(pattern.clone())
+            ));
+        }
+        for origin in &m.origins {
+            any.push(format!("origin = {}", qb.push_param(origin.clone())));
+        }
+        qb.where_raw(|_| format!("({})", any.join(" OR ")), Vec::new());
+        qb.order_by_multiple(&[
+            (
+                "CASE WHEN status IN ('pending', 'accepted') THEN 0 ELSE 1 END",
+                "ASC",
+            ),
+            ("created_at", "DESC"),
+            ("id", "DESC"),
+        ]);
+        qb.limit(i64::try_from(limit).unwrap_or(i64::MAX));
+        let conn = pool.get()?;
+        let mut stmt =
+            conn.prepare(&qb.build_select(&format!("SELECT {IDEA_COLUMNS} FROM dev_ideas")))?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_idea)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
 /// What a re-filing did to an existing backlog row's 1–5 scales.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ScaleBackfill {
@@ -2070,6 +2135,10 @@ fn set_idea_evidence(pool: &DbPool, id: &str, evidence: &str) -> Result<DevIdea,
 #[cfg(test)]
 #[path = "ideas_backlog_tests.rs"]
 mod backlog_memory_tests;
+
+#[cfg(test)]
+#[path = "ideas_match_tests.rs"]
+mod match_tests;
 
 #[cfg(test)]
 mod bench_decoration_tests {

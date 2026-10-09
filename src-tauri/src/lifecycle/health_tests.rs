@@ -81,6 +81,7 @@ fn judge_with(
         current_tip: tip,
         budgets,
         docs,
+        previous_evidence: None,
     })
 }
 
@@ -480,4 +481,315 @@ fn durations_format_for_a_human() {
     assert_eq!(fmt_ms(119_000), "119s");
     assert_eq!(fmt_ms(120_000), "2m 00s");
     assert_eq!(fmt_ms(185_400), "3m 05s");
+}
+
+// --- rules view -----------------------------------------------------------------
+
+/// The shipped rules are the ones `step_health` judges with: every boundary
+/// below is read from `rules_view()` and probed against the verdict, so a
+/// number changed (or inlined) in one place only turns this red.
+#[test]
+fn rules_view_is_what_step_health_judges_with() {
+    let rules = rules_view();
+
+    // Budgets: one per kind, in the fixed order; at the budget is green, one
+    // millisecond over is amber, under whichever step measures that kind.
+    assert_eq!(
+        rules
+            .default_budgets
+            .iter()
+            .map(|b| b.kind)
+            .collect::<Vec<_>>(),
+        [
+            K::Lint,
+            K::Typecheck,
+            K::Test,
+            K::Check,
+            K::Coverage,
+            K::Other
+        ]
+    );
+    for b in &rules.default_budgets {
+        let step = crate::lifecycle::detect_commands::step_of(b.kind);
+        let at = |ms: u32| {
+            let mut runs = vec![run(1, "cmd", b.kind, O::Passed, ms)];
+            if step == "tests" {
+                runs.push(cov(1, Some(100.0)));
+                runs[0].value_pct = (b.kind == K::Coverage).then_some(100.0);
+            }
+            one(step, &runs).health
+        };
+        assert_eq!(at(b.budget_ms), H::Green, "{:?} at budget", b.kind);
+        assert_eq!(at(b.budget_ms + 1), H::Amber, "{:?} over budget", b.kind);
+    }
+
+    // Step kinds: each listed kind is judged under that step (a failure there
+    // turns it red) and under no other.
+    assert_eq!(
+        rules
+            .step_kinds
+            .iter()
+            .map(|s| s.step_id.as_str())
+            .collect::<Vec<_>>(),
+        ["gate", "tests"]
+    );
+    for s in &rules.step_kinds {
+        for &kind in &s.kinds {
+            let failed = [run(1, "cmd", kind, O::Failed, 10)];
+            assert_eq!(one(&s.step_id, &failed).health, H::Red, "{kind:?}");
+            let other = if s.step_id == "gate" { "tests" } else { "gate" };
+            assert_eq!(one(other, &failed).health, H::Unmeasured, "{kind:?}");
+        }
+    }
+
+    // Coverage: green at the target, amber just under it and at the floor,
+    // red just under the floor.
+    let coverage = |pct: u32| {
+        one(
+            "tests",
+            &[
+                run(1, "test", K::Test, O::Passed, 10),
+                cov(1, Some(f64::from(pct))),
+            ],
+        )
+        .health
+    };
+    assert_eq!(coverage(rules.coverage_green_pct), H::Green);
+    assert_eq!(coverage(rules.coverage_green_pct - 1), H::Amber);
+    assert_eq!(coverage(rules.amber_floor_pct), H::Amber);
+    assert_eq!(coverage(rules.amber_floor_pct - 1), H::Red);
+
+    // Docs: 100 verifiable docs, clean share at the target is green.
+    let docs_at = |clean: u32| docs(100, 0, 0, clean).health;
+    assert_eq!(docs_at(rules.docs_clean_pct), H::Green);
+    assert_eq!(docs_at(rules.docs_clean_pct - 1), H::Amber);
+
+    // Evidence: 100 counted changes; done rate bands, then the sample floor.
+    let done = |n: u32| evidence("commit", i64::from(n), i64::from(100 - n), 0, 0).health;
+    assert_eq!(done(rules.done_rate_pct), H::Green);
+    assert_eq!(done(rules.done_rate_pct - 1), H::Amber);
+    assert_eq!(done(rules.amber_floor_pct), H::Amber);
+    assert_eq!(done(rules.amber_floor_pct - 1), H::Red);
+    let floor = i64::from(rules.min_samples);
+    assert_eq!(evidence("commit", floor, 0, 0, 0).health, H::Green);
+    assert_eq!(evidence("commit", floor - 1, 0, 0, 0).health, H::Unmeasured);
+}
+
+// --- previous + history ---------------------------------------------------------
+
+/// Twelve measures of gate (lint) and tests (test + coverage); the newest
+/// fails lint and lifts coverage over the target.
+fn twelve_measures() -> Vec<LifecycleRun> {
+    let mut runs = Vec::new();
+    for m in 1..=12u32 {
+        let lint = if m == 12 { O::Failed } else { O::Passed };
+        runs.push(run(m, "lint", K::Lint, lint, 1000 * m));
+        runs.push(run(m, "test", K::Test, O::Passed, 500));
+        runs.push(cov(m, Some(if m == 12 { 75.0 } else { 65.0 })));
+    }
+    runs
+}
+
+#[test]
+fn previous_is_the_judgment_without_the_newest_measure() {
+    let runs = twelve_measures();
+    let steps = [view("gate"), view("tests")];
+    let now = judge(&steps, &runs);
+    let without: Vec<LifecycleRun> = runs
+        .iter()
+        .filter(|r| r.measure_id != "m012")
+        .cloned()
+        .collect();
+    let before = judge(&steps, &without);
+    for (n, b) in now.iter().zip(&before) {
+        let p = n.previous.as_ref().expect("two measures or more");
+        assert_eq!(p.health, b.health, "{}", n.step_id);
+        assert_eq!(p.metrics, b.metrics, "{}", n.step_id);
+        assert_eq!(p.measured_at, b.measured_at, "{}", n.step_id);
+        assert_eq!(p.head_sha, b.head_sha, "{}", n.step_id);
+    }
+    assert_eq!((now[0].health, before[0].health), (H::Red, H::Green));
+    assert_eq!((now[1].health, before[1].health), (H::Green, H::Amber));
+    assert!(before.iter().all(|b| b.previous.is_some()), "11 measures");
+
+    assert!(one("gate", &[]).previous.is_none(), "never measured");
+    assert!(
+        one("gate", &[run(1, "lint", K::Lint, O::Passed, 10)])
+            .previous
+            .is_none(),
+        "one measure has nothing before it"
+    );
+    let only_tests = [
+        run(1, "test", K::Test, O::Passed, 10),
+        run(2, "test", K::Test, O::Passed, 10),
+    ];
+    assert!(
+        one("gate", &only_tests).previous.is_none(),
+        "the gate never ran in the earlier window"
+    );
+    assert!(one("tests", &only_tests).previous.is_some());
+}
+
+#[test]
+fn a_past_column_is_judged_on_its_own_tip_and_never_stale() {
+    let runs: Vec<LifecycleRun> = (1..=3u32)
+        .map(|m| {
+            let mut r = run(m, "lint", K::Lint, O::Passed, 1000);
+            r.head_sha = format!("sha-{m}");
+            r
+        })
+        .collect();
+    let h = history(&[view("gate").step], &runs, &HashMap::new());
+    assert_eq!(h.measures.len(), 3);
+    for c in &h.measures {
+        assert_eq!(c.cells[0].health, H::Green, "{}", c.measure_id);
+    }
+    // The current verdict against a moved base is stale; `previous`, judged
+    // on its own Measure's tip, is not.
+    let now = one("gate", &runs);
+    assert_eq!(now.health, H::Stale);
+    let p = now.previous.expect("previous");
+    assert_eq!(p.health, H::Green);
+    assert_eq!(p.head_sha.as_deref(), Some("sha-2"));
+}
+
+#[test]
+fn the_newest_column_is_the_current_verdict_and_the_next_is_previous() {
+    let runs = twelve_measures();
+    let budgets = HashMap::from([("lint".to_string(), 5_000)]);
+    let steps = [view("frame"), view("tests"), view("docs"), view("gate")];
+    let now = judge_with(&steps, &runs, Some(TIP), &budgets, &DocTally::default());
+    let doc_steps: Vec<LifecycleStep> = steps.iter().map(|v| v.step.clone()).collect();
+    let h = history(&doc_steps, &runs, &budgets);
+    assert_eq!(
+        h.step_ids,
+        ["tests", "gate"],
+        "command steps, in step order"
+    );
+    assert_eq!(h.measures.len(), 12);
+    for (i, id) in h.step_ids.iter().enumerate() {
+        let current = now.iter().find(|v| &v.step_id == id).expect("judged");
+        let newest = &h.measures[0].cells[i];
+        assert_eq!(&newest.step_id, id);
+        assert_eq!(newest.health, current.health, "{id}");
+        assert_eq!(newest.reason, current.reason, "{id}");
+        assert_eq!(newest.metrics, current.metrics, "{id}");
+        let earlier = &h.measures[1].cells[i];
+        let previous = current.previous.as_ref().expect("previous");
+        assert_eq!(earlier.health, previous.health, "{id}");
+        assert_eq!(earlier.metrics, previous.metrics, "{id}");
+    }
+    // Lint over its 5s override from measure 6 on: the window moves the line.
+    let gate = |c: &LifecycleMeasureColumn| c.cells[1].health;
+    assert_eq!(gate(&h.measures[0]), H::Red);
+    assert_eq!(gate(&h.measures[1]), H::Amber);
+    assert_eq!(gate(&h.measures[11]), H::Green);
+}
+
+#[test]
+fn history_columns_are_capped_newest_first_with_runs_as_planned() {
+    let mut runs = Vec::new();
+    for m in 1..=29u32 {
+        let mut lint = run(m, "lint", K::Lint, O::Passed, 1_000);
+        let mut tsc = run(m, "tsc", K::Typecheck, O::Passed, 2_500);
+        lint.started_at = format!("2026-10-{m:02}T00:00:01.000Z");
+        tsc.started_at = format!("2026-10-{m:02}T00:00:02.000Z");
+        lint.finished_at = format!("2026-10-{m:02}T00:00:03.000Z");
+        tsc.finished_at = lint.finished_at.clone();
+        // Newest first, as the ledger reads.
+        runs.insert(0, lint);
+        runs.insert(0, tsc);
+    }
+    let h = history(&[view("gate").step], &runs, &HashMap::new());
+    assert_eq!(h.measures.len(), HISTORY_COLUMNS);
+    assert_eq!(h.measures[0].measure_id, "m029");
+    assert_eq!(h.measures[19].measure_id, "m010");
+    let c = &h.measures[0];
+    assert_eq!(
+        c.runs
+            .iter()
+            .map(|r| r.command_id.as_str())
+            .collect::<Vec<_>>(),
+        ["lint", "tsc"]
+    );
+    assert_eq!(c.duration_ms, 3_500);
+    assert_eq!(c.started_at, "2026-10-29T00:00:01.000Z");
+    assert_eq!(c.head_sha, TIP);
+    // The oldest column still sees a full window of older measures.
+    let samples = metric_of_cell(&h.measures[19].cells[0], LifecycleMetricKey::MedianMs);
+    assert_eq!(samples, HISTORY_MEASURES as u32);
+
+    // A tie in start time keeps the ledger's insertion order.
+    let mut a = run(1, "a", K::Lint, O::DidNotRun, 0);
+    let mut b = run(1, "b", K::Check, O::DidNotRun, 0);
+    a.started_at = "2026-10-01T00:00:00.000Z".into();
+    b.started_at = a.started_at.clone();
+    let h = history(&[view("gate").step], &[b, a], &HashMap::new());
+    assert_eq!(
+        h.measures[0]
+            .runs
+            .iter()
+            .map(|r| r.command_id.as_str())
+            .collect::<Vec<_>>(),
+        ["a", "b"]
+    );
+    assert!(history(&[view("gate").step], &[], &HashMap::new())
+        .measures
+        .is_empty());
+}
+
+fn metric_of_cell(c: &LifecycleHistoryCell, key: LifecycleMetricKey) -> u32 {
+    c.metrics
+        .iter()
+        .find(|m| m.key == key)
+        .map(|m| m.samples)
+        .expect("metric")
+}
+
+#[test]
+fn evidence_previous_is_the_window_without_the_newest_change() {
+    let tally = |done, skipped| LifecycleStepTally {
+        done,
+        skipped,
+        unknown: 0,
+        failed: 0,
+    };
+    let earlier = PreviousEvidence {
+        tallies: HashMap::from([("commit".to_string(), tally(3, 2))]),
+        measured_at: Some("2026-10-07T00:00:00Z".into()),
+    };
+    let steps = [
+        view_with("commit", LifecycleStepParams::default(), tally(9, 1)),
+        view("land"),
+        view("gate"),
+        view("docs"),
+        view("frame"),
+    ];
+    let (budgets, docs) = (HashMap::new(), DocTally::default());
+    let input = |previous_evidence| HealthInput {
+        steps: &steps,
+        runs: &[],
+        current_tip: Some(TIP),
+        budgets: &budgets,
+        docs: &docs,
+        previous_evidence,
+    };
+    let out = step_health(&input(Some(&earlier)));
+    assert_eq!(out[0].health, H::Green);
+    let p = out[0].previous.as_ref().expect("commit previous");
+    assert_eq!(p.health, H::Amber, "3 of 5 done");
+    assert_eq!(p.measured_at.as_deref(), Some("2026-10-07T00:00:00Z"));
+    assert!(p.head_sha.is_none());
+    let land = out[1].previous.as_ref().expect("land previous");
+    assert_eq!(land.health, H::Unmeasured, "nothing tallied in that window");
+    assert!(
+        out[2..].iter().all(|v| v.previous.is_none()),
+        "gate unmeasured, docs, frame"
+    );
+
+    let out = step_health(&input(None));
+    assert!(
+        out.iter().all(|v| v.previous.is_none()),
+        "no evidence at all"
+    );
 }

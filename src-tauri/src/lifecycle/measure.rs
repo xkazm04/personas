@@ -19,14 +19,21 @@
 //! - After the runs: the docs rot scan for this project (its 6 h throttle
 //!   respected), [`super::slow::file_slow_gates`], and
 //!   [`super::overseer_after_measure`].
+//! - **Live and stoppable.** The slot ([`ActiveMeasure`]) records the plan and
+//!   which command runs since when, so the snapshot derives per-command
+//!   progress ([`super::progress`]); each command start emits the changed
+//!   event. [`cancel`] fires the slot's token: the running child is abandoned
+//!   as at a timeout, it and every unrun command are recorded `did_not_run`
+//!   ([`CANCELLED_REASON`]), and the follow-ups do not run.
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use chrono::SecondsFormat;
-use personas_engine::gate_exec::{self, CommandExec, ExecCommand, ExecStatus};
+use personas_engine::gate_exec::{self, CommandExec, ExecCommand, ExecEvent, ExecStatus};
 use personas_engine::git_checkpoint::run_git_blocking as git;
+use tokio_util::sync::CancellationToken;
 
 use crate::db::models::{
     LifecycleDoc, LifecycleGateCommand, LifecycleGateKind, LifecycleMeasureStarted, LifecycleRun,
@@ -50,51 +57,137 @@ pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(600);
 // The process-global slot
 // ---------------------------------------------------------------------------
 
-/// The project whose Measure is running, if any.
+/// The running Measure, as the slot records it. Progress is derived from this
+/// plus the `dev_lifecycle_runs` rows already written (see `progress`).
+#[derive(Debug, Clone)]
+pub struct ActiveMeasure {
+    pub project_id: String,
+    /// Empty until the plan resolved ([`MeasureSlot::begin`]).
+    pub measure_id: String,
+    /// When the slot was taken.
+    pub started_at: String,
+    pub head_sha: String,
+    /// The plan's commands, in run order; empty until the plan resolved.
+    pub commands: Vec<LifecycleGateCommand>,
+    /// The command the runner is executing: its index in `commands` and when
+    /// it started.
+    pub running: Option<(usize, String)>,
+    /// Set by [`cancel`]; the runner checks it before each command and races
+    /// it against the running child.
+    pub cancel: CancellationToken,
+}
+
+/// The running Measure, if any.
 ///
 /// Invariant this lock protects: at most ONE Measure runs in this process.
 /// It is in-memory on purpose - no row claims "running", so a crash or a
 /// restart can never strand a project as measuring. Poisoning is recoverable
-/// (the value is a plain `Option<String>`).
-static ACTIVE: Mutex<Option<String>> = Mutex::new(None);
+/// (the value is a plain record; every writer leaves it whole).
+static ACTIVE: Mutex<Option<ActiveMeasure>> = Mutex::new(None);
 
-fn active() -> std::sync::MutexGuard<'static, Option<String>> {
+fn active() -> std::sync::MutexGuard<'static, Option<ActiveMeasure>> {
     ACTIVE.lock().unwrap_or_else(|e| e.into_inner())
 }
 
 /// Is a Measure running for `project_id` right now?
 pub fn measuring(project_id: &str) -> bool {
-    active().as_deref() == Some(project_id)
+    active()
+        .as_ref()
+        .is_some_and(|a| a.project_id == project_id)
+}
+
+/// The running Measure of `project_id`, once its plan resolved.
+pub fn active_measure(project_id: &str) -> Option<ActiveMeasure> {
+    active()
+        .as_ref()
+        .filter(|a| a.project_id == project_id && !a.measure_id.is_empty())
+        .cloned()
+}
+
+/// Ask the running Measure of `project_id` to stop. `true` when one is
+/// running for it (asking twice is still `true`); the slot is released when
+/// the runner has recorded every unrun command and cleaned up.
+pub fn cancel(project_id: &str) -> bool {
+    match active().as_ref().filter(|a| a.project_id == project_id) {
+        Some(a) => {
+            a.cancel.cancel();
+            true
+        }
+        None => false,
+    }
+}
+
+/// Record that command `index` of Measure `measure_id` started at `at`. A
+/// no-op once that Measure no longer holds the slot.
+pub fn mark_running(measure_id: &str, index: usize, at: String) {
+    if let Some(a) = active()
+        .as_mut()
+        .filter(|a| !measure_id.is_empty() && a.measure_id == measure_id)
+    {
+        a.running = Some((index, at));
+    }
 }
 
 /// The right to run a Measure. Released on drop - including on unwind.
 #[derive(Debug)]
 pub struct MeasureSlot {
     project_id: String,
+    cancel: CancellationToken,
 }
 
 impl MeasureSlot {
     /// Take the slot, or refuse with who holds it.
     pub fn acquire(project_id: &str) -> Result<Self, AppError> {
         let mut slot = active();
-        if let Some(holder) = slot.as_deref() {
-            return Err(AppError::Validation(if holder == project_id {
+        if let Some(holder) = slot.as_ref() {
+            return Err(AppError::Validation(if holder.project_id == project_id {
                 "a Measure is already running for this project".to_string()
             } else {
                 "another project's Measure is running; one runs at a time".to_string()
             }));
         }
-        *slot = Some(project_id.to_string());
+        let cancel = CancellationToken::new();
+        *slot = Some(ActiveMeasure {
+            project_id: project_id.to_string(),
+            measure_id: String::new(),
+            started_at: rfc3339(chrono::Utc::now()),
+            head_sha: String::new(),
+            commands: Vec::new(),
+            running: None,
+            cancel: cancel.clone(),
+        });
         Ok(Self {
             project_id: project_id.to_string(),
+            cancel,
         })
+    }
+
+    /// The plan resolved: record what will run, so progress can be shown.
+    pub fn begin(&self, plan: &MeasurePlan, measure_id: &str) {
+        if let Some(a) = active()
+            .as_mut()
+            .filter(|a| a.project_id == self.project_id)
+        {
+            a.measure_id = measure_id.to_string();
+            a.head_sha = plan.head_sha.clone();
+            a.commands = plan.commands.clone();
+            a.running = None;
+        }
+    }
+
+    /// The token [`cancel`] fires for this Measure.
+    pub fn cancel_token(&self) -> CancellationToken {
+        self.cancel.clone()
     }
 }
 
 impl Drop for MeasureSlot {
     fn drop(&mut self) {
         let mut slot = active();
-        if slot.as_deref() == Some(self.project_id.as_str()) {
+        if slot
+            .as_ref()
+            .is_some_and(|a| a.project_id == self.project_id)
+        {
             *slot = None;
         }
     }
@@ -174,12 +267,29 @@ pub fn plan(pool: &DbPool, project_id: &str) -> Result<MeasurePlan, AppError> {
 pub fn base_tip(root: &Path, recorded: Option<&str>) -> Result<String, String> {
     let base = super::evidence::resolve_base(root, recorded)
         .ok_or_else(|| format!("no base branch resolves in {}", root.display()))?;
+    branch_tip(root, &base)
+}
+
+/// The tip sha of an already-resolved branch `base` (one `git rev-parse`).
+pub fn branch_tip(root: &Path, base: &str) -> Result<String, String> {
     let sha = git(root, &["rev-parse", &format!("refs/heads/{base}")])?;
     let sha = sha.trim().to_string();
     if sha.is_empty() {
         return Err(format!("the base branch {base} has no tip"));
     }
     Ok(sha)
+}
+
+/// Commits reachable from `tip` but not from `since` (one `git rev-list
+/// --count`). `None` when git cannot say (e.g. `since` left the history), and
+/// when `tip` is not ahead of a different `since` (a rewound base): a count of
+/// 0 there would read as "fresh" while the shas disagree.
+pub fn commits_since(root: &Path, since: &str, tip: &str) -> Option<u32> {
+    if since == tip {
+        return Some(0);
+    }
+    let out = git(root, &["rev-list", "--count", &format!("{since}..{tip}")]).ok()?;
+    out.trim().parse::<u32>().ok().filter(|&n| n > 0)
 }
 
 // ---------------------------------------------------------------------------
@@ -277,6 +387,27 @@ pub fn record_missing(
     Ok(written)
 }
 
+/// The `first_error` of every command a cancelled Measure did not finish.
+pub const CANCELLED_REASON: &str = "cancelled by the operator";
+
+/// How a [`run`] ended. A cancelled Measure skips its follow-ups.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RunEnd {
+    /// Every command has a row (some may be `did_not_run`).
+    Completed,
+    /// Stopped by [`cancel`]: the abandoned command and every one after it
+    /// are recorded `did_not_run` with [`CANCELLED_REASON`].
+    Cancelled,
+}
+
+/// What a [`run`] is steered and observed by.
+pub struct RunControl<'a> {
+    /// Stops the run (see [`RunEnd::Cancelled`]).
+    pub cancel: &'a CancellationToken,
+    /// Called as command `index` (plan order) starts, with the start time.
+    pub on_start: &'a (dyn Fn(usize, String) + Send + Sync),
+}
+
 /// Run the plan and append its rows. `timeout` overrides every command's
 /// timeout (tests); `None` is [`DEFAULT_TIMEOUT`] or twice the budget.
 pub async fn run(
@@ -284,14 +415,19 @@ pub async fn run(
     plan: &MeasurePlan,
     measure_id: &str,
     timeout: Option<Duration>,
-) -> Result<(), AppError> {
+    control: &RunControl<'_>,
+) -> Result<RunEnd, AppError> {
+    if control.cancel.is_cancelled() {
+        record_missing(pool, plan, measure_id, CANCELLED_REASON)?;
+        return Ok(RunEnd::Cancelled);
+    }
     if plan.head_sha.is_empty() {
         let reason = format!(
             "could not resolve the base branch tip: {}",
             plan.tip_error.as_deref().unwrap_or("unknown")
         );
         record_missing(pool, plan, measure_id, &reason)?;
-        return Ok(());
+        return Ok(RunEnd::Completed);
     }
     let exec_plan: Vec<ExecCommand> = plan
         .commands
@@ -301,36 +437,46 @@ pub async fn run(
             timeout: timeout.unwrap_or_else(|| timeout_for(c)),
         })
         .collect();
-    let mut index = 0usize;
     let mut write_error: Option<AppError> = None;
-    let executed = gate_exec::exec_in_worktree(
+    let executed = gate_exec::exec_in_worktree_with(
         &plan.root,
         &plan.head_sha,
         &exec_plan,
         TEMP_PREFIX,
-        |exec| {
-            if let Some(cmd) = plan.commands.get(index) {
-                if let Err(e) = append_run(pool, &row_from_exec(plan, measure_id, cmd, exec)) {
-                    tracing::warn!(project_id = %plan.project_id, error = %e,
-                        "lifecycle measure: could not record a run");
-                    write_error.get_or_insert(e);
+        control.cancel,
+        |event| match event {
+            ExecEvent::Started { index, at } => (control.on_start)(index, rfc3339(at)),
+            ExecEvent::Finished { index, exec } => {
+                if let Some(cmd) = plan.commands.get(index) {
+                    if let Err(e) = append_run(pool, &row_from_exec(plan, measure_id, cmd, exec)) {
+                        tracing::warn!(project_id = %plan.project_id, error = %e,
+                            "lifecycle measure: could not record a run");
+                        write_error.get_or_insert(e);
+                    }
                 }
             }
-            index += 1;
         },
     )
     .await;
-    if let Err(reason) = executed {
-        record_missing(
-            pool,
-            plan,
-            measure_id,
-            &format!("the measure worktree could not be created: {reason}"),
-        )?;
-    }
+    let end = match executed {
+        Ok(done) if done.cancelled => {
+            record_missing(pool, plan, measure_id, CANCELLED_REASON)?;
+            RunEnd::Cancelled
+        }
+        Ok(_) => RunEnd::Completed,
+        Err(reason) => {
+            record_missing(
+                pool,
+                plan,
+                measure_id,
+                &format!("the measure worktree could not be created: {reason}"),
+            )?;
+            RunEnd::Completed
+        }
+    };
     match write_error {
         Some(e) => Err(e),
-        None => Ok(()),
+        None => Ok(end),
     }
 }
 
@@ -361,7 +507,8 @@ pub fn after_measure(pool: &DbPool, plan: &MeasurePlan) {
 /// The `notify` [`start`] wants, for a caller holding an `AppHandle`: emits
 /// `DEV_TOOLS_LIFECYCLE_CHANGED` with the same `CdcEvent` payload shape the
 /// CDC arm sends for a `dev_lifecycle_runs` write, so listeners need no
-/// second shape. Used for the two moments no row marks: start and release.
+/// second shape. Used for the moments no row marks: start, each command
+/// start, a cancel request, and release.
 pub fn emitter(app: tauri::AppHandle) -> Arc<dyn Fn() + Send + Sync> {
     use tauri::Emitter;
     Arc::new(move || {
@@ -396,6 +543,7 @@ pub async fn start(
             .map_err(|e| AppError::Internal(format!("lifecycle measure plan: {e}")))??
     };
     let measure_id = uuid::Uuid::new_v4().to_string();
+    slot.begin(&plan, &measure_id);
     notify();
     // Nobody waits on the supervisor: it IS the boundary. It owns the work's
     // handle and turns every way the work can end into rows and an event.
@@ -412,8 +560,22 @@ async fn supervise(
 ) {
     let work = {
         let (pool, plan, measure_id) = (pool.clone(), plan.clone(), measure_id.clone());
+        let cancel = slot.cancel_token();
+        let notify = notify.clone();
         tokio::spawn(async move {
-            run(&pool, &plan, &measure_id, None).await?;
+            // Each command start moves the running row; no ledger row marks
+            // it, so listeners are told here (each finished row rides CDC).
+            let on_start = |index: usize, at: String| {
+                mark_running(&measure_id, index, at);
+                notify();
+            };
+            let control = RunControl {
+                cancel: &cancel,
+                on_start: &on_start,
+            };
+            if run(&pool, &plan, &measure_id, None, &control).await? == RunEnd::Cancelled {
+                return Ok(());
+            }
             tokio::task::spawn_blocking(move || after_measure(&pool, &plan))
                 .await
                 .map_err(|e| AppError::Internal(format!("lifecycle measure follow-up: {e}")))

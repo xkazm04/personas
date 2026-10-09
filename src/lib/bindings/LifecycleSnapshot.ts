@@ -2,6 +2,7 @@
 import type { LifecycleAuthor } from "./LifecycleAuthor";
 import type { LifecycleEvidenceItem } from "./LifecycleEvidenceItem";
 import type { LifecycleGoalView } from "./LifecycleGoalView";
+import type { LifecycleMeasureProgress } from "./LifecycleMeasureProgress";
 import type { LifecyclePreset } from "./LifecyclePreset";
 import type { LifecycleRulesView } from "./LifecycleRulesView";
 import type { LifecycleStepHealthView } from "./LifecycleStepHealthView";
@@ -48,4 +49,8 @@ tip: LifecycleTipView | null,
 /**
  * The judging rules in force (defaults; step params override).
  */
-rules: LifecycleRulesView, };
+rules: LifecycleRulesView, 
+/**
+ * The running Measure for this project, null when none.
+ */
+progress: LifecycleMeasureProgress | null, };

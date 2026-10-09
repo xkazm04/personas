@@ -11,8 +11,8 @@ use tauri::State;
 
 use crate::commands::blocking::run_blocking;
 use crate::db::models::{
-    LifecycleMeasureStarted, LifecyclePreset, LifecycleSendResult, LifecycleSnapshot,
-    LifecycleStepDetail, LifecycleStepParams, LifecycleWatchedPipeline,
+    LifecycleHistory, LifecycleMeasureStarted, LifecyclePreset, LifecycleSendResult,
+    LifecycleSnapshot, LifecycleStepDetail, LifecycleStepParams, LifecycleWatchedPipeline,
 };
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
@@ -85,7 +85,26 @@ pub async fn dev_tools_lifecycle_measure(
     lifecycle::measure::start(state.db.clone(), project_id, notify).await
 }
 
-/// Layer-2 data for one step: run history (newest first, <= 30) and doc rows.
+/// Ask the project's running Measure to stop. `true` when one was running for
+/// it; the abandoned command and every unrun one are recorded `did_not_run`
+/// ("cancelled by the operator") and the follow-ups are skipped.
+/// `snapshot.progress.cancelling` shows the request until the slot frees.
+#[tauri::command]
+pub async fn dev_tools_lifecycle_cancel_measure(
+    app: tauri::AppHandle,
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<bool, AppError> {
+    require_auth(&state).await?;
+    let asked = lifecycle::measure::cancel(&project_id);
+    if asked {
+        lifecycle::measure::emitter(app)();
+    }
+    Ok(asked)
+}
+
+/// Layer-2 data for one step: run history (newest first, <= 30), doc rows and
+/// the backlog items about the step.
 #[tauri::command]
 pub async fn dev_tools_lifecycle_step_detail(
     state: State<'_, Arc<AppState>>,
@@ -96,6 +115,21 @@ pub async fn dev_tools_lifecycle_step_detail(
     let db = state.db.clone();
     run_blocking("dev_tools_lifecycle_step_detail", move || {
         lifecycle::step_detail(&db, &project_id, &step_id)
+    })
+    .await
+}
+
+/// The Measure history: the command steps judged at each of the newest 20
+/// Measures (newest first), with each Measure's runs.
+#[tauri::command]
+pub async fn dev_tools_lifecycle_history(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<LifecycleHistory, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    run_blocking("dev_tools_lifecycle_history", move || {
+        lifecycle::history(&db, &project_id)
     })
     .await
 }
