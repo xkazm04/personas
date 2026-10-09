@@ -1,0 +1,137 @@
+{
+  "schema": "conform-run/1",
+  "worker": "57b6cefe-63a3-4de9-a25a-f8418e1e7c64",
+  "subject": "rate-limiting",
+  "evaluatedAt": "2026-10-09T17:17:06Z",
+  "evaluatedAgainst": "sha256-b2:c1ab95c98c885951",
+  "evaluatedRevision": 8,
+  "pairs": [
+    {
+      "context": "059fdee0-40da-434a-a5cb-874bc9179a31",
+      "subject": "rate-limiting",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/management_api.rs:754 writes an api_key_audit DB row (plus an unlatched warn at :749) on every 429, bypassing the limiter once-per-streak latch at src-tauri/engine/src/rate_limiter.rs:78; storm-hygiene budgets the refusal branch as the hot path, so a refusal storm becomes per-request log and SQLite write amplification",
+      "techniques": [
+        {
+          "technique": "storm-hygiene",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/management_api.rs:754 record_audit(...429...) runs per refusal - a DB insert per rejected request at storm rate; :749 tracing::warn! per refusal duplicates the latched warn"
+        },
+        {
+          "technique": "refusal-contract",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/management_api.rs:832 rate_limited_response sets the standard Retry-After header from the limiter computed retry_after (body names no rule/window - partial)"
+        },
+        {
+          "technique": "key-design",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/management_api.rs:745 bucket keyed apikey:{key.id}, a server-assigned id reached only after key lookup and scope check, so callers cannot mint buckets"
+        },
+        {
+          "technique": "limit-derivation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/management_api.rs:408 API_KEY_RATE_MAX = 120 carries a rationale (single-user loopback) but no arithmetic and is a compile-time constant, not overridable without a release"
+        }
+      ],
+      "registryProposal": "Previous verdict (2026-10-05) cited management_api.rs:739-744; lines drifted to 749/754 - same defect, still live."
+    },
+    {
+      "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+      "subject": "rate-limiting",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/infrastructure/tier_usage.rs:83 infers each bucket limit from its key prefix (webhook: else event_source_max), so apikey: (enforced 120, management_api.rs:408), tool: and mcp_tool: (enforced 30, rate_limiter.rs:175) buckets are charted against the wrong limit and feed approaching_limit at :109; limit-observability requires one arithmetic for operator and caller",
+      "techniques": [
+        {
+          "technique": "limit-observability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/tier_usage.rs:83 limit guessed from key spelling because the limiter owns no policy (check() takes max/window per call, src-tauri/engine/src/rate_limiter.rs:50) - the exact failure the golden path names"
+        },
+        {
+          "technique": "limit-observability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/tier_usage.rs:109 approaching_limit computed from the mis-derived percent, so the near-limit warning is false for every non-webhook non-event key family"
+        }
+      ],
+      "registryProposal": "The root cause sits in rate_limiter.rs (policy as call-site parameter), which context-map files under test-runner-lab (6a81750d-fdbf-4518-bae6-689303e1a884) - a context with no rate-limiting pair. Missing pairing: test-runner-lab x rate-limiting, or the file belongs in an engine context."
+    },
+    {
+      "context": "767b2bb5-4662-4be1-ad24-c881ac334016",
+      "subject": "rate-limiting",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/webhook.rs:409 refuses with 429 and no_headers() (retry-after only in body prose); refusal-contract requires the protocol standard Retry-After header, which the same file already sets on its 422 path at webhook.rs:499 - header-honouring senders get nothing and guess",
+      "techniques": [
+        {
+          "technique": "refusal-contract",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/webhook.rs:409 no_headers() on the 429 path while :499 inserts retry-after on the 422 active-hours path"
+        },
+        {
+          "technique": "storm-hygiene",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/webhook.rs:402 tracing::warn! on every refused webhook, defeating the limiter latch at src-tauri/engine/src/rate_limiter.rs:78 (tool_runner.rs and mcp_tools.rs refusal branches do the same)"
+        },
+        {
+          "technique": "untrusted-key-derivation",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/webhook.rs:396 key webhook:{trigger_id} is formed only after trigger_repo::get_by_id at :350 rejects unknown ids, so a caller cannot mint a fresh bucket per request"
+        },
+        {
+          "technique": "key-design",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/mcp_tools.rs:793 keys mcp_tool:{credential_id}:{tool_name} on the server-assigned credential so caller-chosen gateway prefixes cannot split one tool into many allowances"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "rate-limiting",
+      "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0",
+      "reason": "governance weak and the context has zero paths in context-map.json (plugins-research-lab-shared) - nothing to read; lexical match on client/get/tokens is a coverage question, not a governing subject"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T17:17:06Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "rate-limiting"
+      ],
+      "techniques": [
+        "storm-hygiene",
+        "refusal-contract",
+        "key-design",
+        "limit-derivation"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T17:17:06Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "rate-limiting"
+      ],
+      "techniques": [
+        "limit-observability"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T17:17:06Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "rate-limiting"
+      ],
+      "techniques": [
+        "refusal-contract",
+        "storm-hygiene",
+        "untrusted-key-derivation",
+        "key-design"
+      ],
+      "deviations": 1
+    }
+  ]
+}

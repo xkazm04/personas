@@ -1,0 +1,48 @@
+{"schema": "conform-run/1", "worker": "6353707a-4e7d-4e65-9deb-a6c501a62475", "subject": "sql-console",
+ "evaluatedAt": "2026-10-09T16:44:20Z",
+ "pairs": [
+  {"context": "55d6d7cb-b016-4d73-8386-b5c18beafdae", "subject": "sql-console", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:48 copies a NULL cell via formatCell (:221 returns 'NULL'), so a copied NULL leaves the grid indistinguishable from the text 'NULL'; and src/features/vault/sub_databases/SqlEditor.tsx:34 Ctrl+Enter runs the whole buffer with no run-selection, and the editor has no schema-aware completion, so it falls below the editor floor",
+   "techniques": [
+    {"technique": "result-fidelity", "verdict": "deviation", "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:48 copy path emits the string 'NULL' for SQL NULL (Export leaves honestly); the display side marks NULL by italic only, and truncation is announced with its bound (results_truncated: 'Results truncated to 500 rows')"},
+    {"technique": "editor-ergonomics", "verdict": "deviation", "evidence": "src/features/vault/sub_databases/SqlEditor.tsx:34 onExecute?.() takes no selection, so run-selection / statement-at-cursor is absent; no completion fed from the introspection cache anywhere in the editor; highlighting (:17) and the cancel affordance (useDbQueryRunner cancelQuery) are realized"},
+    {"technique": "safe-mode-guarding", "verdict": "conformant", "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:241 client mirror refuses batches after literal stripping, fails closed on unparseable input (:178 isMutationQuery), scans read-shaped writes; src/features/vault/sub_databases/hooks/useQuerySafeMode.ts:34 voids a pending consent when the runQuery target changes"},
+    {"technique": "introspection-architecture", "verdict": "conformant", "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:6 records the client SQL builders deleted; what remains (getSelectAllQuery :152) is an emitted clipboard helper, not an executed door"}
+   ],
+   "registryProposal": "The authoritative trusted-side guard and introspection door (src-tauri/src/engine/db_query.rs, filed under context 'output-stream-parser'), the NL lane backend (src-tauri/src/commands/credentials/nl_query.rs, context 'commands-credentials') and the client introspection cache (src/hooks/database/useTableIntrospection.ts, context 'hooks-design') carry no sql-console pair at all, so the subject's two load-bearing techniques (safe-mode-guarding authority, introspection-architecture one door) are never judged where they live. Add those three pairs."},
+  {"context": "647d6a54-3813-4149-bbf7-2d96a57a77c7", "subject": "sql-console", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:43 composes a Redis TYPE \"<key>\" statement client-side with hand-rolled escaping and feeds it straight to executeDbQuery: an executed second introspection door that introspectionQueries.ts:6 says was deleted",
+   "techniques": [
+    {"technique": "introspection-architecture", "verdict": "deviation", "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:43 executed (not emitted) client-built introspection statement; the door should accept 'type of key K on connection C' by name"},
+    {"technique": "nl-assist-gating", "verdict": "conformant", "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:279 the NL lane reuses the same useQuerySafeMode hook and :256 the same executeDbQuery call as typed SQL; :290 re-pointing the run target voids the pending consent rather than carrying it"},
+    {"technique": "safe-mode-guarding", "verdict": "conformant", "evidence": "src/features/vault/sub_databases/tabs/MutationConfirmBanner.tsx:44 the consent shows the whole held statement in a scrolling pre block, never sliced"},
+    {"technique": "dialect-capability-declaration", "verdict": "conformant", "evidence": "src/features/vault/sub_databases/tabs/ConnectorCapabilityNote.tsx:27 the user-facing capability note is fetched from the backend declaration (dbConnectorCapability), not re-derived from the client family map"},
+    {"technique": "editor-ergonomics", "verdict": "conformant", "evidence": "src/features/vault/sub_databases/tabs/ConsoleTab.tsx:161 the console's cancel affordance is wired to cancelQuery, reaching the engine via the execution id"}
+   ]},
+  {"context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857", "subject": "sql-console", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:59 asserts only the text 'NULL', which a literal string 'NULL' satisfies identically, so the NULL marker can regress with the suite green; :80 matches /truncated/ without the 500-row bound",
+   "techniques": [
+    {"technique": "result-fidelity", "verdict": "deviation", "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:59 does not pin the NULL / 'NULL' / empty-string distinction the technique requires; :80 does not pin the bound in the truncation notice"},
+    {"technique": "dialect-capability-declaration", "verdict": "conformant", "evidence": "src/features/vault/sub_databases/__tests__/introspectionQueries.test.ts:110 a fail-loud family census over the builtin connector seeds; src/features/vault/sub_databases/__tests__/ConnectorCapabilityNote.test.tsx:24 pins the backend-reported class"},
+    {"technique": "editor-ergonomics", "verdict": "conformant", "evidence": "src/features/vault/sub_databases/__tests__/SqlEditor.test.tsx:30 pins the keyboard run binding; :93 and :106 pin string and comment highlighting"}
+   ],
+   "registryProposal": "The golden path says nothing about what a test context owes the subject beyond dialect-capability-declaration's 'The declaration is testable'. A one-line rule in result-fidelity (pin the three-way NULL distinction and the truncation bound in a test, since a display-only marker is the first thing a refactor drops) would make test-context verdicts derivable rather than inferred."}
+ ],
+ "declined": [
+  {"subject": "sql-console", "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0", "reason": "probable pair already judged not-applicable on 2026-10-03 against the current digest sha256-b2:60a26f15745fd8c1 (revision 1); nothing moved, not re-read"},
+  {"subject": "sql-console", "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd", "reason": "probable pair already judged not-applicable on 2026-10-03 against the current digest; not re-read"},
+  {"subject": "sql-console", "context": "ab849301-d5ce-4d91-a12e-0e87a0417585", "reason": "probable pair already judged not-applicable on 2026-10-03 against the current digest; not re-read"},
+  {"subject": "sql-console", "context": "d3346f2c-d747-4d85-b6e6-c1450da57ec9", "reason": "probable pair already judged not-applicable on 2026-10-03 against the current digest; not re-read"},
+  {"subject": "sql-console", "context": "2a54cdc2-87af-4298-b490-9eb87f230df7", "reason": "probable pair already judged not-applicable on 2026-10-03 against the current digest; not re-read"},
+  {"subject": "sql-console", "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433", "reason": "probable pair already judged not-applicable on 2026-09-23 against the current digest; not re-read"},
+  {"subject": "sql-console", "context": "b62fa237-32b4-41c3-bf56-3e498b643da9", "reason": "probable pair already judged not-applicable on 2026-10-03 against the current digest; not re-read"}
+ ],
+ "consults": [
+  {"ts": "2026-10-09T16:44:20Z", "bundle": "software-engineering", "subjects": ["sql-console"], "techniques": ["result-fidelity", "editor-ergonomics", "safe-mode-guarding", "introspection-architecture"], "deviations": 2},
+  {"ts": "2026-10-09T16:44:20Z", "bundle": "software-engineering", "subjects": ["sql-console"], "techniques": ["introspection-architecture", "nl-assist-gating", "safe-mode-guarding", "dialect-capability-declaration", "editor-ergonomics"], "deviations": 1},
+  {"ts": "2026-10-09T16:44:20Z", "bundle": "software-engineering", "subjects": ["sql-console"], "techniques": ["result-fidelity", "dialect-capability-declaration", "editor-ergonomics"], "deviations": 1}
+ ]
+}

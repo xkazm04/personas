@@ -1,0 +1,44 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d44aeaa0-68fe-4eff-92a8-7fb5dbfadb94",
+  "subject": "health-checks",
+  "evaluatedAt": "2026-10-09T17:48:30Z",
+  "pairs": [
+    {
+      "context": "6c0d30e4-99b9-4580-ba02-9a526db1d639",
+      "subject": "health-checks",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_health/useHealthDigestScheduler.ts:107 the weekly notification's all-healthy branch keys on totalIssues === 0, which excludes undetermined (src/stores/slices/agents/healthCheckSlice.ts:206), and :101 never reads undeterminedCount - a fleet whose sub-checks could not run is announced as all healthy (re-judged 2026-10-09: still present)",
+      "evaluatedAgainst": "sha256-b2:9254e4fb7feef6b1",
+      "evaluatedRevision": 11,
+      "techniques": [
+        {"technique": "three-state-outcomes", "verdict": "realized", "evidence": "src/features/agents/sub_health/types.ts:38 severity is a closed sum with 'undetermined' as a claim about the check, emitted at src/features/agents/sub_health/useHealthCheck.ts:365 and bucketed separately at src/stores/slices/agents/healthCheckSlice.ts:193"},
+        {"technique": "health-rollup", "verdict": "deviation", "evidence": "src/features/agents/sub_health/useHealthDigestScheduler.ts:107 the digest summary launders undetermined members into 'all healthy' - the rollup must carry the undetermined count as itself"},
+        {"technique": "remediation-affordances", "verdict": "realized", "evidence": "src/features/agents/sub_health/useHealthCheck.ts:116 PROPOSAL_RULES pair each issue class with a typed fix handle (labelKey) rendered as an Apply Fix affordance"},
+        {"technique": "check-scheduling", "verdict": "realized", "evidence": "src/features/agents/sub_health/useHealthDigestScheduler.ts:28 corrupt/future stamps parse as due-once-then-heal; :89 latches the session on a failed attempt so a crash costs one launch, not a hot loop (stamp itself is written after success at :94, bounded by that latch)"}
+      ]
+    },
+    {
+      "context": "dd45411d-8955-4579-906e-5a3b00ba16da",
+      "subject": "health-checks",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/infrastructure/system/health.rs:111 count_since(..).unwrap_or(0) turns an unreadable crash table into 'no crashes', the section is omitted and all_ok (:147) stays true - HealthCheckStatus (:22) has no could-not-determine member, so unverifiable collapses into green",
+      "evaluatedAgainst": "sha256-b2:9254e4fb7feef6b1",
+      "evaluatedRevision": 11,
+      "techniques": [
+        {"technique": "three-state-outcomes", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/system/health.rs:22 HealthCheckStatus is Ok/Warn/Error/Inactive/Info with no unverifiable member; :111 a failed DB read becomes zero crashes and the stability section silently disappears"},
+        {"technique": "probe-design", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/system/binary_probe.rs:74 `--version` is spawned with .output() and no deadline - a hung CLI wedges the health command (and BYOM's probe via the same cache) instead of concluding unverifiable; scratch round-trips are realized at src-tauri/src/commands/infrastructure/system/health.rs:279 (keyring) and the probe executes the real tool rather than checking a path"},
+        {"technique": "probe-caching", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/system/binary_probe.rs:6 the shared 60s TTL cache (src-tauri/src/boot/mod.rs:200) returns BinaryProbeResult with no timestamp, exposes no invalidation (an Install leaves the red cached up to 60s) and no in-flight dedup (:46 concurrent misses each spawn)"},
+        {"technique": "remediation-affordances", "verdict": "partial", "evidence": "src-tauri/src/commands/infrastructure/system/health.rs:43 a structured remediation field plus the installable flag exist and the environment section fills them (:293), but the active-engine Not-found Error sets remediation: None (:488) with its instruction left in detail prose"},
+        {"technique": "health-rollup", "verdict": "partial", "evidence": "src-tauri/src/commands/infrastructure/system/health.rs:147 all_ok is worst-of over items and the sections travel with it for drill-down, but with no undetermined state the summary cannot surface unverifiable members"}
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {"ts": "2026-10-09T17:48:30Z", "bundle": "software-engineering", "subjects": ["health-checks"], "techniques": ["three-state-outcomes", "health-rollup", "remediation-affordances", "check-scheduling"], "deviations": 1},
+    {"ts": "2026-10-09T17:48:30Z", "bundle": "software-engineering", "subjects": ["health-checks"], "techniques": ["three-state-outcomes", "probe-design", "probe-caching", "remediation-affordances", "health-rollup"], "deviations": 3}
+  ]
+}

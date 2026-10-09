@@ -1,0 +1,126 @@
+{
+  "schema": "conform-run/1",
+  "worker": "fa11a4fa-09d8-4f88-99c8-80905ddd1894",
+  "subject": "agent-cli-transport",
+  "evaluatedAt": "2026-10-09T16:16:30Z",
+  "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+  "evaluatedRevision": 9,
+  "pairs": [
+    {
+      "context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/session/launch.rs:280 Athena's attended Claude chat turn runs with --dangerously-skip-permissions and full native tools (cwd home, :338) while the host owns an approval queue whose card (src/features/companions/athena/ApprovalCard.tsx:10) only ever receives Athena's self-declared propose_action ops - the child's own Bash/Write calls are never routed to it, so a turn can write anywhere in the operator's home with nobody asked; the Grok arm of the same launcher passes --tools \"\" (:398-399), so the two engines disagree on stance.",
+      "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+      "evaluatedRevision": 9,
+      "techniques": [
+        {
+          "technique": "host-routed-approval-round-trip",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/session/launch.rs:280 an attended chat host that already owns a review queue (src/features/companions/athena/ApprovalCard.tsx:10) passes skip-all-permissions instead of keeping the child's permission engine and answering its mid-turn requests - the technique's own use_when trigger, verbatim"
+        },
+        {
+          "technique": "permission-stance-enforcement",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/session/launch.rs:280 a conversational turn (generate-shaped: no workspace work) gets the full-bypass flag with native tools on; the research leg in the same file shows the conformant shape (--allowedTools, no bypass), and the Grok arm removes tools (:398-399)"
+        }
+      ],
+      "registryProposal": "Coverage: src-tauri/src/companion/session/* (launch.rs argv builder, cli.rs stale-resume classifier is_stale_session_error, probe_engines availability probe) belongs to NO context in this repo's context-map.json, so the companion's whole CLI transport is unreachable by any pair; this verdict had to anchor through the chat-bubbles UI context. That is a consumer context-map hole, not a registry hole - but it means the subject's strongest realization in this repo (an engine-aware launch seam with a shim-immune probe, launch.rs:24-27) is invisible to /conform."
+    },
+    {
+      "context": "a6843b83-43a1-4eab-ae40-26f23b949a0d",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/execution/usePersonaExecution.ts:157 the live execution surface receives only a prose error string (ExecutionStatusEvent.error, src-tauri/core/src/types.rs:800) - the runner reads the CLI result envelope's subtype and mints a typed error_category (src-tauri/src/engine/runner/mod.rs:3624, :3646) but neither travels on the status event, so this caller cannot branch on max-turns vs usage-limit vs startup-stall and renders all of them as one '[ERROR] <text>' line.",
+      "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+      "evaluatedRevision": 9,
+      "techniques": [
+        {
+          "technique": "output-normalization",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/types.rs:800 ExecutionStatusEvent carries `error: Option<String>` only; the tool's own classification is flattened into text by parser::terminal_error_message (src-tauri/src/engine/runner/mod.rs:3624) before it reaches usePersonaExecution.ts:167 - 'the subtype must reach the caller as a value it can branch on, not be flattened into one opaque message' (verdict-survives-boundary). error_category reaches only the aggregate observability breakdown, never the live run"
+        }
+      ]
+    },
+    {
+      "context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskControls.tsx:122 the desk launches unattended Auto-Run edit waves whose tasks, when isolation fails, edit the operator's live project root (src-tauri/src/commands/infrastructure/task_executor.rs:1636, justified at :1243 by 'a person present', which an auto-run wave lacks) - and no run-desk file renders the recorded worktree_fallback_reason/worktree_branch; PrBridge.tsx:176 invents a dev-tools/ branch instead of the autopilot/ branch the agent actually authored on, so the operator cannot tell from the desk which runs were contained.",
+      "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+      "evaluatedRevision": 9,
+      "techniques": [
+        {
+          "technique": "permission-stance-enforcement",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/task_executor.rs:1636 the edit stance's first belt (containment in an isolated worktree) silently downgrades to the live checkout for auto-run tasks too (run_one_task_for_auto -> run_task_execution), and the downgrade is surfaced only as a transient live-panel line, never on the desk's TaskCard or PrBridge (src/features/plugins/dev-tools/sub_runner/PrBridge.tsx:176)"
+        },
+        {
+          "technique": "permission-stance-enforcement",
+          "verdict": "realized (edit opt-in defaults off)",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:46 unattended auto-heal re-dispatch is an explicit operator toggle that defaults to off"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-cli-transport",
+      "context": "cbb061cf-5c61-49d4-80d8-98b8f9b40600",
+      "reason": "browser-webview-control is consumer-only: it reaches a generate-mode CLI call through IPC (src/features/browser/twinDraftLane.ts:245 -> src-tauri/src/commands/infrastructure/twin.rs:1177 spawn_claude_logged) and its approval bar points at host-owned browser_act/browser_login approvals, not child permission requests. The one live question - twinDraftLane.ts:165 re-classifies the failure from message text via resolveError and drops AppError.kind - is a typed-error-contract question more than this subject's; judging it here would manufacture a deviation. Left unknown."
+    },
+    {
+      "subject": "agent-cli-transport",
+      "context": "1d8a480b-eac4-4110-a60e-47a6ab281c97",
+      "reason": "glyph-persona-card is governance: weak - a coverage question, never judged by default."
+    },
+    {
+      "subject": "agent-cli-transport",
+      "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14",
+      "reason": "budget: agents-deployment (cloud deployment UI) unread this run; likely not-applicable but not argued."
+    },
+    {
+      "subject": "agent-cli-transport",
+      "context": "895b4bb2-16fd-4e8e-aae8-11315fe6436b",
+      "reason": "budget: api-agents (IPC wrappers) unread this run."
+    },
+    {
+      "subject": "agent-cli-transport",
+      "context": "50bf2ad0-3da7-4405-991a-6e22695903a2",
+      "reason": "budget: companion-narration-ops unread; its thread-custody rule-4 question (is a re-thread shown?) depends on src-tauri/src/companion/session/cli.rs, which no context owns."
+    },
+    {
+      "subject": "agent-cli-transport",
+      "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+      "reason": "budget: persona-build-matrix unread this run."
+    },
+    {
+      "subject": "agent-cli-transport",
+      "context": "b7c818bf-fe04-44ff-aa8d-7cd51e0fc67f",
+      "reason": "budget: persona-shared-ui unread this run."
+    },
+    {
+      "subject": "agent-cli-transport",
+      "context": "11fe7642-7a1a-47c5-8910-499850aa04fe",
+      "reason": "budget: plugins-companion-inbox unread this run."
+    },
+    {
+      "subject": "agent-cli-transport",
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "reason": "budget: stores-slices-system unread this run."
+    },
+    {
+      "subject": "agent-cli-transport",
+      "context": "0aded02d-f5c5-4e24-8366-90783fb343b1",
+      "reason": "budget: stores-util unread this run."
+    }
+  ],
+  "consults": [
+    {"ts": "2026-10-09T16:16:30Z", "bundle": "software-engineering", "subjects": ["agent-cli-transport"], "techniques": ["host-routed-approval-round-trip", "permission-stance-enforcement"], "deviations": 1},
+    {"ts": "2026-10-09T16:16:30Z", "bundle": "software-engineering", "subjects": ["agent-cli-transport"], "techniques": ["output-normalization"], "deviations": 1},
+    {"ts": "2026-10-09T16:16:30Z", "bundle": "software-engineering", "subjects": ["agent-cli-transport"], "techniques": ["permission-stance-enforcement"], "deviations": 1}
+  ]
+}

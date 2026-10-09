@@ -1,0 +1,91 @@
+{
+  "schema": "conform-run/1",
+  "worker": "e5ec0d28-914e-4a2e-93e4-7f7c939bd799",
+  "subject": "adoption-measurement",
+  "evaluatedAt": "2026-10-09T16:52:44.758Z",
+  "pairs": [
+    {
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+      "subject": "adoption-measurement",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:1 prop contract of the template-adoption wizard - adoption here is one user instantiating one persona from a template, not a practice spreading across a population, so no technique applies",
+      "techniques": [],
+      "registryProposal": "Matcher missed a governing pair: context 10c96ae7-a356-4555-996b-df92fc5dc8e7 (plugins-dev-tools-skills) measures skill uptake across projects from observed acts (transcript-mined invokes, src/api/devTools/devTools.ts:1671) with an age-guarded dormancy verdict (src-tauri/src/commands/infrastructure/skill_usage.rs:684, removed != dormant at :229) - add adoption-measurement there (it pairs usage-analytics instead, whose precondition is instrumenting your own product). It is also a non-node (Rust) application candidate for dormancy-verdicts, answering the single-stack finding."
+    },
+    {
+      "context": "e76afaf6-ba3b-4341-b1ad-f444f08da8b8",
+      "subject": "adoption-measurement",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:10 summarizeAnswer formats one user answer in the template-configuration questionnaire - no population, uptake signal or ledger, the precondition every technique shares",
+      "techniques": []
+    },
+    {
+      "context": "80e0534a-d0ea-469a-9c3a-cf12910ecde9",
+      "subject": "adoption-measurement",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_generated/adoption/useCasePickerShared.ts:1 helpers for the wizard use-case picker step - single-user template instantiation, nothing measures a practice uptake across a population",
+      "techniques": []
+    },
+    {
+      "context": "7dddb34a-3a9b-4ce0-832f-55ea352c12b5",
+      "subject": "adoption-measurement",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerTypes.ts:1 production UI of the adoption wizard capability-and-trigger step - single-user wizard, not measurement of uptake across a population",
+      "techniques": []
+    }
+  ],
+  "declined": [
+    {
+      "subject": "adoption-measurement",
+      "context": "9b013060-5483-4162-9f8a-6b69109d623d",
+      "reason": "weak context (teams-kpis); skill never judges weak rows by default - existing not-applicable verdict is current at revision 3 and left untouched"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "10c96ae7-a356-4555-996b-df92fc5dc8e7",
+      "reason": "pair absent from the map and worker contract forbids adding pairs; named as a missing pairing in registryProposal - judge after the merger/builder adds it"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T16:52:44.758Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "adoption-measurement"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T16:52:44.758Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "adoption-measurement"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T16:52:44.758Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "adoption-measurement"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T16:52:44.758Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "adoption-measurement"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

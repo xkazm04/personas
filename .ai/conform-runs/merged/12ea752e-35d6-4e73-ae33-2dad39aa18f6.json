@@ -1,0 +1,15 @@
+{"schema": "conform-run/1", "worker": "12ea752e-35d6-4e73-ae33-2dad39aa18f6", "subject": "prompt-safety",
+ "evaluatedAt": "2026-10-09T17:29:45Z",
+ "evaluatedAgainst": "sha256-b2:51087132dbd1c9fb", "evaluatedRevision": 7,
+ "pairs": [{"context": "969f50a2-b70d-41e3-b573-284a75a67425", "subject": "prompt-safety", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/runner/mod.rs:1371 still interpolates recalled agent-memory title/content raw and :1480 appends it after assembly, outside every <untrusted_*> fence and past the canary (src-tauri/engine/src/prompt/assemble.rs:891) - though a public fencing door now exists (assemble.rs:60) and the knowledge-consult lane uses it (src-tauri/src/engine/knowledge_consult.rs:450); recalled memory, a named attacker-controlled span, reaches every run unfenced and unannounced",
+   "evaluatedAt": "2026-10-09", "evaluatedAgainst": "sha256-b2:51087132dbd1c9fb", "evaluatedRevision": 7,
+   "techniques": [
+     {"technique": "untrusted-span-fencing", "verdict": "deviation", "evidence": "src-tauri/src/engine/runner/mod.rs:1371 memory bypasses the one door (src-tauri/engine/src/prompt/assemble.rs:60); src-tauri/engine/src/prompt/runtime_safety.rs:19 nonce is time^counter^constant, not cryptographic, and never checked absent from the payload; src-tauri/src/commands/design/n8n_transform/prompt_sanitizer.rs:171 is a second copy of the fence machinery. Realized for third-party input: src-tauri/engine/src/prompt/assemble.rs:1022"},
+     {"technique": "canary-tripwires", "verdict": "deviation", "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:38 asks the model to emit a [SECURITY] confession but no production code screens raw run output for it or for the fence nonce (the only check is src-tauri/engine/src/prompt/resume_prompt.rs:97, asserting the instruction is present) - no trip protocol, no boundary-violation outcome, no test proving the tripwire fires"},
+     {"technique": "input-caps-and-clamps", "verdict": "conformant", "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:99 clamps each runtime variable to MAX_RUNTIME_VAR_LENGTH on a char boundary with an appended truncation marker (visible clamp at one door)"}
+   ],
+   "registryProposal": "Upward lesson for canary-tripwires: this repo already realizes the nonce-echo trip as a typed refusal in one lane (src-tauri/src/commands/infrastructure/twin.rs:1391 returns draft_tripped_fence) while its main runtime prompt does not - a candidate rust--canary-tripwires application showing both the realized and the missing site in one tree. Coverage note: the memory-injection code that is the anchor of this deviation lives in src-tauri/src/engine/runner/mod.rs, which is not in this context's file_paths although the context's own description claims memory composition; the context map, not the subject, is what under-covers it."}],
+ "declined": [],
+ "consults": [{"ts": "2026-10-09T17:29:45Z", "bundle": "software-engineering", "subjects": ["prompt-safety"], "techniques": ["untrusted-span-fencing", "canary-tripwires", "input-caps-and-clamps"], "deviations": 1}]}

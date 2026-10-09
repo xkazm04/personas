@@ -1,0 +1,99 @@
+{
+  "schema": "conform-run/1",
+  "worker": "00ab5518-4af7-45f4-9cdb-bfa7cea0ffd9",
+  "subject": "authorization",
+  "evaluatedAt": "2026-10-09T16:45:02Z",
+  "pairs": [
+    {
+      "context": "0ecc70bc-a005-4ff8-9a98-f362d2a75f53",
+      "subject": "authorization",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/network/identity.rs:60 import_trusted_peer (adds a P2P trust anchor, invoked at src/api/network/identity.ts:56) carries no #[requires] and is absent from PRIVILEGED_COMMANDS, so it dispatches with no channel proof; its only guard require_auth_sync is a no-op Ok(()) (src-tauri/src/ipc_auth.rs:470) - privilege-tiers' worst-effect rule puts it at elevated, and the unlisted default is public",
+      "evaluatedAgainst": "sha256-b2:57d60a438fa36d05",
+      "evaluatedRevision": 6,
+      "techniques": [
+        {
+          "technique": "privilege-tiers",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/network/identity.rs:60 import_trusted_peer, src-tauri/src/commands/core/memories.rs:192 delete_all_memories, src-tauri/src/commands/infrastructure/system_ops.rs:143 system_ops_run_now and src-tauri/src/commands/infrastructure/skill_files.rs:1589 skill_files_write are public mutations, while the sibling src-tauri/src/commands/network/enclave.rs:14 seal_enclave is #[requires(privileged)]. Measured over the 422 commands this context's 30 wrappers invoke: 7 carry #[requires(privileged)] and 414 carry no annotation at all"
+        },
+        {
+          "technique": "declarative-requirements",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/ipc_auth.rs:470 require_auth_sync is Ok(()), so the hand-written guard on 414 of 422 of this context's commands declares nothing; no gate fails an unannotated command (scripts/check-command-feature-coverage.mjs checks cargo-feature registration, not tier), so totality ('unannotated is unbuildable') is not enforced - an author can register a working command without stating its requirement"
+        },
+        {
+          "technique": "dispatch-chokepoint-gating",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/ipc_auth.rs:617 wrap_invoke_handler gates listed commands before dispatch with constant-time token compare and a uniform AppError::Forbidden refusal; the drift test at src-tauri/src/ipc_auth.rs:1170 reconciles #[requires] against the list with an instrument assertion. The mechanism is sound - its coverage is the deviation recorded under privilege-tiers and failure-direction"
+        },
+        {
+          "technique": "failure-direction",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/ipc_auth.rs:657 the else-branch dispatches any command not in PRIVILEGED_COMMANDS/CLOUD_COMMANDS ungated - the unlisted case resolves to allow, the inverse of default-deny"
+        },
+        {
+          "technique": "authorization-audit",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/ipc_auth.rs:638 a chokepoint refusal is recorded only as tracing::warn!, never to a queryable store or a counted health surface, so a probe from rendered content against the privileged set leaves no trail an operator can query"
+        }
+      ],
+      "registryProposal": "Lexical matching tied this context to authorization through 'audit'/'review', but the governing fact is something else: a TS IPC-wrapper context exposes operations whose tiers are declared in Rust, so the verdict has to be anchored in the Rust command files. The registry could say in an application note that for an IPC-client context the authorization pair is judged over the commands it invokes, not over the wrapper files. Upward lesson: this repo shows a partial-adoption shape the technique does not name - a declarative macro (#[requires]) beside a hand-written guard of the same name (require_auth_sync) that has become a no-op. A reader sees a guard on every command, and in this context 414 of 422 of them enforce nothing. declarative-requirements could name the 'vestigial guard call' as a failure mode alongside the dual-artifact drift."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "authorization",
+      "context": "a38e2b93-2322-4187-befa-c0443c4ca85f",
+      "reason": "weak governance: the glyph-definitions context is SVG glyph data ('scopeMapGlyph', 'ratelimitGlyph'); the match is lexical and judging it would manufacture a verdict - left as a coverage question"
+    },
+    {
+      "subject": "authorization",
+      "context": "621caefc-8ae0-42e7-89b6-8e879ad62814",
+      "reason": "already judged deviation 2026-10-03 against the current subject digest sha256-b2:57d60a438fa36d05 rev 6 (not stale); spot-checked: the anchor src-tauri/src/mcp_server/auth.rs:75 'No key row -> nothing to audit' is still live, not re-judged"
+    },
+    {
+      "subject": "authorization",
+      "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7",
+      "reason": "already judged deviation 2026-10-03 against the current digest (not stale); spot-checked: src-tauri/src/engine/api_proxy.rs:781 scope-enforcement outcome still recorded only via tracing::warn!, not re-judged"
+    },
+    {
+      "subject": "authorization",
+      "context": "e61f931c-25d7-4532-9ec7-ab6f3fc377e2",
+      "reason": "already judged not-applicable 2026-10-03 against the current digest; not stale, not re-read"
+    },
+    {
+      "subject": "authorization",
+      "context": "c413de7d-1182-4abc-8a08-9c8832254c62",
+      "reason": "already judged not-applicable 2026-10-03 against the current digest; not stale, not re-read"
+    },
+    {
+      "subject": "authorization",
+      "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65",
+      "reason": "already judged not-applicable 2026-10-03 against the current digest; not stale, not re-read"
+    },
+    {
+      "subject": "authorization",
+      "context": "b62fa237-32b4-41c3-bf56-3e498b643da9",
+      "reason": "already judged not-applicable 2026-10-03 against the current digest; not stale, not re-read"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T16:45:02Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "authorization"
+      ],
+      "techniques": [
+        "privilege-tiers",
+        "declarative-requirements",
+        "dispatch-chokepoint-gating",
+        "failure-direction",
+        "authorization-audit"
+      ],
+      "deviations": 1
+    }
+  ]
+}

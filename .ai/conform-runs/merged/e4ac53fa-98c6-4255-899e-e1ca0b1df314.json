@@ -1,0 +1,61 @@
+{
+  "schema": "conform-run/1",
+  "worker": "e4ac53fa-98c6-4255-899e-e1ca0b1df314",
+  "subject": "embedded-db",
+  "evaluatedAt": "2026-10-09T17:20:30Z",
+  "pairs": [
+    {
+      "context": "e8fa2ff7-145d-4c58-af83-1239b87d2c24",
+      "subject": "embedded-db",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/sub_activity/libs/useLlmSpend.ts:3 the context's reads cross IPC (api/llmSpend, api/companion, overviewStore) and no file in it opens, pools, journals, maintains or routes queries to the embedded store; the aggregate it renders is built at src-tauri/db/src/repos/execution/metrics.rs:1246 in the db-repos context",
+      "evaluatedAgainst": "sha256-b2:0722fec97cff5b66",
+      "evaluatedRevision": 15,
+      "techniques": [
+        {
+          "technique": "analytical-reads-off-the-serving-store",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_activity/libs/useLlmSpend.ts:3 this UI only consumes the rollup over IPC; the serving-store-vs-analytical-copy routing decision is made at src-tauri/db/src/repos/execution/metrics.rs:1246 (db-repos), which is where the technique must be judged"
+        },
+        {
+          "technique": "connection-pooling",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_activity/libs/useAthenaUsage.ts:3 reads via companionGetUsageDashboard IPC; the context acquires no pooled connection"
+        },
+        {
+          "technique": "db-self-instrumentation",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/execution/metrics.rs:1246 the measured query (timed_query! keyed execution_metrics) lives in db-repos, not in this context"
+        }
+      ],
+      "registryProposal": "Technique-shaped resonance: analytical-reads-off-the-serving-store's use_when 'adding a reporting surface to an application that already has a store' matches UI dashboard contexts lexically, but the surface never makes the routing decision; the matcher should weight the repo/query context that builds the aggregate. Missing pairing: db-repos (1bad7967-29dc-4e12-b99a-cb5177b4fb9b) carries no embedded-db pair, yet src-tauri/db/src/repos/execution/metrics.rs:1246 runs a 1-365 day scan of persona_executions on the serving store behind an interactive dashboard; that is the context where analytical-reads (and the three-condition threshold) should be judged."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "embedded-db",
+      "context": "0b0ee725-52a2-4656-9e13-07c5204de60e",
+      "reason": "already judged deviation on 2026-10-05 against the current digest sha256-b2:0722fec97cff5b66 (rev 15); all nine anchors re-printed and still name the same constructs, and no commit has touched src-tauri/db/src/lib.rs, perf.rs or damage.rs since, so there was nothing to re-judge"
+    },
+    {
+      "subject": "embedded-db",
+      "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3",
+      "reason": "already judged not-applicable on 2026-10-05 against the current digest (rev 15); not stale"
+    },
+    {
+      "subject": "embedded-db",
+      "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474",
+      "reason": "already judged not-applicable on 2026-10-05 against the current digest (rev 15); not stale"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T17:20:30Z",
+      "bundle": "software-engineering",
+      "subjects": ["embedded-db"],
+      "techniques": ["analytical-reads-off-the-serving-store", "connection-pooling", "db-self-instrumentation"],
+      "deviations": 0
+    }
+  ]
+}

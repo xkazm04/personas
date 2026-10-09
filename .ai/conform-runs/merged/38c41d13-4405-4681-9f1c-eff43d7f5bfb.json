@@ -1,0 +1,6 @@
+{"schema": "conform-run/1", "worker": "38c41d13-4405-4681-9f1c-eff43d7f5bfb", "subject": "hash-pinned-translation-pipeline",
+ "evaluatedAt": "2026-10-09T17:32:55Z",
+ "pairs": [],
+ "declined": [{"subject": "hash-pinned-translation-pipeline", "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+   "reason": "No work: the map (built 2026-10-01T08:52:29Z) holds zero pairs for this subject in any of its 215 contexts and no orphans; the worker brief forbids adding a pair, so nothing was judged. registryProposal: pair software-engineering/hash-pinned-translation-pipeline (digest sha256-b2:5fb570c0ab07039a, revision 2) with the i18n context 2e1e105a (and likely i18n-generated 1ffb5765). The precondition holds - 14 locales, LLM-translated via scripts/i18n/translate-extract.mjs - and a first read suggests a deviation: scripts/i18n/check-coverage.mjs:8 gates key-set shape only (extras/missing), and no script under scripts/i18n computes or stores a source hash, so shape-sync-is-not-content-sync and source-hash-provenance look unrealized. That is a lead for the next run, not a verdict. The matcher scored the subject at zero against a context whose vocabulary (locales, coverage, section-locales) overlaps translation-pipeline-topology instead; worth checking whether the subject's use_when triggers reach consumer vocabulary at all."}],
+ "consults": []}

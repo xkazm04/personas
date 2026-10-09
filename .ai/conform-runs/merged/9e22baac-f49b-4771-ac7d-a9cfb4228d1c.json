@@ -1,0 +1,33 @@
+{"schema":"conform-run/1","worker":"9e22baac-f49b-4771-ac7d-a9cfb4228d1c","subject":"trace-rollup-and-attribution","evaluatedAt":"2026-10-09T16:38:31Z",
+"pairs":[
+{"context":"03960450-6979-4412-9de3-35c897fe56d2","subject":"trace-rollup-and-attribution","bundle":"llm-observability","state":"deviation",
+ "evidence":"src/features/agents/sub_executions/libs/useBulkRerun.ts:115 skips null origCost into totalCostOriginal and BulkRunCohort (useBulkRerun.ts:61) carries no unmeasured-run count, so BulkRerunReport.tsx:90 prints a lower bound as the cohort total (/usr/bin/bash.0000 over a cohort of unpriced runs) - re-verified 2026-10-09, files unchanged since 2026-10-06",
+ "techniques":[
+  {"technique":"unpriced-span-accounting","verdict":"deviation","evidence":"src/features/agents/sub_executions/libs/useBulkRerun.ts:115 sum over nullable cost with no count beside it; src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:90 renders it as a total"},
+  {"technique":"derived-trace-rollup","verdict":"deviation","evidence":"src/features/agents/sub_executions/libs/traceHelpers.ts:106 buildSpanTree keys byId by span_id last-write-wins (duplicate ids render one span twice and lose the other) and never promotes self-parented or cyclic spans to roots, so they are dropped from the forest"}
+ ]},
+{"context":"208f50de-5d3b-4345-9fed-1c106a7a36e9","subject":"trace-rollup-and-attribution","bundle":"llm-observability","state":"deviation",
+ "evidence":"src/features/agents/sub_executions/detail/inspector/useTraceData.ts:250 builds the waterfall via buildSpanTree, which drops cycle/self-parented spans and duplicates collided ids, while TraceInspector.tsx:185 counts unifiedTrace.spans.length - the Spans tile and the rows beneath it range over different sets - re-verified 2026-10-09",
+ "techniques":[
+  {"technique":"derived-trace-rollup","verdict":"deviation","evidence":"src/features/agents/sub_executions/detail/inspector/useTraceData.ts:250 folds through traceHelpers.ts buildSpanTree, which violates the every-event-exactly-once tolerance rule"},
+  {"technique":"single-shape-rule","verdict":"deviation","evidence":"src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:185 tile counts the raw span set rather than the collection the waterfall renders; the collection is re-derived at the display site"},
+  {"technique":"span-cap-truncation-signal","verdict":"conformant","evidence":"src/features/agents/sub_executions/detail/inspector/TraceSummary.tsx:60 reads evicted_span_count, and TraceInspector.tsx:188-191 add the frontend half for the live fetch-window overflow"},
+  {"technique":"unpriced-span-accounting","verdict":"conformant","evidence":"src/features/agents/sub_executions/detail/inspector/TraceSummary.tsx:45 keeps root cost nullable and src/lib/utils/formatters.ts:300 renders null as a dash, never $0.00"}
+ ]},
+{"context":"a6843b83-43a1-4eab-ae40-26f23b949a0d","subject":"trace-rollup-and-attribution","bundle":"llm-observability","state":"deviation",
+ "evidence":"src/hooks/execution/useReasoningTrace.ts:100 coerces the optional ResultEvent.duration_ms (src/lib/types/terminalEvents.ts:56) to 0, and useExecutionSummary.ts:82 hands it to ExecutionSummaryCard.tsx:124-127, whose != null guard cannot see the coercion, so an unmeasured run reads as 0 ms - re-verified 2026-10-09",
+ "techniques":[
+  {"technique":"derived-trace-rollup","verdict":"deviation","evidence":"src/hooks/execution/useReasoningTrace.ts:100 the event fold substitutes 0 for an absent wall-clock duration (law never-present-absence-as-an-answer)"},
+  {"technique":"unpriced-span-accounting","verdict":"conformant","evidence":"src/hooks/execution/useReasoningTrace.ts:101 carries cost_usd through as possibly-undefined and ExecutionSummaryCard.tsx:131 shows cost only when != null"}
+ ],
+ "registryProposal":"unpriced-span-accounting's last decision rule says 'a missing latency treated as zero merely makes a duration conservative'. That is true for summed per-span latency inside a fold whose wall-clock duration is measured separately, but read literally it licenses this context's single-figure duration ?? 0 rendered as '0 ms'. Scope the carve-out to per-span latency within an aggregate, and say that a run's or trace's own duration that was never measured stays null under never-present-absence-as-an-answer."}
+],
+"declined":[
+ {"subject":"trace-rollup-and-attribution","context":"03960450-6979-4412-9de3-35c897fe56d2","reason":"keyset-trace-pagination, tenant-scoped-trace-ids and single-shape-rule were not judged: useExecutionList.ts has no offset or cursor paging to test, and tenancy in a local-first single-user app needs a separate read of the Rust query layer"},
+ {"subject":"trace-rollup-and-attribution","context":"208f50de-5d3b-4345-9fed-1c106a7a36e9","reason":"keyset-trace-pagination and tenant-scoped-trace-ids were not judged: a detail view has no paging, and the tenant scope lives in the Rust query layer, which was not read on this run"}
+],
+"consults":[
+ {"ts":"2026-10-09T16:38:31Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["unpriced-span-accounting","derived-trace-rollup"],"deviations":2},
+ {"ts":"2026-10-09T16:38:31Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["derived-trace-rollup","single-shape-rule","span-cap-truncation-signal","unpriced-span-accounting"],"deviations":2},
+ {"ts":"2026-10-09T16:38:31Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["derived-trace-rollup","unpriced-span-accounting"],"deviations":1}
+]}

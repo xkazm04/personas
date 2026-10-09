@@ -1,0 +1,163 @@
+{
+  "schema": "conform-run/1",
+  "worker": "7e0db69c-123d-4c18-b5a1-841bbfb06abe",
+  "subject": "versioning-snapshots",
+  "evaluatedAt": "2026-10-09T17:13:24.522Z",
+  "pairs": [
+    {
+      "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+      "subject": "versioning-snapshots",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/execution/lab.rs:888 lab_rollback_version overwrites the live personas row in place with no capture-before-restore and no durable activation record, so an unsaved edit is destroyed and the rollback leaves no trail of what displaced what",
+      "techniques": [
+        {
+          "technique": "snapshot-scope",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/execution/lab.rs:620 three capture sites with three column sets (lab.rs:630 omits design_context/icon/color/core_profile; src-tauri/src/commands/design/build_sessions.rs:2691 omits core_profile); the dedupe compares structured_prompt only; no site copies persona_tools, so a restore wires an old prompt to the current tool list"
+        },
+        {
+          "technique": "version-identity",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/migrations/schema.rs:444 the (persona_id, version_number) index is NOT unique; max+1 is derived at insert inside BEGIN IMMEDIATE (src-tauri/db/src/repos/execution/metrics.rs:108) but no constraint turns a collision from the deferred-tx sites into a loud retry"
+        },
+        {
+          "technique": "restore-semantics",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/execution/lab.rs:888 re-activation restore by UPDATE in place, COALESCE-merging optional fields (a chimera by its own comment), with no pre-restore capture and no record of the activation"
+        },
+        {
+          "technique": "lineage-and-variants",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/migrations/schema.rs:433 persona_prompt_versions has no parent column; restores re-tag an existing row and record no edge"
+        },
+        {
+          "technique": "promotion-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/execution/lab.rs:603 accepting a matrix draft writes the live persona, then mints its version as experimental (lab.rs:631), so the row tagged production no longer describes what runs; states are declared (lab.rs:828) and demote+promote is atomic (src-tauri/db/src/repos/execution/metrics.rs:310), but no promotion records evidence or a trigger"
+        },
+        {
+          "technique": "retention-and-pruning",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/migrations/fk_hygiene.rs:411 the deletion contract is declared (cascade with the persona), but no retention policy is declared anywhere: everything is kept by default, not by decision"
+        }
+      ],
+      "registryProposal": "The 2026-10-03 verdict called promotion-lifecycle conformant because the tag column has declared states and an atomic single-production swap. But the runtime reads the personas row, not the tag, and a save path (accept-draft) moves that row without touching the tag. promotion-lifecycle could name this shape outright: a state column that is not the pointer the runtime reads is a second, decorative authority, and a judge that checks only the column will pass it.",
+      "evaluatedAgainst": "sha256-b2:e895b228981cf506",
+      "evaluatedRevision": 7
+    },
+    {
+      "context": "9b0ee86c-2613-49a5-9fda-fcc4d432fb72",
+      "subject": "versioning-snapshots",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/lab/versions.rs:45 create_version (IMMEDIATE tx, parent_version_id lineage, tools copied) has zero production callers while the live path writes persona_prompt_versions from three hand-rolled under-scoped sites: the correct capture door is dead and the later, narrower ones are in use",
+      "techniques": [
+        {
+          "technique": "snapshot-scope",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/lab/versions.rs:84 the one full-graph capture inserts into persona_versions, which nothing in production writes; the live captures are src-tauri/src/commands/execution/lab.rs:630 and src-tauri/src/commands/design/build_sessions.rs:2691, each with a different column set"
+        },
+        {
+          "technique": "lineage-and-variants",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/lab/versions.rs:34 lineage exists only on the dead table; the live table (src-tauri/db/src/migrations/schema.rs:433) has no parent edge"
+        },
+        {
+          "technique": "version-identity",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/lab/versions.rs:45 the only insert path that derives the number and lineage in one IMMEDIATE tx is never called; live identity relies on the non-unique index at src-tauri/db/src/migrations/schema.rs:444"
+        }
+      ],
+      "registryProposal": "Upward evidence for the golden path's version-economics rule: src-tauri/db/src/repos/lab/ratings.rs:138 aggregates only results carrying a non-null version_id, so every rating is pinned to the exact version it measured and legacy unpinned runs are excluded rather than floated onto the current version. No technique owns that rule's mechanics yet; it lives only in golden-path prose.",
+      "evaluatedAgainst": "sha256-b2:e895b228981cf506",
+      "evaluatedRevision": 7
+    },
+    {
+      "context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd",
+      "subject": "versioning-snapshots",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/infrastructure/webbuild.rs:328 webbuild_restore_version calls versions::restore with no commit_snapshot first, so edits to tracked files made since the last turn snapshot are overwritten, and the restore mints no version recording what was revived",
+      "techniques": [
+        {
+          "technique": "restore-semantics",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/versions.rs:96 restore runs git restore --overlay on the live worktree; the overlay choice (versions.rs:93) fixed deletion, but there is no capture-before-restore and no forward-minted version"
+        },
+        {
+          "technique": "snapshot-scope",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/webbuild/versions.rs:45 each build turn snapshots the whole worktree onto a private ref through one routine (snapshot_worktree)"
+        },
+        {
+          "technique": "lineage-and-variants",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/versions.rs:96 snapshots inherit git parent edges, but a restore records no edge to the revived sha, so the next snapshot names the previous head as parent, not the true source"
+        },
+        {
+          "technique": "version-identity",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/webbuild/versions.rs:26 identity is the content-addressed git sha, minted by the snapshot and never supplied by a caller; there is no per-project human number, which a turn log does not need"
+        },
+        {
+          "technique": "promotion-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/webbuild/versions.rs:26 BuildVersion carries only sha/message/when; there is no active or promoted state, and the live worktree is the only thing that runs"
+        },
+        {
+          "technique": "retention-and-pruning",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/versions.rs:68 the list is capped at 40 for display, but nothing declares what happens to older refs: everything is kept by default, not by decision"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:e895b228981cf506",
+      "evaluatedRevision": 7
+    },
+    {
+      "context": "7741725e-8124-4899-b17e-8e39e7fcf1ed",
+      "subject": "versioning-snapshots",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/studio/StudioVersions.tsx:52 restore calls webbuildRestoreVersion behind only a confirm dialog (:119) that warns it cannot be undone; the UI surfaces the missing backend capture-before-restore instead of closing it",
+      "techniques": [
+        {
+          "technique": "restore-semantics",
+          "verdict": "deviation",
+          "evidence": "src/features/studio/StudioVersions.tsx:123 the confirm body says the restore cannot be undone, which is true because nothing is captured first; the header comment at :15 still describes `git checkout <sha> -- .`, stale since the backend moved to `git restore --overlay`"
+        },
+        {
+          "technique": "lineage-and-variants",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/bindings/BuildVersion.ts:3 the binding has no parent or lineage field for the UI to render; the gap is in the backend"
+        },
+        {
+          "technique": "promotion-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/bindings/BuildVersion.ts:3 there is no state or tag field, so there is no promotion concept to surface"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:e895b228981cf506",
+      "evaluatedRevision": 7
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-09T17:13:24.522Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "versioning-snapshots"
+      ],
+      "techniques": [
+        "snapshot-scope",
+        "version-identity",
+        "restore-semantics",
+        "lineage-and-variants",
+        "promotion-lifecycle",
+        "retention-and-pruning"
+      ],
+      "deviations": 4
+    }
+  ]
+}

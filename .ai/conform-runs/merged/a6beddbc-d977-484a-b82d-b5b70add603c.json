@@ -1,0 +1,47 @@
+{"schema": "conform-run/1", "worker": "a6beddbc-d977-484a-b82d-b5b70add603c", "subject": "data-access",
+ "evaluatedAt": "2026-10-09T16:31:00Z",
+ "pairs": [
+  {"context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573", "subject": "data-access", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:243 calls listScans once per project (and listGoals per project at :313) under mapWithConcurrency because the surface offers only per-parent reads (src-tauri/db/src/repos/dev/scans.rs:25, src-tauri/db/src/repos/dev/goals.rs:45) - opening Mastermind costs N IPC round trips + N queries per family, linear in project count, against the file's own <=1-IPC goal (:5)",
+   "techniques": [
+    {"technique": "batching-and-n-plus-one", "verdict": "deviation", "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:243 loops listScans(id) per project id; no children-of-parents operation exists at src-tauri/db/src/repos/dev/scans.rs:25 or src-tauri/db/src/repos/dev/goals.rs:45, so bounded concurrency (5) only caps the fan-out, it does not make it set-shaped"},
+    {"technique": "layering-rules", "verdict": "conformant", "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:19 reaches the store only through named typed IPC operations (getCrossProjectMetadata, listGoals, listScans, tasksPage); no query text or raw handle above the db crate"}
+   ],
+   "registryProposal": "batching-and-n-plus-one is written for a caller inside the same process as the repository; here the loop sits across an IPC hop, so each iteration is a query plus a serialization round trip. A bounded-concurrency fan-out (mapWithConcurrency(ids, 5)) is a recurring 'mitigation' that hides the N+1 from latency while leaving the count linear - worth naming as a known non-fix in the technique."},
+  {"context": "0aded02d-f5c5-4e24-8366-90783fb343b1", "subject": "data-access", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/stores/slices/agents/personaSlice.ts:20 precondition unmet: the context owns no store or query language - persona data arrives only through typed IPC wrappers (set-shaped getPersonaSummaries at :262), and its one direct write (src/stores/util/dedupedStorage.ts:30) is a localStorage UI-preference blob, a client-state concern",
+   "techniques": [
+    {"technique": "layering-rules", "verdict": "not-applicable", "evidence": "src/stores/slices/agents/personaSlice.ts:20 imports named operations from @/api/agents/personas; no statement is built here"},
+    {"technique": "batching-and-n-plus-one", "verdict": "not-applicable", "evidence": "src/stores/slices/agents/personaSlice.ts:262 list data is fetched in one set-shaped call; per-id getPersonaDetail is only used when a single persona is opened"}
+   ]},
+  {"context": "cd7e7cc7-cc5b-44a1-9bff-76b34af21966", "subject": "data-access", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/api/__tests__/personas.test.ts:5 precondition unmet: these suites test the TS IPC wrappers by mocking the Tauri transport (mockInvoke, e.g. src/api/__tests__/executions.test.ts:26); no statement, mapping or store engine is under test here - repo-testing's real-engine rule belongs to the db crate's suite",
+   "techniques": [
+    {"technique": "repo-testing", "verdict": "not-applicable", "evidence": "src/api/__tests__/personas.test.ts:5 the mocked seam is the IPC transport above the repository (a layer this repo owns), which the technique licenses; the engine is never mocked here because it is never reached"}
+   ],
+   "registryProposal": "Coverage question: a frontend IPC-wrapper test suite matched data-access on the tokens tests/serialization/mock; test-harness (already paired) is the governing subject. Technique-shaped resonance with repo-testing's 'mock the layer you wrote' rule, not a data-layer context."},
+  {"context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857", "subject": "data-access", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts:11 precondition unmet: live introspection runs in the backend's parameterized commands, so these suites test only frontend result parsers and a clipboard SELECT helper that is never executed (src/features/vault/sub_databases/introspectionQueries.ts:7) - no repository or store engine is under test",
+   "techniques": [
+    {"technique": "repo-testing", "verdict": "not-applicable", "evidence": "src/features/vault/sub_databases/__tests__/introspectionQueries.test.ts:17 text-equality is asserted on a copy-paste string whose spelling IS its contract, not on an executed statement, so the 'do not snapshot query text' rule does not reach it"},
+    {"technique": "query-construction", "verdict": "not-applicable", "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:7 the only builder left in scope emits clipboard text; the executed hand-escape (TablesTab.tsx:42) is already a recorded deviation on vault-databases-tabs and lives outside this context"}
+   ],
+   "registryProposal": "The governing subject for this context is sql-console (already paired, deviation); data-access matched on database/tests/query. The golden path's 'ad-hoc queries run by people' carve-out is the precondition test that routes it away."}
+ ],
+ "declined": [
+  {"subject": "data-access", "context": "1ffb5765-de47-4f01-87ec-06732a63522c", "reason": "i18n-generated: budget (4 pairs this run); unread, matched only on 'four/parity/type' - likely not-applicable but not judged without reading"},
+  {"subject": "data-access", "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3", "reason": "stores: budget; unread"},
+  {"subject": "data-access", "context": "532bbf10-3fd3-4b57-a8ea-95a957645697", "reason": "stores-slices-overview: budget; unread (processActivity/homeSpine slices may hold fan-out loops worth a batching read)"},
+  {"subject": "data-access", "context": "336089a8-bb18-449c-a62e-ca76b02097fb", "reason": "test-bridge-core: budget; unread"},
+  {"subject": "data-access", "context": "a8857307-216c-46e0-9571-e05e8cf06112", "reason": "agents-components-allpersonas: budget; unread (batch bar may issue per-id writes - a batching read is warranted)"}
+ ],
+ "consults": [
+  {"ts": "2026-10-09T16:31:00Z", "bundle": "software-engineering", "subjects": ["data-access"], "techniques": ["batching-and-n-plus-one", "layering-rules"], "deviations": 1},
+  {"ts": "2026-10-09T16:31:00Z", "bundle": "software-engineering", "subjects": ["data-access"], "techniques": ["layering-rules", "batching-and-n-plus-one"], "deviations": 0},
+  {"ts": "2026-10-09T16:31:00Z", "bundle": "software-engineering", "subjects": ["data-access"], "techniques": ["repo-testing"], "deviations": 0},
+  {"ts": "2026-10-09T16:31:00Z", "bundle": "software-engineering", "subjects": ["data-access"], "techniques": ["repo-testing", "query-construction"], "deviations": 0}
+ ]}

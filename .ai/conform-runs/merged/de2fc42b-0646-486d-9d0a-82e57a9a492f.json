@@ -1,0 +1,54 @@
+{"schema": "conform-run/1", "worker": "de2fc42b-0646-486d-9d0a-82e57a9a492f", "subject": "error-handling",
+ "evaluatedAt": "2026-10-09T16:50:00Z",
+ "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2", "evaluatedRevision": 15,
+ "pairs": [
+  {"context": "2e1e105a-866c-4039-9620-7ed5d0d30b17", "subject": "error-handling", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/errors/errorRegistry.ts:716 resolveError takes only a raw string and classifies by substring/regex (:723), never by the AppError category the backend already serialises (src-tauri/core/src/error.rs:210); a reworded upstream message silently falls to GENERIC_FALLBACK, whose miss is recorded only as a breadcrumb (:735)",
+   "techniques": [
+    {"technique": "user-facing-mapping", "verdict": "deviation", "evidence": "src/lib/errors/errorRegistry.ts:723 prose match is the ONLY tier - no category or structured-field tier precedes it; :735 the generic-fallback miss is a Sentry breadcrumb (conditional door), not a self-reporting metric"},
+    {"technique": "structured-propagation", "verdict": "deviation", "evidence": "src/lib/silentCatch.ts:110 toastCatch re-derives category from extractMessage(err) prose instead of reading envelope.category shipped at src-tauri/core/src/error.rs:210 - stringification at the IPC boundary"},
+    {"technique": "error-doors", "verdict": "partial", "evidence": "src/lib/silentCatch.ts:125 since 2026-10-05 the user-facing door reaches the persistent app log (recordError); :116 its Sentry write is still only a breadcrumb, so a user-facing failure never produces a telemetry event on its own"}
+   ],
+   "registryProposal": "Re-verified 2026-10-09: the 10-03 verdict's ToastContainer/translated-customMessage clause is no longer cited (the toastCatch comment at src/lib/silentCatch.ts:131-139 says the renderer now prefers the caller string when unclassified). error-doors should say whether a local-first app's persistent structured log file, read by its own operator tooling, counts as the telemetry door for user-facing failures - the technique only distinguishes a console log from a telemetry event."},
+  {"context": "90f639de-ffc7-4225-b67f-1566e5d66b8b", "subject": "error-handling", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:96 flattens each IPC rejection to message text and :97 routes it only to log.warn (console-only; src/lib/log.ts:3 forwards only `error` to the log file) plus local state - a failing 60s status-page poll reaches no telemetry or persistent door",
+   "techniques": [
+    {"technique": "error-doors", "verdict": "deviation", "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:97 background poll failure goes to console.warn + setSlaError only; same at :110 and :117 - no silentCatch, no recordError"},
+    {"technique": "structured-propagation", "verdict": "deviation", "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:96 `instanceof Error ? .message : String(..)` discards the AppError kind/category envelope"},
+    {"technique": "swallowed-error-prevention", "verdict": "deviation", "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:116 catch body is console-only + flag-only, the non-empty swallow the lint rule cannot see"}
+   ]},
+  {"context": "468953eb-0204-4013-b366-9357b2161138", "subject": "error-handling", "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src-tauri/core/src/error_taxonomy.rs:25 closed ErrorCategory with explicit Unknown (:56), typed variants map structurally (src-tauri/core/src/error.rs:110) with prose only as a fallback for string passthroughs (:133), and the category crosses IPC as data (:210) with a ts-rs-generated TS mirror (src-tauri/core/src/error_taxonomy.rs:22)",
+   "techniques": [
+    {"technique": "taxonomy-design", "verdict": "conformant", "evidence": "src-tauri/core/src/error_taxonomy.rs:25 closed enum, :56 Unknown as explicit member, :22 derive(TS) generates src/lib/bindings/ErrorCategory.ts rather than hand-mirroring; :78 UsageLimitInfo carries the stated reset time as a typed field"},
+    {"technique": "structured-propagation", "verdict": "conformant", "evidence": "src-tauri/core/src/error.rs:210 serialises category plus auto_fixable/failover_eligible so the far side never needs to re-classify"},
+    {"technique": "consumer-decides-error-shape", "verdict": "conformant", "evidence": "src-tauri/core/src/error.rs:110 closed category is the published value the independently-built frontend branches on"},
+    {"technique": "crash-capture", "verdict": "not-applicable", "evidence": "src-tauri/core/src/lib.rs:1 dependency-free library crate; no fn main, panic hook or process::exit anywhere in src-tauri/core/src"},
+    {"technique": "exit-contract-is-a-taxonomy-projection", "verdict": "not-applicable", "evidence": "src-tauri/core/src/lib.rs:1 library crate with no process exit status to project onto"}
+   ]},
+  {"context": "ab849301-d5ce-4d91-a12e-0e87a0417585", "subject": "error-handling", "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:43 last-resort render handler logs to the persistent log (:47) and persists the crash, sanitised before the first write (src/lib/utils/crashPersistence.ts:98), locally first (:102) then shipped to the backend (:144) with its own failures routed (:141)",
+   "techniques": [
+    {"technique": "crash-capture", "verdict": "conformant", "evidence": "src/lib/utils/crashPersistence.ts:98 sanitizeCrashString before persisting; :102 localStorage first; :144 fire-and-forget backend ship"},
+    {"technique": "error-doors", "verdict": "conformant", "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:47 logger.error reaches the app log file (src/lib/log.ts:3) in addition to the crash store"},
+    {"technique": "swallowed-error-prevention", "verdict": "conformant", "evidence": "src/lib/utils/crashPersistence.ts:141 the door's own internal failure routes through silentCatch rather than throwing into the boundary"},
+    {"technique": "user-facing-mapping", "verdict": "not-applicable", "evidence": "src/features/shared/components/feedback/ErrorBanner.tsx:6 presentational primitives take a pre-resolved message; mapping is owned by the registry in the i18n context"},
+    {"technique": "taxonomy-design", "verdict": "not-applicable", "evidence": "src/features/shared/components/feedback/ErrorBanner.tsx:6 no classification happens in these components"},
+    {"technique": "structured-propagation", "verdict": "not-applicable", "evidence": "src/features/shared/components/feedback/ErrorBanner.tsx:6 terminal render surface; nothing propagates onward"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "error-handling", "context": "1ffb5765-de47-4f01-87ec-06732a63522c", "reason": "judged 2026-10-03 against the current digest (rev 15, unchanged); test-only context, not re-read this run - budget spent on the live deviations and basename-anchored verdicts"},
+  {"subject": "error-handling", "context": "456eb952-9b93-4de4-bad5-79e6f101aeb1", "reason": "judged 2026-10-03 against the current digest (rev 15); not re-read this run"},
+  {"subject": "error-handling", "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757", "reason": "judged 2026-10-03 against the current digest (rev 15); its evidence still uses basename anchors - next candidate for re-anchoring, not re-read this run"}
+ ],
+ "consults": [
+  {"ts": "2026-10-09T16:50:00Z", "bundle": "software-engineering", "subjects": ["error-handling"], "techniques": ["user-facing-mapping", "structured-propagation", "error-doors"], "deviations": 2},
+  {"ts": "2026-10-09T16:50:00Z", "bundle": "software-engineering", "subjects": ["error-handling"], "techniques": ["error-doors", "structured-propagation", "swallowed-error-prevention"], "deviations": 3},
+  {"ts": "2026-10-09T16:50:00Z", "bundle": "software-engineering", "subjects": ["error-handling"], "techniques": ["taxonomy-design", "structured-propagation", "consumer-decides-error-shape", "crash-capture", "exit-contract-is-a-taxonomy-projection"], "deviations": 0},
+  {"ts": "2026-10-09T16:50:00Z", "bundle": "software-engineering", "subjects": ["error-handling"], "techniques": ["crash-capture", "error-doors", "swallowed-error-prevention", "user-facing-mapping", "taxonomy-design", "structured-propagation"], "deviations": 0}
+ ]}

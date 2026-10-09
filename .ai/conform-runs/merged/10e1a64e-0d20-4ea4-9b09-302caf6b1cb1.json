@@ -1,0 +1,48 @@
+{"schema": "conform-run/1", "worker": "10e1a64e-0d20-4ea4-9b09-302caf6b1cb1", "subject": "voice-io",
+ "evaluatedAt": "2026-10-09T17:37:10Z",
+ "pairs": [
+  {"context": "3f38546e-e970-4837-97f7-f0504aa32daf", "subject": "voice-io", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:b7d28920c42693f8", "evaluatedRevision": 19,
+   "evidence": "src/features/companions/athena/useHoldToTalk.ts:117 runs whichever option a bare spoken digit names, including approve on elevated-risk actions (useDecisionQueue.ts:112, actionRisk.ts:23 'never gates execution'), with no confirmation; spoken-intent-parsing requires destructive/expensive actions to confirm explicitly with the interpretation echoed back",
+   "techniques": [
+    {"technique": "spoken-intent-parsing", "verdict": "deviation", "evidence": "src/features/companions/athena/useHoldToTalk.ts:117 executes the option on any match; the parser returns no match rung or cost (parseSpokenDecision.ts:69) and its ladder stops at trim+case+edge-punctuation (parseSpokenDecision.ts:53) - no filler strip, synonyms ('approve'/'yes'), contained keyword ('option two') or bounded fuzzy rung. Realized: one parsing door per channel, a closed per-decision grammar sized by optionCount, finals only (useHoldToTalk.ts:97); unmatched falls through as a visible chat turn (useHoldToTalk.ts:120) rather than an unmatched(heard) echo"},
+    {"technique": "stt-pipeline", "verdict": "conformant", "evidence": "src/features/companions/athena/useHoldToTalk.ts:97 only the final transcript crosses into a decision; partials stay display-only (interimText caption)"}
+   ],
+   "registryProposal": "spoken-intent-parsing's confirmation table assumes the parser knows the action's cost. Here the cost classification lives in a separate advisory table (actionRisk.ts), and the clicked-chip and spoken paths share one resolver (resolveDecision.ts:4-8 'must resolve decisions identically'). That makes it easy to justify voice skipping confirmation because click does. The technique could say outright that sharing a resolver with a deterministic input (click/key) does not inherit its confirmation posture: the spoken path adds a statistical layer, and the cost has to sit on the grammar entry the parser returns."},
+  {"context": "3effd422-2610-4c8a-bc02-53aceafd827c", "subject": "voice-io", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:b7d28920c42693f8", "evaluatedRevision": 19,
+   "evidence": "src-tauri/src/commands/companion/stt.rs:33 companion_stt_transcribe returns a bare String, so no-speech crosses IPC as AppError::Internal text (whisper.rs:210) and useLocalDictation.ts:266 renders err.message - silence, no-speech and engine failure cannot stay three typed facts across the boundary (stt-pipeline, verdict-survives-boundary)",
+   "techniques": [
+    {"technique": "stt-pipeline", "verdict": "deviation", "evidence": "src-tauri/src/commands/companion/stt.rs:33 Result<String, AppError> carries no typed no-speech/anomaly outcome; the consumer re-derives it from message text at src/features/companions/athena/useLocalDictation.ts:266"},
+    {"technique": "decode-time-vocabulary-biasing", "verdict": "conformant", "evidence": "src-tauri/src/companion/stt/whisper.rs:222 the adapter recognizes whisper's in-band no-speech markers ([BLANK_AUDIO], [SILENCE]) and reduces them before any string reaches a caller"},
+    {"technique": "engine-abstraction", "verdict": "conformant", "evidence": "src-tauri/src/commands/companion/voice.rs:53 one synthesis dispatch over the closed TtsEngineId vocabulary; retired-engine values normalized on read at src/stores/slices/system/athenaSlice.ts:133 (the absent-vs-broken collapse is already recorded on companion-proactive at whisper.rs:101)"},
+    {"technique": "on-device-vs-cloud", "verdict": "deviation", "evidence": "src-tauri/src/companion/stt/downloader.rs:78 model readiness reported to the Voice tab (stt.rs:83) is a bare is_file check with no integrity verification - the bookkeeping proxy gate-sees-target warns about; the transcription path itself is on-device only (stt.rs:5)"},
+    {"technique": "real-time-synthesis-budget", "verdict": "deviation", "evidence": "src-tauri/src/commands/companion/voice.rs:57 serializes Kokoro behind a semaphore because each call spawns a subprocess that reloads the ~310MB model (already recorded on companion-proactive at kokoro.rs:222)"}
+   ]},
+  {"context": "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20", "subject": "voice-io", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:b7d28920c42693f8", "evaluatedRevision": 19,
+   "evidence": "src/features/plugins/radio/hooks/useRadioState.ts:8 the radio surface consumes only station/now-playing/state APIs; none of its 14 files captures, transcribes, synthesizes or speaks (zero speech/tts/getUserMedia references), so no voice-io precondition holds",
+   "techniques": [],
+   "registryProposal": "Coverage: technique-shaped resonance on 'audio/engine/playing'. The golden path's boundary paragraph says this subject owns 'plumbing sound through a product', which reads as covering music-stream playback, but every technique is speech capture/synthesis. Suggest wording it 'plumbing speech', and naming media-playback as the home for non-speech streams. This context is the matcher's evidence: a SomaFM/YouTube music player scored 662 against voice-io. media-playback is the likely governing subject (not added; this worker may not add pairs)."},
+  {"context": "50bf2ad0-3da7-4405-991a-6e22695903a2", "subject": "voice-io", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:b7d28920c42693f8", "evaluatedRevision": 19,
+   "evidence": "src/features/companions/athena/NarrationThread.tsx:2 'narration' here is the visible progress-beat timeline; none of the context's nine components reaches speech, tts, audio or playback, so the read-aloud/tts-pipeline preconditions do not hold",
+   "techniques": []}
+ ],
+ "declined": [
+  {"subject": "voice-io", "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14", "reason": "strong-confidence unknown, but priorNotApplicable=3 and the match tokens (cloud/pipeline/output) are deployment vocabulary; left for a later run under the 3-6 budget"},
+  {"subject": "voice-io", "context": "059fdee0-40da-434a-a5cb-874bc9179a31", "reason": "strong-confidence unknown (engine/clipboard/seed); possibly transcript-handoff-receipts via clipboard, unread this run - budget"},
+  {"subject": "voice-io", "context": "a3b615d2-05d8-47bd-ad92-672c6b42b0f3", "reason": "strong-confidence unknown (engine/parsing/attribution); may host the TTS: line extraction that speech-ready-text governs, unread this run - budget"},
+  {"subject": "voice-io", "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b", "reason": "context governance is weak; judging it would test the match, not the code"},
+  {"subject": "voice-io", "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a", "reason": "companion-brain matched on 'synthesis/recognition' in the profile/recall sense, not speech; unread this run - budget"}
+ ],
+ "consults": [
+  {"ts": "2026-10-09T17:37:10Z", "bundle": "software-engineering", "subjects": ["voice-io"], "techniques": ["spoken-intent-parsing", "stt-pipeline"], "deviations": 1},
+  {"ts": "2026-10-09T17:37:10Z", "bundle": "software-engineering", "subjects": ["voice-io"], "techniques": ["stt-pipeline", "decode-time-vocabulary-biasing", "engine-abstraction", "on-device-vs-cloud", "real-time-synthesis-budget"], "deviations": 3},
+  {"ts": "2026-10-09T17:37:10Z", "bundle": "software-engineering", "subjects": ["voice-io"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-09T17:37:10Z", "bundle": "software-engineering", "subjects": ["voice-io"], "techniques": [], "deviations": 0}
+ ]}

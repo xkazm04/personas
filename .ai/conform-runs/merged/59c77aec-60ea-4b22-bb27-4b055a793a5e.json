@@ -1,0 +1,94 @@
+{
+  "schema": "conform-run/1",
+  "worker": "59c77aec-60ea-4b22-bb27-4b055a793a5e",
+  "subject": "fleet-orchestration",
+  "evaluatedAt": "2026-10-09T16:31:00Z",
+  "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+  "evaluatedRevision": 25,
+  "mapLag": "map pairs carry digest sha256-b2:e63d5473ea2636c8 / revision 24; registry index at b9446491 has sha256-b2:4fc5c1fbe75c52d2 / revision 25 (a70ae91a, 2026-10-06, amends completion-claim-verification only). Verdicts below are written against the registry's digest.",
+  "pairs": [
+    {
+      "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+      "evaluatedRevision": 25,
+      "evidence": "src-tauri/core/src/models/team_assignment.rs:150 types the assignment status as a free String beside the closed TeamAssignmentStatus enum (:31), so the orchestrator writes 'paused' (src-tauri/src/engine/team_assignment_orchestrator.rs:624), a state neither the enum nor the CHECK at src-tauri/db/src/migrations/incremental/c02_dev_goals_and_kpis.rs:90 defines; it compiles and fails at the DB, so pause_team_assignment (Fleet monitor ConversationCards.tsx:121) always errors. Prior not-applicable withdrawn: this context models a capped parallel multi-persona dispatch (:152) with a harvest record (:321).",
+      "techniques": [
+        {"technique": "session-registry", "verdict": "deviation", "evidence": "src-tauri/core/src/models/team_assignment.rs:150 status: String bypasses the closed vocabulary declared at :31; a producer (src-tauri/src/engine/team_assignment_orchestrator.rs:624) writes a state the machine does not define and only the SQLite CHECK refuses it"},
+        {"technique": "parallel-dispatch", "verdict": "realized", "evidence": "src-tauri/core/src/models/team_assignment.rs:152 max_parallel_steps is on the record and consumed as the slot budget at src-tauri/src/engine/team_assignment_orchestrator.rs:796"},
+        {"technique": "result-harvest", "verdict": "realized", "evidence": "src-tauri/core/src/models/team_assignment.rs:321 AssignmentOutcome records steps_total/done/failed/skipped on the terminal transition, one row per assignment"}
+      ],
+      "registryProposal": "Coverage: recipe-build-models is a catch-all of core models (team_assignment.rs, execution.rs, build_session.rs); the prior not-applicable was argued from build_session.rs alone, the 12-path-sample failure the skill warns about. pipeline-dag / agent-chaining likely also govern team_assignment.rs's step DAG."
+    },
+    {
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+      "evaluatedRevision": 25,
+      "evidence": "src/features/agents/quick-answer/triage/deck/useAcceptedDispatch.ts:342 the deck now dispatches a lane-width batch of accepted ideas into the runner (added 2026-10-05, after context-map.json 2026-09-22, so it sits in no context), which falsifies the prior not-applicable; the client reports partial outcome beside success (:101) but the cap/admission it relies on is server-side (src-tauri/src/commands/infrastructure/dev_tools.rs:1141). 2 of 18 techniques read - below the evidence floor.",
+      "techniques": [
+        {"technique": "result-harvest", "verdict": "realized", "evidence": "src/features/agents/quick-answer/triage/deck/useAcceptedDispatch.ts:101 skipped is reported beside dispatched, never folded into it"},
+        {"technique": "parallel-dispatch", "verdict": "unknown", "evidence": "src/features/agents/quick-answer/triage/deck/useAcceptedDispatch.ts:225 clamps the lane width client-side; the door that enforces it is src-tauri/src/commands/infrastructure/dev_tools.rs:1141, outside this context and unread against the technique"}
+      ],
+      "registryProposal": "Not a registry finding: the consumer's context-map lags (useAcceptedDispatch.ts, triageSession.ts, triageJournal.ts are in no context); a rescan should place them before this pair is judged."
+    },
+    {
+      "context": "8650ca36-36fe-4862-98f5-745e866a2687",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+      "evaluatedRevision": 25,
+      "evidence": "src/features/agents/sub_design/DesignHub.tsx:52 SUB_TABS is four authoring panels over one persona draft, and src/features/agents/sub_tool_runner/libs/useToolRunner.ts:25 runs one tool call for one persona; across all 9 context files nothing registers, dispatches or harvests a set of concurrent sessions, so the subject's precondition fails.",
+      "techniques": []
+    },
+    {
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+      "evaluatedRevision": 25,
+      "evidence": "src/features/shared/components/display/UnifiedTable.tsx:2 the context is generic display primitives (table, badges, status dots); none of its 32 files carries a session, dispatch or harvest concept or a fleet status vocabulary, so the precondition fails. (Prior anchor :4 landed on a blank comment line.)",
+      "techniques": []
+    },
+    {
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+      "evaluatedRevision": 25,
+      "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:14 the widgets are inline chat cards Athena emits into the cockpit (:20 informational, writes no selection); across the 31 widgets the backend calls are reads plus one UAT completion, and none creates, tracks, dispatches or harvests a session.",
+      "techniques": []
+    },
+    {
+      "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+      "evaluatedRevision": 25,
+      "evidence": "src/features/home/sub_releases/HomeReleases.tsx:2 a What's New roadmap view beside a tour and power-move catalogue whose only fleet reference is a nav deep link (src/features/home/sub_learning/powerMoves/registry.ts:140; the prior :170 no longer exists in a 150-line file). No session, roster, dispatch or harvest.",
+      "techniques": []
+    }
+  ],
+  "declined": [
+    {"subject": "fleet-orchestration", "context": "743a0ae5-b7d0-46a6-a915-cb82c7834bf8", "reason": "strong unknown (fleet-monitor-shell); over budget after the six stale pairs - needs a full 18-technique read"},
+    {"subject": "fleet-orchestration", "context": "4560e824-e952-45a9-8aef-fe88d721952e", "reason": "strong unknown (home-welcome); over budget"},
+    {"subject": "fleet-orchestration", "context": "*deviations-at-revision-24", "reason": "10 deviation verdicts sit one revision behind (24 vs 25); revision 25 only amends completion-claim-verification, which none of their evidence cites, so they were not re-read this run"},
+    {"subject": "fleet-orchestration", "context": "*probable-unknowns", "reason": "~27 probable-confidence unknown pairs left for later runs; most look like surfaces outside the subject's precondition (notepad-editor, vault-catalog-picker, feedback primitives)"}
+  ],
+  "consults": [
+    {"ts": "2026-10-09T16:31:00Z", "bundle": "software-engineering", "subjects": ["fleet-orchestration"], "techniques": ["session-registry", "parallel-dispatch", "result-harvest"], "deviations": 1},
+    {"ts": "2026-10-09T16:31:00Z", "bundle": "software-engineering", "subjects": ["fleet-orchestration"], "techniques": ["parallel-dispatch", "result-harvest"], "deviations": 0},
+    {"ts": "2026-10-09T16:31:00Z", "bundle": "software-engineering", "subjects": ["fleet-orchestration"], "techniques": [], "deviations": 0},
+    {"ts": "2026-10-09T16:31:00Z", "bundle": "software-engineering", "subjects": ["fleet-orchestration"], "techniques": [], "deviations": 0},
+    {"ts": "2026-10-09T16:31:00Z", "bundle": "software-engineering", "subjects": ["fleet-orchestration"], "techniques": [], "deviations": 0},
+    {"ts": "2026-10-09T16:31:00Z", "bundle": "software-engineering", "subjects": ["fleet-orchestration"], "techniques": [], "deviations": 0}
+  ]
+}

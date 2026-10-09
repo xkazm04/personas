@@ -1,0 +1,163 @@
+{
+  "schema": "conform-run/1",
+  "worker": "0a06b266-72a8-44ea-9aac-b1d021f8a02c",
+  "subject": "browser-credential-boundary",
+  "evaluatedAt": "2026-10-09T16:24:24Z",
+  "pairs": [
+    {
+      "context": "1092db16-982f-4d99-b71b-14e6cf704a4f",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 token_endpoint_request POSTs client_secret via SHARED_HTTP (no SSRF-safe resolver, default redirect following) to a token_url that is caller data (oauth.rs:2073) or a dependency response (discovery.token_endpoint, oauth.rs:2068); the repo own SSRF_SAFE_HTTP (src-tauri/core/src/http_clients.rs:27) exists for exactly this and is unused here - unchanged since the 2026-10-03 verdict",
+      "techniques": [
+        {
+          "technique": "outbound-fetch-destination-validation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:1205 validate_issuer_url judges only literal-IP hosts, then discover_oidc fetches the name via SHARED_HTTP (oauth.rs:1295) - a second, unbound resolution, and the discovered token_endpoint (oauth.rs:2068) is never judged at all"
+        },
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "realized",
+          "evidence": "src/lib/bindings/CreateCredentialInput.ts:15 oauthSessionRef: the command layer merges OAuth tokens server-side, token material never crosses IPC"
+        },
+        {
+          "technique": "omit-the-column-not-the-value",
+          "verdict": "realized",
+          "evidence": "src-tauri/core/src/models/credential.rs:40 serde skip_serializing + ts(skip) on encrypted_data: the webview shape has no column for the sealed value"
+        },
+        {
+          "technique": "opaque-upstream-errors",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:1295 the error caller is the local operator UI of a one-operator desktop install - a trust boundary owned on both sides, which the technique exempts"
+        }
+      ],
+      "registryProposal": "outbound-fetch-destination-validation should name the OAuth/OIDC case explicitly: a discovery document is a dependency response whose token_endpoint then receives the client secret - the credentialed fetch to a data-supplied address the technique says must be split into two features"
+    },
+    {
+      "context": "cf38b51d-aebb-4b36-bb8e-68a494a3662f",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/api/vault/oauthGatewayApi.ts:70 the only IPC door that took/returned raw tokens was retired and refresh runs server-side; foraged secrets cross as masked display values and import by id (src-tauri/src/commands/credentials/foraging.rs:203, src/api/vault/foraging.ts:15)",
+      "techniques": [
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "realized",
+          "evidence": "src/api/vault/foraging.ts:15 importForagedCredential sends foragedId only; the unmasked value is re-read backend-side at import"
+        },
+        {
+          "technique": "omit-the-column-not-the-value",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/credentials/foraging.rs:169 mask_value applied on read (foraging.rs:203) so ForagedCredential.fields never holds a raw secret; list_credential_fields returns metadata only (src/api/vault/credentials.ts:110)"
+        },
+        {
+          "technique": "public-vs-server-env-split",
+          "verdict": "not-applicable",
+          "evidence": "src/api/vault/oauthGatewayApi.ts:1 the vault API tier imports only the IPC wrapper; zero import.meta.env reads under src/api/vault, so no value can be inlined into the bundle"
+        },
+        {
+          "technique": "outbound-fetch-destination-validation",
+          "verdict": "not-applicable",
+          "evidence": "src/api/vault/oauthGatewayApi.ts:60 forwards authorizeUrl/tokenUrl to the backend; the fetch (and its recorded deviation) belongs to commands-credentials, no fetch happens in this context"
+        }
+      ],
+      "registryProposal": "The subject never says whether a desktop webview counts as the browser tier. src-tauri/src/commands/credentials/auto_cred_browser.rs:173 returns extracted credential values to the operator own webview for review before a session-encrypted save - a capture flow, judged here as outside this subject (credential-vault / capture-form territory), but a scope sentence for native-shell webviews would stop judges splitting on it"
+    },
+    {
+      "context": "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/browser/whitelist/siteEdit.ts:73 binds a site to a credential id only via the privileged browser_sites_bind_credential (src-tauri/src/commands/browser/sites.rs:79); the prior verdict anchor LoginTab.tsx no longer exists and is replaced by this one",
+      "techniques": [
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/browser/sites.rs:85 stores the id reference; browser_login attaches the value backend-side, guarded by src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:838"
+        },
+        {
+          "technique": "omit-the-column-not-the-value",
+          "verdict": "realized",
+          "evidence": "src/lib/bindings/BrowserSite.ts:26 the site row has credential_id and no column a value could ride in"
+        },
+        {
+          "technique": "default-deny-plus-defaulted-owner",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/browser/sites.rs:85 the whitelist lives in the app-local SQLite behind a privileged command; no browser-held role reaches a data store, so the RLS precondition is unmet"
+        },
+        {
+          "technique": "aggregate-view-not-base-table",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/browser/sites.rs:85 same: no browser-reachable store grant exists to narrow"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "browser-credential-boundary",
+      "context": "cbb061cf-5c61-49d4-80d8-98b8f9b40600",
+      "reason": "not-applicable verdict of 2026-10-03 against the current digest; outside this run budget, not re-read"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "e61f931c-25d7-4532-9ec7-ab6f3fc377e2",
+      "reason": "not-applicable verdict of 2026-10-06 against the current digest with 3 anchors; not re-read this run"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7",
+      "reason": "conformant verdict of 2026-10-06 against the current digest, anchoring 5 of 8 techniques; not re-read this run"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "reason": "conformant verdict of 2026-10-06 against the current digest, anchoring 5 of 8 techniques; not re-read this run"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T16:24:24Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "browser-credential-boundary"
+      ],
+      "techniques": [
+        "outbound-fetch-destination-validation",
+        "broker-proxy-attaches-secret",
+        "omit-the-column-not-the-value",
+        "opaque-upstream-errors"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T16:24:24Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "browser-credential-boundary"
+      ],
+      "techniques": [
+        "broker-proxy-attaches-secret",
+        "omit-the-column-not-the-value",
+        "public-vs-server-env-split",
+        "outbound-fetch-destination-validation"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T16:24:24Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "browser-credential-boundary"
+      ],
+      "techniques": [
+        "broker-proxy-attaches-secret",
+        "omit-the-column-not-the-value",
+        "default-deny-plus-defaulted-owner",
+        "aggregate-view-not-base-table"
+      ],
+      "deviations": 0
+    }
+  ]
+}

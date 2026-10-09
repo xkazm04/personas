@@ -1,0 +1,37 @@
+{"schema":"conform-run/1","worker":"e5f5e2b1-1518-44d4-b881-39195a416435","subject":"cost-metering",
+ "evaluatedAt":"2026-10-09T17:20:48Z",
+ "pairs":[
+  {"context":"468953eb-0204-4013-b366-9357b2161138","subject":"cost-metering","bundle":"software-engineering","state":"deviation",
+   "evidence":"src-tauri/core/src/types.rs:407 ExecutionResult.cost_usd (and ExecutionMetrics.cost_usd :526) is a non-optional f64 mid-pipeline, so a run killed before its result line persists as Some(0.0) (src-tauri/src/engine/execution.rs:2394) - unknown spelled as free, and the run-budget record API (src-tauri/core/src/run_budget.rs:188) likewise takes f64, so spawns of unknown cost can approach a ceiling but never cross it",
+   "techniques":[
+    {"technique":"usage-ledgers","verdict":"deviation","evidence":"src-tauri/core/src/types.rs:526 ExecutionMetrics.cost_usd: f64 although result_seen (:531) knows when no cost was reported; src-tauri/src/engine/execution.rs:2394 writes Some(result.cost_usd), converting 'unknown' into a definite $0 at the one non-optional hop"},
+    {"technique":"budget-enforcement","verdict":"deviation","evidence":"src-tauri/core/src/run_budget.rs:188 record(run_id, cost_usd: f64) has no unknown-cost form; the pipeline consumer books nothing for a None cost (src-tauri/src/engine/pipeline_executor.rs:509) and nothing at all for failed/cancelled/incomplete nodes (:530), so failed spend never advances the run ceiling. Realized: launch-gate overshoot declared (run_budget.rs:24), explicit 0=unlimited sentinel (:51), enforce flag captured on the persisted row (src-tauri/db/src/repos/run_budget.rs:39); warn-only default (run_budget.rs:83) is declared, not hidden"},
+    {"technique":"spend-attribution","verdict":"realized","evidence":"src-tauri/core/src/run_budget.rs:94 RunBudgetState keys spend by minted run_id plus owning kind"}
+   ]},
+  {"context":"1bad7967-29dc-4e12-b99a-cb5177b4fb9b","subject":"cost-metering","bundle":"software-engineering","state":"deviation",
+   "evidence":"src-tauri/db/src/repos/llm_spend.rs:85 the headless ledger's only row constructor is a parse of the stream's `result` event, so a killed or timed-out spawn writes no row (no failed-leg writer like turn_ledger's), and :30 swallows a failed insert with an uncounted warn; the curator daily cap sums this ledger (:135), so failed spend and dropped writes are invisible to it",
+   "techniques":[
+    {"technique":"usage-ledgers","verdict":"deviation","evidence":"src-tauri/db/src/repos/llm_spend.rs:85 rows exist only when a result line arrives (failures are not rows); :30 best-effort drop logged but not counted; :135 COALESCE(SUM(cost_usd),0.0) returns a bare (f64,i64) with no window and no unpriced-row count, so NULL-cost rows sum as $0; same zero-coalescing in src-tauri/db/src/repos/execution/metrics.rs:1097 feeds averages"},
+    {"technique":"spend-attribution","verdict":"realized","evidence":"src-tauri/db/src/repos/llm_spend.rs:20 SpendCtx carries source/trigger_kind/model/persona_id/project_id at write time; :320 group_by keeps an explicit '(unknown)' bucket so slices sum to the total"},
+    {"technique":"budget-enforcement","verdict":"realized","evidence":"src-tauri/db/src/repos/llm_spend.rs:173 SpendBand/SpendHeadroom is one computed vocabulary for 'approaching' with Unlimited as an explicit member rather than a divide"}
+   ]},
+  {"context":"532bbf10-3fd3-4b57-a8ea-95a957645697","subject":"cost-metering","bundle":"software-engineering","state":"deviation",
+   "evidence":"src/stores/slices/overview/personaHealthSlice.ts:273 keeps only MonthlySpendResult.items and discards its periodStartUtc, then :435 derives a burn rate over active days of a rolling 30-day chart and :440 projects exhaustion of the UTC-calendar-month ceiling with no reset - per-consumer period math whose projectedExhaustionDays drives a health charge (src/stores/slices/agents/healthCheckSlice.ts:111)",
+   "techniques":[
+    {"technique":"usage-ledgers","verdict":"deviation","evidence":"src/stores/slices/overview/personaHealthSlice.ts:273 drops the period window the backend returned with the totals; the consumer re-derives its own window"},
+    {"technique":"spend-observability","verdict":"deviation","evidence":"src/stores/slices/overview/personaHealthSlice.ts:435 dailyBurnRate = totalCost / activeDays (active, not elapsed, days) and :436 x30 - a projection whose assumption is unstated and whose window differs from the enforcer's; realized: a failed spend source is marked failed, not empty (:328), and budgetRatio reads the gate's own monthly sum (:430)"}
+   ]},
+  {"context":"66bc7a14-bf15-41d7-8d9a-900aa670f47e","subject":"cost-metering","bundle":"software-engineering","state":"not-applicable",
+   "evidence":"src/features/teams/sub_factory/passport/passportModel.ts:134 the context's only cost is a user-maintained flat monthly service list (no units, rates, ledger or metered call); its dispatches hand paid work to a Fleet session (src/features/teams/sub_factory/passport/actionConfirmCatalog.ts:94), whose context owns that spend",
+   "techniques":[],
+   "registryProposal":"Lexical false match on 'cost/model/estimation': app-cost.json is fixed-fee service bookkeeping, not per-unit metering. If anything governs it, it is llm-observability margin-and-unit-economics or a fixed-cost/opex subject the corpus may lack - a coverage question, not a cost-metering pair."}
+ ],
+ "declined":[
+  {"subject":"cost-metering","context":"2fb16136-586e-478d-823f-38434d2d5b9a","reason":"commands-communication is governance: weak - the match itself is doubtful, so it is reported as a coverage question rather than judged"}
+ ],
+ "consults":[
+  {"ts":"2026-10-09T17:20:48Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["usage-ledgers","budget-enforcement","spend-attribution"],"deviations":2},
+  {"ts":"2026-10-09T17:20:48Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["usage-ledgers","spend-attribution","budget-enforcement"],"deviations":1},
+  {"ts":"2026-10-09T17:20:48Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["usage-ledgers","spend-observability"],"deviations":2},
+  {"ts":"2026-10-09T17:20:48Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":[],"deviations":0}
+ ]}

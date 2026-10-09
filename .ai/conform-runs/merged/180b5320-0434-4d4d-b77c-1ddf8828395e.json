@@ -1,0 +1,19 @@
+{"schema": "conform-run/1", "worker": "180b5320-0434-4d4d-b77c-1ddf8828395e", "subject": "entity-lifecycle",
+ "evaluatedAt": "2026-10-09T17:25:22Z",
+ "pairs": [
+  {"context": "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0", "subject": "entity-lifecycle", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/core/personas.rs:2470 the blast-radius probe still counts only running/queued executions while persona_executions is ON DELETE CASCADE (src-tauri/db/src/migrations/schema.rs:111), so a persona delete silently destroys every completed/failed run the preview never names; re-confirmed 2026-10-09 (prior anchor :2425 had drifted)",
+   "techniques": [
+    {"technique": "blast-radius-computation", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/core/personas.rs:2470 probe predicate (status IN running,queued) is narrower than the cascade that takes every execution row - preview omits the run history as a casualty"},
+    {"technique": "cascade-design", "verdict": "deviation", "evidence": "src-tauri/db/src/migrations/schema.rs:111 persona_executions.persona_id is ON DELETE CASCADE; run history should be a declared survivor (detach + denormalized provenance), not a casualty"},
+    {"technique": "change-logging", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/core/personas.rs:989 archive (and restore/delete) flips lifecycle with no transition record - persona_change_log is only written by update_persona's write_diff (:1433), so a persona delete is recorded nowhere once the row is gone, although the log table itself would survive (e02_credentials_and_audit_trails.rs:185 has no FK)"},
+    {"technique": "orphan-reconciliation", "verdict": "conformant", "evidence": "src-tauri/db/src/repos/core/personas.rs:2260 delete captures doomed memory ids inside the door and runs the vector-store reapers with a ledger before the ids leave scope"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "entity-lifecycle", "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400", "reason": "weak-governed context (plugins-artist-gallery) whose context-map.json file_paths is empty - no code to read, and judging a weak match manufactures deviations; left unknown as a coverage question"}
+ ],
+ "consults": [
+  {"ts": "2026-10-09T17:25:22Z", "bundle": "software-engineering", "subjects": ["entity-lifecycle"], "techniques": ["blast-radius-computation", "cascade-design", "change-logging", "orphan-reconciliation"], "deviations": 3}
+ ]}

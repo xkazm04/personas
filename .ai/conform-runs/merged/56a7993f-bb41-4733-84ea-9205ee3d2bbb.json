@@ -1,0 +1,285 @@
+{
+  "schema": "conform-run/1",
+  "worker": "56a7993f-bb41-4733-84ea-9205ee3d2bbb",
+  "subject": "settings",
+  "evaluatedAt": "2026-10-09T16:47:20Z",
+  "pairs": [
+    {
+      "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src-tauri/src/cloud/sync/cursor.rs:12 the sync pipeline reads its flag, cursors and counters only through typed accessors over registered keys (cursor prefix allowlisted at src-tauri/db/src/settings_keys.rs:1650), and its per-tick bookkeeping is excluded from the audit trail (settings_keys.rs:2279, :2313) while the user-facing enable toggle is audited as sync (:2483)",
+      "techniques": [
+        {
+          "technique": "key-registry",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:34 cursor keys are built from settings_keys::CLOUD_SYNC_CURSOR_PREFIX, which the store allowlists at src-tauri/db/src/settings_keys.rs:1650"
+        },
+        {
+          "technique": "typed-accessors",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:12 one accessor per key with the default (off) owned beside it; the store validator restricts the flag to true/false (src-tauri/db/src/settings_keys.rs:2006); reset-to-platform-label is a delete, not a write of the default (cursor.rs:135); peek_cursor (cursor.rs:56) keeps never-synced distinct from the backfill placeholder"
+        },
+        {
+          "technique": "settings-audit-and-history",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/settings_keys.rs:2279 device id / last-at / row counter and :2313 the cursor prefix family are declared audit-excluded in the registry, so the 45s tick cannot flood History; the enable toggles keep category sync at :2483"
+        },
+        {
+          "technique": "setting-kinds",
+          "verdict": "not-judged",
+          "evidence": "store-level taxonomy absence is already recorded on the db pair; this context's keys are one flag defaulting off plus engine bookkeeping"
+        },
+        {
+          "technique": "save-experience",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:2 backend-only module persisting engine bookkeeping; the context has no settings surface"
+        },
+        {
+          "technique": "read-batching",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:448 reads happen engine-side per background pass over the local pool, not as a boot fan-out across the IPC boundary"
+        },
+        {
+          "technique": "inherited-default-override",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:142 the unnamed-device fallback is a compile-time per-OS constant, not a live upstream source"
+        },
+        {
+          "technique": "cross-source-precedence-chain",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:2 one source only: the app_settings table"
+        },
+        {
+          "technique": "presence-decides-precedence",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:2 the store is app-writable; no read-only source carries two names for one key"
+        },
+        {
+          "technique": "in-place-document-patch",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:2 row-per-key store, not one stored document"
+        },
+        {
+          "technique": "applied-defaults-ledger",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:2 no shipped default entries in a user-editable collection"
+        }
+      ]
+    },
+    {
+      "context": "a7ece012-8300-4780-b286-b9cea81801fc",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src-tauri/core/src/models/settings_audit_log.rs:13 SettingsAuditEntry carries every field the record contract names (category :19, key :23, old :28, new :31, optional origin :35, timestamp :36), with origin optional rather than invented as the technique sanctions; the rest of the subject has no surface in a type-definition context",
+      "techniques": [
+        {
+          "technique": "settings-audit-and-history",
+          "verdict": "realized",
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:28 before_value beside after_value (:31) makes revert and no-op detection possible; category :19 makes History filterable by feature; actor :35 is Option, None when the layer cannot attribute"
+        },
+        {
+          "technique": "key-registry",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 serde/ts-rs type definitions only; no key space is declared or read here"
+        },
+        {
+          "technique": "typed-accessors",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no settings read path in this context"
+        },
+        {
+          "technique": "read-batching",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no read path"
+        },
+        {
+          "technique": "setting-kinds",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no key classification lives in the model crate"
+        },
+        {
+          "technique": "save-experience",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no settings surface"
+        },
+        {
+          "technique": "inherited-default-override",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no defaults resolved here"
+        },
+        {
+          "technique": "config-backup-and-restore",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no persisted config file owned here"
+        }
+      ]
+    },
+    {
+      "context": "b4439e30-fcff-4095-97dd-d9d7da2247dd",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/settings/sub_portability/components/export-prototype/types.ts:21 the export surface picks entity scopes (personas, teams, credentials, projects, knowledge, twins, athena) and has no app-settings scope, so the precondition - this context reading or writing the durable settings key space - does not hold; the one settings write on import is backend-side through the validated, audited door (src-tauri/src/commands/core/data_portability/import_athena.rs:94)",
+      "techniques": [
+        {
+          "technique": "config-backup-and-restore",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_portability/components/export-prototype/types.ts:21 portability exports entity data, not the settings store; store backup/rotation is owned by the db context"
+        },
+        {
+          "technique": "save-experience",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_portability/components/export-prototype/types.ts:21 an export/import action surface, not a settings-edit surface"
+        }
+      ],
+      "registryProposal": "lexical-only match (settings/backup/kept): the context sits under src/features/settings/ by navigation, not by owning settings state; route by precondition"
+    },
+    {
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:177 the editor persists persona entity fields through applyPersonaOp, not app_settings keys; its SETTINGS_KEYS (src/features/agents/sub_editor/libs/PersonaDraft.ts:87) names persona draft fields, so the precondition - the application settings key space - does not hold",
+      "techniques": [
+        {
+          "technique": "save-experience",
+          "verdict": "resonant-not-governing",
+          "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:108 dirty = draft differs from baseline; src/hooks/utility/timing/useDebouncedSave.ts:82 flushes a pending debounce on unmount; src/features/agents/sub_editor/components/DeepFanoutToggle.tsx:76 reverts the optimistic flip on a failed write - realized, but on a persona-entity form"
+        },
+        {
+          "technique": "key-registry",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_editor/libs/PersonaDraft.ts:87 SETTINGS_KEYS is a persona-field list, not a store key space"
+        }
+      ],
+      "registryProposal": "technique-shaped resonance: save-experience is a configuration-form contract this persona editor realizes well, but it lives inside a subject whose precondition is the app settings store; consider sharing save-experience with draft-editing/form so entity-config surfaces are governed without importing the store techniques. The lexical match came from the repo naming a persona tab 'settings'."
+    },
+    {
+      "context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/shared/components/forms/SettingRow.tsx:14 the shared row is a controlled primitive (checked + onChange :16) holding no stored state and performing no write, so every store and save technique belongs to the caller; the precondition does not hold at the primitive",
+      "techniques": [
+        {
+          "technique": "save-experience",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/forms/AccessibleToggle.tsx:32 the toggle only calls the caller-supplied onChange; reflecting stored state and reverting on failure are the consuming surface's job"
+        },
+        {
+          "technique": "settings-audit-and-history",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/forms/SettingRow.tsx:14 presentational; recent-change markers belong to the settings surface that composes it"
+        }
+      ],
+      "registryProposal": "possible upward lesson, not a deviation: a shared settings row is the natural carrier for the recent-change-at-the-scene marker; SettingRow has statusDot/countLabel slots but none for 'changed recently' - worth an application note under settings-audit-and-history"
+    }
+  ],
+  "declined": [
+    {
+      "subject": "settings",
+      "context": "97025c06-0d64-4025-8a1f-98b90ba1c233",
+      "reason": "model-config: real paths are two lib files (compareHelpers.ts, OllamaCloudPresets.ts); the only settings touch is an apparently unused OLLAMA_API_KEY_SETTING constant duplicating src-tauri/db/src/settings_keys.rs:28 - too thin to judge this run; secret-in-settings is already census-counted (settings-key-holding-secret)"
+    },
+    {
+      "subject": "settings",
+      "context": "ad601e35-b998-4029-97a5-77487f00d561",
+      "reason": "lib-types: shared type definitions; unread this run (budget)"
+    },
+    {
+      "subject": "settings",
+      "context": "f197653d-267c-4a91-bffc-b3be17434877",
+      "reason": "trigger-config: per-trigger config panels; unread this run (budget)"
+    },
+    {
+      "subject": "settings",
+      "context": "876c0b4e-6472-4544-a21b-56e7529fb6b3",
+      "reason": "vault-shared-vector: unread this run (budget)"
+    },
+    {
+      "subject": "settings",
+      "context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd",
+      "reason": "webbuild: unread this run (budget)"
+    },
+    {
+      "subject": "settings",
+      "context": "cab45fee-e439-4bff-9924-217b1acc17f8",
+      "reason": "plugins-artist-hooks: map row lists zero paths (dead context)"
+    },
+    {
+      "subject": "settings",
+      "context": "b2d7acbc-0191-46e4-8a4d-87c229410c7e",
+      "reason": "plugins-artist-media-studio-hooks: map row lists zero paths (dead context)"
+    },
+    {
+      "subject": "settings",
+      "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0",
+      "reason": "plugins-research-lab-shared: governance weak and zero paths - a coverage question, not judged by rule"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T16:47:20Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "settings"
+      ],
+      "techniques": [
+        "key-registry",
+        "typed-accessors",
+        "settings-audit-and-history"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T16:47:20Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "settings"
+      ],
+      "techniques": [
+        "settings-audit-and-history"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T16:47:20Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "settings"
+      ],
+      "techniques": [
+        "config-backup-and-restore",
+        "save-experience"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T16:47:20Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "settings"
+      ],
+      "techniques": [
+        "save-experience",
+        "key-registry"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T16:47:20Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "settings"
+      ],
+      "techniques": [
+        "save-experience",
+        "settings-audit-and-history"
+      ],
+      "deviations": 0
+    }
+  ]
+}

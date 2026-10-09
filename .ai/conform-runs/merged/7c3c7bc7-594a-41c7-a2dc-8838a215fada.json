@@ -1,0 +1,31 @@
+{"schema": "conform-run/1", "worker": "7c3c7bc7-594a-41c7-a2dc-8838a215fada", "subject": "undo-history",
+ "evaluatedAt": "2026-10-09T17:18:00Z",
+ "evaluatedAgainst": "sha256-b2:6b331b14c940f6a7", "evaluatedRevision": 3,
+ "pairs": [
+  {"context": "1ff7809a-171b-4baa-9c9b-12d888b017f0", "subject": "undo-history", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:224 clears redo only inside pushUndo, which runs after the 800ms debounce (src/features/agents/sub_editor/libs/useEditorSave.ts:217) and an IPC await (useEditorSave.ts:185), and undo (EditorDocument.tsx:228) neither cancels the pending save (cancelAll, EditorDocument.tsx:187) nor awaits the in-flight one, so redo after a divergent edit reapplies a stale step over the new value (useEditorSave.ts:162) and Ctrl+Z inside the debounce window reverts the previous step while the open edit is still pending; re-verified 2026-10-09 on code unchanged since the 2026-10-05 verdict, all 7 techniques now judged",
+   "evaluatedAt": "2026-10-09", "evaluatedAgainst": "sha256-b2:6b331b14c940f6a7", "evaluatedRevision": 3,
+   "techniques": [
+    {"technique": "redo-semantics", "verdict": "deviation", "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:224 truncates redo only when the post-save pushUndo lands (src/features/agents/sub_editor/libs/useEditorSave.ts:185), not on the edit, so redo stays enabled after a divergent edit for the 800ms debounce plus the IPC round-trip"},
+    {"technique": "gesture-coalescing", "verdict": "deviation", "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:228 undo pops the last committed entry without first closing the open step (no cancelAll at EditorDocument.tsx:187 and no flush), so undo pressed while a debounced edit is pending reverts the previous gesture. Time-window coalescing itself is realized at src/features/agents/sub_editor/libs/useEditorSave.ts:217"},
+    {"technique": "undo-scope", "verdict": "deviation", "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:232 restores without settling the in-flight save; the slice is declared (src/features/agents/sub_editor/libs/PersonaDraft.ts:100) and persona-guarded (src/features/agents/sub_editor/libs/useEditorSave.ts:128), but a save already in flight can overwrite the restored value"},
+    {"technique": "stack-policy", "verdict": "realized", "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:46 MAX_UNDO_DEPTH 50, evicted oldest-first at EditorDocument.tsx:222; the stack is cleared only on a real persona switch (src/features/agents/sub_editor/hooks/useEditorDraft.ts:88), never on autosave"},
+    {"technique": "undo-model-selection", "verdict": "realized", "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:175 captures a value snapshot of the scoped slice per coalesced save, and restore/reapply (useEditorSave.ts:161-162) persist it through the same buildOp the forward save uses, so no inverse can drift: a snapshot of a small slice, as the decision procedure prescribes. Minor gap: the choice and its arithmetic are not written next to the stack (src/features/agents/sub_editor/libs/EditorDocument.tsx:15 describes the mechanism only)"},
+    {"technique": "checkpoint-restore", "verdict": "not-applicable", "evidence": "src/features/agents/sub_editor/components/PersonaChangeHistory.tsx:24 says the context's only history surface is read-only (no restore), and the context has no replace-the-document operation that would need a before-checkpoint"},
+    {"technique": "execution-emitted-inverse", "verdict": "not-applicable", "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:161 the step's closures replay captured value snapshots (applyState(prev/next)), not inverses built while the operation runs; the context chose the snapshot model, and the closures capture values, not references (useEditorSave.ts:175)"}
+   ],
+   "registryProposal": "redo-semantics and gesture-coalescing both assume the step boundary is the edit. Under debounced autosave the history entry is committed when the save completes, not at the edit, so the stack lags the document by the debounce plus the IPC round-trip. That is the shared root of this context's three technique deviations. A short rule would name the fix: invalidate redo and close the open step on the edit, and have undo flush or cancel the pending save before it pops. Candidate home: gesture-coalescing's 'what closes an open step' list."},
+  {"context": "b2d7acbc-0191-46e4-8a4d-87c229410c7e", "subject": "undo-history", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "context-map.json:7596 the context still has empty file_paths, and git ls-files finds only i18n locale JSON under the media_studio name (no code), so the 80-step undo deleted with the Artist plugin has no surface to judge; reconfirmed 2026-10-09",
+   "evaluatedAt": "2026-10-09", "evaluatedAgainst": "sha256-b2:6b331b14c940f6a7", "evaluatedRevision": 3,
+   "techniques": [],
+   "registryProposal": "This is a dead context, and the pairing exists only because of its old vocabulary. Its pair should retire when the context map drops the context."}
+ ],
+ "declined": [],
+ "consults": [
+  {"ts": "2026-10-09T17:18:00Z", "bundle": "software-engineering", "subjects": ["undo-history"], "techniques": ["redo-semantics", "gesture-coalescing", "undo-scope", "stack-policy", "undo-model-selection", "checkpoint-restore", "execution-emitted-inverse"], "deviations": 3},
+  {"ts": "2026-10-09T17:18:00Z", "bundle": "software-engineering", "subjects": ["undo-history"], "techniques": [], "deviations": 0}
+ ]
+}

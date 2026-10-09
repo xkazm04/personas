@@ -1,0 +1,45 @@
+{"schema": "conform-run/1", "worker": "b12eff39-efd6-458f-bd03-c52ddd65b8b4", "subject": "deployment-contract",
+ "evaluatedAt": "2026-10-09T17:46:16Z",
+ "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc", "evaluatedRevision": 4,
+ "pairs": [
+  {"context": "e0a448bc-24d4-4663-ba31-27d4ce378a14", "subject": "deployment-contract", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc", "evaluatedRevision": 4,
+   "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:58 the deployment smoke test still calls local execute_persona instead of the deployed endpoint the card advertises (DeploymentCard.tsx:44), although src/api/system/cloud.ts:49 cloudExecutePersona exists, so its pass/fail describes the local twin and not the deployment",
+   "techniques": [
+    {"technique": "deploy-gate-coupling", "verdict": "deviation", "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:58 verifying check exercises the local executor, not the address production serves (src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:44); the rule 'point the verifying check at the address production serves, never at a local twin' is violated verbatim"},
+    {"technique": "platform-build-parity", "verdict": "not-applicable", "evidence": "src/api/system/cloud.ts:49 the cloud host executes a persona definition; it does not build this repository's code, so there is no second build system to keep in parity"},
+    {"technique": "cache-immutability-licensing", "verdict": "not-applicable", "evidence": "src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:44 the deployment is an API endpoint, not a served build output with cacheable assets"}
+   ]},
+  {"context": "2b61b648-d166-4255-b7b7-5d32ffdd6751", "subject": "deployment-contract", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc", "evaluatedRevision": 4,
+   "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1282 both GitLab rollbacks (offered at src/features/plugins/gitlab/components/DeploymentHistoryTab.tsx:55 and GitOpsVersionHistory.tsx:63) rebuild the agent from the historical prompt plus the CURRENT local tools and model, so 'rollback' ships an artifact nobody ever ran instead of re-pointing to the last known-good one",
+   "techniques": [
+    {"technique": "environment-promotion", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:989 rollback = persona_to_agent_with_prompt(current persona, current persona_tools, snapshot prompt), a recomputation, not re-pointing; and src-tauri/src/commands/infrastructure/gitlab.rs:856 cuts the version tag at default_branch on every path while only the fallback path (gitlab.rs:817) commits the deployed AGENTS.md, so whenever create_duo_agent succeeds the tag names a commit that does not hold the deployed definition and a later tag rollback (gitlab.rs:960) restores the wrong snapshot"},
+    {"technique": "platform-build-parity", "verdict": "not-applicable", "evidence": "src-tauri/src/gitlab/client.rs:176 the deploy POSTs an agent definition to GitLab's API; GitLab does not build this repository's code"},
+    {"technique": "cache-immutability-licensing", "verdict": "not-applicable", "evidence": "src-tauri/src/gitlab/client.rs:176 the deployed artifact is an API-registered agent definition, not a served asset tree"}
+   ],
+   "registryProposal": "Pipeline viewer / deployment-history surfaces in this context are cicd-monitoring territory (watching deployments you do not own); only the versioned deploy + rollback commands it drives are deployment-contract. Consider pairing cicd-monitoring here if the matcher has not."},
+  {"context": "93359619-794a-4de7-a5bb-c7864e475fe7", "subject": "deployment-contract", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc", "evaluatedRevision": 4,
+   "evidence": "src-tauri/src/engine/platforms/deploy.rs:25 the only deploy here pushes a persona's design_result JSON to n8n/Zapier/GitHub via a thin wrapper (src-tauri/src/commands/tools/deploy_automation.rs:16): no host build, no environment ladder, no verification racing it, no served assets, so none of the subject's six techniques has its precondition met",
+   "techniques": [
+    {"technique": "deploy-gate-coupling", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/tools/deploy_automation.rs:16 no verifying check exists to race or couple; deploy.rs activation_warning already refuses to claim an unconfirmed remote state"},
+    {"technique": "environment-promotion", "verdict": "not-applicable", "evidence": "src-tauri/src/engine/platforms/deploy.rs:25 a single workflow-definition push with no preview/production rungs or rollback"},
+    {"technique": "platform-build-parity", "verdict": "not-applicable", "evidence": "src-tauri/src/engine/platforms/deploy.rs:25 the target receives JSON, it builds no repository code"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "deployment-contract", "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1", "reason": "already judged not-applicable at the current digest sha256-b2:0aecb9f382210cdc (revisionsBehind 0, 2026-09-23); nothing moved, re-judging would spend budget on a settled pair"},
+  {"subject": "deployment-contract", "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400", "reason": "weak context and dead: context-map.json file_paths is empty and none of its entry_points (src/features/plugins/artist/sub_gallery/*) is tracked by git; matched only on the word 'assets'"},
+  {"subject": "deployment-contract", "context": "cab45fee-e439-4bff-9924-217b1acc17f8", "reason": "dead context: context-map.json file_paths is empty and none of its entry_points (src/features/plugins/artist/hooks/useArtistAssets.ts etc.) is tracked by git; matched only on 'asset'/'assets', a technique-shaped resonance with cache-immutability-licensing, not the subject"}
+ ],
+ "consults": [
+  {"ts": "2026-10-09T17:46:16Z", "bundle": "software-engineering", "subjects": ["deployment-contract"], "techniques": ["deploy-gate-coupling", "platform-build-parity", "cache-immutability-licensing"], "deviations": 1},
+  {"ts": "2026-10-09T17:46:16Z", "bundle": "software-engineering", "subjects": ["deployment-contract"], "techniques": ["environment-promotion", "platform-build-parity", "cache-immutability-licensing"], "deviations": 1},
+  {"ts": "2026-10-09T17:46:16Z", "bundle": "software-engineering", "subjects": ["deployment-contract"], "techniques": ["deploy-gate-coupling", "environment-promotion", "platform-build-parity"], "deviations": 0}
+ ],
+ "registryProposal": "deployment-contract's golden path opens 'A repository that deploys through a hosting platform', but in this repo it bites hardest on PRODUCT-mediated deployments (the app shipping a user's persona to a cloud runtime / GitLab Duo): deploy-gate-coupling already absorbed one such lesson (the 'verify the address production serves, not a local twin' rule), and environment-promotion's rollback-is-re-pointing caught a second here. The golden path should say whether an application that deploys its users' artifacts to a host is in scope, so judges stop deciding it by analogy pair by pair."
+}

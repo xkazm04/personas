@@ -1,0 +1,215 @@
+{
+  "schema": "conform-run/1",
+  "worker": "4cf233c4-a788-4e7f-9780-653d49dacaf3",
+  "subject": "accessibility",
+  "evaluatedAt": "2026-10-09T15:53:49.488Z",
+  "pairs": [
+    {
+      "context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5",
+      "subject": "accessibility",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/components/forms/KeyValueEditor.tsx:169 names its key/value inputs by placeholder alone and the trash button at :183 has no name, so the catalog's repeatable-row editor reads \"edit text\" and \"button\"; src/features/shared/components/forms/PasswordToggleField.tsx:113 takes the reveal control out of the tab order (pointer-only), and src/features/shared/components/forms/PillGroup.tsx:58 is a radiogroup with no arrow model whose pills stay focusable while faded out at :65",
+      "techniques": [
+        {
+          "technique": "name-and-description-wiring",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/forms/KeyValueEditor.tsx:169 placeholder is the only name source (vanishes once typed); :183 icon-only Trash button has no aria-label; src/features/shared/components/forms/FormField.tsx:269 renders the hint with no id so it joins no describedby chain; src/features/shared/components/forms/CharBudget.tsx:59 hard-codes an English accessible name outside i18n. Realized: src/features/shared/components/forms/FormField.tsx:250 label htmlFor + :179 aria-describedby plumbing generated inside the primitive"
+        },
+        {
+          "technique": "keyboard-navigation-models",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/forms/PasswordToggleField.tsx:113 tabIndex={-1} makes reveal unreachable by keyboard; src/features/shared/components/forms/PillGroup.tsx:76 every role=radio is its own tab stop with no arrow/roving model, and :103 injects caller content inside the radiogroup beside its members; src/features/shared/components/forms/Listbox.tsx:185 the search input sits inside role=listbox (:241) and :164 moves only a visual focusIndex with no aria-activedescendant - half of each composite model"
+        },
+        {
+          "technique": "hidden-but-mounted-inertness",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/forms/PillGroup.tsx:65 hides the preset pills with w-0/opacity-0 while customInputActive, closing only the visual channel - the radios keep their tab stops and tree nodes (the invisible detour)"
+        },
+        {
+          "technique": "live-region-architecture",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/forms/FormField.tsx:281 mounts role=alert already holding the error text (semantics #1: silent on most pairings) instead of calling the shell provider; src/features/shared/components/forms/CharBudget.tsx:59 sits in an aria-live region that changes on every keystroke - an ambient tally admitted as news"
+        },
+        {
+          "technique": "primitive-level-a11y",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/forms/AccessibleToggle.tsx:41 is the contract done right (native button, role=switch, required label at :43, aria-checked, focus ring) and src/features/shared/components/forms/Slider.tsx:102 wraps the native range; but KeyValueEditor, PasswordToggleField and PillGroup ship the defects above to every consumer from inside the catalog"
+        },
+        {
+          "technique": "a11y-verification",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/forms/__tests__/FormErrorSummary.test.tsx:80 asserts by role and accessible name; src/features/shared/components/forms/FormErrorSummary.tsx:34 moves focus to the offending field"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:5e30485ee0c7c123",
+      "evaluatedRevision": 7,
+      "registryProposal": "Listbox puts a search <input> inside role=listbox; keyboard-navigation-models states the owned-members invariant abstractly - a worked \"filterable listbox: the input is the combobox, the popup is the listbox\" counter-example would make the rule land on its commonest violation."
+    },
+    {
+      "context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0",
+      "subject": "accessibility",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/components/buttons/CopyButton.tsx:76 names its icon-only form by native title alone (last-resort source) and :133 swaps the visible label to \"Copied\" with no announcement - the transient-outcome half-move the technique names; src/features/shared/components/buttons/Button.tsx:152 offers icon-only sizes while ButtonProps (:96) requires no name, so nameless icon buttons compile",
+      "techniques": [
+        {
+          "technique": "name-and-description-wiring",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/buttons/CopyButton.tsx:76 title is the only name of the icon-only variant; :133 the label slot carries the transient outcome, so the name churns Copy->Copied and nothing reaches the announcement channel"
+        },
+        {
+          "technique": "primitive-level-a11y",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/buttons/Button.tsx:152 icon-only is a size variant of the general ButtonProps (:96) with no required label/aria-label, so the nameless case is not structurally hard to omit. Realized: aria-busy owned by the primitive at :248 and src/features/shared/components/buttons/AsyncButton.tsx:100"
+        },
+        {
+          "technique": "keyboard-navigation-models",
+          "verdict": "deviation",
+          "evidence": "Roving tabindex realized (src/features/shared/components/layout/PanelTabBar.tsx:84, src/features/shared/components/layout/SegmentedTabs.tsx:132) and drag has a keyboard path (src/features/shared/components/kanban/KanbanBoard.tsx:201), but each tab strip re-derives its own arrow handler (src/features/shared/components/layout/PanelTabBar.tsx:52, src/features/shared/components/layout/SegmentedTabs.tsx:83) instead of one shared mechanism - the divergence the technique warns of"
+        },
+        {
+          "technique": "hidden-but-mounted-inertness",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:59 is a role=dialog whose background containment belongs to modal-stack (useDialogKeyboard at :50); no in-surface keep-mounted hide was found in this context"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:5e30485ee0c7c123",
+      "evaluatedRevision": 7
+    },
+    {
+      "context": "dc471d31-ae30-4ac9-b015-d51969df458d",
+      "subject": "accessibility",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/chrome/CommandPalette.tsx:447 names the palette input by placeholder alone and arrow selection is visual-only (src/features/shared/chrome/CommandPaletteResults.tsx:80, no combobox/listbox roles or aria-activedescendant), so the app-wide keyboard path is silent to a screen reader as selection moves; src/features/shared/chrome/notifications/NotificationCenter.tsx:195 hard-codes an English \"Dismiss\" on a button kept at opacity-0 until hover (:194), so keyboard focus lands on an invisible control",
+      "techniques": [
+        {
+          "technique": "keyboard-navigation-models",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/CommandPaletteResults.tsx:80 the active row is a styling flag only - neither real focus nor aria-activedescendant moves; src/features/shared/chrome/notifications/NotificationCenter.tsx:194 focusable dismiss is opacity-0 with no focus-visible reveal (focus not visible). Realized: src/features/shared/chrome/sidebar/Sidebar.tsx:210 named nav landmark, src/features/shared/chrome/sidebar/SidebarLevel1.tsx:238 aria-current"
+        },
+        {
+          "technique": "name-and-description-wiring",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/CommandPalette.tsx:447 placeholder-only name; src/features/shared/chrome/notifications/NotificationCenter.tsx:195 and :320 untranslated literal names. Realized: src/features/shared/chrome/TitleBar.tsx:74 icon buttons carry translated aria-labels"
+        },
+        {
+          "technique": "live-region-architecture",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:219 owns a component-level polite region re-voicing four badge tallies on every count change - an ambient display admitted as news, outside the provider; yet :184 already calls announceImperative for section changes and src/features/shared/chrome/ToastContainer.tsx:282 keeps a persistent shell-mounted region"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:5e30485ee0c7c123",
+      "evaluatedRevision": 7,
+      "registryProposal": "shared-chrome realizes the command palette as an overlay; modal-stack (focus-and-scroll-containment) plausibly governs it as well and is worth checking as a pairing - this worker did not add it."
+    },
+    {
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "subject": "accessibility",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/components/display/UnifiedTable.tsx:595 moves an index-keyed, visual-only focusedIndex (no real focus, no aria-activedescendant) inside a tab stop whose outline is removed at :696, so the shared table every list surface inherits is silent to a screen reader and teleports after a resort; src/features/shared/components/display/ColumnResize.tsx:126 is a pointer-only separator (:130 onPointerDown) with no keyboard resize",
+      "techniques": [
+        {
+          "technique": "keyboard-navigation-models",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:595 position keyed by sortedData index (identity-survives-reuse) and expressed only as a ring; :696 focus:outline-none strips the indicator from the container stop; src/features/shared/components/display/ColumnResize.tsx:130 resize exists for pointer only. Realized: src/features/shared/components/display/DensityToggle.tsx:78 roving radiogroup"
+        },
+        {
+          "technique": "primitive-level-a11y",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:615 claims role=table while rows (src/features/shared/components/display/UnifiedTableRow.tsx:121) carry no row/cell roles, so the claimed composite owns no members. Realized: src/features/shared/components/display/SortableHeader.tsx:116 aria-sort on the column header, src/features/shared/components/display/StatusDot.tsx:146 required label so state is not hue-alone"
+        },
+        {
+          "technique": "name-and-description-wiring",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/display/StatusDot.tsx:146 required translated label; src/features/shared/components/display/DataGrid.tsx:500 named bulk toolbar"
+        },
+        {
+          "technique": "a11y-verification",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/display/__tests__/SortableHeader.test.tsx:31 queries by role and asserts aria-sort - a screen-reader-visible assertion"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:5e30485ee0c7c123",
+      "evaluatedRevision": 7
+    }
+  ],
+  "declined": [
+    {
+      "subject": "accessibility",
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "reason": "already judged deviation against the current digest (sha256-b2:5e30485ee0c7c123, rev 7); not stale, not re-read this run"
+    },
+    {
+      "subject": "accessibility",
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "reason": "already judged deviation against the current digest; not stale"
+    },
+    {
+      "subject": "accessibility",
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+      "reason": "already judged conformant against the current digest; not stale"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T15:53:49.488Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "accessibility"
+      ],
+      "techniques": [
+        "name-and-description-wiring",
+        "keyboard-navigation-models",
+        "hidden-but-mounted-inertness",
+        "live-region-architecture",
+        "primitive-level-a11y",
+        "a11y-verification"
+      ],
+      "deviations": 5
+    },
+    {
+      "ts": "2026-10-09T15:53:49.488Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "accessibility"
+      ],
+      "techniques": [
+        "name-and-description-wiring",
+        "primitive-level-a11y",
+        "keyboard-navigation-models",
+        "hidden-but-mounted-inertness"
+      ],
+      "deviations": 3
+    },
+    {
+      "ts": "2026-10-09T15:53:49.488Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "accessibility"
+      ],
+      "techniques": [
+        "keyboard-navigation-models",
+        "name-and-description-wiring",
+        "live-region-architecture"
+      ],
+      "deviations": 3
+    },
+    {
+      "ts": "2026-10-09T15:53:49.488Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "accessibility"
+      ],
+      "techniques": [
+        "keyboard-navigation-models",
+        "primitive-level-a11y",
+        "name-and-description-wiring",
+        "a11y-verification"
+      ],
+      "deviations": 2
+    }
+  ]
+}

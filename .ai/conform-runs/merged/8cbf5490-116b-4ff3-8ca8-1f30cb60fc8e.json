@@ -1,0 +1,99 @@
+{
+  "schema": "conform-run/1",
+  "worker": "8cbf5490-116b-4ff3-8ca8-1f30cb60fc8e",
+  "subject": "subprocess-lifecycle",
+  "evaluatedAt": "2026-10-09T17:33:02Z",
+  "pairs": [
+    {
+      "context": "2de6333f-8375-404b-8fdc-fe0fb15d4f95",
+      "subject": "subprocess-lifecycle",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/fleet/headless.rs:72 fleet kill is a single-pid sysinfo kill (PTY lane: portable-pty killer, pty.rs:649), never the tree, though the repo already has kill_tree (src-tauri/src/webbuild/devserver.rs:595) - closing/hibernating a claude session leaves its MCP servers and tool shells running as unowned orphans",
+      "techniques": [
+        {
+          "technique": "termination-and-reaping",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:72 root-pid kill only, no polite rung or tree; orphans are found by name heuristic (src-tauri/src/commands/fleet/process_scan.rs:46), not a spawn-time identity marker, so the boot sweep cannot act (src-tauri/src/commands/fleet/persist.rs:402 declines auto-kill because cwd matching is ambiguous)"
+        },
+        {
+          "technique": "spawn-contract",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:736 argv vector + validated cwd + resolved exe are realized, but env is inherit-then-strip (also src-tauri/src/commands/fleet/pty.rs:633), not constructed from an allowlist; headless.rs:725 is a second spawn door beside engine cli_process"
+        },
+        {
+          "technique": "concurrency-and-slots",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/fleet/stale.rs:2074 live_slot_evictions: declared soft cap, oldest-idle resumable sessions only, working sessions untouchable"
+        },
+        {
+          "technique": "liveness-and-heartbeats",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/fleet/stale.rs:483 stall measured per session from transcript growth (artifact effects), with a separate pre-contact deadline NEVER_ATTACHED_SECS at stale.rs:71"
+        }
+      ],
+      "registryProposal": "liveness-and-heartbeats: this fleet degrades a silent session to Stale (claim) and the auto-forget/doze passes act on it; worth an application showing transcript-growth as the honest heartbeat for a CLI child whose stdout is a TUI"
+    },
+    {
+      "context": "6a81750d-fdbf-4518-bae6-689303e1a884",
+      "subject": "subprocess-lifecycle",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/session_pool.rs:145 the warm-session fingerprint hashes tool_count, not tool identity, and omits credentials and CLI version although the module doc (session_pool.rs:9) promises credential invalidation - swapping one tool or credential for another resumes a session built in a different world",
+      "techniques": [
+        {
+          "technique": "session-reuse",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/session_pool.rs:145 under-inclusive fingerprint (count not identity; no credentials, binary version, cwd or scheme version), contrary to prefer-over-inclusion; offer is success-only (src-tauri/src/engine/execution.rs:2487) and take consumes (src-tauri/src/commands/execution/executions.rs:598), which are realized"
+        },
+        {
+          "technique": "concurrency-and-slots",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/queue.rs:74 AdmitResult::QueueFull - bounded queue with visible refusal; per-persona cap snapshotted at queue.rs:47 beside the global cap"
+        },
+        {
+          "technique": "host-resource-protection",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/resource_governor.rs:29 hysteresis band (CPU pause 70 / resume 55, memory 90/88) and first-sample skip at resource_governor.rs:45"
+        },
+        {
+          "technique": "liveness-and-heartbeats",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/process_activity.rs:18 activity events carry run_id, keyed per run rather than a global light"
+        }
+      ],
+      "registryProposal": "session-reuse: the fingerprint inputs are assembled by hand at three call sites around one shared helper (src-tauri/src/commands/execution/executions.rs:585, src-tauri/src/engine/execution.rs:1063 and :1885) - a shared hash function is not enough for compute-it-in-one-place; the technique could name argument assembly as the drift point"
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-09T17:33:02Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "subprocess-lifecycle"
+      ],
+      "techniques": [
+        "termination-and-reaping",
+        "spawn-contract",
+        "concurrency-and-slots",
+        "liveness-and-heartbeats"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-09T17:33:02Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "subprocess-lifecycle"
+      ],
+      "techniques": [
+        "session-reuse",
+        "concurrency-and-slots",
+        "host-resource-protection",
+        "liveness-and-heartbeats"
+      ],
+      "deviations": 1
+    }
+  ]
+}

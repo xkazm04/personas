@@ -1,0 +1,111 @@
+{
+  "schema": "conform-run/1",
+  "worker": "06cf5b63-418d-4c01-91ce-84b634b4f0bf",
+  "subject": "app-shell",
+  "evaluatedAt": "2026-10-09T16:15:53Z",
+  "pairs": [
+    {
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/system/uiSlice.ts:571 setSettingsTab writes any id unchecked and src/stores/systemStore.ts:95 persists settingsTab with no restore validation (only sidebarSection is checked, systemStore.ts:234), so a retired SettingsTab id in a stored blob makes src/features/settings/components/SettingsPage.tsx:72 tabComponents[tab] undefined and Settings crashes to its error boundary - navigation-model restore rule unmet for sub-destinations (same for persisted cloudTab/homeTab, systemStore.ts:82,88)",
+      "techniques": [
+        {
+          "technique": "navigation-model",
+          "verdict": "deviation",
+          "evidence": "src/stores/systemStore.ts:95 settingsTab restored without vocabulary check (contrast systemStore.ts:234 for sidebarSection); setter src/stores/slices/system/uiSlice.ts:571 validates nothing. Realized: one door records history via recordNavigation at uiSlice.ts:532, and platform back inputs are bound to it at src/lib/keyboard/NavHistoryShortcuts.tsx:41"
+        },
+        {
+          "technique": "entitlement-gating",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/uiSlice.ts:523 setSidebarSection applies no policy; only Back/Forward consult gates (uiSlice.ts:718 gatePredicate) and the router swaps a gated section to Home with no explanation (src/features/personas/PersonasPage.tsx:309) - every entrance is gated, but arrival at a forbidden section is a silent eviction, not an explanation surface"
+        }
+      ],
+      "registryProposal": "applications/react--navigation-model.md cites systemStore.ts:138-141 for the goals->teams restore migration; it now sits at src/stores/systemStore.ts:185-187, and the stronger evidence is systemStore.ts:225-235 (unknown persisted id fell back to home after a gate-lookup crash survived restarts). Refresh the anchor and add the sub-destination restore gap as the counter-example.",
+      "evaluatedAt": "2026-10-09",
+      "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
+      "evaluatedRevision": 6
+    },
+    {
+      "context": "456eb952-9b93-4de4-bad5-79e6f101aeb1",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:73 renders the incidents tab with no entitlement check and the setter src/stores/slices/overview/overviewSlice.ts:279 checks nothing, so src/features/companions/athena/decision/useDecisionQueue.ts:153 and src/features/companions/athena/ProactiveCard.tsx:53 route straight to tabs the sidebar hides below TEAM (src/features/shared/chrome/sidebar/sidebarData.ts:81,87) - entitlement-gating one-gate-every-entrance unmet (re-verified 2026-10-09; setter anchor moved from :222)",
+      "techniques": [
+        {
+          "technique": "entitlement-gating",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/overview/overviewSlice.ts:279 setOverviewTab ungated; src/features/companions/athena/guidance/appActions.ts:60 is a further ungated entrance to incidents"
+        },
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "realized",
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:72-79 every subtab renders inside one Suspense + ErrorBoundary unit (per the prior verdict lazyRetry-wrapped)"
+        }
+      ],
+      "evaluatedAt": "2026-10-09",
+      "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
+      "evaluatedRevision": 6
+    }
+  ],
+  "declined": [
+    {
+      "subject": "app-shell",
+      "context": "5ab49df3-3442-4ea6-a405-077dec64850d",
+      "reason": "persona-core-codex is a weak-governance row (badge/sub/section tokens only); judging it would manufacture a match - left as a coverage question"
+    },
+    {
+      "subject": "app-shell",
+      "context": "4560e824-e952-45a9-8aef-fe88d721952e",
+      "reason": "home-welcome deviation re-verified live 2026-10-09 (src/features/home/sub_welcome/NavigationGrid.tsx:67 still filters on SIMPLE_SECTIONS); digest unchanged, verdict left as written to keep its fuller evidence"
+    },
+    {
+      "subject": "app-shell",
+      "context": "83a8a744-2036-4e3e-9654-6fcec82334ff",
+      "reason": "plugins-obsidian-brain deviation re-verified live (src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:1 still imports plain React lazy, used at :10-15); verdict current, not rewritten"
+    },
+    {
+      "subject": "app-shell",
+      "context": "dc471d31-ae30-4ac9-b015-d51969df458d",
+      "reason": "shared-chrome deviation re-verified live (src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120-122 casts still present); verdict current, not rewritten"
+    },
+    {
+      "subject": "app-shell",
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+      "reason": "not-applicable verdict judged 2026-10-03 against the current digest sha256-b2:62a9a7fc993ea8b5; not re-read this run"
+    },
+    {
+      "subject": "app-shell",
+      "context": "89eddf81-0c57-441d-a07d-de36bf022cb5",
+      "reason": "not-applicable verdict judged 2026-10-03 against the current digest; not re-read this run"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T16:15:53Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "navigation-model",
+        "entitlement-gating"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T16:15:53Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "entitlement-gating",
+        "lazy-section-loading"
+      ],
+      "deviations": 1
+    }
+  ]
+}

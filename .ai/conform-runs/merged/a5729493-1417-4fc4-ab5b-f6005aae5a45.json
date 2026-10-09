@@ -1,0 +1,229 @@
+{
+  "schema": "conform-run/1",
+  "worker": "a5729493-1417-4fc4-ab5b-f6005aae5a45",
+  "subject": "session-continuation",
+  "evaluatedAt": "2026-10-09T17:56:23Z",
+  "pairs": [
+    {
+      "context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e",
+      "subject": "session-continuation",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/harness/orchestrator.ts:118 the loop exits on a pass rate built from the model's self-reported feature statuses (written at :209 before gates, counted across failed areas at src/lib/harness/plan-builder.ts:76), so evaluator-passed is read as complete; and an area left in-progress by a crash (:151) is never re-picked (plan-builder.ts:57 takes only pending), so a resume reports done with work stranded",
+      "techniques": [
+        {
+          "technique": "continuation-as-state",
+          "verdict": "realized",
+          "evidence": "src/lib/harness/orchestrator.ts:93 the loop re-reads persisted plan.json and drives continuation itself; prompt text is not the carrier (arming is an explicit CLI act, so no lease is needed)"
+        },
+        {
+          "technique": "single-loop-authority",
+          "verdict": "deviation",
+          "evidence": "src/lib/harness/orchestrator.ts:118 terminal yield on passRate whose numerator (src/lib/harness/plan-builder.ts:76) counts model-claimed pass statuses written at orchestrator.ts:209 even when required gates failed - evaluator-passed collapsed into complete"
+        },
+        {
+          "technique": "stuck-loop-detection",
+          "verdict": "deviation",
+          "evidence": "src/lib/harness/orchestrator.ts:132 retries by attempt count with no failure signature; an area marked in-progress at :151 before a crash or a second-Ctrl-C exit (src/lib/harness/run-harness.ts:183) is neither pending nor failed, so src/lib/harness/plan-builder.ts:57 never resumes it"
+        },
+        {
+          "technique": "boundary-applied-stop",
+          "verdict": "realized",
+          "evidence": "src/lib/harness/orchestrator.ts:112 pause is checked only at the iteration boundary, and each session is bounded by its own timeout at src/lib/harness/executor.ts:176"
+        },
+        {
+          "technique": "compaction-checkpoint",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/harness/executor.ts:146 every area is a fresh claude -p session; loop state lives in plan.json, never in a session that can be compacted"
+        },
+        {
+          "technique": "advisory-guard-fail-mode",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/harness/executor.ts:167 the harness spawns the CLI with no turn-boundary interceptors to classify"
+        },
+        {
+          "technique": "gate-state-lifetimes",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/harness/orchestrator.ts:112 one process runs one loop; the technique's own when-not-to-use covers it"
+        }
+      ],
+      "registryProposal": "Golden path frontmatter lists 10 techniques but its body '## The techniques' list and Invariants omit ordered-yield-composition (9 listed). Also: the map row digest for this subject was sha256-b2:89e82a9f790ac3fb rev 6 while the registry index is sha256-b2:b0eabf78abd856a4 rev 8; verdicts are stamped against the index.",
+      "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
+      "evaluatedRevision": 8
+    },
+    {
+      "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+      "subject": "session-continuation",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/build_session/oneshot.rs:183 the test/fix loop stops on an attempt count (MAX_TEST_RETRIES=3) with no failure signature, so an identical failure buys two more fix passes and the stop hands up the first line of the summary (:747) rather than a root-cause hypothesis",
+      "techniques": [
+        {
+          "technique": "stuck-loop-detection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:183 halts on attempts, not failure identity; src-tauri/src/engine/build_session/oneshot.rs:747 the halt carries a truncated symptom line, not a hypothesis. The involuntary-interruption half IS realized: src-tauri/db/src/repos/core/build_sessions.rs:534 resumes an orphan at most MAX_RESTART_RESUMES=1 times inside a 2h window under compare-and-set"
+        },
+        {
+          "technique": "single-loop-authority",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:408 promotion requires the harness's own tool-test verdict and fails closed (Held, :145) on an unreadable report or tools counted but never called - evaluator-passed kept apart from complete"
+        },
+        {
+          "technique": "boundary-applied-stop",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:119 cancellation is checked at every loop boundary and after every await; the long fix pass is bounded by its own timeout at src-tauri/src/engine/build_session/fix_pass.rs:41"
+        },
+        {
+          "technique": "sealed-stage-advance",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/core/build_sessions.rs:534 a resume restarts from the persisted row under a CAS on the orphan predicate with a claim lease (:561); the stage advance is driven by tool-test evidence, not a model phrase"
+        },
+        {
+          "technique": "continuation-as-state",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/build_session/gates.rs:7 the Rule 16/17 ask-first rule is enforced by a Rust state machine that suppresses out-of-order events rather than by prompt text"
+        },
+        {
+          "technique": "compaction-checkpoint",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:6 each fix is a one-shot --print invocation; the loop state is the session row, not model context"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
+      "evaluatedRevision": 8
+    },
+    {
+      "context": "6a81750d-fdbf-4518-bae6-689303e1a884",
+      "subject": "session-continuation",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/engine/src/hooks_sidecar.rs:135 the only turn-boundary (Stop) hook these executions carry appends a memory-capture line and never refuses a stop; session reuse (src-tauri/engine/src/session_pool.rs:4) and incident re-admission (src-tauri/src/engine/incident_continuation.rs:24) are cross-execution resumes driven by a scheduler, which the golden path routes to background-jobs/durable operations",
+      "techniques": [
+        {
+          "technique": "continuation-as-state",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/hooks_sidecar.rs:135 Stop hook is capture-only; no keep-working mode exists in a persona execution"
+        },
+        {
+          "technique": "sealed-stage-advance",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/incident_continuation.rs:24 the exactly-once CAS claim admits a NEW execution after a human resolves an incident - a scheduler loop, not a staged session"
+        }
+      ],
+      "registryProposal": "Technique-shaped resonance: this grab-bag Lab context matched on the word 'continuation'. Its incident_continuation exactly-once claim and session_pool TTL resume belong under durable-agent-operations / execution-state-checkpointing. The repo surface session-continuation truly governs is the companion autonomous-turn chain (src-tauri/src/companion/prompt/addenda.rs:84, up to 20 consecutive autonomous turns) on contexts companion / companion-proactive, which the matcher did not pair with this subject.",
+      "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
+      "evaluatedRevision": 8
+    },
+    {
+      "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+      "subject": "session-continuation",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/engine/src/prompt/resume_prompt.rs:17 this context only renders the framing sentence for a --resume execution whose resume decision is made upstream (src-tauri/engine/src/session_pool.rs:4); it owns no loop, turn boundary or stop decision",
+      "techniques": [
+        {
+          "technique": "continuation-as-state",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/prompt/resume_prompt.rs:10 a one-shot prompt builder; the prompt text is a courtesy over an engine-held Continuation, which is the shape the technique allows"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
+      "evaluatedRevision": 8
+    }
+  ],
+  "declined": [
+    {
+      "subject": "session-continuation",
+      "context": "8650ca36-36fe-4862-98f5-745e866a2687",
+      "reason": "budget: unread this run (probable match on tool/session vocabulary; agents design hub UI)"
+    },
+    {
+      "subject": "session-continuation",
+      "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "reason": "paths are Playwright specs only; the autonomous-mode code they exercise lives in the companion contexts, which carry no session-continuation pair - see registryProposal on test-runner-lab"
+    },
+    {
+      "subject": "session-continuation",
+      "context": "aebcd52a-07a3-4305-bf42-d961b4f37a62",
+      "reason": "weak context - a coverage question, not judged by default"
+    },
+    {
+      "subject": "session-continuation",
+      "context": "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394",
+      "reason": "budget: unread this run (fleet grid UI; the above-session layer is fleet-orchestration)"
+    },
+    {
+      "subject": "session-continuation",
+      "context": "4810daf8-0549-4899-95d2-99c81cde6455",
+      "reason": "budget: unread this run (observability UI; match on evaluator/detection tokens looks lexical)"
+    },
+    {
+      "subject": "session-continuation",
+      "context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f",
+      "reason": "budget: unread this run (run desk task queue UI)"
+    },
+    {
+      "subject": "session-continuation",
+      "context": "fd961ee9-bf7c-4ec7-90c3-a728045d3d44",
+      "reason": "budget: unread this run (team goals UI)"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T17:56:23Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "session-continuation"
+      ],
+      "techniques": [
+        "continuation-as-state",
+        "single-loop-authority",
+        "stuck-loop-detection",
+        "boundary-applied-stop",
+        "compaction-checkpoint",
+        "advisory-guard-fail-mode",
+        "gate-state-lifetimes"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-09T17:56:23Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "session-continuation"
+      ],
+      "techniques": [
+        "stuck-loop-detection",
+        "single-loop-authority",
+        "boundary-applied-stop",
+        "sealed-stage-advance",
+        "continuation-as-state",
+        "compaction-checkpoint"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T17:56:23Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "session-continuation"
+      ],
+      "techniques": [
+        "continuation-as-state",
+        "sealed-stage-advance"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T17:56:23Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "session-continuation"
+      ],
+      "techniques": [
+        "continuation-as-state"
+      ],
+      "deviations": 0
+    }
+  ]
+}
