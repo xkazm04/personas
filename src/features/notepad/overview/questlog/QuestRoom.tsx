@@ -12,6 +12,7 @@ import { DESK_KEY, Keycap } from '../parts/Keycap';
 import type { NoteOverviewProps } from '../types';
 import type { GoalSignals } from './goalSignals';
 import { railOf, type QuestZone } from './questlogModel';
+import { QuestRoomBands, type QuestMilestoneGroup } from './QuestRoomBands';
 
 /** One rung above the desk: the room is the surface in front of the operator. */
 const QUESTLOG_ROOM_KEY_PRIORITY = NOTEPAD_LAYER_PRIORITY + 2;
@@ -26,6 +27,11 @@ interface QuestRoomProps extends Omit<NoteOverviewProps, 'onCreate' | 'initialPr
   /** `[` / `]` — fly to the neighbouring project without leaving this level. */
   onStepProject: (delta: 1 | -1) => void;
   onClose: () => void;
+  /** Optional milestone bands (Goals > Progress). A brief drawn in a band
+   *  leaves the lanes; the desk passes none and keeps its three lanes. */
+  milestoneGroups?: readonly QuestMilestoneGroup[];
+  /** Off while a layer above owns the keys (the pad opened over Goals). */
+  keyboardEnabled?: boolean;
 }
 
 /**
@@ -47,13 +53,18 @@ interface QuestRoomProps extends Omit<NoteOverviewProps, 'onCreate' | 'initialPr
 export function QuestRoom({
   zone, projects, saveStates, signals, summaries, working,
   selectedGoalId, onSelectGoal, onStepProject, onClose, onOpen, onPatch, onDelete, onCertify,
+  milestoneGroups, keyboardEnabled = true,
 }: QuestRoomProps) {
   const { t } = useTranslation();
   const reveal = useRevealTracker();
 
+  const banded = useMemo(
+    () => new Set((milestoneGroups ?? []).flatMap((g) => (g.brief ? [g.brief.id] : []))),
+    [milestoneGroups],
+  );
   const live = useMemo(
-    () => zone.goals.filter((n) => n.status !== 'shipped'),
-    [zone],
+    () => zone.goals.filter((n) => n.status !== 'shipped' && !banded.has(n.id)),
+    [zone, banded],
   );
 
   const lanes = useMemo(() => {
@@ -74,9 +85,12 @@ export function QuestRoom({
 
   const counts = useMemo(() => {
     const seen = new Map<DevNote['status'], number>();
-    for (const note of live) seen.set(note.status, (seen.get(note.status) ?? 0) + 1);
+    // Over the whole zone, banded briefs included: the chips count the project.
+    for (const note of zone.goals) {
+      if (note.status !== 'shipped') seen.set(note.status, (seen.get(note.status) ?? 0) + 1);
+    }
     return [...seen.entries()];
-  }, [live]);
+  }, [zone]);
 
   // Escape belongs to the room while it is up. Through the app's registry, one
   // rung ABOVE the desk (which disables itself while the room is open anyway),
@@ -89,7 +103,37 @@ export function QuestRoom({
     if (e.key === '[') { onStepProject(-1); return true; }
     if (e.key === ']') { onStepProject(1); return true; }
   }, [onClose, onStepProject]);
-  useAppKeyboard(onKey, { priority: QUESTLOG_ROOM_KEY_PRIORITY });
+  useAppKeyboard(onKey, { priority: QUESTLOG_ROOM_KEY_PRIORITY, enabled: keyboardEnabled });
+
+  const renderCard = (note: DevNote, order: number) => (
+    <NoteDeskCard
+      key={note.id}
+      note={note}
+      projects={projects}
+      saveState={saveStates[note.id] ?? 'clean'}
+      summary={summaries[note.id]}
+      working={working[note.id]}
+      order={order}
+      reveal={reveal}
+      autoFocus={false}
+      selected={note.id === selectedGoalId}
+      onSelect={() => onSelectGoal(note.id)}
+      onOpen={() => onOpen(note.id)}
+      onPatch={(patch) => onPatch(note.id, patch)}
+      onDelete={() => onDelete(note)}
+      onCertify={() => onCertify(note.id)}
+    />
+  );
+  const renderLane = (lane: (typeof lanes)[number]) => (
+    <section key={lane.key}>
+      <p className="flex items-center gap-1.5 typo-label text-foreground/85 mb-2">
+        <lane.Icon className="w-3.5 h-3.5" aria-hidden />
+        {lane.label}
+        <span className="tabular-nums">· {lane.notes.length}</span>
+      </p>
+      <div className="grid grid-cols-3 gap-4">{lane.notes.map(renderCard)}</div>
+    </section>
+  );
 
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-testid="notepad-questlog-room">
@@ -126,37 +170,10 @@ export function QuestRoom({
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto px-8 pb-6 flex flex-col gap-5">
-        {lanes.map((lane) => (
-          <section key={lane.key}>
-            <p className="flex items-center gap-1.5 typo-label text-foreground/85 mb-2">
-              <lane.Icon className="w-3.5 h-3.5" aria-hidden />
-              {lane.label}
-              <span className="tabular-nums">· {lane.notes.length}</span>
-            </p>
-            <div className="grid grid-cols-3 gap-4">
-              {lane.notes.map((note, order) => (
-                <NoteDeskCard
-                  key={note.id}
-                  note={note}
-                  projects={projects}
-                  saveState={saveStates[note.id] ?? 'clean'}
-                  summary={summaries[note.id]}
-                  working={working[note.id]}
-                  order={order}
-                  reveal={reveal}
-                  autoFocus={false}
-                  selected={note.id === selectedGoalId}
-                  onSelect={() => onSelectGoal(note.id)}
-                  onOpen={() => onOpen(note.id)}
-                  onPatch={(patch) => onPatch(note.id, patch)}
-                  onDelete={() => onDelete(note)}
-                  onCertify={() => onCertify(note.id)}
-                />
-              ))}
-            </div>
-          </section>
-        ))}
-        {lanes.length === 0 && (
+        {lanes.filter((l) => l.key === 'waiting').map(renderLane)}
+        {milestoneGroups && <QuestRoomBands groups={milestoneGroups} renderCard={renderCard} />}
+        {lanes.filter((l) => l.key !== 'waiting').map(renderLane)}
+        {lanes.length === 0 && !milestoneGroups?.length && (
           <p className="typo-caption text-foreground/85 italic">{t.notepad.desk_zone_none_live}</p>
         )}
       </div>

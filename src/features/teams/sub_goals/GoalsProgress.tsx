@@ -43,6 +43,7 @@ import { ProgressViewProvider, useCanvasHost } from './progress/canvasHost';
 import { useProgressModel, type DoneFilter } from './progress/useProgressModel';
 import { LedgerCanvas } from './progress/variants/LedgerCanvas';
 import { CardsLayers } from './progress/layers/cards/CardsLayers';
+import { NotesLayers } from './progress/layers/notes/NotesLayers';
 
 const LEFT_W = 200;
 
@@ -50,7 +51,7 @@ const LEFT_W = 200;
  *  be enumerated or reviewed; a named constant can be grepped. */
 const SHOW_VARIANT_SWITCHER = import.meta.env.DEV;
 
-type ProgressVariant = 'cards' | 'ledger';
+type ProgressVariant = 'cards' | 'notes' | 'ledger';
 
 /**
  * The switcher really does select among mutually exclusive regions, so it
@@ -68,6 +69,9 @@ const VARIANTS: Array<{ id: ProgressVariant; label: string }> = [
   // into one universal surface; every other layout was deleted rather than
   // kept alive "to decide between" (owner's call, 2026-10-08).
   { id: 'cards', label: 'Cards' },
+  // Cards with layers 1 and 2 ported from the Notepad (QuestRoom + its editor)
+  // rather than re-drawn - so the Notepad's features come along (2026-10-09).
+  { id: 'notes', label: 'Notes' },
   { id: 'ledger', label: 'Ledger' },
 ];
 
@@ -148,6 +152,7 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
               contract while failing the detector teaches the next reader that
               the gate is noise. */}
           <div {...segmentedTabPanelProps(VARIANT_TABS_ID, variant)} role="tabpanel">
+            {variant === 'notes' && <NotesLayers leftWidth={LEFT_W} />}
             {variant === 'ledger' && <LedgerCanvas />}
             {variant === 'cards' && <CardsLayers leftWidth={LEFT_W} />}
           </div>

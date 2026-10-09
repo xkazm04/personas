@@ -80,7 +80,7 @@ function BriefNote({ note }: { note: DevNote }) {
   );
 }
 
-function NoBrief({ card, projectId }: { card: MilestoneCard; projectId: string }) {
+export function NoBrief({ card, projectId }: { card: MilestoneCard; projectId: string }) {
   const { dl } = useProgressView();
   const full = atCap();
   const start = async () => {
