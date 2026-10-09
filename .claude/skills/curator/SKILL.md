@@ -22,6 +22,9 @@ description: Drive Curator's work loop from a terminal instead of from the Perso
 /curator project               re-project her plan from the current checkout, no app needed
 /curator growth                take one growth sample from the registry's own instruments
 /curator release               put a stranded claim back after an aborted pass
+/curator release-stranded      release every open dispatch whose worker process is provably gone
+/curator pool                  run-pool: several conform workers at once, RAM-scaled, until a brake
+/curator pool stop|status      ask a running pool to stop after its workers settle / read it
 ```
 
 `next` takes `--lane queue,plan,method,refill` to drive part of the ladder. The filter
@@ -30,7 +33,7 @@ queue before her plan. Two situations need it and both have happened: the app is
 owns the standing lane, or her plan is still the one projected from an older checkout and
 only the queue file is current.
 
-`next --engine conform,deepen,apply,reconcile` filters the PLAN lane the same way (skip, never reorder). `--engine conform` is the one that cannot publish registry content: `conform` workers run in this repo, write only `.ai/registry-map.json` and are told never to commit or push, while `apply` and `deepen` workers commit in the registry and may push its default branch. Use it when the registry's `main` carries commits that are not Curator's.
+`next --engine conform,deepen,apply,reconcile` filters the PLAN lane the same way (skip, never reorder). `--engine conform` is the one that cannot publish registry content: `conform` workers run in this repo, write only their own run file under `.ai/conform-runs/` and are told never to commit or push, while `apply` and `deepen` workers commit in the registry and may push its default branch. Use it when the registry's `main` carries commits that are not Curator's.
 
 `next --terminal-owns` waives ONLY the `curator_enabled` brake, for when the operator switched
 the app's tick off precisely so this terminal drives her (quiet hours and backpressure still
@@ -42,8 +45,14 @@ Plan items of engine `apply` and `conform` are dispatchable: the item cannot car
 argument, so `loop.py` derives it at claim time. `apply` becomes `/intake apply <technique>`
 with the first technique in the subject's index entry that has no application row (none left
 = the item is skipped, never guessed). `conform` becomes `/conform --subject <slug>` and runs
-in THIS repo, whose `.ai/registry-map.json` it writes; that worker is told not to commit or
-push, so the operator reads and commits the map diff.
+in THIS repo. **It never writes `.ai/registry-map.json`.** It writes ONE run file,
+`.ai/conform-runs/<dispatch-id>.json` (the brief carries the shape), and the registry's
+`scripts/merge-conform-runs.mjs` - `loop.py merge` - is the map's only writer: it takes a
+lock, keeps the newer verdict when two disagree and records the older in
+`.ai/conform-detail.json`, refuses `unknown` and anchors on a blank line, appends the run's
+`consults` to `.ai/consults.jsonl`, and archives the file in `.ai/conform-runs/merged/`. A file
+merged twice changes nothing. The worker is told not to commit or push, so the operator reads
+and commits the map diff.
 
 `conform` items are also filtered by scope: the scan ranks a subject without knowing which
 bundles this repo consumes, so `loop.py` skips any item whose domain is not in
@@ -189,6 +198,11 @@ python .claude/skills/curator/loop.py settle --claim claim.json --state idled --
 python .claude/skills/curator/loop.py commits --claim claim.json --since <head-at-dispatch>
 ```
 
+A **conform** pass is judged through the merger, not from stdout: run
+`loop.py merge --only <dispatch-id>.json` first and read its per-file counts (`merged`,
+`unchanged`, `older`, `declined`, `skipped` with reasons). Verdicts it accepted are `landed`;
+a run file whose every verdict it refused is `declined`, with its reasons.
+
 `commits` records what the checkout gained as hers. **Read its caveat before trusting the
 number**: the range is `since..HEAD` in a checkout other sessions also write, so a commit
 somebody else landed inside the window is credited too. The app has the same defect and it
@@ -196,6 +210,56 @@ has been observed live. Pass the sha the claim actually started from.
 
 Take one growth sample per loop, not per pass (`loop.py growth`) - it runs the registry's
 instruments and costs about ten seconds.
+
+## The pool - several workers at once
+
+`loop.py run-pool` is the unattended form: it claims with the same ladder, runs a worker per
+claim in parallel, settles each as it ends, merges after each settle, and re-projects when the
+projection goes stale. Measure it with `--dry` first, which claims nothing and lists what it
+would take, in order, with the memory figures it decided on.
+
+**What may run beside what.** Only `conform` workers run in parallel: each runs in THIS repo
+and writes only its own run file, so N of them share nothing but the merger's lock. Every lane
+that writes the registry checkout (deepen, apply, reconcile, the queue, method and standing
+lanes) has ONE serial slot, and while it is taken only conform plan items are admitted. No
+two running workers - nor a worker and any other driver's open dispatch - ever hold one
+subject. The default is `--lane plan --engine conform`; anything wider is opt-in.
+
+**How many.** `N = min(--max, floor((free_gb - 6) / 2.5))`, recomputed from a fresh sample
+(the median of five, /appmaster's method) before EVERY claim. The constants are named and
+argued in `loop.py` (`RESERVE_GB`, `PER_WORKER_GB`, `MAX_WORKERS = 4`); unreadable memory
+allows one worker. A running worker is charged twice on purpose - it has not grown yet.
+
+**How it settles, and how that differs from a pass you drive.** A pool settles mechanically,
+from evidence it can read: for conform, the merger's counts for that worker's run file (no
+run file is `blocked`, a lock held by a live merger defers the settle rather than guessing);
+for a registry lane, the commits since dispatch, with the `commits` caveat in the evidence.
+Every settle carries the worker's last words, and `~/.personas/curator-pool/done/` keeps each
+worker's whole stdout. That is weaker than a session reading the output, which is why the
+operator reads the map diff before committing it.
+
+**State lives outside the repo** - `~/.personas/curator-pool/` (`CURATOR_POOL_DIR` overrides):
+`pool.lock`, `pool.jsonl` (every event), `workers/` while a worker runs, `done/` after, and
+`STOP`. Workers run in their own process group, so a pool that dies leaves them running; the
+next pool adopts them by pid AND creation time and settles the ones that ended meanwhile.
+
+**The usage limit.** `--on-limit stop` (the default) stops after the running workers settle,
+as a pass does. `--on-limit doze` stops claiming, then every `--doze-min` (30) sends a one-line
+probe - no claim, no row - and resumes when the limit has lifted. A limited worker's item is
+released, never settled.
+
+```bash
+# the weekend run - in the background, so a reaped shell does not take the pool with it
+mkdir -p ~/.personas/curator-pool
+python .claude/skills/curator/loop.py run-pool --terminal-owns --on-limit doze \
+  >> ~/.personas/curator-pool/pool.out 2>&1
+python .claude/skills/curator/loop.py run-pool --status   # pool, workers, last events
+python .claude/skills/curator/loop.py run-pool --stop     # no new claims; exits once its workers settle
+```
+
+To stop it NOW instead: end the pool pid from `run-pool --status`, end its workers' pids, then
+`loop.py release-stranded`. If the map is ever reverted under a run (a sibling's hook stash
+that failed to restore), `loop.py merge --reapply` folds the `merged/` archive back in.
 
 ## Conduct
 
@@ -239,7 +303,12 @@ and resumes; this driver does not, and pretending otherwise would burn the reset
   and this one may lag it.
 - **Stranded claims are yours to clear.** If a pass is interrupted, `release` the claim in
   the same session. An item left `dispatched` with nothing running is the leak the Gaps
-  drawer counts as `open_dispatches`, and it will still be there tomorrow.
+  drawer counts as `open_dispatches`, and it will still be there tomorrow. For one nobody
+  holds a claim file for, `loop.py release-stranded` (`--dry` first) releases it **only when
+  its worker process is provably gone**: a pool record whose pid and creation time no longer
+  match, and no live claude/node process whose command line names its dispatch, session,
+  fleet session or argument. Never on the row's age - a row records the last transition,
+  not a heartbeat, and three live workers were once killed on that reading.
 
 ## Ending a session
 
