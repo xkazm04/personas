@@ -3226,7 +3226,11 @@
           "revision": 52,
           "changedAt": "2026-09-25",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_editor/components/PersonaEditorHeader.tsx:95 is the only place readiness refuses an enable; src-tauri/src/commands/core/personas.rs:142 set_persona_enabled and :226 update_persona (UpdateSettings carries enabled) re-check nothing, so any other caller enables a persona with no trigger or missing credentials (gate-laddering: UI-only courtesy)",
+          "evaluatedAt": "2026-10-09",
+          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+          "evaluatedRevision": 53
         },
         {
           "subject": "agent-memory",
@@ -9090,10 +9094,10 @@
           "changedAt": "2026-09-29",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge() hard-DELETEs both source memories inside the merge transaction, with no supersedence link or archive tier: consolidation (supersede, never close by deletion) and decay-and-forgetting (deletion-is-not-repair) are unmet for the merge door, so a merged item's provenance is unrecoverable. The persona guard at :1581 does satisfy scope-before-similarity, and archive_by_ids (:1283) shows the non-destructive path exists.",
-          "evaluatedAt": "2026-10-01",
-          "evaluatedAgainst": "sha256-b2:0942d53ebe93cb4e",
-          "evaluatedRevision": 46,
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge() still hard-DELETEs both originals; persona_memory_sources is ON DELETE CASCADE (src-tauri/db/src/migrations/incremental/e16_living_agent.rs:107) and the merged INSERT (:1643) carries no fact_key and no source rows, so a merge destroys both items' episode provenance and fact identity with no supersedence link or tombstone. Re-judged at revision 47; verdict unchanged, consequence sharper.",
+          "evaluatedAt": "2026-10-09",
+          "evaluatedAgainst": "sha256-b2:23599eae61aa7119",
+          "evaluatedRevision": 47,
           "source": "conform"
         },
         {
@@ -11225,7 +11229,11 @@
           "revision": 46,
           "changedAt": "2026-09-29",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/ConversationBriefing.tsx:178 pins a channel row verbatim into team long-term memory with persona_id set to the speaker (:182) and provenance only {source:'conversation-pin'} (:187), with no pointer to the channel item, run or approving operator; the row is then injected into scanner prompts (src-tauri/src/commands/infrastructure/idea_scanner.rs:623), so a belief recalled as a persona's own cannot answer who wrote it, from what, approved by whom.",
+          "evaluatedAt": "2026-10-09",
+          "evaluatedAgainst": "sha256-b2:23599eae61aa7119",
+          "evaluatedRevision": 47
         },
         {
           "subject": "fleet-orchestration",
@@ -15715,7 +15723,11 @@
           "revision": 52,
           "changedAt": "2026-09-25",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "scripts/generate-template-checksums.mjs:184 prints the error-level P8 rule (optional connector without fallback_note, :141) and has no exit path, so the codegen task that writes this context's src/lib/personas/templates/templateChecksums.ts reports ok - the only checker of that rule can never fail a build (severity-by-construction)",
+          "evaluatedAt": "2026-10-09",
+          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+          "evaluatedRevision": 53
         },
         {
           "subject": "import-normalization",
@@ -19679,10 +19691,10 @@
           "changedAt": "2026-09-29",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:142 resolves a duplicate via mergeMemoriesAction, which hard-DELETEs both originals (src-tauri/db/src/repos/core/memories.rs:1662): consolidation requires supersedence and decay-and-forgetting forbids deletion as repair, so a two-item family is replaced by a machine-concatenated item with no supersedence link or auditable members. Core and cross-persona guards (memories.rs:1581) satisfy scope-before-similarity; keep_a/keep_b archives correctly (MemoryConflictReview.tsx:117). Re-judged at revision 46; verdict unchanged.",
-          "evaluatedAt": "2026-10-01",
-          "evaluatedAgainst": "sha256-b2:0942d53ebe93cb4e",
-          "evaluatedRevision": 46,
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:152 resolves a duplicate through mergeMemoriesAction, the hard-DELETE merge at src-tauri/db/src/repos/core/memories.rs:1662, whose cascade drops both originals' provenance rows: the review surface's one consolidating action replaces a family with an unauditable item. Re-judged at revision 47; verdict unchanged.",
+          "evaluatedAt": "2026-10-09",
+          "evaluatedAgainst": "sha256-b2:23599eae61aa7119",
+          "evaluatedRevision": 47,
           "source": "conform"
         },
         {
@@ -28257,7 +28269,11 @@
           "revision": 52,
           "changedAt": "2026-09-25",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:133 is the context's only refusal and it is spend admission control, not a quality standard; src/stores/slices/agents/matrixBuildSlice.ts:1067 merely records a backend-computed test verdict and refuses nothing",
+          "evaluatedAt": "2026-10-09",
+          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+          "evaluatedRevision": 53
         },
         {
           "subject": "agent-instruction-files",
@@ -29551,10 +29567,10 @@
           "changedAt": "2026-09-29",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:146 retires a team belief via deleteTeamMemory, a hard DELETE at src-tauri/db/src/repos/resources/team_memories.rs:289, and :171 corrects one by in-place overwrite (updateTeamMemory): consolidation's supersedence and decay-and-forgetting's demote-never-delete are unrealized, so the shared ledger keeps no demotion tier and no audit trail of the prior belief. Re-judged at revision 46; verdict unchanged.",
-          "evaluatedAt": "2026-10-01",
-          "evaluatedAgainst": "sha256-b2:0942d53ebe93cb4e",
-          "evaluatedRevision": 46,
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:477 evict_excess, run automatically after every pipeline run (src-tauri/src/engine/pipeline_executor.rs:1097), hard-DELETEs the lowest-importance auto memories, and the UI delete (src/features/teams/sub_teamMemory/useTeamMemories.ts:146) is a hard DELETE at team_memories.rs:289: the cap and the retire both skip demotion tiers, so a scoring bug becomes permanent amnesia. Correction to the prior verdict: edits are not unaudited, since update appends a 20-deep revision log (team_memories.rs:226).",
+          "evaluatedAt": "2026-10-09",
+          "evaluatedAgainst": "sha256-b2:23599eae61aa7119",
+          "evaluatedRevision": 47,
           "source": "conform"
         },
         {
@@ -33130,7 +33146,11 @@
           "revision": 52,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/output_assertions.rs:408 returns the same total:0/critical_failures:0 summary on a failed assertion load as for a persona with none (:421), so src-tauri/src/engine/execution.rs:2321 marks the run Completed - could-not-run reads as pass, baseline blocker assertion included",
+          "evaluatedAt": "2026-10-09",
+          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+          "evaluatedRevision": 53
         },
         {
           "subject": "agent-instruction-files",

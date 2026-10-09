@@ -1,0 +1,163 @@
+{
+  "schema": "conform-run/1",
+  "worker": "910f5999-b183-4f5d-a67e-e49e43242f9b",
+  "subject": "quality-gates",
+  "evaluatedAt": "2026-10-09T15:40:00Z",
+  "pairs": [
+    {
+      "context": "7826a48f-5883-4f26-8476-c3c515bda745",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "scripts/generate-template-checksums.mjs:184 prints the error-level P8 rule (optional connector without fallback_note, :141) and has no exit path, so the codegen task that writes this context's src/lib/personas/templates/templateChecksums.ts reports ok - the only checker of that rule can never fail a build (severity-by-construction)",
+      "techniques": [
+        {
+          "technique": "severity-by-construction",
+          "verdict": "deviation",
+          "evidence": "scripts/generate-template-checksums.mjs:184 [error] findings are printed and never reach process.exit; scripts/run-codegen.mjs:195 fails only on a child exit code, so error-labelled template lint is advisory by construction"
+        },
+        {
+          "technique": "gate-liveness",
+          "verdict": "realized",
+          "evidence": "src/lib/personas/templates/templateCatalog.ts:117 load status separates failed (all candidates dropped for an error) from empty (all intentionally unpublished), and :219 refuses to serve a catalog with duplicate ids instead of last-wins"
+        },
+        {
+          "technique": "refusal-names-a-reachable-remedy",
+          "verdict": "realized",
+          "evidence": "src/lib/personas/templates/templateChecksums.ts:3 names the in-tree regenerator, and the catalog skip reasons (src/lib/personas/templates/templateCatalog.ts:176 missing_checksum, :194 schema_invalid) are distinct per cause"
+        }
+      ]
+    },
+    {
+      "context": "6a81750d-fdbf-4518-bae6-689303e1a884",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/output_assertions.rs:408 returns the same total:0/critical_failures:0 summary on a failed assertion load as for a persona with none (:421), so src-tauri/src/engine/execution.rs:2321 marks the run Completed - could-not-run reads as pass, baseline blocker assertion included",
+      "techniques": [
+        {
+          "technique": "gate-liveness",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/output_assertions.rs:408 an instrument failure (assertions could not be loaded) has no exit path of its own and is indistinguishable from an empty assertion set; separately src-tauri/engine/src/verification_command.rs:65 run_verification has no production caller although :9 says its result feeds the F7 fix-loop - the trigger is dead while the checker stands ready"
+        },
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/output_assertions.rs:471 a CRITICAL assertion whose verdict could not be stored is counted neither passed nor failed and cannot downgrade the run (stated at :457) - a hole in the gate's own vision resolves to compliance rather than FAIL-CLOSED/REFUSE"
+        },
+        {
+          "technique": "blocking-by-input-determinism",
+          "verdict": "realized",
+          "evidence": "src-tauri/engine/src/verification_command.rs:79 a verification command that cannot spawn fails closed (passed:false) rather than passing - but see gate-liveness: nothing calls it"
+        }
+      ]
+    },
+    {
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_editor/components/PersonaEditorHeader.tsx:95 is the only place readiness refuses an enable; src-tauri/src/commands/core/personas.rs:142 set_persona_enabled and :226 update_persona (UpdateSettings carries enabled) re-check nothing, so any other caller enables a persona with no trigger or missing credentials (gate-laddering: UI-only courtesy)",
+      "techniques": [
+        {
+          "technique": "gate-laddering",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/personas.rs:142 the binding door writes enabled without consulting triggers/subscriptions or credentials; the refusal exists only at src/features/agents/sub_editor/components/PersonaEditorHeader.tsx:95"
+        },
+        {
+          "technique": "refusal-names-a-reachable-remedy",
+          "verdict": "realized",
+          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:19 every blocker carries the editor tab (and sub-tab) that fixes it, so the refusal routes to its remedy"
+        },
+        {
+          "technique": "policy-projection",
+          "verdict": "realized",
+          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:45 one resolver feeds both the header popover and the Design-tab badge, so the reason list and the badge count cannot drift"
+        }
+      ]
+    },
+    {
+      "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:133 is the context's only refusal and it is spend admission control, not a quality standard; src/stores/slices/agents/matrixBuildSlice.ts:1067 merely records a backend-computed test verdict and refuses nothing",
+      "techniques": [],
+      "registryProposal": "technique-shaped resonance, not governance: src/stores/slices/agents/budgetEnforcementSlice.ts:108 fails closed (with a session-scoped human override) when the spend instrument cannot be read - the in-path branch of quality-gates/unmeasurable-criteria - but the subject governing it is llm-observability/usage-limit-governance, which the matcher never paired with this context"
+    }
+  ],
+  "declined": [
+    {
+      "subject": "quality-gates",
+      "context": "a3b615d2-05d8-47bd-ad92-672c6b42b0f3",
+      "reason": "read and left unknown: src-tauri/engine/src/fix_loop.rs is a quality-gate repair loop and parts of the oracle freeze hold (src-tauri/engine/src/ai_healing.rs:510 refuses healer edits to the enabled flag; src-tauri/engine/src/fix_loop.rs:238 writes the attempt counter last), but whether the re-entered persona or the healer (src-tauri/engine/src/ai_healing.rs:545 unrestricted CLI file/command tool use) can reach its own output_assertions was not established; 3 of 27 techniques evidenced, below the floor, no anchored deviation"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "(7 previously judged pairs: agent-health, display-data-formatters, engine-build-session, lib-harness, notepad-plan, shared-components-forms, teams-factory-passport-improve)",
+      "reason": "stale by one revision (52 -> 53); rev 53 (registry 77170409) only added applications/dotnet--gate-liveness.md, the golden path and technique text did not change, so re-judging them was not the best use of this run's budget"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T15:40:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "severity-by-construction",
+        "gate-liveness",
+        "refusal-names-a-reachable-remedy"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T15:40:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "gate-liveness",
+        "unmeasurable-criteria",
+        "blocking-by-input-determinism"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-09T15:40:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "gate-laddering",
+        "refusal-names-a-reachable-remedy",
+        "policy-projection"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T15:40:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T15:40:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "oracle-frozen-during-repair",
+        "self-reported-gate-inputs"
+      ],
+      "deviations": 0
+    }
+  ]
+}

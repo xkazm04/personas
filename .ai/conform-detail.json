@@ -1565,23 +1565,33 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-7",
+      "evaluatedAt": "2026-10-09",
+      "evaluatedTs": "2026-10-09T15:39:28.000Z",
+      "worker": "3429d36b-b462-4b05-bc18-7d9e1c2e1e35",
       "techniques": [
         {
-          "technique": "rollup-compaction",
-          "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 `DELETE FROM persona_memories WHERE id = ?1` runs for each merged original. The technique requires members to remain linked, auditable and out of default reads."
-        },
-        {
           "technique": "consolidation",
-          "verdict": "conformant",
-          "evidence": "src/features/overview/sub_memories/libs/memoryConflicts.ts:143 tests contradiction before duplicate, so polarity-flipped pairs are never offered a merge. src/features/overview/sub_memories/components/MemoryConflictReview.tsx:117 retires the losing side by archive, not delete."
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:152 merge supersedes nothing and links nothing; the contradiction branch is tested before the duplicate branch (src/features/overview/sub_memories/libs/memoryConflicts.ts:144 precedes :156), which does realize the technique's test-contradiction-first rule"
         },
         {
           "technique": "decay-and-forgetting",
-          "verdict": "conformant",
-          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:117 `setMemoryTier(retire.id, 'archive')` demotes to a never-injected but searchable tier, instead of the former hard delete."
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:152 merge deletes as repair; keep_a/keep_b retire by demotion to archive at :127, the conformant path"
+        },
+        {
+          "technique": "scope-before-similarity",
+          "verdict": "realized",
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:152 is guarded above by core and cross-persona refusals that mirror src-tauri/db/src/repos/core/memories.rs:1581"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:142 resolves a duplicate via mergeMemoriesAction, which hard-DELETEs both originals (src-tauri/db/src/repos/core/memories.rs:1662): consolidation requires supersedence and decay-and-forgetting forbids deletion as repair, so a two-item family is replaced by a machine-concatenated item with no supersedence link or auditable members. Core and cross-persona guards (memories.rs:1581) satisfy scope-before-similarity; keep_a/keep_b archives correctly (MemoryConflictReview.tsx:117). Re-judged at revision 46; verdict unchanged.",
+          "evaluatedAt": "2026-10-01",
+          "worker": null,
+          "reason": "replaced by 3429d36b-b462-4b05-bc18-7d9e1c2e1e35"
         }
       ]
     },
@@ -1590,23 +1600,33 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-7",
+      "evaluatedAt": "2026-10-09",
+      "evaluatedTs": "2026-10-09T15:39:28.000Z",
+      "worker": "3429d36b-b462-4b05-bc18-7d9e1c2e1e35",
       "techniques": [
-        {
-          "technique": "consolidation",
-          "verdict": "deviation",
-          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:171 `updateTeamMemory(id, title, content, ...)` overwrites the belief in place. Supersede-don't-replace is violated, and the prior claim leaves no lineage."
-        },
         {
           "technique": "decay-and-forgetting",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:289 `DELETE FROM team_memories WHERE id = ?1` is the only retire path from useTeamMemories.ts:146. There is no archive or demotion tier, although persona memories have one (MemoryConflictReview.tsx:117)."
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:477 an automated cap pass deletes rather than archives, the trapdoor the demotion-tiers rule forbids; manual (run_id NULL) rows are exempt from the cap entirely, so the operator pool has no cap at all"
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:171 corrects a belief by in-place UPDATE; the prior value survives only as a capped revision entry in tags (src-tauri/db/src/repos/resources/team_memories.rs:226), not as a superseded item recall or audit can reach as lineage"
         },
         {
           "technique": "memory-governance",
-          "verdict": "deviation",
-          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:171 applies a human correction as a silent edit, not as a recorded operator-issued superseding event, so its reach cannot be checked later."
+          "verdict": "partial",
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:226 the revision log answers 'what did it say before' for operator edits, but deletion at :289 leaves no record answering 'who removed it and why'"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:146 retires a team belief via deleteTeamMemory, a hard DELETE at src-tauri/db/src/repos/resources/team_memories.rs:289, and :171 corrects one by in-place overwrite (updateTeamMemory): consolidation's supersedence and decay-and-forgetting's demote-never-delete are unrealized, so the shared ledger keeps no demotion tier and no audit trail of the prior belief. Re-judged at revision 46; verdict unchanged.",
+          "evaluatedAt": "2026-10-01",
+          "worker": null,
+          "reason": "replaced by 3429d36b-b462-4b05-bc18-7d9e1c2e1e35"
         }
       ]
     },
@@ -5390,6 +5410,157 @@
           "evidence": "src-tauri/db/src/macros.rs:100 row_mapper! is the single declared decode seam"
         }
       ]
+    },
+    "7826a48f-5883-4f26-8476-c3c515bda745/quality-gates": {
+      "context": "lib-personas",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-09",
+      "evaluatedTs": "2026-10-09T15:40:00.000Z",
+      "worker": "910f5999-b183-4f5d-a67e-e49e43242f9b",
+      "techniques": [
+        {
+          "technique": "severity-by-construction",
+          "verdict": "deviation",
+          "evidence": "scripts/generate-template-checksums.mjs:184 [error] findings are printed and never reach process.exit; scripts/run-codegen.mjs:195 fails only on a child exit code, so error-labelled template lint is advisory by construction"
+        },
+        {
+          "technique": "gate-liveness",
+          "verdict": "realized",
+          "evidence": "src/lib/personas/templates/templateCatalog.ts:117 load status separates failed (all candidates dropped for an error) from empty (all intentionally unpublished), and :219 refuses to serve a catalog with duplicate ids instead of last-wins"
+        },
+        {
+          "technique": "refusal-names-a-reachable-remedy",
+          "verdict": "realized",
+          "evidence": "src/lib/personas/templates/templateChecksums.ts:3 names the in-tree regenerator, and the catalog skip reasons (src/lib/personas/templates/templateCatalog.ts:176 missing_checksum, :194 schema_invalid) are distinct per cause"
+        }
+      ]
+    },
+    "6a81750d-fdbf-4518-bae6-689303e1a884/quality-gates": {
+      "context": "test-runner-lab",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-09",
+      "evaluatedTs": "2026-10-09T15:40:00.000Z",
+      "worker": "910f5999-b183-4f5d-a67e-e49e43242f9b",
+      "techniques": [
+        {
+          "technique": "gate-liveness",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/output_assertions.rs:408 an instrument failure (assertions could not be loaded) has no exit path of its own and is indistinguishable from an empty assertion set; separately src-tauri/engine/src/verification_command.rs:65 run_verification has no production caller although :9 says its result feeds the F7 fix-loop - the trigger is dead while the checker stands ready"
+        },
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/output_assertions.rs:471 a CRITICAL assertion whose verdict could not be stored is counted neither passed nor failed and cannot downgrade the run (stated at :457) - a hole in the gate's own vision resolves to compliance rather than FAIL-CLOSED/REFUSE"
+        },
+        {
+          "technique": "blocking-by-input-determinism",
+          "verdict": "realized",
+          "evidence": "src-tauri/engine/src/verification_command.rs:79 a verification command that cannot spawn fails closed (passed:false) rather than passing - but see gate-liveness: nothing calls it"
+        }
+      ]
+    },
+    "1ff7809a-171b-4baa-9c9b-12d888b017f0/quality-gates": {
+      "context": "agents-editor",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-09",
+      "evaluatedTs": "2026-10-09T15:40:00.000Z",
+      "worker": "910f5999-b183-4f5d-a67e-e49e43242f9b",
+      "techniques": [
+        {
+          "technique": "gate-laddering",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/personas.rs:142 the binding door writes enabled without consulting triggers/subscriptions or credentials; the refusal exists only at src/features/agents/sub_editor/components/PersonaEditorHeader.tsx:95"
+        },
+        {
+          "technique": "refusal-names-a-reachable-remedy",
+          "verdict": "realized",
+          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:19 every blocker carries the editor tab (and sub-tab) that fixes it, so the refusal routes to its remedy"
+        },
+        {
+          "technique": "policy-projection",
+          "verdict": "realized",
+          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:45 one resolver feeds both the header popover and the Design-tab badge, so the reason list and the badge count cannot drift"
+        }
+      ]
+    },
+    "b6e66a59-78d3-465e-83b7-e77498b4c6ae/quality-gates": {
+      "context": "stores-slices-agents",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-09",
+      "evaluatedTs": "2026-10-09T15:40:00.000Z",
+      "worker": "910f5999-b183-4f5d-a67e-e49e43242f9b",
+      "techniques": [],
+      "registryProposal": "technique-shaped resonance, not governance: src/stores/slices/agents/budgetEnforcementSlice.ts:108 fails closed (with a session-scoped human override) when the spend instrument cannot be read - the in-path branch of quality-gates/unmeasurable-criteria - but the subject governing it is llm-observability/usage-limit-governance, which the matcher never paired with this context"
+    },
+    "71d36b74-2b52-4759-a000-b505ddf27915/agent-memory": {
+      "context": "db-repos-core",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-09",
+      "evaluatedTs": "2026-10-09T15:39:28.000Z",
+      "worker": "3429d36b-b462-4b05-bc18-7d9e1c2e1e35",
+      "techniques": [
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge closes two beliefs by deletion rather than supersedence; the one consolidation door create_consolidated (:549) does write provenance rows and refuses source-less drafts, so the store has two grades of merged item"
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/migrations/incremental/e16_living_agent.rs:107 cascade means the merge door orphans provenance silently; the non-destructive retire exists at src-tauri/db/src/repos/core/memories.rs:1283 (archive_by_ids) and user delete tombstones fact-keyed rows at :1436, so only the merge door violates forgetting-never-orphans-provenance"
+        },
+        {
+          "technique": "scope-before-similarity",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1581 merge refuses cross-persona pairs, and the merged row inherits the source persona"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge() hard-DELETEs both source memories inside the merge transaction, with no supersedence link or archive tier: consolidation (supersede, never close by deletion) and decay-and-forgetting (deletion-is-not-repair) are unmet for the merge door, so a merged item's provenance is unrecoverable. The persona guard at :1581 does satisfy scope-before-similarity, and archive_by_ids (:1283) shows the non-destructive path exists.",
+          "evaluatedAt": "2026-10-01",
+          "worker": null,
+          "reason": "replaced by 3429d36b-b462-4b05-bc18-7d9e1c2e1e35"
+        }
+      ]
+    },
+    "0f1b56ac-cd96-4355-993e-dc445a20e63e/agent-memory": {
+      "context": "fleet-monitor-channels",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-09",
+      "evaluatedTs": "2026-10-09T15:39:28.000Z",
+      "worker": "3429d36b-b462-4b05-bc18-7d9e1c2e1e35",
+      "techniques": [
+        {
+          "technique": "memory-governance",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/ConversationBriefing.tsx:187 the write records neither the evidence's author nor the operator's approval; the audit question terminates at a tag, not a real event, and a pinned step or tool line whose author is a third party is stored as standing 'context'"
+        },
+        {
+          "technique": "episodic-capture",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/ConversationBriefing.tsx:178 the body is the raw utterance (transcript altitude) and carries no pointer to the raw evidence it came from (item.id is used only for the local pinned Set)"
+        },
+        {
+          "technique": "recall-injection",
+          "verdict": "not-judged",
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:128 the injection read orders by importance and recency only; the label and budget obligations live in the scanner prompt builder, outside this context"
+        }
+      ],
+      "registryProposal": "agent-memory's write-path techniques assume a distiller between capture and belief; an operator 'pin this line' action is a fourth writer the corpus only names as 'the human's direct edit'. Worth a decision rule: a human pin is a review-lane adoption and must record the source item id and the original author, not just the act."
     }
   }
 }
