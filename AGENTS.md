@@ -28,6 +28,9 @@ Because several sessions commit here at once, name yours in a trailer so a regre
 to the session that made it: `git commit --trailer "Agent-Session: <your active-runs slug>@<date>"`
 (add `--trailer "Work-Package: <item id>"` when the work has one). `node scripts/git/by-session.mjs`
 lists history by these and by the harness's `Claude-Session:` trailer.
+`node scripts/git/check-session-trailer.mjs <message-file>` is the verdict on one message: a commit
+co-authored by Claude (or carrying `Claude-Session:`) without a session trailer exits 1; human
+commits, merges and reverts pass. It is not yet wired as a `commit-msg` hook in `lefthook.yml`.
 
 ## Commands
 
@@ -57,6 +60,10 @@ Before you report done: `npm run gate -- --cold`.
 - The done gate above runs tsc, eslint on changed files and the golden-path census, cold.
 - `npm run check`: the full pre-push chain. Style rules in ESLint are warn and fail nothing; the
   census ratchets in `scripts/census/rules.json` are what fail a style slip.
+- Counts quoted in the docs (connectors, languages, codegen tasks, tests) are measured against the
+  tree by `node scripts/docs/check-doc-counts.mjs`; `src/__tests__/structural/docCounts.test.ts`
+  (in `npm test`) fails when README.md or CONTRIBUTING.md drifts. Change a quoted number, or move
+  the sentence, and update `CLAIMS` in that script in the same change.
 
 ## Adding or editing a workflow
 

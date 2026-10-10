@@ -21,26 +21,10 @@
  * Opt out: // eslint-disable-next-line custom/prefer-section-card
  */
 
+const { collectClassText, isClassNameAttribute } = require('./_classname-strings.cjs');
+
 function shellPresent(cls) {
   return cls.includes('bg-secondary/30') && cls.includes('border-primary/12');
-}
-
-/** Collect the static className text from a className attribute value. */
-function classText(valueNode) {
-  if (!valueNode) return '';
-  if (valueNode.type === 'Literal') return String(valueNode.value || '');
-  if (valueNode.type !== 'JSXExpressionContainer') return '';
-  const out = [];
-  const visit = (n) => {
-    if (!n) return;
-    if (n.type === 'Literal') out.push(String(n.value || ''));
-    else if (n.type === 'TemplateLiteral') n.quasis.forEach((q) => out.push(q.value.raw));
-    else if (n.type === 'ConditionalExpression') { visit(n.consequent); visit(n.alternate); }
-    else if (n.type === 'LogicalExpression') { visit(n.left); visit(n.right); }
-    else if (n.type === 'CallExpression') n.arguments.forEach(visit);
-  };
-  visit(valueNode.expression);
-  return out.join(' ');
 }
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -65,11 +49,9 @@ module.exports = {
     return {
       JSXOpeningElement(node) {
         if (!node.name || node.name.name !== 'div') return;
-        const attr = node.attributes.find(
-          (a) => a.type === 'JSXAttribute' && a.name && a.name.name === 'className',
-        );
+        const attr = node.attributes.find((a) => a.type === 'JSXAttribute' && isClassNameAttribute(a));
         if (!attr) return;
-        const cls = classText(attr.value);
+        const cls = collectClassText(attr.value);
         if (!cls || !shellPresent(cls)) return;
         context.report({ node, messageId: 'preferCard' });
       },

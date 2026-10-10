@@ -10,6 +10,22 @@
  * section F). None of the copies walked `cond && "class"`, the commonest cn()
  * argument. One walker now gives all four the deep shape, and a design-token
  * family that only bans a pattern is one createRawClassRule() declaration.
+ *
+ * prefer-status-badge and prefer-section-card read className through
+ * collectClassText() as well (2026-10-10). Each had carried a fifth and sixth
+ * copy of the walker, one that followed ANY call's arguments but missed
+ * `[..].join(' ')`. They now see exactly what the design-token rules see.
+ *
+ * The four prefer-* rules stay four rules on purpose. Only those two match on
+ * className; prefer-shared-clipboard matches a `.clipboard.writeText` member
+ * read, and prefer-numeric matches a `.toFixed()` / `.toLocaleString()` call
+ * whose nearest boundary is rendered JSX text. Those two share no node type,
+ * no matcher and no exemption shape with the className pair. A "raw pattern ->
+ * shared component" table would need one visitor per row, which is the four
+ * files again behind an extra indirection. The className pair also differ in
+ * kind: StatusBadge maps a colour family to a variant and skips banner-shaped
+ * near-misses, while SectionCard is a single fixed shell. What they share is
+ * this walker, and they share it here.
  */
 
 /** Class-merging helpers whose arguments are class strings. */

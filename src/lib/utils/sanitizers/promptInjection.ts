@@ -47,13 +47,27 @@ export const INJECTION_PATTERNS: RegExp[] = [
 
 /**
  * Strip all known prompt-injection structural patterns from text.
+ *
+ * Runs to a FIXPOINT, not one pass. A single ordered pass let the stripping
+ * itself assemble an attack: the zero-width, ANSI and non-BMP patterns run
+ * after the phrase and role-override patterns, so `ig​nore previous
+ * instructions` or `sys\x1b[0mtem:` slipped past the phrase check and became
+ * live once the smuggled character was removed; likewise a phrase nested inside
+ * itself (`ignignore previous instructionsore previous instructions`) reformed
+ * after the inner copy was cut. Every pattern only deletes, so each pass that
+ * changes the text shortens it and the loop terminates; when it exits, no
+ * pattern matches the result.
  */
 export function stripInjectionPatterns(text: string): string {
   let clean = text;
-  for (const pattern of INJECTION_PATTERNS) {
-    clean = clean.replace(pattern, '');
+  for (;;) {
+    let next = clean;
+    for (const pattern of INJECTION_PATTERNS) {
+      next = next.replace(pattern, '');
+    }
+    if (next === clean) return clean;
+    clean = next;
   }
-  return clean;
 }
 
 export interface EscapeForPromptOptions {
