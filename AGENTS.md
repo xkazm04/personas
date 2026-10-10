@@ -10,12 +10,15 @@ Where a pointed-to file and this one disagree, the pointed-to file wins.
 |---|---|
 | anything in this repo | `.claude/CLAUDE.md` (repo law: commands, gates, git policy, conventions) |
 | `src/**/*.tsx`, `src/**/*.css` (any UI) | `.claude/rules/ui.md`, then `.claude/Design.md` as the full reference |
-| user-facing strings, `src/i18n/**` | `.claude/rules/i18n.md` |
+| user-facing strings, `src/i18n/**`, `scripts/i18n/**`, `src/features/**/i18n/**` | `.claude/rules/i18n.md` |
 | `src-tauri/**` | `.claude/rules/rust-backend.md` |
+| the credential vault: master key, credential decrypt, IPC tiers, API proxy | `docs/security/credential-vault-threat-model.md` (what is protected, from whom, and the boundaries not to cross) |
 | "why is it this way?" | `docs/decisions.md` (generated index over every decision store) |
 
 Claude Code loads the `.claude/rules/*.md` files by their `paths:` frontmatter. Other harnesses do
-not, so open the one that matches your change yourself.
+not, so open the one that matches your change yourself. The globs in the first column are the
+frontmatter's, verbatim: `src/__tests__/structural/rulesPathGlobs.test.ts` (in `npm test`) fails when
+a rules file's glob matches no file in the tree, or when a row here and its rules file disagree.
 
 ## Git policy
 
