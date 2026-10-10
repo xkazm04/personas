@@ -34,6 +34,10 @@ lists history by these and by the harness's `Claude-Session:` trailer.
 `node scripts/git/check-session-trailer.mjs <message-file>` is the verdict on one message: a commit
 co-authored by Claude (or carrying `Claude-Session:`) without a session trailer exits 1; human
 commits, merges and reverts pass. It is not yet wired as a `commit-msg` hook in `lefthook.yml`.
+`node scripts/git/trailer-coverage.mjs [--since <date>] [--min-share 0.9]` applies the same verdict
+to a window of history (default: 30 days) and prints the share of agent commits that name their
+session, with the hash of every one that does not; `--min-share` makes it exit 1 below a floor.
+No share has been recorded yet, and no regression has yet been traced to a session this way.
 
 ## Commands
 
@@ -41,7 +45,7 @@ Generated from `.ai/manifest.yaml`; change a command there, then run
 `node .ai/project-commands.mjs --write`.
 
 <!-- ai:commands:begin -->
-<!-- GENERATED from .ai/manifest.yaml (capabilities, guidance.doneGate) by node .ai/project-commands.mjs --write. Edit the manifest, not this block: --check, and src/__tests__/structural/guidanceCommands.test.ts, fail when it is stale. -->
+<!-- GENERATED from .ai/manifest.yaml (capabilities, guidance.doneGate, guidance.prePushGate) by node .ai/project-commands.mjs --write. Edit the manifest, not this block: --check, and src/__tests__/structural/guidanceCommands.test.ts, fail when it is stale. -->
 
 | Capability | Command |
 |---|---|
@@ -54,14 +58,19 @@ Generated from `.ai/manifest.yaml`; change a command there, then run
 
 Before you report done: `npm run gate -- --cold`.
 
+Before you push: `npm run check` (the full pre-push chain; it is not part of done).
+
 - **test**: the Vitest suite. The Rust suites are separate lanes (`npm run test:rust` for app_lib with `--features desktop`, `npm run test:rust:crates` for the extracted crates), listed under Common Commands in `.claude/CLAUDE.md`.
 - **typecheck**: the portable form, run through `npx` because `tsc` is not on PATH on Windows. `npm run check` and `npm run build` typecheck through `npm run typecheck:native` (the TS 7 native compiler, same tsconfig), and `npm run gate` answers tsc from a warm daemon. All three are the same typecheck, not three different ones.
 <!-- ai:commands:end -->
 
-## Gates to run before you report done
+## What the two gates run
 
-- The done gate above runs tsc, eslint on changed files and the golden-path census, cold.
-- `npm run check`: the full pre-push chain. Style rules in ESLint are warn and fail nothing; the
+The done and pre-push commands are the two generated lines above; this section only says what is
+behind them.
+
+- The done gate runs tsc, eslint on changed files and the golden-path census, cold.
+- The pre-push gate is the full `check` chain. Style rules in ESLint are warn and fail nothing; the
   census ratchets in `scripts/census/rules.json` are what fail a style slip.
 - Counts quoted in the docs (connectors, languages, codegen tasks, tests) are measured against the
   tree by `node scripts/docs/check-doc-counts.mjs`; `src/__tests__/structural/docCounts.test.ts`

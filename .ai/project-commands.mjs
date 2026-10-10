@@ -2,7 +2,7 @@
 // .ai/project-commands.mjs - project the manifest's command table into the guidance files.
 //
 // The commands an agent runs (build, test, lint, typecheck, ...) are declared ONCE, in
-// .ai/manifest.yaml `capabilities` (plus `guidance.doneGate`). Every guidance projection
+// .ai/manifest.yaml `capabilities` (plus `guidance.doneGate` and `guidance.prePushGate`). Every guidance projection
 // listed in `guidance.projections` (AGENTS.md, root CLAUDE.md) carries a generated block
 // between the markers below instead of restating them in prose, so a command that changes
 // changes everywhere or fails a check. .claude/CLAUDE.md is the canonical prose and is not
@@ -44,13 +44,15 @@ export function parseCapabilities(manifestText) {
   return caps;
 }
 
-/** `guidance.doneGate` and `guidance.projections`. */
+/** `guidance.doneGate`, `guidance.prePushGate` and `guidance.projections`. */
 export function parseGuidance(manifestText) {
   const block = (lf(manifestText).split(/\nguidance:\n/)[1] || '').split(/\n(?=[^\s#])/)[0];
   const doneGate = block.match(/^\s+doneGate:\s*(.+)$/m);
+  const prePushGate = block.match(/^\s+prePushGate:\s*(.+)$/m);
   const projections = block.match(/^\s+projections:\s*\[([^\]]*)\]/m);
   return {
     doneGate: doneGate ? unquote(doneGate[1]) : null,
+    prePushGate: prePushGate ? unquote(prePushGate[1]) : null,
     projections: projections ? projections[1].split(',').map(unquote).filter(Boolean) : [],
   };
 }
@@ -58,16 +60,17 @@ export function parseGuidance(manifestText) {
 /** The exact block every projection must carry, markers included. */
 export function renderBlock(manifestText) {
   const caps = parseCapabilities(manifestText);
-  const { doneGate } = parseGuidance(manifestText);
+  const { doneGate, prePushGate } = parseGuidance(manifestText);
   const lines = [
     BEGIN,
-    `<!-- GENERATED from ${MANIFEST} (capabilities, guidance.doneGate) by node .ai/project-commands.mjs --write. Edit the manifest, not this block: --check, and src/__tests__/structural/guidanceCommands.test.ts, fail when it is stale. -->`,
+    `<!-- GENERATED from ${MANIFEST} (capabilities, guidance.doneGate, guidance.prePushGate) by node .ai/project-commands.mjs --write. Edit the manifest, not this block: --check, and src/__tests__/structural/guidanceCommands.test.ts, fail when it is stale. -->`,
     '',
     '| Capability | Command |',
     '|---|---|',
     ...caps.map((c) => `| ${c.name} | \`${c.command}\` |`),
   ];
   if (doneGate) lines.push('', `Before you report done: \`${doneGate}\`.`);
+  if (prePushGate) lines.push('', `Before you push: \`${prePushGate}\` (the full pre-push chain; it is not part of done).`);
   const notes = caps.filter((c) => c.note);
   if (notes.length > 0) {
     lines.push('');

@@ -32,6 +32,9 @@ guidance:
   canonical: .claude/CLAUDE.md
   projections: [AGENTS.md, CLAUDE.md]
   doneGate: "npm run gate -- --cold"
+  # The full pre-push chain (every project check, then typecheck and eslint). Not part of done:
+  # done is the gate above; this is what must be green before a branch leaves the box.
+  prePushGate: "npm run check"
 
 # Pointers — these subsystems can change format underneath without breaking this contract.
 paths:
