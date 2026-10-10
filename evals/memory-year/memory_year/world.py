@@ -391,7 +391,12 @@ class World:
         # stable and reversal facts, probed at several later points
         for scope in ["user"] + self.projects:
             keys = {f.key for f in self.facts if f.scope == scope and f.kind in ("fact", "preference")}
-            for key in keys:
+            # Sorted: a set of strings iterates in hash order, which PYTHONHASHSEED varies per
+            # process, and each probe draws its minute from the shared RNG. Until 2026-10-10
+            # the probes were NOT deterministic from the seed (events and facts were): four
+            # processes gave four probe sets for seed 7, none of them the saved s7-d365-x10.
+            # A published ladder's probe set lives in its saved probes.json, not in its seed.
+            for key in sorted(keys):
                 hist = self.history(scope, key)
                 newest = hist[-1]
                 probe_days = sorted({min(N - 1, newest.valid_from + d) for d in (3, 30, 90, 200) if newest.valid_from + d < N})
