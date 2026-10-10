@@ -28,7 +28,8 @@ context-map markers, so a context scan keeps it.
 
 Before you report done: `npm run gate -- --cold`.
 
-- **typecheck**: the portable form. `npm run check` and `npm run build` typecheck through `npm run typecheck:native` (the TS 7 native compiler, same tsconfig), and `npm run gate` answers tsc from a warm daemon. All three are the same typecheck, not three different ones.
+- **test**: the Vitest suite. The Rust suites are separate lanes (`npm run test:rust` for app_lib with `--features desktop`, `npm run test:rust:crates` for the extracted crates), listed under Common Commands in `.claude/CLAUDE.md`.
+- **typecheck**: the portable form, run through `npx` because `tsc` is not on PATH on Windows. `npm run check` and `npm run build` typecheck through `npm run typecheck:native` (the TS 7 native compiler, same tsconfig), and `npm run gate` answers tsc from a warm daemon. All three are the same typecheck, not three different ones.
 <!-- ai:commands:end -->
 
 <!-- personas:context-map:start -->
