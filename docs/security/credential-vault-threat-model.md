@@ -2,9 +2,10 @@
 
 > Written 2026-10-10 from the code, not from the README. Every claim cites the file and line it was
 > read from at that date. **Re-read the cited line before you rely on a claim**: this repo's guidance
-> has a long record of prose that outlived its code (see `.claude/CLAUDE.md`), and nothing checks
-> this file against the source. A human security review of this document is owed; it was written by
-> an agent.
+> has a long record of prose that outlived its code (see `.claude/CLAUDE.md`). The boundaries in
+> section 7 that a text check can carry are checked against the source on every `npm test` (see the
+> end of section 7); the rest of this file is not. A human security review of this document is owed;
+> it was written by an agent.
 
 This is the boundary map for the code that holds users' third-party secrets: API keys, OAuth tokens,
 database passwords. It says what is protected, from whom, where the protection actually sits, and
@@ -100,7 +101,7 @@ renderer".
 | `export_credentials` / `export_full` | public at the wrapper | Bulk export of the vault. Sealing for export is in `src-tauri/src/commands/core/data_portability/sealing.rs` |
 | `browser_sites_bind_credential` | privileged (`ipc_auth.rs:408`) | Points a stored credential at a web origin the browser agent can drive |
 | `create_credential` / `update_credential` / `update_credential_field` | privileged | Overwrite a secret (integrity, not confidentiality) |
-| `healthcheck_credential*` | privileged | Sends the secret to its service's healthcheck URL |
+| `healthcheck_credential` / `healthcheck_credential_preview` | privileged | Sends the secret to its service's healthcheck URL |
 
 ## 4. Audit and the signals that say the vault is degraded
 
@@ -165,6 +166,24 @@ Each default was flipped from fail-open after a bug hunt (2026-06-07 #1, #2, #5,
 8. **Do not widen `execute_api_request`'s host.** The host comes from the credential, never from the
    caller's `path`. Keep `build_full_url` the single place that joins them, and keep the SSRF gate
    inside the interceptor continuation (`engine/api_proxy.rs:724-760`).
+
+### Which of these are checked
+
+[`vault-boundaries.json`](./vault-boundaries.json) restates this list by number, and
+`src/__tests__/structural/vault-boundaries.test.ts` enforces it on every `npm test`. A failure names
+the rule it guards (`rule 4: ...`), so read the matching item above before you change anything.
+
+| Rule | Checked against the source | What fails |
+|---|---|---|
+| 1, 2, 7 | No (`prose-only`, each with its reason in the JSON) | Nothing. These need a data-flow or call-graph check |
+| 3 | Yes | `Serialize` derived or implemented for `SecureString` or `EncryptedToken` |
+| 4 | Yes | A command in `mustBePrivileged` leaves `PRIVILEGED_COMMANDS`, or a `deliberate` exclusion in the tier ledger (`DRIFT_BASELINE`) is not in `publicByDecision` and section 3.1 |
+| 5 | Yes | A section 5 variable is no longer read with its closed default in `crypto.rs` |
+| 6 | Yes | `OnceLock<Result<` appears in `crypto.rs` |
+| 8 | Yes, for the single join point only | `build_full_url` is defined anywhere other than `engine/api_proxy.rs`, or more than once |
+
+The test also fails when this list and the JSON disagree. Add or renumber a rule in both places, in
+the same change. Editing a command list in the JSON is a security decision; flag it for human review.
 
 Changes to these paths are security-sensitive edits under `.claude/CLAUDE.md` § PR self-review:
 flag them for human review.

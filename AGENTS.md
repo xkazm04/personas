@@ -12,7 +12,7 @@ Where a pointed-to file and this one disagree, the pointed-to file wins.
 | `src/**/*.tsx`, `src/**/*.css` (any UI) | `.claude/rules/ui.md`, then `.claude/Design.md` as the full reference |
 | user-facing strings, `src/i18n/**`, `scripts/i18n/**`, `src/features/**/i18n/**` | `.claude/rules/i18n.md` |
 | `src-tauri/**` | `.claude/rules/rust-backend.md` |
-| the credential vault: master key, credential decrypt, IPC tiers, API proxy | `docs/security/credential-vault-threat-model.md` (what is protected, from whom, and the boundaries not to cross) |
+| the credential vault: master key, credential decrypt, IPC tiers, API proxy | `docs/security/credential-vault-threat-model.md` (what is protected, from whom, and the boundaries not to cross). Section 7's checkable boundaries are listed in `docs/security/vault-boundaries.json` and enforced by `src/__tests__/structural/vault-boundaries.test.ts` |
 | "why is it this way?" | `docs/decisions.md` (generated index over every decision store) |
 
 Claude Code loads the `.claude/rules/*.md` files by their `paths:` frontmatter. Other harnesses do

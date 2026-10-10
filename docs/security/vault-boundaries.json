@@ -1,0 +1,89 @@
+{
+  "$comment": "The machine-readable half of section 7 of docs/security/credential-vault-threat-model.md. One entry per numbered rule there, with the same id. A `checked` rule is enforced by src/__tests__/structural/vault-boundaries.test.ts, which reads the Rust source as text on every `npm test`; a `prose-only` rule says why no text check can carry it. The test fails if this list and section 7 disagree, if a checked rule has no check, or if an anchor a check expects is missing (a check that finds nothing is broken, not green). Changing a name list here is a security decision: flag it for human review.",
+  "files": {
+    "crypto": "src-tauri/core/src/crypto.rs",
+    "ipcAuth": "src-tauri/src/ipc_auth.rs",
+    "apiProxy": "src-tauri/src/engine/api_proxy.rs",
+    "threatModel": "docs/security/credential-vault-threat-model.md"
+  },
+  "rustRoots": ["src-tauri/src", "src-tauri/core/src", "src-tauri/db/src", "src-tauri/engine/src"],
+  "rules": [
+    {
+      "id": 1,
+      "title": "Never return a decrypted field value from a #[tauri::command]",
+      "kind": "prose-only",
+      "reason": "A decrypted value is a String once it leaves SecureString; no text pattern separates it from any other String a command returns."
+    },
+    {
+      "id": 2,
+      "title": "Never log plaintext, and never put it in an AppError message",
+      "kind": "prose-only",
+      "reason": "Whether a formatted value is a secret is a data-flow question; SecureString's redacting Debug/Display is the structural guard, and rule 3 keeps its serialization closed."
+    },
+    {
+      "id": 3,
+      "title": "Never add Serialize to SecureString or EncryptedToken",
+      "kind": "checked",
+      "types": ["SecureString", "EncryptedToken"]
+    },
+    {
+      "id": 4,
+      "title": "A new secret-touching async command goes into PRIVILEGED_COMMANDS; an exclusion is recorded in the tier ledger",
+      "kind": "checked",
+      "mustBePrivileged": [
+        "create_credential",
+        "update_credential",
+        "update_credential_field",
+        "healthcheck_credential",
+        "healthcheck_credential_preview",
+        "browser_sites_bind_credential"
+      ],
+      "publicByDecision": [
+        "execute_api_request",
+        "get_api_proxy_metrics",
+        "save_api_definition",
+        "export_credentials",
+        "import_credentials",
+        "export_full",
+        "import_portability_bundle"
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Never flip a fail-closed default in section 5",
+      "kind": "checked",
+      "closedDefaults": [
+        {
+          "variable": "PERSONAS_ALLOW_FALLBACK_KEY",
+          "pattern": "env_bool_strict\\(\\s*\"PERSONAS_ALLOW_FALLBACK_KEY\"\\s*,\\s*false\\s*\\)"
+        },
+        {
+          "variable": "PERSONAS_MIGRATE_LEGACY_KEY",
+          "pattern": "std::env::var\\(\\s*\"PERSONAS_MIGRATE_LEGACY_KEY\"\\s*\\)\\s*\\.unwrap_or_default\\(\\)\\s*==\\s*\"1\""
+        },
+        {
+          "variable": "PERSONAS_ALLOW_LEGACY_IPC",
+          "pattern": "std::env::var\\(\\s*\"PERSONAS_ALLOW_LEGACY_IPC\"\\s*\\)\\s*\\.unwrap_or_default\\(\\)\\s*!=\\s*\"1\""
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Never cache a key-derivation Result",
+      "kind": "checked",
+      "forbiddenInCrypto": "OnceLock<\\s*Result<"
+    },
+    {
+      "id": 7,
+      "title": "Every decrypt writes an audit row via audit_log, and must not block on that write",
+      "kind": "prose-only",
+      "reason": "A decrypt path and its audit write can sit in different functions and crates; pairing them needs a call graph, not a text match. credential_audit_write_failures is the runtime signal."
+    },
+    {
+      "id": 8,
+      "title": "Do not widen execute_api_request's host; build_full_url is the single place that joins base URL and path",
+      "kind": "checked",
+      "singleDefinition": "build_full_url"
+    }
+  ]
+}
