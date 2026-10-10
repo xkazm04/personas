@@ -1,0 +1,25 @@
+{
+  "schema": "conform-run/1",
+  "worker": "db8645a2-0bef-4c03-842e-1c0e8eb1cc64",
+  "subject": "trace-rollup-and-attribution",
+  "evaluatedAt": "2026-10-10T11:29:35Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "trace-rollup-and-attribution",
+      "context": "03960450-6979-4412-9de3-35c897fe56d2",
+      "reason": "already judged 2026-10-09 against the current digest sha256-b2:441741a78f8712b4 (revision 7, revisionsBehind 0, not stale); no commit has touched the anchored files since 2026-10-06 and every anchor line was printed back on 2026-10-10T11:29:35Z and still says what the evidence claims - a re-judge would restate the standing deviation"
+    },
+    {
+      "subject": "trace-rollup-and-attribution",
+      "context": "208f50de-5d3b-4345-9fed-1c106a7a36e9",
+      "reason": "already judged 2026-10-09 against the current digest sha256-b2:441741a78f8712b4 (revision 7, revisionsBehind 0, not stale); no commit has touched the anchored files since 2026-10-06 and every anchor line was printed back on 2026-10-10T11:29:35Z and still says what the evidence claims - a re-judge would restate the standing deviation"
+    },
+    {
+      "subject": "trace-rollup-and-attribution",
+      "context": "a6843b83-43a1-4eab-ae40-26f23b949a0d",
+      "reason": "already judged 2026-10-09 against the current digest sha256-b2:441741a78f8712b4 (revision 7, revisionsBehind 0, not stale); no commit has touched the anchored files since 2026-10-06 and every anchor line was printed back on 2026-10-10T11:29:35Z and still says what the evidence claims - a re-judge would restate the standing deviation"
+    }
+  ],
+  "consults": []
+}

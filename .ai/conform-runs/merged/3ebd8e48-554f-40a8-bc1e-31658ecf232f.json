@@ -1,0 +1,175 @@
+{
+  "schema": "conform-run/1",
+  "worker": "3ebd8e48-554f-40a8-bc1e-31658ecf232f",
+  "subject": "quality-gates",
+  "evaluatedAt": "2026-10-10T01:09:48.799Z",
+  "pairs": [
+    {
+      "context": "a3b615d2-05d8-47bd-ad92-672c6b42b0f3",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/ai_healing.rs:169 makes the healer itself decide should_retry, and src-tauri/src/engine/healing_retry.rs:947 runs the verifying re-run only when it says true - yet src-tauri/engine/src/ai_healing.rs:292 has already committed the healed prompt as a new production version, so a heal ending should_retry:false ships an unverified prompt reported as phase 'completed' (oracle-frozen-during-repair: the verdict comes from the toolchain, not the fixer)",
+      "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+      "evaluatedRevision": 53,
+      "techniques": [
+        {
+          "technique": "oracle-frozen-during-repair",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/ai_healing.rs:169 healer authors should_retry (parsed at :211); src-tauri/src/engine/healing_retry.rs:947 gates the only verifying re-run on it while :292 already snapshotted the healed prompt as production - a repair ending with the check unrun is never marked unverified"
+        },
+        {
+          "technique": "self-reported-gate-inputs",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/fix_loop.rs:207 the _fix_* keys are inserted last (:238), so a prior model-written input cannot pin the attempt counter or plant a failure list into the quality-gate fix loop"
+        }
+      ]
+    },
+    {
+      "context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/design/connector_readiness.rs:965 an exact match with 2+ vault credentials resolves to None and :588 refuses as VaultCredential, whose remedy :104 'add the credential in Settings -> Vault' cannot clear it (another credential keeps :964 true), and the run gate :767 never reads the persona's design_context.credentialLinks binding - a correctly bound persona is refused with a remedy that makes it worse",
+      "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+      "evaluatedRevision": 53,
+      "techniques": [
+        {
+          "technique": "refusal-names-a-reachable-remedy",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:104 remedy for the ambiguous-match refusal (:965 -> :588) is to add a credential, which keeps exact.len()>1 at :964; the remedy applied as worded does not clear the check (CliLogin at :129 does resolve its login command per connector)"
+        },
+        {
+          "technique": "false-positive-economics",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:767 persona_live_blockers resolves readiness by connector name from vault-global state (persona_declared_connectors :695 reads names only), so a persona whose credentialLinks binds one of two same-service credentials is refused at every run"
+        },
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:548 a blank connector declaration and :619 an unwired probe arm both fail closed as Misconfigured instead of reading as ready"
+        },
+        {
+          "technique": "policy-projection",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:3 one resolver serves adopt, promote and run gate; :1230 the gallery's readiness is derived from it instead of a parallel TS computation"
+        },
+        {
+          "technique": "severity-by-construction",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/design/template_adopt.rs:40 the inert adoption integrity gate was removed rather than left as decoration, and :52 labels the surviving verifier a detector, not a gate"
+        }
+      ]
+    },
+    {
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 the deck routes a human reviewer's verdict (accept/reject vocabulary, src/features/agents/quick-answer/triage/triageTypes.ts:38) to one backend write; no mechanism here computes a verdict over an artifact, so no quality-gates precondition holds",
+      "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+      "evaluatedRevision": 53,
+      "techniques": [],
+      "registryProposal": "technique-shaped resonance: matched at score 1597 on verdict/blocking/triage tokens, but the governing subjects are human-review-queue and hitl-approval; the golden path's precondition is a check that can refuse, and a human decision surface is not one"
+    },
+    {
+      "context": "dc471d31-ae30-4ac9-b015-d51969df458d",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/shared/chrome/sidebar/SidebarLevel1.tsx:198 the only 'gate' is tier visibility (plan entitlement), and src/features/shared/chrome/CliReadinessBanner.tsx:12 the CLI-readiness 'gate' is presentation only and refuses nothing; no quality standard is enforced in this context",
+      "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+      "evaluatedRevision": 53,
+      "techniques": []
+    }
+  ],
+  "declined": [
+    {
+      "subject": "quality-gates",
+      "context": "a38e2b93-2322-4187-befa-c0443c4ca85f",
+      "reason": "weak governance (glyph-definitions): the match itself is doubtful; left as a coverage question, not judged"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "1d8a480b-eac4-4110-a60e-47a6ab281c97",
+      "reason": "weak governance (glyph-persona-card): the match itself is doubtful; left as a coverage question, not judged"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400",
+      "reason": "weak governance (plugins-artist-gallery): the match itself is doubtful; left as a coverage question, not judged"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b",
+      "reason": "weak governance (plugins-research-lab-reports): the match itself is doubtful; left as a coverage question, not judged"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0",
+      "reason": "weak governance (plugins-research-lab-shared): the match itself is doubtful; left as a coverage question, not judged"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "89d44c76-ec4c-4388-843e-503cf6ca2507",
+      "reason": "weak governance (progress-transform): the match itself is doubtful; left as a coverage question, not judged"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "9b013060-5483-4162-9f8a-6b69109d623d",
+      "reason": "weak governance (teams-kpis): the match itself is doubtful; left as a coverage question, not judged"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7",
+      "reason": "weak governance (triggers-test): the match itself is doubtful; left as a coverage question, not judged"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T01:09:48.799Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "oracle-frozen-during-repair",
+        "self-reported-gate-inputs"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T01:09:48.799Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "refusal-names-a-reachable-remedy",
+        "false-positive-economics",
+        "unmeasurable-criteria",
+        "policy-projection",
+        "severity-by-construction"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T01:09:48.799Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T01:09:48.799Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

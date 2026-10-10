@@ -1,0 +1,9 @@
+{"schema": "conform-run/1", "worker": "6d2fdcd1-9ab5-4726-b0f0-bb0a4716c939", "subject": "design-tokens",
+ "evaluatedAt": "2026-10-10T01:34:22Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "design-tokens", "context": "14c7d145-2166-454b-aee5-d69d9d527d79", "reason": "no work: deviation judged 2026-10-09 against sha256-b2:165125b7a54d0de3 revision 7, which is the registry index digest at HEAD 32d7899f; the anchor line re-printed unchanged at HEAD and no commit since touched it, so a re-judge would restate a current verdict (src/styles/globals.css:907 html filter: brightness)"},
+  {"subject": "design-tokens", "context": "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6", "reason": "no work: deviation judged 2026-10-09 against sha256-b2:165125b7a54d0de3 revision 7, which is the registry index digest at HEAD 32d7899f; the anchor line re-printed unchanged at HEAD and no commit since touched it, so a re-judge would restate a current verdict (src/lib/utils/rafAnimationEngine.ts:71 OS media query only)"},
+  {"subject": "design-tokens", "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65", "reason": "no work: deviation judged 2026-10-09 against sha256-b2:165125b7a54d0de3 revision 7, which is the registry index digest at HEAD 32d7899f; the anchor line re-printed unchanged at HEAD and no commit since touched it, so a re-judge would restate a current verdict (src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:127 hue-authored badge)"}
+ ],
+ "consults": []}

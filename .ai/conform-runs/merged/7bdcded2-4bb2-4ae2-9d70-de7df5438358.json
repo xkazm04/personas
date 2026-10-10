@@ -1,0 +1,10 @@
+{
+  "schema": "conform-run/1",
+  "worker": "7bdcded2-4bb2-4ae2-9d70-de7df5438358",
+  "subject": "telemetry-pii-redaction",
+  "evaluatedAt": "2026-10-10T02:16:34Z",
+  "pairs": [],
+  "declined": [],
+  "consults": [],
+  "note": "No work: .ai/registry-map.json (generatedAt 2026-10-01T08:52:29Z) holds zero pairs for telemetry-pii-redaction - the map carries 201 of the index's 234 software-engineering subjects. Missing pairing (registry/matcher finding, not added per dispatch rules): the subject governs this repo - src/lib/sentry.ts:213 sets sendDefaultPii:false and :215 a beforeSend scrubber - but src/lib/sentry.ts and src/lib/silentFailureTelemetry.ts belong to NO context in context-map.json, so no rebuild can pair them until a context owns them; src-tauri/core/src/redact.rs sits in context core (468953eb-0204-4013-b366-9357b2161138), the nearest existing candidate. Operator follow-up: assign the telemetry files to a context, then node ../ai-registry/scripts/build-registry-map.mjs --project personas."
+}

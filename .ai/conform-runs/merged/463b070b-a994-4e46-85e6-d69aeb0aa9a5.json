@@ -1,0 +1,70 @@
+{
+  "schema": "conform-run/1",
+  "worker": "463b070b-a994-4e46-85e6-d69aeb0aa9a5",
+  "subject": "client-state",
+  "evaluatedAt": "2026-10-10T01:13:00Z",
+  "pairs": [
+    {
+      "context": "417112d1-004b-41d5-a656-57997a47d818",
+      "subject": "client-state",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/utility/timing/useDebouncedSave.ts:31 one scalar isSaving guards saves the debounce can overlap (a new timer at :47 fires whether or not the last save settled), so when a save outlasts the delay the first to settle clears isSaving (:62) while the other is in flight and the later-settling one writes lastError (:52/:55) regardless of order; useAnimatedNumber.ts:27 puts target in the session's deps, so every change re-registers at the new value and never tweens (latent: no consumer)",
+      "techniques": [
+        {"technique": "status-fsms", "verdict": "deviation", "evidence": "src/hooks/utility/timing/useDebouncedSave.ts:31 scalar isSaving for saves that can run concurrently; the first finally (:62) clears busy while a later save is still running"},
+        {"technique": "async-race-guards", "verdict": "deviation", "evidence": "src/hooks/utility/timing/useDebouncedSave.ts:47 debounce bounds when saves leave, not the order they land: each completion writes lastError (:52, :55) with no attempt token, so an older save failing after a newer one succeeded shows a stale failure; per the technique a debounce is not a race guard"},
+        {"technique": "effect-identity-and-latched-callbacks", "verdict": "deviation", "evidence": "src/hooks/utility/timing/useAnimatedNumber.ts:27 target in the session deps: registerAnimation writes the new target as its start (src/lib/utils/rafAnimationEngine.ts:177), so the counter jumps instead of animating; separately usePolling.ts:150 teardown disposes the ticker but runFetch has no cancelled flag, so a disabled session's late completion still writes status (:114). Realized: usePolling.ts:105 latches fetchFn in a ref, :99 keeps the failure counter in a cell across re-registration"},
+        {"technique": "singleton-lifecycle", "verdict": "realized", "evidence": "src/hooks/utility/timing/relativeTimeTicker.ts:79 module-scope subscriber set is refcounted (timer stopped when it drains, :177) and ships a reset hatch at :302"},
+        {"technique": "persistence-and-migration", "verdict": "not-applicable", "evidence": "src/hooks/utility/timing/useDebouncedSave.ts:51 persists through a caller-supplied save to the authority; no file in the context reads or writes local storage"}
+      ],
+      "registryProposal": "The map marks this context governance:weak, but effect-identity-and-latched-callbacks governs it directly: its use_when ('a caller-supplied callback changes identity on every render', 'backoff counters that never grow') describes these timing hooks. The weak flag is a context-level average hiding a strong technique-level fit. Separately, the debounced auto-save that overlaps itself (one scalar busy flag plus unordered completions) is a common shape: async-race-guards' debounce paragraph covers reads, and optimistic-write-path covers per-entity serialization, but neither names debounced auto-save. It would be worth an explicit sentence."
+    },
+    {
+      "context": "d9cffe6c-a868-4ed4-b5e8-6c8add36918a",
+      "subject": "client-state",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_lifecycle/journey/useLifecycleSnapshot.ts:46 and src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer2/useStepDetail.ts:34 commit to module caches unguarded, so an older-revision reply that settles after a newer one stays warm for the next mount; neither module ships a reset hatch (useLifecycleSnapshot.ts:28, useStepDetail.ts:22) while lifecycleView/history/useLifecycleHistory.ts:129 does. Re-confirmed after 67f78ca56a",
+      "techniques": [
+        {"technique": "async-race-guards", "verdict": "deviation", "evidence": "src/features/plugins/dev-tools/sub_lifecycle/journey/useLifecycleSnapshot.ts:46 snapshotCache.set runs on every completion, with no check that its revision is still the newest; the inFlight revision at :40 only dedups joins"},
+        {"technique": "singleton-lifecycle", "verdict": "deviation", "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer2/useStepDetail.ts:22 module-scope detailCache plus the inFlight map (:24) have no reset hatch, so src/features/plugins/dev-tools/sub_lifecycle/journey/__tests__/LifecyclePage.test.tsx:235 avoids warm state by inventing a fresh project id; sibling realizes it at lifecycleView/history/useLifecycleHistory.ts:129"}
+      ]
+    },
+    {
+      "context": "03e7f46a-3f19-47b8-98a5-398efed815b4",
+      "subject": "client-state",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/realtime/useRunEventListener.ts:102 bindings (callbacks included) are the session deps and memoization is delegated to callers, so an inline array re-listens every render and drops events in the gap; src/hooks/agents/useRecentAgents.ts:18 rehydrates localStorage by bare cast with no version, and the write at :25 is unguarded. Re-confirmed: neither file has changed since the 2026-10-01 verdict",
+      "techniques": [
+        {"technique": "effect-identity-and-latched-callbacks", "verdict": "deviation", "evidence": "src/hooks/realtime/useRunEventListener.ts:102 '}, [bindings]); // bindings is memoized by callers'; the technique names memoizing the caller's callback as its failure mode"},
+        {"technique": "persistence-and-migration", "verdict": "deviation", "evidence": "src/hooks/agents/useRecentAgents.ts:18 JSON.parse(raw) as RecentEntry[] with no version stamp and no shape check"}
+      ]
+    },
+    {
+      "context": "c413de7d-1182-4abc-8a08-9c8832254c62",
+      "subject": "client-state",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/overseer/useDirector.ts:114 refresh() fires getDirectorPortfolio(period) with no latest-wins token, so an out-of-order reply from an earlier period overwrites the newer one; the portfolio lane's finally (:123) clears refreshing while the verdicts lane may still be in flight. Re-confirmed: file unchanged since the 2026-10-01 verdict",
+      "techniques": [
+        {"technique": "async-race-guards", "verdict": "deviation", "evidence": "src/features/companions/overseer/useDirector.ts:114 period-switch fetch commits setPortfolio unconditionally"},
+        {"technique": "status-fsms", "verdict": "deviation", "evidence": "src/features/companions/overseer/useDirector.ts:123 one scalar refreshing is cleared by the portfolio lane alone. Realized: per-lane portfolioError/verdictsError flags"}
+      ]
+    }
+  ],
+  "declined": [
+    {"subject": "client-state", "context": "ab849301-d5ce-4d91-a12e-0e87a0417585", "reason": "not-applicable verdict from 2026-10-06 against the current digest (rev 15), not stale; left for budget"},
+    {"subject": "client-state", "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573", "reason": "deviation judged 2026-10-09 against the current digest; anchor file unchanged since; left for budget"},
+    {"subject": "client-state", "context": "ade5a251-866a-4352-9a03-012d78fe9b74", "reason": "deviation judged 2026-10-09 against the current digest; left for budget"},
+    {"subject": "client-state", "context": "11fe7642-7a1a-47c5-8910-499850aa04fe", "reason": "deviation judged 2026-10-06 against the current digest; anchor files unchanged since 2026-09-22; left for budget"},
+    {"subject": "client-state", "context": "532bbf10-3fd3-4b57-a8ea-95a957645697", "reason": "deviation judged 2026-10-09 against the current digest; left for budget"},
+    {"subject": "client-state", "context": "0aded02d-f5c5-4e24-8366-90783fb343b1", "reason": "deviation judged 2026-10-09 against the current digest; left for budget"}
+  ],
+  "consults": [
+    {"ts": "2026-10-10T01:13:00Z", "bundle": "software-engineering", "subjects": ["client-state"], "techniques": ["status-fsms", "async-race-guards", "effect-identity-and-latched-callbacks", "singleton-lifecycle", "persistence-and-migration"], "deviations": 3},
+    {"ts": "2026-10-10T01:13:00Z", "bundle": "software-engineering", "subjects": ["client-state"], "techniques": ["async-race-guards", "singleton-lifecycle"], "deviations": 2},
+    {"ts": "2026-10-10T01:13:00Z", "bundle": "software-engineering", "subjects": ["client-state"], "techniques": ["effect-identity-and-latched-callbacks", "persistence-and-migration"], "deviations": 2},
+    {"ts": "2026-10-10T01:13:00Z", "bundle": "software-engineering", "subjects": ["client-state"], "techniques": ["async-race-guards", "status-fsms"], "deviations": 2}
+  ]
+}

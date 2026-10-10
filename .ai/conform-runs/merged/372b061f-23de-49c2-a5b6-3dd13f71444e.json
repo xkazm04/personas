@@ -1,0 +1,8 @@
+{"schema": "conform-run/1", "worker": "372b061f-23de-49c2-a5b6-3dd13f71444e", "subject": "subprocess-lifecycle",
+ "evaluatedAt": "2026-10-10T12:13:17Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "subprocess-lifecycle", "context": "2de6333f-8375-404b-8fdc-fe0fb15d4f95", "reason": "no work: already judged deviation on 2026-10-10 against the current subject digest sha256-b2:14e6e49e4c386292 (revision 12, registry e6f59b26), not stale; anchors re-read unchanged (headless.rs:72 p.kill(), devserver.rs:595 kill_tree) and no commit or dirty edit touched src-tauri/src/commands/fleet since"},
+  {"subject": "subprocess-lifecycle", "context": "6a81750d-fdbf-4518-bae6-689303e1a884", "reason": "no work: already judged deviation on 2026-10-10 against the current subject digest sha256-b2:14e6e49e4c386292 (revision 12), not stale; anchors re-read unchanged (session_pool.rs:145 hashes tool_count, session_pool.rs:9 promises credential invalidation, tools.rs:73 assign_tool) and no commit or dirty edit touched those files since"}
+ ],
+ "consults": []}

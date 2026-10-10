@@ -1,0 +1,162 @@
+{
+  "schema": "conform-run/1",
+  "worker": "9f6f1232-c6f7-494f-9686-eff9f74dfa45",
+  "subject": "i18n",
+  "evaluatedAt": "2026-10-10T12:00:38Z",
+  "pairs": [
+    {
+      "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+      "subject": "i18n",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/i18n/routeSections.ts:85 home never fetches the overview section that CockpitPanel.tsx:34 reads, so the landing route ships English to 13 locales behind green parity; error copy is still English sentences (src/lib/errors/errorRegistry.ts:75) rendered raw at 7 sites (src/features/companions/athena/BrainHealthPanel.tsx:145); 6 of 9 techniques deviate",
+      "evaluatedAgainst": "sha256-b2:13f1a2698a82c874",
+      "evaluatedRevision": 7,
+      "techniques": [
+        {
+          "technique": "catalog-architecture",
+          "verdict": "deviation",
+          "evidence": "src/i18n/routeSections.ts:85 home route declares cockpit but not overview, while src/features/home/sub_cockpit/CockpitPanel.tsx:34 reads t.overview.cockpit; the pure-read resolver (src/i18n/useTranslation.ts:385) never fetches it, so the landing route renders English in every locale until Overview is visited, and scripts/i18n/check-route-sections.mjs is wired to no gate"
+        },
+        {
+          "technique": "completeness-gates",
+          "verdict": "realized-partial",
+          "evidence": "lefthook.yml:75 strict key parity at commit on locale edits, extras always fail (scripts/i18n/check-coverage.mjs:8), value parity via check-untranslated; domain coverage only for chain_stop and error_registry, the repo itself records missing token arms in docs/concepts/golden-path-deferred-fixes.md:636 (not re-counted this run)"
+        },
+        {
+          "technique": "token-label-separation",
+          "verdict": "deviation",
+          "evidence": "src/i18n/tokenMaps.ts:40 the unknown-token report is DEV-only, so a production miss renders the raw token (:50) with no telemetry, and version skew is a production phenomenon"
+        },
+        {
+          "technique": "string-extraction-enforcement",
+          "verdict": "deviation",
+          "evidence": "eslint.config.js:104 custom/no-hardcoded-jsx-text is warn, and pre-commit runs eslint --quiet (lefthook.yml:32), so a new hardcoded string fails no gate"
+        },
+        {
+          "technique": "encoding-corruption-ratchet",
+          "verdict": "deviation",
+          "evidence": "scripts/i18n/check-escapes.mjs:3 gates the backslash-escape cascade only; no scan for the byte-split lead+continuation signature or U+FFFD exists anywhere under scripts/i18n, so a mis-encoded save passes every gate"
+        },
+        {
+          "technique": "incomplete-bundle-kill-switch",
+          "verdict": "deviation",
+          "evidence": "src/i18n/locales.manifest.ts:16 LocaleDescriptor carries no shippable flag, so no locale can be withdrawn from the switcher, setter or rehydration without deleting it"
+        },
+        {
+          "technique": "interpolation-and-plurals",
+          "verdict": "realized",
+          "evidence": "scripts/i18n/translate-merge.mjs:70 the merge door refuses any locale with a placeholder break"
+        },
+        {
+          "technique": "locale-runtime",
+          "verdict": "realized",
+          "evidence": "src/main.tsx:209 reads the persisted locale and route before mount and races section preload against a 1200 ms bound (:212); src/i18n/pseudoLocale.ts provides the pseudo-locale"
+        },
+        {
+          "technique": "script-aware-presentation",
+          "verdict": "deviation",
+          "evidence": "src/styles/typography.css:75 line-height and tracking corrections enumerate locales (zh, ja, ko, hi, bn, ar) rather than scripts, so a new locale of a covered script silently inherits Latin metrics"
+        }
+      ],
+      "registryProposal": "Upward lesson for encoding-corruption-ratchet: this repo met a second corruption class every structural gate is blind to, an escaping cascade (literal backslash runs, scripts/i18n/check-escapes.mjs:3), which also FOOLED value parity into passing 27 untranslated strings because the mangling made them differ from the source. The technique names only the byte-split signature; the cascade deserves naming as a sibling signature with the same ratchet shape."
+    },
+    {
+      "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+      "subject": "i18n",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "lefthook.yml:49 the stop_reason vocabulary edit (src-tauri/db/src/chain.rs:45) runs no i18n gate at commit; its domain-coverage parity (src/i18n/__tests__/chainStopReasons.parity.test.ts:33) fires only in CI after landing, the wrong door per completeness-gates; prior conformant cited 2 of 9 techniques, below the evidence floor",
+      "evaluatedAgainst": "sha256-b2:13f1a2698a82c874",
+      "evaluatedRevision": 7,
+      "techniques": [
+        {
+          "technique": "completeness-gates",
+          "verdict": "deviation",
+          "evidence": "lefthook.yml:49 the only commit job on *.rs is rustfmt, so an edit to the stop_reason vocabulary (src-tauri/db/src/chain.rs:45) commits and pushes green; the domain-coverage parity (src/i18n/__tests__/chainStopReasons.parity.test.ts:33, non-empty floor :30) runs only in CI (.github/workflows/ci.yml:566), after the edit has landed on master"
+        },
+        {
+          "technique": "token-label-separation",
+          "verdict": "realized",
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:33 diffs the chain_stop label map against the Rust vocabulary it parses at run time, the proactive build-time half"
+        },
+        {
+          "technique": "catalog-architecture",
+          "verdict": "realized",
+          "evidence": "src/i18n/generated/types.ts:2 typed key tree generated from en.json by a named step (scripts/run-codegen.mjs:36), regenerated in CI npm run build"
+        },
+        {
+          "technique": "string-extraction-enforcement",
+          "verdict": "not-applicable",
+          "evidence": "context-map.json lists only two test files and one generated type file for i18n-generated; extraction lives in the i18n context"
+        },
+        {
+          "technique": "encoding-corruption-ratchet",
+          "verdict": "not-applicable",
+          "evidence": "no catalog file belongs to this context; catalogs are under the i18n context"
+        },
+        {
+          "technique": "incomplete-bundle-kill-switch",
+          "verdict": "not-applicable",
+          "evidence": "the locale registry src/i18n/locales.manifest.ts belongs to the i18n context"
+        },
+        {
+          "technique": "locale-runtime",
+          "verdict": "not-applicable",
+          "evidence": "no runtime code in this context; preload lives in src/main.tsx"
+        },
+        {
+          "technique": "script-aware-presentation",
+          "verdict": "not-applicable",
+          "evidence": "no stylesheet in this context"
+        },
+        {
+          "technique": "interpolation-and-plurals",
+          "verdict": "not-applicable",
+          "evidence": "no merge door or message authoring in this context; the door is scripts/i18n/translate-merge.mjs"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-10T12:00:38Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "i18n"
+      ],
+      "techniques": [
+        "catalog-architecture",
+        "completeness-gates",
+        "token-label-separation",
+        "string-extraction-enforcement",
+        "encoding-corruption-ratchet",
+        "incomplete-bundle-kill-switch",
+        "interpolation-and-plurals",
+        "locale-runtime",
+        "script-aware-presentation"
+      ],
+      "deviations": 6
+    },
+    {
+      "ts": "2026-10-10T12:00:38Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "i18n"
+      ],
+      "techniques": [
+        "completeness-gates",
+        "token-label-separation",
+        "catalog-architecture",
+        "string-extraction-enforcement",
+        "encoding-corruption-ratchet",
+        "incomplete-bundle-kill-switch",
+        "locale-runtime",
+        "script-aware-presentation",
+        "interpolation-and-plurals"
+      ],
+      "deviations": 1
+    }
+  ]
+}

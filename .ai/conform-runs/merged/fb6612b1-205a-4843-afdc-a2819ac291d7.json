@@ -1,0 +1,15 @@
+{
+  "schema": "conform-run/1",
+  "worker": "fb6612b1-205a-4843-afdc-a2819ac291d7",
+  "subject": "structured-output",
+  "evaluatedAt": "2026-10-10T01:24:27Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "structured-output",
+      "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b",
+      "reason": "No work: the other 9 structured-output pairs in this map are judged and none is stale (each evaluatedAgainst equals the registry index digest sha256-b2:d51aec71411ccb2b, revision 15, at registry 32d7899f). This was the only unknown pair, and it sits on a weak context, which the skill does not judge by default. The context is also dead: context-map.json lists file_paths [] for it, and its entry_points under src/features/plugins/research-lab/ were deleted by 0697f13438 (\"remove the Artist and Research Lab plugins\"). There is no code to judge. The context map needs a rescan, not a verdict."
+    }
+  ],
+  "consults": []
+}

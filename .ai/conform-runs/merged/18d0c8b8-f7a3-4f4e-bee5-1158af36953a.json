@@ -1,0 +1,194 @@
+{
+  "schema": "conform-run/1",
+  "worker": "18d0c8b8-f7a3-4f4e-bee5-1158af36953a",
+  "subject": "app-shell",
+  "evaluatedAt": "2026-10-10T01:15:00Z",
+  "pairs": [
+    {
+      "context": "4560e824-e952-45a9-8aef-fe88d721952e",
+      "state": "deviation",
+      "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:67-68 filters Welcome cards by hand-copied SIMPLE_SECTIONS/DEV_MODE_SECTIONS (src/lib/utils/platform/platform.ts:102-103) instead of passesGates (src/lib/navigation/registry.ts:160), so on the default TEAM tier (src/lib/constants/uiModes.ts:65) the rail offers Plugins (registry.ts:84 minTier TEAM) while Welcome hides it - re-verified 2026-10-10, unfixed",
+      "techniques": [
+        {
+          "technique": "entitlement-gating",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:67-68 second gate policy beside src/lib/navigation/registry.ts:160 passesGates; the two disagree on plugins at TEAM"
+        },
+        {
+          "technique": "navigation-model",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_welcome/HomeWelcome.tsx:68 casts card id `as SidebarSection` into setSidebarSection; NAV_CARDS (HomeWelcome.tsx:13) is a second hand-kept list of section ids"
+        },
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "realized",
+          "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:49 prefetches on intent through the shared deduped map in src/features/home/lib/prefetch.ts:60 (carried from 2026-10-06, not re-read)"
+        }
+      ],
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
+      "evaluatedRevision": 6,
+      "registryProposal": "Ranking signal: this subject was dispatched on \"8 consumer deviations\", but every app-shell verdict in this repo was already current (evaluatedAgainst == digest, rev 6) and all 5 deviations re-verified unchanged; a deviation count without a staleness or code-change filter re-dispatches /conform to re-audit, not to learn. Rank by deviations whose anchored files changed since evaluatedAt, or route current deviations to the consumer backlog instead."
+    },
+    {
+      "context": "456eb952-9b93-4de4-bad5-79e6f101aeb1",
+      "state": "deviation",
+      "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:73 renders IncidentsInbox with no tier check and src/stores/slices/overview/overviewSlice.ts:279 setOverviewTab writes unchecked, so src/features/companions/athena/decision/useDecisionQueue.ts:153 and src/features/companions/athena/ProactiveCard.tsx:53 route to tabs the sidebar hides below TEAM (src/features/shared/chrome/sidebar/sidebarData.ts:81) - re-verified 2026-10-10, unfixed",
+      "techniques": [
+        {
+          "technique": "entitlement-gating",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/overview/overviewSlice.ts:279 the sub-destination door consults no gate; sidebarData.ts:81,87 minTier TEAM gates only the advertisement"
+        },
+        {
+          "technique": "navigation-model",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:153 writes overviewTab directly rather than through one validating navigate door"
+        }
+      ],
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
+      "evaluatedRevision": 6
+    },
+    {
+      "context": "83a8a744-2036-4e3e-9654-6fcec82334ff",
+      "state": "deviation",
+      "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10-15 splits six sub-panels with plain React lazy(), skipping the repo's chunk-retry wrapper src/lib/lazyRetry.ts that sibling src/features/plugins/twin/TwinPage.tsx:19-24 uses; a transient chunk blip goes straight to the reload prompt - re-verified 2026-10-10, unfixed (prior evidence named lib/lazyRetry.ts under twin; the real path is src/lib/lazyRetry.ts)",
+      "techniques": [
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10 const SetupPanel = lazy(...) - no automatic retry before the stated failure"
+        },
+        {
+          "technique": "navigation-model",
+          "verdict": "realized",
+          "evidence": "src/features/plugins/twin/TwinPage.tsx:87-93 validates a rehydrated twinTab and redirects retired/unknown ids instead of rendering blank"
+        }
+      ],
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
+      "evaluatedRevision": 6
+    },
+    {
+      "context": "dc471d31-ae30-4ac9-b015-d51969df458d",
+      "state": "deviation",
+      "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120-122 casts untyped sub-nav ids (`id as DevToolsTab`/`ObsidianBrainTab`/`TwinTab`); only top-level sections derive from the registry (sidebarData.ts:34) while nine sub-nav arrays (sidebarData.ts:58-194) stay hand-kept - sidebarData.ts:161-164 records this cast shipping a blank page; re-verified 2026-10-10, anchor moved from :156-159",
+      "techniques": [
+        {
+          "technique": "navigation-model",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120 setDevToolsTab(id as DevToolsTab) - sub-destination vocabularies unregistered, ids cast past the compiler"
+        },
+        {
+          "technique": "nav-hierarchy",
+          "verdict": "realized",
+          "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:34 sections derive from SIDEBAR_SECTIONS; second level is section-scoped sub-nav arrays rendered in their section"
+        }
+      ],
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
+      "evaluatedRevision": 6,
+      "registryProposal": "Upward lesson: 3 of 5 deviations here (shared-chrome, stores-slices-system, home-welcome) share one root - the navigation-model \"discipline covers every level\" extension; the repo registered top-level sections (src/lib/navigation/registry.ts) but no sub-destination vocabulary, and the crash/blank-page reports cluster exactly there. Worth a react--navigation-model application note: registering sub-vocabularies with reachability is the measured highest-yield step after a top-level registry."
+    },
+    {
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "state": "deviation",
+      "evidence": "src/stores/slices/system/uiSlice.ts:571 setSettingsTab writes any id unchecked and src/stores/systemStore.ts:95 persists settingsTab with no restore validation (only sidebarSection is checked, systemStore.ts:234), so a retired id makes src/features/settings/components/SettingsPage.tsx:72 tabComponents[tab] undefined and Settings crashes to its boundary - same for cloudTab/homeTab (systemStore.ts:82,88); re-verified 2026-10-10, unfixed",
+      "techniques": [
+        {
+          "technique": "navigation-model",
+          "verdict": "deviation",
+          "evidence": "src/stores/systemStore.ts:95 persisted sub-location restored without validation against today's vocabulary; restore path is not the deep-link path"
+        }
+      ],
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
+      "evaluatedRevision": 6
+    }
+  ],
+  "declined": [
+    {
+      "subject": "app-shell",
+      "context": "5ab49df3-3442-4ea6-a405-077dec64850d",
+      "reason": "persona-core-codex is a weak context (governance: weak, confidence probable); /conform never judges weak pairs by default - a coverage question for the registry, not a verdict"
+    },
+    {
+      "subject": "app-shell",
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+      "reason": "agents-editor not-applicable verdict is current (evaluatedAgainst == digest, 2026-10-03) and not a deviation; left as-is within the budget, not re-read"
+    },
+    {
+      "subject": "app-shell",
+      "context": "89eddf81-0c57-441d-a07d-de36bf022cb5",
+      "reason": "display-data-formatters not-applicable verdict is current (2026-10-03); left as-is within the budget, not re-read"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T01:15:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "entitlement-gating",
+        "navigation-model",
+        "lazy-section-loading"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T01:15:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "entitlement-gating",
+        "navigation-model"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T01:15:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "lazy-section-loading",
+        "navigation-model"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T01:15:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "navigation-model",
+        "nav-hierarchy"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T01:15:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "navigation-model"
+      ],
+      "deviations": 1
+    }
+  ]
+}

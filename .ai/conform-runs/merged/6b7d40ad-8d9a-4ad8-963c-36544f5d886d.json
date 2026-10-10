@@ -1,0 +1,53 @@
+{"schema": "conform-run/1", "worker": "6b7d40ad-8d9a-4ad8-963c-36544f5d886d", "subject": "credential-vault",
+ "evaluatedAt": "2026-10-10T11:56:48Z",
+ "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef", "evaluatedRevision": 4,
+ "pairs": [
+  {"context": "94b0b4ea-9adb-44d7-8222-4e2345de455b", "subject": "credential-vault", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/settings/sub_byom/components/ByomApiKeyManager.tsx:165 saves the Ollama/LiteLLM master keys through setAppSetting into app_settings, plain TEXT with no seal (src-tauri/db/src/settings_keys.rs:1357), then :116 loads them back across IPC into React state where :91 echoes first/last four chars and :531 copies the value - while the Qwen key beside them is keyring-backed and write-only (:281, :364).",
+   "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef", "evaluatedRevision": 4,
+   "techniques": [
+    {"technique": "encryption-at-rest", "verdict": "deviation", "evidence": "src/features/settings/sub_byom/components/ByomApiKeyManager.tsx:165 two foreign provider keys go to app_settings, whose value column has no encryption hook on the write path (src-tauri/db/src/settings_keys.rs:1357), so they bypass the vault's seal door entirely"},
+    {"technique": "brokered-egress", "verdict": "deviation", "evidence": "src/features/settings/sub_byom/components/ByomApiKeyManager.tsx:116 the plaintext values cross IPC into the renderer on every mount; :91 partial echo and :531 copy-to-clipboard are the value-not-identity confirmation the golden path names a partial leak"},
+    {"technique": "health-probing", "verdict": "conformant", "evidence": "src/features/settings/sub_byom/components/ByomApiKeyManager.tsx:75 'Verify' resolves to a neutral 'stored' state documented at :69 as not a probe, so it never paints a green it did not earn"}
+   ]},
+  {"context": "fbfcd99a-a333-42da-b85e-2ec1f560b4be", "subject": "credential-vault", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_connectors/libs/connectorTypes.ts:107 readiness (and getStatusKey at :180) falls through to the success boolean, so the 'unreachable' result the store deliberately returns (src/stores/slices/vault/credentialSlice.ts:363, stored at useConnectorStatuses.ts:121) renders as a red 'failed' and Test-all counts it as regressed (useConnectorStatuses.ts:196) - an offline laptop paints the persona's connectors red.",
+   "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef", "evaluatedRevision": 4,
+   "techniques": [
+    {"technique": "health-probing", "verdict": "deviation", "evidence": "src/features/agents/sub_connectors/libs/connectorTypes.ts:180 only 'unverifiable' is branched on; 'unreachable' (success:false) becomes 'failed', and useConnectorStatuses.ts:125 also converts a thrown probe into a failure result - the third state exists in the type but not in the renderer. Staleness IS realized (connectorTypes.ts:48 isStaleResult over restored testedAt)"},
+    {"technique": "rotation-and-remediation", "verdict": "deviation", "evidence": "src/features/agents/sub_connectors/libs/connectorTypes.ts:107 hand-derives a second readiness vocabulary from the boolean instead of consuming the one resolver (isHealthVerdict / readCredentialHealthState in src/lib/credentials/healthState.ts, cited at credentialSlice.ts:56), which is why the 'unreachable' member is invisible here"},
+    {"technique": "brokered-egress", "verdict": "conformant", "evidence": "src/features/agents/sub_connectors/components/connectors/CredentialPicker.tsx:17 binding a credential to a connector slot works on CredentialMetadata only; the tab tests by id through the store (useConnectorStatuses.ts:121), never holding a value"}
+   ]},
+  {"context": "77b8c703-0803-42bc-808a-f255725cc293", "subject": "credential-vault", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:391 the graph's health ring (GraphCanvas.tsx:188) and the failover list (credentialGraph.ts:344, SimulationControls.tsx:87) read only healthcheck_last_success, which the backend sets true for an unverifiable credential (src-tauri/src/engine/healthcheck.rs:105), so a never-checkable credential draws a green ring, a green check, and triggers the 'fail over to it' mitigation (SimulationControls.tsx:116).",
+   "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef", "evaluatedRevision": 4,
+   "techniques": [
+    {"technique": "health-probing", "verdict": "deviation", "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:391 the gating-shim boolean is the only health input; the typed healthcheck_last_state is never read, so unverifiable renders green - the fourth narrowing the technique names"},
+    {"technique": "rotation-and-remediation", "verdict": "deviation", "evidence": "src/features/vault/sub_dependencies/SimulationControls.tsx:116 the revoke-simulation recommends failover onto any healthOk===true sibling, including one nothing ever verified, so the mitigation advice inherits the admission gate's policy"},
+    {"technique": "brokered-egress", "verdict": "conformant", "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:96 severityForBlastRadius answers 'who still depends on this' from dependents (events floor it at medium, :93), the retirement-safety query the technique says the door's record enables; nodes carry metadata only (:391)"}
+   ]},
+  {"context": "937c9d47-b0ca-4e3b-90e3-25baefe04474", "subject": "credential-vault", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/cloud/sync/client.rs:3 the sync authenticates with the public anon key plus the user's own app session JWT (mod.rs:896), and rows.rs:11 never reads the credential/vault table family - it retains no foreign secret, the golden path's precondition.",
+   "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef", "evaluatedRevision": 4,
+   "techniques": [],
+   "registryProposal": "Matched on 'secret-free projection' vocabulary. What this context realizes is the exclusion of sealed columns from an outbound mirror plus heuristic payload redaction (src-tauri/src/cloud/sync/rows.rs:103) - telemetry-pii-redaction / sync-replication territory, not custody. Route by the subject's precondition (retains a foreign secret), which fails here."},
+  {"context": "4560e824-e952-45a9-8aef-fe88d721952e", "subject": "credential-vault", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_welcome/lib/useVaultCredentials.ts:17 the Welcome surface narrows credentials to service_type alone and only counts them (useNavCardStatus.ts:134); it holds no value and renders no health state, so no custody technique has a seat here.",
+   "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef", "evaluatedRevision": 4,
+   "techniques": []}
+ ],
+ "declined": [
+  {"subject": "credential-vault", "context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857", "reason": "budget: five pairs judged this run; vault-database-tests is a test suite whose verdict would be about whether tests pin the custody contract (e.g. DatabaseCard renders metadata only), which needs its own read - left unknown for the next run"}
+ ],
+ "consults": [
+  {"ts": "2026-10-10T11:56:48Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": ["encryption-at-rest", "brokered-egress", "health-probing"], "deviations": 1},
+  {"ts": "2026-10-10T11:56:48Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": ["health-probing", "rotation-and-remediation", "brokered-egress"], "deviations": 1},
+  {"ts": "2026-10-10T11:56:48Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": ["health-probing", "rotation-and-remediation", "brokered-egress"], "deviations": 1},
+  {"ts": "2026-10-10T11:56:48Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-10T11:56:48Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": [], "deviations": 0}
+ ]}

@@ -1,0 +1,35 @@
+{
+  "schema": "conform-run/1",
+  "worker": "b59cd2c8-6338-4170-bacd-b3c44cf7f0f7",
+  "subject": "adoption-measurement",
+  "evaluatedAt": "2026-10-10T01:43:26Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "adoption-measurement",
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+      "reason": "template-adoption-persona-layout (not-applicable, 2026-10-09): already judged against the current subject digest sha256-b2:502064804797857b (revision 3, registry 32d7899f); not stale; anchor re-printed and still says what the evidence claims, file untouched since the verdict - nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "e76afaf6-ba3b-4341-b1ad-f444f08da8b8",
+      "reason": "template-adoption-questionnaire (not-applicable, 2026-10-09): already judged against the current subject digest sha256-b2:502064804797857b (revision 3, registry 32d7899f); not stale; anchor re-printed and still says what the evidence claims, file untouched since the verdict - nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "80e0534a-d0ea-469a-9c3a-cf12910ecde9",
+      "reason": "template-adoption-support (not-applicable, 2026-10-09): already judged against the current subject digest sha256-b2:502064804797857b (revision 3, registry 32d7899f); not stale; anchor re-printed and still says what the evidence claims, file untouched since the verdict - nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "7dddb34a-3a9b-4ce0-832f-55ea352c12b5",
+      "reason": "templates-generated-adoption-ucpicker (not-applicable, 2026-10-09): already judged against the current subject digest sha256-b2:502064804797857b (revision 3, registry 32d7899f); not stale; anchor re-printed and still says what the evidence claims, file untouched since the verdict - nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "9b013060-5483-4162-9f8a-6b69109d623d",
+      "reason": "teams-kpis is a weak context (never judged by default) and already carries a not-applicable verdict (2026-10-03) at the current digest; anchor src/features/teams/sub_kpis/kpiMeta.ts:28 still resolves, file untouched since 2026-08-13"
+    }
+  ],
+  "consults": []
+}

@@ -1,0 +1,22 @@
+{"schema": "conform-run/1", "worker": "3d673039-d8a7-42ef-a97d-1078e9aa8a15", "subject": "job-coordination",
+ "evaluatedAt": "2026-10-10T01:38:23Z",
+ "pairs": [
+  {"context": "89d44c76-ec4c-4388-843e-503cf6ca2507", "subject": "job-coordination", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/components/progress/EstimatedProgressBar.tsx:37 progress is elapsed-time React state behind a presentational bar (ContentLoader.tsx:37 likewise props-only); no durable job record, claim, lease or recovery path exists in this context",
+   "techniques": [
+     {"technique": "job-state-machines", "verdict": "not-applicable", "evidence": "src/features/shared/components/progress/EstimatedProgressBar.tsx:37 local useState progress, no job status vocabulary or record"},
+     {"technique": "in-flight-is-a-position", "verdict": "not-applicable", "evidence": "src/features/shared/components/progress/ContentLoader.tsx:37 renders caller props; nothing is recovered after restart"}
+   ],
+   "registryProposal": "coverage question, not a corpus hole: progress-transform is weak and matched only on progress/step vocabulary; its context-map entry_points (TransformProgress.tsx, phaseDetection.ts) no longer exist on disk, so the context description overstates the module - a context-map rescan, not a registry change, is the fix"}
+ ],
+ "declined": [
+  {"subject": "job-coordination", "context": "059fdee0-40da-434a-a5cb-874bc9179a31", "reason": "deviation judged 2026-10-09 against the current digest sha256-b2:68f09609d1498e88 (rev 17); anchors src-tauri/src/boot/workers.rs:233 and src-tauri/src/engine/persona_jobs.rs:205 re-printed this run and unchanged in git since - still live, no re-judge needed"},
+  {"subject": "job-coordination", "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0", "reason": "not-applicable judged 2026-10-09 against current digest rev 17; anchored file unchanged since"},
+  {"subject": "job-coordination", "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50", "reason": "not-applicable judged 2026-10-09 against current digest rev 17; anchored file unchanged since"},
+  {"subject": "job-coordination", "context": "a4174786-a5fb-4145-a1b3-f02826fac64a", "reason": "not-applicable judged 2026-10-09 against current digest rev 17; anchored file unchanged since"},
+  {"subject": "job-coordination", "context": "2b61b648-d166-4255-b7b7-5d32ffdd6751", "reason": "not-applicable judged 2026-10-09 against current digest rev 17; anchored file unchanged since"}
+ ],
+ "consults": [
+  {"ts": "2026-10-10T01:38:23Z", "bundle": "software-engineering", "subjects": ["job-coordination"], "techniques": ["job-state-machines", "in-flight-is-a-position"], "deviations": 0}
+ ]}

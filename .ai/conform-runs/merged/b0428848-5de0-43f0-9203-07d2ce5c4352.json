@@ -1,0 +1,111 @@
+{
+  "schema": "conform-run/1",
+  "worker": "b0428848-5de0-43f0-9203-07d2ce5c4352",
+  "subject": "async-ui-states",
+  "evaluatedAt": "2026-10-10T12:00:30Z",
+  "pairs": [
+    {
+      "context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0",
+      "subject": "async-ui-states",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:c71d22c8deba8577",
+      "evaluatedRevision": 4,
+      "evidence": "src/features/shared/components/buttons/AsyncButton.tsx:110 renders Button without `loading` (omitted at AsyncButton.tsx:13), so the width lock (src/features/shared/components/buttons/Button.tsx:165) never engages and the spinner+label swap reflows the pressed button; AND src/features/shared/components/layout/RouteChunkSkeleton.tsx:40 rides its 150ms invisibility window on animation-delay, which src/styles/globals.css:4893 erases under prefers-reduced-motion, so reduced-motion users get the ghost on frame one - re-verified 2026-10-10",
+      "techniques": [
+        {
+          "technique": "action-busy-states",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/buttons/AsyncButton.tsx:110 Button rendered without `loading`, so Button.tsx:165 width lock never fires (rule 3 geometry holds); synchronous disarm (AsyncButton.tsx:41), finally-release (AsyncButton.tsx:57) and aria-busy (AsyncButton.tsx:113) are realized"
+        },
+        {
+          "technique": "placeholder-design",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/layout/RouteChunkSkeleton.tsx:40 delay window is the fade-in's animationDelay; src/styles/globals.css:4884 lists .animate-fade-in under the prefers-reduced-motion block that sets `animation: none !important` (globals.css:4893), the exact trap the technique names; header-only geometry and aria-hidden (RouteChunkSkeleton.tsx:38) are realized"
+        }
+      ],
+      "registryProposal": "placeholder-design: RouteChunkSkeleton is a near-textbook React realization of 'code arrival is the same wait' (header-only ghost, CSS-only delay) AND a live instance of its reduced-motion trap - a blanket `animation: none !important` reduced-motion reset silently deletes every animation-delay-based invisibility window. Worth an application (react--placeholder-design) citing both, and a decision rule naming the global reset as the usual way the trap ships."
+    },
+    {
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "subject": "async-ui-states",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:c71d22c8deba8577",
+      "evaluatedRevision": 4,
+      "evidence": "src/features/shared/components/feedback/SuspenseFallback.tsx:14 renders LoadingSpinner, which paints nothing (src/features/shared/components/feedback/LoadingSpinner.tsx:9 spinners disabled app-wide), so code-arrival is a blank py-12 hole with an undelayed role=status at 4 Suspense sites (EditorBody.tsx:190, FleetPage.tsx:150, SettingsPage.tsx:84, KPIDashboard.tsx:106) - re-verified 2026-10-10, files untouched since 2026-04-26",
+      "techniques": [
+        {
+          "technique": "placeholder-design",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/feedback/SuspenseFallback.tsx:14 code-arrival fallback is a blank hole (LoadingSpinner.tsx:9 renders null) with no delay, where the technique requires a delayed chrome-consistent ghost; the sibling RouteChunkSkeleton already does this and is the fix"
+        },
+        {
+          "technique": "failure-states",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/feedback/ErrorBanner.tsx:48 failure primitive carries a retry affordance wired to the caller's onRetry, distinct from the empty primitive"
+        }
+      ]
+    },
+    {
+      "context": "36783fec-01fa-40d5-8620-cf65ae691d27",
+      "subject": "async-ui-states",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:c71d22c8deba8577",
+      "evaluatedRevision": 4,
+      "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:46 EmptyStateContent takes no cause input, so ManualReviewList branches on the filtered count (src/features/overview/sub_manual-review/components/ManualReviewList.tsx:174 -> src/features/overview/sub_manual-review/libs/reviewHelpers.ts:130) and a filter excluding every review, or a drained queue, lands on the first-run hero with a create-persona action (ManualReviewList.tsx:456) - re-verified 2026-10-10",
+      "techniques": [
+        {
+          "technique": "empty-state-design",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:130 'empty' is derived from visibleCount = filteredReviews.length (ManualReviewList.tsx:174), not the raw collection, and the primitive (types.ts:46) has no cause axis; a drained review queue is a zero-is-the-goal state yet offers create-persona (ManualReviewList.tsx:456)"
+        },
+        {
+          "technique": "state-model",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:127 data presence dominates (list before ghost/error/empty), and error is resolved before empty so failure is never spelled as inbox-zero"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-10T12:00:30Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "async-ui-states"
+      ],
+      "techniques": [
+        "action-busy-states",
+        "placeholder-design"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T12:00:30Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "async-ui-states"
+      ],
+      "techniques": [
+        "placeholder-design",
+        "failure-states"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T12:00:30Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "async-ui-states"
+      ],
+      "techniques": [
+        "empty-state-design",
+        "state-model"
+      ],
+      "deviations": 1
+    }
+  ]
+}

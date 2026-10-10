@@ -1,0 +1,140 @@
+{
+  "schema": "conform-run/1",
+  "worker": "5a33eebf-17c9-4e12-92df-8167b502fde0",
+  "subject": "agent-cli-transport",
+  "evaluatedAt": "2026-10-10T11:26:54Z",
+  "pairs": [
+    {
+      "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:561 the launcher promises to roll back the draft persona when the CLI is unavailable, but start_build_session returns the id before any spawn (src-tauri/src/commands/design/build_sessions.rs:128) and CLI absence arrives later as an untyped prose BuildEvent::Error (src-tauri/src/engine/build_session/runner.rs:680); no build surface consults the shared useCliReadiness predicate, so a machine without the CLI keeps a draft persona and shows an unclassified 'Failed to start build' the user cannot tell from a crash or a logout",
+      "techniques": [
+        {
+          "technique": "fallback-ladder",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:561 the honest-refusal rung and the one shared predicate are both absent: useCliReadiness (src/hooks/utility/data/useCliReadiness.ts:55) has no caller under src/features/agents, so absence is discovered by spawning after the draft persona exists; the :656 fallback is hardcoded English naming no missing capability"
+        },
+        {
+          "technique": "output-normalization",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/events.rs:375 BuildEvent::Error carries only message+retryable, so the buildError this surface passes on (src/features/agents/components/matrix/UnifiedBuildEntry.tsx:843) is prose; not-installed, unauthorized and spawn failure cannot be branched on (verdict-survives-boundary)"
+        }
+      ],
+      "evaluatedAt": "2026-10-10",
+      "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+      "evaluatedRevision": 9
+    },
+    {
+      "context": "895b4bb2-16fd-4e8e-aae8-11315fe6436b",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/api/agents/evolution.ts:104 the probe door every readiness gate consumes documents that a rejection means 'binary missing OR no working subscription session' without distinguishing them (backend maps both to AppError::Internal, src-tauri/src/commands/execution/evolution.rs:167), and the wrapper at :107 passes no force, so installed vs authorized collapse into one rejection and a cached probe that a real run has falsified cannot be re-probed from the client",
+      "techniques": [
+        {
+          "technique": "availability-probe",
+          "verdict": "deviation",
+          "evidence": "src/api/agents/evolution.ts:104 installed and authorized collapse into one rejection; src/hooks/utility/data/useCliReadiness.ts:62 must then guess from the message (already a recorded deviation on hooks-utility-data) - this door is its root. The probe itself does go through the spawn door at ~$0 (src-tauri/engine/src/cli_capabilities.rs:108 build_cli_args mirrors production), and the wrapper doc at src/api/agents/evolution.ts:100 wrongly calls it 'not free'"
+        },
+        {
+          "technique": "dated-capability-matrix",
+          "verdict": "partial",
+          "evidence": "src-tauri/engine/src/cli_capabilities.rs:63 CliCapabilities carries cliVersion, probedAt and servedFromCache (dated and witnessed), but the cache at :92 never invalidates on a version change or a real-run auth failure, and src/api/agents/evolution.ts:108 passes no force to ask for one"
+        }
+      ],
+      "evaluatedAt": "2026-10-10",
+      "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+      "evaluatedRevision": 9
+    },
+    {
+      "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_deployment/components/cloud/CloudStatusPanel.tsx:129 renders the orchestrator's has_claude_token presence bool (src-tauri/src/cloud/client.rs:100) as a green 'token available' - existence shown as authorization - while the same deployment's OAuth tab renders that token three-valued (CloudOAuthPanel.tsx:95, isExpired null is unknown), so the Status tab can show green for an expired or unverified Anthropic token that every cloud run will then fail on",
+      "techniques": [
+        {
+          "technique": "availability-probe",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudStatusPanel.tsx:129 a two-valued presence check rendered as authorized; credential existence proves nothing and unknown must render as unknown"
+        },
+        {
+          "technique": "subscription-auth-selection",
+          "verdict": "realized",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudOAuthPanel.tsx:95 the headless cloud lane authenticates with a refreshable, expiring Anthropic OAuth token (the long-lived-auth-for-headless clause) and renders its status three-valued"
+        },
+        {
+          "technique": "fallback-ladder",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudStatusPanel.tsx:129 one predicate, shared: the Status and OAuth tabs answer 'can the cloud transport serve?' from two predicates that can disagree"
+        }
+      ],
+      "evaluatedAt": "2026-10-10",
+      "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+      "evaluatedRevision": 9
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-cli-transport",
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "reason": "stores-slices-system: the slices only launch scans over IPC and keep the returned scan_id (src/stores/slices/system/devToolsScannerSlice.ts:88); CLI completion and failure handling lives in src/features/plugins/dev-tools/hooks/useContextScanBackground.ts and the backend, outside this context, and fleetSlice aggregates interactive sessions that may not be this subject at all - not enough seam read to judge honestly"
+    },
+    {
+      "subject": "agent-cli-transport",
+      "context": "50bf2ad0-3da7-4405-991a-6e22695903a2",
+      "reason": "companion-narration-ops: render-only narration components, unread this run (budget went to contexts with a live CLI seam); probably not-applicable, but a not-applicable has to be argued from the code"
+    },
+    {
+      "subject": "agent-cli-transport",
+      "context": "b7c818bf-fe04-44ff-aa8d-7cd51e0fc67f",
+      "reason": "persona-shared-ui: chat-thread and avatar primitives with no CLI reference found by grep; unread beyond that, left for a run that can anchor a not-applicable"
+    },
+    {
+      "subject": "agent-cli-transport",
+      "context": "1d8a480b-eac4-4110-a60e-47a6ab281c97",
+      "reason": "glyph-persona-card is governance: weak - not evaluated by default; it is a coverage question for the registry"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T11:26:54Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-cli-transport"
+      ],
+      "techniques": [
+        "fallback-ladder",
+        "output-normalization"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T11:26:54Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-cli-transport"
+      ],
+      "techniques": [
+        "availability-probe",
+        "dated-capability-matrix"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T11:26:54Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-cli-transport"
+      ],
+      "techniques": [
+        "availability-probe",
+        "subscription-auth-selection",
+        "fallback-ladder"
+      ],
+      "deviations": 2
+    }
+  ]
+}

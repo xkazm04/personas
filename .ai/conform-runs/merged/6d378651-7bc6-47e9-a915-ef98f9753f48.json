@@ -1,0 +1,40 @@
+{
+  "schema": "conform-run/1",
+  "worker": "6d378651-7bc6-47e9-a915-ef98f9753f48",
+  "subject": "usage-limit-governance",
+  "evaluatedAt": "2026-10-10T11:31:17Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "usage-limit-governance",
+      "context": "6da794b4-7a5f-4087-a4d4-fb8a416456e5",
+      "reason": "no work: already judged deviation on 2026-10-10 against sha256-b2:a784035133baaaba revision 5, which is the registry index digest at e6f59b26; not stale, so re-judging would duplicate a current verdict (anchors re-read at HEAD: executions.rs:469-494 and openai.rs:232 still hold)"
+    },
+    {
+      "subject": "usage-limit-governance",
+      "context": "e8fa2ff7-145d-4c58-af83-1239b87d2c24",
+      "reason": "no work: already judged not-applicable on 2026-10-09 against sha256-b2:a784035133baaaba revision 5, which is the registry index digest at e6f59b26; not stale, so re-judging would duplicate a current verdict"
+    },
+    {
+      "subject": "usage-limit-governance",
+      "context": "7901fd6c-0346-430b-aefe-fc4cd623b167",
+      "reason": "no work: already judged not-applicable on 2026-10-09 against sha256-b2:a784035133baaaba revision 5, which is the registry index digest at e6f59b26; not stale, so re-judging would duplicate a current verdict"
+    },
+    {
+      "subject": "usage-limit-governance",
+      "context": "66bc7a14-bf15-41d7-8d9a-900aa670f47e",
+      "reason": "no work: already judged not-applicable on 2026-10-09 against sha256-b2:a784035133baaaba revision 5, which is the registry index digest at e6f59b26; not stale, so re-judging would duplicate a current verdict"
+    },
+    {
+      "subject": "usage-limit-governance",
+      "context": "a4174786-a5fb-4145-a1b3-f02826fac64a",
+      "reason": "no work: already judged not-applicable on 2026-10-09 against sha256-b2:a784035133baaaba revision 5, which is the registry index digest at e6f59b26; not stale, so re-judging would duplicate a current verdict"
+    },
+    {
+      "subject": "usage-limit-governance",
+      "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+      "reason": "no work: already judged not-applicable on 2026-10-09 against sha256-b2:a784035133baaaba revision 5, which is the registry index digest at e6f59b26; not stale, so re-judging would duplicate a current verdict"
+    }
+  ],
+  "consults": []
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "conform-run/1",
+  "worker": "3a10b2a9-a53b-4036-81ca-4ec9a19cc291",
+  "subject": "guided-tours",
+  "evaluatedAt": "2026-10-10T01:47:09.533Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "guided-tours",
+      "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50",
+      "reason": "current verdict: deviation judged 2026-10-09 against sha256-b2:6f44ad03ebd5bd19 (revision 4, revisionsBehind 0), which is the digest at registry 32d7899f; no commit has touched the context code since 2026-10-01 and every anchor still prints back the cited construct - re-judging would duplicate a fresh verdict"
+    },
+    {
+      "subject": "guided-tours",
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "reason": "current verdict: deviation judged 2026-10-09 against sha256-b2:6f44ad03ebd5bd19 (revision 4, revisionsBehind 0), which is the digest at registry 32d7899f; no commit has touched the context code since 2026-10-01 and every anchor still prints back the cited construct - re-judging would duplicate a fresh verdict"
+    },
+    {
+      "subject": "guided-tours",
+      "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+      "reason": "current verdict: deviation judged 2026-10-09 against sha256-b2:6f44ad03ebd5bd19 (revision 4, revisionsBehind 0), which is the digest at registry 32d7899f; no commit has touched the context code since 2026-10-01 and every anchor still prints back the cited construct - re-judging would duplicate a fresh verdict"
+    },
+    {
+      "subject": "guided-tours",
+      "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "reason": "current verdict: deviation judged 2026-10-09 against sha256-b2:6f44ad03ebd5bd19 (revision 4, revisionsBehind 0), which is the digest at registry 32d7899f; no commit has touched the context code since 2026-10-01 and every anchor still prints back the cited construct - re-judging would duplicate a fresh verdict"
+    }
+  ],
+  "consults": []
+}

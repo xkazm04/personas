@@ -1,0 +1,49 @@
+{
+  "schema": "conform-run/1",
+  "worker": "a60e8130-a8ab-4bd7-be48-65e5e8365445",
+  "subject": "prompt-safety",
+  "evaluatedAt": "2026-10-10T02:12:30.257Z",
+  "pairs": [
+    {
+      "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+      "subject": "prompt-safety",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/runner/mod.rs:1371 still interpolates recalled agent-memory title/content raw and :1480 appends it after assembly, outside every <untrusted_*> fence and past the canary (src-tauri/engine/src/prompt/assemble.rs:891) although the fencing door exists (src-tauri/engine/src/prompt/assemble.rs:60); also the nonce is time^counter, the clamp precedes neutralization, and nothing machine-reads the canary in output, so recalled memory reaches every run unfenced and a tripped canary settles as success",
+      "techniques": [
+        {
+          "technique": "untrusted-span-fencing",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1371 recalled memory (a named attacker-controlled, cross-principal span via with_home_team) is formatted raw, bypassing the one door at src-tauri/engine/src/prompt/assemble.rs:60; and src-tauri/engine/src/prompt/runtime_safety.rs:13 mints the nonce from SystemTime nanos XOR a counter (not cryptographic) with no absent-from-payload re-mint check"
+        },
+        {
+          "technique": "canary-tripwires",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:34 the canary exists only as an in-prompt instruction; no code in src-tauri/src or src-tauri/engine/src screens execution output for the [SECURITY] confession, so a run that took directions from a fenced region is not quarantined, has no boundary-violation outcome and settles as success"
+        },
+        {
+          "technique": "input-caps-and-clamps",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:99 truncates to MAX_RUNTIME_VAR_LENGTH BEFORE neutralization; the expanding escape at src-tauri/engine/src/prompt/runtime_safety.rs:155 (``` -> 6 chars) and the fullwidth-# heading escape push the spliced value past its ceiling, and a cut can bisect a ---SECTION:x--- marker that the step-4 regex then no longer matches - the door order the technique names as wrong"
+        }
+      ],
+      "registryProposal": "Missing pairings: prompt-safety should govern commands-design (5d4b913e-4384-49d7-8854-5c7ddac7e19e) - src-tauri/src/commands/design/n8n_transform/prompt_sanitizer.rs:171 is a second, independent copy of the nonce fence and :181 a second canary text, the duplicated-security-control defect untrusted-span-fencing names - and companion-brain (9e46b252-8eb1-4a15-a627-f7e342f1d85a), whose sleep_cycle fence the rust--untrusted-span-fencing application already cites. The matcher scored prompt-safety at zero on both. Separately, the outbound techniques (output-sanitization, model-output-as-untrusted, payoff-removal, session-capability-conjunction, inspection-coverage-is-a-verdict) have no context in this map at all: the subject is paired only with the inbound assembly context, so the outbound half of the boundary is never judged here."
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-10T02:12:30.257Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "prompt-safety"
+      ],
+      "techniques": [
+        "untrusted-span-fencing",
+        "canary-tripwires",
+        "input-caps-and-clamps"
+      ],
+      "deviations": 1
+    }
+  ]
+}

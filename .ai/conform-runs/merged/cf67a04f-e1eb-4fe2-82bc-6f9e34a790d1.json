@@ -1,0 +1,40 @@
+{
+  "schema": "conform-run/1",
+  "worker": "cf67a04f-e1eb-4fe2-82bc-6f9e34a790d1",
+  "subject": "job-coordination",
+  "evaluatedAt": "2026-10-10T11:38:15.249Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "job-coordination",
+      "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
+      "reason": "already judged not-applicable on 2026-10-09 against the current subject digest sha256-b2:68f09609d1498e88 (revision 17, registry e6f59b26); no commit has touched its anchor files since, so a re-judge would only copy the verdict"
+    },
+    {
+      "subject": "job-coordination",
+      "context": "059fdee0-40da-434a-a5cb-874bc9179a31",
+      "reason": "already judged deviation on 2026-10-09 against the current subject digest sha256-b2:68f09609d1498e88 (revision 17, registry e6f59b26); no commit has touched its anchor files since, so a re-judge would only copy the verdict"
+    },
+    {
+      "subject": "job-coordination",
+      "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50",
+      "reason": "already judged not-applicable on 2026-10-09 against the current subject digest sha256-b2:68f09609d1498e88 (revision 17, registry e6f59b26); no commit has touched its anchor files since, so a re-judge would only copy the verdict"
+    },
+    {
+      "subject": "job-coordination",
+      "context": "a4174786-a5fb-4145-a1b3-f02826fac64a",
+      "reason": "already judged not-applicable on 2026-10-09 against the current subject digest sha256-b2:68f09609d1498e88 (revision 17, registry e6f59b26); no commit has touched its anchor files since, so a re-judge would only copy the verdict"
+    },
+    {
+      "subject": "job-coordination",
+      "context": "2b61b648-d166-4255-b7b7-5d32ffdd6751",
+      "reason": "already judged not-applicable on 2026-10-09 against the current subject digest sha256-b2:68f09609d1498e88 (revision 17, registry e6f59b26); no commit has touched its anchor files since, so a re-judge would only copy the verdict"
+    },
+    {
+      "subject": "job-coordination",
+      "context": "89d44c76-ec4c-4388-843e-503cf6ca2507",
+      "reason": "already judged not-applicable on 2026-10-10 against the current subject digest sha256-b2:68f09609d1498e88 (revision 17, registry e6f59b26); no commit has touched its anchor files since, so a re-judge would only copy the verdict"
+    }
+  ],
+  "consults": []
+}

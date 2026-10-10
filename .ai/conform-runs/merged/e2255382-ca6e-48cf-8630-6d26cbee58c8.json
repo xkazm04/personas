@@ -1,0 +1,12 @@
+{"schema": "conform-run/1", "worker": "e2255382-ca6e-48cf-8630-6d26cbee58c8", "subject": "retry-backoff",
+ "evaluatedAt": "2026-10-10T14:27:35Z",
+ "pairs": [{"context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f", "subject": "retry-backoff", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:100 the heal cap is looked up by row id in session memory while every retry mints a new row (src-tauri/db/src/repos/dev/tasks.rs:944) whose persisted attempt is never checked, so auto-heal retries each child failure afresh and the lineage has no bound",
+   "evaluatedAgainst": "sha256-b2:4ca1a8af506f44d9", "evaluatedRevision": 13,
+   "techniques": [
+     {"technique": "durable-retries", "verdict": "deviation", "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:78 maxRetries lives in a useState counter keyed by the per-attempt row id (rules 3+4: attempt count in the row, identity minted once); src-tauri/db/src/repos/dev/tasks.rs:944 persists parent_task_id/attempt but no heal path reads them, so a reload or each new child row resets the ladder"}
+   ],
+   "registryProposal": "Re-confirmation of a verdict merged 2026-10-09 (142fdff211); only durable-retries was read against code this pass - the other 8 techniques (backoff-design, storm-control, retry-observability, ...) are unjudged on run-desk and a deviation needs only one. The matcher also pairs retry-backoff with run-desk alone at 'probable'; the Rust engine's healing/retry modules (src-tauri/src/engine) are the likelier governed surface and carry no retry-backoff pair - worth a matcher check."}],
+ "declined": [],
+ "consults": [{"ts": "2026-10-10T14:27:35Z", "bundle": "software-engineering", "subjects": ["retry-backoff"], "techniques": ["durable-retries"], "deviations": 1}]}

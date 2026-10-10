@@ -1,0 +1,31 @@
+{"schema": "conform-run/1", "worker": "bdbebff8-1d06-4db3-8ac2-06bfadcbcb62", "subject": "multi-provider-gateway-plane",
+ "evaluatedAt": "2026-10-10T02:09:26Z",
+ "pairs": [
+  {"context": "ab849301-d5ce-4d91-a12e-0e87a0417585", "subject": "multi-provider-gateway-plane", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:76 'fallback' here is React error UI and src/features/shared/components/feedback/ConnectionStatusBadge.tsx:11 only renders a reconnect countdown it is handed - no request path, no candidate set of upstreams; the precondition (one process fronting several interchangeable upstreams) is unmet",
+   "techniques": [],
+   "registryProposal": "lexical resonance only (provider/fallback/error): React Context 'Provider' and Suspense/ErrorBoundary 'fallback' are UI vocabulary; the subject's use_when could exclude render-layer fallbacks"},
+  {"context": "ba0d4722-bfde-40aa-8e1d-52591719f834", "subject": "multi-provider-gateway-plane", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_lab/components/shared/ImprovePromptButton.tsx:29 reads modelsTested back from a stored run and src/features/agents/sub_lab/components/shared/ScenarioDetailPanel.tsx:155 displays result.modelId - the context renders lab results; it selects, calls and translates no upstream (arena dispatch lives in the backend runner)",
+   "techniques": []},
+  {"context": "11fe7642-7a1a-47c5-8910-499850aa04fe", "subject": "multi-provider-gateway-plane", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/companions/athena/inbox/hooks/adapters/index.ts:2 the four inbox adapters are pure functions over local store records, fed at src/features/companions/athena/inbox/hooks/useUnifiedInbox.ts:93 from useOverviewStore - an in-process merge of app-owned slices, not upstreams fronted for uncontrolled callers",
+   "techniques": [],
+   "registryProposal": "technique-shaped resonance: named-members-over-a-uniform-collection's doctrine (named per-source adapters, per-member rules) is realized here, but the inbox fails the subject's precondition. Also: context-map.json carries 0 file_paths for this context while the registry-map row lists 12 - the map row is built from data the project map no longer holds"},
+  {"context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc", "subject": "multi-provider-gateway-plane", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/triggers/sub_studio/routing/layouts/useRoutingState.ts:19 'routing' is linkPersonaToEvent - event fan-out to every subscribed persona, not selection of one candidate among interchangeable upstreams - and src/features/triggers/sub_smee_relay/SmeeRelayTab.tsx:77 binds each relay to one smee.io channel (N=1)",
+   "techniques": []}
+ ],
+ "declined": [
+  {"subject": "multi-provider-gateway-plane", "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0", "reason": "governance: weak and the row carries no paths; the skill forbids judging weak pairs by default, reported as a coverage question"},
+  {"subject": "multi-provider-gateway-plane", "context": "89d44c76-ec4c-4388-843e-503cf6ca2507", "reason": "governance: weak (two progress-bar components); the match on transform/multi/status is lexical, so it's reported as a coverage question rather than judged"},
+  {"subject": "multi-provider-gateway-plane", "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b", "reason": "already judged deviation on 2026-10-09 at the current digest sha256-b2:f268193750c0a517 rev 9 (not stale); spot-check shows it still live - src-tauri/src/engine/runner/mod.rs:2088 qwen HTTP branch, :2393 refusal reported as 'All providers failed'; left as recorded"}
+ ],
+ "consults": [
+  {"ts": "2026-10-10T02:09:26Z", "bundle": "software-engineering", "subjects": ["multi-provider-gateway-plane"], "techniques": [], "deviations": 0}
+ ]
+}

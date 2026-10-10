@@ -1,0 +1,40 @@
+{
+  "schema": "conform-run/1",
+  "worker": "78bea105-b3de-40e4-a9f7-4f088fc52cd8",
+  "subject": "import-normalization",
+  "evaluatedAt": "2026-10-10T11:22:13.740Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "import-normalization",
+      "context": "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0",
+      "reason": "no work: already judged 2026-10-10 against the current subject digest sha256-b2:4981ff0ea8a59c1b (revision 1, unchanged at registry e6f59b26); no commit has touched its anchored files since, and the anchor line still says what the evidence claims (current state: not-applicable)"
+    },
+    {
+      "subject": "import-normalization",
+      "context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e",
+      "reason": "no work: already judged 2026-10-10 against the current subject digest sha256-b2:4981ff0ea8a59c1b (revision 1, unchanged at registry e6f59b26); no commit has touched its anchored files since, and the anchor line still says what the evidence claims (current state: deviation)"
+    },
+    {
+      "subject": "import-normalization",
+      "context": "7826a48f-5883-4f26-8476-c3c515bda745",
+      "reason": "no work: already judged 2026-10-10 against the current subject digest sha256-b2:4981ff0ea8a59c1b (revision 1, unchanged at registry e6f59b26); no commit has touched its anchored files since, and the anchor line still says what the evidence claims (current state: deviation)"
+    },
+    {
+      "subject": "import-normalization",
+      "context": "2418ddaf-0e6e-446f-968f-28a4bf6e7120",
+      "reason": "no work: already judged 2026-10-10 against the current subject digest sha256-b2:4981ff0ea8a59c1b (revision 1, unchanged at registry e6f59b26); no commit has touched its anchored files since, and the anchor line still says what the evidence claims (current state: deviation)"
+    },
+    {
+      "subject": "import-normalization",
+      "context": "5dc3cb6a-6612-4909-995d-86e92394ec94",
+      "reason": "no work: already judged 2026-10-10 against the current subject digest sha256-b2:4981ff0ea8a59c1b (revision 1, unchanged at registry e6f59b26); no commit has touched its anchored files since, and the anchor line still says what the evidence claims (current state: deviation)"
+    },
+    {
+      "subject": "import-normalization",
+      "context": "b62fa237-32b4-41c3-bf56-3e498b643da9",
+      "reason": "no work: already judged 2026-10-10 against the current subject digest sha256-b2:4981ff0ea8a59c1b (revision 1, unchanged at registry e6f59b26); no commit has touched its anchored files since, and the anchor line still says what the evidence claims (current state: deviation)"
+    }
+  ],
+  "consults": []
+}

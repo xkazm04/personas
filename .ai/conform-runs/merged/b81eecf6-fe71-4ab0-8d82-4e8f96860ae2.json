@@ -1,0 +1,24 @@
+{"schema": "conform-run/1", "worker": "b81eecf6-fe71-4ab0-8d82-4e8f96860ae2", "subject": "cost-metering",
+ "evaluatedAt": "2026-10-10T12:02:00Z",
+ "pairs": [
+  {"context": "2fb16136-586e-478d-823f-38434d2d5b9a", "subject": "cost-metering", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:190 the periodStartUtc returned beside the totals is computed by a second boundary function (chrono, :219), not by the SQLite datetime('now','start of month') the rows were actually filtered with (src-tauri/db/src/repos/execution/executions.rs:2346), and no period end is returned; :27 spend is a bare f64 from SUM over a nullable cost_usd (src-tauri/db/src/migrations/schema.rs:123) COALESCEd to 0.0 (:192), so an unpriced month renders as $0 beside max_budget_usd with no unpriced count",
+   "techniques": [
+    {"technique": "usage-ledgers", "verdict": "deviation", "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:190 period label comes from monthly_period_start_utc (:219), a second owner of the month boundary next to the SQL predicate (src-tauri/db/src/repos/execution/executions.rs:2346); the result carries start but not end, so it is not the window the query used"},
+    {"technique": "spend-observability", "verdict": "deviation", "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:27 PersonaMonthlySpend.spend is a non-optional f64 with no unpriced/default-priced share, so the total-against-ceiling hides how much of it is a floor; realized half: :201 the budget feed reuses the gate's MONTHLY_SPEND_PREDICATE, so dashboard and enforcer count the same row set"},
+    {"technique": "spend-attribution", "verdict": "realized", "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:198 groups by persona_id (stable id, name joined only for display), so renames do not orphan history; the result is a per-actor budget table, not a breakdown claiming to sum to a total"},
+    {"technique": "budget-enforcement", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:122 get_all_monthly_spend is a read-only feed; the enforcing read is get_monthly_spend at src-tauri/db/src/repos/execution/executions.rs:2348, judged under db-repos-execution"},
+    {"technique": "price-tables", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:195 only sums stored cost_usd; no pricing happens in this context (tables live in engine-build-session / test-runner-lab)"},
+    {"technique": "preflight-estimation", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:122 the context initiates no metered call to estimate"},
+    {"technique": "reversible-debit-and-settle", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:28 budgets are post-hoc ceilings (max_budget_usd), no prepaid debit exists"},
+    {"technique": "engagement-paced-cadence", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:122 IPC commands invoked on demand; no self-driven loop in this context"},
+    {"technique": "unit-classes-are-open", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:195 reads cost only, never extracts provider unit classes"}
+   ],
+   "registryProposal": "Coverage: this row is marked governance weak and the pair scored only probable, yet the context owns the per-persona monthly spend vs max_budget_usd feed (get_all_monthly_spend, get_overview_bundle); cost-metering genuinely governs it, so the weak flag here is a matcher under-read, not a doubtful match. Upward lesson for usage-ledgers 'Periods travel with results': add the smell 'a period label computed beside the filter rather than by it' - this repo returns periodStartUtc (satisfying a shape check for 'results carry their window') while the label and the WHERE clause are two independent clock reads and two boundary implementations; the technique should say the returned window must be the value the query was parameterized with."}
+ ],
+ "declined": [],
+ "consults": [
+  {"ts": "2026-10-10T12:02:00Z", "bundle": "software-engineering", "subjects": ["cost-metering"], "techniques": ["usage-ledgers", "spend-observability", "spend-attribution", "budget-enforcement"], "deviations": 1}
+ ]
+}

@@ -1,0 +1,98 @@
+{
+  "schema": "conform-run/1",
+  "worker": "dfd0e908-b627-4d85-b4b2-37c38012fa2b",
+  "subject": "async-ui-states",
+  "evaluatedAt": "2026-10-10T01:54:37Z",
+  "pairs": [
+    {
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "subject": "async-ui-states",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/components/feedback/SuspenseFallback.tsx:14 renders LoadingSpinner, which paints nothing (src/features/shared/components/feedback/LoadingSpinner.tsx:9 spinners disabled app-wide), so code-arrival is a blank py-12 hole with an undelayed role=status at 4 Suspense sites (EditorBody.tsx:190, FleetPage.tsx:150, SettingsPage.tsx:84, KPIDashboard.tsx:106) - re-verified 2026-10-10, files untouched since 10-07",
+      "techniques": [
+        {
+          "technique": "placeholder-design",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/feedback/SuspenseFallback.tsx:13 lazy-boundary fallback is an empty centered py-12 box with no header-band ghost and no appearance delay; placeholder-design \"code arrival is the same wait\" requires a delayed placeholder holding the shared chrome geometry"
+        }
+      ]
+    },
+    {
+      "context": "36783fec-01fa-40d5-8620-cf65ae691d27",
+      "subject": "async-ui-states",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:46 EmptyStateContent takes no cause input, so ManualReviewList branches on the filtered count (src/features/overview/sub_manual-review/components/ManualReviewList.tsx:174 -> src/features/overview/sub_manual-review/libs/reviewHelpers.ts:127) and a filter excluding every review lands on the first-run hero with a create-persona action (ManualReviewList.tsx:456) - re-verified 2026-10-10, still live",
+      "techniques": [
+        {
+          "technique": "empty-state-design",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:127 branches on visibleCount (filtered) not the raw collection; no-match renders first-run copy + create action at src/features/overview/sub_manual-review/components/ManualReviewList.tsx:456"
+        },
+        {
+          "technique": "failure-states",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:129 error resolves to its own view, rendered as InlineErrorBanner with retry at src/features/overview/sub_manual-review/components/ManualReviewList.tsx:438"
+        },
+        {
+          "technique": "state-model",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:128 loading resolves to ghost before empty can be asserted, and held rows (line 127) dominate loading/error"
+        }
+      ]
+    },
+    {
+      "context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0",
+      "subject": "async-ui-states",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/components/buttons/AsyncButton.tsx:110 renders Button without its `loading` prop (omitted at AsyncButton.tsx:13), so the width lock (src/features/shared/components/buttons/Button.tsx:165 fires only on `loading`) never engages and the spinner+label swap reflows the pressed button (action-busy-states rule 3) - re-verified 2026-10-10, unchanged",
+      "techniques": [
+        {
+          "technique": "action-busy-states",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/buttons/AsyncButton.tsx:110 geometry-hold rule broken: Button.tsx:165 min-width lock keyed on `loading`, which AsyncButton never passes; synchronous disarm is realized at AsyncButton.tsx:41 and aria-busy at AsyncButton.tsx:113"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-10T01:54:37Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "async-ui-states"
+      ],
+      "techniques": [
+        "placeholder-design"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T01:54:37Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "async-ui-states"
+      ],
+      "techniques": [
+        "empty-state-design",
+        "failure-states",
+        "state-model"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T01:54:37Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "async-ui-states"
+      ],
+      "techniques": [
+        "action-busy-states"
+      ],
+      "deviations": 1
+    }
+  ]
+}

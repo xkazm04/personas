@@ -1,0 +1,200 @@
+{
+  "schema": "conform-run/1",
+  "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
+  "subject": "browser-credential-boundary",
+  "evaluatedAt": "2026-10-10T11:25:36Z",
+  "pairs": [
+    {
+      "context": "1092db16-982f-4d99-b71b-14e6cf704a4f",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 token_endpoint_request POSTs client_secret via SHARED_HTTP (system resolver, default redirect following) to a token_url that is caller data (oauth.rs:2073) or a discovery response validated by string only (oauth.rs:1323); SSRF_SAFE_HTTP (src-tauri/core/src/http_clients.rs:27) exists and is unused - re-verified 2026-10-10, file unchanged since 2026-09-16",
+      "techniques": [
+        {
+          "technique": "outbound-fetch-destination-validation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 and :1295 (OIDC discovery GET) use SHARED_HTTP; the issuer guard at oauth.rs:1205 judges only an IP-literal string, so a hostname resolving inward passes, the verdict is not bound to the connection, and redirects are followed unjudged - with client_secret attached to a data-borne destination"
+        },
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/credentials/foraging.rs:203 foraged secrets cross IPC as masked values and import by id; token refresh runs server-side (src/api/vault/oauthGatewayApi.ts:72)"
+        },
+        {
+          "technique": "omit-the-column-not-the-value",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/credential.rs:40 serde-skips encrypted_data off every credential shape this context returns"
+        },
+        {
+          "technique": "opaque-upstream-errors",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:85 upstream token-endpoint bodies pass sanitize_secrets at one chokepoint before reaching IPC; remaining detail is the technique's own-trust-boundary exception (single-operator desktop)"
+        },
+        {
+          "technique": "public-vs-server-env-split",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/http_clients.rs:27 this context is Rust only; no bundle-shipped configuration"
+        }
+      ],
+      "registryProposal": "The dispatch ranked this subject on '8 consumer deviations'; in this repo only this one pair (1 of 7) is a deviation. The attention scan's tally likely aggregates across consumers or counts superseded verdicts - worth checking."
+    },
+    {
+      "context": "cf38b51d-aebb-4b36-bb8e-68a494a3662f",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/api/vault/credentials.ts:84 the only door carrying secret values sends them session-key encrypted (key minted at src-tauri/src/commands/credentials/crud.rs:31); every other door is id-only and the raw-token refresh door is retired (src/api/vault/oauthGatewayApi.ts:72)",
+      "techniques": [
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "conformant",
+          "evidence": "src/api/vault/credentials.ts:84 preview healthcheck sends sessionEncryptedData; healthcheck/rotation/db queries pass credentialId and Rust attaches the secret; src/api/vault/oauthGatewayApi.ts:72 raw refresh_token IPC retired"
+        },
+        {
+          "technique": "omit-the-column-not-the-value",
+          "verdict": "conformant",
+          "evidence": "src/api/vault/credentials.ts:21 list_credentials returns PersonaCredential, whose encrypted_data is serde-skipped (src-tauri/core/src/models/credential.rs:40); foraged values arrive masked (src-tauri/src/commands/credentials/foraging.rs:203)"
+        },
+        {
+          "technique": "outbound-fetch-destination-validation",
+          "verdict": "not-applicable",
+          "evidence": "src/api/vault/oauthGatewayApi.ts:61 forwards caller tokenUrl/oidcIssuer to Rust; the guard belongs at the Rust fetch door, where it is missing and recorded as the commands-credentials deviation (not double-counted here)"
+        },
+        {
+          "technique": "public-vs-server-env-split",
+          "verdict": "not-applicable",
+          "evidence": "src/api/vault/credentials.ts:1 every door is an IPC invoke; zero import.meta.env reads under src/api/vault"
+        },
+        {
+          "technique": "aggregate-view-not-base-table",
+          "verdict": "not-applicable",
+          "evidence": "src/api/vault/credentials.ts:1 the webview reaches the store only through privileged IPC commands; no browser-held role key"
+        },
+        {
+          "technique": "default-deny-plus-defaulted-owner",
+          "verdict": "not-applicable",
+          "evidence": "src/api/vault/credentials.ts:1 no row-policy store is browser-reachable"
+        }
+      ],
+      "registryProposal": "Upward lesson for an application (tauri--broker-proxy-attaches-secret): on a desktop shell the broker is the IPC command layer, and secrets typed into the webview cross it encrypted to a per-session public key (src-tauri/src/commands/credentials/crud.rs:31, src/features/vault/shared/hooks/health/useCredentialHealth.ts:216) - a stronger shape than the technique's same-origin route, worth teaching."
+    },
+    {
+      "context": "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/browser/whitelist/siteEdit.ts:73 binds a site to a credential id only via the privileged browser_sites_bind_credential (src-tauri/src/commands/browser/sites.rs:79); the site shape carries credential_id and no secret (src/lib/bindings/BrowserSite.ts:26)",
+      "techniques": [
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "conformant",
+          "evidence": "src/features/browser/whitelist/siteEdit.ts:73 the webview sends origin + credentialId; browser_login attaches the secret Rust-side (src/features/browser/whitelist/SiteCredentialField.tsx:2)"
+        },
+        {
+          "technique": "omit-the-column-not-the-value",
+          "verdict": "conformant",
+          "evidence": "src/lib/bindings/BrowserSite.ts:26 credential_id only; the picker lists id/name/service_type (src/features/browser/whitelist/SiteCredentialField.tsx:43)"
+        },
+        {
+          "technique": "public-vs-server-env-split",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/whitelist/siteEdit.ts:73 configuration moves over IPC; zero import.meta.env reads under src/features/browser"
+        },
+        {
+          "technique": "aggregate-view-not-base-table",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/browser/sites.rs:79 site rows are reached only through privileged commands; no browser-held store role"
+        },
+        {
+          "technique": "default-deny-plus-defaulted-owner",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/browser/sites.rs:79 no row-policy store is browser-reachable"
+        }
+      ],
+      "registryProposal": "The context map's path list for this context omits siteEdit.ts and SiteCredentialField.tsx, which carry its entire credential surface; the context scan lags the whitelist->server-control refactor (e385cc353e)."
+    },
+    {
+      "context": "cbb061cf-5c61-49d4-80d8-98b8f9b40600",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/browser/types.ts:62 BrowserTab carries url/title/origin/lease and no credential field; no file in this context references credential/secret/vault (re-grepped 2026-10-10, files unchanged since the 2026-10-03 verdict) - the credential binding lives in site-whitelist-management",
+      "techniques": []
+    }
+  ],
+  "declined": [
+    {
+      "subject": "browser-credential-boundary",
+      "context": "e61f931c-25d7-4532-9ec7-ab6f3fc377e2",
+      "reason": "verdict (not-applicable, 2026-10-06) is current against digest rev 3; no commits to src/lib/credentials since; all three anchors print back what they claim - nothing to re-judge"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7",
+      "reason": "verdict (conformant, 2026-10-06) is current against digest rev 3; no commits to its paths since; all six anchors print back what they claim - left as is, over budget"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "reason": "verdict (conformant, 2026-10-06) is current against digest rev 3; no commits to its tabs or src-tauri/src/engine/db_query.rs since; all anchors print back correctly - left as is, over budget"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T11:25:36Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "browser-credential-boundary"
+      ],
+      "techniques": [
+        "outbound-fetch-destination-validation",
+        "broker-proxy-attaches-secret",
+        "omit-the-column-not-the-value",
+        "opaque-upstream-errors",
+        "public-vs-server-env-split"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T11:25:36Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "browser-credential-boundary"
+      ],
+      "techniques": [
+        "broker-proxy-attaches-secret",
+        "omit-the-column-not-the-value",
+        "outbound-fetch-destination-validation",
+        "public-vs-server-env-split",
+        "aggregate-view-not-base-table",
+        "default-deny-plus-defaulted-owner"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T11:25:36Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "browser-credential-boundary"
+      ],
+      "techniques": [
+        "broker-proxy-attaches-secret",
+        "omit-the-column-not-the-value",
+        "public-vs-server-env-split",
+        "aggregate-view-not-base-table",
+        "default-deny-plus-defaulted-owner"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T11:25:36Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "browser-credential-boundary"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

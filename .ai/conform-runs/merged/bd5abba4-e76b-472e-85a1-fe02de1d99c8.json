@@ -1,0 +1,261 @@
+{
+  "schema": "conform-run/1",
+  "worker": "bd5abba4-e76b-472e-85a1-fe02de1d99c8",
+  "subject": "data-access",
+  "evaluatedAt": "2026-10-10T01:31:33.733Z",
+  "pairs": [
+    {
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:42 still hand-escapes a Redis key and splices it into TYPE command text at :43 - a value interpolated into a command plus a second copy of the quoting grammar whose authority is src-tauri/src/engine/db_query.rs:1760 split_redis_command; re-judged at rev 18, unchanged since the rev-17 verdict",
+      "techniques": [
+        {
+          "technique": "query-construction",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:43 value spliced into command text; bound values and one owner of escaping are the never-optional floor even for a SQL-console surface"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:b67182492821d592",
+      "evaluatedRevision": 18
+    },
+    {
+      "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/core/src/models/build_session.rs:502 PersistedBuildSession::from_session still decodes JSON payload columns outside the seam with unwrap_or_default() (and .ok() at :506) instead of the propagating Json<T> FromSql at src-tauri/core/src/models/json_column.rs:91, so a corrupt resolved_cells/pending_question/agent_ir reaches the UI (src-tauri/src/commands/design/build_sessions.rs:614) as absent - a single-record read reporting corruption as not-there",
+      "techniques": [
+        {
+          "technique": "row-mapping",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/build_session.rs:506 per-field .ok() collapses a decode failure into None on a by-id read; single-record reads must fail loud"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:b67182492821d592",
+      "evaluatedRevision": 18
+    },
+    {
+      "context": "a8857307-216c-46e0-9571-e05e8cf06112",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:149 handleBatchArchive (and handleBatchRestore at :173) loops the singular archivePersona/restorePersona IPC once per selected persona, serially - N round trips and N write transactions for one bulk action, while the sibling bulk delete already goes set-shaped (bulkDeletePersonas at :80, per-id outcome report) - the technique's named failure, a bulk route that keeps looping the singular",
+      "techniques": [
+        {
+          "technique": "batching-and-n-plus-one",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:151 await archivePersona(id) inside a for-of over the selection; the surface (src/api/agents/personas.ts:83, :87) offers no set-shaped archive/restore though bulk_delete_personas proves the shape"
+        },
+        {
+          "technique": "batching-and-n-plus-one",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewPage.tsx:100 listDirectorScoreTrends(ids) - one keyed-map call for every visible row; src/features/agents/components/allPersonas/PersonaConfigPanel.tsx:333 resolveEffectiveConfigBulk for the config panel (reads are set-shaped; only the bulk writes loop)"
+        },
+        {
+          "technique": "layering-rules",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:4 the list view reaches persistence only through typed IPC wrappers; no query text or connection in the context"
+        }
+      ],
+      "registryProposal": "batching-and-n-plus-one scopes its set-shaped rule to reads (membership, child-of-parent, aggregate) and its loader to reads only; the commonest desktop-IPC case met here is a bulk WRITE action looping a single-record mutation. The technique's bulk-route-looping-the-singular sentence covers it only by analogy - a paragraph on set-shaped writes (per-id outcome report vs one all-or-nothing transaction) would turn this verdict from an inference into a rule",
+      "evaluatedAgainst": "sha256-b2:b67182492821d592",
+      "evaluatedRevision": 18
+    },
+    {
+      "context": "532bbf10-3fd3-4b57-a8ea-95a957645697",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/stores/slices/pipeline/teamSlice.ts:146 per-team member/connection counts arrive in one grouped-aggregate call (getTeamCounts -> src-tauri/db/src/repos/resources/teams.rs:79 get_all_team_counts) and per-persona health in one bundle (src/stores/slices/overview/personaHealthSlice.ts:283); the slices own no query text and reach the store only through typed wrappers; the remaining techniques govern the Rust data layer, not these consumers",
+      "techniques": [
+        {
+          "technique": "batching-and-n-plus-one",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:146 grouped aggregate instead of a per-team count loop; src/stores/slices/overview/personaHealthSlice.ts:283 set-shaped personaStats/personaDaily; src/stores/slices/pipeline/teamSlice.ts:434 batchDeleteTeamMemories(ids). The one fan-out, src/stores/slices/pipeline/channelSlice.ts:334, is one query per mounted channel subscription (distinct team+kinds keys), not per list row"
+        },
+        {
+          "technique": "layering-rules",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 imports typed @/api wrappers; no raw invoke, SQL or connection in any of the context's 24 files"
+        },
+        {
+          "technique": "query-construction",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+        },
+        {
+          "technique": "row-mapping",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+        },
+        {
+          "technique": "transactions-and-units-of-work",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+        },
+        {
+          "technique": "repo-testing",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+        },
+        {
+          "technique": "cross-driver-invariant-parity",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+        },
+        {
+          "technique": "read-models-and-projections",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+        },
+        {
+          "technique": "capability-declared-in-the-type",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+        },
+        {
+          "technique": "sequence-token-write-ordering",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+        },
+        {
+          "technique": "existence-authority-written-last",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+        },
+        {
+          "technique": "operator-defined-tables",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+        },
+        {
+          "technique": "localized-record-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:b67182492821d592",
+      "evaluatedRevision": 18
+    },
+    {
+      "context": "336089a8-bb18-449c-a62e-ca76b02097fb",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "tests/playwright/companion-bridge.ts:2 precondition unmet: the harness drives the running app over the test-automation HTTP server and never opens a store, builds a statement or decodes a row; repo-testing's real-engine rule belongs to the db crate suite",
+      "techniques": [],
+      "evaluatedAgainst": "sha256-b2:b67182492821d592",
+      "evaluatedRevision": 18
+    },
+    {
+      "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/i18n/generated/types.ts:2 precondition unmet: the context is a type file generated from en.json plus two i18n contract tests - an interface catalog, not a store; localized-record-identity routes interface translation elsewhere by its own text",
+      "techniques": [],
+      "evaluatedAgainst": "sha256-b2:b67182492821d592",
+      "evaluatedRevision": 18
+    }
+  ],
+  "declined": [
+    {
+      "subject": "data-access",
+      "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3",
+      "reason": "read but left unknown: the context mixes client-state stores with IPC wrappers; src/api/fleet/fleet.ts:225 sessionMetadata is single-id and callers loop it (src/features/plugins/dev-tools/sub_skills/analytics/useSkillsAnalytics.ts:121 mapWithConcurrency over up to 30 ids) while tokenSummary (src/api/fleet/fleet.ts:235) returns only a fleet aggregate - a batching deviation IF a backend transcript-file read counts as the operational store this subject governs; that applicability is uncertain"
+    },
+    {
+      "subject": "data-access",
+      "context": "0b0ee725-52a2-4656-9e13-07c5204de60e",
+      "reason": "over budget; verdict stamped rev 17 (7bc5f1eb) - rev 18 changed only a python application's line numbers, so substance likely holds; re-judge next run"
+    },
+    {
+      "subject": "data-access",
+      "context": "320d2cea-9761-4233-97c1-ee2eaf4d6c17",
+      "reason": "over budget; rev-17 verdict, rev 18 is an application-only change"
+    },
+    {
+      "subject": "data-access",
+      "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474",
+      "reason": "over budget; rev-17 verdict, rev 18 is an application-only change"
+    },
+    {
+      "subject": "data-access",
+      "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae",
+      "reason": "over budget; rev-17 verdict, rev 18 is an application-only change"
+    },
+    {
+      "subject": "data-access",
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "reason": "over budget; rev-17 verdict, rev 18 is an application-only change"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T01:31:33.733Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "data-access"
+      ],
+      "techniques": [
+        "query-construction"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T01:31:33.733Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "data-access"
+      ],
+      "techniques": [
+        "row-mapping"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T01:31:33.733Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "data-access"
+      ],
+      "techniques": [
+        "batching-and-n-plus-one",
+        "layering-rules"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T01:31:33.733Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "data-access"
+      ],
+      "techniques": [
+        "batching-and-n-plus-one",
+        "layering-rules"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T01:31:33.733Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "data-access"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T01:31:33.733Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "data-access"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

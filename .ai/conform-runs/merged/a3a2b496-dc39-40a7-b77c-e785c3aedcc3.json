@@ -1,0 +1,142 @@
+{
+  "schema": "conform-run/1",
+  "worker": "a3a2b496-dc39-40a7-b77c-e785c3aedcc3",
+  "subject": "status-vocabulary",
+  "evaluatedAt": "2026-10-10T02:45:18Z",
+  "pairs": [
+    {
+      "context": "1d8a480b-eac4-4110-a60e-47a6ab281c97",
+      "subject": "status-vocabulary",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:77 renders the dimension name from a local hardcoded-English DIM_LABEL copy (glyphLayoutHelpers.ts:10) instead of the translated useGlyphDimText, and falls back to the raw cellKey token - English or machine tokens in all 13 other locales",
+      "techniques": [
+        {
+          "technique": "token-label-separation@i18n",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:77 DIM_LABEL[dim] is the English const and the else branch displays question.cellKey raw; the translated path exists at src/features/shared/glyph/persona-sigil/useGlyphDimText.ts:33 and is bypassed"
+        },
+        {
+          "technique": "vocabulary-chain-integrity",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/buildTypes.ts:75 ReviewPolicy.mode is never|on_low_confidence|always, yet src/features/agents/sub_glyph/GlyphCapabilityPreview.tsx:95 labels an auto_triage member the authority does not have, keyed by bare string so the type cannot see the drift"
+        },
+        {
+          "technique": "status-color-mapping",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_glyph/GlyphCapabilityPreview.tsx:53 reviewTone and :95 reviewLabel are two parallel string-keyed tables; unknown mode degrades to muted (:60) for an approval vocabulary, colour is raw text-amber-400/80 (:199) not a status role"
+        },
+        {
+          "technique": "vocabulary-evolution-checklist",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_glyph/GlyphCapabilityPreview.tsx:102 an unrecognised review mode renders its raw token - the forgotten-layer failure the checklist exists to prevent"
+        },
+        {
+          "technique": "untrusted-label-rendering",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_glyph/GlyphCapabilityPreview.tsx:172 LLM-authored cap.title renders as a React text child, never markup"
+        },
+        {
+          "technique": "timestamp-display",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:19 the context state is cellStates/build phases; none of its nine files renders a moment"
+        },
+        {
+          "technique": "number-formatting",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/glyphLayoutHelpers.ts:21 the context derives petal states, not quantities; no numeric rendering in its files"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:bea7b30fd48d528d",
+      "evaluatedRevision": 5
+    },
+    {
+      "context": "417112d1-004b-41d5-a656-57997a47d818",
+      "subject": "status-vocabulary",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/utility/timing/useElapsedTimer.ts:16 a shared elapsed-display hook spins its own setInterval per instance beside the shared ticker, never slows, and keeps ticking while the document is hidden - the per-cell timer the technique retires (4 consumers incl. TerminalHeader, ExecutionMiniPlayer)",
+      "techniques": [
+        {
+          "technique": "timestamp-display",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/timing/useElapsedTimer.ts:16 per-instance interval bypasses the shared ticker; src/hooks/utility/timing/relativeTimeTicker.ts:250 useQuantizedNow already offers the shared pulse it should ride"
+        },
+        {
+          "technique": "number-formatting",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/timing/useAnimatedNumber.ts:16 returns a raw interpolated number; formatting is the caller-side primitive, not this context"
+        },
+        {
+          "technique": "status-color-mapping",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/timing/usePolling.ts:1 the context holds timing primitives only; no status vocabulary is defined or rendered"
+        },
+        {
+          "technique": "vocabulary-chain-integrity",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/timing/usePolling.ts:1 no closed display vocabulary in this context"
+        },
+        {
+          "technique": "untrusted-label-rendering",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/timing/useElapsedTimer.ts:8 hooks return numbers; nothing in the context renders text"
+        }
+      ],
+      "registryProposal": "Upward lesson for timestamp-display: src/hooks/utility/timing/relativeTimeTicker.ts:106 gives each subscriber its own due time so the finest cadence is not contagious (one sub-minute label no longer re-renders 30s subscribers at 1 Hz), and :154 stops the ticker when the document is hidden with a catch-up fire on return. The technique names coalescing and age-scaling but neither of these; both were measured defects of a one-timer design. Coverage note: this context is weak overall (debounce/polling/RAF) and the subject governs only its ticker and elapsed-timer files.",
+      "evaluatedAgainst": "sha256-b2:bea7b30fd48d528d",
+      "evaluatedRevision": 5
+    }
+  ],
+  "declined": [
+    {
+      "subject": "status-vocabulary",
+      "context": "89eddf81-0c57-441d-a07d-de36bf022cb5",
+      "reason": "judged deviation 2026-10-09 against the current digest sha256-b2:bea7b30fd48d528d (revision 5); not stale, re-reading adds nothing"
+    },
+    {
+      "subject": "status-vocabulary",
+      "context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5",
+      "reason": "judged deviation 2026-10-09 against the current digest sha256-b2:bea7b30fd48d528d (revision 5); not stale"
+    },
+    {
+      "subject": "status-vocabulary",
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "reason": "judged deviation 2026-10-09 against the current digest sha256-b2:bea7b30fd48d528d (revision 5); not stale"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T02:45:18Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "status-vocabulary"
+      ],
+      "techniques": [
+        "token-label-separation",
+        "vocabulary-chain-integrity",
+        "status-color-mapping",
+        "vocabulary-evolution-checklist",
+        "untrusted-label-rendering",
+        "timestamp-display",
+        "number-formatting"
+      ],
+      "deviations": 4
+    },
+    {
+      "ts": "2026-10-10T02:45:18Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "status-vocabulary"
+      ],
+      "techniques": [
+        "timestamp-display",
+        "number-formatting",
+        "status-color-mapping",
+        "vocabulary-chain-integrity",
+        "untrusted-label-rendering"
+      ],
+      "deviations": 1
+    }
+  ]
+}

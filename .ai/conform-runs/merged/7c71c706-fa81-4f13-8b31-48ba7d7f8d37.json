@@ -1,0 +1,52 @@
+{"schema": "conform-run/1", "worker": "7c71c706-fa81-4f13-8b31-48ba7d7f8d37", "subject": "voice-io",
+ "evaluatedAt": "2026-10-10T12:17:30Z",
+ "pairs": [
+  {"context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50", "subject": "voice-io", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/onboarding/components/useTourNarration.ts:102 tour narration plays through its own raw element from play() with no shared speech arbiter (BubbleReadAloud.tsx holds a separate one), so a step narration and an Athena read-aloud can be audible at once; its 'error' status renders identical to idle (TourNarrationButton.tsx:30) and its audio cache is keyed by step id alone (:121), so a mid-tour voice change replays the old voice",
+   "techniques": [
+    {"technique": "tts-pipeline", "verdict": "deviation", "evidence": "src/features/onboarding/components/useTourNarration.ts:121 cached audio keyed by stepId only - derivation-names-recomputation needs (text, voice, params, engine) in the key; object URLs in urlCacheRef (:84) are never revoked on unmount. Realized: identity claimed synchronously at request time (:96) and re-checked after the synthesis wait (:101); every stop path bumps the generation (:153, :166, :174)"},
+    {"technique": "voice-ux-integration", "verdict": "deviation", "evidence": "src/features/onboarding/components/useTourNarration.ts:102 calls play() directly with its own audioRef (:79) - no single arbiter enforces at-most-one-audible across tour, read-aloud (src/features/companions/athena/BubbleReadAloud.tsx:38) and proactive speech; src/features/onboarding/components/TourNarrationButton.tsx:30 folds only speaking/loading into the indicator, so 'error' (synthesis failed or playback refused) looks exactly like designed silence. Realized: narration never blocks the tour and a step change replaces (:148)"},
+    {"technique": "engine-abstraction", "verdict": "conformant", "evidence": "src/features/onboarding/components/useTourNarration.ts:134 the surface passes the resolved voice.engine through synthesize() without naming any engine (the :21 comment naming ElevenLabs/Piper is stale prose, not code)"},
+    {"technique": "speech-ready-text", "verdict": "not-applicable", "evidence": "src/stores/slices/system/tourSlice.ts:257 tour narration is authored spoken prose, not display markup, so the markup door has nothing to remove"}
+   ],
+   "registryProposal": "Context-map coverage gap, not a corpus hole: the shared speech primitive and its other callers (src/features/companions/athena/voicePlayback.ts, BubbleReadAloud.tsx, src/features/studio/guide/useGuideReadAloud.ts, src/features/plugins/twin/setup/useSetupVoice.ts) sit in no context's file_paths, so the one-arbiter / withhold-the-playback-handle defect at voicePlayback.ts:47 (returns the raw HTMLAudioElement) has no pair to land on. The tts-pipeline 'withhold the playback handle' measured case recurs here verbatim: each caller is internally correct and they overlap each other."},
+  {"context": "e0a448bc-24d4-4663-ba31-27d4ce378a14", "subject": "voice-io", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/executionPlayer/ExecutionMiniPlayer.tsx:38 the context's 'player' is a progress/result view of an execution; none of its 34 cloud-deployment and execution files captures, transcribes, synthesizes or plays audio, so neither voice-io pipeline exists here",
+   "techniques": [
+    {"technique": "tts-pipeline", "verdict": "not-applicable", "evidence": "src/features/agents/executionPlayer/ExecutionMiniPlayer.tsx:38 no synthesis or playback - 'player' is an execution progress view"},
+    {"technique": "stt-pipeline", "verdict": "not-applicable", "evidence": "src/features/agents/executionPlayer/ExecutionMiniPlayer.tsx:38 no capture or transcription anywhere in the context"}
+   ],
+   "registryProposal": "Lexical resonance: 'player'/'playground' and deployment vocabulary score voice-io as strong (899.9) on a surface with no audio; voice-io matching should require an audio-domain token (audio, speech, microphone, playback, tts/stt)."},
+  {"context": "059fdee0-40da-434a-a5cb-874bc9179a31", "subject": "voice-io", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/persona_jobs.rs:380 'synthesis' here is LLM synthesis of memories into insights; the 32 engine-infrastructure files (jobs, topology, event bus, clipboard/file watchers) carry no audio capture, transcription, synthesis or playback, so no voice-io precondition holds",
+   "techniques": [
+    {"technique": "tts-pipeline", "verdict": "not-applicable", "evidence": "src-tauri/src/engine/persona_jobs.rs:380 the only 'synthesis' is LLM memory synthesis, not speech"},
+    {"technique": "transcript-handoff-receipts", "verdict": "not-applicable", "evidence": "src-tauri/src/engine/persona_jobs.rs:475 'transcripts' are CLI session text; the context's clipboard monitor reads the clipboard for error detection and delivers no dictated transcript"}
+   ],
+   "registryProposal": "Same resonance: 'synthesis' and 'transcript' are LLM/CLI vocabulary in this repo; voice-io pairs scored on them without an audio token are near-certain not-applicable."},
+  {"context": "a3b615d2-05d8-47bd-ad92-672c6b42b0f3", "subject": "voice-io", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/deliberation.rs:1397 'voice' is the persona's viewpoint in an LLM deliberation turn and synthesize_proposal is LLM text synthesis; the context parses the CLI stream (src-tauri/engine/src/parser.rs:2 ProtocolMessage/StreamLineType) and chunks documents for embeddings, with no audio anywhere",
+   "techniques": [
+    {"technique": "speech-ready-text", "verdict": "not-applicable", "evidence": "src-tauri/engine/src/chunker.rs:1 chunking is for vector embeddings, not cutting text for synthesis"},
+    {"technique": "tts-pipeline", "verdict": "not-applicable", "evidence": "src-tauri/src/engine/deliberation.rs:1397 persona 'voice' is written viewpoint; nothing is spoken"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "voice-io", "context": "50bf2ad0-3da7-4405-991a-6e22695903a2", "reason": "stale not-applicable (rev 19 vs 20); the rev-20 delta (real-time-synthesis-budget added, tts-pipeline/authored-voice-identity edited) does not touch the no-audio precondition the verdict rests on - left for a --stale pass rather than re-read inside a 4-pair budget"},
+  {"subject": "voice-io", "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1", "reason": "stale not-applicable at rev 19; precondition (no audio) unaffected by the rev-20 delta, unread this run"},
+  {"subject": "voice-io", "context": "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20", "reason": "stale not-applicable at rev 19; unread this run"},
+  {"subject": "voice-io", "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474", "reason": "stale not-applicable at rev 19; unread this run"},
+  {"subject": "voice-io", "context": "767b2bb5-4662-4be1-ad24-c881ac334016", "reason": "stale not-applicable at rev 19; unread this run"},
+  {"subject": "voice-io", "context": "ebca0ef1-e509-4721-8472-1588ac2f93cc", "reason": "probable pair; src/features/plugins/twin/shared/channels.ts:73 'voice' is a tone channel id - likely not-applicable but its sub_channels files were not read, so left unknown"},
+  {"subject": "voice-io", "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b", "reason": "weak context - a coverage question, never judged by default"}
+ ],
+ "consults": [
+  {"ts": "2026-10-10T12:17:30Z", "bundle": "software-engineering", "subjects": ["voice-io"], "techniques": ["tts-pipeline", "voice-ux-integration", "engine-abstraction", "speech-ready-text"], "deviations": 2},
+  {"ts": "2026-10-10T12:17:30Z", "bundle": "software-engineering", "subjects": ["voice-io"], "techniques": ["tts-pipeline", "stt-pipeline"], "deviations": 0},
+  {"ts": "2026-10-10T12:17:30Z", "bundle": "software-engineering", "subjects": ["voice-io"], "techniques": ["tts-pipeline", "transcript-handoff-receipts"], "deviations": 0},
+  {"ts": "2026-10-10T12:17:30Z", "bundle": "software-engineering", "subjects": ["voice-io"], "techniques": ["speech-ready-text", "tts-pipeline"], "deviations": 0}
+ ]}

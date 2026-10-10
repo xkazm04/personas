@@ -1,0 +1,220 @@
+{
+  "schema": "conform-run/1",
+  "worker": "2d8e0e50-5978-4133-8647-1bbaae10b6ce",
+  "subject": "quality-gates",
+  "evaluatedAt": "2026-10-10T11:13:52Z",
+  "pairs": [
+    {
+      "context": "320d2cea-9761-4233-97c1-ee2eaf4d6c17",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/quality_gate.rs:95 ships a default Reject rule on the bare substring 'has no' (also matches 'has now'/'has not'), applied at src-tauri/src/engine/dispatch.rs:992 to every agent ManualReview, so legitimate human-decision reviews are silently discarded by a detector whose precision was never measured and whose rejections reach no audit record (the policy-off drop at :863 does)",
+      "techniques": [
+        {
+          "technique": "false-positive-economics",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/quality_gate.rs:95 'has no' and :80 'api_key' substring rules default to Reject (:109) via plain contains (:130); no precision measurement against the review population exists, and a rejected review is logged only to the execution log (src-tauri/src/engine/dispatch.rs:992) with no counted audit row, so neither precision nor recall can ever be computed"
+        },
+        {
+          "technique": "severity-by-construction",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/dispatch.rs:904 Reject returns before mem_repo::create, so the label's severity is the construction's severity (Tag/Warn fall through to store)"
+        },
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/quality_gate.rs:146 an unparseable saved config is replaced by the defaults with only a warn, so an operator's narrowed rule set silently reverts to the shipped Reject rules - a broken instrument input read as a valid policy"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+      "evaluatedRevision": 53,
+      "registryProposal": "false-positive-economics' 'nobody was entitled to the artifact' carve-out (machine-generated candidates) should say what happens when the refused machine candidate IS a request for a human decision: dropping it removes the human from the loop, so a false positive costs a missed decision, not a wasted generation."
+    },
+    {
+      "context": "50f50f97-be0e-4a93-8f1c-c0b967cd45d0",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:266 the findings loop only records a re-measured verify state (cleared/moved/unchanged/regressed/pending); nothing in the context refuses a change, commit, release or advancement on it - assessment, not refusal (matched on finding/rule tokens)",
+      "techniques": [
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "realized (in an assessment)",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/verify.ts:104 a sensor that did not probe this sweep yields 'pending' with reason sensor_not_probed, never 'cleared' - absence in the instrument is not read as compliance"
+        },
+        {
+          "technique": "advancement-evidence-fields",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/verify.ts:168 the verify state is written only after the item already shipped; no stage boundary is gated on it"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+      "evaluatedRevision": 53,
+      "registryProposal": "Upward lesson for unmeasurable-criteria / measurement-honesty: verify.ts:95-112 makes the probed-origins set a REQUIRED argument so no call site can forget to distinguish 'signal absent' from 'sensor skipped' - the derivation lives in the signature, not in a null-check each caller must remember."
+    },
+    {
+      "context": "ef73ca1c-fc54-4b9c-83ec-390c54929192",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:98 the inbox only reads verdicts made elsewhere (human decisions, or trust_llm/auto_triage notes the engine wrote) and renders them; nothing in this context computes a verdict over an artifact or refuses anything - hitl-approval/triage-queues govern it",
+      "techniques": [
+        {
+          "technique": "policy-projection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/components/AutoResolvedBadge.tsx:16 projects the auto-resolution policy onto rows, but the projected policy is review routing, not a quality gate"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+      "evaluatedRevision": 53,
+      "registryProposal": "Coverage: matched on backlog/review/item tokens; the governing subjects are hitl-approval and triage-queues. Reviews dropped upstream by the dispatch quality gate (see db-repos-execution) never reach this inbox and leave no marker here."
+    },
+    {
+      "context": "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:4 the context's only refusals are origin validation and per-site enable/tool permission for agent browsing - an authorization allowlist enforced in Rust, not a quality standard over a tree, change or release (matched on site/policy/allowlist tokens)",
+      "techniques": [
+        {
+          "technique": "gate-laddering",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:5 the UI pre-check defers to the Rust refusal as the binding rung, but what it gates is access, which authorization / browser-credential-boundary govern"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+      "evaluatedRevision": 53
+    },
+    {
+      "context": "767b2bb5-4662-4be1-ad24-c881ac334016",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/recipe_eligibility.rs:234 a prompt_template that is not valid JSON is silently skipped and the recipe scores vacuously Eligible (pinned by the test at :477), and src-tauri/src/commands/recipes/recipe_adoption.rs:87 refuses adoption only on Incompatible - a gate that could not read the canonical requirement signal waves the recipe through as one-click",
+      "techniques": [
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/recipe_eligibility.rs:234 the instrument ran and could not decide (unparseable serialized UC) and the result reads as compliance; the module already fails closed on a declared-but-unparseable tool_requirements (:108), so only this branch is open"
+        },
+        {
+          "technique": "gate-liveness",
+          "verdict": "realized-at-caller",
+          "evidence": "src-tauri/engine/src/template_checksums.rs:190 verify_templates_batch reports all_valid:true over zero inputs; the only caller refuses that case first (src/lib/personas/templates/templateCatalog.ts:421 returns null), so the empty-success sits in the instrument, guarded one level up"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+      "evaluatedRevision": 53,
+      "registryProposal": "Coverage: this context is a grab-bag of 31 engine files (webhook relay, oauth, autopilot, recipe eligibility, template checksums); quality-gates governs only recipe_eligibility.rs and template_checksums.rs, and the context's name names neither."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "quality-gates",
+      "context": "a38e2b93-2322-4187-befa-c0443c4ca85f",
+      "reason": "weak governance row (glyph-definitions); judging it would test the match, not the code - reported as a coverage question"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "1d8a480b-eac4-4110-a60e-47a6ab281c97",
+      "reason": "weak governance row (glyph-persona-card); judging it would test the match, not the code - reported as a coverage question"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400",
+      "reason": "weak governance row (plugins-artist-gallery); judging it would test the match, not the code - reported as a coverage question"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b",
+      "reason": "weak governance row (plugins-research-lab-reports); judging it would test the match, not the code - reported as a coverage question"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0",
+      "reason": "weak governance row (plugins-research-lab-shared); judging it would test the match, not the code - reported as a coverage question"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "89d44c76-ec4c-4388-843e-503cf6ca2507",
+      "reason": "weak governance row (progress-transform); judging it would test the match, not the code - reported as a coverage question"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "9b013060-5483-4162-9f8a-6b69109d623d",
+      "reason": "weak governance row (teams-kpis); judging it would test the match, not the code - reported as a coverage question"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7",
+      "reason": "weak governance row (triggers-test); judging it would test the match, not the code - reported as a coverage question"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "*",
+      "reason": "62 further probable-confidence unknown pairs left for later runs (budget 5); none are strong, and most matched on generic tokens rather than a refusal mechanism"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T11:13:52Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "false-positive-economics",
+        "severity-by-construction",
+        "unmeasurable-criteria"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T11:13:52Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "unmeasurable-criteria",
+        "advancement-evidence-fields"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T11:13:52Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "policy-projection"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T11:13:52Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "gate-laddering"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T11:13:52Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "unmeasurable-criteria",
+        "gate-liveness"
+      ],
+      "deviations": 1
+    }
+  ]
+}

@@ -1,0 +1,648 @@
+{
+  "schema": "conform-run/1",
+  "worker": "251266ad-2249-4365-a14c-7393f839cea7",
+  "subject": "test-harness",
+  "evaluatedAt": "2026-10-10T14:30:20Z",
+  "pairs": [
+    {
+      "context": "12d5948a-76a4-4db1-ac6a-ac554eb12020",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/home/sub_cockpit/widgets/__tests__/ObservabilityPlanWidget.test.tsx:47 'handles all four metric kinds' asserts only that data-section=\"success-metric\" exists (:57), which the widget renders for ANY kind (src/features/home/sub_cockpit/widgets/ObservabilityPlanWidget.tsx:64), so collapsing metricLabel (:92) to one label stays green - three of four kind labels are unpinned under a name that claims all four (only count_by_status is asserted, :42).",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/ObservabilityPlanWidget.test.tsx:47 the test name claims a per-kind guard; its assertion (:57) is satisfied by src/features/home/sub_cockpit/widgets/ObservabilityPlanWidget.tsx:64, upstream of the kind decision at :92 - reach probe 'return the custom label for every kind' stays green"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/PersonaReadyWidget.test.tsx:20 mocks reset per test; RTL auto-cleanup unmounts between tests via vitest.config.ts:12 globals"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "conformant",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/ConnectorCallCard.test.tsx:6 in-memory builder with overrides - the cheapest fixture tier for a render claim"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/TemplateSuggestionsWidget.test.tsx:93 the regression test records the defect it fails against (inert rows), so its control is its own fix"
+        },
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "conformant",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/UseCaseSetWidget.test.tsx:41 role tests enumerate the full three-member role set; no 'every' claim rests on a partial hand list in this context"
+        },
+        {
+          "technique": "approval-snapshots-with-guarded-update",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/DecisionLogWidget.test.tsx:31 assertions are per-field getByText; no snapshot is recorded in this context"
+        },
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/ConnectorCallCard.test.tsx:30 widgets render UI for a human reader; nothing is emitted for a foreign interpreter"
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/ModelTierChoiceWidget.test.tsx:65 every assertion executes the component; no source-text pin"
+        },
+        {
+          "technique": "suite-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "history-driven-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "platform-quirk-absorption",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "flake-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "long-lane-certification",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "out-of-graph-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "configuration-axes-cross-the-ladder",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "dynamic-verifier-classes",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "verification-inherits-driver-reach",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "mutation-lane-with-a-triaged-baseline",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "context-starved-executor",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "constraint-injection-for-unreachable-tiers",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "recorded-interaction-fixtures",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "live-app-harness",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:5521806124d93882",
+      "evaluatedRevision": 26
+    },
+    {
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/system/tourSlice.test.ts:203 'registers_all_seven_tours_in_completion_map' hand-lists 7 tours while StaticTourId (src/stores/slices/system/tourSlice.ts:14) and the map (:1412) carry 9 - teams-orchestration (:22) and obsidian-brain are unpinned under a name a searcher reads as 'all tours covered'; derive the cases from TOUR_REGISTRY instead.",
+      "techniques": [
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/tourSlice.test.ts:203 a claim over a closed set (all tours) runs over a hand-written 7-of-9 list; the two members added after the test are exactly the two it omits"
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/__tests__/tourAnchors.test.ts:78 the anchor-drift gate's needle is the bare anchor string over a haystack that includes comments, so an anchor named only in prose passes; its floor (:121) bounds the registry, not the 6,155-file walk. No false green today: a probe of 31 anchors found none satisfied only by a comment or by another anchor definition"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/system/fleetSlice.test.ts:97 fresh harness per test plus the module-latch reset hatch at :273; src/stores/__tests__/tourMockBuildSeam.test.ts:55 resets the real stores and storage per test"
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/system/__tests__/twinSlice.fetchTwinTones.test.ts:46 deferred promises force the stale ordering the header names, so the latest-wins decision itself is reached"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/system/__tests__/devToolsTriageSlice.test.ts:146 the failure branch (rejected write) is driven and asserted, not only the happy path"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/system/fleetSlice.test.ts:97 minimal in-memory slice harness instead of the full store"
+        },
+        {
+          "technique": "approval-snapshots-with-guarded-update",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/system/fleetSlice.test.ts:97 slice reducers asserted field by field; no snapshots in this context"
+        },
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/system/deployTarget.test.ts:14 store slices emit no artifact for a foreign interpreter"
+        },
+        {
+          "technique": "suite-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "history-driven-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "platform-quirk-absorption",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "flake-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "long-lane-certification",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "out-of-graph-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "configuration-axes-cross-the-ladder",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "dynamic-verifier-classes",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "verification-inherits-driver-reach",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "mutation-lane-with-a-triaged-baseline",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "context-starved-executor",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "constraint-injection-for-unreachable-tiers",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "recorded-interaction-fixtures",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "live-app-harness",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:5521806124d93882",
+      "evaluatedRevision": 26
+    },
+    {
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/hooks/utility/interaction/__tests__/useScrollRestoration.test.ts:27 every test file resets what it inherits (module map here, html attribute at useMotion.test.ts:8, real store field at useUnsavedGuard.test.ts:13), builds in-memory fixtures, and names only what it asserts; lane-level techniques are properties of vitest.config.ts, not this context.",
+      "techniques": [
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/__tests__/useScrollRestoration.test.ts:27 module-level POSITIONS cleared per test; src/hooks/utility/interaction/__tests__/useMotion.test.ts:8 and src/hooks/utility/interaction/__tests__/useUnsavedGuard.test.ts:13 reset the global they touch"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/__tests__/useScrollRestoration.test.ts:9 in-memory element builder backs only the metrics the claim needs"
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/__tests__/useTrackedElementRect.test.ts:71 the name's claim (unsafe id guarded) is reached by feeding the exact unsafe input; no producer other than the hook can answer"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/__tests__/useUnsavedGuard.test.ts:7 the failure branch (rejected save) is driven, and the header names the pre-fix empty catch the tests fail against"
+        },
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/__tests__/useProgressiveReveal.test.ts:13 the cadence claim is checked as an invariant on every tick, not over a hand-picked member list of a closed set"
+        },
+        {
+          "technique": "approval-snapshots-with-guarded-update",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/__tests__/useMotion.test.ts:58 per-field toMatchObject; no snapshots"
+        },
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/__tests__/useMotion.test.ts:4 hooks emit no artifact for a foreign interpreter"
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/__tests__/useTrackedElementRect.test.ts:37 every assertion executes the hook; no source-text pin"
+        },
+        {
+          "technique": "suite-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "history-driven-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "platform-quirk-absorption",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "flake-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "long-lane-certification",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "out-of-graph-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "configuration-axes-cross-the-ladder",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "dynamic-verifier-classes",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "verification-inherits-driver-reach",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "mutation-lane-with-a-triaged-baseline",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "context-starved-executor",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "constraint-injection-for-unreachable-tiers",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "recorded-interaction-fixtures",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "live-app-harness",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        }
+      ],
+      "registryProposal": "The evidence floor (cite at least half the techniques) forces ~16 lane-scoped not-applicable rows onto every unit-test context for this 24-technique subject; techniques could declare a scope (lane vs test-file) so a context that owns no lane config is floored on the test-file techniques only. Consumer-side, not registry: src/hooks/utility/interaction/__tests__/useUnsavedGuard.test.ts sits in this context's __tests__ dir but context-map.json lists it under no context.",
+      "evaluatedAgainst": "sha256-b2:5521806124d93882",
+      "evaluatedRevision": 26
+    },
+    {
+      "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/stores/slices/agents/__tests__/runLifecycle.test.ts:21 carries its own negative control (the bug path asserted beside the fix), cancel tests cover each of the four lab modes (src/stores/__tests__/labSlice.cancel.test.ts:66) after a per-test flag reset (:52), and the stale-fetch pin drives the one shared factory (src/stores/slices/agents/labSlice.ts:402).",
+      "techniques": [
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/agents/__tests__/runLifecycle.test.ts:21 an in-suite control asserts the defect path (finish from idle rejected) beside the fixed path, so the instrument is shown able to fail"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/stores/__tests__/labSlice.cancel.test.ts:52 resets every per-mode flag on the shared real store per test; src/stores/__tests__/matrixBuildSlice.test.ts:12 resets the build session per test"
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/agents/labSlice.ts:402 all four fetchRuns siblings are built by one createLabCrud factory, so src/stores/slices/agents/__tests__/labSlice.fetchRuns.test.ts:68 reaches the single producer of the latest-wins decision"
+        },
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "conformant",
+          "evidence": "src/stores/__tests__/labSlice.cancel.test.ts:113 the concurrency claim names its sub-population (ab/matrix/eval) rather than claiming every mode; per-mode cancel tests cover all four (:66)"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/agents/__tests__/labSlice.fetchRuns.test.ts:49 minimal in-memory slice harness"
+        },
+        {
+          "technique": "approval-snapshots-with-guarded-update",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/__tests__/matrixBuildSlice.test.ts:12 field-level assertions throughout; no snapshots"
+        },
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/__tests__/labSlice.cancel.test.ts:66 slices emit no artifact for a foreign interpreter"
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/agents/__tests__/runLifecycle.test.ts:21 every assertion executes the code; no source-text pin"
+        },
+        {
+          "technique": "suite-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "history-driven-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "platform-quirk-absorption",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "flake-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "long-lane-certification",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "out-of-graph-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "configuration-axes-cross-the-ladder",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "dynamic-verifier-classes",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "verification-inherits-driver-reach",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "mutation-lane-with-a-triaged-baseline",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "context-starved-executor",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "constraint-injection-for-unreachable-tiers",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "recorded-interaction-fixtures",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        },
+        {
+          "technique": "live-app-harness",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:5521806124d93882",
+      "evaluatedRevision": 26
+    }
+  ],
+  "declined": [
+    {
+      "subject": "test-harness",
+      "context": "6da794b4-7a5f-4087-a4d4-fb8a416456e5",
+      "reason": "commands-execution is the product's own test-suite FEATURE (src-tauri/src/commands/execution/test_suites.rs); the match looks like vocabulary resonance (suite/assertion/test) and needs a precondition read - unread, budget of 4 spent"
+    },
+    {
+      "subject": "test-harness",
+      "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+      "reason": "recipe-build-models holds product models named test_run/test_suite (src-tauri/core/src/models/test_suite.rs), likely technique-shaped resonance - unread, budget spent"
+    },
+    {
+      "subject": "test-harness",
+      "context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e",
+      "reason": "commands-design matched on src-tauri/src/commands/testing/ (a product feature) - unread, budget spent"
+    },
+    {
+      "subject": "test-harness",
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "reason": "home-cockpit-widgets matched on 'test' via BrowserTestReportWidget.tsx, a product widget - unread, budget spent"
+    },
+    {
+      "subject": "test-harness",
+      "context": "7826a48f-5883-4f26-8476-c3c515bda745",
+      "reason": "strong unknown, unread - budget of 4 spent"
+    },
+    {
+      "subject": "test-harness",
+      "context": "959baa73-f18f-42c8-8569-466939b9050d",
+      "reason": "strong unknown with no test files in context - unread, budget spent"
+    },
+    {
+      "subject": "test-harness",
+      "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049",
+      "reason": "strong unknown with no test files in context - unread, budget spent"
+    },
+    {
+      "subject": "test-harness",
+      "context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0",
+      "reason": "strong unknown with 3 tests - unread, budget spent"
+    },
+    {
+      "subject": "test-harness",
+      "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc",
+      "reason": "strong unknown with 1 test - unread, budget spent"
+    },
+    {
+      "subject": "test-harness",
+      "context": "0dabb588-48ce-4c35-b425-c344fd723ce7",
+      "reason": "strong unknown with 2 tests - unread, budget spent"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T14:30:20Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "unreached-decisions-pin-nothing",
+        "isolation-lanes",
+        "fixture-economics",
+        "negative-control-tests",
+        "gate-scope-is-not-report-scope"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T14:30:20Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "gate-scope-is-not-report-scope",
+        "pin-the-call-not-the-name",
+        "isolation-lanes",
+        "unreached-decisions-pin-nothing",
+        "negative-control-tests",
+        "fixture-economics"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T14:30:20Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "isolation-lanes",
+        "fixture-economics",
+        "unreached-decisions-pin-nothing",
+        "negative-control-tests",
+        "gate-scope-is-not-report-scope"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T14:30:20Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "negative-control-tests",
+        "isolation-lanes",
+        "unreached-decisions-pin-nothing",
+        "gate-scope-is-not-report-scope",
+        "fixture-economics"
+      ],
+      "deviations": 0
+    }
+  ]
+}

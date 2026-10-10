@@ -1,0 +1,8 @@
+{"schema": "conform-run/1", "worker": "26a6c68c-ea82-43f6-9d99-00ce9cd94c3a", "subject": "health-checks",
+ "evaluatedAt": "2026-10-10T14:25:46Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "health-checks", "context": "6c0d30e4-99b9-4580-ba02-9a526db1d639", "reason": "no work: already re-judged 2026-10-10 against the current subject digest sha256-b2:9254e4fb7feef6b1 (rev 11, registry e5babec3 agrees, revisionsBehind 0); its anchors src/features/agents/sub_health/useHealthDigestScheduler.ts:101/:107 and src/stores/slices/agents/healthCheckSlice.ts:206 still read as the evidence claims and none of the anchored files has a commit since 2026-09-06 or uncommitted edits - a re-read would duplicate the standing deviation, not test it"},
+  {"subject": "health-checks", "context": "dd45411d-8955-4579-906e-5a3b00ba16da", "reason": "no work: already re-judged 2026-10-10 against the current subject digest sha256-b2:9254e4fb7feef6b1 (rev 11); anchors src-tauri/src/commands/infrastructure/system/health.rs:22/:111/:147 still read as the evidence claims and the file is unchanged since 2026-09-06 - the standing deviation is current"}
+ ],
+ "consults": []}

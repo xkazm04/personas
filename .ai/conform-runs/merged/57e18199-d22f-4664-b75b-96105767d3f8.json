@@ -1,0 +1,238 @@
+{
+  "schema": "conform-run/1",
+  "worker": "57e18199-d22f-4664-b75b-96105767d3f8",
+  "subject": "hitl-approval",
+  "evaluatedAt": "2026-10-10T02:42:57.536Z",
+  "pairs": [
+    {
+      "context": "3effd422-2610-4c8a-bc02-53aceafd827c",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:36 the 24h approval expiry is a read-side filter (also refused at claim, :445) and no sweep ever writes an expired status, so stale approvals stay pending in every query while invisible on every surface; and :555 boot recovery resets running->pending asserting the action never ran although execute_claimed runs the executor before finalize (:197), so a crash between them re-offers an already-executed action for a second approval",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:475 every decision path (inbox, headless, operator API) claims through one pending->running compare-and-swap; a loser gets NotPending carrying the current status"
+        },
+        {
+          "technique": "review-queues",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:36 expiry is WHERE created_at >= now-24h on the read plus a refusal at the door, never a status write - the technique names exactly this as leaving the item alive; ORDER BY created_at DESC LIMIT 50 also drops the oldest (soonest-expiring) items off the surface first"
+        },
+        {
+          "technique": "decision-records",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:519 the verdict write records only status and resolved_at; the decider is stamped into the payload by a separate best-effort write that warns and proceeds on failure (approval_operator.rs:130), the rejection reason lives only in a chat episode, and approval_autopilot.rs:243 writes a machine supersession as status rejected with no CAS and no resolved_at, indistinguishable from a human refusal"
+        },
+        {
+          "technique": "resume-after-decision",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:555 recover_interrupted_approvals resets every running row to pending on boot, but the side effect runs before finalize_approval (:197), so an executed-but-unfinalized action is re-presented and can run twice - exactly-once is not guaranteed"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:bc33acb280c8df96",
+      "evaluatedRevision": 21
+    },
+    {
+      "context": "0dabb588-48ce-4c35-b425-c344fd723ce7",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/migrations/incremental/e04_trigger_vocabulary_and_hot_paths.rs:290 a held trigger fire can only be pending/approved/rejected and nothing sweeps it, so a held fire never expires; the queue row shows only event_type, not the payload approval will republish (src/features/triggers/sub_triggers/PendingTriggerApprovals.tsx:101), and a lost CAS returns success even when the racing verdict was the opposite (src-tauri/src/commands/tools/triggers.rs:226)",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/resources/triggers/fires.rs:134 the held fire is a durable row flipped by a WHERE status = pending compare-and-swap; the hold is enforced in the substrate at src-tauri/src/engine/background/scheduler.rs:1279 and src-tauri/src/engine/background/event_bus.rs:492"
+        },
+        {
+          "technique": "review-queues",
+          "verdict": "deviation",
+          "evidence": "src/features/triggers/sub_triggers/PendingTriggerApprovals.tsx:101 the decision row names agent, trigger type, event_type and age but never the event payload that approval republishes (src-tauri/src/commands/tools/triggers.rs:218), so the human approves a label, not the thing; and the held fire names no reaper (e04 migration :290)"
+        },
+        {
+          "technique": "resume-after-decision",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/tools/triggers.rs:226 a lost CAS returns Ok with the resolved row whatever verdict won, so a Discard that lost to a concurrent Run-now reports success and the UI forgets the row; separately :204 commits approved before event_repo::publish runs, so a publish failure leaves an approved fire that never ran, recorded identically to one that did"
+        },
+        {
+          "technique": "unattended-mode",
+          "verdict": "realized",
+          "evidence": "src/features/triggers/sub_triggers/UnattendedModeSection.tsx:16 the per-trigger auto/dry_run/approval choice is offered only for the trigger types the backend actually holds - a deliberate, visible configuration default rather than a residual grant"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:bc33acb280c8df96",
+      "evaluatedRevision": 21,
+      "registryProposal": "The repo carries two deliberately opposite lost-CAS policies, each with a comment arguing it (fires.rs:122 'the decision was recorded by proxy' vs manual_reviews.rs:466 'a different, conflicting decision won'). Each premise holds for one case only; resume-after-decision's rule (compare the winning verdict to the caller's: same = success, different = loud conflict) dissolves the argument. Worth a rust application showing that comparison on the CAS loser path."
+    },
+    {
+      "context": "b164f847-45d6-4c9e-85bc-a1308375085d",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:813 the stale-review sweep resolves every pending review older than one cutoff (no severity ladder, :788) to status resolved, so expired-unanswered is not a verdict but a substring sentinel in free-text reviewer_notes that the human note writer (:712) also appends to; and a review created without a severity silently defaults to info with no marker (:59)",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:481 validate_transition (:447) plus a WHERE status = expected compare-and-swap; a lost race is surfaced as an error, not merged"
+        },
+        {
+          "technique": "review-queues",
+          "verdict": "partial",
+          "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:813 expiry IS a write by a sweep, as required, but it lands on the same status a human resolution uses"
+        },
+        {
+          "technique": "decision-records",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:16 the row carries no decider and no content version, and the verdict vocabulary has no expired member, so a timeout is told from a decision only by is_gc_expired substring-matching reviewer_notes (:757) - the confusion its own comment records as an incident (:745)"
+        },
+        {
+          "technique": "severity-sla-ladder",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:788 one cutoff for every severity and one terminal action; no per-severity deadline and no hold rung for the severities a person must see"
+        },
+        {
+          "technique": "fail-loud-classification-default",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:59 an absent severity becomes info, the mildest bucket, with no marker - an unclassified review is spelled the same as a readable low-severity one"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:bc33acb280c8df96",
+      "evaluatedRevision": 21
+    },
+    {
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:85 the cockpit Decisions panel says Nothing waiting while its source (src/features/companions/athena/inbox/hooks/useUnifiedInbox.ts:93) reads only manual reviews, reports and healing issues - companion_approval rows and held trigger fires never reach it, so the queue is incomplete by construction and its empty state is a false claim",
+      "techniques": [
+        {
+          "technique": "review-queues",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:35 the panel renders a curated three-source feed, not the pending set from the system of record; a gate class living elsewhere (companion approvals, held trigger fires) is absent unless someone wires an adapter - the invisible stall the technique names. Also DecisionDrawer.tsx:76 renders only item.body, never the approval contextData/suggestedActions the item carries, so the decision is made without the thing itself in view"
+        },
+        {
+          "technique": "decision-records",
+          "verdict": "realized",
+          "evidence": "src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx:44 a failed action keeps the drawer and item open and reports the error rather than removing it optimistically; the optional note travels with the verdict"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:bc33acb280c8df96",
+      "evaluatedRevision": 21,
+      "registryProposal": "VerdictWidget (src/features/home/sub_cockpit/widgets/VerdictWidget.tsx:57) makes the option the gated assistant recommended the primary call to action beside the options themselves - the golden path's 'summary written by the gated party' concern applied to the recommendation rather than the content. No technique says whether an assessor's recommended option may be visually preselected on the decision surface; oracle-before-gate or review-queues could own it."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "hitl-approval",
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "reason": "unread this run: the 4-pair budget went to the contexts holding real approval machinery; probable-confidence lexical match left for a later run"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "942d2449-34ab-4f02-af7e-b130269d10ef",
+      "reason": "unread: the context row has no paths in the map (likely a dead context) - a coverage question, not a pair to judge"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e",
+      "reason": "unread: matched on generic tokens (executor/plan, types/review, steps); likely technique-shaped resonance with no gate in the context - needs a precondition check before any verdict"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "ad601e35-b998-4029-97a5-77487f00d561",
+      "reason": "unread: matched on generic tokens (executor/plan, types/review, steps); likely technique-shaped resonance with no gate in the context - needs a precondition check before any verdict"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50",
+      "reason": "unread: matched on generic tokens (executor/plan, types/review, steps); likely technique-shaped resonance with no gate in the context - needs a precondition check before any verdict"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757",
+      "reason": "unread this run: the 4-pair budget went to the contexts holding real approval machinery; probable-confidence lexical match left for a later run"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91",
+      "reason": "unread this run: the 4-pair budget went to the contexts holding real approval machinery; probable-confidence lexical match left for a later run"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f",
+      "reason": "unread this run: the 4-pair budget went to the contexts holding real approval machinery; probable-confidence lexical match left for a later run"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "fd961ee9-bf7c-4ec7-90c3-a728045d3d44",
+      "reason": "unread this run: the 4-pair budget went to the contexts holding real approval machinery; probable-confidence lexical match left for a later run"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7",
+      "reason": "unread this run: the 4-pair budget went to the contexts holding real approval machinery; probable-confidence lexical match left for a later run"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T02:42:57.536Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "gate-state-machines",
+        "review-queues",
+        "decision-records",
+        "resume-after-decision"
+      ],
+      "deviations": 3
+    },
+    {
+      "ts": "2026-10-10T02:42:57.536Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "gate-state-machines",
+        "review-queues",
+        "resume-after-decision",
+        "unattended-mode"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T02:42:57.536Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "gate-state-machines",
+        "review-queues",
+        "decision-records",
+        "severity-sla-ladder",
+        "fail-loud-classification-default"
+      ],
+      "deviations": 3
+    },
+    {
+      "ts": "2026-10-10T02:42:57.536Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "review-queues",
+        "decision-records"
+      ],
+      "deviations": 1
+    }
+  ]
+}

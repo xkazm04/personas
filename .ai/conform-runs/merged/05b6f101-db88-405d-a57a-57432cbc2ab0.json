@@ -1,0 +1,50 @@
+{
+  "schema": "conform-run/1",
+  "worker": "05b6f101-db88-405d-a57a-57432cbc2ab0",
+  "subject": "motion",
+  "evaluatedAt": "2026-10-10T01:49:50.314Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "motion",
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "reason": "already judged deviation on 2026-10-03 against sha256-b2:8d9b3eabe2f3b534 (revision 10), which is still the registry index digest at 32d7899f; no anchor file changed in git since the verdict (globals.css lines cited by the 10-09 verdicts re-read and still live), so a re-judgment would only copy the verdict"
+    },
+    {
+      "subject": "motion",
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "reason": "already judged deviation on 2026-10-03 against sha256-b2:8d9b3eabe2f3b534 (revision 10), which is still the registry index digest at 32d7899f; no anchor file changed in git since the verdict (globals.css lines cited by the 10-09 verdicts re-read and still live), so a re-judgment would only copy the verdict"
+    },
+    {
+      "subject": "motion",
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+      "reason": "already judged deviation on 2026-10-03 against sha256-b2:8d9b3eabe2f3b534 (revision 10), which is still the registry index digest at 32d7899f; no anchor file changed in git since the verdict (globals.css lines cited by the 10-09 verdicts re-read and still live), so a re-judgment would only copy the verdict"
+    },
+    {
+      "subject": "motion",
+      "context": "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6",
+      "reason": "already judged deviation on 2026-10-03 against sha256-b2:8d9b3eabe2f3b534 (revision 10), which is still the registry index digest at 32d7899f; no anchor file changed in git since the verdict (globals.css lines cited by the 10-09 verdicts re-read and still live), so a re-judgment would only copy the verdict"
+    },
+    {
+      "subject": "motion",
+      "context": "36783fec-01fa-40d5-8620-cf65ae691d27",
+      "reason": "already judged deviation on 2026-10-03 against sha256-b2:8d9b3eabe2f3b534 (revision 10), which is still the registry index digest at 32d7899f; no anchor file changed in git since the verdict (globals.css lines cited by the 10-09 verdicts re-read and still live), so a re-judgment would only copy the verdict"
+    },
+    {
+      "subject": "motion",
+      "context": "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20",
+      "reason": "already judged deviation on 2026-10-09 against sha256-b2:8d9b3eabe2f3b534 (revision 10), which is still the registry index digest at 32d7899f; no anchor file changed in git since the verdict (globals.css lines cited by the 10-09 verdicts re-read and still live), so a re-judgment would only copy the verdict"
+    },
+    {
+      "subject": "motion",
+      "context": "b4439e30-fcff-4095-97dd-d9d7da2247dd",
+      "reason": "already judged deviation on 2026-10-09 against sha256-b2:8d9b3eabe2f3b534 (revision 10), which is still the registry index digest at 32d7899f; no anchor file changed in git since the verdict (globals.css lines cited by the 10-09 verdicts re-read and still live), so a re-judgment would only copy the verdict"
+    },
+    {
+      "subject": "motion",
+      "context": "a576c14f-1edd-4da4-8d11-527161a3b5b3",
+      "reason": "already judged deviation on 2026-10-09 against sha256-b2:8d9b3eabe2f3b534 (revision 10), which is still the registry index digest at 32d7899f; no anchor file changed in git since the verdict (globals.css lines cited by the 10-09 verdicts re-read and still live), so a re-judgment would only copy the verdict"
+    }
+  ],
+  "consults": []
+}

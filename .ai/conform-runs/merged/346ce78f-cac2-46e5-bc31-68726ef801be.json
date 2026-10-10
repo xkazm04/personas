@@ -1,0 +1,45 @@
+{
+  "schema": "conform-run/1",
+  "worker": "346ce78f-cac2-46e5-bc31-68726ef801be",
+  "subject": "browser-credential-boundary",
+  "evaluatedAt": "2026-10-10T01:14:57Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "browser-credential-boundary",
+      "context": "1092db16-982f-4d99-b71b-14e6cf704a4f",
+      "reason": "already judged against the current subject digest sha256-b2:d3eef10e9ed8459f (revision 3, unchanged since 2026-09-03), not stale; verdict of 2026-10-09 (deviation) stands; re-checked: src-tauri/src/commands/credentials/oauth.rs:105 and :1295 still fetch via crate::SHARED_HTTP, so the recorded outbound-fetch-destination-validation deviation is still live; the 2026-10-08 commits to this context (b041c6d5a6, 382e4a4417) predate the verdict"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "cf38b51d-aebb-4b36-bb8e-68a494a3662f",
+      "reason": "already judged against the current subject digest sha256-b2:d3eef10e9ed8459f (revision 3, unchanged since 2026-09-03), not stale; verdict of 2026-10-09 (conformant, 4 techniques in conform-detail) stands; no commit touches its anchors since"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b",
+      "reason": "already judged against the current subject digest sha256-b2:d3eef10e9ed8459f (revision 3, unchanged since 2026-09-03), not stale; verdict of 2026-10-09 (conformant, 4 techniques in conform-detail) stands; no commit touches src/features/browser/whitelist or src-tauri/src/commands/browser/sites.rs since"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "cbb061cf-5c61-49d4-80d8-98b8f9b40600",
+      "reason": "already judged against the current subject digest sha256-b2:d3eef10e9ed8459f (revision 3, unchanged since 2026-09-03), not stale; verdict of 2026-10-03 (not-applicable) stands; no commit touches src/features/browser/webview or browserStore.ts since 2026-10-06"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "e61f931c-25d7-4532-9ec7-ab6f3fc377e2",
+      "reason": "already judged against the current subject digest sha256-b2:d3eef10e9ed8459f (revision 3, unchanged since 2026-09-03), not stale; verdict of 2026-10-06 (not-applicable) stands; no commit touches src/lib/credentials since"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7",
+      "reason": "already judged against the current subject digest sha256-b2:d3eef10e9ed8459f (revision 3, unchanged since 2026-09-03), not stale; verdict of 2026-10-06 (conformant) stands; no commit touches its anchors since"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "reason": "already judged against the current subject digest sha256-b2:d3eef10e9ed8459f (revision 3, unchanged since 2026-09-03), not stale; verdict of 2026-10-06 (conformant) stands; src-tauri/src/engine/db_query.rs:138 still SSRF_SAFE_HTTP and :148 sanitize_error unchanged; no commit touches the context since"
+    }
+  ],
+  "consults": []
+}

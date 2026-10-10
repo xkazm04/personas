@@ -1,0 +1,35 @@
+{
+  "schema": "conform-run/1",
+  "worker": "8f9b4e8c-e254-419c-a60b-d6568030cf0d",
+  "subject": "judge-calibration-and-drift",
+  "evaluatedAt": "2026-10-10T02:18:34Z",
+  "pairs": [
+    {
+      "context": "417112d1-004b-41d5-a656-57997a47d818",
+      "subject": "judge-calibration-and-drift",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/hooks/utility/timing/usePolling.ts:6 the context is debounce/polling/RAF/elapsed-timer primitives (POLLING_CONFIG cadence registry); none of its 8 files hold an LLM judge, golden set or score, so the subject precondition (an LLM judge scoring outputs) does not hold - match came from lexical tokens number/labels/updates on a weak context",
+      "techniques": [],
+      "registryProposal": "Coverage question (weak context, technique-free resonance): judge-calibration-and-drift matched timing-utility-hooks on number/labels/updates only; route by precondition. Separately, a MISSING pairing: src-tauri/src/bench/db.rs:80 stores per-dimension LLM judge scores with judge_model (persona benchmark across opus/sonnet/haiku/gemma, rubric at db.rs:120), but no context in context-map.json covers src-tauri/src/bench/ at all, so the one surface this subject actually governs is invisible to the map - a context-map coverage hole for the project, then a conform pairing."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "judge-calibration-and-drift",
+      "context": "3c107fe6-ec95-4f45-bf31-665e9ccfe223",
+      "reason": "already judged not-applicable on 2026-10-09 against sha256-b2:d0f0d4aa66f81402 rev 5, which is the registry index digest/revision now (HEAD 32d7899f); not stale, re-judging adds nothing"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T02:18:34Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "judge-calibration-and-drift"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

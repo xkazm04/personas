@@ -1,0 +1,25 @@
+{
+  "schema": "conform-run/1",
+  "worker": "2f957c61-669a-43be-b5b4-a63f6659c9e2",
+  "subject": "trace-rollup-and-attribution",
+  "evaluatedAt": "2026-10-10T01:26:54Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "trace-rollup-and-attribution",
+      "context": "03960450-6979-4412-9de3-35c897fe56d2",
+      "reason": "current verdict: judged 2026-10-09 against sha256-b2:441741a78f8712b4 (revision 7), which is still the registry index digest at 32d7899f; no commit touches src/features/agents/sub_executions or src/hooks/execution since 8d04860cb3 (2026-10-04), the paths are clean in the working tree, and every evidence anchor was re-printed on 2026-10-10 and still says what the verdict claims - re-judging would duplicate a fresh verdict"
+    },
+    {
+      "subject": "trace-rollup-and-attribution",
+      "context": "208f50de-5d3b-4345-9fed-1c106a7a36e9",
+      "reason": "current verdict: judged 2026-10-09 against sha256-b2:441741a78f8712b4 (revision 7), which is still the registry index digest at 32d7899f; no commit touches src/features/agents/sub_executions or src/hooks/execution since 8d04860cb3 (2026-10-04), the paths are clean in the working tree, and every evidence anchor was re-printed on 2026-10-10 and still says what the verdict claims - re-judging would duplicate a fresh verdict"
+    },
+    {
+      "subject": "trace-rollup-and-attribution",
+      "context": "a6843b83-43a1-4eab-ae40-26f23b949a0d",
+      "reason": "current verdict: judged 2026-10-09 against sha256-b2:441741a78f8712b4 (revision 7), which is still the registry index digest at 32d7899f; no commit touches src/features/agents/sub_executions or src/hooks/execution since 8d04860cb3 (2026-10-04), the paths are clean in the working tree, and every evidence anchor was re-printed on 2026-10-10 and still says what the verdict claims - re-judging would duplicate a fresh verdict"
+    }
+  ],
+  "consults": []
+}

@@ -1,0 +1,10 @@
+{"schema": "conform-run/1", "worker": "302319f9-d278-4e59-b089-8aee598532ef", "subject": "rate-limiting",
+ "evaluatedAt": "2026-10-10T13:20:00Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "rate-limiting", "context": "059fdee0-40da-434a-a5cb-874bc9179a31", "reason": "already judged deviation on 2026-10-10 against sha256-b2:c1ab95c98c885951 rev 8, which is the registry index digest at e6f59b26; anchors management_api.rs:754 and rate_limiter.rs:78 re-printed and still say what the evidence claims; files unchanged since 761b0fc626 (2026-10-07) - re-judging would duplicate a current verdict"},
+  {"subject": "rate-limiting", "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10", "reason": "already judged deviation on 2026-10-10 against the current digest (rev 8); anchors tier_usage.rs:83 and :109 re-printed and unchanged - nothing to re-judge"},
+  {"subject": "rate-limiting", "context": "767b2bb5-4662-4be1-ad24-c881ac334016", "reason": "already judged deviation on 2026-10-10 against the current digest (rev 8); anchors webhook.rs:409 (no_headers on 429) and :499 (retry-after set elsewhere) re-printed and unchanged - nothing to re-judge"},
+  {"subject": "rate-limiting", "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0", "reason": "governance weak and the context has zero files in context-map.json and zero paths in the map row - a lexical match (client/get/tokens) with no code to read; a coverage question, not a pair to judge"}
+ ],
+ "consults": []}

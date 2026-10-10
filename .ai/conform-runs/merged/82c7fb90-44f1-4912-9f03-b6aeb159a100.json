@@ -1,0 +1,95 @@
+{
+  "schema": "conform-run/1",
+  "worker": "82c7fb90-44f1-4912-9f03-b6aeb159a100",
+  "subject": "credential-vault",
+  "evaluatedAt": "2026-10-10T02:00:07Z",
+  "pairs": [
+    {
+      "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 the explorer submits credentialId + query (intent, not value) to the one door, which decrypts and audits inside the backend (src-tauri/src/engine/db_query.rs:739-740) and scrubs secrets from errors (:148); the shell renders metadata only (DatabaseCard.tsx:38).",
+      "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
+      "evaluatedRevision": 4,
+      "techniques": [
+        {"technique": "brokered-egress", "verdict": "conformant", "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 executeDbQuery(credentialId, ...) by reference; plaintext exists only at src-tauri/src/engine/db_query.rs:739 with the decrypt audit line at :740 and response scrubbing at :148"},
+        {"technique": "health-probing", "verdict": "not-applicable", "evidence": "src/features/vault/sub_databases/DatabaseCard.tsx:41 the shell renders name and connector label only; it shows no probe status (the probe widget lives in the tabs context)"},
+        {"technique": "acquisition", "verdict": "not-applicable", "evidence": "src/features/vault/sub_databases/DatabaseListView.tsx:60 filters credentials already in custody; nothing in the shell admits a credential"},
+        {"technique": "encryption-at-rest", "verdict": "not-applicable", "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:27 a credential id is the only credential input; the seal is the backend's (db_query.rs:739)"},
+        {"technique": "rotation-and-remediation", "verdict": "not-applicable", "evidence": "src/features/vault/sub_databases/SchemaManagerModal.tsx:59 the only credential write is a name-only rename; no rotation or remediation surface here"},
+        {"technique": "token-refresh-lifecycle", "verdict": "not-applicable", "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:27 the shell holds no token to refresh"}
+      ]
+    },
+    {
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_databases/tabs/TableActions.tsx:30 'Test connection' paints green/red from result.success alone, so an unreachable probe (state 'unreachable', success:false, useCredentialHealth.ts:165) shows a red XCircle as if the DB rejected the key, and an unverifiable one shows a green check it did not earn.",
+      "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
+      "evaluatedRevision": 4,
+      "techniques": [
+        {"technique": "health-probing", "verdict": "deviation", "evidence": "src/features/vault/sub_databases/tabs/TableActions.tsx:30 renders the compatibility boolean instead of the typed state the result carries (src/lib/bindings/HealthcheckResult.ts state union), the fourth narrowing the technique names; rendered at TablesTab.tsx:113"},
+        {"technique": "brokered-egress", "verdict": "conformant", "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:256 and :164 the console and NL chat send credentialId only; the value never enters the tab"}
+      ]
+    },
+    {
+      "context": "876c0b4e-6472-4544-a21b-56e7529fb6b3",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:83 the 'personas_vector_db' credential row is written with an empty '{}' value; it is a local knowledge base listed in the vault (VectorKbModal.tsx:316 reads only metadata.kb_id), not a retained foreign secret, which the golden path's precondition requires.",
+      "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
+      "evaluatedRevision": 4,
+      "techniques": [],
+      "registryProposal": "Coverage: this context was paired by /conform triage 2026-08-29 on the precondition, but the precondition fails - the 'credential' here is a container row for a local vector KB (vector_kb.rs:82-83) holding no foreign secret. The pairing is unearned; the governing subjects are retrieval / embedded-db, not credential-vault."
+    },
+    {
+      "context": "6229df3d-d54e-47bb-8091-abb479003c18",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:68 copies MCP env-var VALUES (masked as secrets at ExtraFieldRenderers.tsx:133, sealed in fields via :73) into the connector definition's metadata, stored plaintext by connectors.rs:35 and returned on every connector-definition fetch, so a secret the form treats as secret sits unsealed beside its sealed copy.",
+      "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
+      "evaluatedRevision": 4,
+      "techniques": [
+        {"technique": "encryption-at-rest", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:68 buildExtraMetadata writes buildEnvMap values (schemaFormTypes.ts:63 keeps ev.value) into metadata; src-tauri/src/commands/credentials/connectors.rs:35 persists it without a seal; the runtime already reads env_vars from the sealed fields, so the plaintext copy has no consumer that needs it"},
+        {"technique": "acquisition", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:157 requests the admission probe only when the user's preview passed, and src-tauri/src/commands/credentials/crud.rs:82 probes only on that request, so a save with no test or a failed test enters custody unvalidated; no provenance is written (src/stores/slices/vault/credentialSlice.ts:234 metadata: null)"},
+        {"technique": "health-probing", "verdict": "conformant", "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:157 the client's pass is only a request; the stamped result comes from the server-side probe (crud.rs:82, the door disbelieves the deliverer)"}
+      ],
+      "registryProposal": "Upward lesson for the golden path's 'one classification with one authority' paragraph: it names renderers, log redactors and error scrubbers as consumers of the secret predicate, and warns of a screen weaker than the seal. Here the inverse happens: the screen masks (ExtraFieldRenderers.tsx:133) and a second WRITE path duplicates the value into a plaintext metadata column (schemaConfigs.tsx:68). Every write path that copies a value is a consumer of the classification too, so a value classified secret must not reach any unsealed column."
+    },
+    {
+      "context": "6b3d5224-2f4b-4f60-a8a6-3ac963ba3051",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_credentials/manager/useCatalogHandlers.ts:95 the catalog manual-entry save calls createCredential with no healthcheck_passed, so crud.rs:82 never runs the admission probe, and the preview test the user may already have run (:139) is discarded: catalog credentials enter custody unvalidated and carry no provenance.",
+      "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
+      "evaluatedRevision": 4,
+      "techniques": [
+        {"technique": "acquisition", "verdict": "deviation", "evidence": "src/features/vault/sub_credentials/manager/useCatalogHandlers.ts:95 admission without a live validation request; src-tauri/src/commands/credentials/crud.rs:82 probes only when asked"},
+        {"technique": "brokered-egress", "verdict": "conformant", "evidence": "src/features/vault/sub_credentials/manager/VaultTrustBadge.tsx:57 audit-write failures are counted and surfaced on the vault's own badge (counter incremented at src-tauri/db/src/repos/resources/audit_log.rs:61), the visible-gap reconciliation the standard prescribes"},
+        {"technique": "encryption-at-rest", "verdict": "conformant", "evidence": "src/features/vault/sub_credentials/manager/VaultTrustBadge.tsx:52 surfaces which master-key custody is active (OS keychain vs machine fallback) rather than a blanket 'encrypted'"},
+        {"technique": "rotation-and-remediation", "verdict": "conformant", "evidence": "src/features/vault/sub_credentials/manager/useRotateAll.ts:24 rotate-all executes only for grant-flow (oauth) credentials and reports the rest as skipped, so manual credentials are not 'rotated'; :43 drops each failure's cause from the UI, but the backend records it in history and audit"}
+      ],
+      "registryProposal": "Missing pairing: src-tauri/src/engine/rotation.rs (rotate_now, driven by this context's useRotateAll) is grouped under context 'output-stream-parser', which carries no credential-vault pair, so the matcher never tests it. It realizes the rotation technique's named failure: rotation.rs:882 discards the history write with `let _ =` and the policy clock still advances (mark_rotated in the loop at :893-894). That code needs a credential-vault pairing, or a context of its own."
+    }
+  ],
+  "declined": [
+    {"subject": "credential-vault", "context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857", "reason": "vault-database-tests is a test-only context; its fixtures only mention healthcheck_config (DatabaseCard.test.tsx:27) and judging a test suite against a custody subject needs a defined reading of what 'realized' means for tests. Left unjudged rather than guessed."},
+    {"subject": "credential-vault", "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b", "reason": "budget. Lead for the next run: ByomProviderList.tsx:431 defines its own TestConnectionButton, which should be checked for the same success-boolean collapse found at TableActions.tsx:30."},
+    {"subject": "credential-vault", "context": "fbfcd99a-a333-42da-b85e-2ec1f560b4be", "reason": "budget; probable-confidence pair, unread"},
+    {"subject": "credential-vault", "context": "4560e824-e952-45a9-8aef-fe88d721952e", "reason": "budget; probable-confidence pair, unread"},
+    {"subject": "credential-vault", "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474", "reason": "budget; probable-confidence pair, unread"},
+    {"subject": "credential-vault", "context": "77b8c703-0803-42bc-808a-f255725cc293", "reason": "budget; probable-confidence pair, unread"}
+  ],
+  "consults": [
+    {"ts": "2026-10-10T02:00:07Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": ["brokered-egress", "health-probing", "acquisition", "encryption-at-rest", "rotation-and-remediation", "token-refresh-lifecycle"], "deviations": 0},
+    {"ts": "2026-10-10T02:00:07Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": ["health-probing", "brokered-egress"], "deviations": 1},
+    {"ts": "2026-10-10T02:00:07Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": [], "deviations": 0},
+    {"ts": "2026-10-10T02:00:07Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": ["encryption-at-rest", "acquisition", "health-probing"], "deviations": 2},
+    {"ts": "2026-10-10T02:00:07Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": ["acquisition", "brokered-egress", "encryption-at-rest", "rotation-and-remediation"], "deviations": 1}
+  ]
+}

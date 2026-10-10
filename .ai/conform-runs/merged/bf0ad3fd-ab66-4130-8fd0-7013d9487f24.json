@@ -1,0 +1,60 @@
+{
+  "schema": "conform-run/1",
+  "worker": "bf0ad3fd-ab66-4130-8fd0-7013d9487f24",
+  "subject": "model-routing",
+  "evaluatedAt": "2026-10-10T12:01:00Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "model-routing",
+      "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b",
+      "reason": "already judged deviation at the current digest sha256-b2:5484901d8df95b15 rev 21, reconfirmed 2026-10-10; no re-judgment owed"
+    },
+    {
+      "subject": "model-routing",
+      "context": "ba0d4722-bfde-40aa-8e1d-52591719f834",
+      "reason": "already judged not-applicable at the current digest rev 21 (2026-10-05); not stale"
+    },
+    {
+      "subject": "model-routing",
+      "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757",
+      "reason": "already judged not-applicable at the current digest rev 21 (2026-10-05); not stale"
+    },
+    {
+      "subject": "model-routing",
+      "context": "54236947-3775-4d0a-8e14-1a709dd4d8bc",
+      "reason": "already judged not-applicable at the current digest rev 21 (2026-10-05); not stale"
+    },
+    {
+      "subject": "model-routing",
+      "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc",
+      "reason": "already judged not-applicable at the current digest rev 21 (2026-10-05); not stale"
+    },
+    {
+      "subject": "model-routing",
+      "context": "b0e9ba6b-7737-43ec-b551-9bcc1b71d76f",
+      "reason": "matcher missed: model-routing should be paired here (dispatch forbids adding pairs). src-tauri/src/companion/model_routing.rs:5 is the per-turn-class model+effort routing table (TurnTier at :12) - the core of the subject, unpaired"
+    },
+    {
+      "subject": "model-routing",
+      "context": "0b0ee725-52a2-4656-9e13-07c5204de60e",
+      "reason": "matcher missed: model-routing should be paired here (dispatch forbids adding pairs). src-tauri/db/src/model_routing.rs:143 resolve() applies ModelRoutingRule (:94) per persona, route_for_difficulty at :53"
+    },
+    {
+      "subject": "model-routing",
+      "context": "7159d27d-86c2-43be-a83f-8b50c4c816be",
+      "reason": "matcher missed: model-routing should be paired here (dispatch forbids adding pairs). src/features/settings/sub_engine/components/ModelRoutingSection.tsx:18 is the routing-rules editor (tier by persona category, effort dial)"
+    },
+    {
+      "subject": "model-routing",
+      "context": "6a81750d-fdbf-4518-bae6-689303e1a884",
+      "reason": "matcher missed: model-routing should be paired here (dispatch forbids adding pairs). src-tauri/src/engine/failover.rs:747 build_failover_chain_with_policy - the fallback chain the byom deviation anchors at :770 lives in this context, not in byom-provider-settings"
+    },
+    {
+      "subject": "model-routing",
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "reason": "matcher missed: model-routing should be paired here (dispatch forbids adding pairs). src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:17 surfaces the capability-tier ladder choice to the operator"
+    }
+  ],
+  "consults": []
+}

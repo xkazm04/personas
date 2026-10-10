@@ -1,0 +1,48 @@
+{"schema": "conform-run/1", "worker": "65f84f09-bfb9-4ffe-b7ca-f3a170100857", "subject": "diff-comparison",
+ "evaluatedAt": "2026-10-10T11:18:26Z",
+ "pairs": [
+  {"context": "03960450-6979-4412-9de3-35c897fe56d2", "subject": "diff-comparison", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:8d6a27cb32976f49", "evaluatedRevision": 6,
+   "evidence": "src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:169 a failed off-thread JSON diff sets [] and the header reads 'identical' (:191), which it also reads while the job is still pending; re-verified 2026-10-10, plus comparisonDiffCore.ts:84 compares JSON.stringify(v ?? null) per top-level key (depth one, serialized equality, absent collapsed to null)",
+   "techniques": [
+    {"technique": "diff-honesty", "verdict": "deviation", "evidence": "src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:169 failure becomes [] and renders as 'identical' (:191) / 'no differences'; the line-diff failure ends in 'no log data' (:107); both sides are capped at the first 500 log lines (:41) with no cap disclosed"},
+    {"technique": "computation-offload", "verdict": "deviation", "evidence": "src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:68 appends each streamed chunk by copying the accumulated array (the O(n^2/chunk) trap); offload, request ids (comparisonDiffWorkerClient.ts:208) and a bounded LRU cache (:43) are realized"},
+    {"technique": "semantic-level-selection", "verdict": "deviation", "evidence": "src/features/agents/sub_executions/libs/comparisonDiffCore.ts:84 JSON.stringify(objA[key] ?? null) per top-level key: depth-one, equality by serialization, absent collapsed into null - all three of the technique's named structural lies"},
+    {"technique": "pair-and-baseline-selection", "verdict": "deviation", "evidence": "src/features/agents/sub_executions/libs/comparisonDiffCore.ts:64 the set-membership line diff appends B-only lines after A's lines, yet the surface numbers both gutters as a positional diff (ComparisonDiff.tsx:112); the alignment is weaker than the rendering claims"}
+   ],
+   "registryProposal": "diff-honesty's 'vocabulary matches the alignment' names id-set differences; a set-MEMBERSHIP line diff rendered with positional +/- gutters and line numbers is a sibling case (repeated lines read 'same', order invisible) worth one sentence in that section. Its alignment-vs-rendering finding was filed under pair-and-baseline-selection here only because no technique owns it more precisely."},
+  {"context": "ba0d4722-bfde-40aa-8e1d-52591719f834", "subject": "diff-comparison", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:8d6a27cb32976f49", "evaluatedRevision": 6,
+   "evidence": "src/features/agents/sub_lab/components/shared/InlineDiffPreview.tsx:37 counts each whitespace separator token from diffStrings as two words, so adding one word renders '+3' and the timeline summary contradicts the detail; re-verified 2026-10-10, DiffViewer.tsx:54 still reads 'No structural differences' when both prompts fail to parse (promptMigration.ts:263 returns {})",
+   "techniques": [
+    {"technique": "diff-honesty", "verdict": "deviation", "evidence": "src/features/agents/sub_lab/components/shared/InlineDiffPreview.tsx:37 summary word count disagrees with the detail; src/features/agents/sub_lab/shared/DiffViewer.tsx:54 a parse failure (src/lib/personas/promptMigration.ts:263) renders as 'no structural differences'"},
+    {"technique": "computation-offload", "verdict": "deviation", "evidence": "src/features/agents/sub_lab/shared/labPrimitives.ts:101 past the DP budget degrades to all-removed + all-added with no disclosure on the surface; the ceiling sits in the algorithm (:25) and prefix/suffix are stripped before re-checking (:123)"},
+    {"technique": "semantic-level-selection", "verdict": "conformant", "evidence": "src/features/agents/sub_lab/shared/DiffViewer.tsx:30 word-level diffStrings runs inside each changed section of a section-level outer diff (levels compose)"},
+    {"technique": "pair-and-baseline-selection", "verdict": "conformant", "evidence": "src/features/agents/sub_lab/shared/DiffViewer.tsx:21 the pair is displayed as vA <-> vB before any difference is read"}
+   ]},
+  {"context": "83a8a744-2036-4e3e-9654-6fcec82334ff", "subject": "diff-comparison", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:8d6a27cb32976f49", "evaluatedRevision": 6,
+   "evidence": "src/features/plugins/obsidian-brain/sub_sync/ConflictDiffView.tsx:32 caps each side at 6000 chars BEFORE diffing, cutting mid-line: the severed line renders as a phantom app/vault edit and divergence past the cap renders as all-shared above keep-app/keep-vault, disclosed only by an unquantified footnote (:80); re-verified 2026-10-10",
+   "techniques": [
+    {"technique": "diff-honesty", "verdict": "deviation", "evidence": "src/features/plugins/obsidian-brain/sub_sync/ConflictDiffView.tsx:32 input truncated by characters, not lines, before diffing; the cap is a footnote under the scroll box (:80), not a marker at the cut"},
+    {"technique": "computation-offload", "verdict": "deviation", "evidence": "src/features/plugins/obsidian-brain/sub_sync/conflictDiff.ts:28 allocates a full (n+1)x(m+1) LCS table synchronously inside a render-path useMemo with no prefix/suffix strip and no ceiling in the algorithm; 6000 chars of short lines is up to ~36M cells on the interactive thread"},
+    {"technique": "pair-and-baseline-selection", "verdict": "conformant", "evidence": "src/features/plugins/obsidian-brain/sub_sync/ConflictDiffView.tsx:45 sides are named by role (app version / vault version) in a legend, not left/right"},
+    {"technique": "presentation-modes", "verdict": "conformant", "evidence": "src/features/plugins/obsidian-brain/sub_sync/ConflictDiffView.tsx:58 each change kind carries a glyph in addition to colour"}
+   ]},
+  {"context": "fd092e44-fcec-4418-8337-ed2b7b2c8473", "subject": "diff-comparison", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:8d6a27cb32976f49", "evaluatedRevision": 6,
+   "evidence": "src/features/teams/sub_teamMemory/components/timeline/TimelineControls.tsx:60 the per-run marker renders only when added or removed > 0, so 'compared, no change', 'baseline off the window edge' (useRunDiffSummaries.ts:80) and 'fetch failed' (useRunDiffSummaries.ts:91, swallowed) all render as the same silence; re-verified 2026-10-10",
+   "techniques": [
+    {"technique": "presentation-modes", "verdict": "deviation", "evidence": "src/features/teams/sub_teamMemory/components/timeline/TimelineControls.tsx:60 zero is not rendered as a claim, so it is indistinguishable from not-compared and failed in the triage row"},
+    {"technique": "diff-honesty", "verdict": "deviation", "evidence": "src/features/teams/sub_teamMemory/libs/useRunDiffSummaries.ts:91 a failed fetch is swallowed into an absent marker; the detail surface does spell failure as failure (src/features/teams/sub_teamMemory/components/diff/RunDiffView.tsx:112) and aligns on content (src/features/teams/sub_teamMemory/libs/memoryDiff.ts:53)"},
+    {"technique": "computation-offload", "verdict": "conformant", "evidence": "src/features/teams/sub_teamMemory/components/diff/RunDiffView.tsx:67 a response is applied only if its latest-wins token is still current"},
+    {"technique": "pair-and-baseline-selection", "verdict": "conformant", "evidence": "src/features/teams/sub_teamMemory/components/diff/DiffHeader.tsx:87 sides are role-named base run / compare run; the seeded pair is not snapped back after the reader chooses (RunDiffView.tsx:35)"}
+   ]}
+ ],
+ "declined": [],
+ "consults": [
+  {"ts": "2026-10-10T11:18:26Z", "bundle": "software-engineering", "subjects": ["diff-comparison"], "techniques": ["diff-honesty", "computation-offload", "semantic-level-selection", "pair-and-baseline-selection"], "deviations": 4},
+  {"ts": "2026-10-10T11:18:26Z", "bundle": "software-engineering", "subjects": ["diff-comparison"], "techniques": ["diff-honesty", "computation-offload", "semantic-level-selection", "pair-and-baseline-selection"], "deviations": 2},
+  {"ts": "2026-10-10T11:18:26Z", "bundle": "software-engineering", "subjects": ["diff-comparison"], "techniques": ["diff-honesty", "computation-offload", "pair-and-baseline-selection", "presentation-modes"], "deviations": 2},
+  {"ts": "2026-10-10T11:18:26Z", "bundle": "software-engineering", "subjects": ["diff-comparison"], "techniques": ["presentation-modes", "diff-honesty", "computation-offload", "pair-and-baseline-selection"], "deviations": 2}
+ ]}

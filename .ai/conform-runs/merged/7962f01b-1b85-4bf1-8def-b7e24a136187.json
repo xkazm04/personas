@@ -1,0 +1,13 @@
+{"schema":"conform-run/1","worker":"7962f01b-1b85-4bf1-8def-b7e24a136187","subject":"authorization","evaluatedAt":"2026-10-10T11:36:13Z",
+ "pairs":[],
+ "declined":[
+  {"subject":"authorization","context":"621caefc-8ae0-42e7-89b6-8e879ad62814","reason":"already judged deviation 2026-10-10 against the current digest sha256-b2:57d60a438fa36d05 rev 6 (not stale); anchors re-printed at HEAD and still hold (src-tauri/src/engine/management_api.rs:777 Ok(None) returns 401 with no record_audit; src-tauri/src/mcp_server/auth.rs:76 same); no commits to the anchored files since 2026-10-09, so a re-judgment would only duplicate the verdict"},
+  {"subject":"authorization","context":"0ecc70bc-a005-4ff8-9a98-f362d2a75f53","reason":"already judged deviation 2026-10-10 at the current digest rev 6; re-checked at HEAD: src-tauri/src/commands/network/identity.rs:60 import_trusted_peer still guarded only by require_auth_sync (no-op at src-tauri/src/ipc_auth.rs:471) and absent from PRIVILEGED_COMMANDS; verdict stands unchanged"},
+  {"subject":"authorization","context":"ee9d4d9e-0414-4460-b159-5d9c7c4108a7","reason":"already judged deviation 2026-10-10 at the current digest rev 6; re-checked at HEAD: src-tauri/src/engine/api_proxy.rs:781 and :799 still record WarnOnly/Block scope outcomes via tracing::warn! only; verdict stands unchanged"},
+  {"subject":"authorization","context":"e61f931c-25d7-4532-9ec7-ab6f3fc377e2","reason":"already judged not-applicable 2026-10-03 at the current digest rev 6; anchor src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:90 still a UI facet filter; no commits to the context's picker files since"},
+  {"subject":"authorization","context":"c413de7d-1182-4abc-8a08-9c8832254c62","reason":"already judged not-applicable 2026-10-03 at the current digest rev 6; anchor src/features/companions/overseer/components/AddToScopeModal.tsx:9 still describes roster membership, not a capability check"},
+  {"subject":"authorization","context":"3619ab0d-0367-43d0-b4eb-ec39c1302d65","reason":"already judged not-applicable 2026-10-03 at the current digest rev 6; anchor src/features/vault/sub_catalog/components/picker/catalogRolePresets.ts:1 still the deprecated stub"},
+  {"subject":"authorization","context":"b62fa237-32b4-41c3-bf56-3e498b643da9","reason":"already judged not-applicable 2026-10-03 at the current digest rev 6; ScopeMismatchBanner still unreferenced outside its own file at HEAD"},
+  {"subject":"authorization","context":"a38e2b93-2322-4187-befa-c0443c4ca85f","reason":"weak context (glyph-definitions), matched only on generic tokens scope/shared/route; per the skill, weak pairs are not judged by default. Coverage question for the registry, not a verdict"}
+ ],
+ "consults":[]}

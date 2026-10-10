@@ -1,0 +1,74 @@
+{
+  "schema": "conform-run/1",
+  "worker": "2bbf0c87-3e8f-4216-889a-e55e7a47a7db",
+  "subject": "versioning-snapshots",
+  "evaluatedAt": "2026-10-10T01:56:18Z",
+  "pairs": [
+    {
+      "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+      "subject": "versioning-snapshots",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:e895b228981cf506",
+      "evaluatedRevision": 7,
+      "evidence": "src-tauri/db/src/repos/execution/metrics.rs:310 promote_to_production demotes the incumbent back to 'experimental' and writes no activation record, so a retired production version is indistinguishable from a never-tested one and which version was live when is unanswerable",
+      "techniques": [
+        {"technique": "promotion-lifecycle", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/execution/metrics.rs:310 the single production pointer is swapped atomically (good) but demotion re-labels the incumbent 'experimental' and promotion records no evidence, approver or timestamp (prohibitions 5 and 6)"},
+        {"technique": "version-identity", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/execution/metrics.rs:108 derives MAX+1 inside BEGIN IMMEDIATE (realized), but src-tauri/db/src/migrations/schema.rs:444 is a non-unique index, so no (persona_id, version_number) uniqueness backs the derivation across the several hand-rolled writers, and MAX+1 over a shrinking set reuses a deleted top number (prohibitions 3 and 4)"},
+        {"technique": "snapshot-scope", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/execution/metrics.rs:206 the auto-save capture (create_prompt_version_if_changed) fills snapshot fields with ..Default::default(), so design_context/icon/color/last_design_result are never captured and a later rollback COALESCEs today's values onto yesterday's prompt - the chimera"},
+        {"technique": "restore-semantics", "verdict": "deviation", "evidence": "src-tauri/src/commands/execution/lab.rs:888 the re-activation rollback overwrites the live personas row with no capture-before-restore and no durable activation record (prohibitions 3 and 7); the capture that would cover a prior edit is swallowed at src-tauri/db/src/repos/core/personas.rs:1174 (let _ =)"},
+        {"technique": "lineage-and-variants", "verdict": "deviation", "evidence": "src-tauri/db/src/migrations/schema.rs:433 persona_prompt_versions has no parent edge column, so a rollback or a matrix-draft accept leaves no record of which version it came from (prohibition 1)"}
+      ],
+      "registryProposal": "The prior verdict's anchor (src-tauri/src/commands/execution/lab.rs:888) sits outside this context's paths: restore lives in the command layer while capture, identity and promotion live in this repo layer. The map has no versioning-snapshots pair on the context owning src-tauri/src/commands/execution/lab.rs - a missing pairing worth adding."
+    },
+    {
+      "context": "9b0ee86c-2613-49a5-9fda-fcc4d432fb72",
+      "subject": "versioning-snapshots",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:e895b228981cf506",
+      "evaluatedRevision": 7,
+      "evidence": "src-tauri/db/src/repos/lab/versions.rs:45 create_version (IMMEDIATE tx, parent edge, tools copied) still has zero production callers - re-verified 2026-10-10, only its own tests call it - while live captures go to persona_prompt_versions through hand-rolled under-scoped writers (src-tauri/src/commands/execution/lab.rs:630, src-tauri/src/commands/design/build_sessions.rs:2691): the correct capture door is dead",
+      "techniques": [
+        {"technique": "snapshot-scope", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/lab/versions.rs:97 copies owned tools inside the same transaction (the right shape) but nothing calls it; the live captures are second paths that omit tools and most configuration (prohibition 5: no second capture path)"},
+        {"technique": "version-identity", "verdict": "realized-but-unreached", "evidence": "src-tauri/db/src/repos/lab/versions.rs:55 derives MAX+1 inside the IMMEDIATE tx opened at :48 - correct, and dead code"},
+        {"technique": "lineage-and-variants", "verdict": "realized-but-unreached", "evidence": "src-tauri/db/src/repos/lab/versions.rs:65 writes parent_version_id (production, else latest) - the only parent edge in either persona version store, on a table no production path writes"}
+      ],
+      "registryProposal": "Repeating shape here: two version tables for one entity (persona_versions with full scope and lineage, persona_prompt_versions with partial scope and all live traffic). snapshot-scope's one-door rule names a second capture PATH but not a second STORE; the technique could name 'parallel version tables, the correct one dead' as a failure mode, with its tell: a fully-scoped capture function whose only callers are tests."
+    },
+    {
+      "context": "7741725e-8124-4899-b17e-8e39e7fcf1ed",
+      "subject": "versioning-snapshots",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:e895b228981cf506",
+      "evaluatedRevision": 7,
+      "evidence": "src/features/studio/StudioVersions.tsx:52 restore fires webbuildRestoreVersion behind only a confirm dialog warning it cannot be undone (:123) and on success (:55) reloads without saying what it restored - the surface guards the missing backend capture-before-restore instead of closing it",
+      "techniques": [
+        {"technique": "restore-semantics", "verdict": "deviation", "evidence": "src/features/studio/StudioVersions.tsx:123 the danger confirm exists because restore destroys uncaptured edits (prohibition 3); success at :55 does not report what happened ('success says what it did'); the rationale comment at :15 still describes `git checkout <sha> -- .` while the backend now runs `git restore --overlay`, so the comment justifying the guard is stale"}
+      ]
+    },
+    {
+      "context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd",
+      "subject": "versioning-snapshots",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:e895b228981cf506",
+      "evaluatedRevision": 7,
+      "evidence": "src-tauri/src/webbuild/versions.rs:101 restore runs `git restore --overlay` with no snapshot_worktree first and mints no version, so edits made since the last turn snapshot are destroyed and the history never records that a restore happened",
+      "techniques": [
+        {"technique": "restore-semantics", "verdict": "deviation", "evidence": "src-tauri/src/webbuild/versions.rs:101 no capture-before-restore and no restore-as-new-version (prohibitions 1 and 3); the private ref is not rewound, but the overwritten live state exists in no version"},
+        {"technique": "snapshot-scope", "verdict": "deviation", "evidence": "src-tauri/src/webbuild/versions.rs:105 `--overlay` keeps files added after the snapshot, so restoring a turn yields its files plus later limbs - a state that never existed, presented as the source version (restore-semantics prohibition 5); the overlay was a recorded triage decision but its result is not labelled as a compose"},
+        {"technique": "lineage-and-variants", "verdict": "realized", "evidence": "src-tauri/engine/src/git_checkpoint.rs:140 each turn snapshot is committed with the private ref's tip as its parent, so turn history is a real parent chain"},
+        {"technique": "retention-and-pruning", "verdict": "deviation", "evidence": "src-tauri/src/webbuild/versions.rs:68 the list is capped at 40 while refs/athena/snapshots grows forever under no declared policy, so older snapshots are kept but unreachable from the UI (prohibitions 1 and 5)"}
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {"ts": "2026-10-10T01:56:18Z", "bundle": "software-engineering", "subjects": ["versioning-snapshots"], "techniques": ["promotion-lifecycle", "version-identity", "snapshot-scope", "restore-semantics", "lineage-and-variants"], "deviations": 1},
+    {"ts": "2026-10-10T01:56:18Z", "bundle": "software-engineering", "subjects": ["versioning-snapshots"], "techniques": ["snapshot-scope", "version-identity", "lineage-and-variants"], "deviations": 1},
+    {"ts": "2026-10-10T01:56:18Z", "bundle": "software-engineering", "subjects": ["versioning-snapshots"], "techniques": ["restore-semantics"], "deviations": 1},
+    {"ts": "2026-10-10T01:56:18Z", "bundle": "software-engineering", "subjects": ["versioning-snapshots"], "techniques": ["restore-semantics", "snapshot-scope", "lineage-and-variants", "retention-and-pruning"], "deviations": 1}
+  ]
+}

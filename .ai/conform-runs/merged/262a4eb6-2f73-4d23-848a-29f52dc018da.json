@@ -1,0 +1,147 @@
+{
+  "schema": "conform-run/1",
+  "worker": "262a4eb6-2f73-4d23-848a-29f52dc018da",
+  "subject": "templates-scaffolding",
+  "evaluatedAt": "2026-10-10T01:57:15.661Z",
+  "pairs": [
+    {
+      "context": "d3346f2c-d747-4d85-b6e6-c1450da57ec9",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
+      "evaluatedRevision": 3,
+      "evidence": "src/features/templates/sub_generated/gallery/modals/TemplatePreviewModal.tsx:19 the Try-it preview builds its run from designResult.structured_prompt, a field none of the 43 canonical built-in payloads carry (seeded raw at src/lib/personas/templates/seedTemplates.ts:94), instead of the adoption mapping (normalize_v3_to_flat build_sessions.rs:268 + substitute_variables :760): on a built-in, sp.identity (:21) throws on Run; on a generated one it runs literal {{param.*}} placeholders - the preview is a second hand reading of the payload, other than the instance, not less",
+      "techniques": [
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplatePreviewModal.tsx:19 preview reads payload.structured_prompt directly (absent on 43/43 canonical templates) rather than running the adoption mapping (src-tauri/src/commands/design/build_sessions.rs:268, :760), so what Try-it runs is never what adopt creates"
+        },
+        {
+          "technique": "readiness-prerequisites",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/CompareModal.tsx:117 renders a Ready/Partial/Blocked Feasibility column (commented at :110 as deciding whether a template will RUN) from design_result.feasibility (buildComparison.ts:85), a verdict frozen at generation by check_feasibility against the connector catalog (src-tauri/src/commands/design/reviews.rs:410, :215), never re-run against the adopter vault - a second readiness vocabulary beside the authoritative three-state connector row (:62) that can say Ready over a listed credential gap"
+        },
+        {
+          "technique": "template-anatomy",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx:55 the modal layer hands adoption to AdoptionWizardModal; no parameter surface is declared or validated in this context"
+        }
+      ],
+      "registryProposal": "adoption-lifecycle names stock-screenshot and stale previews; this repo shows a third degenerate kind worth naming - a sandboxed live run of the raw payload (no answers, no mapping) labelled as how the persona behaves. It is neither static nor stale, yet still other than the instance."
+    },
+    {
+      "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
+      "evaluatedRevision": 3,
+      "evidence": "src/features/agents/components/matrix/BuildTemplateSuggestion.tsx:72 the mid-build Faster path offer is gated only by lexical keyword overlap; the matcher behind it (src-tauri/db/src/repos/communication/reviews.rs:160) searches every persona_design_reviews row with no status or publication predicate, so a generated draft persisted as failed (src-tauri/src/commands/design/reviews.rs:431) can interrupt a build as the template to adopt, despite the doc claiming a published template (:8)",
+      "techniques": [
+        {
+          "technique": "catalog-curation",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/components/matrix/BuildTemplateSuggestion.tsx:8 promises a published template while the query at src-tauri/db/src/repos/communication/reviews.rs:160 has no admission predicate - the generated tail, including failed drafts, impersonates the curated core, ranked by adoption_count"
+        },
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:407 accepting resolves the template by stable review id (getDesignReview(match.id)) and routes into the shared adoption wizard rather than a parallel instantiation path"
+        }
+      ]
+    },
+    {
+      "context": "b4439e30-fcff-4095-97dd-d9d7da2247dd",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
+      "evaluatedRevision": 3,
+      "evidence": "src/api/system/dataPortability.ts:50 exportFull/exportSelective copy live personas, teams, credentials and KPIs into a passphrase bundle for restore - a copy of a past with no catalog, parameter surface or interview, which the golden path routes to versioning-snapshots / import-normalization, not templates",
+      "techniques": [],
+      "registryProposal": "Matcher resonance: this context scored 578.7 on the tokens portability/manifest/picker, which are homonyms here (data-export portability, export manifest cart) of template-portability and the integrity manifest. Route by the subject precondition (alternatives to choose among, author absent at use), not by technique-name vocabulary."
+    },
+    {
+      "context": "b26fe932-b123-4b9e-8d1c-bbbf4e508265",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
+      "evaluatedRevision": 3,
+      "evidence": "src/api/templates/templateAdopt.ts:149 the Layer 2 backend-authoritative integrity check is handed path and content by the frontend layer it double-checks (templateCatalog.ts:418 JSON.stringify of templates Layer 1 already passed) and its only caller discards the verdict (src/lib/eventBridge.ts:1464) - a receipt, not an independent check, against the bundle-tamper threat its own manifest header names",
+      "techniques": [
+        {
+          "technique": "integrity-and-provenance",
+          "verdict": "deviation",
+          "evidence": "src/api/templates/templateAdopt.ts:149 verifier receives caller-supplied content (src/lib/personas/templates/templateCatalog.ts:418) and never reads the artifact through its own door; the result is dropped at src/lib/eventBridge.ts:1464 (log-only on mismatch), so a tamper changes no outcome"
+        },
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/api/templates/templateAdopt.ts:111 the always-on adjustAdoptionDraft LLM pass rewrites the mapped agent_ir in place before promote (src-tauri/src/commands/design/template_adopt.rs:2023), so the same template and answers yield different instances and the deterministic base is not retained"
+        }
+      ],
+      "registryProposal": "adoption-lifecycle and instance-upgrade forbid model output inside the mapping but say nothing about a deliberate post-mapping LLM specialization step, which this repo runs on every adoption. Worth a decision rule: allowed only if the deterministic base and the adjustment diff are both stamped, so preview, forensics and upgrade can still regenerate the base."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "templates-scaffolding",
+      "context": "9b6cc17c-3add-4152-a349-c189b15a109f",
+      "reason": "governance weak (template-design-preview): judging a weak row manufactures deviations; reported as a coverage question instead"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T01:57:15.661Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "templates-scaffolding"
+      ],
+      "techniques": [
+        "adoption-lifecycle",
+        "readiness-prerequisites",
+        "template-anatomy"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T01:57:15.661Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "templates-scaffolding"
+      ],
+      "techniques": [
+        "catalog-curation",
+        "adoption-lifecycle"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T01:57:15.661Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "templates-scaffolding"
+      ],
+      "techniques": [
+        "template-portability",
+        "integrity-and-provenance"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T01:57:15.661Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "templates-scaffolding"
+      ],
+      "techniques": [
+        "integrity-and-provenance",
+        "adoption-lifecycle"
+      ],
+      "deviations": 2
+    }
+  ]
+}

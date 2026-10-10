@@ -1,0 +1,6 @@
+{"schema": "conform-run/1", "worker": "2e7b5a9c-8f08-40ae-bf98-9e7eded1cd98", "subject": "dead-code",
+ "evaluatedAt": "2026-10-10T02:30:35Z",
+ "pairs": [],
+ "declined": [{"subject": "dead-code", "context": null,
+   "reason": "no work, second consecutive dispatch: .ai/registry-map.json (generatedAt 2026-10-01T08:52:29Z, unchanged since worker 995027c9 declined the same subject on 2026-10-09) still lists zero dead-code pairs (0 of 1756 across 215 contexts, absent from subjectIndex, 0 orphans). The subject is unchanged at registry 32d7899f (sha256-b2:400586c502acd4a1, revision 11, 7 techniques), so a rebuild alone would re-run the same lexical match. The ranking's '1 consumer deviation' does not resolve to any verdict in this map. Registry finding: the attention scan re-dispatches a subject whose consumer map has no pair to judge; it should skip (or route to /straighten as a pairing question) a subject with zero pairs in the target map until the map or the pairing changes. Candidate pairing, which this worker may not add: the context owning src/features/agents/sub_model_config (dead exports in src/features/agents/sub_model_config/libs/compareHelpers.ts, per the 6e7b7da6 registryProposal); the repo's dead-code tooling (knip.json, scripts/check-binding-orphans.mjs) sits under scripts/, which no context covers."}],
+ "consults": []}

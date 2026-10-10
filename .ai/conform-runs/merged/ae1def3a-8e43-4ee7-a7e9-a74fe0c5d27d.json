@@ -1,0 +1,187 @@
+{
+  "schema": "conform-run/1",
+  "worker": "ae1def3a-8e43-4ee7-a7e9-a74fe0c5d27d",
+  "subject": "agent-memory",
+  "evaluatedAt": "2026-10-10T11:14:00Z",
+  "pairs": [
+    {
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:790 the deck asks the operator WHY an idea is rejected on the stated promise that the reason becomes the scanners' constraint memory, but the memory actually written (src-tauri/src/commands/infrastructure/dev_tools.rs:804, content at :819) and the scanner's rejected-ideas hint (src-tauri/src/commands/infrastructure/idea_scanner.rs:596) carry title and description only: the operator's correction is remembered as a bare verdict, so 'Already done', 'Working as intended' and 'Not worth the effort' all recall as the same permanent never-re-surface rule",
+      "techniques": [
+        {
+          "technique": "memory-governance",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:819 a human rejection is remembered with operator authority (constraint, importance 8 at :796) but without the grounds the operator gave (sent at src/features/agents/quick-answer/triage/triageDispatch.ts:173, stored only in dev_ideas.rejection_reason): the correction is applied as a verdict, not remembered as the event it was, and the recalled rule is broader than the operator said"
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "partial",
+          "evidence": "src-tauri/src/commands/infrastructure/idea_scanner.rs:944 the proposer's re-ask check is whole-claim (dedup key, any status) - realized; but the prompt half at :130 widens each rejection to 'close variants' by title alone, the generalising refusal the technique's identity rule forbids"
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:799 seenStatus rides as the CAS expectation so a stale card cannot fire a second, contradictory decision-memory fan-out (enforced by the compare-and-swap at src-tauri/src/commands/infrastructure/dev_tools.rs:662)"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:23599eae61aa7119",
+      "evaluatedRevision": 47,
+      "registryProposal": "memory-governance 'Corrections: the highest evidence grade' says a correction is remembered as an event with operator provenance, but not that the correction's stated GROUNDS must survive into the remembered item. Measured here: a verdict-only memory turns a reasoned, scoped correction ('already done') into a standing prohibition stronger than anything the operator said, carried at operator authority. Worth one sentence: the remembered correction carries its reason, or it recalls as a broader rule than was issued."
+    },
+    {
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/system/twinSlice.ts:68 the twin's live beliefs are typed and fetched as TwinPendingMemory rows with status='approved' (:522), because approval flips a status on the pending row (src-tauri/db/src/repos/twin.rs:602) instead of moving it to a belief store: every live read (e.g. src-tauri/src/engine/twin_prompt/input.rs:211) must remember the filter, and the one that forgets injects pending and rejected claims about the person into the twin's prompt as settled; the slice's own comment at :64 records the shared list already having to be split so a panel visit cannot collapse the approved corpus",
+      "techniques": [
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/twin.rs:602 approval and rejection are status flips on the pending row - the technique's 'status column' and 'rejection stored as a status on the pending row' failure modes; five production readers in five files each add status='approved' by hand"
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/system/twinSlice.ts:531 claims about the person go through a proposal-reviewed lane: the operator approves or rejects each with reviewer notes, and the repo refuses a second verdict on a decided row (src-tauri/db/src/repos/twin.rs:602 WHERE status = 'pending')"
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/twin_sample/prompt.rs:85 (the proposer-remembers-the-verdict rule) de-duplicates new proposals against the twin's memories of ANY status by normalized whole content, so an approved, pending or rejected claim is not filed again (bounded at 500 rows, :48)"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:23599eae61aa7119",
+      "evaluatedRevision": 47
+    },
+    {
+      "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/stores/slices/agents/chatSlice.ts:180 'This slice drives only the display': the turn, its session resume and transcript input are assembled in Rust (chat_turn::start), so these slices hold renderer caches (the 500-message cap at :97 is a display buffer, not a recall budget) and no store an agent writes or recalls; the match rode on agent/agents/stores",
+      "techniques": [
+        {
+          "technique": "working-memory",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/agents/chatSlice.ts:180 the operative state of a chat turn lives in the backend turn path; the slice only mirrors streaming flags and output listeners"
+        },
+        {
+          "technique": "recall-injection",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/agents/chatSlice.ts:97 MAX_CHAT_MESSAGES caps what the UI renders; nothing in the slice packs memory into an agent's context"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:23599eae61aa7119",
+      "evaluatedRevision": 47
+    },
+    {
+      "context": "56a0fd55-279d-428b-b2f6-7c89154abd6f",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/schedules/libs/calendarHelpers.ts:300 the context projects cron fire times and binds past slots to real runs within a 90s tolerance - an operator calendar with no agent store, capture, distillation or recall; the match rode on past/month/week (observation-clock vocabulary) without its precondition, a distillation grounding relative time",
+      "techniques": [
+        {
+          "technique": "observation-clock",
+          "verdict": "not-applicable",
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:300 time here grounds schedule slots to execution records, not an episode's relative phrase in a distillation pass"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:23599eae61aa7119",
+      "evaluatedRevision": 47
+    },
+    {
+      "context": "89eddf81-0c57-441d-a07d-de36bf022cb5",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/shared/components/display/RelativeTime.tsx:2 the context is presentational formatters (relative/absolute time, numerics, counters, tooltips) over values callers pass in; it holds no store an agent writes or recalls, so the subject's precondition is unmet; the match rode on shared/item/counter",
+      "techniques": [
+        {
+          "technique": "memory-value-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/RelativeTime.tsx:2 formatting imports only; 'counter' here is an animated display number, not a retrieval-usage term"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:23599eae61aa7119",
+      "evaluatedRevision": 47
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-memory",
+      "context": "c413de7d-1182-4abc-8a08-9c8832254c62",
+      "reason": "overview-director: the map's path sample (src/features/companions/overseer/*) and context-map.json's file_paths (src/features/overview/sub_missionControl/*, 4 files) disagree, so it is unclear which code the pair governs; a coverage question for the next map build, not a verdict"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "d77a22ee-23cb-42f3-a910-590f8622977f",
+      "reason": "companion-core-store: context-map.json lists zero file_paths for this context while the map row carries five; judging it would be judging a sample of a context the project no longer populates"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T11:14:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "memory-governance",
+        "pending-beliefs-live-apart",
+        "consolidation"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T11:14:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "pending-beliefs-live-apart",
+        "memory-governance"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T11:14:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "working-memory",
+        "recall-injection"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T11:14:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "observation-clock"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T11:14:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "memory-value-model"
+      ],
+      "deviations": 0
+    }
+  ]
+}

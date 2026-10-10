@@ -1,0 +1,72 @@
+{
+  "schema": "conform-run/1",
+  "worker": "4476eed5-bfdb-4690-8adb-58a174d90bb2",
+  "subject": "scheduling",
+  "evaluatedAt": "2026-10-10T02:40:30Z",
+  "pairs": [
+    {
+      "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
+      "subject": "scheduling",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/api/pipeline/triggers.ts:273 listRecentScheduleRuns is the IPC surface's only run read and its RecentScheduleRun carries no cause and no represented due time, and no wrapper reads a non-fire ledger - out-of-window skips are only a tracing line (src-tauri/src/engine/background/scheduler.rs:848), so a declined fire cannot be explained through this API",
+      "techniques": [
+        {
+          "technique": "schedule-observability",
+          "verdict": "deviation",
+          "evidence": "src/lib/bindings/RecentScheduleRun.ts:7 the run read model carries trigger_id/status/created_at but no cause descriptor and no represented due time; re-affirmed 2026-10-10 against rev 6, files unchanged since the 2026-10-09 verdict"
+        }
+      ]
+    },
+    {
+      "context": "4810daf8-0549-4899-95d2-99c81cde6455",
+      "subject": "scheduling",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/overview/alertSlice.ts:450 alert rules are evaluated level-triggered (fire whenever the condition holds) and suppressed only by a global 1h cooldown at :440 that counts nothing - a siren with a snooze button; a persisting breach re-alerts hourly as if new and \"still failing, N since last notice\" is unrecoverable",
+      "techniques": [
+        {
+          "technique": "cooldown-and-debounce",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/overview/alertSlice.ts:440 the cooldown skip increments no suppression counter, and :450 fires on every evaluation where the condition holds rather than on its false-to-true edge; re-affirmed 2026-10-10, unchanged"
+        }
+      ]
+    },
+    {
+      "context": "56a0fd55-279d-428b-b2f6-7c89154abd6f",
+      "subject": "scheduling",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/schedules/libs/calendarHelpers.ts:19 past-unknown still collapses skipped/out-of-window/over-budget/offline into one state because the only read, src-tauri/src/commands/tools/triggers.rs:1544, returns real executions with no cause and no represented due time - rev 6 verdict-survives-boundary names this exact shape, so \"why didn't this fire\" stays unanswerable on the calendar",
+      "techniques": [
+        {
+          "technique": "schedule-observability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/tools/triggers.rs:1544 list_recent_schedule_runs is a real-runs-only read contract, the exact shape the technique says leaves a consumer only an undifferentiated unknown; re-affirmed 2026-10-10, unchanged"
+        }
+      ]
+    },
+    {
+      "context": "417112d1-004b-41d5-a656-57997a47d818",
+      "subject": "scheduling",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/hooks/utility/timing/useDebounce.ts:12 a per-render in-memory window.setTimeout over a UI value - the context holds no schedulable item (no persisted rule, next_run_at, run identity or trigger), so the subject's precondition, a durable scheduler deciding when work fires, does not hold",
+      "techniques": [
+        {
+          "technique": "cooldown-and-debounce",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/timing/useDebouncedSave.ts:46 the only resonance: a UI auto-save debounce that restarts its timer on every dep change; it governs no trigger, so the technique's persist-suppression-state and count-suppressed steps have no target here"
+        }
+      ],
+      "registryProposal": "Technique-shaped resonance, not a governing subject: timing-utility-hooks matched scheduling lexically (scheduling, debounce) but realizes client-side UI timing primitives. The one transferable rule, cooldown-and-debounce's 'debounce needs a max-wait ceiling', is unmet at src/hooks/utility/timing/useDebouncedSave.ts:46-47 (continuous edits defer the save indefinitely); that rule likely belongs in draft-editing or async-ui-states, which should govern this context instead."
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {"ts": "2026-10-10T02:40:30Z", "bundle": "software-engineering", "subjects": ["scheduling"], "techniques": ["schedule-observability"], "deviations": 1},
+    {"ts": "2026-10-10T02:40:30Z", "bundle": "software-engineering", "subjects": ["scheduling"], "techniques": ["cooldown-and-debounce"], "deviations": 1},
+    {"ts": "2026-10-10T02:40:30Z", "bundle": "software-engineering", "subjects": ["scheduling"], "techniques": ["schedule-observability"], "deviations": 1},
+    {"ts": "2026-10-10T02:40:30Z", "bundle": "software-engineering", "subjects": ["scheduling"], "techniques": ["cooldown-and-debounce"], "deviations": 0}
+  ]
+}

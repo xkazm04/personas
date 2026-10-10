@@ -1,0 +1,8 @@
+{"schema": "conform-run/1", "worker": "f03d6d4b-4162-4656-8195-c5316ae67ed3", "subject": "multi-provider-gateway-plane",
+ "evaluatedAt": "2026-10-10T11:20:00Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "multi-provider-gateway-plane", "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0", "reason": "context is governance: weak with an empty paths list - the match (client/rest/source) is the doubtful part; a coverage question, not a pair to judge"},
+  {"subject": "multi-provider-gateway-plane", "context": "89d44c76-ec4c-4388-843e-503cf6ca2507", "reason": "context is governance: weak (two progress-bar components matched on transform/multi/status) - judging it would manufacture a verdict on a surface the subject's precondition (one process fronting interchangeable upstreams) does not describe"}
+ ],
+ "consults": []}

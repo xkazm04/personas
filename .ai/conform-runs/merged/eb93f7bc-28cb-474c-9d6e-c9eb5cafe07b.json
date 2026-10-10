@@ -1,0 +1,175 @@
+{
+  "schema": "conform-run/1",
+  "worker": "eb93f7bc-28cb-474c-9d6e-c9eb5cafe07b",
+  "subject": "terminal-multiplexing",
+  "evaluatedAt": "2026-10-10T01:25:22.599Z",
+  "evaluatedAgainst": "sha256-b2:c3ef11aba4a471f5",
+  "evaluatedRevision": 7,
+  "pairs": [
+    {
+      "context": "621caefc-8ae0-42e7-89b6-8e879ad62814",
+      "subject": "terminal-multiplexing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 the context manages API keys for the local HTTP management server on 127.0.0.1:9420; no file imports @xterm or touches a PTY (grepped), so there is no interactive session to attach, render or drive (precondition: a PTY-backed interactive session with an emulator; repo-wide, portable_pty lives only in src-tauri/src/commands/fleet/ and @xterm only in the fleet features)",
+      "techniques": [
+        {
+          "technique": "pty-management",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:1 is where this repo's PTY seam lives; this context neither spawns nor reads one"
+        }
+      ]
+    },
+    {
+      "context": "c5228746-931d-4733-9cf7-84519a2c9605",
+      "subject": "terminal-multiplexing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/hooks/design/core/useTauriStream.ts:100 design hooks start a backend command and listen to its Tauri event stream for analysis output; no PTY, emulator or keystroke path anywhere under these 34 paths (grepped), so the subject has nothing to govern - the stream is streaming-output territory (precondition: a PTY-backed interactive session with an emulator; repo-wide, portable_pty lives only in src-tauri/src/commands/fleet/ and @xterm only in the fleet features)",
+      "techniques": [
+        {
+          "technique": "pty-management",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:1 is where this repo's PTY seam lives; this context neither spawns nor reads one"
+        }
+      ]
+    },
+    {
+      "context": "a6843b83-43a1-4eab-ae40-26f23b949a0d",
+      "subject": "terminal-multiplexing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:186 execution hooks consume run-id-filtered status/line events (and src/hooks/execution/useStructuredStream.ts:40 structured execution events) from one-shot persona runs over piped CLI output; no PTY, emulator or attach/detach ladder exists here, so the subject's precondition does not hold - the line cap at :76 belongs to streaming-output (precondition: a PTY-backed interactive session with an emulator; repo-wide, portable_pty lives only in src-tauri/src/commands/fleet/ and @xterm only in the fleet features)",
+      "techniques": [
+        {
+          "technique": "pty-management",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:1 is where this repo's PTY seam lives; this context neither spawns nor reads one"
+        }
+      ],
+      "registryProposal": "The golden path's two-lanes section invites pairing any piped structured-event CLI consumer with this subject; it could state that the structured lane is in scope only when it shares session identity with a PTY lane (here persona executions are a separate one-shot engine), so matchers and judges stop treating every stream-json consumer as the second lane."
+    },
+    {
+      "context": "4810daf8-0549-4899-95d2-99c81cde6455",
+      "subject": "terminal-multiplexing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/sub_observability/components/AiHealingStreamOverlay.tsx:233 the only stream-like surface maps a healing run's string lines into plain rows, and src/features/overview/sub_observability/components/SystemTraceViewer.tsx:2 is a trace DataTable; nothing in these 24 paths imports @xterm or writes to a PTY (grepped), so there is no terminal session to multiplex (precondition: a PTY-backed interactive session with an emulator; repo-wide, portable_pty lives only in src-tauri/src/commands/fleet/ and @xterm only in the fleet features)",
+      "techniques": [
+        {
+          "technique": "pty-management",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:1 is where this repo's PTY seam lives; this context neither spawns nor reads one"
+        }
+      ]
+    },
+    {
+      "context": "dd45411d-8955-4579-906e-5a3b00ba16da",
+      "subject": "terminal-multiplexing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/commands/infrastructure/system/binary_probe.rs:72 probes binaries with a one-shot std::process::Command ... .output() (:74), piped and collected, not a pseudo-terminal; no portable_pty in these 8 files (grepped), so this is subprocess-lifecycle/health-checks territory, not an interactive multiplexed terminal (precondition: a PTY-backed interactive session with an emulator; repo-wide, portable_pty lives only in src-tauri/src/commands/fleet/ and @xterm only in the fleet features)",
+      "techniques": [
+        {
+          "technique": "pty-management",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:1 is where this repo's PTY seam lives; this context neither spawns nor reads one"
+        }
+      ]
+    },
+    {
+      "context": "9fca099d-94e4-4fd0-8460-3cf5d8c85acf",
+      "subject": "terminal-multiplexing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_generated/gallery/cards/TemplateVirtualList.tsx:101 the context is a virtualized template-card gallery; no PTY, emulator, session or keystroke path exists in its 32 paths (grepped), so the match is lexical (hooks/actions/session vocabulary) (precondition: a PTY-backed interactive session with an emulator; repo-wide, portable_pty lives only in src-tauri/src/commands/fleet/ and @xterm only in the fleet features)",
+      "techniques": [
+        {
+          "technique": "pty-management",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:1 is where this repo's PTY seam lives; this context neither spawns nor reads one"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "terminal-multiplexing",
+      "context": "19f3a6a0-f733-47d1-94b4-a1256c8a92fc",
+      "reason": "budget: run capped at 6 pairs; glyph-command-panel is a probable-confidence unknown with the lowest scores (416/408) - left unread for the next run"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "2418ddaf-0e6e-446f-968f-28a4bf6e7120",
+      "reason": "budget: run capped at 6 pairs; n8n-wizard-orchestration is a probable-confidence unknown with the lowest scores (416/408) - left unread for the next run"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T01:25:22.599Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "terminal-multiplexing"
+      ],
+      "techniques": [
+        "pty-management"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T01:25:22.599Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "terminal-multiplexing"
+      ],
+      "techniques": [
+        "pty-management"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T01:25:22.599Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "terminal-multiplexing"
+      ],
+      "techniques": [
+        "pty-management"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T01:25:22.599Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "terminal-multiplexing"
+      ],
+      "techniques": [
+        "pty-management"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T01:25:22.599Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "terminal-multiplexing"
+      ],
+      "techniques": [
+        "pty-management"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T01:25:22.599Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "terminal-multiplexing"
+      ],
+      "techniques": [
+        "pty-management"
+      ],
+      "deviations": 0
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{"schema": "conform-run/1", "worker": "8bd0507c-6e3f-44dd-a89d-5a8668397338", "subject": "session-continuation",
+ "evaluatedAt": "2026-10-10T02:44:42Z",
+ "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
+ "evaluatedRevision": 8,
+ "mapLag": "map pairs carry digest sha256-b2:89e82a9f790ac3fb revision 6; registry index (e87608a9) is sha256-b2:b0eabf78abd856a4 revision 8 - verdicts below are written against the registry's digest/revision, as read",
+ "pairs": [
+  {"context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f", "subject": "session-continuation", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:101 the Run Desk's only loop (auto-heal) re-dispatches a whole failed task as a new execution (RunDeskPage.tsx:234 retryTask) from a UI effect, and auto-run is a backend scheduler (AutoRunBanner.tsx:25 dev_auto_runs); no session turn boundary or stop decision lives here - the golden path routes scheduler-driven loops to background-jobs",
+   "evaluatedAt": "2026-10-10", "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4", "evaluatedRevision": 8,
+   "techniques": [
+    {"technique": "stuck-loop-detection", "verdict": "precondition-unmet (resonance)", "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:78 auto-heal caps on maxRetries: 3 per task with no failure signature, so three identical failures are retried exactly like three different ones - the technique's doctrine, but across executions rather than inside one session"},
+    {"technique": "continuation-as-state", "verdict": "precondition-unmet", "evidence": "src/features/plugins/dev-tools/sub_runner/AutoRunBanner.tsx:25 the auto-run's persisted record is the scheduler's dev_auto_runs row, read for display, not a turn-boundary continuation record"}
+   ],
+   "registryProposal": "technique-shaped resonance: stuck-loop-detection's failure-identity rule (signature over attempt count) is exactly what a cross-execution auto-heal/retry loop needs (here selfHealing.ts:101 caps on retryCount and keys failure events by updated_at, not signature), but its subject's precondition is one session's turn boundary. Check whether retry-backoff or self-healing carries the failure-identity rule for re-dispatch loops; if not, that is a hole worth a shared_with or a cross-link."},
+  {"context": "b30528dc-8655-4b38-800e-8cb73e96d618", "subject": "session-continuation", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "tests/playwright/companion-autonomous-mode.spec.ts:10 these specs are UI-wiring smoke tests that explicitly stub the autonomous chain (turn -> continue_autonomously -> scheduled tick) and synthesize streaming (companion-stop-button.spec.ts:14); the context owns no loop, record or stop path to judge",
+   "evaluatedAt": "2026-10-10", "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4", "evaluatedRevision": 8,
+   "techniques": [
+    {"technique": "continuation-as-state", "verdict": "precondition-unmet", "evidence": "tests/playwright/companion-autonomous-mode.spec.ts:10 the real continuation (src-tauri/src/companion/session/autonomy.rs:1) is out of this context and the destructive two-half test is not attempted here"},
+    {"technique": "ordered-teardown", "verdict": "precondition-unmet", "evidence": "tests/playwright/companion-stop-button.spec.ts:14 stop-cancellation behaviour is deferred to the interrupt registry; this suite checks only that the button renders and clicks"}
+   ],
+   "registryProposal": "coverage hole in the consumer's context map, not the corpus: the code this subject genuinely governs - src-tauri/src/companion/session/autonomy.rs (autonomous continuation: next-tick scheduling), session/interrupts.rs (stop), the dispatcher's continue_autonomously op - belongs to NO context in context-map.json, so the matcher could only reach session-continuation through this test-only context's vocabulary ('autonomous', 'stop', 'mode'). A rescan that gives companion/session its own context, paired with session-continuation, would put the real Athena autonomous loop under judgment."},
+  {"context": "8650ca36-36fe-4862-98f5-745e866a2687", "subject": "session-continuation", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:106 the tool runner is one direct tool invocation per operator click raced against a timeout, and sub_design only parses a saved design result (designStateHelpers.ts:17); there is no agent turn loop, continuation mode or stop gate in this context",
+   "evaluatedAt": "2026-10-10", "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4", "evaluatedRevision": 8,
+   "techniques": [
+    {"technique": "continuation-as-state", "verdict": "precondition-unmet", "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:106 single invoke per click; nothing to continue"},
+    {"technique": "boundary-applied-stop", "verdict": "precondition-unmet", "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:106 no reasoning call follows the tool result, so there is no boundary to apply a stop at"}
+   ]},
+  {"context": "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394", "subject": "session-continuation", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/fleet/FleetHooksPill.tsx:32 the grid is the registry-of-sessions layer above (fleet-orchestration's seam); its installed Claude Code Stop hook only POSTs the event (src-tauri/src/commands/fleet/hook_install.rs:103) and never refuses a stop, so no continuation authority, record or teardown lives here",
+   "evaluatedAt": "2026-10-10", "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4", "evaluatedRevision": 8,
+   "techniques": [
+    {"technique": "advisory-guard-fail-mode", "verdict": "realized (observer hook, outside the subject's precondition)", "evidence": "src-tauri/src/commands/fleet/hook_install.rs:103 every machine-wide boundary hook is bounded (curl -m 2 --connect-timeout 1) and fails open with || exit 0 (rationale at :96), so a down or hung Personas cannot stall any Claude Code session's turn"},
+    {"technique": "continuation-as-state", "verdict": "precondition-unmet", "evidence": "src-tauri/src/commands/fleet/hook_install.rs:103 the Stop hook is fire-and-forget telemetry; it arms and enforces nothing"}
+   ],
+   "registryProposal": "upward lesson for advisory-guard-fail-mode: an OBSERVER hook installed machine-wide (into every agent session on the host, not one harness) has a second cost of failing closed beyond a stuck operator - when the observing app is down, every tool call in every unrelated session logs a hook-error pair. The repo's rule (hard -m 2 bound + fail-open '|| exit 0', rationale at hook_install.rs:96) is a clean application candidate: fail-open is mandatory for observers, not just advisory guards."}
+ ],
+ "declined": [
+  {"subject": "session-continuation", "context": "fd961ee9-bf7c-4ec7-90c3-a728045d3d44", "reason": "budget: teams-goals' advance/abort (src/features/teams/sub_goals/GoalHandoffPanel.tsx:29) delegates to a backend team-assignment orchestrator whose loop was not read; judging the UI alone would be a guess - likely the multi-agent layer above one session, but unverified"},
+  {"subject": "session-continuation", "context": "4810daf8-0549-4899-95d2-99c81cde6455", "reason": "budget: overview-observability's alert evaluator (useGlobalAlertEvaluator.ts) is a timer loop and the healing overlay was not read; left unknown rather than written not-applicable from a grep"},
+  {"subject": "session-continuation", "context": "aebcd52a-07a3-4305-bf42-d961b4f37a62", "reason": "weak context (governance: weak); the skill never judges weak pairs by default - a coverage question, not a verdict"}
+ ],
+ "consults": [
+  {"ts": "2026-10-10T02:44:42Z", "bundle": "software-engineering", "subjects": ["session-continuation"], "techniques": ["stuck-loop-detection", "continuation-as-state"], "deviations": 0},
+  {"ts": "2026-10-10T02:44:42Z", "bundle": "software-engineering", "subjects": ["session-continuation"], "techniques": ["continuation-as-state", "ordered-teardown"], "deviations": 0},
+  {"ts": "2026-10-10T02:44:42Z", "bundle": "software-engineering", "subjects": ["session-continuation"], "techniques": ["continuation-as-state", "boundary-applied-stop"], "deviations": 0},
+  {"ts": "2026-10-10T02:44:42Z", "bundle": "software-engineering", "subjects": ["session-continuation"], "techniques": ["advisory-guard-fail-mode", "continuation-as-state"], "deviations": 0}
+ ]}

@@ -1,0 +1,79 @@
+{
+  "schema": "conform-run/1",
+  "worker": "cc8123ad-a2a0-475b-9a88-c705d9790f61",
+  "subject": "agent-memory",
+  "evaluatedAt": "2026-10-10T01:06:00Z",
+  "pairs": [
+    {
+      "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/dev_memories.rs:163 render_for_prompt breaks on the first line that overflows the char budget, so one fat project memory silently drops every lower-ranked item behind it from the unattended worker prompt (recall-injection: skip, don't stop); and the store is append-only by design (dev_memories.rs:11) with no cap, decay, supersedence or retirement, so a reversed constraint keeps reciting itself forever",
+      "evaluatedAgainst": "sha256-b2:23599eae61aa7119",
+      "evaluatedRevision": 47,
+      "techniques": [
+        {"technique": "recall-injection", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/dev_memories.rs:163 `break` on the first oversize line stops packing instead of skipping; the rendered line (dev_memories.rs:161) carries kind but no age or confidence, and its caller degrades a read error to no block at all (src-tauri/src/commands/infrastructure/dev_tools.rs:1275 logs and returns None), so failed recall reads to the worker as empty"},
+        {"technique": "decay-and-forgetting", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/dev_memories.rs:11 'append + read-for-injection' - no per-category cap, no demotion tier, no reaper; get_for_injection (dev_memories.rs:123) orders by category/importance/created_at with no last-use input, so recall precision falls monotonically with project age (the hoard)"},
+        {"technique": "consolidation", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/dev_memories.rs:80 INSERT OR IGNORE on (project_id, source_kind, source_id) makes a later write for the same source a silent no-op and there is no supersede path, so contradiction is never data in this store"},
+        {"technique": "episodic-capture", "verdict": "conformant", "evidence": "src-tauri/db/src/repos/dev_memories.rs:90 every row carries source_kind + source_id pointing at the originating decision/task, idempotent per source event (dev_memories.rs:80)"}
+      ]
+    },
+    {
+      "context": "dc7c4f48-e819-47d0-80be-6afb942d28fd",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/core/src/models/memory.rs:225 the memory contract deliberately keeps ACTIVE_CAP overflow-archival on the lexicographic importance/access_count/created_at order (enforced at src-tauri/db/src/repos/core/memories.rs:2024) while recall ranks by the decay-aware score at :205, so the cap archives items the read path ranks above the survivors - the second-door janitor memory-value-model forbids",
+      "evaluatedAgainst": "sha256-b2:23599eae61aa7119",
+      "evaluatedRevision": 47,
+      "techniques": [
+        {"technique": "memory-value-model", "verdict": "deviation", "evidence": "src-tauri/core/src/models/memory.rs:225 cap keeps its own ordering while recall uses the score at :205-206; the bounded retrieval term (min(access_count, 9), :206) is realized, but two value models now order one tier"},
+        {"technique": "decay-and-forgetting", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/core/memories.rs:2024 cap ranked by a column sort rather than the shared value model - the exact 'importance, then accesses, then age' failure the technique's caps section names"},
+        {"technique": "recall-injection", "verdict": "conformant", "evidence": "src-tauri/core/src/models/memory.rs:151 the usage increment is a DELIVERY rule counted only on the packed set, callers enumerated as the contract; src-tauri/core/src/retrieval/mod.rs:62 the relevance floor returns its dropped count; src-tauri/core/src/retrieval/mod.rs:171 a cut excerpt is marked so a truncated item never reads as whole"},
+        {"technique": "probe-without-write-back", "verdict": "conformant", "evidence": "src-tauri/core/src/models/memory.rs:151 read-path callers enumerated and classified as delivery vs prepare-only, with the one known non-incrementing delivery (claude_md_projection) recorded as a gap at :165"},
+        {"technique": "memory-governance", "verdict": "conformant", "evidence": "src-tauri/core/src/models/memory.rs:115 promotion to the core (identity) tier is user-initiated only, through one named entry point; lifecycle never touches core"},
+        {"technique": "consolidation", "verdict": "unknown", "evidence": "src-tauri/core/src/validation/memory.rs:5 the closed category set has no failed-approach kind; whether 'learned' carries dead ends was not traced"}
+      ],
+      "registryProposal": "decay-and-forgetting's caps section already cites a store whose cap ranks by 'importance, then accesses, then age'; this contract (src-tauri/core/src/models/memory.rs:225) is a live instance that DOCUMENTS the disagreement as deliberate ('out of scope for the injection ranking'). Worth a line in the technique: a contract that names the split does not make it safe - the documented exception is the same defect with a reviewer's blessing."
+    },
+    {
+      "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:213 a team-bound project with zero memories records no snapshot and memory_health_overview reads only snapshots (:266), so a never-covered project is absent from the health list and a project whose memories all retired keeps serving its last healthy snapshot - coverage-instrumentation's 'never' row and 'only live memory counts' both fail",
+      "evaluatedAgainst": "sha256-b2:23599eae61aa7119",
+      "evaluatedRevision": 47,
+      "techniques": [
+        {"technique": "coverage-instrumentation", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:266 the overview's population is the snapshot table, not dev_projects; the skip at :213 is counted only in the scan's return value. The sibling ledger instrument is conformant: src-tauri/src/commands/infrastructure/memory_ledger.rs:1233 denominator is every dev_context, :1236 counts only live in-window nodes, :1243 reports unanchored"},
+        {"technique": "memory-value-model", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:39 HALF_LIFE_CASE is a hand-copied SQL twin of src-tauri/db/src/memory_recall.rs:118; values agree today but nothing pins them, so the module doc's 'can never disagree' is a promise with no gate"},
+        {"technique": "baseline-ladder", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:143 a health snapshot, not a memory-design benchmark; no pipeline-vs-incumbent comparison is made here"}
+      ]
+    },
+    {
+      "context": "0ecc70bc-a005-4ff8-9a98-f362d2a75f53",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/api/overview/memories.ts:141 deleteAllMemories exposes delete_all (src-tauri/db/src/repos/core/memories.rs:1486), a workspace-wide hard DELETE of every non-core memory that writes no fact_key tombstone (the single-item delete does, memories.rs:1436), so the purge is amnesia by panic and is undone by the next consolidation re-deriving every unbarred fact (wired at src/features/overview/sub_memories/components/MemoriesPageDense.tsx:592)",
+      "evaluatedAgainst": "sha256-b2:23599eae61aa7119",
+      "evaluatedRevision": 47,
+      "techniques": [
+        {"technique": "decay-and-forgetting", "verdict": "deviation", "evidence": "src/api/overview/memories.ts:141 bulk hard delete with no demotion tier and no re-derivation bar, against src-tauri/db/src/repos/core/memories.rs:1436 where the single-item door writes one - two forget verbs with different semantics"},
+        {"technique": "coverage-instrumentation", "verdict": "deviation", "evidence": "src/api/devTools/devTools.ts:1908 scanMemoryHealth types the result as { projects_scanned } and drops projects_no_memories / projects_no_team that the backend returns (src-tauri/src/commands/infrastructure/memory_health.rs:54), so the honest zero never reaches the caller"},
+        {"technique": "memory-governance", "verdict": "conformant", "evidence": "src/api/overview/memories.ts:294 proposals are applied or discarded explicitly (proposal-reviewed lane), and src/api/overview/memories.ts:40 operator claims are filed with source 'user'"}
+      ]
+    }
+  ],
+  "declined": [
+    {"subject": "agent-memory", "context": "*", "reason": "the remaining ~105 unknown agent-memory pairs are left for later runs under the 3-6 pair budget; strong-confidence unknowns not reached: agents-quick-answer, companion-core-store, overview-director, stores-slices-agents, stores-slices-system, plugins-dev-tools-projects, schedules-components, shared-components-forms, display-data-formatters (several matched on lexical tokens only - answer/reason, past/month/week, shared/filter - and look like not-applicable candidates that still need a read)"},
+    {"subject": "agent-memory", "context": "*", "reason": "the 9 already-judged pairs (companion-brain, companion-narration-ops, db-repos-core, fleet-monitor-channels, home-learning, lib-personas, overview-memories, plugins-companion-decision, team-memory) were evaluated against the current subject digest sha256-b2:23599eae61aa7119 (revision 47) and were not re-read"}
+  ],
+  "consults": [
+    {"ts": "2026-10-10T01:06:00Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": ["recall-injection", "decay-and-forgetting", "consolidation", "episodic-capture"], "deviations": 1},
+    {"ts": "2026-10-10T01:06:00Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": ["memory-value-model", "decay-and-forgetting", "recall-injection", "probe-without-write-back", "memory-governance", "consolidation"], "deviations": 1},
+    {"ts": "2026-10-10T01:06:00Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": ["coverage-instrumentation", "memory-value-model", "baseline-ladder"], "deviations": 1},
+    {"ts": "2026-10-10T01:06:00Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": ["decay-and-forgetting", "coverage-instrumentation", "memory-governance"], "deviations": 1}
+  ]
+}

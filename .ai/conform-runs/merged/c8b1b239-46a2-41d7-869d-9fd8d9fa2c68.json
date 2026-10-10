@@ -1,0 +1,95 @@
+{
+  "schema": "conform-run/1",
+  "worker": "c8b1b239-46a2-41d7-869d-9fd8d9fa2c68",
+  "subject": "companion-identity",
+  "evaluatedAt": "2026-10-10T02:34:10Z",
+  "evaluatedAgainst": "sha256-b2:ff529a6dc44bf233",
+  "evaluatedRevision": 7,
+  "pairs": [
+    {
+      "context": "bcb603ad-ce58-4b76-9623-aa99ace984af",
+      "subject": "companion-identity",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/proactive/mod.rs:342 an Athena schedule_proactive commitment (a promise the code itself says has no re-fire path, :214) is written only as a companion_proactive_message row with no brain document, so a DB reset, rebuild or folder export silently drops every open check-in she promised and nothing on disk says one is owed.",
+      "techniques": [
+        {
+          "technique": "disk-truth-db-index",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_dev.rs:843 the op executor persists the commitment via insert_scheduled into user_db alone; the open/kept state of a promise is DB-only meaning, which the technique forbids outside the documents"
+        }
+      ],
+      "registryProposal": "disk-truth-db-index names whether a promise is still open as document-owned state, but the realistic shape is an agent-authored future commitment parked in a delivery/nudge queue table that proactive-nudges owns for rationing; one sentence routing commitment durability to this subject while proactive-nudges keeps cadence would stop the pairing reading as lexical-only."
+    },
+    {
+      "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+      "subject": "companion-identity",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/db/src/repos/dev_memories.rs:1 this context holds project-scoped dev-loop, twin, fleet and spend repos; the companion brain tables (companion_node, companion_proactive_message) live in user_db outside it, so no constitution, self-model, brain index or capability inventory is read or written here.",
+      "techniques": []
+    },
+    {
+      "context": "336089a8-bb18-449c-a62e-ca76b02097fb",
+      "subject": "companion-identity",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "tests/playwright/companion-bridge.ts:140 the harness reaches the app only through /bridge-exec into the running product doors and its brain counts (:314) are a write-pipeline probe via companion_list_brain_items, not an identity gate; no spec reads or writes the constitution or self-model.",
+      "techniques": [],
+      "registryProposal": "anchored-identity-diffs enumerates test processes that clear the location variable, but not a UI harness that drives the real app against the person's default brain root: nothing under tests/ or scripts/ sets PERSONAS_HOME here, so harness turns land as real episodes and can file real update_identity proposals through legitimate doors. Worth one sentence in the door-enumeration clause (writer = harness-driven turns), likely shared with agent-memory."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "companion-identity",
+      "context": "d77a22ee-23cb-42f3-a910-590f8622977f",
+      "reason": "companion-core-store has an empty file_paths list in context-map.json (dead context); nothing to read."
+    },
+    {
+      "subject": "companion-identity",
+      "context": "895b4bb2-16fd-4e8e-aae8-11315fe6436b",
+      "reason": "api-agents is a thin invokeWithTimeout wrapper layer (src/api/companion.ts beside 32 persona CRUD files); every technique is realized behind it in the Rust command contexts already judged, so a verdict here would only mirror those."
+    },
+    {
+      "subject": "companion-identity",
+      "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "reason": "companion-ui-controls consolidates 29 Playwright spec files; only grepped (no spec references identity documents), not read, so left unknown rather than an unread not-applicable."
+    },
+    {
+      "subject": "companion-identity",
+      "context": "5ab49df3-3442-4ea6-a405-077dec64850d",
+      "reason": "persona-core-codex is a weak-governance row (lexical-only, score 290.5); judging it would manufacture a match."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T02:34:10Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "companion-identity"
+      ],
+      "techniques": [
+        "disk-truth-db-index"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T02:34:10Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "companion-identity"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T02:34:10Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "companion-identity"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

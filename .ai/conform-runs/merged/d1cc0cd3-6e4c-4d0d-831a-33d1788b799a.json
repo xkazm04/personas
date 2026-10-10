@@ -1,0 +1,55 @@
+{"schema": "conform-run/1", "worker": "d1cc0cd3-6e4c-4d0d-831a-33d1788b799a", "subject": "error-handling",
+ "evaluatedAt": "2026-10-10T01:44:49Z",
+ "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2", "evaluatedRevision": 15,
+ "pairs": [
+  {"context": "468953eb-0204-4013-b366-9357b2161138", "subject": "error-handling", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2", "evaluatedRevision": 15,
+   "evidence": "src-tauri/core/src/error.rs:91 Internal(String) is a cause-dropping catch-all minted 1,488 times across src-tauri (708 as format!(\"..{e}\") over a foreign error) and re-classified from its own prose at :134 - self-minted timeouts (src-tauri/engine/src/p2p/manifest_sync.rs:146) have no variant to carry the category the mint site knew; supersedes the prior conformant, which read :134 as a rare fallback",
+   "techniques": [
+    {"technique": "taxonomy-design", "verdict": "realized", "evidence": "src-tauri/core/src/error_taxonomy.rs:25 closed ErrorCategory with explicit Unknown at :56, ts-rs-mirrored (:22); retry-interval extraction is partial - RateLimited(String) at src-tauri/core/src/error.rs:47 carries no typed interval"},
+    {"technique": "structured-propagation", "verdict": "deviation", "evidence": "src-tauri/db/src/embedder.rs:95 map_err(|e| AppError::Internal(format!(\"Embedding failed: {e}\"))) wrap-replaces the cause (one of 708 such sites); the category is rediscovered from prose at src-tauri/core/src/error.rs:134 instead of attached at birth"},
+    {"technique": "reclassification-is-not-repair", "verdict": "deviation", "evidence": "src-tauri/core/src/error_taxonomy.rs:25 has no internal/impossible class, and AppError::Internal (src-tauri/core/src/error.rs:91) is the generic passthrough routed by prose into RateLimit/Timeout/Unknown - the zero-rate detector the technique keeps is folded away"},
+    {"technique": "consumer-decides-error-shape", "verdict": "realized", "evidence": "src-tauri/core/src/error.rs:210 category serialised as a branchable value across the IPC boundary beside kind/auto_fixable/failover_eligible"},
+    {"technique": "user-facing-mapping", "verdict": "not-applicable", "evidence": "src-tauri/core/src/error.rs:1 a backend crate; user copy lives in the frontend registry (judged under context 2e1e105a)"},
+    {"technique": "exit-contract-is-a-taxonomy-projection", "verdict": "not-applicable", "evidence": "src-tauri/core/src/lib.rs:1 a library crate with no process exit contract"}
+   ],
+   "registryProposal": "structured-propagation could name the measured shape seen here: a typed enum whose catch-all String variant is the majority mint path (1,488 Internal vs 17 RateLimited sites) - 'prose only as a fallback tier' is true of the code path and false of the traffic, and a judge reading only the classifier returns conformant (the prior verdict did). Suggest a decision rule keyed on mint-site share, not classifier shape."},
+  {"context": "ab849301-d5ce-4d91-a12e-0e87a0417585", "subject": "error-handling", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2", "evaluatedRevision": 15,
+   "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:43 the section boundary (36 call sites) catches render crashes before the root Sentry.withErrorBoundary (src/main.tsx:223) and opens no Sentry door - every handled render crash is dark to operator telemetry and persists with no breadcrumb trail (src/lib/utils/crashPersistence.ts:114)",
+   "techniques": [
+    {"technique": "crash-capture", "verdict": "deviation", "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:43 escapes-not-failures: the more sections are wrapped, the fewer crashes reach Sentry; trail rule unmet - the entry at src/lib/utils/crashPersistence.ts:114 holds timestamp/component/message/stack only. Realized parts: sanitize-before-persist (:98), local-first (:102), backend persist (:144)"},
+    {"technique": "error-doors", "verdict": "partial", "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:47 logger.error reaches the JSONL log file and the user sees the fallback card, but the telemetry door the routing table requires on both routes is absent"},
+    {"technique": "user-facing-mapping", "verdict": "not-judged", "evidence": "src/features/shared/components/feedback/ErrorBanner.tsx:52 banners render caller-supplied text; mapping is the caller's (registry judged under 2e1e105a)"}
+   ]},
+  {"context": "2e1e105a-866c-4039-9620-7ed5d0d30b17", "subject": "error-handling", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2", "evaluatedRevision": 15,
+   "evidence": "src/lib/errors/errorRegistry.ts:716 resolveError still takes only a raw string and matches prose (:723), ignoring the category the backend serialises (src-tauri/core/src/error.rs:210); a generic-fallback miss is recorded only as a Sentry breadcrumb (:735) - re-confirmed live at the current digest",
+   "techniques": [
+    {"technique": "user-facing-mapping", "verdict": "deviation", "evidence": "src/lib/errors/errorRegistry.ts:723 prose is the only tier - no category or kind tier ahead of it; the generic tier does not report itself as an event (:735); the prose table is duplicated in src/i18n/useTranslatedError.ts:82 against src/lib/errors/errorRegistry.ts:73, two places to fix when wording changes"},
+    {"technique": "structured-propagation", "verdict": "deviation", "evidence": "src/lib/errors/errorRegistry.ts:716 the frontend door accepts a string, so the structured envelope from src-tauri/core/src/error.rs:210 is flattened before classification"},
+    {"technique": "error-doors", "verdict": "deviation", "evidence": "src/lib/errors/errorRegistry.ts:735 a trail entry is the sole door for an unmapped failure - a conditional door per the technique"}
+   ]},
+  {"context": "90f639de-ffc7-4225-b67f-1566e5d66b8b", "subject": "error-handling", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2", "evaluatedRevision": 15,
+   "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:97 a failing 60s status-page poll is routed only to log.warn (console-only; src/lib/log.ts:3 forwards only error) and local state - re-confirmed live; the IPC wrapper does not cover it (src/lib/devlog/ipc.ts:113 forwards slow calls, not failures)",
+   "techniques": [
+    {"technique": "error-doors", "verdict": "deviation", "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:97 a background failure reaches no telemetry door (same at :110 and the outer catch); no cooldown keying for a 60s poll"},
+    {"technique": "structured-propagation", "verdict": "deviation", "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:96 the IPC rejection is flattened to .message, dropping kind/category before it is stored"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "error-handling", "context": "1ffb5765-de47-4f01-87ec-06732a63522c", "reason": "judged conformant at the current digest (revision 15) by an earlier run; not re-read this run (budget). For the next reader: its evidence cites 2 of 11 techniques and declares the rest not-applicable without anchors - below the evidence floor as written"},
+  {"subject": "error-handling", "context": "456eb952-9b93-4de4-bad5-79e6f101aeb1", "reason": "judged conformant at the current digest; not re-read (budget). Same floor concern: 2 of 11 techniques cited, the rest declared not-applicable without anchors"},
+  {"subject": "error-handling", "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757", "reason": "judged conformant at the current digest with 4 techniques cited; not re-read this run (budget)"}
+ ],
+ "consults": [
+  {"ts": "2026-10-10T01:44:49Z", "bundle": "software-engineering", "subjects": ["error-handling"], "techniques": ["taxonomy-design", "structured-propagation", "reclassification-is-not-repair", "consumer-decides-error-shape"], "deviations": 2},
+  {"ts": "2026-10-10T01:44:49Z", "bundle": "software-engineering", "subjects": ["error-handling"], "techniques": ["crash-capture", "error-doors"], "deviations": 1},
+  {"ts": "2026-10-10T01:44:49Z", "bundle": "software-engineering", "subjects": ["error-handling"], "techniques": ["user-facing-mapping", "structured-propagation", "error-doors"], "deviations": 3},
+  {"ts": "2026-10-10T01:44:49Z", "bundle": "software-engineering", "subjects": ["error-handling"], "techniques": ["error-doors", "structured-propagation"], "deviations": 2}
+ ]}

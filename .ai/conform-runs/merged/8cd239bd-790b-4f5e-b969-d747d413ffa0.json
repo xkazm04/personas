@@ -1,0 +1,162 @@
+{
+  "schema": "conform-run/1",
+  "worker": "8cd239bd-790b-4f5e-b969-d747d413ffa0",
+  "subject": "draft-editing",
+  "evaluatedAt": "2026-10-10T02:05:38Z",
+  "evaluatedAgainst": "sha256-b2:79771a6adb7936e5",
+  "evaluatedRevision": 3,
+  "pairs": [
+    {
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+      "subject": "draft-editing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:210 clearAll() empties the dirty map without reverting the draft to baseline (tab cancel at src/features/agents/sub_editor/libs/useTabSection.ts:72 only stops the debounce timer), so after a guard Discard (src/features/agents/sub_editor/components/EditorBody.tsx:94) the aggregate reads clean while the buffer still holds the edits - re-confirmed 2026-10-10, code unchanged since 2026-10-09",
+      "techniques": [
+        {
+          "technique": "draft-model",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_editor/components/EditorBody.tsx:94 Discard calls clearAllDirty() and nothing restores draft from baseline; the patch door itself is realized at src/features/agents/sub_editor/hooks/useEditorDraft.ts:30"
+        },
+        {
+          "technique": "dirty-tracking",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_editor/libs/PersonaDraft.ts:116 per-group dirtiness derived by comparing draft to baseline over declared SETTINGS_KEYS/MODEL_KEYS, with a compile-time exhaustiveness check at :101"
+        },
+        {
+          "technique": "debounced-save-groups",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:200 one debounced save group per key set (settings, model), each advancing only its own keys of the baseline (:184, :196)"
+        },
+        {
+          "technique": "navigation-guards",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_editor/components/EditorBody.tsx:87 the guard is fed the bare aggregate isDirty, which ignores pending/in-flight saves and is falsified by the Discard path above"
+        },
+        {
+          "technique": "field-defaults-and-bounds",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_editor/libs/PersonaDraft.ts:41 clampDraftPatch applies bounds at the patch door; the timeout default carries its incident rationale at :155"
+        },
+        {
+          "technique": "completeness-derivation",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:28 readiness is a derived list of blockers, each naming the surface that fixes it, gating enable rather than save"
+        }
+      ],
+      "registryProposal": "Upward lesson: src/features/agents/sub_editor/libs/PersonaDraft.ts:97-103 makes the dirty-tracking region map mechanically exhaustive with a type-level assertion (an unmapped draft field fails tsc). draft-editing has no react--dirty-tracking application; this is a strong candidate citation."
+    },
+    {
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+      "subject": "draft-editing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:90 opens the modal on any dirty sidebar exit without attempting a flush, and the contract (:51) takes only an isDirty boolean, so flush-first-ask-second and pending/in-flight awareness are unrealizable for every caller - re-confirmed 2026-10-10, code unchanged since 2026-10-09",
+      "techniques": [
+        {
+          "technique": "navigation-guards",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:51 the guard input is a single isDirty boolean (prohibition 2: ignores pending/in-flight/failed saves) and :90 opens the dialog before any flush (prohibition 3)"
+        },
+        {
+          "technique": "draft-model",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:50 this context is a library of shared interaction hooks; it holds no draft buffer of its own"
+        }
+      ],
+      "registryProposal": "Precondition note: this context is a shared-hooks library, so only navigation-guards governs it; draft-model, dirty-tracking, save groups and completeness live in the consuming editors. A technique-level pairing (navigation-guards only) would describe it better than the whole subject."
+    },
+    {
+      "context": "2a54cdc2-87af-4298-b490-9eb87f230df7",
+      "subject": "draft-editing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_presets/usePresetAdoption.ts:30 the surface is a one-shot preset adoption staged preview->adopting->done with no persisted entity under sustained revision; git ls-files lists no draft-editor files under src/features/templates - re-confirmed 2026-10-10",
+      "techniques": [],
+      "registryProposal": "Coverage: the context is named templates-draft-editor but holds the explore catalog and preset adoption; the pairing is lexical-only (draft/editing/payload) and fails the golden path's sustained-revision precondition. The context name, not the code, earned the match."
+    },
+    {
+      "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc",
+      "subject": "draft-editing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:174 commitAll iterates committableLinks (:168) without excluding links already committing and commitLink (:89) has no re-entry check, while Commit-all (src/features/triggers/sub_studio/StudioPatchbay.tsx:149) is never disabled, so a second click during the gated create->dry-run->enable round trip creates a duplicate live trigger; :124 drops the link by id on success, losing a condition cycled mid-flight (StudioPatchbay.tsx:196 stays enabled while busy) - re-confirmed 2026-10-10",
+      "techniques": [
+        {
+          "technique": "debounced-save-groups",
+          "verdict": "deviation",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:124 success removes the link by id without comparing against the payload sent, so an edit made while in flight is dropped (prohibitions 3 and 4)"
+        },
+        {
+          "technique": "draft-model",
+          "verdict": "conformant",
+          "evidence": "src/features/triggers/sub_studio/libs/studioDraftModel.ts:46 the chain draft is one object (ChainDraft) mutated only through composer setters, loaded and saved under its own key at :57/:77"
+        },
+        {
+          "technique": "navigation-guards",
+          "verdict": "conformant",
+          "evidence": "src/features/triggers/sub_studio/libs/studioDraftModel.ts:51 the draft persists to local storage (survival layer), so leaving the studio does not lose uncommitted links"
+        },
+        {
+          "technique": "completeness-derivation",
+          "verdict": "conformant",
+          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:42 commitBlocker derives a named per-link blocker on demand, gating commit while the incomplete link stays in the draft"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-10T02:05:38Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "draft-editing"
+      ],
+      "techniques": [
+        "draft-model",
+        "dirty-tracking",
+        "debounced-save-groups",
+        "navigation-guards",
+        "field-defaults-and-bounds",
+        "completeness-derivation"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T02:05:38Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "draft-editing"
+      ],
+      "techniques": [
+        "navigation-guards",
+        "draft-model"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T02:05:38Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "draft-editing"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T02:05:38Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "draft-editing"
+      ],
+      "techniques": [
+        "debounced-save-groups",
+        "draft-model",
+        "navigation-guards",
+        "completeness-derivation"
+      ],
+      "deviations": 1
+    }
+  ]
+}

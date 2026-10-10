@@ -1,0 +1,6 @@
+{"schema": "conform-run/1", "worker": "f43d5bc5-8094-4c1b-8f5c-c7b9128749fa", "subject": "quality-regression-gating",
+ "evaluatedAt": "2026-10-10T12:19:10Z",
+ "pairs": [],
+ "declined": [{"subject": "quality-regression-gating", "context": "92f6c0fc-8d5c-43a7-bab8-1851973d5198",
+   "reason": "no work: the map lists this subject on exactly one context (overview-leaderboard), already judged not-applicable on 2026-10-09 with all four applicable techniques anchored, against sha256-b2:2fa1e4fd027c9e92 / revision 8 - identical to the registry index at e5babec3, so the verdict is not stale. The '1 consumer deviation' that ranked this subject is the 2026-08-27 scan-sweep consult (tested-superiority-claims on a Lab strategy leaderboard, positional strategy_label) on a context that carries NO pair for this subject; this worker may not add pairs. Registry proposal (repeats the 10-09 worker's): pair quality-regression-gating with overview-certification (908be532), lab-arena (a1223fbb), test-runner-lab (6a81750d) and commands-contest (e4b48fb7), which do compare eval runs, so the recorded deviation can land on a context where it can be judged"}],
+ "consults": []}

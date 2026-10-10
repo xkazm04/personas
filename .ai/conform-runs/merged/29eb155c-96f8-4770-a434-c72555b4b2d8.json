@@ -1,0 +1,30 @@
+{
+  "schema": "conform-run/1",
+  "worker": "29eb155c-96f8-4770-a434-c72555b4b2d8",
+  "subject": "diff-comparison",
+  "evaluatedAt": "2026-10-10T01:10:30.624Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "diff-comparison",
+      "context": "03960450-6979-4412-9de3-35c897fe56d2",
+      "reason": "current deviation 2026-10-06: already judged against the current subject digest sha256-b2:8d6a27cb32976f49 (revision 6, matching the registry index at 32d7899f); no anchored file has changed since the verdict and its anchor lines still read as claimed - nothing to re-judge"
+    },
+    {
+      "subject": "diff-comparison",
+      "context": "ba0d4722-bfde-40aa-8e1d-52591719f834",
+      "reason": "current deviation 2026-10-06: already judged against the current subject digest sha256-b2:8d6a27cb32976f49 (revision 6, matching the registry index at 32d7899f); no anchored file has changed since the verdict and its anchor lines still read as claimed - nothing to re-judge"
+    },
+    {
+      "subject": "diff-comparison",
+      "context": "83a8a744-2036-4e3e-9654-6fcec82334ff",
+      "reason": "current deviation 2026-10-09: already judged against the current subject digest sha256-b2:8d6a27cb32976f49 (revision 6, matching the registry index at 32d7899f); no anchored file has changed since the verdict and its anchor lines still read as claimed - nothing to re-judge"
+    },
+    {
+      "subject": "diff-comparison",
+      "context": "fd092e44-fcec-4418-8337-ed2b7b2c8473",
+      "reason": "current deviation 2026-10-06: already judged against the current subject digest sha256-b2:8d6a27cb32976f49 (revision 6, matching the registry index at 32d7899f); no anchored file has changed since the verdict and its anchor lines still read as claimed - nothing to re-judge"
+    }
+  ],
+  "consults": []
+}

@@ -1,0 +1,136 @@
+{
+  "schema": "conform-run/1",
+  "worker": "96a2a328-b145-4457-a218-44efe2eff45c",
+  "subject": "accessibility",
+  "evaluatedAt": "2026-10-10T01:06:37Z",
+  "evaluatedAgainst": "sha256-b2:5e30485ee0c7c123",
+  "evaluatedRevision": 7,
+  "pairs": [
+    {
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+      "subject": "accessibility",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:5e30485ee0c7c123",
+      "evaluatedRevision": 7,
+      "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:11 the shared roving mechanism is index-keyed and has ZERO consumers (every tablist hand-rolls arrows, e.g. src/features/shared/components/layout/SegmentedTabs.tsx:83), and src/hooks/utility/interaction/useCopyToClipboard.ts:44 sets a visual-only copied flag that none of its 43 consumers announces - the prior conformant verdict cited the roving hook as realized when nothing uses it",
+      "techniques": [
+        {
+          "technique": "preference-respect",
+          "verdict": "realized",
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:56 one reduced-motion signal from both the OS query and the in-app data-motion toggle; derived, not re-detected, at src/hooks/utility/interaction/useProgressiveReveal.ts:89"
+        },
+        {
+          "technique": "keyboard-navigation-models",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:11 position keyed by activeIndex:number (identity-survives-reuse names index keying as the failure) and the hook has no consumer in src/, so composites re-derive arrow handling per widget (src/features/shared/components/layout/SegmentedTabs.tsx:83, src/features/shared/components/layout/PanelTabBar.tsx:59) while 7 of 13 role=tablist files have no arrow model at all"
+        },
+        {
+          "technique": "primitive-level-a11y",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:9 the one shared behavior door exists but is outside every call site, so wrap/Home/End/orientation diverge across 6 hand-rolled copies - near-primitives the technique says to consolidate"
+        },
+        {
+          "technique": "name-and-description-wiring",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useCopyToClipboard.ts:44 the canonical copy door exposes the transient outcome only as state for a label swap and never routes it to the announcer (src/features/shared/components/feedback/AriaLiveProvider.tsx:135 exists); 0 of 43 consumers announce, the half-move the transient-outcome rule names"
+        },
+        {
+          "technique": "live-region-architecture",
+          "verdict": "realized-in-part",
+          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:18 save confirmation is requested through the toast layer rather than a hook-owned region; the copy hooks are the gap recorded above"
+        }
+      ],
+      "registryProposal": "keyboard-navigation-models could name the unadopted-shared-mechanism case explicitly: here the roving hook exists, passes any review of the hook itself, and is consumed by nothing - a conformance check that reads the mechanism and not its consumer count grades it realized"
+    },
+    {
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "subject": "accessibility",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:5e30485ee0c7c123",
+      "evaluatedRevision": 7,
+      "evidence": "src/features/home/sub_cockpit/widgets/LinkedDecisionsWidget.tsx:109 mounts role=alert already holding its error text (also src/features/home/sub_cockpit/widgets/RecentDecisionsWidget.tsx:86, src/features/home/sub_cockpit/widgets/WalkthroughOfferWidget.tsx:118), so the failure is silent on most pairings; src/features/home/sub_cockpit/widgets/VerdictWidget.tsx:58 marks a dangerous option only by an aria-hidden red dot. The 09-23 anchor (hand-rolled buttons, :154) is fixed - every widget now uses KitButton",
+      "techniques": [
+        {
+          "technique": "primitive-level-a11y",
+          "verdict": "realized-with-composition-defect",
+          "evidence": "src/features/home/sub_cockpit/widgets/LinkedDecisionsWidget.tsx:86 actions go through KitButton over the shared Button (aria-busy at src/features/shared/components/buttons/Button.tsx:248), no raw <button> left in the widget dir; but src/features/home/sub_cockpit/widgets/VerdictWidget.tsx:58 adds danger meaning outside the primitive via src/features/shared/components/kit/Mark.tsx:23 (aria-hidden dot)"
+        },
+        {
+          "technique": "live-region-architecture",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/LinkedDecisionsWidget.tsx:109 component-owned role=alert mounted with its text (semantics #1) instead of useAnnounce; the right shape sits in the same tree at src/features/home/sub_cockpit/widgets/WalkthroughOfferWidget.tsx:108 (region mounted empty from first render)"
+        },
+        {
+          "technique": "name-and-description-wiring",
+          "verdict": "realized",
+          "evidence": "src/features/shared/components/kit/Toolbar.tsx:146 KitButton icons are aria-hidden inside text-named buttons, labels are i18n strings (src/features/home/sub_cockpit/widgets/LinkedDecisionsWidget.tsx:93)"
+        },
+        {
+          "technique": "preference-respect",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/VerdictWidget.tsx:58 the destructive option is carried by colour alone (forced colours repaints it away; the dot is also hidden from the tree), no structural carrier"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "accessibility",
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "reason": "judged 2026-10-09 against the current digest rev 7; not stale, re-reading a one-day-old verdict would not pay back"
+    },
+    {
+      "subject": "accessibility",
+      "context": "dc471d31-ae30-4ac9-b015-d51969df458d",
+      "reason": "judged 2026-10-09 against the current digest rev 7; not stale"
+    },
+    {
+      "subject": "accessibility",
+      "context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5",
+      "reason": "judged 2026-10-09 against the current digest rev 7; not stale"
+    },
+    {
+      "subject": "accessibility",
+      "context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0",
+      "reason": "judged 2026-10-09 against the current digest rev 7; not stale"
+    },
+    {
+      "subject": "accessibility",
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "reason": "judged 2026-10-06 against the current digest rev 7; not stale - left for a later pass"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T01:06:37Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "accessibility"
+      ],
+      "techniques": [
+        "preference-respect",
+        "keyboard-navigation-models",
+        "primitive-level-a11y",
+        "name-and-description-wiring",
+        "live-region-architecture"
+      ],
+      "deviations": 3
+    },
+    {
+      "ts": "2026-10-10T01:06:37Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "accessibility"
+      ],
+      "techniques": [
+        "primitive-level-a11y",
+        "live-region-architecture",
+        "name-and-description-wiring",
+        "preference-respect"
+      ],
+      "deviations": 3
+    }
+  ]
+}

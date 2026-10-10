@@ -1,0 +1,8 @@
+{"schema": "conform-run/1", "worker": "5ac3fcb2-643a-4c3b-9f14-c0b4eb954460", "subject": "table",
+ "evaluatedAt": "2026-10-10T01:06:17Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "table", "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400",
+   "reason": "dead context: every entry point it lists (context-map.json:7464 src/features/plugins/artist/sub_gallery/GalleryPage.tsx, Gallery2D.tsx, ThreeViewer.tsx) was deleted by 0697f13438 (2026-09-15, 'remove the Artist and Research Lab plugins'); git ls-files has no artist file, so there is no code to judge. Also governance=weak and the match rests on the tokens sort/toggle only. Fix is a context-map rescan, not a verdict."}
+ ],
+ "consults": []}

@@ -1,0 +1,30 @@
+{
+  "schema": "conform-run/1",
+  "worker": "35995fa6-db8a-46a3-88a5-6081643930e8",
+  "subject": "versioning-snapshots",
+  "evaluatedAt": "2026-10-10T11:57:34Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "versioning-snapshots",
+      "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+      "reason": "db-repos (deviation) - current verdict: evaluatedAgainst sha256-b2:e895b228981cf506 = registry index digest at e6f59b26, evaluatedRevision 7 = revision 7, judged 2026-10-10; anchor files unchanged in git since and the anchor line re-read still says what the evidence claims - re-judging a current verdict is not work"
+    },
+    {
+      "subject": "versioning-snapshots",
+      "context": "9b0ee86c-2613-49a5-9fda-fcc4d432fb72",
+      "reason": "db-repos-lab (deviation) - current verdict: evaluatedAgainst sha256-b2:e895b228981cf506 = registry index digest at e6f59b26, evaluatedRevision 7 = revision 7, judged 2026-10-10; anchor files unchanged in git since and the anchor line re-read still says what the evidence claims - re-judging a current verdict is not work"
+    },
+    {
+      "subject": "versioning-snapshots",
+      "context": "7741725e-8124-4899-b17e-8e39e7fcf1ed",
+      "reason": "studio (deviation) - current verdict: evaluatedAgainst sha256-b2:e895b228981cf506 = registry index digest at e6f59b26, evaluatedRevision 7 = revision 7, judged 2026-10-10; anchor files unchanged in git since and the anchor line re-read still says what the evidence claims - re-judging a current verdict is not work"
+    },
+    {
+      "subject": "versioning-snapshots",
+      "context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd",
+      "reason": "webbuild (deviation) - current verdict: evaluatedAgainst sha256-b2:e895b228981cf506 = registry index digest at e6f59b26, evaluatedRevision 7 = revision 7, judged 2026-10-10; anchor files unchanged in git since and the anchor line re-read still says what the evidence claims - re-judging a current verdict is not work"
+    }
+  ],
+  "consults": []
+}

@@ -1,0 +1,73 @@
+{
+  "schema": "conform-run/1",
+  "worker": "9dadc75f-3ee8-4cf8-883a-4da72da85155",
+  "subject": "scoring-rubrics",
+  "evaluatedAt": "2026-10-10T02:12:38Z",
+  "pairs": [
+    {
+      "context": "92f6c0fc-8d5c-43a7-bab8-1851973d5198",
+      "subject": "scoring-rubrics",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:124 feeds signal.successRate into the heaviest (0.30) dimension ignoring successRateSource, which src/stores/slices/overview/personaHealthSlice.ts:415 sets to 100 for an unmeasured persona, so an idle agent collects full marks; re-judged per technique 2026-10-10 (5 of 7 deviate, code unchanged since 2026-10-05)",
+      "techniques": [
+        {
+          "technique": "unmeasured-honesty",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:124 success dimension takes the 100 that src/stores/slices/overview/personaHealthSlice.ts:415 assigns when successRateSource is unknown (absence as the ceiling); speed/cost are correctly dropped and renormalized at src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:136, but no coverage travels with the score and no coverage floor refuses to rank"
+        },
+        {
+          "technique": "score-explanation",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_leaderboard/components/LeaderboardMatrixView.tsx:262 cell renders only the normalized value: no weight, no contribution, no raw unit, no coverage; a missing speed/cost renders as the neutral 50 from src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:71 instead of as absent"
+        },
+        {
+          "technique": "weight-design",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:58 vector is one declaration (good) but carries no per-weight rationale, no sum assertion and no rubric version"
+        },
+        {
+          "technique": "rubric-stability",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:107 computeLeaderboard has no golden fixtures (git ls-files finds no leaderboard test), and src/features/overview/sub_leaderboard/components/leaderboardViewHelpers.ts:42 re-implements the 80/60/40 bands of src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:97 as a second copy"
+        },
+        {
+          "technique": "gap-ranking",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:182 ties break on successRate with no stable-identity final key (same at src/features/overview/sub_leaderboard/libs/leaderboardRanking.ts:51), and no entry carries a gap list or a top gap named as an action"
+        },
+        {
+          "technique": "normalization",
+          "verdict": "partial",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:71 speed/cost are cohort-relative (fleet average), polarity-inverted and clamped, which suits a ranking surface, but the frame is not shown to the reader and activity uses the raw fleet max, so one outlier compresses everyone else"
+        },
+        {
+          "technique": "weight-lenses",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:58 one weight vector grades one population (personas); no per-class weighting exists or is claimed"
+        }
+      ],
+      "registryProposal": "score-explanation rule \"never band a dimension with the composite thresholds\" fires here (src/features/overview/sub_leaderboard/components/LeaderboardMatrixView.tsx:258 applies scoreTint to every dimension cell and the composite alike); consider a node/react application citing this as the per-dimension-banding failure shape. Also: the context-map entry point LeaderboardPage.tsx was deleted on 2026-08-25 (tab retired, surface moved to sub_missionControl/sections/LeaderboardSection.tsx), so the context paths miss the live consumer."
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-10T02:12:38Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "scoring-rubrics"
+      ],
+      "techniques": [
+        "unmeasured-honesty",
+        "score-explanation",
+        "weight-design",
+        "rubric-stability",
+        "gap-ranking",
+        "normalization",
+        "weight-lenses"
+      ],
+      "deviations": 5
+    }
+  ]
+}

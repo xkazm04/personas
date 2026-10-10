@@ -1,0 +1,8 @@
+{"schema": "conform-run/1", "worker": "0b91c865-05e7-430d-b33a-688a55fe2c69", "subject": "deployment-contract",
+ "evaluatedAt": "2026-10-10T02:31:47Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "deployment-contract", "context": "cab45fee-e439-4bff-9924-217b1acc17f8", "reason": "dead context: the plugins-artist-hooks code (src/features/plugins/artist/hooks/*) was deleted in 0697f13438 'remove the Artist and Research Lab plugins' and git ls-files returns nothing for it; there is no code to anchor any verdict against. context-map.json still carries the context with file_paths [] - a rescan should retire it, after which this pair orphans or drops"},
+  {"subject": "deployment-contract", "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400", "reason": "weak-governed context (skipped by rule) and also dead: the artist gallery was deleted in 0697f13438; the asset/assets token match was a lexical resonance with cache-immutability-licensing on code that never served a build output"}
+ ],
+ "consults": []}
