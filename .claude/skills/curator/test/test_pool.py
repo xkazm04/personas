@@ -179,6 +179,7 @@ class JudgeConform(unittest.TestCase):
         self.assertEqual(self.judge(None, tmp_left=True)[0], "blocked")
         self.assertIn("timed out", self.judge(None, timed_out=True)[1])
         self.assertEqual(self.judge(None, exit_code=1)[0], "blocked")
+        self.assertIn("mid-merge", self.judge(None, timed_out=True, out_tail="mid-merge")[1])
 
     def test_a_run_file_beats_the_limit(self):
         # It wrote its verdicts and THEN hit the limit: the work landed.
@@ -205,6 +206,12 @@ class JudgeSerial(unittest.TestCase):
         self.assertEqual(self.judge(limited=True, commits=1)[0], "landed")
         self.assertEqual(self.judge(exit_code=2)[0], "blocked")
         self.assertEqual(self.judge(timed_out=True, commits=1)[0], "blocked")
+
+    def test_a_timeout_keeps_the_tell(self):
+        # The last words are the only record of what the ceiling interrupted.
+        action, evidence = self.judge(timed_out=True, commits=3, out_tail="writing the ledger row")
+        self.assertEqual(action, "blocked")
+        self.assertIn("writing the ledger row", evidence)
 
     def test_a_request_has_its_own_vocabulary(self):
         for action, state in loop.REQUEST_STATE.items():

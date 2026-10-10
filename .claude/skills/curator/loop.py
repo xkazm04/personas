@@ -1827,7 +1827,9 @@ def judge_conform(merge: dict | None, run_name: str, *, limited: bool, timed_out
     if tmp_left:
         return "blocked", "the worker left only a half-written run file (.tmp)"
     if timed_out:
-        return "blocked", f"timed out after {timeout_min} min with no run file"
+        # The ceiling is a symptom, not a cause: what the worker was doing when it fired is the
+        # tell, and nothing else keeps it once the process is gone (fault-signature-catalogue).
+        return "blocked", f"timed out after {timeout_min} min with no run file; the worker's last words: {out_tail}"
     return "blocked", f"exit {exit_code}, no run file; the worker's last words: {out_tail}"
 
 
@@ -1837,7 +1839,8 @@ def judge_serial(claim: dict, *, commits: int, limited: bool, timed_out: bool,
     if limited and commits == 0:
         return "release", "the worker hit the subscription's usage limit before committing anything"
     if timed_out:
-        return "blocked", f"timed out after {timeout_min} min; {commits} registry commit(s) since dispatch"
+        return "blocked", (f"timed out after {timeout_min} min; {commits} registry commit(s) since dispatch; "
+                           f"the worker's last words: {out_tail}")
     if exit_code not in (None, 0):
         return "blocked", f"exit {exit_code}; the worker's last words: {out_tail}"
     if commits > 0:
