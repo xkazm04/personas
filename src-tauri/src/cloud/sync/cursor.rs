@@ -117,3 +117,35 @@ pub fn resolve_device_id(pool: &DbPool) -> String {
     let _ = settings::set(pool, settings_keys::CLOUD_SYNC_DEVICE_ID, &new_id);
     new_id
 }
+
+/// The operator-set heartbeat name, if any (trimmed, never empty).
+pub fn get_device_name(pool: &DbPool) -> Option<String> {
+    settings::get(pool, settings_keys::CLOUD_SYNC_DEVICE_NAME)
+        .ok()
+        .flatten()
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+}
+
+/// Set the heartbeat name; `None` (or blank) clears it back to the platform
+/// label. The length bound is enforced by the settings validator.
+pub fn set_device_name(pool: &DbPool, name: Option<&str>) -> Result<(), AppError> {
+    match name.map(str::trim).filter(|n| !n.is_empty()) {
+        Some(n) => settings::set(pool, settings_keys::CLOUD_SYNC_DEVICE_NAME, n),
+        None => settings::delete(pool, settings_keys::CLOUD_SYNC_DEVICE_NAME).map(|_| ()),
+    }
+}
+
+/// What the heartbeat calls this device when the operator named nothing: the
+/// platform's product name. Never the hostname - that would be more data
+/// leaving the machine than the operator chose to send (PHASE2-SPEC 4.1).
+pub fn platform_label() -> &'static str {
+    match std::env::consts::OS {
+        "windows" => "Windows",
+        "macos" => "macOS",
+        "linux" => "Linux",
+        "android" => "Android",
+        "ios" => "iOS",
+        _ => "Desktop",
+    }
+}

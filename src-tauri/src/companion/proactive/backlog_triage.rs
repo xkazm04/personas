@@ -4,7 +4,7 @@
 //! dozen sensors. Deciding them one card at a time is the bottleneck the whole
 //! triage-unification effort exists to remove, so this module does what
 //! `execution_review` does for finished executions: ONE headless decision over
-//! a whole batch, on the micro tier (`model_routing::MICRO` — Sonnet@low),
+//! a whole batch, on the triage tier (`model_routing::TRIAGE` — Sonnet@low),
 //! returning a per-item accept/reject verdict with a reason.
 //!
 //! Three deliberate differences from `execution_review`:
@@ -320,9 +320,13 @@ pub async fn run_backlog_triage_batch(
     let memories = gather_memories(db, ideas);
     let prompt = build_backlog_triage_prompt(ideas, &memories, project_name);
 
-    let (blob, turn_id) =
-        crate::companion::athena_reaction::cli_text_tracked(prompt, user_db, "backlog_triage")
-            .await?;
+    let (blob, turn_id) = crate::companion::athena_reaction::cli_text_tracked_on(
+        prompt,
+        user_db,
+        "backlog_triage",
+        &crate::companion::model_routing::TRIAGE,
+    )
+    .await?;
 
     let Some(decision) = parse_backlog_triage(&blob) else {
         if let Some(tid) = &turn_id {

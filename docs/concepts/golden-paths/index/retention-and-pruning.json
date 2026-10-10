@@ -182,6 +182,15 @@
       "resolvedFrom": "basename",
       "verbatim": "settings_keys.rs"
     },
+    "src-tauri/engine/src/db_query.rs": {"count":1,"sections":[0],"lines":["2596"],"contexts":["`.rs` files are a guard at `db_query.rs:2596` that *rejects* `VACUUM INTO`, and"],"resolvedFrom":"basename","verbatim":"db_query.rs"},
+    "src-tauri/engine/src/project_tracking/subscription.rs": {
+      "count": 1,
+      "sections": [3],
+      "lines": ["437"],
+      "contexts": ["| `engine/background.rs` — `cleanup_tick` (`:2967`) | the one hourly home for scheduled retention. `CleanupSubscription::interval()` = 3600 s (`subscription.rs:437`) |"],
+      "resolvedFrom": "basename",
+      "verbatim": "subscription.rs"
+    },
     "src-tauri/src/commands/companion/consolidate.rs": {
       "count": 1,
       "sections": [7],
@@ -197,15 +206,6 @@
       "contexts": ["(`dev_tools_http.rs:88`), and 2 were test functions in `dev_tools_backlog_tests.rs`"],
       "resolvedFrom": "basename",
       "verbatim": "dev_tools_http.rs"
-    },
-    "src-tauri/src/engine/db_query.rs": {"count":1,"sections":[0],"lines":["2596"],"contexts":["`.rs` files are a guard at `db_query.rs:2596` that *rejects* `VACUUM INTO`, and"],"resolvedFrom":"basename","verbatim":"db_query.rs"},
-    "src-tauri/src/engine/project_tracking/subscription.rs": {
-      "count": 1,
-      "sections": [3],
-      "lines": ["437"],
-      "contexts": ["| `engine/background.rs` — `cleanup_tick` (`:2967`) | the one hourly home for scheduled retention. `CleanupSubscription::interval()` = 3600 s (`subscription.rs:437`) |"],
-      "resolvedFrom": "basename",
-      "verbatim": "subscription.rs"
     },
     "src-tauri/src/logging.rs": {"count":3,"sections":[0,7,8],"lines":["194","378"],"contexts":["(`logging.rs:194`) exists and is wired (`:118`) — but it matches only"],"resolvedFrom":"basename","verbatim":"logging.rs"},
     "src/features/agents/sub_settings/components/PersonaSettingsTab.tsx": {

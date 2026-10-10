@@ -439,3 +439,17 @@ fn an_invalid_roster_entry_falls_back_to_the_unbounded_default() {
         "only the base flag, never a roster-smuggled copy"
     );
 }
+
+#[test]
+fn superseded_model_in_a_stored_profile_spawns_on_its_successor() {
+    // Operator rule 2026-10-08: never Sonnet 4.6, Sonnet is always 5.5. A
+    // profile written before that (a DB row, a recipe, an import) still says 4-6.
+    let profile = ModelProfile {
+        model: Some("claude-sonnet-4-6".to_string()),
+        ..Default::default()
+    };
+    let args = build_cli_args(None, Some(&profile)).args;
+    let i = args.iter().position(|a| a == "--model").expect("--model");
+    assert_eq!(args[i + 1], model_ids::SONNET_CURRENT);
+    assert!(!args.iter().any(|a| a == "claude-sonnet-4-6"));
+}

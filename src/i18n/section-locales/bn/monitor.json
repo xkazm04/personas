@@ -227,6 +227,9 @@
   "grid_dock_collapse": "ডিসপ্যাচ কনসোল লুকান",
   "grid_fleet_exited": "এই সেশনটি শেষ হয়েছে — এর টার্মিনাল আর নেই।",
   "grid_fleet_kill": "সেশন বন্ধ করুন",
+  "terminal_asleep_label": "কেন এটি ঘুমিয়ে আছে",
+  "terminal_wake_failed": "এই সেশনটি জাগানো যাচ্ছে না",
+  "terminal_wake_failed_hint": "বোর্ড থেকে সরাতে সেশনটি বন্ধ করুন।",
   "grid_messages_empty": "এখনও কোনও চ্যানেল কার্যকলাপ নেই।",
   "grid_rail_loading_more": "আরও লোড হচ্ছে…",
   "grid_session_recap_ai_title": "সেশনের শিরোনাম",
@@ -615,6 +618,14 @@
   "orch_never_served": "কখনো পরিবেশিত হয়নি",
   "orch_refusal_budget": "মাসিক বাজেট খরচ হয়ে গেছে",
   "orch_refusal_concurrency": "মেশিন তার পার্সোনা সীমায় পৌঁছেছে",
+  "orch_refusal_headless": "টার্মিনালের App Master এই প্রকল্পটি পরিচালনা করছে",
+  "orch_headless_running": "Headless - চলছে",
+  "orch_headless_idle": "Headless - নিষ্ক্রিয়",
+  "orch_headless_stale": "Headless - পুরনো",
+  "orch_headless_hint": "এই প্রকল্পের App Master টার্মিনাল (/appmaster) থেকে চলছে। এর রিপোর্ট সাম্প্রতিক থাকা পর্যন্ত অ্যাপের ভেতরের master সরে থাকে।",
+  "orch_headless_next_wake": "পরবর্তী জাগরণ:",
+  "orch_headless_no_wake": "ঘোষণা করা হয়নি",
+  "orch_headless_reported": "শেষ রিপোর্ট:",
   "orch_refusal_daily_cap": "দৈনিক সীমা পৌঁছেছে",
   "orch_refusal_in_flight": "এখনও তার শেষ পাস চালাচ্ছে",
   "orch_refusal_interval_floor": "নিজের ব্যবধান না আসা পর্যন্ত বিশ্রামে",
@@ -1073,5 +1084,6 @@
   "dc_hub_row_open_aria": "খুলুন: {title}",
   "dc_hub_triage_all_none": "কিছুই অপেক্ষায় নেই",
   "dc_hub_triage_all_short": "সব",
-  "dc_hub_triage_all_walk_tip": "সবগুলো {count}টি ক্রমানুসারে দেখুন, সবচেয়ে জরুরি আগে"
+  "dc_hub_triage_all_walk_tip": "সবগুলো {count}টি ক্রমানুসারে দেখুন, সবচেয়ে জরুরি আগে",
+  "grid_rail_triage_modal_aria": "পর্যালোচনার বিবরণ"
 }

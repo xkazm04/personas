@@ -308,6 +308,8 @@ export const EventName = {
 
   // Referral (personas://ref/<code> deep link received from OS)
   REFERRAL_RECEIVED: 'referral-received',
+  PERSONA_LINK_OPENED: 'persona-link-opened',
+  EXECUTION_LINK_OPENED: 'execution-link-opened',
 
   // Cloud-app pairing request (personas://pair deep link or POST /pair/request)
   PAIRING_REQUESTED: 'pairing-requested',
@@ -317,6 +319,13 @@ export const EventName = {
 
   // Persona health (push-based summary refresh signal from backend)
   PERSONA_HEALTH_CHANGED: 'persona-health-changed',
+
+  // A paired phone's command (pause / resume / cancel) ran here with no prompt
+  REMOTE_COMMAND_APPLIED: 'remote-command-applied',
+
+  // Persona chat row changed (CDC on chat_messages / chat_session_context):
+  // a turn's reply, or a turn a paired phone started, landed
+  CHAT_CHANGED: 'chat-changed',
 
   // SLA reliability breach (published to the persona-event bus on the
   // execution-completion path; one enter-event + one recovery per episode)
@@ -524,7 +533,8 @@ export interface ReviewDispatchBlockedPayload {
 /** Manual review resolved (commands/design/reviews.rs ManualReviewResolvedEvent). */
 export interface ManualReviewResolvedPayload {
   review_id: string;
-  execution_id: string;
+  /** `null` for a review raised outside any run (the headless App Master's report approval). */
+  execution_id: string | null;
   persona_id: string;
   status: string;
   /** What the resolution taught the fleet (Phase 2 — visible learning). Null
@@ -1215,6 +1225,14 @@ export interface EventPayloadMap {
     code: string;
   };
 
+  // Navigation-only deep links (personas://persona/<id>, personas://execution/<id>)
+  [EventName.PERSONA_LINK_OPENED]: {
+    personaId: string;
+  };
+  [EventName.EXECUTION_LINK_OPENED]: {
+    executionId: string;
+  };
+
   // Cloud-app pairing request — emitted with the Rust `PendingPairingView`.
   [EventName.PAIRING_REQUESTED]: PendingPairingView;
 
@@ -1227,6 +1245,16 @@ export interface EventPayloadMap {
   // Persona health
   [EventName.PERSONA_HEALTH_CHANGED]: {
     persona_id: string;
+  };
+
+  // Paired-phone command applied locally (Rust RemoteCommandApplied, camelCase)
+  [EventName.REMOTE_COMMAND_APPLIED]: import('./bindings/RemoteCommandApplied').RemoteCommandApplied;
+
+  /** Same `CdcEvent` payload as `DEV_TOOLS_SHIP_CHANGED`; the open chat refetches. */
+  [EventName.CHAT_CHANGED]: {
+    action: 'insert' | 'update' | 'delete';
+    table: string;
+    rowid: number;
   };
 
   // SLA reliability breach (payload shape mirrors Rust SlaBreachEventPayload,

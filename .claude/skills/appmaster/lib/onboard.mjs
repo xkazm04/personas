@@ -2,7 +2,8 @@
 // app later through `/master onboard`. Reads the DB only to resolve the project's slug.
 
 import fs from 'node:fs';
-import { Refusal, briefPath, slugify } from './contract.mjs';
+import path from 'node:path';
+import { Refusal, SELF_REPO, briefPath, slugify } from './contract.mjs';
 import { saveBrief } from './store.mjs';
 import { resolveProject } from './dbread.mjs';
 
@@ -10,7 +11,9 @@ import { resolveProject } from './dbread.mjs';
 export const BRIEF_KEYS = [
   'project', 'product', 'stage', 'users', 'operatorRole', 'goals', 'charters', 'model', 'maxParallel', 'maxConcurrent',
   'boundaries', 'askFor', 'pacing', 'reportStyle', 'tone', 'digestCadence', 'digest', 'rung', 'extra', 'gates', 'models', 'headless',
+  'repos', 'baseBranch',
 ];
+const REPO_KEYS = ['key', 'root', 'baseBranch', 'lane', 'gates'];
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isStrMap = (v) => isObj(v) && Object.values(v).every((x) => typeof x === 'string' && x.trim());
@@ -47,6 +50,24 @@ export function validateBrief(brief) {
     }
   }
   if (brief.headless != null && typeof brief.headless !== 'boolean') errors.push('headless must be true or false');
+  if (brief.baseBranch != null && !(typeof brief.baseBranch === 'string' && brief.baseBranch.trim())) errors.push('baseBranch must name the branch the project\'s own runs are cut from and merge into');
+  if (brief.repos != null) {
+    if (!Array.isArray(brief.repos)) errors.push('repos must be an array of {key, root, baseBranch, lane?, gates?}');
+    else {
+      const seen = new Set();
+      brief.repos.forEach((r, i) => {
+        if (!isObj(r)) { errors.push(`repos[${i}] must be an object {key, root, baseBranch, lane?, gates?}`); return; }
+        for (const k of Object.keys(r)) if (!REPO_KEYS.includes(k)) warnings.push(`repos[${i}]: unknown key "${k}" (kept as written)`);
+        if (typeof r.key !== 'string' || !SLUG_RE.test(r.key) || r.key === SELF_REPO) errors.push(`repos[${i}].key must be a kebab-case key other than "${SELF_REPO}" (the project's own repo)`);
+        else if (seen.has(r.key)) errors.push(`repos[${i}].key "${r.key}" is listed twice`);
+        else seen.add(r.key);
+        if (typeof r.root !== 'string' || !path.isAbsolute(r.root)) errors.push(`repos[${i}].root must be the absolute path of that repo's checkout`);
+        if (typeof r.baseBranch !== 'string' || !r.baseBranch.trim()) errors.push(`repos[${i}].baseBranch must name the branch runs are cut from and merge into`);
+        if (r.lane != null && !(Number.isInteger(r.lane) && r.lane >= 1)) errors.push(`repos[${i}].lane must be a positive integer (live runs in that repo across all projects)`);
+        if (r.gates != null && !isStrMap(r.gates)) errors.push(`repos[${i}].gates must map a gate name (typecheck, lint, test) to a shell command`);
+      });
+    }
+  }
   for (const k of ['maxParallel', 'maxConcurrent']) if (brief[k] != null && !(Number.isInteger(brief[k]) && brief[k] >= 1)) errors.push(`${k} must be a positive integer`);
   return { ok: !errors.length, errors, warnings };
 }

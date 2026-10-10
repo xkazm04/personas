@@ -131,6 +131,11 @@ fn overlay(base: &LifecycleStepParams, p: Option<ProposedParams>) -> LifecycleSt
         pr_base: p.pr_base.or_else(|| base.pr_base.clone()),
         automerge_enabled: p.automerge_enabled.or(base.automerge_enabled),
         automerge_target: p.automerge_target.or_else(|| base.automerge_target.clone()),
+        // Measurement knobs are the operator's (Gate/Tests detail), never Athena's.
+        commands: base.commands.clone(),
+        coverage_green_pct: base.coverage_green_pct,
+        docs_clean_pct: base.docs_clean_pct,
+        done_rate_pct: base.done_rate_pct,
     }
 }
 

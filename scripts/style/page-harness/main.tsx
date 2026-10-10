@@ -13,6 +13,7 @@
 import '@/styles/globals.css';
 import { Component, StrictMode, Suspense, lazy, useEffect, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { MotionConfig } from 'framer-motion';
 import { installTape, type ReplayLog, type Tape } from './tapePlayer';
 
 interface HarnessState extends ReplayLog {
@@ -37,6 +38,11 @@ const themeId = params.get('theme') ?? 'dark-midnight';
 const textScale = params.get('textScale') ?? 'larger';
 // Unset = the store default ('low': 1.25 on dark, 0.82 "Dimmer" on light), as a fresh profile gets.
 const brightness = params.get('brightness');
+// `motion=reduce` turns on the in-app Appearance toggle (`<html data-motion="reduce">`).
+// `shoot.mjs --reduced-motion` passes it AND emulates the OS media query, which
+// the MotionConfig below honours the way App.tsx's does: both reduced-motion
+// signals, as a user with either setting gets them.
+const reduceMotion = params.get('motion') === 'reduce';
 
 const state: HarnessState = {
   module: moduleId,
@@ -115,7 +121,10 @@ async function loadTape(): Promise<Tape | null> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`tape fetch ${url} -> HTTP ${res.status}`);
   state.tapeSource = url;
-  return (await res.json()) as Tape;
+  // Kept on window like an injected tape, so a module's seed block
+  // (`__harness_seed`) reaches its `prepare` in a served page too.
+  window.__PAGE_HARNESS_TAPE__ = (await res.json()) as Tape;
+  return window.__PAGE_HARNESS_TAPE__;
 }
 
 async function boot(): Promise<void> {
@@ -143,6 +152,7 @@ async function boot(): Promise<void> {
   theme.setTextScale(textScale as Parameters<typeof theme.setTextScale>[0]);
   theme.setDensity(theme.density);
   if (brightness) theme.setBrightness(brightness as Parameters<typeof theme.setBrightness>[0]);
+  if (reduceMotion) theme.setReduceMotion(true);
 
   await getEnglishTranslationsAsync();
   await entry.prepare?.();
@@ -151,6 +161,7 @@ async function boot(): Promise<void> {
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
+      <MotionConfig reducedMotion="user">
       <Frame>
         <Boundary>
           <Suspense fallback={null}>
@@ -162,6 +173,7 @@ async function boot(): Promise<void> {
           </Suspense>
         </Boundary>
       </Frame>
+      </MotionConfig>
     </StrictMode>,
   );
 }

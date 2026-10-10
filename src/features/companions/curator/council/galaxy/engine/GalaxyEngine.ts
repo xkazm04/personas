@@ -400,8 +400,10 @@ export class GalaxyEngine {
       const stars = this.focus.registrySubjects
         .map((slug) => this.layout?.bySlug.get(slug))
         .filter((s): s is SubjectNode => Boolean(s));
-      const target = fitToSet(this.frameViewport(), stars);
-      if (target) this.flyTo(target, ms);
+      // A council whose stars the field does not hold is framed as the sky:
+      // without a flight the insets never ease in either, and the field
+      // would stay drawn under the chrome it was asked to clear.
+      this.flyTo(fitToSet(this.frameViewport(), stars) ?? this.frameOf(null), ms);
       return;
     }
     this.flyTo(this.frameOf(this.subject ?? this.category ?? this.domain), ms);
@@ -563,8 +565,8 @@ export class GalaxyEngine {
       } else if (domains.size === 1) {
         this.domain = [...domains][0] ?? null;
       }
-      const target = fitToSet(this.frameViewport(), stars);
-      if (target && fly) this.flyTo(target, FLIGHT_MS);
+      // No star in the field: the sky, as `reframe` does.
+      if (fly) this.flyTo(fitToSet(this.frameViewport(), stars) ?? this.frameOf(null), FLIGHT_MS);
       return;
     }
 

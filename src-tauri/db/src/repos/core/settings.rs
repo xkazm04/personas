@@ -337,6 +337,28 @@ mod tests {
         assert!(delete_operator_only(&pool, settings_keys::CLI_ENGINE).is_err());
     }
 
+    /// The pairing origin decides where the next QR's secret is sent, so the
+    /// generic writers refuse it exactly like the other operator-only keys.
+    #[test]
+    fn pairing_origin_refuses_the_generic_writers() {
+        let pool = init_test_db().unwrap();
+        let key = settings_keys::CLOUD_PAIRING_ORIGIN;
+        assert!(set(&pool, key, "https://evil.example").is_err());
+        assert!(delete(&pool, key).is_err());
+        assert_eq!(get(&pool, key).unwrap(), None);
+
+        set_operator_only(&pool, key, "https://desk.tail1234.ts.net").unwrap();
+        assert_eq!(
+            get(&pool, key).unwrap().as_deref(),
+            Some("https://desk.tail1234.ts.net")
+        );
+        assert!(set(&pool, key, "https://evil.example").is_err());
+        // Even the operator door stores only the normalised shape.
+        assert!(set_operator_only(&pool, key, "https://desk.tail1234.ts.net/").is_err());
+        assert!(set_operator_only(&pool, key, "http://desk.tail1234.ts.net").is_err());
+        assert!(delete_operator_only(&pool, key).unwrap());
+    }
+
     #[test]
     fn test_get_set_delete() {
         let pool = init_test_db().unwrap();

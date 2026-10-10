@@ -8,7 +8,7 @@ stack: rust
 # Gate state machines in the build-session interviewer (Rust)
 
 The repo's cleanest specimen of "the gate lives in the substrate, not the
-prompt" is `src-tauri/src/engine/build_session/gates.rs`. The build prompt's
+prompt" is `src-tauri/engine/src/build_session/gates.rs`. The build prompt's
 Rule 16/17 instructs the LLM to ask a clarifying question before resolving
 any gated capability field — and the module header states the measured
 reality: "In practice Sonnet 4.x treats the rule as advisory and jumps to

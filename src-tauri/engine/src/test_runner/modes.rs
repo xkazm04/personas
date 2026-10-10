@@ -23,9 +23,8 @@ use super::{
     build_arena_summary, build_consensus_summary, build_draft_generation_prompt,
     build_keyed_summary, compute_agreement_rate, emit_lab_status, make_common_result_fields,
     parse_draft_from_output, resolve_active_version, run_lab_loop, spawn_cli_and_collect,
-    LabCallbacks, LabVariant, TestModelConfig, TestScenario, LAB_MODEL,
+    LabCallbacks, LabVariant, TestModelConfig, TestScenario, LAB_CLASS,
 };
-use crate::prompt;
 
 // -- Main entry point -------------------------------------------
 
@@ -584,11 +583,12 @@ pub async fn run_matrix_test(
     emit_lab_status(&app, "lab-matrix-status", &run_id, "drafting", None);
 
     let draft_prompt_text = build_draft_generation_prompt(persona, &user_instruction, None);
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push(LAB_MODEL.to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
+    let route = LAB_CLASS.route();
+    let cli_args = crate::cli_process::headless_claude_args(
+        route.model,
+        route.effort,
+        &["--max-turns".to_string(), "1".to_string()],
+    );
 
     let draft_output = match spawn_cli_and_collect(
         &cli_args,
@@ -597,7 +597,7 @@ pub async fn run_matrix_test(
         personas_db::repos::llm_spend::SpendCtx {
             source: "evaluator",
             trigger_kind: "lab_draft",
-            model: Some(LAB_MODEL),
+            model: Some(route.model),
             persona_id: Some(persona.id.as_str()),
             project_id: None,
         },

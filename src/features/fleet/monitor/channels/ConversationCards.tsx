@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Check, ChevronDown, Pause, Play, Scale, Wand2, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Collapse } from '@/features/shared/components/display/Collapse';
@@ -118,21 +118,31 @@ export const AssignmentCard = memo(function AssignmentCard({
   const live = label === 'step_running' || label === 'created';
   const { steps } = useAssignmentSteps(assignmentId, live);
 
-  // Roll the steps up into one status for the card. The channel's event label
-  // ('step_running') is not a step status ('running'), so stepMeta can't take it.
-  const rollup =
-    steps.find((s) => s.status === 'failed')?.status ??
-    steps.find((s) => s.status === 'awaiting_review')?.status ??
-    steps.find((s) => s.status === 'running')?.status ??
-    (steps.length > 0 && steps.every((s) => s.status === 'done' || s.status === 'skipped') ? 'done' : 'pending');
-  const meta = stepMeta(rollup);
   const pause = usePipelineStore((s) => s.pauseAssignment);
   const resume = usePipelineStore((s) => s.resumeAssignment);
 
+  // Four passes over the step list, re-run on every render until this memo:
+  // the card re-renders for reasons that have nothing to do with the steps
+  // (a toggle elsewhere, a poll on the parent), and `personaIds` being a fresh
+  // array also defeated `PersonaStack`'s own prop comparison every time.
+  //
+  // The rollup: the channel's event label ('step_running') is not a step
+  // status ('running'), so stepMeta can't take it — it has to be derived.
+  const { meta, personaIds, rework, done } = useMemo(() => {
+    const rollup =
+      steps.find((s) => s.status === 'failed')?.status ??
+      steps.find((s) => s.status === 'awaiting_review')?.status ??
+      steps.find((s) => s.status === 'running')?.status ??
+      (steps.length > 0 && steps.every((s) => s.status === 'done' || s.status === 'skipped') ? 'done' : 'pending');
+    return {
+      meta: stepMeta(rollup),
+      personaIds: steps.map((s) => s.assignedPersonaId),
+      rework: steps.reduce((n, s) => n + (s.retryCount ?? 0), 0),
+      done: steps.filter((s) => s.status === 'done').length,
+    };
+  }, [steps]);
+
   const title = items[0]?.body ?? t.monitor.conv_card_assignment;
-  const personaIds = steps.map((s) => s.assignedPersonaId);
-  const rework = steps.reduce((n, s) => n + (s.retryCount ?? 0), 0);
-  const done = steps.filter((s) => s.status === 'done').length;
 
   return (
     <div className="my-2 rounded-card border border-status-info/25 bg-status-info/[0.06] overflow-hidden">
@@ -146,7 +156,7 @@ export const AssignmentCard = memo(function AssignmentCard({
               {tx(t.monitor.conv_steps, { done, total: steps.length })}
             </span>
             {rework > 0 && (
-              <span className="typo-caption text-amber-300">{tx(t.monitor.conv_rework, { count: rework })}</span>
+              <span className="typo-caption text-status-warning">{tx(t.monitor.conv_rework, { count: rework })}</span>
             )}
             <span className="typo-caption text-foreground opacity-35">
               <RelativeTime timestamp={items[items.length - 1]!.at} />
@@ -175,7 +185,7 @@ export const AssignmentCard = memo(function AssignmentCard({
                           </span>
                         )}
                         {(s.retryCount ?? 0) > 0 && (
-                          <span className="typo-caption text-amber-300 flex-shrink-0">×{(s.retryCount ?? 0) + 1}</span>
+                          <span className="typo-caption text-status-warning flex-shrink-0">×{(s.retryCount ?? 0) + 1}</span>
                         )}
                       </span>
                       {s.outputSummary && (
@@ -217,7 +227,7 @@ const DELIB_STATUS: Record<string, string> = {
   paused: 'text-foreground',
   resolved: 'text-status-success',
   aborted: 'text-status-error',
-  awaiting_action: 'text-amber-300',
+  awaiting_action: 'text-status-warning',
 };
 
 /** memo (C3): same contract as AssignmentCard — keyed callbacks, stable props. */
@@ -297,12 +307,17 @@ export const DeliberationCard = memo(function DeliberationCard({
 
 /* ── PROPOSAL — the composer's decomposed goal, awaiting Confirm ───────────── */
 
-export function ProposalCard({
+/** memo (C3): it was the one card in this file that was NOT memoized, and it
+ *  took two inline lambdas minted per render by its one call site — so it
+ *  re-rendered on every poll even though a proposal is local-only state that a
+ *  poll cannot touch. The callbacks are KEYED now (they take the proposal /
+ *  its goal) so the caller can hold them stable. */
+export const ProposalCard = memo(function ProposalCard({
   proposal, onConfirm, onDismiss,
 }: {
   proposal: AssignProposal;
-  onConfirm: () => void;
-  onDismiss: () => void;
+  onConfirm: (proposal: AssignProposal) => void;
+  onDismiss: (goal: string) => void;
 }) {
   const { t, tx } = useTranslation();
   const personaIndex = usePersonaIndex();
@@ -350,20 +365,57 @@ export function ProposalCard({
         <div className="px-3 pb-2 flex items-center gap-1.5">
           <button
             type="button"
-            onClick={onConfirm}
+            onClick={() => onConfirm(proposal)}
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-interactive border border-status-success/30 bg-status-success/10 typo-caption text-status-success hover:bg-status-success/20 transition-colors"
           >
             <Check className="w-3 h-3" /> {t.monitor.conv_proposal_run}
           </button>
           <button
             type="button"
-            onClick={onDismiss}
+            onClick={() => onDismiss(proposal.goal)}
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-interactive border border-border typo-caption text-foreground hover:bg-secondary/40 transition-colors"
           >
             <X className="w-3 h-3" /> {t.monitor.conv_proposal_drop}
           </button>
         </div>
       )}
+    </div>
+  );
+});
+
+/* ── GHOSTS — what a channel shows while its FIRST page is in flight ───────── */
+
+/** Deterministic bubble widths + sides, so the ghost reads as a conversation
+ *  rather than a barcode (overview-loading §C). */
+const GHOST_BUBBLES: Array<{ w: string; mine: boolean; h: number }> = [
+  { w: 'w-56', mine: false, h: 44 },
+  { w: 'w-40', mine: true, h: 32 },
+  { w: 'w-72', mine: false, h: 60 },
+  { w: 'w-48', mine: true, h: 32 },
+  { w: 'w-64', mine: false, h: 44 },
+  { w: 'w-36', mine: true, h: 32 },
+];
+
+/**
+ * @catalog ConversationGhostRows — calm, geometry-matched chat placeholders for a channel whose first page has not landed yet.
+ *
+ * Law 3 of `docs/design/overview-loading.md`: the delay lives on the
+ * placeholder. Each bubble enters with `animate-fade-in` behind an
+ * `animation-delay` starting at 120ms, so a warm channel paints none of this —
+ * it is literally invisible until the fetch has been slow enough to deserve a
+ * placeholder. No `animate-pulse`, no spinner, `aria-hidden`.
+ */
+export function ConversationGhostRows({ count = GHOST_BUBBLES.length }: { count?: number }) {
+  return (
+    <div aria-hidden data-testid="conversation-ghosts" className="flex-1 min-h-0 px-3 py-2 flex flex-col justify-end gap-2 overflow-hidden">
+      {GHOST_BUBBLES.slice(0, count).map((g, i) => (
+        <div key={i} className={`flex ${g.mine ? 'justify-end' : 'justify-start'}`}>
+          <div
+            className={`${g.w} rounded-card bg-primary/[0.06] animate-fade-in`}
+            style={{ height: g.h, animationDelay: `${120 + i * 35}ms` }}
+          />
+        </div>
+      ))}
     </div>
   );
 }

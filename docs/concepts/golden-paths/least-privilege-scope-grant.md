@@ -17,7 +17,7 @@
 > **This leaf owns the ratio.**
 >
 > **Sweep.** Read end to end: `src-tauri/src/ipc_auth.rs` (1,214 lines, both allowlists and the
-> drift test), `src-tauri/macros/src/lib.rs`, `src-tauri/src/engine/credential_broker.rs`,
+> drift test), `src-tauri/macros/src/lib.rs`, `src-tauri/engine/src/credential_broker.rs`,
 > `engine/management_api.rs:261-420`, `commands/credentials/oauth.rs:388-800`,
 > `commands/fleet/{commands,pty,external,headless}.rs`, `engine/prompt/cli_args.rs`,
 > `db/src/repos/core/settings.rs`, `db/src/settings_keys.rs:1154-1250`,
@@ -448,9 +448,9 @@ what was used — including (b), because you cannot compute a ceiling you have n
 
 | primitive | what it gives you |
 |---|---|
-| `src-tauri/src/engine/credential_broker.rs:93-116` `authorize_credential_use` | **The one true least-privilege primitive in the tree.** A pure, default-deny scope intersection: exact match, *"no substring, no case folding"*, and *"Empty scope lists — including the fail-closed empty vec that `parsed_scopes` returns for a corrupt column — authorize nothing."* This is P3 and P4 in nine lines. |
-| `src-tauri/src/engine/credential_broker.rs:50-69` `BrokerGrant` | **The answer to P1, and the most important primitive in this document.** A closed enum returned by the authorizer naming *which* grant permitted the use — *"recorded in the audit detail so 'who could do what, and why' is reconstructible from the ledger."* Copy the idea before you copy the code: **an authorization function should return the reason, not a boolean.** 0 rows (§7 D1). |
-| `src-tauri/src/engine/credential_broker.rs:40-46`, `:118-124` `clamp_handle_ttl` | *"'Short-lived' is a security property, not a suggestion; the mint path clamps, never trusts."* The narrowing that exists. |
+| `src-tauri/engine/src/credential_broker.rs:93-116` `authorize_credential_use` | **The one true least-privilege primitive in the tree.** A pure, default-deny scope intersection: exact match, *"no substring, no case folding"*, and *"Empty scope lists — including the fail-closed empty vec that `parsed_scopes` returns for a corrupt column — authorize nothing."* This is P3 and P4 in nine lines. |
+| `src-tauri/engine/src/credential_broker.rs:50-69` `BrokerGrant` | **The answer to P1, and the most important primitive in this document.** A closed enum returned by the authorizer naming *which* grant permitted the use — *"recorded in the audit detail so 'who could do what, and why' is reconstructible from the ledger."* Copy the idea before you copy the code: **an authorization function should return the reason, not a boolean.** 0 rows (§7 D1). |
+| `src-tauri/engine/src/credential_broker.rs:40-46`, `:118-124` `clamp_handle_ttl` | *"'Short-lived' is a security property, not a suggestion; the mint path clamps, never trusts."* The narrowing that exists. |
 | `src-tauri/src/engine/management_api.rs:335-394` `authorize(method, path, scopes)` | **Object-level capability, and the best authorization design in the repo** (also named by [ownership-verification](./ownership-verification.md) §3). `/api/proxy/{id}` accepts broad `proxy`, the exact `proxy:credential:<id>`, or any `cred:<connector>:use` — then re-checks default-deny once the row is loaded, with the reason written at `:361-366`. **The grant names the object.** Its one defect is `:386-392` (§7 D6). |
 | `src-tauri/src/engine/management_api.rs:348-356` | **The anti-escalation rule, written down:** *"Minting consumer identities is a trust operation: broad `proxy` only. A derived handle must never be able to mint further handles."* Copy the sentence as much as the branch. |
 | `src-tauri/db/src/repos/core/settings.rs:11-61` `audit_setting_change` | **P9, correct, and the fleet's only example.** The widening ledger at the repository layer *"so INTERNAL Rust callers … are audited too — not only the Tauri command surface"*, with the no-op skip (`:29-31`), a closed `audit_category` allowlist, and structural redaction for known-secret keys (`:44-48`). |
@@ -458,7 +458,7 @@ what was used — including (b), because you cannot compute a ceiling you have n
 | `src-tauri/src/ipc_auth.rs:1149-1211` the drift test | **The right instrument in the wrong suite.** It asserts `found.len() > 150` *before* asserting the result — *"the source walk is broken, not the codebase suddenly clean"* — which is the fail-loud discipline `golden-path-contract.md` §9 demands, done properly. §9 moves it, it does not replace it. |
 | `src-tauri/src/ipc_auth.rs:117-127`, `:245-252`, `:396-401` | **Allowlist entries with a written reason.** `PRIVILEGED_COMMANDS`'s 184 entries sit under **43** comment headers; **28 of those headers state what authority the commands confer** (*"unlinks a file from disk"*, *"runs an unscoped `UPDATE personas SET icon = ''`"*, *"a second call on a `.trash/` path hard-deletes"*), covering **110** entries. This is what (f) looks like, and — with §6's finding that the two siblings who wrote their reasoning down are the two who got it right — it is the corpus's best evidence that the sentence is the control. |
 | `src-tauri/src/engine/desktop_security.rs:326-351` `is_fully_approved` / `pending_capabilities` | **The re-consent diff** — what is still unapproved for a manifest. Named by [automated-credential-provisioning](./automated-credential-provisioning.md) §7.E; still 0 consumers. |
-| `src-tauri/src/engine/db_query.rs:637` `connector_capability(service_type)` | **Honest capability advertising** — `FullSql` / `SelectSubset` / `KeyValue` / `IntrospectionOnly`, kept *"immediately next to the `execute_query` dispatch … so the advertised capability and the actual execution behavior can never silently drift."* The pattern §7 D3 needs and does not have. |
+| `src-tauri/engine/src/db_query.rs:637` `connector_capability(service_type)` | **Honest capability advertising** — `FullSql` / `SelectSubset` / `KeyValue` / `IntrospectionOnly`, kept *"immediately next to the `execute_query` dispatch … so the advertised capability and the actual execution behavior can never silently drift."* The pattern §7 D3 needs and does not have. |
 | `src-tauri/src/companion/jobs/operations_views.rs:27` `run_view` | **The grant that names exactly what is used**: 7 named views, clamped params, no string. Owned by [sql-console](./sql-console.md); named here because it is the only place in the product where the asked set and the used set are the same set by construction. |
 | `scripts/check-command-contract.mjs` | The repo's only locally-enforced generated-artifact gate, and 90 % of §9's instrument: it already parses `lib.rs`'s handler block and walks every `.rs` file for `#[tauri::command]`. |
 
@@ -589,7 +589,7 @@ commands is a decision or an accumulation.**
 
 ## 6. Evidence
 
-**The ONE site to copy: `src-tauri/src/engine/credential_broker.rs:93-116`.**
+**The ONE site to copy: `src-tauri/engine/src/credential_broker.rs:93-116`.**
 
 ```rust
 /// Default-deny scope intersection: may a caller key with `scopes` use the

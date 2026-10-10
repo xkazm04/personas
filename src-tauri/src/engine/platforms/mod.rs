@@ -1,4 +1,4 @@
 pub mod deploy;
-pub mod github;
-pub mod n8n;
-pub mod zapier;
+pub use personas_engine::platforms::github;
+pub use personas_engine::platforms::n8n;
+pub use personas_engine::platforms::zapier;

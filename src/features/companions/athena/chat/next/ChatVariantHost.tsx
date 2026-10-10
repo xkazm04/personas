@@ -1,18 +1,15 @@
 /**
- * ChatVariantHost — renders the chat prototype picked in the switcher. Spread
- * fills `VariantFrame`'s slots (`frame/slots.ts`); Filament owns its own layer
- * (`frame/variants/filament/FilamentFrame.tsx`) because its pieces sit on the
- * window's bezel rather than inside VariantFrame's inset grid. Owner kept
- * Spread and Current on 2026-09-23 and picked the Oracle card body on
- * 2026-09-24; Filament is the 2026-10-03 contest winner being ported.
- * TODO(prototype, 2026-09-22): consolidate the Athena chat switcher.
+ * ChatVariantHost — renders the chat variant picked in the switcher.
+ *
+ * Fusion (`frame/variants/fusion/index.tsx`) is the only variant that owns its
+ * own layer over the app; Current renders through the classic panel and never
+ * reaches this host. Spread, R5 · A / B / C and Filament were retired on
+ * 2026-10-07 (see `ChatVariantTabs`).
  */
 
 import type { AthenaChatEngine } from '../athenaChatEngine';
 import type { ChatVariant } from './ChatVariantTabs';
-import { VariantFrame } from './frame/VariantFrame';
-import { HALO_C_SLOTS } from './frame/variants/c';
-import { FilamentFrame } from './frame/variants/filament/FilamentFrame';
+import { FusionFrame } from './frame/variants/fusion';
 
 export function ChatVariantHost({
   variant,
@@ -25,6 +22,12 @@ export function ChatVariantHost({
 }) {
   // Keyed by variant so switching tabs resets the layer (expanded, open
   // decision) instead of carrying one variant's state into another's stage.
-  if (variant === 'filament') return <FilamentFrame key={variant} engine={engine} lifted={lifted} />;
-  return <VariantFrame key={variant} engine={engine} lifted={lifted} slots={HALO_C_SLOTS} />;
+  switch (variant) {
+    case 'fusion':
+      return <FusionFrame key={variant} engine={engine} lifted={lifted} />;
+    default: {
+      const unreachable: never = variant;
+      return unreachable;
+    }
+  }
 }

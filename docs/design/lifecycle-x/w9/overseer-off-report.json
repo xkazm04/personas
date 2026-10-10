@@ -1,0 +1,111 @@
+{
+  "module": "plugins/lifecycle/overseer-off",
+  "kit": null,
+  "query": null,
+  "reducedMotion": false,
+  "steps": null,
+  "label": "overseer-off",
+  "createdAt": "2026-10-09T07:24:18.492Z",
+  "browser": "153.0.8010.12",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 6,
+    "note": "Synthetic: the collar with the Overseer switched off."
+  },
+  "ok": true,
+  "unknownIpcCommands": [
+    "dev_tools_workspace_set_active"
+  ],
+  "shots": [
+    {
+      "file": "overseer-off-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1
+      },
+      "stable": true,
+      "textLength": 1278,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Send again to Overseer The Overseer is off Auto-measure and his items ",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "overseer-off-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1
+      },
+      "stable": true,
+      "textLength": 1483,
+      "textSample": "Atlas Web Solo practice, default · Measured 30 min. ago on a1b2c3d, up to date with main All projects / Atlas Web no repo Measure Watched Send again to Overseer The Overseer is off Auto-measure and hi",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import { resolveReviewSeverity, parseSuggestedActions, detectAutoResolution } fr
 import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { AutoResolvedBadge } from './AutoResolvedBadge';
 import { SeverityIndicator, ContextDataPreview } from './ReviewListItem';
+import { ReviewReportLink } from './ReviewReportLink';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { ReviewMessage } from '@/lib/bindings/ReviewMessage';
@@ -153,15 +154,18 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
               </div>
             </div>
           </div>
-          <button
-            onClick={() => {
-              useSystemStore.getState().setSidebarSection('overview');
-            }}
-            className="inline-flex items-center gap-1 typo-caption text-blue-400/70 hover:text-blue-400 transition-colors"
-            title={review.execution_id ? `Execution ${review.execution_id.slice(0, 8)}` : 'View executions'}
-          >
-            <ExternalLink className="w-3 h-3" /> {t.overview.review.execution_link}
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <ReviewReportLink contextData={review.context_data} />
+            <button
+              onClick={() => {
+                useSystemStore.getState().setSidebarSection('overview');
+              }}
+              className="inline-flex items-center gap-1 typo-caption text-blue-400/70 hover:text-blue-400 transition-colors"
+              title={review.execution_id ? `Execution ${review.execution_id.slice(0, 8)}` : 'View executions'}
+            >
+              <ExternalLink className="w-3 h-3" /> {t.overview.review.execution_link}
+            </button>
+          </div>
         </div>
       </div>
 

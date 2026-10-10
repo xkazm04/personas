@@ -145,3 +145,61 @@ range (priority is 1..5); `404` names the recipe slugs nobody has seeded, and no
 when it fires. Partial outcomes are reported, never rounded up — read `notes` and `manifestPath`
 before treating an adoption as complete. The same operation is the `adopt_app_master` Tauri
 command; the code is `src-tauri/src/commands/infrastructure/app_master_adopt.rs`.
+
+## Headless App Master doors
+
+A headless App Master (`/appmaster`, see
+[`../architecture/headless-app-master.md`](../architecture/headless-app-master.md)) never writes
+`personas.db`: it queues every app-owned write in its outbox and replays it through these routes when
+the app is up. Same handshake as above. Bodies are camelCase and an absent optional key means "not set"
+(never send `null` placeholders). Statuses: `400` a malformed payload or a value outside its
+vocabulary, `404` an id or name that resolves to nothing, `409` things that exist but do not belong
+together, `422` a council run the door read and refused. Code: `headless_doors.rs`,
+`headless_report.rs`.
+
+```bash
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/milestones" -d '{"projectId":"<id>","name":"Ten masters","goal":"...","targetDate":"2026-10-31"}'
+#   -> { milestoneId }. Born planned (cutting it is the operator's act). 404 project, 400 empty name.
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/goals" -d '{"projectId":"<id>","title":"...","description":"...","milestoneId":"<mid>"}'
+#   -> { goalId }. Optional targetDate, parentGoalId, milestoneId. With milestoneId the goal is bound
+#   into that milestone (item_kind goal, bucket core); a milestone or parent goal of ANOTHER project is
+#   a 409 and nothing is written.
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/projects/<id>/workspace" -d '{"workspaceName":"Core"}'
+#   -> { workspaceId } (null when cleared). workspaceId OR workspaceName, or neither to clear. A name
+#   must match an existing workspace exactly: 404 when none does (this door never creates one), 409
+#   when two share it. Both keys, or a blank one, is a 400.
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/reports" -d '{
+  "projectId":"<id>", "title":"Checkout ships", "content":"## What changed\n...",
+  "attachments":[{"path":"C:/repo/shots/after.png","caption":"after the fix"}],
+  "approval":{"title":"Ship checkout?","description":"...","severity":"high"} }'
+#   -> { reportId, reviewId? }. See below.
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/council/ingest" -d '{"projectId":"<id>","runDir":"C:/.../headless/council/2026-10-07-checkout-r1"}'
+#   -> the dev_tools_council_ingest summary { projectId, runsIngested, runsSkipped, subjectsCreated, refused }.
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/use-cases/<use_case_id>/tier" -d '{"tier":"major"}'
+#   -> { useCaseId, tier }. major | standard; 400 otherwise, 404 an unknown feature.
+```
+
+**Reports.** `personaId` defaults to the project's App Master persona (409 when the project has none
+and none is named). The report is stored as markdown with
+`metadata = {"projectId","source":"headless-app-master","attachments":[{"path","caption"}],"attachmentsCleaned":false}`.
+Each attachment must be an existing file under the `~/.personas` tree or a registered project root, at
+most 12 files and 8 MB each, png/jpg/jpeg/gif/webp/mp4/webm/pdf/md only; it is COPIED to
+`<app data dir>/reports/<reportId>/NN-<name>` (the directory the database lives in, which the Reports
+UI can load through the asset protocol) and the copy's path is what the metadata records. An
+`approval` raises a pending manual review for the same persona (severity `info` by default, one of
+`info|low|medium|high|warning|critical`) with `context_data = {"reportId"}` and no execution behind it
+(migration `e60_review_execution_optional`). When that review is decided - by any path, or by the
+stale-review sweep - the copies directory is deleted and the metadata gains `attachmentsCleaned: true`
+and `cleanedAt`. Everything is validated before the first write and a later failure undoes the report,
+so a replayed entry finds the whole report or nothing; a replay of one that already landed returns the
+same `reportId` and `reviewId`.
+
+**Council ingest.** `runDir` must sit under the project's own `.personas/council/runs/`, or under the
+headless App Master's durable copy for THIS project:
+`<personas checkout>/.claude/master/<slug>/headless/council/<runDirName>/`, where `<slug>` is the
+project root's last path segment. Nothing broader is accepted. Every other check of the door applies to
+both (1 MiB cap, the slug must be a feature of the project, the arithmetic is recomputed). A run read
+and refused is a `422` whose body is the summary with the reason in `refused`; a run already ingested
+is a `200` with `runsSkipped: 1`. Results carry `mode` (`full` | `lite`; absent = full) since registry
+council 0.4.0, rounds are counted per mode (migration `e61_council_run_mode`), a lite run never
+supersedes a full one in the subject's state, and the human gate decides only a full `ready` run.

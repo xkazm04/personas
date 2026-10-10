@@ -20,19 +20,26 @@
 //     reruns on TAURI_CONFIG, which `tauri dev` sets and this build does not) and
 //     that costs one incremental app_lib compile on the next launch;
 //   - uses the SAME --features as the app launch it precedes, so dependencies
-//     compiled for one are reused by the other;
+//     compiled for one are reused by the other. DO NOT narrow this to "what the
+//     sidecar needs": a different feature set forks cargo's feature resolution
+//     and buys a second full compile of the dependency graph instead of reusing
+//     the app's artifacts. The lite/full choice moves both at once, from
+//     package.json's pretauri:dev* hooks;
 //   - respects CARGO_TARGET_DIR (a worktree sharing the main target);
 //   - runs synchronously, before the app's cargo, since two cargo processes at
-//     once on Windows is the memory failure this repo keeps measuring;
+//     once on Windows is the memory failure this repo keeps measuring, and goes
+//     through scripts/build/cargo-run.mjs so the throttle (below-normal
+//     priority, cores-2 jobs) and the one-cargo-at-a-time queue apply here too;
 //   - never blocks a launch: a failed build (for instance the exe is held open
 //     by a live run) prints one warning and exits 0.
 //
 // Env: PERSONAS_MCP_SIDECAR=skip to skip, PERSONAS_MCP_SIDECAR=force to rebuild.
 
-import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { runCargo } from '../build/cargo-run.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const log = (m) => console.log(`[mcp-sidecar] ${m}`);
@@ -74,17 +81,28 @@ export function ensureMcpSidecar(features) {
     return true;
   }
   log(`${exeMtime === 0 ? 'missing' : 'stale'}: building ${path.relative(ROOT, exe)} (features: ${features || 'none'})`);
-  // One command string under a shell (the tauri-dev-test.mjs precedent: Node >=20
-  // on Windows needs the shell to resolve cargo shims, and an args array plus
-  // shell is deprecated). `features` is refused unless it is a plain list.
+  // `features` is still refused unless it is a plain list. runCargo spawns under
+  // a shell on Windows (Node >=20 needs one to resolve the cargo shim), so this
+  // string reaches a command line and the validation is a security boundary, not
+  // tidiness. The manifest path is kept RELATIVE for the same reason: `cwd` is
+  // passed as an option and is never quoted, so a repo root containing a space
+  // cannot break the argv the shell reassembles.
   if (features && !/^[A-Za-z0-9_,-]+$/.test(features)) {
     log(`refusing features "${features}": expected a comma-separated list of names`);
     return false;
   }
-  const command = `cargo build --manifest-path src-tauri/Cargo.toml --bin personas-mcp${features ? ` --features ${features}` : ''}`;
-  const r = spawnSync(command, { cwd: ROOT, stdio: 'inherit', shell: true });
-  if (r.status !== 0) {
-    log(`WARNING: cargo build of personas-mcp failed (exit ${r.status ?? r.error?.message}); runs in this launch will have no personas MCP tools`);
+  const status = runCargo({
+    args: [
+      'build',
+      '--manifest-path', 'src-tauri/Cargo.toml',
+      '--bin', 'personas-mcp',
+      ...(features ? ['--features', features] : []),
+    ],
+    cwd: ROOT,
+    label: 'sidecar',
+  });
+  if (status !== 0) {
+    log(`WARNING: cargo build of personas-mcp failed (exit ${status}); runs in this launch will have no personas MCP tools`);
     return false;
   }
   log('built');

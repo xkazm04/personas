@@ -1,0 +1,151 @@
+{
+  "family": "kb-extract",
+  "source": "src-tauri/src/engine/kb_extract.rs:167-203 (extract_document prompt, pass 2), schema rendering render_schema_for_prompt at :409-420, wire types ExtractionResponse/ExtractedRow at :424-440, EXTRACTION_MODEL at :30, 180s timeout at :189",
+  "notes": "Pass 2 (per-document extraction) is lifted, not pass 1 (schema inference): pass 2 has a fixed, checkable answer; pass 1's 'good schema' is a judgement. Facts are matched against the serialized rows after lowercasing and removing whitespace, so '450 mm' == '450mm'. `facts[].any` = alternatives, any one counts. `absentFields`: schema fields the document does NOT state - the prompt says 'omit fields not stated', so a non-empty value there is an invented fact. `absentStrings`: tempting values that are not in the document at all. `rowCounts`: exact count of rows per entityType.",
+  "tasks": [
+    {
+      "id": "kb-01-footings",
+      "difficulty": "easy",
+      "title": "Foundation plan S-101 rev C",
+      "schema": [
+        { "entityType": "footing", "description": "an isolated or strip concrete footing", "fields": [
+          { "name": "mark", "description": "the footing mark/label" },
+          { "name": "width_mm", "description": "plan width in millimetres" },
+          { "name": "depth_mm", "description": "depth in millimetres" },
+          { "name": "concrete_grade", "description": "concrete strength class" },
+          { "name": "supplier", "description": "concrete supplier name" }
+        ] }
+      ],
+      "text": "[page 1]\nFOUNDATION PLAN S-101 rev C. General notes: all concrete to be C30/37 unless noted otherwise. Cover 50 mm.\n[page 2]\nFooting schedule.\nF1: pad footing 1200 x 1200, depth 450 mm.\nF2: pad footing 1800 x 1800, depth 600 mm, concrete C35/45 (heavier column load).\nF3: strip footing 600 wide, depth 400 mm.\nGrid lines A-D are at 6.0 m centres.",
+      "facts": [
+        { "label": "F1", "any": ["f1"] },
+        { "label": "F2", "any": ["f2"] },
+        { "label": "F3", "any": ["f3"] },
+        { "label": "F2 grade", "any": ["c35/45"] },
+        { "label": "F1 depth", "any": ["450"] },
+        { "label": "F2 width", "any": ["1800"] },
+        { "label": "F3 depth", "any": ["400"] }
+      ],
+      "absentFields": ["supplier"],
+      "absentStrings": ["c25/30", "c40/50"],
+      "rowCounts": { "footing": 3 },
+      "good": "```json\n{\"rows\":[{\"entityType\":\"footing\",\"entityKey\":\"F1 footing\",\"attributes\":{\"mark\":\"F1\",\"width_mm\":1200,\"depth_mm\":450,\"concrete_grade\":\"C30/37\"},\"page\":2,\"confidence\":0.9},{\"entityType\":\"footing\",\"entityKey\":\"F2 footing\",\"attributes\":{\"mark\":\"F2\",\"width_mm\":1800,\"depth_mm\":600,\"concrete_grade\":\"C35/45\"},\"page\":2,\"confidence\":1.0},{\"entityType\":\"footing\",\"entityKey\":\"F3 footing\",\"attributes\":{\"mark\":\"F3\",\"width_mm\":600,\"depth_mm\":400,\"concrete_grade\":\"C30/37\"},\"page\":2,\"confidence\":0.9}]}\n```",
+      "bad": "```json\n{\"rows\":[{\"entityType\":\"footing\",\"entityKey\":\"F1 footing\",\"attributes\":{\"mark\":\"F1\",\"width_mm\":1200,\"depth_mm\":450,\"concrete_grade\":\"C30/37\",\"supplier\":\"Cemex\"},\"page\":2,\"confidence\":0.9},{\"entityType\":\"footing\",\"entityKey\":\"F2 footing\",\"attributes\":{\"mark\":\"F2\",\"width_mm\":1800,\"depth_mm\":600,\"concrete_grade\":\"C30/37\"},\"page\":2,\"confidence\":1.0}]}\n```"
+    },
+    {
+      "id": "kb-02-invoice",
+      "difficulty": "easy",
+      "title": "Invoice INV-2026-0417",
+      "schema": [
+        { "entityType": "party", "description": "a company named on the invoice", "fields": [
+          { "name": "role", "description": "seller or buyer" },
+          { "name": "name", "description": "legal name" },
+          { "name": "vat_id", "description": "VAT identification number" }
+        ] },
+        { "entityType": "line_item", "description": "one billed line", "fields": [
+          { "name": "description", "description": "what was billed" },
+          { "name": "quantity", "description": "number of units" },
+          { "name": "unit_price_eur", "description": "price per unit in EUR" },
+          { "name": "discount_pct", "description": "line discount percent" }
+        ] }
+      ],
+      "text": "INVOICE INV-2026-0417, issued 2026-04-17, due 2026-05-17.\nSeller: Northwind Fabrication s.r.o., VAT CZ27084521.\nBuyer: Halden Logistics GmbH (VAT not provided).\nLines:\n1. Laser-cut steel brackets, qty 240, unit price EUR 3.85\n2. Powder coating service, qty 240, unit price EUR 1.10\n3. Pallet and packaging, qty 2, unit price EUR 18.00\nTotal net EUR 1224.00. Payment by bank transfer.",
+      "facts": [
+        { "label": "seller", "any": ["northwind"] },
+        { "label": "buyer", "any": ["halden"] },
+        { "label": "seller vat", "any": ["cz27084521"] },
+        { "label": "brackets", "any": ["bracket"] },
+        { "label": "bracket price", "any": ["3.85"] },
+        { "label": "coating price", "any": ["1.1"] },
+        { "label": "pallet price", "any": ["18"] }
+      ],
+      "absentFields": ["discount_pct"],
+      "absentStrings": [],
+      "absentPatterns": ["de[0-9]{6,}"],
+      "rowCounts": { "party": 2, "line_item": 3 },
+      "good": "```json\n{\"rows\":[{\"entityType\":\"party\",\"entityKey\":\"Northwind Fabrication\",\"attributes\":{\"role\":\"seller\",\"name\":\"Northwind Fabrication s.r.o.\",\"vat_id\":\"CZ27084521\"},\"page\":null,\"confidence\":1.0},{\"entityType\":\"party\",\"entityKey\":\"Halden Logistics\",\"attributes\":{\"role\":\"buyer\",\"name\":\"Halden Logistics GmbH\"},\"page\":null,\"confidence\":1.0},{\"entityType\":\"line_item\",\"entityKey\":\"Steel brackets\",\"attributes\":{\"description\":\"Laser-cut steel brackets\",\"quantity\":240,\"unit_price_eur\":3.85},\"page\":null,\"confidence\":1.0},{\"entityType\":\"line_item\",\"entityKey\":\"Powder coating\",\"attributes\":{\"description\":\"Powder coating service\",\"quantity\":240,\"unit_price_eur\":1.10},\"page\":null,\"confidence\":1.0},{\"entityType\":\"line_item\",\"entityKey\":\"Pallet\",\"attributes\":{\"description\":\"Pallet and packaging\",\"quantity\":2,\"unit_price_eur\":18.00},\"page\":null,\"confidence\":1.0}]}\n```",
+      "bad": "{\"rows\":[{\"entityType\":\"party\",\"entityKey\":\"Northwind\",\"attributes\":{\"role\":\"seller\",\"vat_id\":\"CZ27084521\"}}]}"
+    },
+    {
+      "id": "kb-03-meeting",
+      "difficulty": "easy",
+      "title": "Platform sync minutes 2026-09-30",
+      "schema": [
+        { "entityType": "action_item", "description": "a task someone committed to", "fields": [
+          { "name": "owner", "description": "person responsible" },
+          { "name": "task", "description": "what will be done" },
+          { "name": "due_date", "description": "ISO date it is due" }
+        ] },
+        { "entityType": "decision", "description": "a decision the meeting made", "fields": [
+          { "name": "summary", "description": "the decision in one line" }
+        ] }
+      ],
+      "text": "Platform sync, 2026-09-30. Attendees: Mara, Tomas, Ines, Luka.\nDiscussion: the release train slipped a week because of the signing certificate renewal.\nDecided: we move the 3.4 release to 2026-10-14. Decided: the legacy REST endpoint stays until Q1.\nActions: Mara renews the code-signing certificate by 2026-10-03. Tomas writes the migration guide for the REST deprecation by 2026-10-10. Ines will look into flaky e2e tests (no date agreed).\nLuka mentioned he might take a look at the docs site later, but did not commit.",
+      "facts": [
+        { "label": "Mara owner", "any": ["mara"] },
+        { "label": "certificate", "any": ["certificate"] },
+        { "label": "Mara due", "any": ["2026-10-03"] },
+        { "label": "Tomas", "any": ["tomas"] },
+        { "label": "Tomas due", "any": ["2026-10-10"] },
+        { "label": "Ines", "any": ["ines"] },
+        { "label": "release date", "any": ["2026-10-14"] },
+        { "label": "REST stays", "any": ["rest"] }
+      ],
+      "absentFields": [],
+      "absentStrings": ["luka"],
+      "rowCounts": { "action_item": 3, "decision": 2 },
+      "good": "```json\n{\"rows\":[{\"entityType\":\"action_item\",\"entityKey\":\"Renew signing cert\",\"attributes\":{\"owner\":\"Mara\",\"task\":\"Renew the code-signing certificate\",\"due_date\":\"2026-10-03\"},\"page\":null,\"confidence\":1.0},{\"entityType\":\"action_item\",\"entityKey\":\"REST migration guide\",\"attributes\":{\"owner\":\"Tomas\",\"task\":\"Write the migration guide for the REST deprecation\",\"due_date\":\"2026-10-10\"},\"page\":null,\"confidence\":1.0},{\"entityType\":\"action_item\",\"entityKey\":\"Flaky e2e tests\",\"attributes\":{\"owner\":\"Ines\",\"task\":\"Look into flaky e2e tests\"},\"page\":null,\"confidence\":0.9},{\"entityType\":\"decision\",\"entityKey\":\"3.4 release date\",\"attributes\":{\"summary\":\"Move the 3.4 release to 2026-10-14\"},\"page\":null,\"confidence\":1.0},{\"entityType\":\"decision\",\"entityKey\":\"Legacy REST endpoint\",\"attributes\":{\"summary\":\"Legacy REST endpoint stays until Q1\"},\"page\":null,\"confidence\":1.0}]}\n```",
+      "bad": "```json\n{\"rows\":[{\"entityType\":\"action_item\",\"entityKey\":\"Renew signing cert\",\"attributes\":{\"owner\":\"Mara\",\"task\":\"Renew the code-signing certificate\",\"due_date\":\"2026-10-03\"},\"page\":null,\"confidence\":1.0},{\"entityType\":\"action_item\",\"entityKey\":\"REST migration guide\",\"attributes\":{\"owner\":\"Tomas\",\"task\":\"Write the migration guide\",\"due_date\":\"2026-10-10\"},\"page\":null,\"confidence\":1.0},{\"entityType\":\"action_item\",\"entityKey\":\"Flaky e2e tests\",\"attributes\":{\"owner\":\"Ines\",\"task\":\"Look into flaky e2e tests\"},\"page\":null,\"confidence\":0.9},{\"entityType\":\"action_item\",\"entityKey\":\"Docs site\",\"attributes\":{\"owner\":\"Luka\",\"task\":\"Review docs site\"},\"page\":null,\"confidence\":0.5},{\"entityType\":\"decision\",\"entityKey\":\"3.4 release date\",\"attributes\":{\"summary\":\"Move the 3.4 release to 2026-10-14\"},\"page\":null,\"confidence\":1.0},{\"entityType\":\"decision\",\"entityKey\":\"Legacy REST endpoint\",\"attributes\":{\"summary\":\"Legacy REST endpoint stays until Q1\"},\"page\":null,\"confidence\":1.0}]}\n```"
+    },
+    {
+      "id": "kb-04-lease",
+      "difficulty": "easy",
+      "title": "Office lease summary",
+      "schema": [
+        { "entityType": "lease_term", "description": "a commercial term of the lease", "fields": [
+          { "name": "term", "description": "name of the term (rent, deposit, notice period, ...)" },
+          { "name": "value", "description": "the agreed value with unit" }
+        ] }
+      ],
+      "text": "[page 3]\nLease of unit 4B, Karlin Business Park. Landlord: Vltava Estates a.s. Tenant: Personas Labs s.r.o.\nMonthly rent: CZK 148,500 excluding VAT.\nSecurity deposit: three months' rent.\nNotice period: 6 months, written notice only.\n[page 4]\nIndexation: rent is indexed annually by CPI, first indexation 2027-01-01.\nParking: 4 spaces included.",
+      "facts": [
+        { "label": "rent", "any": ["148,500", "148500", "148 500"] },
+        { "label": "deposit", "any": ["three months", "3 months", "3months"] },
+        { "label": "notice", "any": ["6 months", "six months", "6months"] },
+        { "label": "indexation", "any": ["cpi"] },
+        { "label": "parking", "any": ["4 spaces", "4spaces", "four"] }
+      ],
+      "absentFields": [],
+      "absentStrings": ["eur", "12 months", "12months"],
+      "rowCounts": {},
+      "good": "```json\n{\"rows\":[{\"entityType\":\"lease_term\",\"entityKey\":\"Monthly rent\",\"attributes\":{\"term\":\"rent\",\"value\":\"CZK 148,500 excl. VAT\"},\"page\":3,\"confidence\":1.0},{\"entityType\":\"lease_term\",\"entityKey\":\"Security deposit\",\"attributes\":{\"term\":\"deposit\",\"value\":\"three months' rent\"},\"page\":3,\"confidence\":1.0},{\"entityType\":\"lease_term\",\"entityKey\":\"Notice period\",\"attributes\":{\"term\":\"notice period\",\"value\":\"6 months\"},\"page\":3,\"confidence\":1.0},{\"entityType\":\"lease_term\",\"entityKey\":\"Indexation\",\"attributes\":{\"term\":\"indexation\",\"value\":\"annual CPI from 2027-01-01\"},\"page\":4,\"confidence\":1.0},{\"entityType\":\"lease_term\",\"entityKey\":\"Parking\",\"attributes\":{\"term\":\"parking\",\"value\":\"4 spaces included\"},\"page\":4,\"confidence\":1.0}]}\n```",
+      "bad": "```json\n{\"rows\":[{\"entityType\":\"lease_term\",\"entityKey\":\"Monthly rent\",\"attributes\":{\"term\":\"rent\",\"value\":\"EUR 6,000\"},\"page\":3,\"confidence\":0.6},{\"entityType\":\"lease_term\",\"entityKey\":\"Notice period\",\"attributes\":{\"term\":\"notice period\",\"value\":\"6 months\"},\"page\":3,\"confidence\":1.0}]}\n```"
+    },
+    {
+      "id": "kb-05-incident",
+      "difficulty": "easy",
+      "title": "Incident report INC-882",
+      "schema": [
+        { "entityType": "incident", "description": "a production incident", "fields": [
+          { "name": "id", "description": "incident identifier" },
+          { "name": "severity", "description": "SEV level" },
+          { "name": "duration_minutes", "description": "how long customers were affected" },
+          { "name": "root_cause", "description": "the confirmed root cause" },
+          { "name": "cost_usd", "description": "estimated financial impact in USD" }
+        ] }
+      ],
+      "text": "INC-882 postmortem. Severity: SEV2. Customer impact from 14:05 to 14:52 UTC (47 minutes): webhook deliveries delayed.\nInitial suspicion was the database failover, but that was ruled out. Confirmed root cause: an expired TLS certificate on the internal queue broker.\nFollow-ups: automate certificate expiry alerts.",
+      "facts": [
+        { "label": "id", "any": ["inc-882"] },
+        { "label": "sev", "any": ["sev2", "sev 2"] },
+        { "label": "duration", "any": ["47"] },
+        { "label": "root cause", "any": ["tls", "certificate"] }
+      ],
+      "absentFields": ["cost_usd"],
+      "absentStrings": ["sev1", "sev3"],
+      "rowCounts": { "incident": 1 },
+      "good": "```json\n{\"rows\":[{\"entityType\":\"incident\",\"entityKey\":\"INC-882\",\"attributes\":{\"id\":\"INC-882\",\"severity\":\"SEV2\",\"duration_minutes\":47,\"root_cause\":\"Expired TLS certificate on the internal queue broker\"},\"page\":null,\"confidence\":1.0}]}\n```",
+      "bad": "```json\n{\"rows\":[{\"entityType\":\"incident\",\"entityKey\":\"INC-882\",\"attributes\":{\"id\":\"INC-882\",\"severity\":\"SEV2\",\"duration_minutes\":47,\"root_cause\":\"Database failover\",\"cost_usd\":12000},\"page\":null,\"confidence\":0.7}]}\n```"
+    }
+  ]
+}

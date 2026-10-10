@@ -330,18 +330,49 @@ pub(crate) async fn cli_text_with_usage(
     Ok((run.text, run.usage))
 }
 
-/// Headless decision on an EXPLICIT model (Design D: the deliberation moderator
-/// runs on Haiku for cost). Records a `companion_turn` ledger row for audit and
-/// returns the parsed `cost_usd` so the caller can roll the spend into its own
-/// meter (the deliberation's `cost_spent_usd`). Best-effort ledger — an insert
-/// failure never fails the decision.
+/// Headless decision on an EXPLICIT model (a deliberation persona's own
+/// resolved model; effort left to the spawn's default). Records a
+/// `companion_turn` ledger row for audit and returns the parsed `cost_usd` so
+/// the caller can roll the spend into its own meter (the deliberation's
+/// `cost_spent_usd`). Best-effort ledger — an insert failure never fails the
+/// decision.
 pub(crate) async fn cli_decision_with_model(
     prompt_text: String,
     user_db: &crate::db::UserDbPool,
     trigger_kind: &'static str,
     model: &str,
 ) -> Result<(String, Option<f64>), AppError> {
-    let run = match cli_text_inner(prompt_text, model, None).await {
+    cli_decision_inner(prompt_text, user_db, trigger_kind, model, None).await
+}
+
+/// [`cli_decision_with_model`] on a class route (Design D: the deliberation
+/// moderator and its split / proposal / merge legs name a `CallClass`; see
+/// `engine::deliberation::MODERATOR_CLASS`). Model AND effort come from the
+/// route.
+pub(crate) async fn cli_decision_on_route(
+    prompt_text: String,
+    user_db: &crate::db::UserDbPool,
+    trigger_kind: &'static str,
+    route: personas_core::model_class::ClassRoute,
+) -> Result<(String, Option<f64>), AppError> {
+    cli_decision_inner(
+        prompt_text,
+        user_db,
+        trigger_kind,
+        route.model,
+        Some(route.effort),
+    )
+    .await
+}
+
+async fn cli_decision_inner(
+    prompt_text: String,
+    user_db: &crate::db::UserDbPool,
+    trigger_kind: &'static str,
+    model: &str,
+    effort: Option<&str>,
+) -> Result<(String, Option<f64>), AppError> {
+    let run = match cli_text_inner(prompt_text, model, effort).await {
         Ok(run) => run,
         Err(e) => {
             record_headless_failure(user_db, trigger_kind, model, &e);
@@ -365,17 +396,37 @@ pub(crate) async fn cli_decision_with_model(
 /// accounting. Returns `(display_text, turn_id)` — the triage legs use the id
 /// to attach their verdict counts via `turn_ledger::update_outcome` after they
 /// parse the decision. Best-effort: a ledger insert failure never fails the
-/// decision (the id is then `None`).
+/// decision (the id is then `None`). Runs on the
+/// [`MICRO`](crate::companion::model_routing::MICRO) tier; a verdict-shaped
+/// leg calls [`cli_text_tracked_on`] with
+/// [`TRIAGE`](crate::companion::model_routing::TRIAGE) instead.
 pub(crate) async fn cli_text_tracked(
     prompt_text: String,
     user_db: &crate::db::UserDbPool,
     trigger_kind: &'static str,
 ) -> Result<(String, Option<String>), AppError> {
-    let micro = &crate::companion::model_routing::MICRO;
-    let run = match cli_text_inner(prompt_text, micro.model, micro.effort).await {
+    cli_text_tracked_on(
+        prompt_text,
+        user_db,
+        trigger_kind,
+        &crate::companion::model_routing::MICRO,
+    )
+    .await
+}
+
+/// [`cli_text_tracked`] on an explicit tier — the triage legs pass
+/// [`TRIAGE`](crate::companion::model_routing::TRIAGE), because judgment is
+/// Haiku's measured weak spot and MICRO is Haiku.
+pub(crate) async fn cli_text_tracked_on(
+    prompt_text: String,
+    user_db: &crate::db::UserDbPool,
+    trigger_kind: &'static str,
+    tier: &crate::companion::model_routing::TurnTier,
+) -> Result<(String, Option<String>), AppError> {
+    let run = match cli_text_inner(prompt_text, tier.model, tier.effort).await {
         Ok(run) => run,
         Err(e) => {
-            record_headless_failure(user_db, trigger_kind, micro.model, &e);
+            record_headless_failure(user_db, trigger_kind, tier.model, &e);
             return Err(e);
         }
     };
@@ -383,7 +434,7 @@ pub(crate) async fn cli_text_tracked(
         user_db,
         crate::companion::turn_ledger::ORIGIN_HEADLESS,
         trigger_kind,
-        micro.model,
+        tier.model,
         run.usage,
         run.timed_out,
     );
@@ -437,13 +488,16 @@ async fn cli_text_inner(
     model: &str,
     effort: Option<&str>,
 ) -> Result<HeadlessRun, AppError> {
-    let mut cli_args = crate::engine::prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push(model.to_string());
-    if let Some(effort) = effort {
-        cli_args.args.push("--effort".to_string());
-        cli_args.args.push(effort.to_string());
-    }
+    // Model and effort go through the profile so `build_cli_args` emits each
+    // flag exactly once. Appending them after a profile-less build sent
+    // `--effort` twice (its default medium, then the tier's), so a `low` tier
+    // only held if the CLI happened to keep the last occurrence.
+    let profile = personas_core::types::ModelProfile {
+        model: Some(model.to_string()),
+        effort: effort.map(str::to_string),
+        ..Default::default()
+    };
+    let cli_args = crate::engine::prompt::build_cli_args(None, Some(&profile));
 
     // No repo access needed for a channel decision — run in a scratch cwd so we
     // never touch a project working tree.
@@ -638,7 +692,15 @@ pub async fn run_athena_reaction_batch(
     }
     let prompt = build_batch_prompt(pool, &signals);
     let state = app.state::<std::sync::Arc<crate::AppState>>();
-    let (blob, _turn_id) = cli_text_tracked(prompt, &state.user_db, "reaction_batch").await?;
+    // A per-signal react/decline + escalate verdict judged on restraint: a
+    // triage leg, so it rides TRIAGE rather than the Haiku MICRO tier.
+    let (blob, _turn_id) = cli_text_tracked_on(
+        prompt,
+        &state.user_db,
+        "reaction_batch",
+        &crate::companion::model_routing::TRIAGE,
+    )
+    .await?;
     let Some(batch) = parse_athena_batch(&blob) else {
         tracing::warn!(
             signals = signals.len(),
@@ -1079,7 +1141,13 @@ pub async fn run_athena_review_resolution(
     let history = recent_channel_history(pool, &candidate.team_id);
     let prompt = build_review_resolution_prompt(&candidate, &history);
     let state = app.state::<std::sync::Arc<crate::AppState>>();
-    let (blob, _turn_id) = cli_text_tracked(prompt, &state.user_db, "review_resolution").await?;
+    let (blob, _turn_id) = cli_text_tracked_on(
+        prompt,
+        &state.user_db,
+        "review_resolution",
+        &crate::companion::model_routing::TRIAGE,
+    )
+    .await?;
     let Some(decision) = parse_athena_review(&blob) else {
         tracing::warn!(team = %candidate.team_name, assignment = %candidate.assignment_id,
             "athena_review_resolution: no decision parsed");

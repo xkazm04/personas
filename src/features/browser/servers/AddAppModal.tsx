@@ -10,14 +10,14 @@
  * the modal closes on success and never waits for the scan itself.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Search, Sparkles } from 'lucide-react';
+import { Plus, Search, Server } from 'lucide-react';
 
 import { useContextScanBackground } from '@/features/plugins/dev-tools/hooks/useContextScanBackground';
 import { ProjectModal } from '@/features/plugins/dev-tools/sub_projects/ProjectModal';
 import { useWorkspaces } from '@/features/plugins/dev-tools/sub_workspaces/workspaceStore';
 import Button from '@/features/shared/components/buttons/Button';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
-import { BaseModal } from '@/features/shared/components/modals';
+import { ModalShell } from '@/features/shared/components/modals/ModalShell';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import type { DevProject } from '@/lib/bindings/DevProject';
@@ -77,18 +77,33 @@ export default function AddAppModal({ isOpen, onClose }: { isOpen: boolean; onCl
 
   return (
     <>
-      <BaseModal isOpen={isOpen && !creating} onClose={onClose} titleId="server-add-app-title" size="lg" portal>
-        <div className="p-6 flex flex-col gap-4" data-testid="server-add-app-modal">
-          <div>
-            <h2 id="server-add-app-title" className="typo-title-lg">
-              {s.add_title}
-            </h2>
-            <p className="mt-1 flex items-start gap-2 typo-body text-foreground">
-              <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" aria-hidden />
-              {s.add_scan_hint}
-            </p>
-          </div>
-
+      <ModalShell
+        isOpen={isOpen && !creating}
+        onClose={onClose}
+        titleId="server-add-app-title"
+        width="md"
+        portal
+        icon={<Server className="h-5 w-5" />}
+        title={s.add_title}
+        subtitle={s.add_scan_hint}
+        footer={
+          <>
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={<Plus className="h-4 w-4" />}
+              onClick={() => setCreating(true)}
+              data-testid="server-add-new-project"
+            >
+              {s.add_new_project}
+            </Button>
+            <Button size="sm" variant="ghost" className="ml-auto" onClick={onClose}>
+              {t.common.cancel}
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4" data-testid="server-add-app-modal">
           <label className="relative block">
             <span className="sr-only">{s.add_search}</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground" aria-hidden />
@@ -114,23 +129,8 @@ export default function AddAppModal({ isOpen, onClose }: { isOpen: boolean; onCl
               <InlineErrorBanner compact title={s.add_failed} message={resolveErrorTranslated(t, extractMessage(failure)).message} />
             </div>
           )}
-
-          <div className="flex items-center gap-2 pt-1">
-            <Button
-              size="sm"
-              variant="secondary"
-              icon={<Plus className="h-4 w-4" />}
-              onClick={() => setCreating(true)}
-              data-testid="server-add-new-project"
-            >
-              {s.add_new_project}
-            </Button>
-            <Button size="sm" variant="ghost" className="ml-auto" onClick={onClose}>
-              {t.common.cancel}
-            </Button>
-          </div>
         </div>
-      </BaseModal>
+      </ModalShell>
 
       <ProjectModal
         open={isOpen && creating}

@@ -1,0 +1,71 @@
+{
+  "family": "session-naming",
+  "source": "src-tauri/src/commands/fleet/naming.rs:223-260 (name_session_from_task), NAMING_MODEL at :135, NAMING_TIMEOUT_SECS=30 at :136, clean_name 48-char cap at :147-160",
+  "notes": "The prompt's own contract is a 3-5 word Title Case label (NOT kebab-case, as the bench brief guessed). Checks score the RAW result against that contract; production's clean_name would strip quotes/periods afterwards, so a raw failure here is a contract miss that production partly papers over. `keywords`: the label must contain at least one (case-insensitive substring) to prove it names THIS task.",
+  "tasks": [
+    {
+      "id": "name-01-auth-bug",
+      "difficulty": "easy",
+      "task": "Fix the login bug where users with an expired refresh token get stuck on a blank screen instead of being redirected to the sign-in page. The token refresh logic lives in src/lib/auth/refresh.ts.",
+      "keywords": ["login", "token", "refresh", "auth", "sign"],
+      "good": "Fix Expired Token Redirect",
+      "bad": "Here is a label: \"fix-expired-token-redirect\"."
+    },
+    {
+      "id": "name-02-i18n-sweep",
+      "difficulty": "easy",
+      "task": "Translate all the new keys added to en.json under the vault section into the 13 other locales and make sure check:i18n:strict passes.",
+      "keywords": ["vault", "translat", "i18n", "locale"],
+      "good": "Vault Locale Translation Sweep",
+      "bad": "Sure! I would call this session something like Vault Locale Translation Sweep because it is about translating keys"
+    },
+    {
+      "id": "name-03-db-migration",
+      "difficulty": "easy",
+      "task": "Add a migration that creates the kb_extraction_runs table with columns id, kb_id, status, schema_json, entities_found, created_at and an index on kb_id. Wire it into the migration runner.",
+      "keywords": ["migration", "kb", "extraction", "table", "schema"],
+      "good": "KB Extraction Runs Migration",
+      "bad": "Migration"
+    },
+    {
+      "id": "name-04-perf",
+      "difficulty": "easy",
+      "task": "The overview dashboard takes 4 seconds to render when there are more than 2000 executions. Profile it, virtualize the execution list, and memoize the metric selectors.",
+      "keywords": ["dashboard", "overview", "render", "perf", "virtual", "execution", "list"],
+      "good": "Speed Up Overview Dashboard",
+      "bad": "Speed Up The Overview Dashboard Rendering With Virtualized Execution Lists And Memoized Selectors"
+    },
+    {
+      "id": "name-05-research",
+      "difficulty": "easy",
+      "task": "Research how other desktop apps implement auto-update with code signing on Windows and macOS, and write a short comparison of Tauri's updater versus Squirrel and Sparkle.",
+      "keywords": ["update", "updater", "signing", "tauri", "squirrel", "sparkle"],
+      "good": "Auto Update Signing Research",
+      "bad": "Kitchen Recipe Planner"
+    },
+    {
+      "id": "name-06-tests",
+      "difficulty": "easy",
+      "task": "Write vitest unit tests for the useShallow-based selectors in src/stores/slices/executionSlice.ts, covering the empty state, a single running execution, and a cancelled execution.",
+      "keywords": ["test", "vitest", "selector", "execution", "slice"],
+      "good": "Execution Slice Selector Tests",
+      "bad": "execution slice selector tests"
+    },
+    {
+      "id": "name-07-ui",
+      "difficulty": "easy",
+      "task": "Redesign the credential catalog empty state so it shows three suggested connectors with their icons and a primary button to open the connector picker.",
+      "keywords": ["credential", "catalog", "empty", "connector"],
+      "good": "Credential Catalog Empty State",
+      "bad": "Credential Catalog Empty State."
+    },
+    {
+      "id": "name-08-cross-repo",
+      "difficulty": "easy",
+      "task": "In the personas-web repo, sync the marketing guide for the Fleet module with the new multi-step orchestration flow, and update the screenshots referenced in desktop-modules.ts.",
+      "keywords": ["fleet", "guide", "marketing", "orchestration", "sync", "web"],
+      "good": "Sync Fleet Marketing Guide",
+      "bad": "Label: Sync Fleet Marketing Guide\n\nThis session updates the personas-web guide."
+    }
+  ]
+}

@@ -2107,3 +2107,364 @@ fn drop_auto_pr_columns_keeps_every_project_row() -> Result<(), Box<dyn std::err
     );
     Ok(())
 }
+
+// ── e60: a manual review may exist with no run ─────────────────────────────
+
+/// An install created before e60 carries `execution_id TEXT NOT NULL`. The
+/// rebuild must drop exactly that NOT NULL and nothing else: every row and its
+/// review thread survive (foreign keys are off for the swap, so dropping the
+/// old table does not cascade into `review_messages`), the FK and its CASCADE
+/// stay, the indexes are replayed, and a replay is a no-op.
+#[test]
+fn review_execution_id_becomes_optional_without_losing_rows_or_threads() {
+    let pool = crate::init_test_db().unwrap();
+    let persona_id = crate::repos::test_fixtures::create_test_persona_id(&pool, "Reviewer", "sp");
+    let exec =
+        crate::repos::execution::executions::create(&pool, &persona_id, None, None, None, None)
+            .unwrap();
+    let conn = crate::PoolExt::conn(&pool, "test:e60_e61_2125").unwrap();
+
+    // The pre-e60 shape, exactly as a live install holds it (the three
+    // trailing columns were added by later ALTERs).
+    conn.execute_batch(
+        "DROP TABLE persona_manual_reviews;
+         CREATE TABLE persona_manual_reviews (
+            id                TEXT PRIMARY KEY,
+            execution_id      TEXT NOT NULL REFERENCES persona_executions(id) ON DELETE CASCADE,
+            persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+            title             TEXT NOT NULL,
+            description       TEXT,
+            severity          TEXT NOT NULL DEFAULT 'info',
+            context_data      TEXT,
+            suggested_actions TEXT,
+            status            TEXT NOT NULL DEFAULT 'pending',
+            reviewer_notes    TEXT,
+            resolved_at       TEXT,
+            created_at        TEXT NOT NULL,
+            updated_at        TEXT NOT NULL
+         , use_case_id TEXT, assignment_id TEXT, step_id TEXT);
+         CREATE INDEX idx_pmr_execution ON persona_manual_reviews(execution_id);",
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO persona_manual_reviews
+            (id, execution_id, persona_id, title, created_at, updated_at, use_case_id)
+         VALUES ('r1', ?1, ?2, 'kept', datetime('now'), datetime('now'), 'uc-1')",
+        rusqlite::params![exec.id, persona_id],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO review_messages (id, review_id, role, content, created_at)
+         VALUES ('m1', 'r1', 'user', 'a thread line', datetime('now'))",
+        [],
+    )
+    .unwrap();
+    assert!(conn
+        .execute(
+            "INSERT INTO persona_manual_reviews (id, execution_id, persona_id, title, created_at, updated_at)
+             VALUES ('r-null', NULL, ?1, 'no run', datetime('now'), datetime('now'))",
+            [&persona_id],
+        )
+        .is_err(), "the legacy shape refuses a NULL - otherwise this test proves nothing");
+
+    run_incremental(&conn).unwrap();
+
+    let notnull: i64 = conn
+        .query_row(
+            "SELECT \"notnull\" AS nn FROM pragma_table_info('persona_manual_reviews') WHERE name = 'execution_id'",
+            [],
+            |r| r.get("nn"),
+        )
+        .unwrap();
+    assert_eq!(notnull, 0, "execution_id is nullable after e60");
+    let (exec_id, uc): (Option<String>, Option<String>) = conn
+        .query_row(
+            "SELECT execution_id, use_case_id FROM persona_manual_reviews WHERE id = 'r1'",
+            [],
+            |r| Ok((r.get("execution_id")?, r.get("use_case_id")?)),
+        )
+        .unwrap();
+    assert_eq!(exec_id.as_deref(), Some(exec.id.as_str()));
+    assert_eq!(uc.as_deref(), Some("uc-1"), "a later column rode the copy");
+    let thread: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) AS n FROM review_messages WHERE review_id = 'r1'",
+            [],
+            |r| r.get("n"),
+        )
+        .unwrap();
+    assert_eq!(
+        thread, 1,
+        "the review's thread was not cascaded away by the swap"
+    );
+    assert!(
+        has_index(&conn, "idx_pmr_execution").unwrap(),
+        "indexes are replayed"
+    );
+
+    // NULL is now storable; a run that does not exist still is not.
+    conn.execute(
+        "INSERT INTO persona_manual_reviews (id, execution_id, persona_id, title, created_at, updated_at)
+         VALUES ('r-null', NULL, ?1, 'no run', datetime('now'), datetime('now'))",
+        [&persona_id],
+    )
+    .expect("a review raised outside any run is storable");
+    assert!(conn
+        .execute(
+            "INSERT INTO persona_manual_reviews (id, execution_id, persona_id, title, created_at, updated_at)
+             VALUES ('r-ghost', 'no-such-run', ?1, 'ghost', datetime('now'), datetime('now'))",
+            [&persona_id],
+        )
+        .is_err(), "the FK onto persona_executions still binds a named run");
+
+    // The CASCADE stays: the review that names a run dies with it.
+    conn.execute("DELETE FROM persona_executions WHERE id = ?1", [&exec.id])
+        .unwrap();
+    let left: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) AS n FROM persona_manual_reviews WHERE id = 'r1'",
+            [],
+            |r| r.get("n"),
+        )
+        .unwrap();
+    assert_eq!(left, 0, "ON DELETE CASCADE survived the rebuild");
+
+    // Idempotent: a replay leaves the DDL byte for byte.
+    let ddl = |conn: &Connection| -> String {
+        conn.query_row(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='persona_manual_reviews'",
+            [],
+            |r| r.get("sql"),
+        )
+        .unwrap()
+    };
+    let once = ddl(&conn);
+    run_incremental(&conn).unwrap();
+    assert_eq!(ddl(&conn), once);
+}
+
+/// A fresh install never carries the NOT NULL, so e60 has nothing to do there.
+#[test]
+fn a_fresh_schema_has_an_optional_review_execution_id() {
+    let pool = crate::init_test_db().unwrap();
+    let conn = crate::PoolExt::conn(&pool, "test:e60_e61_2250").unwrap();
+    let notnull: i64 = conn
+        .query_row(
+            "SELECT \"notnull\" AS nn FROM pragma_table_info('persona_manual_reviews') WHERE name = 'execution_id'",
+            [],
+            |r| r.get("nn"),
+        )
+        .unwrap();
+    assert_eq!(notnull, 0);
+}
+
+// ── e61: council runs carry a mode; rounds are per (subject, mode) ─────────
+
+/// A pre-0.4.0 store keys a round by `(subject_id, round_no)`, so a lite
+/// round 1 beside a full round 1 cannot exist. The rebuild adds `mode`
+/// (existing rows are full), widens the key to `(subject_id, mode, round_no)`,
+/// keeps every child row (verdicts and the decision that cites the run), keeps
+/// the run-dir index, and is a no-op on replay.
+#[test]
+fn council_runs_gain_a_mode_and_count_rounds_per_mode() {
+    let pool = crate::init_test_db().unwrap();
+    let conn = crate::PoolExt::conn(&pool, "test:e60_e61_2271").unwrap();
+    conn.execute_batch(
+        "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/council-p1');
+         INSERT INTO dev_council_subjects (id, project_id, kind, slug, title, created_at, updated_at)
+            VALUES ('s1', 'p1', 'architecture', 'store', 'Store', datetime('now'), datetime('now'));
+         DROP TABLE dev_council_runs;
+         CREATE TABLE dev_council_runs (
+            id TEXT PRIMARY KEY NOT NULL,
+            subject_id TEXT NOT NULL
+                REFERENCES dev_council_subjects(id) ON DELETE CASCADE,
+            round_no INTEGER NOT NULL CHECK (round_no >= 1),
+            supersedes_run_id TEXT
+                REFERENCES dev_council_runs(id) ON DELETE SET NULL,
+            rubric_version TEXT NOT NULL
+                CHECK (rubric_version IN ('feature-v1','architecture-v1')),
+            trust_state TEXT NOT NULL
+                CHECK (trust_state IN ('uncalibrated','untrusted','trusted')),
+            outcome TEXT NOT NULL
+                CHECK (outcome IN ('ready','fail','incomplete','stalled')),
+            overall REAL,
+            coverage REAL NOT NULL,
+            head_sha TEXT NOT NULL,
+            span_digest TEXT NOT NULL,
+            spanned_paths_json TEXT NOT NULL,
+            hard_failures_json TEXT NOT NULL,
+            must_address_json TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            run_dir TEXT NOT NULL,
+            started_at TEXT,
+            finished_at TEXT,
+            ingested_at TEXT NOT NULL,
+            UNIQUE (subject_id, round_no)
+         );
+         CREATE UNIQUE INDEX idx_dev_council_runs_run_dir ON dev_council_runs(run_dir);
+         INSERT INTO dev_council_runs (id, subject_id, round_no, rubric_version, trust_state,
+                outcome, overall, coverage, head_sha, span_digest, spanned_paths_json,
+                hard_failures_json, must_address_json, summary, run_dir, ingested_at)
+            VALUES ('r1', 's1', 1, 'architecture-v1', 'uncalibrated', 'ready', 0.8, 1.0,
+                'abc', 'd', '[]', '[]', '[]', 'clean', '/runs/r1', datetime('now'));
+         INSERT INTO dev_council_verdicts (id, run_id, dimension, kind, state, score, confidence,
+                floor, floor_hit, advisory, payload_json)
+            VALUES ('v1', 'r1', 'craft', 'mixed', 'measured', 0.8, 'med', NULL, 0, 0, '{}');
+         INSERT INTO dev_council_decisions (id, subject_id, run_id, decision, saw_digest, decided_at)
+            VALUES ('d1', 's1', 'r1', 'approved', 'dig', datetime('now'));",
+    )
+    .unwrap();
+
+    run_incremental(&conn).unwrap();
+
+    assert!(has_column(&conn, "dev_council_runs", "mode").unwrap());
+    let mode: String = conn
+        .query_row(
+            "SELECT mode FROM dev_council_runs WHERE id = 'r1'",
+            [],
+            |r| r.get("mode"),
+        )
+        .unwrap();
+    assert_eq!(
+        mode, "full",
+        "every run ingested before lite existed was a full council"
+    );
+    let children: (i64, i64) = conn
+        .query_row(
+            "SELECT (SELECT COUNT(*) FROM dev_council_verdicts WHERE run_id = 'r1') AS verdicts,
+                    (SELECT COUNT(*) FROM dev_council_decisions WHERE run_id = 'r1') AS decisions",
+            [],
+            |r| Ok((r.get("verdicts")?, r.get("decisions")?)),
+        )
+        .unwrap();
+    assert_eq!(children, (1, 1), "the swap cascaded nothing");
+    assert!(has_index(&conn, "idx_dev_council_runs_run_dir").unwrap());
+
+    let insert = |id: &str, mode: &str, round: i64| {
+        conn.execute(
+            "INSERT INTO dev_council_runs (id, subject_id, mode, round_no, rubric_version,
+                trust_state, outcome, coverage, head_sha, span_digest, spanned_paths_json,
+                hard_failures_json, must_address_json, summary, run_dir, ingested_at)
+             VALUES (?1, 's1', ?2, ?3, 'architecture-v1', 'uncalibrated', 'ready', 0.7, 'abc',
+                'd', '[]', '[]', '[]', 's', '/runs/' || ?1, datetime('now'))",
+            rusqlite::params![id, mode, round],
+        )
+    };
+    insert("r1-lite", "lite", 1).expect("a lite round 1 beside the full round 1");
+    assert!(
+        insert("r1-again", "full", 1).is_err(),
+        "a second full round 1 is still unrepresentable"
+    );
+    assert!(
+        insert("r-odd", "partial", 2).is_err(),
+        "mode is a closed set"
+    );
+
+    let ddl = |conn: &Connection| -> String {
+        conn.query_row(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_council_runs'",
+            [],
+            |r| r.get("sql"),
+        )
+        .unwrap()
+    };
+    let once = ddl(&conn);
+    run_incremental(&conn).unwrap();
+    assert_eq!(ddl(&conn), once, "a replay does not rebuild again");
+
+    // The subject still takes its runs AND the decision that pins one with
+    // it. This only holds while `dev_council_decisions` is newer than
+    // `dev_council_runs` (SQLite cascades newest child first), which is why
+    // the step recreates the decisions table after the runs table.
+    conn.execute("DELETE FROM dev_council_subjects WHERE id = 's1'", [])
+        .expect("a decided subject is still deletable after the rebuild");
+    let left: (i64, i64) = conn
+        .query_row(
+            "SELECT (SELECT COUNT(*) FROM dev_council_runs) AS runs_left,
+                    (SELECT COUNT(*) FROM dev_council_decisions) AS decisions_left",
+            [],
+            |r| Ok((r.get("runs_left")?, r.get("decisions_left")?)),
+        )
+        .unwrap();
+    assert_eq!(left, (0, 0));
+}
+
+/// A store that took the `mode` step from an intermediate build, without the
+/// decisions reorder, has the runs table newer than the decisions table - and
+/// a decided subject it cannot delete. The ordering step repairs exactly that,
+/// keyed on the order itself.
+#[test]
+fn the_decisions_table_is_moved_after_the_runs_table_when_it_is_not() {
+    let pool = crate::init_test_db().unwrap();
+    let conn = crate::PoolExt::conn(&pool, "test:e60_e61_2399").unwrap();
+    // Recreate the runs table (already on the new shape) so it is the newest:
+    // what a runs-only rebuild leaves behind.
+    let ddl: String = conn
+        .query_row(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_council_runs'",
+            [],
+            |r| r.get("sql"),
+        )
+        .unwrap();
+    conn.execute_batch(&format!(
+        "DROP TABLE dev_council_runs;
+         {};
+         CREATE UNIQUE INDEX IF NOT EXISTS idx_dev_council_runs_run_dir ON dev_council_runs(run_dir);",
+        ddl
+    ))
+    .unwrap();
+    let order = |conn: &Connection| -> Vec<String> {
+        let mut stmt = conn
+            .prepare(
+                "SELECT name FROM sqlite_master WHERE type='table'
+                   AND name IN ('dev_council_runs','dev_council_decisions') ORDER BY rowid",
+            )
+            .unwrap();
+        let rows = stmt.query_map([], |r| r.get::<_, String>("name")).unwrap();
+        rows.collect::<Result<Vec<_>, _>>().unwrap()
+    };
+    assert_eq!(
+        order(&conn),
+        vec!["dev_council_decisions", "dev_council_runs"]
+    );
+
+    conn.execute_batch(
+        "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/council-p1');
+         INSERT INTO dev_council_subjects (id, project_id, kind, slug, title, created_at, updated_at)
+            VALUES ('s1', 'p1', 'architecture', 'store', 'Store', datetime('now'), datetime('now'));
+         INSERT INTO dev_council_runs (id, subject_id, mode, round_no, rubric_version, trust_state,
+                outcome, overall, coverage, head_sha, span_digest, spanned_paths_json,
+                hard_failures_json, must_address_json, summary, run_dir, ingested_at)
+            VALUES ('r1', 's1', 'full', 1, 'architecture-v1', 'uncalibrated', 'ready', 0.8, 1.0,
+                'abc', 'd', '[]', '[]', '[]', 'clean', '/runs/r1', datetime('now'));
+         INSERT INTO dev_council_decisions (id, subject_id, run_id, decision, saw_digest, decided_at)
+            VALUES ('d1', 's1', 'r1', 'approved', 'dig', datetime('now'));",
+    )
+    .unwrap();
+    assert!(
+        conn.execute("DELETE FROM dev_council_subjects WHERE id = 's1'", [])
+            .is_err(),
+        "the broken order trips the RESTRICT - otherwise this test proves nothing"
+    );
+
+    run_incremental(&conn).unwrap();
+    assert_eq!(
+        order(&conn),
+        vec!["dev_council_runs", "dev_council_decisions"]
+    );
+    let kept: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) AS n FROM dev_council_decisions WHERE id = 'd1'",
+            [],
+            |r| r.get("n"),
+        )
+        .unwrap();
+    assert_eq!(kept, 1, "the reorder copies the decisions");
+    conn.execute("DELETE FROM dev_council_subjects WHERE id = 's1'", [])
+        .expect("a decided subject is deletable once decisions load after runs");
+    run_incremental(&conn).unwrap();
+    assert_eq!(
+        order(&conn),
+        vec!["dev_council_runs", "dev_council_decisions"]
+    );
+}

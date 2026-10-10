@@ -143,6 +143,7 @@ pub(super) fn shard(
         commands::core::chat::save_chat_session_context,
         commands::core::chat::get_chat_session_context,
         commands::core::chat::get_latest_chat_session,
+        commands::core::chat::start_chat_turn,
         // Execution -- Executions
         commands::execution::executions::list_executions,
         commands::execution::executions::list_executions_summary,

@@ -121,6 +121,15 @@
       "contexts": ["| Heavy vendor libs get their own named chunk | **physics** | `vite.config.ts:119-161` here; per-named-export recharts splitting at `UsageChartCards.tsx:9-39` there |"],
       "resolved": false
     },
+    "agents/quick-answer/QuickAnswerPopover.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["27","103"],
+      "contexts": [
+        "| `App.tsx:47` (DevInspector) · `agents/quick-answer/QuickAnswerPopover.tsx:27` · `agents/sub_design/DesignHub.tsx:20` · `overview/…/ExecutionsWithSubtabs.tsx:8` · `plugins/artist/sub_gallery/Gallery…"
+      ],
+      "resolved": false
+    },
     "dist/assets/preload-helper-*.js": {"count":1,"sections":[8],"contexts":["(`dist/assets/preload-helper-*.js`, verified) and absent in `vite dev`, where"],"resolved":false},
     "feature-lazy.tsx": {
       "count": 1,
@@ -203,6 +212,13 @@
       ],
       "resolved": false
     },
+    "shared/chrome/useTitleBarTray.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["17-20","194"],
+      "contexts": ["| `overview/sub_health/components/PersonaHealthDashboard.tsx:12,16` · `triggers/TriggersPage.tsx:25-26` · `shared/chrome/useTitleBarTray.tsx:17-20` | 2 each | tabs; tray overlays |"],
+      "resolved": false
+    },
     "src/App.tsx": {
       "count": 12,
       "sections": [4,6,7,8,9],
@@ -212,16 +228,6 @@
       "verbatim": "App.tsx"
     },
     "src/__tests__/structural/personas-page-code-splitting.test.ts": {"count":2,"sections":[6,8],"lines":["1-35"],"contexts":["- `src/__tests__/structural/personas-page-code-splitting.test.ts:1-35` — the only"]},
-    "src/features/agents/quick-answer/QuickAnswerPopover.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["27","103"],
-      "contexts": [
-        "| `App.tsx:47` (DevInspector) · `agents/quick-answer/QuickAnswerPopover.tsx:27` · `agents/sub_design/DesignHub.tsx:20` · `overview/…/ExecutionsWithSubtabs.tsx:8` · `plugins/artist/sub_gallery/Gallery…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/quick-answer/QuickAnswerPopover.tsx"
-    },
     "src/features/agents/sub_design/DesignHub.tsx": {
       "count": 2,
       "sections": [7],
@@ -400,7 +406,7 @@
     },
     "src/features/shared/chrome/footer/DesktopFooter.tsx": {"count":1,"sections":[9],"contexts":["documented at `:104-108` and `:356-362`), `DesktopFooter.tsx` footer icons,"],"resolvedFrom":"basename","verbatim":"DesktopFooter.tsx"},
     "src/features/shared/chrome/sidebar/SidebarLevel2.tsx": {"count":1,"sections":[7],"lines":["185"],"contexts":["(`HomeWelcome.tsx:58`, `NavigationGrid.tsx:48`, `SidebarLevel2.tsx:185`), and its"],"resolvedFrom":"basename","verbatim":"SidebarLevel2.tsx"},
-    "src/features/shared/chrome/useTitleBarTray.tsx": {"count":4,"sections":[6,7,8],"lines":["14-22","17-20","194"],"contexts":["- `src/features/shared/chrome/useTitleBarTray.tsx:14-22` — same, for tray overlays"]},
+    "src/features/shared/chrome/useTitleBarTray.tsx": {"count":1,"sections":[6],"lines":["14-22"],"contexts":["- `src/features/shared/chrome/useTitleBarTray.tsx:14-22` — same, for tray overlays"]},
     "src/features/shared/components/feedback/ErrorBoundary.tsx": {
       "count": 3,
       "sections": [3,6,7],
@@ -426,16 +432,6 @@
       "contexts": ["- **`layout/RouteChunkSkeleton`** (`RouteChunkSkeleton.tsx:31-45`) — the fallback"],
       "resolvedFrom": "basename",
       "verbatim": "RouteChunkSkeleton.tsx"
-    },
-    "src/features/teams/sub_goals/GoalsTimeline.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["32"],
-      "contexts": [
-        "| `App.tsx:47` (DevInspector) · `agents/quick-answer/QuickAnswerPopover.tsx:27` · `agents/sub_design/DesignHub.tsx:20` · `overview/…/ExecutionsWithSubtabs.tsx:8` · `plugins/artist/sub_gallery/Gallery…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "teams/sub_goals/GoalsTimeline.tsx"
     },
     "src/features/triggers/TriggersPage.tsx": {
       "count": 2,
@@ -464,6 +460,16 @@
       "resolvedFrom": "basename",
       "verbatim": "preloadErrorRecovery.ts"
     },
+    "teams/sub_goals/GoalsTimeline.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["32"],
+      "contexts": [
+        "| `App.tsx:47` (DevInspector) · `agents/quick-answer/QuickAnswerPopover.tsx:27` · `agents/sub_design/DesignHub.tsx:20` · `overview/…/ExecutionsWithSubtabs.tsx:8` · `plugins/artist/sub_gallery/Gallery…"
+      ],
+      "resolved": false
+    },
+    "useTitleBarTray.tsx": {"count":1,"sections":[8],"lines":["14-22"],"contexts":["`useTitleBarTray.tsx:14-22`, `App.tsx:104-106`, `vite.config.ts:147-152`)."],"resolved":false},
     "vite.config.ts": {
       "count": 8,
       "sections": [2,3,4,6,8],

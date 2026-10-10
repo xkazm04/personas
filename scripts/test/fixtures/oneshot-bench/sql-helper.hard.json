@@ -1,0 +1,124 @@
+{
+  "family": "sql-helper",
+  "difficulty": "hard",
+  "source": "same call site as sql-helper.json (nl_query.rs:271-319); the prompt text is unchanged, only the schema and the questions are harder",
+  "notes": "HARD tier. Runs against sql-schema-hard.sql (its own temp DB, so the easy tier's prompt stays byte-identical). Every question sets one named trap (`trap`), and `bad` holds one wrong-but-plausible query per trap. `expected` is the hand-computed answer key; --dry-run fails if `reference` stops producing it. Scoring is unchanged: fenced sql block, executes, rows cover `reference`'s rows.",
+  "databaseType": "sqlite",
+  "schemaFile": "sql-schema-hard.sql",
+  "tasks": [
+    {
+      "id": "sql-h01-q1-city-category",
+      "difficulty": "hard",
+      "trap": "5-table join; Q1 end edge (order 5 at 2026-03-31 23:59 vs BETWEEN ... '2026-03-31'); charged unit_price vs list_price",
+      "question": "For paid orders placed in Q1 2026 (January 1 through March 31, inclusive), what is the revenue per customer city and product category? Revenue is the quantity times the unit price charged on the order line. Show the city, the category name and the revenue.",
+      "reference": "SELECT cu.city, ca.name AS category, SUM(oi.quantity * oi.unit_price) AS revenue FROM orders o JOIN customers cu ON cu.id = o.customer_id JOIN order_items oi ON oi.order_id = o.id JOIN products p ON p.id = oi.product_id JOIN categories ca ON ca.id = p.category_id WHERE o.status = 'paid' AND o.created_at >= '2026-01-01' AND o.created_at < '2026-04-01' GROUP BY cu.city, ca.name",
+      "expected": [["Prague", "Hardware", 1520], ["Prague", "Software", 1190], ["Brno", "Hardware", 850], ["Brno", "Software", 450], ["Brno", "Services", 200]],
+      "ordered": false,
+      "good": "```sql\nSELECT cu.city, ca.name AS category, SUM(oi.quantity * oi.unit_price) AS revenue\nFROM orders o\nJOIN customers cu ON cu.id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.id\nJOIN products p ON p.id = oi.product_id\nJOIN categories ca ON ca.id = p.category_id\nWHERE o.status = 'paid'\n  AND date(o.created_at) BETWEEN '2026-01-01' AND '2026-03-31'\nGROUP BY cu.city, ca.name\nORDER BY revenue DESC;\n```\nRevenue per city and category for paid Q1 orders.",
+      "bad": [
+        "```sql\nSELECT cu.city, ca.name AS category, SUM(oi.quantity * oi.unit_price) AS revenue\nFROM orders o\nJOIN customers cu ON cu.id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.id\nJOIN products p ON p.id = oi.product_id\nJOIN categories ca ON ca.id = p.category_id\nWHERE o.status = 'paid' AND o.created_at BETWEEN '2026-01-01' AND '2026-03-31'\nGROUP BY cu.city, ca.name;\n```",
+        "```sql\nSELECT cu.city, ca.name AS category, SUM(oi.quantity * p.list_price) AS revenue\nFROM orders o\nJOIN customers cu ON cu.id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.id\nJOIN products p ON p.id = oi.product_id\nJOIN categories ca ON ca.id = p.category_id\nWHERE o.status = 'paid' AND o.created_at < '2026-04-01'\nGROUP BY cu.city, ca.name;\n```",
+        "```sql\nSELECT city, name, SUM(quantity * unit_price) FROM orders JOIN customers ON customers.id = orders.customer_id JOIN order_items ON order_items.order_id = orders.id JOIN products ON products.id = order_items.product_id JOIN categories ON categories.id = products.category_id WHERE orders.status = 'paid' GROUP BY city, name;\n```"
+      ]
+    },
+    {
+      "id": "sql-h02-avg-discount-nulls",
+      "difficulty": "hard",
+      "trap": "NULL handling: AVG(discount) skips NULL discounts (0.10 instead of 0.0556)",
+      "question": "What is the average discount across all paid orders? Orders with no discount recorded should count as a discount of 0.",
+      "reference": "SELECT AVG(COALESCE(discount, 0)) AS avg_discount FROM orders WHERE status = 'paid'",
+      "expected": [[0.0556]],
+      "ordered": true,
+      "good": "```sql\nSELECT AVG(COALESCE(o.discount, 0)) AS avg_discount\nFROM orders o\nWHERE o.status = 'paid';\n```",
+      "bad": [
+        "```sql\nSELECT AVG(discount) AS avg_discount FROM orders WHERE status = 'paid';\n```",
+        "```sql\nSELECT AVG(COALESCE(discount, 0)) AS avg_discount FROM orders;\n```"
+      ]
+    },
+    {
+      "id": "sql-h03-having-orders-vs-lines",
+      "difficulty": "hard",
+      "trap": "GROUP BY + HAVING after a join to order lines: COUNT(*) counts lines (6), not orders (3)",
+      "question": "Which customers have at least 3 paid orders and more than 2,200 in total paid revenue? Show the customer name, the number of paid orders and the total paid revenue (quantity times the line unit price).",
+      "reference": "SELECT c.name, COUNT(DISTINCT o.id) AS paid_orders, SUM(oi.quantity * oi.unit_price) AS revenue FROM customers c JOIN orders o ON o.customer_id = c.id AND o.status = 'paid' JOIN order_items oi ON oi.order_id = o.id GROUP BY c.id HAVING COUNT(DISTINCT o.id) >= 3 AND SUM(oi.quantity * oi.unit_price) > 2200",
+      "expected": [["Anna Novak", 3, 2420]],
+      "ordered": false,
+      "good": "```sql\nSELECT c.name, COUNT(DISTINCT o.id) AS paid_orders, SUM(oi.quantity * oi.unit_price) AS total_revenue\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nJOIN order_items oi ON oi.order_id = o.id\nWHERE o.status = 'paid'\nGROUP BY c.id, c.name\nHAVING COUNT(DISTINCT o.id) >= 3 AND SUM(oi.quantity * oi.unit_price) > 2200;\n```",
+      "bad": [
+        "```sql\nSELECT c.name, COUNT(*) AS paid_orders, SUM(oi.quantity * oi.unit_price) AS total_revenue\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nJOIN order_items oi ON oi.order_id = o.id\nWHERE o.status = 'paid'\nGROUP BY c.id, c.name\nHAVING COUNT(*) >= 3 AND SUM(oi.quantity * oi.unit_price) > 2200;\n```",
+        "```sql\nSELECT c.name, COUNT(DISTINCT o.id) AS paid_orders, SUM(oi.quantity * oi.unit_price) AS total_revenue\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nJOIN order_items oi ON oi.order_id = o.id\nWHERE o.status = 'paid'\nGROUP BY c.id, c.name\nHAVING COUNT(DISTINCT o.id) >= 3;\n```"
+      ]
+    },
+    {
+      "id": "sql-h04-top2-per-category",
+      "difficulty": "hard",
+      "trap": "top-N per group (window function); a global LIMIT 2 returns 2 rows instead of 6; refunded/pending lines must not count",
+      "question": "For each product category, list its 2 best-selling products by units sold in paid orders, with the units sold. Products with no paid sales are not listed, and a category with fewer than 2 such products shows only what it has.",
+      "reference": "SELECT category, product, units FROM (SELECT ca.name AS category, p.name AS product, SUM(oi.quantity) AS units, ROW_NUMBER() OVER (PARTITION BY ca.id ORDER BY SUM(oi.quantity) DESC) AS rn FROM order_items oi JOIN orders o ON o.id = oi.order_id AND o.status = 'paid' JOIN products p ON p.id = oi.product_id JOIN categories ca ON ca.id = p.category_id GROUP BY ca.id, p.id) WHERE rn <= 2",
+      "expected": [["Hardware", "Mesh Node", 10], ["Hardware", "Edge Router", 4], ["Software", "Backup Agent", 10], ["Software", "Analytics Suite", 4], ["Services", "Health Check", 3], ["Services", "Setup Visit", 1]],
+      "ordered": false,
+      "good": "```sql\nWITH sales AS (\n  SELECT ca.name AS category, p.name AS product, SUM(oi.quantity) AS units\n  FROM order_items oi\n  JOIN orders o ON o.id = oi.order_id\n  JOIN products p ON p.id = oi.product_id\n  JOIN categories ca ON ca.id = p.category_id\n  WHERE o.status = 'paid'\n  GROUP BY ca.name, p.name\n), ranked AS (\n  SELECT *, RANK() OVER (PARTITION BY category ORDER BY units DESC) AS rnk FROM sales\n)\nSELECT category, product, units FROM ranked WHERE rnk <= 2 ORDER BY category, units DESC;\n```",
+      "bad": [
+        "```sql\nSELECT ca.name AS category, p.name AS product, SUM(oi.quantity) AS units\nFROM order_items oi\nJOIN orders o ON o.id = oi.order_id\nJOIN products p ON p.id = oi.product_id\nJOIN categories ca ON ca.id = p.category_id\nWHERE o.status = 'paid'\nGROUP BY ca.name, p.name\nORDER BY units DESC\nLIMIT 2;\n```",
+        "```sql\nSELECT category, product, units FROM (\n  SELECT ca.name AS category, p.name AS product, SUM(oi.quantity) AS units,\n         ROW_NUMBER() OVER (PARTITION BY ca.id ORDER BY SUM(oi.quantity) DESC) AS rn\n  FROM order_items oi\n  JOIN products p ON p.id = oi.product_id\n  JOIN categories ca ON ca.id = p.category_id\n  GROUP BY ca.id, p.id\n) WHERE rn <= 2;\n```"
+      ]
+    },
+    {
+      "id": "sql-h05-march-date-edge",
+      "difficulty": "hard",
+      "trap": "date range edge: created_at has a time; BETWEEN '2026-03-01' AND '2026-03-31' drops the 23:59 order (3 instead of 4)",
+      "question": "How many orders, of any status, were created in March 2026?",
+      "reference": "SELECT COUNT(*) AS orders FROM orders WHERE created_at >= '2026-03-01' AND created_at < '2026-04-01'",
+      "expected": [[4]],
+      "ordered": true,
+      "good": "```sql\nSELECT COUNT(*) AS march_orders\nFROM orders\nWHERE strftime('%Y-%m', created_at) = '2026-03';\n```",
+      "bad": [
+        "```sql\nSELECT COUNT(*) AS march_orders\nFROM orders\nWHERE created_at BETWEEN '2026-03-01' AND '2026-03-31';\n```",
+        "```sql\nSELECT COUNT(*) AS march_orders\nFROM orders\nWHERE created_at >= '2026-03-01' AND created_at <= '2026-04-01 00:00:00';\n```"
+      ]
+    },
+    {
+      "id": "sql-h06-ambiguous-status",
+      "difficulty": "hard",
+      "trap": "ambiguous columns: `status` is on orders AND shipments, `name` on three tables; 'returned' is a SHIPMENT status, not the refunded ORDER status",
+      "question": "Which customers had a shipment with status 'returned', and which carrier handled it? Show the customer name and the carrier, one row per distinct customer and carrier.",
+      "reference": "SELECT DISTINCT c.name, s.carrier FROM shipments s JOIN orders o ON o.id = s.order_id JOIN customers c ON c.id = o.customer_id WHERE s.status = 'returned'",
+      "expected": [["Ben Ortiz", "DHL"], ["Ben Ortiz", "UPS"], ["Eva Lind", "UPS"]],
+      "ordered": false,
+      "good": "```sql\nSELECT DISTINCT c.name AS customer, s.carrier\nFROM shipments s\nJOIN orders o ON o.id = s.order_id\nJOIN customers c ON c.id = o.customer_id\nWHERE s.status = 'returned'\nORDER BY customer, s.carrier;\n```",
+      "bad": [
+        "```sql\nSELECT DISTINCT name, carrier\nFROM shipments\nJOIN orders ON orders.id = shipments.order_id\nJOIN customers ON customers.id = orders.customer_id\nWHERE status = 'returned';\n```",
+        "```sql\nSELECT DISTINCT c.name AS customer, s.carrier\nFROM shipments s\nJOIN orders o ON o.id = s.order_id\nJOIN customers c ON c.id = o.customer_id\nWHERE o.status = 'refunded';\n```"
+      ]
+    },
+    {
+      "id": "sql-h07-left-join-zero-units",
+      "difficulty": "hard",
+      "trap": "LEFT JOIN to keep zero categories (Training has no products, Accessories only sold in a cancelled order); a WHERE on the paid filter or a NULL sum loses the zeros",
+      "question": "For every product category, how many units were sold in paid orders? Include categories that sold zero units, showing 0 for them.",
+      "reference": "SELECT c.name, COALESCE(SUM(x.quantity), 0) AS units FROM categories c LEFT JOIN (SELECT p.category_id, oi.quantity FROM order_items oi JOIN orders o ON o.id = oi.order_id AND o.status = 'paid' JOIN products p ON p.id = oi.product_id) x ON x.category_id = c.id GROUP BY c.id",
+      "expected": [["Hardware", 15], ["Software", 14], ["Services", 4], ["Training", 0], ["Accessories", 0]],
+      "ordered": false,
+      "good": "```sql\nSELECT c.name AS category,\n       COALESCE(SUM(CASE WHEN o.status = 'paid' THEN oi.quantity END), 0) AS units_sold\nFROM categories c\nLEFT JOIN products p ON p.category_id = c.id\nLEFT JOIN order_items oi ON oi.product_id = p.id\nLEFT JOIN orders o ON o.id = oi.order_id\nGROUP BY c.id, c.name\nORDER BY units_sold DESC;\n```",
+      "bad": [
+        "```sql\nSELECT c.name AS category, COALESCE(SUM(oi.quantity), 0) AS units_sold\nFROM categories c\nLEFT JOIN products p ON p.category_id = c.id\nLEFT JOIN order_items oi ON oi.product_id = p.id\nLEFT JOIN orders o ON o.id = oi.order_id\nWHERE o.status = 'paid'\nGROUP BY c.id, c.name;\n```",
+        "```sql\nSELECT c.name AS category, SUM(CASE WHEN o.status = 'paid' THEN oi.quantity END) AS units_sold\nFROM categories c\nLEFT JOIN products p ON p.category_id = c.id\nLEFT JOIN order_items oi ON oi.product_id = p.id\nLEFT JOIN orders o ON o.id = oi.order_id\nGROUP BY c.id, c.name;\n```",
+        "```sql\nSELECT c.name AS category, COALESCE(SUM(oi.quantity), 0) AS units_sold\nFROM categories c\nLEFT JOIN products p ON p.category_id = c.id\nLEFT JOIN order_items oi ON oi.product_id = p.id\nGROUP BY c.id, c.name;\n```"
+      ]
+    },
+    {
+      "id": "sql-h08-self-join-referrals",
+      "difficulty": "hard",
+      "trap": "self-join on customers.referred_by, plus a cross-row predicate (different city)",
+      "question": "List every customer who was referred by another customer living in a different city. Show the referred customer's name, the referrer's name, and both of their cities.",
+      "reference": "SELECT c.name AS customer, r.name AS referrer, c.city, r.city AS referrer_city FROM customers c JOIN customers r ON r.id = c.referred_by WHERE c.city <> r.city",
+      "expected": [["Ben Ortiz", "Anna Novak", "Brno", "Prague"], ["Dan Weber", "Ben Ortiz", "Vienna", "Brno"], ["Gus Hale", "Eva Lind", "Prague", "Brno"]],
+      "ordered": false,
+      "good": "```sql\nSELECT c.name AS customer, c.city AS customer_city, r.name AS referrer, r.city AS referrer_city\nFROM customers c\nJOIN customers r ON r.id = c.referred_by\nWHERE c.city != r.city\nORDER BY c.name;\n```",
+      "bad": [
+        "```sql\nSELECT c.name AS customer, c.city AS customer_city, r.name AS referrer, r.city AS referrer_city\nFROM customers c\nJOIN customers r ON r.id = c.referred_by;\n```",
+        "```sql\nSELECT c.name AS customer, c.city AS customer_city, r.name AS referrer, r.city AS referrer_city\nFROM customers c\nLEFT JOIN customers r ON r.id = c.referred_by\nWHERE r.id IS NULL OR c.city != r.city;\n```"
+      ]
+    }
+  ]
+}

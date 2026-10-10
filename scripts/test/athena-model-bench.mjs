@@ -85,6 +85,9 @@ const REPORT = path.join(OUT_DIR, 'report.md');
 const OPUS = 'claude-opus-5';
 const SONNET = 'claude-sonnet-5';
 const GROK = 'grok-4.6';
+/** Production MAIN (model_routing.rs) and its Haiku 5.5 challenger. */
+const SONNET_55 = 'claude-sonnet-5-5';
+const HAIKU_55 = 'claude-haiku-5-5';
 
 /** Matrix cells. Every cell names its `engine` and `promptClass`:
  *  - engine `claude` = today's argv (`-p - --system-prompt-file`), `grok` =
@@ -108,6 +111,11 @@ const CELLS = {
   's-high-r': { engine: 'claude', model: SONNET, effort: 'high', promptClass: 'full', reinforced: true },
   's-med-r': { engine: 'claude', model: SONNET, effort: 'medium', promptClass: 'full', reinforced: true },
   's-low-r': { engine: 'claude', model: SONNET, effort: 'low', promptClass: 'full', reinforced: true },
+  's55-low': { engine: 'claude', model: SONNET_55, effort: 'low', promptClass: 'full' },
+  'h55-low': { engine: 'claude', model: HAIKU_55, effort: 'low', promptClass: 'full' },
+  'h55-med': { engine: 'claude', model: HAIKU_55, effort: 'medium', promptClass: 'full' },
+  'h55-high': { engine: 'claude', model: HAIKU_55, effort: 'high', promptClass: 'full' },
+  'h55-low-r': { engine: 'claude', model: HAIKU_55, effort: 'low', promptClass: 'full', reinforced: true },
   // Grok cells are metered (grok.com login reports real total_cost_usd) and
   // measured ~3x slower to first text on the full prompt; run them on a
   // scenario subset, never as part of the certification.

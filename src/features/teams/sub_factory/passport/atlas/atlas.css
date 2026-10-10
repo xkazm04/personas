@@ -22,47 +22,53 @@
    brings its own interior, so the atlas only gives it room. */
 .atlas-empty { padding-block: 8px; }
 
-/* ---- the matrix (proposed kit part: SpineMatrix) ---- */
-.atlas-matrix { --name: 248px; --score: 44px; overflow-x: auto; scrollbar-width: thin; }
-.atlas-matrix__head, .atlas-matrix__row {
-  display: grid; align-items: stretch;
-  grid-template-columns: var(--name) var(--score) var(--score) repeat(var(--cols), minmax(56px, 1fr));
-}
-.atlas-matrix__head { min-height: 56px; position: sticky; top: 0; z-index: 3; background: var(--background); }
+/* ---- the matrix: the Instrument figure (every value a reading on a scale) ----
+ * One project per line, one dimension per column. Every animation runs once
+ * (mount, lens change, a clicked cell); reduced motion turns all of it off. */
+.atlas-matrix { --cols-def: minmax(290px, 330px) 64px 64px repeat(var(--cols), minmax(60px, 1fr)); overflow-x: auto; scrollbar-width: thin; padding-bottom: 4px; }
+.atlas-matrix__head, .atlas-matrix__row { display: grid; align-items: stretch; grid-template-columns: var(--cols-def); }
+.atlas-matrix__head { position: sticky; top: 0; z-index: 3; background: var(--background); min-height: 56px; }
 .atlas-matrix__name-head { display: flex; align-items: flex-end; gap: 6px; padding: 0 10px 8px var(--gutter); }
-.atlas-matrix__gaps-head { margin-left: auto; }
-.atlas-matrix__score-head { display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; }
-.atlas-matrix__dim {
-  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px;
-  padding: 0 3px 6px; border-bottom: 2px solid var(--rule); text-align: center; line-height: 1.2; min-width: 0;
-}
+.atlas-matrix__score-head { display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; color: var(--quiet); }
+.atlas-matrix__dim { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; padding: 0 3px 6px; border-bottom: 2px solid var(--rule); text-align: center; line-height: 1.2; transition: color 160ms ease, border-color 160ms ease; }
 .atlas-matrix__dim.is-current { color: var(--primary); border-bottom-color: var(--primary); }
-.atlas-matrix__dim-label { cursor: help; }
-.atlas-matrix__row { height: 32px; position: relative; --band: transparent; }
+.atlas-matrix__row { position: relative; min-height: 56px; --band: transparent; }
 .atlas-matrix__row:nth-child(even) { --band: var(--band-alt); }
 .atlas-matrix__row:hover { --band: var(--band-hover); }
 .atlas-matrix__row.is-selected { --band: var(--band-sel); }
-.atlas-matrix__row > * { min-width: 0; background: var(--band); }
-.atlas-matrix__row > :first-child { background: linear-gradient(to right, transparent 22px, var(--band) 22px); }
-.atlas-matrix__row.is-selected::after {
-  content: ''; position: absolute; left: 13px; top: 2px; bottom: 2px; width: 3px; border-radius: 2px;
-  background: var(--primary); box-shadow: 0 0 12px var(--glow); pointer-events: none;
-}
-.atlas-matrix__project { display: flex; align-items: center; gap: 8px; padding: 0 10px 0 16px; }
-.atlas-matrix__name.k-btn, .atlas-matrix__name {
-  height: 100%; min-width: 0; flex: 1; justify-content: flex-start; gap: 6px; padding: 0 4px;
-  /* Weight is the kit's (.k-strong on the name span), not repainted here: a
-     feature stylesheet that pins a font-weight owns a type decision the token
-     ladder already makes. */
-  background: transparent; border: 0; white-space: nowrap;
-}
-.atlas-matrix__name:hover { color: var(--primary); }
-.atlas-matrix__gaps { width: 22px; text-align: right; flex: none; }
-.atlas-matrix__score { display: flex; align-items: center; justify-content: center; color: var(--quiet); }
-.atlas-matrix__cell { display: flex; align-items: center; justify-content: center; cursor: pointer; outline-offset: -2px; }
-.atlas-matrix__cell.is-column { background: color-mix(in srgb, var(--primary) 5%, var(--band)); }
-.atlas-matrix__cell:hover { background: var(--band-sel); }
+.atlas-matrix__row > * { min-width: 0; background: var(--band); transition: background-color 160ms ease; }
+.atlas-matrix__name.k-btn, .atlas-matrix__name { height: auto; min-width: 0; flex: 1; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; padding: 4px 6px; background: transparent; border: 0; text-align: left; white-space: normal; }
+.atlas-matrix__name:hover .atlas-matrix__title { color: var(--primary); }
+.atlas-matrix__title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; transition: color 140ms ease; }
+.atlas-matrix__cell { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 6px; cursor: pointer; outline-offset: -2px; }
 .atlas-matrix__cell:focus-visible { outline: 2px solid var(--primary); }
+.atlas-matrix__cell.is-column { background: color-mix(in srgb, var(--primary) 5%, var(--band)); }
+.atlas-matrix__cell:hover .atlas-meter__seg:not(.is-on) { background: var(--line); }
+.atlas-matrix__cell.is-pinged { animation: atlas-ping 520ms ease-out 1; }
+
+.atlas-id { display: flex; align-items: center; gap: 10px; padding: 0 10px 0 16px; }
+.atlas-tile { position: relative; width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 8px; background: color-mix(in srgb, var(--tone) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 40%, transparent); color: var(--tone); overflow: hidden; }
+.atlas-tile img { width: 22px; height: 22px; object-fit: contain; }
+.atlas-tile[data-ink='unknown'] { box-shadow: none; outline: 1.5px dashed var(--tone); outline-offset: -1.5px; background: transparent; }
+.atlas-tile[data-ink='warn'] { background: linear-gradient(to top, color-mix(in srgb, var(--tone) 22%, transparent) 50%, color-mix(in srgb, var(--tone) 6%, transparent) 50%); }
+.atlas-tile__gaps { position: absolute; right: 0; bottom: 0; min-width: 15px; padding: 0 3px; border-radius: 6px 0 0 0; background: var(--tone); color: var(--background); text-align: center; line-height: 1.35; }
+.atlas-dial { display: grid; place-items: center; position: relative; }
+.atlas-dial svg { width: 40px; height: 40px; transform: rotate(-90deg); overflow: visible; }
+.atlas-dial__num { position: absolute; inset: 0; display: grid; place-items: center; }
+.atlas-meter { display: flex; gap: 2px; width: 100%; max-width: 44px; height: 10px; align-items: stretch; }
+.atlas-meter__seg { flex: 1; border-radius: 2px; background: var(--rule); position: relative; overflow: hidden; transition: background-color 140ms ease; }
+.atlas-meter__seg.is-on::after { content: ''; position: absolute; inset: 0; background: var(--tone); transform-origin: left; animation: atlas-grow 300ms cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--d, 0s) + var(--sd, 0s)); }
+.atlas-meter[data-ink='warn'] .atlas-meter__seg.is-on::after { background: repeating-linear-gradient(135deg, var(--tone) 0 3px, color-mix(in srgb, var(--tone) 55%, transparent) 3px 5px); }
+.atlas-meter[data-ink='unknown'] .atlas-meter__seg { background: none; outline: 1px dashed var(--line); outline-offset: -1px; }
+.atlas-meter[data-ink='setup'] .atlas-meter__seg { background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--status-info) 55%, transparent); }
+.atlas-count { color: var(--tone); animation: atlas-rise 300ms ease both; animation-delay: var(--d, 0s); }
+
+@keyframes atlas-rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes atlas-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes atlas-ping { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 45%, transparent); } to { box-shadow: 0 0 0 8px transparent; } }
+@media (prefers-reduced-motion: reduce) {
+  .atlas-matrix *, .atlas-matrix *::after { animation: none !important; transition: none !important; }
+}
 
 .atlas-readout { display: flex; align-items: center; gap: 10px; min-height: 36px; background: var(--band-alt); padding-right: 12px; }
 /* Weight comes from .k-strong on the element; this rule is layout only. */
@@ -115,38 +121,8 @@
 
 /* ---- narrow surface (the 1280 window's ~950px column) ---- */
 @container kit (max-width: 1100px) {
-  .atlas-matrix { --name: 200px; --score: 36px; }
-  .atlas-matrix__head, .atlas-matrix__row { grid-template-columns: var(--name) var(--score) var(--score) repeat(var(--cols), minmax(44px, 1fr)); }
-  .atlas-matrix__dim-count { display: none; }
+  .atlas-matrix { --cols-def: minmax(230px, 260px) 54px 54px repeat(var(--cols), minmax(50px, 1fr)); }
   .atlas-readout__keys { display: none; }
   .atlas-dim { grid-template-columns: minmax(0, 1fr) auto; }
   .atlas-dim__value { grid-column: 1 / -1; grid-row: 2; }
 }
-
-/* ---- bench figures (/prototype 2026-10-06) ----------------------------------
- * Two alternative readings of the same model. Both are FIGURES composed into
- * the portfolio shell (doctrine 6c), so layout is free here while type and
- * colour stay on the app's tokens. */
-
-/* Ledger: the dimension is the row, the states are columns. The table is
- * windowed, so the figure gives it a bounded height to scroll inside - the
- * only height in this stylesheet, and it is a cap, not a layout dimension. */
-.atlas-ledger {
-  display: flex; flex-direction: column; min-height: 0;
-  height: clamp(320px, 56vh, 680px);
-  padding: 0 12px 0 var(--gutter);
-}
-.atlas-ledger__dim { cursor: help; }
-.atlas-ledger__num { display: inline-flex; align-items: center; gap: 6px; }
-.atlas-ledger__who { display: flex; align-items: center; gap: 4px; min-width: 0; flex-wrap: nowrap; overflow: hidden; }
-.atlas-ledger__who-btn { max-width: 11ch; min-width: 0; padding: 0 6px; height: 22px; background: var(--band-alt); }
-.atlas-ledger__who-btn:hover { color: var(--primary); background: var(--band-sel); }
-
-/* Dossier: the project is the unit, its gaps are named. */
-.atlas-dossier { padding: 0 12px 0 var(--gutter); }
-.atlas-dossier__meta { display: inline-flex; align-items: center; gap: 8px; }
-.atlas-dossier__note { margin: 0; display: flex; align-items: center; gap: 8px; color: var(--quiet); }
-.atlas-dossier__gaps { display: flex; flex-wrap: wrap; gap: 4px 6px; }
-.atlas-dossier__gap { height: 24px; padding: 0 8px; gap: 6px; background: var(--band-alt); max-width: 100%; min-width: 0; }
-.atlas-dossier__gap:hover { color: var(--primary); background: var(--band-sel); }
-.atlas-dossier__gap-more { display: inline-flex; align-items: center; }

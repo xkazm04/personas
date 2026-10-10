@@ -23,6 +23,7 @@ import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnF
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { priorityConfig, MESSAGE_ROW_HEIGHT, type PriorityStyle } from '../libs/reportHelpers';
 import { PriorityChip } from './PriorityChip';
+import { usePendingReportFocus } from '../libs/usePendingReportFocus';
 import { useColumnWidths, ColumnResizeHandle } from '@/features/shared/components/display/ColumnResize';
 
 // Ordered columns for the flat message grid. Widths are defaults — users can
@@ -135,6 +136,8 @@ export default function ReportList() {
   }, []);
 
   useReportCreatedListener(handleMessageCreated);
+  // An Approvals row linked to a report opens it here (pendingReportFocus door).
+  usePendingReportFocus(enrichedMessages, personaMap, setSelectedMsg);
 
   const filteredMessages = useMemo(() => {
     let result = enrichedMessages;

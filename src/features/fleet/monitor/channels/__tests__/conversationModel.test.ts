@@ -6,6 +6,7 @@ import {
   goalText,
   looksLikeGoal,
   nextPromptBatch,
+  reconcileRows,
   type QueuedPrompt,
 } from '../conversationModel';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
@@ -276,5 +277,74 @@ describe('dayLabel', () => {
 
   it('returns an empty label for an unparseable timestamp rather than "Invalid Date"', () => {
     expect(dayLabel('not-a-date', words, now)).toBe('');
+  });
+});
+
+/* ----------------------------------------------------------------------------
+ * ROW IDENTITY ACROSS A REBUILD.
+ *
+ * `buildConversation` is pure and allocates a fresh object per row, so one
+ * arriving message handed every memoized card a brand-new `row` prop and a
+ * brand-new `items` array. The virtualizer's `getItemKey` saved the DOM nodes;
+ * nothing saved the renders. These assert identity by REFERENCE, because
+ * reference is exactly what `React.memo` compares.
+ * -------------------------------------------------------------------------- */
+describe('reconcileRows', () => {
+  const page = (ids: string[]) => ids.map((id, i) => item(id, `2026-08-20T10:0${i}:00Z`));
+
+  it('returns the previous ARRAY when nothing changed', () => {
+    const items = page(['a', 'b', 'c']);
+    const first = buildConversation(items);
+    const second = reconcileRows(first, buildConversation(items));
+    expect(second).toBe(first);
+  });
+
+  it('keeps every unchanged row object when one message arrives', () => {
+    const items = page(['a', 'b', 'c']);
+    const first = buildConversation(items);
+    // The channel is newest-first; a new message lands at the head.
+    const grown = buildConversation([item('d', '2026-08-20T10:09:00Z'), ...items]);
+    const next = reconcileRows(first, grown);
+
+    expect(next).not.toBe(first);
+    expect(next).toHaveLength(first.length + 1);
+    // Every row the previous build already produced is the SAME object.
+    for (const row of first) {
+      expect(next.find((r) => r.key === row.key)).toBe(row);
+    }
+    expect(next[next.length - 1]!.key).toBe('talk:d');
+  });
+
+  it('keeps a cluster row AND its items array when the cluster did not change', () => {
+    const steps = [
+      step('s2', '2026-08-20T10:02:00Z', 'asg-1'),
+      step('s1', '2026-08-20T10:01:00Z', 'asg-1'),
+    ];
+    const first = buildConversation(steps);
+    const next = reconcileRows(first, buildConversation(steps));
+    const a = first.find((r) => r.kind === 'assignment')!;
+    const b = next.find((r) => r.kind === 'assignment')!;
+    expect(b).toBe(a);
+    // The array identity is the one AssignmentCard's memo compares.
+    expect(b.kind === 'assignment' && a.kind === 'assignment' && b.items === a.items).toBe(true);
+  });
+
+  it('replaces a cluster row when a step joins it', () => {
+    const base = [step('s1', '2026-08-20T10:01:00Z', 'asg-1')];
+    const first = buildConversation(base);
+    const grown = buildConversation([step('s2', '2026-08-20T10:02:00Z', 'asg-1'), ...base]);
+    const next = reconcileRows(first, grown);
+    const a = first.find((r) => r.kind === 'assignment')!;
+    const b = next.find((r) => r.kind === 'assignment')!;
+    expect(b).not.toBe(a);
+    expect(b.kind === 'assignment' && b.items).toHaveLength(2);
+  });
+
+  it('replaces a talk row when the item object itself was replaced', () => {
+    const first = buildConversation(page(['a']));
+    const next = reconcileRows(first, buildConversation(page(['a'])));
+    // Same id, DIFFERENT object — the slice only preserves identity on a quiet
+    // refresh, so a genuine rewrite must not be mistaken for one.
+    expect(next[next.length - 1]).not.toBe(first[first.length - 1]);
   });
 });

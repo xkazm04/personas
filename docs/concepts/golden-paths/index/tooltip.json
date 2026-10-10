@@ -35,6 +35,8 @@
     "**[`timestamp-display.md`](./timestamp-display.md)** owns which locale a moment is"
   ],
   "citations": {
+    "DeckActionBar.tsx": {"count":1,"sections":[7],"lines":["133,154"],"contexts":["`DeckActionBar.tsx:133,154` (`branch.hint` vs `branch.label`) · `DeckTopBar.tsx:41,120,151`"],"resolved":false},
+    "DeckTopBar.tsx": {"count":1,"sections":[7],"lines":["41,120,151"],"contexts":["`DeckActionBar.tsx:133,154` (`branch.hint` vs `branch.label`) · `DeckTopBar.tsx:41,120,151`"],"resolved":false},
     "DispatchTable.tsx": {"count":2,"sections":[7,9],"lines":["106"],"contexts":["`DispatchTable.tsx:106` · `PersonaCoachingTable.tsx:163,211` · `contextMapPerf.tsx:261,317`"],"resolved":false},
     "EdgeDeleteTooltip.tsx": {"count":2,"sections":[5,9],"contexts":["- **Naming an anchored popover `*Tooltip`.** `EdgeDeleteTooltip.tsx` has a delete action,"],"resolved":false},
     "ExecutionListRow.tsx": {"count":3,"sections":[7,9],"lines":["71,78,140,141,224","191"],"contexts":["High-traffic remainder: `ExecutionListRow.tsx:71,78,140,141,224` ·"],"resolved":false},
@@ -47,6 +49,7 @@
     "MessageDetailModal.tsx": {"count":1,"sections":[7],"lines":["945"],"contexts":["`UseCaseRow.tsx:134,156,192` · `GlyphTopBar.tsx:45` · `MessageDetailModal.tsx:945` ·"],"resolved":false},
     "PersonaParametersCard.tsx": {"count":1,"sections":[7],"lines":["60"],"contexts":["behind a \"+N\" overflow) · `PersonaOverviewColumns.tsx:41` · `PersonaParametersCard.tsx:60`"],"resolved":false},
     "PersonaSquare.tsx": {"count":1,"sections":[7],"lines":["27"],"contexts":["· `PersonaSquare.tsx:27` · `PersonaMonitor.tsx:256` · `ReviewListItem.tsx:14,24,33` · …"],"resolved":false},
+    "QuestionPanel.tsx": {"count":1,"sections":[7],"lines":["45"],"contexts":["· `QuestionPanel.tsx:45` · `GlyphCapabilityPreview.tsx:229,242,253` ·"],"resolved":false},
     "StandardsCard.tsx": {"count":1,"sections":[7],"lines":["54"],"contexts":["· `GroundingTable.tsx:63` · `StandardsCard.tsx:54` · `SensorScoreboard.tsx:53`."],"resolved":false},
     "UseCaseDetailPanel.tsx": {"count":1,"sections":[9],"contexts":["`GlyphCapabilityPreview.tsx` · `UseCaseDetailPanel.tsx` · `ConnectorStatusCard.tsx` ·"],"resolved":false},
     "UseCaseRow.tsx": {"count":2,"sections":[7],"lines":["134,156,192","134,192"],"contexts":["`UseCaseRow.tsx:134,156,192` · `GlyphTopBar.tsx:45` · `MessageDetailModal.tsx:945` ·"],"resolved":false},
@@ -72,7 +75,7 @@
     "overview/sub_analytics/ExecutionHeatmap.tsx": {"count":1,"sections":[7],"lines":["444"],"contexts":["| `overview/sub_analytics/ExecutionHeatmap.tsx:444` | **justified** (SVG `<rect>` trigger), reasoning at `:440-442` |"],"resolved":false},
     "overview/sub_certification/GateBreakdown.tsx": {"count":1,"sections":[7],"lines":["29"],"contexts":["`overview/sub_certification/GateBreakdown.tsx:29` (the gate log tail, available nowhere"],"resolved":false},
     "plugins/companion/Bubble.tsx": {"count":1,"sections":[7],"lines":["215"],"contexts":["`FleetStatusLegend.tsx:40`, `plugins/companion/Bubble.tsx:215`,"],"resolved":false},
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**The positive control is deliberately NOT proposed for `rules.json`.** A census baseline"],"resolvedFrom":"basename","verbatim":"rules.json"},
+    "rules.json": {"count":1,"sections":[9],"contexts":["**The positive control is deliberately NOT proposed for `rules.json`.** A census baseline"],"resolved":false},
     "scripts/census/run-census.mjs": {"count":1,"sections":[9],"lines":["19-38"],"contexts":["contract (`run-census.mjs:19-38`) was exercised against this exact rule:"],"resolvedFrom":"basename","verbatim":"run-census.mjs"},
     "shared-facts.json": {"count":3,"sections":[7,9],"contexts":["`shared-facts.json`; everything else was measured during"],"resolved":false},
     "src/**/*.tsx": {"count":1,"sections":[7],"contexts":["Parsed, not grepped. Every JSX opening tag in `src/**/*.tsx` was read with a"],"resolved":false},
@@ -95,23 +98,6 @@
     },
     "src/features/agents/components/matrix/UnifiedBuildEntry.tsx": {"count":1,"sections":[7],"lines":["750"],"contexts":["examples: `UnifiedBuildEntry.tsx:750` (a two-clause sentence in a ternary) ·"],"resolvedFrom":"basename","verbatim":"UnifiedBuildEntry.tsx"},
     "src/features/agents/executionPlayer/PipelineDots.tsx": {"count":1,"sections":[7],"lines":["38"],"contexts":["`PipelineDots.tsx:38` · `RunnerPhaseTimeline.tsx:58,85` · `KnowledgeTree.tsx:335` ·"],"resolvedFrom":"basename","verbatim":"PipelineDots.tsx"},
-    "src/features/agents/quick-answer/triage/deck/DeckActionBar.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["133,154"],
-      "contexts": ["`DeckActionBar.tsx:133,154` (`branch.hint` vs `branch.label`) · `DeckTopBar.tsx:41,120,151`"],
-      "resolvedFrom": "basename",
-      "verbatim": "DeckActionBar.tsx"
-    },
-    "src/features/agents/quick-answer/triage/deck/DeckTopBar.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["41,120,151"],
-      "contexts": ["`DeckActionBar.tsx:133,154` (`branch.hint` vs `branch.label`) · `DeckTopBar.tsx:41,120,151`"],
-      "resolvedFrom": "basename",
-      "verbatim": "DeckTopBar.tsx"
-    },
-    "src/features/agents/quick-answer/triage/deck/QuestionPanel.tsx": {"count":1,"sections":[7],"lines":["45"],"contexts":["· `QuestionPanel.tsx:45` · `GlyphCapabilityPreview.tsx:229,242,253` ·"],"resolvedFrom":"basename","verbatim":"QuestionPanel.tsx"},
     "src/features/agents/sub_connectors/components/connectors/ConnectorStatusCard.tsx": {"count":2,"sections":[7,9],"lines":["75"],"contexts":["`ConnectorStatusCard.tsx:75`, `ReadinessTrend.tsx:17`."],"resolvedFrom":"basename","verbatim":"ConnectorStatusCard.tsx"},
     "src/features/agents/sub_deployment/components/cloud/DailyBreakdownChart.tsx": {
       "count": 1,

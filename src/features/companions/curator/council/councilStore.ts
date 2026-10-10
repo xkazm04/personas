@@ -25,7 +25,8 @@ import { silentCatch } from '@/lib/silentCatch';
 import { buildLayout } from './galaxy/engine/layout';
 import type { GalaxyEngine } from './galaxy/engine/GalaxyEngine';
 import { FIXTURE_ROOT, IS_DEV, loadReferenceFixture } from './galaxy/fixture';
-import type { CameraState, GalaxyCounts, GalaxyFocus, GalaxyLayout, GalaxyNode } from './galaxy/engine/types';
+import type { GalaxyCounts, GalaxyFocus, GalaxyLayout, GalaxyNode } from './galaxy/engine/types';
+import type { QueueFilter } from './queue/laneModel';
 
 export type LoadStatus = 'idle' | 'loading' | 'loaded' | 'failed';
 
@@ -63,21 +64,14 @@ export interface CouncilStore {
   focus: GalaxyFocus;
   counts: GalaxyCounts;
   hover: GalaxyNode | null;
-  filter: string;
-  selectedIndex: number;
-  lensOn: boolean;
-  /** The view to restore when the bench drops (WP8 raises it). */
-  cameraBeforeBench: CameraState | null;
-  /**
-   * The focus the reader was standing in when the bench went up.
-   *
-   * Restored TOGETHER with `cameraBeforeBench`, and in that order: the focus
-   * without a flight, then the exact camera. Focus alone would put the
-   * reader at the altitude their path implies rather than at the view they
-   * had placed themselves, which is a different promise from the one the
-   * reference makes.
-   */
-  focusBeforeBench: GalaxyFocus | null;
+
+  // ── the queue (the lanes) and the open council ──
+  /** The row the header CTA acts on; its stars are lit. */
+  selectedId: string | null;
+  /** The council open as the verdict page. Null = the galaxy. */
+  openId: string | null;
+  /** Which of the queue's three lists the lanes show. */
+  queueFilter: QueueFilter;
 
   /** DEV only: the page is showing the checked-in reference fixture. */
   fixtureOn: boolean;
@@ -92,68 +86,47 @@ export interface CouncilStore {
   fixtureRuns: Record<string, CouncilRunDetail>;
 
   /**
-   * The live canvas engine, published by the galaxy stage that owns it.
+   * The live canvas engine, published by the fused stage that owns it.
    *
-   * ONE owner: `GalaxyStage` creates it, hands it here, and clears it on
-   * unmount. The bench reads it and never constructs one. It is here rather
-   * than in a prop because the bench mounts in an opaque slot inside the
-   * stage, and the alternative - a render-prop bench - would make every
-   * consumer of the slot know about the engine.
+   * ONE owner: `FusedStage` creates it, hands it here, and clears it on
+   * unmount. Everything else reads it and never constructs one.
    */
   engine: GalaxyEngine | null;
 
-  // ── the bench (WP8) ──
-  /** The queue drawer is up. The galaxy stays live above it, never hidden. */
-  benchOpen: boolean;
-  /** The subject whose round table is open. Null means the queue layer. */
-  tableSubjectId: string | null;
-  /** Index into the flattened queue; the arrows move this. */
-  queueIndex: number;
   /**
    * Decisions taken with the fixture on.
    *
    * The fixture has no backend, so a decision has nowhere to go: it is held
-   * here, the bench and the galaxy read it, and the page says out loud that
+   * here, the queue and the galaxy read it, and the page says out loud that
    * it is fixture mode. It is NEVER consulted when `fixtureOn` is false, so
    * a real decision can only ever come from the store.
    */
   fixtureDecisions: Record<string, { decision: 'approved' | 'rejected'; reason: string | null }>;
   /**
-   * Bumped by the `G` key. The gate FOCUSES its Approve button when this
-   * changes and does nothing else: no key in this app commits a decision.
+   * Bumped to ask the gate to FOCUS its Approve button; it does nothing
+   * else: no key in this app commits a decision.
    */
   gateFocusNonce: number;
-  /**
-   * `[` and `]` at the round table, as a signed step the table consumes.
-   *
-   * The chain of rounds lives in the table's own fetch, not here, so the key
-   * handler cannot know which round is next - it says WHICH WAY, and the
-   * table, which holds the chain, decides where that lands.
-   */
-  roundStep: number;
 
   load: (registryRoot: string | null) => Promise<void>;
   loadFixture: () => Promise<void>;
   setFocus: (focus: GalaxyFocus) => void;
-  focusCouncil: (subject: CouncilSubjectState, camera: CameraState | null) => void;
+  focusCouncil: (subject: CouncilSubjectState) => void;
   clearCouncilFocus: () => void;
   setCounts: (counts: GalaxyCounts) => void;
   setHover: (node: GalaxyNode | null) => void;
-  setFilter: (filter: string) => void;
-  setSelectedIndex: (index: number) => void;
-  setLens: (on: boolean) => void;
-  setCameraBeforeBench: (camera: CameraState | null) => void;
+  /**
+   * Select a council in the queue: it arms the header CTA and lights the
+   * stars it lands on. Null clears both.
+   */
+  selectCouncil: (subject: CouncilSubjectState | null) => void;
+  /** Open a council as the verdict page (it is selected too), or close it with null. */
+  openCouncil: (subjectId: string | null) => void;
+  setQueueFilter: (filter: QueueFilter) => void;
 
   setEngine: (engine: GalaxyEngine | null) => void;
-  setBenchOpen: (open: boolean) => void;
-  setTableSubject: (subjectId: string | null) => void;
-  setQueueIndex: (index: number) => void;
   /** Move the keyboard focus to the gate. It never commits. */
   focusGate: () => void;
-  /** Ask the table for the previous (-1) or next (+1) round. */
-  stepRound: (delta: number) => void;
-  /** The table has honoured the step. */
-  clearRoundStep: () => void;
   /** Re-read the councils and the overlay after a decision lands. */
   refreshCouncils: () => Promise<void>;
   /** Fixture mode only: hold the decision in memory so the page can show it. */
@@ -181,8 +154,8 @@ const EMPTY_COUNTS: GalaxyCounts = {
  * colour of the stars that council lands on, on the way back up. With a
  * backend that happens because `refreshCouncils()` re-reads the real
  * overlay; with the fixture there is nothing to re-read, so the decision is
- * projected onto the overlay here instead of being invisible above the
- * bench.
+ * projected onto the overlay here instead of being invisible beside the
+ * queue.
  *
  * The projection follows `markOf`'s own precedence (rejected, then approved,
  * then pending): a decision moves one count off `pending` and onto its own
@@ -248,20 +221,14 @@ export const useCouncilStore = create<CouncilStore>((set, get) => ({
   focus: { kind: 'none' },
   counts: EMPTY_COUNTS,
   hover: null,
-  filter: '',
-  selectedIndex: 0,
-  lensOn: true,
-  cameraBeforeBench: null,
-  focusBeforeBench: null,
+  selectedId: null,
+  openId: null,
+  queueFilter: 'waiting',
   fixtureOn: false,
   fixtureRuns: {},
   engine: null,
-  benchOpen: false,
-  tableSubjectId: null,
-  queueIndex: 0,
   fixtureDecisions: {},
   gateFocusNonce: 0,
-  roundStep: 0,
 
   loadFixture: async () => {
     if (!IS_DEV) return;
@@ -335,66 +302,37 @@ export const useCouncilStore = create<CouncilStore>((set, get) => ({
     set({ galaxyStatus: 'failed', galaxyError: galaxyResult.reason });
   },
 
-  setFocus: (focus) => set({ focus, selectedIndex: 0, filter: '' }),
+  setFocus: (focus) => set({ focus }),
 
-  focusCouncil: (subject, camera) =>
-    set((s) => ({
-      cameraBeforeBench: camera ?? s.cameraBeforeBench,
-      selectedIndex: 0,
-      filter: '',
+  focusCouncil: (subject) =>
+    set({
       focus: {
         kind: 'council',
         subjectId: subject.id,
         title: subject.title,
         registrySubjects: subject.registrySubjects,
       },
-    })),
+    }),
 
-  clearCouncilFocus: () => set({ focus: { kind: 'none' }, selectedIndex: 0, filter: '' }),
+  clearCouncilFocus: () => set({ focus: { kind: 'none' } }),
   setCounts: (counts) => set({ counts }),
   setHover: (hover) => set({ hover }),
-  setFilter: (filter) => set({ filter, selectedIndex: 0 }),
-  setSelectedIndex: (selectedIndex) => set({ selectedIndex }),
-  setLens: (lensOn) => set({ lensOn }),
-  setCameraBeforeBench: (cameraBeforeBench) => set({ cameraBeforeBench }),
+
+  selectCouncil: (subject) => {
+    if (!subject) {
+      set({ selectedId: null });
+      get().clearCouncilFocus();
+      return;
+    }
+    set({ selectedId: subject.id });
+    get().focusCouncil(subject);
+  },
+  openCouncil: (openId) => set((s) => ({ openId, selectedId: openId ?? s.selectedId })),
+  setQueueFilter: (queueFilter) => set({ queueFilter }),
 
   setEngine: (engine) => set({ engine }),
 
-  /**
-   * Raising the bench REMEMBERS the reader's view; dropping it gives that
-   * view back, byte for byte.
-   *
-   * The camera comes from the engine rather than from anything React knows,
-   * because the camera is not React state: it is tweened per frame inside
-   * the engine, and the value that matters is the one at the moment the
-   * bench went up. On the way down the focus is restored WITHOUT a flight
-   * (`setFocus(focus, false)`), and then the exact camera is flown back to,
-   * so the reader lands where they were rather than at the altitude their
-   * focus implies.
-   */
-  setBenchOpen: (benchOpen) => {
-    const s = get();
-    if (benchOpen) {
-      set({
-        benchOpen: true,
-        focusBeforeBench: s.focus,
-        cameraBeforeBench: s.engine?.getCamera() ?? s.cameraBeforeBench,
-      });
-      return;
-    }
-    const focus = s.focusBeforeBench ?? { kind: 'none' as const };
-    const camera = s.cameraBeforeBench;
-    set({ benchOpen: false, tableSubjectId: null, focus, focusBeforeBench: null });
-    const engine = s.engine;
-    if (!engine) return;
-    engine.setFocus(focus, false);
-    if (camera) engine.restoreCamera(camera);
-  },
-  setTableSubject: (tableSubjectId) => set({ tableSubjectId }),
-  setQueueIndex: (queueIndex) => set({ queueIndex }),
   focusGate: () => set((s) => ({ gateFocusNonce: s.gateFocusNonce + 1 })),
-  stepRound: (delta) => set({ roundStep: delta }),
-  clearRoundStep: () => set({ roundStep: 0 }),
 
   recordFixtureDecision: (subjectId, decision, reason) =>
     set((s) => {
@@ -427,7 +365,7 @@ export const useCouncilStore = create<CouncilStore>((set, get) => ({
     const overlay = overlayResult.value;
     const galaxy = get().galaxy;
     // The stars have to repaint: a decision changes the marks the field is
-    // drawn with, and a bench that agreed with a sky that did not would be
+    // drawn with, and a queue that agreed with a sky that did not would be
     // two ideas of the same fact.
     if (galaxy) set({ overlay, layout: buildLayout(galaxy, overlay) });
     if (root) {

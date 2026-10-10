@@ -140,6 +140,7 @@
       ],
       "resolved": false
     },
+    "runner/mod.rs": {"count":4,"sections":[0,9],"lines":["2612","2857-2878","2770","2854"],"contexts":["(`runner/mod.rs:2612`); the Claude CLI in `stream-json` mode simply reports its"],"resolved":false},
     "scan-finalize.ts": {
       "count": 1,
       "sections": [],
@@ -224,6 +225,14 @@
       "resolvedFrom": "suffix",
       "verbatim": "engine/src/eval.rs"
     },
+    "src-tauri/engine/src/failover.rs": {
+      "count": 4,
+      "sections": [0,9,12],
+      "lines": ["639-643","39","840","523"],
+      "contexts": ["(`failover.rs:639-643`) is `opus-4-8 → sonnet-4-6 → haiku-4-5`, and its doc"],
+      "resolvedFrom": "basename",
+      "verbatim": "failover.rs"
+    },
     "src-tauri/engine/src/healing_orchestrator.rs": {
       "count": 4,
       "sections": [0,3,7],
@@ -281,14 +290,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "src/commands/fleet/stale.rs"
     },
-    "src-tauri/src/engine/failover.rs": {
-      "count": 7,
-      "sections": [0,6,9,12],
-      "lines": ["639-643","39","652-672","840","523"],
-      "contexts": ["`src/engine/failover.rs` (1,074), `src/engine/runner/mod.rs`'s failover block"],
-      "resolvedFrom": "suffix",
-      "verbatim": "src/engine/failover.rs"
-    },
     "src-tauri/src/engine/mod.rs": {
       "count": 6,
       "sections": [0,7,12],
@@ -298,9 +299,9 @@
       "verbatim": "engine/mod.rs"
     },
     "src-tauri/src/engine/runner/mod.rs": {
-      "count": 9,
-      "sections": [0,7,9],
-      "lines": ["2612","1675-1679","2857-2878","2770","1493-1714","2793-2798","2887","2854"],
+      "count": 5,
+      "sections": [0,7],
+      "lines": ["1675-1679","1493-1714","2793-2798","2887"],
       "contexts": ["`src/engine/failover.rs` (1,074), `src/engine/runner/mod.rs`'s failover block"],
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/runner/mod.rs"
@@ -315,6 +316,7 @@
     },
     "src/": {"count":4,"sections":[7],"contexts":["`.ts`/`.tsx` under `src/`. `#[cfg(test)]` removed by a **brace-matched,"],"resolved":false,"isDir":true},
     "src/companion/session.rs": {"count":1,"sections":[0],"lines":["520"],"contexts":["| `src/companion/session.rs:520` | 6 turn-failure reasons | telemetry labels |"],"resolved":false},
+    "src/engine/failover.rs": {"count":3,"sections":[6],"lines":["639-643","652-672"],"contexts":["`src/engine/failover.rs` (1,074), `src/engine/runner/mod.rs`'s failover block"],"resolved":false},
     "src/features/agents/sub_executions/detail/ErrorExplanationCard.tsx": {
       "count": 2,
       "sections": [0,7],

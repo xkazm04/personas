@@ -20,13 +20,13 @@
 mod events;
 mod fanout;
 mod fix_pass;
-mod gates;
-mod kp_surface;
+pub use personas_engine::build_session::gates;
+pub use personas_engine::build_session::kp_surface;
 mod oneshot;
 mod orchestrator;
-mod parser;
-mod provisional;
-pub mod reference;
+pub use personas_engine::build_session::parser;
+pub use personas_engine::build_session::provisional;
+pub use personas_engine::build_session::reference;
 mod restart;
 mod runner;
 mod session_prompt;
@@ -56,12 +56,30 @@ use crate::db::DbPool;
 use crate::error::AppError;
 use crate::ActiveProcessRegistry;
 
-/// Model and effort for the builder's own turns (not the runtime model the
-/// build recommends for each capability; that lives in `session_prompt`).
-const BUILD_MODEL: &str = "claude-sonnet-5-5";
-const BUILD_EFFORT: &str = "low";
+/// Call class of the builder's own turns (not the runtime model the build
+/// recommends for each capability; that lives in `session_prompt`). Model and
+/// effort come from the class table (`personas_core::model_class`).
+const BUILD_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Build;
 
-use super::prompt;
+/// Env var that replaces the build route's MODEL, for benchmarking only. The
+/// effort stays the route's.
+const BUILD_MODEL_ENV: &str = "PERSONAS_BUILD_MODEL";
+
+/// The model the builder's turns run on: `env_override` (the value of
+/// [`BUILD_MODEL_ENV`], when set and non-blank) replaces `route.model`; the
+/// route's effort is never overridden. Pure, so the override is testable
+/// without mutating the process environment.
+fn resolve_build_model(
+    route: personas_core::model_class::ClassRoute,
+    env_override: Option<&str>,
+) -> String {
+    env_override
+        .map(str::trim)
+        .filter(|m| !m.is_empty())
+        .unwrap_or(route.model)
+        .to_string()
+}
 
 // =============================================================================
 // SessionHandle -- in-memory handle for an active build session
@@ -338,11 +356,11 @@ impl BuildSessionManager {
         // Measured live 2026-09-26 on claude-sonnet-4-6 at the CLI default effort,
         // the first turn spent 57-201 s thinking before its first output; low
         // effort trades depth the design pass rarely needs for time to first frame.
-        let mut cli_args = prompt::build_cli_args(None, None);
-        cli_args.args.push("--model".to_string());
-        cli_args.args.push(BUILD_MODEL.to_string());
-        cli_args.args.push("--effort".to_string());
-        cli_args.args.push(BUILD_EFFORT.to_string());
+        let route = BUILD_CLASS.route();
+        let env_model = std::env::var(BUILD_MODEL_ENV).ok();
+        let build_model = resolve_build_model(route, env_model.as_deref());
+        let mut cli_args =
+            super::cli_process::headless_claude_args(&build_model, route.effort, &[]);
         // B2 streaming (interactive only): ask the CLI to emit incremental
         // content_block_delta events so the runner can surface the persona's
         // behavior_core to the Cinema loading view the moment the LLM finishes
@@ -549,5 +567,33 @@ impl BuildSessionManager {
     pub fn get_session_ids(&self) -> Vec<String> {
         let sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         sessions.keys().cloned().collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn build_model_is_the_class_route_without_an_override() {
+        let route = BUILD_CLASS.route();
+        assert_eq!(resolve_build_model(route, None), route.model);
+        // A blank override is no override.
+        assert_eq!(resolve_build_model(route, Some("  ")), route.model);
+    }
+
+    #[test]
+    fn build_model_env_override_replaces_only_the_model() {
+        let route = BUILD_CLASS.route();
+        let bench = personas_core::model_ids::HAIKU_CURRENT;
+        assert_eq!(
+            resolve_build_model(route, Some(&format!(" {bench} "))),
+            bench
+        );
+        // The effort is never overridden: the argv carries the route's.
+        let args = super::super::cli_process::headless_claude_args(bench, route.effort, &[]);
+        let effort_at = args.args.iter().position(|a| a == "--effort").unwrap();
+        assert_eq!(args.args[effort_at + 1], route.effort);
+        assert_eq!(args.args.iter().filter(|a| *a == "--effort").count(), 1);
     }
 }

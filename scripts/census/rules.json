@@ -593,8 +593,8 @@
         }
       ],
       "baseline": {
-        "files": 255,
-        "matches": 557
+        "files": 256,
+        "matches": 559
       },
       "floor": 4000
     },
@@ -727,8 +727,8 @@
         }
       ],
       "baseline": {
-        "files": 56,
-        "matches": 754
+        "files": 55,
+        "matches": 753
       },
       "floor": 1500
     },
@@ -1039,7 +1039,7 @@
       },
       "baseline": {
         "files": 43,
-        "matches": 291
+        "matches": 292
       },
       "floor": 900
     },
@@ -1426,7 +1426,7 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 398,
+        "files": 397,
         "matches": 733
       },
       "floor": 2000
@@ -1662,7 +1662,8 @@
       "goldenPath": "docs/concepts/golden-paths/cloud-auth-degraded-mode.md",
       "title": "A remote call that carried a credential folds its non-2xx into an untyped message string, so no caller can tell \"the credential was rejected, re-authenticate\" from \"the service is down, retry\"",
       "roots": [
-        "src-tauri/src"
+        "src-tauri/src",
+        "src-tauri/engine/src"
       ],
       "extensions": [
         ".rs"
@@ -1807,6 +1808,10 @@
         {
           "path": "src-tauri/src/commands/infrastructure/schema_vocabulary.rs",
           "reason": "the CREATE TABLE strings here (:224,:225,:226) are INPUT DATA to names_of()'s own test, whose subject IS DDL parsing - it deliberately includes back-ticked, quoted, schema-qualified and VIRTUAL spellings because the parser must handle them. Never executed. hand-rolled-fixture-ddl still counts this file, so the territory is not blind."
+        },
+        {
+          "path": "src-tauri/db/src/migrations/incremental/e60_review_execution_optional.rs",
+          "reason": "the CREATE TABLE strings at :179 and :180 (`CREATE TABLE t (execution_id TEXT)`, `CREATE TABLE t (id TEXT)`) are INPUT DATA to relax_execution_id's own test, an_unexpected_shape_is_refused_not_guessed - DDL handed to the parser to prove it refuses an unexpected shape, never executed against any connection. hand-rolled-fixture-ddl still counts this file, so the territory is not blind."
         }
       ],
       "baseline": {
@@ -1966,8 +1971,8 @@
         "description": "A leading-character cut taken with a UTF-16 code-unit index and NOT continued (neither `+ rest` nor `}${rest}`) — i.e. a monogram, not a capitalisation. charAt(0)/slice(0,1)/slice(0,2) split any astral-plane codepoint, so an emoji-initial entity name yields a lone surrogate and renders U+FFFD. Cut with [...name][0] instead."
       },
       "baseline": {
-        "files": 10,
-        "matches": 10
+        "files": 9,
+        "matches": 9
       },
       "floor": 4000
     },
@@ -2140,8 +2145,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 136,
-        "matches": 276
+        "files": 135,
+        "matches": 275
       },
       "floor": 4000
     },
@@ -2798,8 +2803,8 @@
         }
       ],
       "baseline": {
-        "files": 11,
-        "matches": 13
+        "files": 10,
+        "matches": 12
       },
       "floor": 900
     },
@@ -3308,6 +3313,10 @@
         {
           "path": "src-tauri/src/commands/fleet/claude_accounts/rotate.rs",
           "reason": "ClaudeAccountRotateSubscription::tick (:192) is the trait-required () adapter — ReactiveSubscription fixes the signature, same as the attention.rs exclusion. The cycle's outcome is NOT discarded: a rotation lands durably in app settings (claude_accounts.last_rotation, read back by the strip and toasted on change) and every failure is logged at warn with the target; a disabled policy returns before any HTTP, which is the designed no-work outcome."
+        },
+        {
+          "path": "src-tauri/src/engine/subscription/lifecycle_watch.rs",
+          "reason": "LifecycleWatchSubscription::tick (:173) is the trait-required () adapter - ReactiveSubscription fixes the signature, same as the attention.rs and rotate.rs exclusions. The cycle's outcome is NOT discarded: the body is lifecycle_watch_tick, which returns the named LifecycleWatchTick (Disabled / NothingDue / Busy / NothingToMeasure(project) / Started(project) / Failed(reason)), unit-tested in lifecycle_watch_tests.rs, and tick logs it EVERY cycle through log_outcome with an `outcome` field (info; warn for Failed; debug for Disabled, the steady state while the Overseer is off). A Started measure also lands durably as its dev_lifecycle_runs rows, did_not_run for any command that never answered (lifecycle::measure::supervise). Cost of the exemption: a regression that stops logging the outcome goes uncounted here."
         }
       ],
       "baseline": {
@@ -3842,8 +3851,8 @@
         }
       ],
       "baseline": {
-        "files": 2,
-        "matches": 2
+        "files": 3,
+        "matches": 3
       },
       "floor": 4000
     },
@@ -3954,6 +3963,10 @@
           "reason": "the mirror is TETHERED, not comment-kept: patternMatches is gated by libs/__tests__/webhookPatternParity.test.ts, which parses every assert!(!?pattern_matches(..)) line out of src-tauri/src/engine/webhook_notifier.rs at run time and fails when TS disagrees or the parse finds fewer than 8 (the chainStopReasons.parity precedent). The condition this leaf counts - two implementations with no mechanism asserting they agree - is absent"
         },
         {
+          "path": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/presets/evidence/adherence.ts",
+          "reason": "the mirror is TETHERED, not comment-kept: doneRate (the done rate per week the adherence figure draws, which the snapshot cannot ship because it is per bucket) is gated by presets/evidence/__tests__/adherence.test.ts, which reads src-tauri/src/lifecycle/health.rs at run time and fails when evidence_step stops counting done + skipped + failed or stops dividing done by that count. The verdict itself stays the backend's (the snapshot's done_rate metric); the client copy only draws history"
+        },
+        {
           "path": "src/features/settings/sub_notifications/libs/__tests__/webhookPatternParity.test.ts",
           "reason": "this file IS the agreement mechanism for webhookMatch.ts (see that exclude); its comment names the Rust matcher because it reads it"
         },
@@ -3964,6 +3977,10 @@
         {
           "path": "src/features/browser/servers/__tests__/serverConfigParity.test.ts",
           "reason": "this file IS the agreement mechanism for serverConfig.ts (see that exclude); its comment names the Rust validator because it reads it"
+        },
+        {
+          "path": "src/features/teams/sub_teamWorkspace/teamStudio/modelOptions.ts",
+          "reason": "the mirror is TETHERED, not comment-kept: the team studio picker's concrete model ids are gated by teamStudio/__tests__/modelOptionsParity.test.ts, which reads HAIKU_CURRENT / SONNET_CURRENT / OPUS_CURRENT out of src-tauri/core/src/model_ids.rs at run time and fails when an option's id differs (the webhookPatternParity precedent). Extracted from TeamWorkspacePane.tsx so the exclusion covers the four-line list, not a component"
         }
       ],
       "baseline": {
@@ -4016,7 +4033,7 @@
       },
       "exclude": [
         {
-          "path": "src-tauri/src/engine/db_query.rs",
+          "path": "src-tauri/engine/src/db_query.rs",
           "reason": "the primitive itself — the one classifier that owns the read/write decision for every door onto this database (is_mutation :383, is_sqlite_read :360, and the CTE_MUTATION_VERBS list :290). Everything else in the repo should be calling this or the classify_db_query IPC command that wraps it."
         },
         {
@@ -4504,8 +4521,8 @@
         }
       ],
       "baseline": {
-        "files": 21,
-        "matches": 126
+        "files": 20,
+        "matches": 125
       },
       "floor": 900
     },
@@ -4599,7 +4616,7 @@
         "pattern": "\\bstatic\\s+[A-Z][A-Z_0-9]*\\s*:\\s*(?:std::sync::|once_cell::sync::)?(?:OnceLock|LazyLock|Lazy|OnceCell)\\s*<\\s*(?:std::sync::|tokio::sync::|parking_lot::)?Mutex\\s*<\\s*(?:std::collections::)?(?:HashMap\\s*<\\s*[A-Za-z_][A-Za-z0-9_:]{0,30}\\s*,\\s*(?:Vec\\s*<\\s*)?(?:Instant|SystemTime|u32|u64|i64)\\s*>|HashSet\\s*<\\s*String\\s*>|Option\\s*<\\s*Instant\\s*>)",
         "flags": "g",
         "ignoreCommentLines": true,
-        "description": "A process-global MUTABLE ledger whose payload is a time, a count, or a set of already-emitted keys - the state a suppression/dedupe/cooldown/breaker decision is made against. PROXY FOR the stack-free condition: the state that decides whether to raise the same alarm again lives only in the process, so the suppression window is silently ONE PROCESS LIFETIME - it resets on restart, no second evaluator of the same condition can see it, and where it is a one-way latch (a HashSet nothing removes from) it has no upper bound at all. THE ANCHOR IS PURELY STRUCTURAL AND THAT WAS DELIBERATE: the static names in this population are T, S, P, SIGS, M, SURFACED, NOTIFIED, WARNED, CONSECUTIVE_FAILURES, BRIDGE_FAILURES, SIDECAR_MISSING_LOG, OAUTH_CLEANUP_LAST_RUN - FIVE ARE SINGLE LETTERS, so any name-derived vocabulary would have missed a third of the population at one end and, per the doctrine's actor-attribution warning, distorted precision at the other. MEASURED 2026-08-17 at 6c97502d3: 12 matches across 8 of 963 .rs files under src-tauri, EVERY ONE OPENED AND READ, precision 12/12 on the stated condition. THE TWELVE: cli_mcp_config.rs:101 SIDECAR_MISSING_LOG (the repo's only escalate-on-repetition counter, and its comment says it lives here only because the incident spine has no occurrences column); remote_commands.rs:30 SURFACED ('so the 15s poll doesn't re-emit the same prompt every tick'); fleet_bridge.rs:172 attention_throttle ('don't re-wake Athena about the same session more than once per window'), :182 decision_signatures ('an unchanged prompt must NOT re-wake Athena'), :804 mechanical_next_signatures, :1547 pending_assessments, :2098 completion_notified ('Sessions already announced, so a re-detection on the next 30s tick cannot announce twice'); oauth.rs:1385 OAUTH_CLEANUP_LAST_RUN; build_session/events.rs:293 WARNED; slack_poller.rs:372 BRIDGE_FAILURES; team_slack_relay.rs:102 and webhook_notifier.rs:506 CONSECUTIVE_FAILURES (the two notifier breakers). THREE OF THE TWELVE ARE ONE-WAY LATCHES WITH NO EXPIRY - SURFACED, NOTIFIED, WARNED: once set, that alarm cannot fire again until the app restarts, at which point it fires again. NINE OF TWELVE CARRY A COMMENT ACCEPTING THE VOLATILITY, which is why this is a RATCHET AND NOT A VERDICT - the ask in section 7 D13 is the sentence webhook_notifier.rs:503-505 already writes ('In-memory only - a restart re-probes every bridge, which is the right default'), not a rewrite. MEASURED LIVE against read-only copies of the operator's personas.db (244 tables) and personas_data.db (71 tables), taken 2026-08-17 with the app running, never opened for write, DELETED after: EVERY table in this database shaped to hold an alarm identity (healing_knowledge with UNIQUE(service_type,pattern_key)+occurrence_count+last_seen_at; automation_suggestions with UNIQUE(event_type,persona_id)+occurrence_count+first_seen_at+last_seen_at; schedule_missed_runs with missed_count+first_missed_at+last_missed_at; alert_rules; fired_alerts; budget_alert_rules; circuit_breaker_state) HOLDS ZERO ROWS, while persona_healing_issues holds 205 rows keyed on UNIQUE(persona_id, execution_id) and audit_incidents holds 164 keyed on source_table:source_id whose source_id is a live persona_executions.id on 100 of them. REPLAYED HEAD TO HEAD over those same 205 healing rows: the deployed occurrence key collapses 0 (0.0 percent), a 1-hour cooldown on the problem collapses 30 (14.6), 24 hours collapses 60 (29.3), SEVEN DAYS collapses 95 (46.3) and destroys the evidence, and the problem identity (persona, title) collapses 112 (54.6) while losing nothing because a counter keeps it - IDENTITY STRICTLY DOMINATES A COOLDOWN AT EVERY WINDOW. TWO INDEPENDENT IMPLEMENTATIONS, AND THE DISAGREEMENT WAS THE FINDING: implementation 2 enumerates every static NAME: declaration and reads its type by an ANGLE-BRACKET-BALANCED WALK with cfg(test) stripped as brace-matched ranges (never a line threshold), finding 80 process-global Mutex/RwLock statics in 50 files. It showed the first draft of this rule was wrong - at HashMap<K,V> with any scalar OR TUPLE payload it returned 19 matches at 68.4 percent precision, the false positives being CACHES (SCENARIO_CACHE, SMART_SEARCH_CACHE, VAULT_INDEX_CACHE, an OAuth token cache) and process registries (DEV_SERVERS, OCR_CANCEL_TOKENS). The discriminator implementation 2 supplied is STRUCTURAL, not a word list: a cache's payload is a tuple (Instant, T); a suppression ledger's is a bare scalar. Restricting the payload took precision to 12/12. ZERO SITE-LEVEL OVERLAP with all 84 committed rules that reach src-tauri, measured by re-running every one of them and intersecting file:line sets; 80 of 84 reproduced their committed baselines exactly under a re-implementation that collapses same-line matches to one site. Nearest by NAME is process-global-caches-a-failure and it is furthest by condition: it keys on OnceLock<Result<..>>, a write-once global that froze a FAILURE; this keys on a Mutex-wrapped MUTABLE ledger of times and keys - disjoint patterns, disjoint files (0 of 8), disjoint failure modes. DISCLOSED RECALL GAP, exactly where a declaration-form anchor fails: it cannot see a ledger held as a STRUCT FIELD (context_rules.rs:113 last_match: HashMap<String, Instant> is the rule engine's own per-rule cooldown; file_watcher.rs:46 last_fired; queue.rs:92 quota_cooldown_until), nor one behind a type alias, nor the FIVE frontend ledgers in the same app that no Rust matcher could ever reach (storeTypes.ts:98 _recentToasts keyed on the toast MESSAGE STRING, remediationBus.ts:91 cooldowns, silentFailureTelemetry.ts:59 on globalThis, useTranslatedError.ts:27 and sentry.ts:72, both single-slot so alternating keys defeat them), nor a guard with no ledger at all - notifications.rs:1543 shows an OS notification with no dedup and no rate limit and 4 of its 6 callers add none. True recall in src-tauri is roughly 12 of 16; across the whole app roughly 12 of 21. CONVERGENCE, measured against 3 independent siblings (personas-web disqualified as a downstream doc consumer whose description of this repo's nudge budget is already stale at 3 versus the real 12; personas-cloud has no alerting at all; vibeman counted and dated as the ANCESTOR at 2025-07-04): ONLY ONE OF THREE PERSISTS ANY SUPPRESSION STATE, and only for one of its two paths - the fleet converged on the disease. Ascent's own comment is the best defence of the escape hatch and is worth adopting with the pattern: 'a cooldown is spam-suppression, not a correctness guarantee, so a cold serverless start at worst re-sends once - never drops a distinct new regression.' Do NOT silence a match by moving the ledger into a struct field, behind a type alias, or into a lazily-initialised wrapper - the honest fix is to persist it, or to write the sentence webhook_notifier.rs:503-505 writes."
+        "description": "A process-global MUTABLE ledger whose payload is a time, a count, or a set of already-emitted keys - the state a suppression/dedupe/cooldown/breaker decision is made against. PROXY FOR the stack-free condition: the state that decides whether to raise the same alarm again lives only in the process, so the suppression window is silently ONE PROCESS LIFETIME - it resets on restart, no second evaluator of the same condition can see it, and where it is a one-way latch (a HashSet nothing removes from) it has no upper bound at all. THE ANCHOR IS PURELY STRUCTURAL AND THAT WAS DELIBERATE: the static names in this population are T, S, P, SIGS, M, SURFACED, NOTIFIED, WARNED, CONSECUTIVE_FAILURES, BRIDGE_FAILURES, SIDECAR_MISSING_LOG, OAUTH_CLEANUP_LAST_RUN - FIVE ARE SINGLE LETTERS, so any name-derived vocabulary would have missed a third of the population at one end and, per the doctrine's actor-attribution warning, distorted precision at the other. MEASURED 2026-08-17 at 6c97502d3: 12 matches across 8 of 963 .rs files under src-tauri, EVERY ONE OPENED AND READ, precision 12/12 on the stated condition. THE TWELVE: cli_mcp_config.rs:101 SIDECAR_MISSING_LOG (the repo's only escalate-on-repetition counter, and its comment says it lives here only because the incident spine has no occurrences column); remote_commands.rs:30 SURFACED ('so the 15s poll doesn't re-emit the same prompt every tick'); fleet_bridge.rs:172 attention_throttle ('don't re-wake Athena about the same session more than once per window'), :182 decision_signatures ('an unchanged prompt must NOT re-wake Athena'), :804 mechanical_next_signatures, :1547 pending_assessments, :2098 completion_notified ('Sessions already announced, so a re-detection on the next 30s tick cannot announce twice'); oauth.rs:1385 OAUTH_CLEANUP_LAST_RUN; build_session/events.rs:293 WARNED; slack_poller.rs:372 BRIDGE_FAILURES; team_slack_relay.rs:102 and webhook_notifier.rs:506 CONSECUTIVE_FAILURES (the two notifier breakers). THREE OF THE TWELVE ARE ONE-WAY LATCHES WITH NO EXPIRY - SURFACED, NOTIFIED, WARNED: once set, that alarm cannot fire again until the app restarts, at which point it fires again. NINE OF TWELVE CARRY A COMMENT ACCEPTING THE VOLATILITY, which is why this is a RATCHET AND NOT A VERDICT - the ask in section 7 D13 is the sentence webhook_notifier.rs:503-505 already writes ('In-memory only - a restart re-probes every bridge, which is the right default'), not a rewrite. MEASURED LIVE against read-only copies of the operator's personas.db (244 tables) and personas_data.db (71 tables), taken 2026-08-17 with the app running, never opened for write, DELETED after: EVERY table in this database shaped to hold an alarm identity (healing_knowledge with UNIQUE(service_type,pattern_key)+occurrence_count+last_seen_at; automation_suggestions with UNIQUE(event_type,persona_id)+occurrence_count+first_seen_at+last_seen_at; schedule_missed_runs with missed_count+first_missed_at+last_missed_at; alert_rules; fired_alerts; budget_alert_rules; circuit_breaker_state) HOLDS ZERO ROWS, while persona_healing_issues holds 205 rows keyed on UNIQUE(persona_id, execution_id) and audit_incidents holds 164 keyed on source_table:source_id whose source_id is a live persona_executions.id on 100 of them. REPLAYED HEAD TO HEAD over those same 205 healing rows: the deployed occurrence key collapses 0 (0.0 percent), a 1-hour cooldown on the problem collapses 30 (14.6), 24 hours collapses 60 (29.3), SEVEN DAYS collapses 95 (46.3) and destroys the evidence, and the problem identity (persona, title) collapses 112 (54.6) while losing nothing because a counter keeps it - IDENTITY STRICTLY DOMINATES A COOLDOWN AT EVERY WINDOW. TWO INDEPENDENT IMPLEMENTATIONS, AND THE DISAGREEMENT WAS THE FINDING: implementation 2 enumerates every static NAME: declaration and reads its type by an ANGLE-BRACKET-BALANCED WALK with cfg(test) stripped as brace-matched ranges (never a line threshold), finding 80 process-global Mutex/RwLock statics in 50 files. It showed the first draft of this rule was wrong - at HashMap<K,V> with any scalar OR TUPLE payload it returned 19 matches at 68.4 percent precision, the false positives being CACHES (SCENARIO_CACHE, SMART_SEARCH_CACHE, VAULT_INDEX_CACHE, an OAuth token cache) and process registries (DEV_SERVERS, OCR_CANCEL_TOKENS). The discriminator implementation 2 supplied is STRUCTURAL, not a word list: a cache's payload is a tuple (Instant, T); a suppression ledger's is a bare scalar. Restricting the payload took precision to 12/12. ZERO SITE-LEVEL OVERLAP with all 84 committed rules that reach src-tauri, measured by re-running every one of them and intersecting file:line sets; 80 of 84 reproduced their committed baselines exactly under a re-implementation that collapses same-line matches to one site. Nearest by NAME is process-global-caches-a-failure and it is furthest by condition: it keys on OnceLock<Result<..>>, a write-once global that froze a FAILURE; this keys on a Mutex-wrapped MUTABLE ledger of times and keys - disjoint patterns, disjoint files (0 of 8), disjoint failure modes. DISCLOSED RECALL GAP, exactly where a declaration-form anchor fails: it cannot see a ledger held as a STRUCT FIELD (context_rules.rs:113 last_match: HashMap<String, Instant> is the rule engine's own per-rule cooldown; file_watcher.rs:46 last_fired; queue.rs:92 quota_cooldown_until), nor one behind a type alias, nor the FIVE frontend ledgers in the same app that no Rust matcher could ever reach (storeTypes.ts:98 _recentToasts keyed on the toast MESSAGE STRING, remediationBus.ts:91 cooldowns, silentFailureTelemetry.ts:59 on globalThis, useTranslatedError.ts:27 and sentry.ts:72, both single-slot so alternating keys defeat them), nor a guard with no ledger at all - notifications.rs:1543 shows an OS notification with no dedup and no rate limit and 4 of its 6 callers add none. True recall in src-tauri is roughly 12 of 16; across the whole app roughly 12 of 21. CONVERGENCE, measured against 3 independent siblings (personas-web disqualified as a downstream doc consumer whose description of this repo's nudge budget is already stale at 3 versus the real 12; personas-cloud has no alerting at all; vibeman counted and dated as the ANCESTOR at 2025-07-04): ONLY ONE OF THREE PERSISTS ANY SUPPRESSION STATE, and only for one of its two paths - the fleet converged on the disease. Ascent's own comment is the best defence of the escape hatch and is worth adopting with the pattern: 'a cooldown is spam-suppression, not a correctness guarantee, so a cold serverless start at worst re-sends once - never drops a distinct new regression.' Do NOT silence a match by moving the ledger into a struct field, behind a type alias, or into a lazily-initialised wrapper - the honest fix is to persist it, or to write the sentence webhook_notifier.rs:503-505 writes. 2026-10-07: SURFACED (cloud/remote_commands.rs) left this count when security finding 6 made it HashMap<String, String> (id -> approval fingerprint); it is still a process-global one-way ledger that nothing removes from, now outside the scalar-payload anchor, so this is a recall gap and not a fix (baseline 9/13 -> 8/12)."
       },
       "exclude": [
         {
@@ -4628,8 +4645,8 @@
         }
       ],
       "baseline": {
-        "files": 9,
-        "matches": 13
+        "files": 8,
+        "matches": 12
       },
       "floor": 900
     },
@@ -4758,7 +4775,7 @@
       },
       "baseline": {
         "files": 23,
-        "matches": 114
+        "matches": 116
       },
       "floor": 900,
       "exclude": [
@@ -4786,8 +4803,8 @@
         "note": "COMPLEMENTARY TO untyped-lifecycle-transition (multi-step-orchestration), not overlapping: measured at SITE level against the FINAL pattern over all 87 registered src-tauri/.rs rules, overlap with that rule is 0 lines. It counts the 152 places the convention is exercised; this counts the 15 places it can be abolished. THIS RULE CAN REACH ZERO - every site is a mechanical signature change. Delete it at 1 rather than baselining at 0 (the census cannot express must-be-zero)."
       },
       "baseline": {
-        "files": 11,
-        "matches": 12
+        "files": 10,
+        "matches": 11
       },
       "floor": 900
     },
@@ -4935,8 +4952,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 11,
-        "matches": 11
+        "files": 12,
+        "matches": 12
       },
       "floor": 4000
     },
@@ -5281,8 +5298,8 @@
         "description": "A <button> whose body opens another activator (<button>, <Button>, <a href>) before its own </button>. Invalid HTML: the inner control is not independently reachable by keyboard in several AT/browser combinations, and it survives only on an e.stopPropagation() no test covers. The opening tag is matched with strings and {…} attribute expressions treated as OPAQUE — a bare `>` inside className={cond ? 'a' : 'b'} or onClick={() => i > n} is arithmetic, never a tag close. Fix: make the row a <div> with the affordances as siblings, or hoist the inner control out."
       },
       "baseline": {
-        "files": 6,
-        "matches": 6
+        "files": 5,
+        "matches": 5
       },
       "floor": 1500
     },
@@ -5304,8 +5321,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a media element whose src is assigned imperatively through a ref (RadioFooter), nor one whose tag is generated by a wrapper component. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 1,
-        "matches": 1
+        "files": 2,
+        "matches": 2
       },
       "floor": 1000
     },
@@ -5450,7 +5467,7 @@
         }
       ],
       "baseline": {
-        "files": 55,
+        "files": 56,
         "matches": 108
       },
       "floor": 900
@@ -5546,8 +5563,48 @@
         }
       ],
       "baseline": {
-        "files": 48,
-        "matches": 103
+        "files": 18,
+        "matches": 61
+      },
+      "floor": 900
+    },
+    {
+      "id": "model-literal-outside-class-table",
+      "goldenPath": "docs/concepts/golden-paths/model-and-effort-selection.md",
+      "title": "Headless call site declares its own `const *_MODEL: &str` instead of asserting a CallClass",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "const [A-Z_]*MODEL[A-Z_]*: &(?:'static )?str = (?:\"claude-|(?:personas_core::|crate::|super::)?model_ids::(?!CODEX))",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a `const <..>MODEL<..>: &str = ` declaration in src-tauri/**/*.rs whose value is a Claude model id, either as a `\"claude-` literal OR through a `model_ids::` constant (Codex lane constants excluded by the `(?!CODEX)` lookahead). PROXY FOR the stack-free condition: a headless one-shot call site that picks its own model, so re-tuning a class after a new model ships is a tree-wide hunt instead of one row in `personas_core::model_class::route`. DELIBERATELY NOT a duplicate of `bare-model-id-literal`: that rule already counts every `\"claude-<family>-N` literal (including argv `.push(\"claude-` / `\"--model\", \"claude-` shapes and these consts), so this rule targets the declaration shape only — and additionally catches the `= model_ids::DEFAULT_BALANCED` alias form, which `bare-model-id-literal` is blind to because it routes through the id door yet still lets the call site choose. Measured 2026-10-08 at 5defd894d4: 25 declarations in 22 files, 15 of them a `\"claude-` literal (mostly `claude-sonnet-4-6`). The legal fix is `CallClass::<X>.route()` from `src-tauri/core/src/model_class.rs`. Settings-key defaults (`*_MODEL_DEFAULT` in `db/src/settings_keys.rs`) are counted on purpose: they are user-overridable but their default is still a call site choosing a model."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/core/src/model_ids.rs",
+          "reason": "the id door itself — the constants every route resolves to"
+        },
+        {
+          "path": "src-tauri/core/src/model_class.rs",
+          "reason": "the class table itself — the one place that is allowed to name a model per call class"
+        },
+        {
+          "path": "src-tauri/**/tests/**",
+          "reason": "integration-test crates: a fixture pinning a model is a test input, not a routing decision (bare-model-id-literal still counts its literal)"
+        },
+        {
+          "path": "src-tauri/**/tests.rs",
+          "reason": "out-of-line `#[cfg(test)] mod tests` files: same reason as tests/"
+        }
+      ],
+      "baseline": {
+        "files": 2,
+        "matches": 2
       },
       "floor": 900
     },
@@ -5585,8 +5642,8 @@
         }
       ],
       "baseline": {
-        "files": 169,
-        "matches": 473
+        "files": 170,
+        "matches": 474
       },
       "floor": 5000
     },
@@ -5636,8 +5693,8 @@
         }
       ],
       "baseline": {
-        "files": 845,
-        "matches": 3945
+        "files": 840,
+        "matches": 3941
       },
       "floor": 5000
     },
@@ -5675,8 +5732,8 @@
         }
       ],
       "baseline": {
-        "files": 279,
-        "matches": 577
+        "files": 278,
+        "matches": 580
       },
       "floor": 5000
     },
@@ -5714,8 +5771,8 @@
         }
       ],
       "baseline": {
-        "files": 75,
-        "matches": 206
+        "files": 73,
+        "matches": 186
       },
       "floor": 5000
     },
@@ -5752,8 +5809,8 @@
         }
       ],
       "baseline": {
-        "files": 972,
-        "matches": 2203
+        "files": 962,
+        "matches": 2173
       },
       "floor": 2200
     },
@@ -5783,7 +5840,7 @@
       ],
       "baseline": {
         "files": 10,
-        "matches": 316
+        "matches": 275
       },
       "floor": 8
     },
@@ -5822,8 +5879,8 @@
         }
       ],
       "baseline": {
-        "files": 700,
-        "matches": 1704
+        "files": 692,
+        "matches": 1689
       },
       "floor": 5000
     }

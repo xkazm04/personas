@@ -45,8 +45,10 @@
     "brainiac/crates/brainiac-server/src/onboard.rs": {"count":1,"sections":[],"lines":["308-319"],"contexts":["- **Two adjacent supports, both real.** `brainiac/crates/brainiac-server/src/onboard.rs:308-319`"],"resolved":false},
     "census-clouddeg-7c21.json": {"count":1,"sections":[9],"contexts":["`census-clouddeg-7c21.json` unique to this composition:"],"resolved":false},
     "cloud/{client,runner,config}.rs": {"count":1,"sections":[],"contexts":["`.../cloud.rs`, `.../cloud_sync.rs`, `.../gitlab.rs`, `cloud/{client,runner,config}.rs`,"],"resolved":false},
+    "commandNames.generated.ts": {"count":1,"sections":[7],"lines":["1279"],"contexts":["frontend call sites** (it exists only in `commandNames.generated.ts:1279`). Recovery from offline"],"resolved":false},
     "demo-fallback.ts": {"count":2,"sections":[],"lines":["16-20","32"],"contexts":["(`demo-fallback.ts:16-20`) — and every page rendering `live: false` **must** render a"],"resolved":false},
     "dispatcher.ts": {"count":2,"sections":[],"lines":["1272","1271-1273"],"contexts":["visible in one string at `dispatcher.ts:1272` — `'No Claude token available (OAuth expired or"],"resolved":false},
+    "engine/db_query.rs": {"count":1,"sections":[9],"contexts":["(`engine/db_query.rs`, `cloud/sync/client.rs`, `commands/infrastructure/auth.rs`,"],"resolved":false},
     "engine/{oauth_refresh,connector_strategy,api_proxy}.rs": {"count":1,"sections":[],"contexts":["`cloud/sync/**`, `cloud/remote_commands.rs`, `engine/{oauth_refresh,connector_strategy,api_proxy}.rs`,"],"resolved":false},
     "gitlab.rs": {"count":5,"sections":[7,9,12],"lines":["157","446","1223"],"contexts":["Measured by parsing both: **56 annotations** (35 in `cloud.rs`, 18 in `gitlab.rs`, 2 in"],"resolved":false},
     "httpApi.ts": {
@@ -64,6 +66,7 @@
     "oauth.ts": {"count":2,"sections":[5],"lines":["272-274"],"contexts":["(`httpApi.ts:1589`), which is `this.tokens !== null` (`oauth.ts:272-274`), so the orchestrator"],"resolved":false},
     "personas-cloud/packages/orchestrator/src/httpApi.ts": {"count":1,"sections":[],"lines":["437"],"contexts":["`personas-cloud/packages/orchestrator/src/httpApi.ts:437`, `admin?: boolean` — **optional,"],"resolved":false},
     "resilience.rs": {"count":1,"sections":[],"lines":["216-222"],"contexts":["(`resilience.rs:216-222`) and applied to none of their own credential paths."],"resolved":false},
+    "rules.json": {"count":1,"sections":[9],"contexts":["skips it. Do not merge this into `rules.json`.** It gates nothing. It matches the one thing this"],"resolved":false},
     "scripts/census/lib/engine.mjs": {
       "count": 2,
       "sections": [8,9],
@@ -72,7 +75,7 @@
       "resolvedFrom": "basename",
       "verbatim": "engine.mjs"
     },
-    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["**Checked against the existing registry first.** `scripts/census/rules.json` holds **56** rules."]},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Checked against the existing registry first.** `scripts/census/rules.json` holds **56** rules."]},
     "shared-facts.json": {"count":3,"sections":[9,12],"contexts":["the walk independently reproduces every figure in `shared-facts.json`),"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["`.rs` files under `src-tauri/` (**1,661** `#[tauri::command]` definitions parsed, not grepped —"],"resolved":false,"isDir":true},
     "src-tauri/core/src/error.rs": {
@@ -91,6 +94,14 @@
       "verbatim": "core/src/http_clients.rs"
     },
     "src-tauri/db/src/repos": {"count":1,"sections":[9],"contexts":["whose row count is discarded, and is rooted at `src-tauri/db/src/repos`. Neither pattern shares a"],"resolved":false,"isDir":true},
+    "src-tauri/engine/src/db_query.rs": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["2153"],
+      "contexts": ["- **−1 in impl-2** — at `db_query.rs:2153` the intervening block is a 6-line multi-line string"],
+      "resolvedFrom": "basename",
+      "verbatim": "db_query.rs"
+    },
     "src-tauri/engine/src/tool_outcome.rs": {
       "count": 3,
       "sections": [2,3,4],
@@ -213,14 +224,6 @@
       "verbatim": "engine/api_proxy.rs"
     },
     "src-tauri/src/engine/connector_strategy.rs": {"count":4,"sections":[3,6,9],"lines":["513","546-561","554"],"contexts":["- **`src-tauri/src/engine/connector_strategy.rs:513` — `is_revocation_error(body)`.** The"]},
-    "src-tauri/src/engine/db_query.rs": {
-      "count": 2,
-      "sections": [9],
-      "lines": ["2153"],
-      "contexts": ["- **−1 in impl-2** — at `db_query.rs:2153` the intervening block is a 6-line multi-line string"],
-      "resolvedFrom": "basename",
-      "verbatim": "db_query.rs"
-    },
     "src-tauri/src/engine/kpi_binding.rs": {"count":1,"sections":[9],"contexts":["`commands/core/persona_icon_gen.rs`, `engine/kpi_binding.rs`, `gitlab/client.rs`); the positive"],"resolvedFrom":"suffix","verbatim":"engine/kpi_binding.rs"},
     "src-tauri/src/engine/oauth_refresh.rs": {
       "count": 7,
@@ -308,14 +311,6 @@
       "contexts": ["`errorRegistry.ts`'s 62 rules, `useTranslatedError.ts`'s 65 rules, `tauriInvoke.ts`, `eventBridge.ts`,"],
       "resolvedFrom": "basename",
       "verbatim": "useTranslatedError.ts"
-    },
-    "src/lib/commandNames.generated.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["1279"],
-      "contexts": ["frontend call sites** (it exists only in `commandNames.generated.ts:1279`). Recovery from offline"],
-      "resolvedFrom": "basename",
-      "verbatim": "commandNames.generated.ts"
     },
     "src/lib/errors/errorRegistry.ts": {
       "count": 8,

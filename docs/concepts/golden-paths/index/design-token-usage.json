@@ -39,6 +39,7 @@
       "contexts": ["| `exclude` path renamed (`Button.tsx` → `ButtonMOVED.tsx`) | **1** | `[structural] exclude \"…ButtonMOVED.tsx\" matched no file. The exemption is stale` |"],
       "resolved": false
     },
+    "DeckTopBar.tsx": {"count":1,"sections":[6],"lines":["48"],"contexts":["zero raw scale classes, in one class string. `DeckTopBar.tsx:48` is the same shape with"],"resolved":false},
     "StatusBadge.tsx": {"count":2,"sections":[7],"lines":["47-50"],"contexts":["`statusTokens.ts`, `Button.tsx`, `SectionCard.tsx`, `StatusBadge.tsx`, `.claude/Design.md`,"],"resolved":false},
     "designTokens.ts": {
       "count": 9,
@@ -96,15 +97,7 @@
     "shared/components/*.tsx": {"count":1,"sections":[8],"contexts":["**126 of 129** `shared/components/*.tsx` files reference `className`; **63** declare"],"resolved":false},
     "src/**": {"count":3,"sections":[7],"contexts":["Sweep: every file under `src/**` — **4,829 files (2,725 `.ts` + 2,104 `.tsx`)** — parsed for"],"resolved":false,"isDir":true},
     "src/**/*.css": {"count":1,"sections":[9],"contexts":["selectors in `src/**/*.css` at run time and floors that fail a walk that saw nothing."],"resolved":false},
-    "src/features/agents/quick-answer/triage/deck/DeckActionBar.tsx": {"count":1,"sections":[6],"lines":["48"],"contexts":["`src/features/agents/quick-answer/triage/deck/DeckActionBar.tsx:48` and `:75` —"]},
-    "src/features/agents/quick-answer/triage/deck/DeckTopBar.tsx": {
-      "count": 1,
-      "sections": [6],
-      "lines": ["48"],
-      "contexts": ["zero raw scale classes, in one class string. `DeckTopBar.tsx:48` is the same shape with"],
-      "resolvedFrom": "basename",
-      "verbatim": "DeckTopBar.tsx"
-    },
+    "src/features/agents/quick-answer/triage/deck/DeckActionBar.tsx": {"count":1,"sections":[6],"lines":["48"],"contexts":["`src/features/agents/quick-answer/triage/deck/DeckActionBar.tsx:48` and `:75` —"],"resolved":false},
     "src/features/agents/sub_connectors/components/automation/AutomationConditionStep.tsx": {"count":1,"sections":[7],"contexts":["`ArenaResultsView.tsx` (14), `AutomationConditionStep.tsx` (12),"],"resolvedFrom":"basename","verbatim":"AutomationConditionStep.tsx"},
     "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx": {"count":1,"sections":[7],"contexts":["Worst files: `TestReportModal.tsx` (22), `ArenaPanelColosseum.tsx` (15),"],"resolvedFrom":"basename","verbatim":"ArenaPanelColosseum.tsx"},
     "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx": {"count":1,"sections":[7],"contexts":["`ArenaResultsView.tsx` (14), `AutomationConditionStep.tsx` (12),"],"resolvedFrom":"basename","verbatim":"ArenaResultsView.tsx"},

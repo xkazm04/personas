@@ -68,6 +68,7 @@
       "resolved": false
     },
     "GenerateHypothesesModal.tsx": {"count":1,"sections":[7],"lines":["83"],"contexts":["`ToneAtelier.tsx:145`, `GenerateHypothesesModal.tsx:83`) or an empty-selection guard where the"],"resolved":false},
+    "ManualReviewList.tsx": {"count":1,"sections":[7],"lines":["296"],"contexts":["| `ManualReviewList.tsx:296` | error | **2400** | less than half the error default, and shorter than a success |"],"resolved":false},
     "NewCompetitionModal.tsx": {"count":1,"sections":[7],"lines":["48"],"contexts":["- `NewCompetitionModal.tsx:48` — `if (!title.trim()) { addToast(dl.task_title_required, 'error'); return; }`"],"resolved":false},
     "ReviewsSplitPaneToasts.tsx": {
       "count": 1,
@@ -134,14 +135,6 @@
       "contexts": ["| `IncidentDetailModal.tsx:121`, `useIncidentActions.ts:32`, `:38` | error | 4000 | below the 5000 error default |"],
       "resolvedFrom": "basename",
       "verbatim": "useIncidentActions.ts"
-    },
-    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["296"],
-      "contexts": ["| `ManualReviewList.tsx:296` | error | **2400** | less than half the error default, and shorter than a success |"],
-      "resolvedFrom": "basename",
-      "verbatim": "ManualReviewList.tsx"
     },
     "src/features/overview/sub_manual-review/components/backlog/BacklogPanel.tsx": {
       "count": 1,

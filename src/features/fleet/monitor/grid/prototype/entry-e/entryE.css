@@ -232,7 +232,7 @@
 }
 
 /* ── Pile tiles: the Board's skin on a line of a list ──────────────────── */
-/* A persona or session line wears the Board's tile (fleetboard.css `fb-tile`
+/* A persona or session line wears the pile tile (grid/skin/skin.css `fb-tile`
    + `is-needs|working|resting|off`, toned by --fb-tone from PILE_VISUAL), so
    its state is the line's whole background, read before its name: a solid
    tone fill when it needs you, lit theme colour while it works, glass at rest,
@@ -245,6 +245,29 @@
   margin: 0 6px 3px;
 }
 .ae-pile > :not(.fb-age) { position: relative; z-index: 1; }
+/* HOVER. The line had only the border change below, which on a `needs` fill
+   (border and background are both --fb-tone) is invisible, and on a hatched
+   `off` line is nearly so - so a dense bay gave the pointer no answer about
+   which row it was on. The lift is a full-bleed wash on ::before rather than a
+   background change, because the four piles paint their backgrounds four
+   different ways and one of them is a solid fill; a wash reads the same over
+   all of them. ::before and not a box-shadow: `is-working` and `is-needs` both
+   own box-shadow (the glow and the halo) and a hover rule would blow them out.
+   It sits under the content (`.ae-pile > :not(.fb-age)` is z-index 1) and over
+   the fill, and is clipped by the tile's own radius and overflow.
+   Subtler than `is-selected` (a 2px primary outline) and `is-flash` (the
+   3-beat pulse) on purpose: this is a pointer, not a verdict. An inert line
+   (a rung that cannot be opened) keeps the default cursor and gets no lift. */
+.ae-pile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: transparent;
+  transition: background-color var(--duration-fast) ease;
+}
+.ae-pile:not(.is-inert):hover::before { background: color-mix(in oklab, var(--foreground) 7%, transparent); }
 .ae-pile:hover { border-color: color-mix(in oklab, var(--foreground) 45%, var(--fb-tone)); }
 .ae-pile.is-inert { cursor: default; }
 .ae-pile.is-over { box-shadow: inset 3px 0 0 var(--status-warning); }
@@ -293,6 +316,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .ae-pile.is-flash { animation: none; }
+  .ae-pile::before { transition: none; }
 }
 
 /* A running dev server's edge breathes: slow, and never below a third lit, so

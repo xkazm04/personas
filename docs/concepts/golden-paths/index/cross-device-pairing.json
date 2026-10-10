@@ -40,6 +40,7 @@
     "app/webhook/route.ts": {"count":1,"sections":[],"lines":["125"],"contexts":["against GitHub (`app/webhook/route.ts:125` `installationMatchesOwner`). **Nobody uses public-key"],"resolved":false},
     "auth.rs": {"count":1,"sections":[],"lines":["38"],"contexts":["(`auth.rs:38`)."],"resolved":false},
     "brainiac-store/src/onboard.rs": {"count":1,"sections":[],"lines":["186-196"],"contexts":["polls mint at most one key\"* (`brainiac-store/src/onboard.rs:186-196`), and `MAX_PENDING: i64 = 100`"],"resolved":false},
+    "commandNames.generated.ts": {"count":2,"sections":[0,7],"lines":["1282"],"contexts":["a union member in `commandNames.generated.ts:1282` and inside a docstring in"],"resolved":false},
     "commands/fleet/{pairing,companion_api}.rs": {"count":1,"sections":[],"contexts":["`commands/fleet/{pairing,companion_api}.rs`, `commands/network/{owned_devices,pairing,identity}.rs`,"],"resolved":false},
     "commands/network/{owned_devices,pairing,identity}.rs": {"count":1,"sections":[],"contexts":["`commands/fleet/{pairing,companion_api}.rs`, `commands/network/{owned_devices,pairing,identity}.rs`,"],"resolved":false},
     "core/src/models/{identity,owned_device}.rs": {"count":1,"sections":[],"contexts":["`core/src/models/{identity,owned_device}.rs` read in full or near-full. Client half:"],"resolved":false},
@@ -400,14 +401,6 @@
       "contexts": ["`bindings/OwnedDevice.ts:27`. `src/api/network/devices.ts` — the module that wraps every other"],
       "resolvedFrom": "suffix",
       "verbatim": "bindings/OwnedDevice.ts"
-    },
-    "src/lib/commandNames.generated.ts": {
-      "count": 2,
-      "sections": [0,7],
-      "lines": ["1282"],
-      "contexts": ["a union member in `commandNames.generated.ts:1282` and inside a docstring in"],
-      "resolvedFrom": "basename",
-      "verbatim": "commandNames.generated.ts"
     },
     "src/lib/contexts/fileHashes.ts": {"count":1,"sections":[],"lines":["9"],"contexts":["`vibeman` carries Personas ports — `src/lib/contexts/fileHashes.ts:9` and"],"resolved":false},
     "src/lib/network/p2pCapability.ts": {"count":5,"sections":[0,3,7,12],"lines":["54-61"],"contexts":["`src/lib/network/p2pCapability.ts`, `src/features/plugins/fleet/FleetPairDevice.tsx`,"]},

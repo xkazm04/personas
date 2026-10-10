@@ -455,16 +455,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/kb_scan.rs"
     },
-    "src-tauri/src/engine/project_tracking/subscription.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["188-189"],
-      "contexts": [
-        "| Persisted read-model fields typed `Option<T>` over a `NOT NULL` column | **11** | incl. `SubscriptionWithProject.created_at/updated_at` (`src/engine/project_tracking/subscription.rs:188-189`) and `…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "src/engine/project_tracking/subscription.rs"
-    },
     "src-tauri/src/gitlab/types.rs": {
       "count": 1,
       "sections": [7],
@@ -514,6 +504,15 @@
       "sections": [5],
       "contexts": [
         "- **`#[serde(default)]` on a non-`Option` field of a persisted model — 21 sites.** `PersonaExecution.business_outcome` (`core/src/models/execution.rs:73`) defaults a missing field to `\"unknown\"`; `Pe…"
+      ],
+      "resolved": false
+    },
+    "src/engine/project_tracking/subscription.rs": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["188-189"],
+      "contexts": [
+        "| Persisted read-model fields typed `Option<T>` over a `NOT NULL` column | **11** | incl. `SubscriptionWithProject.created_at/updated_at` (`src/engine/project_tracking/subscription.rs:188-189`) and `…"
       ],
       "resolved": false
     },

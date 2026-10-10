@@ -188,6 +188,16 @@
       "resolvedFrom": "basename",
       "verbatim": "healing_timeline.rs"
     },
+    "src-tauri/engine/src/project_tracking/subscription.rs": {
+      "count": 5,
+      "sections": [5,6,7],
+      "lines": ["2001-2008","1021-1040","1986-2069"],
+      "contexts": [
+        "| **Implying a capability from another toggle** | `COMPANION_AUTONOMOUS_MODE` (a button in the **Athena chat header**, `AthenaChatHeader.tsx:116`) implies unattended auto-approval of human reviews wi…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "subscription.rs"
+    },
     "src-tauri/engine/src/queue.rs": {
       "count": 3,
       "sections": [3,6],
@@ -305,16 +315,6 @@
       "verbatim": "pattern_miner.rs"
     },
     "src-tauri/src/engine/persona_brain/sleep_cycle.rs": {"count":2,"sections":[5],"contexts":["(`sleep_cycle.rs`: *\"Deliberately the SAME computation the admission runs, not a parallel"],"resolvedFrom":"basename","verbatim":"sleep_cycle.rs"},
-    "src-tauri/src/engine/project_tracking/subscription.rs": {
-      "count": 5,
-      "sections": [5,6,7],
-      "lines": ["2001-2008","1021-1040","1986-2069"],
-      "contexts": [
-        "| **Implying a capability from another toggle** | `COMPANION_AUTONOMOUS_MODE` (a button in the **Athena chat header**, `AthenaChatHeader.tsx:116`) implies unattended auto-approval of human reviews wi…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "subscription.rs"
-    },
     "src-tauri/src/engine/system_ops.rs": {
       "count": 3,
       "sections": [3,6],

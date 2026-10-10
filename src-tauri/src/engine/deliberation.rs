@@ -470,14 +470,18 @@ pub struct ModeratorContext {
     pub result_pending: bool,
 }
 
-/// The moderator (orchestrator) runs on Sonnet 5.5 — promoted from Haiku to test
-/// how far a more capable conversation manager pushes flow efficiency (Opus
-/// before 2026-09-29). Reasoning effort isn't exposed on the headless
-/// `claude -p` path, so it runs at default.
-pub const MODERATOR_MODEL: &str = personas_core::model_ids::DEFAULT_STRONG;
-/// Track (child) moderator — Sonnet. A track is one scoped checklist item, so a
-/// cheaper conversation manager suffices; keeps the full-strength moderator on the parent only.
-pub const TRACK_MODERATOR_MODEL: &str = "claude-sonnet-4-6";
+/// Call class of the moderator (orchestrator) and its split / proposal / merge
+/// legs: long-form reasoning over the roster, agenda and recent turns. Model
+/// and effort come from the class table (`personas_core::model_class`) —
+/// Sonnet 5.5, promoted from Haiku to test how far a more capable conversation
+/// manager pushes flow efficiency (Opus before 2026-09-29).
+pub const MODERATOR_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Synthesis;
+/// Track (child) moderator. A track is one scoped checklist item; kept as its
+/// own constant so the parent and track moderators can be re-tiered apart
+/// (it rode the older Sonnet 4.6 until 2026-10-08).
+pub const TRACK_MODERATOR_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Synthesis;
 /// Max deliberations advanced per tick — bounds a cold-start fan-out.
 const MAX_DELIBERATIONS_PER_TICK: usize = 8;
 /// Recent turns shown to the moderator.
@@ -581,16 +585,16 @@ pub fn parse_decision(blob: &str) -> Option<ModeratorDecision> {
     result
 }
 
-/// The moderator model for a deliberation: Opus on the top-level parent (the
-/// hard conversation-management + cross-track synthesis), Sonnet on child tracks
-/// (a single scoped checklist item — cheaper, still capable). Cost lever: tracks
-/// dominate the call volume when a deliberation splits, so this is where the
-/// Opus tax is biggest.
-pub fn moderator_model_for(delib: &TeamDeliberation) -> &'static str {
+/// The moderator route for a deliberation: [`MODERATOR_CLASS`] on the
+/// top-level parent (the hard conversation-management + cross-track
+/// synthesis), [`TRACK_MODERATOR_CLASS`] on child tracks (a single scoped
+/// checklist item). Cost lever: tracks dominate the call volume when a
+/// deliberation splits, so this is where a cheaper track tier would pay most.
+pub fn moderator_route_for(delib: &TeamDeliberation) -> personas_core::model_class::ClassRoute {
     if delib.parent_id.is_some() {
-        TRACK_MODERATOR_MODEL
+        TRACK_MODERATOR_CLASS.route()
     } else {
-        MODERATOR_MODEL
+        MODERATOR_CLASS.route()
     }
 }
 
@@ -601,14 +605,14 @@ pub fn moderator_model_for(delib: &TeamDeliberation) -> &'static str {
 pub async fn run_moderator(
     ctx: &ModeratorContext,
     user_db: &crate::db::UserDbPool,
-    model: &str,
+    route: personas_core::model_class::ClassRoute,
 ) -> Result<(ModeratorDecision, Option<f64>), AppError> {
     let prompt = build_moderator_prompt(ctx);
-    let (blob, cost) = crate::companion::athena_reaction::cli_decision_with_model(
+    let (blob, cost) = crate::companion::athena_reaction::cli_decision_on_route(
         prompt,
         user_db,
         "deliberation_moderate",
-        model,
+        route,
     )
     .await?;
     Ok((parse_decision(&blob).unwrap_or_default(), cost))
@@ -805,7 +809,7 @@ pub async fn advance_one_deliberation(
     }
 
     let (ctx, last_speaker) = build_moderator_context(pool, delib)?;
-    let (mut decision, cost) = run_moderator(&ctx, user_db, moderator_model_for(delib)).await?;
+    let (mut decision, cost) = run_moderator(&ctx, user_db, moderator_route_for(delib)).await?;
     if let Some(c) = cost {
         let _ = deliberation_repo::add_cost(pool, &delib.id, c);
     }
@@ -1708,11 +1712,11 @@ pub async fn synthesize_proposal(
         .map(|t| (author_label(&t.author_kind).to_string(), t.body))
         .collect();
     let prompt = build_proposal_prompt(&delib.topic, delib.goal.as_deref(), &agenda, &recent);
-    let (blob, cost) = crate::companion::athena_reaction::cli_decision_with_model(
+    let (blob, cost) = crate::companion::athena_reaction::cli_decision_on_route(
         prompt,
         user_db,
         "deliberation_proposal",
-        "claude-sonnet-4-6",
+        MODERATOR_CLASS.route(),
     )
     .await
     .ok()?;
@@ -1831,11 +1835,11 @@ pub async fn plan_split(
         &ctx.roster,
         &ctx.open_agenda,
     );
-    let (blob, cost) = crate::companion::athena_reaction::cli_decision_with_model(
+    let (blob, cost) = crate::companion::athena_reaction::cli_decision_on_route(
         prompt,
         user_db,
         "deliberation_split",
-        MODERATOR_MODEL,
+        MODERATOR_CLASS.route(),
     )
     .await?;
     if let Some(c) = cost {
@@ -1897,11 +1901,11 @@ pub async fn synthesize_merged_proposal(
         })
         .collect();
     let prompt = build_merge_prompt(&parent.topic, parent.goal.as_deref(), &summaries);
-    let (blob, cost) = crate::companion::athena_reaction::cli_decision_with_model(
+    let (blob, cost) = crate::companion::athena_reaction::cli_decision_on_route(
         prompt,
         user_db,
         "deliberation_merge",
-        "claude-sonnet-4-6",
+        MODERATOR_CLASS.route(),
     )
     .await
     .ok()?;

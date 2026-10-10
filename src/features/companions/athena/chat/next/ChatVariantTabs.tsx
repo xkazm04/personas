@@ -1,27 +1,38 @@
 /**
- * ChatVariantTabs — the throwaway /prototype switcher for the Athena chat.
+ * ChatVariantTabs — the Athena chat's variant switcher.
  *
- * TODO(prototype, 2026-09-22): consolidate the Athena chat switcher. The owner
- * picks a winner (or a fusion) from these variants; the winner becomes the only
- * render and this file, the store below and the losing variants are deleted in
- * the same commit.
+ * FUSION IS THE DEFAULT (2026-10-07): the owner's fusion of round 5's six
+ * variants (`frame/variants/fusion/`). Current - the classic panel - stays
+ * selectable beside it. Halo · Spread and R5 · A / B / C were deleted on
+ * 2026-10-07 after Fusion took their parts, and Filament (the `athena-chrome`
+ * contest winner) the same day, after round 6 folded its rail into Fusion's.
+ *
+ * The store below holds no persistence, so a default is only a default if it
+ * is written here - every launch and every reload opens on it.
  */
 
 import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 
-export type ChatVariant = 'current' | 'spread' | 'filament';
+// TODO(prototype, 2026-10-07): athena chat - consolidate Fusion / Filament / Current once the owner settles.
+export type ChatVariant = 'fusion' | 'current';
 
 export const useChatVariantStore = create<{ variant: ChatVariant; set: (v: ChatVariant) => void }>((set) => ({
-  variant: 'spread',
+  // The owner's fusion, so it is what the app opens on. Deliberately NOT persisted to
+  // Web Storage: the default is now the thing you want, which is what made the
+  // missing persistence a problem in the first place, and a storage site here
+  // would be one the golden path then has to route somewhere
+  // (`raw-web-storage`).
+  variant: 'fusion',
   set: (variant) => set({ variant }),
 }));
 
+// Fusion first: the strip reads left-to-right as what ships, then what stays
+// selectable beside it.
 const TABS: { id: ChatVariant; label: string; testId: string }[] = [
+  { id: 'fusion', label: 'Fusion', testId: 'chat-variant-fusion' },
   { id: 'current', label: 'Current', testId: 'chat-variant-current' },
-  { id: 'spread', label: 'Halo · Spread', testId: 'chat-variant-spread' },
-  { id: 'filament', label: 'Filament', testId: 'chat-variant-filament' },
 ];
 
 export function ChatVariantTabs({ lifted }: { lifted: boolean }) {

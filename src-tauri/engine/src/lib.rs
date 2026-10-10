@@ -40,6 +40,35 @@
 #![allow(clippy::unnecessary_lazy_evaluations)]
 #![allow(clippy::unnecessary_map_or)]
 
+// -------------------------------------------------------------------------
+// Extracted from app_lib's `engine` module (crate-split step 6, 2026-10-07).
+// Code motion only: module paths rewritten, no logic changed. app_lib's
+// `src/engine/mod.rs` glob-re-exports this crate, so `crate::engine::<name>`
+// paths on the other side resolve unchanged.
+// -------------------------------------------------------------------------
+pub mod automation_runner;
+pub mod background;
+pub mod brain_payload;
+pub mod build_session;
+#[cfg(test)]
+pub mod circuit_breakers_integration_tests;
+pub mod credential_broker;
+pub mod db_query;
+pub mod evolution;
+pub mod failover;
+pub mod fitness_driver;
+pub mod genome;
+pub mod genome_critique;
+pub mod http_engine;
+pub mod knowledge_consult;
+pub mod platforms;
+pub mod project_tracking;
+pub mod runner;
+pub mod subscription;
+pub mod team_assignment_matching;
+pub mod twin_sample;
+pub mod twin_setup;
+
 pub mod a2a;
 pub mod active_persona_cap;
 pub mod adoption_answers;
@@ -113,6 +142,7 @@ pub mod failure_signature;
 #[cfg(feature = "desktop")]
 pub mod file_watcher;
 pub mod fix_loop;
+pub mod gate_exec;
 pub mod git_checkpoint;
 pub mod google_oauth;
 pub mod headless;

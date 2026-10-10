@@ -140,7 +140,7 @@ export function SetupDrawer({ contests, defaultProjectId, wide, onClose, onCreat
 
   return (
     <BaseModal isOpen onClose={onClose} titleId={TITLE_ID} placement="right-drawer" portal panelClassName={drawerPanelClass(wide)}>
-      <div className={`contest-ledger sl-drawer${wide ? ' wide' : ''}`} data-type-density="compact" data-testid="ledger-setup">
+      <div className={`contest-ledger sl-drawer${wide ? ' wide' : ''}`} data-testid="ledger-setup">
         <div className="dr-h">
           <div className="hx">
             <h2 id={TITLE_ID}>{s.setup_title}</h2>

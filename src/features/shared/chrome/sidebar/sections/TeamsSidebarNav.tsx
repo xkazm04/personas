@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Target, LayoutDashboard, ChartNoAxesGantt, Gauge, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Layers, Server, Globe, PenTool } from 'lucide-react';
+import { LayoutDashboard, ChartNoAxesGantt, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Layers, Server, Globe, PenTool } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
@@ -88,9 +88,6 @@ const BROWSER_ITEMS: Array<{
   { id: 'webview', icon: Globe, labelKey: 'webview', testId: 'teams-webview-nav' },
 ];
 
-/** Surfaces whose first paint waits on the Mastermind data families. */
-const PREFETCH_ON_INTENT: ReadonlySet<TeamsTab> = new Set<TeamsTab>(['mastermind', 'factory']);
-
 /** Start loading the canvas's code and data before the click lands. Dynamic
  *  import: the sidebar is in the main bundle, the canvas's data layer is not. */
 function prefetchMastermindIntent() {
@@ -98,6 +95,20 @@ function prefetchMastermindIntent() {
     .then((m) => m.prefetchMastermind())
     .catch(silentCatch('sidebar mastermind prefetch'));
 }
+
+/** Lifecycle: its page chunk and the active project's snapshot (deduped inside). */
+function prefetchLifecycleIntent() {
+  void import('@/features/plugins/dev-tools/sub_lifecycle/prefetchLifecycle')
+    .then((m) => m.prefetchLifecycle())
+    .catch(silentCatch('sidebar lifecycle prefetch'));
+}
+
+/** Surfaces whose first paint waits on data a hover can start fetching. */
+const PREFETCH_ON_INTENT: Partial<Record<TeamsTab, () => void>> = {
+  mastermind: prefetchMastermindIntent,
+  factory: prefetchMastermindIntent,
+  lifecycle: prefetchLifecycleIntent,
+};
 
 export function TeamsSidebarNav() {
   const { t } = useTranslation();
@@ -178,7 +189,7 @@ export function TeamsSidebarNav() {
       testId: item.testId,
       devOnly: item.devOnly === true,
       active: teamsTab === item.id,
-      prefetch: PREFETCH_ON_INTENT.has(item.id),
+      prefetch: PREFETCH_ON_INTENT[item.id],
       onSelect: () => go(item.id),
     })),
     ...(showStudio
@@ -189,7 +200,7 @@ export function TeamsSidebarNav() {
           testId: 'teams-studio-nav',
           devOnly: true,
           active: sidebarSection === 'studio',
-          prefetch: false,
+          prefetch: undefined,
           onSelect: () => setSidebarSection('studio'),
         }]
       : []),
@@ -222,21 +233,20 @@ export function TeamsSidebarNav() {
 
       {/* Goals hub — view submenu (board/timeline) underneath */}
       <div className="mt-3 pt-3 border-t border-primary/10 space-y-0.5">
+        {/* Group caption, same shape as Development / Browser below. It stays
+            a button so the hub remains reachable by its test id and tour anchor. */}
         <button
           type="button"
           data-testid="teams-goals-nav"
           onClick={() => go('goals')}
           aria-current={teamsTab === 'goals' ? 'page' : undefined}
-          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-            teamsTab === 'goals'
-              ? 'bg-primary/10 text-foreground'
-              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
+          className={`w-full flex items-center gap-2 px-3 pb-1 typo-caption uppercase tracking-wider transition-colors ${
+            teamsTab === 'goals' ? 'text-foreground' : 'text-foreground/50 hover:text-foreground'
           }`}
         >
-          <Target className="w-4 h-4 flex-shrink-0" />
-          {t.sidebar.goals}
+          <span className="truncate">{t.sidebar.goals}</span>
           {activeGoalCount > 0 && (
-            <span className="ml-auto typo-caption text-foreground font-mono">{activeGoalCount}</span>
+            <span className="ml-auto typo-caption font-mono">{activeGoalCount}</span>
           )}
         </button>
         {/* View submenu — always expanded; clicking a view also navigates into
@@ -269,21 +279,20 @@ export function TeamsSidebarNav() {
       {/* KPIs — the outcome layer above goals; view submenu (Dashboard / By
           context / Proposals) nested underneath, mirroring Goals. */}
       <div className="mt-3 pt-3 border-t border-primary/10 space-y-0.5">
+        {/* Group caption, same shape as Development / Browser below. It stays
+            a button so the hub remains reachable by its test id and tour anchor. */}
         <button
           type="button"
           data-testid="teams-kpis-nav"
           onClick={() => go('kpis')}
           aria-current={teamsTab === 'kpis' ? 'page' : undefined}
-          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-            teamsTab === 'kpis'
-              ? 'bg-primary/10 text-foreground'
-              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
+          className={`w-full flex items-center gap-2 px-3 pb-1 typo-caption uppercase tracking-wider transition-colors ${
+            teamsTab === 'kpis' ? 'text-foreground' : 'text-foreground/50 hover:text-foreground'
           }`}
         >
-          <Gauge className="w-4 h-4 flex-shrink-0" />
-          {t.sidebar.kpis}
+          <span className="truncate">{t.sidebar.kpis}</span>
           {kpiProposalCount > 0 && (
-            <span className="ml-auto typo-caption text-foreground font-mono">{kpiProposalCount}</span>
+            <span className="ml-auto typo-caption font-mono">{kpiProposalCount}</span>
           )}
         </button>
         <div className="ml-3 pl-2 border-l border-primary/10 space-y-0.5">
@@ -332,8 +341,8 @@ export function TeamsSidebarNav() {
                 data-testid={item.testId}
                 data-experimental={item.devOnly ? 'true' : undefined}
                 onClick={item.onSelect}
-                onPointerEnter={item.prefetch ? prefetchMastermindIntent : undefined}
-                onFocus={item.prefetch ? prefetchMastermindIntent : undefined}
+                onPointerEnter={item.prefetch}
+                onFocus={item.prefetch}
                 aria-current={active ? 'page' : undefined}
                 // The golden rail is `border-l-2` ON THE ROW, drawn just inside
                 // the group's own grey rail, plus a squared left corner so the

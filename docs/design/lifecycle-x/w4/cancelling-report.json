@@ -1,0 +1,220 @@
+{
+  "module": "plugins/lifecycle/cancelling",
+  "kit": null,
+  "query": null,
+  "reducedMotion": false,
+  "steps": null,
+  "label": "cancelling",
+  "createdAt": "2026-10-09T01:11:31.724Z",
+  "browser": "153.0.8010.12",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 14,
+    "note": "Synthetic: the collar mix with a Measure running on the base tip (5 commands of Gate and Tests). A cancel is on its way."
+  },
+  "ok": true,
+  "unknownIpcCommands": [
+    "dev_tools_workspace_set_active",
+    "companions_status"
+  ],
+  "shots": [
+    {
+      "file": "cancelling-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1
+      },
+      "stable": true,
+      "textLength": 1145,
+      "textSample": "Atlas Web Solo practice, default · Cancelling the Measure All projects / Atlas Web no repo Cancelling Send again to Overseer Ask Athena Measure started: 5 commands. Cancelling the Measure. npx tsc --n",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "cancelling-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1
+      },
+      "stable": true,
+      "textLength": 1239,
+      "textSample": "Atlas Web Solo practice, default · Cancelling the Measure All projects / Atlas Web no repo Cancelling Send again to Overseer Ask Athena Measure started: 5 commands. Cancelling the Measure. npx tsc --n",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "cancelling-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1
+      },
+      "stable": true,
+      "textLength": 1145,
+      "textSample": "Atlas Web Solo practice, default · Cancelling the Measure All projects / Atlas Web no repo Cancelling Send again to Overseer Ask Athena Measure started: 5 commands. Cancelling the Measure. npx tsc --n",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "cancelling-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1,
+        "dev_tools_lifecycle_history": 1
+      },
+      "stable": true,
+      "textLength": 1239,
+      "textSample": "Atlas Web Solo practice, default · Cancelling the Measure All projects / Atlas Web no repo Cancelling Send again to Overseer Ask Athena Measure started: 5 commands. Cancelling the Measure. npx tsc --n",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

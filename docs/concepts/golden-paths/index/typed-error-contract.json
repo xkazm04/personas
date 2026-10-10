@@ -66,6 +66,7 @@
       "verbatim": "error_taxonomy.rs"
     },
     "src-tauri/db/src/repos/resources/owned_devices.rs": {"count":1,"sections":[6],"lines":["252"],"contexts":["- `src-tauri/db/src/repos/resources/owned_devices.rs:252` — a repo-layer function that raises a"]},
+    "src-tauri/engine/src/failover.rs": {"count":4,"sections":[6,7,8],"lines":["73-88","74","73","81"],"contexts":["- `src-tauri/engine/src/failover.rs:73-88` — `is_failover_eligible` as the breaker guard, plus a"]},
     "src-tauri/engine/src/tool_outcome.rs": {"count":2,"sections":[6,7],"lines":["107-125","114"],"contexts":["- **`src-tauri/engine/src/tool_outcome.rs:107-125` — the exemplary Rust *consumer*.** `classify_app_error`"]},
     "src-tauri/src/engine/error_taxonomy.rs": {
       "count": 1,
@@ -75,7 +76,6 @@
       ],
       "resolved": false
     },
-    "src-tauri/src/engine/failover.rs": {"count":4,"sections":[6,7,8],"lines":["73-88","74","73","81"],"contexts":["- `src-tauri/src/engine/failover.rs:73-88` — `is_failover_eligible` as the breaker guard, plus a"]},
     "src-tauri/src/engine/mcp_tools.rs": {"count":1,"sections":[6],"lines":["938"],"contexts":["- `src-tauri/src/engine/mcp_tools.rs:938` — the exemplary *producer* of a structured variant:"]},
     "src-tauri/src/error.rs": {
       "count": 1,

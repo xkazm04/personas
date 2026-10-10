@@ -40,6 +40,7 @@
       "resolvedFrom": "basename",
       "verbatim": "ci.yml"
     },
+    "GoalsMissions.tsx": {"count":1,"sections":[7],"lines":["114"],"contexts":["| `localeCompare` on a timestamp field | **34 / 33 files** | 1 correct (`GoalsMissions.tsx:114`) |"],"resolved":false},
     "backlog_triage.rs": {
       "count": 1,
       "sections": [7],
@@ -524,16 +525,6 @@
       "resolvedFrom": "basename",
       "verbatim": "rollup.rs"
     },
-    "src-tauri/src/engine/failover.rs": {
-      "count": 1,
-      "sections": [3],
-      "lines": ["328"],
-      "contexts": [
-        "- **`core::utils::now_utc() -> String`** = `chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true)`. The single Rust chokepoint. Sits beside `now_ms()` in `core/src/utils/mod.rs`. **…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "src/engine/failover.rs"
-    },
     "src-tauri/src/engine/kpi_derivation.rs": {
       "count": 1,
       "sections": [5],
@@ -543,26 +534,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/kpi_derivation.rs"
-    },
-    "src-tauri/src/engine/project_tracking/events.rs": {
-      "count": 1,
-      "sections": [6],
-      "lines": ["87"],
-      "contexts": [
-        "- `db/src/repos/communication/events.rs:591-597` — **the only retention prune in the repo that is correct.** `// Use chrono for the cutoff date to match the timestamp format used in publish().` `pers…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "src/engine/project_tracking/events.rs"
-    },
-    "src-tauri/src/engine/project_tracking/pulse.rs": {
-      "count": 1,
-      "sections": [3],
-      "lines": ["180"],
-      "contexts": [
-        "- **`core::utils::now_utc() -> String`** = `chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true)`. The single Rust chokepoint. Sits beside `now_ms()` in `core/src/utils/mod.rs`. **…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "src/engine/project_tracking/pulse.rs"
     },
     "src-tauri/src/logging.rs": {
       "count": 4,
@@ -592,6 +563,33 @@
       "lines": ["904"],
       "contexts": [
         "- **`Utc::now().format(\"...\")`** — 20 sites across **12 distinct format strings**, including `\"%Y-%m-%d %H:%M:%S\"` (the SQLite shape, hand-rolled in Rust — `src/engine/kpi_derivation.rs:483,496,508`)…"
+      ],
+      "resolved": false
+    },
+    "src/engine/failover.rs": {
+      "count": 1,
+      "sections": [3],
+      "lines": ["328"],
+      "contexts": [
+        "- **`core::utils::now_utc() -> String`** = `chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true)`. The single Rust chokepoint. Sits beside `now_ms()` in `core/src/utils/mod.rs`. **…"
+      ],
+      "resolved": false
+    },
+    "src/engine/project_tracking/events.rs": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["87"],
+      "contexts": [
+        "- `db/src/repos/communication/events.rs:591-597` — **the only retention prune in the repo that is correct.** `// Use chrono for the cutoff date to match the timestamp format used in publish().` `pers…"
+      ],
+      "resolved": false
+    },
+    "src/engine/project_tracking/pulse.rs": {
+      "count": 1,
+      "sections": [3],
+      "lines": ["180"],
+      "contexts": [
+        "- **`core::utils::now_utc() -> String`** = `chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true)`. The single Rust chokepoint. Sits beside `now_ms()` in `core/src/utils/mod.rs`. **…"
       ],
       "resolved": false
     },
@@ -657,14 +655,6 @@
       "contexts": ["| Competing un-normalizing relative-time formatters | **5** | incl. `display/grouping.ts:31` (day bucketing) |"],
       "resolvedFrom": "suffix",
       "verbatim": "display/grouping.ts"
-    },
-    "src/features/teams/sub_goals/GoalsMissions.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["114"],
-      "contexts": ["| `localeCompare` on a timestamp field | **34 / 33 files** | 1 correct (`GoalsMissions.tsx:114`) |"],
-      "resolvedFrom": "basename",
-      "verbatim": "GoalsMissions.tsx"
     },
     "src/features/teams/sub_kpis/kpiMath.ts": {
       "count": 1,

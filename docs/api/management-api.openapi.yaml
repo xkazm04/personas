@@ -74,6 +74,14 @@ paths:
                       master probation reviews auto-decide, all recorded as actor
                       `headless_bridge`. An unattended driver VERIFIES the mode here
                       rather than inferring it from a pairing that happened to succeed.
+                  timestamp:
+                    type: integer
+                    description: |
+                      Server time in epoch milliseconds (the web dashboard's
+                      `HealthResponse.timestamp`). `/health` is unauthenticated, so it
+                      carries no activity counts: the web's `workers` and
+                      `hasSubscription` are not served here; the authenticated
+                      `GET /api/status` carries the worker counts.
 
   /api/personas:
     get:
@@ -96,6 +104,81 @@ paths:
           content: { application/json: { schema: { $ref: "#/components/schemas/ApiResult" } } }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/status:
+    get:
+      summary: Engine status in the web dashboard's StatusResponse shape
+      description: |
+        Any valid key (no scope required). `data` is the web's
+        `StatusResponse`. `workers` is always `[]` (the desktop runs
+        executions itself and has no remote workers). `workerCounts.total` is
+        the engine's global max concurrent, `executing` the running total and
+        `idle` their saturating difference; `queueLength` is the queued
+        total. `activeExecutions` lists each running execution with
+        `workerId: "desktop"` and `startedAt` in epoch ms.
+        `hasClaudeToken` is always `false` and `oauth` is always
+        `{connected: false, scopes: [], expiresAt: null}`: the desktop has no
+        honest source for them.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StatusResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/execute:
+    post:
+      summary: Execute a persona, named in the body (non-blocking)
+      description: |
+        The web dashboard's call shape. Requires broad `personas:execute`; a
+        per-persona grant (`personas:execute:persona:{id}`) is NOT enough here
+        (the path names no persona), so use `/api/execute/{personaId}` for it.
+        Runs the same checks as `/api/execute/{personaId}`, in the same order:
+        404 unknown persona, 400 disabled persona, then the project-binding
+        check. The run's stored input is the raw `prompt` text.
+        Answers `ExecutionAck` `{executionId, status: "queued"}` in the usual
+        envelope.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [personaId, prompt]
+              properties:
+                personaId: { type: string }
+                prompt: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExecutionAckResult" }
+        "400": { description: "`invalid_body` — personaId or prompt missing or empty; or the persona is disabled; or a binding refusal" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Persona not found, or `project_not_found`" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/executions/{id}/cancel:
+    post:
+      summary: Cancel a queued or running execution
+      description: |
+        No body. Requires broad `personas:execute` (the path names no persona,
+        so a per-persona grant cannot match). The owning persona is read from
+        the execution row, never from the request. Cancels through the engine
+        exactly as the desktop's `cancel_execution` command does. Answers
+        `ExecutionAck` `{executionId, status: "cancelled"}`.
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExecutionAckResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "`execution_not_found`" }
+        "409": { description: "`execution_not_running` — the run already finished" }
+        "429": { $ref: "#/components/responses/RateLimited" }
 
   /api/execute/{personaId}:
     post:
@@ -1111,6 +1194,52 @@ components:
           properties:
             execution_id: { type: string }
             status: { type: string, example: queued }
+    ExecutionAck:
+      type: object
+      required: [executionId, status]
+      properties:
+        executionId: { type: string }
+        status: { type: string, enum: [queued, cancelled] }
+    ExecutionAckResult:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { $ref: "#/components/schemas/ExecutionAck" }
+        error: { type: string }
+        code: { type: string }
+    StatusResult:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          type: object
+          required: [workers, workerCounts, queueLength, activeExecutions, hasClaudeToken, oauth]
+          properties:
+            workers: { type: array, items: { type: object } }
+            workerCounts:
+              type: object
+              properties:
+                total: { type: integer }
+                idle: { type: integer }
+                executing: { type: integer }
+            queueLength: { type: integer }
+            activeExecutions:
+              type: array
+              items:
+                type: object
+                properties:
+                  executionId: { type: string }
+                  workerId: { type: string }
+                  startedAt: { type: integer, description: epoch ms }
+            hasClaudeToken: { type: boolean }
+            oauth:
+              type: object
+              properties:
+                connected: { type: boolean }
+                scopes: { type: array, items: { type: string } }
+                expiresAt: { type: [string, "null"] }
+        error: { type: string }
+        code: { type: string }
     BuildStart:
       type: object
       properties:

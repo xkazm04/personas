@@ -14,4 +14,4 @@
  * eight agent lenses (`architecture-analyst`, `security-auditor`, …) live
  * there and are not sources in their own right.
  */
-export type BacklogSource = "standards_finding" | "passport_gap" | "llm_cost" | "sentry_spike" | "kpi_offtrack" | "skill_dormant" | "doc_rot" | "kpi_sim" | "memory_disputed" | "workspace_practice" | "scan_sweep" | "app_master" | "team_proposed" | "platform_escalation" | "idea_scanner" | "headless_bench_seed" | "static_scan" | "memory_reflection" | "manual";
+export type BacklogSource = "standards_finding" | "passport_gap" | "llm_cost" | "sentry_spike" | "kpi_offtrack" | "skill_dormant" | "doc_rot" | "kpi_sim" | "memory_disputed" | "workspace_practice" | "scan_sweep" | "app_master" | "team_proposed" | "platform_escalation" | "idea_scanner" | "headless_bench_seed" | "static_scan" | "memory_reflection" | "lifecycle" | "manual";

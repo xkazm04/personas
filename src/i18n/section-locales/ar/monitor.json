@@ -227,6 +227,9 @@
   "grid_dock_collapse": "إخفاء وحدة الإرسال",
   "grid_fleet_exited": "انتهت هذه الجلسة — لم تعد الطرفية موجودة.",
   "grid_fleet_kill": "إنهاء الجلسة",
+  "terminal_asleep_label": "لماذا هي نائمة",
+  "terminal_wake_failed": "لا يمكن إيقاظ هذه الجلسة",
+  "terminal_wake_failed_hint": "أنهِ الجلسة لإزالتها من اللوحة.",
   "grid_messages_empty": "لا يوجد نشاط في القنوات بعد.",
   "grid_rail_loading_more": "جارٍ تحميل المزيد…",
   "grid_session_recap_ai_title": "عنوان الجلسة",
@@ -615,6 +618,14 @@
   "orch_never_served": "لم تُخدم قط",
   "orch_refusal_budget": "تم إنفاق الميزانية الشهرية",
   "orch_refusal_concurrency": "الجهاز عند حد الشخصيات الأقصى",
+  "orch_refusal_headless": "يتولى App Master من الطرفية هذا المشروع",
+  "orch_headless_running": "Headless - قيد التشغيل",
+  "orch_headless_idle": "Headless - خامل",
+  "orch_headless_stale": "Headless - قديم",
+  "orch_headless_hint": "يعمل App Master لهذا المشروع من الطرفية (/appmaster). يتنحى master داخل التطبيق ما دامت تقاريره حديثة.",
+  "orch_headless_next_wake": "الإيقاظ التالي:",
+  "orch_headless_no_wake": "غير معلن",
+  "orch_headless_reported": "آخر تقرير:",
   "orch_refusal_daily_cap": "تم بلوغ الحد اليومي",
   "orch_refusal_in_flight": "لا تزال تُنجز جولتها الأخيرة",
   "orch_refusal_interval_floor": "ترتاح حتى فاصلها الزمني",
@@ -1073,5 +1084,6 @@
   "dc_hub_row_open_aria": "فتح: {title}",
   "dc_hub_triage_all_none": "لا شيء في الانتظار",
   "dc_hub_triage_all_short": "الكل",
-  "dc_hub_triage_all_walk_tip": "تصفّح كل {count} بالترتيب، الأكثر إلحاحًا أولًا"
+  "dc_hub_triage_all_walk_tip": "تصفّح كل {count} بالترتيب، الأكثر إلحاحًا أولًا",
+  "grid_rail_triage_modal_aria": "تفاصيل المراجعة"
 }

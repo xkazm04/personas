@@ -529,6 +529,35 @@ pub fn create_persona_channel_message(
     })
 }
 
+/// How many operator rows (`author_kind = 'user'`) `author_id` wrote in the
+/// last `window_minutes`, across every persona, not counting the row `except_id`.
+///
+/// The per-controller cap of a phone's `channel_say` reads this: a phone's row
+/// carries its controller id as `author_id`. A desk post carries none, so it
+/// never matches and is never capped.
+pub fn count_user_messages_by_author_since(
+    pool: &DbPool,
+    author_id: &str,
+    window_minutes: i64,
+    except_id: &str,
+) -> Result<i64, AppError> {
+    timed_query!(
+        "team_channel",
+        "team_channel::count_user_messages_by_author",
+        {
+            let conn = pool.get()?;
+            conn.query_row(
+                "SELECT COUNT(*) AS n FROM team_channel_messages
+             WHERE author_kind = 'user' AND author_id = ?1 AND id != ?3
+               AND datetime(created_at) >= datetime('now', ?2)",
+                params![author_id, format!("-{window_minutes} minutes"), except_id],
+                |r| r.get::<_, i64>("n"),
+            )
+            .map_err(AppError::Database)
+        }
+    )
+}
+
 /// One message the attention loop's arrivals lane may wake a persona for.
 ///
 /// Carries more than the `(id, body)` pair it replaced because the wake now
@@ -1152,6 +1181,51 @@ mod tests {
             vec![("architect".to_string(), "architect".to_string())]
         );
         assert_eq!(team_ids_for_persona(&pool, "master_a")?, vec!["t1"]);
+        Ok(())
+    }
+
+    fn post_as(pool: &DbPool, persona_id: &str, kind: &str, author: Option<&str>) -> String {
+        let (id, _) = create_persona_channel_message(
+            pool,
+            CreatePersonaChannelMessageInput {
+                id: None,
+                persona_id: persona_id.into(),
+                author_kind: kind.into(),
+                author_id: author.map(str::to_string),
+                author_label: author.map(|_| "phone".to_string()),
+                body: "said".into(),
+                reply_to: None,
+                failed: false,
+            },
+        )
+        .unwrap();
+        id
+    }
+
+    #[test]
+    fn the_author_count_sees_only_that_authors_user_rows_inside_the_window() -> Result<(), AppError>
+    {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        seed_persona(&pool, "p2")?;
+        let count = |except: &str| count_user_messages_by_author_since(&pool, "ctl-a", 10, except);
+
+        let first = post_as(&pool, "p1", "user", Some("ctl-a"));
+        // Every persona counts: the cap is the controller's, not the channel's.
+        post_as(&pool, "p2", "user", Some("ctl-a"));
+        assert_eq!(count("")?, 2);
+        assert_eq!(count(&first)?, 1, "the excepted row is not counted");
+
+        // Another controller, a desk post (no author) and a persona row
+        // carrying the same id are not this controller's says.
+        post_as(&pool, "p1", "user", Some("ctl-b"));
+        post_user(&pool, "p1", "from the desk");
+        post_as(&pool, "p1", "persona", Some("ctl-a"));
+        assert_eq!(count("")?, 2);
+
+        // Outside the window it no longer counts.
+        backdate(&pool, &first, "-11 minutes")?;
+        assert_eq!(count("")?, 1);
         Ok(())
     }
 }

@@ -256,6 +256,15 @@
       ],
       "resolved": false
     },
+    "overview/sub_manual-review/components/ManualReviewList.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["508-510"],
+      "contexts": [
+        "| `overview/sub_messages/components/MessageList.tsx:403-408` · `overview/sub_manual-review/components/ManualReviewList.tsx:508-510` | Same `ConfirmDialog` + interpolated-count shape, copied three tim…"
+      ],
+      "resolved": false
+    },
     "overview/sub_messages/components/MessageDetailModal.tsx": {
       "count": 1,
       "sections": [7],
@@ -757,16 +766,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_events/libs/useEventLog.ts"
-    },
-    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["508-510"],
-      "contexts": [
-        "| `overview/sub_messages/components/MessageList.tsx:403-408` · `overview/sub_manual-review/components/ManualReviewList.tsx:508-510` | Same `ConfirmDialog` + interpolated-count shape, copied three tim…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_manual-review/components/ManualReviewList.tsx"
     },
     "src/features/overview/sub_memories/components/MemoriesPageDense.tsx": {
       "count": 4,

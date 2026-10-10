@@ -5,10 +5,21 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { ENV_STRIP } from './contract.mjs';
+import { ENV_STRIP, SELF_REPO, repoOf } from './contract.mjs';
 
 export const GATE_NAMES = ['typecheck', 'lint', 'test'];
 export const GATE_TIMEOUT_MS = 15 * 60 * 1000;
+/** The full gate (`verify`): every suite, run before a push or release, so it gets room a busy machine needs. */
+export const FULL_GATE_TIMEOUT_MS = 45 * 60 * 1000;
+/** A branch that changes more code files than this is not narrowed: its merge gate runs the full suite. */
+export const FOCUS_MAX_FILES = 150;
+const CODE_EXT = /\.(?:[cm]?[jt]sx?|vue|svelte)$/i;
+/**
+ * Files whose change can break any test without any test importing them: dependencies, the lockfile,
+ * and the compiler and test-runner config. A branch that touches one runs the FULL test suite, so a
+ * dependency bump never passes as "no related tests".
+ */
+const WIDE_FILE = /(?:^|\/)(?:package\.json|package-lock\.json|npm-shrinkwrap\.json|pnpm-lock\.yaml|yarn\.lock|tsconfig[\w.-]*\.json|(?:vitest|vite|jest|babel|next)\.config\.[cm]?[jt]s|\.babelrc|\.npmrc|\.nvmrc)$/i;
 const TAIL_LINES = 40;
 
 /** `.ai/manifest.yaml` capabilities: `  typecheck: { command: "..." }` lines inside `capabilities:`. */
@@ -52,13 +63,95 @@ export function resolveGates(root, brief = {}) {
   return gates;
 }
 
+/**
+ * The gates of the repo a run targets. The project's own repo: resolveGates(root, brief) as always.
+ * A second repo: the brief's `repos[].gates` for that key, else that repo's manifest / package.json.
+ * The project brief's own `gates` never apply to another repo (pof's typecheck is not the registry's).
+ */
+export function resolveRunGates(run, brief = {}) {
+  const r = repoOf(run);
+  if (r.key === SELF_REPO) return resolveGates(r.root, brief);
+  const entry = (Array.isArray(brief?.repos) ? brief.repos : []).find((x) => x?.key === r.key);
+  return resolveGates(r.root, entry?.gates && typeof entry.gates === 'object' ? { gates: entry.gates } : {});
+}
+
+// ---------------------------------------------------------------- the focused merge gate
+//
+// Two gates (operator, 2026-10-09). The MERGE gate narrows `test` to the branch's changed area; the
+// FULL gate (`verify`) runs every suite before a push or release. Why: under a loaded machine ascent's and
+// devsecops' full suites outran the 15-minute gate and held three runs overnight on a timeout, not on a
+// failing test. Accepted risk, the operator's: a change can break an unrelated feature and still merge;
+// the full gate catches it before anything leaves the machine.
+
+/** The script behind `npm run <name>` in `root`'s package.json, or null. */
+function npmScriptOf(root, command) {
+  const m = /^npm run ([\w:.-]+)$/.exec(String(command || '').trim());
+  return m ? (packageScripts(root)[m[1]] ?? null) : null;
+}
+
+/**
+ * (root, gates, gateBrief) => {kind:'template', template} | {kind:'vitest'} | null
+ * How the merge gate narrows `test`, or null to run the full test command as before.
+ * - gateBrief.gates.testFocused, a command with a `{files}` placeholder, wins; an explicit empty
+ *   `testFocused` opts the repo out.
+ * - Else a test gate that is plain `vitest run` (directly or through `npm run <script>`) becomes
+ *   `vitest related`, which runs the tests whose import graph reaches a changed file.
+ * - Anything else (kp's node:test runner, firetv's rule suites, a Rust or Gradle gate) stays full.
+ * APPMASTER_GATE_FOCUS=off turns narrowing off everywhere.
+ */
+export function testFocus(root, gates, gateBrief = {}) {
+  if (String(process.env.APPMASTER_GATE_FOCUS || '').toLowerCase() === 'off') return null;
+  const bg = (gateBrief && typeof gateBrief.gates === 'object' && gateBrief.gates) || {};
+  if (Object.prototype.hasOwnProperty.call(bg, 'testFocused')) {
+    const tpl = bg.testFocused;
+    return typeof tpl === 'string' && tpl.includes('{files}') ? { kind: 'template', template: tpl } : null;
+  }
+  const cmd = String(gates?.test || '').trim();
+  if (!cmd) return null;
+  const script = npmScriptOf(root, cmd) ?? cmd.replace(/^npx\s+/, '');
+  return /^vitest run\s*$/.test(String(script).trim()) ? { kind: 'vitest' } : null;
+}
+
+/** The focus for the repo a run targets: the brief's own gates for self, that repo's entry otherwise (as resolveRunGates). */
+export function runTestFocus(run, gates, brief = {}) {
+  const r = repoOf(run);
+  if (r.key === SELF_REPO) return testFocus(r.root, gates, brief);
+  const entry = (Array.isArray(brief?.repos) ? brief.repos : []).find((x) => x?.key === r.key);
+  return testFocus(r.root, gates, entry?.gates && typeof entry.gates === 'object' ? { gates: entry.gates } : {});
+}
+
+/**
+ * (focus, dir, files) => string | '' | null
+ * The narrowed test command for `files` (repo-relative, the branch's diff) as they exist in `dir`.
+ * '' = no code file changed, so no test can be related: the test gate passes as 'no related tests'.
+ * null = run the full test command: too many code files to narrow, or a dependency or config file
+ * changed (WIDE_FILE), whose effect no import graph shows.
+ */
+export function focusedTestCommand(focus, dir, files) {
+  const all = [...new Set((files || []).map((f) => String(f).replace(/\\/g, '/')))];
+  if (all.some((f) => WIDE_FILE.test(f))) return null;
+  const code = all.filter((f) => CODE_EXT.test(f) && fs.existsSync(path.join(dir, f)));
+  if (!code.length) return '';
+  if (code.length > FOCUS_MAX_FILES) return null;
+  const quoted = code.map((f) => `"${f}"`).join(' ');
+  return focus.kind === 'template'
+    ? focus.template.split('{files}').join(quoted)
+    : `npx vitest related --run --passWithNoTests ${quoted}`;
+}
+
 const tail = (text, n = TAIL_LINES) => String(text || '').replace(/\s+$/, '').split(/\r?\n/).slice(-n).join('\n');
 
-function gateEnv() {
+// A gate is the project's own command in its own worktree, so a repo-local script (`gradlew.bat`) must
+// resolve the way it does in the operator's shell. The harness sets NoDefaultCurrentDirectoryInExePath,
+// which stops cmd searching the current directory (2026-10-07: firetv's deathride gate failed with
+// "'gradlew.bat' is not recognized" in a worktree that held the file).
+const GATE_ENV_STRIP = ['NoDefaultCurrentDirectoryInExePath'];
+
+export function gateEnv(extra = {}) {
   const env = { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' };
-  const strip = new Set(ENV_STRIP.map((k) => k.toUpperCase()));
+  const strip = new Set([...ENV_STRIP, ...GATE_ENV_STRIP].map((k) => k.toUpperCase()));
   for (const k of Object.keys(env)) if (strip.has(k.toUpperCase())) delete env[k];
-  return env;
+  return { ...env, ...extra };
 }
 
 /**
@@ -78,12 +171,22 @@ export function failureSignature(text, cap = 300) {
     // node:test summaries as kp's runner prints them: a bare test-file path, and `\u00b7 test name` under it
     const isNodeTestFile = /^(?:[A-Za-z]:)?[\\/].*\.test\.[cm]?[jt]sx?$/.test(line);
     const isNodeTestName = /^\u00b7\s+\S/.test(line);
-    if (!isTestFail && !isTsError && !isNodeTestFile && !isNodeTestName) continue;
+    // Rust's libtest (`test path::name ... FAILED`), and the census ratchet's drift / structural lines,
+    // which carry the rule's counts, so an identical line on the base means master's own red
+    // (2026-10-07: personas-web's landing was held on census rises its branch did not add)
+    const isRustTestFail = /^test \S+ \.\.\. FAILED$/.test(line);
+    const isCensus = /^\[(?:drift|structural)\]\s/.test(line);
+    if (!isTestFail && !isTsError && !isNodeTestFile && !isNodeTestName && !isRustTestFail && !isCensus) continue;
     const norm = line
       // the SAME test lives at a different absolute path in the branch worktree and in the base worktree
       .replace(/[A-Za-z]:[\\/][^\s]*?[\\/]worktrees[\\/][^\\/\s]+[\\/][^\\/\s]+[\\/]/g, '')
       .replace(/\\/g, '/')
       .replace(/\(\d+,\d+\)/g, '')              // tsc (line,col)
+      // Playwright's list reporter numbers each test by run order ("✘ 843 [node] › ..."), and the
+      // number differs between the branch and the base run of the SAME failure (2026-10-07: gravitone's
+      // inherited kit-census failures read as the branch's own, so the run was held)
+      .replace(/^([×✗✖✘])\s+\d+\s+/, '$1 ')
+      .replace(/\s*\(\d+(?:\.\d+)?\s?m?s\)$/i, '')  // trailing (303ms)
       .replace(/\s+\d+(?:\.\d+)?\s?m?s$/i, '')    // trailing timing
       .replace(/\s*\[[^\]]*\]\s*$/, '')           // trailing [ ... ] annotation
       .replace(/\s+/g, ' ')
@@ -97,7 +200,8 @@ export function failureSignature(text, cap = 300) {
 export function testFilesIn(failures) {
   const files = new Set();
   for (const f of failures || []) {
-    const m = /([\w@./-]+\.test\.[cm]?[jt]sx?)/.exec(String(f));
+    // node:test / vitest files (x.test.ts) and Playwright specs (x.spec.ts, printed as "x.spec.ts:15:5 ›")
+    const m = /([\w@./-]+\.(?:test|spec)\.[cm]?[jt]sx?)/.exec(String(f));
     if (m) files.add(m[1]);
   }
   return [...files];
@@ -115,9 +219,9 @@ export function failuresAreInherited(branch, base) {
   return branch.every((f) => b.has(f));
 }
 
-/** Run one shell command in cwd: cmd /d /s /c on Windows (UTF-8 code page), sh -c elsewhere. */
-export function runShell(command, cwd, timeoutMs = GATE_TIMEOUT_MS) {
-  const opts = { cwd, encoding: 'utf8', timeout: timeoutMs, windowsHide: true, maxBuffer: 256 * 2 ** 20, stdio: ['ignore', 'pipe', 'pipe'], env: gateEnv() };
+/** Run one shell command in cwd: cmd /d /s /c on Windows (UTF-8 code page), sh -c elsewhere. `env` adds to the scrubbed env. */
+export function runShell(command, cwd, timeoutMs = GATE_TIMEOUT_MS, env = {}) {
+  const opts = { cwd, encoding: 'utf8', timeout: timeoutMs, windowsHide: true, maxBuffer: 256 * 2 ** 20, stdio: ['ignore', 'pipe', 'pipe'], env: gateEnv(env) };
   const r = process.platform === 'win32'
     ? spawnSync(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', `"chcp 65001 >nul & ${command}"`], { ...opts, windowsVerbatimArguments: true })
     : spawnSync('/bin/sh', ['-c', command], opts);
@@ -131,13 +235,13 @@ export function runShell(command, cwd, timeoutMs = GATE_TIMEOUT_MS) {
  * (worktree, gates, {timeoutMs}) => {typecheck?:{ok,exit,tail,skipped?},lint?:...,test?:...}
  * Sequential, cwd = the worktree. A gate with no command is {skipped:true, reason:'no command'}.
  */
-export function runGates(worktree, gates = {}, { timeoutMs = GATE_TIMEOUT_MS, only } = {}) {
+export function runGates(worktree, gates = {}, { timeoutMs = GATE_TIMEOUT_MS, only, env = {} } = {}) {
   const out = {};
   for (const g of only || GATE_NAMES) {
     const command = gates[g];
     if (!command) { out[g] = { ok: false, skipped: true, reason: 'no command' }; continue; }
     const started = Date.now();
-    out[g] = { command, ...runShell(command, worktree, timeoutMs), ms: Date.now() - started };
+    out[g] = { command, ...runShell(command, worktree, timeoutMs, env), ms: Date.now() - started };
   }
   return out;
 }

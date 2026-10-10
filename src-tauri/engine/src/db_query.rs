@@ -1,0 +1,4297 @@
+//! REST-based database query execution engine.
+//!
+//! Dispatches queries to connector-specific HTTP APIs:
+//! - Supabase: SQL-over-HTTP via `/pg/query`
+//! - Neon: serverless driver HTTP endpoint
+//! - Upstash: Redis REST API
+//! - PlanetScale: Vitess HTTP API
+//!
+//! Connectors without REST APIs (raw postgres, mongodb, redis, duckdb) return
+//! a "not yet supported" error with guidance.
+
+use std::collections::HashMap;
+use std::sync::{LazyLock, OnceLock};
+use std::time::{Duration, Instant};
+
+use serde_json::Value;
+use tokio_util::sync::CancellationToken;
+
+use crate::safe_json;
+use personas_core::error::AppError;
+use personas_db::models::QueryResult;
+use personas_db::repos::resources::audit_log;
+use personas_db::repos::resources::credentials as cred_repo;
+use personas_db::{DbPool, UserDbPool};
+
+/// Maximum rows returned per query to prevent memory exhaustion.
+const MAX_ROWS: usize = 500;
+
+/// Per-query wall-clock deadline for user-initiated DB queries. A query that
+/// exceeds this is aborted (HTTP future dropped, or local SQLite interrupted)
+/// and returns a clear timeout error rather than hanging a UI spinner forever.
+const QUERY_TIMEOUT: Duration = Duration::from_secs(60);
+
+/// Busy-handler timeout for the built-in SQLite connection: how long a statement
+/// waits on a locked database before failing fast. Kept well under
+/// [`QUERY_TIMEOUT`] so lock contention surfaces as a quick, actionable error
+/// instead of consuming the whole query budget.
+const SQLITE_BUSY_TIMEOUT: Duration = Duration::from_secs(10);
+
+/// Hard ceiling on a connector's raw HTTP response body before it is parsed.
+/// The pass-through connectors (Neon, PlanetScale) stream the full result set
+/// into memory as a single `String`, then deserialize it, *before* the
+/// post-parse [`MAX_ROWS`] cap can apply. A pathological query (a huge table
+/// with no usable `LIMIT`, or very wide rows) could therefore OOM the process
+/// during download/parse. Reject any body larger than this with a clean error
+/// instead. 8 MB comfortably holds a full `MAX_ROWS`-row page of normal rows
+/// while still bounding worst-case memory.
+const MAX_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
+
+/// Reject an over-large connector response body before it is deserialized.
+///
+/// Called after `resp.text()` (the download is already bounded by the HTTP
+/// client's own limits, but a compliant server can still legitimately return a
+/// multi-hundred-MB JSON array). Erroring here turns an OOM into a friendly,
+/// actionable message.
+fn ensure_response_within_ceiling(body: &str) -> Result<(), AppError> {
+    if body.len() > MAX_RESPONSE_BYTES {
+        return Err(AppError::Validation(format!(
+            "Query result too large ({} MB, limit {} MB) — narrow the query \
+             (add a WHERE clause or a smaller LIMIT).",
+            body.len() / (1024 * 1024),
+            MAX_RESPONSE_BYTES / (1024 * 1024),
+        )));
+    }
+    Ok(())
+}
+
+/// Append a defensive `LIMIT` to a raw read statement that lacks its own, so the
+/// pass-through connectors (Neon, PlanetScale) cannot download an unbounded
+/// result set into memory before the post-parse [`MAX_ROWS`] cap applies.
+///
+/// Injects `LIMIT MAX_ROWS + 1`. The `+1` is load-bearing: the response parsers
+/// detect truncation via `rows.len() > MAX_ROWS`, so a full page must still
+/// yield one extra row for the `truncated` flag to fire.
+///
+/// **Append-only — this never rewrites the caller's SQL.** Injection is skipped
+/// (statement returned verbatim) when any of these hold, leaving the post-parse
+/// row cap + response-size ceiling as the backstop:
+///  - the statement is not `SELECT`/read-`WITH`-shaped (mutations are never touched);
+///  - it already carries a top-level `LIMIT` (scanned with literals stripped);
+///  - it contains more than one statement (ambiguous where to append);
+///  - it contains a line comment (`--`), which would swallow the appended clause.
+///
+/// Known limits of the append approach: a compound `UNION` select receives a
+/// single trailing `LIMIT` bounding the whole union (acceptable as a safety
+/// cap, not per-branch); statements whose trailing token is inside a block
+/// comment `/* … */` are still appended-to but that is syntactically valid SQL.
+/// Anything not confidently a single bare read is left untouched by design.
+fn inject_row_limit(query_text: &str) -> String {
+    // Multiple statements: never guess where the LIMIT belongs.
+    if has_multiple_statements(query_text) {
+        return query_text.to_string();
+    }
+
+    let trimmed = query_text.trim().trim_end_matches(';');
+    let trimmed_end = trimmed.trim_end();
+
+    // Only bare read statements are eligible.
+    let is_read = match extract_first_keyword(trimmed_end) {
+        Some(ref kw) if kw == "SELECT" => true,
+        Some(ref kw) if kw == "WITH" => !body_has_mutation(trimmed_end),
+        _ => false,
+    };
+    if !is_read {
+        return query_text.to_string();
+    }
+
+    // Scan for an existing top-level LIMIT and for line comments, with string
+    // literals stripped so a value like '... limit ...' never false-matches.
+    let stripped = strip_sql_literals(trimmed_end);
+    // A line comment would swallow the appended clause; an unterminated literal
+    // or comment means the statement could not be read at all. Leave both
+    // untouched — an un-capped read is a UX cost, a mis-appended one is a bug.
+    if stripped.unterminated || stripped.has_line_comment {
+        return query_text.to_string();
+    }
+    let stripped_upper = stripped.text.to_ascii_uppercase();
+    let already_limited = stripped_upper
+        .split(|c: char| !c.is_ascii_alphanumeric() && c != '_')
+        .any(|tok| tok == "LIMIT");
+    if already_limited {
+        return query_text.to_string();
+    }
+
+    format!("{trimmed_end} LIMIT {}", MAX_ROWS + 1)
+}
+
+/// Return the SSRF-safe HTTP client (30-second timeout, connection pooling, and
+/// a DNS resolver that rejects private/internal/metadata IPs at connect time).
+///
+/// Every DB connector below targets a URL/host built from user-supplied
+/// credential data (`project_url`, `connection_string`, `host`, …), so these
+/// requests are the highest-trust SSRF surface in the app. Using
+/// `SSRF_SAFE_HTTP` rather than the plain `SHARED_HTTP` closes the
+/// DNS-rebinding window and blocks pivots to cloud IMDS / internal services.
+/// Self-hosted DBs on private addresses are intentionally rejected.
+fn http_client() -> reqwest::Client {
+    personas_core::http_clients::SSRF_SAFE_HTTP.clone()
+}
+
+/// Strip credential material from error messages before they reach the UI,
+/// Sentry breadcrumbs, or log files.
+///
+/// Removes connection strings (`postgresql://...`), bearer tokens, API keys
+/// in common header patterns, and basic auth credentials.
+///
+/// Regexes are compiled once and cached via `OnceLock` to avoid per-call overhead.
+fn sanitize_error(msg: &str, fields: &HashMap<String, String>) -> String {
+    static RE_CONNSTR: OnceLock<regex::Regex> = OnceLock::new();
+    static RE_BEARER: OnceLock<regex::Regex> = OnceLock::new();
+    static RE_BASIC: OnceLock<regex::Regex> = OnceLock::new();
+
+    let mut sanitized = msg.to_string();
+
+    // Redact all non-empty credential field values regardless of length
+    for (key, value) in fields {
+        if !value.is_empty() {
+            sanitized = sanitized.replace(value, &format!("[REDACTED:{}]", key));
+        }
+    }
+
+    // Strip common connection string patterns (postgresql://user:pass@host/db)
+    let re_connstr = RE_CONNSTR
+        .get_or_init(|| regex::Regex::new(r"(?i)postgres(?:ql)?://[^\s,\]})']+").unwrap());
+    sanitized = re_connstr
+        .replace_all(&sanitized, "[REDACTED:connection_string]")
+        .to_string();
+
+    // Strip Bearer tokens that may appear in echoed headers
+    let re_bearer =
+        RE_BEARER.get_or_init(|| regex::Regex::new(r"(?i)Bearer\s+[A-Za-z0-9._\-]+").unwrap());
+    sanitized = re_bearer
+        .replace_all(&sanitized, "Bearer [REDACTED]")
+        .to_string();
+
+    // Strip Basic auth credentials
+    let re_basic =
+        RE_BASIC.get_or_init(|| regex::Regex::new(r"(?i)Basic\s+[A-Za-z0-9+/=]+").unwrap());
+    sanitized = re_basic
+        .replace_all(&sanitized, "Basic [REDACTED]")
+        .to_string();
+
+    sanitized
+}
+
+/// Shared result handler for query/introspection functions.
+///
+/// Sets `duration_ms` on success, logs the outcome via `tracing`, and on error
+/// sanitizes credential material before wrapping in `AppError::Internal`.
+fn finalize_result(
+    result: Result<QueryResult, AppError>,
+    duration_ms: u64,
+    service: &str,
+    credential_id: &str,
+    fields: &HashMap<String, String>,
+    label: &str,
+    table_name: Option<&str>,
+) -> Result<QueryResult, AppError> {
+    match result {
+        Ok(mut qr) => {
+            qr.duration_ms = duration_ms;
+            if let Some(tbl) = table_name {
+                tracing::info!(
+                    service_type = %service,
+                    credential_id = %credential_id,
+                    duration_ms = duration_ms,
+                    row_count = qr.row_count,
+                    truncated = qr.truncated,
+                    table_name = %tbl,
+                    "db_query::{label} completed"
+                );
+            } else {
+                tracing::info!(
+                    service_type = %service,
+                    credential_id = %credential_id,
+                    duration_ms = duration_ms,
+                    row_count = qr.row_count,
+                    truncated = qr.truncated,
+                    "db_query::{label} completed"
+                );
+            }
+            Ok(qr)
+        }
+        Err(e) => {
+            let sanitized = sanitize_error(&e.to_string(), fields);
+            if let Some(tbl) = table_name {
+                tracing::warn!(
+                    service_type = %service,
+                    credential_id = %credential_id,
+                    duration_ms = duration_ms,
+                    table_name = %tbl,
+                    error = %sanitized,
+                    "db_query::{label} failed"
+                );
+            } else {
+                tracing::warn!(
+                    service_type = %service,
+                    credential_id = %credential_id,
+                    duration_ms = duration_ms,
+                    error = %sanitized,
+                    "db_query::{label} failed"
+                );
+            }
+            Err(AppError::Internal(sanitized))
+        }
+    }
+}
+
+/// Extract the first SQL/command keyword from a query string, stripping
+/// leading comments (block `/* ... */` and line `-- ...`).
+///
+/// Returns `None` if the query is empty or consists entirely of comments.
+/// Returns `Some("__UNCLOSED_COMMENT__")` for an unclosed block comment so
+/// callers can apply a fail-safe policy.
+fn extract_first_keyword(query_text: &str) -> Option<String> {
+    let mut s = query_text.trim();
+    loop {
+        s = s.trim_start();
+        if s.starts_with("--") {
+            {
+                let pos = s.find('\n')?;
+                s = &s[pos + 1..];
+            }
+        } else if s.starts_with("/*") {
+            if let Some(pos) = s.find("*/") {
+                s = &s[pos + 2..];
+            } else {
+                return Some("__UNCLOSED_COMMENT__".to_string());
+            }
+        } else {
+            break;
+        }
+    }
+
+    let kw: String = s
+        .chars()
+        .take_while(|c| c.is_ascii_alphabetic())
+        .collect::<String>()
+        .to_ascii_uppercase();
+
+    if kw.is_empty() {
+        None
+    } else {
+        Some(kw)
+    }
+}
+
+/// Verbs that make a statement data-modifying even when it leads with `WITH`.
+/// SQLite, Postgres, Neon and PlanetScale all execute data-modifying CTEs of the
+/// form `WITH x AS (DELETE/INSERT/UPDATE ... RETURNING *) SELECT ...`, whose
+/// leading keyword is `WITH` — so a leading-keyword-only classifier wrongly
+/// reports them as reads (bug-hunt 2026-06-07 mcp #1).
+const CTE_MUTATION_VERBS: &[&str] = &[
+    "DELETE", "INSERT", "UPDATE", "MERGE", "REPLACE", "UPSERT", "TRUNCATE", "DROP", "ALTER",
+];
+
+/// Read-shaped writes: tokens that make a `SELECT`/`VALUES`-led statement one
+/// the engine's own `READ ONLY` transaction mode refuses. `INTO` (Postgres
+/// `SELECT INTO` creates a table; MySQL `INTO OUTFILE` writes a file), `SHARE`
+/// (`FOR SHARE` row locks; `FOR UPDATE` is caught by `UPDATE` above),
+/// sequence advancement, and the engine-state functions. Seeded from the
+/// engine's definition, not from the verbs people type by hand. The client's
+/// `READ_SHAPED_WRITES_RE` (`src/features/vault/sub_databases/safeModeUtils.ts`)
+/// carries the same set for instant feedback; the set is pinned by
+/// `tests::read_shaped_writes_set_is_pinned` below, whose failure names that
+/// file, so a change here cannot land without the client following.
+const READ_SHAPED_WRITES: &[&str] = &[
+    "INTO",
+    "SHARE",
+    "NEXTVAL",
+    "SETVAL",
+    "LO_IMPORT",
+    "LO_EXPORT",
+    "PG_TERMINATE_BACKEND",
+    "PG_CANCEL_BACKEND",
+];
+
+/// Output of [`strip_sql_literals`]: the executable skeleton of a statement plus
+/// the two flags a fail-closed caller needs.
+struct StrippedSql {
+    /// The query with every string literal and comment body replaced by a
+    /// single space. Only meaningful when `unterminated` is false.
+    text: String,
+    /// A quoted literal or a block comment ran to end-of-input without closing,
+    /// so an unknown amount of the payload was never classified. Callers MUST
+    /// treat the query as unsafe instead of trusting `text`.
+    unterminated: bool,
+    /// A `--` was seen outside any literal — whether or not it was blanked out
+    /// (see the dialect rule below). Only [`inject_row_limit`] cares: appending
+    /// ` LIMIT n` after a line comment would put the clause inside the comment,
+    /// so the flag must be set even for the `--x` form we leave visible.
+    has_line_comment: bool,
+}
+
+/// True when what follows `--` makes it a line comment in *every* dialect this
+/// module forwards to. Postgres and SQLite end a comment at a bare `--`; MySQL
+/// (PlanetScale/Vitess) requires whitespace after it. See the dialect note on
+/// [`strip_sql_literals`].
+fn is_line_comment_gap(next: Option<&char>) -> bool {
+    match next {
+        None => true, // `--` at end of input is a comment everywhere
+        Some(c) => c.is_whitespace(),
+    }
+}
+
+/// Blank out the contents of SQL string literals **and comments** so that verb
+/// and separator scanning sees only text the database will actually execute.
+///
+/// # Direction of failure — read this before editing
+///
+/// Every caller **searches this function's output for danger** (a `;`, a
+/// mutation verb). Text this function drops is therefore danger the caller can
+/// no longer see: for these consumers "consume to end of input" is the
+/// **UNSAFE** direction, not the safe one.
+///
+/// The pre-2026-08-22 version had no `--` arm and no `/* */` arm, and its own
+/// doc comment called dropping the remainder "the safe direction for a mutation
+/// classifier" — exactly inverted. A single apostrophe inside a comment (`--'`,
+/// `/* it's */`) opened a literal that never closed, so everything after it
+/// vanished from the classifier's view — including a whole data-modifying CTE
+/// that Postgres went on to execute as ONE statement:
+///
+/// ```sql
+/// WITH t AS (SELECT 1) --'
+/// , d AS (DELETE FROM users RETURNING 1) SELECT * FROM d
+/// ```
+///
+/// So this function never silently swallows the tail. When a literal or block
+/// comment does not close it sets `unterminated`, and every caller fails
+/// **closed**: classify as a mutation, as multiple statements, as not-a-read.
+///
+/// # Dialect rule: blank out only what is inert EVERYWHERE
+///
+/// The same string is classified once and then forwarded to Postgres/Neon,
+/// SQLite, or MySQL (PlanetScale/Vitess) — and this function does not know
+/// which. Blanking out something one engine actually executes would re-open the
+/// very hole above, so anything dialect-dependent is left **visible** and is
+/// scanned as executable text. That over-rejects; over-rejection is the side of
+/// this line to be wrong on.
+///
+/// * `--` is stripped only when followed by whitespace or end of input. MySQL
+///   needs that whitespace, so a bare `--1; DROP TABLE t` really is two MySQL
+///   statements and the `;` must stay countable.
+/// * `/*! … */` is a MySQL **executable** comment — its body runs — so it is
+///   never blanked out. Plain `/* … */` is.
+/// * `#` is a MySQL line comment and nothing at all in Postgres/SQLite, so it
+///   is not treated as a comment. An apostrophe behind one therefore opens an
+///   unterminated literal and the query fails closed, which is what we want.
+///
+/// # Deliberate escaping decisions
+///
+/// * Doubled quotes (`''`, `""`) stay inside the literal.
+/// * A backslash is **inert** inside a literal. Postgres runs with
+///   `standard_conforming_strings=on` and SQLite has no backslash escape at
+///   all, so honouring a backslash-quote pair as a closing quote would be the
+///   wrong reading in both engines.
+/// * Nested block comments (`/* /* */ */`) are counted by depth. Nesting is a
+///   Postgres extension; SQLite ends the comment at the first `*/`. Where the
+///   dialects disagree, the depth counter is still inside a comment at EOF,
+///   which sets `unterminated` and refuses the statement — safe under either
+///   reading rather than guessing which engine is on the other end.
+/// * Postgres dollar-quoting (`$$ … $$`) is **not** understood: a `;` or a verb
+///   inside one is read as executable text and over-rejects the query.
+fn strip_sql_literals(sql: &str) -> StrippedSql {
+    let chars: Vec<char> = sql.chars().collect();
+    let mut out = String::with_capacity(sql.len());
+    let mut unterminated = false;
+    let mut has_line_comment = false;
+    let mut i = 0usize;
+
+    while i < chars.len() {
+        match chars[i] {
+            // `--` line comment. Postgres and SQLite end a comment at a bare
+            // `--`; MySQL requires whitespace after it. Flag it either way so
+            // `inject_row_limit` never appends a clause that could land inside
+            // a comment — but only BLANK IT OUT when every dialect agrees it
+            // is one. The newline is deliberately left in place so whatever
+            // follows the comment stays visible.
+            '-' if chars.get(i + 1) == Some(&'-') => {
+                has_line_comment = true;
+                if is_line_comment_gap(chars.get(i + 2)) {
+                    i += 2;
+                    while i < chars.len() && chars[i] != '\n' {
+                        i += 1;
+                    }
+                    out.push(' ');
+                } else {
+                    // Dialect-dependent: leave it visible so the guards can
+                    // still see a `;` or a verb behind it.
+                    out.push(chars[i]);
+                    i += 1;
+                }
+            }
+            // `/* … */` block comment, depth-counted. `/*!` is excluded: MySQL
+            // executes that body, so it must stay visible.
+            '/' if chars.get(i + 1) == Some(&'*') && chars.get(i + 2) != Some(&'!') => {
+                let mut depth = 1usize;
+                i += 2;
+                while i < chars.len() && depth > 0 {
+                    if chars[i] == '/' && chars.get(i + 1) == Some(&'*') {
+                        depth += 1;
+                        i += 2;
+                    } else if chars[i] == '*' && chars.get(i + 1) == Some(&'/') {
+                        depth -= 1;
+                        i += 2;
+                    } else {
+                        i += 1;
+                    }
+                }
+                if depth > 0 {
+                    unterminated = true;
+                }
+                out.push(' ');
+            }
+            // Quoted literal / quoted identifier.
+            c @ ('\'' | '"') => {
+                i += 1;
+                let mut closed = false;
+                while i < chars.len() {
+                    if chars[i] == c {
+                        // Doubled-quote escape ('' or "") stays inside.
+                        if chars.get(i + 1) == Some(&c) {
+                            i += 2;
+                            continue;
+                        }
+                        i += 1;
+                        closed = true;
+                        break;
+                    }
+                    i += 1;
+                }
+                if !closed {
+                    unterminated = true;
+                }
+                out.push(' '); // the whole literal becomes a separator
+            }
+            c => {
+                out.push(c);
+                i += 1;
+            }
+        }
+    }
+
+    StrippedSql {
+        text: out,
+        unterminated,
+        has_line_comment,
+    }
+}
+
+/// True if the payload contains more than one SQL statement — i.e. any content
+/// after an intermediate `;` once string literals are stripped (so a `;` inside
+/// a quoted value never false-positives). Trailing semicolons are fine. Used by
+/// the safe-mode guard in [`execute_query`]: the first-keyword classifier only
+/// sees statement one, while Neon/PlanetScale forward the raw payload verbatim.
+fn has_multiple_statements(query_text: &str) -> bool {
+    let stripped = strip_sql_literals(query_text);
+    // Fail CLOSED. If a literal or comment never closed we could not read the
+    // rest of the payload, so we must not certify it as a single statement.
+    if stripped.unterminated {
+        return true;
+    }
+    stripped.text.trim().trim_end_matches(';').contains(';')
+}
+
+/// True if a read-led statement (`WITH`, `SELECT`, `VALUES`, `EXPLAIN`) embeds
+/// a data-modifying verb or a read-shaped write in its body. Literals are
+/// stripped first, and matching is token-exact (split on non-`[A-Za-z0-9_]`)
+/// so columns like `updated_at` / `deleted` / `shares` do not false-positive.
+fn body_has_mutation(query_text: &str) -> bool {
+    let stripped = strip_sql_literals(query_text);
+    // Fail CLOSED: an unreadable tail is assumed to mutate. This guard is only
+    // ever consulted in order to GRANT read-only status, so "unknown" has to
+    // resolve to "no".
+    if stripped.unterminated {
+        return true;
+    }
+    stripped
+        .text
+        .split(|c: char| !c.is_ascii_alphanumeric() && c != '_')
+        .any(|tok| {
+            let up = tok.to_ascii_uppercase();
+            CTE_MUTATION_VERBS.contains(&up.as_str()) || READ_SHAPED_WRITES.contains(&up.as_str())
+        })
+}
+
+/// Returns `true` when the query is a read-only statement **in SQLite**.
+///
+/// Only keywords that are valid SQLite read statements are recognised:
+/// `SELECT`, `PRAGMA`, `EXPLAIN`, `WITH`, `VALUES`, `ANALYZE`.
+///
+/// Note: `ANALYZE` updates internal `sqlite_stat*` tables as a side-effect
+/// but is considered read-only for user-facing classification because it
+/// never modifies user data.
+///
+/// `SHOW` and `DESCRIBE` are **not** valid in SQLite and are intentionally
+/// excluded — they would fail at the engine level anyway.
+pub fn is_sqlite_read(query_text: &str) -> bool {
+    match extract_first_keyword(query_text) {
+        None => true, // empty / comment-only — not a mutation
+        Some(ref kw) if kw == "__UNCLOSED_COMMENT__" => false,
+        // A data-modifying CTE leads with WITH but is not read-only.
+        Some(ref kw) if kw == "WITH" => !body_has_mutation(query_text),
+        Some(kw) => matches!(
+            kw.as_str(),
+            "SELECT" | "PRAGMA" | "EXPLAIN" | "VALUES" | "ANALYZE"
+        ),
+    }
+}
+
+/// Classifies a SQL/Redis/Convex statement as read-only or mutating.
+///
+/// Returns `true` if the statement is a mutation (INSERT, UPDATE, DELETE,
+/// DROP, ALTER, TRUNCATE, CREATE, REPLACE, GRANT, REVOKE, SET, FLUSH, DEL, etc.).
+/// Returns `false` for read-only statements (SELECT, SHOW, DESCRIBE, EXPLAIN, WITH, etc.).
+///
+/// For Redis commands, checks against known write commands (SET, DEL, HSET, LPUSH, etc.).
+///
+/// **For local SQLite queries, prefer [`is_sqlite_read`] which uses an
+/// SQLite-specific keyword list.**
+pub fn is_mutation(query_text: &str) -> bool {
+    match extract_first_keyword(query_text) {
+        None => false,                                        // comment-only — not a mutation
+        Some(ref kw) if kw == "__UNCLOSED_COMMENT__" => true, // fail-safe
+        // A data-modifying CTE (`WITH ... (DELETE/INSERT/UPDATE ...)`) is a
+        // mutation despite leading with WITH (bug-hunt 2026-06-07 mcp #1).
+        Some(ref kw) if kw == "WITH" => body_has_mutation(query_text),
+        // A read-shaped write (`SELECT ... INTO`, `FOR UPDATE`, `nextval(...)`)
+        // and `EXPLAIN ANALYZE <mutation>` (which executes) share their first
+        // token with a real read, so the body is scanned, as for WITH. Before
+        // this arm, 8 of 9 such statements walked through safe mode as reads.
+        Some(ref kw) if kw == "SELECT" || kw == "VALUES" || kw == "EXPLAIN" => {
+            body_has_mutation(query_text)
+        }
+        Some(kw) => !matches!(
+            kw.as_str(),
+            // SQL read-only keywords (covers MySQL SHOW/DESCRIBE, Postgres, etc.)
+            "SELECT" | "SHOW" | "DESCRIBE" | "DESC" | "EXPLAIN" | "WITH"
+            | "PRAGMA" | "ANALYZE" | "VALUES"
+            // Redis read commands
+            | "GET" | "MGET" | "HGET" | "HGETALL" | "HMGET" | "HKEYS" | "HVALS" | "HLEN"
+            | "LRANGE" | "LLEN" | "LINDEX" | "SCARD" | "SMEMBERS" | "SISMEMBER"
+            | "ZRANGE" | "ZRANGEBYSCORE" | "ZSCORE" | "ZCARD" | "ZCOUNT" | "ZRANK"
+            | "EXISTS" | "TYPE" | "TTL" | "PTTL" | "KEYS" | "SCAN" | "DBSIZE" | "INFO"
+            | "PING" | "ECHO" | "TIME" | "RANDOMKEY" | "STRLEN" | "GETRANGE"
+        ),
+    }
+}
+
+/// Validate that a SQL statement is safe DDL (CREATE TABLE/INDEX/VIEW/TRIGGER)
+/// or transaction control (BEGIN/COMMIT/ROLLBACK). Rejects DML (INSERT, UPDATE,
+/// DELETE) and destructive DDL (DROP, ALTER, TRUNCATE). Used during schema setup
+/// in template adoption to guard against hallucinated AI proposals or careless
+/// user edits destroying operational data.
+fn validate_ddl_only(sql: &str) -> Result<(), AppError> {
+    let trimmed = sql.trim();
+    if trimmed.is_empty() {
+        return Ok(());
+    }
+    let upper = trimmed.to_uppercase();
+    let upper = upper.trim_start();
+
+    // Allow transaction control
+    if upper.starts_with("BEGIN")
+        || upper.starts_with("COMMIT")
+        || upper.starts_with("ROLLBACK")
+        || upper.starts_with("SAVEPOINT")
+        || upper.starts_with("RELEASE")
+    {
+        return Ok(());
+    }
+
+    // Allow only CREATE TABLE / INDEX / UNIQUE INDEX / VIEW / TRIGGER
+    if let Some(after_create) = upper.strip_prefix("CREATE ") {
+        let after = after_create.trim_start();
+        // Handle optional "IF NOT EXISTS" and similar noise after the object type
+        if after.starts_with("TABLE")
+            || after.starts_with("INDEX")
+            || after.starts_with("UNIQUE")
+            || after.starts_with("VIEW")
+            || after.starts_with("TRIGGER")
+            || after.starts_with("TEMP ")
+            || after.starts_with("TEMPORARY ")
+        {
+            return Ok(());
+        }
+    }
+
+    let preview: String = trimmed.chars().take(80).collect();
+    Err(AppError::Validation(format!(
+        "Only CREATE TABLE/INDEX/VIEW/TRIGGER statements are allowed during schema setup. \
+         Blocked: \"{preview}\""
+    )))
+}
+
+/// Execute a query against the database credential's service.
+///
+/// `user_db` is required for `personas_database` (built-in SQLite) queries.
+/// Pass `None` when the caller does not have access to the user database pool
+/// (legacy call sites) -- `personas_database` queries will return an error.
+///
+/// When `allow_mutation` is `false` (safe mode, the default), any statement
+/// classified as a mutation (INSERT, UPDATE, DELETE, DROP, etc.) is rejected
+/// before it reaches the external database.
+pub async fn execute_query(
+    pool: &DbPool,
+    credential_id: &str,
+    query_text: &str,
+    user_db: Option<&UserDbPool>,
+    allow_mutation: bool,
+    ddl_only: bool,
+) -> Result<QueryResult, AppError> {
+    execute_query_cancellable(
+        pool,
+        credential_id,
+        query_text,
+        user_db,
+        allow_mutation,
+        ddl_only,
+        None,
+    )
+    .await
+}
+
+/// Wait for the (optional) cancellation token, or never resolve when absent.
+async fn wait_cancelled(cancel: Option<&CancellationToken>) {
+    match cancel {
+        Some(t) => t.cancelled().await,
+        None => std::future::pending::<()>().await,
+    }
+}
+
+/// As [`execute_query`], but additionally bounded by [`QUERY_TIMEOUT`] and an
+/// optional [`CancellationToken`] so the UI can abort a long-running query.
+///
+/// - REST connectors: the in-flight request future is dropped on cancel/timeout,
+///   which closes the connection.
+/// - Built-in SQLite: a `busy_timeout` is set and the running statement is
+///   interrupted via `rusqlite`'s interrupt handle. The pooled connection is
+///   always returned to the pool (the blocking task owns it and is awaited to
+///   completion after an interrupt).
+///
+/// All existing callers reach this via [`execute_query`] with `cancel = None`
+/// and so gain the [`QUERY_TIMEOUT`] guarantee for free.
+#[allow(clippy::too_many_arguments)]
+pub async fn execute_query_cancellable(
+    pool: &DbPool,
+    credential_id: &str,
+    query_text: &str,
+    user_db: Option<&UserDbPool>,
+    allow_mutation: bool,
+    ddl_only: bool,
+    cancel: Option<&CancellationToken>,
+) -> Result<QueryResult, AppError> {
+    // DDL-only guard: when set, only safe CREATE statements and tx control are allowed.
+    // This protects the built-in database from destructive AI-proposed or user-edited SQL
+    // during schema setup (template adoption DataStep).
+    if ddl_only {
+        validate_ddl_only(query_text)?;
+    }
+
+    // Safe-mode guard: reject mutations unless explicitly allowed
+    if !allow_mutation && is_mutation(query_text) {
+        return Err(AppError::Validation(
+            "This query appears to modify data (INSERT, UPDATE, DELETE, DROP, etc.). \
+             Enable write mode or confirm the mutation to execute it."
+                .to_string(),
+        ));
+    }
+
+    // Safe-mode multi-statement guard: `is_mutation` classifies by the FIRST
+    // statement only, but the raw pass-through connectors (Neon, PlanetScale)
+    // forward the whole payload verbatim — so `SELECT 1; DELETE FROM users`
+    // classified as a read and the trailing mutation could execute in "safe
+    // mode" if the endpoint honors stacked statements. In safe mode a request
+    // is one statement, period. (Write mode is exempt: the user explicitly
+    // confirmed a mutating request.) Literals are stripped first so a
+    // semicolon inside a string value never false-positives; the companion
+    // lane has enforced the same invariant since its inception.
+    if !allow_mutation && has_multiple_statements(query_text) {
+        return Err(AppError::Validation(
+            "Multiple SQL statements are not allowed in safe mode. \
+             Run one statement at a time, or enable write mode for a confirmed mutation."
+                .to_string(),
+        ));
+    }
+    let credential = cred_repo::get_by_id(pool, credential_id)?;
+
+    let start = Instant::now();
+    let service = credential.service_type.as_str();
+
+    // Built-in local database -- no external credentials needed
+    if service == "personas_database" {
+        let udb = user_db
+            .ok_or_else(|| AppError::Internal("User database pool not available".to_string()))?;
+        return run_local_sqlite_guarded(udb, query_text, cancel, start).await;
+    }
+
+    let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
+    if let Err(e) = audit_log::log_decrypt(
+        pool,
+        credential_id,
+        &credential.name,
+        "db_query:execute",
+        None,
+        None,
+    ) {
+        tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
+    }
+
+    // Run the connector call under the query deadline + optional cancellation.
+    // Dropping `work` (on cancel or timeout) aborts the in-flight HTTP request.
+    let work = async {
+        match service {
+            "supabase" => execute_supabase(&fields, query_text).await,
+            "neon" => execute_neon(&fields, query_text).await,
+            "upstash" => execute_upstash(&fields, query_text).await,
+            "planetscale" => execute_planetscale(&fields, query_text).await,
+            "convex" => execute_convex(&fields, query_text).await,
+            other => Err(AppError::Internal(format!(
+                "Direct query execution is not yet supported for '{other}'. \
+                 Supported connectors with REST APIs: Supabase, Neon, Upstash, PlanetScale, Convex."
+            ))),
+        }
+    };
+
+    let result = tokio::select! {
+        biased;
+        _ = wait_cancelled(cancel) => Err(AppError::Validation("Query cancelled.".to_string())),
+        r = tokio::time::timeout(QUERY_TIMEOUT, work) => match r {
+            Ok(inner) => inner,
+            Err(_) => Err(AppError::Validation(format!(
+                "Query timed out after {}s. Narrow the query or add a LIMIT.",
+                QUERY_TIMEOUT.as_secs()
+            ))),
+        },
+    };
+
+    let duration_ms = start.elapsed().as_millis() as u64;
+    finalize_result(
+        result,
+        duration_ms,
+        service,
+        credential_id,
+        &fields,
+        "execute_query",
+        None,
+    )
+}
+
+// ============================================================================
+// Connector capability class -- honest query-lane advertising
+// ============================================================================
+
+/// The query-capability class of a database connector.
+///
+/// Single source of truth for what the SQL editor can honestly promise for a
+/// given `service_type`. Different connectors expose very different query lanes:
+/// raw pass-through drivers accept arbitrary SQL, Supabase's PostgREST lane only
+/// parses simple single-table SELECTs, Redis is key-value, and API connectors
+/// have no ad-hoc query lane at all. The frontend renders a capability note from
+/// this so the editor never implies more than the connector actually supports.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "kebab-case")]
+pub enum DbConnectorCapability {
+    /// Arbitrary SQL, including JOINs, aggregates, CTEs, and writes.
+    FullSql,
+    /// Single-table SELECT with WHERE / ORDER BY / LIMIT only — no JOINs,
+    /// aggregates, CTEs, or writes (e.g. Supabase PostgREST).
+    SelectSubset,
+    /// Key-value command surface (SCAN / GET / TYPE, …), not SQL.
+    KeyValue,
+    /// No ad-hoc query lane — schema browsing only (API connectors).
+    IntrospectionOnly,
+}
+
+/// Classify a connector `service_type` into its honest query-capability class.
+///
+/// Kept immediately next to the `execute_query` dispatch above so the advertised
+/// capability and the actual execution behavior can never silently drift.
+pub fn connector_capability(service_type: &str) -> DbConnectorCapability {
+    match service_type {
+        // Raw SQL pass-through drivers + the built-in local SQLite database.
+        "neon" | "planetscale" | "personas_database" => DbConnectorCapability::FullSql,
+        // Supabase's PostgREST lane parses only simple single-table SELECTs.
+        "supabase" => DbConnectorCapability::SelectSubset,
+        // Convex runs scoped read function-queries (db.query(...).take(n)) — a
+        // limited query surface, not arbitrary SQL.
+        "convex" => DbConnectorCapability::SelectSubset,
+        // Redis-family key-value stores.
+        "upstash" | "redis" => DbConnectorCapability::KeyValue,
+        // API connectors: browse schema only; execute_query has no lane for them.
+        "notion" | "airtable" => DbConnectorCapability::IntrospectionOnly,
+        // Unknown/unsupported: execute_query rejects these outright, so the most
+        // honest advertisement is "no ad-hoc query lane".
+        _ => DbConnectorCapability::IntrospectionOnly,
+    }
+}
+
+#[cfg(test)]
+mod capability_tests {
+    use super::{connector_capability, DbConnectorCapability};
+
+    #[test]
+    fn classifies_each_known_connector() {
+        assert_eq!(connector_capability("neon"), DbConnectorCapability::FullSql);
+        assert_eq!(
+            connector_capability("planetscale"),
+            DbConnectorCapability::FullSql
+        );
+        assert_eq!(
+            connector_capability("personas_database"),
+            DbConnectorCapability::FullSql
+        );
+        assert_eq!(
+            connector_capability("supabase"),
+            DbConnectorCapability::SelectSubset
+        );
+        assert_eq!(
+            connector_capability("upstash"),
+            DbConnectorCapability::KeyValue
+        );
+        assert_eq!(
+            connector_capability("notion"),
+            DbConnectorCapability::IntrospectionOnly
+        );
+        assert_eq!(
+            connector_capability("some-future-db"),
+            DbConnectorCapability::IntrospectionOnly
+        );
+    }
+}
+
+// ============================================================================
+// Introspection -- connector-aware table/column discovery
+// ============================================================================
+
+/// Slice a catalog `QueryResult` to one page. `limit = None` keeps the
+/// existing [`MAX_ROWS`] cap so other callers (NL query, schema proposal)
+/// still see the full dump.
+fn page_catalog(mut qr: QueryResult, limit: Option<u32>, offset: Option<u32>) -> QueryResult {
+    let off = offset.unwrap_or(0) as usize;
+    let lim = limit.map(|n| n.max(1) as usize).unwrap_or(MAX_ROWS);
+    let total = qr.rows.len();
+    let start = off.min(total);
+    let end = start.saturating_add(lim).min(total);
+    qr.truncated = qr.truncated || end < total;
+    if start > 0 || end < total {
+        qr.rows = qr.rows[start..end].to_vec();
+    }
+    qr.row_count = qr.rows.len();
+    qr
+}
+
+fn catalog_sql_page(limit: Option<u32>, offset: Option<u32>) -> (usize, usize) {
+    let off = offset.unwrap_or(0) as usize;
+    let lim = limit.map(|n| n.max(1) as usize).unwrap_or(MAX_ROWS);
+    (lim, off)
+}
+
+/// Introspect tables for a credential. Supabase uses the PostgREST OpenAPI spec;
+/// SQL-based connectors use `information_schema`; Redis uses SCAN.
+pub async fn introspect_tables(
+    pool: &DbPool,
+    credential_id: &str,
+    user_db: Option<&UserDbPool>,
+) -> Result<QueryResult, AppError> {
+    introspect_tables_paged(pool, credential_id, user_db, None, None).await
+}
+
+/// Paged table introspection. The schema-browser sidebar asks for one viewport
+/// (~50 names); other callers keep [`introspect_tables`] unbounded-up-to-MAX_ROWS.
+pub async fn introspect_tables_paged(
+    pool: &DbPool,
+    credential_id: &str,
+    user_db: Option<&UserDbPool>,
+    limit: Option<u32>,
+    offset: Option<u32>,
+) -> Result<QueryResult, AppError> {
+    let credential = cred_repo::get_by_id(pool, credential_id)?;
+
+    if credential.service_type == "personas_database" {
+        let udb = user_db
+            .ok_or_else(|| AppError::Internal("User database pool not available".to_string()))?;
+        let start = Instant::now();
+        let (lim, off) = catalog_sql_page(limit, offset);
+        let sql = format!(
+            "SELECT name AS table_name, type AS table_type FROM sqlite_master \
+             WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%' \
+             ORDER BY name LIMIT {} OFFSET {}",
+            lim.saturating_add(1),
+            off
+        );
+        let mut qr = execute_local_sqlite(udb, &sql)?;
+        if qr.rows.len() > lim {
+            qr.rows.truncate(lim);
+            qr.truncated = true;
+        }
+        qr.duration_ms = start.elapsed().as_millis() as u64;
+        qr.row_count = qr.rows.len();
+        return Ok(qr);
+    }
+
+    let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
+    if let Err(e) = audit_log::log_decrypt(
+        pool,
+        credential_id,
+        &credential.name,
+        "db_query:introspect_tables",
+        None,
+        None,
+    ) {
+        tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
+    }
+    let start = Instant::now();
+
+    let (lim, off) = catalog_sql_page(limit, offset);
+    let result = match credential.service_type.as_str() {
+        "supabase" => introspect_supabase_tables(&fields)
+            .await
+            .map(|qr| page_catalog(qr, limit, offset)),
+        "neon" => {
+            let q = format!(
+                "SELECT table_name, table_type FROM information_schema.tables \
+                 WHERE table_schema = 'public' ORDER BY table_name LIMIT {} OFFSET {}",
+                lim.saturating_add(1),
+                off
+            );
+            execute_neon(&fields, &q)
+                .await
+                .map(|qr| page_catalog(qr, Some(lim as u32), Some(0)))
+        }
+        "planetscale" => {
+            let q = format!(
+                "SELECT table_name, table_type FROM information_schema.tables \
+                 WHERE table_schema = DATABASE() ORDER BY table_name LIMIT {} OFFSET {}",
+                lim.saturating_add(1),
+                off
+            );
+            execute_planetscale(&fields, &q)
+                .await
+                .map(|qr| page_catalog(qr, Some(lim as u32), Some(0)))
+        }
+        "upstash" | "redis" => execute_upstash(&fields, "SCAN 0 MATCH * COUNT 100")
+            .await
+            .map(|qr| page_catalog(qr, limit, offset)),
+        "convex" => introspect_convex_tables(&fields)
+            .await
+            .map(|qr| page_catalog(qr, limit, offset)),
+        "notion" => introspect_notion_tables(&fields)
+            .await
+            .map(|qr| page_catalog(qr, limit, offset)),
+        "airtable" => introspect_airtable_tables(&fields, limit, offset).await,
+        other => Err(AppError::Internal(format!(
+            "Table introspection is not supported for '{other}'."
+        ))),
+    };
+
+    let duration_ms = start.elapsed().as_millis() as u64;
+    let service = credential.service_type.as_str();
+    finalize_result(
+        result,
+        duration_ms,
+        service,
+        credential_id,
+        &fields,
+        "introspect_tables",
+        None,
+    )
+}
+
+/// Introspect columns for a specific table. Supabase uses OpenAPI spec;
+/// SQL connectors use `information_schema.columns`.
+pub async fn introspect_columns(
+    pool: &DbPool,
+    credential_id: &str,
+    table_name: &str,
+    user_db: Option<&UserDbPool>,
+) -> Result<QueryResult, AppError> {
+    let credential = cred_repo::get_by_id(pool, credential_id)?;
+
+    if credential.service_type == "personas_database" {
+        let udb = user_db
+            .ok_or_else(|| AppError::Internal("User database pool not available".to_string()))?;
+        let start = Instant::now();
+        let mut qr = introspect_local_sqlite_columns(udb, table_name)?;
+        qr.duration_ms = start.elapsed().as_millis() as u64;
+        qr.row_count = qr.rows.len();
+        return Ok(qr);
+    }
+
+    let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
+    if let Err(e) = audit_log::log_decrypt(
+        pool,
+        credential_id,
+        &credential.name,
+        "db_query:introspect_columns",
+        None,
+        None,
+    ) {
+        tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
+    }
+    let start = Instant::now();
+    let safe_name = table_name.replace(|c: char| !c.is_alphanumeric() && c != '_', "");
+
+    let result = match credential.service_type.as_str() {
+        "supabase" => introspect_supabase_columns(&fields, &safe_name).await,
+        "neon" => {
+            execute_neon_parameterized(
+                &fields,
+                "SELECT column_name, data_type, is_nullable, column_default \
+                 FROM information_schema.columns \
+                 WHERE table_schema = 'public' AND table_name = $1 \
+                 ORDER BY ordinal_position",
+                &[&safe_name],
+            )
+            .await
+        }
+        "planetscale" => {
+            execute_planetscale_parameterized(
+                &fields,
+                "SELECT column_name, column_type, is_nullable, column_default \
+                 FROM information_schema.columns \
+                 WHERE table_schema = DATABASE() AND table_name = ? \
+                 ORDER BY ordinal_position",
+                &[&safe_name],
+            )
+            .await
+        }
+        "convex" => introspect_convex_columns(&fields, &safe_name).await,
+        "notion" => introspect_notion_columns(&fields, &safe_name).await,
+        "airtable" => introspect_airtable_columns(&fields, &safe_name).await,
+        other => Err(AppError::Internal(format!(
+            "Column introspection is not supported for '{other}'."
+        ))),
+    };
+
+    let duration_ms = start.elapsed().as_millis() as u64;
+    let service = credential.service_type.as_str();
+    finalize_result(
+        result,
+        duration_ms,
+        service,
+        credential_id,
+        &fields,
+        "introspect_columns",
+        Some(&safe_name),
+    )
+}
+
+// -- Supabase OpenAPI spec cache ------------------------------------------
+
+/// TTL for cached OpenAPI specs (seconds).
+const OPENAPI_SPEC_CACHE_TTL_SECS: f64 = 30.0;
+
+struct OpenApiSpecCacheEntry {
+    spec: Value,
+    fetched_at: Instant,
+}
+
+/// Keyed by `project_url` so each Supabase project gets its own cache slot.
+static OPENAPI_SPEC_CACHE: LazyLock<std::sync::Mutex<HashMap<String, OpenApiSpecCacheEntry>>> =
+    LazyLock::new(|| std::sync::Mutex::new(HashMap::new()));
+
+/// Return the OpenAPI spec for a Supabase project, reusing a cached copy when fresh.
+async fn fetch_supabase_openapi_spec_cached(
+    fields: &HashMap<String, String>,
+) -> Result<Value, AppError> {
+    let project_url = fields
+        .get("project_url")
+        .ok_or_else(|| AppError::Validation("Missing project_url field".into()))?;
+    let cache_key = project_url.clone();
+
+    // Check cache first
+    {
+        let cache = OPENAPI_SPEC_CACHE.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(entry) = cache.get(&cache_key) {
+            if entry.fetched_at.elapsed().as_secs_f64() < OPENAPI_SPEC_CACHE_TTL_SECS {
+                return Ok(entry.spec.clone());
+            }
+        }
+    }
+
+    // Cache miss or stale — fetch fresh
+    let spec = fetch_supabase_openapi_spec(fields).await?;
+
+    {
+        let mut cache = OPENAPI_SPEC_CACHE.lock().unwrap_or_else(|e| e.into_inner());
+        cache.insert(
+            cache_key,
+            OpenApiSpecCacheEntry {
+                spec: spec.clone(),
+                fetched_at: Instant::now(),
+            },
+        );
+    }
+
+    Ok(spec)
+}
+
+// -- Supabase OpenAPI introspection --------------------------------------
+
+/// Fetch the PostgREST OpenAPI spec and extract table names.
+async fn introspect_supabase_tables(
+    fields: &HashMap<String, String>,
+) -> Result<QueryResult, AppError> {
+    let spec = fetch_supabase_openapi_spec_cached(fields).await?;
+
+    let definitions = spec
+        .get("definitions")
+        .and_then(|d| d.as_object())
+        .ok_or_else(|| AppError::Internal("OpenAPI spec has no definitions".into()))?;
+
+    let rows: Vec<Vec<Value>> = definitions
+        .keys()
+        .map(|name| {
+            vec![
+                Value::String(name.clone()),
+                Value::String("BASE TABLE".to_string()),
+            ]
+        })
+        .collect();
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns: vec!["table_name".into(), "table_type".into()],
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated: false,
+    })
+}
+
+/// Fetch the PostgREST OpenAPI spec and extract column details for one table.
+async fn introspect_supabase_columns(
+    fields: &HashMap<String, String>,
+    table_name: &str,
+) -> Result<QueryResult, AppError> {
+    let spec = fetch_supabase_openapi_spec_cached(fields).await?;
+
+    let definitions = spec
+        .get("definitions")
+        .and_then(|d| d.as_object())
+        .ok_or_else(|| AppError::Internal("OpenAPI spec has no definitions".into()))?;
+
+    let table_def = definitions
+        .get(table_name)
+        .ok_or_else(|| AppError::Internal(format!("Table '{table_name}' not found in schema")))?;
+
+    let empty_map = serde_json::Map::new();
+    let properties = table_def
+        .get("properties")
+        .and_then(|p| p.as_object())
+        .unwrap_or(&empty_map);
+
+    let required: Vec<String> = table_def
+        .get("required")
+        .and_then(|r| r.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let rows: Vec<Vec<Value>> = properties
+        .iter()
+        .map(|(col_name, col_def)| {
+            let pg_type = col_def
+                .get("format")
+                .and_then(|f| f.as_str())
+                .or_else(|| col_def.get("type").and_then(|t| t.as_str()))
+                .unwrap_or("unknown");
+
+            let is_nullable = if required.contains(col_name) {
+                "NO"
+            } else {
+                "YES"
+            };
+
+            let default_val = col_def
+                .get("default")
+                .map(|d| Value::String(d.to_string()))
+                .unwrap_or(Value::Null);
+
+            vec![
+                Value::String(col_name.clone()),
+                Value::String(pg_type.to_string()),
+                Value::String(is_nullable.to_string()),
+                default_val,
+            ]
+        })
+        .collect();
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns: vec![
+            "column_name".into(),
+            "data_type".into(),
+            "is_nullable".into(),
+            "column_default".into(),
+        ],
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated: false,
+    })
+}
+
+/// Fetch the PostgREST OpenAPI spec from `GET {project_url}/rest/v1/`.
+async fn fetch_supabase_openapi_spec(fields: &HashMap<String, String>) -> Result<Value, AppError> {
+    // Trim and reject empty/whitespace fields: an untrimmed URL fails
+    // `reqwest::Url::parse` and a key with a trailing newline (common from
+    // copy-paste, esp. local Supabase keys) produces an invalid header value —
+    // both surface as the opaque reqwest "builder error" rather than a useful
+    // message.
+    let project_url = fields
+        .get("project_url")
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Validation("Missing project_url field".into()))?;
+
+    let api_key = fields
+        .get("service_role_key")
+        .or_else(|| fields.get("anon_key"))
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Validation("Missing service_role_key or anon_key field".into()))?;
+
+    let spec_url = format!("{}/rest/v1/", project_url.trim_end_matches('/'));
+
+    let client = http_client();
+    let resp = client
+        .get(&spec_url)
+        .header("apikey", api_key)
+        .header("Authorization", format!("Bearer {api_key}"))
+        .header("Accept", "application/openapi+json")
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Supabase OpenAPI request failed: {e}")))?;
+
+    let status = resp.status();
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read Supabase response: {e}")))?;
+
+    if !status.is_success() {
+        return Err(AppError::Internal(format!(
+            "Supabase OpenAPI request failed (HTTP {status}): {body}"
+        )));
+    }
+
+    safe_json::from_str_as(&body)
+        .map_err(|e| AppError::Internal(format!("Failed to parse OpenAPI spec: {e}")))
+}
+
+// ============================================================================
+// Supabase -- PostgREST REST API (SELECT queries converted to REST calls)
+// ============================================================================
+
+pub async fn execute_supabase(
+    fields: &HashMap<String, String>,
+    query_text: &str,
+) -> Result<QueryResult, AppError> {
+    // Trim and reject empty/whitespace fields: an untrimmed URL fails
+    // `reqwest::Url::parse` and a key with a trailing newline (common from
+    // copy-paste, esp. local Supabase keys) produces an invalid header value —
+    // both surface as the opaque reqwest "builder error" rather than a useful
+    // message.
+    let project_url = fields
+        .get("project_url")
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Validation("Missing project_url field".into()))?;
+
+    let api_key = fields
+        .get("service_role_key")
+        .or_else(|| fields.get("anon_key"))
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Validation("Missing service_role_key or anon_key field".into()))?;
+
+    let base = project_url.trim_end_matches('/');
+    let sql = query_text.trim().trim_end_matches(';').trim();
+
+    // Parse SELECT queries and convert to PostgREST REST API calls.
+    // Supabase cloud does not have a raw SQL endpoint.
+    let parsed = parse_select_to_postgrest(sql).ok_or_else(|| {
+        AppError::Internal(
+            "Supabase (PostgREST) supports single-table SELECT queries only: \
+             choose columns, filter with WHERE, sort with ORDER BY, and cap with \
+             LIMIT. JOINs, subqueries, GROUP BY / aggregates, CTEs (WITH), and \
+             INSERT / UPDATE / DELETE are not available over the REST API. \
+             Example: SELECT * FROM table_name WHERE status = 'active' \
+             ORDER BY created_at LIMIT 100"
+                .into(),
+        )
+    })?;
+
+    let mut url = format!(
+        "{}/rest/v1/{}?select={}",
+        base,
+        urlencoding::encode(&parsed.table),
+        urlencoding::encode(&parsed.select)
+    );
+
+    if let Some(limit) = parsed.limit {
+        url.push_str(&format!("&limit={limit}"));
+    }
+    if let Some(ref order) = parsed.order {
+        url.push_str(&format!("&order={}", urlencoding::encode(order)));
+    }
+    for filter in &parsed.filters {
+        url.push_str(&format!("&{filter}"));
+    }
+
+    let client = http_client();
+    let resp = client
+        .get(&url)
+        .header("apikey", api_key)
+        .header("Authorization", format!("Bearer {api_key}"))
+        .header("Accept", "application/json")
+        .header("Prefer", "count=exact")
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Supabase request failed: {e}")))?;
+
+    let status = resp.status();
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read Supabase response: {e}")))?;
+
+    if !status.is_success() {
+        return Err(AppError::Internal(format!(
+            "Supabase query failed (HTTP {status}): {body}"
+        )));
+    }
+
+    ensure_response_within_ceiling(&body)?;
+    parse_postgres_json_response(&body)
+}
+
+/// Validate that a SQL identifier contains only safe characters (alphanumeric, underscore, dot).
+/// Returns `None` if the identifier is empty or contains unsafe characters that could enable
+/// parameter pollution or URL injection in PostgREST filter URLs.
+fn validate_sql_identifier(ident: &str) -> Option<&str> {
+    if ident.is_empty() {
+        return None;
+    }
+    if ident
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '.')
+    {
+        Some(ident)
+    } else {
+        None
+    }
+}
+
+/// Parsed SELECT query components for PostgREST conversion.
+struct PostgrestSelect {
+    table: String,
+    select: String,
+    limit: Option<u32>,
+    order: Option<String>,
+    filters: Vec<String>,
+}
+
+/// Case-insensitive (ASCII) search for `needle` in `haystack`, returning a
+/// byte offset **into `haystack` itself** rather than into a case-folded copy.
+///
+/// `str::to_uppercase()` is not byte-length-preserving for some Unicode (e.g.
+/// the `ﬀ` ligature is 3 bytes but uppercases to 2-byte `FF`), so offsets
+/// found in an uppercased copy can land on the wrong byte -- or mid-codepoint
+/// -- when sliced back into the original string. Matching directly against
+/// the original bytes avoids that entirely: since `needle` is pure ASCII, a
+/// byte-for-byte match can only start on an ASCII byte, which is always a
+/// valid UTF-8 char boundary.
+fn find_ci(haystack: &str, needle: &str) -> Option<usize> {
+    let hb = haystack.as_bytes();
+    let nb = needle.as_bytes();
+    if nb.is_empty() || nb.len() > hb.len() {
+        return None;
+    }
+    (0..=(hb.len() - nb.len())).find(|&start| hb[start..start + nb.len()].eq_ignore_ascii_case(nb))
+}
+
+/// Parse a simple SELECT SQL query into PostgREST components.
+///
+/// Supports: SELECT [cols] FROM table [WHERE simple_conds] [ORDER BY cols] [LIMIT n]
+/// Does NOT support: JOINs, subqueries, GROUP BY, HAVING, UNION, CTEs, aggregates.
+fn parse_select_to_postgrest(sql: &str) -> Option<PostgrestSelect> {
+    if !sql
+        .get(0..6)
+        .is_some_and(|s| s.eq_ignore_ascii_case("SELECT"))
+    {
+        return None;
+    }
+
+    // Reject unsupported constructs
+    for kw in &[
+        "JOIN ", "GROUP BY", "HAVING ", "UNION ", "WITH ", "INSERT ", "UPDATE ", "DELETE ",
+    ] {
+        if find_ci(sql, kw).is_some() {
+            return None;
+        }
+    }
+
+    // Split into clauses by finding keyword positions
+    let from_pos = find_ci(sql, " FROM ")?;
+    let select_part = sql[6..from_pos].trim(); // after "SELECT"
+
+    let after_from = &sql[from_pos + 6..]; // after " FROM "
+
+    // Extract table name (first word after FROM, stripping quotes)
+    let table_end = after_from
+        .find(|c: char| c.is_whitespace())
+        .unwrap_or(after_from.len());
+    let table = after_from[..table_end]
+        .trim_matches(|c: char| c == '"' || c == '`' || c == '\'')
+        .to_string();
+
+    if table.is_empty() {
+        return None;
+    }
+
+    // Strip schema prefix (e.g., "public.table_name" -> "table_name")
+    let table = if let Some(dot_pos) = table.find('.') {
+        table[dot_pos + 1..].to_string()
+    } else {
+        table
+    };
+
+    // Validate table name to prevent URL injection
+    validate_sql_identifier(&table)?;
+
+    let remainder = after_from[table_end..].trim();
+
+    // Parse SELECT columns with identifier validation
+    let select = if select_part == "*" {
+        "*".to_string()
+    } else {
+        let cols: Vec<&str> = select_part
+            .split(',')
+            .map(|c| c.trim().trim_matches(|ch: char| ch == '"' || ch == '`'))
+            .collect();
+        for col in &cols {
+            validate_sql_identifier(col)?;
+        }
+        cols.join(",")
+    };
+
+    let mut limit: Option<u32> = None;
+    let mut order: Option<String> = None;
+    let mut filters: Vec<String> = Vec::new();
+
+    // Extract LIMIT
+    if let Some(lim_pos) = find_ci(remainder, "LIMIT ") {
+        let after_limit = remainder[lim_pos + 6..].trim();
+        if let Some(num) = after_limit.split_whitespace().next() {
+            limit = num.parse().ok();
+        }
+    }
+
+    // Extract ORDER BY
+    if let Some(ord_pos) = find_ci(remainder, "ORDER BY ") {
+        let after_order = &remainder[ord_pos + 9..];
+        // Take until LIMIT or end
+        let end = find_ci(after_order, "LIMIT ").unwrap_or(after_order.len());
+        let order_str = after_order[..end].trim();
+
+        let mut order_parts: Vec<String> = Vec::new();
+        for part in order_str.split(',') {
+            let part = part.trim();
+            // Compare the ASCII suffix on the raw bytes (no char-boundary
+            // requirement for a `&[u8]` slice) before ever slicing `part` as a
+            // `&str` -- slicing by `part.len() - N` directly is only safe
+            // once we know those last N bytes are themselves ASCII.
+            let pb = part.as_bytes();
+            let (col, dir) = if pb.len() >= 5 && pb[pb.len() - 5..].eq_ignore_ascii_case(b" DESC") {
+                (
+                    part[..part.len() - 5]
+                        .trim()
+                        .trim_matches(|c: char| c == '"' || c == '`'),
+                    "desc",
+                )
+            } else if pb.len() >= 4 && pb[pb.len() - 4..].eq_ignore_ascii_case(b" ASC") {
+                (
+                    part[..part.len() - 4]
+                        .trim()
+                        .trim_matches(|c: char| c == '"' || c == '`'),
+                    "asc",
+                )
+            } else {
+                (part.trim_matches(|c: char| c == '"' || c == '`'), "asc")
+            };
+            validate_sql_identifier(col)?;
+            order_parts.push(format!("{col}.{dir}"));
+        }
+
+        order = Some(order_parts.join(","));
+    }
+
+    // Extract simple WHERE conditions
+    if let Some(where_pos) = find_ci(remainder, "WHERE ") {
+        let after_where = &remainder[where_pos + 6..];
+        // Take until ORDER BY or LIMIT or end
+        let end = ["ORDER BY", "LIMIT "]
+            .iter()
+            .filter_map(|kw| find_ci(after_where, kw))
+            .min()
+            .unwrap_or(after_where.len());
+        let where_str = after_where[..end].trim();
+
+        // Parse simple AND-separated conditions: col = val, col > val, etc.
+        for cond in where_str.split(" AND ") {
+            let cond = cond.trim();
+            if let Some(filter) = parse_postgrest_filter(cond) {
+                filters.push(filter);
+            }
+        }
+    }
+
+    // Default limit if none specified
+    if limit.is_none() {
+        limit = Some(500);
+    }
+
+    Some(PostgrestSelect {
+        table,
+        select,
+        limit,
+        order,
+        filters,
+    })
+}
+
+/// Parse a single WHERE condition into a PostgREST filter parameter.
+/// Supports: col = val, col != val, col > val, col < val, col >= val, col <= val,
+///           col IS NULL, col IS NOT NULL, col LIKE val, col IN (a, b, c)
+fn parse_postgrest_filter(cond: &str) -> Option<String> {
+    let cond = cond.trim();
+    let upper = cond.to_uppercase();
+
+    // IS NOT NULL
+    if upper.ends_with("IS NOT NULL") {
+        let col = cond[..cond.len() - 11]
+            .trim()
+            .trim_matches(|c: char| c == '"' || c == '`');
+        validate_sql_identifier(col)?;
+        return Some(format!("{col}=not.is.null"));
+    }
+    // IS NULL
+    if upper.ends_with("IS NULL") {
+        let col = cond[..cond.len() - 7]
+            .trim()
+            .trim_matches(|c: char| c == '"' || c == '`');
+        validate_sql_identifier(col)?;
+        return Some(format!("{col}=is.null"));
+    }
+
+    // Operator-based: >=, <=, !=, <>, =, >, <, LIKE, ILIKE
+    let operators = [
+        (">=", "gte"),
+        ("<=", "lte"),
+        ("!=", "neq"),
+        ("<>", "neq"),
+        ("=", "eq"),
+        (">", "gt"),
+        ("<", "lt"),
+    ];
+
+    for (op, pg_op) in &operators {
+        if let Some(pos) = cond.find(op) {
+            let col = cond[..pos]
+                .trim()
+                .trim_matches(|c: char| c == '"' || c == '`');
+            validate_sql_identifier(col)?;
+            let val = cond[pos + op.len()..]
+                .trim()
+                .trim_matches(|c: char| c == '\'' || c == '"');
+            return Some(format!("{}={}.{}", col, pg_op, urlencoding::encode(val)));
+        }
+    }
+
+    // LIKE / ILIKE
+    if let Some(pos) = upper.find(" LIKE ") {
+        let col = cond[..pos]
+            .trim()
+            .trim_matches(|c: char| c == '"' || c == '`');
+        validate_sql_identifier(col)?;
+        let val = cond[pos + 6..]
+            .trim()
+            .trim_matches(|c: char| c == '\'' || c == '"')
+            .replace('%', "*");
+        return Some(format!("{}=like.{}", col, urlencoding::encode(&val)));
+    }
+    if let Some(pos) = upper.find(" ILIKE ") {
+        let col = cond[..pos]
+            .trim()
+            .trim_matches(|c: char| c == '"' || c == '`');
+        validate_sql_identifier(col)?;
+        let val = cond[pos + 7..]
+            .trim()
+            .trim_matches(|c: char| c == '\'' || c == '"')
+            .replace('%', "*");
+        return Some(format!("{}=ilike.{}", col, urlencoding::encode(&val)));
+    }
+
+    None
+}
+
+// ============================================================================
+// Neon -- Serverless SQL-over-HTTP
+// ============================================================================
+
+pub async fn execute_neon(
+    fields: &HashMap<String, String>,
+    query_text: &str,
+) -> Result<QueryResult, AppError> {
+    // Neon serverless driver uses the connection string host
+    let connection_string = fields
+        .get("connection_string")
+        .or_else(|| fields.get("database_url"))
+        .ok_or_else(|| AppError::Validation("Missing connection_string field for Neon".into()))?;
+
+    // Extract the host from the connection string for the SQL-over-HTTP endpoint
+    // Format: postgresql://user:pass@ep-xxx.region.neon.tech/dbname
+    let host = extract_pg_host(connection_string).ok_or_else(|| {
+        AppError::Validation("Cannot extract host from Neon connection string".into())
+    })?;
+
+    let sql_url = format!("https://{host}/sql");
+
+    // Bound raw reads with a defensive LIMIT so an unbounded SELECT can't stream
+    // the whole table into memory before the post-parse row cap applies.
+    let bounded_query = inject_row_limit(query_text);
+
+    let client = http_client();
+    let resp = client
+        .post(&sql_url)
+        .header("Neon-Connection-String", connection_string)
+        .header("Content-Type", "application/json")
+        .json(&serde_json::json!({ "query": bounded_query, "params": [] }))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Neon request failed: {e}")))?;
+
+    let status = resp.status();
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read Neon response: {e}")))?;
+
+    if !status.is_success() {
+        return Err(AppError::Internal(format!(
+            "Neon query failed (HTTP {status}): {body}"
+        )));
+    }
+
+    ensure_response_within_ceiling(&body)?;
+    parse_neon_response(&body)
+}
+
+/// Execute a parameterized query against Neon (used for introspection to prevent SQL injection).
+async fn execute_neon_parameterized(
+    fields: &HashMap<String, String>,
+    query_text: &str,
+    params: &[&str],
+) -> Result<QueryResult, AppError> {
+    let connection_string = fields
+        .get("connection_string")
+        .or_else(|| fields.get("database_url"))
+        .ok_or_else(|| AppError::Validation("Missing connection_string field for Neon".into()))?;
+
+    let host = extract_pg_host(connection_string).ok_or_else(|| {
+        AppError::Validation("Cannot extract host from Neon connection string".into())
+    })?;
+
+    let sql_url = format!("https://{}/sql", host);
+
+    let client = http_client();
+    let resp = client
+        .post(&sql_url)
+        .header("Neon-Connection-String", connection_string)
+        .header("Content-Type", "application/json")
+        .json(&serde_json::json!({ "query": query_text, "params": params }))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Neon request failed: {e}")))?;
+
+    let status = resp.status();
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read Neon response: {e}")))?;
+
+    if !status.is_success() {
+        return Err(AppError::Internal(format!(
+            "Neon query failed (HTTP {status}): {body}"
+        )));
+    }
+
+    parse_neon_response(&body)
+}
+
+// ============================================================================
+// Upstash -- Redis REST API
+// ============================================================================
+
+/// Split a Redis command string into RESP arguments, respecting
+/// double-quoted substrings (with `\"` / `\\` escapes) so a single key or
+/// value containing whitespace is not silently torn into multiple array
+/// elements — e.g. `TYPE "my key"` -> `["TYPE", "my key"]`, not
+/// `["TYPE", "\"my", "key\""]`. Callers building a command string for a
+/// literal key should wrap it in double quotes.
+fn split_redis_command(query_text: &str) -> Result<Vec<String>, AppError> {
+    let mut parts = Vec::new();
+    let mut current = String::new();
+    let mut has_current = false;
+    let mut in_quotes = false;
+    let mut chars = query_text.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        match c {
+            '"' if in_quotes => in_quotes = false,
+            '"' => {
+                in_quotes = true;
+                has_current = true;
+            }
+            '\\' if in_quotes && matches!(chars.peek(), Some('"') | Some('\\')) => {
+                current.push(chars.next().expect("peeked Some"));
+            }
+            c if c.is_whitespace() && !in_quotes => {
+                if has_current {
+                    parts.push(std::mem::take(&mut current));
+                    has_current = false;
+                }
+            }
+            c => {
+                current.push(c);
+                has_current = true;
+            }
+        }
+    }
+    if in_quotes {
+        return Err(AppError::Validation(
+            "Unterminated \" in Redis command".into(),
+        ));
+    }
+    if has_current {
+        parts.push(current);
+    }
+    Ok(parts)
+}
+
+pub async fn execute_upstash(
+    fields: &HashMap<String, String>,
+    query_text: &str,
+) -> Result<QueryResult, AppError> {
+    let redis_url = fields
+        .get("redis_rest_url")
+        .or_else(|| fields.get("url"))
+        .or_else(|| fields.get("endpoint"))
+        .ok_or_else(|| AppError::Validation("Missing redis_rest_url field for Upstash".into()))?;
+
+    let token = fields
+        .get("redis_rest_token")
+        .or_else(|| fields.get("token"))
+        .or_else(|| fields.get("password"))
+        .ok_or_else(|| AppError::Validation("Missing redis_rest_token field for Upstash".into()))?;
+
+    // Split the query into command parts (e.g., "GET mykey" -> ["GET", "mykey"]).
+    // Quote-aware so a key containing whitespace (passed as `GET "my key"`)
+    // survives as one argument instead of silently splitting into two.
+    let parts = split_redis_command(query_text)?;
+    if parts.is_empty() {
+        return Err(AppError::Validation("Empty Redis command".into()));
+    }
+
+    let url = redis_url.trim_end_matches('/').to_string();
+
+    let client = http_client();
+    let resp = client
+        .post(&url)
+        .header("Authorization", format!("Bearer {token}"))
+        .header("Content-Type", "application/json")
+        .json(&parts)
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Upstash request failed: {e}")))?;
+
+    let status = resp.status();
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read Upstash response: {e}")))?;
+
+    if !status.is_success() {
+        return Err(AppError::Internal(format!(
+            "Upstash query failed (HTTP {status}): {body}"
+        )));
+    }
+
+    parse_upstash_response(&body)
+}
+
+// ============================================================================
+// PlanetScale -- Vitess HTTP API
+// ============================================================================
+
+pub async fn execute_planetscale(
+    fields: &HashMap<String, String>,
+    query_text: &str,
+) -> Result<QueryResult, AppError> {
+    let host = fields
+        .get("host")
+        .or_else(|| fields.get("database_host"))
+        .ok_or_else(|| AppError::Validation("Missing host field for PlanetScale".into()))?;
+
+    let username = fields
+        .get("username")
+        .ok_or_else(|| AppError::Validation("Missing username field for PlanetScale".into()))?;
+
+    let password = fields
+        .get("password")
+        .ok_or_else(|| AppError::Validation("Missing password field for PlanetScale".into()))?;
+
+    let url = format!("https://{host}/psdb.v1alpha1.Database/Execute");
+
+    // Bound raw reads with a defensive LIMIT (see `inject_row_limit`).
+    let bounded_query = inject_row_limit(query_text);
+
+    let client = http_client();
+    let resp = client
+        .post(&url)
+        .basic_auth(username, Some(password))
+        .header("Content-Type", "application/json")
+        .json(&serde_json::json!({
+            "query": bounded_query
+        }))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("PlanetScale request failed: {e}")))?;
+
+    let status = resp.status();
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read PlanetScale response: {e}")))?;
+
+    if !status.is_success() {
+        return Err(AppError::Internal(format!(
+            "PlanetScale query failed (HTTP {status}): {body}"
+        )));
+    }
+
+    ensure_response_within_ceiling(&body)?;
+    parse_planetscale_response(&body)
+}
+
+/// Execute a parameterized query against PlanetScale (used for introspection to prevent SQL injection).
+async fn execute_planetscale_parameterized(
+    fields: &HashMap<String, String>,
+    query_text: &str,
+    params: &[&str],
+) -> Result<QueryResult, AppError> {
+    let host = fields
+        .get("host")
+        .or_else(|| fields.get("database_host"))
+        .ok_or_else(|| AppError::Validation("Missing host field for PlanetScale".into()))?;
+
+    let username = fields
+        .get("username")
+        .ok_or_else(|| AppError::Validation("Missing username field for PlanetScale".into()))?;
+
+    let password = fields
+        .get("password")
+        .ok_or_else(|| AppError::Validation("Missing password field for PlanetScale".into()))?;
+
+    let url = format!("https://{}/psdb.v1alpha1.Database/Execute", host);
+
+    // PlanetScale Vitess API accepts typed bind variables
+    let bind_vars: serde_json::Map<String, Value> = params
+        .iter()
+        .enumerate()
+        .map(|(i, v)| {
+            (
+                format!("v{}", i + 1),
+                serde_json::json!({ "type": "VARCHAR", "value": v }),
+            )
+        })
+        .collect();
+
+    // Replace ? placeholders with :v1, :v2, etc. for Vitess bind variable syntax
+    let mut vitess_query = query_text.to_string();
+    for i in (0..params.len()).rev() {
+        if let Some(pos) = vitess_query.rfind('?') {
+            vitess_query.replace_range(pos..pos + 1, &format!(":v{}", i + 1));
+        }
+    }
+
+    let client = http_client();
+    let resp = client
+        .post(&url)
+        .basic_auth(username, Some(password))
+        .header("Content-Type", "application/json")
+        .json(&serde_json::json!({
+            "query": vitess_query,
+            "bindings": bind_vars
+        }))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("PlanetScale request failed: {e}")))?;
+
+    let status = resp.status();
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read PlanetScale response: {e}")))?;
+
+    if !status.is_success() {
+        return Err(AppError::Internal(format!(
+            "PlanetScale query failed (HTTP {status}): {body}"
+        )));
+    }
+
+    parse_planetscale_response(&body)
+}
+
+// ============================================================================
+// Response Parsers
+// ============================================================================
+
+/// Parse a generic Postgres-style JSON response (array of objects).
+pub fn parse_postgres_json_response(body: &str) -> Result<QueryResult, AppError> {
+    let parsed: serde_json::Value =
+        safe_json::from_str(body).map_err(|e| AppError::Internal(format!("Invalid JSON: {e}")))?;
+
+    // Response may be an array of row objects or wrapped in a result key
+    let rows_val = if parsed.is_array() {
+        &parsed
+    } else if let Some(rows) = parsed.get("rows").or(parsed.get("result")) {
+        rows
+    } else {
+        // Single result -- wrap in array
+        return Ok(QueryResult {
+            columns: vec!["result".into()],
+            rows: vec![vec![parsed]],
+            row_count: 1,
+            duration_ms: 0,
+            truncated: false,
+        });
+    };
+
+    let arr = rows_val
+        .as_array()
+        .ok_or_else(|| AppError::Internal("Expected array of rows".into()))?;
+
+    if arr.is_empty() {
+        return Ok(QueryResult {
+            columns: vec![],
+            rows: vec![],
+            row_count: 0,
+            duration_ms: 0,
+            truncated: false,
+        });
+    }
+
+    // Extract columns from first row keys — sorted for deterministic ordering
+    let columns: Vec<String> = if let Some(first) = arr.first().and_then(|r| r.as_object()) {
+        let mut cols: Vec<String> = first.keys().cloned().collect();
+        cols.sort();
+        cols
+    } else {
+        vec!["value".into()]
+    };
+
+    let truncated = arr.len() > MAX_ROWS;
+    let take = arr.len().min(MAX_ROWS);
+
+    let rows: Vec<Vec<serde_json::Value>> = arr[..take]
+        .iter()
+        .map(|row| {
+            if let Some(obj) = row.as_object() {
+                columns
+                    .iter()
+                    .map(|c| obj.get(c).cloned().unwrap_or(serde_json::Value::Null))
+                    .collect()
+            } else {
+                vec![row.clone()]
+            }
+        })
+        .collect();
+
+    let row_count = rows.len();
+
+    Ok(QueryResult {
+        columns,
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated,
+    })
+}
+
+/// Parse Neon serverless response.
+pub fn parse_neon_response(body: &str) -> Result<QueryResult, AppError> {
+    let parsed: serde_json::Value =
+        safe_json::from_str(body).map_err(|e| AppError::Internal(format!("Invalid JSON: {e}")))?;
+
+    // Neon response: { fields: [{name, dataTypeID}], rows: [[val, ...]], ...}
+    let columns: Vec<String> = if let Some(fields) = parsed.get("fields").and_then(|f| f.as_array())
+    {
+        fields
+            .iter()
+            .filter_map(|f| f.get("name").and_then(|n| n.as_str()).map(String::from))
+            .collect()
+    } else {
+        vec![]
+    };
+
+    let raw_rows = parsed
+        .get("rows")
+        .and_then(|r| r.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    let truncated = raw_rows.len() > MAX_ROWS;
+    let take = raw_rows.len().min(MAX_ROWS);
+
+    let rows: Vec<Vec<serde_json::Value>> = raw_rows[..take]
+        .iter()
+        .filter_map(|r| r.as_array().cloned())
+        .collect();
+
+    let row_count = rows.len();
+
+    Ok(QueryResult {
+        columns,
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated,
+    })
+}
+
+/// Parse Upstash Redis REST response.
+pub fn parse_upstash_response(body: &str) -> Result<QueryResult, AppError> {
+    let parsed: serde_json::Value =
+        safe_json::from_str(body).map_err(|e| AppError::Internal(format!("Invalid JSON: {e}")))?;
+
+    // Upstash response: { result: <value> } or { result: [items...] }
+    let result = parsed.get("result").cloned().unwrap_or(parsed.clone());
+
+    match &result {
+        serde_json::Value::Array(arr) => {
+            let truncated = arr.len() > MAX_ROWS;
+            let take = arr.len().min(MAX_ROWS);
+            let rows: Vec<Vec<serde_json::Value>> =
+                arr[..take].iter().map(|v| vec![v.clone()]).collect();
+            let row_count = rows.len();
+            Ok(QueryResult {
+                columns: vec!["value".into()],
+                rows,
+                row_count,
+                duration_ms: 0,
+                truncated,
+            })
+        }
+        serde_json::Value::Null => Ok(QueryResult {
+            columns: vec!["result".into()],
+            rows: vec![vec![serde_json::Value::Null]],
+            row_count: 1,
+            duration_ms: 0,
+            truncated: false,
+        }),
+        other => Ok(QueryResult {
+            columns: vec!["result".into()],
+            rows: vec![vec![other.clone()]],
+            row_count: 1,
+            duration_ms: 0,
+            truncated: false,
+        }),
+    }
+}
+
+/// Parse PlanetScale Vitess HTTP response.
+pub fn parse_planetscale_response(body: &str) -> Result<QueryResult, AppError> {
+    let parsed: serde_json::Value =
+        safe_json::from_str(body).map_err(|e| AppError::Internal(format!("Invalid JSON: {e}")))?;
+
+    // PlanetScale response has { result: { fields: [...], rows: [...] } }
+    let result = parsed.get("result").unwrap_or(&parsed);
+
+    let columns: Vec<String> = result
+        .get("fields")
+        .and_then(|f| f.as_array())
+        .map(|fields| {
+            fields
+                .iter()
+                .filter_map(|f| f.get("name").and_then(|n| n.as_str()).map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let raw_rows = result
+        .get("rows")
+        .and_then(|r| r.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    let truncated = raw_rows.len() > MAX_ROWS;
+    let take = raw_rows.len().min(MAX_ROWS);
+
+    let rows: Vec<Vec<serde_json::Value>> = raw_rows[..take]
+        .iter()
+        .map(|row| {
+            if let Some(obj) = row.as_object() {
+                columns
+                    .iter()
+                    .map(|c| obj.get(c).cloned().unwrap_or(serde_json::Value::Null))
+                    .collect()
+            } else if let Some(arr) = row.as_array() {
+                arr.clone()
+            } else {
+                vec![row.clone()]
+            }
+        })
+        .collect();
+
+    let row_count = rows.len();
+
+    Ok(QueryResult {
+        columns,
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated,
+    })
+}
+
+/// Extract the host portion from a PostgreSQL connection string.
+pub fn extract_pg_host(conn_str: &str) -> Option<String> {
+    // postgresql://user:pass@host:port/db?params
+    if let Some(at_idx) = conn_str.find('@') {
+        let after_at = &conn_str[at_idx + 1..];
+        // Take up to the next / or ?
+        let end = after_at
+            .find('/')
+            .unwrap_or(after_at.find('?').unwrap_or(after_at.len()));
+        let host_port = &after_at[..end];
+        // Strip port if present
+        if let Some(colon) = host_port.rfind(':') {
+            Some(host_port[..colon].to_string())
+        } else {
+            Some(host_port.to_string())
+        }
+    } else {
+        None
+    }
+}
+
+// ============================================================================
+// Convex -- function execution & schema introspection via HTTP API
+// ============================================================================
+
+/// Extract deploy key and deployment URL from credential fields.
+fn convex_creds(fields: &HashMap<String, String>) -> Result<(String, String), AppError> {
+    let deployment_url = fields
+        .get("deployment_url")
+        .ok_or_else(|| AppError::Validation("Missing deployment_url field".into()))?
+        .trim_end_matches('/')
+        .to_string();
+    let deploy_key = fields
+        .get("deploy_key")
+        .ok_or_else(|| AppError::Validation("Missing deploy_key field".into()))?
+        .clone();
+    Ok((deployment_url, deploy_key))
+}
+
+/// Execute a Convex query or mutation via the HTTP API.
+///
+/// The query text should be a JSON body for the `/api/query` or `/api/mutation`
+/// endpoint, e.g.: `{ "path": "messages:list", "args": {} }`
+///
+/// Alternatively, a shorthand like `tableName` or `tableName:functionName` is
+/// accepted and expanded into a list_snapshot request for table browsing.
+async fn execute_convex(
+    fields: &HashMap<String, String>,
+    query_text: &str,
+) -> Result<QueryResult, AppError> {
+    let (deployment_url, deploy_key) = convex_creds(fields)?;
+    let trimmed = query_text.trim();
+
+    // If it looks like JSON, treat as a raw function call
+    if trimmed.starts_with('{') {
+        let body: Value = safe_json::from_str(trimmed)
+            .map_err(|e| AppError::Validation(format!("Invalid JSON body: {e}")))?;
+
+        // Determine endpoint: presence of "mutation" key or path containing "mutation" -> /api/mutation
+        let path_str = body.get("path").and_then(|p| p.as_str()).unwrap_or("");
+        let endpoint = if path_str.contains("mutation") || body.get("mutation").is_some() {
+            "mutation"
+        } else if path_str.contains("action") || body.get("action").is_some() {
+            "action"
+        } else {
+            "query"
+        };
+
+        let url = format!("{deployment_url}/api/{endpoint}");
+        let client = http_client();
+        let resp = client
+            .post(&url)
+            .header("Authorization", format!("Convex {deploy_key}"))
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| AppError::Internal(format!("Convex request failed: {e}")))?;
+
+        let status = resp.status();
+        let resp_body: Value = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to parse Convex response: {e}")))?;
+
+        if !status.is_success() || resp_body.get("status").and_then(|s| s.as_str()) == Some("error")
+        {
+            let msg = resp_body
+                .get("errorMessage")
+                .and_then(|m| m.as_str())
+                .unwrap_or("Unknown error");
+            return Err(AppError::Internal(format!(
+                "Convex {endpoint} failed: {msg}"
+            )));
+        }
+
+        return convex_value_to_query_result(
+            &resp_body.get("value").cloned().unwrap_or(Value::Null),
+        );
+    }
+
+    // Shorthand: treat as table name -- list documents via /api/list_snapshot
+    let table_name = trimmed.trim_matches('"').trim_matches('\'');
+
+    // Validate table name: only alphanumeric and underscores allowed
+    if !table_name.chars().all(|c| c.is_alphanumeric() || c == '_') {
+        return Err(AppError::Validation(
+            "Invalid Convex table name: only alphanumeric characters and underscores are allowed"
+                .into(),
+        ));
+    }
+
+    convex_list_snapshot(&deployment_url, &deploy_key, Some(table_name)).await
+}
+
+/// List documents from a Convex table via the streaming export snapshot API.
+async fn convex_list_snapshot(
+    deployment_url: &str,
+    deploy_key: &str,
+    table_name: Option<&str>,
+) -> Result<QueryResult, AppError> {
+    let mut url = format!("{deployment_url}/api/list_snapshot?format=json");
+    if let Some(tn) = table_name {
+        url.push_str(&format!("&tableName={}", urlencoding::encode(tn)));
+    }
+
+    let client = http_client();
+    let resp = client
+        .get(&url)
+        .header("Authorization", format!("Convex {deploy_key}"))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Convex list_snapshot failed: {e}")))?;
+
+    let status = resp.status();
+
+    // list_snapshot is also part of Streaming Export -- requires Professional plan
+    if status == reqwest::StatusCode::FORBIDDEN {
+        let tn_hint = table_name.map(|n| format!(" '{n}'")).unwrap_or_default();
+        return Err(AppError::Internal(format!(
+            "Browsing table{tn_hint} via list_snapshot requires the Convex Professional plan. \
+             On the free plan, call your query functions instead:\n\n\
+             {{\"path\": \"myModule:listItems\", \"args\": {{}}}}"
+        )));
+    }
+
+    let body: Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse Convex response: {e}")))?;
+
+    if !status.is_success() {
+        let msg = body
+            .get("errorMessage")
+            .or_else(|| body.get("message"))
+            .and_then(|m| m.as_str())
+            .unwrap_or("Unknown error");
+        return Err(AppError::Internal(format!(
+            "Convex list_snapshot failed (HTTP {status}): {msg}"
+        )));
+    }
+
+    let values = body
+        .get("values")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    if values.is_empty() {
+        return Ok(QueryResult {
+            columns: vec!["(no documents)".into()],
+            rows: vec![],
+            row_count: 0,
+            duration_ms: 0,
+            truncated: false,
+        });
+    }
+
+    // Collect all unique keys from documents to build columns (_id first)
+    let mut columns = vec!["_id".to_string()];
+    for doc in &values {
+        if let Some(obj) = doc.as_object() {
+            for key in obj.keys() {
+                if key != "_id" && !columns.contains(key) {
+                    columns.push(key.clone());
+                }
+            }
+        }
+    }
+
+    let truncated = values.len() > MAX_ROWS;
+    let rows: Vec<Vec<Value>> = values
+        .iter()
+        .take(MAX_ROWS)
+        .map(|doc| {
+            columns
+                .iter()
+                .map(|col| doc.get(col).cloned().unwrap_or(Value::Null))
+                .collect()
+        })
+        .collect();
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns,
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated,
+    })
+}
+
+/// Introspect Convex tables via the `/api/json_schemas` streaming export endpoint.
+///
+/// This endpoint requires the Convex Professional plan. On free plans it returns
+/// a 403, in which case we fall back to an empty result with guidance.
+async fn introspect_convex_tables(
+    fields: &HashMap<String, String>,
+) -> Result<QueryResult, AppError> {
+    let (deployment_url, deploy_key) = convex_creds(fields)?;
+    let url = format!("{deployment_url}/api/json_schemas?format=json");
+
+    let client = http_client();
+    let resp = client
+        .get(&url)
+        .header("Authorization", format!("Convex {deploy_key}"))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Convex json_schemas request failed: {e}")))?;
+
+    let status = resp.status();
+
+    // 403 = Streaming Export requires Professional plan -- return helpful guidance
+    if status == reqwest::StatusCode::FORBIDDEN {
+        return Err(AppError::Internal(
+            "Schema introspection requires the Convex Professional plan (Streaming Export API). \
+             On the free Starter plan, use the Console tab to query tables directly:\n\n\
+             * Enter a table name to browse its documents\n\
+             * Use JSON to call your functions: {\"path\": \"myModule:myQuery\", \"args\": {}}"
+                .into(),
+        ));
+    }
+
+    let body: Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse Convex schema response: {e}")))?;
+
+    if !status.is_success() {
+        let msg = body
+            .get("errorMessage")
+            .or_else(|| body.get("message"))
+            .and_then(|m| m.as_str())
+            .unwrap_or("Unknown error");
+        return Err(AppError::Internal(format!(
+            "Convex json_schemas failed (HTTP {status}): {msg}"
+        )));
+    }
+
+    // The response is a JSON Schema with table definitions under various paths.
+    let tables = extract_convex_table_names(&body);
+
+    let rows: Vec<Vec<Value>> = tables
+        .iter()
+        .map(|name| {
+            vec![
+                Value::String(name.clone()),
+                Value::String("DOCUMENT".to_string()),
+            ]
+        })
+        .collect();
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns: vec!["table_name".into(), "table_type".into()],
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated: false,
+    })
+}
+
+/// Extract table names from Convex JSON Schema response.
+///
+/// The schema has `$defs` with entries like `"tableName"` or uses `oneOf`
+/// with `$ref` paths. We look for object definitions that have `properties`
+/// containing `_id` (which indicates a document table).
+fn extract_convex_table_names(schema: &Value) -> Vec<String> {
+    let mut tables = Vec::new();
+
+    // Method 1: Look in "$defs" for table definitions
+    if let Some(defs) = schema.get("$defs").and_then(|d| d.as_object()) {
+        for (name, def) in defs {
+            // Skip internal/system tables
+            if name.starts_with('_') {
+                continue;
+            }
+            // Table definitions typically have "type": "object" with properties
+            if def.get("type").and_then(|t| t.as_str()) == Some("object") {
+                tables.push(name.clone());
+            }
+        }
+    }
+
+    // Method 2: Look in "anyOf" / "oneOf" for $ref table references
+    for key in &["anyOf", "oneOf"] {
+        if let Some(variants) = schema.get(key).and_then(|v| v.as_array()) {
+            for variant in variants {
+                if let Some(ref_path) = variant.get("$ref").and_then(|r| r.as_str()) {
+                    // "$ref": "#/$defs/tableName" -> extract tableName
+                    if let Some(name) = ref_path.strip_prefix("#/$defs/") {
+                        if !name.starts_with('_') && !tables.contains(&name.to_string()) {
+                            tables.push(name.to_string());
+                        }
+                    }
+                }
+                // Also check if the variant has a $description with table name
+                if let Some(desc) = variant.get("$description").and_then(|d| d.as_str()) {
+                    if desc.contains("table:") {
+                        if let Some(name) = desc.strip_prefix("table:") {
+                            let name = name.trim().to_string();
+                            if !name.starts_with('_') && !tables.contains(&name) {
+                                tables.push(name);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    tables.sort();
+    tables
+}
+
+/// Introspect columns (document fields) for a Convex table.
+///
+/// Like table introspection, this requires the Professional plan.
+async fn introspect_convex_columns(
+    fields: &HashMap<String, String>,
+    table_name: &str,
+) -> Result<QueryResult, AppError> {
+    let (deployment_url, deploy_key) = convex_creds(fields)?;
+    let url = format!("{deployment_url}/api/json_schemas?format=json");
+
+    let client = http_client();
+    let resp = client
+        .get(&url)
+        .header("Authorization", format!("Convex {deploy_key}"))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Convex json_schemas request failed: {e}")))?;
+
+    let status = resp.status();
+
+    if status == reqwest::StatusCode::FORBIDDEN {
+        return Err(AppError::Internal(
+            "Column introspection requires the Convex Professional plan (Streaming Export API). \
+             Browse documents directly using the Console tab instead."
+                .into(),
+        ));
+    }
+
+    let body: Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse Convex schema response: {e}")))?;
+
+    if !status.is_success() {
+        let msg = body
+            .get("errorMessage")
+            .and_then(|m| m.as_str())
+            .unwrap_or("Unknown error");
+        return Err(AppError::Internal(format!(
+            "Convex json_schemas failed (HTTP {status}): {msg}"
+        )));
+    }
+
+    // Find the table definition in $defs
+    let table_def = body
+        .get("$defs")
+        .and_then(|d| d.get(table_name))
+        .ok_or_else(|| {
+            AppError::Internal(format!("Table '{table_name}' not found in Convex schema"))
+        })?;
+
+    let empty_map = serde_json::Map::new();
+    let properties = table_def
+        .get("properties")
+        .and_then(|p| p.as_object())
+        .unwrap_or(&empty_map);
+
+    let required: Vec<String> = table_def
+        .get("required")
+        .and_then(|r| r.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let rows: Vec<Vec<Value>> = properties
+        .iter()
+        .map(|(col_name, col_def)| {
+            // Convex types: use "type" field or "$description" annotation
+            let convex_type = col_def
+                .get("$description")
+                .and_then(|d| d.as_str())
+                .or_else(|| col_def.get("type").and_then(|t| t.as_str()))
+                .unwrap_or("unknown");
+
+            let is_nullable = if required.contains(col_name) {
+                "NO"
+            } else {
+                "YES"
+            };
+
+            vec![
+                Value::String(col_name.clone()),
+                Value::String(convex_type.to_string()),
+                Value::String(is_nullable.to_string()),
+                Value::Null, // no default concept in Convex
+            ]
+        })
+        .collect();
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns: vec![
+            "column_name".into(),
+            "data_type".into(),
+            "is_nullable".into(),
+            "column_default".into(),
+        ],
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated: false,
+    })
+}
+
+/// Convert a Convex function return value into a QueryResult.
+fn convex_value_to_query_result(value: &Value) -> Result<QueryResult, AppError> {
+    match value {
+        Value::Array(arr) => {
+            if arr.is_empty() {
+                return Ok(QueryResult {
+                    columns: vec!["(empty)".into()],
+                    rows: vec![],
+                    row_count: 0,
+                    duration_ms: 0,
+                    truncated: false,
+                });
+            }
+
+            // Collect all unique keys from array items (_id first)
+            let mut columns = vec!["_id".to_string()];
+            for item in arr {
+                if let Some(obj) = item.as_object() {
+                    for key in obj.keys() {
+                        if key != "_id" && !columns.contains(key) {
+                            columns.push(key.clone());
+                        }
+                    }
+                }
+            }
+
+            let truncated = arr.len() > MAX_ROWS;
+            let rows: Vec<Vec<Value>> = arr
+                .iter()
+                .take(MAX_ROWS)
+                .map(|item| {
+                    columns
+                        .iter()
+                        .map(|col| item.get(col).cloned().unwrap_or(Value::Null))
+                        .collect()
+                })
+                .collect();
+
+            let row_count = rows.len();
+            Ok(QueryResult {
+                columns,
+                rows,
+                row_count,
+                duration_ms: 0,
+                truncated,
+            })
+        }
+        Value::Object(_) => {
+            // Single document result -- present as single-row table
+            let columns: Vec<String> = value
+                .as_object()
+                .map(|o| {
+                    let mut v: Vec<String> = o.keys().cloned().collect();
+                    v.sort();
+                    v
+                })
+                .unwrap_or_default();
+            let row: Vec<Value> = columns
+                .iter()
+                .map(|col| value.get(col).cloned().unwrap_or(Value::Null))
+                .collect();
+            Ok(QueryResult {
+                columns,
+                rows: vec![row],
+                row_count: 1,
+                duration_ms: 0,
+                truncated: false,
+            })
+        }
+        _ => {
+            // Scalar result
+            Ok(QueryResult {
+                columns: vec!["result".into()],
+                rows: vec![vec![value.clone()]],
+                row_count: 1,
+                duration_ms: 0,
+                truncated: false,
+            })
+        }
+    }
+}
+
+// ============================================================================
+// Local SQLite (Built-in Database)
+// ============================================================================
+
+/// Run a built-in SQLite query under the query deadline + optional cancellation.
+///
+/// The blocking `rusqlite` work runs on a `spawn_blocking` thread that **owns**
+/// the pooled connection, so the connection is always returned to the pool when
+/// the closure ends — including after an interrupt. On cancel/timeout the
+/// running statement is aborted via the connection's interrupt handle and the
+/// blocking task is awaited to completion (never detached) before returning.
+async fn run_local_sqlite_guarded(
+    user_db: &UserDbPool,
+    query_text: &str,
+    cancel: Option<&CancellationToken>,
+    start: Instant,
+) -> Result<QueryResult, AppError> {
+    let conn = user_db
+        .get()
+        .map_err(|e| AppError::Internal(format!("Failed to connect to user database: {e}")))?;
+
+    // Fail fast on a locked DB instead of blocking the whole query budget.
+    let _ = conn.busy_timeout(SQLITE_BUSY_TIMEOUT);
+    // Interrupt handle is Send+Sync and can be fired from another task/thread.
+    let interrupt = conn.get_interrupt_handle();
+    let query = query_text.to_string();
+
+    // The closure moves `conn`; it is dropped (returned to the pool) when the
+    // task finishes, whether it completed normally or was interrupted.
+    let mut task = tokio::task::spawn_blocking(move || execute_local_sqlite_conn(&conn, &query));
+
+    tokio::select! {
+        biased;
+        _ = wait_cancelled(cancel) => {
+            interrupt.interrupt();
+            let _ = (&mut task).await; // let the blocking task unwind + return the conn
+            Err(AppError::Validation("Query cancelled.".to_string()))
+        }
+        _ = tokio::time::sleep(QUERY_TIMEOUT) => {
+            interrupt.interrupt();
+            let _ = (&mut task).await;
+            Err(AppError::Validation(format!(
+                "Query timed out after {}s. Narrow the query or add a LIMIT.",
+                QUERY_TIMEOUT.as_secs()
+            )))
+        }
+        joined = &mut task => {
+            let mut qr = joined
+                .map_err(|e| AppError::Internal(format!("Local query task failed: {e}")))??;
+            qr.duration_ms = start.elapsed().as_millis() as u64;
+            qr.row_count = qr.rows.len();
+            Ok(qr)
+        }
+    }
+}
+
+/// Execute a SQL query against the local user-facing SQLite database.
+/// This is completely isolated from the internal app database.
+pub fn execute_local_sqlite(
+    user_db: &UserDbPool,
+    query_text: &str,
+) -> Result<QueryResult, AppError> {
+    let conn = user_db
+        .get()
+        .map_err(|e| AppError::Internal(format!("Failed to connect to user database: {e}")))?;
+    execute_local_sqlite_conn(&conn, query_text)
+}
+
+/// Core SQLite execution against an already-acquired connection. Factored out so
+/// [`run_local_sqlite_guarded`] can hold the connection (to set `busy_timeout`
+/// and obtain an interrupt handle) before running the statement on a blocking
+/// thread.
+fn execute_local_sqlite_conn(
+    conn: &rusqlite::Connection,
+    query_text: &str,
+) -> Result<QueryResult, AppError> {
+    let trimmed = query_text.trim();
+
+    if is_sqlite_read(trimmed) {
+        let mut stmt = conn
+            .prepare(trimmed)
+            .map_err(|e| AppError::Internal(format!("SQL prepare error: {e}")))?;
+
+        let col_count = stmt.column_count();
+        let columns: Vec<String> = (0..col_count)
+            .map(|i| stmt.column_name(i).unwrap_or("?").to_string())
+            .collect();
+
+        let mut rows_out: Vec<Vec<Value>> = Vec::new();
+        let mut rows_iter = stmt
+            .query([])
+            .map_err(|e| AppError::Internal(format!("SQL query error: {e}")))?;
+
+        while let Some(row) = rows_iter
+            .next()
+            .map_err(|e| AppError::Internal(format!("Row fetch error: {e}")))?
+        {
+            if rows_out.len() >= MAX_ROWS {
+                break;
+            }
+            let mut row_vals: Vec<Value> = Vec::with_capacity(col_count);
+            for i in 0..col_count {
+                let val: Value = match row.get_ref(i) {
+                    Ok(rusqlite::types::ValueRef::Null) => Value::Null,
+                    Ok(rusqlite::types::ValueRef::Integer(n)) => Value::Number(n.into()),
+                    Ok(rusqlite::types::ValueRef::Real(f)) => serde_json::Number::from_f64(f)
+                        .map(Value::Number)
+                        .unwrap_or(Value::Null),
+                    Ok(rusqlite::types::ValueRef::Text(t)) => {
+                        Value::String(String::from_utf8_lossy(t).to_string())
+                    }
+                    Ok(rusqlite::types::ValueRef::Blob(b)) => {
+                        Value::String(format!("<blob {} bytes>", b.len()))
+                    }
+                    Err(_) => Value::Null,
+                };
+                row_vals.push(val);
+            }
+            rows_out.push(row_vals);
+        }
+
+        Ok(QueryResult {
+            columns,
+            rows: rows_out,
+            row_count: 0, // set by caller
+            duration_ms: 0,
+            truncated: false,
+        })
+    } else {
+        // Deny-list: block statements that could escape the database sandbox.
+        // Derive the leading verb with the SAME comment/whitespace-stripping
+        // tokenizer the classifier uses, so separator tricks (`ATTACH/**/DATABASE`,
+        // `ATTACH\tDATABASE`, a newline before the verb) can't split the verb from
+        // the guard the way the old raw `starts_with("ATTACH ")` did.
+        let upper = trimmed.to_uppercase();
+        match extract_first_keyword(trimmed).as_deref() {
+            Some("ATTACH") | Some("DETACH") => {
+                return Err(AppError::Validation(
+                    "Statement type 'ATTACH/DETACH' is not allowed".into(),
+                ));
+            }
+            // VACUUM itself is fine (maintenance), but `VACUUM INTO` writes a full
+            // DB copy to an arbitrary path — block it regardless of separators.
+            Some("VACUUM") if upper.contains("INTO") => {
+                return Err(AppError::Validation(
+                    "Statement type 'VACUUM INTO' is not allowed".into(),
+                ));
+            }
+            _ => {}
+        }
+
+        // Write statement (CREATE TABLE, INSERT, UPDATE, DELETE, etc.)
+        let affected = conn
+            .execute(trimmed, [])
+            .map_err(|e| AppError::Internal(format!("SQL execute error: {e}")))?;
+
+        Ok(QueryResult {
+            columns: vec!["affected_rows".to_string()],
+            rows: vec![vec![Value::Number(affected.into())]],
+            row_count: affected,
+            duration_ms: 0,
+            truncated: false,
+        })
+    }
+}
+
+/// Introspect columns of a specific table in the local user database.
+pub fn introspect_local_sqlite_columns(
+    user_db: &UserDbPool,
+    table_name: &str,
+) -> Result<QueryResult, AppError> {
+    let safe_name = table_name.replace(|c: char| !c.is_alphanumeric() && c != '_', "");
+    execute_local_sqlite(user_db, &format!("PRAGMA table_info('{}')", safe_name))
+}
+
+// ============================================================================
+// Notion -- API-based database/page introspection
+// ============================================================================
+
+/// Notion API version header required by all endpoints.
+const NOTION_VERSION: &str = "2022-06-28";
+
+/// Fetch Notion databases shared with the integration.
+///
+/// Uses `POST /v1/search` with `filter.value = "database"` to discover
+/// databases the integration token has access to. Each database maps to a
+/// "table" in our schema browser.
+async fn introspect_notion_tables(
+    fields: &HashMap<String, String>,
+) -> Result<QueryResult, AppError> {
+    let api_key = fields
+        .get("api_key")
+        .ok_or_else(|| AppError::Validation("Missing api_key field".into()))?;
+
+    let client = http_client();
+    let body = serde_json::json!({
+        "filter": { "property": "object", "value": "database" },
+        "page_size": 100
+    });
+
+    let resp = client
+        .post("https://api.notion.com/v1/search")
+        .header("Authorization", format!("Bearer {api_key}"))
+        .header("Notion-Version", NOTION_VERSION)
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Notion search request failed: {e}")))?;
+
+    let status = resp.status();
+    let json: Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse Notion response: {e}")))?;
+
+    if !status.is_success() {
+        let msg = json
+            .get("message")
+            .and_then(|m| m.as_str())
+            .unwrap_or("Unknown error");
+        return Err(AppError::Internal(format!(
+            "Notion search failed (HTTP {status}): {msg}"
+        )));
+    }
+
+    let results = json
+        .get("results")
+        .and_then(|r| r.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    let rows: Vec<Vec<Value>> = results
+        .iter()
+        .filter_map(|db| {
+            let id = db.get("id")?.as_str()?;
+            let title = notion_extract_title(db);
+            Some(vec![
+                Value::String(id.to_string()),
+                Value::String(title),
+                Value::String("DATABASE".to_string()),
+            ])
+        })
+        .collect();
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns: vec![
+            "table_name".into(),
+            "display_label".into(),
+            "table_type".into(),
+        ],
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated: false,
+    })
+}
+
+/// Extract a plain-text title from a Notion database object.
+fn notion_extract_title(db: &Value) -> String {
+    // title is an array of rich-text objects
+    if let Some(title_arr) = db.get("title").and_then(|t| t.as_array()) {
+        let text: String = title_arr
+            .iter()
+            .filter_map(|rt| rt.get("plain_text").and_then(|t| t.as_str()))
+            .collect();
+        if !text.is_empty() {
+            return text;
+        }
+    }
+    "Untitled".to_string()
+}
+
+/// Fetch properties (columns) for a specific Notion database.
+///
+/// Uses `GET /v1/databases/{database_id}` to retrieve the schema.
+/// Each property becomes a column with its Notion type.
+async fn introspect_notion_columns(
+    fields: &HashMap<String, String>,
+    database_id: &str,
+) -> Result<QueryResult, AppError> {
+    let api_key = fields
+        .get("api_key")
+        .ok_or_else(|| AppError::Validation("Missing api_key field".into()))?;
+
+    // Notion database IDs are UUIDs with dashes -- validate format
+    let safe_id = database_id
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '-')
+        .collect::<String>();
+
+    let url = format!("https://api.notion.com/v1/databases/{safe_id}");
+
+    let client = http_client();
+    let resp = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {api_key}"))
+        .header("Notion-Version", NOTION_VERSION)
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Notion database request failed: {e}")))?;
+
+    let status = resp.status();
+    let json: Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse Notion response: {e}")))?;
+
+    if !status.is_success() {
+        let msg = json
+            .get("message")
+            .and_then(|m| m.as_str())
+            .unwrap_or("Unknown error");
+        return Err(AppError::Internal(format!(
+            "Notion database fetch failed (HTTP {status}): {msg}"
+        )));
+    }
+
+    let empty_map = serde_json::Map::new();
+    let properties = json
+        .get("properties")
+        .and_then(|p| p.as_object())
+        .unwrap_or(&empty_map);
+
+    let rows: Vec<Vec<Value>> = properties
+        .iter()
+        .map(|(name, prop)| {
+            let prop_type = prop
+                .get("type")
+                .and_then(|t| t.as_str())
+                .unwrap_or("unknown");
+            vec![
+                Value::String(name.clone()),
+                Value::String(prop_type.to_string()),
+                Value::String("YES".to_string()), // Notion properties are always nullable
+                Value::Null,
+            ]
+        })
+        .collect();
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns: vec![
+            "column_name".into(),
+            "data_type".into(),
+            "is_nullable".into(),
+            "column_default".into(),
+        ],
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated: false,
+    })
+}
+
+// ============================================================================
+// Airtable -- Meta API-based table introspection
+// ============================================================================
+
+/// Fetch Airtable tables accessible with the token.
+///
+/// Strategy:
+/// - If `base_id` field is set, fetch tables from that single base.
+/// - Otherwise, list all bases via `GET /meta/bases` then fetch tables per base.
+///
+/// Tables are returned as `base_name / table_name` for disambiguation when
+/// spanning multiple bases, or just `table_name` when scoped to a single base.
+async fn introspect_airtable_tables(
+    fields: &HashMap<String, String>,
+    limit: Option<u32>,
+    offset: Option<u32>,
+) -> Result<QueryResult, AppError> {
+    let api_key = fields
+        .get("api_key")
+        .ok_or_else(|| AppError::Validation("Missing api_key field".into()))?;
+
+    let client = http_client();
+
+    // Determine which bases to scan
+    let single_base = fields.get("base_id").filter(|b| !b.trim().is_empty());
+
+    let bases: Vec<(String, String)> = if let Some(base_id) = single_base {
+        // Single base -- we still need to get its name via bases list
+        vec![(base_id.trim().to_string(), String::new())]
+    } else {
+        // List all bases
+        let resp = client
+            .get("https://api.airtable.com/v0/meta/bases")
+            .header("Authorization", format!("Bearer {api_key}"))
+            .send()
+            .await
+            .map_err(|e| AppError::Internal(format!("Airtable bases request failed: {e}")))?;
+
+        let status = resp.status();
+        let json: Value = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to parse Airtable response: {e}")))?;
+
+        if !status.is_success() {
+            let msg = airtable_error_message(&json, status);
+            return Err(AppError::Internal(msg));
+        }
+
+        json.get("bases")
+            .and_then(|b| b.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|base| {
+                        let id = base.get("id")?.as_str()?.to_string();
+                        let name = base
+                            .get("name")
+                            .and_then(|n| n.as_str())
+                            .unwrap_or("Unnamed")
+                            .to_string();
+                        Some((id, name))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+
+    let multi_base = single_base.is_none() && bases.len() > 1;
+    let mut rows: Vec<Vec<Value>> = Vec::new();
+    let (lim, off) = catalog_sql_page(limit, offset);
+    let mut skipped = 0usize;
+    let mut truncated = false;
+
+    for (base_id, base_name) in &bases {
+        let url = format!("https://api.airtable.com/v0/meta/bases/{}/tables", base_id);
+
+        let resp = client
+            .get(&url)
+            .header("Authorization", format!("Bearer {api_key}"))
+            .send()
+            .await
+            .map_err(|e| AppError::Internal(format!("Airtable tables request failed: {e}")))?;
+
+        let status = resp.status();
+        let json: Value = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to parse Airtable response: {e}")))?;
+
+        if !status.is_success() {
+            let msg = airtable_error_message(&json, status);
+            tracing::warn!(base_id = %base_id, error = %msg, "Airtable table fetch failed for base");
+            continue;
+        }
+
+        let tables = json
+            .get("tables")
+            .and_then(|t| t.as_array())
+            .cloned()
+            .unwrap_or_default();
+
+        for table in &tables {
+            let table_id = table
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let table_name = table
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Unnamed")
+                .to_string();
+
+            // Compose a unique identifier: base_id:table_id for column introspection
+            let compound_id = format!("{}:{}", base_id, table_id);
+
+            let display = if multi_base {
+                format!("{} / {}", base_name, table_name)
+            } else {
+                table_name
+            };
+
+            if skipped < off {
+                skipped += 1;
+                continue;
+            }
+            if rows.len() >= lim {
+                truncated = true;
+                break;
+            }
+
+            rows.push(vec![
+                Value::String(compound_id),
+                Value::String(display),
+                Value::String("TABLE".to_string()),
+            ]);
+        }
+        if truncated {
+            break;
+        }
+    }
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns: vec![
+            "table_name".into(),
+            "display_label".into(),
+            "table_type".into(),
+        ],
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated,
+    })
+}
+
+/// Fetch fields (columns) for an Airtable table.
+///
+/// `table_name` is expected to be a compound ID: `base_id:table_id`.
+async fn introspect_airtable_columns(
+    fields: &HashMap<String, String>,
+    table_name: &str,
+) -> Result<QueryResult, AppError> {
+    let api_key = fields
+        .get("api_key")
+        .ok_or_else(|| AppError::Validation("Missing api_key field".into()))?;
+
+    // Parse compound ID (base_id:table_id)
+    let (base_id, table_id) = table_name.split_once(':').ok_or_else(|| {
+        AppError::Validation(format!(
+            "Invalid Airtable table reference '{table_name}'. Expected format: base_id:table_id"
+        ))
+    })?;
+
+    let url = format!("https://api.airtable.com/v0/meta/bases/{}/tables", base_id);
+
+    let client = http_client();
+    let resp = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {api_key}"))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Airtable tables request failed: {e}")))?;
+
+    let status = resp.status();
+    let json: Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse Airtable response: {e}")))?;
+
+    if !status.is_success() {
+        let msg = airtable_error_message(&json, status);
+        return Err(AppError::Internal(msg));
+    }
+
+    // Find the matching table by ID
+    let table = json
+        .get("tables")
+        .and_then(|t| t.as_array())
+        .and_then(|arr| {
+            arr.iter().find(|t| {
+                t.get("id")
+                    .and_then(|v| v.as_str())
+                    .map(|id| id == table_id)
+                    .unwrap_or(false)
+            })
+        })
+        .ok_or_else(|| {
+            AppError::Internal(format!("Table '{table_id}' not found in base '{base_id}'"))
+        })?;
+
+    let airtable_fields = table
+        .get("fields")
+        .and_then(|f| f.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    let rows: Vec<Vec<Value>> = airtable_fields
+        .iter()
+        .map(|field| {
+            let name = field
+                .get("name")
+                .and_then(|n| n.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+            let field_type = field
+                .get("type")
+                .and_then(|t| t.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+            vec![
+                Value::String(name),
+                Value::String(field_type),
+                Value::String("YES".to_string()),
+                Value::Null,
+            ]
+        })
+        .collect();
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns: vec![
+            "column_name".into(),
+            "data_type".into(),
+            "is_nullable".into(),
+            "column_default".into(),
+        ],
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated: false,
+    })
+}
+
+/// Extract a human-readable error message from an Airtable API error response.
+fn airtable_error_message(json: &Value, status: reqwest::StatusCode) -> String {
+    let msg = json
+        .get("error")
+        .and_then(|e| e.get("message").and_then(|m| m.as_str()))
+        .or_else(|| {
+            json.get("error")
+                .and_then(|e| e.get("type").and_then(|t| t.as_str()))
+        })
+        .unwrap_or("Unknown error");
+    format!("Airtable API request failed (HTTP {status}): {msg}")
+}
+
+// ============================================================================
+// Tests
+// ============================================================================
+
+#[cfg(test)]
+mod tests {
+    /// The tripwire on the side that changes (client-rule-mirroring, rung e):
+    /// the client regex `READ_SHAPED_WRITES_RE` in
+    /// `src/features/vault/sub_databases/safeModeUtils.ts` carries this exact
+    /// set. Change the list here and this fails naming that file.
+    #[test]
+    fn read_shaped_writes_set_is_pinned() {
+        let expected = [
+            "INTO",
+            "SHARE",
+            "NEXTVAL",
+            "SETVAL",
+            "LO_IMPORT",
+            "LO_EXPORT",
+            "PG_TERMINATE_BACKEND",
+            "PG_CANCEL_BACKEND",
+        ];
+        assert_eq!(
+            READ_SHAPED_WRITES, &expected,
+            "READ_SHAPED_WRITES changed: update READ_SHAPED_WRITES_RE in              src/features/vault/sub_databases/safeModeUtils.ts in the same change"
+        );
+    }
+
+    use super::*;
+    use serde_json::json;
+
+    // -- safe-mode multi-statement guard (stacked-statement bypass) --
+
+    #[test]
+    fn test_stacked_statements_detected() {
+        // The bypass shape: leading SELECT classifies as a read while the raw
+        // pass-through connectors would forward the trailing mutation verbatim.
+        assert!(has_multiple_statements("SELECT 1; DELETE FROM users"));
+        assert!(has_multiple_statements("SELECT 1;\nDROP TABLE t;"));
+    }
+
+    #[test]
+    fn test_single_statement_shapes_allowed() {
+        assert!(!has_multiple_statements("SELECT * FROM users"));
+        assert!(!has_multiple_statements("SELECT * FROM users;"));
+        assert!(!has_multiple_statements("SELECT * FROM users;  \n"));
+        // Semicolon INSIDE a string literal is data, not a separator.
+        assert!(!has_multiple_statements(
+            "SELECT * FROM t WHERE note = 'a;b'"
+        ));
+        assert!(!has_multiple_statements("SELECT ';' AS sep FROM t;"));
+    }
+
+    // -- safe-mode mutation classifier (CTE bypass regression) -------
+
+    #[test]
+    fn test_data_modifying_cte_is_mutation() {
+        let cte = "WITH deleted AS (DELETE FROM kb_documents RETURNING *) SELECT * FROM deleted";
+        assert!(
+            is_mutation(cte),
+            "WITH ... DELETE must classify as a mutation"
+        );
+        assert!(
+            !is_sqlite_read(cte),
+            "WITH ... DELETE must not classify as a read"
+        );
+    }
+
+    #[test]
+    fn test_read_only_cte_is_not_mutation() {
+        let cte = "WITH recent AS (SELECT * FROM events WHERE deleted = 0) SELECT * FROM recent";
+        assert!(!is_mutation(cte), "WITH ... SELECT must stay a read");
+        assert!(is_sqlite_read(cte), "WITH ... SELECT is a read");
+    }
+
+    #[test]
+    fn test_cte_mutation_verb_in_string_literal_is_not_a_mutation() {
+        let q = "WITH t AS (SELECT * FROM logs WHERE msg = 'DELETE failed') SELECT * FROM t";
+        assert!(
+            !is_mutation(q),
+            "a verb inside a string literal must not trip the classifier"
+        );
+    }
+
+    // -- read-shaped writes (safe-mode bypass, 2026-09-02) -----------------
+
+    #[test]
+    fn test_read_shaped_writes_are_mutations() {
+        // First token SELECT/VALUES, but the engine's own READ ONLY transaction
+        // refuses every one of these. Before the body scan covered SELECT, all
+        // eight classified as reads and were dispatched with no confirm.
+        let cases = [
+            "SELECT * INTO users_backup FROM users",
+            "SELECT * FROM users INTO OUTFILE '/tmp/u.csv'",
+            "SELECT * FROM users WHERE id = 1 FOR UPDATE",
+            "SELECT * FROM users FOR SHARE",
+            "SELECT nextval('users_id_seq')",
+            "SELECT setval('users_id_seq', 1000)",
+            "VALUES (nextval('users_id_seq'))",
+            "SELECT pg_terminate_backend(1234)",
+            "EXPLAIN ANALYZE DELETE FROM users",
+        ];
+        for q in cases {
+            assert!(is_mutation(q), "must classify as a mutation: {q}");
+        }
+    }
+
+    #[test]
+    fn test_read_shaped_near_misses_stay_reads() {
+        let cases = [
+            "SELECT updated_at, deleted, inserted_by FROM users",
+            "SELECT shares FROM cap_table JOIN inventory USING (id)",
+            "SELECT * FROM t WHERE note = 'SELECT * INTO x FROM y'",
+            "SELECT * FROM t /* was: SELECT ... FOR UPDATE */",
+            "EXPLAIN ANALYZE SELECT * FROM users",
+        ];
+        for q in cases {
+            assert!(!is_mutation(q), "must stay a read: {q}");
+        }
+    }
+
+    // -- comment-blind literal stripper (safe-mode bypass, 2026-08-22) -----
+    //
+    // INVARIANT (read this before touching `strip_sql_literals`):
+    // Both safe-mode guards SEARCH THE STRIPPED TEXT FOR DANGER, so any text
+    // the stripper DROPS is danger it can no longer see. "Consume to EOF" is
+    // therefore the UNSAFE direction here, not the safe one. Every payload
+    // below smuggles an apostrophe inside a comment so the old stripper
+    // mistook it for an opening quote and ate the rest of the query.
+
+    #[test]
+    fn test_line_comment_apostrophe_cannot_hide_cte_mutation() {
+        // Postgres ends the `--` comment at the newline and executes the
+        // data-modifying CTE as ONE statement -- no stacked-statement support
+        // needed, so `has_multiple_statements` never sees it either.
+        let payload =
+            "WITH t AS (SELECT 1) --'\n, d AS (DELETE FROM users RETURNING 1) SELECT * FROM d";
+        assert!(
+            is_mutation(payload),
+            "a DELETE after a comment-hidden apostrophe must classify as a mutation"
+        );
+        assert!(
+            !is_sqlite_read(payload),
+            "a DELETE after a comment-hidden apostrophe must not classify as a read"
+        );
+        assert!(
+            body_has_mutation(payload),
+            "the CTE body guard must still see the DELETE"
+        );
+    }
+
+    #[test]
+    fn test_block_comment_apostrophe_cannot_hide_cte_mutation() {
+        // An English contraction inside a block comment is enough.
+        let payload = "WITH t AS (SELECT 1) /* it's fine */ , d AS (DELETE FROM users RETURNING 1) SELECT * FROM d";
+        assert!(
+            is_mutation(payload),
+            "a DELETE after a block-comment apostrophe must classify as a mutation"
+        );
+        assert!(!is_sqlite_read(payload));
+    }
+
+    #[test]
+    fn test_comment_hidden_semicolon_is_still_multi_statement() {
+        assert!(
+            has_multiple_statements("SELECT 1 --'\n; DROP TABLE users"),
+            "a line comment must not swallow the statement separator"
+        );
+        assert!(
+            has_multiple_statements("SELECT 1 /* don't */ ; DROP TABLE users"),
+            "a block comment must not swallow the statement separator"
+        );
+    }
+
+    #[test]
+    fn test_unterminated_literal_classifies_unsafe_not_safe() {
+        // The old doc comment called "drop the remainder" the safe direction.
+        // For a guard that searches for danger it is exactly inverted.
+        let payload =
+            "WITH t AS (SELECT 1) ' , d AS (DELETE FROM users RETURNING 1) SELECT * FROM d";
+        assert!(
+            is_mutation(payload),
+            "an unterminated literal must fail CLOSED (treated as a mutation)"
+        );
+        assert!(!is_sqlite_read(payload));
+        assert!(
+            has_multiple_statements("SELECT 1 ' ; DROP TABLE users"),
+            "an unterminated literal must fail closed in the multi-statement guard too"
+        );
+    }
+
+    #[test]
+    fn test_unterminated_block_comment_classifies_unsafe() {
+        // Nested block comments are a Postgres extension; SQLite ends at the
+        // first `*/`. Depth-counting plus fail-closed covers both dialects:
+        // whichever engine is right, an unbalanced comment is refused. Both
+        // payloads carry an apostrophe, which is what made the old stripper
+        // eat the tail instead of seeing the danger in it.
+        assert!(
+            is_mutation(
+                "WITH t AS (SELECT 1) /* don't /* b */ , d AS (DELETE FROM users RETURNING 1) SELECT * FROM d"
+            ),
+            "a nested block comment must not hide the DELETE behind it"
+        );
+        assert!(
+            has_multiple_statements("SELECT 1 /* it's unbalanced ; DROP TABLE users"),
+            "an unterminated block comment must fail closed"
+        );
+    }
+
+    #[test]
+    fn test_mysql_dialect_divergences_fail_closed() {
+        // PlanetScale (Vitess/MySQL) is a live pass-through connector, and MySQL
+        // does not read comments the way Postgres/SQLite do. The stripper only
+        // blanks out what is inert in EVERY dialect it forwards to; anything
+        // dialect-dependent is left VISIBLE so the guards can still see danger
+        // in it (over-rejection, never under-rejection).
+
+        // MySQL needs whitespace after `--`; `--x` is not a comment there, so
+        // the `;` behind it is a real separator and must stay visible.
+        assert!(
+            has_multiple_statements("SELECT 1 --x; DROP TABLE users"),
+            "`--` without trailing whitespace is dialect-dependent: do not strip it"
+        );
+
+        // `/*! ... */` is an EXECUTABLE comment in MySQL — its body runs.
+        assert!(
+            has_multiple_statements("SELECT 1 /*!50000 ; DROP TABLE users */"),
+            "a MySQL executable comment body must not be blanked out"
+        );
+
+        // `#` is a MySQL line comment and nothing in Postgres/SQLite. It is not
+        // stripped, so the apostrophe behind it opens an unterminated literal
+        // and the query fails closed.
+        assert!(
+            has_multiple_statements("SELECT 1 #'\n; DROP TABLE users"),
+            "a `#`-comment apostrophe must not swallow the separator"
+        );
+    }
+
+    // -- negative controls: a classifier that rejects everything is useless --
+
+    #[test]
+    fn test_ordinary_reads_with_comments_stay_read_only() {
+        let cases = [
+            "SELECT id, name FROM users -- only the active ones\nWHERE active = 1",
+            "/* monthly report */ SELECT count(*) FROM orders",
+            "SELECT * FROM logs WHERE msg = 'DELETE failed' -- audit trail",
+            "WITH t AS (SELECT 1) /* no mutation here */ SELECT * FROM t",
+            "SELECT * FROM t WHERE note = 'a;b' -- keeps the semicolon",
+            "SELECT 'it''s fine' AS s FROM t -- doubled-quote escape",
+        ];
+        for q in cases {
+            assert!(!is_mutation(q), "must stay a read: {q}");
+            assert!(!has_multiple_statements(q), "must stay one statement: {q}");
+        }
+        // SQLite-flavoured reads route down the read branch.
+        assert!(is_sqlite_read(
+            "SELECT id FROM users -- only the active ones\nWHERE active = 1"
+        ));
+        assert!(is_sqlite_read(
+            "WITH t AS (SELECT 1) /* no mutation here */ SELECT * FROM t"
+        ));
+    }
+
+    #[test]
+    fn test_row_limit_injection_unchanged_by_comment_handling() {
+        // A bare read still gets its cap...
+        let expected = format!("LIMIT {}", MAX_ROWS + 1);
+        let limited = inject_row_limit("SELECT * FROM t");
+        assert!(limited.ends_with(expected.as_str()), "got: {limited}");
+        // ...and a query carrying a line comment is still left alone, because
+        // appending after `-- note` would put the LIMIT inside the comment.
+        let commented = "SELECT * FROM t -- note";
+        assert_eq!(inject_row_limit(commented), commented);
+        // ...including the MySQL-ambiguous `--x` form, which is NOT blanked out
+        // but is still flagged, so the cap is declined rather than appended
+        // into a Postgres comment. (Regression lock: green before the fix too.)
+        let tight = "SELECT * FROM t --x";
+        assert_eq!(inject_row_limit(tight), tight);
+    }
+
+    // -- extract_pg_host ---------------------------------------------
+
+    #[test]
+    fn test_extract_host_standard() {
+        let result =
+            extract_pg_host("postgresql://user:pass@ep-cool-cloud-123.us-east-2.neon.tech/mydb");
+        assert_eq!(
+            result,
+            Some("ep-cool-cloud-123.us-east-2.neon.tech".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_host_with_port() {
+        let result = extract_pg_host("postgresql://user:pass@myhost:5432/db");
+        assert_eq!(result, Some("myhost".to_string()));
+    }
+
+    #[test]
+    fn test_extract_host_with_params() {
+        let result = extract_pg_host("postgresql://user:pass@myhost/db?sslmode=require");
+        assert_eq!(result, Some("myhost".to_string()));
+    }
+
+    #[test]
+    fn test_extract_host_no_at_symbol() {
+        let result = extract_pg_host("invalid-connection-string");
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_extract_host_minimal() {
+        let result = extract_pg_host("postgresql://u:p@h/d");
+        assert_eq!(result, Some("h".to_string()));
+    }
+
+    #[test]
+    fn test_extract_host_port_and_params() {
+        let result =
+            extract_pg_host("postgresql://user:pass@host:5432/db?sslmode=require&timeout=10");
+        assert_eq!(result, Some("host".to_string()));
+    }
+
+    // -- parse_postgres_json_response --------------------------------
+
+    #[test]
+    fn test_parse_pg_array_of_objects() {
+        let body = r#"[{"id":1,"name":"alice"},{"id":2,"name":"bob"}]"#;
+        let result = parse_postgres_json_response(body).unwrap();
+        assert_eq!(result.row_count, 2);
+        assert!(!result.truncated);
+        assert!(result.columns.contains(&"id".to_string()));
+        assert!(result.columns.contains(&"name".to_string()));
+        assert_eq!(result.rows.len(), 2);
+    }
+
+    #[test]
+    fn test_parse_pg_wrapped_in_rows_key() {
+        let body = r#"{"rows":[{"id":1},{"id":2}]}"#;
+        let result = parse_postgres_json_response(body).unwrap();
+        assert_eq!(result.row_count, 2);
+        assert_eq!(result.columns, vec!["id"]);
+    }
+
+    #[test]
+    fn test_parse_pg_wrapped_in_result_key() {
+        let body = r#"{"result":[{"val":"hello"}]}"#;
+        let result = parse_postgres_json_response(body).unwrap();
+        assert_eq!(result.row_count, 1);
+        assert_eq!(result.columns, vec!["val"]);
+    }
+
+    #[test]
+    fn test_parse_pg_empty_array() {
+        let body = "[]";
+        let result = parse_postgres_json_response(body).unwrap();
+        assert_eq!(result.row_count, 0);
+        assert!(result.columns.is_empty());
+        assert!(result.rows.is_empty());
+        assert!(!result.truncated);
+    }
+
+    #[test]
+    fn test_parse_pg_single_value() {
+        let body = r#"{"count":42}"#;
+        let result = parse_postgres_json_response(body).unwrap();
+        assert_eq!(result.row_count, 1);
+        assert_eq!(result.columns, vec!["result"]);
+        // The entire JSON object is stored as the single cell
+        assert_eq!(result.rows[0][0], json!({"count": 42}));
+    }
+
+    #[test]
+    fn test_parse_pg_large_set_truncation() {
+        // Build a JSON array with 600 rows
+        let rows: Vec<serde_json::Value> = (0..600)
+            .map(|i| json!({"id": i, "val": format!("row_{}", i)}))
+            .collect();
+        let body = serde_json::to_string(&rows).unwrap();
+
+        let result = parse_postgres_json_response(&body).unwrap();
+        assert!(result.truncated);
+        assert_eq!(result.row_count, 500); // MAX_ROWS
+        assert_eq!(result.rows.len(), 500);
+    }
+
+    #[test]
+    fn test_parse_pg_invalid_json() {
+        let body = "not json at all";
+        let result = parse_postgres_json_response(body);
+        assert!(result.is_err());
+    }
+
+    // -- Bounded results (LIMIT injection + response ceiling) --------------
+
+    #[test]
+    fn test_inject_limit_no_limit_gets_injected() {
+        let out = inject_row_limit("SELECT * FROM users");
+        assert_eq!(out, format!("SELECT * FROM users LIMIT {}", MAX_ROWS + 1));
+    }
+
+    #[test]
+    fn test_inject_limit_own_limit_untouched() {
+        let sql = "SELECT * FROM users LIMIT 10";
+        assert_eq!(inject_row_limit(sql), sql);
+        // Case-insensitive and newline-separated LIMIT is still detected.
+        let sql2 = "SELECT id FROM t\nlimit 5";
+        assert_eq!(inject_row_limit(sql2), sql2);
+    }
+
+    #[test]
+    fn test_inject_limit_trailing_semicolon_stripped_then_appended() {
+        let out = inject_row_limit("SELECT * FROM users;");
+        assert_eq!(out, format!("SELECT * FROM users LIMIT {}", MAX_ROWS + 1));
+    }
+
+    #[test]
+    fn test_inject_limit_skips_mutations() {
+        let sql = "DELETE FROM users";
+        assert_eq!(inject_row_limit(sql), sql);
+        let sql2 = "UPDATE users SET x = 1";
+        assert_eq!(inject_row_limit(sql2), sql2);
+        // Data-modifying CTE leads with WITH but must not be treated as a read.
+        let sql3 = "WITH d AS (DELETE FROM users RETURNING *) SELECT * FROM d";
+        assert_eq!(inject_row_limit(sql3), sql3);
+    }
+
+    #[test]
+    fn test_inject_limit_read_cte_gets_injected() {
+        let out = inject_row_limit("WITH t AS (SELECT 1) SELECT * FROM t");
+        assert_eq!(
+            out,
+            format!(
+                "WITH t AS (SELECT 1) SELECT * FROM t LIMIT {}",
+                MAX_ROWS + 1
+            )
+        );
+    }
+
+    #[test]
+    fn test_inject_limit_multi_statement_untouched() {
+        let sql = "SELECT * FROM users; SELECT * FROM orders";
+        assert_eq!(inject_row_limit(sql), sql);
+    }
+
+    #[test]
+    fn test_inject_limit_line_comment_untouched() {
+        // A trailing line comment would swallow an appended LIMIT — leave as-is.
+        let sql = "SELECT * FROM users -- all of them";
+        assert_eq!(inject_row_limit(sql), sql);
+    }
+
+    #[test]
+    fn test_inject_limit_literal_with_limit_word_still_injected() {
+        // "limit" only appears inside a string literal, so a real LIMIT is added.
+        let out = inject_row_limit("SELECT * FROM t WHERE note = 'no limit here'");
+        assert_eq!(
+            out,
+            format!(
+                "SELECT * FROM t WHERE note = 'no limit here' LIMIT {}",
+                MAX_ROWS + 1
+            )
+        );
+    }
+
+    #[test]
+    fn test_response_ceiling_rejects_oversize_body() {
+        let big = "x".repeat(MAX_RESPONSE_BYTES + 1);
+        let err = ensure_response_within_ceiling(&big).unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)));
+        assert!(format!("{err}").contains("too large"));
+    }
+
+    #[test]
+    fn test_response_ceiling_allows_normal_body() {
+        let ok = "[]";
+        assert!(ensure_response_within_ceiling(ok).is_ok());
+    }
+
+    // -- Query timeout / cancellation (local SQLite guarded path) ----------
+
+    fn memory_user_db() -> UserDbPool {
+        use r2d2::Pool;
+        use r2d2_sqlite::SqliteConnectionManager;
+        let manager = SqliteConnectionManager::memory();
+        Pool::builder().max_size(1).build(manager).expect("pool")
+    }
+
+    #[tokio::test]
+    async fn test_local_guarded_completes_without_cancel() {
+        let pool = memory_user_db();
+        let qr = run_local_sqlite_guarded(&pool, "SELECT 1 AS n", None, Instant::now())
+            .await
+            .expect("query should succeed");
+        assert_eq!(qr.row_count, 1);
+        assert_eq!(qr.rows[0][0], json!(1));
+    }
+
+    #[tokio::test]
+    async fn test_local_guarded_respects_precancelled_token() {
+        let pool = memory_user_db();
+        let token = CancellationToken::new();
+        token.cancel(); // already cancelled before the query starts
+        let err = run_local_sqlite_guarded(&pool, "SELECT 1 AS n", Some(&token), Instant::now())
+            .await
+            .expect_err("pre-cancelled token must abort the query");
+        assert!(matches!(err, AppError::Validation(_)));
+        assert!(format!("{err}").contains("cancelled"));
+        // The pooled connection must have been returned despite the abort.
+        assert!(pool.get().is_ok());
+    }
+
+    #[test]
+    fn test_parse_pg_null_values() {
+        let body = r#"[{"name":null,"age":25}]"#;
+        let result = parse_postgres_json_response(body).unwrap();
+        assert_eq!(result.row_count, 1);
+        // Find the null value in the row
+        let name_idx = result.columns.iter().position(|c| c == "name").unwrap();
+        assert_eq!(result.rows[0][name_idx], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn test_parse_pg_exactly_max_rows() {
+        let rows: Vec<serde_json::Value> = (0..500).map(|i| json!({"id": i})).collect();
+        let body = serde_json::to_string(&rows).unwrap();
+
+        let result = parse_postgres_json_response(&body).unwrap();
+        assert!(!result.truncated); // Exactly 500 -- not truncated
+        assert_eq!(result.row_count, 500);
+    }
+
+    // -- parse_neon_response -----------------------------------------
+
+    #[test]
+    fn test_parse_neon_standard() {
+        let body = r#"{"fields":[{"name":"id","dataTypeID":23},{"name":"name","dataTypeID":25}],"rows":[[1,"alice"],[2,"bob"]]}"#;
+        let result = parse_neon_response(body).unwrap();
+        assert_eq!(result.columns, vec!["id", "name"]);
+        assert_eq!(result.row_count, 2);
+        assert_eq!(result.rows[0], vec![json!(1), json!("alice")]);
+        assert_eq!(result.rows[1], vec![json!(2), json!("bob")]);
+    }
+
+    #[test]
+    fn test_parse_neon_empty() {
+        let body = r#"{"fields":[],"rows":[]}"#;
+        let result = parse_neon_response(body).unwrap();
+        assert!(result.columns.is_empty());
+        assert_eq!(result.row_count, 0);
+        assert!(!result.truncated);
+    }
+
+    #[test]
+    fn test_parse_neon_missing_fields() {
+        let body = r#"{"rows":[[1],[2]]}"#;
+        let result = parse_neon_response(body).unwrap();
+        assert!(result.columns.is_empty());
+        assert_eq!(result.row_count, 2);
+    }
+
+    #[test]
+    fn test_parse_neon_truncation() {
+        let rows: Vec<serde_json::Value> = (0..600).map(|i| json!([i])).collect();
+        let body = json!({"fields": [{"name": "id"}], "rows": rows}).to_string();
+
+        let result = parse_neon_response(&body).unwrap();
+        assert!(result.truncated);
+        assert_eq!(result.row_count, 500);
+    }
+
+    #[test]
+    fn test_parse_neon_mixed_types() {
+        let body = r#"{"fields":[{"name":"a"},{"name":"b"},{"name":"c"}],"rows":[["hello",42,true],[null,0,false]]}"#;
+        let result = parse_neon_response(body).unwrap();
+        assert_eq!(result.row_count, 2);
+        assert_eq!(result.rows[0], vec![json!("hello"), json!(42), json!(true)]);
+        assert_eq!(result.rows[1], vec![json!(null), json!(0), json!(false)]);
+    }
+
+    // -- parse_upstash_response --------------------------------------
+
+    #[test]
+    fn test_parse_upstash_string_result() {
+        let body = r#"{"result":"OK"}"#;
+        let result = parse_upstash_response(body).unwrap();
+        assert_eq!(result.columns, vec!["result"]);
+        assert_eq!(result.row_count, 1);
+        assert_eq!(result.rows[0][0], json!("OK"));
+    }
+
+    #[test]
+    fn test_parse_upstash_array_result() {
+        let body = r#"{"result":["val1","val2","val3"]}"#;
+        let result = parse_upstash_response(body).unwrap();
+        assert_eq!(result.columns, vec!["value"]);
+        assert_eq!(result.row_count, 3);
+        assert_eq!(result.rows[0][0], json!("val1"));
+        assert_eq!(result.rows[2][0], json!("val3"));
+    }
+
+    #[test]
+    fn test_parse_upstash_null_result() {
+        let body = r#"{"result":null}"#;
+        let result = parse_upstash_response(body).unwrap();
+        assert_eq!(result.columns, vec!["result"]);
+        assert_eq!(result.row_count, 1);
+        assert_eq!(result.rows[0][0], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn test_parse_upstash_integer_result() {
+        let body = r#"{"result":42}"#;
+        let result = parse_upstash_response(body).unwrap();
+        assert_eq!(result.columns, vec!["result"]);
+        assert_eq!(result.row_count, 1);
+        assert_eq!(result.rows[0][0], json!(42));
+    }
+
+    #[test]
+    fn test_parse_upstash_hash_result() {
+        // HGETALL returns flat key-value pairs as array
+        let body = r#"{"result":["field1","value1","field2","value2"]}"#;
+        let result = parse_upstash_response(body).unwrap();
+        assert_eq!(result.columns, vec!["value"]);
+        assert_eq!(result.row_count, 4);
+    }
+
+    #[test]
+    fn test_parse_upstash_truncation() {
+        let arr: Vec<serde_json::Value> = (0..600).map(|i| json!(i)).collect();
+        let body = json!({"result": arr}).to_string();
+
+        let result = parse_upstash_response(&body).unwrap();
+        assert!(result.truncated);
+        assert_eq!(result.row_count, 500);
+    }
+
+    #[test]
+    fn test_parse_upstash_empty_array() {
+        let body = r#"{"result":[]}"#;
+        let result = parse_upstash_response(body).unwrap();
+        assert_eq!(result.columns, vec!["value"]);
+        assert_eq!(result.row_count, 0);
+        assert!(!result.truncated);
+    }
+
+    // -- parse_planetscale_response ----------------------------------
+
+    #[test]
+    fn test_parse_ps_standard_object_rows() {
+        let body = r#"{"result":{"fields":[{"name":"id"},{"name":"email"}],"rows":[{"id":1,"email":"a@b.com"}]}}"#;
+        let result = parse_planetscale_response(body).unwrap();
+        assert_eq!(result.columns, vec!["id", "email"]);
+        assert_eq!(result.row_count, 1);
+    }
+
+    #[test]
+    fn test_parse_ps_array_rows() {
+        let body = r#"{"result":{"fields":[{"name":"id"},{"name":"name"}],"rows":[[1,"alice"],[2,"bob"]]}}"#;
+        let result = parse_planetscale_response(body).unwrap();
+        assert_eq!(result.columns, vec!["id", "name"]);
+        assert_eq!(result.row_count, 2);
+        assert_eq!(result.rows[0], vec![json!(1), json!("alice")]);
+    }
+
+    #[test]
+    fn test_parse_ps_empty() {
+        let body = r#"{"result":{"fields":[],"rows":[]}}"#;
+        let result = parse_planetscale_response(body).unwrap();
+        assert!(result.columns.is_empty());
+        assert_eq!(result.row_count, 0);
+    }
+
+    #[test]
+    fn test_parse_ps_truncation() {
+        let rows: Vec<serde_json::Value> = (0..600).map(|i| json!([i])).collect();
+        let body = json!({"result": {"fields": [{"name": "id"}], "rows": rows}}).to_string();
+
+        let result = parse_planetscale_response(&body).unwrap();
+        assert!(result.truncated);
+        assert_eq!(result.row_count, 500);
+    }
+
+    #[test]
+    fn test_parse_ps_no_result_wrapper() {
+        // Some responses might not have the "result" wrapper
+        let body = r#"{"fields":[{"name":"x"}],"rows":[[99]]}"#;
+        let result = parse_planetscale_response(body).unwrap();
+        assert_eq!(result.columns, vec!["x"]);
+        assert_eq!(result.rows[0], vec![json!(99)]);
+    }
+
+    // -- Integration tests (env-gated) -------------------------------
+
+    /// Helper to check if Upstash SRH Docker emulator is available.
+    fn upstash_test_fields() -> Option<HashMap<String, String>> {
+        let url = std::env::var("UPSTASH_TEST_URL").ok()?;
+        let token = std::env::var("UPSTASH_TEST_TOKEN").ok()?;
+        let mut fields = HashMap::new();
+        fields.insert("redis_rest_url".to_string(), url);
+        fields.insert("redis_rest_token".to_string(), token);
+        Some(fields)
+    }
+
+    #[tokio::test]
+    #[ignore] // Run with: cargo test -- --ignored (requires Docker SRH)
+    async fn test_upstash_live_set_get() {
+        let fields =
+            upstash_test_fields().expect("UPSTASH_TEST_URL and UPSTASH_TEST_TOKEN required");
+
+        // SET
+        let set_result = execute_upstash(&fields, "SET test_key hello_world")
+            .await
+            .unwrap();
+        assert_eq!(set_result.rows[0][0], json!("OK"));
+
+        // GET
+        let get_result = execute_upstash(&fields, "GET test_key").await.unwrap();
+        assert_eq!(get_result.rows[0][0], json!("hello_world"));
+
+        // Cleanup
+        let _ = execute_upstash(&fields, "DEL test_key").await;
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_upstash_live_hset_hgetall() {
+        let fields =
+            upstash_test_fields().expect("UPSTASH_TEST_URL and UPSTASH_TEST_TOKEN required");
+
+        let _ = execute_upstash(&fields, "DEL test_hash").await;
+        let _ = execute_upstash(&fields, "HSET test_hash name alice age 30")
+            .await
+            .unwrap();
+
+        let result = execute_upstash(&fields, "HGETALL test_hash").await.unwrap();
+        assert!(result.row_count >= 4); // ["name", "alice", "age", "30"]
+
+        let _ = execute_upstash(&fields, "DEL test_hash").await;
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_upstash_live_nonexistent_key() {
+        let fields =
+            upstash_test_fields().expect("UPSTASH_TEST_URL and UPSTASH_TEST_TOKEN required");
+
+        let result = execute_upstash(&fields, "GET __surely_nonexistent_key__")
+            .await
+            .unwrap();
+        assert_eq!(result.rows[0][0], serde_json::Value::Null);
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_upstash_live_del() {
+        let fields =
+            upstash_test_fields().expect("UPSTASH_TEST_URL and UPSTASH_TEST_TOKEN required");
+
+        let _ = execute_upstash(&fields, "SET del_test_key value").await;
+        let result = execute_upstash(&fields, "DEL del_test_key").await.unwrap();
+        // DEL returns integer count of deleted keys
+        assert_eq!(result.row_count, 1);
+    }
+
+    #[tokio::test]
+    async fn test_upstash_empty_command() {
+        let mut fields = HashMap::new();
+        fields.insert(
+            "redis_rest_url".to_string(),
+            "http://localhost:8079".to_string(),
+        );
+        fields.insert("redis_rest_token".to_string(), "token".to_string());
+
+        let result = execute_upstash(&fields, "").await;
+        assert!(result.is_err());
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(err_msg.contains("Empty Redis command"));
+    }
+
+    #[test]
+    fn test_split_redis_command_simple() {
+        assert_eq!(
+            split_redis_command("GET mykey").unwrap(),
+            vec!["GET".to_string(), "mykey".to_string()]
+        );
+    }
+
+    #[test]
+    fn test_split_redis_command_quoted_key_with_spaces() {
+        assert_eq!(
+            split_redis_command(r#"TYPE "my key""#).unwrap(),
+            vec!["TYPE".to_string(), "my key".to_string()]
+        );
+    }
+
+    #[test]
+    fn test_split_redis_command_quoted_escapes() {
+        assert_eq!(
+            split_redis_command(r#"SET "a\"b" "c\\d""#).unwrap(),
+            vec!["SET".to_string(), "a\"b".to_string(), "c\\d".to_string()]
+        );
+    }
+
+    #[test]
+    fn test_split_redis_command_mixed_quoted_and_bare() {
+        assert_eq!(
+            split_redis_command(r#"HSET h "field one" value"#).unwrap(),
+            vec![
+                "HSET".to_string(),
+                "h".to_string(),
+                "field one".to_string(),
+                "value".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn test_split_redis_command_unterminated_quote_errors() {
+        assert!(split_redis_command(r#"GET "unterminated"#).is_err());
+    }
+
+    #[test]
+    fn test_split_redis_command_empty_returns_empty() {
+        assert!(split_redis_command("").unwrap().is_empty());
+        assert!(split_redis_command("   ").unwrap().is_empty());
+    }
+
+    // -- PostgREST parser tests --
+
+    #[test]
+    fn test_postgrest_simple_select() {
+        let result = parse_select_to_postgrest("SELECT * FROM users").unwrap();
+        assert_eq!(result.table, "users");
+        assert_eq!(result.select, "*");
+        assert_eq!(result.limit, Some(500));
+    }
+
+    #[test]
+    fn test_postgrest_select_with_limit() {
+        let result = parse_select_to_postgrest("SELECT * FROM users LIMIT 100").unwrap();
+        assert_eq!(result.table, "users");
+        assert_eq!(result.limit, Some(100));
+    }
+
+    #[test]
+    fn test_postgrest_select_columns() {
+        let result =
+            parse_select_to_postgrest("SELECT id, name, email FROM users LIMIT 50").unwrap();
+        assert_eq!(result.select, "id,name,email");
+        assert_eq!(result.limit, Some(50));
+    }
+
+    #[test]
+    fn test_postgrest_select_with_order() {
+        let result =
+            parse_select_to_postgrest("SELECT * FROM messages ORDER BY created_at DESC LIMIT 100")
+                .unwrap();
+        assert_eq!(result.table, "messages");
+        assert_eq!(result.order.as_deref(), Some("created_at.desc"));
+        assert_eq!(result.limit, Some(100));
+    }
+
+    #[test]
+    fn test_postgrest_select_with_where() {
+        let result =
+            parse_select_to_postgrest("SELECT * FROM users WHERE active = true LIMIT 100").unwrap();
+        assert_eq!(result.filters.len(), 1);
+        assert_eq!(result.filters[0], "active=eq.true");
+    }
+
+    #[test]
+    fn test_postgrest_strip_schema_prefix() {
+        let result = parse_select_to_postgrest("SELECT * FROM public.users LIMIT 100").unwrap();
+        assert_eq!(result.table, "users");
+    }
+
+    #[test]
+    fn test_postgrest_strip_quotes() {
+        let result =
+            parse_select_to_postgrest("SELECT * FROM \"agent_messages\" LIMIT 100").unwrap();
+        assert_eq!(result.table, "agent_messages");
+    }
+
+    #[test]
+    fn test_postgrest_rejects_join() {
+        let result = parse_select_to_postgrest(
+            "SELECT * FROM users JOIN orders ON users.id = orders.user_id",
+        );
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_postgrest_rejects_insert() {
+        let result = parse_select_to_postgrest("INSERT INTO users (name) VALUES ('test')");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_postgrest_rejects_group_by() {
+        let result = parse_select_to_postgrest("SELECT role, COUNT(*) FROM users GROUP BY role");
+        assert!(result.is_none());
+    }
+
+    // -- sanitize_error tests ------------------------------------------
+
+    #[test]
+    fn test_sanitize_strips_connection_string() {
+        let fields = HashMap::new();
+        let msg = "Error: postgresql://admin:s3cret@db.example.com:5432/mydb connection refused";
+        let result = sanitize_error(msg, &fields);
+        assert!(!result.contains("admin"));
+        assert!(!result.contains("s3cret"));
+        assert!(result.contains("[REDACTED:connection_string]"));
+    }
+
+    #[test]
+    fn test_sanitize_strips_bearer_token() {
+        let fields = HashMap::new();
+        let msg =
+            "Request failed with header Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.payload.sig";
+        let result = sanitize_error(msg, &fields);
+        assert!(!result.contains("eyJhbGciOiJIUzI1NiJ9"));
+        assert!(result.contains("Bearer [REDACTED]"));
+    }
+
+    #[test]
+    fn test_sanitize_strips_basic_auth() {
+        let fields = HashMap::new();
+        let msg = "Auth header was Basic dXNlcjpwYXNz and it failed";
+        let result = sanitize_error(msg, &fields);
+        assert!(!result.contains("dXNlcjpwYXNz"));
+        assert!(result.contains("Basic [REDACTED]"));
+    }
+
+    #[test]
+    fn test_sanitize_strips_field_values() {
+        // Every non-empty field value is redacted regardless of length —
+        // a short-value exemption would let short secrets (PINs, short
+        // tokens) leak, so `sanitize_error` doesn't special-case length.
+        let mut fields = HashMap::new();
+        fields.insert(
+            "api_key".to_string(),
+            "sk-super-secret-key-12345".to_string(),
+        );
+        fields.insert("port".to_string(), "5432".to_string());
+        let msg = "Failed with key sk-super-secret-key-12345 on port 5432";
+        let result = sanitize_error(msg, &fields);
+        assert!(!result.contains("sk-super-secret-key-12345"));
+        assert!(result.contains("[REDACTED:api_key]"));
+        assert!(!result.contains("5432"));
+        assert!(result.contains("[REDACTED:port]"));
+    }
+
+    #[test]
+    fn test_sanitize_no_secrets_unchanged() {
+        let fields = HashMap::new();
+        let msg = "Connection timed out after 30s";
+        let result = sanitize_error(msg, &fields);
+        assert_eq!(result, msg);
+    }
+}

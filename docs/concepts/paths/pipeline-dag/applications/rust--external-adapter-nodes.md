@@ -7,7 +7,7 @@ stack: rust
 
 # External adapter nodes — Rust automation dispatch & platform deploy
 
-Where the technique lands in this repo: `src-tauri/src/engine/automation_runner.rs`
+Where the technique lands in this repo: `src-tauri/engine/src/automation_runner.rs`
 (webhook/dispatch invocation), `src-tauri/src/engine/platforms/{deploy,n8n,github,zapier}.rs`
 (platform adapters), and `src-tauri/src/commands/tools/deploy_automation.rs`
 (the privileged command door).

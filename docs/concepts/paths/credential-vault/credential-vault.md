@@ -10,7 +10,7 @@ techniques:
   - acquisition
   - health-probing
 evidence:
-  - src-tauri/src/engine/credential_broker.rs      # the cardinal rule as code: intent in, outcome out, plaintext never
+  - src-tauri/engine/src/credential_broker.rs      # the cardinal rule as code: intent in, outcome out, plaintext never
   - src-tauri/core/src/crypto.rs                   # sealing, key custody ladder, zeroization, instrumented legacy-path retirement
   - src-tauri/src/engine/oauth_refresh.rs          # the maintenance loop: refresh-ahead, startup staleness sweep, honest failure classes
   - src-tauri/src/engine/healthcheck.rs            # three-state probe honesty (verified / failed / unverifiable)

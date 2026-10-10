@@ -4,6 +4,12 @@
 // .contest/Contest/contests/kpi-descent.md): the owner kept Map, Ledger and
 // River and deleted Classic, Projects and Portfolio outright. A persisted
 // value naming one of the deleted three falls back to the default.
+//
+// A second round on 2026-10-06 benched three more concepts here (assay,
+// almanac, console) behind a dev-only gate; the owner closed the round and
+// they were deleted the same day. The fallback below is what makes that safe
+// for anyone whose browser still holds one of those ids in `kpi-variant`: an
+// unrecognised value resolves to the default rather than rendering nothing.
 import { useCallback, useState } from 'react';
 
 import { safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';

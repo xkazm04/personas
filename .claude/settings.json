@@ -16,8 +16,15 @@
         "hooks": [
           {
             "type": "command",
+            "if": "Bash(cargo *)",
             "command": "node \"$CLAUDE_PROJECT_DIR/scripts/build/guard-concurrent-cargo.mjs\"",
-            "timeout": 20
+            "timeout": 900
+          },
+          {
+            "type": "command",
+            "if": "Bash(timeout *)",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/build/guard-concurrent-cargo.mjs\"",
+            "timeout": 900
           }
         ]
       }

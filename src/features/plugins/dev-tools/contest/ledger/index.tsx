@@ -15,6 +15,7 @@ import { Layers, List, ListOrdered, Lock, MapPin, Plus, Search, Film, Trophy } f
 import { Button } from '@/features/shared/components/buttons';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useElementSize } from '@/hooks/utility/interaction/useElementSize';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ContestReviewBucket } from '@/lib/bindings/ContestReviewBucket';
@@ -33,6 +34,7 @@ import { setBucket } from '../model/reviewModel';
 import { seatLabel } from '../model/seatCatalog';
 import { ContestLevel, isEditable, lockText } from './ContestLevel';
 import { keyOf, ledgerCounts, ledgerGroups, ledgerOrder, shortTitle, type LedgerFilter } from './ledgerModel';
+import { useLedgerWindow } from './useLedgerWindow';
 import { LedgerLevel } from './LedgerLevel';
 import { formatDay, Kbd, prefersReducedMotion, Rich, useNow } from './parts';
 import { SetupDrawer } from './SetupDrawer';
@@ -100,7 +102,12 @@ export default function LedgerShell() {
     [s],
   );
   const groups = useMemo(() => ledgerGroups(contests, filter, query, searchText), [contests, filter, query, searchText]);
+  // Keyboard walks the WHOLE filtered set, not the window: ↑/↓ past the last
+  // rendered row opens the next page rather than stopping at it.
   const order = useMemo(() => ledgerOrder(groups), [groups]);
+  const revealKey = `${filter ?? ''}|${query.trim()}`;
+  const ledgerWindow = useLedgerWindow(groups, revealKey);
+  const enter = useRevealTracker(revealKey, 'contest-ledger');
 
   // ── The camera ──────────────────────────────────────────────
   const rectIn = (el: HTMLElement | null) => {
@@ -249,6 +256,7 @@ export default function LedgerShell() {
       const move = (to: string | undefined) => {
         if (!to) return;
         setFocusKey(to);
+        ledgerWindow.revealThrough(order.indexOf(to));
         rowRefs.current.get(to)?.scrollIntoView?.({ block: 'nearest' });
       };
       if (k === 'ArrowDown' || k === 'j' || k === 'J') {
@@ -404,7 +412,7 @@ export default function LedgerShell() {
   const readinessProject = summary?.projectId ?? activeProjectId ?? null;
 
   return (
-    <div ref={rootRef} className={`contest-ledger sl${wide ? ' wide' : ''}`} data-type-density="compact" data-testid="contest-ledger">
+    <div ref={rootRef} className={`contest-ledger sl${wide ? ' wide' : ''}`} data-testid="contest-ledger">
       <ContentHeader
         icon={<Trophy className="w-5 h-5 text-primary" />}
         iconColor="primary"
@@ -472,7 +480,10 @@ export default function LedgerShell() {
         <section ref={levelRefs[1]} className="lv lv1" aria-label={L.ledger_label} hidden={level !== 1 && leaving !== 1}>
           <LedgerLevel
             contests={contests}
-            groups={groups}
+            groups={ledgerWindow.window.groups}
+            pager={ledgerWindow.pager}
+            hasEntered={enter.hasEntered}
+            markEntered={enter.markEntered}
             isLoading={list.isLoading}
             error={list.error}
             onRetry={() => void list.refresh()}

@@ -227,6 +227,9 @@
   "grid_dock_collapse": "Скрыть консоль отправки",
   "grid_fleet_exited": "Сессия завершена — её терминала больше нет.",
   "grid_fleet_kill": "Завершить сессию",
+  "terminal_asleep_label": "Почему она спит",
+  "terminal_wake_failed": "Эту сессию нельзя разбудить",
+  "terminal_wake_failed_hint": "Завершите сессию, чтобы убрать её с доски.",
   "grid_messages_empty": "В каналах пока нет активности.",
   "grid_rail_loading_more": "Загружаем ещё…",
   "grid_session_recap_ai_title": "Название сессии",
@@ -615,6 +618,14 @@
   "orch_never_served": "ещё не запускалась",
   "orch_refusal_budget": "Месячный бюджет исчерпан",
   "orch_refusal_concurrency": "Машина достигла лимита персон",
+  "orch_refusal_headless": "Этим проектом управляет App Master из терминала",
+  "orch_headless_running": "Headless - работает",
+  "orch_headless_idle": "Headless - простаивает",
+  "orch_headless_stale": "Headless - устарел",
+  "orch_headless_hint": "App Master этого проекта запущен из терминала (/appmaster). Master в приложении уступает, пока его отчёты свежие.",
+  "orch_headless_next_wake": "Следующее пробуждение:",
+  "orch_headless_no_wake": "не объявлено",
+  "orch_headless_reported": "Последний отчёт:",
   "orch_refusal_daily_cap": "Достигнут дневной лимит",
   "orch_refusal_in_flight": "Ещё выполняет предыдущий проход",
   "orch_refusal_interval_floor": "Отдыхает до истечения интервала",
@@ -1073,5 +1084,6 @@
   "dc_hub_row_open_aria": "Открыть: {title}",
   "dc_hub_triage_all_none": "Ничего не ожидает",
   "dc_hub_triage_all_short": "Все",
-  "dc_hub_triage_all_walk_tip": "Пройти все ({count}) по порядку, сначала срочные"
+  "dc_hub_triage_all_walk_tip": "Пройти все ({count}) по порядку, сначала срочные",
+  "grid_rail_triage_modal_aria": "Детали проверки"
 }

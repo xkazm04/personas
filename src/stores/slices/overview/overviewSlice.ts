@@ -96,9 +96,28 @@ export interface OverviewSlice {
    *  once the modal is open so the same id doesn't re-trigger on remount. */
   pendingExecutionFocus: string | null;
 
+  /** Cross-SURFACE scope signal for the Timeline, which moved out of the
+   *  PersonaMonitor into Overview > Monitoring on 2026-10-06. The Monitor's
+   *  Map is still a Monitor view, so its node click now has to cross from one
+   *  surface to the other: it parks the speaker here, routes to Overview >
+   *  Timeline and closes the overlay. `TimelinePage` consumes it into the
+   *  Stream's initial callsign lens and clears it, so a later visit opens on
+   *  the full feed. Transient, never persisted - the same contract
+   *  `pendingExecutionFocus` above keeps. */
+  pendingTimelineScope: { teamId: string; personaId: string } | null;
+
+  /** Cross-component focus signal for opening one report's detail modal on
+   *  Overview > Reports. An Approvals row linked to a report (`context_data.reportId`)
+   *  parks the id here and routes to the Reports tab; `ReportList` consumes it
+   *  (`usePendingReportFocus`) and clears it. Transient, never persisted - the
+   *  same contract `pendingExecutionFocus` above keeps. */
+  pendingReportFocus: string | null;
+
   // Actions
   setOverviewTab: (tab: OverviewTab) => void;
   setPendingExecutionFocus: (executionId: string | null) => void;
+  setPendingReportFocus: (reportId: string | null) => void;
+  setPendingTimelineScope: (scope: { teamId: string; personaId: string } | null) => void;
   setPipelineError: (source: string, error: string | null) => void;
   /** Apply a whole wave of pipeline fetch outcomes in a single store write —
    *  one set() per wave instead of 2×N (setPipelineError + setPipelineFetchedAt
@@ -191,6 +210,42 @@ let fetchGlobalSeq = 0;
  *  is correct. */
 let fetchGlobalCountsSeq = 0;
 
+/**
+ * Whether two cloud-review lists say the same thing.
+ *
+ * Field-by-field over exactly what `fetchCloudReviews` builds, so it is exact
+ * rather than a heuristic, and it allocates nothing — far cheaper than the
+ * board rebuild one fresh array identity causes downstream. `context_data` and
+ * `suggested_actions` are not compared because that shaper always writes
+ * `null` into both; `source` for the same reason.
+ */
+function sameCloudReviews(
+  a: readonly ManualReviewItem[],
+  b: readonly ManualReviewItem[],
+): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const x = a[i]!;
+    const y = b[i]!;
+    if (
+      x.id !== y.id ||
+      x.persona_id !== y.persona_id ||
+      x.execution_id !== y.execution_id ||
+      x.review_type !== y.review_type ||
+      x.content !== y.content ||
+      x.severity !== y.severity ||
+      x.status !== y.status ||
+      x.reviewer_notes !== y.reviewer_notes ||
+      x.title !== y.title ||
+      x.created_at !== y.created_at ||
+      x.resolved_at !== y.resolved_at
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSlice> = (set, get) => ({
   overviewTab: "home" as OverviewTab,
   globalExecutions: [],
@@ -213,6 +268,8 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   pipelineErrors: {},
   pipelineFetchedAt: {},
   pendingExecutionFocus: null,
+  pendingTimelineScope: null,
+  pendingReportFocus: null,
 
   // Note: do NOT wrap this in startTransition. Sidebar nav clicks must be
   // a synchronous, deterministic state update — the OverviewPage uses
@@ -221,6 +278,8 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   // the content never swaps even though the sidebar highlight updated.
   setOverviewTab: (tab) => set({ overviewTab: tab }),
   setPendingExecutionFocus: (executionId) => set({ pendingExecutionFocus: executionId }),
+  setPendingReportFocus: (reportId) => set({ pendingReportFocus: reportId }),
+  setPendingTimelineScope: (scope) => set({ pendingTimelineScope: scope }),
   setPipelineError: (source, error) => set((prev) => {
     const next = { ...prev.pipelineErrors };
     if (error) next[source] = error;
@@ -480,9 +539,21 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   }),
 
   fetchCloudReviews: async () => {
+    // KEEP THE ARRAY WHEN THE ANSWER HAS NOT CHANGED.
+    //
+    // This runs every 15 seconds. It used to `set` a freshly built array every
+    // time, including the two paths below that set a literal `[]` — and that
+    // identity is load-bearing far downstream: `useMonitorData` folds
+    // `cloudReviews` into `reviews`, and `reviews` is a dep of the Activity
+    // board's `buildMonitorModel` memo. So an install with ZERO cloud reviews,
+    // or with the same ones it had a minute ago, rebuilt and re-sorted every
+    // card on the board four times a minute. The guard is the same one
+    // `personaSlice` applies to its health map for the same reason.
+    const keep = (next: ManualReviewItem[]): ManualReviewItem[] =>
+      sameCloudReviews(get().cloudReviews, next) ? get().cloudReviews : next;
     const cloudConfig = storeBus.get<{ is_connected?: boolean } | null>(AccessorKey.SYSTEM_CLOUD_CONFIG);
     if (!cloudConfig?.is_connected) {
-      set({ cloudReviews: [] });
+      set({ cloudReviews: keep([]) });
       return;
     }
     set({ isLoadingCloudReviews: true });
@@ -509,10 +580,10 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
           source: 'cloud' as const,
         };
       });
-      set({ cloudReviews: shaped, isLoadingCloudReviews: false });
+      set({ cloudReviews: keep(shaped), isLoadingCloudReviews: false });
     } catch (err) {
       log.warn('overviewSlice', 'fetchCloudReviews failed, falling back to empty', { operation: 'cloudListPendingReviews', error: String(err) });
-      set({ cloudReviews: [], isLoadingCloudReviews: false });
+      set({ cloudReviews: keep([]), isLoadingCloudReviews: false });
     }
   },
 

@@ -6,9 +6,10 @@ bend: *it never admits on its own*. A clean run is escorted to a human decision,
 never converted into one.
 
 This page documents what ships today. The review reaches a person through the
-**Council page**: a galaxy of the organisation's knowledge registry, a bench of
-councils waiting on a decision, and one council's round table with the gate
-pinned in its footer.
+**Council page**: a galaxy of the organisation's knowledge registry with the
+councils laid beside it as **lanes** (one queue, every project), and one
+council's **verdict card** with the gate - plus a full **browser report** for
+reading the round in detail.
 
 The page is built against one artifact the owner approved and kept:
 `.claude/council-reference/` (open `index.html` from `file://`, no build, no
@@ -98,7 +99,7 @@ summarises.
 | `fail` | a floor was hit or a member failed hard | Run next round |
 | `incomplete` | coverage fell under the floor | Run next round |
 | `stalled` | three rounds ran and it is still not clean; there is no round 4 | nothing until the operator opens the report |
-| `ready` | clean, waiting on a human | Awaiting your decision, which opens the Council page on that subject's round table |
+| `ready` | clean, waiting on a human | Awaiting your decision, which opens the Council page on that subject's verdict card |
 | `machine_pass` | clean, tier `standard`, so it never reaches a human | Promote to major |
 | `approved` | a human approved it | nothing |
 | `approved_drifted` | approved, and the reviewed code has changed since | Run next round |
@@ -142,144 +143,109 @@ never rendered as "nothing has been councilled".
 
 ## The Council page
 
-Teams -> Council. Three layers, one state, and the layer below is never hidden
-by the layer above.
+Teams -> Council. The galaxy, the lanes beside it, and a council's verdict
+card when one is opened. Redesigned 2026-10-09 (spark `council-readout`): the
+old bench was a second door to the same list the decisions panel already
+showed, so the panel became the one queue and the round table became a full
+page plus a browser report.
 
 ### The galaxy
 
 The knowledge registry drawn as a field: one globular cluster per domain,
 categories as sub-discs, subjects as stars, techniques on a sunflower spiral
-around their subject. A star's rim arc is its council state. `L` turns on a
-lens that magnifies under the pointer without changing the zoom, `/` filters
-the level you are standing at, `0` frames the whole field, and `Esc` climbs one
-layer with the camera returning exactly where it was.
+around their subject. A star's rim arc is its council state. On the left an
+altitude timeline (Sky, Domain, Category, Subject, Technique) whose needle
+rides the camera, the current rung as the counts card and the numbered list of
+the level below with care marks. `M` cycles three modes: **Bezel**, the field
+seen through a dial whose rim carries the whole registry (`←` `→` turn it, an
+arc click flies); **Cross-section**, a bottom dock folded to the subjects
+needing care (`S` spreads it); **None**, the galaxy alone. A pinned technique
+opens as a document beside a shrunken dial. Code: `council/galaxy/fused/` and
+`council/galaxy/engine/`.
 
-Opening a council puts the whole field in **council focus**: the stars that
+Selecting a council puts the field in **council focus**: the stars that
 council lands on are lit and named, everything else is dimmed rather than
-hidden, and the count of what was dimmed is printed rather than implied.
+hidden, and the count of what was dimmed is printed. The stage reserves the
+lanes' width, so the camera frames the field beside the queue, never under it.
 
-`Esc` out of the bench gives the reader their own view back **exactly**: the
-camera is read off the canvas engine when the drawer goes up and flown back
-to when it comes down, and the flight's last frame snaps to its target rather
-than interpolating to within a float epsilon of it.
+### The lanes - one queue
 
-### The bench
+Docked right of the galaxy (`council/queue/`). Three filters with their counts:
+**Waiting on you**, **Machine pass**, **Decided**. The queue spans **every
+project** and is grouped by project; each lane head carries the lane's mean per
+member on the same columns, so "which project is weakest at robustness" is a
+glance.
 
-`Q` raises the queue **over** the field without hiding it: the sky keeps its
-full height behind the drawer, the docked rail stays beside it, and the
-engine is told the drawer's height so the camera frames the focused set in
-the band that is left. The queue spans **every project**, so a person who
-works across repositories has one queue; each row carries its project's name
-for that reason.
+Each council is one row: its title, round and the number of must-address items,
+then **five heat cells** - one per rubric member, the score printed inside, the
+colour a sequential ramp with the 0.70 bar between its second and third step, a
+hatched cell for a member that was not measured (never a zero), a red corner for
+a floor hit - and the overall. A council whose only round is **lite** is drawn
+dashed and hollow. The cells come straight from the list projection
+(`CouncilSubjectState.dimensions`, `mustAddressCount`), so drawing the queue
+reads no run.
 
-Three groups, each with its one-line note:
+"The bar is advisory while the council is uncalibrated" is said once, in the
+legend. Click selects a row (its stars light up), `↑` `↓` `Home` `End` move,
+`W` walks the waiting rows; double-click, `Enter` or `Q` opens it.
 
-- **Yours to decide** — the decidable rows, and the only ones the headline
-  counts. Ordered by hard failures, then floor hits, then the thinnest
-  coverage, then the latest round.
-- **Not waiting on you** — machine passes and anything sent back to the
-  builders. A `machine_pass` is deliberately here and deliberately not in the
-  count.
-- **Decided** — your past decisions, and whether the code has moved since.
+### The header
 
-The sentence *"the instrument is uncalibrated, so judged floors are advisory;
-mechanical floors bind"* is said **once**, in the bench header. Everywhere else
-an advisory floor is simply drawn dotted.
+A selected council arms one action in the page header: **Open council** when it
+has a full round, **Run full council** - the shipped consent door
+(`DispatchChooser`, `/council <slug>`) - when only lite passes or nothing has
+run. A lite council waits on you too, but for a full round, not a decision.
 
-Each row carries a 54 px **glyph** - the overall as a disc, the threshold as
-a ring, the coverage as an arc on the rim - and NOT the rose. A row is drawn
-from the list projection, which has no per-member scores, so a rose there
-would draw five hatched wedges and say "we measured nothing" when the truth
-is "we have not read the round". The rose belongs to the preview and the
-round table, where the members are actually on hand. Selecting a row aims the
-sky behind the bench at that council's stars; `Enter` sits at the round table.
+### The verdict card
 
-### The round table
+`Q` or Open council replaces the stage with one council's verdict card
+(`council/verdict/`), a report cover a person recognises at first sight: title,
+project, round and mode, a dial for the overall against the bar, the members as
+one figure with a shared bar line and floor notches, outcome and trust in one
+line, the must-address count with its first items, and the gate. `Esc` or `Q`
+returns to the galaxy with the selection kept; rounds switch in place.
 
-A fixed frame the reader never loses:
-
-- the header names where it came from, what it is, how its rounds went against
-  the threshold (`[` and `]` move between rounds) and the constellation of
-  stars it lands on;
-- the left column holds the **rose**, the council's one-line reading, and the
-  **coverage ring** against the floor below which there is no overall at all;
-- the right column holds the five member seats (`1`..`5`, or the arrows; the
-  weakest is marked) and the chosen member's reading: its score against its
-  threshold and its floor on a rail, its kind and weight, its findings with
-  severity and recurrence, and its **evidence well**;
-- the footer holds the gate, always in view.
-
-**The rose** is the whole council in one figure. A wedge's width is its
-member's weight, its reach is the score, the ring is the threshold, an arc is
-the floor (dotted when the floor is advisory), a striped wedge was carried from
-the previous round, and a member that was never measured is **hatched at full
-reach**. That last one is the rule the whole design rests on: absence of a
-measurement is not a low score, and it contributes nothing to the overall.
-
-**The evidence well** is composed by the app, deterministically, from that
-member's own `evidence[]` and `findings[]`, and rendered through the cockpit
-widget registry. The skill never authors it and no model is ever asked to. A
-metric becomes figures, a URL becomes a followable row, a file becomes an
-excerpt, findings become a list, and a screenshot or recording becomes the
-`council_media` widget, which reads its bytes through the path-confined
-`dev_tools_council_read_media` door and turns them into an object URL. A file
-the run recorded but that is not on disk renders a labelled placeholder frame,
-never a broken image. `council_media` is app-composed only: it is deliberately
-absent from Athena's constitution and from every Rust op allowlist.
-
-**What the round says about itself** sits under the open member's reading:
-the council's **synthesis** - the one sentence `synthesis.md` calls the one
-that must survive being read alone - and the **must-address** list.
-
-Both are rendered defensively, because the first real run showed why:
-
-- a `must_address` entry arrived at **1,269 characters**. The skill clamps
-  generated lines to 200 as of council 0.3.0, but runs supersede and are never
-  rewritten, so stored rows keep whatever they were written with. Items are
-  one-line items - clamped to two lines, with the whole text on hover.
-- another entry **repeated a finding title word for word**, a few centimetres
-  below the finding itself. An item that matches a finding already on screen is
-  dropped, and the number dropped is printed rather than swallowed.
-- the `summary` column held the **feature's own description**, not a verdict:
-  `result.json` shipped an empty summary and the ingest door substituted the
-  blurb. The door now **refuses** an empty summary rather than substituting,
-  and for the rows written before it did it computes
-  `summary_is_subject_fallback` at read time. The round table renders the
-  summary only when that flag is false; otherwise it says *"No synthesis was
-  recorded for this round."* The client never compares the two strings itself -
-  the store holds no subject description to compare against, which is why the
-  flag exists.
-
-#### Known gaps
-
-- **The envelope and the scenarios are not stored.** `result.json` carries
-  `scenarios` and `envelope`; `dev_council_runs` has no column for either and
-  `dev_council_verdicts.payload_json` holds only `{delta, evidence, findings,
-  techniques, unmeasuredReason}`. On a subject that declares branches, the page
-  prints an outcome with no way to say "weak for one branch, never measured for
-  another" - the exact failure the scenario machinery exists to prevent.
-- **The Features feature tab cannot list must-address.** It renders
-  `feature.council`, the list projection, which carries overall / coverage /
-  round / state and no run. Listing the items there needs a run fetch in that
-  panel, which is a new surface rather than a rendering change.
+**Read full report** opens the round's `report.html` in the browser, where the
+format is free: the verdict first, a drawn member score header naming the exact
+round, run id and head sha, must-address items as designed claims linked to
+their findings, each member's findings and evidence, and the council's own
+report sections, with a contents rail. The /council skill renders it beside
+`report.md` at the end of every run (`council.mjs report`, skill 0.5.0); older
+runs are rendered with `node scripts/council/render-report.mjs <runDir> | --all`.
+The projection's `reportPath` is set only when the file exists, so a run
+without one shows the action disabled with the reason. The report is for
+reading only - **the decision never leaves the app**, bound to the round on
+screen.
 
 ### The gate
 
-The gate opens **only** when the subject is `ready` **and** (`tier: major`
-**or** `kind: architecture`). Every other state is a closed gate carrying one
-sentence that says why, and a rejection shows back the reason that was written.
+The gate opens **only** when the subject is `ready`, (`tier: major` **or**
+`kind: architecture`), **and** its state comes from a **full** round. A lite
+pass is the council's feedback, never its verdict, and the decide door refuses
+it; its gate stays closed and says to run a full council. Every other state is
+a closed gate carrying one sentence that says why, and a rejection shows back
+the reason that was written.
 
 - Approve is **armed and then confirmed**: the first press changes the label and
   nothing else.
 - Reject opens a box that stays disabled until at least twelve characters are
   written, with a live count of what is still owed.
-- **No key commits anything.** `G` moves the focus to Approve and stops there.
+- **No key commits anything.**
 - The write carries the digest of the round **on screen**. If the council moved
   since the person looked, the door refuses, the page refetches and says so, and
   nothing is retried behind their back.
 
-After a decision the row moves into Decided, the headline count drops, and the
-stars it touches repaint in the field above the bench.
+After a decision the council moves to Decided and the stars it touches repaint
+in the field.
+
+#### Known gaps
+
+- **The envelope and the scenarios are not stored.** `result.json` carries
+  `scenarios` and `envelope`; `dev_council_runs` has no column for either. The
+  browser report shows them (it reads `result.json`); the app cannot.
+- **A member's unmeasured reason** lives in the verdict payload but not in the
+  list projection, so a hatched cell says "not measured" without the why; the
+  verdict card and the report carry it.
 
 ### The dev fixture
 
@@ -287,11 +253,10 @@ In a development build the page offers **Load the reference fixture**: the
 checked-in topology and council fixture the design artifact was built against,
 with no backend behind it. Approve and reject work in memory and the gate says
 so out loud. With the fixture off and no backend, every read fails into the
-page's own honest error and empty states rather than into a blank field.
-
-### The fused instrument (variant)
-
-A **Classic / Fused** switch in the page header (remembered per person; an unknown saved value falls back to Classic) selects a second stage over the same registry galaxy: the fused HUD, the owner's fusion of the 2026-09-22/23 design contest's Cross-section and Bezel (`.contest/Contest/contests/council-hud-r2-r3.md`), ported onto the product's own galaxy engine with a `fused` style profile (labels never cover a star and fall back to the rank number, one level is named at a time, halos and council rings are capped at half the gap to the nearest neighbour, one claim palette is shared by stars, bars and arcs) and measured against the winner's captured style contract. On the left an altitude timeline (Sky, Domain, Category, Subject, Technique) whose needle rides the camera, the current rung as the counts card, soundings for what lies below, and the numbered list of the level below with care marks; at the top right the decisions waiting on the person, named with their overall (`W` lights their stars). `M` cycles three modes, named where they are switched and announced: **Bezel**, the field seen through a dial whose rim carries the whole registry, one notch per technique, re-engraved at every altitude so 12 o'clock is where you stand (`←` `→` turn it, an arc click flies); **Cross-section**, a bottom dock that opens folded to the subjects needing care at desktop width (the three chips filter it, `S` spreads it to one row per altitude with the preview row under the pointer; at 1600 x 900 and above it opens spread); **None**, the galaxy alone. A pinned technique opens as a document beside a shrunken dial. The classic stage, its strip and its counts card are unchanged. Code: `council/galaxy/fused/` and `council/galaxy/engine/profile.ts`; the contract and shots live machine-local under `.claude/council-reference/`.
+page's own honest error and empty states rather than into a blank field. The
+shot harness (`council/__shots__/harness.html`) also takes `?live=1`, the local
+app database's councils frozen by `node scripts/council/export-live-fixture.mjs`
+(gitignored output), plus `?select=<slug>` and `?open=<slug>`.
 
 ## In a dev build, decisions repaint the sky
 

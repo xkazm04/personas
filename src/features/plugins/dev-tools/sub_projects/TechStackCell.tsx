@@ -36,6 +36,10 @@ import { resolveTechIcon, TechGlyph } from '@/features/shared/components/display
  *  column's width for every other row. */
 const PROSE_CHARS = 28;
 
+/** Past this many tokens the rest collapse into a `+N` chip, so a long stack
+ *  cannot run past the column's right edge into its neighbour. */
+const MAX_VISIBLE = 4;
+
 /**
  * Projects store `tech_stack` as one string. `toProject` splits it on commas,
  * but real rows also use `/` and `;` - so split again here rather than changing
@@ -51,9 +55,11 @@ export function splitStackTokens(tokens: readonly string[]): string[] {
 export function TechStackCell({ tokens }: { tokens: readonly string[] }) {
   const parts = splitStackTokens(tokens);
   if (parts.length === 0) return null;
+  const visible = parts.slice(0, MAX_VISIBLE);
+  const hidden = parts.slice(MAX_VISIBLE);
   return (
-    <span className="flex items-center gap-1 min-w-0">
-      {parts.map((label, i) => {
+    <span className="flex items-center gap-1 min-w-0 max-w-full overflow-hidden">
+      {visible.map((label, i) => {
         const match = resolveTechIcon(label);
         if (match) {
           return (
@@ -73,12 +79,19 @@ export function TechStackCell({ tokens }: { tokens: readonly string[] }) {
         const long = label.length > PROSE_CHARS;
         return (
           <Tooltip key={`${label}-${i}`} content={label}>
-            <span className="inline-flex items-center rounded-input bg-secondary/40 border border-primary/10 px-1.5 py-0.5 typo-caption text-foreground min-w-0 max-w-[12rem] truncate cursor-default">
+            <span className="inline-block rounded-input bg-secondary/40 border border-primary/10 px-1.5 py-0.5 typo-caption text-foreground min-w-0 max-w-[12rem] truncate cursor-default">
               {long ? `${label.slice(0, PROSE_CHARS).trimEnd()}…` : label}
             </span>
           </Tooltip>
         );
       })}
+      {hidden.length > 0 && (
+        <Tooltip content={hidden.join(', ')}>
+          <span className="inline-flex items-center shrink-0 rounded-input bg-secondary/40 border border-primary/10 px-1.5 py-0.5 typo-caption text-foreground tabular-nums cursor-default">
+            +{hidden.length}
+          </span>
+        </Tooltip>
+      )}
     </span>
   );
 }

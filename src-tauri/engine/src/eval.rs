@@ -14,7 +14,6 @@ use ts_rs::TS;
 
 use super::cli_process::CliProcessDriver;
 use super::parser;
-use super::prompt;
 use personas_core::types::*;
 use personas_db::DbPool;
 
@@ -601,21 +600,25 @@ Respond with ONLY a JSON object:
     )
 }
 
-/// Model for the LLM test-result evaluator. Pinned deliberately so scoring runs
-/// on a consistent judge rather than the undeclared account default (typically
-/// Opus 4.8). (tiger finding: lab/eval tier rode account-default.)
-const LLM_EVAL_MODEL: &str = personas_core::model_ids::DEFAULT_BALANCED;
+/// Call class of the LLM test-result evaluator: a `Verdict` (it scores another
+/// output), so scoring runs on a consistent judge rather than the undeclared
+/// account default. Model and effort come from the class table
+/// (`personas_core::model_class`). (tiger finding: lab/eval tier rode
+/// account-default.)
+const LLM_EVAL_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Verdict;
 
 async fn run_llm_eval(
     prompt_text: &str,
     pool: &DbPool,
     persona_id: Option<&str>,
 ) -> Result<LlmEvalResult, String> {
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push(LLM_EVAL_MODEL.to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
+    let route = LLM_EVAL_CLASS.route();
+    let cli_args = crate::cli_process::headless_claude_args(
+        route.model,
+        route.effort,
+        &["--max-turns".to_string(), "1".to_string()],
+    );
 
     let mut driver = CliProcessDriver::spawn_temp_no_stderr(&cli_args, "personas-llm-eval")
         .map_err(|e| format!("Failed to spawn LLM eval process: {e}"))?;
@@ -651,7 +654,7 @@ async fn run_llm_eval(
             &personas_db::repos::llm_spend::SpendCtx {
                 source: "evaluator",
                 trigger_kind: "lab_eval",
-                model: Some(LLM_EVAL_MODEL),
+                model: Some(route.model),
                 persona_id,
                 project_id: None,
             },

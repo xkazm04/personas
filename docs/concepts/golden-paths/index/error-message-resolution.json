@@ -85,13 +85,13 @@
       "resolvedFrom": "suffix",
       "verbatim": "validation/trigger.rs"
     },
+    "src-tauri/engine/src/automation_runner.rs": {"count":2,"sections":[7],"lines":["32","693"],"contexts":["| 34 | `no_webhook` | 1 (`automation_runner.rs:32`) | `Validation` |"],"resolvedFrom":"basename","verbatim":"automation_runner.rs"},
     "src-tauri/engine/src/p2p/connection.rs": {"count":1,"sections":[7],"lines":["232,332"],"contexts":["| 30 | `connection_limit` | 2 (`p2p/connection.rs:232,332`) | `Validation` |"],"resolvedFrom":"suffix","verbatim":"p2p/connection.rs"},
     "src-tauri/engine/src/tool_outcome.rs": {"count":1,"sections":[7],"contexts":["textual references and **134** constructions — a 5.3× spread, because `error.rs`, `tool_outcome.rs`"],"resolvedFrom":"basename","verbatim":"tool_outcome.rs"},
     "src-tauri/src/commands/design/build_simulate.rs": {"count":1,"sections":[7],"lines":["229"],"contexts":["| 50 | `build_nothing_to_promote` | 1 (`build_simulate.rs:229`) | `Validation` |"],"resolvedFrom":"basename","verbatim":"build_simulate.rs"},
     "src-tauri/src/commands/network/bundle.rs": {"count":1,"sections":[7],"lines":["83"],"contexts":["| 36 | `empty_bundle` | 1 (`network/bundle.rs:83`) | `Validation` |"],"resolvedFrom":"suffix","verbatim":"network/bundle.rs"},
     "src-tauri/src/commands/ocr/mod.rs": {"count":1,"sections":[7],"lines":["196,486"],"contexts":["| 26 | `ocr_file_too_large` | 2 (`ocr/mod.rs:196,486`) | `Validation` |"],"resolvedFrom":"suffix","verbatim":"ocr/mod.rs"},
     "src-tauri/src/commands/tools/automations.rs": {"count":1,"sections":[7],"lines":["165"],"contexts":["| 33 | `inactive` | 1 (`tools/automations.rs:165`) | `Validation` |"],"resolvedFrom":"suffix","verbatim":"tools/automations.rs"},
-    "src-tauri/src/engine/automation_runner.rs": {"count":2,"sections":[7],"lines":["32","693"],"contexts":["| 34 | `no_webhook` | 1 (`automation_runner.rs:32`) | `Validation` |"],"resolvedFrom":"basename","verbatim":"automation_runner.rs"},
     "src-tauri/src/ipc_auth.rs": {"count":1,"sections":[7],"lines":["650"],"contexts":["(`src-tauri/src/ipc_auth.rs:650`), which `tauriInvoke.ts:546` already special-cases by substring."]},
     "src/__tests__/structural/tauri-command-error-envelope.test.ts": {
       "count": 1,

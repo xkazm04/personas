@@ -1,0 +1,68 @@
+[page 1]
+MUNICIPALITY OF HRADEC NAD ORLICÍ - PUBLIC WORKS PROCUREMENT COMMITTEE
+Minutes of the 7th meeting of 2026
+Date: 12 March 2026, 14:00-17:20, Council Chamber, Town Hall
+Present: J. Matoušek (chair), L. Pokorná (deputy chair), R. Sýkora, E. Hronková, M. Vlček, D. Kratochvíl (procurement officer, non-voting), A. Benešová (legal counsel, non-voting)
+Apologies: P. Urban
+Quorum: confirmed (5 of 6 voting members present)
+
+1. Opening and approval of the agenda
+
+The chair opened the meeting at 14:00 and confirmed the quorum. The agenda circulated on 5 March was approved without changes. The chair reminded members that the purpose of the meeting is to decide the award of the three lots of the tender "Town Infrastructure Renewal 2026-2028" (reference VZ-2026/014), published on 9 January 2026 in the national procurement bulletin, and that members with a conflict of interest must declare it before the relevant item. No member declared a conflict of interest.
+
+2. Minutes of the previous meeting
+
+The minutes of the 6th meeting (19 February 2026) were approved unanimously. Matters arising: the chair noted that the earlier plan to decide the awards on 5 March had been postponed to today because the evaluation committee requested an additional week to verify bidders' references. Any date of 5 March mentioned in earlier correspondence about the award is therefore void.
+
+3. Report of the evaluation committee
+
+The procurement officer presented the evaluation committee's report dated 9 March 2026. Eleven bids were received across the three lots by the deadline of 20 February 2026 at 10:00. One bid for Lot 2 was received at 10:07 and was excluded as late without being opened. The evaluation criteria were price (60%), technical quality and methodology (25%) and delivery schedule (15%), as stated in the tender documentation. All remaining bids were checked for completeness, the bidders' qualification documents were verified, and abnormally low tenders were assessed against the methodology set out in section 9 of the tender documentation. The report was accepted by the committee without objections.
+
+The procurement officer reminded the committee that bid prices quoted in the evaluation report are the prices as submitted, before any clarification or negotiation permitted under section 12 of the tender documentation, and are therefore not the contract values.
+
+[page 2]
+4. Lot 1 - Road resurfacing (Husova, Palackého and Na Kopci streets)
+
+Four bids were evaluated. The highest-scoring bid was submitted by Stavby Morava a.s., with a submitted price of EUR 1,284,000 excluding VAT and a proposed duration of 18 months. The second-placed bidder was Silnice Východ s.r.o. at EUR 1,331,600. The evaluation committee noted that Stavby Morava's methodology for traffic management during works on Husova street was the strongest of all bidders and that its references for comparable municipal resurfacing projects were verified with three contracting authorities.
+
+Under section 12 of the tender documentation the procurement officer conducted a clarification round with Stavby Morava a.s. on 10 and 11 March regarding the unit price for kerb replacement, which had been priced above the market benchmark. The bidder accepted a reduced unit price for kerb replacement and confirmed all other prices. Mr. Vlček asked whether the reduction affected the delivery schedule; the procurement officer confirmed that it did not, and that the 18-month duration and the phasing of works by street remain as bid.
+
+Ms. Hronková asked whether the second-placed bidder had been treated equally. Legal counsel confirmed that the clarification round concerned only an abnormally high unit price in the winning bid and did not change the ranking of bidders, so equal treatment was respected.
+
+Resolution 7/1: The committee AWARDS Lot 1 to Stavby Morava a.s. The contract value after the clarification round is EUR 1,247,500 excluding VAT. Duration 18 months from the handover of the site. Vote: 5 for, 0 against, 0 abstentions. Adopted.
+
+5. Lot 2 - Street lighting LED retrofit
+
+Five bids were evaluated (the late bid having been excluded). Two bidders with almost identical names took part: Lumen Civic s.r.o. (Brno) and Lumen City s.r.o. (Olomouc). The procurement officer confirmed that the two companies are unrelated and that each submitted a separate statutory declaration of independence.
+
+Lumen City s.r.o. submitted the lowest price, EUR 379,400, but scored lower on technical quality because its proposed luminaires do not meet the required colour temperature of 3000 K in residential streets, and it proposed a longer schedule. Lumen Civic s.r.o. achieved the highest total score. The committee discussed whether the colour-temperature requirement was proportionate; Mr. Sýkora noted that it had been set after residents' complaints about the 4000 K pilot on Riegrova street in 2024, and the committee agreed that it should stand.
+
+Resolution 7/2: The committee AWARDS Lot 2 to Lumen Civic s.r.o. Vote: 4 for, 0 against, 1 abstention (Mr. Kratochvíl does not vote; Ms. Pokorná abstained because she was absent from the site visit). Adopted.
+
+Ms. Pokorná asked that the minutes record the contract terms of Lot 2 separately, after the legal check of the draft contract that legal counsel performed during the break. Legal counsel reported after the break that the draft contract is in order. The contract value for the lighting lot, as it will be signed, is EUR 386,900 excluding VAT, which equals the bid as submitted by Lumen Civic; no clarification round was needed. The contract duration is 24 months, including a 12-month defects-liability period following completion of the retrofit.
+
+[page 3]
+6. Lot 3 - Winter road maintenance 2026-2028
+
+Two bids were evaluated. The highest-scoring bid was submitted by Polar Services s.r.o. at EUR 512,000 for the two winter seasons. However, the evaluation committee found that Polar Services had not demonstrated the required availability of four gritting vehicles within 30 minutes of a call-out, because two of the vehicles listed in its bid are leased under a contract that expires in November 2026. The second bidder, Zima Plus s.r.o., did not meet the minimum qualification requirement for annual turnover.
+
+Legal counsel advised that awarding the lot to Polar Services would expose the municipality to a challenge, and that Zima Plus is not eligible. After discussion, the committee concluded that neither bid can be accepted.
+
+Resolution 7/3: The committee does NOT award Lot 3. The tender for Lot 3 is cancelled and Lot 3 will be re-tendered with an amended vehicle-availability clause. Vote: 5 for, 0 against, 0 abstentions. Adopted. Lot 3 was not awarded to Polar Services s.r.o. or to any other bidder.
+
+Mr. Vlček asked how winter maintenance will be covered for the coming season if the re-tender is not completed in time. The procurement officer explained that the current contract can be extended once by up to six months under its own terms, and will propose the extension at the next meeting.
+
+7. Standstill period and publication
+
+The procurement officer will notify all bidders of the decisions on Lots 1 and 2 within three working days. Contracts for Lots 1 and 2 may be signed after the 15-day standstill period, provided no objection is received. The award notices will be published in the national procurement bulletin after signature.
+
+Mr. Sýkora asked that the minutes record the committee's general observations on the tender for future rounds. The committee observed that the number of bids per lot was higher than in 2023, which it attributes to the earlier publication date and to the clearer qualification requirements. It also observed that two bidders asked for clarification of the same question about the phasing of works on Na Kopci street, and recommended that future tender documentation include a phasing drawing rather than a written description. The procurement officer will collect lessons learned from the evaluation committee and present them together with next year's tender plan.
+
+8. Any other business
+
+Ms. Hronková raised the condition of the footbridge over the Orlice river. The procurement officer will prepare a scope note for a separate small-value contract. Mr. Sýkora asked that next year's tender plan be presented in June.
+
+The date of these awards for all purposes, including the contracts, is the date of this meeting, 12 March 2026.
+
+The meeting closed at 17:20.
+Minutes taken by: D. Kratochvíl. Approved by the chair: J. Matoušek.

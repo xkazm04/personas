@@ -33,10 +33,12 @@
     "CronAgentsPage.tsx": {"count":1,"sections":[7],"lines":["42"],"contexts":["| `CronAgentsPage.tsx:42` | **seed a mock schedule** | noise + shared primitive |"],"resolved":false},
     "GuideSidebarContent.tsx": {"count":1,"sections":[6],"lines":["109"],"contexts":["sibling with the declarative form** — `GuideSidebarContent.tsx:109`"],"resolved":false},
     "KnowledgeGraphDashboard.tsx": {"count":1,"sections":[7],"lines":["193"],"contexts":["| `KnowledgeGraphDashboard.tsx:193` | **seed a mock pattern** | ″ |"],"resolved":false},
+    "ManualReviewList.tsx": {"count":1,"sections":[7],"lines":["367"],"contexts":["| `ManualReviewList.tsx:367` | **seed a mock review** | ″ |"],"resolved":false},
     "MessageList.tsx": {"count":1,"sections":[7],"lines":["279"],"contexts":["| `MessageList.tsx:279` | **seed a mock message** | ″ |"],"resolved":false},
     "check-prod-bundle.mjs": {"count":1,"sections":[8],"contexts":["`{DEV && <X/>}` silently reverses it. A `check-prod-bundle.mjs` asserting that"],"resolved":false},
     "docs/concepts/golden-paths/index.json": {"count":1,"sections":[7],"contexts":["five are golden-path artifacts or the session ledger — `index.json`,"],"resolvedFrom":"basename","verbatim":"index.json"},
     "error.tsx": {"count":1,"sections":[6],"lines":["28"],"contexts":["shows a *partial* compliance worth naming: `error.tsx:28` and"],"resolved":false},
+    "generated/enSectionStrings.ts": {"count":1,"sections":[6],"contexts":["| present in `generated/enSectionStrings.ts` | yes |"],"resolved":false},
     "global-error.tsx": {"count":1,"sections":[6],"lines":["27"],"contexts":["`global-error.tsx:27` hoist the flag to `const isDev = …` and then still"],"resolved":false},
     "gp-msurf-faults.mjs": {"count":1,"sections":[9],"contexts":["Nineteen cases, all passing (`gp-msurf-faults.mjs`, scratch):"],"resolved":false},
     "lib.rs": {
@@ -91,7 +93,6 @@
     "src/features/overview/components/health/SystemHealthPanel.tsx": {"count":1,"sections":[7],"lines":["115"],"contexts":["| `SystemHealthPanel.tsx:115` | `<CrashLogsSection />` | noise |"],"resolvedFrom":"basename","verbatim":"SystemHealthPanel.tsx"},
     "src/features/overview/sub_events/components/EventLogList.tsx": {"count":1,"sections":[7],"lines":["303"],"contexts":["| `EventLogList.tsx:303` | **seed a mock event** | ″ |"],"resolvedFrom":"basename","verbatim":"EventLogList.tsx"},
     "src/features/overview/sub_health/libs/compositeHealthScore.ts": {"count":1,"sections":[6],"lines":["105"],"contexts":["`compositeHealthScore.ts:105`, `FleetBootstrap.tsx:7`, `sidebarData.ts:26`,"],"resolvedFrom":"basename","verbatim":"compositeHealthScore.ts"},
-    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {"count":1,"sections":[7],"lines":["367"],"contexts":["| `ManualReviewList.tsx:367` | **seed a mock review** | ″ |"],"resolvedFrom":"basename","verbatim":"ManualReviewList.tsx"},
     "src/features/personas/PersonasPage.tsx": {"count":2,"sections":[6],"contexts":["`src/features/personas/PersonasPage.tsx` (6), `src-tauri/src/lib.rs`'s"]},
     "src/features/plugins/fleet/FleetBootstrap.tsx": {"count":2,"sections":[6],"lines":["7"],"contexts":["`compositeHealthScore.ts:105`, `FleetBootstrap.tsx:7`, `sidebarData.ts:26`,"],"resolvedFrom":"basename","verbatim":"FleetBootstrap.tsx"},
     "src/features/plugins/fleet/FleetPairDevice.tsx": {
@@ -148,7 +149,6 @@
       "resolvedFrom": "basename",
       "verbatim": "CredentialTypePicker.tsx"
     },
-    "src/i18n/generated/enSectionStrings.ts": {"count":1,"sections":[6],"contexts":["| present in `generated/enSectionStrings.ts` | yes |"],"resolvedFrom":"suffix","verbatim":"generated/enSectionStrings.ts"},
     "src/i18n/locales/en.json": {"count":1,"sections":[6],"contexts":["| dev-only `mock_*` / `seed_*` UI keys in `en.json` | **12** |"],"resolvedFrom":"basename","verbatim":"en.json"},
     "src/lib/constants/uiModes.ts": {"count":1,"sections":[9],"lines":["41"],"contexts":["| `env-default-conflates-unset-with-empty` | 1 (`uiModes.ts:41`) | **0** | 0 |"],"resolvedFrom":"basename","verbatim":"uiModes.ts"},
     "src/lib/design/eventTokens.ts": {"count":1,"sections":[6],"lines":["71"],"contexts":["`canvasTestBridge.ts:10`, `eventTokens.ts:71`, `DevInspector.tsx:15`,"],"resolvedFrom":"basename","verbatim":"eventTokens.ts"},

@@ -8,6 +8,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::db::models::{SessionStatus, UpdateN8nSessionInput};
 use crate::db::repos::resources::n8n_sessions;
+use crate::engine::cli_process::{headless_claude_args, with_escalation, AttemptError};
 use crate::engine::event_registry::event_name;
 use crate::engine::parser::parse_stream_line;
 use crate::engine::prompt;
@@ -25,6 +26,12 @@ use super::types::N8nPersonaOutput;
 
 use crate::commands::design::analysis::extract_display_text;
 use crate::commands::design::n8n_limits::MAX_TRANSFORM_PAYLOAD_BYTES;
+
+/// Every n8n transform turn emits a strict persona JSON structure. Model and
+/// effort come from the class table (`personas_core::model_class`); a draft
+/// that does not parse escalates once.
+const TRANSFORM_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::StructuredJson;
 
 // -- Tauri commands ----------------------------------------------
 
@@ -418,45 +425,52 @@ async fn run_unified_transform_turn1(
         "[Milestone] Analyzing workflow and preparing transformation...",
     );
 
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-sonnet-4-6".to_string());
+    // A draft that does not parse escalates once (see `TRANSFORM_CLASS`); a
+    // questions answer is a valid output and ends the turn.
+    with_escalation(TRANSFORM_CLASS, |route| {
+        let prompt_text = prompt_text.clone();
+        async move {
+            let cli_args = headless_claude_args(route.model, route.effort, &[]);
 
-    let (output_text, captured_session_id) =
-        run_claude_prompt_text(prompt_text, &cli_args, Some((app, transform_id)))
-            .await
-            .map_err(AppError::Internal)?;
+            let (output_text, captured_session_id) =
+                run_claude_prompt_text(prompt_text, &cli_args, Some((app, transform_id)))
+                    .await
+                    .map_err(|e| AttemptError::Fatal(AppError::Internal(e)))?;
 
-    // Store session ID for possible Turn 2
-    if let Some(ref sid) = captured_session_id {
-        set_n8n_transform_claude_session(transform_id, sid.clone());
-    }
+            // Store session ID for possible Turn 2
+            if let Some(ref sid) = captured_session_id {
+                set_n8n_transform_claude_session(transform_id, sid.clone());
+            }
 
-    // Check if output contains questions
-    if let Some(questions) = extract_questions_output(&output_text) {
-        tracing::info!(transform_id = %transform_id, "Turn 1 produced questions");
-        set_n8n_transform_questions(transform_id, questions.clone());
-        set_n8n_transform_status(app, transform_id, "awaiting_answers", None);
-        emit_n8n_transform_line(
-            app,
-            transform_id,
-            "[Milestone] Questions generated. Awaiting user answers...",
-        );
-        return Ok((None, true));
-    }
+            // Check if output contains questions
+            if let Some(questions) = extract_questions_output(&output_text) {
+                tracing::info!(transform_id = %transform_id, "Turn 1 produced questions");
+                set_n8n_transform_questions(transform_id, questions.clone());
+                set_n8n_transform_status(app, transform_id, "awaiting_answers", None);
+                emit_n8n_transform_line(
+                    app,
+                    transform_id,
+                    "[Milestone] Questions generated. Awaiting user answers...",
+                );
+                return Ok((None, true));
+            }
 
-    // No questions -- try to parse persona output directly
-    emit_n8n_transform_line(
-        app,
-        transform_id,
-        "[Milestone] Claude output received. Extracting persona JSON draft...",
-    );
+            // No questions -- try to parse persona output directly
+            emit_n8n_transform_line(
+                app,
+                transform_id,
+                "[Milestone] Claude output received. Extracting persona JSON draft...",
+            );
 
-    let draft = parse_persona_output(&output_text, workflow_name)?;
+            let draft = parse_persona_output(&output_text, workflow_name)
+                .map_err(|e| AttemptError::BadOutput(e.to_string()))?;
 
-    emit_n8n_transform_line(app, transform_id, "[Milestone] Draft ready for review.");
+            emit_n8n_transform_line(app, transform_id, "[Milestone] Draft ready for review.");
 
-    Ok((Some(draft), false))
+            Ok((Some(draft), false))
+        }
+    })
+    .await
 }
 
 /// Execute Turn 2 of the unified transform: resume Claude session with user answers.
@@ -485,49 +499,60 @@ Remember: return ONLY valid JSON with the persona object, no markdown fences."#
     );
     let prompt_text = wrap_prompt_with_sections(&base_prompt);
 
-    // `None` profile: this path pins its own model on the next two lines.
-    let mut cli_args = prompt::build_resume_cli_args(claude_session_id, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-sonnet-4-6".to_string());
+    // Model and effort ride the class route. An escalation re-resumes the
+    // same Turn 1 session on the escalated route.
+    with_escalation(TRANSFORM_CLASS, |route| {
+        let prompt_text = prompt_text.clone();
+        async move {
+            let profile = personas_core::types::ModelProfile {
+                model: Some(route.model.to_string()),
+                effort: Some(route.effort.to_string()),
+                ..Default::default()
+            };
+            let cli_args = prompt::build_resume_cli_args(claude_session_id, Some(&profile));
 
-    clear_n8n_transform_sections(transform_id);
+            clear_n8n_transform_sections(transform_id);
 
-    let accum = streaming::SectionAccumulator::new(vec![]);
-    let (on_line, on_section) = build_section_callbacks(app, transform_id);
+            let accum = streaming::SectionAccumulator::new(vec![]);
+            let (on_line, on_section) = build_section_callbacks(app, transform_id);
 
-    let (output_text, _, returned_accum) = run_claude_prompt_text_inner(
-        prompt_text,
-        &cli_args,
-        Some(&on_line),
-        Some(&on_section),
-        Some(accum),
-        420,
-    )
-    .await
-    .map_err(AppError::Internal)?;
+            let (output_text, _, returned_accum) = run_claude_prompt_text_inner(
+                prompt_text,
+                &cli_args,
+                Some(&on_line),
+                Some(&on_section),
+                Some(accum),
+                420,
+            )
+            .await
+            .map_err(|e| AttemptError::Fatal(AppError::Internal(e)))?;
 
-    // Try section assembly first, fall back to monolithic parsing
-    if let Some(accumulator) = returned_accum {
-        if accumulator.has_sections() {
-            if let Some(draft) = accumulator.assemble("n8n workflow") {
-                emit_n8n_transform_line(
-                    app,
-                    transform_id,
-                    "[Milestone] All sections validated. Draft ready for review.",
-                );
-                return Ok(draft);
+            // Try section assembly first, fall back to monolithic parsing
+            if let Some(accumulator) = returned_accum {
+                if accumulator.has_sections() {
+                    if let Some(draft) = accumulator.assemble("n8n workflow") {
+                        emit_n8n_transform_line(
+                            app,
+                            transform_id,
+                            "[Milestone] All sections validated. Draft ready for review.",
+                        );
+                        return Ok(draft);
+                    }
+                }
             }
-        }
-    }
 
-    emit_n8n_transform_line(
-        app,
-        transform_id,
-        "[Milestone] Extracting persona JSON draft...",
-    );
-    let draft = parse_persona_output(&output_text, "n8n workflow")?;
-    emit_n8n_transform_line(app, transform_id, "[Milestone] Draft ready for review.");
-    Ok(draft)
+            emit_n8n_transform_line(
+                app,
+                transform_id,
+                "[Milestone] Extracting persona JSON draft...",
+            );
+            let draft = parse_persona_output(&output_text, "n8n workflow")
+                .map_err(|e| AttemptError::BadOutput(e.to_string()))?;
+            emit_n8n_transform_line(app, transform_id, "[Milestone] Draft ready for review.");
+            Ok(draft)
+        }
+    })
+    .await
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -569,60 +594,69 @@ async fn run_n8n_transform_job(
         "[Milestone] Preparing section-by-section transformation...",
     );
 
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-sonnet-4-6".to_string());
-
     let known_connectors = streaming::extract_known_connectors(connectors_json, credentials_json);
-    clear_n8n_transform_sections(transform_id);
 
-    emit_n8n_transform_line(
-        app,
-        transform_id,
-        "[Milestone] Claude CLI started. Streaming sections...",
-    );
+    // A draft that neither assembles nor parses escalates once (see
+    // `TRANSFORM_CLASS`); a spawn/timeout failure does not.
+    with_escalation(TRANSFORM_CLASS, |route| {
+        let prompt_text = prompt_text.clone();
+        let known_connectors = known_connectors.clone();
+        async move {
+            let cli_args = headless_claude_args(route.model, route.effort, &[]);
 
-    let accum = streaming::SectionAccumulator::new(known_connectors);
-    let (on_line, on_section) = build_section_callbacks(app, transform_id);
+            clear_n8n_transform_sections(transform_id);
 
-    let (output_text, _session_id, returned_accum) = run_claude_prompt_text_inner(
-        prompt_text,
-        &cli_args,
-        Some(&on_line),
-        Some(&on_section),
-        Some(accum),
-        420,
-    )
-    .await
-    .map_err(AppError::Internal)?;
-
-    // Try section assembly first, fall back to monolithic parsing
-    if let Some(accumulator) = returned_accum {
-        if accumulator.has_sections() {
-            if let Some(draft) = accumulator.assemble(workflow_name) {
-                emit_n8n_transform_line(
-                    app,
-                    transform_id,
-                    "[Milestone] All sections validated. Draft ready for review.",
-                );
-                return Ok(draft);
-            }
-            tracing::warn!(
-                transform_id = %transform_id,
-                "Section assembly failed with {} sections, falling back to monolithic",
-                accumulator.sections.len()
+            emit_n8n_transform_line(
+                app,
+                transform_id,
+                "[Milestone] Claude CLI started. Streaming sections...",
             );
-        }
-    }
 
-    emit_n8n_transform_line(
-        app,
-        transform_id,
-        "[Milestone] Extracting persona JSON draft...",
-    );
-    let draft = parse_persona_output(&output_text, workflow_name)?;
-    emit_n8n_transform_line(app, transform_id, "[Milestone] Draft ready for review.");
-    Ok(draft)
+            let accum = streaming::SectionAccumulator::new(known_connectors);
+            let (on_line, on_section) = build_section_callbacks(app, transform_id);
+
+            let (output_text, _session_id, returned_accum) = run_claude_prompt_text_inner(
+                prompt_text,
+                &cli_args,
+                Some(&on_line),
+                Some(&on_section),
+                Some(accum),
+                420,
+            )
+            .await
+            .map_err(|e| AttemptError::Fatal(AppError::Internal(e)))?;
+
+            // Try section assembly first, fall back to monolithic parsing
+            if let Some(accumulator) = returned_accum {
+                if accumulator.has_sections() {
+                    if let Some(draft) = accumulator.assemble(workflow_name) {
+                        emit_n8n_transform_line(
+                            app,
+                            transform_id,
+                            "[Milestone] All sections validated. Draft ready for review.",
+                        );
+                        return Ok(draft);
+                    }
+                    tracing::warn!(
+                        transform_id = %transform_id,
+                        "Section assembly failed with {} sections, falling back to monolithic",
+                        accumulator.sections.len()
+                    );
+                }
+            }
+
+            emit_n8n_transform_line(
+                app,
+                transform_id,
+                "[Milestone] Extracting persona JSON draft...",
+            );
+            let draft = parse_persona_output(&output_text, workflow_name)
+                .map_err(|e| AttemptError::BadOutput(e.to_string()))?;
+            emit_n8n_transform_line(app, transform_id, "[Milestone] Draft ready for review.");
+            Ok(draft)
+        }
+    })
+    .await
 }
 
 // -- Shared utilities (pub for template_adopt) ------------

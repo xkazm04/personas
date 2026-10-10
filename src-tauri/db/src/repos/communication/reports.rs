@@ -593,6 +593,184 @@ pub fn cleanup_old_reports(pool: &DbPool, retention_days: i64) -> Result<usize, 
 }
 
 // ============================================================================
+// Headless App Master reports — metadata and attachment lifecycle
+// ============================================================================
+
+/// `metadata.source` on a report the headless App Master posted through
+/// `POST /dev-tools/reports`. The Reports UI keys its attachment strip on the
+/// rest of that metadata (`attachments[].path`, `attachments[].caption`,
+/// `attachmentsCleaned`, `cleanedAt`); those key names are a contract.
+pub const HEADLESS_REPORT_SOURCE: &str = "headless-app-master";
+
+/// The directory every attachment copy of a headless report lives in is
+/// `<app data dir>/reports/<reportId>/`. This is its parent's name.
+pub const HEADLESS_REPORTS_DIR: &str = "reports";
+
+/// Merge `patch`'s top-level keys into a report's `metadata` object.
+///
+/// Read-modify-write under an IMMEDIATE transaction, because the read decides
+/// the write: two patches racing on one row must not each write back the
+/// object they read and drop the other's keys. A malformed or non-object blob
+/// is preserved under `previous_metadata`, same rule as
+/// [`annotate_athena_triage`].
+pub fn merge_metadata(
+    pool: &DbPool,
+    id: &str,
+    patch: &serde_json::Map<String, serde_json::Value>,
+) -> Result<(), AppError> {
+    timed_query!("persona_reports", "persona_reports::merge_metadata", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let existing: Option<String> = tx
+            .query_row(
+                "SELECT metadata FROM persona_reports WHERE id = ?1",
+                params![id],
+                |row| row.get("metadata"),
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::NotFound(format!("PersonaReport {id}"))
+                }
+                other => AppError::Database(other),
+            })?;
+        let mut root = match existing
+            .as_deref()
+            .filter(|s| !s.trim().is_empty())
+            .map(serde_json::from_str::<serde_json::Value>)
+        {
+            Some(Ok(serde_json::Value::Object(map))) => map,
+            Some(_) => {
+                let mut map = serde_json::Map::new();
+                map.insert("previous_metadata".into(), serde_json::json!(existing));
+                map
+            }
+            None => serde_json::Map::new(),
+        };
+        for (k, v) in patch {
+            root.insert(k.clone(), v.clone());
+        }
+        tx.execute(
+            "UPDATE persona_reports SET metadata = ?1 WHERE id = ?2",
+            params![serde_json::Value::Object(root).to_string(), id],
+        )?;
+        tx.commit()?;
+        Ok(())
+    })
+}
+
+/// What [`release_headless_attachments`] did.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AttachmentRelease {
+    /// Not a headless report, or its files were already released.
+    Untouched,
+    /// The copies are gone and the metadata says so. `removed` is the
+    /// directory that was deleted, `None` when there was none on disk.
+    Released { removed: Option<std::path::PathBuf> },
+    /// The stored paths do not all sit directly in `<…>/reports/<reportId>/`,
+    /// so nothing was deleted and the metadata still says the files exist.
+    Refused(String),
+}
+
+/// The directory a headless report's attachment copies live in, read from the
+/// paths its own metadata records — or why those paths are not one.
+///
+/// Confinement is structural, and it is the reason this may delete at all: the
+/// directory must be named exactly `report_id` (a v4 UUID the door minted) and
+/// sit in a directory named [`HEADLESS_REPORTS_DIR`], and EVERY recorded path
+/// must be a direct child of it. A metadata blob any other writer forged could
+/// at most name another report's own copy directory.
+fn headless_attachment_dir(
+    report_id: &str,
+    paths: &[String],
+) -> Result<Option<std::path::PathBuf>, String> {
+    let Some(first) = paths.first() else {
+        return Ok(None);
+    };
+    let dir = std::path::Path::new(first)
+        .parent()
+        .ok_or_else(|| format!("attachment path `{first}` has no parent directory"))?
+        .to_path_buf();
+    let named_for_the_report = dir.file_name().and_then(|n| n.to_str()) == Some(report_id);
+    let under_reports = dir
+        .parent()
+        .and_then(|p| p.file_name())
+        .and_then(|n| n.to_str())
+        == Some(HEADLESS_REPORTS_DIR);
+    if report_id.is_empty() || !named_for_the_report || !under_reports {
+        return Err(format!(
+            "attachments of report {report_id} are not in a `{HEADLESS_REPORTS_DIR}/{report_id}/` directory ({})",
+            dir.display()
+        ));
+    }
+    if let Some(stray) = paths
+        .iter()
+        .find(|p| std::path::Path::new(p).parent() != Some(dir.as_path()))
+    {
+        return Err(format!(
+            "attachment `{stray}` is not in {} with the others",
+            dir.display()
+        ));
+    }
+    Ok(Some(dir))
+}
+
+/// Delete a headless report's attachment copies and record that on the row
+/// (`attachmentsCleaned: true`, `cleanedAt`). Called when the approval linked
+/// to the report is decided: the files existed for the operator to look at
+/// while deciding, and keeping them afterwards would grow the app data dir by
+/// up to 96 MB per report forever.
+///
+/// The metadata flips ONLY when the directory is really gone (removed now, or
+/// already absent), so the UI never says "cleaned" over files still on disk.
+/// A removal that fails is an `Err` and changes nothing; the caller logs it.
+pub fn release_headless_attachments(
+    pool: &DbPool,
+    report_id: &str,
+) -> Result<AttachmentRelease, AppError> {
+    let report = get_by_id(pool, report_id)?;
+    let meta = report
+        .metadata
+        .as_deref()
+        .and_then(|m| serde_json::from_str::<serde_json::Value>(m).ok())
+        .unwrap_or(serde_json::Value::Null);
+    if meta.get("source").and_then(|s| s.as_str()) != Some(HEADLESS_REPORT_SOURCE)
+        || meta.get("attachmentsCleaned").and_then(|c| c.as_bool()) == Some(true)
+    {
+        return Ok(AttachmentRelease::Untouched);
+    }
+    let paths: Vec<String> = meta
+        .get("attachments")
+        .and_then(|a| a.as_array())
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|i| i.get("path").and_then(|p| p.as_str()))
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default();
+    let dir = match headless_attachment_dir(report_id, &paths) {
+        Ok(dir) => dir,
+        Err(why) => return Ok(AttachmentRelease::Refused(why)),
+    };
+    let removed = match dir {
+        Some(dir) if dir.exists() => {
+            std::fs::remove_dir_all(&dir)?;
+            Some(dir)
+        }
+        _ => None,
+    };
+    let mut patch = serde_json::Map::new();
+    patch.insert("attachmentsCleaned".into(), serde_json::Value::Bool(true));
+    patch.insert(
+        "cleanedAt".into(),
+        serde_json::Value::String(chrono::Utc::now().to_rfc3339()),
+    );
+    merge_metadata(pool, report_id, &patch)?;
+    Ok(AttachmentRelease::Released { removed })
+}
+
+// ============================================================================
 // Message Deliveries
 // ============================================================================
 
@@ -969,5 +1147,169 @@ mod tests {
         let n = delete_all(&pool).unwrap();
         assert_eq!(n, 3);
         assert_eq!(get_total_count(&pool).unwrap(), 0);
+    }
+
+    // ------------------------------------------------------------------
+    // Headless App Master reports: metadata merge and attachment release
+    // ------------------------------------------------------------------
+
+    fn headless_report(pool: &DbPool, persona_id: &str, metadata: serde_json::Value) -> String {
+        create(
+            pool,
+            CreateReportInput {
+                persona_id: persona_id.to_string(),
+                execution_id: None,
+                title: Some(format!("Headless {}", uuid::Uuid::new_v4())),
+                content: "body".into(),
+                content_type: Some("markdown".into()),
+                priority: None,
+                metadata: Some(metadata.to_string()),
+                thread_id: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    fn meta_of(pool: &DbPool, id: &str) -> serde_json::Value {
+        serde_json::from_str(get_by_id(pool, id).unwrap().metadata.as_deref().unwrap()).unwrap()
+    }
+
+    #[test]
+    fn merge_metadata_keeps_other_keys_and_preserves_a_malformed_blob() {
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool);
+        let id = headless_report(&pool, &persona_id, serde_json::json!({ "a": 1, "b": 2 }));
+        let mut patch = serde_json::Map::new();
+        patch.insert("b".into(), serde_json::json!(3));
+        patch.insert("c".into(), serde_json::json!("x"));
+        merge_metadata(&pool, &id, &patch).unwrap();
+        assert_eq!(
+            meta_of(&pool, &id),
+            serde_json::json!({ "a": 1, "b": 3, "c": "x" })
+        );
+
+        crate::PoolExt::conn(&pool, "test:reports_corrupt_metadata")
+            .unwrap()
+            .execute(
+                "UPDATE persona_reports SET metadata = 'not json' WHERE id = ?1",
+                params![id],
+            )
+            .unwrap();
+        merge_metadata(&pool, &id, &patch).unwrap();
+        let meta = meta_of(&pool, &id);
+        assert_eq!(meta["previous_metadata"], serde_json::json!("not json"));
+        assert_eq!(meta["c"], serde_json::json!("x"));
+
+        assert!(matches!(
+            merge_metadata(&pool, "no-such-report", &patch),
+            Err(AppError::NotFound(_))
+        ));
+    }
+
+    #[test]
+    fn the_attachment_dir_is_confined_to_reports_slash_the_report_id() {
+        let base = std::env::temp_dir().join("app-data");
+        let dir = base.join("reports").join("rep-1");
+        let p = |name: &str| dir.join(name).to_string_lossy().into_owned();
+
+        assert_eq!(headless_attachment_dir("rep-1", &[]), Ok(None));
+        assert_eq!(
+            headless_attachment_dir("rep-1", &[p("01-a.png"), p("02-b.md")]),
+            Ok(Some(dir.clone()))
+        );
+        // Named for another report.
+        assert!(headless_attachment_dir("rep-2", &[p("01-a.png")]).is_err());
+        // Not under a `reports` directory.
+        let loose = base
+            .join("rep-1")
+            .join("01-a.png")
+            .to_string_lossy()
+            .into_owned();
+        assert!(headless_attachment_dir("rep-1", &[loose]).is_err());
+        // One stray path sinks the whole set: nothing is deleted on a guess.
+        let stray = base.join("elsewhere.png").to_string_lossy().into_owned();
+        assert!(headless_attachment_dir("rep-1", &[p("01-a.png"), stray]).is_err());
+    }
+
+    #[test]
+    fn release_deletes_the_copies_once_and_flips_the_metadata() {
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool);
+        let base = std::env::temp_dir().join(format!("report-release-{}", uuid::Uuid::new_v4()));
+        let id = headless_report(&pool, &persona_id, serde_json::json!({}));
+        let dir = base.join(HEADLESS_REPORTS_DIR).join(&id);
+        std::fs::create_dir_all(&dir).unwrap();
+        let copy = dir.join("01-a.png");
+        std::fs::write(&copy, b"png").unwrap();
+        let mut seed = serde_json::Map::new();
+        seed.insert("source".into(), serde_json::json!(HEADLESS_REPORT_SOURCE));
+        seed.insert(
+            "attachments".into(),
+            serde_json::json!([{ "path": copy.to_string_lossy(), "caption": "c" }]),
+        );
+        seed.insert("attachmentsCleaned".into(), serde_json::json!(false));
+        merge_metadata(&pool, &id, &seed).unwrap();
+
+        assert_eq!(
+            release_headless_attachments(&pool, &id).unwrap(),
+            AttachmentRelease::Released {
+                removed: Some(dir.clone())
+            }
+        );
+        assert!(!dir.exists());
+        let meta = meta_of(&pool, &id);
+        assert_eq!(meta["attachmentsCleaned"], serde_json::json!(true));
+        assert!(meta["cleanedAt"].is_string());
+        assert_eq!(meta["attachments"][0]["caption"], serde_json::json!("c"));
+
+        assert_eq!(
+            release_headless_attachments(&pool, &id).unwrap(),
+            AttachmentRelease::Untouched,
+            "a second release is a no-op"
+        );
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn release_leaves_foreign_reports_and_unconfined_paths_alone() {
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool);
+        let plain = headless_report(
+            &pool,
+            &persona_id,
+            serde_json::json!({ "athena_triage": {} }),
+        );
+        assert_eq!(
+            release_headless_attachments(&pool, &plain).unwrap(),
+            AttachmentRelease::Untouched
+        );
+
+        let outside = std::env::temp_dir().join(format!("keep-me-{}.png", uuid::Uuid::new_v4()));
+        std::fs::write(&outside, b"mine").unwrap();
+        let forged = headless_report(
+            &pool,
+            &persona_id,
+            serde_json::json!({
+                "source": HEADLESS_REPORT_SOURCE,
+                "attachments": [{ "path": outside.to_string_lossy() }],
+                "attachmentsCleaned": false,
+            }),
+        );
+        assert!(matches!(
+            release_headless_attachments(&pool, &forged).unwrap(),
+            AttachmentRelease::Refused(_)
+        ));
+        assert!(
+            outside.is_file(),
+            "a path outside reports/<id>/ is never deleted"
+        );
+        assert_eq!(
+            meta_of(&pool, &forged)["attachmentsCleaned"],
+            serde_json::json!(false),
+            "nothing was cleaned, so nothing says it was"
+        );
+        let _ = std::fs::remove_file(&outside);
     }
 }

@@ -2,9 +2,9 @@
 // units, the lens / search / sort toolbar, the legend, and the readout of the
 // current coordinate. Every count is derived from the passports in hand.
 //
-// This is structure, so the kit owns it (doctrine 6c): a variant never
-// re-authors a toolbar or a stat strip. What a variant supplies is the `figure`
-// in the middle and, while the owner is comparing, the control that picks it.
+// This is structure, so the kit owns it (doctrine 6c): a figure never
+// re-authors a toolbar or a stat strip. What a concept supplies is the drawing
+// in the middle, and nothing else.
 import { useMemo, useRef, type ReactNode } from 'react';
 import { KitButton, SearchField, Segmented, StatStrip, Toolbar, UnitStrip } from '@/features/shared/components/kit';
 import { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
@@ -16,7 +16,7 @@ import { ATLAS_WORDS as W, INK_MARK, LEGEND_ORDER, LENSES, SORTS } from './atlas
 
 export interface PortfolioView { lens: AtlasLens; sort: AtlasSort; query: string; unfold: boolean; at: AtlasCoord }
 
-export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, view, onView, figure, keys, extraControls }: {
+export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, view, onView, figure }: {
   all: AppPassport[];
   projects: AppPassport[];
   rows: AtlasRow[];
@@ -24,12 +24,8 @@ export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, v
   names: AtlasNames;
   view: PortfolioView;
   onView: (patch: Partial<PortfolioView>) => void;
-  /** The chosen figure, already wired to the model. Null when nothing matched. */
+  /** The figure, already wired to the model. Null when nothing matched. */
   figure: ReactNode;
-  /** The figure's own keyboard summary: only the matrix is a roving grid. */
-  keys?: string;
-  /** Dev-only variant picker; absent in a production build. */
-  extraControls?: ReactNode;
 }) {
   const searchRef = useRef<HTMLInputElement>(null);
   const care = needCare(all);
@@ -59,7 +55,6 @@ export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, v
             <InkDot ink="setup" /> {W.sharedSetup(sharedSetup.length)}
           </KitButton>
         )}
-        {extraControls}
       </Toolbar>
       <div className="atlas-legend typo-caption" aria-hidden="true">
         {LEGEND_ORDER.map((k) => <span key={k} className="atlas-legend__item"><InkDot ink={k} /> {INK_MARK[k].label}</span>)}
@@ -81,7 +76,7 @@ export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, v
             <span className="k-quiet k-ellipsis">{inkOf(current, row) === 'unknown' ? INK_MARK.unknown.label : valueText(row.get(current))}</span>
           </>
         ) : null}
-        <span className="atlas-readout__keys k-quiet">{keys ?? W.keysPortfolio}</span>
+        <span className="atlas-readout__keys k-quiet">{W.keysPortfolio}</span>
       </div>
     </div>
   );

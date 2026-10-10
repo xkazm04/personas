@@ -1,0 +1,44 @@
+{
+  "family": "session-naming",
+  "difficulty": "hard",
+  "source": "same call site as session-naming.json (naming.rs:223-260); prompt unchanged, task text harder",
+  "notes": "HARD tier. Task strings live in session-naming-hard/*.txt and are all under the prompt's 2000-char slice, so the real ask is always visible but sits AFTER noise (a stack trace, three paragraphs of unrelated status, log lines) or is in Czech / German. `noiseKeywords`: the label must not name the noise; each task's text says explicitly that the noise is not the task. `keywords` accept the source language and English, so answering in either is fine.",
+  "tasks": [
+    {
+      "id": "name-h01-stack-trace",
+      "difficulty": "hard",
+      "taskFile": "session-naming-hard/h01-stack-trace.txt",
+      "keywords": ["reconnect", "websocket", "socket", "backoff", "retry", "jitter"],
+      "noiseKeywords": ["serde", "span", "panic", "telemetry", "decoder", "unwrap"],
+      "good": "Websocket Reconnect Backoff",
+      "bad": ["Fix Serde Span ID Panic", "Websocket reconnect backoff fix", "Add Exponential Backoff With Jitter To Websocket Reconnect"]
+    },
+    {
+      "id": "name-h02-rambling",
+      "difficulty": "hard",
+      "taskFile": "session-naming-hard/h02-rambling.txt",
+      "keywords": ["csv", "export", "audit", "download"],
+      "noiseKeywords": ["dark mode", "onboarding", "sentry", "tour", "illustration", "empty state", "dashboard", "rotation"],
+      "good": "Audit Log CSV Export",
+      "bad": ["Dark Mode And Onboarding Tour", "Audit Log CSV Export.", "Weekly Status And Audit Export Tasks Review"]
+    },
+    {
+      "id": "name-h03-czech",
+      "difficulty": "hard",
+      "taskFile": "session-naming-hard/h03-czech.txt",
+      "keywords": ["trezor", "vault", "mezipam", "cache", "odhláš", "logout", "log out", "sign out", "sign-out", "přihlaš", "login", "credential", "připojení", "connection"],
+      "noiseKeywords": ["gmail", "github", "slack"],
+      "good": "Vymazání Mezipaměti Trezoru Při Odhlášení",
+      "bad": ["Oprava chyby v trezoru", "Gmail GitHub Slack Connections", "Clear Vault Cache On Logout And Add Unit Test For It"]
+    },
+    {
+      "id": "name-h04-german-logs",
+      "difficulty": "hard",
+      "taskFile": "session-naming-hard/h04-german-logs.txt",
+      "keywords": ["trigger", "schedul", "zeitplan", "dst", "sommerzeit", "winterzeit", "zeitumstellung", "doppelt", "duplicate", "double", "twice", "utc", "daylight"],
+      "noiseKeywords": ["sqlite", "wal", "busy", "checkpoint"],
+      "good": "Scheduler DST Doppelte Trigger",
+      "bad": ["Fix SQLite WAL Busy Retries", "\"Scheduler UTC Fix\"", "Scheduler"]
+    }
+  ]
+}

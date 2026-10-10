@@ -1,4 +1,5 @@
 pub mod chat;
+pub mod chat_turn;
 pub mod data_portability;
 pub mod export_types;
 pub mod frontend_bridge;

@@ -1565,7 +1565,12 @@
     "unknown_persona": "অজানা",
     "unread": "অপঠিত",
     "view_execution": "এক্সিকিউশন দেখুন",
-    "what_could_be_better": "কী ভালো হতে পারে?"
+    "what_could_be_better": "কী ভালো হতে পারে?",
+    "attachment_missing": "ফাইলটি আর উপলব্ধ নেই",
+    "attachment_open": "{name} খুলুন",
+    "attachments_cleaned": "সিদ্ধান্তের পর স্ক্রিনশট সরিয়ে ফেলা হয়েছে",
+    "attachments_label": "সংযুক্তি",
+    "linked_report_unavailable": "সেই রিপোর্টটি আর উপলব্ধ নেই"
   },
   "reports": {
     "channel_desktop": "ডেস্কটপ",
@@ -1817,7 +1822,8 @@
     "unknown_persona": "অজানা পার্সোনা",
     "you": "আপনি",
     "load_failed_title": "পর্যালোচনার সারি লোড করা যায়নি",
-    "row_gone": "সেই পর্যালোচনা আর সারিতে নেই। পেজ রিলোড করে আবার চেষ্টা করুন।"
+    "row_gone": "সেই পর্যালোচনা আর সারিতে নেই। পেজ রিলোড করে আবার চেষ্টা করুন।",
+    "view_report": "রিপোর্ট দেখুন"
   },
   "saved_views": {
     "errors": {

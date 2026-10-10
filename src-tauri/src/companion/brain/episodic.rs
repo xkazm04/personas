@@ -742,6 +742,88 @@ pub fn list_before(
     hydrate_rows(session_id, rows)
 }
 
+/// SQL boolean: the episode is a USER or ASSISTANT turn, read off the role
+/// suffix the writer puts in every file name (`<id>_<role>.md`, see
+/// [`append_episode`]) - the same source `retrieval::role_from_episode_path`
+/// reads. System rows (forwarded prompts, autonomy markers, machine
+/// correlator records) never match.
+const TURN_ROLE_SQL: &str =
+    "(file_path LIKE '%\\_user.md' ESCAPE '\\' OR file_path LIKE '%\\_assistant.md' ESCAPE '\\')";
+
+/// The user and assistant turns of one conversation created at or after
+/// `floor`, strictly after the `(created_at, id)` keyset cursor `after` (all of
+/// them when `None`), oldest-first, at most `limit`. The cloud chat projection
+/// reads through this (`cloud::sync::athena_chat`), so it shares the
+/// excerpt-vs-disk hydration with the transcript.
+///
+/// The order and the cursor compare the stored strings, so they are
+/// consistent with each other whatever the timestamp format.
+pub fn list_turns_after(
+    pool: &UserDbPool,
+    session_id: &str,
+    floor: &str,
+    after: Option<(&str, &str)>,
+    limit: u32,
+) -> Result<Vec<Episode>, AppError> {
+    let conn = pool.get()?;
+    let (after_at, after_id) = after.unwrap_or(("", ""));
+    let sql = format!(
+        "SELECT id, file_path, body_excerpt, created_at
+         FROM companion_node
+         WHERE kind = 'episode'
+           AND session_id = ?1
+           AND body_excerpt IS NOT NULL
+           AND {TURN_ROLE_SQL}
+           AND created_at >= ?2
+           AND (created_at > ?3 OR (created_at = ?3 AND id > ?4))
+         ORDER BY created_at ASC, id ASC
+         LIMIT ?5"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt
+        .query_map(
+            params![session_id, floor, after_at, after_id, limit],
+            read_row,
+        )?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    drop(stmt);
+    let root = disk::brain_root()?;
+    Ok(rows
+        .into_iter()
+        .filter_map(|row| hydrate_row(&root, session_id, row))
+        .collect())
+}
+
+/// How many user/assistant turns of one conversation lie in
+/// `[floor, through]` (the `(created_at, id)` keyset, inclusive). The cloud
+/// chat projection compares this with the count it recorded when it pushed
+/// through the same cursor: any difference means a turn it already pushed was
+/// deleted (a thread wipe, a brain-view delete) or an older one appeared late,
+/// and the thread is pushed again from scratch.
+pub fn count_turns_through(
+    pool: &UserDbPool,
+    session_id: &str,
+    floor: &str,
+    through: (&str, &str),
+) -> Result<u64, AppError> {
+    let conn = pool.get()?;
+    let sql = format!(
+        "SELECT COUNT(*) FROM companion_node
+         WHERE kind = 'episode'
+           AND session_id = ?1
+           AND body_excerpt IS NOT NULL
+           AND {TURN_ROLE_SQL}
+           AND created_at >= ?2
+           AND (created_at < ?3 OR (created_at = ?3 AND id <= ?4))"
+    );
+    let n: i64 = conn.query_row(
+        &sql,
+        params![session_id, floor, through.0, through.1],
+        |r| r.get(0),
+    )?;
+    Ok(n.max(0) as u64)
+}
+
 /// `(id, file_path, body_excerpt, created_at)` — one index row, newest-first.
 type EpisodeRow = (String, String, String, String);
 

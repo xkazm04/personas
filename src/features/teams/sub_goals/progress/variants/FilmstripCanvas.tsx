@@ -1,19 +1,22 @@
 /**
- * VARIANT 1 - FILMSTRIP. THESIS: chronology stays the spine; a milestone is a
- * labelled drop zone in the row's own margin and a bound goal flies a flag.
+ * THE FILMSTRIP - layer 0 of the Notes view. Chronology stays the spine; a
+ * milestone is a labelled drop zone in the row's own margin and a bound goal
+ * flies a flag.
  *
- * This is the CURRENT view, kept as the baseline so the other two are compared
- * against the real thing rather than against a description of it. What is new
- * is the second line of each row: the project's milestones as chips, each a
- * drop target, plus the unassigned lane and the button that creates a cut. The
- * frames themselves keep their date order, so the one thing this layout is good
- * at - seeing a whole portfolio's timing at once - is not traded away for scope.
+ * It was its own Progress tab until 2026-10-08; now it is the portfolio layer
+ * the Notes view opens on, and `onOpenProject` turns each project name into
+ * the door to that project's room. Each row is the project's goals
+ * as frames in date order, then its milestones as chips (each a drop target),
+ * the unassigned lane and the button that creates a cut, so seeing a whole
+ * portfolio's timing at once is not traded away for scope.
  *
  * The cost it accepts: WHICH cut a goal belongs to is not legible at a glance.
  * The flag says "committed", its tone says "planned / cut / shipped", and the
- * name needs the menu. That is the honest limit of a 20px frame.
+ * name needs the menu or layer 1. That is the honest limit of a 20px frame.
  */
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import { AddGoalButton, NODE_PX } from '../../progressShared';
 import { AddLaneButton, CanvasFrame, LaneChip, UnassignedLane } from '../canvasParts';
@@ -21,19 +24,36 @@ import { useProgressView } from '../canvasHost';
 import { useMenuKey } from '../rowCanvas';
 import type { ProgressRow } from '../useProgressModel';
 
-export function FilmstripCanvas({ leftWidth }: { leftWidth: number }) {
+/** `onOpenProject` turns each project name into the door to that project's
+ *  milestones - the layered views use the filmstrip as their layer 0. */
+export function FilmstripCanvas({
+  leftWidth,
+  onOpenProject,
+}: {
+  leftWidth: number;
+  onOpenProject?: (projectId: string) => void;
+}) {
   const { model } = useProgressView();
   return (
     <>
       {model.rows.map((row) => (
-        <FilmstripRow key={row.projectId} row={row} leftWidth={leftWidth} />
+        <FilmstripRow key={row.projectId} row={row} leftWidth={leftWidth} onOpenProject={onOpenProject} />
       ))}
     </>
   );
 }
 
-function FilmstripRow({ row, leftWidth }: { row: ProgressRow; leftWidth: number }) {
+function FilmstripRow({
+  row,
+  leftWidth,
+  onOpenProject,
+}: {
+  row: ProgressRow;
+  leftWidth: number;
+  onOpenProject?: (projectId: string) => void;
+}) {
   const { model, canvas, dl, createGoalIn } = useProgressView();
+  const { tx } = useTranslation();
   const { onKeyDown, onContextMenu } = useMenuKey((e) =>
     canvas.openMenu(e, { kind: 'project', projectId: row.projectId, name: row.name }),
   );
@@ -66,7 +86,18 @@ function FilmstripRow({ row, leftWidth }: { row: ProgressRow; leftWidth: number 
         style={{ width: leftWidth }}
       >
         <Tooltip content={row.name}>
-          <span className="typo-body text-foreground truncate">{row.name}</span>
+          {onOpenProject ? (
+            <Button
+              variant="link"
+              data-testid={`progress-open-project-${row.projectId}`}
+              aria-label={tx(dl.layers_open_project, { project: row.name })}
+              onClick={() => onOpenProject(row.projectId)}
+            >
+              <span className="typo-body truncate">{row.name}</span>
+            </Button>
+          ) : (
+            <span className="typo-body text-foreground truncate">{row.name}</span>
+          )}
         </Tooltip>
       </div>
 

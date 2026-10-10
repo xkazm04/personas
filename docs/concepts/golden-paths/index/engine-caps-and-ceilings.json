@@ -91,6 +91,14 @@
       "resolvedFrom": "suffix",
       "verbatim": "engine/src/p2p/messaging.rs"
     },
+    "src-tauri/engine/src/project_tracking/subscription.rs": {
+      "count": 2,
+      "sections": [7,9],
+      "lines": ["2287"],
+      "contexts": ["concentrated in exactly the places that fan out — `subscription.rs` alone declares **eight**"],
+      "resolvedFrom": "basename",
+      "verbatim": "subscription.rs"
+    },
     "src-tauri/engine/src/prompt/advisory.rs": {
       "count": 2,
       "sections": [7,9],
@@ -193,14 +201,6 @@
       "verbatim": "llm_topology.rs"
     },
     "src-tauri/src/engine/persona_brain/sleep_cycle.rs": {"count":3,"sections":[7,9],"lines":["1963"],"contexts":["Two of the ten disclose the total anyway (`sleep_cycle.rs:1963` interpolates"],"resolvedFrom":"basename","verbatim":"sleep_cycle.rs"},
-    "src-tauri/src/engine/project_tracking/subscription.rs": {
-      "count": 2,
-      "sections": [7,9],
-      "lines": ["2287"],
-      "contexts": ["concentrated in exactly the places that fan out — `subscription.rs` alone declares **eight**"],
-      "resolvedFrom": "basename",
-      "verbatim": "subscription.rs"
-    },
     "src/companion/dispatcher.rs": {
       "count": 1,
       "sections": [7],

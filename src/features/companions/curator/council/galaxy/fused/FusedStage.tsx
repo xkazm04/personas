@@ -1,7 +1,7 @@
 // The fused instrument: the registry galaxy flown with the round-3 contest
 // HUD. The field is the product's own engine (`../engine/GalaxyEngine`) in
 // its `fused` style profile; over it, an altitude timeline with the nested
-// list on the left, the named decisions at the top right, and two heavy
+// list on the left, the queue of councils at the top right, and two heavy
 // instruments switched from the keyboard as MODES, never stacked: the
 // bezel lens (the registry engraved on a dial rim that re-engraves per
 // altitude), the cross-section dock (folded to what needs care at desktop
@@ -13,9 +13,9 @@
 // build of this tree is checked against it to zero deviations, and the
 // plan is `docs/design/promotions/2026-09-23-council-hud-and-cadastre.md`.
 //
-// It takes `GalaxyStage`'s slot and props, so the page dispatches on the
-// variant and nothing else, and the bench keeps its `setBenchHeight` seam.
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+// The queue docks top right as Project lanes (`../../queue/CouncilLanes`);
+// the stage reserves its box so the camera frames the field beside it.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useCouncilStore } from '../../councilStore';
 import type { GalaxyEngine } from '../engine/GalaxyEngine';
@@ -23,7 +23,7 @@ import { useHudReservations } from '../useHudReservations';
 import { useRegistryRoot } from '../useRegistryRoot';
 import { BezelLens } from './BezelLens';
 import { CrossSectionDock } from './CrossSectionDock';
-import { DecisionsPanel } from './DecisionsPanel';
+import { CouncilLanes } from '../../queue/CouncilLanes';
 import { FieldTip } from './FieldTip';
 import { Finder } from './Finder';
 import { FusedCanvas } from './FusedCanvas';
@@ -33,7 +33,6 @@ import { LIST_ID, listKids } from './NestedList';
 import { NavColumn } from './NavColumn';
 import { SayCaption } from './SayCaption';
 import { rowsWanted, spreadHeight } from './spreadPaint';
-import { levelOf } from './fusedModel';
 import { useFusedData, useFusedPath } from './useFused';
 import { useFusedKeys } from './useFusedKeys';
 import { TechniqueDocument } from './TechniqueDocument';
@@ -41,7 +40,7 @@ import { useInstrumentColors } from './tokenColors';
 import { CARE_H, docWidth, useStageFrame, useStageSize } from './useStageFrame';
 import './fused.css';
 
-export function FusedStage({ bench }: { bench?: ReactNode }) {
+export function FusedStage() {
   const registryRoot = useRegistryRoot();
   const [engine, setEngineLocal] = useState<GalaxyEngine | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
@@ -56,7 +55,6 @@ export function FusedStage({ bench }: { bench?: ReactNode }) {
   const load = useCouncilStore((s) => s.load);
   const publishEngine = useCouncilStore((s) => s.setEngine);
   const finderOpen = useFusedStore((s) => s.finderOpen);
-  const mode = useFusedStore((s) => s.mode);
   const spread = useFusedStore((s) => s.spread);
   const setCursor = useFusedStore((s) => s.setCursor);
 
@@ -65,8 +63,7 @@ export function FusedStage({ bench }: { bench?: ReactNode }) {
     void load(registryRoot);
   }, [fixtureOn, load, registryRoot]);
 
-  // This stage owns the engine and is the only thing that publishes it, as
-  // `GalaxyStage` does, so the bench can hand the reader's camera back.
+  // This stage owns the engine and is the only thing that publishes it.
   const setEngine = useCallback(
     (next: GalaxyEngine | null) => {
       setEngineLocal(next);
@@ -86,9 +83,9 @@ export function FusedStage({ bench }: { bench?: ReactNode }) {
   // The dock's height when it is up: the folded strip, or one row per
   // altitude of the descent plus the preview row when it is spread.
   const dockH = spread ? spreadHeight(rowsWanted(path, null).length) : CARE_H;
-  useStageFrame({ engine, stageRef, navRef, size, dockH });
+  useStageFrame({ engine, stageRef, navRef, panelRef: beaconRef, size, dockH });
   useHudReservations(stageRef, cards, engine, true);
-  useFusedKeys(engine, layout, path, data.decisions);
+  useFusedKeys(engine, layout, path);
 
   // The field under the pointer rests on a row of the list, as the list
   // itself does: the child you point at opens in place.
@@ -100,8 +97,6 @@ export function FusedStage({ bench }: { bench?: ReactNode }) {
   if (!registryRoot && !fixtureOn) return <FusedUnpaired />;
   const lit = focus.kind === 'council' ? new Set(focus.registrySubjects) : null;
   const waitingSubjects = data.decisions.flatMap((d) => d.stars);
-  // Over the lens on a narrow stage, below the sky, the panel folds to its count.
-  const fold = mode === 'lens' && !path.technique && levelOf(path) >= 1 && size.w < 1400 && focus.kind !== 'council';
 
   return (
     <div
@@ -124,7 +119,7 @@ export function FusedStage({ bench }: { bench?: ReactNode }) {
         />
       ) : null}
       <NavColumn engine={engine} path={path} data={data} navRef={navRef} />
-      <DecisionsPanel decisions={data.decisions} fold={fold} beaconRef={beaconRef} />
+      <CouncilLanes rootRef={beaconRef} />
       {layout ? (
         <CrossSectionDock
           engine={engine}
@@ -155,7 +150,6 @@ export function FusedStage({ bench }: { bench?: ReactNode }) {
         spreadHeight={spreadHeight(rowsWanted(path, null).length)}
       />
       {finderOpen && layout ? <Finder engine={engine} layout={layout} /> : null}
-      {bench}
     </div>
   );
 }

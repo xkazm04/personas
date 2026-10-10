@@ -57,7 +57,9 @@
     "FabricSearch.tsx": {"count":1,"sections":[7],"lines":["65"],"contexts":["`SearchAutocomplete.tsx:95`, `FabricSearch.tsx:65`."],"resolved":false},
     "Gallery3D.tsx": {"count":1,"sections":[7],"lines":["183"],"contexts":["`Gallery3D.tsx:183` · `GalleryPage.tsx:122` · `TextLane.tsx:110` · `VoiceoverButton.tsx:97` ·"],"resolved":false},
     "GalleryPage.tsx": {"count":1,"sections":[7],"lines":["122"],"contexts":["`Gallery3D.tsx:183` · `GalleryPage.tsx:122` · `TextLane.tsx:110` · `VoiceoverButton.tsx:97` ·"],"resolved":false},
+    "GoalsMissions.tsx": {"count":3,"sections":[6,7],"lines":["238","236","243"],"contexts":["`GoalsMissions.tsx:238` with a threshold of 8. Pick one."],"resolved":false},
     "KnowledgeTree.tsx": {"count":2,"sections":[4,6],"lines":["414"],"contexts":["`hideSearch={options.length < 8}` (`KnowledgeTree.tsx:414`) beats a static"],"resolved":false},
+    "ManualReviewList.tsx": {"count":1,"sections":[7],"lines":["397"],"contexts":["`ManualReviewList.tsx:397` · `CreatePracticeModal.tsx:79` ·"],"resolved":false},
     "ModelDropdown.tsx": {"count":1,"sections":[5],"lines":["35"],"contexts":["`TimezoneSelect.tsx:64`, `ModelDropdown.tsx:35`), `rounded-md`"],"resolved":false},
     "NodeContextMenu.tsx": {"count":1,"sections":[7],"lines":["32"],"contexts":["`FactoryBreadcrumb.tsx:62` (mouse-leave only) and `NodeContextMenu.tsx:32` (no Escape)."],"resolved":false},
     "ProjectFilter.tsx": {"count":1,"sections":[7],"lines":["55"],"contexts":["`UseCaseFixtureDropdown.tsx:66` · `ProjectFilter.tsx:55` · `SortDropdown.tsx:44` ·"],"resolved":false},
@@ -212,7 +214,6 @@
     "src/features/companions/athena/ConversationSwitcher.tsx": {"count":1,"sections":[7],"lines":["149"],"contexts":["· `PersonaOverviewBatchBar.tsx:108` · `ConversationSwitcher.tsx:149` ·"],"resolvedFrom":"basename","verbatim":"ConversationSwitcher.tsx"},
     "src/features/fleet/monitor/channels/ConversationComposer.tsx": {"count":2,"sections":[7],"lines":["162"],"contexts":["· `PlaygroundHeader.tsx:166` · `ConversationComposer.tsx:162`. Plus"],"resolvedFrom":"basename","verbatim":"ConversationComposer.tsx"},
     "src/features/overview/sub_activity/components/GlobalExecutionList.tsx": {"count":1,"sections":[7],"lines":["388"],"contexts":["`GlobalExecutionList.tsx:388` · `AnnotateModal.tsx:55,67` ·"],"resolvedFrom":"basename","verbatim":"GlobalExecutionList.tsx"},
-    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {"count":1,"sections":[7],"lines":["397"],"contexts":["`ManualReviewList.tsx:397` · `CreatePracticeModal.tsx:79` ·"],"resolvedFrom":"basename","verbatim":"ManualReviewList.tsx"},
     "src/features/overview/sub_memories/components/CreateMemoryForm.tsx": {
       "count": 2,
       "sections": [7],
@@ -640,7 +641,6 @@
       "resolvedFrom": "basename",
       "verbatim": "passportWidgets.tsx"
     },
-    "src/features/teams/sub_goals/GoalsMissions.tsx": {"count":3,"sections":[6,7],"lines":["238","236","243"],"contexts":["`GoalsMissions.tsx:238` with a threshold of 8. Pick one."],"resolvedFrom":"basename","verbatim":"GoalsMissions.tsx"},
     "src/features/teams/sub_teamMemory/components/diff/DiffHeader.tsx": {
       "count": 1,
       "sections": [7],

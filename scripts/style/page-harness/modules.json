@@ -339,5 +339,235 @@
       ]
     ],
     "fill": {}
+  },
+  "athena/chat/idle": {
+    "title": "Athena chat overlay, open, over Overview / Executions (idle scenario: the synthetic tape seeds it; a recording captures whatever the live chat holds)",
+    "record": [
+      {
+        "method": "navigate",
+        "params": {
+          "section": "home"
+        }
+      },
+      {
+        "method": "navigate",
+        "params": {
+          "section": "overview"
+        }
+      },
+      {
+        "method": "clickTestId",
+        "params": {
+          "testId": "tab-executions"
+        }
+      },
+      {
+        "method": "openCompanion",
+        "params": {}
+      }
+    ],
+    "boot": [
+      [
+        "list_personas",
+        null
+      ],
+      [
+        "get_persona_summaries",
+        null
+      ],
+      [
+        "fleet_list_sessions",
+        null
+      ],
+      [
+        "dev_tools_list_projects",
+        null
+      ]
+    ],
+    "fill": {}
+  },
+  "athena/chat/streaming": {
+    "title": "Athena chat overlay, open, over Overview / Executions (streaming scenario: the synthetic tape seeds it; a recording captures whatever the live chat holds)",
+    "record": [
+      {
+        "method": "navigate",
+        "params": {
+          "section": "home"
+        }
+      },
+      {
+        "method": "navigate",
+        "params": {
+          "section": "overview"
+        }
+      },
+      {
+        "method": "clickTestId",
+        "params": {
+          "testId": "tab-executions"
+        }
+      },
+      {
+        "method": "openCompanion",
+        "params": {}
+      }
+    ],
+    "boot": [
+      [
+        "list_personas",
+        null
+      ],
+      [
+        "get_persona_summaries",
+        null
+      ],
+      [
+        "fleet_list_sessions",
+        null
+      ],
+      [
+        "dev_tools_list_projects",
+        null
+      ]
+    ],
+    "fill": {}
+  },
+  "athena/chat/waiting": {
+    "title": "Athena chat overlay, open, over Overview / Executions (waiting scenario: the synthetic tape seeds it; a recording captures whatever the live chat holds)",
+    "record": [
+      {
+        "method": "navigate",
+        "params": {
+          "section": "home"
+        }
+      },
+      {
+        "method": "navigate",
+        "params": {
+          "section": "overview"
+        }
+      },
+      {
+        "method": "clickTestId",
+        "params": {
+          "testId": "tab-executions"
+        }
+      },
+      {
+        "method": "openCompanion",
+        "params": {}
+      }
+    ],
+    "boot": [
+      [
+        "list_personas",
+        null
+      ],
+      [
+        "get_persona_summaries",
+        null
+      ],
+      [
+        "fleet_list_sessions",
+        null
+      ],
+      [
+        "dev_tools_list_projects",
+        null
+      ]
+    ],
+    "fill": {}
+  },
+  "athena/chat/decision": {
+    "title": "Athena chat overlay, open, over Overview / Executions (decision scenario: the synthetic tape seeds it; a recording captures whatever the live chat holds)",
+    "record": [
+      {
+        "method": "navigate",
+        "params": {
+          "section": "home"
+        }
+      },
+      {
+        "method": "navigate",
+        "params": {
+          "section": "overview"
+        }
+      },
+      {
+        "method": "clickTestId",
+        "params": {
+          "testId": "tab-executions"
+        }
+      },
+      {
+        "method": "openCompanion",
+        "params": {}
+      }
+    ],
+    "boot": [
+      [
+        "list_personas",
+        null
+      ],
+      [
+        "get_persona_summaries",
+        null
+      ],
+      [
+        "fleet_list_sessions",
+        null
+      ],
+      [
+        "dev_tools_list_projects",
+        null
+      ]
+    ],
+    "fill": {}
+  },
+  "athena/chat/empty": {
+    "title": "Athena chat overlay, open, over Overview / Executions (empty scenario: the synthetic tape seeds it; a recording captures whatever the live chat holds)",
+    "record": [
+      {
+        "method": "navigate",
+        "params": {
+          "section": "home"
+        }
+      },
+      {
+        "method": "navigate",
+        "params": {
+          "section": "overview"
+        }
+      },
+      {
+        "method": "clickTestId",
+        "params": {
+          "testId": "tab-executions"
+        }
+      },
+      {
+        "method": "openCompanion",
+        "params": {}
+      }
+    ],
+    "boot": [
+      [
+        "list_personas",
+        null
+      ],
+      [
+        "get_persona_summaries",
+        null
+      ],
+      [
+        "fleet_list_sessions",
+        null
+      ],
+      [
+        "dev_tools_list_projects",
+        null
+      ]
+    ],
+    "fill": {}
   }
 }

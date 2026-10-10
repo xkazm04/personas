@@ -605,131 +605,159 @@ pub fn doc_rot_scan(
     };
 
     for (pid, root_str) in &projects {
-        // Throttle — rot moves at commit speed, not remount speed.
-        if !force {
-            let fresh: bool = conn
-                .query_row(
-                    "SELECT MAX(scanned_at) >= datetime('now', ?2) FROM doc_status WHERE project_id = ?1",
-                    rusqlite::params![pid, format!("-{RESCAN_MIN_HOURS} hours")],
-                    |r| r.get::<_, Option<bool>>(0),
-                )
-                .ok()
-                .flatten()
-                .unwrap_or(false);
-            if fresh {
-                summary.projects_skipped_fresh += 1;
-                continue;
-            }
-        }
-
-        let root = Path::new(root_str);
-        let Some(path_ts) = git_recent_paths(root) else {
-            summary.projects_no_git += 1;
-            continue;
-        };
-        let doc_map = parse_doc_map(root);
-        let managed: Vec<String> = doc_map.keys().cloned().collect();
-        let (docs, truncated) = list_docs(root, &managed);
-        summary.docs_truncated |= truncated;
-        let top_dirs: Vec<String> = std::fs::read_dir(root)
-            .map(|rd| {
-                rd.flatten()
-                    .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
-                    .map(|e| e.file_name().to_string_lossy().to_string())
-                    .filter(|n| !skippable_dir(n))
-                    .collect()
-            })
-            .unwrap_or_default();
-
-        for doc in &docs {
-            // Content signal first — it is read from the doc regardless of how
-            // the doc is coupled, and it is the ONLY signal for a doc whose
-            // every reference has been renamed away.
-            let refs = scan_references(root, doc, &top_dirs);
-            let scope = match doc_map.get(doc).cloned() {
-                Some(s) => Some(s),
-                None if refs.scope.is_empty() => None,
-                None => Some(refs.scope.clone()),
-            };
-            let v = judge_doc(doc, scope.as_ref(), &path_ts);
-            let scope_json = v
-                .scope
-                .as_ref()
-                .map(|s| serde_json::to_string(s).unwrap_or_default());
-            let changed_json = serde_json::to_string(&v.changed).unwrap_or_else(|_| "[]".into());
-            let broken_json = serde_json::to_string(&refs.broken).unwrap_or_else(|_| "[]".into());
-            let dirty_since = v.dirty_since_ts.map(fmt_unix);
-            if dirty_since.is_some() {
-                summary.dirty += 1;
-            }
-            if !refs.broken.is_empty() {
-                summary.broken += 1;
-            }
-            if scope.is_none() && refs.broken.is_empty() {
-                summary.unverifiable += 1;
-            }
-            conn.execute(
-                "INSERT INTO doc_status
-                   (project_id, doc_path, coupled_scope, last_doc_commit, last_source_commit,
-                    dirty_since, changed_sources, broken_refs, scanned_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, datetime('now'))
-                 ON CONFLICT(project_id, doc_path) DO UPDATE SET
-                   coupled_scope = excluded.coupled_scope,
-                   last_doc_commit = excluded.last_doc_commit,
-                   last_source_commit = excluded.last_source_commit,
-                   -- keep the EARLIEST dirty stamp while still dirty; clear when clean
-                   dirty_since = CASE
-                     WHEN excluded.dirty_since IS NULL THEN NULL
-                     WHEN doc_status.dirty_since IS NOT NULL AND doc_status.dirty_since < excluded.dirty_since
-                       THEN doc_status.dirty_since
-                     ELSE excluded.dirty_since END,
-                   changed_sources = excluded.changed_sources,
-                   broken_refs = excluded.broken_refs,
-                   scanned_at = datetime('now')",
-                rusqlite::params![
-                    pid,
-                    v.doc_path,
-                    scope_json,
-                    (v.doc_ts > 0).then(|| fmt_unix(v.doc_ts)),
-                    (v.source_ts > 0).then(|| fmt_unix(v.source_ts)),
-                    dirty_since,
-                    changed_json,
-                    broken_json,
-                ],
-            )?;
-            summary.docs_tracked += 1;
-        }
-
-        // A deleted doc is a projection of nothing — drop its row (its read
-        // events stay; they're history).
-        let placeholders = if docs.is_empty() {
-            "''".to_string()
-        } else {
-            docs.iter().map(|_| "?").collect::<Vec<_>>().join(",")
-        };
-        let sql = format!(
-            "DELETE FROM doc_status WHERE project_id = ?1 AND doc_path NOT IN ({placeholders})"
-        );
-        let mut params: Vec<Box<dyn rusqlite::ToSql>> = vec![Box::new(pid.clone())];
-        for d in &docs {
-            params.push(Box::new(d.clone()));
-        }
-        conn.execute(
-            &sql,
-            rusqlite::params_from_iter(params.iter().map(|p| p.as_ref())),
-        )?;
-
-        summary.projects_scanned += 1;
+        scan_project(&conn, pid, root_str, force, &mut summary)?;
     }
 
     Ok(summary)
+}
+
+/// One project's doc-rot scan: the per-project body of [`doc_rot_scan`],
+/// honouring the same [`RESCAN_MIN_HOURS`] throttle unless `force`. Also the
+/// door Lifecycle's Measure uses to refresh the `docs` step after a run.
+pub(crate) fn scan_project_docs(
+    pool: &crate::db::DbPool,
+    project_id: &str,
+    root_path: &str,
+    force: bool,
+) -> Result<DocRotScanSummary, AppError> {
+    let conn = pool
+        .get()
+        .map_err(|e| AppError::Internal(format!("db connection failed: {e}")))?;
+    let mut summary = DocRotScanSummary::default();
+    scan_project(&conn, project_id, root_path, force, &mut summary)?;
+    Ok(summary)
+}
+
+fn scan_project(
+    conn: &rusqlite::Connection,
+    pid: &str,
+    root_str: &str,
+    force: bool,
+    summary: &mut DocRotScanSummary,
+) -> Result<(), AppError> {
+    // Throttle — rot moves at commit speed, not remount speed.
+    if !force {
+        let fresh: bool = conn
+            .query_row(
+                "SELECT MAX(scanned_at) >= datetime('now', ?2) FROM doc_status WHERE project_id = ?1",
+                rusqlite::params![pid, format!("-{RESCAN_MIN_HOURS} hours")],
+                |r| r.get::<_, Option<bool>>(0),
+            )
+            .ok()
+            .flatten()
+            .unwrap_or(false);
+        if fresh {
+            summary.projects_skipped_fresh += 1;
+            return Ok(());
+        }
+    }
+
+    let root = Path::new(root_str);
+    let Some(path_ts) = git_recent_paths(root) else {
+        summary.projects_no_git += 1;
+        return Ok(());
+    };
+    let doc_map = parse_doc_map(root);
+    let managed: Vec<String> = doc_map.keys().cloned().collect();
+    let (docs, truncated) = list_docs(root, &managed);
+    summary.docs_truncated |= truncated;
+    let top_dirs: Vec<String> = std::fs::read_dir(root)
+        .map(|rd| {
+            rd.flatten()
+                .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
+                .map(|e| e.file_name().to_string_lossy().to_string())
+                .filter(|n| !skippable_dir(n))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    for doc in &docs {
+        // Content signal first — it is read from the doc regardless of how
+        // the doc is coupled, and it is the ONLY signal for a doc whose
+        // every reference has been renamed away.
+        let refs = scan_references(root, doc, &top_dirs);
+        let scope = match doc_map.get(doc).cloned() {
+            Some(s) => Some(s),
+            None if refs.scope.is_empty() => None,
+            None => Some(refs.scope.clone()),
+        };
+        let v = judge_doc(doc, scope.as_ref(), &path_ts);
+        let scope_json = v
+            .scope
+            .as_ref()
+            .map(|s| serde_json::to_string(s).unwrap_or_default());
+        let changed_json = serde_json::to_string(&v.changed).unwrap_or_else(|_| "[]".into());
+        let broken_json = serde_json::to_string(&refs.broken).unwrap_or_else(|_| "[]".into());
+        let dirty_since = v.dirty_since_ts.map(fmt_unix);
+        if dirty_since.is_some() {
+            summary.dirty += 1;
+        }
+        if !refs.broken.is_empty() {
+            summary.broken += 1;
+        }
+        if scope.is_none() && refs.broken.is_empty() {
+            summary.unverifiable += 1;
+        }
+        conn.execute(
+            "INSERT INTO doc_status
+               (project_id, doc_path, coupled_scope, last_doc_commit, last_source_commit,
+                dirty_since, changed_sources, broken_refs, scanned_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, datetime('now'))
+             ON CONFLICT(project_id, doc_path) DO UPDATE SET
+               coupled_scope = excluded.coupled_scope,
+               last_doc_commit = excluded.last_doc_commit,
+               last_source_commit = excluded.last_source_commit,
+               -- keep the EARLIEST dirty stamp while still dirty; clear when clean
+               dirty_since = CASE
+                 WHEN excluded.dirty_since IS NULL THEN NULL
+                 WHEN doc_status.dirty_since IS NOT NULL AND doc_status.dirty_since < excluded.dirty_since
+                   THEN doc_status.dirty_since
+                 ELSE excluded.dirty_since END,
+               changed_sources = excluded.changed_sources,
+               broken_refs = excluded.broken_refs,
+               scanned_at = datetime('now')",
+            rusqlite::params![
+                pid,
+                v.doc_path,
+                scope_json,
+                (v.doc_ts > 0).then(|| fmt_unix(v.doc_ts)),
+                (v.source_ts > 0).then(|| fmt_unix(v.source_ts)),
+                dirty_since,
+                changed_json,
+                broken_json,
+            ],
+        )?;
+        summary.docs_tracked += 1;
+    }
+
+    // A deleted doc is a projection of nothing — drop its row (its read
+    // events stay; they're history).
+    let placeholders = if docs.is_empty() {
+        "''".to_string()
+    } else {
+        docs.iter().map(|_| "?").collect::<Vec<_>>().join(",")
+    };
+    let sql = format!(
+        "DELETE FROM doc_status WHERE project_id = ?1 AND doc_path NOT IN ({placeholders})"
+    );
+    let mut params: Vec<Box<dyn rusqlite::ToSql>> = vec![Box::new(pid.to_string())];
+    for d in &docs {
+        params.push(Box::new(d.clone()));
+    }
+    conn.execute(
+        &sql,
+        rusqlite::params_from_iter(params.iter().map(|p| p.as_ref())),
+    )?;
+
+    summary.projects_scanned += 1;
+    Ok(())
 }
 
 /// The single place a doc's verdict is named. `unverifiable` is its own rung
 /// on purpose: an unscoped doc is one the detector could not judge, and
 /// collapsing that into `clean` is what let the highest-risk docs — the ones
 /// naming paths that moved — read as healthy.
-fn doc_status_label(unscoped: bool, dirty: bool, broken: &[String]) -> &'static str {
+pub(crate) fn doc_status_label(unscoped: bool, dirty: bool, broken: &[String]) -> &'static str {
     if !broken.is_empty() {
         "broken"
     } else if dirty {

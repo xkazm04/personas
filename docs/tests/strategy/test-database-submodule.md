@@ -23,9 +23,9 @@ docker compose -f docker-compose.test.yml down
 
 | Layer | File | Tests | Type |
 |-------|------|------:|------|
-| Response parsers | `src-tauri/src/engine/db_query.rs` | 33 | Rust unit |
+| Response parsers | `src-tauri/engine/src/db_query.rs` | 33 | Rust unit |
 | Repo CRUD | `src-tauri/src/db/repos/resources/db_schema.rs` | 29 | Rust unit (in-memory SQLite) |
-| Upstash live | `src-tauri/src/engine/db_query.rs` | 4 | Rust integration (`#[ignore]`) |
+| Upstash live | `src-tauri/engine/src/db_query.rs` | 4 | Rust integration (`#[ignore]`) |
 | Zustand store | `src/stores/__tests__/databaseSlice.test.ts` | 11 | Vitest + Tauri mock |
 | SqlEditor | `src/features/vault/sub_databases/__tests__/SqlEditor.test.tsx` | 11 | Vitest + RTL |
 | QueryResultTable | `src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx` | 9 | Vitest + RTL |
@@ -238,7 +238,7 @@ Tests the Zustand `DatabaseSlice` in isolation by mocking Tauri IPC commands.
 
 ### Rust parser test
 
-Add to the `#[cfg(test)] mod tests` block in `src-tauri/src/engine/db_query.rs`. Parser functions are `pub(crate)` and can be called directly with fixture JSON strings.
+Add to the `#[cfg(test)] mod tests` block in `src-tauri/engine/src/db_query.rs`. Parser functions are `pub(crate)` and can be called directly with fixture JSON strings.
 
 ### Rust CRUD test
 

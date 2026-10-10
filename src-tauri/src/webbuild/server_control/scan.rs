@@ -3,7 +3,7 @@
 //! A headless Claude CLI turn in `cwd = root_path` reads the repository and
 //! answers with one JSON object: the dev command, the port the project pins
 //! (if any) and its tech stack. It runs through the subprocess chokepoint's
-//! headless door (`cli_process::spawn_headless_claude`), the one that takes a
+//! headless door (`cli_process::spawn_headless_claude_route`), the one that takes a
 //! working directory and owns the guarantees this needs: `kill_on_drop`, no
 //! window, and `force_subscription_auth`, so the scan bills the operator's
 //! subscription and never the API. `companion::brain::oneshot` was the other
@@ -31,8 +31,13 @@ use crate::error::AppError;
 /// The scan's ceiling (contract: 120 s).
 pub const SCAN_TIMEOUT: Duration = Duration::from_secs(120);
 
-/// The model the scan runs on (contract: Sonnet).
-const SCAN_MODEL: &str = personas_core::model_ids::SONNET_CURRENT;
+/// The call class the scan runs as: read a repository into a fixed JSON
+/// shape. Model and effort come from the class table
+/// (`personas_core::model_class`); a reply [`parse_finding`] rejects
+/// escalates once. (The original contract pinned Sonnet; the 2026-10-08
+/// one-shot bench moved extraction to the class table.)
+const SCAN_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Extract;
 
 /// Tools the scan turn may not use: it reads, it never runs or writes.
 const SCAN_DENIED_TOOLS: &str = "Bash,Edit,Write,NotebookEdit,WebFetch,WebSearch";
@@ -134,28 +139,54 @@ fn result_event(line: &str) -> Option<(String, bool)> {
 /// Run the scan turn in `root` and parse its answer. `Err` carries the reason
 /// the caller records as `scan failed: <reason>`.
 pub async fn run(pool: &DbPool, project_id: &str, root: &Path) -> Result<ScanFinding, String> {
+    crate::engine::cli_process::with_escalation(SCAN_CLASS, |route| {
+        run_attempt(pool, project_id, root, route)
+    })
+    .await
+    .map_err(|e| match e {
+        // An attempt's own reason, verbatim.
+        AppError::Internal(reason) => reason,
+        other => other.to_string(),
+    })
+}
+
+/// One scan turn on `route`. A reply [`parse_finding`] rejects is
+/// `BadOutput` (the only outcome that escalates); everything else is `Fatal`.
+async fn run_attempt(
+    pool: &DbPool,
+    project_id: &str,
+    root: &Path,
+    route: personas_core::model_class::ClassRoute,
+) -> Result<ScanFinding, crate::engine::cli_process::AttemptError> {
+    use crate::engine::cli_process::AttemptError;
+    let fatal = |reason: String| AttemptError::Fatal(AppError::Internal(reason));
+
     let extra = vec![
         "--disallowedTools".to_string(),
         SCAN_DENIED_TOOLS.to_string(),
     ];
-    let mut child = crate::engine::cli_process::spawn_headless_claude(
+    let mut child = crate::engine::cli_process::spawn_headless_claude_route(
         SCAN_PROMPT.to_string(),
-        SCAN_MODEL,
+        route,
         &extra,
         Some(root),
         false,
     )
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| fatal(e.to_string()))?;
     let stdout = child
         .stdout
         .take()
-        .ok_or_else(|| "the scan turn produced no output pipe".to_string())?;
+        .ok_or_else(|| fatal("the scan turn produced no output pipe".to_string()))?;
     let mut lines = BufReader::new(stdout).lines();
 
     let spend = crate::db::repos::llm_spend::SpendCtx {
         source: "scanner",
-        trigger_kind: "dev_server_scan",
-        model: Some(SCAN_MODEL),
+        trigger_kind: if crate::engine::cli_process::is_escalation_leg(SCAN_CLASS, route) {
+            "escalation"
+        } else {
+            "dev_server_scan"
+        },
+        model: Some(route.model),
         persona_id: None,
         project_id: Some(project_id),
     };
@@ -180,22 +211,25 @@ pub async fn run(pool: &DbPool, project_id: &str, root: &Path) -> Result<ScanFin
     }
 
     if read.is_err() {
-        return Err(format!("no answer within {} s", SCAN_TIMEOUT.as_secs()));
+        return Err(fatal(format!(
+            "no answer within {} s",
+            SCAN_TIMEOUT.as_secs()
+        )));
     }
     let reply = match result {
         Some((text, true)) => {
-            return Err(format!(
+            return Err(fatal(format!(
                 "the CLI reported an error: {}",
                 preview(&text, REPLY_PREVIEW_BYTES)
-            ))
+            )))
         }
         Some((text, false)) if !text.trim().is_empty() => text,
         _ => streamed,
     };
     if reply.trim().is_empty() {
-        return Err("the scan turn answered with nothing".to_string());
+        return Err(fatal("the scan turn answered with nothing".to_string()));
     }
-    parse_finding(&reply).map_err(|e| e.to_string())
+    parse_finding(&reply).map_err(|e| AttemptError::BadOutput(e.to_string()))
 }
 
 #[cfg(test)]

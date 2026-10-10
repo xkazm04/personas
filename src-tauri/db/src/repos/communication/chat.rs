@@ -131,6 +131,25 @@ pub fn create(pool: &DbPool, input: CreateChatMessageInput) -> Result<ChatMessag
     })
 }
 
+/// Point a message at the execution it started: a chat turn's user row at
+/// its run, which is what lets a reply owed across a restart be found again
+/// (`chat_turn::reconcile`). Only a message that points nowhere yet is
+/// changed; returns whether it was.
+pub fn link_execution(
+    pool: &DbPool,
+    message_id: &str,
+    execution_id: &str,
+) -> Result<bool, AppError> {
+    timed_query!("chat_messages", "chat_messages::link_execution", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE chat_messages SET execution_id = ?2 WHERE id = ?1 AND execution_id IS NULL",
+            params![message_id, execution_id],
+        )?;
+        Ok(n > 0)
+    })
+}
+
 pub fn delete_session(pool: &DbPool, persona_id: &str, session_id: &str) -> Result<i64, AppError> {
     timed_query!("chat_sessions", "chat_sessions::delete_session", {
         let mut conn = pool.get()?;
@@ -143,6 +162,20 @@ pub fn delete_session(pool: &DbPool, persona_id: &str, session_id: &str) -> Resu
         let rows = tx.execute(
             "DELETE FROM chat_messages WHERE persona_id = ?1 AND session_id = ?2",
             params![persona_id, session_id],
+        )?;
+        // The delete half of the cloud chat projection (PHASE2-SPEC 5.2): one
+        // delete, one tombstone, atomically. The newest delete wins, like
+        // `persona_tombstones`, so the cursor-driven sync pass sees it.
+        tx.execute(
+            "INSERT INTO chat_session_tombstones (session_id, persona_id, deleted_at) \
+             VALUES (?1, ?2, ?3) \
+             ON CONFLICT(session_id) DO UPDATE SET \
+               persona_id = excluded.persona_id, deleted_at = excluded.deleted_at",
+            params![
+                session_id,
+                persona_id,
+                chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
+            ],
         )?;
         tx.commit()?;
         Ok(rows as i64)
@@ -245,4 +278,87 @@ pub fn get_latest_session(
             None => Ok(None),
         }
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_db;
+    use crate::models::{ChatRole, CreatePersonaInput};
+    use crate::repos::core::personas;
+
+    fn persona(pool: &DbPool) -> String {
+        personas::create(
+            pool,
+            CreatePersonaInput {
+                name: "Chat Test Agent".into(),
+                system_prompt: "You are a test agent.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    fn tombstones(pool: &DbPool) -> Result<Vec<(String, String, String)>, AppError> {
+        let conn = pool.get()?;
+        let mut stmt = conn
+            .prepare("SELECT session_id, persona_id, deleted_at FROM chat_session_tombstones ORDER BY session_id")
+            .unwrap();
+        let rows = stmt
+            .query_map([], |r| {
+                Ok((
+                    r.get("session_id")?,
+                    r.get("persona_id")?,
+                    r.get("deleted_at")?,
+                ))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
+    /// PHASE2-SPEC 5.2: deleting a session leaves a tombstone in the same
+    /// transaction, so the cloud mirror can delete it too; a second delete of
+    /// the same id moves the watermark forward instead of failing.
+    #[test]
+    fn deleting_a_session_writes_its_tombstone() {
+        let pool = init_test_db().unwrap();
+        let p = persona(&pool);
+        create(
+            &pool,
+            CreateChatMessageInput {
+                persona_id: p.clone(),
+                session_id: "chat-1-abcd1234".into(),
+                role: ChatRole::User,
+                content: "hello".into(),
+                execution_id: None,
+                metadata: None,
+            },
+        )
+        .unwrap();
+        assert!(tombstones(&pool).unwrap().is_empty());
+        assert_eq!(delete_session(&pool, &p, "chat-1-abcd1234").unwrap(), 1);
+        let first = tombstones(&pool).unwrap();
+        assert_eq!(first.len(), 1);
+        assert_eq!(
+            (first[0].0.as_str(), first[0].1.as_str()),
+            ("chat-1-abcd1234", p.as_str())
+        );
+        assert!(chrono::DateTime::parse_from_rfc3339(&first[0].2).is_ok());
+        assert_eq!(delete_session(&pool, &p, "chat-1-abcd1234").unwrap(), 0);
+        assert_eq!(tombstones(&pool).unwrap().len(), 1, "one row per session");
+    }
 }

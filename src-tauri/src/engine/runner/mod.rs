@@ -6,11 +6,11 @@
 
 mod credentials;
 mod env;
-mod globals;
+pub use personas_engine::runner::globals;
 pub(crate) mod hooks;
-mod stages;
+pub use personas_engine::runner::stages;
 pub(crate) mod team_context;
-mod workspace_gc;
+pub use personas_engine::runner::workspace_gc;
 
 // Cross-module re-exports. These paths are what external callers (outside
 // `engine::runner`) see — matches the layout before the submodule split so no
@@ -4244,7 +4244,7 @@ mod prior_feedback_tests {
     fn review(title: &str, status: ManualReviewStatus, notes: Option<&str>) -> PersonaManualReview {
         PersonaManualReview {
             id: format!("rev-{title}"),
-            execution_id: "exec-1".into(),
+            execution_id: Some("exec-1".into()),
             persona_id: "p1".into(),
             title: title.into(),
             description: Some(format!("about {title}")),

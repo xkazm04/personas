@@ -146,6 +146,15 @@
       "resolved": false
     },
     "registry-job-claim-lease-composer.json": {"count":1,"sections":[9],"contexts":["(`registry-job-claim-lease-composer.json` — a filename unique to this composer,"],"resolved":false},
+    "runner/mod.rs": {
+      "count": 2,
+      "sections": [0,7],
+      "lines": ["2122"],
+      "contexts": [
+        "| **a renewal that extends the lease while work continues** | ❌ | `touch_last_heartbeat` (`executions.rs:1461`) has **exactly one caller** (`runner/mod.rs:2122`) and **does not touch `claim_expires_a…"
+      ],
+      "resolved": false
+    },
     "scanQueue.core.repository.ts": {"count":1,"sections":[5],"lines":["97-111"],"contexts":["`vibeman` `scanQueue.core.repository.ts:97-111` gets this right with a"],"resolved":false},
     "scripts/connectors/builtin/vercel.json": {"count":1,"sections":[12],"contexts":["invariant; (b) `vercel.json` runs the cron **daily**, so \"re-qualifies on the"],"resolvedFrom":"basename","verbatim":"vercel.json"},
     "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json` `rust.files`), lexed with a"],"resolved":false},
@@ -279,16 +288,6 @@
       "contexts": ["`src/companion/jobs/mod.rs:305-339` and `src/engine/persona_jobs.rs:201-228` are"],
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/persona_jobs.rs"
-    },
-    "src-tauri/src/engine/runner/mod.rs": {
-      "count": 2,
-      "sections": [0,7],
-      "lines": ["2122"],
-      "contexts": [
-        "| **a renewal that extends the lease while work continues** | ❌ | `touch_last_heartbeat` (`executions.rs:1461`) has **exactly one caller** (`runner/mod.rs:2122`) and **does not touch `claim_expires_a…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "runner/mod.rs"
     },
     "src-tauri/tests/": {"count":1,"sections":[8],"contexts":["5. **No test exercises a crash between claim and settle.** `src-tauri/tests/`"],"resolved":false,"isDir":true},
     "sweeps.rs": {

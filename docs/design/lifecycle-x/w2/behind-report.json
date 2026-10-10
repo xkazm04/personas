@@ -1,0 +1,216 @@
+{
+  "module": "plugins/lifecycle/behind",
+  "kit": null,
+  "query": null,
+  "reducedMotion": false,
+  "steps": null,
+  "label": "behind",
+  "createdAt": "2026-10-08T22:59:30.930Z",
+  "browser": "153.0.8010.12",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 3,
+    "note": "Synthetic: Solo v0 with all six health verdicts, a null metric, the Overseer goal and twelve changes of evidence. Measured 2 days ago, 14 commits behind main."
+  },
+  "ok": true,
+  "unknownIpcCommands": [
+    "dev_tools_workspace_set_active",
+    "companions_status"
+  ],
+  "shots": [
+    {
+      "file": "behind-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1
+      },
+      "stable": true,
+      "textLength": 877,
+      "textSample": "Atlas Web Solo practice, default · Measured 2 days ago, 14 commits behind main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Land is the weakest step: failing. Done in 40%",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "behind-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1
+      },
+      "stable": true,
+      "textLength": 963,
+      "textSample": "Atlas Web Solo practice, default · Measured 2 days ago, 14 commits behind main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Land is the weakest step: failing. Done in 40%",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "behind-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1
+      },
+      "stable": true,
+      "textLength": 877,
+      "textSample": "Atlas Web Solo practice, default · Measured 2 days ago, 14 commits behind main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Land is the weakest step: failing. Done in 40%",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "behind-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_workspace_set_active",
+          "args": {
+            "workspaceId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "companions_status",
+          "args": {},
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_workspace_set_active": 1,
+        "companions_status": 1,
+        "dev_tools_get_lifecycle": 1
+      },
+      "stable": true,
+      "textLength": 963,
+      "textSample": "Atlas Web Solo practice, default · Measured 2 days ago, 14 commits behind main All projects / Atlas Web no repo Measure Send again to Overseer Ask Athena Land is the weakest step: failing. Done in 40%",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

@@ -29,7 +29,6 @@
 
 use crate::cli_process::CliProcessDriver;
 use crate::parser;
-use crate::prompt;
 use personas_core::types::StreamLineType;
 use personas_db::models::ManualReviewStatus;
 use personas_db::repos::communication::manual_reviews as review_repo;
@@ -261,21 +260,23 @@ pub fn extract_review_policy_context(
 // Async LLM call
 // ---------------------------------------------------------------------------
 
-/// Model for the auto-triage evaluator. Pinned deliberately so the verdict runs
-/// on a consistent, capable judge rather than the undeclared account default
-/// (typically Opus 4.8) — explicit + cost-predictable, mirroring the other
-/// headless judges (`SYNTHESIS_MODEL`, idea-scanner). (tiger finding.)
-const EVALUATOR_MODEL: &str = personas_core::model_ids::DEFAULT_BALANCED;
+/// Call class of the auto-triage evaluator: a `Verdict`, so it runs on a
+/// consistent, capable judge rather than the undeclared account default —
+/// explicit + cost-predictable. Model and effort come from the class table
+/// (`personas_core::model_class`). (tiger finding.)
+const EVALUATOR_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Verdict;
 
 /// Spawn the Claude CLI in single-turn print mode and pipe the prompt to
 /// stdin. Returns the raw assistant text (or an error on timeout / spawn
 /// failure). Mirrors `genome_critique::run_critique_cli`.
 async fn run_evaluator_cli(prompt_text: &str) -> Result<(String, Option<String>), String> {
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push(EVALUATOR_MODEL.to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
+    let route = EVALUATOR_CLASS.route();
+    let cli_args = crate::cli_process::headless_claude_args(
+        route.model,
+        route.effort,
+        &["--max-turns".to_string(), "1".to_string()],
+    );
 
     let mut driver = CliProcessDriver::spawn_temp_no_stderr(&cli_args, "personas-auto-triage")
         .map_err(|e| format!("Failed to spawn evaluator CLI: {e}"))?;
@@ -374,7 +375,7 @@ async fn run_and_finalize(ctx: SpawnedEvaluatorContext) {
                     &personas_db::repos::llm_spend::SpendCtx {
                         source: "evaluator",
                         trigger_kind: "auto_triage",
-                        model: Some(EVALUATOR_MODEL),
+                        model: Some(EVALUATOR_CLASS.route().model),
                         persona_id: Some(&ctx.persona_id),
                         project_id: None,
                     },

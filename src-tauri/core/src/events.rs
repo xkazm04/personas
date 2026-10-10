@@ -351,6 +351,12 @@ event_names! {
     // Referral (personas://ref/<code> deep link received from OS)
     REFERRAL_RECEIVED          => "referral-received",
 
+    // Open a persona (personas://persona/<id> deep link; navigation only)
+    PERSONA_LINK_OPENED        => "persona-link-opened",
+
+    // Open an execution (personas://execution/<id> deep link; navigation only)
+    EXECUTION_LINK_OPENED      => "execution-link-opened",
+
     // Cloud-app pairing request (personas://pair deep link or POST /pair/request)
     PAIRING_REQUESTED          => "pairing-requested",
 
@@ -359,6 +365,16 @@ event_names! {
 
     // Persona health (push-based summary refresh signal)
     PERSONA_HEALTH_CHANGED     => "persona-health-changed",
+
+    // A paired phone's command changed local state with no prompt here
+    // (cloud::remote_commands, PHASE2-SPEC D1): refetch personas + tell the
+    // operator what their phone did.
+    REMOTE_COMMAND_APPLIED     => "remote-command-applied",
+    // Persona chat: a `chat_messages` or `chat_session_context` row changed.
+    // CDC, payload `CdcEvent` (`{action, table, rowid}`). The chat turn runs
+    // in Rust (`commands::core::chat_turn`), so its reply - and a turn a
+    // paired phone started - lands as a row the open chat refetches on this.
+    CHAT_CHANGED               => "chat-changed",
 
     // SLA reliability breach (published to the persona-event BUS by
     // `engine::sla_breach` on the execution-completion path; zero-config

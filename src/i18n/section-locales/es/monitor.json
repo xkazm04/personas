@@ -227,6 +227,9 @@
   "grid_dock_collapse": "Ocultar la consola de envío",
   "grid_fleet_exited": "Esta sesión ha finalizado: su terminal ya no existe.",
   "grid_fleet_kill": "Terminar sesión",
+  "terminal_asleep_label": "Por qué está dormida",
+  "terminal_wake_failed": "Esta sesión no se puede despertar",
+  "terminal_wake_failed_hint": "Finaliza la sesión para quitarla del tablero.",
   "grid_messages_empty": "Aún no hay actividad en los canales.",
   "grid_rail_loading_more": "Cargando más…",
   "grid_session_recap_ai_title": "Título de la sesión",
@@ -615,6 +618,14 @@
   "orch_never_served": "nunca atendido",
   "orch_refusal_budget": "Presupuesto mensual agotado",
   "orch_refusal_concurrency": "Máquina en su límite de personas",
+  "orch_refusal_headless": "Un App Master de terminal tiene este proyecto",
+  "orch_headless_running": "Headless - en ejecución",
+  "orch_headless_idle": "Headless - inactivo",
+  "orch_headless_stale": "Headless - obsoleto",
+  "orch_headless_hint": "El App Master de este proyecto se ejecuta desde una terminal (/appmaster). El master de la app se aparta mientras sus informes estén al día.",
+  "orch_headless_next_wake": "Próximo despertar:",
+  "orch_headless_no_wake": "sin anunciar",
+  "orch_headless_reported": "Último informe:",
   "orch_refusal_daily_cap": "Límite diario alcanzado",
   "orch_refusal_in_flight": "Aún ejecutando su última pasada",
   "orch_refusal_interval_floor": "Descansando hasta su intervalo",
@@ -1073,5 +1084,6 @@
   "dc_hub_row_open_aria": "Abrir: {title}",
   "dc_hub_triage_all_none": "Nada en espera",
   "dc_hub_triage_all_short": "Todo",
-  "dc_hub_triage_all_walk_tip": "Recorrer los {count} en orden, lo más urgente primero"
+  "dc_hub_triage_all_walk_tip": "Recorrer los {count} en orden, lo más urgente primero",
+  "grid_rail_triage_modal_aria": "Detalles de la revisión"
 }

@@ -1565,7 +1565,12 @@
     "unknown_persona": "Неизвестный",
     "unread": "Непрочитано",
     "view_execution": "Посмотреть запуск",
-    "what_could_be_better": "Что можно улучшить?"
+    "what_could_be_better": "Что можно улучшить?",
+    "attachment_missing": "Файл больше недоступен",
+    "attachment_open": "Открыть {name}",
+    "attachments_cleaned": "Скриншоты удалены после принятия решения",
+    "attachments_label": "Вложения",
+    "linked_report_unavailable": "Этот отчёт больше недоступен"
   },
   "reports": {
     "channel_desktop": "Рабочий стол",
@@ -1817,7 +1822,8 @@
     "unknown_persona": "Неизвестная персона",
     "you": "Вы",
     "load_failed_title": "Не удалось загрузить очередь проверки",
-    "row_gone": "Этой проверки больше нет в очереди. Обновите страницу и попробуйте снова."
+    "row_gone": "Этой проверки больше нет в очереди. Обновите страницу и попробуйте снова.",
+    "view_report": "Открыть отчёт"
   },
   "saved_views": {
     "errors": {

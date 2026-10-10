@@ -1,0 +1,94 @@
+/* The doc estate's figure: one cell per doc, drawn by status so the shape
+ * alone tells them apart (docLooks.ts): broken a square with a knocked-out
+ * cross, stale a half-filled square, unverifiable a dashed hollow square,
+ * clean a small dot. Colour stays tokenised (the status variables and
+ * color-mix over them); the cell edge comes from `--lcx7-cell`, set on the
+ * map by how many docs it draws. */
+
+.lcx7-cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--lcx7-cell) * 0.32);
+}
+
+.lcx7-cell {
+  position: relative;
+  box-sizing: border-box;
+  width: var(--lcx7-cell);
+  height: var(--lcx7-cell);
+  flex: none;
+  cursor: pointer;
+  border-radius: calc(var(--lcx7-cell) * 0.2);
+  transition: transform 150ms ease, opacity 150ms ease;
+}
+
+.lcx7-cell:hover {
+  transform: scale(1.18);
+}
+
+.lcx7-cell[data-status="broken"] {
+  background:
+    linear-gradient(45deg, transparent 41%, var(--background) 41% 59%, transparent 59%),
+    linear-gradient(-45deg, transparent 41%, var(--background) 41% 59%, transparent 59%),
+    var(--status-error);
+}
+
+.lcx7-cell[data-status="stale"] {
+  background: linear-gradient(135deg, var(--status-warning) 50%, color-mix(in srgb, var(--status-warning) 22%, transparent) 50%);
+  box-shadow: inset 0 0 0 0.09375rem var(--status-warning);
+}
+
+.lcx7-cell[data-status="unverifiable"] {
+  border: 0.09375rem dashed var(--status-info);
+  background: color-mix(in srgb, var(--status-info) 10%, transparent);
+}
+
+.lcx7-cell[data-status="clean"] {
+  border-radius: 9999px;
+  transform: scale(0.62);
+  background: color-mix(in srgb, var(--status-success) 70%, transparent);
+}
+
+.lcx7-cell[data-status="clean"]:hover {
+  transform: scale(0.8);
+}
+
+/* Outside the filter: still in place (the map never reflows), faded back. */
+.lcx7-cell[data-out="true"] {
+  opacity: 0.2;
+}
+
+/* The keyboard cursor and the doc selected in the list below. */
+.lcx7-cell[data-cursor="true"],
+.lcx7-cell[data-selected="true"] {
+  outline: 0.125rem solid var(--primary);
+  outline-offset: 0.125rem;
+}
+
+/* A status chip's swatch: the same shape at a chip's size. */
+.lcx7-swatch {
+  --lcx7-cell: 0.75rem;
+  cursor: inherit;
+}
+
+.lcx7-swatch:hover {
+  transform: none;
+}
+
+.lcx7-swatch[data-status="clean"]:hover {
+  transform: scale(0.62);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lcx7-cell {
+    transition: none;
+  }
+
+  .lcx7-cell:hover {
+    transform: none;
+  }
+
+  .lcx7-cell[data-status="clean"]:hover {
+    transform: scale(0.62);
+  }
+}

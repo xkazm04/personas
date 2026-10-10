@@ -57,6 +57,15 @@
     "console/middleware.ts": {"count":1,"sections":[],"lines":["35"],"contexts":["before the session check (`console/middleware.ts:35`), and the file records the exact failure this"],"resolved":false},
     "context-map.json": {"count":1,"sections":[7],"contexts":["| `POST /dev-tools/export-context-map` | → `write_context_map_artifacts` — **rewrites `context-map.json` and `CLAUDE.md` on disk** |"]},
     "cron-auth.ts": {"count":3,"sections":[6],"lines":["1-6","24-26"],"contexts":["other.\"* `ascent`'s `cron-auth.ts:1-6` claims to single-source three cron routes *\"so the three"],"resolved":false},
+    "engine/credential_broker.rs": {
+      "count": 2,
+      "sections": [3],
+      "lines": ["130","93"],
+      "contexts": [
+        "| **`engine/credential_broker.rs:130` — `mint_derived_handle(pool, credential_id, consumer, ttl)`** | The narrow credential this repo already owns and does not use for its own bridge: a fresh `extern…"
+      ],
+      "resolved": false
+    },
     "exec_dir/.claude/personas-mcp-config.json": {"count":2,"sections":[0,7],"contexts":["`exec_dir/.claude/personas-mcp-config.json` (`cli_mcp_config.rs:183-192`) — in a *stable, reused"],"resolved":false},
     "external_api_keys.rs": {
       "count": 2,
@@ -104,6 +113,7 @@
       ],
       "resolved": false
     },
+    "runner/mod.rs": {"count":3,"sections":[0,7,8],"lines":["1161-1162"],"contexts":["(`runner/mod.rs:1161-1162`) and writes it **in plaintext** into"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Existing rules checked for overlap** (104 in `scripts/census/rules.json`): the closest three are"]},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[9],"contexts":["— the same class of check as `check-csp-hosts.mjs`'s exit-2 guard, and the reason it partitions"],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
     "shared-facts.json": {"count":1,"sections":[],"contexts":["`walked` count, matching `shared-facts.json`). Every `Router` construction, every `.route(`"],"resolved":false},
@@ -116,6 +126,24 @@
       "contexts": ["`cloud/remote_commands.rs`, `cli_mcp_config.rs` and `ipc_auth.rs` read in full or near-full."],
       "resolvedFrom": "basename",
       "verbatim": "cli_mcp_config.rs"
+    },
+    "src-tauri/engine/src/credential_broker.rs": {
+      "count": 4,
+      "sections": [0,5,7],
+      "lines": ["98-99","148-151"],
+      "contexts": ["`BrokerGrant::Broad` **for every credential id** (`credential_broker.rs:98-99`), and the proxy"],
+      "resolvedFrom": "basename",
+      "verbatim": "credential_broker.rs"
+    },
+    "src-tauri/engine/src/http_engine/config.rs": {
+      "count": 2,
+      "sections": [5,7],
+      "lines": ["46-70"],
+      "contexts": [
+        "| **A second dispatcher over the same tool set with its own allowlist** | `http_engine/tools.rs:191` calls `mcp_server::tools::call_tool` **directly**, bypassing `authorize_tool_call`, and substitute…"
+      ],
+      "resolvedFrom": "suffix",
+      "verbatim": "http_engine/config.rs"
     },
     "src-tauri/engine/src/p2p/remote_jobs.rs": {
       "count": 1,
@@ -217,24 +245,6 @@
       "verbatim": "daemon/runtime.rs"
     },
     "src-tauri/src/daemon_bin.rs": {"count":1,"sections":[],"contexts":["`mcp_server/{mod,auth,db,install,vault}.rs`, `companion/orchestration/mcp/*`, `daemon_bin.rs`,"],"resolvedFrom":"basename","verbatim":"daemon_bin.rs"},
-    "src-tauri/src/engine/credential_broker.rs": {
-      "count": 6,
-      "sections": [0,3,5,7],
-      "lines": ["98-99","130","93","148-151"],
-      "contexts": ["`BrokerGrant::Broad` **for every credential id** (`credential_broker.rs:98-99`), and the proxy"],
-      "resolvedFrom": "basename",
-      "verbatim": "credential_broker.rs"
-    },
-    "src-tauri/src/engine/http_engine/config.rs": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["46-70"],
-      "contexts": [
-        "| **A second dispatcher over the same tool set with its own allowlist** | `http_engine/tools.rs:191` calls `mcp_server::tools::call_tool` **directly**, bypassing `authorize_tool_call`, and substitute…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "http_engine/config.rs"
-    },
     "src-tauri/src/engine/http_engine/tools.rs": {
       "count": 2,
       "sections": [5,7],
@@ -269,7 +279,6 @@
       "resolvedFrom": "basename",
       "verbatim": "push.rs"
     },
-    "src-tauri/src/engine/runner/mod.rs": {"count":3,"sections":[0,7,8],"lines":["1161-1162"],"contexts":["(`runner/mod.rs:1161-1162`) and writes it **in plaintext** into"],"resolvedFrom":"suffix","verbatim":"runner/mod.rs"},
     "src-tauri/src/engine/webhook.rs": {"count":6,"sections":[0,3,4,7,9],"lines":["75"],"contexts":["classified. `management_api.rs` (2,800 lines), `webhook.rs`, `local_http/mod.rs`,"],"resolvedFrom":"basename","verbatim":"webhook.rs"},
     "src-tauri/src/ipc_auth.rs": {
       "count": 13,

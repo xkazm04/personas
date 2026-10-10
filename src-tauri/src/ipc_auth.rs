@@ -140,8 +140,23 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "set_use_case_generation_settings",
     "rename_event_listeners",
     "cloud_sync_set_enabled",
+    // Paired phones of the mobile command plane: the trust list decides which
+    // remote commands run without a click, so reading and revoking it are
+    // privileged like the sync toggle beside them.
+    "cloud_pair_controller_cancel",
+    "cloud_sync_set_device_name",
+    // Each opt-in sends a new class of free text off the machine (M19).
+    "cloud_sync_set_data_class",
+    "cloud_controllers_list",
+    "cloud_controller_revoke",
+    // The pairing QR's origin receives the next pairing secret, so moving it
+    // (and reading it, beside the trust list) is privileged.
+    "cloud_pairing_origin_get",
+    "cloud_pairing_origin_set",
     "discover_connector_resources",
     "execute_persona",
+    // A persona chat turn starts a paid run exactly as execute_persona does.
+    "start_chat_turn",
     // Credentials -- Write/Delete CRUD (reads are public)
     "create_credential",
     "update_credential",
@@ -747,6 +762,8 @@ pub const CLOUD_COMMANDS: &[&str] = &[
     "cloud_sync_persona",
     "cloud_adopt_deployment",
     "cloud_sync_now",
+    "cloud_pair_controller_start",
+    "cloud_pair_controller_poll",
     "cloud_connect",
     "cloud_reconnect_from_keyring",
     "cloud_disconnect",

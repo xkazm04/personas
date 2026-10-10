@@ -26,7 +26,11 @@ export function KpiVariantSwitcher({
     <div className="space-y-4">
       <div data-testid="kpi-variant-switcher">
       <SegmentedTabs<KpiVariant>
-        tabs={KPI_VARIANTS.map((id) => ({ id, label: o.variant_labels[id], testId: `kpi-variant-${id}` }))}
+        tabs={KPI_VARIANTS.map((id) => ({
+          id,
+          label: o.variant_labels[id],
+          testId: `kpi-variant-${id}`,
+        }))}
         activeTab={variant}
         onTabChange={onChange}
         ariaLabel={o.variant_switcher_aria}

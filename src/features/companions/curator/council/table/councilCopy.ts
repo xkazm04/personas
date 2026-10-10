@@ -7,7 +7,7 @@
 // was written to prevent, one layer up.
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 
-import { decidable } from '../councilRules';
+import { awaitsYou, decidable } from '../councilRules';
 import type { Rubric } from './rubrics';
 import type { Seat } from './runModel';
 
@@ -15,6 +15,7 @@ export interface GateCopy {
   /** Translated strings this module interpolates, handed in by the caller. */
   open_body: string;
   why_ready_standard: string;
+  why_lite: string;
   why_machine_pass: string;
   why_stalled: string;
   why_incomplete: string;
@@ -37,7 +38,7 @@ export interface Gate {
  * not. Total over `CouncilState` with an explicit unknown arm.
  */
 export function gateOf(
-  subject: Pick<CouncilSubjectState, 'state' | 'tier' | 'kind' | 'roundNo' | 'coverage'>,
+  subject: Pick<CouncilSubjectState, 'state' | 'tier' | 'kind' | 'mode' | 'roundNo' | 'coverage'>,
   rubric: Rubric,
   percent: (ratio: number) => string,
 ): Gate {
@@ -46,11 +47,12 @@ export function gateOf(
 }
 
 function closedKey(
-  subject: Pick<CouncilSubjectState, 'state' | 'tier' | 'kind'>,
+  subject: Pick<CouncilSubjectState, 'state' | 'tier' | 'kind' | 'mode'>,
 ): keyof GateCopy {
   switch (subject.state) {
     case 'ready':
-      return 'why_ready_standard';
+      // Ready but closed: either a standard feature, or only a lite pass exists.
+      return awaitsYou(subject) ? 'why_lite' : 'why_ready_standard';
     case 'machine_pass':
       return 'why_machine_pass';
     case 'stalled':
@@ -87,7 +89,7 @@ function closedValues(
 
 /** Does the gate open for this subject? The one predicate, re-exported. */
 export function gateOpens(
-  subject: Pick<CouncilSubjectState, 'state' | 'tier' | 'kind'>,
+  subject: Pick<CouncilSubjectState, 'state' | 'tier' | 'kind' | 'mode'>,
 ): boolean {
   return decidable(subject);
 }

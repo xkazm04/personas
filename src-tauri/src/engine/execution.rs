@@ -547,12 +547,32 @@ impl ExecutionEngine {
     /// kill. That is `os-process-reconciliation`'s leaf. The only liveness
     /// question this path needs ("is another instance running this work?") is
     /// answered before it, by the leadership lease in `boot::recovery`.
-    pub fn classify_stale_executions(pool: &DbPool) {
-        match exec_repo_restart::classify_running_rows(pool) {
-            Ok(sweep) if sweep.total() == 0 => {
-                tracing::debug!("No mid-run executions to classify");
+    ///
+    /// **It runs after a graceful exit too** — see
+    /// [`exec_repo_restart::reconcile_after_exit`]. The clean-shutdown marker
+    /// is read here only to say which kind of exit left the rows.
+    pub fn classify_stale_executions(app_data_dir: &std::path::Path, pool: &DbPool) {
+        match exec_repo_restart::reconcile_after_exit(pool, app_data_dir) {
+            Ok(seen) if seen.sweep.total() == 0 => {
+                tracing::debug!(
+                    previous_exit_clean = seen.previous_exit_clean,
+                    "No mid-run executions to classify"
+                );
             }
-            Ok(sweep) => {
+            Ok(seen) if seen.previous_exit_clean => {
+                let sweep = seen.sweep;
+                tracing::warn!(
+                    resume_pending = sweep.resume_pending.len(),
+                    unproven = sweep.unproven.len(),
+                    suspended = sweep.suspended.len(),
+                    "Previous exit was graceful but left {} execution(s) running - \
+                     the exit path does not drain persona executions; classified \
+                     exactly as after a crash",
+                    sweep.total()
+                );
+            }
+            Ok(seen) => {
+                let sweep = seen.sweep;
                 tracing::info!(
                     resume_pending = sweep.resume_pending.len(),
                     unproven = sweep.unproven.len(),

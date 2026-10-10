@@ -9,18 +9,23 @@
  * parallel idea of what a milestone is. The write path is `progress/milestoneOps`
  * and nothing else in the module calls the milestone API.
  *
- * Three layouts read the same model (`progress/useProgressModel`) and the same
+ * Two layouts read the same model (`progress/useProgressModel`) and the same
  * canvas (`progress/canvasHost`), behind a dev-only switcher:
  *
- *   FILMSTRIP  the current view. Chronology is the spine; a milestone is a chip
- *              in the row's margin and a bound goal flies a small flag. Best at
- *              sensing a whole portfolio's timing; weakest at saying WHICH cut.
- *   SWIMLANE   the row becomes a board. One lane per milestone plus unassigned,
- *              and where a goal sits IS its commitment. Best at scope; costs the
- *              one-viewsight comparison across projects.
+ *   NOTES      the default, three layers deep (spark goals-layers): the
+ *              filmstrip across every project as layer 0; the Notepad's own
+ *              QuestRoom for one project, banded by milestone (each cut's brief
+ *              card beside its goals), as layer 1; the Notepad's editor
+ *              (NotePlanPane for a brief) as layer 2. Ported, not re-drawn, so
+ *              everything the Notepad does comes along.
  *   LEDGER     one dense `UnifiedTable` row per goal grouped by project, the cut
  *              as a sortable column. Best for working the backlog; shows you
  *              rows rather than shape.
+ *
+ * Deleted, the owner's calls: Swimlane (2026-10-06); the Filmstrip tab, Track
+ * and Bands (2026-10-08); Cards (2026-10-09), whose milestone cards and
+ * re-drawn detail lost features the Notepad already had. The filmstrip
+ * survives as Notes' layer 0.
  *
  * The switcher is declared as a named constant rather than an
  * `import.meta.env.DEV` test inside the JSX, and its state is session-scoped:
@@ -37,9 +42,8 @@ import { GoalAtmosphere } from './goalsTheme';
 import { ProgressLegend, ProgressEmpty, ProgressGhost, useGoalDrawer } from './progressShared';
 import { ProgressViewProvider, useCanvasHost } from './progress/canvasHost';
 import { useProgressModel, type DoneFilter } from './progress/useProgressModel';
-import { FilmstripCanvas } from './progress/variants/FilmstripCanvas';
-import { SwimlaneCanvas } from './progress/variants/SwimlaneCanvas';
 import { LedgerCanvas } from './progress/variants/LedgerCanvas';
+import { NotesLayers } from './progress/layers/notes/NotesLayers';
 
 const LEFT_W = 200;
 
@@ -47,7 +51,7 @@ const LEFT_W = 200;
  *  be enumerated or reviewed; a named constant can be grepped. */
 const SHOW_VARIANT_SWITCHER = import.meta.env.DEV;
 
-type ProgressVariant = 'filmstrip' | 'swimlane' | 'ledger';
+type ProgressVariant = 'notes' | 'ledger';
 
 /**
  * The switcher really does select among mutually exclusive regions, so it
@@ -61,8 +65,9 @@ type ProgressVariant = 'filmstrip' | 'swimlane' | 'ledger';
 const VARIANT_TABS_ID = 'goals-progress-variant';
 
 const VARIANTS: Array<{ id: ProgressVariant; label: string }> = [
-  { id: 'filmstrip', label: 'Filmstrip' },
-  { id: 'swimlane', label: 'Swimlane' },
+  // Notes and Ledger survive; every other layout was deleted rather than kept
+  // alive "to decide between" (owner's calls, 2026-10-06 to 2026-10-09).
+  { id: 'notes', label: 'Notes' },
   { id: 'ledger', label: 'Ledger' },
 ];
 
@@ -70,7 +75,7 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const model = useProgressModel(projectScope);
-  const [variant, setVariant] = useState<ProgressVariant>('filmstrip');
+  const [variant, setVariant] = useState<ProgressVariant>('notes');
   const { openGoal, createGoalIn, drawer } = useGoalDrawer(model.allGoals ?? [], model.refresh);
 
   const projectIds = useMemo(() => model.rows.map((r) => r.projectId), [model.rows]);
@@ -135,10 +140,6 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
         data-done-filter={model.doneFilter}
         className="group/strip relative rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 overflow-hidden"
       >
-        {variant === 'filmstrip' && (
-          <ChronologyHeader leftWidth={LEFT_W} label={tx(dl.progress_summary, { projects: model.rows.length, goals: model.shownGoals })} />
-        )}
-
         <ProgressViewProvider value={view}>
           {/* `role` is written out as well as spread. The helper supplies the
               same value, but the census rule that found this gap is a TEXT
@@ -147,8 +148,7 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
               contract while failing the detector teaches the next reader that
               the gate is noise. */}
           <div {...segmentedTabPanelProps(VARIANT_TABS_ID, variant)} role="tabpanel">
-            {variant === 'filmstrip' && <FilmstripCanvas leftWidth={LEFT_W} />}
-            {variant === 'swimlane' && <SwimlaneCanvas />}
+            {variant === 'notes' && <NotesLayers leftWidth={LEFT_W} />}
             {variant === 'ledger' && <LedgerCanvas />}
           </div>
         </ProgressViewProvider>
@@ -166,32 +166,6 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
       </div>
 
       {drawer}
-    </div>
-  );
-}
-
-/** The filmstrip's reading direction. Only that layout orders by date, so only
- *  that layout gets the past / today / future rule above its rows. */
-function ChronologyHeader({ leftWidth, label }: { leftWidth: number; label: string }) {
-  const { t } = useTranslation();
-  const dl = t.plugins.dev_lifecycle;
-  return (
-    <div className="flex items-center border-b border-primary/10 bg-secondary/20">
-      <div className="shrink-0 px-3 py-2" style={{ width: leftWidth }}>
-        <span className="typo-caption text-foreground tabular-nums">{label}</span>
-      </div>
-      <div className="flex-1 flex items-center gap-2 px-1 py-2">
-        <span className="typo-caption text-foreground uppercase tracking-wider">{dl.progress_past}</span>
-        <span className="h-px flex-1 bg-gradient-to-r from-primary/20 to-violet-400/40" />
-        <span className="px-1.5 py-px rounded-full border border-violet-500/30 bg-violet-500/10 typo-caption text-violet-300">
-          {dl.progress_today}
-        </span>
-        <span className="h-px flex-1 bg-gradient-to-r from-violet-400/40 to-primary/20" />
-        <span className="typo-caption text-foreground uppercase tracking-wider">{dl.progress_future}</span>
-      </div>
-      <div className="shrink-0 px-3 py-2">
-        <span className="typo-caption text-foreground uppercase tracking-wider">{dl.progress_no_date}</span>
-      </div>
     </div>
   );
 }

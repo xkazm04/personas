@@ -1565,7 +1565,12 @@
     "unknown_persona": "Unbekannt",
     "unread": "Ungelesen",
     "view_execution": "Ausführung anzeigen",
-    "what_could_be_better": "Was könnte besser sein?"
+    "what_could_be_better": "Was könnte besser sein?",
+    "attachment_missing": "Datei nicht mehr verfügbar",
+    "attachment_open": "{name} öffnen",
+    "attachments_cleaned": "Screenshots nach der Entscheidung entfernt",
+    "attachments_label": "Anhänge",
+    "linked_report_unavailable": "Dieser Bericht ist nicht mehr verfügbar"
   },
   "reports": {
     "channel_desktop": "Desktop",
@@ -1817,7 +1822,8 @@
     "unknown_persona": "Unbekannte Persona",
     "you": "Sie",
     "load_failed_title": "Die Prüfliste konnte nicht geladen werden",
-    "row_gone": "Diese Prüfung ist nicht mehr in der Warteschlange. Bitte neu laden und erneut versuchen."
+    "row_gone": "Diese Prüfung ist nicht mehr in der Warteschlange. Bitte neu laden und erneut versuchen.",
+    "view_report": "Bericht anzeigen"
   },
   "saved_views": {
     "errors": {

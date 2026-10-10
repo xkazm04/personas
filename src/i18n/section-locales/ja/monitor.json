@@ -227,6 +227,9 @@
   "grid_dock_collapse": "送信コンソールを隠す",
   "grid_fleet_exited": "このセッションは終了しました — ターミナルはもうありません。",
   "grid_fleet_kill": "セッションを終了",
+  "terminal_asleep_label": "スリープ中の理由",
+  "terminal_wake_failed": "このセッションは再開できません",
+  "terminal_wake_failed_hint": "ボードから消すにはセッションを終了してください。",
   "grid_messages_empty": "チャンネルの動きはまだありません。",
   "grid_rail_loading_more": "さらに読み込み中…",
   "grid_session_recap_ai_title": "セッション名",
@@ -615,6 +618,14 @@
   "orch_never_served": "未実行",
   "orch_refusal_budget": "月間予算を使い切りました",
   "orch_refusal_concurrency": "マシンがペルソナ上限に達しています",
+  "orch_refusal_headless": "ターミナルの App Master がこのプロジェクトを担当中",
+  "orch_headless_running": "Headless - 実行中",
+  "orch_headless_idle": "Headless - 待機中",
+  "orch_headless_stale": "Headless - 古い",
+  "orch_headless_hint": "このプロジェクトの App Master はターミナル (/appmaster) から実行されています。報告が新しい間、アプリ内の master は待機します。",
+  "orch_headless_next_wake": "次回の起動:",
+  "orch_headless_no_wake": "未通知",
+  "orch_headless_reported": "最終報告:",
   "orch_refusal_daily_cap": "日次上限に到達しました",
   "orch_refusal_in_flight": "前回のパスをまだ実行中です",
   "orch_refusal_interval_floor": "間隔待機中です",
@@ -1073,5 +1084,6 @@
   "dc_hub_row_open_aria": "開く: {title}",
   "dc_hub_triage_all_none": "待機中のものはありません",
   "dc_hub_triage_all_short": "すべて",
-  "dc_hub_triage_all_walk_tip": "{count} 件すべてを緊急度の高い順に確認"
+  "dc_hub_triage_all_walk_tip": "{count} 件すべてを緊急度の高い順に確認",
+  "grid_rail_triage_modal_aria": "レビューの詳細"
 }

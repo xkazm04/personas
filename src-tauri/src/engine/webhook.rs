@@ -199,12 +199,21 @@ async fn health() -> impl IntoResponse {
     // VERIFIES the mode here instead of inferring it from a pairing that
     // happened to auto-approve — the difference between "the mode is on" and
     // "a human happened to click fast" must never be a guess.
-    Json(serde_json::json!({
+    Json(health_body(chrono::Utc::now().timestamp_millis()))
+}
+
+/// The `/health` body. `timestamp` (epoch ms) is the web dashboard's
+/// `HealthResponse.timestamp`. This route is unauthenticated, so it carries no
+/// activity counts: the web's `workers` and `hasSubscription` are served by
+/// the authenticated `GET /api/status`, not here.
+fn health_body(timestamp_ms: i64) -> serde_json::Value {
+    serde_json::json!({
         "status": "ok",
         "service": "personas-webhook",
         "management": management_routes_live(),
         "headlessBridge": personas_engine::headless::enabled(),
-    }))
+        "timestamp": timestamp_ms,
+    })
 }
 
 /// GET /webhook/{trigger_id} -- confirms the webhook endpoint exists and
@@ -703,6 +712,31 @@ fn mark_triggered_and_publish(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn health_adds_only_a_timestamp_and_no_activity_counts() {
+        let body = health_body(1_767_323_045_000);
+        let mut keys: Vec<&str> = body
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(|k| k.as_str())
+            .collect();
+        keys.sort();
+        assert_eq!(
+            keys,
+            [
+                "headlessBridge",
+                "management",
+                "service",
+                "status",
+                "timestamp"
+            ]
+        );
+        assert_eq!(body["status"], "ok");
+        assert_eq!(body["service"], "personas-webhook");
+        assert_eq!(body["timestamp"], 1_767_323_045_000_i64);
+    }
 
     #[test]
     fn test_hmac_verification_valid() {

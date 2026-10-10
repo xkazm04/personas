@@ -1,91 +1,73 @@
 /**
- * Lifecycle: the active project's development practice. The header names the
- * preset and version; the body is one of three prototype layouts over ONE data
- * model (`lifecycleView/useLifecycleView`), so a variant is layout and styling
- * only.
+ * Lifecycle: the active project's development practice, over ONE data model
+ * (`lifecycleView/useLifecycleView`).
  *
- * 2026-10-06, the owner's note: a node click no longer opens a drawer. The
- * selected step's state renders inline under the timeline, and the evidence is
- * a real `UnifiedTable` ledger rather than loose cards. The right-drawer
- * `StepDetailSheet` is gone: a modal that reopens on every node made walking
- * the journey impossible, which is the one thing the surface exists for.
+ * The FRAME (Lifecycle excellence wave 1, 2026-10-08): the header names the
+ * PROJECT, with one line under it for the practice and how fresh its
+ * measurement is against the base branch (`frame/HeaderSubtitle`), and one
+ * action cluster on its own row (`frame/HeaderToolbar`): picker, Measure, the
+ * Overseer hand-off, Ask Athena, and Install when a binding is missing. The
+ * header and its cluster are permanent chrome: they paint at their final size
+ * before the snapshot lands, disabled where they need it.
  *
- * Loading pattern v2: the header and the action row are permanent chrome; a
- * cold first load ghosts the timeline and the ledger ghosts itself (UnifiedTable
- * owns that contract from `isLoading`); a warm remount paints from the module
- * cache in useLifecycleSnapshot and revalidates; a failure shows an inline
- * banner and keeps any warm snapshot on screen.
+ * Two layers in one body (`lifecycleView/LifecycleBody`). Layer 1 is the whole
+ * practice as the collar rail; pressing a step replaces it, in place, with
+ * that step's Layer-2 screen (a lazily loaded chunk, warmed on intent). Esc
+ * comes back. Not a drawer and not a route: the owner's 2026-10-06 note that a
+ * modal reopened on every node made walking the journey impossible still
+ * holds, so Layer 2 walks too (Left / Right).
  *
- * The variant switcher is dev-only and declared as a named constant rather than
- * an `import.meta.env.DEV` gate inside the JSX, and it is session-scoped: it
- * exists to pick a winner, and a Web Storage call for a prototype toggle would
- * add a storage site the golden path then has to route somewhere.
+ * A running Measure is one session for the whole page (`measure/measureSession`):
+ * the header's Measure control turns into its live progress and its subtitle
+ * says the time left, Layer 1 shows the Measure panel in the status band's
+ * slot, and Gate and Tests hold their verdict until the last run lands.
+ *
+ * Loading pattern v2: a cold first load ghosts Layer 1 in its real geometry
+ * under the permanent header; a warm remount paints from the module cache in
+ * useLifecycleSnapshot and revalidates; a failure shows an inline banner and
+ * keeps any warm snapshot on screen.
  */
-import { useState } from 'react';
 import { GitBranch } from 'lucide-react';
 
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
-import { Segmented } from '@/features/shared/components/kit';
 import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { LifecycleProjectPicker } from './LifecycleProjectPicker';
 import { LifecycleViewProvider } from './lifecycleView/context';
+import { HeaderSubtitle } from './lifecycleView/frame/HeaderSubtitle';
+import { HeaderToolbar } from './lifecycleView/frame/HeaderToolbar';
+import { LifecycleBody } from './lifecycleView/LifecycleBody';
+import { MeasureSessionProvider } from './lifecycleView/measure/measureSession';
+import { GLYPH } from './lifecycleView/system/scales';
 import { useLifecycleView } from './lifecycleView/useLifecycleView';
-import { LedgerFirst } from './lifecycleView/variants/LedgerFirst';
-import { RailBelow } from './lifecycleView/variants/RailBelow';
-import { StepperBeside } from './lifecycleView/variants/StepperBeside';
-
-/** See the header: a build-flag decision taken at the point of rendering cannot
- *  be enumerated or reviewed; a named constant can be grepped. */
-const SHOW_LAYOUT_SWITCHER = import.meta.env.DEV;
-
-type LifecycleLayout = 'rail' | 'stepper' | 'ledger';
-
-const LAYOUTS: Array<{ v: LifecycleLayout; label: string }> = [
-  { v: 'rail', label: 'Rail below' },
-  { v: 'stepper', label: 'Stepper beside' },
-  { v: 'ledger', label: 'Ledger first' },
-];
-
-/** The baseline: the surface as it shipped, minus the drawer. */
-const DEFAULT_LAYOUT: LifecycleLayout = 'rail';
 
 export default function LifecyclePage() {
   const { t } = useTranslation();
   const model = useLifecycleView();
-  const [layout, setLayout] = useState<LifecycleLayout>(DEFAULT_LAYOUT);
 
   return (
     <LifecycleViewProvider model={model}>
-      <ContentBox>
-        <ContentHeader
-          icon={<GitBranch className="w-5 h-5 text-violet-400" />}
-          iconColor="violet"
-          title={t.plugins.dev_tools.lifecycle_title}
-          subtitle={model.subtitle}
-          actions={
-            <div className="flex items-center gap-2">
-              {SHOW_LAYOUT_SWITCHER && (
-                <Segmented label="Lifecycle layout" value={layout} onChange={setLayout} options={LAYOUTS} />
-              )}
-              <LifecycleProjectPicker />
-            </div>
-          }
-        />
+      <MeasureSessionProvider>
+        <ContentBox>
+          <ContentHeader
+            compact
+            icon={<GitBranch className={`${GLYPH.md} text-primary`} />}
+            iconColor="primary"
+            title={model.projectName ?? t.plugins.dev_tools.lifecycle_title}
+            subtitle={model.projectId ? <HeaderSubtitle /> : undefined}
+          >
+            <HeaderToolbar />
+          </ContentHeader>
 
-        <ContentBody centered>
-          {!model.projectId ? (
-            <EmptyState icon={GitBranch} title={model.dl.lc_empty_title} subtitle={model.dl.lc_empty_subtitle} />
-          ) : layout === 'stepper' ? (
-            <StepperBeside />
-          ) : layout === 'ledger' ? (
-            <LedgerFirst />
-          ) : (
-            <RailBelow />
-          )}
-        </ContentBody>
-      </ContentBox>
+          <ContentBody centered>
+            {!model.projectId ? (
+              <EmptyState icon={GitBranch} title={model.dl.lc_empty_title} subtitle={model.dl.lc_empty_subtitle} />
+            ) : (
+              <LifecycleBody />
+            )}
+          </ContentBody>
+        </ContentBox>
+      </MeasureSessionProvider>
     </LifecycleViewProvider>
   );
 }

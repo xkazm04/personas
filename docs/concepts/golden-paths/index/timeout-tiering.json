@@ -101,6 +101,13 @@
     "oauth.rs": {"count":1,"sections":[6],"lines":["231"],"contexts":["`url_safety.rs:270` (a required parameter), `oauth.rs:231` (`remaining`, the"],"resolved":false},
     "orchestrator/src/workerPool.ts": {"count":2,"sections":[],"lines":["62-63","64-74"],"contexts":["pair across two packages: `orchestrator/src/workerPool.ts:62-63`"],"resolved":false},
     "package.json": {"count":1,"sections":[9],"contexts":["`npm run check`** — `package.json`'s `check` script runs `npm run census:check`"]},
+    "runner/mod.rs": {
+      "count": 9,
+      "sections": [4,6,7,10,11,12],
+      "lines": ["546","54","58","545-560","2046","82","3122-3131"],
+      "contexts": ["*recorded* — §7 D1 has the clamp at `runner/mod.rs:546` writing an"],
+      "resolved": false
+    },
     "schemas.ts": {"count":1,"sections":[],"lines":["97"],"contexts":["`schemas.ts:97` accepts up to 600,000; `db.ts:244` defaults 300,000;"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Mechanism: a census rule** (`scripts/census/rules.json`). **It executes in"]},
     "scripts/census/run-census.mjs": {"count":1,"sections":[],"contexts":["(`scripts/census/run-census.mjs`) before being written down, then re-extracted"]},
@@ -177,7 +184,9 @@
       "resolvedFrom": "basename",
       "verbatim": "ai_healing.rs"
     },
+    "src-tauri/engine/src/automation_runner.rs": {"count":1,"sections":[6],"lines":["538"],"contexts":["residual of a session TTL), `automation_runner.rs:538`"],"resolvedFrom":"basename","verbatim":"automation_runner.rs"},
     "src-tauri/engine/src/p2p/connection.rs": {"count":2,"sections":[7,9],"contexts":["raising the policy is a nine-site edit. `engine/src/p2p/connection.rs` does the"],"resolvedFrom":"suffix","verbatim":"engine/src/p2p/connection.rs"},
+    "src-tauri/engine/src/project_tracking/subscription.rs": {"count":2,"sections":[6,7],"lines":["1014"],"contexts":["`subscription.rs:1014` (*worst-case overshoot is \"TTL + 2m\"*),"],"resolvedFrom":"basename","verbatim":"subscription.rs"},
     "src-tauri/src/commands/core/persona_icon_gen.rs": {
       "count": 1,
       "sections": [7],
@@ -244,7 +253,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "daemon/lock.rs"
     },
-    "src-tauri/src/engine/automation_runner.rs": {"count":1,"sections":[6],"lines":["538"],"contexts":["residual of a session TTL), `automation_runner.rs:538`"],"resolvedFrom":"basename","verbatim":"automation_runner.rs"},
     "src-tauri/src/engine/build_session/fix_pass.rs": {"count":1,"sections":[9],"contexts":["`desktop_bridges.rs` (3) + `build_session/fix_pass.rs` (3) = **20 of 61 in four"],"resolvedFrom":"suffix","verbatim":"build_session/fix_pass.rs"},
     "src-tauri/src/engine/build_session/runner.rs": {
       "count": 1,
@@ -271,11 +279,10 @@
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/mod.rs"
     },
-    "src-tauri/src/engine/project_tracking/subscription.rs": {"count":2,"sections":[6,7],"lines":["1014"],"contexts":["`subscription.rs:1014` (*worst-case overshoot is \"TTL + 2m\"*),"],"resolvedFrom":"basename","verbatim":"subscription.rs"},
     "src-tauri/src/engine/runner/mod.rs": {
-      "count": 12,
-      "sections": [3,4,6,7,10,11,12],
-      "lines": ["58","546","52-58","54","2046-2051","545-560","2046","82"],
+      "count": 3,
+      "sections": [3,6,7],
+      "lines": ["58","52-58","2046-2051"],
       "contexts": [
         "| `src/engine/runner/mod.rs:58` `DEFAULT_EXECUTION_TIMEOUT_MS` + `:3122-3131` | **the only ordering assertion in the tree.** 660,000 ms chosen to sit above the Claude CLI's 10-minute subagent-stall c…"
       ],

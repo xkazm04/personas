@@ -11,15 +11,20 @@
  * the chat (via ProcessActivityDrawer row or TitleBar notification), the
  * background entry is "adopted" — promoted into the main chatSlice so the
  * user can continue the conversation natively.
+ *
+ * The turn itself is the desktop's ONE chat turn (`start_chat_turn` ->
+ * `chat_turn::start` in Rust, the same path as the foreground chat and a
+ * paired phone's `chat_send`): it inserts the user row, saves the session
+ * context (named after the report through `title`), builds the advisory input,
+ * starts the run and writes the assistant row when the run completes - also
+ * when this webview has reloaded or the app restarted in between. This slice
+ * only drives the display: the slot's status, the reply preview, the
+ * activity row and the notifications.
  */
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
-import {
-  createChatMessage,
-  saveChatSessionContext,
-} from "@/api/agents/chat";
-import { executePersona, getExecution } from "@/api/agents/executions";
+import { startChatTurn } from "@/api/agents/chat";
 import { sendAppNotification } from "@/api/system/system";
 import { useNotificationCenterStore } from "@/stores/notificationCenterStore";
 import { createLogger } from "@/lib/log";
@@ -188,47 +193,21 @@ export const createBackgroundChatSlice: StateCreator<
     } catch (err) { silentCatch("stores/slices/agents/backgroundChatSlice:catch2")(err); }
 
     try {
-      // 1. Persist the user message into the chat_messages table. This makes
-      //    the session discoverable via listChatSessions once adopted.
-      await createChatMessage({
+      // The whole turn, in Rust: the user row (discoverable via
+      // listChatSessions once adopted), the session context in advisory mode
+      // and named after the report, the `_advisory` first-turn input (on
+      // follow-up turns after adoption chatSlice resumes the Claude session),
+      // the run, and the assistant row when it completes.
+      const turn = await startChatTurn({
         personaId,
         sessionId,
-        role: "user",
-        content: instruction,
-      });
-
-      // 2. Save initial session context — derives a human-readable title from
-      //    the source message title. Chat mode is 'advisory' so the wrapper is
-      //    _advisory: true, which routes through the advisory prompt on turn 1.
-      await saveChatSessionContext({
-        sessionId,
-        personaId,
+        message: instruction,
         chatMode: "advisory",
-        title: title.length > 60 ? title.slice(0, 57) + "..." : title,
-      }).catch(silentCatch("stores/slices/agents/backgroundChatSlice:catch8"));
-
-      // 3. Build the advisory-mode conversation input. On turn 1 we send the
-      //    full conversation with _advisory: true so the CLI prompt wraps it
-      //    in diagnostic mode. On follow-up turns (after adoption) normal
-      //    chatSlice logic takes over and uses --resume.
-      const conversationInput = JSON.stringify({
-        _advisory: true,
-        conversation: `Human: ${instruction}`,
-        latest_message: instruction,
+        title,
       });
-
-      // 4. Spawn the execution. clientRequestId prevents duplicates.
-      const exec = await executePersona(
-        personaId,
-        undefined,
-        conversationInput,
-        undefined,
-        undefined,
-        crypto.randomUUID(),
-      );
-
-      if (!exec?.id) {
-        throw new Error("executePersona did not return an execution id");
+      const executionId = turn.executionId;
+      if (!executionId) {
+        throw new Error("start_chat_turn did not return an execution id");
       }
 
       set((s) => {
@@ -237,14 +216,14 @@ export const createBackgroundChatSlice: StateCreator<
         return {
           backgroundChats: {
             ...s.backgroundChats,
-            [feedbackId]: { ...cur, status: "running", executionId: exec.id },
+            [feedbackId]: { ...cur, status: "running", executionId },
           },
         };
       });
 
       // 5. Install isolated per-execution listeners writing into this
       //    background slot, NOT global chatSlice state.
-      setupBackgroundExecListeners(feedbackId, personaId, sessionId, exec.id, set, get);
+      setupBackgroundExecListeners(feedbackId, personaId, sessionId, executionId, set, get);
 
       return feedbackId;
     } catch (err) {
@@ -380,32 +359,11 @@ function setupBackgroundExecListeners(
         const terminalStatus = event.payload.status;
         const succeeded = parseExecutionState(terminalStatus) === "completed" && fullResponse.length > 0;
 
-        try {
-          if (succeeded) {
-            // Persist assistant message so the session can be adopted later.
-            await createChatMessage({
-              personaId,
-              sessionId,
-              role: "assistant",
-              content: fullResponse,
-              executionId,
-            });
-            // Capture the Claude session id for --resume continuation after adoption.
-            let claudeSessionId: string | undefined;
-            try {
-              const exec = await getExecution(executionId, personaId);
-              if (exec.claude_session_id) claudeSessionId = exec.claude_session_id;
-            } catch (err) { silentCatch("stores/slices/agents/backgroundChatSlice:catch4")(err); }
-
-            await saveChatSessionContext({
-              sessionId,
-              personaId,
-              ...(claudeSessionId ? { claudeSessionId } : {}),
-            }).catch(silentCatch("stores/slices/agents/backgroundChatSlice:catch9"));
-          }
-        } catch (err) {
-          logger.warn("Failed to persist assistant reply", { feedbackId, executionId, error: err });
-        }
+        // The reply row is not written here: the Rust turn's completion
+        // hook writes it from the execution's output (and a restart
+        // re-arms that hook), so neither a reload of this webview nor a
+        // restart loses it. The streamed lines only feed the preview and
+        // the notification.
 
         // Update slice state
         set((s) => {

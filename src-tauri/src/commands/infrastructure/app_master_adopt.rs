@@ -199,6 +199,12 @@ pub struct AppMasterAdoption {
     /// personas it starts will WAIT, which is a reason to finish work in flight
     /// before widening the front, not a reason not to hire.
     pub active_personas: personas_engine::active_persona_cap::ActivePersonaHeadroom,
+    /// The project's headless App Master (`/appmaster`), when one has ever
+    /// posted a beat for it. `None` on the adopt path, which reports what the
+    /// adoption did, not who is running the project.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub headless: Option<crate::commands::infrastructure::headless_master::HeadlessState>,
 }
 
 /// One unanswered ask, as the state route reports it.
@@ -386,7 +392,7 @@ pub(crate) struct BoundAdoption {
 /// (exact before case-insensitive). The same lenient order
 /// `apply_codebase_pin_from_design` accepts, because a caller that has a name
 /// should not have to look up an id first.
-fn resolve_project(pool: &DbPool, needle: &str) -> Result<DevProject, AppError> {
+pub(crate) fn resolve_project(pool: &DbPool, needle: &str) -> Result<DevProject, AppError> {
     let needle = needle.trim();
     personas_core::validation::require_non_empty("project", needle)?;
 
@@ -881,6 +887,9 @@ pub fn adopt(pool: &DbPool, input: &AdoptAppMasterInput) -> Result<AppMasterAdop
         // may have just consumed a slot, and a caller deciding whether to hire
         // again must see the count AFTER its own effect.
         active_personas: personas_engine::active_persona_cap::active_persona_headroom(pool)?,
+        // The adopt path reports what the adoption did; who is running the
+        // project right now is the state route's answer.
+        headless: None,
     })
 }
 
@@ -1363,16 +1372,25 @@ fn write_manifest_law(
     Some(path.to_string_lossy().to_string())
 }
 
+/// The project's App Master persona under this door's rule: pinned to the
+/// project by its design context and named with the App Master prefix. Shared
+/// with the headless state door so the readout and the preview resolve the
+/// same persona.
+pub(crate) fn app_master_persona(
+    pool: &DbPool,
+    project_id: &str,
+) -> Result<Option<Persona>, AppError> {
+    Ok(personas_repo::list_by_dev_project(pool, project_id)?
+        .into_iter()
+        .find(|p| p.name.starts_with(APP_MASTER_NAME_PREFIX)))
+}
+
 /// The current adoption state for a project: the App Master persona, its
 /// recipe charters and their status. `None` when no persona is pinned to the
 /// project under this door's naming.
 pub fn current(pool: &DbPool, project: &str) -> Result<Option<AppMasterAdoption>, AppError> {
     let project = resolve_project(pool, project)?;
-    let pinned = personas_repo::list_by_dev_project(pool, &project.id)?;
-    let Some(persona) = pinned
-        .into_iter()
-        .find(|p| p.name.starts_with(APP_MASTER_NAME_PREFIX))
-    else {
+    let Some(persona) = app_master_persona(pool, &project.id)? else {
         return Ok(None);
     };
     let responsibilities = resp_repo::list_by_persona(pool, &persona.id, false)?;
@@ -1420,6 +1438,11 @@ pub fn current(pool: &DbPool, project: &str) -> Result<Option<AppMasterAdoption>
     let manifest_path = manifest::read(&persona.id)
         .and(manifest::manifest_path(&persona.id).ok())
         .map(|p| p.to_string_lossy().to_string());
+    let headless = crate::commands::infrastructure::headless_master::headless_state(
+        pool,
+        &project.id,
+        chrono::Utc::now(),
+    )?;
     Ok(Some(AppMasterAdoption {
         persona_id: persona.id,
         persona_name: persona.name,
@@ -1432,6 +1455,7 @@ pub fn current(pool: &DbPool, project: &str) -> Result<Option<AppMasterAdoption>
         open_asks,
         last_note,
         active_personas: personas_engine::active_persona_cap::active_persona_headroom(pool)?,
+        headless,
     }))
 }
 

@@ -32,9 +32,11 @@
     "data_portability.rs": {"count":1,"sections":[7],"lines":["11852"],"contexts":["`data_portability.rs:11852`, and the 1,700-odd `pumper-*` directories belong to a different repo"],"resolved":false},
     "desktop_bridges.rs": {"count":1,"sections":[7],"lines":["902"],"contexts":["`starts_with` is not containment (`:486-491`) — has **one consumer**, `desktop_bridges.rs:902`,"],"resolved":false},
     "eval.rs": {"count":2,"sections":[0,9],"lines":["620"],"contexts":["| `personas-llm-eval-*` | `eval.rs:620` — cleans on success | 0 |"],"resolved":false},
+    "genome_critique.rs": {"count":2,"sections":[0,9],"lines":["171"],"contexts":["| `personas-genome-critique-*`, `personas-assignment-*` | `genome_critique.rs`, `team_assignment_matching.rs` | 0 |"],"resolved":false},
     "headless.rs": {"count":1,"sections":[2],"lines":["132"],"contexts":["`pty.rs:324`, `:364`, `headless.rs:132`, `external.rs:169`, and nine more), so the working"],"resolved":false},
     "mkB-private-rules.json": {"count":1,"sections":[9],"contexts":["Validated standalone in a private registry (`mkB-private-rules.json`, filename unique to this"],"resolved":false},
     "package.json": {"count":4,"sections":[0,7],"lines":["81"],"contexts":["the flags `package.json` actually ships and once with `--include-orphans` — and the two runs"]},
+    "runner/mod.rs": {"count":2,"sections":[7],"lines":["663-675"],"contexts":["`cli_process.rs`, `runner/mod.rs` read around every path-construction and cleanup site."],"resolved":false},
     "schema.rs": {"count":1,"sections":[7],"lines":["1338"],"contexts":["`dev_competition_slots.worktree_name` (`schema.rs:1338`) records B's name. C and D are"],"resolved":false},
     "scripts/test/longitudinal.mjs": {"count":1,"sections":[0],"lines":["66"],"contexts":["`worktree-gc.mjs:283` runs one on every `--force` pass, and `scripts/test/longitudinal.mjs:66` runs"]},
     "scripts/worktree-gc.mjs": {"count":7,"sections":[0,7,12],"lines":["43","283","200","170"],"contexts":["construction sites opened and classified by hand. `scripts/worktree-gc.mjs` (289 lines) read in"]},
@@ -59,6 +61,14 @@
     },
     "src-tauri/engine/src/cli_process.rs": {"count":3,"sections":[0,7,9],"lines":["529-547","502-547","502"],"contexts":["(`src-tauri/engine/src/cli_process.rs:529-547`) creates `%TEMP%/<prefix>-<uuid>` and sets"]},
     "src-tauri/engine/src/path_safety.rs": {"count":1,"sections":[7],"contexts":["is `auto_cred_browser.rs:807`, `:820`, and Personas never emits `--add-dir`. `path_safety.rs` — this"],"resolvedFrom":"basename","verbatim":"path_safety.rs"},
+    "src-tauri/engine/src/team_assignment_matching.rs": {
+      "count": 2,
+      "sections": [0,9],
+      "lines": ["346"],
+      "contexts": ["| `personas-genome-critique-*`, `personas-assignment-*` | `genome_critique.rs`, `team_assignment_matching.rs` | 0 |"],
+      "resolvedFrom": "basename",
+      "verbatim": "team_assignment_matching.rs"
+    },
     "src-tauri/src/commands/companion/approvals/approval_exec_dev.rs": {"count":3,"sections":[0,7],"lines":["844-851","861-864"],"contexts":["(`src-tauri/src/commands/companion/approvals/approval_exec_dev.rs:844-851`)."]},
     "src-tauri/src/commands/companion/approvals/approval_exec_fleet.rs": {
       "count": 2,
@@ -126,30 +136,6 @@
       "contexts": ["| `build-cap/-prose/-clarify/-test-*`, `test-summary-*` | `fanout.rs`, `tool_tests.rs` | 0 |"],
       "resolvedFrom": "basename",
       "verbatim": "tool_tests.rs"
-    },
-    "src-tauri/src/engine/genome_critique.rs": {
-      "count": 2,
-      "sections": [0,9],
-      "lines": ["171"],
-      "contexts": ["| `personas-genome-critique-*`, `personas-assignment-*` | `genome_critique.rs`, `team_assignment_matching.rs` | 0 |"],
-      "resolvedFrom": "basename",
-      "verbatim": "genome_critique.rs"
-    },
-    "src-tauri/src/engine/runner/mod.rs": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["663-675"],
-      "contexts": ["`cli_process.rs`, `runner/mod.rs` read around every path-construction and cleanup site."],
-      "resolvedFrom": "suffix",
-      "verbatim": "runner/mod.rs"
-    },
-    "src-tauri/src/engine/team_assignment_matching.rs": {
-      "count": 2,
-      "sections": [0,9],
-      "lines": ["346"],
-      "contexts": ["| `personas-genome-critique-*`, `personas-assignment-*` | `genome_critique.rs`, `team_assignment_matching.rs` | 0 |"],
-      "resolvedFrom": "basename",
-      "verbatim": "team_assignment_matching.rs"
     },
     "src/features/plugins/fleet/sub_settings/FleetProcessScanner.tsx": {"count":1,"sections":[12],"contexts":["`src/features/plugins/fleet/sub_settings/FleetProcessScanner.tsx`, which is about processes, not"]},
     "test_runner.rs": {"count":3,"sections":[0,9],"lines":["1098","1137"],"contexts":["| `personas-test-coord/-exec-*` | `test_runner.rs:1098`, `:1137` | 0 |"],"resolved":false}

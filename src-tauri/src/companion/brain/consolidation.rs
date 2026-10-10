@@ -1275,6 +1275,13 @@ fn build_consolidation_prompt(
 /// file (we put everything in the user prompt for total control), no
 /// stream events to the UI — this is a backend computation.
 ///
+/// Call class of the consolidation leg: long-form reasoning over many
+/// episodes. Model comes from the class table (`personas_core::model_class`).
+/// `oneshot::call_claude_text` takes no effort, so the route's effort is not
+/// applied here and the leg keeps the CLI's own default.
+const CONSOLIDATION_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Synthesis;
+
 /// Spawn/stream/timeout plumbing lives in
 /// [`oneshot::call_claude_text`](crate::companion::brain::oneshot::call_claude_text);
 /// this wrapper owns only the consolidation-specific model choice and
@@ -1286,7 +1293,7 @@ async fn call_claude_oneshot(
     let text = call_claude_text(
         pool,
         prompt,
-        personas_core::model_ids::DEFAULT_STRONG,
+        CONSOLIDATION_CLASS.route().model,
         oneshot::leg::CONSOLIDATION,
         CONSOLIDATION_TIMEOUT,
     )

@@ -454,8 +454,10 @@ pub fn suggest_topology(
     ))
 }
 
-/// LLM model for team building -- needs reasoning for composition decisions.
-const TEAM_BUILDER_MODEL: &str = "claude-sonnet-4-6";
+/// Call class for team building: a strict JSON topology from an intent. Model
+/// and effort come from the class table (`personas_core::model_class`).
+const TEAM_BUILDER_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::StructuredJson;
 const TEAM_BUILDER_TIMEOUT_SECS: u64 = 120;
 
 /// Shared helper that runs the LLM topology pipeline: builds the prompt, calls
@@ -470,8 +472,8 @@ async fn run_llm_topology_request(
     use crate::commands::credentials::ai_artifact_flow::run_claude_prompt;
     use crate::db::repos::communication::reviews as review_repo;
     use crate::db::repos::core::personas as persona_repo;
+    use crate::engine::cli_process::{headless_claude_args, with_escalation, AttemptError};
     use crate::engine::llm_topology;
-    use crate::engine::prompt;
 
     let personas = persona_repo::get_all(db)?;
     let templates = review_repo::get_reviews(db, None, Some(50))?;
@@ -479,28 +481,47 @@ async fn run_llm_topology_request(
     let prompt_text =
         llm_topology::build_llm_topology_prompt(query, &personas, &templates, existing_member_ids);
 
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push(TEAM_BUILDER_MODEL.to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
+    let personas_ref = &personas;
+    let attempt = with_escalation(TEAM_BUILDER_CLASS, |route| {
+        let prompt_text = prompt_text.clone();
+        async move {
+            let cli_args = headless_claude_args(
+                route.model,
+                route.effort,
+                &["--max-turns".to_string(), "1".to_string()],
+            );
+            let output_text = run_claude_prompt(
+                prompt_text,
+                &cli_args,
+                TEAM_BUILDER_TIMEOUT_SECS,
+                empty_output_msg,
+            )
+            .await
+            .map_err(|e| AttemptError::Fatal(AppError::Internal(e)))?;
 
-    let output_text = run_claude_prompt(
-        prompt_text,
-        &cli_args,
-        TEAM_BUILDER_TIMEOUT_SECS,
-        empty_output_msg,
-    )
-    .await
-    .map_err(AppError::Internal)?;
+            match llm_topology::parse_llm_topology_response(&output_text, personas_ref) {
+                Some(bp) if !bp.members.is_empty() => Ok(bp),
+                Some(_) => Err(AttemptError::BadOutput(
+                    "topology response named no members".into(),
+                )),
+                None => Err(AttemptError::BadOutput(
+                    "topology response did not parse".into(),
+                )),
+            }
+        }
+    })
+    .await;
 
-    match llm_topology::parse_llm_topology_response(&output_text, &personas) {
-        Some(bp) if !bp.members.is_empty() => Ok(bp),
-        _ => Ok(topology_heuristic::suggest_topology(
+    match attempt {
+        Ok(bp) => Ok(bp),
+        // The output was rejected on every route: the keyword heuristic is the
+        // site's long-standing fallback for an unusable answer.
+        Err(AppError::Validation(_)) => Ok(topology_heuristic::suggest_topology(
             query,
             &personas,
             existing_member_ids,
         )),
+        Err(e) => Err(e),
     }
 }
 

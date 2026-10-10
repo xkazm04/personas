@@ -53,8 +53,8 @@
       "resolved": false
     },
     "render_plan/invariants.rs": {"count":1,"sections":[9],"contexts":["strings (`engine/src/design.rs`, `companion/prompt.rs`, `render_plan/invariants.rs`"],"resolved":false},
+    "rules.json": {"count":1,"sections":[9],"contexts":["this into `rules.json`:**"],"resolved":false},
     "schema.rs": {"count":3,"sections":[6],"contexts":["Production DDL by file: `incremental.rs` 146 · `schema.rs` 79 · `db/src/lib.rs`"],"resolved":false},
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["this into `rules.json`:**"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/test/clean-env.cjs": {"count":5,"sections":[5,7,9],"lines":["57"],"contexts":["data. `scripts/test/clean-env.cjs:57` sets `foreign_keys = OFF`, deletes 17"]},
     "shared-facts.json": {"count":2,"sections":[9],"contexts":["`shared-facts.json`) with a comment-stripping,"],"resolved":false},
     "sqlite.driver.ts": {

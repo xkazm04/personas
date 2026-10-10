@@ -301,6 +301,7 @@
       "resolvedFrom": "basename",
       "verbatim": "messaging.rs"
     },
+    "src-tauri/engine/src/platforms/github.rs": {"count":1,"sections":[0],"lines":["566"],"contexts":["routing (`mcp_tools.rs:794`), GitHub (`github.rs:566`), the team-preset adopter"],"resolvedFrom":"basename","verbatim":"github.rs"},
     "src-tauri/engine/src/queue.rs": {
       "count": 6,
       "sections": [0,3,6,7],
@@ -463,7 +464,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "engine/mod.rs"
     },
-    "src-tauri/src/engine/platforms/github.rs": {"count":1,"sections":[0],"lines":["566"],"contexts":["routing (`mcp_tools.rs:794`), GitHub (`github.rs:566`), the team-preset adopter"],"resolvedFrom":"basename","verbatim":"github.rs"},
     "src-tauri/src/engine/resource_governor.rs": {"count":3,"sections":[3,8],"contexts":["`src/engine/resource_governor.rs`, `src/commands/fleet/stale.rs`,"],"resolvedFrom":"suffix","verbatim":"src/engine/resource_governor.rs"},
     "src-tauri/src/engine/share_link.rs": {
       "count": 2,

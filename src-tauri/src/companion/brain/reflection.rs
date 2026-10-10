@@ -185,6 +185,13 @@ fn build_reflection_prompt(episodes: &[episodic::Episode], instructions: Option<
     p
 }
 
+/// Call class of the reflection leg: free-form reasoning over the day's
+/// material. Model comes from the class table (`personas_core::model_class`).
+/// `oneshot::call_claude_text` takes no effort, so the route's effort is not
+/// applied here and the leg keeps the CLI's own default.
+const REFLECTION_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Synthesis;
+
 /// Spawn/stream/timeout plumbing lives in
 /// [`oneshot::call_claude_text`](crate::companion::brain::oneshot::call_claude_text);
 /// this wrapper owns only the reflection-specific model choice and the
@@ -194,7 +201,7 @@ async fn call_claude_oneshot(pool: &UserDbPool, prompt: &str) -> Result<String, 
     let text = call_claude_text(
         pool,
         prompt,
-        personas_core::model_ids::DEFAULT_STRONG,
+        REFLECTION_CLASS.route().model,
         oneshot::leg::REFLECTION,
         REFLECTION_TIMEOUT,
     )

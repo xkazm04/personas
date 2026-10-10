@@ -313,6 +313,10 @@ pub(super) async fn run_session(
     handle_generation: u64,
 ) {
     let multiagent = orchestration == "multiagent";
+    // The model this session's turns run on, for the spend rows: the CLI's
+    // `result` envelope does not carry one, so without it every resolution
+    // turn booked `model = NULL` and a bench could not tell which arm ran.
+    let spend_model = cli_model(&cli_args);
     tracing::info!(
         session_id = %session_id,
         orchestration = %orchestration,
@@ -812,7 +816,7 @@ pub(super) async fn run_session(
                                         &pool,
                                         Some(&persona_id),
                                         SPEND_RESOLUTION,
-                                        None,
+                                        spend_model.as_deref(),
                                         &line,
                                     );
                                 }
@@ -2184,6 +2188,28 @@ pub(super) const TOTAL_COUNT_UNKNOWN: usize = 0;
 // REAL child processes, because the bug was never in the arithmetic: it was
 // that a wedged child and a finishing child produced identical signals. A
 // fake would have reproduced the fake, not the hang.
+
+/// The value of `--model` in `args`, when present.
+fn cli_model(args: &CliArgs) -> Option<String> {
+    args.args
+        .windows(2)
+        .find(|w| w[0] == "--model")
+        .map(|w| w[1].clone())
+}
+
+#[cfg(test)]
+mod spend_model_tests {
+    use super::*;
+
+    #[test]
+    fn resolution_spend_rows_name_the_model_the_session_spawns_on() {
+        let haiku = personas_core::model_ids::HAIKU_CURRENT;
+        let args = crate::engine::cli_process::headless_claude_args(haiku, "low", &[]);
+        assert_eq!(cli_model(&args).as_deref(), Some(haiku));
+        let bare = crate::engine::prompt::build_cli_args(None, None);
+        assert_eq!(cli_model(&bare), None);
+    }
+}
 
 #[cfg(test)]
 mod hang_tests {

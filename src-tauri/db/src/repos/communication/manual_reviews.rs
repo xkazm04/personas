@@ -11,6 +11,10 @@ use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use personas_core::error::AppError;
 
+/// The columns [`row_to_review`] reads, in the order the flip's `RETURNING`
+/// emits them.
+const REVIEW_COLUMNS: &str = "id, execution_id, persona_id, title, description, severity,      context_data, suggested_actions, status, reviewer_notes, resolved_at, created_at,      updated_at, use_case_id, assignment_id, step_id";
+
 fn row_to_review(row: &rusqlite::Row) -> rusqlite::Result<PersonaManualReview> {
     Ok(PersonaManualReview {
         id: row.get("id")?,
@@ -77,6 +81,54 @@ pub fn create(
             ],
         )?;
 
+        get_by_id(pool, &id)
+    })
+}
+
+/// A review raised OUTSIDE any run: no execution to hang it off, so none is
+/// invented. The only caller today is the headless App Master's report door
+/// (`POST /dev-tools/reports`), whose persona runs from a terminal and may never
+/// have executed inside the app.
+///
+/// The doors that raise reviews FOR a persona's work (the attention asks, the
+/// App master probation, the Director) still anchor to its latest execution and
+/// keep using [`create`]; a NULL here means "no run raised this", never "we
+/// lost the run".
+#[derive(Debug, Clone, Copy)]
+pub struct UnanchoredReviewInput<'a> {
+    pub persona_id: &'a str,
+    pub title: &'a str,
+    pub description: Option<&'a str>,
+    pub severity: &'a str,
+    pub context_data: Option<&'a str>,
+}
+
+/// Insert a pending review with `execution_id` NULL. See
+/// [`UnanchoredReviewInput`].
+pub fn create_unanchored(
+    pool: &DbPool,
+    input: UnanchoredReviewInput<'_>,
+) -> Result<PersonaManualReview, AppError> {
+    timed_query!("manual_reviews", "manual_reviews::create_unanchored", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO persona_manual_reviews
+             (id, execution_id, persona_id, title, description, severity, status,
+              context_data, created_at, updated_at)
+             VALUES (?1, NULL, ?2, ?3, ?4, ?5, 'pending', ?6, ?7, ?7)",
+            params![
+                id,
+                input.persona_id,
+                input.title,
+                input.description,
+                input.severity,
+                input.context_data,
+                now,
+            ],
+        )?;
+        drop(conn);
         get_by_id(pool, &id)
     })
 }
@@ -266,12 +318,124 @@ pub fn get_by_execution(
     })
 }
 
+/// The report a review's `context_data` points at (`{"reportId": "<id>"}`),
+/// written by the headless App Master's report door. Free-text or foreign
+/// context answers `None`: most reviews carry no such key.
+pub fn linked_report_id(context_data: Option<&str>) -> Option<String> {
+    let value: serde_json::Value = serde_json::from_str(context_data?).ok()?;
+    value
+        .get("reportId")?
+        .as_str()
+        .map(str::trim)
+        .filter(|id| !id.is_empty())
+        .map(str::to_string)
+}
+
+/// The newest review linked to a report, if any. Lets a replayed report post
+/// find the approval its first attempt raised instead of raising a second.
+pub fn find_by_report_id(
+    pool: &DbPool,
+    report_id: &str,
+) -> Result<Option<PersonaManualReview>, AppError> {
+    timed_query!("manual_reviews", "manual_reviews::find_by_report_id", {
+        let conn = pool.get()?;
+        // A coarse LIKE narrows the scan; the exact match is made on the
+        // parsed JSON, so a context that merely MENTIONS the id never counts
+        // and malformed JSON elsewhere in the table cannot fail the query.
+        let mut stmt = conn.prepare(
+            "SELECT id, execution_id, persona_id, title, description, severity,
+                    context_data, suggested_actions, status, reviewer_notes,
+                    resolved_at, created_at, updated_at, use_case_id,
+                    assignment_id, step_id
+             FROM persona_manual_reviews
+             WHERE context_data LIKE '%reportId%'
+             ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map([], row_to_review)?;
+        Ok(collect_rows(rows, "manual_reviews::find_by_report_id")
+            .into_iter()
+            .find(|r| linked_report_id(r.context_data.as_deref()).as_deref() == Some(report_id)))
+    })
+}
+
+/// A decided review releases the attachment copies of the report it was
+/// raised for (`reports::release_headless_attachments`). Best-effort and
+/// logged: the decision is the durable fact, and nothing here may fail it.
+fn release_linked_report(pool: &DbPool, review_id: &str) {
+    let review = match get_by_id(pool, review_id) {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(review_id, error = %e,
+                "review decided: could not re-read it to release a linked report");
+            return;
+        }
+    };
+    let Some(report_id) = linked_report_id(review.context_data.as_deref()) else {
+        return;
+    };
+    match crate::repos::communication::reports::release_headless_attachments(pool, &report_id) {
+        Ok(crate::repos::communication::reports::AttachmentRelease::Released { removed }) => {
+            tracing::info!(review_id, report_id = %report_id, removed = ?removed,
+                "review decided: released the report's attachment copies");
+        }
+        Ok(crate::repos::communication::reports::AttachmentRelease::Refused(why)) => {
+            tracing::warn!(review_id, report_id = %report_id, why = %why,
+                "review decided: the report's attachments were NOT released");
+        }
+        Ok(crate::repos::communication::reports::AttachmentRelease::Untouched) => {}
+        Err(e) => {
+            tracing::warn!(review_id, report_id = %report_id, error = %e,
+                "review decided: releasing the report's attachments failed");
+        }
+    }
+}
+
+/// Resolve a review — the chokepoint every resolution path shares (the review
+/// commands, Athena's approvals, auto-triage, the probation and ask doors).
+///
+/// After the status flip lands, a review that was raised for a headless App
+/// Master report releases that report's attachment copies. That lives HERE
+/// rather than in any one caller for the same reason the learning loop does:
+/// a decision taken anywhere must have the same consequences.
 pub fn update_status(
     pool: &DbPool,
     id: &str,
     status: ManualReviewStatus,
     reviewer_notes: Option<String>,
 ) -> Result<Option<LearnedMemoryRef>, AppError> {
+    update_status_returning(pool, id, status, reviewer_notes).map(|(_, learned)| learned)
+}
+
+/// [`update_status`], also returning the review as the flip wrote it.
+///
+/// The row comes back from the flip's own `UPDATE ... RETURNING`, so a caller
+/// that needs it does not read it a second time AFTER the decision committed:
+/// a failed re-read there would report an error for a decision that was in
+/// fact made. Nothing after the flip writes the review row (the learning loop
+/// writes memories, the attachment release writes reports), so the returned
+/// snapshot is the row as it stands.
+pub fn update_status_returning(
+    pool: &DbPool,
+    id: &str,
+    status: ManualReviewStatus,
+    reviewer_notes: Option<String>,
+) -> Result<(PersonaManualReview, Option<LearnedMemoryRef>), AppError> {
+    let (review, learned) = flip_status(pool, id, status, reviewer_notes)?;
+    if status != ManualReviewStatus::Pending {
+        release_linked_report(pool, id);
+    }
+    Ok((review, learned))
+}
+
+/// The body of [`update_status_returning`]: the compare-and-swap flip and the
+/// learning loop. Returns with every pooled connection it took released, so the
+/// attachment release that follows checks out its own.
+fn flip_status(
+    pool: &DbPool,
+    id: &str,
+    status: ManualReviewStatus,
+    reviewer_notes: Option<String>,
+) -> Result<(PersonaManualReview, Option<LearnedMemoryRef>), AppError> {
     timed_query!("manual_reviews", "manual_reviews::update_status", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
@@ -306,31 +470,37 @@ pub fn update_status(
         // decision recorded by proxy -- so the caller's action was genuinely
         // dropped and must be surfaced as `Err`, not treated as a benign no-op.
         let expected = current.status.as_str();
-        let rows = conn.execute(
-            "UPDATE persona_manual_reviews
-             SET status = ?1,
-                 reviewer_notes = COALESCE(?2, reviewer_notes),
-                 resolved_at = COALESCE(?3, resolved_at),
-                 updated_at = ?4
-             WHERE id = ?5 AND status = ?6",
-            params![
-                status.as_str(),
-                reviewer_notes,
-                resolved_at,
-                now,
-                id,
-                expected
-            ],
-        )?;
+        let flipped = conn
+            .query_row(
+                &format!(
+                    "UPDATE persona_manual_reviews
+                     SET status = ?1,
+                         reviewer_notes = COALESCE(?2, reviewer_notes),
+                         resolved_at = COALESCE(?3, resolved_at),
+                         updated_at = ?4
+                     WHERE id = ?5 AND status = ?6
+                     RETURNING {REVIEW_COLUMNS}"
+                ),
+                params![
+                    status.as_str(),
+                    reviewer_notes,
+                    resolved_at,
+                    now,
+                    id,
+                    expected
+                ],
+                row_to_review,
+            )
+            .optional()?;
 
-        if rows == 0 {
+        let Some(review) = flipped else {
             // get_by_id above succeeded, so the row exists — a 0-row flip means a
             // concurrent caller already resolved it. Surface a benign error that the
             // command layer's `?` turns into "someone else won; don't re-fire".
             return Err(AppError::Validation(format!(
                 "Manual review {id} was already resolved by a concurrent action"
             )));
-        }
+        };
 
         // Surfaced reference to whatever the learning loop wrote (Phase 2).
         let mut learned: Option<LearnedMemoryRef> = None;
@@ -453,7 +623,7 @@ pub fn update_status(
                             title: learned_title.clone(),
                             content,
                             category: Some("learned".to_string()),
-                            source_execution_id: Some(current.execution_id.clone()),
+                            source_execution_id: current.execution_id.clone(),
                             // MEMORY CONTRACT (4): importance is 1..=5. Approved
                             // director coaching is a deliberate, user-endorsed
                             // signal, so pin it at the top of the band.
@@ -494,7 +664,7 @@ pub fn update_status(
                         title: learned_title.clone(),
                         content,
                         category: Some("learned".to_string()),
-                        source_execution_id: Some(current.execution_id.clone()),
+                        source_execution_id: current.execution_id.clone(),
                         importance: Some(5),
                         tags: Some(Json(vec!["human-review".to_string(), verdict.to_string()])),
                         use_case_id: current.use_case_id.clone(),
@@ -518,7 +688,7 @@ pub fn update_status(
             }
         }
 
-        Ok(learned)
+        Ok((review, learned))
     })
 }
 
@@ -561,7 +731,8 @@ pub fn append_reviewer_note(pool: &DbPool, id: &str, note: &str) -> Result<bool,
 /// only).
 pub struct StaleReviewResolution {
     pub id: String,
-    pub execution_id: String,
+    /// `None` for a review raised outside any run (e60).
+    pub execution_id: Option<String>,
     pub persona_id: String,
     pub use_case_id: Option<String>,
     pub created_at: String,
@@ -657,11 +828,17 @@ pub fn gc_stale_pending(
         )?;
 
         tx.commit()?;
+        drop(conn);
         tracing::info!(
             count = resolved.len(),
             cutoff = %cutoff_iso,
             "Auto-resolved stale pending reviews"
         );
+        // Aged out is resolved too: an approval nobody answered must not
+        // keep its report's attachment copies forever.
+        for r in &resolved {
+            release_linked_report(pool, &r.id);
+        }
         Ok(resolved)
     })
 }
@@ -925,7 +1102,7 @@ mod tests {
         assert_eq!(review.severity, "warning");
         assert_eq!(review.title, "Check output quality");
         assert_eq!(review.persona_id, persona_id);
-        assert_eq!(review.execution_id, execution_id);
+        assert_eq!(review.execution_id, Some(execution_id.clone()));
 
         // Get by id
         let fetched = get_by_id(&pool, &review.id).unwrap();
@@ -1311,5 +1488,174 @@ mod tests {
         let n = delete_all(&pool).unwrap();
         assert_eq!(n, 2);
         assert_eq!(get_pending_count(&pool, None).unwrap(), 0);
+    }
+
+    /// A review raised outside any run (e60) round-trips through every reader
+    /// that used to assume a run: the typed read, the lists, the learning loop
+    /// on resolution and the stale-review sweep.
+    #[test]
+    fn an_unanchored_review_reads_resolves_and_ages_out_with_no_run() {
+        let pool = init_test_db().unwrap();
+        let (persona_id, _execution_id) = setup_persona_and_execution(&pool);
+        let review = create_unanchored(
+            &pool,
+            UnanchoredReviewInput {
+                persona_id: &persona_id,
+                title: "Ship the report?",
+                description: Some("screenshots attached"),
+                severity: "high",
+                context_data: Some(r#"{"reportId":"rep-1"}"#),
+            },
+        )
+        .unwrap();
+        assert_eq!(review.execution_id, None);
+        assert_eq!(review.severity, "high");
+        assert_eq!(review.status, ManualReviewStatus::Pending);
+        assert_eq!(
+            review.context_data.as_deref(),
+            Some(r#"{"reportId":"rep-1"}"#)
+        );
+        assert_eq!(get_by_persona(&pool, &persona_id, None).unwrap().len(), 1);
+        assert_eq!(get_all(&pool, Some("pending")).unwrap().len(), 1);
+
+        // Resolution writes the learned memory with no source run.
+        update_status(&pool, &review.id, ManualReviewStatus::Approved, None).unwrap();
+        assert_eq!(
+            get_by_id(&pool, &review.id).unwrap().status,
+            ManualReviewStatus::Approved
+        );
+
+        // A second one ages out through the sweep, which used to read
+        // `execution_id` as a String and would have failed the whole batch.
+        let stale = create_unanchored(
+            &pool,
+            UnanchoredReviewInput {
+                persona_id: &persona_id,
+                title: "Nobody answered",
+                description: None,
+                severity: "info",
+                context_data: None,
+            },
+        )
+        .unwrap();
+        let resolved = gc_stale_pending(
+            &pool,
+            &(chrono::Utc::now() + chrono::Duration::days(1)).to_rfc3339(),
+        )
+        .unwrap();
+        assert_eq!(resolved.len(), 1);
+        assert_eq!(resolved[0].id, stale.id);
+        assert_eq!(resolved[0].execution_id, None);
+    }
+    #[test]
+    fn a_linked_report_id_is_read_only_from_json_that_names_one() {
+        assert_eq!(
+            linked_report_id(Some(r#"{"reportId":"rep-1","other":2}"#)).as_deref(),
+            Some("rep-1")
+        );
+        assert_eq!(
+            linked_report_id(Some("free text mentioning reportId")),
+            None
+        );
+        assert_eq!(linked_report_id(Some(r#"{"source":"director"}"#)), None);
+        assert_eq!(linked_report_id(Some(r#"{"reportId":"  "}"#)), None);
+        assert_eq!(linked_report_id(Some(r#"{"reportId":7}"#)), None);
+        assert_eq!(linked_report_id(None), None);
+    }
+
+    #[test]
+    fn a_review_is_found_by_the_report_it_links_to() {
+        let pool = init_test_db().unwrap();
+        let (persona_id, execution_id) = setup_persona_and_execution(&pool);
+        create_pending_review(&pool, &persona_id, &execution_id);
+        let linked = create_unanchored(
+            &pool,
+            UnanchoredReviewInput {
+                persona_id: &persona_id,
+                title: "Ship?",
+                description: None,
+                severity: "info",
+                context_data: Some(r#"{"reportId":"rep-9"}"#),
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            find_by_report_id(&pool, "rep-9").unwrap().map(|r| r.id),
+            Some(linked.id)
+        );
+        assert!(find_by_report_id(&pool, "rep-1").unwrap().is_none());
+    }
+
+    fn pending_review(pool: &DbPool, notes_seed: Option<&str>) -> String {
+        let (persona_id, execution_id) = setup_persona_and_execution(pool);
+        let review = create(
+            pool,
+            CreateManualReviewInput {
+                execution_id,
+                persona_id,
+                title: "Returning review".into(),
+                description: None,
+                severity: None,
+                context_data: None,
+                suggested_actions: None,
+                use_case_id: None,
+                assignment_id: None,
+                step_id: None,
+            },
+        )
+        .unwrap();
+        if let Some(n) = notes_seed {
+            append_reviewer_note(pool, &review.id, n).unwrap();
+        }
+        review.id
+    }
+
+    #[test]
+    fn update_status_returning_matches_a_later_read() {
+        let pool = init_test_db().unwrap();
+        let id = pending_review(&pool, None);
+
+        let (review, _) = update_status_returning(
+            &pool,
+            &id,
+            ManualReviewStatus::Approved,
+            Some("ship it".into()),
+        )
+        .unwrap();
+        assert_eq!(review.status, ManualReviewStatus::Approved);
+        assert!(review.resolved_at.is_some());
+        assert_eq!(review.reviewer_notes.as_deref(), Some("ship it"));
+
+        let read = get_by_id(&pool, &id).unwrap();
+        assert_eq!(
+            serde_json::to_value(&review).unwrap(),
+            serde_json::to_value(&read).unwrap()
+        );
+    }
+
+    #[test]
+    fn update_status_returning_none_notes_keep_existing_notes() {
+        let pool = init_test_db().unwrap();
+        let id = pending_review(&pool, Some("earlier note"));
+        let before = get_by_id(&pool, &id).unwrap().reviewer_notes;
+        assert!(before.is_some());
+
+        let (review, _) =
+            update_status_returning(&pool, &id, ManualReviewStatus::Rejected, None).unwrap();
+        assert_eq!(review.reviewer_notes, before);
+    }
+
+    #[test]
+    fn update_status_returning_lost_cas_is_err_without_a_review() {
+        let pool = init_test_db().unwrap();
+        let id = pending_review(&pool, None);
+        update_status_returning(&pool, &id, ManualReviewStatus::Approved, None).unwrap();
+
+        let second = update_status_returning(&pool, &id, ManualReviewStatus::Rejected, None);
+        assert!(matches!(second, Err(AppError::Validation(_))));
+        assert_eq!(
+            get_by_id(&pool, &id).unwrap().status,
+            ManualReviewStatus::Approved
+        );
     }
 }

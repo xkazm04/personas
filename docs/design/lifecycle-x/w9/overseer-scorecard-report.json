@@ -1,0 +1,137 @@
+{
+  "module": "companions/overseer/scorecard",
+  "kit": null,
+  "query": null,
+  "reducedMotion": false,
+  "steps": null,
+  "label": "overseer-scorecard",
+  "createdAt": "2026-10-09T07:28:14.172Z",
+  "browser": "153.0.8010.12",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 6,
+    "note": "Synthetic: two agents in scope; three watched pipelines, one never sent."
+  },
+  "ok": true,
+  "unknownIpcCommands": [
+    "obsidian_available",
+    "get_director_campaign_report",
+    "list_director_experiments"
+  ],
+  "shots": [
+    {
+      "file": "overseer-scorecard-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "obsidian_available",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "get_director_campaign_report",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_director_experiments",
+          "args": {
+            "limit": null,
+            "personaId": null
+          },
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "get_director_portfolio": 1,
+        "list_director_verdicts": 1,
+        "get_director_brain_enabled": 1,
+        "obsidian_available": 1,
+        "get_director_campaign_report": 1,
+        "list_director_experiments": 1,
+        "dev_tools_overseer_watched_pipelines": 2
+      },
+      "stable": true,
+      "textLength": 1450,
+      "textSample": "DIRECTOR Coaching 2 starred personas Refresh Add to scope Review all in scope 7d 30d 90d Avg verdict 6.0 Director long-term memory Value delivered 70% Fleet executions that delivered value Avg verdict",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "overseer-scorecard-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "obsidian_available",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "get_director_campaign_report",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_director_experiments",
+          "args": {
+            "limit": null,
+            "personaId": null
+          },
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "get_director_portfolio": 1,
+        "list_director_verdicts": 1,
+        "get_director_brain_enabled": 1,
+        "obsidian_available": 1,
+        "get_director_campaign_report": 1,
+        "list_director_experiments": 1,
+        "dev_tools_overseer_watched_pipelines": 2
+      },
+      "stable": true,
+      "textLength": 1450,
+      "textSample": "DIRECTOR Coaching 2 starred personas Refresh Add to scope Review all in scope 7d 30d 90d Avg verdict 6.0 Director long-term memory Value delivered 70% Fleet executions that delivered value Avg verdict",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

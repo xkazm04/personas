@@ -6,6 +6,41 @@
 // UnifiedTable (sorting, keyboard nav, ghost-under-header cold load, one-shot
 // row cascade) so it reads like every other ledger in the app, and scoped by
 // the header picker's workspace / project.
+//
+// WHY THERE IS NO 20-PER-PAGE WINDOW HERE, measured 2026-10-06 rather than
+// assumed, because a brief asked for one:
+//
+//  1. THE ROWS ARE ALREADY WINDOWED. `rowHeight={ROW_HEIGHT}` puts this table
+//     on UnifiedTable's virtual path (`useVirtual = rowHeight > 0`,
+//     UnifiedTable.tsx:569), which renders `virtualizer.getVirtualItems()` -
+//     the visible rows plus `overscan: 5` (useVirtualList.ts:10). At 500
+//     proposals the DOM holds roughly twenty rows, not five hundred. "All the
+//     data is not loaded at once" is therefore already true at the only layer
+//     where this surface can make it true.
+//
+//  2. THERE IS NOTHING TO PAGE FROM. The rows come from `s.kpis`, one array
+//     that `fetchAllKpis` fills from `dev_tools_list_all_kpis` - a command
+//     with no limit and no offset - and that same array backs the KPI
+//     dashboard, the signal board and the steering panel. Real backend
+//     pagination would need a new Rust command AND would break three other
+//     consumers that need the whole set. So the only honest option is a
+//     RENDER window, which point 1 already provides.
+//
+//  3. A SECOND, CLIENT-SIDE WINDOW WOULD CORRUPT THE SORT. UnifiedTable owns
+//     the sort: it holds `sortKey`/`sortDir` in its own state, persists them
+//     under `tableId`, and sorts the `data` IT IS GIVEN (UnifiedTable.tsx:546).
+//     It exposes no sort callback, so a caller that slices `data` to twenty
+//     rows gets those twenty sorted and the other four hundred and eighty
+//     silently excluded from the comparison - a sort that lies, in exchange
+//     for a DOM saving that point 1 already banked. The correct place for a
+//     page window on this surface is INSIDE UnifiedTable, next to the sort it
+//     would have to cooperate with (one `pageSize` prop applied to
+//     `sortedData`, after the sort). That file is shared and is not this
+//     module's to change; it is reported as the follow-up instead.
+//
+// What this pass did add is the thing the virtual path was missing: a
+// `scrollRestoreKey`, so returning to the queue from the dashboard or the
+// detail modal lands where you were reading instead of back at row one.
 import { useMemo, useState } from 'react';
 import { Cable, Check, X } from 'lucide-react';
 
@@ -188,6 +223,10 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
         ariaLabel={t.kpis.view_proposals}
         emptyTitle={t.kpis.queue_empty_title}
         rowReveal={{ resetKey: scope.key }}
+        // "Where you are" in this queue is the picker scope: a different
+        // workspace/project is a different list and starts at the top, the
+        // same one returns to the row you were reading.
+        scrollRestoreKey={`kpi-proposals:${scope.key}`}
       />
       {openKpi && <KPIProposalModal kpi={openKpi} onClose={() => setOpenId(null)} />}
       {connectKpi && <KPIConnectWizard kpi={connectKpi} onClose={() => setConnectId(null)} />}

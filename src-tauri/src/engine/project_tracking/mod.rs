@@ -1,6 +1,6 @@
 //! Project tracking — engine subsystem that absorbs CLI activity (git
 //! commits, active-runs ledger entries, optional Obsidian notes), keeps a
-//! capped raw event log, and runs an hourly consolidator (Sonnet 4.6) that
+//! capped raw event log, and runs an hourly consolidator (Sonnet 5.5) that
 //! produces a stable per-project "pulse" — narrative + 3-5 named
 //! directions + 0-3 tensions. Companion's brain consumes the pulse via the
 //! `project-tracking://pulse-updated` event; users discuss it in chat when
@@ -27,12 +27,12 @@
 //! - Phase 6: `watchers/obsidian` (gated on Obsidian credential detection).
 
 pub mod consolidator;
-pub mod events;
-pub mod pulse;
+pub use personas_engine::project_tracking::events;
+pub use personas_engine::project_tracking::pulse;
 pub mod push;
 pub mod scheduler;
-pub mod subscription;
-pub mod watchers;
+pub use personas_engine::project_tracking::subscription;
+pub use personas_engine::project_tracking::watchers;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;

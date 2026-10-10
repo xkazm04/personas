@@ -31,6 +31,7 @@
   ],
   "citations": {
     "AgentDetail.tsx": {"count":1,"sections":[],"lines":["77-93"],"contexts":["`AgentDetail.tsx:77-93` runs `i * 120` over four elements, which is fine; the same expression"],"resolved":false},
+    "ManualReviewList.tsx": {"count":1,"sections":[7],"lines":["474"],"contexts":["(`ManualReviewList.tsx:474`) always passes a proper `revealKey`, so the fallback is unreachable."],"resolved":false},
     "RevealItem.test.tsx": {"count":1,"sections":[9],"contexts":["5. **Land the four probes** from this composition as `RevealItem.test.tsx` /"],"resolved":false},
     "ToneConsole.tsx": {"count":1,"sections":[7],"lines":["280"],"contexts":["`ScraperControlRoom.tsx:347`, `ToneConsole.tsx:280`) — these are placeholders, not entrances;"],"resolved":false},
     "UnifiedTable.reveal.test.tsx": {"count":1,"sections":[9],"contexts":["`UnifiedTable.reveal.test.tsx`: the delay cap, the reduced-motion short-circuit, the"],"resolved":false},
@@ -66,9 +67,10 @@
       "resolved": false
     },
     "rules-lis.json": {"count":1,"sections":[9],"contexts":["composer-unique harness (`stagger-*-lis.mjs`, `rules-lis.json`), then **re-extracted from the"],"resolved":false},
+    "rules.json": {"count":1,"sections":[9],"contexts":["fenced block above and re-run**; both runs identical. `rules.json` was **not** edited — merge"],"resolved":false},
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"contexts":["Validated standalone against the real engine (`scripts/census/lib/engine.mjs`) through a"]},
     "scripts/census/merge-published-rules.mjs": {"count":1,"sections":[9],"contexts":["with `scripts/census/merge-published-rules.mjs`."]},
-    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["All **81** rules in `scripts/census/rules.json` were read. None matches `animationDelay`,"]},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["All **81** rules in `scripts/census/rules.json` were read. None matches `animationDelay`,"]},
     "shared-facts.json": {"count":2,"sections":[9],"contexts":["Shared counts cited from `shared-facts.json`; everything else was"],"resolved":false},
     "src/": {"count":1,"sections":[9],"contexts":["means a restructured `src/`, a renamed extension or a mis-pointed walk exits 1 saying the matcher"],"resolved":false,"isDir":true},
     "src/**": {"count":1,"sections":[],"contexts":["Composed 2026-08-15 at `0a5b7fcaf`. Sweep: all **4,829** `src/**` `.ts`/`.tsx` files walked by the"],"resolved":false,"isDir":true},
@@ -110,14 +112,6 @@
       "contexts": ["`VirtualizedTableBody.tsx`, `LeaderboardMatrixView.tsx`, `PersonaCoachingTable.tsx`,"],
       "resolvedFrom": "basename",
       "verbatim": "LeaderboardMatrixView.tsx"
-    },
-    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["474"],
-      "contexts": ["(`ManualReviewList.tsx:474`) always passes a proper `revealKey`, so the fallback is unreachable."],
-      "resolvedFrom": "basename",
-      "verbatim": "ManualReviewList.tsx"
     },
     "src/features/overview/sub_manual-review/components/ReviewInboxPanel.tsx": {
       "count": 2,

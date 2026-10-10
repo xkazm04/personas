@@ -196,7 +196,11 @@ async fn run_nl_query(params: RunParams) {
         NL_QUERY_JOBS.emit_line(&app_clone, &id_clone, line);
     };
 
-    let cli_result = ai_helpers::run_single_turn_prompt(system_prompt, Some(&on_line)).await;
+    let cli_result = ai_helpers::run_single_turn_prompt(system_prompt, Some(&on_line), |out| {
+        ai_helpers::extract_fenced_block(out, "sql")
+            .ok_or_else(|| "No SQL block found in AI response".to_string())
+    })
+    .await;
 
     if cancel_token.is_cancelled() {
         NL_QUERY_JOBS.emit_line(&app, &query_id, "> Cancelled.");
@@ -204,50 +208,46 @@ async fn run_nl_query(params: RunParams) {
     }
 
     match cli_result {
-        Ok((output, _session_id)) => {
-            let sql = ai_helpers::extract_fenced_block(&output, "sql");
+        Ok((generated_sql, output, _session_id)) => {
             let explanation = ai_helpers::extract_explanation(&output);
 
-            match sql {
-                Some(generated_sql) => {
-                    NL_QUERY_JOBS.emit_line(&app, &query_id, "> Query generated successfully.");
+            NL_QUERY_JOBS.emit_line(&app, &query_id, "> Query generated successfully.");
 
-                    NL_QUERY_JOBS.update_extra(&query_id, |extra| {
-                        extra.generated_sql = Some(generated_sql.clone());
-                        extra.explanation = explanation.clone();
-                    });
+            NL_QUERY_JOBS.update_extra(&query_id, |extra| {
+                extra.generated_sql = Some(generated_sql.clone());
+                extra.explanation = explanation.clone();
+            });
 
-                    let _ = app.emit(
-                        event_name::NL_QUERY_STATUS,
-                        serde_json::json!({
-                            "job_id": query_id,
-                            "status": "completed",
-                            "error": null,
-                            "generated_sql": generated_sql,
-                            "explanation": explanation,
-                        }),
-                    );
+            let _ = app.emit(
+                event_name::NL_QUERY_STATUS,
+                serde_json::json!({
+                    "job_id": query_id,
+                    "status": "completed",
+                    "error": null,
+                    "generated_sql": generated_sql,
+                    "explanation": explanation,
+                }),
+            );
 
-                    if let Ok(mut jobs) = NL_QUERY_JOBS.lock() {
-                        if let Some(job) = jobs.get_mut(&query_id) {
-                            job.status = "completed".into();
-                        }
-                    }
-                }
-                None => {
-                    NL_QUERY_JOBS.emit_line(
-                        &app,
-                        &query_id,
-                        "[ERROR] Could not extract a query from the AI response.",
-                    );
-                    NL_QUERY_JOBS.set_status(
-                        &app,
-                        &query_id,
-                        "failed",
-                        Some("No SQL block found in AI response".into()),
-                    );
+            if let Ok(mut jobs) = NL_QUERY_JOBS.lock() {
+                if let Some(job) = jobs.get_mut(&query_id) {
+                    job.status = "completed".into();
                 }
             }
+        }
+        Err(AppError::Validation(reason)) => {
+            tracing::warn!(query_id = %query_id, "NL query: output rejected: {}", reason);
+            NL_QUERY_JOBS.emit_line(
+                &app,
+                &query_id,
+                "[ERROR] Could not extract a query from the AI response.",
+            );
+            NL_QUERY_JOBS.set_status(
+                &app,
+                &query_id,
+                "failed",
+                Some("No SQL block found in AI response".into()),
+            );
         }
         Err(e) => {
             tracing::warn!(query_id = %query_id, "NL query CLI failed: {}", e);

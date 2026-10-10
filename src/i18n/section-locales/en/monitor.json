@@ -733,6 +733,9 @@
   "grid_column_workspace_open": "Open workspace",
   "grid_column_workspace_rename": "Rename group",
   "grid_fleet_kill": "Kill session",
+  "terminal_asleep_label": "Why it is asleep",
+  "terminal_wake_failed": "This session can't be woken",
+  "terminal_wake_failed_hint": "Kill the session to clear it from the board.",
   "grid_fleet_exited": "This session has exited — its terminal is gone.",
   "grid_session_recap_open": "Session recap",
   "grid_session_recap_summary": "Claude's recap",
@@ -903,6 +906,14 @@
   "orch_refusal_daily_cap": "Daily cap reached",
   "orch_refusal_budget": "Monthly budget spent",
   "orch_refusal_concurrency": "Machine at its persona cap",
+  "orch_refusal_headless": "A terminal App Master holds this project",
+  "orch_headless_running": "Headless - running",
+  "orch_headless_idle": "Headless - idle",
+  "orch_headless_stale": "Headless - stale",
+  "orch_headless_hint": "This project's App Master is running from a terminal (/appmaster). The in-app master stands aside while its reports are fresh.",
+  "orch_headless_next_wake": "Next wake:",
+  "orch_headless_no_wake": "not announced",
+  "orch_headless_reported": "Last report:",
   "orch_lane_arrivals": "Arrivals",
   "orch_lane_advance": "Advance a charter",
   "orch_lane_improve": "Self-review",
@@ -1073,5 +1084,6 @@
   "grid_dock_athena_off": "Off: this run stays yours. Athena asks before she touches it.",
   "grid_dock_athena_failed": "The run was dispatched but Athena was not given it. Flag the session from its menu if you still want her to take it over.",
   "grid_dock_athena_unseen": "Athena was not given this run: no session appeared for it. If one did start, flag it from its menu.",
-  "grid_dock_athena_remote": "Not available for a run on a paired device: that session lives on the other machine, not in this fleet."
+  "grid_dock_athena_remote": "Not available for a run on a paired device: that session lives on the other machine, not in this fleet.",
+  "grid_rail_triage_modal_aria": "Review details"
 }

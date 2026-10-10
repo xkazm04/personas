@@ -1,0 +1,72 @@
+[page 1]
+POSTMORTEM: Checkout and API outage, 14 September 2026
+Status: final (supersedes the preliminary report of 15 September)
+Authors: Platform Reliability, with input from Payments and Customer Support
+Review meeting: 18 September 2026
+
+Summary
+
+On 14 September 2026 customers could not complete checkout, and API requests to the payments and orders endpoints failed with HTTP 503, for about an hour and a half. A follow-on degradation affected webhook deliveries for a further 35 minutes after the main recovery. This document covers both: the main outage is tracked as INC-4471 and the follow-on degradation as INC-4474. Both are customer-facing incidents with their own entries in the incident register.
+
+During the response the team also investigated INC-4468, a DNS resolution problem reported the same morning by the EU office. INC-4468 was initially suspected to be related, because it started within the same hour, but it was NOT part of this outage: it was caused by a misconfigured resolver on the office network, affected only internal staff laptops, and had no customer impact. It is excluded from this postmortem and from the customer impact numbers below.
+
+Timeline (all times UTC)
+
+07:52 - The TLS certificate on the internal service-mesh gateway expires. From this moment, calls from the checkout service to the payments service fail the mTLS handshake. This is the start of INC-4471.
+07:53 - Error rate on checkout climbs above 40%. The alert fires but is routed to a deprecated pager rotation and is not acknowledged.
+08:10 - A customer-support lead notices a spike in tickets and declares an incident. The first status-page post says the outage "started at 08:10 UTC"; that time is when the incident was detected, not when it started, and was corrected in the preliminary report.
+08:24 - The on-call engineer identifies handshake failures between checkout and payments.
+08:51 - Root cause identified: the gateway certificate expired because the renewal job had been failing silently since 2 August, when its service account was rotated.
+09:12 - A new certificate is issued manually and rolled out to the gateway.
+09:31 - Error rates return to baseline on checkout and the API. INC-4471 ends.
+[page 2]
+09:31 - Webhook deliveries that had been queued during the outage start to drain.
+10:05 - Webhook delivery latency exceeds 15 minutes and the delivery workers start failing with timeouts. This is the start of INC-4474.
+
+INC-4474 in detail
+
+When the gateway recovered, about 1.9 million webhook events that had been queued during INC-4471 were released at once. The delivery workers retried failed deliveries immediately and without jitter, so every customer endpoint that was slow to respond received the same events repeatedly. This retry storm saturated the delivery workers and the outbound connection pool. Customers that rely on webhooks for order fulfilment saw delayed or duplicated events.
+
+The team throttled the drain rate and enabled exponential backoff with jitter on the delivery workers. Webhook latency returned to normal and duplicate deliveries stopped at 10:40, which is the end of INC-4474.
+
+Customer impact
+
+The preliminary report of 15 September estimated that about 12,000 customers were affected by INC-4471. That estimate was based on the number of active sessions at 08:10 and was known to be rough. After log analysis of failed checkout and API requests, the confirmed number of distinct customers who experienced at least one failed request during INC-4471 is 8,412. The preliminary estimate of 12,000 is withdrawn.
+
+For INC-4474, the number of distinct customers whose webhook endpoints received delayed or duplicated events is 1,130, of which 212 received at least one duplicate.
+
+Internal staff affected by INC-4468 are not counted, because INC-4468 is not part of this outage.
+
+[page 3]
+Detection and response analysis
+
+Time to detect was 18 minutes (07:52 to 08:10), all of it attributable to the misrouted alert: the checkout error-rate alert fired at 07:53 with the correct severity, but the deprecated pager rotation it was routed to had no members since the team reorganisation in July. Time to mitigate from detection was 81 minutes. Of those, 14 were spent ruling out INC-4468 as a cause, because the DNS symptoms on staff laptops initially looked like a resolver problem affecting the gateway. The responders were right to check, and the reviewers agreed the time was well spent given the information available, but the parallel investigation should have been handed to a second responder earlier.
+
+The incident commander role was taken by the customer-support lead until 08:24, when the on-call engineer joined. The review recommends that support leads keep the communications role and hand the incident commander role to engineering as soon as an engineer joins. Communication with customers was otherwise good: the status page was updated every 20 minutes, the support macros were ready by 08:40, and enterprise customers received a direct email from their account managers by 09:00.
+
+Root causes
+
+INC-4471: expiry of the TLS certificate on the internal service-mesh gateway. Contributing factors: the certificate renewal job had been failing silently since 2 August after its service account was rotated; the expiry alert existed but was routed to a deprecated pager rotation; no dashboard tracked days-to-expiry for internal certificates.
+
+INC-4474: a retry storm in the webhook delivery workers, caused by immediate retries without backoff or jitter when the queued backlog was released all at once.
+
+What went well
+
+- Once the handshake failures were identified, the root cause was found in under 30 minutes.
+- Customer support kept the status page updated every 20 minutes.
+
+What went poorly
+
+- Detection relied on customer tickets, 18 minutes after the start.
+- The first status-page post gave the detection time as the start time.
+- The backlog drain was not rate limited.
+
+Action items
+
+1. Monitor certificate expiry for every internal certificate, with alerts 30, 14 and 3 days before expiry. Owner: Platform Reliability. Due: 2 October.
+2. Make the renewal job fail loudly: page on any failed run. Owner: Platform Reliability. Due: 25 September.
+3. Remove the deprecated pager rotation and audit alert routing. Owner: SRE leads. Due: 30 September.
+4. Rate-limit backlog drains and make exponential backoff with jitter the default for delivery workers. Owner: Integrations. Due: 9 October.
+5. Status-page template: separate "detected at" from "started at". Owner: Customer Support. Due: 25 September.
+
+Approvals: Head of Platform, Head of Payments, VP Engineering.

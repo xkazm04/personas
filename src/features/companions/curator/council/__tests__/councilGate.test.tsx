@@ -109,13 +109,25 @@ describe('the uncalibrated sentence', () => {
   // deliberate, so the test records the two roles rather than the one count:
   // ONE sentence that explains the word (`bench.lede`) and ONE label that
   // names it per row (`trust.uncalibrated`). A third is still a regression.
-  it('is EXPLAINED once and LABELLED once, and nowhere else', () => {
+  //
+  // 2026-10-09 (council-readout consolidation): the bench is retired. The
+  // explanation moved with the queue to the lanes' bar key (`lanes.bar_tip`),
+  // and the verdict card names the trust state once on its verdict line
+  // (`verdict.uncalibrated`), the surface that replaced the round table.
+  // `bench.lede` has no user left and stays listed only until the orphaned
+  // keys are swept; drop it from this list in that same change.
+  it('is EXPLAINED once and LABELLED once per surface, and nowhere else', () => {
     const said = Object.entries(en.council)
       .flatMap(([group, keys]) =>
         Object.entries(keys as Record<string, string>).map(([k, v]) => [`${group}.${k}`, v] as const),
       )
       .filter(([, v]) => typeof v === 'string' && /uncalibrated/i.test(v));
-    expect(said.map(([k]) => k).sort()).toEqual(['bench.lede', 'trust.uncalibrated']);
+    expect(said.map(([k]) => k).sort()).toEqual([
+      'bench.lede',
+      'lanes.bar_tip',
+      'trust.uncalibrated',
+      'verdict.uncalibrated',
+    ]);
     // The label is a WORD, not a sentence: the explanation stays in one place.
     const label = said.find(([k]) => k === 'trust.uncalibrated')?.[1] ?? '';
     expect(label.split(/\s+/).length).toBeLessThanOrEqual(2);

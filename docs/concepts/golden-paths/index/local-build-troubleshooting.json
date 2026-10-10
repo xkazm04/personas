@@ -56,6 +56,7 @@
       ]
     },
     "build.rs": {"count":2,"sections":[7],"contexts":["**Do not fix it in `build.rs`** — the reasons are recorded at `run-rust-tests.mjs:26-38`"],"resolved":false},
+    "feature-doc-map.json": {"count":1,"sections":[9],"contexts":["script reads only `feature-doc-map.json`'s globs (`scripts/docs/check-doc-map-paths.mjs:23`)"],"resolved":false},
     "lefthook.yml": {
       "count": 1,
       "sections": [9],
@@ -90,7 +91,6 @@
       "resolvedFrom": "basename",
       "verbatim": "check-doc-map-paths.mjs"
     },
-    "scripts/docs/feature-doc-map.json": {"count":1,"sections":[9],"contexts":["script reads only `feature-doc-map.json`'s globs (`scripts/docs/check-doc-map-paths.mjs:23`)"],"resolvedFrom":"basename","verbatim":"feature-doc-map.json"},
     "scripts/ensure-ort-cache.mjs": {
       "count": 13,
       "sections": [0,2,3,5,7],

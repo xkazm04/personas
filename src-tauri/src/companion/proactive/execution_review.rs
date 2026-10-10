@@ -749,18 +749,22 @@ pub async fn review_recent_executions(
     );
 
     let prompt = build_triage_prompt(&groups, overflow, saturated);
-    let (blob, turn_id) =
-        match crate::companion::athena_reaction::cli_text_tracked(prompt, user_db, "exec_triage")
-            .await
-        {
-            Ok(x) => x,
-            Err(e) => {
-                // Triage CLI failed (rate/usage limit, spawn error, …) — bounded
-                // retry instead of silently skipping the batch.
-                handle_triage_failure(sys_db, &cursor, newest_window.as_deref(), attempts);
-                return Err(e);
-            }
-        };
+    let (blob, turn_id) = match crate::companion::athena_reaction::cli_text_tracked_on(
+        prompt,
+        user_db,
+        "exec_triage",
+        &crate::companion::model_routing::TRIAGE,
+    )
+    .await
+    {
+        Ok(x) => x,
+        Err(e) => {
+            // Triage CLI failed (rate/usage limit, spawn error, …) — bounded
+            // retry instead of silently skipping the batch.
+            handle_triage_failure(sys_db, &cursor, newest_window.as_deref(), attempts);
+            return Err(e);
+        }
+    };
     let Some(decision) = parse_exec_triage(&blob) else {
         tracing::warn!("exec_review: no triage decision parsed from CLI output");
         if let Some(tid) = &turn_id {

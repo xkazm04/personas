@@ -621,7 +621,10 @@ mod model_override_provenance_tests {
     #[test]
     fn tier_slugs_are_unaffected() {
         let p = resolve_use_case_model_override(&json!("haiku")).expect("slug resolves");
-        assert_eq!(p.model.as_deref(), Some("claude-haiku-4-5-20251001"));
+        assert_eq!(
+            p.model.as_deref(),
+            Some(personas_core::model_ids::HAIKU_CURRENT)
+        );
         assert_eq!(p.auth_token, None);
     }
 }

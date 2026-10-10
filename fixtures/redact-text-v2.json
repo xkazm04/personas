@@ -1,0 +1,360 @@
+{
+  "version": 2,
+  "cases": [
+    {
+      "name": "prose: a pasted key is masked and the sentence around it survives",
+      "input": "Deploy failed. I used sk-proj-4f8Kq2Lx9Vb7Nm3Zt6Wy1Rc5Hd0Jg2Pa8Se4Uf for the call, then retried twice.",
+      "expected": "Deploy failed. I used [redacted] for the call, then retried twice."
+    },
+    {
+      "name": "prose: quotes, brackets and punctuation around a key stay",
+      "input": "The key (\"ghp_16C7e42F292c6912E7710c838347Ae178B4a\"), see above.",
+      "expected": "The key (\"[redacted]\"), see above."
+    },
+    {
+      "name": "named value: an env assignment keeps its name",
+      "input": "export GITHUB_TOKEN=ghp_16C7e42F292c6912E7710c838347Ae178B4a\nnext line",
+      "expected": "export GITHUB_TOKEN=[redacted]\nnext line"
+    },
+    {
+      "name": "url: a key in the query string is masked, the other pairs stay",
+      "input": "https://api.example.com/v1?access_token=sk-proj-4f8Kq2Lx9Vb7Nm3Zt6Wy1Rc5Hd0Jg2Pa8Se4Uf&page=2",
+      "expected": "https://api.example.com/v1?access_token=[redacted]&page=2"
+    },
+    {
+      "name": "url: a long link without a key is kept",
+      "input": "See https://docs.example.com/guides/getting-started/installation/windows-and-macos#prerequisites now",
+      "expected": "See https://docs.example.com/guides/getting-started/installation/windows-and-macos#prerequisites now"
+    },
+    {
+      "name": "url: a key as a path segment is masked",
+      "input": "https://github.com/ghp_16C7e42F292c6912E7710c838347Ae178B4a/repo",
+      "expected": "https://github.com/[redacted]/repo"
+    },
+    {
+      "name": "bearer: the word after Bearer is masked whatever it looks like",
+      "input": "Authorization: Bearer abc123 was sent",
+      "expected": "Authorization: Bearer [redacted] was sent"
+    },
+    {
+      "name": "dense: a JWT is masked whole",
+      "input": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U",
+      "expected": "[redacted]"
+    },
+    {
+      "name": "dense: a long base64 run is masked",
+      "input": "blob: QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAx",
+      "expected": "blob: [redacted]"
+    },
+    {
+      "name": "kept: short words that share a token prefix",
+      "input": "We use sk-learn and xoxo, AKIA is a name, eyJ alone is nothing.",
+      "expected": "We use sk-learn and xoxo, AKIA is a name, eyJ alone is nothing."
+    },
+    {
+      "name": "named value: a secret-named key in prose masks its value",
+      "input": "set DB_PASSWORD=hunter2 and retry",
+      "expected": "set DB_PASSWORD=[redacted] and retry"
+    },
+    {
+      "name": "named value: a secret-named key with a colon masks the next word",
+      "input": "the password: hunter2 was reused",
+      "expected": "the password: [redacted] was reused"
+    },
+    {
+      "name": "named value: a secret-named JSON key masks its value",
+      "input": "{\"client_secret\":\"abc\"}",
+      "expected": "{\"client_secret\":\"[redacted]\"}"
+    },
+    {
+      "name": "kept: a key that is not secret-named keeps its value",
+      "input": "name=alice mode: fast",
+      "expected": "name=alice mode: fast"
+    },
+    {
+      "name": "url: the password in userinfo is masked",
+      "input": "connect postgres://admin:hunter2@db.internal:5432/app now",
+      "expected": "connect postgres://admin:[redacted]@db.internal:5432/app now"
+    },
+    {
+      "name": "kept: userinfo without a password and a port",
+      "input": "see https://user@example.com/path and https://example.com:8080/x",
+      "expected": "see https://user@example.com/path and https://example.com:8080/x"
+    },
+    {
+      "name": "prefix: a google api key is masked",
+      "input": "key AIzaSyA1b2C3d4E5f6G7h8I9j0KlMnOpQrStUvW end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a npm token is masked",
+      "input": "key npm_aB3dE5gH7jK9mN1pQ3sT5vW7yZ9bC1dE3fG5 end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a hugging face token is masked",
+      "input": "key hf_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789 end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a stripe live restricted key is masked",
+      "input": "key rk_live_4eC39HqLyjWDarjtT1zdp7dc end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a stripe test restricted key is masked",
+      "input": "key rk_test_4eC39HqLyjWDarjtT1zdp7dc end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a webhook signing secret is masked",
+      "input": "key whsec_8f2a1b3c4d5e6f708192a3b4c5d6e7f8 end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a shopify access token is masked",
+      "input": "key shpat_0123456789abcdef0123456789abcdef end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a grafana service account token is masked",
+      "input": "key glsa_AbCdEfGhIjKlMnOpQrStUvWxYz012345_0a1b2c3d end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "prefix: a slack app token is masked",
+      "input": "key xapp-1-A0123456789-1234567890123-abcdef0123456789 end",
+      "expected": "key [redacted] end"
+    },
+    {
+      "name": "mixed: a 32-character mixed-case run with digits is masked",
+      "input": "value aB3dE5gH7jK9mN1pQ3sT5vW7yZ9bC1dE here",
+      "expected": "value [redacted] here"
+    },
+    {
+      "name": "kept: a UUID, a git SHA, a sha256 and prose",
+      "input": "id 6f1d2c3b-4a59-4e68-9d7c-0b1a2c3d4e5f commit 9fceb02d0ae598e95dc970b74767f19372d61af8 sha e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 and the quick brown fox jumps over the lazy dog, twice daily.",
+      "expected": "id 6f1d2c3b-4a59-4e68-9d7c-0b1a2c3d4e5f commit 9fceb02d0ae598e95dc970b74767f19372d61af8 sha e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 and the quick brown fox jumps over the lazy dog, twice daily."
+    },
+    {
+      "name": "kept: whitespace byte for byte",
+      "input": "  two  spaces\n\n\ttab and trailing  ",
+      "expected": "  two  spaces\n\n\ttab and trailing  "
+    },
+    {
+      "name": "kept: the empty string",
+      "input": "",
+      "expected": ""
+    },
+    {
+      "name": "joined pairs: the password in a connection string is masked, every other pair stays",
+      "input": "Server=db;User=sa;Password=hunter2;Database=prod",
+      "expected": "Server=db;User=sa;Password=[redacted];Database=prod"
+    },
+    {
+      "name": "joined pairs: a connection string split by spaces in prose",
+      "input": "use Data Source=db01;Initial Catalog=sales;User ID=svc;Password=Pa55;Encrypt=True now",
+      "expected": "use Data Source=db01;Initial Catalog=sales;User ID=svc;Password=[redacted];Encrypt=True now"
+    },
+    {
+      "name": "joined pairs: a trailing separator after the password stays",
+      "input": "Server=db;Password=hunter2;",
+      "expected": "Server=db;Password=[redacted];"
+    },
+    {
+      "name": "joined pairs: a secret between ampersands outside a URL",
+      "input": "a=1&client_secret=xyz&b=2",
+      "expected": "a=1&client_secret=[redacted]&b=2"
+    },
+    {
+      "name": "kept: joined pairs that are all non-secret",
+      "input": "Server=db;Database=prod;Timeout=30 and page=2&sort=desc&q=rust",
+      "expected": "Server=db;Database=prod;Timeout=30 and page=2&sort=desc&q=rust"
+    },
+    {
+      "name": "kept: an ampersand or a semicolon in prose",
+      "input": "R&D and Q&A; a;b;c then x&y",
+      "expected": "R&D and Q&A; a;b;c then x&y"
+    },
+    {
+      "name": "named value: a password with base64 padding goes whole",
+      "input": "DB_PASSWORD=c2VjcmV0cGFzcw== set",
+      "expected": "DB_PASSWORD=[redacted] set"
+    },
+    {
+      "name": "named value: a password holding a colon goes whole",
+      "input": "DB_PASSWORD=abc:def set",
+      "expected": "DB_PASSWORD=[redacted] set"
+    },
+    {
+      "name": "url: a secret query pair keeps the segment rule",
+      "input": "https://example.com/cb?state=abc&client_secret=xyz&code=1",
+      "expected": "https://example.com/cb?state=abc&client_secret=[redacted]&code=1"
+    },
+    {
+      "name": "private key: an RSA block is masked between its markers",
+      "input": "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAzEmzWN92epKTmR3qqozgkjKMNDeVTmF8nEki3/XRe/0u23Uh\n7hHbY5yvkNXiISu6XIgSeKWSFTlaDMfiqGUxKiXwEpt4be2xVSzoaT4liy2JVoXa\ny6U2zZ17nZ2tYNjX8o3ZP3cmrtMMEiyb8jgqEl72panN/oYLdhghQq14ILMfsOA6\nUJTYUpyAcYwosJcnnPq+FjGokIofaLptBNOfAdbfiJvTF/iToJZlfEUIxV2b/HYt\nggN+CBLRSXKwmTpGtE==\n-----END RSA PRIVATE KEY-----",
+      "expected": "-----BEGIN RSA PRIVATE KEY-----\n[redacted]\n-----END RSA PRIVATE KEY-----"
+    },
+    {
+      "name": "private key: an EC block is masked between its markers",
+      "input": "-----BEGIN EC PRIVATE KEY-----\nMHcCAQEEIPdQtPRf0uelyV3LtZChZfanXtI3WCBD70LMlwrknCI2Oablfapvc1OC\n5beLs/5BfeFwxPHzn15DFUaLlwyEQ5uOJW0pEJqTOT9MZiZsGO3BxshZLJaFERuo\nkQ1L28xOfg==\n-----END EC PRIVATE KEY-----",
+      "expected": "-----BEGIN EC PRIVATE KEY-----\n[redacted]\n-----END EC PRIVATE KEY-----"
+    },
+    {
+      "name": "private key: an OPENSSH block is masked between its markers",
+      "input": "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAA5zEqmLM7IamJTt/a+YpZsmklBdiooSTxTxDcVIMw\n4ecvNvQqCP5LUajymw899moAQVlu1VJQo/Swhsn9w9VBy2ZCKCP+XkXGzvi2VO+/\ngcYRKpfPZjsnXlwXWBtjPLnpxOgKUV9mcjcZEfrNXo3HtuufkPueOUw+mvedMi6r\n0JE5pI9PS1ROmNsDZ2fAXE==\n-----END OPENSSH PRIVATE KEY-----",
+      "expected": "-----BEGIN OPENSSH PRIVATE KEY-----\n[redacted]\n-----END OPENSSH PRIVATE KEY-----"
+    },
+    {
+      "name": "private key: a PKCS#8 PRIVATE KEY block is masked between its markers",
+      "input": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCdYHN3VRV5ZZETkhhbE7rLEQKiE8695o0\nTaoLqv6Lxp2CjugukyN6qvz6S1EhMjeM2J4a9nvcoXUZshivQ222fLuzVgTXug/J\n3S3w6PQ/TT8y/DNxGsiD5uXCUpvxNIfCOV4vCaJACYCyYeLToeQxuXVFIxiSxGxV\nr4UVMmW3Yfr0B0DD80gSvkWFyGnj/5NGfYQzVi6I7zYIzAazsSiqoybB+KTvkU97\nkFQIIv==\n-----END PRIVATE KEY-----",
+      "expected": "-----BEGIN PRIVATE KEY-----\n[redacted]\n-----END PRIVATE KEY-----"
+    },
+    {
+      "name": "private key: a PGP private key block is masked between its markers",
+      "input": "-----BEGIN PGP PRIVATE KEY BLOCK-----\n\nlQOYBGUACdssqSuii9UK5Sw8HR7hw/bsypEkKjDNn8ervtM22/WS6cmpbPl/NODK\nYO2XDOVuaEEIOGJj9fACpB6F+krGZmcibWbCGc2ZQoIh4eV01gzItQTFnEH4PBVi\nzlt1USNmds3+lxlrRVy+wTEiS+bgTv8mGOnnXc6hNERFxDG2pGsGRBnLg2t+y5bk\nvxJRtlDU1rThJ+rLLECB==\n=Ab12\n-----END PGP PRIVATE KEY BLOCK-----",
+      "expected": "-----BEGIN PGP PRIVATE KEY BLOCK-----\n\n[redacted]\n-----END PGP PRIVATE KEY BLOCK-----"
+    },
+    {
+      "name": "private key: a block inside prose, the prose before and after survives",
+      "input": "Here is the key, sorry:\n-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCdYHN3VRV5ZZETkhhbE7rLEQKiE8695o0\nTaoLqv6Lxp2CjugukyN6qvz6S1EhMjeM2J4a9nvcoXUZshivQ222fLuzVgTXug/J\n3S3w6PQ/TT8y/DNxGsiD5uXCUpvxNIfCOV4vCaJACYCyYeLToeQxuXVFIxiSxGxV\nr4UVMmW3Yfr0B0DD80gSvkWFyGnj/5NGfYQzVi6I7zYIzAazsSiqoybB+KTvkU97\nkFQIIv==\n-----END PRIVATE KEY-----\nPlease rotate it today.",
+      "expected": "Here is the key, sorry:\n-----BEGIN PRIVATE KEY-----\n[redacted]\n-----END PRIVATE KEY-----\nPlease rotate it today."
+    },
+    {
+      "name": "private key: a block pasted on one line with spaces",
+      "input": "key -----BEGIN RSA PRIVATE KEY----- MIIEowIBAAKCAQEAzEmzWN92epKTmR3qqozgkjKMNDeVTmF8nEki3/XRe/0u23Uh 7hHbY5yvkNXiISu6XIgSeKWSFTlaDMfiqGUxKiXwEpt4be2xVSzoaT4liy2JVoXa y6U2zZ17nZ2tYNjX8o3ZP3cmrtMMEiyb8jgqEl72panN/oYLdhghQq14ILMfsOA6 UJTYUpyAcYwosJcnnPq+FjGokIofaLptBNOfAdbfiJvTF/iToJZlfEUIxV2b/HYt ggN+CBLRSXKwmTpGtE== -----END RSA PRIVATE KEY----- end",
+      "expected": "key -----BEGIN RSA PRIVATE KEY----- [redacted] -----END RSA PRIVATE KEY----- end"
+    },
+    {
+      "name": "private key: a block cut short masks to the end of the text (fail closed)",
+      "input": "cut short:\n-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAzEmzWN92epKTmR3qqozgkjKMNDeVTmF8nEki3/XRe/0u23Uh\n7hHbY5yvkNXiISu6XIgSeKWSFTlaDMfiqGUxKiXwEpt4be2xVSzoaT4liy2JVoXa\nMIIEow",
+      "expected": "cut short:\n-----BEGIN RSA PRIVATE KEY-----\n[redacted]"
+    },
+    {
+      "name": "private key: a block whose END names another label masks to the end (fail closed)",
+      "input": "-----BEGIN RSA PRIVATE KEY-----\nMHcCAQEEIPdQtPRf0uelyV3LtZChZfanXtI3WCBD70LMlwrknCI2Oablfapvc1OC\n5beLs/5BfeFwxPHzn15DFUaLlwyEQ5uOJW0pEJqTOT9MZiZsGO3BxshZLJaFERuo\nkQ1L28xOfg==\n-----END EC PRIVATE KEY-----\nafter",
+      "expected": "-----BEGIN RSA PRIVATE KEY-----\n[redacted]"
+    },
+    {
+      "name": "kept: a CERTIFICATE block is public, its base64 lines stay",
+      "input": "Chain:\n-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIE1vtOunSKz/f1VEbP4A5jMUUn9heDu8GRybh/qd+o1cgz\nNwaUYrtNnwQbRPaOFIuH7fjeDOKiH2pxw3p9M1QJENMsMvICTDCebzq4gE9TU8u0\nKy4UGHXFphpYmnjiqhpYcS8U8O4dEpQNY74/hJfW8WEMtVGbBKJHzgvPHeG9iQTR\nNsFbDGWufXec3TT9DtVMsnR0TMCcAt3Sunp9OU+OgFIWtOyWWaCUcEHoF8Ji+HGT\nO2XXt0YpkWcWPggHkfdEoiLAXj45hodUG3VB9X0FT4yXflnNlcK8nJf5ujH8Qz/4\nDuG6miG5DIQfJ7Ex9FiJRuwYnCfBEy==\n-----END CERTIFICATE-----\nend",
+      "expected": "Chain:\n-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIE1vtOunSKz/f1VEbP4A5jMUUn9heDu8GRybh/qd+o1cgz\nNwaUYrtNnwQbRPaOFIuH7fjeDOKiH2pxw3p9M1QJENMsMvICTDCebzq4gE9TU8u0\nKy4UGHXFphpYmnjiqhpYcS8U8O4dEpQNY74/hJfW8WEMtVGbBKJHzgvPHeG9iQTR\nNsFbDGWufXec3TT9DtVMsnR0TMCcAt3Sunp9OU+OgFIWtOyWWaCUcEHoF8Ji+HGT\nO2XXt0YpkWcWPggHkfdEoiLAXj45hodUG3VB9X0FT4yXflnNlcK8nJf5ujH8Qz/4\nDuG6miG5DIQfJ7Ex9FiJRuwYnCfBEy==\n-----END CERTIFICATE-----\nend"
+    },
+    {
+      "name": "kept: a PUBLIC KEY block is public, its base64 lines stay",
+      "input": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsQdmRaATIoFa7C2Hfequ\nsiBxYtqI3Y1mQ5skz6CUXp9HS3YymKdNuaiySbWmqTof001TS2PnzZSmxz9GQHA+\nDn6cgkDF1TzkgPonHTyS6vSiplvOZuKV2JssRB9jU6ZaxtFdsgZbrvVnY2yywpBD\n8dBIJWKv9nrIfs==\n-----END PUBLIC KEY-----",
+      "expected": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsQdmRaATIoFa7C2Hfequ\nsiBxYtqI3Y1mQ5skz6CUXp9HS3YymKdNuaiySbWmqTof001TS2PnzZSmxz9GQHA+\nDn6cgkDF1TzkgPonHTyS6vSiplvOZuKV2JssRB9jU6ZaxtFdsgZbrvVnY2yywpBD\n8dBIJWKv9nrIfs==\n-----END PUBLIC KEY-----"
+    },
+    {
+      "name": "private key: a bundle keeps the certificate and masks the key",
+      "input": "-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIE1vtOunSKz/f1VEbP4A5jMUUn9heDu8GRybh/qd+o1cgz\nNwaUYrtNnwQbRPaOFIuH7fjeDOKiH2pxw3p9M1QJENMsMvICTDCebzq4gE9TU8u0\nKy4UGHXFphpYmnjiqhpYcS8U8O4dEpQNY74/hJfW8WEMtVGbBKJHzgvPHeG9iQTR\nNsFbDGWufXec3TT9DtVMsnR0TMCcAt3Sunp9OU+OgFIWtOyWWaCUcEHoF8Ji+HGT\nO2XXt0YpkWcWPggHkfdEoiLAXj45hodUG3VB9X0FT4yXflnNlcK8nJf5ujH8Qz/4\nDuG6miG5DIQfJ7Ex9FiJRuwYnCfBEy==\n-----END CERTIFICATE-----\n-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAzEmzWN92epKTmR3qqozgkjKMNDeVTmF8nEki3/XRe/0u23Uh\n7hHbY5yvkNXiISu6XIgSeKWSFTlaDMfiqGUxKiXwEpt4be2xVSzoaT4liy2JVoXa\ny6U2zZ17nZ2tYNjX8o3ZP3cmrtMMEiyb8jgqEl72panN/oYLdhghQq14ILMfsOA6\nUJTYUpyAcYwosJcnnPq+FjGokIofaLptBNOfAdbfiJvTF/iToJZlfEUIxV2b/HYt\nggN+CBLRSXKwmTpGtE==\n-----END RSA PRIVATE KEY-----\n",
+      "expected": "-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIE1vtOunSKz/f1VEbP4A5jMUUn9heDu8GRybh/qd+o1cgz\nNwaUYrtNnwQbRPaOFIuH7fjeDOKiH2pxw3p9M1QJENMsMvICTDCebzq4gE9TU8u0\nKy4UGHXFphpYmnjiqhpYcS8U8O4dEpQNY74/hJfW8WEMtVGbBKJHzgvPHeG9iQTR\nNsFbDGWufXec3TT9DtVMsnR0TMCcAt3Sunp9OU+OgFIWtOyWWaCUcEHoF8Ji+HGT\nO2XXt0YpkWcWPggHkfdEoiLAXj45hodUG3VB9X0FT4yXflnNlcK8nJf5ujH8Qz/4\nDuG6miG5DIQfJ7Ex9FiJRuwYnCfBEy==\n-----END CERTIFICATE-----\n-----BEGIN RSA PRIVATE KEY-----\n[redacted]\n-----END RSA PRIVATE KEY-----\n"
+    },
+    {
+      "name": "a CERTIFICATE block whose body is not base64 is judged token by token",
+      "input": "-----BEGIN CERTIFICATE-----\npassword=hunter2\n-----END CERTIFICATE-----",
+      "expected": "-----BEGIN CERTIFICATE-----\npassword=[redacted]\n-----END CERTIFICATE-----"
+    },
+    {
+      "name": "bare cloud key: the AWS documentation example secret access key is masked",
+      "input": "aws_access_key_id AKIAIOSFODNN7EXAMPLE secret wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY ok",
+      "expected": "aws_access_key_id [redacted] secret [redacted] ok"
+    },
+    {
+      "name": "bare cloud key: a 40-character base64 key holding '+' is masked",
+      "input": "use 2gvMStxk49VXRfk3Wafd+l9i04YaAP0M5+OcgLaa here",
+      "expected": "use [redacted] here"
+    },
+    {
+      "name": "bare cloud key: quoted under a key that is not secret-named",
+      "input": "{\"key\": \"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\"}",
+      "expected": "{\"key\": \"[redacted]\"}"
+    },
+    {
+      "name": "kept: a 40-character relative path of mixed case and digits",
+      "input": "open docs/Guides/Setup2/WindowsMacOS/Readme12 first",
+      "expected": "open docs/Guides/Setup2/WindowsMacOS/Readme12 first"
+    },
+    {
+      "name": "kept: a 40-character src/ directory path",
+      "input": "under src/features/overview/components/Metric2 now",
+      "expected": "under src/features/overview/components/Metric2 now"
+    },
+    {
+      "name": "kept: a src/ file path with a line number",
+      "input": "see src-tauri/src/cloud/sync/redact.rs:42 and src/features/agents/AgentEditor.tsx",
+      "expected": "see src-tauri/src/cloud/sync/redact.rs:42 and src/features/agents/AgentEditor.tsx"
+    },
+    {
+      "name": "kept: a 40-character URL path without a scheme",
+      "input": "GET /api/v2/Users/4821/Settings/Profile/Edit returned 200",
+      "expected": "GET /api/v2/Users/4821/Settings/Profile/Edit returned 200"
+    },
+    {
+      "name": "kept: a 40-character git SHA",
+      "input": "merged 9fceb02d0ae598e95dc970b74767f19372d61af8 today",
+      "expected": "merged 9fceb02d0ae598e95dc970b74767f19372d61af8 today"
+    },
+    {
+      "name": "kept: a UUID",
+      "input": "persona 6f1d2c3b-4a59-4e68-9d7c-0b1a2c3d4e5f paused",
+      "expected": "persona 6f1d2c3b-4a59-4e68-9d7c-0b1a2c3d4e5f paused"
+    },
+    {
+      "name": "kept: a 40-character camelCase identifier",
+      "input": "call handleWorkspaceAuthenticationCallbackNow once",
+      "expected": "call handleWorkspaceAuthenticationCallbackNow once"
+    },
+    {
+      "name": "known miss: a short password in prose is kept, no rule tells it from 'the password is wrong'",
+      "input": "the password is hunter2",
+      "expected": "the password is hunter2"
+    },
+    {
+      "name": "already masked: env assignment",
+      "input": "DB_PASSWORD=[redacted]",
+      "expected": "DB_PASSWORD=[redacted]"
+    },
+    {
+      "name": "already masked: secret name with colon and space",
+      "input": "password: [redacted]",
+      "expected": "password: [redacted]"
+    },
+    {
+      "name": "already masked: after Bearer",
+      "input": "Bearer [redacted]",
+      "expected": "Bearer [redacted]"
+    },
+    {
+      "name": "already masked: JSON key",
+      "input": "{\"client_secret\":\"[redacted]\"}",
+      "expected": "{\"client_secret\":\"[redacted]\"}"
+    },
+    {
+      "name": "already masked: joined pairs",
+      "input": "Server=db;User=sa;Password=[redacted];Database=prod",
+      "expected": "Server=db;User=sa;Password=[redacted];Database=prod"
+    },
+    {
+      "name": "already masked: URL query pair",
+      "input": "?access_token=[redacted]&page=2",
+      "expected": "?access_token=[redacted]&page=2"
+    },
+    {
+      "name": "already masked: URL userinfo",
+      "input": "postgres://admin:[redacted]@db.internal:5432/app",
+      "expected": "postgres://admin:[redacted]@db.internal:5432/app"
+    },
+    {
+      "name": "marker only by shape: no brackets is still masked",
+      "input": "DB_PASSWORD=redacted",
+      "expected": "DB_PASSWORD=[redacted]"
+    },
+    {
+      "name": "marker only by shape: extra characters after it are masked",
+      "input": "DB_PASSWORD=[redacted]hunter2",
+      "expected": "DB_PASSWORD=[[redacted]"
+    }
+  ]
+}

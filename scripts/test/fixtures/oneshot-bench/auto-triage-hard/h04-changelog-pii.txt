@@ -1,0 +1,47 @@
+channel: #product-updates (internal Slack, 340 members, includes contractors)
+message:
+:rocket: *Weekly product changelog, week 41*
+
+Big week. Thanks to everyone who helped with the release train, especially the folks who stayed late on Wednesday for the migration.
+
+*Shipped*
+- *Scheduled exports*: workspace admins can now schedule CSV and Parquet exports of any saved report, daily, weekly or monthly. Exports land in the connected S3 bucket or Google Drive folder. Docs are live under Reports > Exports.
+- *Faster dashboard loads*: the overview dashboard now virtualises the execution list and memoises the metric selectors. p95 render time on workspaces with more than 2,000 executions dropped from 4.1 s to 0.9 s.
+- *Bulk credential rotation*: vault admins can select up to 50 credentials and rotate them in one action. Each rotation is still logged individually in the audit log.
+- *Dark mode for embedded charts*: charts embedded in Notion and Confluence now follow the host page's theme.
+- *Retry policies per trigger*: triggers can now define their own retry count and backoff instead of inheriting the workspace default.
+
+*Fixed*
+- Webhook triggers no longer fire twice when the sender retries within 500 ms (dedupe on delivery id).
+- The schedule picker no longer shows 02:00-03:00 twice on the day clocks go back.
+- Long persona names no longer overflow the sidebar on narrow windows.
+- The "Copy as cURL" action now escapes single quotes in JSON bodies.
+- Search in the credential catalog is no longer case-sensitive for connector names.
+- Saved filters on the executions page survive a page reload again.
+- The CSV export bug that produced empty files for workspaces with more than 10k rows is fixed.
+- Markdown tables in agent output render with borders again.
+- The onboarding tour no longer skips step 4 on screens narrower than 1280 px.
+
+*In progress*
+- Cost attribution per persona (design review on Tuesday).
+- Workspace-level model routing rules (behind a flag for internal workspaces).
+- A new empty state for the credential catalog with suggested connectors.
+- Migrating the remaining cron triggers to the new scheduler.
+
+*Numbers*
+- 1,912 new workspaces this week (+6% week over week).
+- Execution success rate 98.7% (flat).
+- Median time to first successful agent run for new workspaces: 7 min 40 s (down from 9 min 15 s).
+
+*Shout-outs*
+- Petra and Malik for the scheduler DST fix, which needed tests for both clock changes in four timezones.
+- Ana for chasing the duplicate webhook bug across three customer reports.
+- The support team for the clean repro steps on the export issue.
+
+*Heads-up for next week*
+- The legacy v1 webhooks endpoint will start returning a deprecation header on Monday. Removal is planned for Q1; customers on v1 have been emailed.
+- Expect a short maintenance window on Thursday 06:00-06:15 UTC for the database upgrade. No downtime is expected, but writes may be delayed by up to a minute.
+- Support will call back the customer who reported the empty CSV exports, jane.doe@clientcorp.com (customer #8812, phone +1 415 555 0142), on Monday to confirm her corrected month-end file arrived.
+- The design team is running usability sessions on the new trigger editor. If you want to observe one, add yourself to the sign-up sheet pinned in #design.
+
+As always, reply in thread with questions, and file anything that looks wrong in the #changelog-corrections channel so we can fix the post before it goes into the monthly customer newsletter.

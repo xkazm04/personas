@@ -58,7 +58,7 @@ export function featureGlyphKind(feature: BoardFeature, running: boolean): Counc
  */
 export function featureDecidable(feature: BoardFeature): boolean {
   if (!feature.council) return false;
-  return decidable({ state: feature.council.state, tier: feature.tier, kind: 'use_case' });
+  return decidable({ state: feature.council.state, tier: feature.tier, kind: 'use_case', mode: feature.council.mode });
 }
 
 /**

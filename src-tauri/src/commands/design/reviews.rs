@@ -22,13 +22,19 @@ use crate::db::repos::resources::{connectors as connector_repo, tools as tool_re
 use crate::engine::design;
 use crate::engine::event_registry::{emit_event_bus, event_name};
 use crate::engine::inflight_guard::InflightGuard;
-use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 use std::sync::LazyLock;
 
 use super::analysis::extract_display_text;
+
+/// Call class of the design-review turns (batch test-case generation and the
+/// single-review rebuild). Model and effort come from the class table
+/// (`personas_core::model_class`). Until 2026-10-08 these spawns passed no
+/// `--model` and rode the CLI account default.
+const REVIEW_CLASS: personas_core::model_class::CallClass =
+    personas_core::model_class::CallClass::Verdict;
 
 /// Single-flight per design review for rebuilds. The tracking job id is unique
 /// per invocation (so each rebuild's snapshot/status stream is independent),
@@ -317,7 +323,9 @@ pub async fn start_design_review_run(
             );
 
             // Spawn Claude CLI and collect output
-            let cli_args = prompt::build_cli_args(None, None);
+            let route = REVIEW_CLASS.route();
+            let cli_args =
+                crate::engine::cli_process::headless_claude_args(route.model, route.effort, &[]);
             let cli_result =
                 run_cli_for_template(&cli_args, &design_prompt, &app, &run_id_clone, i, &registry)
                     .await;
@@ -800,7 +808,9 @@ pub async fn rebuild_design_review(
         );
 
         // Use the n8n CLI runner with streaming output
-        let cli_args = prompt::build_cli_args(None, None);
+        let route = REVIEW_CLASS.route();
+        let cli_args =
+            crate::engine::cli_process::headless_claude_args(route.model, route.effort, &[]);
         let cli_result =
             run_claude_prompt_text(design_prompt, &cli_args, Some((&app, &rebuild_id))).await;
 
@@ -1191,9 +1201,19 @@ pub(crate) fn gc_stale_manual_reviews_inner(
     let resolved = manual_repo::gc_stale_pending(pool, cutoff_iso)?;
     let count = resolved.len() as u32;
     for row in &resolved {
+        // `policy_events` is an execution's audit trail. A review raised
+        // outside any run (e60) has no execution to file the line under, so
+        // its aging-out is recorded on the review alone (the reviewer note).
+        let Some(execution_id) = row.execution_id.as_deref() else {
+            tracing::debug!(
+                review_id = %row.id,
+                "Stale-review GC: no execution behind this review; no policy_events row"
+            );
+            continue;
+        };
         if let Err(e) = crate::db::repos::execution::policy_events::insert(
             pool,
-            &row.execution_id,
+            execution_id,
             &row.persona_id,
             row.use_case_id.as_deref(),
             "review",
@@ -1217,7 +1237,8 @@ pub(crate) fn gc_stale_manual_reviews_inner(
 #[derive(Clone, Serialize)]
 struct ManualReviewResolvedEvent {
     review_id: String,
-    execution_id: String,
+    /// `None` for a review raised outside any run (e60).
+    execution_id: Option<String>,
     persona_id: String,
     status: String,
     /// What the resolution taught the fleet (Phase 2 — visible learning).
@@ -1247,8 +1268,40 @@ pub fn update_manual_review_status(
     reviewer_notes: Option<String>,
 ) -> Result<PersonaManualReview, AppError> {
     require_auth_sync(&state)?;
-    let learned = manual_repo::update_status(&state.db, &id, status, reviewer_notes)?;
-    let review = manual_repo::get_by_id(&state.db, &id)?;
+    resolve_manual_review(&state, &app, &id, status, reviewer_notes)
+}
+
+/// The database half of a manual-review resolution: the chokepoint status
+/// write (`manual_reviews::update_status`, which also writes the one `learned`
+/// memory) and the row as that write returned it. Pool-only, so it is tested on its
+/// own; [`resolve_manual_review`] is the whole resolution.
+pub(crate) fn record_review_decision(
+    pool: &crate::db::DbPool,
+    id: &str,
+    status: crate::db::models::ManualReviewStatus,
+    reviewer_notes: Option<String>,
+) -> Result<(PersonaManualReview, Option<LearnedMemoryRef>), AppError> {
+    manual_repo::update_status_returning(pool, id, status, reviewer_notes)
+}
+
+/// One manual-review resolution with every side effect: the status write and
+/// its learned memory, the `MANUAL_REVIEW_RESOLVED` event, the
+/// `review_decision.*` bus event, the team-channel bridge, the goal signal,
+/// App master probation and ask reactions, and the held-team-step resume loop.
+///
+/// The desk's Approve / Reject (`update_manual_review_status`) and a paired
+/// phone's `review_decide` (`cloud::review_decide`, PHASE2-SPEC 1.6 / M20)
+/// both come through here, so a decision made on either surface reacts the
+/// same way. A lost compare-and-swap (someone else decided first) is an `Err`
+/// and fires none of the side effects.
+pub(crate) fn resolve_manual_review(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    id: &str,
+    status: crate::db::models::ManualReviewStatus,
+    reviewer_notes: Option<String>,
+) -> Result<PersonaManualReview, AppError> {
+    let (review, learned) = record_review_decision(&state.db, id, status, reviewer_notes)?;
 
     if matches!(
         review.status,
@@ -1279,24 +1332,24 @@ pub fn update_manual_review_status(
         // (companion/approvals.rs) so the signal is SYMMETRIC regardless of who
         // resolved the review — P1b fixed the asymmetry where the Athena path
         // never published this.
-        publish_review_decision(&state.db, &app, &review);
+        publish_review_decision(&state.db, app, &review);
 
         // GAP 3: surface the decision in the source persona's team channel.
-        bridge_review_decision_to_channel(&state, &review);
+        bridge_review_decision_to_channel(state, &review);
         // GAP 5: mark the human decision on the linked goal timeline.
-        record_review_goal_signal(&state, &review);
+        record_review_goal_signal(state, &review);
 
         // App master probation (P4): approve ⇒ activate (suggest → full),
         // reject ⇒ retire. Runs before the resume-loop because a probation
         // packet never links a team assignment, so the two are disjoint.
-        react_to_app_master_probation(&state, &review, None, None);
+        react_to_app_master_probation(state, &review, None, None);
 
         // App Master operator ask: the plain Approve / Reject controls are the
         // other way an operator answers one, and they must mean the same thing
         // as clicking the ask's own action — otherwise the same decision moves
         // the backlog or not depending on which button was nearer.
         react_to_app_master_ask(
-            &state,
+            state,
             &review,
             match review.status {
                 crate::db::models::ManualReviewStatus::Approved => {
@@ -1313,7 +1366,7 @@ pub fn update_manual_review_status(
         // Resume-loop (Phase 1): if this review gated a team step that is still
         // held, an APPROVAL resumes the blocked assignment. Shared with the
         // Athena path so resolution reacts identically regardless of who acted.
-        react_to_review_decision(&state, &app, &review);
+        react_to_review_decision(state, app, &review);
     }
 
     Ok(review)
@@ -1963,13 +2016,14 @@ pub async fn dispatch_review_action(
     action: String,
 ) -> Result<PersonaManualReview, AppError> {
     require_auth_sync(&state)?;
-    let learned = manual_repo::update_status(
+    // The review comes back from the decision's own UPDATE ... RETURNING, so a
+    // failed re-read can no longer skip the side effects of a committed decision.
+    let (review, learned) = manual_repo::update_status_returning(
         &state.db,
         &review_id,
         crate::db::models::ManualReviewStatus::Approved,
         Some(format!("Chose action: {action}")),
     )?;
-    let review = manual_repo::get_by_id(&state.db, &review_id)?;
 
     // Surface the resolution exactly like the plain path (Phase 2 toast + bus).
     let _ = app.emit(
@@ -2072,7 +2126,7 @@ pub async fn dispatch_review_action(
                         source_id: review.id.clone(),
                         persona_id: Some(review.persona_id.clone()),
                         persona_name: persona_name.clone(),
-                        execution_id: Some(review.execution_id.clone()),
+                        execution_id: review.execution_id.clone(),
                         severity: "high".to_string(),
                         kind: kind.to_string(),
                         title: format!("Couldn't carry out approved action: {}", review.title),
@@ -3535,6 +3589,75 @@ mod ask_tests {
         )
         .unwrap();
         assert!(!apply_ask_verdicts(&pool, &plain, Some(ASK_ACCEPT_ACTION)).handled);
+    }
+
+    /// The desk's `update_manual_review_status` and the phone's `review_decide`
+    /// share one resolution ([`resolve_manual_review`]); its database half is
+    /// what both callers' result comes from: the chokepoint status write (and
+    /// its one `learned` memory), then the row as it now stands.
+    #[test]
+    fn the_shared_resolution_records_the_decision_and_returns_the_row() {
+        let pool = init_test_db().unwrap();
+        let (persona, exec, _) = fixture(&pool, 0);
+        let review = review_repo::create(
+            &pool,
+            CreateManualReviewInput {
+                execution_id: exec,
+                persona_id: persona.clone(),
+                title: "Ship the release notes".into(),
+                description: None,
+                severity: Some("info".into()),
+                context_data: None,
+                suggested_actions: None,
+                use_case_id: None,
+                assignment_id: None,
+                step_id: None,
+            },
+        )
+        .unwrap();
+
+        let (decided, learned) = record_review_decision(
+            &pool,
+            &review.id,
+            crate::db::models::ManualReviewStatus::Approved,
+            Some("Looks right".into()),
+        )
+        .unwrap();
+        assert_eq!(
+            decided.status,
+            crate::db::models::ManualReviewStatus::Approved
+        );
+        assert_eq!(decided.reviewer_notes.as_deref(), Some("Looks right"));
+        assert!(decided.resolved_at.is_some());
+        let stored = review_repo::get_by_id(&pool, &review.id).unwrap();
+        assert_eq!(
+            (stored.status, stored.reviewer_notes, stored.resolved_at),
+            (
+                decided.status,
+                decided.reviewer_notes.clone(),
+                decided.resolved_at.clone()
+            ),
+            "the returned row is the stored row"
+        );
+        let learned = learned.expect("a resolution teaches the persona once");
+        assert_eq!(
+            (learned.category.as_str(), learned.persona_id.as_str()),
+            ("learned", persona.as_str())
+        );
+
+        // A second, different decision is refused by the chokepoint's
+        // transition rule, and the first one stands.
+        assert!(record_review_decision(
+            &pool,
+            &review.id,
+            crate::db::models::ManualReviewStatus::Rejected,
+            None,
+        )
+        .is_err());
+        assert_eq!(
+            review_repo::get_by_id(&pool, &review.id).unwrap().status,
+            crate::db::models::ManualReviewStatus::Approved
+        );
     }
 
     /// `medium` is a warning, not a critical: the per-persona badge map must

@@ -88,12 +88,18 @@ export interface ModalShellProps {
   actions?: ReactNode;
   /** Footer bar. Omitted entirely when absent - an empty bar is still a border. */
   footer?: ReactNode;
+  /**
+   * Render through BaseModal's portal tier (z 10000). Needed by a modal opened
+   * from inside another high-z overlay - the Persona Monitor - which the
+   * default tier (z 50) would render underneath.
+   */
+  portal?: boolean;
   children: ReactNode;
 }
 
 export function ModalShell({
   isOpen, onClose, titleId, width = 'md',
-  icon, title, subtitle, status, actions, footer, children,
+  icon, title, subtitle, status, actions, footer, portal, children,
 }: ModalShellProps) {
   const { t } = useTranslation();
   return (
@@ -101,6 +107,7 @@ export function ModalShell({
       isOpen={isOpen}
       onClose={onClose}
       titleId={titleId}
+      portal={portal}
       maxWidthClass={WIDTH[width]}
       panelClassName={PANEL}
       staggerChildren={false}

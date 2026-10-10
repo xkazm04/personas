@@ -1,42 +1,25 @@
 // Passport Atlas — the portfolio layer: the kit-governed chrome from
-// AtlasPortfolioShell with ONE figure in the middle.
+// AtlasPortfolioShell with the matrix figure in the middle.
 //
-// The figure is chosen here and nowhere else. `AtlasFigureProps` is the whole
-// contract between the model and a figure, so every direction reads the same
-// projects, the same lens rows and the same roving coordinate: a variant is
-// composition and styling, never a second data model.
+// `AtlasFigureProps` is the whole contract between the model and the figure,
+// so the drawing never carries a second copy of the data model. The seam is
+// worth keeping on its own terms: it is what lets the figure be tested and
+// read without the shell, and it survived two prototype rounds that did not.
 //
-// Three directions are on the bench for the owner to compare (/prototype,
-// 2026-10-06): `matrix` is the shipped baseline and the default, so nothing
-// changes for a user until he picks. The picker is dev-only; the gate is a
-// named module constant, not a brace at the render site.
-import { useState } from 'react';
-import { Segmented } from '@/features/shared/components/kit';
-import { MatrixFigure } from './variants/matrix/MatrixFigure';
-import { LedgerFigure } from './variants/ledger/LedgerFigure';
-import { DossierFigure } from './variants/dossier/DossierFigure';
+// The matrix is the only figure, drawn as the Instrument (favicon tiles, score
+// dials, a rung meter per cell): the owner's pick of the /prototype round of
+// 2026-10-06, which replaced the dot matrix. Three benched concepts (a stamp
+// sheet, a core sample, a cohort banding) were built and deleted earlier that
+// day, along with the skin layer that preceded them. What stays from that work
+// is the parts that stand without a bench: `useRovingFigure` (one keyboard
+// model instead of a copy per drawing) and the figure contract itself.
 import { AtlasPortfolioShell, type PortfolioView } from './AtlasPortfolioShell';
-import type { AtlasCoord, AtlasFigureKind, AtlasFigureProps, AtlasNames } from './atlasFigure';
-import { ATLAS_WORDS as W, FIGURES } from './atlasWords';
+import type { AtlasCoord, AtlasFigureProps, AtlasNames } from './atlasFigure';
+import { InstrumentFigure } from './variants/instrument/InstrumentFigure';
 import type { AppPassport } from '../passportModel';
 import type { AtlasRow } from './atlasModel';
 
 export type { PortfolioView };
-
-/** The bench is a development surface. Production always renders the baseline. */
-const SHOW_FIGURE_BENCH = import.meta.env.DEV;
-
-const FIGURE_KEYS: Record<AtlasFigureKind, string> = {
-  matrix: W.keysPortfolio,
-  ledger: W.keysLedger,
-  dossier: W.keysDossier,
-};
-
-function Figure({ kind, ...props }: AtlasFigureProps & { kind: AtlasFigureKind }) {
-  if (kind === 'ledger') return <LedgerFigure {...props} />;
-  if (kind === 'dossier') return <DossierFigure {...props} />;
-  return <MatrixFigure {...props} />;
-}
 
 export function AtlasPortfolio({ all, projects, rows, sharedSetup, names, view, onView, onOpenCell, onOpenProject }: {
   all: AppPassport[];
@@ -49,11 +32,6 @@ export function AtlasPortfolio({ all, projects, rows, sharedSetup, names, view, 
   onOpenCell: (c: AtlasCoord) => void;
   onOpenProject: (slug: string) => void;
 }) {
-  // Session state, deliberately: a throwaway comparison toggle is not a
-  // preference, so it is never written to Web Storage.
-  const [kind, setKind] = useState<AtlasFigureKind>('matrix');
-  const shown = SHOW_FIGURE_BENCH ? kind : 'matrix';
-
   const figure: AtlasFigureProps = {
     projects, rows, names, at: view.at,
     onMove: (at) => onView({ at }),
@@ -69,11 +47,7 @@ export function AtlasPortfolio({ all, projects, rows, sharedSetup, names, view, 
       names={names}
       view={view}
       onView={onView}
-      keys={FIGURE_KEYS[shown]}
-      figure={<Figure kind={shown} {...figure} />}
-      extraControls={SHOW_FIGURE_BENCH
-        ? <Segmented label={W.figure} options={FIGURES} value={kind} onChange={setKind} />
-        : undefined}
+      figure={<InstrumentFigure {...figure} />}
     />
   );
 }

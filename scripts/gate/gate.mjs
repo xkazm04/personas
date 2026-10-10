@@ -278,7 +278,12 @@ function coldEslint(files) {
 
 function coldCensus() {
   const r = run(process.execPath, ['scripts/census/run-census.mjs', '--check']);
-  const tail = (r.stdout + r.stderr).trim().split('\n').slice(-30).join('\n');
+  // Every drift / structural line, wherever it printed, then the last 30 lines. A reader that compares
+  // two runs (the headless merge gate's inherited-failure check) must see every rule that moved: with
+  // the tail alone, rules printed early fell off and a branch was held on master's own drift (2026-10-07).
+  const lines = (r.stdout + r.stderr).trim().split('\n');
+  const problems = lines.filter((l) => /\[(?:drift|structural)\]/.test(l));
+  const tail = [...new Set([...problems, ...lines.slice(-30)])].join('\n');
   return { ok: r.status === 0, ms: r.ms, cold: true, output: tail };
 }
 

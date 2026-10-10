@@ -76,6 +76,13 @@ const EVENT_BRIDGE_TIMING = {
    */
   DEV_TOOLS_SHIP_DEBOUNCE_MS: 250,
   /**
+   * Debounce for `CHAT_CHANGED`. The same pre-commit hazard as the Ship
+   * event (the hook fires inside the write transaction), so the same trailing
+   * debounce and the same value: shorter risks reading before the commit,
+   * longer makes a reply the operator is waiting for visibly late.
+   */
+  CHAT_CHANGED_DEBOUNCE_MS: 250,
+  /**
    * Throttle for `NETWORK_SNAPSHOT_UPDATED`. The Rust P2P engine can emit
    * snapshots faster than React can re-render them. Halving causes dropped
    * frames during peer churn; doubling lets the dock stale-render connection
@@ -918,6 +925,56 @@ const registry: EventRegistration[] = [
     },
   },
 
+  // -- A paired phone's command ran here (mobile command plane) -------------
+  //
+  // Pause / resume / cancel from a paired phone run with no prompt on this
+  // desktop. The persona list learns of an `enabled` flip only through this
+  // event (the CDC summary refresh does not carry `enabled`), so refetch, and
+  // tell the operator what their phone did.
+  {
+    event: EventName.REMOTE_COMMAND_APPLIED,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.REMOTE_COMMAND_APPLIED, (payload) => {
+        void useAgentStore.getState().fetchPersonas();
+        if (!payload.changed) return;
+        const s = getActiveTranslations().remote_approval;
+        const template =
+          payload.commandType === "pause_persona"
+            ? s.applied_paused
+            : payload.commandType === "resume_persona"
+              ? s.applied_resumed
+              : s.applied_cancelled;
+        useToastStore
+          .getState()
+          .addToast(interpolate(template, { name: payload.personaName ?? payload.personaId }), "success");
+      });
+      return [unlisten];
+    },
+  },
+
+  // -- A persona chat row landed (CDC push) ---------------------------------
+  //
+  // The chat turn runs in Rust, so a turn's reply is a row written by the
+  // completion hook, and a turn a paired phone started arrives the same way.
+  // Only message writes matter (a context write is the turn's own bookkeeping,
+  // and refetching on it would answer the refetch's own touch). Debounced: a
+  // turn writes its user row and its context in one burst.
+  {
+    event: EventName.CHAT_CHANGED,
+    setup: async () => {
+      let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+      const unlisten = await typedListen(EventName.CHAT_CHANGED, (payload) => {
+        if (payload.table !== "chat_messages") return;
+        if (debounceTimer !== null) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          debounceTimer = null;
+          void useAgentStore.getState().refreshActiveChat();
+        }, EVENT_BRIDGE_TIMING.CHAT_CHANGED_DEBOUNCE_MS);
+      });
+      return [unlisten];
+    },
+  },
+
   // -- Ship-table write landed (CDC push) -----------------------------------
   //
   // The Ship planner is watched while background agents and Athena change goals
@@ -1036,6 +1093,28 @@ const registry: EventRegistration[] = [
           recordReferralOnce();
         },
       );
+      return [unlisten];
+    },
+  },
+
+  // -- Navigation-only deep links (personas://persona/<id>, personas://execution/<id>) --
+  {
+    event: EventName.PERSONA_LINK_OPENED,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.PERSONA_LINK_OPENED, async (payload) => {
+        const { openPersonaFromLink } = await import("@/lib/deepLinks/navigationLinks");
+        await openPersonaFromLink(payload?.personaId);
+      });
+      return [unlisten];
+    },
+  },
+  {
+    event: EventName.EXECUTION_LINK_OPENED,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.EXECUTION_LINK_OPENED, async (payload) => {
+        const { openExecutionFromLink } = await import("@/lib/deepLinks/navigationLinks");
+        openExecutionFromLink(payload?.executionId);
+      });
       return [unlisten];
     },
   },

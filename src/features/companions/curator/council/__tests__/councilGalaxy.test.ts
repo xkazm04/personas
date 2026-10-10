@@ -17,7 +17,7 @@ import { buildLayout, markOf } from '../galaxy/engine/layout';
 import { applyLens, LENS_M, LENS_R } from '../galaxy/engine/lens';
 import { fixtureRunDetail } from '../galaxy/fixtureRuns';
 import { seatsOf } from '../table/runModel';
-import { dedupeMustAddress } from '../table/RunSynthesis';
+import { parseMustAddress } from '../verdict/verdictModel';
 
 const VIEWPORT: Viewport = { x0: 0, x1: 1280, y0: 0, y1: 800 };
 
@@ -464,40 +464,25 @@ describe('fixtureRunDetail - the fixture carries whole ROUNDS, and nothing read 
   });
 });
 
-describe('dedupeMustAddress - old data is the normal case, not the edge one', () => {
-  const seat = (titles: string[]) =>
-    ({
-      name: 'value',
-      findings: titles.map((title, i) => ({ id: `f${i}`, severity: 'med', title, detail: '', recurrence: 0 })),
-    }) as unknown as Parameters<typeof dedupeMustAddress>[1][number];
-
-  it('drops the entry that word-for-word repeats a finding already on screen', () => {
-    const { items, deduped } = dedupeMustAddress(
-      JSON.stringify(['Worker exit is not settled from the transcript', 'Write the replay-queue test']),
-      [seat(['Worker exit is not settled from the transcript'])],
-    );
-    expect(items).toEqual(['Write the replay-queue test']);
-    expect(deduped).toBe(1);
-  });
-
-  it('treats trailing punctuation and case as the same line, because they are', () => {
-    const { items, deduped } = dedupeMustAddress(
-      JSON.stringify(['no test touches the replay queue.']),
-      [seat(['No test touches the replay queue'])],
-    );
-    expect(items).toEqual([]);
-    expect(deduped).toBe(1);
+describe('parseMustAddress - old data is the normal case, not the edge one', () => {
+  it('takes the member off a "member: text" line, and leaves a line naming none alone', () => {
+    expect(parseMustAddress(JSON.stringify(['craft: Write the replay-queue test', 'value is unmeasured: no users']))).toEqual([
+      { member: 'craft', text: 'Write the replay-queue test' },
+      { member: 'value', text: 'no users' },
+    ]);
+    expect(parseMustAddress(JSON.stringify(['robustness scored 0.4 below its floor of 0.5']))).toEqual([
+      { member: null, text: 'robustness scored 0.4 below its floor of 0.5' },
+    ]);
   });
 
   it('keeps the 1,269-character entry the kp run stored — clamping is the UI’s job', () => {
     const long = 'x'.repeat(1269);
-    const { items } = dedupeMustAddress(JSON.stringify([long]), []);
-    expect(items).toEqual([long]);
+    expect(parseMustAddress(JSON.stringify([long]))).toEqual([{ member: null, text: long }]);
   });
 
   it('is an EMPTY list for a blob that will not parse, never a fabricated one', () => {
-    expect(dedupeMustAddress('{not json', [])).toEqual({ items: [], deduped: 0 });
-    expect(dedupeMustAddress('"a string"', [])).toEqual({ items: [], deduped: 0 });
-    expect(dedupeMustAddress('[1, null, "  ", "real"]', [])).toEqual({ items: ['real'], deduped: 0 });
+    expect(parseMustAddress('{not json')).toEqual([]);
+    expect(parseMustAddress('"a string"')).toEqual([]);
+    expect(parseMustAddress('[1, null, "  ", "real"]')).toEqual([{ member: null, text: 'real' }]);
   });
 });

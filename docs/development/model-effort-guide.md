@@ -190,3 +190,29 @@ docs/tests/model-bench/ORCHESTRATOR.md
 Model ids and effort behavior will drift. The value of this document is not its
 table — it is that the table is **cheap to regenerate**. Re-measure before
 believing a claim here that matters to a decision you are about to make.
+
+---
+
+## 9. 2026-10-08 — a second shape: headless one-shots, Haiku 5.5 vs Sonnet 5.5
+
+A different shape from P3, and a sturdier measurement: short headless calls with
+one checkable answer each, **deterministic scoring, no judge**, three reps per
+cell (732 one-shot calls, 414 Athena turns, 0 lost to infra). Full tables,
+caveats and re-measure commands:
+[`docs/tests/model-bench/haiku-5-5.md`](../tests/model-bench/haiku-5-5.md).
+
+- **Where the answer is checkable, the cheap model is enough.** Haiku 5.5 at
+  medium matched or beat Sonnet 5.5 on extraction, strict JSON and SQL, at
+  94-95% lower list-price cost per call.
+- **Where the task is a call, it is not.** Triage verdicts on hard cases: 92%
+  vs 100%. Athena's memory-write proposal: 0/3 vs 3/3, and a reinforced prompt
+  that named the failure still scored 0/3. Same lesson as §5 from the other
+  side: when a cheaper model is wrong about a judgment, prompt pressure did not
+  move it.
+- **What changed because of it.** The headless call sites now name a
+  `CallClass`, not a model (`src-tauri/core/src/model_class.rs`): the checkable
+  classes run on Haiku with one escalation to Sonnet when the site's own
+  validator rejects the output; the judgment classes stay on Sonnet.
+
+This does not touch §1-§8: long-form design is still the only shape measured
+for effort, and Athena's conversational turn is routed separately.

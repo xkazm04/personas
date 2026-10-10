@@ -38,6 +38,9 @@
     "ReviewWorklist.tsx": {"count":3,"sections":[8],"lines":["314-316","327-336","358-361"],"contexts":["one.** `brainiac`'s is the only complete one (`ReviewWorklist.tsx:314-316`,"],"resolved":false},
     "TinderLayout.tsx": {"count":1,"sections":[],"lines":["153"],"contexts":["(`TinderLayout.tsx:153`). It is `exclusive: true` hand-built for exactly one pair of components,"],"resolved":false},
     "_dev-inspector/DevInspector.tsx": {"count":1,"sections":[7],"lines":["125"],"contexts":["look. The sibling sweep found the identical move in `ascent` (`_dev-inspector/DevInspector.tsx:125`)"],"resolved":false},
+    "agents/quick-answer/triage/__tests__/deckKeyboardOwnership.test.tsx": {"count":1,"sections":[],"contexts":["`agents/quick-answer/triage/__tests__/deckKeyboardOwnership.test.tsx`,"],"resolved":false},
+    "agents/quick-answer/triage/deck/useDeckControls.tsx": {"count":1,"sections":[],"contexts":["`agents/quick-answer/triage/deck/useDeckControls.tsx`,"],"resolved":false},
+    "deckKeyboardOwnership.test.tsx": {"count":6,"sections":[0,6,9],"lines":["90"],"contexts":["the repo shipped a test for it (`deckKeyboardOwnership.test.tsx`, 137 lines, `DANGEROUS_KEYS`"],"resolved":false},
     "lefthook.yml": {"count":2,"sections":[9],"lines":["74-75","58-64"],"contexts":["(`lefthook.yml:74-75`), which exists because the census had been *\"enforced NOWHERE\"* before"]},
     "lib/useTinderItems.ts": {"count":1,"sections":[],"lines":["234-235"],"contexts":["(`lib/useTinderItems.ts:234-235`). **Three of four advertised chords do not exist.**"],"resolved":false},
     "package.json": {"count":1,"sections":[9],"lines":["52"],"contexts":["(`package.json:52`) and, more importantly, in the **`golden-path-census` pre-push job**"]},
@@ -66,20 +69,12 @@
       "verbatim": "PersonaOverviewToolbar.tsx"
     },
     "src/features/agents/quick-answer/triage/__tests__/deckKeyboardOwnership.test.tsx": {
-      "count": 8,
-      "sections": [0,3,6,9],
-      "lines": ["90"],
-      "contexts": ["`agents/quick-answer/triage/__tests__/deckKeyboardOwnership.test.tsx`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/quick-answer/triage/__tests__/deckKeyboardOwnership.test.tsx"
-    },
-    "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx": {
-      "count": 5,
-      "sections": [3,4,7],
-      "lines": ["607","101","592"],
-      "contexts": ["`agents/quick-answer/triage/deck/useDeckControls.tsx`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/quick-answer/triage/deck/useDeckControls.tsx"
+      "count": 1,
+      "sections": [3],
+      "contexts": [
+        "| **`src/features/agents/quick-answer/triage/__tests__/deckKeyboardOwnership.test.tsx`** | **The test to extend, and the best artefact in this leaf.** A `DANGEROUS_KEYS` fixture pressed against a lay…"
+      ],
+      "resolved": false
     },
     "src/features/agents/sub_editor/hooks/useEditorKeyboard.ts": {"count":1,"sections":[7],"lines":["19"],"contexts":["(`useEditorKeyboard.ts:19`, `useRunnerExecution.ts:145`), and one is `1000`"],"resolvedFrom":"basename","verbatim":"useEditorKeyboard.ts"},
     "src/features/agents/sub_executions/libs/useRunnerExecution.ts": {
@@ -256,6 +251,15 @@
       "verbatim": "shortcutRegistry.ts"
     },
     "src/lib/ui/BaseModal.tsx": {"count":2,"sections":[3],"lines":["198-227"],"contexts":["`lib/ui/BaseModal.tsx`, `shared/chrome/{CommandPalette,TitleBarDock}.tsx`,"],"resolvedFrom":"suffix","verbatim":"lib/ui/BaseModal.tsx"},
+    "useDeckControls.tsx": {
+      "count": 4,
+      "sections": [3,4,7],
+      "lines": ["607","101","592"],
+      "contexts": [
+        "| **…`{ exclusive: true }`** | **The only correct answer to \"an overlay must silence what it hides\", and the best-reasoned comment in this leaf** (`:69-79`): *\"Priority alone only decides who sees a…"
+      ],
+      "resolved": false
+    },
     "useReviewKeyboardShortcuts.ts": {"count":1,"sections":[],"lines":["21-24"],"contexts":["and reached for a lock instead (`useReviewKeyboardShortcuts.ts:21-24`): *\"the single-item a/r"],"resolved":false},
     "useTimelineKeyboard.ts": {"count":1,"sections":[9],"lines":["122"],"contexts":["reported `DrivePage.tsx:324` and `useTimelineKeyboard.ts:122` as unguarded when both guard on the"],"resolved":false}
   }

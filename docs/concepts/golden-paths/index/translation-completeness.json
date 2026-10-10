@@ -58,6 +58,13 @@
     "mvp-passport.json": {"count":1,"sections":[],"lines":["43"],"contexts":["English-only as an explicit launch decision (`mvp-passport.json:43`) and has zero i18n crates"],"resolved":false},
     "opengraph-image.tsx": {"count":2,"sections":[8],"lines":["137-139"],"contexts":["(`t.has(kindKey) ? t(kindKey) : …`, `opengraph-image.tsx:137-139`)."],"resolved":false},
     "personas-web/src/i18n/useTranslation.ts": {"count":1,"sections":[],"lines":["46-48"],"contexts":["(`personas-web/src/i18n/useTranslation.ts:46-48`), and a CI + pre-push completeness gate. On P4 that"],"resolved":false},
+    "runner/mod.rs": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["1813-1818"],
+      "contexts": ["| `xhigh` | thinking | UI-selectable at `modelCatalog.ts:87` → stamped at `runner/mod.rs:1813-1818` | `LlmCallsTable.tsx:219`, `ExecutionValueBadges.tsx:44` |"],
+      "resolved": false
+    },
     "schema.rs": {
       "count": 2,
       "sections": [7],
@@ -149,14 +156,6 @@
       "contexts": ["| `warning`, `error` | severity | `engine/director.rs:432` → `manual_reviews.rs:57-62` | `sub_director/PersonaDetailModal.tsx:278` |"],
       "resolvedFrom": "suffix",
       "verbatim": "engine/director.rs"
-    },
-    "src-tauri/src/engine/runner/mod.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["1813-1818"],
-      "contexts": ["| `xhigh` | thinking | UI-selectable at `modelCatalog.ts:87` → stamped at `runner/mod.rs:1813-1818` | `LlmCallsTable.tsx:219`, `ExecutionValueBadges.tsx:44` |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "runner/mod.rs"
     },
     "src/": {"count":1,"sections":[],"contexts":["**Sweep size.** All **4,829** `.ts`/`.tsx` files under `src/`, walked twice by two independent"],"resolved":false,"isDir":true},
     "src/App.tsx": {"count":1,"sections":[7],"lines":["367-370"],"contexts":["the router** at `App.tsx:367-370`, and the section is declared only on `home` — so it"],"resolvedFrom":"basename","verbatim":"App.tsx"},

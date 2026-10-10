@@ -231,6 +231,13 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
             badges: overviewBadges,
             devIds: overviewDevSet,
             labelOverrides: overviewLabelOverrides,
+            // Timeline is the one Overview row with a POSITION rather than a
+            // name: the operator asked for it last under Monitoring, and
+            // every group here is otherwise sorted by resolved label, which
+            // would scatter it per locale ("Timeline" after Activity in
+            // English, "Лента" before it in Russian). `pinLast` is the only
+            // escape from that sort.
+            pinLast: ['timeline'],
           })}
           activeId={overviewTab}
           onSelect={(id) => setOverviewTab(id as OverviewTab)}

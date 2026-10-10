@@ -383,7 +383,7 @@ writing the home dir, `.personas-skill-meta.json` sidecar with a source *path*. 
 
 **P6 — Persona agents (later stage, per operator).** Generated personas have runtime
 memory but no expert system. Connection design (sketch, to be its own plan):
-  - ✅ **Consult lane — SHIPPED 2026-08-20** (`src-tauri/src/engine/knowledge_consult.rs`,
+  - ✅ **Consult lane — SHIPPED 2026-08-20** (`src-tauri/engine/src/knowledge_consult.rs`,
     injected in `engine/runner/mod.rs` immediately after the memory block, so the agent's
     own experience outranks generic doctrine when they disagree).
     - **A menu of pointers, not bodies.** 1,005 forged techniques is not injectable and a

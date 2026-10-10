@@ -167,13 +167,26 @@ function report(id: string) {
   };
 }
 
-/** One tick of a named feed, then a re-render to read the result. */
+/**
+ * A CONTROLLED CLOCK, because a ticker now declines a tick that would re-read
+ * what was just read (`pollIsDue` — it is what removes the duplicate mount
+ * read and stops reopening the overlay firing every feed at once). A tick
+ * fired on the real clock a millisecond after the mount read is inside that
+ * window and is correctly declined, so a test of what the NEXT poll reports
+ * has to say that a cadence has passed.
+ */
+let nowMs = 1_700_000_000_000;
+
+/** One tick of a named feed, a full cadence on, then a re-render. */
 async function tick(name: string, rerender: () => void) {
+  nowMs += 60_000;
   await act(async () => { await pollers.get(name)?.(); });
   rerender();
 }
 
 beforeEach(() => {
+  nowMs += 10 * 60_000;
+  vi.spyOn(Date, 'now').mockImplementation(() => nowMs);
   vi.clearAllMocks();
   pollers.clear();
   agentState.personaSummariesError = null;

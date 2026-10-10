@@ -1283,6 +1283,9 @@ pub enum BacklogSource {
     StaticScan,
     /// Product findings surfaced as a side-channel of a memory-consolidation run.
     MemoryReflection,
+    /// Lifecycle measurement: a step the Overseer was sent to turn green, or a
+    /// gate/test command over its time budget or regressing. No model.
+    Lifecycle,
     /// A human typing an item into the backlog form.
     Manual,
 }
@@ -1308,6 +1311,7 @@ impl BacklogSource {
             Self::HeadlessBenchSeed => "headless_bench_seed",
             Self::StaticScan => "static_scan",
             Self::MemoryReflection => "memory_reflection",
+            Self::Lifecycle => "lifecycle",
             Self::Manual => "manual",
         }
     }
@@ -1339,6 +1343,7 @@ impl BacklogSource {
             "headless_bench_seed" => Some(Self::HeadlessBenchSeed),
             "static_scan" => Some(Self::StaticScan),
             "memory_reflection" => Some(Self::MemoryReflection),
+            "lifecycle" => Some(Self::Lifecycle),
             "manual" | "cross-impact" => Some(Self::Manual),
             // Every Idea-Scanner lens is that one source; the lens itself stays
             // in `scan_type`. Derived from `scan_agents.toml`, not invented.

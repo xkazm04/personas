@@ -140,31 +140,112 @@ test('(ii) clean paths + gates ok -> fast-forward merged, mergedSha == branch ti
   assert.equal(M.cmdSettle({ flags: { run: run.runId } }).mergedSha, tip, 'settle is idempotent on a merged run');
 });
 
-test('(iii) base moved -> worktree rebase, typecheck re-run, then fast-forward', () => {
-  const { root, run, wt } = scenario('moved');
+// a gate that passes only when BOTH the builder's file and the moved base's file are present proves
+// the gates ran on the rebased result, not on the branch as it was cut
+const bothScript = path.join(tmp, 'both-gate.cjs').replace(/\\/g, '/');
+fs.writeFileSync(bothScript, "const fs = require('fs'); for (const f of process.argv.slice(2)) if (!fs.existsSync(f)) { console.log(' FAIL  src/both.test.ts > ' + f + ' is missing'); process.exit(1); }\n");
+const bothGates = (...files) => ({ typecheck: 'exit 0', lint: 'exit 0', test: `node ${bothScript} ${files.join(' ')}` });
+
+test('(iii) base moved with a disjoint file -> rebased in the worktree BEFORE the gates, gates verify the rebased tip, fast-forward', () => {
+  const { root, run, wt } = scenario('moved', { gates: bothGates('c.txt', 'base2.txt') });
   commitIn(wt, 'c.txt', 'builder file\n');
   const baseMove = commitIn(root, 'base2.txt', 'operator landed this meanwhile\n', 'operator commit');
   const out = settle(run);
   assert.equal(out.state, 'merged', out.heldReason);
   assert.equal(out.verdict.rebased, true);
-  assert.equal(out.verdict.gatesAfterRebase.typecheck.ok, true);
+  assert.equal(out.verdict.rebasedOnto, baseMove);
+  assert.equal(out.verdict.rebasedFrom, run.baseSha);
+  assert.equal(out.verdict.gates.test.ok, true, 'the test gate saw both files: it ran on the rebased tip');
+  assert.equal(out.verdict.gatesAfterRebase, undefined, 'no second rebase was needed at the merge');
+  assert.equal(out.baseSha, baseMove, 'the run records the base its branch now sits on');
+  assert.equal(out.originalBaseSha, run.baseSha, 'and keeps the cut-time base');
+  assert.equal(out.verdict.commits.length, 1, 'commits are counted from the new base');
+  assert.deepEqual(out.verdict.files, ['c.txt']);
   assert.equal(sh(root, 'rev-parse', 'HEAD'), out.mergedSha);
   sh(root, 'merge-base', '--is-ancestor', baseMove, 'HEAD');
   assert.ok(fs.existsSync(path.join(root, 'c.txt')) && fs.existsSync(path.join(root, 'base2.txt')));
   assert.equal(sh(root, 'rev-list', '--count', `${baseMove}..HEAD`), '1', 'linear: one rebased commit on top');
 });
 
-test('(iii-b) base moved with a conflict -> rebase aborted, held, branch tip unchanged', () => {
+test('(iii-b) base moved with a conflict -> rebase aborted, worktree clean, held with a merge-held ask, branch tip unchanged', () => {
   const { root, run, wt } = scenario('conflict');
   const tip = commitIn(wt, 'a.txt', 'builder line\n');
   commitIn(root, 'a.txt', 'operator line\n', 'operator commit');
   const before = snapshot(root);
   const out = settle(run);
   assertHeldWithAsk(out, 'conflict');
-  assert.match(out.heldReason, /conflicts/);
+  assert.match(out.heldReason, /rebasing onto [0-9a-f]{10} conflicts \(the rebase was aborted; the branch is unchanged\)/);
   assert.equal(sh(root, 'rev-parse', `refs/heads/${run.branch}`), tip);
-  assert.equal(fs.existsSync(path.resolve(wt, sh(wt, 'rev-parse', '--git-path', 'rebase-merge'))), false, 'no rebase left in progress');
+  assert.equal(sh(wt, 'rev-parse', 'HEAD'), tip, 'the worktree is back on the branch tip');
+  assert.equal(sh(wt, 'status', '--porcelain', '--untracked-files=all').split('\n').filter((l) => l && !/node_modules/.test(l)).length, 0, 'the worktree is clean');
+  for (const m of ['rebase-merge', 'rebase-apply']) assert.equal(fs.existsSync(path.resolve(wt, sh(wt, 'rev-parse', '--git-path', m))), false, `no ${m} left in progress`);
+  assert.equal(out.baseSha, run.baseSha, 'a failed rebase moves nothing');
+  assert.deepEqual(out.verdict.gates, {}, 'no gate ran on a branch that cannot rebase');
   assert.deepEqual(snapshot(root), before);
+  assert.equal(fs.existsSync(path.join(C.STATE_ROOT, '_headless-gate.lock')), false, 'the gate slot is released on the hold');
+});
+
+test('(iii-c) two builders of one project: the second to settle finds the base moved by the first, rebases and merges', () => {
+  const root = makeRepo('pair');
+  const project = { slug: 'pair', id: 'p-pair', name: 'pair', root, baseBranch: 'main' };
+  S.saveBrief('pair', { headless: true, charters: [{ slug: 'accepted-idea-delivery', priority: 1 }, { slug: 'project-kpi-stewardship', priority: 2 }], gates: okGates });
+  const cut = (charterSlug, paths) => {
+    let r = S.newRun(project, { wakeId: 'w-pair', charterSlug, reason: 'r', brief: `work on ${paths[0]}`, ideaIds: [], model: C.MODELS.builder, paths });
+    const wt = WT.createWorktree(r, {});
+    r = S.updateRun(r, { ...wt, state: 'exited', startedAt: C.nowIso(), endedAt: C.nowIso() });
+    return { run: r, wt: wt.worktree };
+  };
+  const A = cut('accepted-idea-delivery', ['src/a/']), B = cut('project-kpi-stewardship', ['src/b/']);
+  assert.equal(A.run.baseSha, B.run.baseSha, 'both cut from the same tip');
+  commitIn(A.wt, 'src/a/x.txt', 'A\n');
+  commitIn(B.wt, 'src/b/y.txt', 'B\n');
+  const outA = settle(A.run);
+  assert.equal(outA.state, 'merged', outA.heldReason);
+  assert.equal(outA.verdict.rebased, false);
+  const outB = settle(B.run);
+  assert.equal(outB.state, 'merged', outB.heldReason);
+  assert.equal(outB.verdict.rebased, true);
+  assert.equal(outB.verdict.rebasedOnto, outA.mergedSha);
+  assert.equal(sh(root, 'rev-parse', 'HEAD'), outB.mergedSha);
+  assert.equal(sh(root, 'rev-list', '--count', `${A.run.baseSha}..HEAD`), '2', 'linear history: A then B');
+  assert.ok(fs.existsSync(path.join(root, 'src/a/x.txt')) && fs.existsSync(path.join(root, 'src/b/y.txt')));
+  assert.equal(outB.verdict.outsidePaths, undefined, 'B stayed inside its declared paths');
+});
+
+test('(iii-d) the base moves WHILE the gates run -> the merge gate rebases again and re-runs the FULL gates', () => {
+  const marker = path.join(tmp, 'moved-once.flag').replace(/\\/g, '/');
+  const moverScript = path.join(tmp, 'mover-gate.cjs').replace(/\\/g, '/');
+  const { root, run, wt } = scenario('during');
+  // the lint gate lands an operator commit in the checkout the first time it runs (and never again)
+  fs.writeFileSync(moverScript, [
+    "const fs = require('fs'); const { execFileSync } = require('child_process');",
+    `if (!fs.existsSync('${marker}')) { fs.writeFileSync('${marker}', 'x');`,
+    `  const root = ${JSON.stringify(root.replace(/\\/g, '/'))};`,
+    "  fs.writeFileSync(root + '/late.txt', 'late\\n');",
+    "  execFileSync('git', ['-C', root, 'add', 'late.txt']);",
+    "  execFileSync('git', ['-C', root, 'commit', '-q', '-m', 'operator commit during the gates']); }",
+  ].join('\n'));
+  S.saveBrief('during', { ...S.loadBrief('during'), gates: { typecheck: 'exit 0', lint: `node ${moverScript}`, test: '' } });
+  commitIn(wt, 'c.txt', 'x\n');
+  const out = settle(run);
+  assert.equal(out.state, 'merged', out.heldReason);
+  const late = sh(root, 'log', '-1', '--format=%H', '--', 'late.txt');
+  assert.equal(out.verdict.rebasedOnto, late, 'the merge gate rebased onto the commit that landed mid-gates');
+  assert.deepEqual(Object.keys(out.verdict.gatesAfterRebase).sort(), ['lint', 'test', 'typecheck'], 'every gate ran again, not only typecheck');
+  assert.equal(out.verdict.gatesAfterRebase.typecheck.ok, true);
+  assert.equal(out.baseSha, late);
+  sh(root, 'merge-base', '--is-ancestor', late, 'HEAD');
+  assert.ok(fs.existsSync(path.join(root, 'late.txt')) && fs.existsSync(path.join(root, 'c.txt')));
+});
+
+test('(iii-e) outsidePaths: files beyond the declared paths are recorded, not held', () => {
+  const { run, wt } = scenario('outside');
+  S.updateRun(run, { paths: ['src/'] });
+  commitIn(wt, 'src/in.txt', 'x\n');
+  commitIn(wt, 'docs/out.md', 'x\n');
+  const out = settle(S.loadRun('outside', run.runId));
+  assert.equal(out.state, 'merged', out.heldReason);
+  assert.deepEqual(out.verdict.outsidePaths, ['docs/out.md']);
 });
 
 test('(iv) boundary hit -> held; prose boundaries are rules, not matchers', () => {
@@ -318,6 +399,14 @@ test('(xv) the failure signature is the same for the same test in the branch wor
   assert.deepEqual(branch, base);
   assert.equal(G.failuresAreInherited(branch, base), true);
   assert.equal(G.failuresAreInherited([...branch, 'app/api/c/d.test.ts'], base), false, 'a failure only the branch has is not inherited');
+  // Playwright numbers tests by run order and times them in parentheses: the same failure must match
+  const pwBranch = G.failureSignature('  ✘ 843 [node] › tests/golden-path/kit-catalog.probe.spec.ts:191:7 › kit census › census.json is what the tree measures today (303ms)\n');
+  const pwBase = G.failureSignature('  ✘ 1004 [node] › tests/golden-path/kit-catalog.probe.spec.ts:191:7 › kit census › census.json is what the tree measures today (145ms)\n');
+  assert.deepEqual(pwBranch, pwBase);
+  assert.equal(G.failuresAreInherited(pwBranch, pwBase), true);
+  // a branch-only Playwright failure names its spec, so the flaky rerun can narrow to it
+  assert.deepEqual(G.testFilesIn(['✘ [node] › tests/golden-path/job-elapsed.probe.spec.ts:15:5 › formatElapsed uses m:ss']), ['tests/golden-path/job-elapsed.probe.spec.ts']);
+  assert.deepEqual(G.testFilesIn(['app/api/x/route.test.ts']), ['app/api/x/route.test.ts']);
 });
 
 test('(xvi) settle with no memory headroom refuses, leaves the run exactly as it was, and a later settle succeeds', () => {
@@ -370,6 +459,48 @@ test('(xviii) narrowCommand and testFilesIn', async () => {
   assert.deepEqual(G.testFilesIn(['FAIL src/__tests__/a.test.tsx > suite > case', 'x/y.test.ts', 'no file here']).sort(), ['src/__tests__/a.test.tsx', 'x/y.test.ts']);
 });
 
+test('(xx) failureSignature reads Rust libtest failures and census drift, so a base with the same lines makes them inherited', async () => {
+  const G = await import('../lib/gate.mjs');
+  const ESC = String.fromCharCode(27);
+  const branch = G.failureSignature([
+    '     Running tests\\bindings.rs (target\\debug\\deps\\bindings-de67bf936a6d770c.exe)',
+    'test checked_in_bindings_match_every_rust_command_event_and_dependency ... FAILED',
+    'test fine_one ... ok',
+    `    ${ESC}[33m[drift]${ESC}[0m files rose 110 -> 113 (+3). New violations of docs/concepts/golden-paths/connection-pool-pragmas.md. Fix them.`,
+    '    [structural] the walk visited 2 files, under the floor of 50',
+  ].join('\n'));
+  assert.deepEqual(branch, [
+    '[drift] files rose 110 -> 113 (+3). New violations of docs/concepts/golden-paths/connection-pool-pragmas.md. Fix them.',
+    '[structural] the walk visited 2 files, under the floor of 50',
+    'test checked_in_bindings_match_every_rust_command_event_and_dependency ... FAILED',
+  ]);
+  const sameOnBase = G.failureSignature('[drift] files rose 110 -> 113 (+3). New violations of docs/concepts/golden-paths/connection-pool-pragmas.md. Fix them.');
+  const branchCensusOnly = G.failureSignature('[drift] files rose 110 -> 113 (+3). New violations of docs/concepts/golden-paths/connection-pool-pragmas.md. Fix them.');
+  assert.equal(G.failuresAreInherited(branchCensusOnly, sameOnBase), true, 'the same drift on the base is master\'s red');
+  const branchRoseMore = G.failureSignature('[drift] files rose 110 -> 114 (+4). New violations of docs/concepts/golden-paths/connection-pool-pragmas.md. Fix them.');
+  assert.equal(G.failuresAreInherited(branchRoseMore, sameOnBase), false, 'a branch that adds a violation is its own red');
+});
+
+test('(xix) a gate resolves a repo-local script: NoDefaultCurrentDirectoryInExePath is not passed on', async () => {
+  const G = await import('../lib/gate.mjs');
+  const before = process.env.NoDefaultCurrentDirectoryInExePath;
+  process.env.NoDefaultCurrentDirectoryInExePath = '1';
+  try {
+    const env = G.gateEnv({ EXTRA: 'x' });
+    assert.equal(Object.keys(env).some((k) => k.toUpperCase() === 'NODEFAULTCURRENTDIRECTORYINEXEPATH'), false);
+    assert.equal(env.EXTRA, 'x');
+    if (process.platform === 'win32') {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'am-gate-cwd-'));
+      fs.writeFileSync(path.join(dir, 'probe.bat'), '@echo probe-ran\r\n');
+      const r = G.runShell('probe.bat', dir, 30000);
+      assert.equal(r.ok, true, r.tail);
+      assert.match(r.tail, /probe-ran/);
+    }
+  } finally {
+    if (before === undefined) delete process.env.NoDefaultCurrentDirectoryInExePath; else process.env.NoDefaultCurrentDirectoryInExePath = before;
+  }
+});
+
 // ---------------------------------------------------------------- the rest of the state machine
 
 test('a usage limit in the stream -> released (not held, not failed) and the mark is set', () => {
@@ -386,6 +517,39 @@ test('a usage limit in the stream -> released (not held, not failed) and the mar
   L.clearLimit();
 });
 
+// The stream shape measured 2026-10-07 when the subscription changed mid-run: the limit's error result,
+// then the worker carried on and ended on a clean result.
+const outlivedStream = () => [
+  { type: 'system', subtype: 'init' },
+  { type: 'result', subtype: 'success', is_error: true, result: "You've hit your weekly limit · resets Oct 11, 4am (Europe/Prague)" },
+  { type: 'result', subtype: 'success', is_error: false, result: 'done' },
+].map((o) => JSON.stringify(o)).join('\n') + '\n';
+
+test('a usage limit the worker outlived (its last result is clean) -> settled like any run, and no mark is set', () => {
+  const { run, wt } = scenario('outlived');
+  const tip = commitIn(wt, 'c.txt', 'finished after the limit lifted\n');
+  fs.writeFileSync(path.join(C.runDir('outlived', run.runId), 'stream.jsonl'), outlivedStream());
+  const out = settle(run);
+  assert.equal(out.state, 'merged', out.heldReason);
+  assert.equal(out.mergedSha, tip);
+  assert.equal(L.readLimit(), null, 'an outlived limit does not stop the loop');
+});
+
+test('a run released for a limit it outlived re-settles on --retry; one the limit stopped stays released', () => {
+  const { run, wt } = scenario('reopen');
+  const tip = commitIn(wt, 'c.txt', 'work\n');
+  const streamFile = path.join(C.runDir('reopen', run.runId), 'stream.jsonl');
+  S.updateRun(run, { state: 'released', heldReason: 'usage limit: seen by watch', limitSeenAt: C.nowIso() });
+  fs.writeFileSync(streamFile, `${JSON.stringify({ type: 'result', is_error: true, result: 'Claude AI usage limit reached|1760000000' })}\n`);
+  assert.equal(M.cmdSettle({ flags: { run: run.runId, retry: true } }).state, 'released', 'stopped by the limit: retry changes nothing');
+  assert.equal(M.cmdSettle({ flags: { run: run.runId } }).state, 'released', 'outlived, but no --retry: returned as it is');
+  fs.writeFileSync(streamFile, outlivedStream());
+  const out = M.cmdSettle({ flags: { run: run.runId, retry: true } });
+  assert.equal(out.state, 'merged', out.heldReason);
+  assert.equal(out.mergedSha, tip);
+  assert.equal(L.readLimit(), null);
+});
+
 test('settle refuses a live worker and an undispatched run; a dirty worktree is held', () => {
   const { run, wt } = scenario('guards');
   const live = S.updateRun(run, { state: 'running', pid: process.pid });
@@ -398,6 +562,23 @@ test('settle refuses a live worker and an undispatched run; a dirty worktree is 
   const out = settle(S.updateRun(live, { state: 'running', pid: 999999 }));
   assertHeldWithAsk(out, 'guards');
   assert.match(out.heldReason, /uncommitted changes/);
+});
+
+test('a worktree dirty only in line endings (a CRLF-writing generator) is restored and merges; a real edit still holds', () => {
+  const { root, run, wt } = scenario('eolonly');
+  const tip = commitIn(wt, 'gen.ts', 'export const a = 1;\nexport const b = 2;\n');
+  fs.writeFileSync(path.join(wt, 'gen.ts'), 'export const a = 1;\r\nexport const b = 2;\r\n');
+  const out = settle(run);
+  assert.equal(out.state, 'merged', out.heldReason);
+  assert.deepEqual(out.verdict.eolRestored, ['gen.ts']);
+  assert.equal(sh(root, 'rev-parse', 'HEAD'), tip);
+
+  const second = scenario('eolreal');
+  commitIn(second.wt, 'gen.ts', 'export const a = 1;\n');
+  fs.writeFileSync(path.join(second.wt, 'gen.ts'), 'export const a = 2;\r\n');
+  const held = settle(second.run);
+  assert.equal(held.state, 'held');
+  assert.match(held.heldReason, /uncommitted changes.*gen\.ts/);
 });
 
 test('parsePorcelain: quoted and octal-escaped paths, and the -z form', () => {
