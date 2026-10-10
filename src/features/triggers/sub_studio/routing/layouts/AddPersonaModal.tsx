@@ -12,7 +12,7 @@ import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { useTranslation } from '@/i18n/useTranslation';
-import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
+import { parseDesignContext } from '@/features/agents/shared/designContext';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 

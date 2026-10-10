@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
+import { parseDesignContext } from '@/features/agents/shared/designContext';
 import { extractProtocolCapabilities } from '../edit/protocolParser';
 import type { DesignContextData } from '@/lib/types/frontendTypes';
 import type { ProtocolCapability } from '@/lib/types/designTypes';

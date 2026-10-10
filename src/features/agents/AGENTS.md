@@ -23,11 +23,19 @@ CI test step fail on it) does two things:
 - It fails when the table below and the `sub_*` directories on disk disagree:
   a module with no row, or a row with no module.
 
-Recorded 2026-10-09: 28 crossing imports in 21 pairs. Most are the editor shell
-mounting tabs (`sub_editor -> sub_activity/design/lab/settings`). The two worth
-undoing first are the `sub_brain <-> sub_life` cycle and `sub_connectors ->
-sub_lab` (`parseDesignContext` lives in `sub_lab/use-cases/UseCasesList`, and
-`components/allPersonas` reads it too, so it belongs in `shared/`).
+Recorded 2026-10-10: 27 crossing imports in 20 pairs. Most are the editor shell
+mounting tabs (`sub_editor -> sub_activity/design/lab/settings`) and the Design
+hub composing panels (`sub_design -> …`). Two crossings were undone that day:
+
+- `sub_connectors -> sub_lab` is gone. The `design_context` parser
+  (`parseDesignContext`, `serializeDesignContext`, `mergeCredentialLink`) moved
+  out of the `sub_lab/use-cases/UseCasesList` component into
+  `shared/designContext.ts`, which every reader now imports directly.
+- The `sub_brain <-> sub_life` cycle is gone. `sub_life` owns the episode and
+  attention surfaces that `sub_brain`'s tiles read, so `sub_brain -> sub_life`
+  stays. `sub_life/BrainSection` no longer imports `sub_brain`; it takes the
+  dashboard as a `renderDashboard` prop, and `sub_design/components/DesignLifePanels`
+  composes the two.
 
 ## Naming rule
 

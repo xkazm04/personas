@@ -1,10 +1,10 @@
 {
-  "$comment": "Ratchet baseline for scripts/check-agents-sub-boundaries.mjs: production imports that cross from one src/features/agents/sub_* module into another, keyed 'from -> to'. Recorded 2026-10-09 (28 imports, 21 pairs). A new pair or a rise fails; a drop fails until re-recorded with --update, which is the deliberate, reviewed way to bank a fix. floor = minimum production files the walk must see (about 395 exist on 2026-10-09: 501 .ts/.tsx files under sub_*, 101 of them *.test.*; 300 is reachable only by a broken walker).",
+  "$comment": "Ratchet baseline for scripts/check-agents-sub-boundaries.mjs: production imports that cross from one src/features/agents/sub_* module into another, keyed 'from -> to'. Recorded 2026-10-09 (28 imports, 21 pairs); re-recorded 2026-10-10 (27 imports, 20 pairs) after parseDesignContext moved to features/agents/shared/designContext.ts (sub_connectors -> sub_lab gone) and the Design hub took over composing BrainDashboard into sub_life's BrainSection (sub_life -> sub_brain gone, sub_design -> sub_brain added; the brain/life cycle is broken). A new pair or a rise fails; a drop fails until re-recorded with --update, which is the deliberate, reviewed way to bank a fix. floor = minimum production files the walk must see (about 395 exist on 2026-10-09: 501 .ts/.tsx files under sub_*, 101 of them *.test.*; 300 is reachable only by a broken walker).",
   "floor": 300,
   "edges": {
     "sub_activity -> sub_executions": 3,
     "sub_brain -> sub_life": 2,
-    "sub_connectors -> sub_lab": 1,
+    "sub_design -> sub_brain": 1,
     "sub_design -> sub_connectors": 2,
     "sub_design -> sub_editor": 1,
     "sub_design -> sub_life": 1,
@@ -20,7 +20,6 @@
     "sub_lab -> sub_executions": 1,
     "sub_lab -> sub_health": 1,
     "sub_lab -> sub_model_config": 1,
-    "sub_life -> sub_brain": 1,
     "sub_responsibilities -> sub_life": 1,
     "sub_settings -> sub_editor": 2
   }

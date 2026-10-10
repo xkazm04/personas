@@ -10,7 +10,7 @@
  * kind reads as "no requirements" rather than as a half-rendered panel.
  *
  * It parses the raw `design_context` string itself instead of going through
- * `parseDesignContext` (`sub_lab/use-cases/UseCasesList.tsx`), whose
+ * `parseDesignContext` (`features/agents/shared/designContext.ts`), whose
  * structured-envelope check only recognises `designFiles` / `credentialLinks`
  * / `useCases` and would rebuild a kpLink-only envelope without the link.
  */
