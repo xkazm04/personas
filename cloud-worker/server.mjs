@@ -141,6 +141,24 @@ const slugify = (s) =>
 // The Anthropic path works against BOTH api.anthropic.com AND Qwen's
 // Anthropic-compatible endpoint (…/apps/anthropic) — so "the Claude option"
 // can run on real Claude or on Qwen-via-Anthropic-protocol just by base_url.
+//
+// The persona's auth_token wins; otherwise the worker's OWN key is used, but
+// only toward the host that key was issued for. A persona that names its own
+// base_url without its own auth_token gets no worker key: falling through would
+// send this worker's secret to a host the caller chose (the desktop's brokered
+// egress makes that unrepresentable, and this mirrors it). A miss resolves to
+// '' -> the labelled mock below, never to another provider's key.
+const DASHSCOPE_HOST = /^dashscope(-intl|-us)?\.aliyuncs\.com$/;
+function workerKeyFor(baseUrl) {
+  let host;
+  try { host = new URL(baseUrl).hostname; } catch { return ''; }
+  if (host === 'api.anthropic.com') return process.env.ANTHROPIC_API_KEY || '';
+  let qwenHost = '';
+  try { qwenHost = new URL(QWEN_BASE_URL).hostname; } catch { /* unset or malformed */ }
+  if (DASHSCOPE_HOST.test(host) || host === qwenHost) return DASHSCOPE_API_KEY;
+  return '';
+}
+
 function resolveEngine(modelProfile) {
   let mp = modelProfile || {};
   if (typeof mp === 'string') {
@@ -148,22 +166,24 @@ function resolveEngine(modelProfile) {
   }
   const provider = String(mp.provider || 'qwen').toLowerCase();
   if (provider === 'claude' || provider === 'anthropic') {
+    const baseUrl = (mp.base_url || 'https://api.anthropic.com').replace(/\/+$/, '');
     return {
       provider,
       protocol: 'anthropic',
-      baseUrl: (mp.base_url || 'https://api.anthropic.com').replace(/\/+$/, ''),
+      baseUrl,
       model: SUPERSEDED_MODELS[mp.model] || mp.model || 'claude-sonnet-5-5',
-      // Fall back to the Qwen key so a "claude" persona pointed at Qwen's
-      // Anthropic-compat endpoint works without a separate Anthropic key.
-      apiKey: mp.auth_token || process.env.ANTHROPIC_API_KEY || DASHSCOPE_API_KEY || '',
+      // A "claude" persona pointed at Qwen's Anthropic-compat endpoint still
+      // runs on the Qwen key, because that host is the key's own.
+      apiKey: mp.auth_token || workerKeyFor(baseUrl),
     };
   }
+  const baseUrl = (mp.base_url || QWEN_BASE_URL).replace(/\/+$/, '');
   return {
     provider,
     protocol: 'openai',
-    baseUrl: (mp.base_url || QWEN_BASE_URL).replace(/\/+$/, ''),
+    baseUrl,
     model: mp.model || QWEN_MODEL,
-    apiKey: mp.auth_token || DASHSCOPE_API_KEY || '',
+    apiKey: mp.auth_token || workerKeyFor(baseUrl),
   };
 }
 

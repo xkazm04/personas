@@ -365,13 +365,53 @@ def rejudge(run_dir: Path, judge_model: str | None, strict: bool, out_root: Path
     return run_dir
 
 
+def _stamp(hv: dict | None) -> str:
+    hv = hv or {}
+    return (hv.get("rev") or "unstamped")[:10] + ("+dirty" if hv.get("dirty") else "")
+
+
+def run_pins(h: dict) -> dict:
+    """Everything a ladder row must share except the design under test.
+
+    The scorer is whichever harness last judged the answers: a re-judged run was scored by
+    the re-judging revision, not the one that produced it.
+    """
+    sc = h.get("scenario") or {}
+    return {
+        "consumer": h.get("consumer"), "judge": h.get("judge"), "judge direction": h.get("judge_direction"),
+        "budget": h.get("budget_tokens"), "elaboration": h.get("elaboration"),
+        "scenario": f"seed {sc.get('seed')} density {sc.get('density')} days {sc.get('days')}",
+        "scored by": _stamp(h.get("rejudged_harness") if h.get("rejudged") else h.get("harness")),
+        "scored at": h.get("rejudged") or h.get("run_id"),
+    }
+
+
+def pin_lines(names: list[str], pins: list[dict]) -> list[str]:
+    """Check the pins instead of asserting them: a pin that differs is named with its rows."""
+    if not pins:
+        return []
+    keys = [k for k in pins[0] if k != "scored at"]
+    same = {k: pins[0][k] for k in keys if all(p[k] == pins[0][k] for p in pins)}
+    differ = [k for k in keys if k not in same]
+    L = ["\npins shared by every row: " + " · ".join(f"{k} `{v}`" for k, v in same.items() if k != "scored by")]
+    if differ:
+        L.append(f"**not a ladder** - rows differ in {', '.join(differ)} as well as the design:")
+        L += [f"- {n}: " + " · ".join(f"{k} `{p[k]}`" for k in differ) for n, p in zip(names, pins)]
+    blind = [p["scored at"] for p in pins if p["scored by"].startswith("unstamped")]
+    if blind:
+        L.append(f"scorer revision unrecorded on {len(blind)} of {len(pins)} rows, scored at {len(set(blind))} "
+                 "different times - the record cannot show that one judge revision scored them all.")
+    return L
+
+
 def compare(run_dirs: list[Path], out_root: Path | None = None) -> str:
     rows = []
     harnesses = set()
+    pins = []
     for d in run_dirs:
         h = json.loads((d / "header.json").read_text(encoding="utf-8"))
-        hv = h.get("harness") or {}
-        harnesses.add((hv.get("rev") or "unstamped")[:10] + ("+dirty" if hv.get("dirty") else ""))
+        harnesses.add(_stamp(h.get("harness")))
+        pins.append(run_pins(h))
         answers = json.loads((d / "answers.json").read_text(encoding="utf-8"))
         probes = {}
         try:
@@ -397,7 +437,7 @@ def compare(run_dirs: list[Path], out_root: Path | None = None) -> str:
         sfv = "-" if r[12] is None else f"{r[12]:.2f}"
         L.append(f"| {r[0]} | {r[1]} | {r[2]} | {r[2] / max(1, r[1]):.2f} | {r[3]} | {r[4]} | {ffv} | {sfv} | {r[5]:.0f} | {r[6]:.2f} | {r[7]:.0f} |")
     if rows:
-        L.append(f"\nconsumer `{rows[0][8]}` · budget {rows[0][9]} · elaboration `{rows[0][10]}` - every row shares them or the table is not a ladder.")
+        L += pin_lines([d.name for d in run_dirs], pins)
         L.append("false fire and silent failure are a pair: a design can zero either one by "
                  "being louder or quieter than it should be, so neither is a score on its own.")
     if len(harnesses) > 1 or "unstamped" in {x.split("+")[0] for x in harnesses}:
