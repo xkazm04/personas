@@ -746,7 +746,16 @@
     "route_paused": "一時停止中",
     "route_toggle_failed": "このルートを変更できませんでした",
     "add_listener_failed": "このリスナーを追加できませんでした",
-    "disconnect_failed": "このルートを切断できませんでした"
+    "disconnect_failed": "このルートを切断できませんでした",
+    "tpl_desc_schedule": "Cron または間隔によるトリガー",
+    "tpl_desc_polling": "HTTP エンドポイントの変更検出",
+    "tpl_desc_webhook": "外部 Webhook の POST",
+    "tpl_desc_event_listener": "公開されたイベントを待ち受けます",
+    "tpl_desc_file_watcher": "ファイルシステムの変更を監視します",
+    "tpl_desc_clipboard": "クリップボードの内容を監視します",
+    "tpl_desc_app_focus": "フォアグラウンドアプリの切り替えを監視します",
+    "tpl_desc_composite": "時間枠付きの複数条件トリガー",
+    "unknown_persona": "不明なペルソナ"
   },
   "subscription_list": {
     "active": "アクティブ",

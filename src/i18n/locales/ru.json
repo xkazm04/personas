@@ -21374,7 +21374,16 @@
       "route_paused": "На паузе",
       "route_toggle_failed": "Не удалось изменить маршрут",
       "add_listener_failed": "Не удалось добавить слушателя",
-      "disconnect_failed": "Не удалось отключить маршрут"
+      "disconnect_failed": "Не удалось отключить маршрут",
+      "tpl_desc_schedule": "Триггер по cron или интервалу",
+      "tpl_desc_polling": "Обнаружение изменений на HTTP-эндпоинте",
+      "tpl_desc_webhook": "Внешний POST-запрос вебхука",
+      "tpl_desc_event_listener": "Прослушивание опубликованных событий",
+      "tpl_desc_file_watcher": "Отслеживание изменений в файловой системе",
+      "tpl_desc_clipboard": "Отслеживание содержимого буфера обмена",
+      "tpl_desc_app_focus": "Отслеживание смены приложения на переднем плане",
+      "tpl_desc_composite": "Триггер с несколькими условиями и временным окном",
+      "unknown_persona": "Неизвестная персона"
     },
     "subscription_list": {
       "active": "Активные",

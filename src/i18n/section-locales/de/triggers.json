@@ -746,7 +746,16 @@
     "route_paused": "Pausiert",
     "route_toggle_failed": "Route konnte nicht geändert werden",
     "add_listener_failed": "Listener konnte nicht hinzugefügt werden",
-    "disconnect_failed": "Route konnte nicht getrennt werden"
+    "disconnect_failed": "Route konnte nicht getrennt werden",
+    "tpl_desc_schedule": "Cron- oder Intervall-Trigger",
+    "tpl_desc_polling": "Änderungserkennung an einem HTTP-Endpunkt",
+    "tpl_desc_webhook": "Externer Webhook-POST",
+    "tpl_desc_event_listener": "Auf veröffentlichte Ereignisse lauschen",
+    "tpl_desc_file_watcher": "Dateisystemänderungen überwachen",
+    "tpl_desc_clipboard": "Zwischenablage-Inhalt überwachen",
+    "tpl_desc_app_focus": "Wechsel der Vordergrund-App überwachen",
+    "tpl_desc_composite": "Trigger mit mehreren Bedingungen und Zeitfenster",
+    "unknown_persona": "Unbekannte Persona"
   },
   "subscription_list": {
     "active": "Aktiv",

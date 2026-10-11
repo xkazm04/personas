@@ -746,7 +746,16 @@
     "route_paused": "En pausa",
     "route_toggle_failed": "No se pudo cambiar esta ruta",
     "add_listener_failed": "No se pudo añadir este oyente",
-    "disconnect_failed": "No se pudo desconectar esta ruta"
+    "disconnect_failed": "No se pudo desconectar esta ruta",
+    "tpl_desc_schedule": "Disparador por cron o intervalo",
+    "tpl_desc_polling": "Detección de cambios en un endpoint HTTP",
+    "tpl_desc_webhook": "POST de un webhook externo",
+    "tpl_desc_event_listener": "Escucha los eventos publicados",
+    "tpl_desc_file_watcher": "Supervisa los cambios en el sistema de archivos",
+    "tpl_desc_clipboard": "Supervisa el contenido del portapapeles",
+    "tpl_desc_app_focus": "Supervisa los cambios de la app en primer plano",
+    "tpl_desc_composite": "Disparador de varias condiciones con ventana de tiempo",
+    "unknown_persona": "Persona desconocida"
   },
   "subscription_list": {
     "active": "Activo",

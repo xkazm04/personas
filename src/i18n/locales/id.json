@@ -21374,7 +21374,16 @@
       "route_paused": "Dijeda",
       "route_toggle_failed": "Gagal mengubah rute ini",
       "add_listener_failed": "Gagal menambahkan listener ini",
-      "disconnect_failed": "Gagal memutuskan rute ini"
+      "disconnect_failed": "Gagal memutuskan rute ini",
+      "tpl_desc_schedule": "Pemicu cron atau interval",
+      "tpl_desc_polling": "Deteksi perubahan pada endpoint HTTP",
+      "tpl_desc_webhook": "POST webhook eksternal",
+      "tpl_desc_event_listener": "Mendengarkan event yang dipublikasikan",
+      "tpl_desc_file_watcher": "Memantau perubahan sistem berkas",
+      "tpl_desc_clipboard": "Memantau isi papan klip",
+      "tpl_desc_app_focus": "Memantau perubahan aplikasi di latar depan",
+      "tpl_desc_composite": "Pemicu multi-kondisi dengan jendela waktu",
+      "unknown_persona": "Persona tidak dikenal"
     },
     "subscription_list": {
       "active": "Aktif",

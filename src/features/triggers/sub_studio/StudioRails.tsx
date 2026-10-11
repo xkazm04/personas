@@ -6,10 +6,11 @@
  */
 import { useMemo, useState } from 'react';
 import { Search, Zap, Bot, Cog, Store, Globe, X } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import type { SystemOpKindMeta } from '@/api/systemOps';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
-import { TRIGGER_BLOCK_TEMPLATES } from './libs/triggerStudioConstants';
+import { TRIGGER_BLOCK_TEMPLATES, templateCopy } from './libs/triggerStudioConstants';
 import { TriggerOptionCard, PersonaOptionCard } from './StudioOptionCards';
 import { SystemOpOptionCard } from './system_ops/SystemOpOptionCard';
 import { useSubscribedFeeds } from '@/features/triggers/sub_shared/useSubscribedFeeds';
@@ -52,6 +53,7 @@ function SearchField({ query, onQuery, placeholder }: { query: string; onQuery: 
 }
 
 export function StudioSourceRail({ c, onClose }: { c: StudioComposer; onClose?: () => void }) {
+  const { t } = useTranslation();
   const { tx, st } = c;
   const [sourceKind, setSourceKind] = useState<'signals' | 'personas'>('signals');
   const [query, setQuery] = useState('');
@@ -59,8 +61,12 @@ export function StudioSourceRail({ c, onClose }: { c: StudioComposer; onClose?: 
 
   const subscribedFeeds = useSubscribedFeeds();
   const filteredTriggers = useMemo(
-    () => TRIGGER_BLOCK_TEMPLATES.filter((tpl) => !q || tpl.label.toLowerCase().includes(q) || tpl.description.toLowerCase().includes(q)),
-    [q],
+    () => TRIGGER_BLOCK_TEMPLATES.filter((tpl) => {
+      if (!q) return true;
+      const copy = templateCopy(t, tpl);
+      return copy.label.toLowerCase().includes(q) || copy.description.toLowerCase().includes(q);
+    }),
+    [q, t],
   );
   const filteredFeeds = useMemo(
     () => subscribedFeeds.filter((f) => !q || f.name.toLowerCase().includes(q) || f.slug.toLowerCase().includes(q)),

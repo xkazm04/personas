@@ -10,10 +10,12 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { SystemOpKindMeta } from '@/api/systemOps';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { findTrigger, personaName, type DraftSource } from './libs/studioDraftModel';
+import { templateCopy } from './libs/triggerStudioConstants';
 
 export function SourceChip({ source, personas, completesLabel }: {
   source: DraftSource; personas: Persona[]; completesLabel: string;
 }) {
+  const { t } = useTranslation();
   if (source.kind === 'trigger') {
     const tpl = findTrigger(source.triggerType);
     const Icon = tpl?.icon ?? Zap;
@@ -22,7 +24,7 @@ export function SourceChip({ source, personas, completesLabel }: {
         <span className={`w-7 h-7 rounded-input flex items-center justify-center bg-secondary/60 shrink-0 ${tpl?.color ?? 'text-amber-400'}`}>
           <Icon className="w-3.5 h-3.5" />
         </span>
-        <span className="typo-body text-foreground truncate">{tpl?.label ?? source.triggerType}</span>
+        <span className="typo-body text-foreground truncate">{tpl ? templateCopy(t, tpl).label : source.triggerType}</span>
       </span>
     );
   }
@@ -40,18 +42,19 @@ export function SourceChip({ source, personas, completesLabel }: {
   return (
     <span className="flex items-center gap-2 min-w-0 shrink">
       <PersonaIcon icon={p?.icon} color={p?.color} display="framed" frameSize="sm" />
-      <span className="typo-body text-foreground truncate">{p?.name ?? personaName(source.personaId, personas)}</span>
+      <span className="typo-body text-foreground truncate">{p?.name ?? personaName(source.personaId, personas, t.triggers.studio.unknown_persona)}</span>
       <span className="typo-body opacity-80 text-foreground shrink-0">{completesLabel}</span>
     </span>
   );
 }
 
 export function TargetChip({ targetId, personas }: { targetId: string; personas: Persona[] }) {
+  const { t } = useTranslation();
   const p = personas.find((x) => x.id === targetId);
   return (
     <span className="flex items-center gap-2 min-w-0 shrink">
       <PersonaIcon icon={p?.icon} color={p?.color} display="framed" frameSize="sm" />
-      <span className="typo-body text-foreground truncate">{p?.name ?? personaName(targetId, personas)}</span>
+      <span className="typo-body text-foreground truncate">{p?.name ?? personaName(targetId, personas, t.triggers.studio.unknown_persona)}</span>
     </span>
   );
 }

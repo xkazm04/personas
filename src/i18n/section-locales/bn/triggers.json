@@ -746,7 +746,16 @@
     "route_paused": "বিরতিতে",
     "route_toggle_failed": "এই রুট পরিবর্তন করা যায়নি",
     "add_listener_failed": "এই লিসেনার যোগ করা যায়নি",
-    "disconnect_failed": "এই রুট বিচ্ছিন্ন করা যায়নি"
+    "disconnect_failed": "এই রুট বিচ্ছিন্ন করা যায়নি",
+    "tpl_desc_schedule": "ক্রন বা ইন্টারভাল ট্রিগার",
+    "tpl_desc_polling": "HTTP এন্ডপয়েন্টের পরিবর্তন শনাক্তকরণ",
+    "tpl_desc_webhook": "বাইরের ওয়েবহুক POST",
+    "tpl_desc_event_listener": "প্রকাশিত ইভেন্টের জন্য অপেক্ষা",
+    "tpl_desc_file_watcher": "ফাইল সিস্টেমের পরিবর্তন পর্যবেক্ষণ",
+    "tpl_desc_clipboard": "ক্লিপবোর্ডের বিষয়বস্তু পর্যবেক্ষণ",
+    "tpl_desc_app_focus": "সক্রিয় অ্যাপের পরিবর্তন পর্যবেক্ষণ",
+    "tpl_desc_composite": "সময়সীমাসহ বহু-শর্তের ট্রিগার",
+    "unknown_persona": "অজানা পার্সোনা"
   },
   "subscription_list": {
     "active": "সক্রিয়",

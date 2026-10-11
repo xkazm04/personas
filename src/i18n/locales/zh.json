@@ -21374,7 +21374,16 @@
       "route_paused": "已暂停",
       "route_toggle_failed": "无法更改此路由",
       "add_listener_failed": "无法添加此监听器",
-      "disconnect_failed": "无法断开此路由"
+      "disconnect_failed": "无法断开此路由",
+      "tpl_desc_schedule": "Cron 或间隔触发器",
+      "tpl_desc_polling": "检测 HTTP 端点的变化",
+      "tpl_desc_webhook": "外部 Webhook POST 请求",
+      "tpl_desc_event_listener": "监听已发布的事件",
+      "tpl_desc_file_watcher": "监控文件系统变化",
+      "tpl_desc_clipboard": "监控剪贴板内容",
+      "tpl_desc_app_focus": "监控前台应用的变化",
+      "tpl_desc_composite": "带时间窗口的多条件触发器",
+      "unknown_persona": "未知角色"
     },
     "subscription_list": {
       "active": "活跃",

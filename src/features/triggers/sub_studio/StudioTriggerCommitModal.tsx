@@ -35,7 +35,7 @@ export function StudioTriggerCommitModal({ open, link, personas, onCreate, onClo
           <div className="flex-1 min-w-0">
             <h2 id="studio-trigger-commit" className="typo-heading text-foreground">{st.form_commit_title}</h2>
             <p className="typo-caption text-foreground truncate">
-              {tx(st.form_commit_subtitle, { persona: personaName(link.targetPersonaId, personas) })}
+              {tx(st.form_commit_subtitle, { persona: personaName(link.targetPersonaId, personas, st.unknown_persona) })}
             </p>
           </div>
           <button type="button" onClick={onClose} aria-label={t.common.cancel}

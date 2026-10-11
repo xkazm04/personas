@@ -746,7 +746,16 @@
     "route_paused": "En pause",
     "route_toggle_failed": "Impossible de modifier cette route",
     "add_listener_failed": "Impossible d'ajouter cet écouteur",
-    "disconnect_failed": "Impossible de déconnecter cette route"
+    "disconnect_failed": "Impossible de déconnecter cette route",
+    "tpl_desc_schedule": "Déclencheur cron ou par intervalle",
+    "tpl_desc_polling": "Détection des changements sur un point de terminaison HTTP",
+    "tpl_desc_webhook": "POST d'un webhook externe",
+    "tpl_desc_event_listener": "Écoute les événements publiés",
+    "tpl_desc_file_watcher": "Surveille les modifications du système de fichiers",
+    "tpl_desc_clipboard": "Surveille le contenu du presse-papiers",
+    "tpl_desc_app_focus": "Surveille les changements d'application au premier plan",
+    "tpl_desc_composite": "Déclencheur multi-conditions avec fenêtre de temps",
+    "unknown_persona": "Persona inconnue"
   },
   "subscription_list": {
     "active": "Actif",

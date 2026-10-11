@@ -746,7 +746,16 @@
     "route_paused": "일시 중지됨",
     "route_toggle_failed": "이 경로를 변경할 수 없습니다",
     "add_listener_failed": "이 리스너를 추가하지 못했습니다",
-    "disconnect_failed": "이 경로의 연결을 끊지 못했습니다"
+    "disconnect_failed": "이 경로의 연결을 끊지 못했습니다",
+    "tpl_desc_schedule": "크론 또는 간격 트리거",
+    "tpl_desc_polling": "HTTP 엔드포인트 변경 감지",
+    "tpl_desc_webhook": "외부 웹훅 POST",
+    "tpl_desc_event_listener": "게시된 이벤트를 수신합니다",
+    "tpl_desc_file_watcher": "파일 시스템 변경을 감시합니다",
+    "tpl_desc_clipboard": "클립보드 내용을 감시합니다",
+    "tpl_desc_app_focus": "전면 앱 변경을 감시합니다",
+    "tpl_desc_composite": "시간 창이 있는 다중 조건 트리거",
+    "unknown_persona": "알 수 없는 페르소나"
   },
   "subscription_list": {
     "active": "활성",

@@ -9,7 +9,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { Persona } from '@/lib/bindings/Persona';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import type { TriggerBlockTemplate } from './libs/triggerStudioConstants';
+import { templateCopy, type TriggerBlockTemplate } from './libs/triggerStudioConstants';
 
 export function TriggerOptionCard({
   template, active, dense, onPick,
@@ -20,9 +20,11 @@ export function TriggerOptionCard({
   dense?: boolean;
   onPick: () => void;
 }) {
+  const { t } = useTranslation();
+  const copy = templateCopy(t, template);
   const Icon = template.icon;
   return (
-    <Tooltip content={template.description} placement="left">
+    <Tooltip content={copy.description} placement="left">
       <button
         type="button"
         onClick={onPick}
@@ -37,7 +39,7 @@ export function TriggerOptionCard({
         <div className={`rounded-input flex items-center justify-center shrink-0 bg-secondary/60 ${dense ? 'w-7 h-7' : 'w-9 h-9'} ${template.color}`}>
           <Icon className={dense ? 'w-4 h-4' : 'w-5 h-5'} />
         </div>
-        <div className={`${dense ? 'typo-body' : 'typo-body-lg'} text-foreground truncate min-w-0 flex-1`}>{template.label}</div>
+        <div className={`${dense ? 'typo-body' : 'typo-body-lg'} text-foreground truncate min-w-0 flex-1`}>{copy.label}</div>
       </button>
     </Tooltip>
   );

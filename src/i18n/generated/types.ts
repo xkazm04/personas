@@ -12028,6 +12028,15 @@ export type Translations = {
       add_listener_failed: string;
       disconnect_failed: string;
       resume_dry_run_failed: string;
+      tpl_desc_schedule: string;
+      tpl_desc_polling: string;
+      tpl_desc_webhook: string;
+      tpl_desc_event_listener: string;
+      tpl_desc_file_watcher: string;
+      tpl_desc_clipboard: string;
+      tpl_desc_app_focus: string;
+      tpl_desc_composite: string;
+      unknown_persona: string;
     };
     subscription_list: {
       active: string;

@@ -21374,7 +21374,16 @@
       "route_paused": "Pozastaveno",
       "route_toggle_failed": "Trasu se nepodařilo změnit",
       "add_listener_failed": "Posluchače se nepodařilo přidat",
-      "disconnect_failed": "Trasu se nepodařilo odpojit"
+      "disconnect_failed": "Trasu se nepodařilo odpojit",
+      "tpl_desc_schedule": "Spouštěč podle cronu nebo intervalu",
+      "tpl_desc_polling": "Zjišťování změn na HTTP endpointu",
+      "tpl_desc_webhook": "Externí webhook POST",
+      "tpl_desc_event_listener": "Naslouchá publikovaným událostem",
+      "tpl_desc_file_watcher": "Sleduje změny v souborovém systému",
+      "tpl_desc_clipboard": "Sleduje obsah schránky",
+      "tpl_desc_app_focus": "Sleduje změny aplikace v popředí",
+      "tpl_desc_composite": "Spouštěč s více podmínkami a časovým oknem",
+      "unknown_persona": "Neznámá persona"
     },
     "subscription_list": {
       "active": "Aktivní",

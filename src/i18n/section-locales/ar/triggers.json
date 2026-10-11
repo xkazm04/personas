@@ -746,7 +746,16 @@
     "route_paused": "متوقف مؤقتًا",
     "route_toggle_failed": "تعذّر تغيير هذا المسار",
     "add_listener_failed": "تعذّرت إضافة هذا المستمع",
-    "disconnect_failed": "تعذّر فصل هذا المسار"
+    "disconnect_failed": "تعذّر فصل هذا المسار",
+    "tpl_desc_schedule": "مشغّل بجدول كرون أو بفاصل زمني",
+    "tpl_desc_polling": "اكتشاف التغييرات في نقطة نهاية HTTP",
+    "tpl_desc_webhook": "طلب POST من webhook خارجي",
+    "tpl_desc_event_listener": "الاستماع إلى الأحداث المنشورة",
+    "tpl_desc_file_watcher": "مراقبة تغييرات نظام الملفات",
+    "tpl_desc_clipboard": "مراقبة محتوى الحافظة",
+    "tpl_desc_app_focus": "مراقبة تغيّر التطبيق في المقدمة",
+    "tpl_desc_composite": "مشغّل متعدد الشروط بنافذة زمنية",
+    "unknown_persona": "شخصية غير معروفة"
   },
   "subscription_list": {
     "active": "نشط",

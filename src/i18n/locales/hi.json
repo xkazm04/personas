@@ -21374,7 +21374,16 @@
       "route_paused": "रुका हुआ",
       "route_toggle_failed": "यह रूट बदला नहीं जा सका",
       "add_listener_failed": "यह लिस्नर जोड़ा नहीं जा सका",
-      "disconnect_failed": "यह रूट डिस्कनेक्ट नहीं हो सका"
+      "disconnect_failed": "यह रूट डिस्कनेक्ट नहीं हो सका",
+      "tpl_desc_schedule": "क्रॉन या अंतराल ट्रिगर",
+      "tpl_desc_polling": "HTTP एंडपॉइंट में बदलाव की पहचान",
+      "tpl_desc_webhook": "बाहरी वेबहुक POST",
+      "tpl_desc_event_listener": "प्रकाशित इवेंट सुनें",
+      "tpl_desc_file_watcher": "फ़ाइल सिस्टम में बदलावों की निगरानी",
+      "tpl_desc_clipboard": "क्लिपबोर्ड सामग्री की निगरानी",
+      "tpl_desc_app_focus": "अग्रभूमि ऐप में बदलावों की निगरानी",
+      "tpl_desc_composite": "समय-सीमा के साथ बहु-शर्त ट्रिगर",
+      "unknown_persona": "अज्ञात पर्सोना"
     },
     "subscription_list": {
       "active": "सक्रिय",

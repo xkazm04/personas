@@ -746,7 +746,16 @@
     "route_paused": "Đã tạm dừng",
     "route_toggle_failed": "Không thể thay đổi tuyến này",
     "add_listener_failed": "Không thể thêm trình lắng nghe này",
-    "disconnect_failed": "Không thể ngắt kết nối tuyến này"
+    "disconnect_failed": "Không thể ngắt kết nối tuyến này",
+    "tpl_desc_schedule": "Trình kích hoạt theo cron hoặc khoảng thời gian",
+    "tpl_desc_polling": "Phát hiện thay đổi trên endpoint HTTP",
+    "tpl_desc_webhook": "POST webhook bên ngoài",
+    "tpl_desc_event_listener": "Lắng nghe các sự kiện đã phát hành",
+    "tpl_desc_file_watcher": "Theo dõi thay đổi của hệ thống tệp",
+    "tpl_desc_clipboard": "Theo dõi nội dung khay nhớ tạm",
+    "tpl_desc_app_focus": "Theo dõi thay đổi ứng dụng ở tiền cảnh",
+    "tpl_desc_composite": "Trình kích hoạt đa điều kiện với khung thời gian",
+    "unknown_persona": "Persona không xác định"
   },
   "subscription_list": {
     "active": "Đang hoạt động",
