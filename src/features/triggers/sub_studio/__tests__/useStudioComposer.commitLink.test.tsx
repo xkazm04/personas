@@ -116,6 +116,20 @@ describe('commitLink for a persona source', () => {
     expect(addToast.mock.calls.at(-1)?.[0]).toContain('jsonpath unresolvable');
     expect(addToast.mock.calls.at(-1)?.[1]).toBe('error');
   });
+
+  it.each(['dry-run', 'enable'] as const)('deletes the created trigger when %s throws', async (step) => {
+    if (step === 'dry-run') dryRunTrigger.mockRejectedValueOnce(new Error('dry-run failed'));
+    else updateTrigger.mockRejectedValueOnce(new Error('enable failed'));
+    const { result } = renderHook(() => useStudioComposer());
+
+    let ok = true;
+    await act(async () => { ok = await result.current.commitLink(PERSONA_LINK); });
+
+    expect(ok).toBe(false);
+    expect(createTrigger).toHaveBeenCalledTimes(1);
+    expect(deleteTrigger).toHaveBeenCalledWith('trg-new', 'dst-persona');
+    expect(addToast.mock.calls.at(-1)?.[1]).toBe('error');
+  });
 });
 
 describe('commitLink for a marketplace source', () => {

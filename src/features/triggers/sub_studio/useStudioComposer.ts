@@ -105,8 +105,10 @@ export function useStudioComposer(onRouteCommitted?: () => void) {
     // direct path.
     const gated = link.source.kind === 'persona';
     setCommitting((s) => new Set(s).add(link.id));
+    let createdId: string | null = null;
     try {
       const created = await createTrigger(gated ? { ...input, enabled: false } : input);
+      createdId = created.id;
       if (gated) {
         const dry = await dryRunTrigger(created.id);
         if (!dry.valid) {
@@ -125,6 +127,11 @@ export function useStudioComposer(onRouteCommitted?: () => void) {
       if (!opts?.silent) { addToast(st.route_committed, 'success'); onRouteCommitted?.(); }
       return true;
     } catch (e) {
+      if (gated && createdId) {
+        await deleteTrigger(createdId, link.targetPersonaId).catch(
+          silentCatch('useStudioComposer:commitLink:cleanup'),
+        );
+      }
       toastCatch('useStudioComposer:commitLink', st.route_commit_failed)(e);
       return false;
     } finally {
