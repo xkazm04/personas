@@ -4367,7 +4367,10 @@
       "send_request": "Kirim permintaan",
       "sending": "Mengirim…",
       "snippets": "Cuplikan",
-      "title": "API Playground"
+      "title": "API Playground",
+      "local_run_completed": "Eksekusi lokal selesai",
+      "local_run_failed": "Eksekusi lokal gagal",
+      "snippets_target_endpoint": "Cuplikan kode memanggil endpoint yang diterapkan. Hasil playground berasal dari eksekusi lokal."
     },
     "auth_code": "Kode otorisasi",
     "chart": {

@@ -4367,7 +4367,10 @@
       "send_request": "Envoyer la requête",
       "sending": "Envoi…",
       "snippets": "Extraits",
-      "title": "Playground API"
+      "title": "Playground API",
+      "local_run_completed": "Exécution locale terminée",
+      "local_run_failed": "Échec de l’exécution locale",
+      "snippets_target_endpoint": "Les extraits de code appellent le point de terminaison déployé. Les résultats du terrain d’essai proviennent d’une exécution locale."
     },
     "auth_code": "Code d’autorisation",
     "chart": {

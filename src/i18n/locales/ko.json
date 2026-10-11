@@ -4367,7 +4367,10 @@
       "send_request": "요청 전송",
       "sending": "전송 중…",
       "snippets": "스니펫",
-      "title": "API 플레이그라운드"
+      "title": "API 플레이그라운드",
+      "local_run_completed": "로컬 실행 완료",
+      "local_run_failed": "로컬 실행 실패",
+      "snippets_target_endpoint": "코드 예시는 배포된 엔드포인트를 호출합니다. 플레이그라운드 결과는 로컬 실행에서 나온 것입니다."
     },
     "auth_code": "인증 코드",
     "chart": {

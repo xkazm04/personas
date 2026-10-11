@@ -4367,7 +4367,10 @@
       "send_request": "إرسال الطلب",
       "sending": "جارٍ الإرسال…",
       "snippets": "مقاطع الكود",
-      "title": "ملعب API"
+      "title": "ملعب API",
+      "local_run_completed": "اكتمل التشغيل المحلي",
+      "local_run_failed": "فشل التشغيل المحلي",
+      "snippets_target_endpoint": "تستدعي مقاطع الشيفرة نقطة النهاية المنشورة. تأتي نتائج ساحة التجربة من تشغيل محلي."
     },
     "auth_code": "رمز التفويض",
     "chart": {

@@ -7812,6 +7812,9 @@ export type Translations = {
       empty_response: string;
       snippets: string;
       request_body_placeholder: string;
+      local_run_completed: string;
+      local_run_failed: string;
+      snippets_target_endpoint: string;
     };
     connection: {
       orchestrator_url_label: string;

@@ -8,7 +8,10 @@
     "send_request": "Odeslat požadavek",
     "sending": "Odesílání…",
     "snippets": "Snippety",
-    "title": "API Playground"
+    "title": "API Playground",
+    "local_run_completed": "Místní spuštění dokončeno",
+    "local_run_failed": "Místní spuštění selhalo",
+    "snippets_target_endpoint": "Ukázky kódu volají nasazený koncový bod. Výsledky hřiště pocházejí z místního spuštění."
   },
   "auth_code": "Autorizační kód",
   "chart": {

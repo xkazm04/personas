@@ -8,7 +8,10 @@
     "send_request": "Enviar solicitud",
     "sending": "Enviando…",
     "snippets": "Fragmentos",
-    "title": "Área de pruebas API"
+    "title": "Área de pruebas API",
+    "local_run_completed": "Ejecución local completada",
+    "local_run_failed": "La ejecución local falló",
+    "snippets_target_endpoint": "Los ejemplos de código llaman al endpoint desplegado. Los resultados del área de pruebas provienen de una ejecución local."
   },
   "auth_code": "Código de autorización",
   "chart": {

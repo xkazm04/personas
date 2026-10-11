@@ -24,7 +24,10 @@
     "sending": "Sending...",
     "empty_response": "(empty response)",
     "snippets": "Snippets",
-    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
+    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }",
+    "local_run_completed": "Local run completed",
+    "local_run_failed": "Local run failed",
+    "snippets_target_endpoint": "Code snippets call the deployed endpoint. Playground results come from a local run."
   },
   "connection": {
     "orchestrator_url_label": "Cloud Server URL",

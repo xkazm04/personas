@@ -4367,7 +4367,10 @@
       "send_request": "Gửi yêu cầu",
       "sending": "Đang gửi…",
       "snippets": "Đoạn mã",
-      "title": "Sân chơi API"
+      "title": "Sân chơi API",
+      "local_run_completed": "Chạy cục bộ hoàn tất",
+      "local_run_failed": "Chạy cục bộ thất bại",
+      "snippets_target_endpoint": "Các đoạn mã gọi điểm cuối đã triển khai. Kết quả trong sân thử nghiệm đến từ lần chạy cục bộ."
     },
     "auth_code": "Mã ủy quyền",
     "chart": {

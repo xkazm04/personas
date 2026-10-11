@@ -8,7 +8,10 @@
     "send_request": "リクエストを送信",
     "sending": "送信中…",
     "snippets": "スニペット",
-    "title": "APIプレイグラウンド"
+    "title": "APIプレイグラウンド",
+    "local_run_completed": "ローカル実行が完了しました",
+    "local_run_failed": "ローカル実行に失敗しました",
+    "snippets_target_endpoint": "コード例はデプロイ済みのエンドポイントを呼び出します。プレイグラウンドの結果はローカル実行によるものです。"
   },
   "auth_code": "認証コード",
   "chart": {

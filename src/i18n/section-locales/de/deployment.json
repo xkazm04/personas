@@ -8,7 +8,10 @@
     "send_request": "Anfrage senden",
     "sending": "Wird gesendet…",
     "snippets": "Codebeispiele",
-    "title": "API-Playground"
+    "title": "API-Playground",
+    "local_run_completed": "Lokaler Lauf abgeschlossen",
+    "local_run_failed": "Lokaler Lauf fehlgeschlagen",
+    "snippets_target_endpoint": "Die Codebeispiele rufen den bereitgestellten Endpunkt auf. Die Ergebnisse im Playground stammen aus einem lokalen Lauf."
   },
   "auth_code": "Autorisierungscode",
   "chart": {

@@ -8,7 +8,10 @@
     "send_request": "发送请求",
     "sending": "发送中…",
     "snippets": "代码片段",
-    "title": "API 测试场"
+    "title": "API 测试场",
+    "local_run_completed": "本地运行已完成",
+    "local_run_failed": "本地运行失败",
+    "snippets_target_endpoint": "代码片段调用已部署的端点。演练场结果来自本地运行。"
   },
   "auth_code": "授权码",
   "chart": {

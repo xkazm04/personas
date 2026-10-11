@@ -190,6 +190,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
       {/* Snippet panel */}
       {showSnippets && (
         <div className="space-y-1.5">
+          <p className="typo-caption text-foreground">{dt.snippets_target_endpoint}</p>
           <div className="flex items-center gap-1">
             {(['curl', 'fetch'] as const).map((lang) => (
               <button
@@ -234,7 +235,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
                 ? 'bg-emerald-500/10 text-emerald-400'
                 : 'bg-red-500/10 text-red-400'
             }`}>
-              {response.status === 'success' ? '200 OK' : 'ERROR'}
+              {response.status === 'success' ? dt.local_run_completed : dt.local_run_failed}
             </span>
             {response.durationMs != null && (
               <Numeric value={response.durationMs} unit="ms" className="text-foreground" />
