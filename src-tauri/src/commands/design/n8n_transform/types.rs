@@ -36,7 +36,11 @@ pub struct N8nTriggerDraft {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct N8nToolDraft {
     pub name: String,
+    // Defaults mirror what the streaming validator accepts (it only requires a name),
+    // so a section reported "valid" is never silently dropped at assemble.
+    #[serde(default = "default_tool_category")]
     pub category: String,
+    #[serde(default)]
     pub description: String,
     pub requires_credential_type: Option<String>,
     pub input_schema: Option<serde_json::Value>,
@@ -46,8 +50,14 @@ pub struct N8nToolDraft {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct N8nConnectorRef {
     pub name: String,
+    #[serde(default)]
     pub n8n_credential_type: String,
+    #[serde(default)]
     pub has_credential: bool,
+}
+
+fn default_tool_category() -> String {
+    "other".to_string()
 }
 
 pub fn normalize_n8n_persona_draft(
