@@ -181,12 +181,7 @@ async fn poll_channel(
 ) -> Result<usize, AppError> {
     let cursor = read_cursor(pool, persona_id, channel_id)?;
 
-    let bot_token = load_bot_token(pool, credential_id).ok_or_else(|| {
-        AppError::Validation(format!(
-            "Discord credential {} has no bot_token field",
-            credential_id
-        ))
-    })?;
+    let bot_token = load_bot_token(pool, credential_id)?;
 
     let messages = fetch_new_messages(&bot_token, channel_id, cursor.as_deref()).await?;
     if messages.is_empty() {
@@ -336,13 +331,13 @@ async fn process_pending_replies(pool: &DbPool) -> Result<usize, AppError> {
     let mut sent = 0usize;
     for row in pending {
         let bot_token = match load_bot_token(pool, &row.credential_id) {
-            Some(t) => t,
-            None => {
-                mark_reply_error(
-                    pool,
-                    &row.message_id,
-                    "credential missing bot_token at reply time",
-                )?;
+            Ok(t) => t,
+            Err(e @ AppError::Validation(_)) => {
+                mark_reply_error(pool, &row.message_id, &e.to_string())?;
+                continue;
+            }
+            Err(e) => {
+                tracing::warn!(error = %e, credential_id = %row.credential_id, "discord_poller: reply credential unavailable; retrying next tick");
                 continue;
             }
         };
@@ -679,16 +674,21 @@ fn mark_reply_error(pool: &DbPool, message_id: &str, error: &str) -> Result<(), 
 // Credential + execution helpers
 // ---------------------------------------------------------------------------
 
-fn load_bot_token(pool: &DbPool, credential_id: &str) -> Option<String> {
-    let cred = credential_repo::get_by_id(pool, credential_id).ok()?;
-    let fields: HashMap<String, String> =
-        credential_repo::get_decrypted_fields(pool, &cred).ok()?;
+fn load_bot_token(pool: &DbPool, credential_id: &str) -> Result<String, AppError> {
+    let cred = credential_repo::get_by_id(pool, credential_id)?;
+    let fields: HashMap<String, String> = credential_repo::get_decrypted_fields(pool, &cred)?;
     fields
         .get("bot_token")
         .or_else(|| fields.get("botToken"))
         .or_else(|| fields.get("token"))
         .filter(|s| !s.trim().is_empty())
         .cloned()
+        .ok_or_else(|| {
+            AppError::Validation(format!(
+                "Discord credential {} has no bot_token field",
+                credential_id
+            ))
+        })
 }
 
 /// Discord IDs are snowflake u64s; their natural string ordering only matches
@@ -708,6 +708,16 @@ fn compare_snowflakes(a: &str, b: &str) -> std::cmp::Ordering {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn missing_credential_preserves_not_found_cause() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db()?;
+        assert!(matches!(
+            load_bot_token(&pool, "missing-discord-credential"),
+            Err(AppError::NotFound(_))
+        ));
+        Ok(())
+    }
 
     #[test]
     fn snowflake_compare_handles_different_lengths() {

@@ -240,12 +240,7 @@ async fn poll_channel(
 ) -> Result<usize, AppError> {
     let cursor = read_cursor(pool, persona_id, channel_id)?;
 
-    let bot_token = load_bot_token(pool, credential_id).ok_or_else(|| {
-        AppError::Validation(format!(
-            "Slack credential {} has no bot_token field",
-            credential_id
-        ))
-    })?;
+    let bot_token = load_bot_token(pool, credential_id)?;
 
     let messages = fetch_new_messages(&bot_token, channel_id, cursor.as_deref()).await?;
     if messages.is_empty() {
@@ -594,12 +589,7 @@ async fn ingest_bridge_inner(pool: &DbPool, bridge: &TeamBridgeSpec) -> Result<u
     let persona_id = &bridge.persona_id;
     let channel_id = &bridge.slack_channel_id;
 
-    let bot_token = load_bot_token(pool, &bridge.credential_id).ok_or_else(|| {
-        AppError::Validation(format!(
-            "Slack credential {} has no bot_token field",
-            bridge.credential_id
-        ))
-    })?;
+    let bot_token = load_bot_token(pool, &bridge.credential_id)?;
     let bot_user_id = resolve_bot_user_id(&bot_token, &bridge.credential_id).await?;
 
     let cursor = read_cursor(pool, persona_id, channel_id)?;
@@ -751,14 +741,13 @@ async fn process_pending_replies(pool: &DbPool) -> Result<usize, AppError> {
     let mut sent = 0usize;
     for row in pending {
         let bot_token = match load_bot_token(pool, &row.credential_id) {
-            Some(t) => t,
-            None => {
-                mark_reply_error(
-                    pool,
-                    &row.channel_id,
-                    &row.message_ts,
-                    "credential missing bot_token at reply time",
-                )?;
+            Ok(t) => t,
+            Err(e @ AppError::Validation(_)) => {
+                mark_reply_error(pool, &row.channel_id, &row.message_ts, &e.to_string())?;
+                continue;
+            }
+            Err(e) => {
+                tracing::warn!(error = %e, credential_id = %row.credential_id, "slack_poller: reply credential unavailable; retrying next tick");
                 continue;
             }
         };
@@ -1233,16 +1222,21 @@ fn mark_reply_error(
 // Credential helpers
 // ---------------------------------------------------------------------------
 
-fn load_bot_token(pool: &DbPool, credential_id: &str) -> Option<String> {
-    let cred = credential_repo::get_by_id(pool, credential_id).ok()?;
-    let fields: HashMap<String, String> =
-        credential_repo::get_decrypted_fields(pool, &cred).ok()?;
+fn load_bot_token(pool: &DbPool, credential_id: &str) -> Result<String, AppError> {
+    let cred = credential_repo::get_by_id(pool, credential_id)?;
+    let fields: HashMap<String, String> = credential_repo::get_decrypted_fields(pool, &cred)?;
     fields
         .get("bot_token")
         .or_else(|| fields.get("botToken"))
         .or_else(|| fields.get("token"))
         .filter(|s| !s.trim().is_empty())
         .cloned()
+        .ok_or_else(|| {
+            AppError::Validation(format!(
+                "Slack credential {} has no bot_token field",
+                credential_id
+            ))
+        })
 }
 
 /// Slack message `ts` values are stringified Unix timestamps with microsecond
@@ -1262,6 +1256,16 @@ fn compare_ts(a: &str, b: &str) -> std::cmp::Ordering {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn missing_credential_preserves_not_found_cause() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db()?;
+        assert!(matches!(
+            load_bot_token(&pool, "missing-slack-credential"),
+            Err(AppError::NotFound(_))
+        ));
+        Ok(())
+    }
 
     #[test]
     fn ts_compare_is_numeric_not_lexical() {
