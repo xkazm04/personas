@@ -17403,7 +17403,8 @@
       "dynamic_budgets_hint": "Cho phép các lượt chạy của đội máy tính dựa trên ngân sách máy, GPU và gói theo thời gian thực, sử dụng hồ sơ tài nguyên của từng nhiệm vụ. Tắt để quay lại giới hạn phiên cố định ở trên.",
       "dynamic_budgets_label": "Ngân sách đội máy tính động",
       "strict_queue_order_hint": "Buộc mọi lượt điều phối phải chờ đến lượt của mình: một lượt chạy mới sẽ xếp sau bất kỳ lượt chạy đang chờ nào đã sẵn sàng khởi động, ngay cả khi đội còn chỗ trống. Cái giá là có thật. Chỗ trống đó có thể nằm không cho đến lượt thăng hạng kế tiếp, và lượt chạy bạn vừa gửi có thể không khởi động dù đội trông vẫn rảnh. Không bao giờ phải chờ sau một lượt chạy bị ngân sách hoặc thời điểm khởi động của chính nó giữ lại.",
-      "strict_queue_order_label": "Thứ tự hàng đợi nghiêm ngặt"
+      "strict_queue_order_label": "Thứ tự hàng đợi nghiêm ngặt",
+      "load_failed": "Không đọc được giá trị đã lưu nên điều khiển đang hiển thị giá trị mặc định - không phải giá trị đã lưu. Hãy tải lại trước khi thay đổi."
     },
     "notifications": {
       "digest_description": "Thông báo hàng tuần tóm tắt các vấn đề sức khỏe trên tất cả tác tử với điểm sức khỏe tổng",
