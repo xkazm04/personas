@@ -1249,10 +1249,24 @@ pub fn backfill_metrics_from_stream(
 /// only account-level usage caps, which set `session_limit_reached` and take
 /// the `SessionLimit` healing path.
 pub fn is_session_limit_error(stderr: &str) -> bool {
-    let lower = stderr.to_lowercase();
-    lower.contains("session limit")
-        || lower.contains("usage limit")
-        || lower.contains("quota exceeded")
+    mentions_usage_limit(&stderr.to_lowercase())
+}
+
+/// The ONE usage-limit vocabulary shared by [`is_session_limit_error`] and
+/// [`parse_usage_limit`] (they drifted apart twice). `hit your limit` is the
+/// CLI's captured plan-cap wording ("You've hit your limit · resets 7pm");
+/// the curly-apostrophe form is irrelevant because the match starts after it.
+/// Takes already-lowercased text.
+fn mentions_usage_limit(lower: &str) -> bool {
+    const TOKENS: &[&str] = &[
+        "usage limit",
+        "weekly limit",
+        "hour limit",
+        "session limit",
+        "quota exceeded",
+        "hit your limit",
+    ];
+    TOKENS.iter().any(|t| lower.contains(t))
 }
 
 /// Parse provider usage-limit details (scope + reset time) from an error text.
@@ -1277,11 +1291,7 @@ pub fn parse_usage_limit(text: &str) -> Option<personas_core::error_taxonomy::Us
     // Two predicates over the same vocabulary, adjacent in one file, disagreeing
     // by one token. This is the leaf's whole thesis in miniature: the recovery a
     // failure gets is decided by which predicate happened to see it.
-    let mentions_limit = lower.contains("usage limit")
-        || lower.contains("weekly limit")
-        || lower.contains("hour limit")
-        || lower.contains("session limit")
-        || lower.contains("quota exceeded");
+    let mentions_limit = mentions_usage_limit(&lower);
     if !mentions_limit {
         return None;
     }
@@ -2325,6 +2335,32 @@ Finished."#;
             _ => panic!("Expected Result, got {st:?}"),
         }
         assert!(display.unwrap().contains("hit your limit"));
+    }
+
+    #[test]
+    fn usage_limit_predicates_recognise_captured_hit_your_limit_shape() {
+        let line = include_str!("../fixtures/stream/result-is-error-usage-limit.json").trim();
+        let text = match parse_stream_line(line).0 {
+            StreamLineType::Result { error_text, .. } => error_text.expect("error_text"),
+            other => panic!("Expected Result, got {other:?}"),
+        };
+        assert!(parse_usage_limit(&text).is_some(), "raw: {text}");
+        assert!(is_session_limit_error(&text), "raw: {text}");
+        let persisted = format!("Claude reported: {text}");
+        assert!(parse_usage_limit(&persisted).is_some());
+        assert!(is_session_limit_error(&persisted));
+        // The two predicates share one vocabulary.
+        for phrase in ["5-hour limit reached", "weekly limit reached"] {
+            assert_eq!(
+                parse_usage_limit(phrase).is_some(),
+                is_session_limit_error(phrase),
+                "{phrase}"
+            );
+            assert!(is_session_limit_error(phrase), "{phrase}");
+        }
+        assert!(!is_session_limit_error(
+            "rate limit exceeded, too many requests"
+        ));
     }
 
     #[test]
