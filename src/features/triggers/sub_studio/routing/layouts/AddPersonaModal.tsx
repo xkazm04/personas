@@ -36,6 +36,19 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [capabilityStep, setCapabilityStep] = useState<Persona | null>(null);
 
+  // The modal stays mounted while closed, so per-open state must reset on the
+  // closed -> open transition; otherwise a reopen for another event lands on
+  // the previous persona's capability step and wires that persona to it.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setSearch('');
+      setSelectedGroupId(null);
+      setCapabilityStep(null);
+    }
+  }
+
   const groupMap = useMemo(() => {
     const m = new Map<string, PersonaTeam>();
     for (const g of teams) m.set(g.id, g);
