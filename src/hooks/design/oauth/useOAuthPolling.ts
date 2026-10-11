@@ -173,7 +173,7 @@ export function useOAuthPolling<
         isAuthorizingRef.current = false;
         setMessage({
           success: false,
-          message: err instanceof Error ? err.message : 'Failed to check OAuth status.',
+          message: extractErrorDetail(err),
         });
       }
     };
