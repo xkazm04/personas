@@ -12,7 +12,6 @@ import {
   Check,
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
-import { useSystemStore } from "@/stores/systemStore";
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Button } from '@/features/shared/components/buttons';
@@ -156,7 +155,7 @@ export default function ExecutionMiniPlayer() {
   const pipelineTrace = useAgentStore((s) => s.pipelineTrace);
   const cancelExecution = useAgentStore((s) => s.cancelExecution);
   const personas = useAgentStore((s) => s.personas);
-  const error = useSystemStore((s) => s.error);
+  const error = useAgentStore((s) => s.error);
 
   const elapsed = useElapsedTimer(isExecuting);
 
@@ -179,6 +178,7 @@ export default function ExecutionMiniPlayer() {
     }
     return null;
   }, [executions, lastExecutionId]);
+  const hasError = !isExecuting && (finishedStatus ? finishedStatus === 'failed' : !!error);
   const executionSummary = useExecutionSummary(traceEntries, traceLive, finishedStatus);
 
   const personaName = useMemo(() => {
@@ -296,7 +296,7 @@ export default function ExecutionMiniPlayer() {
           onPointerCancel={handlePointerEnd}
         >
           <GripVertical className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
-          <StatusIndicator isExecuting={isExecuting} hasError={!!error && !isExecuting} />
+          <StatusIndicator isExecuting={isExecuting} hasError={hasError} />
           <div className="flex-1 min-w-0 flex items-center gap-2">
             <Bot className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
             <span className="typo-body text-foreground truncate">{personaName}</span>
@@ -348,7 +348,7 @@ export default function ExecutionMiniPlayer() {
         {isSimple && (
           <SimpleExecutionView
             isExecuting={isExecuting}
-            error={error}
+            error={hasError ? error ?? t.execution.failed : null}
             stageProgress={stageProgress}
             elapsed={elapsed}
             executionOutput={executionOutput}
