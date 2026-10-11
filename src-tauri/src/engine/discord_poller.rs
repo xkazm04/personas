@@ -392,18 +392,9 @@ async fn fetch_new_messages(
         url.push_str(&format!("&after={}", id));
     }
 
-    // Not `SHARED_HTTP`: a poller on a short loop wants an 8 s deadline, not
-    // 30 s. The host is the compile-time literal `discord.com`, and the bot
-    // token rides in `Authorization`, which reqwest strips across a host
-    // change — so neither the SSRF resolver nor a redirect policy would add
-    // anything here.
-    let client = reqwest::Client::builder()
-        .timeout(HTTP_TIMEOUT)
-        .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
-
-    let resp = client
+    let resp = crate::SHARED_HTTP
         .get(&url)
+        .timeout(HTTP_TIMEOUT)
         .header("Authorization", format!("Bot {}", bot_token))
         .header("User-Agent", "Personas-Desktop/1.0 (Discord poller)")
         .send()
@@ -496,15 +487,9 @@ async fn post_reply(
         "allowed_mentions": { "parse": [] },
     });
 
-    // Same 8 s poller deadline and same literal `discord.com` host as
-    // `fetch_new_messages` above.
-    let client = reqwest::Client::builder()
-        .timeout(HTTP_TIMEOUT)
-        .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
-
-    let resp = client
+    let resp = crate::SHARED_HTTP
         .post(&url)
+        .timeout(HTTP_TIMEOUT)
         .header("Authorization", format!("Bot {}", bot_token))
         .header("User-Agent", "Personas-Desktop/1.0 (Discord poller)")
         .header("Content-Type", "application/json")
