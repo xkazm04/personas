@@ -29,7 +29,9 @@ export function PeerList() {
   const { t } = useTranslation();
   const st = t.sharing;
 
-  const trustedPeerIds = useMemo(() => new Set(trustedPeers.map((p) => p.peer_id)), [trustedPeers]);
+  const trustedPeerIds = useMemo(() => new Set(
+    trustedPeers.filter((p) => p.trust_level !== 'revoked').map((p) => p.peer_id),
+  ), [trustedPeers]);
 
   const doFetch = useCallback(async () => {
     try {
