@@ -542,6 +542,7 @@
   "relay_channel_url_placeholder": "https://smee.io/…",
   "relay_confirm_delete": "Supprimer ce relais ?",
   "relay_delete_failed": "Échec de la suppression du relais — veuillez réessayer",
+  "relay_toggle_failed": "Échec de la mise à jour du relais — veuillez réessayer",
   "relay_delete_title": "Supprimer le relais",
   "relay_event_filter_field": "Filtre d’événements",
   "relay_event_filter_note": "Filtrez les événements entrants par type ou schéma",
@@ -684,6 +685,9 @@
     "marketplace_empty": "Aucun flux abonné pour l’instant — abonnez-vous dans le Marketplace pour les relier aux personas.",
     "marketplace_source_hint": "Exécute le persona lorsque ce flux signale un changement",
     "no_routes_desc": "Activez une source à gauche, puis cliquez sur un persona cible à droite. La route s’affiche ici.",
+    "load_failed_title": "Impossible de charger les routes",
+    "load_failed_desc": "Les routes n'ont pas pu être chargées ; une liste vide serait trompeuse. Vos routes n'ont pas disparu - réessayez.",
+    "load_failed_retry": "Réessayer",
     "no_routes_title": "Aucune route pour l’instant",
     "no_sources_match": "Aucune source ne correspond à « {query} »",
     "no_targets_match": "Aucun persona ne correspond à « {query} »",
@@ -739,7 +743,9 @@
     "resume_dry_run_failed": "Le test à blanc a échoué, la route reste en pause. {error}",
     "resume_route": "Reprendre la route",
     "route_paused": "En pause",
-    "route_toggle_failed": "Impossible de modifier cette route"
+    "route_toggle_failed": "Impossible de modifier cette route",
+    "add_listener_failed": "Impossible d'ajouter cet écouteur",
+    "disconnect_failed": "Impossible de déconnecter cette route"
   },
   "subscription_list": {
     "active": "Actif",

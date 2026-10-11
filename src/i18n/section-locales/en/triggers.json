@@ -106,6 +106,9 @@
     "cancel_pending_route": "Cancel pending route",
     "no_routes_title": "No routes yet",
     "no_routes_desc": "Arm a source on the left, then click a target persona on the right. The route patches in here.",
+    "load_failed_title": "Couldn't load routes",
+    "load_failed_desc": "The routes could not be loaded, so an empty list here would be misleading. Your routes are not gone - try again.",
+    "load_failed_retry": "Retry",
     "cycle_condition_hint": "Click to cycle the run condition",
     "condition_always": "always",
     "condition_on_success": "on success",
@@ -163,6 +166,8 @@
     "last_fired": "Last fired",
     "never_fired": "Never fired",
     "route_toggle_failed": "Couldn't change this route",
+    "add_listener_failed": "Couldn't add this listener",
+    "disconnect_failed": "Couldn't disconnect this route",
     "resume_dry_run_failed": "Dry-run failed, so the route stays paused. {error}"
   },
   "subscription_list": {
@@ -773,6 +778,7 @@
   "relay_last_event": "Last:",
   "relay_delete_title": "Delete relay",
   "relay_delete_failed": "Failed to delete relay — please try again",
+  "relay_toggle_failed": "Failed to update relay — please try again",
   "setup_guide_step1": "Create a channel at smee.io/new",
   "clipboard_pattern_placeholder": "e.g. https?://.* or error|exception",
   "composite_event_type_placeholder": "Event type (e.g. file_changed)",

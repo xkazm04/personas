@@ -542,6 +542,7 @@
   "relay_channel_url_placeholder": "https://smee.io/su-id-de-canal",
   "relay_confirm_delete": "Confirmar",
   "relay_delete_failed": "No se pudo eliminar el relay — inténtalo de nuevo",
+  "relay_toggle_failed": "No se pudo actualizar el relay — inténtalo de nuevo",
   "relay_delete_title": "Eliminar relay",
   "relay_event_filter_field": "Filtro de Evento",
   "relay_event_filter_note": "(opcional, separado por comas)",
@@ -684,6 +685,9 @@
     "marketplace_empty": "Aún no hay feeds suscritos: suscríbete en el Marketplace para conectarlos a las personas.",
     "marketplace_source_hint": "Ejecuta la persona cuando este feed informa de un cambio",
     "no_routes_desc": "Activa una fuente a la izquierda y luego haz clic en una persona destino a la derecha. La ruta aparecerá aquí.",
+    "load_failed_title": "No se pudieron cargar las rutas",
+    "load_failed_desc": "No se pudieron cargar las rutas, así que una lista vacía sería engañosa. Tus rutas no han desaparecido: inténtalo de nuevo.",
+    "load_failed_retry": "Reintentar",
     "no_routes_title": "Aún no hay rutas",
     "no_sources_match": "No hay fuentes que coincidan con \"{query}\"",
     "no_targets_match": "No hay personas que coincidan con \"{query}\"",
@@ -739,7 +743,9 @@
     "resume_dry_run_failed": "La prueba falló, así que la ruta sigue en pausa. {error}",
     "resume_route": "Reanudar ruta",
     "route_paused": "En pausa",
-    "route_toggle_failed": "No se pudo cambiar esta ruta"
+    "route_toggle_failed": "No se pudo cambiar esta ruta",
+    "add_listener_failed": "No se pudo añadir este oyente",
+    "disconnect_failed": "No se pudo desconectar esta ruta"
   },
   "subscription_list": {
     "active": "Activo",

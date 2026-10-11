@@ -691,7 +691,8 @@
     "dynamic_budgets_hint": "Připouští běhy flotily podle živých rozpočtů stroje, GPU a plánu s využitím profilu zdrojů každého pověření. Vypněte pro návrat k pevnému limitu relace výše.",
     "dynamic_budgets_label": "Dynamické rozpočty flotily",
     "strict_queue_order_hint": "Každé odeslání počká, až na ně přijde řada: nový běh se zařadí za každý čekající běh, který je připraven začít, i když má flotila volný slot. Ta cena je skutečná. Slot může zůstat nevyužitý až do dalšího průchodu povyšování a běh, který jste právě spustili, nemusí začít, přestože flotila vypadá volná. Za během, který zdržuje rozpočet nebo jeho vlastní čas startu, se nikdy nečeká.",
-    "strict_queue_order_label": "Přísné pořadí fronty"
+    "strict_queue_order_label": "Přísné pořadí fronty",
+    "load_failed": "Uloženou hodnotu se nepodařilo načíst, ovládací prvek proto ukazuje výchozí hodnotu, ne uloženou. Před změnou stránku znovu načtěte."
   },
   "notifications": {
     "digest_description": "Týdenní notifikace shrnující zdravotní problémy napříč všemi agenty s celkovým skóre zdraví",

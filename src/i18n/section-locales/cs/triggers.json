@@ -542,6 +542,7 @@
   "relay_channel_url_placeholder": "https://smee.io/vas-id-kanalu",
   "relay_confirm_delete": "Potvrdit",
   "relay_delete_failed": "Relé se nepodařilo smazat — zkuste to prosím znovu",
+  "relay_toggle_failed": "Relay se nepodařilo aktualizovat — zkuste to prosím znovu",
   "relay_delete_title": "Smazat relé",
   "relay_event_filter_field": "Filtr událostí",
   "relay_event_filter_note": "(volitelné, oddělené čárkou)",
@@ -684,6 +685,9 @@
     "marketplace_empty": "Zatím nemáte odebírané kanály — přihlaste se k odběru v Marketplace a propojte je s personami.",
     "marketplace_source_hint": "Spustí personu, když tento kanál nahlásí změnu",
     "no_routes_desc": "Nastavte zdroj vlevo, pak klikněte na cílovou personu vpravo. Trasa se zobrazí zde.",
+    "load_failed_title": "Trasy se nepodařilo načíst",
+    "load_failed_desc": "Trasy se nepodařilo načíst, takže prázdný seznam by byl zavádějící. Vaše trasy nezmizely - zkuste to znovu.",
+    "load_failed_retry": "Zkusit znovu",
     "no_routes_title": "Zatím žádné trasy",
     "no_sources_match": "Žádné zdroje neodpovídají \"{query}\"",
     "no_targets_match": "Žádné persony neodpovídají \"{query}\"",
@@ -739,7 +743,9 @@
     "resume_dry_run_failed": "Zkušební běh selhal, trasa zůstává pozastavená. {error}",
     "resume_route": "Obnovit trasu",
     "route_paused": "Pozastaveno",
-    "route_toggle_failed": "Trasu se nepodařilo změnit"
+    "route_toggle_failed": "Trasu se nepodařilo změnit",
+    "add_listener_failed": "Posluchače se nepodařilo přidat",
+    "disconnect_failed": "Trasu se nepodařilo odpojit"
   },
   "subscription_list": {
     "active": "Aktivní",

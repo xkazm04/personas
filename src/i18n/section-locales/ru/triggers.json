@@ -542,6 +542,7 @@
   "relay_channel_url_placeholder": "https://smee.io/your-channel-id",
   "relay_confirm_delete": "Подтвердить",
   "relay_delete_failed": "Не удалось удалить ретранслятор — попробуйте снова",
+  "relay_toggle_failed": "Не удалось обновить ретранслятор — попробуйте ещё раз",
   "relay_delete_title": "Удалить ретранслятор",
   "relay_event_filter_field": "Фильтр событий",
   "relay_event_filter_note": "(необязательно, через запятую)",
@@ -684,6 +685,9 @@
     "marketplace_empty": "Пока нет подписанных лент — оформите подписку в Marketplace, чтобы связать их с персонами.",
     "marketplace_source_hint": "Запускает персону, когда эта лента сообщает об изменении",
     "no_routes_desc": "Выберите источник слева, затем нажмите на целевую персону справа. Маршрут появится здесь.",
+    "load_failed_title": "Не удалось загрузить маршруты",
+    "load_failed_desc": "Маршруты не удалось загрузить, поэтому пустой список вводил бы в заблуждение. Ваши маршруты не пропали - повторите попытку.",
+    "load_failed_retry": "Повторить",
     "no_routes_title": "Маршрутов пока нет",
     "no_sources_match": "Источники по запросу «{query}» не найдены",
     "no_targets_match": "Персоны по запросу «{query}» не найдены",
@@ -739,7 +743,9 @@
     "resume_dry_run_failed": "Пробный запуск не прошёл, маршрут остаётся на паузе. {error}",
     "resume_route": "Возобновить маршрут",
     "route_paused": "На паузе",
-    "route_toggle_failed": "Не удалось изменить маршрут"
+    "route_toggle_failed": "Не удалось изменить маршрут",
+    "add_listener_failed": "Не удалось добавить слушателя",
+    "disconnect_failed": "Не удалось отключить маршрут"
   },
   "subscription_list": {
     "active": "Активные",

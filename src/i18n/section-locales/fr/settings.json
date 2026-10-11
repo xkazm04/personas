@@ -691,7 +691,8 @@
     "dynamic_budgets_hint": "Admet les exécutions de flotte selon les budgets en direct de machine, GPU et plan, en utilisant le profil de ressources de chaque mandat. Désactivez pour revenir au plafond de session fixe ci-dessus.",
     "dynamic_budgets_label": "Budgets de flotte dynamiques",
     "strict_queue_order_hint": "Chaque lancement attend son tour : une nouvelle exécution se place derrière toute exécution en attente déjà prête à démarrer, même si la flotte a un créneau libre. Le coût est réel. Ce créneau peut rester inutilisé jusqu'au prochain passage de promotion, et une exécution que vous venez de lancer peut ne pas démarrer alors que la flotte semble libre. On n'attend jamais derrière une exécution retenue par un budget ou par sa propre heure de départ.",
-    "strict_queue_order_label": "Ordre strict de la file"
+    "strict_queue_order_label": "Ordre strict de la file",
+    "load_failed": "La valeur enregistrée n'a pas pu être lue : le contrôle affiche une valeur par défaut, pas celle enregistrée. Rechargez avant de la modifier."
   },
   "notifications": {
     "digest_description": "Notification hebdomadaire résumant les problèmes de santé de tous les agents avec un score de santé global",

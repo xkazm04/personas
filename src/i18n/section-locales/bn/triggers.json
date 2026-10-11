@@ -542,6 +542,7 @@
   "relay_channel_url_placeholder": "https://smee.io/your-channel-id",
   "relay_confirm_delete": "নিশ্চিত করুন",
   "relay_delete_failed": "রিলে মুছতে ব্যর্থ হয়েছে — অনুগ্রহ করে আবার চেষ্টা করুন",
+  "relay_toggle_failed": "রিলে আপডেট করা যায়নি — অনুগ্রহ করে আবার চেষ্টা করুন",
   "relay_delete_title": "রিলে মুছুন",
   "relay_event_filter_field": "ইভেন্ট ফিল্টার",
   "relay_event_filter_note": "(ঐচ্ছিক, কমা-বিভক্ত)",
@@ -684,6 +685,9 @@
     "marketplace_empty": "এখনও কোনও সাবস্ক্রাইব করা ফিড নেই — পার্সোনার সাথে যুক্ত করতে Marketplace-এ সাবস্ক্রাইব করুন।",
     "marketplace_source_hint": "এই ফিড কোনও পরিবর্তনের রিপোর্ট করলে পার্সোনাটি চালায়",
     "no_routes_desc": "বাম দিকে একটি উৎস সক্রিয় করুন, তারপর ডান দিকে একটি লক্ষ্য persona-তে ক্লিক করুন। রুটটি এখানে যুক্ত হবে।",
+    "load_failed_title": "রুট লোড করা যায়নি",
+    "load_failed_desc": "রুট লোড করা যায়নি, তাই খালি তালিকা বিভ্রান্তিকর হবে। আপনার রুটগুলো হারিয়ে যায়নি - আবার চেষ্টা করুন।",
+    "load_failed_retry": "আবার চেষ্টা করুন",
     "no_routes_title": "এখনো কোনো রুট নেই",
     "no_sources_match": "\"{query}\"-এর সাথে কোনো উৎস মেলে না",
     "no_targets_match": "\"{query}\"-এর সাথে কোনো persona মেলে না",
@@ -739,7 +743,9 @@
     "resume_dry_run_failed": "ড্রাই-রান ব্যর্থ, তাই রুট বিরতিতেই থাকবে। {error}",
     "resume_route": "রুট আবার চালু করুন",
     "route_paused": "বিরতিতে",
-    "route_toggle_failed": "এই রুট পরিবর্তন করা যায়নি"
+    "route_toggle_failed": "এই রুট পরিবর্তন করা যায়নি",
+    "add_listener_failed": "এই লিসেনার যোগ করা যায়নি",
+    "disconnect_failed": "এই রুট বিচ্ছিন্ন করা যায়নি"
   },
   "subscription_list": {
     "active": "সক্রিয়",

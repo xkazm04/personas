@@ -542,6 +542,7 @@
   "relay_channel_url_placeholder": "https://smee.io/your-channel-id",
   "relay_confirm_delete": "確認",
   "relay_delete_failed": "リレーの削除に失敗しました — もう一度お試しください",
+  "relay_toggle_failed": "リレーを更新できませんでした — もう一度お試しください",
   "relay_delete_title": "リレーを削除",
   "relay_event_filter_field": "イベントフィルター",
   "relay_event_filter_note": "(任意、カンマ区切り)",
@@ -684,6 +685,9 @@
     "marketplace_empty": "購読中のフィードはまだありません。Marketplace で購読してペルソナに接続してください。",
     "marketplace_source_hint": "このフィードが変更を報告するとペルソナを実行します",
     "no_routes_desc": "左側でソースを設定し、右側のターゲットペルソナをクリックしてください。ルートがここに表示されます。",
+    "load_failed_title": "ルートを読み込めませんでした",
+    "load_failed_desc": "ルートを読み込めなかったため、空の一覧は誤解を招きます。ルートは消えていません。もう一度お試しください。",
+    "load_failed_retry": "再試行",
     "no_routes_title": "ルートがありません",
     "no_sources_match": "「{query}」に一致するソースはありません",
     "no_targets_match": "「{query}」に一致するペルソナはありません",
@@ -739,7 +743,9 @@
     "resume_dry_run_failed": "ドライランに失敗したため、ルートは一時停止のままです。{error}",
     "resume_route": "ルートを再開",
     "route_paused": "一時停止中",
-    "route_toggle_failed": "このルートを変更できませんでした"
+    "route_toggle_failed": "このルートを変更できませんでした",
+    "add_listener_failed": "このリスナーを追加できませんでした",
+    "disconnect_failed": "このルートを切断できませんでした"
   },
   "subscription_list": {
     "active": "アクティブ",

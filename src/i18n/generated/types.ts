@@ -8176,6 +8176,9 @@ export type Translations = {
     add_trusted_peer: string;
     no_trusted_peers: string;
     import_complete: string;
+    import_partial: string;
+    import_failed: string;
+    import_failed_toast: string;
     resources_imported: string;
     skipped_conflicts: string;
     confirm: string;
@@ -11953,6 +11956,9 @@ export type Translations = {
       cancel_pending_route: string;
       no_routes_title: string;
       no_routes_desc: string;
+      load_failed_title: string;
+      load_failed_desc: string;
+      load_failed_retry: string;
       cycle_condition_hint: string;
       condition_always: string;
       condition_on_success: string;
@@ -12010,6 +12016,8 @@ export type Translations = {
       last_fired: string;
       never_fired: string;
       route_toggle_failed: string;
+      add_listener_failed: string;
+      disconnect_failed: string;
       resume_dry_run_failed: string;
     };
     subscription_list: {
@@ -12620,6 +12628,7 @@ export type Translations = {
     relay_last_event: string;
     relay_delete_title: string;
     relay_delete_failed: string;
+    relay_toggle_failed: string;
     setup_guide_step1: string;
     clipboard_pattern_placeholder: string;
     composite_event_type_placeholder: string;
@@ -13625,6 +13634,7 @@ export type Translations = {
       dynamic_budgets_hint: string;
       strict_queue_order_label: string;
       strict_queue_order_hint: string;
+      load_failed: string;
     };
     recent_change: {
       label: string;

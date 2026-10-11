@@ -859,7 +859,8 @@
     "dynamic_budgets_label": "Dynamic fleet budgets",
     "dynamic_budgets_hint": "Admit fleet runs against live machine, GPU and plan budgets using each charter's resource profile. Turn off to fall back to the fixed session cap above.",
     "strict_queue_order_label": "Strict queue order",
-    "strict_queue_order_hint": "Make every dispatch wait its turn: a new run queues behind any waiting run that is ready to start, even when the fleet has a free slot. The cost is real. That slot can sit idle until the next promotion pass, and a run you just fired may not start although the fleet looks free. Runs held by a budget or by their own start time are never waited on."
+    "strict_queue_order_hint": "Make every dispatch wait its turn: a new run queues behind any waiting run that is ready to start, even when the fleet has a free slot. The cost is real. That slot can sit idle until the next promotion pass, and a run you just fired may not start although the fleet looks free. Runs held by a budget or by their own start time are never waited on.",
+    "load_failed": "Couldn't read the stored value, so the control shows a default - not what is saved. Reload before changing it."
   },
   "recent_change": {
     "label": "Last {action}: {when}",
