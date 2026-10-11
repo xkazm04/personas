@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { EventName, type EventPayloadMap } from '@/lib/eventRegistry';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import {
@@ -38,7 +38,6 @@ export function PeerDetailDrawer({
   const syncPeerManifest = useSystemStore((s) => s.syncPeerManifest);
   const addToast = useToastStore((s) => s.addToast);
 
-  const drawerRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
   const st = t.sharing;
 
@@ -62,44 +61,6 @@ export function PeerDetailDrawer({
       fetchPeerManifest(peer.peer_id);
     }
   }, [peer.peer_id, isConnected, fetchPeerManifest]);
-
-  // Close on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
-
-  // Focus trap: keep Tab cycling within the drawer panel
-  const handleFocusTrap = useCallback((e: React.KeyboardEvent) => {
-    if (e.key !== 'Tab') return;
-    const panel = drawerRef.current;
-    if (!panel) return;
-    const focusable = panel.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    if (focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-    if (e.shiftKey) {
-      if (document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      }
-    } else {
-      if (document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-  }, []);
-
-  // Auto-focus the drawer panel on mount
-  useEffect(() => {
-    drawerRef.current?.focus();
-  }, []);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -134,12 +95,7 @@ export function PeerDetailDrawer({
       panelClassName="relative w-full max-w-md bg-background border-l border-border shadow-elevation-3 flex flex-col animate-in slide-in-from-right duration-200 outline-none"
       staggerChildren={false}
     >
-      <div
-        ref={drawerRef}
-        tabIndex={-1}
-        onKeyDown={handleFocusTrap}
-        className="contents"
-      >
+      <>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div className="min-w-0 flex-1">
@@ -286,7 +242,7 @@ export function PeerDetailDrawer({
             </div>
           )}
         </div>
-      </div>
+      </>
     </BaseModal>
   );
 }
