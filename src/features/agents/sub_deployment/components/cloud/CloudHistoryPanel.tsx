@@ -59,23 +59,30 @@ export function CloudHistoryPanel() {
   // good snapshot. The failed-poll trap of the registry's
   // transition-detection-and-notify technique: a failed poll yields NO
   // snapshot (the previous rows stay), and the display says so.
+  // Request sequencing: a poll started under the previous filters can resolve
+  // after the debounced filter fetch. Only the newest request may write rows,
+  // stats, staleness or the busy flag - a superseded response is dropped.
+  const fetchSeqRef = useRef(0);
   const fetchData = useCallback(async (source: 'poll' | 'manual' | 'filter' = 'poll') => {
+    const seq = ++fetchSeqRef.current;
     setIsLoading(true);
     try {
       const [execs, st] = await Promise.all([
         cloudListExecutions(filterPersona || undefined, filterStatus || undefined, 50),
         cloudExecutionStats(filterPersona || undefined, period),
       ]);
+      if (seq !== fetchSeqRef.current) return;
       setExecutions(execs);
       setStats(st);
       setStale(false);
     } catch (err) {
+      if (seq !== fetchSeqRef.current) return;
       setStale(true);
       if (source === 'manual') toastCatch('features/deployment/components/cloud/CloudHistoryPanel:refresh')(err);
       else silentCatch('features/deployment/components/cloud/CloudHistoryPanel:catch1')(err);
       if (source === 'poll') throw err;
     } finally {
-      setIsLoading(false);
+      if (seq === fetchSeqRef.current) setIsLoading(false);
     }
   }, [filterPersona, filterStatus, period]);
 

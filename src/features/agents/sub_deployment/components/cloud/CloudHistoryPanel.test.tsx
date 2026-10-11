@@ -90,3 +90,34 @@ describe('CloudHistoryPanel: the failed-poll trap', () => {
     expect(screen.getByTestId('cloud-history-liveness').getAttribute('data-stale')).toBe('false');
   });
 });
+
+describe('CloudHistoryPanel: superseded requests', () => {
+  it('a poll started under the old filters that lands after the new filter result is dropped', async () => {
+    const execA = { ...exec, id: 'ex-A', personaId: 'pA' };
+    const execB = { ...exec, id: 'ex-B', personaId: 'pB' };
+    let resolveA: (v: unknown[]) => void = () => {};
+    let resolveB: (v: unknown[]) => void = () => {};
+    listMock
+      .mockImplementationOnce(() => new Promise<unknown[]>((r) => { resolveA = r; }))
+      .mockImplementationOnce(() => new Promise<unknown[]>((r) => { resolveB = r; }));
+    statsMock.mockResolvedValue(stats);
+    render(<CloudHistoryPanel />);
+
+    // Poll under the OLD filters (status = all) is in flight.
+    const oldPoll = captured.poll!;
+    let pollDone: Promise<unknown> = Promise.resolve();
+    await act(async () => { pollDone = Promise.resolve(oldPoll()); });
+
+    // Operator switches the status filter; the debounced refetch starts (300ms).
+    const statusSelect = screen.getAllByRole('combobox')[1]!;
+    await act(async () => { fireEvent.change(statusSelect, { target: { value: 'failed' } }); });
+    await vi.waitFor(() => expect(listMock).toHaveBeenCalledTimes(2), { timeout: 2000 });
+
+    // New filter lands first, then the stale poll lands last.
+    await act(async () => { resolveB([execB]); await Promise.resolve(); });
+    await act(async () => { resolveA([execA]); await pollDone; });
+
+    expect(screen.getByText('persona:pB')).toBeTruthy();
+    expect(screen.queryByText('persona:pA')).toBeNull();
+  });
+});
