@@ -146,8 +146,8 @@ export function StudioPatchbay() {
               </button>
             )}
             {c.committableLinks.length > 0 && (
-              <button type="button" onClick={() => void c.commitAll()}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-interactive text-status-success hover:bg-status-success/10 transition-colors">
+              <button type="button" onClick={() => void c.commitAll()} disabled={c.committing.size > 0}
+                className="disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-interactive text-status-success hover:bg-status-success/10 transition-colors">
                 <Check className="w-3.5 h-3.5" /> {st.commit_all}
               </button>
             )}

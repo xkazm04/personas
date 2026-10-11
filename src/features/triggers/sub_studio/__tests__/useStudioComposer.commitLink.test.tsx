@@ -142,3 +142,21 @@ describe('commitLink for a marketplace source', () => {
     expect(dryRunTrigger).not.toHaveBeenCalled();
   });
 });
+
+describe('commitAll in-flight guard', () => {
+  it('a double "Save all" creates each route once', async () => {
+    localStorage.setItem(
+      'trigger_studio_draft_v1',
+      JSON.stringify({ version: 1, links: [PERSONA_LINK] }),
+    );
+    const { result } = renderHook(() => useStudioComposer());
+    expect(result.current.committableLinks).toHaveLength(1);
+
+    await act(async () => {
+      // Two clicks in the same tick: state is stale, so only a ref-backed guard sees the first.
+      await Promise.all([result.current.commitAll(), result.current.commitAll()]);
+    });
+
+    expect(createTrigger).toHaveBeenCalledTimes(1);
+  });
+});

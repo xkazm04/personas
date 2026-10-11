@@ -9,7 +9,7 @@
  * Live routing state (existing triggers/events/subscriptions) is NOT here — it
  * stays in `routing/layouts/useRoutingState`; the ledger composes both.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -41,6 +41,9 @@ export function useStudioComposer(onRouteCommitted?: () => void) {
   // (the full trigger form, locked to the source's type).
   const [formCommit, setFormCommit] = useState<DraftLink | null>(null);
   const [committing, setCommitting] = useState<Set<string>>(new Set());
+  // Ref mirror of `committing`: state is stale within a tick, so a double click
+  // would pass a state-based guard twice.
+  const inFlight = useRef<Set<string>>(new Set());
 
   useEffect(() => { saveDraft(draft); }, [draft]);
 
@@ -104,6 +107,8 @@ export function useStudioComposer(onRouteCommitted?: () => void) {
     // Marketplace links are fully specified by the subscription and keep the
     // direct path.
     const gated = link.source.kind === 'persona';
+    if (inFlight.current.has(link.id)) return false;
+    inFlight.current.add(link.id);
     setCommitting((s) => new Set(s).add(link.id));
     let createdId: string | null = null;
     try {
@@ -135,6 +140,7 @@ export function useStudioComposer(onRouteCommitted?: () => void) {
       toastCatch('useStudioComposer:commitLink', st.route_commit_failed)(e);
       return false;
     } finally {
+      inFlight.current.delete(link.id);
       setCommitting((s) => { const n = new Set(s); n.delete(link.id); return n; });
     }
   };
