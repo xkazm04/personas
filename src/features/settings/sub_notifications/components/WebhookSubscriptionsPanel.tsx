@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Webhook, Plus, Trash2, Send, CheckCircle2, XCircle, Pencil, AlertTriangle, CircleDashed } from 'lucide-react';
+import { Webhook, Plus, Trash2, Send, Check, CheckCircle2, XCircle, Pencil, AlertTriangle, CircleDashed } from 'lucide-react';
 import { interpolate, useTranslation } from '@/i18n/useTranslation';
 import {
   createNotificationSubscription,
@@ -14,8 +14,10 @@ import type { EventVocabularyEntry } from '@/lib/bindings/EventVocabularyEntry';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
+import Button from '@/features/shared/components/buttons/Button';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useConfirmClick } from '@/features/settings/shared/useConfirmClick';
 import {
   EMPTY_WEBHOOK_DRAFT,
   classifyPatterns,
@@ -189,14 +191,12 @@ export function WebhookSubscriptionsPanel() {
               >
                 <Pencil className="w-3.5 h-3.5 text-primary/60" />
               </button>
-              <button
-                type="button"
-                onClick={() => removeSubscription(sub.id)}
-                className="rounded-interactive p-1.5 hover:bg-red-500/10"
-                aria-label={s.webhook_subscriptions_delete_aria}
-              >
-                <Trash2 className="w-3.5 h-3.5 text-red-400" />
-              </button>
+              <WebhookDeleteButton
+                id={sub.id}
+                onDelete={removeSubscription}
+                label={s.webhook_subscriptions_delete_aria}
+                confirmLabel={t.common.confirm}
+              />
               <AccessibleToggle
                 checked={sub.enabled}
                 onChange={() => toggleEnabled(sub)}
@@ -217,6 +217,28 @@ export function WebhookSubscriptionsPanel() {
         )}
       </div>
     </div>
+  );
+}
+
+function WebhookDeleteButton({
+  id, onDelete, label, confirmLabel,
+}: {
+  id: string;
+  onDelete: (id: string) => void;
+  label: string;
+  confirmLabel: string;
+}) {
+  const { armed, trigger } = useConfirmClick(() => onDelete(id));
+  return (
+    <Button
+      type="button"
+      onClick={trigger}
+      variant={armed ? 'accent' : 'ghost'}
+      tone={armed ? 'error' : undefined}
+      size="icon-sm"
+      aria-label={armed ? confirmLabel : label}
+      icon={armed ? <Check className="w-3.5 h-3.5" /> : <Trash2 className="w-3.5 h-3.5" />}
+    />
   );
 }
 
