@@ -318,6 +318,13 @@ pub async fn approve_deliberation_action(
                     action.use_case_title, e
                 ),
             );
+            // The spawn never started: free the claim so a retry (e.g. after the
+            // user adds the missing credential) is not told it is "already handled".
+            if let Err(re) =
+                repo::release_capability(&pool, &group_root, &action.use_case_id, &deliberation_id)
+            {
+                tracing::warn!(error = %re, deliberation_id = %deliberation_id, "failed to release capability claim after spawn failure");
+            }
             let _ = repo::clear_pending_action(&pool, &deliberation_id, "open");
         }
     }

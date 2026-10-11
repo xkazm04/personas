@@ -267,6 +267,28 @@ pub fn claim_capability(
     })
 }
 
+/// Release a capability claim after a failed spawn so an approved retry can run.
+/// Scoped to the claiming `deliberation_id` so a sibling track cannot release a
+/// claim whose spawn is still live. Returns `false` when there was no such claim.
+pub fn release_capability(
+    pool: &DbPool,
+    group_root: &str,
+    use_case_id: &str,
+    deliberation_id: &str,
+) -> Result<bool, AppError> {
+    timed_query!("deliberation", "deliberation::release_capability", {
+        let conn = pool.get()?;
+        let n = conn
+            .execute(
+                "DELETE FROM deliberation_capability_claims
+                  WHERE group_root = ?1 AND use_case_id = ?2 AND deliberation_id = ?3",
+                params![group_root, use_case_id, deliberation_id],
+            )
+            .map_err(AppError::Database)?;
+        Ok(n == 1)
+    })
+}
+
 /// Mark an approved capability as running in the background: hold its execution
 /// id and park at 'action_running' (the reaper finishes it).
 pub fn set_action_running(pool: &DbPool, id: &str, execution_id: &str) -> Result<(), AppError> {
@@ -559,6 +581,24 @@ mod claim_capability_tests {
 
         // But a repeat within grp-A of an already-claimed capability loses.
         assert!(!claim_capability(&pool, "grp-A", "uc-code-review", "track-5").unwrap());
+    }
+
+    /// A failed spawn must release its claim so a retry can run; only the
+    /// claiming deliberation may release.
+    #[test]
+    fn release_allows_reclaim_and_only_owner_releases() {
+        let pool = init_test_db().unwrap();
+        assert!(claim_capability(&pool, "grp-R", "uc-x", "track-1").unwrap());
+
+        // A different deliberation cannot release someone else's claim.
+        assert!(!release_capability(&pool, "grp-R", "uc-x", "track-2").unwrap());
+        assert!(!claim_capability(&pool, "grp-R", "uc-x", "track-3").unwrap());
+
+        // The owner releases; the capability can be claimed again.
+        assert!(release_capability(&pool, "grp-R", "uc-x", "track-1").unwrap());
+        assert!(claim_capability(&pool, "grp-R", "uc-x", "track-3").unwrap());
+        // Releasing a claim that is gone reports false, not an error.
+        assert!(!release_capability(&pool, "grp-R", "uc-x", "track-1").unwrap());
     }
 }
 
