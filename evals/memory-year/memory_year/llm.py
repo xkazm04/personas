@@ -137,6 +137,11 @@ class LLM:
         self.cache_hits = 0
         self.errors = 0
         self.refusals = 0
+        # What the seat actually served. The totals above also add a cached reply's stored
+        # tokens, so they read as what the run would cost from cold, not what it drew.
+        self.drawn_calls = 0
+        self.drawn_in = 0
+        self.drawn_out = 0
 
     def _key(self, system: str, prompt: str) -> str:
         return hashlib.sha256(json.dumps([self.spec, CLI_PROFILE, system, prompt]).encode()).hexdigest()
@@ -190,6 +195,7 @@ class LLM:
             self._db.execute("INSERT OR REPLACE INTO calls VALUES (?,?,?,?,?)", (k, text, tin, tout, ms))
             self._db.commit()
             self.calls += 1; self.tokens_in += tin; self.tokens_out += tout
+            self.drawn_calls += 1; self.drawn_in += tin; self.drawn_out += tout
         return Reply(text, tin, tout, ms, False, est)
 
 

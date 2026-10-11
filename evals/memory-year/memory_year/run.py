@@ -64,6 +64,21 @@ def served_stale(probe, context: str) -> bool:
     return any(w and w.lower() in low for w in probe.wrong)
 
 
+def drawn(m: LLM | None, since: dict | None = None) -> dict:
+    """One workload's draw on the seat: calls and tokens the CLI served, cache replays apart.
+
+    Every model call a run makes - the screen, the answering, the judge, the arm's own
+    write path - draws on one subscription seat, and a window is planned as capacity split
+    between them. A split that is not recorded cannot be planned: the header used to carry
+    the consumer's totals (screen included, cache replays added back) and the arm's write
+    cost, and the judge's draw was counted by its own client and never written down.
+    """
+    d = {"calls": 0, "replayed": 0, "tokens_in": 0, "tokens_out": 0}
+    if m is not None:
+        d = {"calls": m.drawn_calls, "replayed": m.cache_hits, "tokens_in": m.drawn_in, "tokens_out": m.drawn_out}
+    return {k: v - (since or {}).get(k, 0) for k, v in d.items()}
+
+
 def screen_unaided(scenario: dict, llm: LLM, elaboration: str, out_dir: Path, probe_ids: set[str] | None = None, parallel: int = 6) -> set[str]:
     """Unaided-baseline screening: a probe the consumer answers correctly with NO context
     is not measuring memory. Cached per (scenario, consumer, elaboration, probe); only the
@@ -125,6 +140,7 @@ def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | N
     if probe_limit is not None:
         will_ask = will_ask[:probe_limit]
     screened = screen_unaided(scenario, llm, elaboration, out_root / scenario_dir.name, set(will_ask), parallel)
+    screen_draw = drawn(llm)   # the screen shares the consumer's client; split it off here
 
     answers: list[Answer] = []
     pending: list = []
@@ -200,6 +216,11 @@ def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | N
         "events_replayed": sum(1 for t in timeline if t[0] == "e"), "probes": probes_done, "screened": len(screened),
         "consumer_calls": llm.calls, "consumer_tokens_in": llm.tokens_in, "consumer_tokens_out": llm.tokens_out, "consumer_cache_hits": llm.cache_hits,
         "write_cost": cost, "store_bytes_at": store_timeline, "wall_s": round(time.time() - t_run, 1),
+        "parallel": parallel,
+        # writing is as the arm reports it, which may add its own cache replays back
+        "allowance": {"screening": screen_draw, "answering": drawn(llm, screen_draw), "judging": drawn(jllm),
+                      "writing": {"calls": cost.get("model_calls", 0), "replayed": None,
+                                  "tokens_in": cost.get("tokens_in", 0), "tokens_out": cost.get("tokens_out", 0)}},
     }
     (run_dir / "header.json").write_text(json.dumps(header, indent=1), encoding="utf-8")
     (run_dir / "answers.json").write_text(json.dumps(to_json(answers), indent=1), encoding="utf-8")
@@ -334,7 +355,15 @@ def report_run(header: dict, answers: list[Answer], scenario: dict) -> str:
     L += [
           f"- write: {wc.get('model_calls', 0)} model calls, {wc.get('tokens_in', 0)} tokens in, {wc.get('tokens_out', 0)} tokens out, {wc.get('embeddings', 0)} embeddings over {ev} events "
           f"({wc.get('model_calls', 0) / ev:.2f} calls/event, {wc.get('tokens_in', 0) / ev:.0f} tokens/event); write wall {wc.get('write_ms', 0)} ms",
-          f"- store bytes at day: {json.dumps(header['store_bytes_at'])}", ""]
+          f"- store bytes at day: {json.dumps(header['store_bytes_at'])}"]
+    al = header.get("allowance")
+    if al:
+        tot = {k: w["tokens_in"] + w["tokens_out"] for k, w in al.items()}
+        whole = sum(tot.values()) or 1
+        L += ["- seat draw by workload (tokens served, share; cache replays drew nothing; writing as the arm reports it): " +" · ".join(
+            f"{k} {tot[k]} ({tot[k] / whole * 100:.1f}%, {w['calls']} calls)" for k, w in al.items())
+            + f" · at {header.get('parallel')} concurrent"]
+    L += [""]
     return "\n".join(L)
 
 
@@ -357,6 +386,7 @@ def rejudge(run_dir: Path, judge_model: str | None, strict: bool, out_root: Path
             a.judge = "deterministic+assert" if needs_extraction(p, a.text) else "deterministic"
     header["rejudged"] = time.strftime("%Y-%m-%d %H:%M")
     header["rejudged_harness"] = harness_revision()
+    header["rejudge_draw"] = drawn(jllm)   # a deferred scoring pass draws on the seat too
     header["judge"] = judge_model or "deterministic-only"
     header["judge_direction"] = "strict" if strict else "lenient"
     (run_dir / "header.json").write_text(json.dumps(header, indent=1), encoding="utf-8")
@@ -365,13 +395,53 @@ def rejudge(run_dir: Path, judge_model: str | None, strict: bool, out_root: Path
     return run_dir
 
 
+def _stamp(hv: dict | None) -> str:
+    hv = hv or {}
+    return (hv.get("rev") or "unstamped")[:10] + ("+dirty" if hv.get("dirty") else "")
+
+
+def run_pins(h: dict) -> dict:
+    """Everything a ladder row must share except the design under test.
+
+    The scorer is whichever harness last judged the answers: a re-judged run was scored by
+    the re-judging revision, not the one that produced it.
+    """
+    sc = h.get("scenario") or {}
+    return {
+        "consumer": h.get("consumer"), "judge": h.get("judge"), "judge direction": h.get("judge_direction"),
+        "budget": h.get("budget_tokens"), "elaboration": h.get("elaboration"),
+        "scenario": f"seed {sc.get('seed')} density {sc.get('density')} days {sc.get('days')}",
+        "scored by": _stamp(h.get("rejudged_harness") if h.get("rejudged") else h.get("harness")),
+        "scored at": h.get("rejudged") or h.get("run_id"),
+    }
+
+
+def pin_lines(names: list[str], pins: list[dict]) -> list[str]:
+    """Check the pins instead of asserting them: a pin that differs is named with its rows."""
+    if not pins:
+        return []
+    keys = [k for k in pins[0] if k != "scored at"]
+    same = {k: pins[0][k] for k in keys if all(p[k] == pins[0][k] for p in pins)}
+    differ = [k for k in keys if k not in same]
+    L = ["\npins shared by every row: " + " · ".join(f"{k} `{v}`" for k, v in same.items() if k != "scored by")]
+    if differ:
+        L.append(f"**not a ladder** - rows differ in {', '.join(differ)} as well as the design:")
+        L += [f"- {n}: " + " · ".join(f"{k} `{p[k]}`" for k in differ) for n, p in zip(names, pins)]
+    blind = [p["scored at"] for p in pins if p["scored by"].startswith("unstamped")]
+    if blind:
+        L.append(f"scorer revision unrecorded on {len(blind)} of {len(pins)} rows, scored at {len(set(blind))} "
+                 "different times - the record cannot show that one judge revision scored them all.")
+    return L
+
+
 def compare(run_dirs: list[Path], out_root: Path | None = None) -> str:
     rows = []
     harnesses = set()
+    pins = []
     for d in run_dirs:
         h = json.loads((d / "header.json").read_text(encoding="utf-8"))
-        hv = h.get("harness") or {}
-        harnesses.add((hv.get("rev") or "unstamped")[:10] + ("+dirty" if hv.get("dirty") else ""))
+        harnesses.add(_stamp(h.get("harness")))
+        pins.append(run_pins(h))
         answers = json.loads((d / "answers.json").read_text(encoding="utf-8"))
         probes = {}
         try:
@@ -397,7 +467,7 @@ def compare(run_dirs: list[Path], out_root: Path | None = None) -> str:
         sfv = "-" if r[12] is None else f"{r[12]:.2f}"
         L.append(f"| {r[0]} | {r[1]} | {r[2]} | {r[2] / max(1, r[1]):.2f} | {r[3]} | {r[4]} | {ffv} | {sfv} | {r[5]:.0f} | {r[6]:.2f} | {r[7]:.0f} |")
     if rows:
-        L.append(f"\nconsumer `{rows[0][8]}` · budget {rows[0][9]} · elaboration `{rows[0][10]}` - every row shares them or the table is not a ladder.")
+        L += pin_lines([d.name for d in run_dirs], pins)
         L.append("false fire and silent failure are a pair: a design can zero either one by "
                  "being louder or quieter than it should be, so neither is a score on its own.")
     if len(harnesses) > 1 or "unstamped" in {x.split("+")[0] for x in harnesses}:
