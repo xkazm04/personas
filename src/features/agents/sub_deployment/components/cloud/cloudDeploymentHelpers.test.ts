@@ -2,28 +2,27 @@ import { describe, it, expect } from 'vitest';
 import type { CloudDeployment } from '@/api/system/cloud';
 import { budgetUtilization, budgetColor, statusColor, statusIcon } from './cloudDeploymentHelpers';
 import { CheckCircle2, PauseCircle, XCircle, Circle } from 'lucide-react';
+import { budgetToneForPct } from './CloudHistoryHelpers';
 
 const dep = (max: number | null, cost: number | null) =>
   ({ maxMonthlyBudgetUsd: max, currentMonthCostUsd: cost } as unknown as CloudDeployment);
 
 describe('budgetUtilization', () => {
-  it('is null with no cap or no spend, so the gauge is not drawn for those', () => {
+  it('is null with no cap or unreported spend, but measures a reported zero', () => {
     expect(budgetUtilization(dep(null, 4))).toBeNull();
     expect(budgetUtilization(dep(10, null))).toBeNull();
-    expect(budgetUtilization(dep(10, 0))).toBeNull();
+    expect(budgetUtilization(dep(10, 0))).toBe(0);
   });
-  it('is a percentage of the cap, clamped at 100', () => {
+  it('is a percentage of the cap, including overspend', () => {
     expect(budgetUtilization(dep(10, 2.5))).toBe(25);
-    expect(budgetUtilization(dep(10, 25))).toBe(100);
+    expect(budgetUtilization(dep(10, 25))).toBe(250);
   });
 });
 
 describe('budgetColor thresholds', () => {
-  it('turns amber at 50 and red at 80 (inclusive)', () => {
-    expect(budgetColor(49.9)).toBe('bg-emerald-500');
-    expect(budgetColor(50)).toBe('bg-amber-500');
-    expect(budgetColor(79.9)).toBe('bg-amber-500');
-    expect(budgetColor(80)).toBe('bg-red-500');
+  it.each([0, 49, 50, 79, 80, 99, 100, 150])('agrees with the history tone at %i percent', (pct) => {
+    const tone = budgetToneForPct(pct);
+    expect(budgetColor(pct)).toBe({ emerald: 'bg-emerald-500', amber: 'bg-amber-500', red: 'bg-red-500' }[tone]);
   });
 });
 
