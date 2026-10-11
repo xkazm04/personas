@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import { DailyBreakdownChart } from './DailyBreakdownChart';
+import { DailyBreakdownChart, formatShortDate } from './DailyBreakdownChart';
 
 /**
  * Per-day values used to live only in a mouse-hover tooltip. The chart now
@@ -22,5 +22,18 @@ describe('DailyBreakdownChart accessible data', () => {
     expect(within(day1).getByText('12')).toBeTruthy();
     const day2 = within(table).getByRole('rowheader', { name: '2026-08-02' }).closest('tr')!;
     expect(within(day2).getByText('-')).toBeTruthy();
+  });
+});
+
+describe('formatShortDate', () => {
+  it('labels a UTC day bucket with that day in a negative-UTC timezone', () => {
+    const prev = process.env.TZ;
+    process.env.TZ = 'America/Los_Angeles';
+    try {
+      expect(formatShortDate('2026-10-01', 'en-US')).toBe('10/1');
+      expect(formatShortDate('2026-01-01', 'en-US')).toBe('1/1');
+    } finally {
+      if (prev === undefined) delete process.env.TZ; else process.env.TZ = prev;
+    }
   });
 });

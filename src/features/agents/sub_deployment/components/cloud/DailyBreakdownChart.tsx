@@ -27,9 +27,17 @@ function bareLabel(label: string): string {
   return label.replace(/\s*[:：]\s*$/, '');
 }
 
-function formatShortDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
+/**
+ * The backend buckets are date-only UTC days ("YYYY-MM-DD"). `new Date(iso)`
+ * parses those as UTC midnight, and local getters then print the previous day
+ * west of UTC; so build the day from its parts and format it in UTC, in the
+ * viewer's locale (D.M. / M月D日 differ). Anything unparseable is shown raw.
+ */
+export function formatShortDate(iso: string, locale?: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return iso;
+  const ms = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return new Intl.DateTimeFormat(locale, { month: 'numeric', day: 'numeric', timeZone: 'UTC' }).format(ms);
 }
 
 export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {
