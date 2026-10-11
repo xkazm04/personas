@@ -88,9 +88,9 @@ export function applyDesignContextMutation(
         return { applied: false, reason: `Persona ${personaId} no longer exists` };
       }
 
-      // Prefer fresh state if persona is still selected (benefits from prior queued writes).
-      // Fall back to the enqueue-time snapshot if the user switched away.
-      const freshPersona = isSelected ? store.selectedPersona : null;
+      // Prior queued writes update the persona list even after selection changes.
+      // Use the enqueue-time snapshot only if the row has left the store.
+      const freshPersona = isSelected ? store.selectedPersona : store.personas.find((p) => p.id === personaId);
       const currentContext = freshPersona ? freshPersona.design_context : snapshotContext;
       const newContext = mutator(currentContext);
       await store.applyPersonaOp(personaId, {
