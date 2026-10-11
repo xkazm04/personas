@@ -324,6 +324,49 @@ pub fn finalize(
     })
 }
 
+/// Sentinel parked in `spawned_assignment_id` while an approval is spawning its
+/// assignment, so a concurrent second approval loses the claim.
+pub const PROPOSAL_CLAIM_SENTINEL: &str = "__claiming__";
+
+/// Atomically claim a resolved, still-pending proposal for approval. Returns
+/// `true` for exactly one caller (proceed to spawn the assignment); `false` when
+/// the proposal was already approved/claimed/dismissed. A single conditional
+/// UPDATE is the arbiter, so a double-click or stale card cannot spawn twice.
+pub fn claim_proposal_approval(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    timed_query!("deliberation", "deliberation::claim_proposal_approval", {
+        let conn = pool.get()?;
+        let n = conn
+            .execute(
+                "UPDATE team_deliberations
+                    SET spawned_assignment_id = ?2, updated_at = datetime('now')
+                  WHERE id = ?1
+                    AND status = 'resolved'
+                    AND spawned_assignment_id IS NULL
+                    AND json_extract(resolution, '$.status') = 'pending'",
+                params![id, PROPOSAL_CLAIM_SENTINEL],
+            )
+            .map_err(AppError::Database)?;
+        Ok(n == 1)
+    })
+}
+
+/// Release a proposal claim after a failed spawn so the user can retry.
+/// Returns `false` when there was no claim to release (already finalized or
+/// never claimed) — the CAS verdict, not an error.
+pub fn release_proposal_claim(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    timed_query!("deliberation", "deliberation::release_proposal_claim", {
+        let conn = pool.get()?;
+        let n = conn
+            .execute(
+                "UPDATE team_deliberations SET spawned_assignment_id = NULL
+                  WHERE id = ?1 AND spawned_assignment_id = ?2",
+                params![id, PROPOSAL_CLAIM_SENTINEL],
+            )
+            .map_err(AppError::Database)?;
+        Ok(n == 1)
+    })
+}
+
 // ── Agenda backbone ─────────────────────────────────────────────────────────
 
 pub fn add_agenda_item(
@@ -516,5 +559,53 @@ mod claim_capability_tests {
 
         // But a repeat within grp-A of an already-claimed capability loses.
         assert!(!claim_capability(&pool, "grp-A", "uc-code-review", "track-5").unwrap());
+    }
+}
+
+#[cfg(test)]
+mod claim_proposal_tests {
+    use super::*;
+    use crate::init_test_db;
+
+    fn seed_pending(pool: &DbPool, id: &str, resolution_status: &str) {
+        let conn = pool.get().unwrap();
+        conn.execute(
+            "INSERT INTO persona_teams (id, name, created_at, updated_at)
+             VALUES ('t-cp', 't-cp', datetime('now'), datetime('now'))
+             ON CONFLICT(id) DO NOTHING",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO team_deliberations (id, team_id, topic, status, resolution)
+             VALUES (?1, 't-cp', 'topic', 'resolved', ?2)",
+            params![
+                id,
+                format!(r#"{{"kind":"proposal","status":"{resolution_status}"}}"#)
+            ],
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn second_approval_loses_the_claim() {
+        let pool = init_test_db().unwrap();
+        seed_pending(&pool, "d1", "pending");
+        assert!(claim_proposal_approval(&pool, "d1").unwrap());
+        assert!(!claim_proposal_approval(&pool, "d1").unwrap());
+    }
+
+    #[test]
+    fn release_allows_retry_and_approved_or_dismissed_never_claim() {
+        let pool = init_test_db().unwrap();
+        seed_pending(&pool, "d2", "pending");
+        assert!(claim_proposal_approval(&pool, "d2").unwrap());
+        assert!(release_proposal_claim(&pool, "d2").unwrap());
+        assert!(!release_proposal_claim(&pool, "d2").unwrap());
+        assert!(claim_proposal_approval(&pool, "d2").unwrap());
+        seed_pending(&pool, "d3", "approved");
+        assert!(!claim_proposal_approval(&pool, "d3").unwrap());
+        seed_pending(&pool, "d4", "dismissed");
+        assert!(!claim_proposal_approval(&pool, "d4").unwrap());
     }
 }
