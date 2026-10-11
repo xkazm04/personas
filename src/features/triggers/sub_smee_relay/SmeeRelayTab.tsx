@@ -24,6 +24,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
 import { useToastStore } from '@/stores/toastStore';
+import { isValidSmeeChannelUrl, SMEE_CHANNEL_PREFIX } from './smeeChannelUrl';
 
 
 interface SmeeRelayTabProps {
@@ -74,7 +75,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 
 
   const handleCreate = async () => {
-    if (!addLabel.trim() || !addUrl.startsWith('https://smee.io/')) return;
+    if (!addLabel.trim() || !isValidSmeeChannelUrl(addUrl)) return;
     setIsCreating(true);
     setCreateError(null);
     try {
@@ -131,14 +132,14 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
     setTouchedFields((prev) => (prev.has(field) ? prev : new Set(prev).add(field)));
 
   const labelValid = addLabel.trim().length > 0;
-  const urlValid = addUrl.startsWith('https://smee.io/') && addUrl.length > 'https://smee.io/'.length;
-  const urlPartiallyTyped = addUrl.length > 0;
+  const urlValid = isValidSmeeChannelUrl(addUrl);
+  const urlPartiallyTyped = addUrl.trim().length > 0;
 
   const labelError = touchedFields.has('label') && !labelValid ? 'Label is required' : null;
   const urlError = touchedFields.has('url') && !urlValid
     ? (!urlPartiallyTyped
         ? 'Channel URL is required'
-        : !addUrl.startsWith('https://smee.io/')
+        : !addUrl.trim().startsWith(SMEE_CHANNEL_PREFIX)
           ? 'URL must start with https://smee.io/'
           : 'Enter the full channel URL (e.g. https://smee.io/abc123)')
     : null;
@@ -310,7 +311,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
               <button
                 type="button"
                 onClick={handleCreate}
-                disabled={isCreating || !addLabel.trim() || !addUrl.startsWith('https://smee.io/')}
+                disabled={isCreating || !addLabel.trim() || !urlValid}
                 className="flex items-center gap-2 px-4 py-2 typo-body rounded-card bg-purple-500/15 text-purple-400 border border-purple-500/25 hover:bg-purple-500/25 disabled:opacity-50 transition-colors"
               >
                 {isCreating ? <LoadingSpinner size="sm" /> : <Plug className="w-3.5 h-3.5" />}
