@@ -568,14 +568,21 @@ mod claim_proposal_tests {
     use crate::init_test_db;
 
     fn seed_pending(pool: &DbPool, id: &str, resolution_status: &str) {
-        let conn = pool.get().unwrap();
+        try_seed_pending(pool, id, resolution_status).expect("seed deliberation");
+    }
+
+    fn try_seed_pending(
+        pool: &DbPool,
+        id: &str,
+        resolution_status: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = pool.get()?;
         conn.execute(
             "INSERT INTO persona_teams (id, name, created_at, updated_at)
              VALUES ('t-cp', 't-cp', datetime('now'), datetime('now'))
              ON CONFLICT(id) DO NOTHING",
             [],
-        )
-        .unwrap();
+        )?;
         conn.execute(
             "INSERT INTO team_deliberations (id, team_id, topic, status, resolution)
              VALUES (?1, 't-cp', 'topic', 'resolved', ?2)",
@@ -583,8 +590,8 @@ mod claim_proposal_tests {
                 id,
                 format!(r#"{{"kind":"proposal","status":"{resolution_status}"}}"#)
             ],
-        )
-        .unwrap();
+        )?;
+        Ok(())
     }
 
     #[test]
