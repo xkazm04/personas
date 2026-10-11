@@ -74,6 +74,8 @@ export default function SettingsPage() {
         return (
           <motion.div
             key={tab}
+            inert={!isActive}
+            aria-hidden={!isActive}
             animate={{ opacity: isActive ? 1 : 0 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
             className={isActive
