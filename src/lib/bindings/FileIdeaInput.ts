@@ -13,4 +13,18 @@ goal: string | null,
  * reads as a paraphrase of it. Only for a finding that is genuinely
  * different; an exact re-filing is still deduped.
  */
-force: boolean | null, };
+force: boolean | null, 
+/**
+ * The producer, when the filer is not the App Master. Only
+ * [`FILEABLE_ORIGINS`] are accepted: `scan_sweep` hands the items a sweep
+ * left open to Approvals over HTTP, because the outbox takes 30 findings a
+ * pass and is read only when a Fleet session exits. `None` files as
+ * `app-master`, exactly as before.
+ */
+origin: string | null, 
+/**
+ * The scan lens, keyed into the dedup key the way the outbox ingest keys
+ * it (`scan:<lens>:<context>:<title>`), so an item the outbox already
+ * filed is a dedup hit here. Read only with `origin: "scan_sweep"`.
+ */
+lens: string | null, };
