@@ -107,7 +107,10 @@ export function useCredentialDesign() {
       }
 
       // Create the credential
-      const serviceType = snapshot.match_existing || snapshot.connector.name;
+      const requestedServiceType = snapshot.match_existing || snapshot.connector.name;
+      const serviceType = connectorDefinitions.find(
+        (connector) => connector.name.toLowerCase() === requestedServiceType.toLowerCase(),
+      )?.name ?? requestedServiceType;
       const credId = await createCredential({
         name: credentialName,
         service_type: serviceType,
