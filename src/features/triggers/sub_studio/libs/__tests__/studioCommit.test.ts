@@ -10,6 +10,7 @@ import {
   linkCommitsViaForm, FORM_COMMITTABLE_SOURCE_TYPES,
 } from '../studioCommit';
 import type { DraftLink } from '../studioDraftModel';
+import { TRIGGER_BLOCK_TEMPLATES } from '../triggerStudioConstants';
 
 const personaLink = (over: Partial<DraftLink> = {}): DraftLink => ({
   id: 'l1',
@@ -27,6 +28,13 @@ const triggerLink = (triggerType: string): DraftLink => ({
 });
 
 describe('commitBlocker', () => {
+  it('offers only committable signal sources on the Studio rail', () => {
+    for (const template of TRIGGER_BLOCK_TEMPLATES) {
+      expect(commitBlocker(triggerLink(template.triggerType)), template.triggerType).toBeNull();
+    }
+    expect(new Set(TRIGGER_BLOCK_TEMPLATES.map((template) => template.triggerType))).toEqual(FORM_COMMITTABLE_SOURCE_TYPES);
+  });
+
   it('persona links with simple conditions are committable', () => {
     expect(commitBlocker(personaLink())).toBeNull();
     expect(commitBlocker(personaLink({ condition: 'on_success' }))).toBeNull();
