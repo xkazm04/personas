@@ -22,6 +22,9 @@ pub struct N8nTransformExtra {
     pub sections: Vec<serde_json::Value>,
     /// The session ID this transform belongs to (for concurrency guard).
     pub session_id: Option<String>,
+    /// The user's workflow name, stashed at Turn 1 so Turn 2 (which only
+    /// receives the transform id) can name the draft and the notification.
+    pub workflow_name: Option<String>,
 }
 
 /// N8n transform-specific extras flattened into BackgroundTaskSnapshot.
@@ -130,6 +133,11 @@ pub fn set_n8n_transform_claude_session(transform_id: &str, session_id: String) 
 
 pub fn get_n8n_transform_claude_session(transform_id: &str) -> Option<String> {
     N8N_JOBS.read_extra(transform_id, |extra| extra.claude_session_id.clone())?
+}
+
+/// The workflow name stashed at Turn 1, if the job is still tracked.
+pub fn get_n8n_transform_workflow_name(transform_id: &str) -> Option<String> {
+    N8N_JOBS.read_extra(transform_id, |extra| extra.workflow_name.clone())?
 }
 
 /// List all n8n transform job snapshots (for unified workflows view).

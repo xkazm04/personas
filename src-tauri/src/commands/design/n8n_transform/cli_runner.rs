@@ -118,6 +118,7 @@ pub async fn start_n8n_transform_background(
                 cancel_outcome: None,
                 extra: N8nTransformExtra {
                     session_id: session_id.clone(),
+                    workflow_name: Some(workflow_name.clone()),
                     ..Default::default()
                 },
             },
@@ -267,6 +268,8 @@ pub async fn continue_n8n_transform(
     let transform_id_for_task = transform_id.clone();
     let token_for_task = cancel_token;
     let session_id_for_task = session_id;
+    let workflow_name =
+        resolve_continue_workflow_name(get_n8n_transform_workflow_name(&transform_id).as_deref());
 
     tokio::spawn(async move {
         let result = tokio::select! {
@@ -278,6 +281,7 @@ pub async fn continue_n8n_transform(
                 &transform_id_for_task,
                 &claude_session_id,
                 &user_answers_json,
+                &workflow_name,
             ) => res
         };
 
@@ -286,7 +290,7 @@ pub async fn continue_n8n_transform(
             result.map(|d| (d, false)),
             &app_handle,
             &transform_id_for_task,
-            "n8n workflow", // workflow_name not available here, use generic
+            &workflow_name,
             session_id_for_task.as_deref(),
         );
     });
@@ -343,6 +347,16 @@ fn build_section_callbacks(
     };
 
     (on_line, on_section)
+}
+
+/// Name used by Turn 2: the one stashed at Turn 1, else a generic label
+/// (job evicted / app restarted between turns).
+fn resolve_continue_workflow_name(stashed: Option<&str>) -> String {
+    stashed
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .unwrap_or("n8n workflow")
+        .to_string()
 }
 
 /// Message carried by the error a cancelled transform task produces. The
@@ -525,6 +539,7 @@ async fn run_continue_transform(
     transform_id: &str,
     claude_session_id: &str,
     user_answers_json: &str,
+    workflow_name: &str,
 ) -> Result<N8nPersonaOutput, AppError> {
     tracing::info!(transform_id = %transform_id, "Starting unified transform Turn 2 (sectioned resume)");
 
@@ -575,7 +590,7 @@ Remember: return ONLY valid JSON with the persona object, no markdown fences."#
             // Try section assembly first, fall back to monolithic parsing
             if let Some(accumulator) = returned_accum {
                 if accumulator.has_sections() {
-                    if let Some(draft) = accumulator.assemble("n8n workflow") {
+                    if let Some(draft) = accumulator.assemble(workflow_name) {
                         emit_n8n_transform_line(
                             app,
                             transform_id,
@@ -591,7 +606,7 @@ Remember: return ONLY valid JSON with the persona object, no markdown fences."#
                 transform_id,
                 "[Milestone] Extracting persona JSON draft...",
             );
-            let draft = parse_persona_output(&output_text, "n8n workflow")
+            let draft = parse_persona_output(&output_text, workflow_name)
                 .map_err(|e| AttemptError::BadOutput(e.to_string()))?;
             emit_n8n_transform_line(app, transform_id, "[Milestone] Draft ready for review.");
             Ok(draft)
@@ -1207,6 +1222,19 @@ pub fn parse_persona_output(
 #[cfg(test)]
 mod outcome_tests {
     use super::*;
+
+    #[test]
+    fn turn2_uses_stashed_workflow_name_for_fallback_persona_name() {
+        let name = resolve_continue_workflow_name(Some("Slack notifier"));
+        assert_eq!(name, "Slack notifier");
+        assert_eq!(resolve_continue_workflow_name(None), "n8n workflow");
+        assert_eq!(resolve_continue_workflow_name(Some("  ")), "n8n workflow");
+        let raw: N8nPersonaOutput = serde_json::from_str(r#"{"system_prompt":"p"}"#)
+            .map_err(|e| e.to_string())
+            .unwrap_or_else(|e| panic!("empty draft must deserialize: {e}"));
+        let draft = super::super::types::normalize_n8n_persona_draft(raw, &name);
+        assert_eq!(draft.name.as_deref(), Some("Slack notifier (n8n)"));
+    }
 
     #[test]
     fn cancel_error_is_classified_as_cancelled_not_failed() {
