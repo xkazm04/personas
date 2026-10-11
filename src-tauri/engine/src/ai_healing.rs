@@ -233,7 +233,10 @@ fn extract_json_objects(text: &str) -> Vec<&str> {
 /// repaired. Callers use this to emit a `healing_audit_log` entry so the drop
 /// is visible instead of invisible.
 fn fix_text_was_dropped(output: &str, parsed_fix_count: usize) -> bool {
-    parsed_fix_count == 0 && output.contains("healing_fix")
+    // Compare the number of `"healing_fix"` keys the healer emitted against the
+    // number that parsed, so a PARTIAL drop (2 good blocks + 1 truncated) is
+    // audited too, not only the all-lost case.
+    output.matches("\"healing_fix\"").count() > parsed_fix_count
 }
 
 /// Process the result of a healing execution: parse fixes and apply them.
@@ -1007,6 +1010,26 @@ mod tests {
         assert!(
             fix_text_was_dropped(truncated, fixes.len()),
             "a referenced-but-unparsed fix must be flagged as dropped"
+        );
+    }
+
+    #[test]
+    fn test_fix_text_was_dropped_detects_partial_drop() {
+        let good = r#"{"healing_fix": {"type": "modify_prompt", "target": "instructions", "description": "x", "payload": "y"}}"#;
+        let output = format!(
+            "{good}
+{good}
+{{\"healing_fix\": {{\"type\": \"modify_prompt\", \"target\": \"instru"
+        );
+        let (fixes, _d, _r) = parse_healing_output(&output);
+        assert_eq!(
+            fixes.len(),
+            2,
+            "two intact blocks parse, the truncated one does not"
+        );
+        assert!(
+            fix_text_was_dropped(&output, fixes.len()),
+            "a partial drop must be flagged"
         );
     }
 
