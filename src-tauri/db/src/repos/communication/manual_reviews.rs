@@ -367,10 +367,11 @@ pub fn delete_all_except_held_gates(pool: &DbPool) -> Result<BulkReviewDeletion,
                 deleted.len()
             )));
             }
-            let kept_held_gates: usize =
-                tx.query_row("SELECT COUNT(*) FROM persona_manual_reviews", [], |r| {
-                    r.get::<_, i64>(0)
-                })? as usize;
+            let kept_held_gates: usize = tx.query_row(
+                "SELECT COUNT(*) AS n FROM persona_manual_reviews",
+                [],
+                |r| r.get::<_, i64>("n"),
+            )? as usize;
             tx.commit()?;
             Ok(BulkReviewDeletion {
                 deleted,
