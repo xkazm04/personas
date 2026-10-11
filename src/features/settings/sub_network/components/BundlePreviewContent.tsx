@@ -34,7 +34,7 @@ export function BundlePreviewContent({
   dangerConfirmed: DangerConfirmKind;
   setDangerConfirmed: (v: DangerConfirmKind) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const st = t.sharing;
   const hasConflicts = preview.resources.some((r) => r.conflict);
 
@@ -135,7 +135,7 @@ export function BundlePreviewContent({
       {/* Resources list */}
       <div>
         <div className="typo-caption text-foreground mb-1.5">
-          {st.resources_in_bundle.replace('{count}', String(preview.resources.length)).replace('{plural}', preview.resources.length !== 1 ? 's' : '')}
+          {tx(preview.resources.length === 1 ? st.resources_in_bundle_one : st.resources_in_bundle_other, { count: preview.resources.length })}
         </div>
         <div className="max-h-[30vh] overflow-y-auto space-y-1 pr-1">
           {preview.resources.map((resource) => (

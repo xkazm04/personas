@@ -38,7 +38,7 @@ export function PeerDetailDrawer({
   const syncPeerManifest = useSystemStore((s) => s.syncPeerManifest);
   const addToast = useToastStore((s) => s.addToast);
 
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const st = t.sharing;
 
   const [syncing, setSyncing] = useState(false);
@@ -54,6 +54,12 @@ export function PeerDetailDrawer({
 
   const state = connectionState ?? (peer.is_connected ? 'Connected' : 'Disconnected');
   const isConnected = state === 'Connected';
+  const stateLabel = {
+    Connected: st.conn_state_connected,
+    Connecting: st.conn_state_connecting,
+    Failed: st.conn_state_failed,
+    Disconnected: st.conn_state_disconnected,
+  }[state];
   const manifest: PeerManifestEntry[] = peerManifests[peer.peer_id] ?? [];
 
   useEffect(() => {
@@ -66,9 +72,9 @@ export function PeerDetailDrawer({
     setSyncing(true);
     try {
       await syncPeerManifest(peer.peer_id);
-      addToast('Manifest synced', 'success');
+      addToast(st.manifest_synced, 'success');
     } catch {
-      addToast('Failed to sync manifest', 'error');
+      addToast(st.manifest_sync_failed, 'error');
     } finally {
       setSyncing(false);
     }
@@ -132,7 +138,7 @@ export function PeerDetailDrawer({
               state === 'Failed' ? 'bg-red-500/10 text-red-400' :
               'bg-zinc-500/10 text-zinc-400'
             }`}>
-              {state}
+              {stateLabel}
             </span>
             {isConnected ? (
               <button
@@ -206,7 +212,7 @@ export function PeerDetailDrawer({
                   {st.shared_resources}
                   {(syncProgress || manifest.length > 0) && (
                     <span className="text-[10px] font-normal text-foreground">
-                      {syncProgress?.resourceCount ?? manifest.length} synced
+                      {tx(st.resources_synced, { count: syncProgress?.resourceCount ?? manifest.length })}
                       {syncProgress?.syncedAt && (
                         <> · {formatRelativeTime(syncProgress.syncedAt)}</>
                       )}

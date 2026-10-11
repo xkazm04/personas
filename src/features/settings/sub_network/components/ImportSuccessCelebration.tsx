@@ -120,7 +120,7 @@ export function importOutcome(r: ImportResult): ImportOutcome {
 }
 
 export function ImportSuccessCelebration({ importResult }: { importResult: ImportResult }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const st = t.sharing;
   const [entered, setEntered] = useState(false);
   const outcome = importOutcome(importResult);
@@ -150,13 +150,13 @@ export function ImportSuccessCelebration({ importResult }: { importResult: Impor
           {tone.label}
         </div>
         <div className="typo-caption text-foreground space-y-0.5">
-          <p>{importResult.imported} {importResult.imported !== 1 ? 'resources' : 'resource'} imported</p>
+          <p>{tx(importResult.imported === 1 ? st.resources_imported_one : st.resources_imported_other, { count: importResult.imported })}</p>
           {importResult.skipped > 0 && (
             <p>{t.sharing.skipped_conflicts.replace('{count}', String(importResult.skipped))}</p>
           )}
           {importResult.errors.length > 0 && (
             <div className="mt-2 text-left">
-              <p className="text-red-400">{importResult.errors.length} error{importResult.errors.length !== 1 ? 's' : ''}:</p>
+              <p className="text-red-400">{tx(importResult.errors.length === 1 ? st.import_errors_one : st.import_errors_other, { count: importResult.errors.length })}</p>
               {importResult.errors.map((e, i) => (
                 <p key={i} className="text-red-400/80 ml-2">- {e}</p>
               ))}
