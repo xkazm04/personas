@@ -5064,7 +5064,22 @@
     "not_found": "Sumber daya yang diminta tidak ditemukan",
     "rate_limited": "Terlalu banyak permintaan -- coba lagi sebentar",
     "validation": "Input tidak valid: {detail}",
-    "run_superseded": "Proses baru untuk tugas ini dimulai di bagian lain aplikasi, jadi proses ini dihentikan. Mulai lagi di sini jika Anda masih membutuhkannya."
+    "run_superseded": "Proses baru untuk tugas ini dimulai di bagian lain aplikasi, jadi proses ini dihentikan. Mulai lagi di sini jika Anda masih membutuhkannya.",
+    "stream_timeout": "Operasi melewati batas waktu. Silakan coba lagi.",
+    "operation_cancelled": "Operasi dibatalkan",
+    "oauth_timed_out": "Otorisasi {provider} melewati batas waktu. Silakan coba lagi.",
+    "oauth_completed": "Otorisasi {provider} selesai.",
+    "oauth_failed": "Otorisasi {provider} gagal. Silakan coba lagi.",
+    "oauth_starting": "Memulai otorisasi {provider}...",
+    "oauth_start_timeout": "Pemulaian sesi OAuth melewati batas waktu.",
+    "oauth_unsafe_url": "URL otorisasi {provider} yang tidak aman diblokir.",
+    "oauth_popup_blocked": "Tidak dapat membuka halaman persetujuan {provider}. Izinkan popup atau pembukaan di browser eksternal.",
+    "oauth_consent_opened": "Halaman persetujuan {provider} telah dibuka. Selesaikan otorisasi di browser Anda.",
+    "oauth_not_started": "Otorisasi {provider} tidak dapat dimulai: {detail}",
+    "oauth_unknown_error": "kesalahan tidak diketahui",
+    "ai_search_no_results": "Tidak ada templat yang cocok ditemukan.",
+    "ai_search_coverage": " ({searched} dari {total} templat dicari)",
+    "ai_search_failed": "Pencarian AI gagal: {detail}"
   },
   "eval_strategies": {
     "composite_description": "Kombinasi tertimbang dari semua strategi",

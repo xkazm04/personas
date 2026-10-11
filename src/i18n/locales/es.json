@@ -5064,7 +5064,22 @@
     "not_found": "El recurso solicitado no fue encontrado",
     "rate_limited": "Demasiadas solicitudes -- intenta de nuevo en un momento",
     "validation": "Entrada inválida: {detail}",
-    "run_superseded": "Se inició una nueva ejecución de esta tarea en otra parte de la aplicación, por lo que esta se detuvo. Vuelve a iniciarla aquí si aún la necesitas."
+    "run_superseded": "Se inició una nueva ejecución de esta tarea en otra parte de la aplicación, por lo que esta se detuvo. Vuelve a iniciarla aquí si aún la necesitas.",
+    "stream_timeout": "La operación agotó el tiempo de espera. Inténtalo de nuevo.",
+    "operation_cancelled": "Operación cancelada",
+    "oauth_timed_out": "La autorización de {provider} agotó el tiempo de espera. Inténtalo de nuevo.",
+    "oauth_completed": "Autorización de {provider} completada.",
+    "oauth_failed": "La autorización de {provider} falló. Inténtalo de nuevo.",
+    "oauth_starting": "Iniciando la autorización de {provider}...",
+    "oauth_start_timeout": "Se agotó el tiempo de espera al iniciar la sesión OAuth.",
+    "oauth_unsafe_url": "Se bloqueó una URL de autorización de {provider} no segura.",
+    "oauth_popup_blocked": "No se pudo abrir la página de consentimiento de {provider}. Permite las ventanas emergentes o la apertura en el navegador externo.",
+    "oauth_consent_opened": "Se abrió la página de consentimiento de {provider}. Completa la autorización en tu navegador.",
+    "oauth_not_started": "La autorización de {provider} no se inició: {detail}",
+    "oauth_unknown_error": "error desconocido",
+    "ai_search_no_results": "No se encontraron plantillas coincidentes.",
+    "ai_search_coverage": " (se buscó en {searched} de {total} plantillas)",
+    "ai_search_failed": "Falló la búsqueda con IA: {detail}"
   },
   "eval_strategies": {
     "composite_description": "Combinación ponderada de todas las estrategias",

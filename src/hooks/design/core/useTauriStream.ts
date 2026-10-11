@@ -215,7 +215,7 @@ export function useTauriStream<TResult, TQuestion = never>(
           fail(getActiveTranslations().errors.run_superseded, 'superseded');
           return true;
         case 'timeout':
-          fail('Operation timed out. Please try again.', 'timeout');
+          fail(getActiveTranslations().errors.stream_timeout, 'timeout');
           return true;
         case 'cancelBackend':
           invokeCancelOnTimeout?.().catch(silentCatch('tauriStream:cancelOnTimeout'));

@@ -4,6 +4,7 @@ import { getDesignReview } from '@/api/overview/reviews';
 import { silentCatchNull } from "@/lib/silentCatch";
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { createLogger } from '@/lib/log';
+import { getActiveTranslations, interpolate } from '@/i18n/useTranslation';
 
 const logger = createLogger('ai-search');
 
@@ -53,7 +54,7 @@ export function useAiSearch(
         }
 
         if (result.rankedIds.length === 0) {
-          setAiSearchRationale(result.rationale || 'No matching templates found.');
+          setAiSearchRationale(result.rationale || getActiveTranslations().errors.ai_search_no_results);
           onResults([], 0);
           setAiSearchActive(true);
           setAiSearchLoading(false);
@@ -75,14 +76,17 @@ export function useAiSearch(
         // Surface partial coverage info when not all templates were searched
         let rationale = result.rationale;
         if (result.totalTemplates > 0 && result.templatesSearched < result.totalTemplates) {
-          rationale += ` (searched ${result.templatesSearched} of ${result.totalTemplates} templates)`;
+          rationale += interpolate(getActiveTranslations().errors.ai_search_coverage, {
+            searched: Number(result.templatesSearched),
+            total: Number(result.totalTemplates),
+          });
         }
         setAiSearchRationale(rationale);
       } catch (err: unknown) {
         if (searchId !== aiSearchIdRef.current) return;
         logger.warn('AI search failed, falling back to keyword search', { err: err instanceof Error ? err.message : String(err) });
         const errMsg = err instanceof Error ? err.message : String(err);
-        setAiSearchRationale(`AI search failed: ${errMsg}`);
+        setAiSearchRationale(interpolate(getActiveTranslations().errors.ai_search_failed, { detail: errMsg }));
         setAiSearchActive(false);
       } finally {
         if (searchId === aiSearchIdRef.current) {

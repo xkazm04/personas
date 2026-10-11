@@ -19,5 +19,20 @@
   "not_found": "Požadovaný zdroj nebyl nalezen",
   "rate_limited": "Příliš mnoho požadavků -- počkej chvíli a zkus to znovu",
   "validation": "Neplatný vstup: {detail}",
-  "run_superseded": "Nové spuštění této úlohy bylo zahájeno jinde v aplikaci, proto bylo toto zastaveno. Pokud ho stále potřebujete, spusťte ho znovu zde."
+  "run_superseded": "Nové spuštění této úlohy bylo zahájeno jinde v aplikaci, proto bylo toto zastaveno. Pokud ho stále potřebujete, spusťte ho znovu zde.",
+  "stream_timeout": "Operace vypršela. Zkuste to prosím znovu.",
+  "operation_cancelled": "Operace zrušena",
+  "oauth_timed_out": "Autorizace {provider} vypršela. Zkuste to prosím znovu.",
+  "oauth_completed": "Autorizace {provider} byla dokončena.",
+  "oauth_failed": "Autorizace {provider} selhala. Zkuste to prosím znovu.",
+  "oauth_starting": "Spouští se autorizace {provider}...",
+  "oauth_start_timeout": "Spuštění relace OAuth vypršelo.",
+  "oauth_unsafe_url": "Nebezpečná autorizační adresa URL {provider} byla zablokována.",
+  "oauth_popup_blocked": "Stránku souhlasu {provider} se nepodařilo otevřít. Povolte vyskakovací okna nebo otevření v externím prohlížeči.",
+  "oauth_consent_opened": "Stránka souhlasu {provider} byla otevřena. Dokončete autorizaci v prohlížeči.",
+  "oauth_not_started": "Autorizace {provider} se nespustila: {detail}",
+  "oauth_unknown_error": "neznámá chyba",
+  "ai_search_no_results": "Nenalezeny žádné odpovídající šablony.",
+  "ai_search_coverage": " (prohledáno {searched} z {total} šablon)",
+  "ai_search_failed": "Vyhledávání pomocí AI selhalo: {detail}"
 }

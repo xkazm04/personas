@@ -19,5 +19,20 @@
   "not_found": "请求的资源未找到",
   "rate_limited": "请求过多 -- 请稍后重试",
   "validation": "输入无效：{detail}",
-  "run_superseded": "此任务已在应用的其他位置开始了新的运行，因此本次运行已停止。如仍需要，请在此处重新开始。"
+  "run_superseded": "此任务已在应用的其他位置开始了新的运行，因此本次运行已停止。如仍需要，请在此处重新开始。",
+  "stream_timeout": "操作超时，请重试。",
+  "operation_cancelled": "操作已取消",
+  "oauth_timed_out": "{provider} 授权已超时，请重试。",
+  "oauth_completed": "{provider} 授权已完成。",
+  "oauth_failed": "{provider} 授权失败，请重试。",
+  "oauth_starting": "正在启动 {provider} 授权...",
+  "oauth_start_timeout": "OAuth 会话启动超时。",
+  "oauth_unsafe_url": "已拦截不安全的 {provider} 授权网址。",
+  "oauth_popup_blocked": "无法打开 {provider} 授权页面。请允许弹出窗口或在外部浏览器中打开。",
+  "oauth_consent_opened": "已打开 {provider} 授权页面，请在浏览器中完成授权。",
+  "oauth_not_started": "{provider} 授权未能启动：{detail}",
+  "oauth_unknown_error": "未知错误",
+  "ai_search_no_results": "未找到匹配的模板。",
+  "ai_search_coverage": " （已搜索 {total} 个模板中的 {searched} 个）",
+  "ai_search_failed": "AI 搜索失败：{detail}"
 }

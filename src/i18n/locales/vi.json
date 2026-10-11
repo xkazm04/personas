@@ -5064,7 +5064,22 @@
     "not_found": "Không tìm thấy tài nguyên yêu cầu",
     "rate_limited": "Quá nhiều yêu cầu -- thử lại sau một chút",
     "validation": "Đầu vào không hợp lệ: {detail}",
-    "run_superseded": "Một lượt chạy mới của tác vụ này đã được bắt đầu ở nơi khác trong ứng dụng, nên lượt này đã bị dừng. Hãy bắt đầu lại tại đây nếu bạn vẫn cần."
+    "run_superseded": "Một lượt chạy mới của tác vụ này đã được bắt đầu ở nơi khác trong ứng dụng, nên lượt này đã bị dừng. Hãy bắt đầu lại tại đây nếu bạn vẫn cần.",
+    "stream_timeout": "Thao tác đã hết thời gian chờ. Vui lòng thử lại.",
+    "operation_cancelled": "Đã hủy thao tác",
+    "oauth_timed_out": "Ủy quyền {provider} đã hết thời gian chờ. Vui lòng thử lại.",
+    "oauth_completed": "Đã hoàn tất ủy quyền {provider}.",
+    "oauth_failed": "Ủy quyền {provider} thất bại. Vui lòng thử lại.",
+    "oauth_starting": "Đang bắt đầu ủy quyền {provider}...",
+    "oauth_start_timeout": "Việc khởi tạo phiên OAuth đã hết thời gian chờ.",
+    "oauth_unsafe_url": "Đã chặn URL ủy quyền {provider} không an toàn.",
+    "oauth_popup_blocked": "Không thể mở trang đồng ý của {provider}. Vui lòng cho phép cửa sổ bật lên hoặc mở bằng trình duyệt ngoài.",
+    "oauth_consent_opened": "Đã mở trang đồng ý của {provider}. Hãy hoàn tất ủy quyền trong trình duyệt của bạn.",
+    "oauth_not_started": "Ủy quyền {provider} chưa bắt đầu được: {detail}",
+    "oauth_unknown_error": "lỗi không xác định",
+    "ai_search_no_results": "Không tìm thấy mẫu phù hợp.",
+    "ai_search_coverage": " (đã tìm trong {searched}/{total} mẫu)",
+    "ai_search_failed": "Tìm kiếm bằng AI thất bại: {detail}"
   },
   "eval_strategies": {
     "composite_description": "Kết hợp có trọng số của tất cả chiến lược",

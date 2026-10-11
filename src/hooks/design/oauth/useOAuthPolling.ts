@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { openExternalUrl } from "@/api/system/system";
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
+import { getActiveTranslations, interpolate } from '@/i18n/useTranslation';
 
 
 /**
@@ -143,7 +144,7 @@ export function useOAuthPolling<
             isAuthorizingRef.current = false;
             setMessage({
               success: false,
-              message: `${currentLabel()} authorization timed out. Please try again.`,
+              message: interpolate(getActiveTranslations().errors.oauth_timed_out, { provider: currentLabel() }),
             });
             return;
           }
@@ -161,14 +162,14 @@ export function useOAuthPolling<
           setCompletedAt(new Date().toLocaleTimeString());
           setMessage({
             success: true,
-            message: `${currentLabel()} authorization completed.`,
+            message: interpolate(getActiveTranslations().errors.oauth_completed, { provider: currentLabel() }),
           });
           return;
         }
 
         setMessage({
           success: false,
-          message: result.error || `${currentLabel()} authorization failed. Please try again.`,
+          message: result.error || interpolate(getActiveTranslations().errors.oauth_failed, { provider: currentLabel() }),
         });
       } catch (err) {
         if (controller.signal.aborted || gen !== generationRef.current) return;
@@ -205,7 +206,7 @@ export function useOAuthPolling<
 
     setIsAuthorizing(true);
     setCompletedAt(null);
-    setMessage({ success: false, message: `Starting ${label} authorization...` });
+    setMessage({ success: false, message: interpolate(getActiveTranslations().errors.oauth_starting, { provider: label }) });
 
     const startPromise = startFn(...args);
     const withTimeout = startTimeoutMs > 0
@@ -213,7 +214,7 @@ export function useOAuthPolling<
           startPromise,
           new Promise<never>((_, reject) => {
             clearStartTimeout();
-            startTimeoutRef.current = window.setTimeout(() => reject(new Error('OAuth session start timed out.')), startTimeoutMs);
+            startTimeoutRef.current = window.setTimeout(() => reject(new Error(getActiveTranslations().errors.oauth_start_timeout)), startTimeoutMs);
           }),
         ])
       : startPromise;
@@ -223,7 +224,7 @@ export function useOAuthPolling<
         clearStartTimeout();
         const safeAuthUrl = sanitizeExternalUrl(oauthStart.authUrl);
         if (!safeAuthUrl) {
-          throw new Error(`Blocked unsafe ${currentLabel()} authorization URL.`);
+          throw new Error(interpolate(getActiveTranslations().errors.oauth_unsafe_url, { provider: currentLabel() }));
         }
 
         let opened = false;
@@ -240,12 +241,12 @@ export function useOAuthPolling<
         }
 
         if (!opened) {
-          throw new Error(`Could not open ${currentLabel()} consent page. Please allow popups or external browser open.`);
+          throw new Error(interpolate(getActiveTranslations().errors.oauth_popup_blocked, { provider: currentLabel() }));
         }
 
         setMessage({
           success: false,
-          message: `${currentLabel()} consent page opened. Complete authorization in your browser.`,
+          message: interpolate(getActiveTranslations().errors.oauth_consent_opened, { provider: currentLabel() }),
         });
         setSessionId(oauthStart.sessionId);
       })
@@ -263,7 +264,7 @@ export function useOAuthPolling<
         const detail = extractErrorDetail(err);
         setMessage({
           success: false,
-          message: `${currentLabel()} authorization did not start: ${detail}`,
+          message: interpolate(getActiveTranslations().errors.oauth_not_started, { provider: currentLabel(), detail }),
         });
       });
   }, [clearStartTimeout, currentLabel]);
@@ -302,5 +303,5 @@ function extractErrorDetail(err: unknown): string {
     if (typeof obj.error === 'string' && obj.error.length > 0) return obj.error;
     if (typeof obj.message === 'string' && obj.message.length > 0) return obj.message;
   }
-  return 'unknown error';
+  return getActiveTranslations().errors.oauth_unknown_error;
 }

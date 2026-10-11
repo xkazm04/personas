@@ -5064,7 +5064,22 @@
     "not_found": "المورد المطلوب غير موجود",
     "rate_limited": "طلبات كثيرة جدًا -- حاول مرة أخرى بعد قليل",
     "validation": "مُدخل غير صالح: {detail}",
-    "run_superseded": "تم بدء تشغيل جديد لهذه المهمة في مكان آخر من التطبيق، لذلك تم إيقاف هذا التشغيل. ابدأه مرة أخرى هنا إذا كنت لا تزال بحاجة إليه."
+    "run_superseded": "تم بدء تشغيل جديد لهذه المهمة في مكان آخر من التطبيق، لذلك تم إيقاف هذا التشغيل. ابدأه مرة أخرى هنا إذا كنت لا تزال بحاجة إليه.",
+    "stream_timeout": "انتهت مهلة العملية. يرجى المحاولة مرة أخرى.",
+    "operation_cancelled": "تم إلغاء العملية",
+    "oauth_timed_out": "انتهت مهلة تفويض {provider}. يرجى المحاولة مرة أخرى.",
+    "oauth_completed": "اكتمل تفويض {provider}.",
+    "oauth_failed": "فشل تفويض {provider}. يرجى المحاولة مرة أخرى.",
+    "oauth_starting": "جارٍ بدء تفويض {provider}...",
+    "oauth_start_timeout": "انتهت مهلة بدء جلسة OAuth.",
+    "oauth_unsafe_url": "تم حظر عنوان URL غير آمن لتفويض {provider}.",
+    "oauth_popup_blocked": "تعذّر فتح صفحة الموافقة الخاصة بـ {provider}. يرجى السماح بالنوافذ المنبثقة أو الفتح في المتصفح الخارجي.",
+    "oauth_consent_opened": "تم فتح صفحة الموافقة الخاصة بـ {provider}. أكمل التفويض في المتصفح.",
+    "oauth_not_started": "لم يبدأ تفويض {provider}: {detail}",
+    "oauth_unknown_error": "خطأ غير معروف",
+    "ai_search_no_results": "لم يتم العثور على قوالب مطابقة.",
+    "ai_search_coverage": " (تم البحث في {searched} من أصل {total} قالب)",
+    "ai_search_failed": "فشل البحث بالذكاء الاصطناعي: {detail}"
   },
   "eval_strategies": {
     "composite_description": "مجموعة موزونة من جميع الاستراتيجيات",

@@ -14553,6 +14553,21 @@ export type Translations = {
     cloud_error: string;
     gitlab_error: string;
     run_superseded: string;
+    stream_timeout: string;
+    operation_cancelled: string;
+    oauth_timed_out: string;
+    oauth_completed: string;
+    oauth_failed: string;
+    oauth_starting: string;
+    oauth_start_timeout: string;
+    oauth_unsafe_url: string;
+    oauth_popup_blocked: string;
+    oauth_consent_opened: string;
+    oauth_not_started: string;
+    oauth_unknown_error: string;
+    ai_search_no_results: string;
+    ai_search_coverage: string;
+    ai_search_failed: string;
   };
   error_registry: {
     decision_conflict_message: string;

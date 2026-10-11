@@ -5064,7 +5064,22 @@
     "not_found": "リクエストされたリソースが見つかりません",
     "rate_limited": "リクエストが多すぎます -- しばらくしてから再試行してください",
     "validation": "入力が無効です: {detail}",
-    "run_superseded": "このタスクの新しい実行がアプリ内の別の場所で開始されたため、この実行は停止されました。まだ必要な場合は、ここでもう一度開始してください。"
+    "run_superseded": "このタスクの新しい実行がアプリ内の別の場所で開始されたため、この実行は停止されました。まだ必要な場合は、ここでもう一度開始してください。",
+    "stream_timeout": "操作がタイムアウトしました。もう一度お試しください。",
+    "operation_cancelled": "操作をキャンセルしました",
+    "oauth_timed_out": "{provider} の認証がタイムアウトしました。もう一度お試しください。",
+    "oauth_completed": "{provider} の認証が完了しました。",
+    "oauth_failed": "{provider} の認証に失敗しました。もう一度お試しください。",
+    "oauth_starting": "{provider} の認証を開始しています...",
+    "oauth_start_timeout": "OAuth セッションの開始がタイムアウトしました。",
+    "oauth_unsafe_url": "安全でない {provider} の認証 URL をブロックしました。",
+    "oauth_popup_blocked": "{provider} の同意ページを開けませんでした。ポップアップまたは外部ブラウザーでの表示を許可してください。",
+    "oauth_consent_opened": "{provider} の同意ページを開きました。ブラウザーで認証を完了してください。",
+    "oauth_not_started": "{provider} の認証を開始できませんでした: {detail}",
+    "oauth_unknown_error": "不明なエラー",
+    "ai_search_no_results": "一致するテンプレートが見つかりませんでした。",
+    "ai_search_coverage": " ({total} 件中 {searched} 件のテンプレートを検索)",
+    "ai_search_failed": "AI 検索に失敗しました: {detail}"
   },
   "eval_strategies": {
     "composite_description": "すべての戦略の加重組み合わせ",

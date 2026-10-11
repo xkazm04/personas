@@ -5064,7 +5064,22 @@
     "not_found": "La ressource demandée est introuvable",
     "rate_limited": "Trop de requêtes -- réessayez dans un instant",
     "validation": "Entrée invalide : {detail}",
-    "run_superseded": "Une nouvelle exécution de cette tâche a été lancée ailleurs dans l'application, celle-ci a donc été arrêtée. Relancez-la ici si vous en avez encore besoin."
+    "run_superseded": "Une nouvelle exécution de cette tâche a été lancée ailleurs dans l'application, celle-ci a donc été arrêtée. Relancez-la ici si vous en avez encore besoin.",
+    "stream_timeout": "L'opération a expiré. Veuillez réessayer.",
+    "operation_cancelled": "Opération annulée",
+    "oauth_timed_out": "L'autorisation {provider} a expiré. Veuillez réessayer.",
+    "oauth_completed": "Autorisation {provider} terminée.",
+    "oauth_failed": "L'autorisation {provider} a échoué. Veuillez réessayer.",
+    "oauth_starting": "Démarrage de l'autorisation {provider}...",
+    "oauth_start_timeout": "Le démarrage de la session OAuth a expiré.",
+    "oauth_unsafe_url": "URL d'autorisation {provider} non sécurisée bloquée.",
+    "oauth_popup_blocked": "Impossible d'ouvrir la page de consentement {provider}. Autorisez les fenêtres contextuelles ou l'ouverture dans le navigateur externe.",
+    "oauth_consent_opened": "La page de consentement {provider} est ouverte. Terminez l'autorisation dans votre navigateur.",
+    "oauth_not_started": "L'autorisation {provider} n'a pas démarré : {detail}",
+    "oauth_unknown_error": "erreur inconnue",
+    "ai_search_no_results": "Aucun modèle correspondant trouvé.",
+    "ai_search_coverage": " ({searched} modèles sur {total} analysés)",
+    "ai_search_failed": "Échec de la recherche IA : {detail}"
   },
   "eval_strategies": {
     "composite_description": "Combinaison pondérée de toutes les stratégies",
