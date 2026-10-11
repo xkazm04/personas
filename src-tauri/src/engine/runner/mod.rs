@@ -200,16 +200,21 @@ pub fn load_living_prompt_inputs(
         }
     };
     // `list_recent` returns newest-first; the prompt section reads oldest-first.
-    let recent_episodes = match episode_repo::list_recent(pool, persona_id, 8) {
+    let recent_episodes = match episode_repo::list_recent_with_runs(pool, persona_id, 8) {
         Ok(eps) => eps
             .into_iter()
             .rev()
-            .map(|e| EpisodeExcerpt {
+            .map(|(e, run)| EpisodeExcerpt {
                 id: e.id,
                 role: e.role,
                 source: e.source,
                 body_excerpt: e.body_excerpt,
                 created_at: e.created_at,
+                charter: run.charter,
+                run_status: run.status,
+                run_duration_ms: run.duration_ms,
+                business_outcome: run.business_outcome,
+                blocker: run.error_message,
             })
             .collect(),
         Err(e) => {

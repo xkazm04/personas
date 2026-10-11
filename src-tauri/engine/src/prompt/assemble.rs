@@ -27,6 +27,38 @@ use personas_db::models::{
 /// guarantee, not a promise about what callers do.
 const MAX_EPISODES_RENDERED: usize = 8;
 
+/// Max chars of an execution error rendered as an episode's `blocker`.
+const MAX_EPISODE_BLOCKER_CHARS: usize = 200;
+
+/// Structured run facts for one episode — `Run: charter=… | status=… |
+/// duration=…s | outcome=… | blocker=…` — or `None` when the episode carries
+/// none (no execution link), so legacy rows render exactly as before.
+fn episode_run_line(ep: &EpisodeExcerpt) -> Option<String> {
+    let mut parts: Vec<String> = Vec::new();
+    if let Some(c) = ep.charter.as_deref().filter(|c| !c.is_empty()) {
+        parts.push(format!("charter={c}"));
+    }
+    if let Some(s) = ep.run_status.as_deref().filter(|s| !s.is_empty()) {
+        parts.push(format!("status={s}"));
+    }
+    if let Some(ms) = ep.run_duration_ms {
+        parts.push(format!("duration={:.1}s", ms as f64 / 1000.0));
+    }
+    if let Some(o) = ep.business_outcome.as_deref().filter(|o| !o.is_empty()) {
+        parts.push(format!("outcome={o}"));
+    }
+    if let Some(b) = ep.blocker.as_deref().filter(|b| !b.trim().is_empty()) {
+        let one_line: String = b.split_whitespace().collect::<Vec<_>>().join(" ");
+        let cut: String = one_line.chars().take(MAX_EPISODE_BLOCKER_CHARS).collect();
+        parts.push(format!("blocker={cut}"));
+    }
+    if parts.is_empty() {
+        None
+    } else {
+        Some(format!("Run: {}", parts.join(" | ")))
+    }
+}
+
 /// Resolved connector usage hint scoped to a single execution.
 ///
 /// `name` is the stable connector slug (e.g. "github") used by
@@ -549,10 +581,13 @@ pub fn assemble_prompt_with_skills(
         .map(|eps| {
             let mut body = String::new();
             for ep in eps.iter().take(MAX_EPISODES_RENDERED) {
-                body.push_str(&format!(
-                    "### {} — {}\n{}\n\n",
-                    ep.role, ep.created_at, ep.body_excerpt
-                ));
+                body.push_str(&format!("### {} — {}\n", ep.role, ep.created_at));
+                if let Some(facts) = episode_run_line(ep) {
+                    body.push_str(&facts);
+                    body.push('\n');
+                }
+                body.push_str(&ep.body_excerpt);
+                body.push_str("\n\n");
             }
             let mut section = String::from("## Recent Episodes (oldest first)\n");
             section.push_str(

@@ -84,6 +84,7 @@ fn episode(n: usize) -> EpisodeExcerpt {
         source: "execution".into(),
         body_excerpt: format!("episode body {n}"),
         created_at: format!("2026-01-01T00:00:0{n}Z"),
+        ..Default::default()
     }
 }
 
@@ -738,4 +739,23 @@ fn core_fingerprint_reacts_to_mirror_edits() {
         core_fingerprint(Some(&manifest_b)),
         "a manifest law edit must invalidate warm sessions too"
     );
+}
+
+#[test]
+fn episodes_render_structured_run_facts_when_present() {
+    let persona = personas_db::models::Persona::default();
+    let mut ep = episode(0);
+    ep.charter = Some("Weekly digest".into());
+    ep.run_status = Some("failed".into());
+    ep.run_duration_ms = Some(12_340);
+    ep.business_outcome = Some("blocked".into());
+    ep.blocker = Some("rate\nlimited".into());
+    let plain = episode(1);
+    let eps = vec![ep, plain];
+    let prompt = assemble_living(&persona, None, Some(&eps));
+    assert!(prompt.contains(
+        "Run: charter=Weekly digest | status=failed | duration=12.3s | outcome=blocked | blocker=rate limited"
+    ));
+    // Episodes without run facts render no Run line.
+    assert_eq!(prompt.matches("Run: ").count(), 1);
 }
