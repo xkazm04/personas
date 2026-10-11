@@ -2,6 +2,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useMemo, useRef, useState } from 'react';
 import { useScaledFontSize } from '@/stores/themeStore';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { successRateTone } from './CloudHistoryHelpers';
 
 export interface DailyPoint {
   date: string;
@@ -16,10 +17,8 @@ const LABEL_H = 16;
 const COST_LINE_COLOR = 'var(--primary)';
 
 function successColor(rate: number | null): string {
-  if (rate == null) return 'var(--muted-foreground)';
-  if (rate >= 0.9) return 'var(--status-success)';
-  if (rate >= 0.7) return 'var(--status-warning)';
-  return 'var(--status-error)';
+  const tone = successRateTone(rate);
+  return tone ? `var(--status-${tone})` : 'var(--muted-foreground)';
 }
 
 /** Tooltip labels carry a trailing colon ("Runs:"); headers and legends do not. */

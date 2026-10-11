@@ -10,7 +10,7 @@ import { cloudListExecutions, cloudExecutionStats, cloudGetExecutionOutput, clou
 import type { CloudExecution, CloudExecutionStats, CloudDeployment } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
-import { formatDuration, formatCost, classifyExecutionStatus, matchesErrorCluster, monthlyBudgetRollup, budgetTone, projectMonthEndSpend } from './CloudHistoryHelpers';
+import { formatDuration, formatCost, classifyExecutionStatus, matchesErrorCluster, monthlyBudgetRollup, budgetTone, successRateTone, projectMonthEndSpend } from './CloudHistoryHelpers';
 import { formatNumeric } from '@/lib/utils/formatters';
 import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
@@ -19,6 +19,13 @@ import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReve
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 
 const EXEC_CASCADE_ROWS = 14;
+
+const SUCCESS_CARD_COLOR = { success: 'emerald', warning: 'amber', error: 'red' } as const;
+/** No runs in the window (null rate) renders neutral, not as the red alarm. */
+function successRateCardColor(rate: number | null | undefined) {
+  const tone = successRateTone(rate);
+  return tone ? SUCCESS_CARD_COLOR[tone] : undefined;
+}
 
 
 // ---------------------------------------------------------------------------
@@ -209,7 +216,7 @@ export function CloudHistoryPanel() {
           <StatCard
             label={dt.history.success_rate}
             value={stats.successRate != null ? formatNumeric(stats.successRate, 'ratio', { precision: 0 }) : '-'}
-            color={stats.successRate != null && stats.successRate >= 0.9 ? 'emerald' : stats.successRate != null && stats.successRate >= 0.7 ? 'amber' : 'red'}
+            color={successRateCardColor(stats.successRate)}
           />
           <StatCard label={dt.history.total_cost} value={formatCost(stats.totalCostUsd)} />
           <StatCard label={dt.history.avg_duration} value={formatDuration(stats.avgDurationMs == null ? null : Number(stats.avgDurationMs))} />

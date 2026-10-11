@@ -106,6 +106,18 @@ export function monthlyBudgetRollup(
   };
 }
 
+/**
+ * Tone for a success rate (0..1). Null means no runs in the window: absence is
+ * neutral (null), never the alarm tone. One threshold table for the stat card
+ * and the daily chart.
+ */
+export function successRateTone(rate: number | null | undefined): 'success' | 'warning' | 'error' | null {
+  if (rate == null) return null;
+  if (rate >= 0.9) return 'success';
+  if (rate >= 0.7) return 'warning';
+  return 'error';
+}
+
 /** Stat-card tone for a budget utilization percentage. Named rather than an
  *  inline band table so the boundaries live in one place. */
 export function budgetToneForPct(pct: number): 'emerald' | 'amber' | 'red' {
