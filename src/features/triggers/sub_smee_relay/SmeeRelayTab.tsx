@@ -1,6 +1,6 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, ExternalLink, Plug,
@@ -26,6 +26,9 @@ import { DebtText } from '@/i18n/DebtText';
 import { useToastStore } from '@/stores/toastStore';
 import { isValidSmeeChannelUrl, SMEE_CHANNEL_PREFIX } from './smeeChannelUrl';
 
+
+/** Minimum gap between per-relay stat refreshes while webhooks stream in. */
+const RELAY_REFRESH_WINDOW_MS = 1500;
 
 interface SmeeRelayTabProps {
   onSwitchToLiveStream?: () => void;
@@ -66,12 +69,24 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 
   useEffect(() => { fetchRelays(); }, [fetchRelays]);
 
-  // Refresh relay stats when global status updates
+  // Refresh relay stats when global status updates. The counter ticks once per
+  // relayed webhook, so a push burst would otherwise cost one full list IPC per
+  // delivery: throttle to one refresh per window, trailing so the last tick lands.
+  const lastRefreshAt = useRef(0);
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (globalStatus.eventsRelayed > 0) {
-      fetchRelays();
-    }
+    if (globalStatus.eventsRelayed <= 0 || refreshTimer.current) return;
+    const wait = Math.max(0, lastRefreshAt.current + RELAY_REFRESH_WINDOW_MS - Date.now());
+    refreshTimer.current = setTimeout(() => {
+      refreshTimer.current = null;
+      lastRefreshAt.current = Date.now();
+      void fetchRelays();
+    }, wait);
   }, [globalStatus.eventsRelayed, fetchRelays]);
+  useEffect(() => () => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    refreshTimer.current = null;
+  }, []);
 
 
   const handleCreate = async () => {
