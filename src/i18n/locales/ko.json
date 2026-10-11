@@ -5457,7 +5457,12 @@
       "try_it": "시도해보기",
       "used_badge": "사용됨",
       "tour_continue": "계속하기 ({completed}/{total})",
-      "tour_in_progress": "{completed}/{total}"
+      "tour_in_progress": "{completed}/{total}",
+      "ask_title": "Athena에게 안내 요청하기",
+      "ask_placeholder": "무엇을 배우고 싶으신가요? 예: 에이전트 일정 설정",
+      "ask_submit": "만들기",
+      "ask_composing": "안내를 만드는 중…",
+      "ask_failed": "Athena가 해당 안내를 만들지 못했습니다. 주제를 다시 표현해 보세요."
     },
     "nav_status": {
       "agents_active": "최근 24시간 동안 활성 에이전트 {count}개",

@@ -99,7 +99,12 @@
     "composed_failed": "Couldn't load the walkthroughs Athena composed for you.",
     "composed_empty": "When you ask Athena to show you how something works, the walkthroughs she composes land here.",
     "composed_dismiss": "Dismiss this outdated walkthrough",
-    "composed_all_dismissed": "You've cleared every outdated walkthrough. New ones appear here as Athena composes them."
+    "composed_all_dismissed": "You've cleared every outdated walkthrough. New ones appear here as Athena composes them.",
+    "ask_title": "Ask Athena for a walkthrough",
+    "ask_placeholder": "What do you want to learn? e.g. scheduling an agent",
+    "ask_submit": "Compose",
+    "ask_composing": "Composing your walkthrough…",
+    "ask_failed": "Athena couldn't compose that walkthrough. Try rephrasing the topic."
   },
   "setup_stepper": {
     "your_profile": "Your profile",

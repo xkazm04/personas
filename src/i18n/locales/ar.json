@@ -5457,7 +5457,12 @@
       "try_it": "جرّبه",
       "used_badge": "مستخدم",
       "tour_continue": "متابعة ({completed}/{total})",
-      "tour_in_progress": "{completed}/{total}"
+      "tour_in_progress": "{completed}/{total}",
+      "ask_title": "اطلب من Athena جولة إرشادية",
+      "ask_placeholder": "ماذا تريد أن تتعلم؟ مثلاً: جدولة وكيل",
+      "ask_submit": "إنشاء",
+      "ask_composing": "جارٍ إعداد جولتك…",
+      "ask_failed": "تعذّر على Athena إعداد هذه الجولة. جرّب إعادة صياغة الموضوع."
     },
     "nav_status": {
       "agents_active": "{count} وكيل نشط خلال آخر 24 ساعة",

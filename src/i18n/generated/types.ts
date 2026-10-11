@@ -2413,6 +2413,11 @@ export type Translations = {
       composed_empty: string;
       composed_dismiss: string;
       composed_all_dismissed: string;
+      ask_title: string;
+      ask_placeholder: string;
+      ask_submit: string;
+      ask_composing: string;
+      ask_failed: string;
     };
     setup_stepper: {
       your_profile: string;

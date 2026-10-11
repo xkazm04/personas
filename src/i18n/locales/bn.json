@@ -5457,7 +5457,12 @@
       "try_it": "চেষ্টা করুন",
       "used_badge": "ব্যবহৃত",
       "tour_continue": "চালিয়ে যান ({completed}/{total})",
-      "tour_in_progress": "{completed}/{total}"
+      "tour_in_progress": "{completed}/{total}",
+      "ask_title": "Athena-কে ওয়াকথ্রু তৈরি করতে বলুন",
+      "ask_placeholder": "আপনি কী শিখতে চান? যেমন: এজেন্ট শিডিউল করা",
+      "ask_submit": "তৈরি করুন",
+      "ask_composing": "আপনার ওয়াকথ্রু তৈরি হচ্ছে…",
+      "ask_failed": "Athena সেই ওয়াকথ্রু তৈরি করতে পারেনি। বিষয়টি অন্যভাবে লিখে দেখুন।"
     },
     "nav_status": {
       "agents_active": "গত ২৪ ঘণ্টায় {count}টি এজেন্ট সক্রিয়",

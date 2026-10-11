@@ -59,7 +59,12 @@
     "try_it": "立即尝试",
     "used_badge": "已使用",
     "tour_continue": "继续 ({completed}/{total})",
-    "tour_in_progress": "{completed}/{total}"
+    "tour_in_progress": "{completed}/{total}",
+    "ask_title": "请 Athena 做一个演示引导",
+    "ask_placeholder": "你想学习什么？例如：为智能体安排计划",
+    "ask_submit": "生成",
+    "ask_composing": "正在生成你的引导…",
+    "ask_failed": "Athena 无法生成该引导，请换个说法描述主题。"
   },
   "nav_status": {
     "agents_active": "过去 24 小时内 {count} 个智能体活跃",

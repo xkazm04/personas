@@ -59,7 +59,12 @@
     "try_it": "試してみる",
     "used_badge": "使用済み",
     "tour_continue": "続ける ({completed}/{total})",
-    "tour_in_progress": "{completed}/{total}"
+    "tour_in_progress": "{completed}/{total}",
+    "ask_title": "Athenaにウォークスルーを依頼",
+    "ask_placeholder": "何を学びたいですか？例：エージェントのスケジュール設定",
+    "ask_submit": "作成",
+    "ask_composing": "ウォークスルーを作成中…",
+    "ask_failed": "Athenaはそのウォークスルーを作成できませんでした。トピックを言い換えてみてください。"
   },
   "nav_status": {
     "agents_active": "過去24時間で{count}件のエージェントがアクティブ",

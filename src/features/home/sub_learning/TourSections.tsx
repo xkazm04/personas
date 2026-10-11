@@ -3,6 +3,7 @@ import { ContextCard, ContextCards, Hint, KitButton, Section, UnitStrip } from '
 import type { TourDef } from '@/stores/slices/system/tourSlice';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TourCard, completedStepsOf, progressOf, PROGRESS_TONE } from './tourCards';
+import { AskWalkthroughRow } from './AskWalkthroughRow';
 import type { ComposedTourEntry, UseComposedTours } from './useComposedTours';
 
 type Completion = Partial<Record<string, boolean>>;
@@ -123,14 +124,15 @@ export function ComposedToursSection({ composed, completion, stepCompleted, onOp
   const ghost = loading && entries.length === 0;
   // An IPC failure is NOT an empty list, and an emptied list (every outdated record
   // dismissed) is not an unused feature: each says so in its own words.
+  const ask = <AskWalkthroughRow onComposed={reload} />;
   const empty = status === 'failed'
     ? {
       title: ht.composed_failed,
       tone: 'error' as const,
       testId: 'learning-composed-failed',
-      action: <KitButton icon={<RefreshCw />} onClick={reload}>{t.common.retry}</KitButton>,
+      action: <><KitButton icon={<RefreshCw />} onClick={reload}>{t.common.retry}</KitButton>{ask}</>,
     }
-    : { title: total > 0 ? ht.composed_all_dismissed : ht.composed_empty };
+    : { title: total > 0 ? ht.composed_all_dismissed : ht.composed_empty, action: ask };
   return (
     <Section
       title={ht.composed_tours}
@@ -144,6 +146,7 @@ export function ComposedToursSection({ composed, completion, stepCompleted, onOp
         </ContextCards>
       ) : (
         <div data-testid="learning-composed-tours">
+          {ask}
           <ContextCards label={ht.composed_tours}>
             {entries.map((entry) => (
               <ComposedCard

@@ -5457,7 +5457,12 @@
       "try_it": "Essayer",
       "used_badge": "Utilisé",
       "tour_continue": "Continuer ({completed}/{total})",
-      "tour_in_progress": "{completed}/{total}"
+      "tour_in_progress": "{completed}/{total}",
+      "ask_title": "Demander une visite guidée à Athena",
+      "ask_placeholder": "Que voulez-vous apprendre ? Par ex. planifier un agent",
+      "ask_submit": "Composer",
+      "ask_composing": "Composition de votre visite…",
+      "ask_failed": "Athena n'a pas pu composer cette visite. Essayez de reformuler le sujet."
     },
     "nav_status": {
       "agents_active": "{count} agent actif ces dernières 24h",

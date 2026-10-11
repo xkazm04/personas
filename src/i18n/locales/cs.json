@@ -5457,7 +5457,12 @@
       "try_it": "Vyzkoušet",
       "used_badge": "Použito",
       "tour_continue": "Pokračovat ({completed}/{total})",
-      "tour_in_progress": "{completed}/{total}"
+      "tour_in_progress": "{completed}/{total}",
+      "ask_title": "Požádejte Athenu o prohlídku",
+      "ask_placeholder": "Co se chcete naučit? Např. naplánování agenta",
+      "ask_submit": "Vytvořit",
+      "ask_composing": "Sestavuji vaši prohlídku…",
+      "ask_failed": "Athena tuto prohlídku nedokázala sestavit. Zkuste téma přeformulovat."
     },
     "nav_status": {
       "agents_active": "{count} agent aktivní za posledních 24 h",

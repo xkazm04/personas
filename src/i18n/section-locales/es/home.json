@@ -59,7 +59,12 @@
     "try_it": "Pruébelo",
     "used_badge": "Usado",
     "tour_continue": "Continuar ({completed}/{total})",
-    "tour_in_progress": "{completed}/{total}"
+    "tour_in_progress": "{completed}/{total}",
+    "ask_title": "Pedir una guía a Athena",
+    "ask_placeholder": "¿Qué quieres aprender? Por ejemplo, programar un agente",
+    "ask_submit": "Crear",
+    "ask_composing": "Preparando tu guía…",
+    "ask_failed": "Athena no pudo preparar esa guía. Prueba a reformular el tema."
   },
   "nav_status": {
     "agents_active": "{count} agente activo en las últimas 24h",

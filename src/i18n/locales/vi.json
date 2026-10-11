@@ -5457,7 +5457,12 @@
       "try_it": "Thử ngay",
       "used_badge": "Đã dùng",
       "tour_continue": "Tiếp tục ({completed}/{total})",
-      "tour_in_progress": "{completed}/{total}"
+      "tour_in_progress": "{completed}/{total}",
+      "ask_title": "Nhờ Athena tạo hướng dẫn",
+      "ask_placeholder": "Bạn muốn học gì? Ví dụ: lên lịch cho một agent",
+      "ask_submit": "Tạo",
+      "ask_composing": "Đang soạn hướng dẫn của bạn…",
+      "ask_failed": "Athena không thể soạn hướng dẫn đó. Hãy thử diễn đạt lại chủ đề."
     },
     "nav_status": {
       "agents_active": "{count} agent hoạt động trong 24h qua",
