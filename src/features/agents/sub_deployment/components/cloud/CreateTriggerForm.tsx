@@ -106,7 +106,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
             className="w-full px-3 py-1.5 typo-code rounded-modal bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
           />
           {cronInvalid && (
-            <p role="alert" className="typo-caption text-status-error">{dt.cron_invalid}</p>
+            <p role="alert" className="typo-caption text-status-error">{t.triggers.build_validation.cron_invalid}</p>
           )}
           <div className="flex flex-wrap gap-1.5">
             {CLOUD_CRON_PRESETS.map((preset) => (

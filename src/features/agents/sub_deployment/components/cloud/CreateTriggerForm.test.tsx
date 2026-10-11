@@ -30,9 +30,9 @@ describe('CreateTriggerForm', () => {
 
   it('disables Create and shows an inline error while the cron is not a 5-field expression', () => {
     setup();
-    expect(createButton()).not.toBeDisabled();
+    expect((createButton() as HTMLButtonElement).disabled).toBe(false);
     fireEvent.change(screen.getByLabelText(/Cron Expression/), { target: { value: '0 * * *' } });
-    expect(createButton()).toBeDisabled();
+    expect((createButton() as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByRole('alert')).toBeTruthy();
     fireEvent.click(createButton());
     expect(cloudCreateTrigger).not.toHaveBeenCalled();

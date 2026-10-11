@@ -16,10 +16,10 @@ describe('ApiPlayground result provenance', () => {
     fireEvent.click(screen.getByRole('button', { name: 'API Playground' }));
     fireEvent.click(screen.getByRole('button', { name: 'Send Request' }));
 
-    expect(await screen.findByText('Local run completed')).toBeInTheDocument();
-    expect(screen.queryByText('200 OK')).not.toBeInTheDocument();
+    expect(await screen.findByText('Local run completed')).toBeTruthy();
+    expect(screen.queryByText('200 OK')).toBeNull();
     expect(executePersona).toHaveBeenCalledWith('persona-1', undefined, expect.any(String));
     fireEvent.click(screen.getByRole('button', { name: 'Snippets' }));
-    expect(screen.getByText('Code snippets call the deployed endpoint. Playground results come from a local run.')).toBeInTheDocument();
+    expect(screen.getByText('Code snippets call the deployed endpoint. Playground results come from a local run.')).toBeTruthy();
   });
 });
