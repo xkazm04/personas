@@ -16,6 +16,7 @@ import { TrendingCarousel } from '../explore/TrendingCarousel';
 import { RecommendedCarousel } from '../explore/RecommendedCarousel';
 import { TeamSynthesisPanel } from '../../shared/TeamSynthesisPanel';
 import { EmptyState } from '../explore/EmptyState';
+import { GalleryLoadError } from '../explore/GalleryLoadError';
 import { useAdoptionCompletionNotifier } from './useAdoptionCompletionNotifier';
 import { TemplateModals } from '../modals/TemplateModals';
 import { TemplateDetailModal } from '../modals/TemplateDetailModal';
@@ -160,6 +161,10 @@ export default function GeneratedReviewsTab({
   // fetch has settled — during a cold fetch we fall through and render the
   // real chrome (search bar, trending frame, list frame) with ghosts inside
   // the still-empty regions instead of blanking the surface.
+  // A failed first page is not an empty catalog -- say so, and offer a retry.
+  if (gallery.error && !gallery.isLoading && gallery.allItems.length === 0) {
+    return <GalleryLoadError onRetry={gallery.refresh} />;
+  }
   if (!gallery.isLoading && gallery.total === 0 && !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0 && gallery.coverageFilter === 'all' && !gallery.aiSearchActive) {
     return <EmptyState />;
   }
