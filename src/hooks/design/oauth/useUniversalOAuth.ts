@@ -28,10 +28,6 @@ export function useUniversalOAuth(): UniversalOAuthState {
   // Ref so extractValues and label can read the latest provider synchronously
   const providerRef = useRef<string | null>(null);
 
-  const providerLabel = providerRef.current
-    ? providerRef.current.charAt(0).toUpperCase() + providerRef.current.slice(1)
-    : 'OAuth';
-
   const polling = useOAuthPolling<[StartOAuthParams], OAuthStatusResult>({
     startFn: (params) => startOAuth(params),
     pollFn: (sessionId) => getOAuthStatus(sessionId),
@@ -52,7 +48,9 @@ export function useUniversalOAuth(): UniversalOAuthState {
       values[OAUTH_FIELD.PROVIDER] = providerRef.current ?? 'unknown';
       return values;
     },
-    label: providerLabel,
+    label: () => providerRef.current
+      ? providerRef.current.charAt(0).toUpperCase() + providerRef.current.slice(1)
+      : 'OAuth',
   });
 
   const startConsent = useCallback(

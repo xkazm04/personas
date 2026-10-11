@@ -38,7 +38,7 @@ export interface OAuthPollingConfig<
   /** Build credential field values from a successful poll result. */
   extractValues: (poll: TPollResult, prev: Record<string, string>) => Record<string, string>;
   /** Human-readable provider label (e.g. "Google", "GitHub"). */
-  label: string;
+  label: string | (() => string);
   /** Timeout (ms) for the start call. 0 = no timeout. Default 12000. */
   startTimeoutMs?: number;
 }
@@ -86,6 +86,10 @@ export function useOAuthPolling<
   // Stable refs so the poll effect doesn't re-trigger on config changes
   const configRef = useRef(config);
   configRef.current = config;
+  const currentLabel = useCallback(() => {
+    const label = configRef.current.label;
+    return typeof label === 'function' ? label() : label;
+  }, []);
 
   // Ref-based guard so the stable startConsent callback sees current authorizing state
   const isAuthorizingRef = useRef(false);
@@ -139,7 +143,7 @@ export function useOAuthPolling<
             isAuthorizingRef.current = false;
             setMessage({
               success: false,
-              message: `${configRef.current.label} authorization timed out. Please try again.`,
+              message: `${currentLabel()} authorization timed out. Please try again.`,
             });
             return;
           }
@@ -157,14 +161,14 @@ export function useOAuthPolling<
           setCompletedAt(new Date().toLocaleTimeString());
           setMessage({
             success: true,
-            message: `${configRef.current.label} authorization completed.`,
+            message: `${currentLabel()} authorization completed.`,
           });
           return;
         }
 
         setMessage({
           success: false,
-          message: result.error || `${configRef.current.label} authorization failed. Please try again.`,
+          message: result.error || `${currentLabel()} authorization failed. Please try again.`,
         });
       } catch (err) {
         if (controller.signal.aborted || gen !== generationRef.current) return;
@@ -184,7 +188,7 @@ export function useOAuthPolling<
       controller.abort();
       if (timer) window.clearTimeout(timer);
     };
-  }, [sessionId, isDocumentVisible]);
+  }, [sessionId, isDocumentVisible, currentLabel]);
 
   const startConsent = useCallback((...args: TStartArgs) => {
     // Prevent concurrent re-entry (e.g. double-click). The ref is used instead
@@ -192,7 +196,8 @@ export function useOAuthPolling<
     if (isAuthorizingRef.current) return;
     isAuthorizingRef.current = true;
 
-    const { startFn, label, startTimeoutMs = 12000 } = configRef.current;
+    const { startFn, startTimeoutMs = 12000 } = configRef.current;
+    const label = currentLabel();
 
     // Abort any existing poll from a previous session and invalidate its generation
     abortRef.current?.abort();
@@ -218,7 +223,7 @@ export function useOAuthPolling<
         clearStartTimeout();
         const safeAuthUrl = sanitizeExternalUrl(oauthStart.authUrl);
         if (!safeAuthUrl) {
-          throw new Error(`Blocked unsafe ${configRef.current.label} authorization URL.`);
+          throw new Error(`Blocked unsafe ${currentLabel()} authorization URL.`);
         }
 
         let opened = false;
@@ -235,12 +240,12 @@ export function useOAuthPolling<
         }
 
         if (!opened) {
-          throw new Error(`Could not open ${configRef.current.label} consent page. Please allow popups or external browser open.`);
+          throw new Error(`Could not open ${currentLabel()} consent page. Please allow popups or external browser open.`);
         }
 
         setMessage({
           success: false,
-          message: `${configRef.current.label} consent page opened. Complete authorization in your browser.`,
+          message: `${currentLabel()} consent page opened. Complete authorization in your browser.`,
         });
         setSessionId(oauthStart.sessionId);
       })
@@ -258,10 +263,10 @@ export function useOAuthPolling<
         const detail = extractErrorDetail(err);
         setMessage({
           success: false,
-          message: `${configRef.current.label} authorization did not start: ${detail}`,
+          message: `${currentLabel()} authorization did not start: ${detail}`,
         });
       });
-  }, [clearStartTimeout]);
+  }, [clearStartTimeout, currentLabel]);
 
   const reset = useCallback(() => {
     clearStartTimeout();
