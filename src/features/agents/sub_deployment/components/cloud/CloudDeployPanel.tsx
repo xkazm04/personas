@@ -17,7 +17,7 @@ import { cloudDiagnose, type CloudDiagnostics } from '@/api/system/cloud';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { useCloudHealthMonitor } from '@/features/agents/sub_deployment/hooks/useCloudHealthMonitor';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { DEPLOYMENT_ACCENTS } from '@/features/agents/sub_deployment/components/deploymentTokens';
 
 
@@ -154,7 +154,7 @@ export default function CloudDeployPanel() {
     try {
       const result = await cloudDiagnose(url.trim(), apiKey.trim());
       setDiagnostics(result);
-    } catch (err) { silentCatch("features/deployment/components/cloud/CloudDeployPanel:catch2")(err); } finally {
+    } catch (err) { toastCatch('CloudDeployPanel:diagnose')(err); } finally {
       setIsDiagnosing(false);
     }
   }, [url, apiKey]);
