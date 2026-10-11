@@ -5,7 +5,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import {
   cloudCreateTrigger,
 } from '@/api/system/cloud';
-import { useToastStore } from '@/stores/toastStore';
+import { toastCatch } from '@/lib/silentCatch';
 import { parseCron } from '@/lib/utils/cronNextFire';
 import { CLOUD_CRON_PRESETS, cloudCronPresetLabel } from './cloudSchedulesHelpers';
 import type { Persona } from '@/lib/types/types';
@@ -23,7 +23,6 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
   const [createType, setCreateType] = useState<'schedule' | 'webhook'>('schedule');
   const [createCron, setCreateCron] = useState('0 * * * *');
   const [isCreating, setIsCreating] = useState(false);
-  const addToast = useToastStore((s) => s.addToast);
   const cronInvalid = createType === 'schedule' && parseCron(createCron) === null;
 
   const handleCreate = async () => {
@@ -36,10 +35,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
       await cloudCreateTrigger(createPersonaId, createType, config, true);
       onCreated();
     } catch (err) {
-      addToast(
-        `Failed to create trigger: ${err instanceof Error ? err.message : String(err)}`,
-        'error',
-      );
+      toastCatch('CreateTriggerForm:create')(err);
     } finally {
       setIsCreating(false);
     }

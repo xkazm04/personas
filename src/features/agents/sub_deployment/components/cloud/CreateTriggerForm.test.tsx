@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { CreateTriggerForm } from './CreateTriggerForm';
 import type { Persona } from '@/lib/types/types';
 
@@ -36,5 +36,15 @@ describe('CreateTriggerForm', () => {
     expect(screen.getByRole('alert')).toBeTruthy();
     fireEvent.click(createButton());
     expect(cloudCreateTrigger).not.toHaveBeenCalled();
+  });
+
+  it('routes a failed create through toastCatch', async () => {
+    const boom = new Error('orchestrator said no');
+    cloudCreateTrigger.mockRejectedValueOnce(boom);
+    const { onCreated } = setup();
+    await act(async () => { fireEvent.click(createButton()); });
+    expect(toastCatch).toHaveBeenCalledWith('CreateTriggerForm:create');
+    expect(toastCatchInner).toHaveBeenCalledWith(boom);
+    expect(onCreated).not.toHaveBeenCalled();
   });
 });
