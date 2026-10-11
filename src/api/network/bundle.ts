@@ -46,6 +46,12 @@ export interface BundleImportOptions {
   preview_id?: string | null;
   /** SHA-256 hash from preview step. Verified before applying to prevent TOCTOU file-swap attacks. */
   expected_bundle_hash?: string | null;
+  /**
+   * Required when the bundle's signature does not verify: "unknown" for an
+   * untrusted signer, "tamper" for a trusted signer whose signature fails.
+   * The backend refuses an unverified bundle unless this matches its verdict.
+   */
+  acknowledged_risk?: 'tamper' | 'unknown' | null;
 }
 
 export interface BundleImportResult {

@@ -225,6 +225,9 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
         rename_prefix: renamePrefix || null,
         preview_id: preview?.preview_id ?? null,
         expected_bundle_hash: preview?.bundle_hash ?? null,
+        // The backend refuses an unverified bundle unless this matches its own
+        // verdict; the "Import anyway" button only enables once it is set.
+        acknowledged_risk: dangerConfirmed,
       };
 
       const result = shareLinkUrl
