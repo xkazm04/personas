@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DiscoveredPeer } from '@/api/network/discovery';
 import type { TrustedPeer } from '@/api/network/identity';
 
@@ -26,6 +26,7 @@ const trustedPeer: TrustedPeer = {
 
 const state = {
   discoveredPeers: [peer],
+  networkStatus: { is_running: true },
   connectionStates: {},
   trustedPeers: [trustedPeer],
   networkError: null,
@@ -33,6 +34,11 @@ const state = {
   connectToPeer: vi.fn(),
   disconnectPeer: vi.fn(),
 };
+
+afterEach(() => {
+  state.discoveredPeers = [peer];
+  state.networkStatus.is_running = true;
+});
 
 vi.mock('@/stores/systemStore', () => ({
   useSystemStore: (selector: (store: typeof state) => unknown) => selector(state),
@@ -71,5 +77,14 @@ describe('PeerList trust status', () => {
 
     fireEvent.click(card);
     expect(screen.getByTestId('drawer-trust')).toHaveTextContent('untrusted');
+  });
+
+  it('shows a static offline state instead of scanning when discovery is stopped', async () => {
+    state.discoveredPeers = [];
+    state.networkStatus.is_running = false;
+    const { container } = render(<PeerList />);
+    await screen.findByText('status_offline');
+    expect(screen.queryByText('scanning_network')).toBeNull();
+    expect(container.querySelector('canvas')).toBeNull();
   });
 });
