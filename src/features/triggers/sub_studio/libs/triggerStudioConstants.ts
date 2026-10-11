@@ -9,7 +9,8 @@ import type { Translations } from '@/i18n/useTranslation';
 // Signal source templates supported by the Studio commit form.
 // ---------------------------------------------------------------------------
 
-type TriggersKey = Extract<keyof Translations['triggers'], `type_${string}`>;
+// `type_selector` is a nested object, not a label string.
+type TriggersKey = Exclude<Extract<keyof Translations['triggers'], `type_${string}`>, 'type_selector'>;
 type StudioKey = Extract<keyof Translations['triggers']['studio'], `tpl_desc_${string}`>;
 
 export interface TriggerBlockTemplate {
