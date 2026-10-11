@@ -169,9 +169,12 @@ export function useAiArtifactTask<TArgs extends unknown[], TResult>(
     invokeCancelOnTimeout: cancelFn,
   });
 
-  // A timeout or a takeover ends the task without a status event, so the
-  // resolveStatus wrapper above never closes its trace session.
-  const endedWithoutStatus = stream.errorKind === 'timeout' || stream.errorKind === 'superseded'
+  // A timeout, a takeover or a rejected backend start ends the task without a
+  // status event, so the resolveStatus wrapper above never closes its trace
+  // session. ('failed' arrives as a status event and is closed there.)
+  const endedWithoutStatus = stream.errorKind === 'timeout'
+    || stream.errorKind === 'superseded'
+    || stream.errorKind === 'start'
     ? stream.errorKind
     : null;
   useEffect(() => {
@@ -184,7 +187,8 @@ export function useAiArtifactTask<TArgs extends unknown[], TResult>(
     async (...args: TArgs) => {
       // Start a system trace session if tracing is enabled
       if (traceOperation) {
-        traceSessionRef.current?.complete('cancelled');
+        // A restart over a live run is not a failure of that run -- abandon, don't complete(error).
+        traceSessionRef.current?.abandon();
         const label = `${errorMessage.replace(/ failed$/, '')}`;
         traceSessionRef.current = SystemTraceSession.start(traceOperation, label);
       }
@@ -196,7 +200,8 @@ export function useAiArtifactTask<TArgs extends unknown[], TResult>(
 
   const cancel = useCallback(() => {
     if (traceSessionRef.current) {
-      traceSessionRef.current.complete('cancelled');
+      // Cancelled is not failed: complete(error) is the failure door.
+      traceSessionRef.current.abandon();
       traceSessionRef.current = null;
     }
     stream.cancel(cancelFn ? async () => { await cancelFn(); return; } : undefined);

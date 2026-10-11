@@ -46,6 +46,7 @@ vi.mock('@/lib/credentials/credentialRecipeRegistry', () => ({
 
 import { useAiArtifactTask } from '../useAiArtifactTask';
 import { useCredentialNegotiator } from '../../credential/useCredentialNegotiator';
+import { getCompletedTraces, getActiveSessions, __resetSystemTracesForTests } from '@/lib/execution/systemTrace';
 
 // -- Helpers -----------------------------------------------------------------
 
@@ -73,7 +74,28 @@ function renderTask(cancelFn = vi.fn(async () => {})) {
   return { hook, startFn, cancelFn };
 }
 
+function renderTracedTask(startFn: () => Promise<unknown>) {
+  const cancelFn = vi.fn(async () => {});
+  const hook = renderHook(() =>
+    useAiArtifactTask<[], Record<string, unknown>>({
+      progressEvent: 'task-progress',
+      statusEvent: 'task-status',
+      runningPhase: 'analyzing',
+      completedPhase: 'preview',
+      startFn,
+      cancelFn,
+      errorMessage: 'Task failed',
+      traceOperation: 'credential_design',
+    }),
+  );
+  return hook;
+}
+
+const rootError = (t: { spans: Array<{ error: string | null }> }) =>
+  t.spans.map((s) => s.error).find((e) => e) ?? null;
+
 beforeEach(() => {
+  __resetSystemTracesForTests();
   listenerMap.clear();
   mockListen.mockClear();
   mockStartNegotiation.mockReset();
@@ -142,6 +164,48 @@ describe('useAiArtifactTask', () => {
     emit('task-status', { design_id: 'B', status: 'completed', result: { late: true }, error: null });
     expect(hook.result.current.phase).toBe('idle');
     expect(hook.result.current.result).toBeNull();
+  });
+});
+
+describe('useAiArtifactTask trace outcomes', () => {
+  it('a backend start rejection closes the trace as a failure', async () => {
+    const hook = renderTracedTask(async () => {
+      throw new Error('CLI missing');
+    });
+    await act(async () => {
+      await hook.result.current.start();
+    });
+    expect(hook.result.current.errorKind).toBe('start');
+    expect(getActiveSessions()).toHaveLength(0);
+    const traces = getCompletedTraces();
+    expect(traces).toHaveLength(1);
+    expect(rootError(traces[0]!)).toBe('start');
+    expect(traces[0]!.abandoned).toBeUndefined();
+  });
+
+  it('a user cancel closes the trace without an error', async () => {
+    const hook = renderTracedTask(async () => ({}));
+    await act(async () => {
+      await hook.result.current.start();
+    });
+    act(() => hook.result.current.cancel());
+    const traces = getCompletedTraces();
+    expect(traces).toHaveLength(1);
+    expect(rootError(traces[0]!)).toBeNull();
+    expect(traces[0]!.abandoned).toBe(true);
+  });
+
+  it('restarting over a live run closes the superseded trace without an error', async () => {
+    const hook = renderTracedTask(async () => ({}));
+    await act(async () => {
+      await hook.result.current.start();
+    });
+    await act(async () => {
+      await hook.result.current.start();
+    });
+    const traces = getCompletedTraces();
+    expect(traces).toHaveLength(1);
+    expect(rootError(traces[0]!)).toBeNull();
   });
 });
 
