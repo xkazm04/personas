@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { rebuildDesignReview, getRebuildSnapshot, cancelRebuild } from '@/api/overview/reviews';
 import { sendAppNotification } from '@/api/system/system';
 import { silentCatch } from "@/lib/silentCatch";
@@ -31,6 +31,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
   const [error, setError] = useState<string | null>(null);
   const [reviewId, setReviewId] = useState<string | null>(null);
   const [reviewName, setReviewName] = useState<string | null>(null);
+  const cancelledRef = useRef(false);
 
   const setRebuildActive = useSystemStore((s) => s.setRebuildActive);
 
@@ -49,10 +50,12 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
   );
 
   const handleLines = useCallback((newLines: string[]) => {
+    if (cancelledRef.current) return;
     setLines(newLines);
   }, []);
 
   const handlePhase = useCallback((p: 'running' | 'completed' | 'failed') => {
+    if (cancelledRef.current) return;
     if (p === 'completed') {
       setPhase('completed');
       setRebuildActive(false);
@@ -65,6 +68,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
   }, [setRebuildActive, onCompleted]);
 
   const handleFailed = useCallback((err: string) => {
+    if (cancelledRef.current) return;
     setError(err);
     setPhase('failed');
     setRebuildActive(false);
@@ -72,6 +76,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
   }, [setRebuildActive]);
 
   const handleCompletedNoDraft = useCallback(() => {
+    if (cancelledRef.current) return;
     setPhase('completed');
     setRebuildActive(false);
     sendAppNotification('Rebuild Complete', 'Template rebuild finished successfully.').catch(silentCatch("backgroundRebuild:notifyCompletedNoDraft"));
@@ -79,12 +84,14 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
   }, [setRebuildActive, onCompleted]);
 
   const handleSessionLost = useCallback(() => {
+    if (cancelledRef.current) return;
     setError('Connection lost -- the rebuild may still be running in the background.');
     setPhase('failed');
     setRebuildActive(false);
   }, [setRebuildActive]);
 
   const handleDraft = useCallback(() => {
+    if (cancelledRef.current) return;
     setPhase('completed');
     setRebuildActive(false);
     sendAppNotification('Rebuild Complete', 'Template rebuild finished successfully.').catch(silentCatch("backgroundRebuild:notifyDraftComplete"));
@@ -104,6 +111,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
   });
 
   const startRebuild = useCallback(async (rId: string, rName: string, userDirection?: string) => {
+    cancelledRef.current = false;
     setPhase('processing');
     setLines([]);
     setError(null);
@@ -121,6 +129,8 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
   }, [setRebuildActive]);
 
   const cancelCurrentRebuild = useCallback(async () => {
+    cancelledRef.current = true;
+    setRebuildId(null);
     if (rebuildId) {
       try {
         await cancelRebuild(rebuildId);
@@ -132,6 +142,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
   }, [rebuildId, setRebuildActive]);
 
   const resetRebuild = useCallback(() => {
+    cancelledRef.current = true;
     setRebuildId(null);
     setPhase('idle');
     setLines([]);
