@@ -155,7 +155,7 @@ function isValidRoster(value: string): boolean {
 /** Shown when a stored limit could not be read: the control then shows a default, not the stored value. */
 function LoadFailedNote({ text }: { text: string }) {
   return (
-    <div role="alert" className="flex items-center gap-2 typo-caption text-red-400 bg-red-400/10 rounded p-2">
+    <div role="alert" className="flex items-center gap-2 typo-caption text-status-error bg-status-error/10 rounded-input p-2">
       <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
       <span>{text}</span>
     </div>

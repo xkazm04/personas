@@ -17,6 +17,8 @@ import { DailyBreakdownChart } from './DailyBreakdownChart';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { createLatestWins } from '@/stores/util/latestWins';
+import { Button } from '@/features/shared/components/buttons';
 
 const EXEC_CASCADE_ROWS = 14;
 
@@ -69,27 +71,27 @@ export function CloudHistoryPanel() {
   // Request sequencing: a poll started under the previous filters can resolve
   // after the debounced filter fetch. Only the newest request may write rows,
   // stats, staleness or the busy flag - a superseded response is dropped.
-  const fetchSeqRef = useRef(0);
+  const latestWins = useRef(createLatestWins()).current;
   const fetchData = useCallback(async (source: 'poll' | 'manual' | 'filter' = 'poll') => {
-    const seq = ++fetchSeqRef.current;
+    const seq = latestWins.next();
     setIsLoading(true);
     try {
       const [execs, st] = await Promise.all([
         cloudListExecutions(filterPersona || undefined, filterStatus || undefined, 50),
         cloudExecutionStats(filterPersona || undefined, period),
       ]);
-      if (seq !== fetchSeqRef.current) return;
+      if (!latestWins.isCurrent(seq)) return;
       setExecutions(execs);
       setStats(st);
       setStale(false);
     } catch (err) {
-      if (seq !== fetchSeqRef.current) return;
+      if (!latestWins.isCurrent(seq)) return;
       setStale(true);
       if (source === 'manual') toastCatch('features/deployment/components/cloud/CloudHistoryPanel:refresh')(err);
       else silentCatch('features/deployment/components/cloud/CloudHistoryPanel:catch1')(err);
       if (source === 'poll') throw err;
     } finally {
-      if (seq === fetchSeqRef.current) setIsLoading(false);
+      if (latestWins.isCurrent(seq)) setIsLoading(false);
     }
   }, [filterPersona, filterStatus, period]);
 
@@ -364,15 +366,16 @@ export function CloudHistoryPanel() {
         // same request again, never the settled-empty copy.
         <div className="py-8 text-center" role="alert" data-testid="cloud-history-load-failed">
           <p className="typo-body text-foreground">{dt.history.load_failed}</p>
-          <button
-            type="button"
+          <Button
+            variant="link"
+            size="sm"
             data-testid="cloud-history-retry"
             onClick={() => { void fetchData('manual'); }}
             disabled={isLoading}
-            className="mt-2 typo-caption text-primary hover:text-primary/80 disabled:opacity-40 transition-colors cursor-pointer"
+            className="mt-2"
           >
             {t.common.retry}
-          </button>
+          </Button>
         </div>
       ) : visibleExecutions.length === 0 ? (
         <div className="py-8 text-center">

@@ -7,7 +7,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { AsyncButton } from '@/features/shared/components/buttons';
+import { AsyncButton, Button } from '@/features/shared/components/buttons';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { statusIcon } from './CloudHistoryHelpers';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
@@ -133,14 +133,14 @@ export function TriggerListItem({
               <div className="flex items-center gap-2 typo-caption text-foreground" role="alert" data-testid="cloud-firings-failed">
                 <span>{dt.firings_load_failed}</span>
                 {onRetryFirings && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="link"
+                    size="sm"
                     data-testid="cloud-firings-retry"
                     onClick={onRetryFirings}
-                    className="text-primary hover:text-primary/80 transition-colors cursor-pointer"
                   >
                     {t.common.retry}
-                  </button>
+                  </Button>
                 )}
               </div>
             ) : firings.length === 0 ? (

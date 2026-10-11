@@ -15,6 +15,7 @@ vi.mock('@/lib/silentCatch', () => ({
 }));
 
 import { useGalleryQuery } from '../useGalleryQuery';
+import { resolveError } from '@/lib/errors/errorRegistry';
 
 const review = (id: string) => ({ id, adoption_count: 0, connectors_used: null });
 const pageOf = (ids: string[], total: number) => ({ items: ids.map(review), total });
@@ -28,7 +29,8 @@ describe('useGalleryQuery failures', () => {
     mockList.mockRejectedValueOnce(new Error('DB busy'));
     const hook = renderHook(() => useGalleryQuery());
     await waitFor(() => expect(hook.result.current.isLoading).toBe(false));
-    expect(hook.result.current.error).toBe('DB busy');
+    expect(hook.result.current.error).toBe(resolveError('DB busy').message);
+    expect(hook.result.current.error).not.toBe('DB busy');
     expect(hook.result.current.items).toEqual([]);
 
     mockList.mockResolvedValueOnce(pageOf(['a'], 1));
@@ -49,7 +51,7 @@ describe('useGalleryQuery failures', () => {
       hook.result.current.fetchMore();
     });
     await waitFor(() => expect(hook.result.current.isFetchingMore).toBe(false));
-    expect(hook.result.current.error).toBe('transient');
+    expect(hook.result.current.error).toBe(resolveError('transient').message);
 
     mockList.mockResolvedValueOnce(pageOf(['b'], 3)); // retry of page 1
     await act(async () => {

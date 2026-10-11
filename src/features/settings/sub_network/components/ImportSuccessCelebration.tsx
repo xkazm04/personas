@@ -126,8 +126,8 @@ export function ImportSuccessCelebration({ importResult }: { importResult: Impor
   const outcome = importOutcome(importResult);
   const tone = {
     success: { box: 'border-emerald-500/20 bg-emerald-500/5', title: 'text-emerald-400', label: st.import_complete },
-    partial: { box: 'border-amber-500/20 bg-amber-500/5', title: 'text-amber-400', label: st.import_partial },
-    failed: { box: 'border-red-500/20 bg-red-500/5', title: 'text-red-400', label: st.import_failed },
+    partial: { box: 'border-status-warning/20 bg-status-warning/5', title: 'text-status-warning', label: st.import_partial },
+    failed: { box: 'border-status-error/20 bg-status-error/5', title: 'text-status-error', label: st.import_failed },
   }[outcome];
 
   useEffect(() => {

@@ -149,7 +149,7 @@ export function StudioPatchbay() {
             )}
             {c.committableLinks.length > 0 && (
               <button type="button" onClick={() => void c.commitAll()} disabled={c.committing.size > 0}
-                className="disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-interactive text-status-success hover:bg-status-success/10 transition-colors">
+                className="disabled:is-disabled flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-interactive text-status-success hover:bg-status-success/10 transition-colors">
                 <Check className="w-3.5 h-3.5" /> {st.commit_all}
               </button>
             )}
@@ -224,7 +224,7 @@ export function StudioPatchbay() {
                   <button type="button" onClick={() => { if (!blocker) void c.commitLink(link); }} disabled={!!blocker || busy}
                     title={blocker === 'signal_source' ? st.commit_blocked_source_type : blocker === 'output_match' ? st.commit_needs_output_match : viaForm ? st.configure_commit_route : st.commit_route}
                     aria-label={viaForm ? st.configure_commit_route : st.commit_route}
-                    className={`p-1.5 rounded-interactive transition-colors disabled:cursor-not-allowed ${blocker ? 'text-foreground opacity-40' : 'text-status-success/80 hover:text-status-success hover:bg-status-success/10 disabled:opacity-50'}`}>
+                    className={`p-1.5 rounded-interactive transition-colors disabled:is-disabled ${blocker ? 'text-foreground opacity-40' : 'text-status-success/80 hover:text-status-success hover:bg-status-success/10'}`}>
                     {busy ? <LoadingSpinner size="sm" /> : <Check className="w-3.5 h-3.5" />}
                   </button>
                   <button type="button" onClick={() => c.removeLink(link.id)} aria-label={st.remove_route}
