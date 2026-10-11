@@ -19,7 +19,14 @@ import { renderHook, act } from '@testing-library/react';
 const cloudGetConfig = vi.hoisted(() => vi.fn());
 const cloudReconnectFromKeyring = vi.hoisted(() => vi.fn().mockResolvedValue(12));
 vi.mock('@/api/system/cloud', () => ({ cloudGetConfig, cloudReconnectFromKeyring }));
+const silentCatchHandler = vi.hoisted(() => vi.fn());
+const silentCatch = vi.hoisted(() => vi.fn((_context: string) => silentCatchHandler));
+vi.mock('@/lib/silentCatch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/silentCatch')>()),
+  silentCatch,
+}));
 
+import { resolveError } from '@/lib/errors/errorRegistry';
 import { useSystemStore } from '@/stores/systemStore';
 import { useCloudHealthMonitor } from '../useCloudHealthMonitor';
 
@@ -46,7 +53,10 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(T0);
   cloudGetConfig.mockReset();
-  cloudReconnectFromKeyring.mockClear();
+  cloudReconnectFromKeyring.mockReset();
+  cloudReconnectFromKeyring.mockResolvedValue(12);
+  silentCatch.mockClear();
+  silentCatchHandler.mockClear();
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -93,6 +103,44 @@ describe('useCloudHealthMonitor late tick after host sleep', () => {
 
     expect(cloudGetConfig).toHaveBeenCalledTimes(1);
     expect(useSystemStore.getState().cloudReconnectState.isReconnecting).toBe(true);
+    unmount();
+  });
+});
+
+describe('useCloudHealthMonitor reconnect loop', () => {
+
+  it('actually attempts a reconnect once the backoff elapses', async () => {
+    cloudGetConfig.mockRejectedValueOnce(new Error('orchestrator down')).mockResolvedValue(connectedConfig);
+    const { unmount } = mountConnected();
+
+    await fireTickAfterSleep(0);
+    expect(useSystemStore.getState().cloudReconnectState.isReconnecting).toBe(true);
+
+    await act(() => vi.advanceTimersByTimeAsync(10_000));
+
+    expect(cloudReconnectFromKeyring).toHaveBeenCalledTimes(1);
+    expect(useSystemStore.getState().cloudReconnectState.isReconnecting).toBe(false);
+    unmount();
+  });
+
+  it('records every failed non-auth attempt and names the last cause in the terminal error', async () => {
+    cloudGetConfig.mockRejectedValue(new Error('orchestrator down'));
+    cloudReconnectFromKeyring.mockRejectedValue(new Error('tls handshake failed'));
+    const { unmount } = mountConnected();
+
+    await fireTickAfterSleep(0);
+    // Walk the backoff until the loop gives up (stop at the terminal error).
+    for (let i = 0; i < 40 && !useSystemStore.getState().cloudError; i++) {
+      await act(() => vi.advanceTimersByTimeAsync(60_000));
+    }
+
+    expect(cloudReconnectFromKeyring.mock.calls.length).toBeGreaterThan(1);
+    expect(silentCatchHandler).toHaveBeenCalledTimes(21);
+    expect(cloudReconnectFromKeyring).toHaveBeenCalledTimes(21);
+    const state = useSystemStore.getState();
+    expect(state.cloudReconnectState.isReconnecting).toBe(false);
+    expect(state.cloudError).toContain('after several attempts');
+    expect(state.cloudError).toContain(`Last error: ${resolveError('tls handshake failed').message}`);
     unmount();
   });
 });

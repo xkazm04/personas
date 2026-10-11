@@ -2,6 +2,8 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { cloudReconnectFromKeyring, cloudGetConfig } from '@/api/system/cloud';
 import { CLOUD_BACKOFF_STEPS, CLOUD_MAX_RECONNECT_ATTEMPTS, type CloudReconnectState } from '@/stores/slices/system/cloudSlice';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
+import { resolveError } from '@/lib/errors/errorRegistry';
 import { isAuthError } from '@/stores/slices/system/deployTarget';
 
 const HEALTH_POLL_INTERVAL = 30_000; // 30s between health pings when connected
@@ -110,6 +112,7 @@ export function useCloudHealthMonitor() {
   const attemptReconnect = useCallback(async (attempt: number, gen: number) => {
     if (isStale(gen)) return;
 
+    let lastCause: string;
     try {
       const latencyMs = await cloudReconnectFromKeyring();
       const config = await cloudGetConfig();
@@ -128,6 +131,7 @@ export function useCloudHealthMonitor() {
         scheduleHealthCheck(gen);
         return;
       }
+      lastCause = 'Connection check reported disconnected';
     } catch (err) {
       if (isStale(gen)) return;
       if (isAuthError(err)) {
@@ -138,6 +142,10 @@ export function useCloudHealthMonitor() {
         });
         return;
       }
+      // Non-auth failure: leave a breadcrumb per attempt and keep the cause for
+      // the terminal message. (Until 2026-10-11 this fell through silently.)
+      silentCatch('useCloudHealthMonitor:reconnect')(err);
+      lastCause = resolveError(extractMessage(err)).message;
     }
 
     if (isStale(gen)) return;
@@ -162,7 +170,8 @@ export function useCloudHealthMonitor() {
         // Reuse the terminal message shape already written for the auth case
         // above, so the UI has one "we stopped trying" state rather than two.
         cloudError:
-          'Could not reach the cloud orchestrator after several attempts. Check the connection and retry.',
+          'Could not reach the cloud orchestrator after several attempts. Check the connection and retry.'
+          + ` Last error: ${lastCause}`,
       });
       return;
     }
@@ -191,6 +200,15 @@ export function useCloudHealthMonitor() {
     } else if (!isConnected && wasConnectedRef.current && !reconnectState.isReconnecting) {
       // Was connected but now dropped (external state change) — start reconnect
       startReconnectLoopRef.current(gen);
+    } else if (reconnectState.isReconnecting) {
+      // startReconnectLoop flips isReconnecting, which re-runs this effect and
+      // its cleanup clears the retry timer the loop just armed -- so no attempt
+      // ever fired. Re-arm the pending attempt under the new generation from the
+      // schedule the loop published to the store.
+      const { attempt, nextRetryAt } = useSystemStore.getState().cloudReconnectState;
+      const delay = Math.max(0, (nextRetryAt ?? Date.now()) - Date.now());
+      clearTimer();
+      timerRef.current = setTimeout(() => void attemptReconnectRef.current(attempt, gen), delay);
     }
 
     const generation = generationRef;
