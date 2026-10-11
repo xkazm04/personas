@@ -215,5 +215,6 @@
   "dispatch_run_on_queued_hint": "Čeká ve frontě, dokud se neprobudí",
   "dispatch_run_on_stale": "Nedávno neviděno",
   "dispatch_run_on_this_machine": "Tento počítač",
-  "md_spellcheck": "Pravopis a gramatika"
+  "md_spellcheck": "Pravopis a gramatika",
+  "agent_fallback_name": "Agent"
 }

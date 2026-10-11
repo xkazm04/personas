@@ -179,6 +179,7 @@ function ActivityGauge({
   tone: 'violet' | 'blue';
   maxHint: number;
 }) {
+  const { t, tx } = useTranslation();
   const safeMax = useMemo(() => {
     const baseline = Math.max(1, maxHint, value);
     return Math.ceil(baseline / 5) * 5;
@@ -218,7 +219,7 @@ function ActivityGauge({
       <p className="typo-body text-foreground mb-2">{label}</p>
       <div className="relative h-24 rounded-card bg-gradient-to-b from-secondary/40 to-secondary/10 border border-primary/10 overflow-hidden">
         <div className={`absolute inset-0 pointer-events-none ${toneClasses.glow}`} />
-        <svg viewBox="0 0 120 70" className="w-full h-full" role="img" aria-label={`${label} gauge`}>
+        <svg viewBox="0 0 120 70" className="w-full h-full" role="img" aria-label={tx(t.deployment.cloud_status.gauge_aria, { label })}>
           <path
             d="M 10 60 A 50 50 0 0 1 110 60"
             fill="none"

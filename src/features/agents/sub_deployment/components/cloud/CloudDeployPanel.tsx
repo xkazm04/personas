@@ -293,6 +293,7 @@ export default function CloudDeployPanel() {
 // ---------------------------------------------------------------------------
 
 function LatencyBadge({ ms }: { ms: number }) {
+  const { t, tx } = useTranslation();
   const { color, bg, border } =
     ms < 200
       ? { color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' }
@@ -303,7 +304,7 @@ function LatencyBadge({ ms }: { ms: number }) {
   return (
     <span
       className={`flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-card border ${bg} ${border} ${color}`}
-      title={`Health-check round-trip latency: ${ms}ms`}
+      title={tx(t.deployment.status.latency_title, { ms })}
     >
       <Activity className="w-3 h-3" />
       {ms}ms

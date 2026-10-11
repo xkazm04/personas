@@ -4,6 +4,7 @@ import { cloudReconnectFromKeyring, cloudGetConfig } from '@/api/system/cloud';
 import { CLOUD_BACKOFF_STEPS, CLOUD_MAX_RECONNECT_ATTEMPTS, type CloudReconnectState } from '@/stores/slices/system/cloudSlice';
 import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import { resolveError } from '@/lib/errors/errorRegistry';
+import { getActiveTranslations, interpolate } from '@/i18n/useTranslation';
 import { isAuthError } from '@/stores/slices/system/deployTarget';
 
 const HEALTH_POLL_INTERVAL = 30_000; // 30s between health pings when connected
@@ -131,14 +132,14 @@ export function useCloudHealthMonitor() {
         scheduleHealthCheck(gen);
         return;
       }
-      lastCause = 'Connection check reported disconnected';
+      lastCause = getActiveTranslations().deploy_errors.reconnect_disconnected;
     } catch (err) {
       if (isStale(gen)) return;
       if (isAuthError(err)) {
         // Auth error — stop trying, notify user
         useSystemStore.setState({
           cloudReconnectState: { isReconnecting: false, attempt: 0, nextRetryAt: null },
-          cloudError: 'Credentials expired or revoked. Please reconnect to the cloud orchestrator.',
+          cloudError: getActiveTranslations().deploy_errors.credentials_revoked,
         });
         return;
       }
@@ -169,9 +170,7 @@ export function useCloudHealthMonitor() {
         cloudReconnectState: { isReconnecting: false, attempt: nextAttempt, nextRetryAt: null },
         // Reuse the terminal message shape already written for the auth case
         // above, so the UI has one "we stopped trying" state rather than two.
-        cloudError:
-          'Could not reach the cloud orchestrator after several attempts. Check the connection and retry.'
-          + ` Last error: ${lastCause}`,
+        cloudError: interpolate(getActiveTranslations().deploy_errors.reconnect_exhausted, { cause: lastCause }),
       });
       return;
     }

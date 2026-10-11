@@ -31,7 +31,7 @@ export function CloudOAuthPanel({
   onRefreshOAuth,
   onDisconnectOAuth,
 }: CloudOAuthPanelProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const dt = t.deployment.oauth_panel;
 
   // State: waiting for callback
@@ -122,7 +122,7 @@ export function CloudOAuthPanel({
         {isExpired && (
           <div className="p-4 rounded-card bg-amber-500/10 border border-amber-500/25">
             <p className="typo-body text-amber-200/90">
-              {`${dt.token_expired_msg_prefix}${oauthStatus.expiresAt ? ` (expired ${formatTimestamp(oauthStatus.expiresAt)})` : ''}`}
+              {`${dt.token_expired_msg_prefix}${oauthStatus.expiresAt ? ` ${tx(dt.expired_at, { time: formatTimestamp(oauthStatus.expiresAt) })}` : ''}`}
             </p>
           </div>
         )}

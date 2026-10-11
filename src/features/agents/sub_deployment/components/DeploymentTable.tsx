@@ -210,9 +210,9 @@ export function DeploymentTable({
                           ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                           : 'bg-red-500/10 border-red-500/20 text-red-400'
                       }`}
-                      title={testResult.error ?? `${testResult.status === 'pass' ? 'Pass' : 'Fail'}${testResult.durationMs != null ? ` - ${testResult.durationMs}ms` : ''}${testResult.costUsd != null && testResult.costUsd > 0 ? ` - $${testResult.costUsd.toFixed(4)}` : ''}`}
+                      title={testResult.error ?? `${testResult.status === 'pass' ? t.deployment.deploy_card.test_title_pass : t.deployment.deploy_card.test_title_fail}${testResult.durationMs != null ? ` - ${testResult.durationMs}ms` : ''}${testResult.costUsd != null && testResult.costUsd > 0 ? ` - $${testResult.costUsd.toFixed(4)}` : ''}`}
                     >
-                      {testResult.status === 'pass' ? 'PASS' : 'FAIL'}
+                      {testResult.status === 'pass' ? t.deployment.deploy_card.test_pass : t.deployment.deploy_card.test_fail}
                       {testResult.durationMs != null && (
                         <Numeric value={testResult.durationMs} unit="ms" className="text-foreground" />
                       )}

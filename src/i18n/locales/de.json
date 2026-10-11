@@ -3605,7 +3605,8 @@
     "dispatch_run_on_queued_hint": "Wartet, bis er aufwacht",
     "dispatch_run_on_stale": "Kürzlich nicht gesehen",
     "dispatch_run_on_this_machine": "Dieser Rechner",
-    "md_spellcheck": "Rechtschreibung und Grammatik"
+    "md_spellcheck": "Rechtschreibung und Grammatik",
+    "agent_fallback_name": "Agent"
   },
   "connector_licensing": {
     "enterprise": "Unternehmen",
@@ -4355,7 +4356,10 @@
     "timed_out": "Verbindung hat sich zeitlich überschritten. Der Server ist möglicherweise nicht erreichbar oder die URL ist falsch.",
     "token_empty": "Bitte GitLab Personal Access Token eingeben.",
     "unauthorized": "Ungültige Zugangsdaten. Bitte überprüfen und erneut versuchen.",
-    "url_empty": "Bitte Orchestrator-URL eingeben."
+    "url_empty": "Bitte Orchestrator-URL eingeben.",
+    "credentials_revoked": "Anmeldedaten sind abgelaufen oder widerrufen. Bitte verbinde dich erneut mit dem Cloud-Orchestrator.",
+    "reconnect_exhausted": "Der Cloud-Orchestrator war nach mehreren Versuchen nicht erreichbar. Prüfe die Verbindung und versuche es erneut. Letzter Fehler: {cause}",
+    "reconnect_disconnected": "Die Verbindungsprüfung meldete eine Trennung"
   },
   "deployment": {
     "api_key": "API-Schlüssel",
@@ -4390,7 +4394,8 @@
       "worker_disconnected": "Getrennt",
       "worker_executing": "Wird ausgeführt",
       "worker_idle": "Inaktiv",
-      "workers": "Worker"
+      "workers": "Worker",
+      "gauge_aria": "Anzeige {label}"
     },
     "cloud_trigger_chain": "Kette",
     "cloud_trigger_manual": "Manuell",
@@ -4498,7 +4503,11 @@
       "pause_deployment": "Bereitstellung pausieren",
       "remove_deployment": "Bereitstellung entfernen",
       "resume_deployment": "Bereitstellung fortsetzen",
-      "test_deployment": "Bereitstellung testen"
+      "test_deployment": "Bereitstellung testen",
+      "test_pass": "BESTANDEN",
+      "test_fail": "FEHLER",
+      "test_title_pass": "Bestanden",
+      "test_title_fail": "Fehlgeschlagen"
     },
     "deploying": "Bereitstellen…",
     "deployments_panel": {
@@ -4508,7 +4517,8 @@
       "no_deployments_yet": "Noch keine Deployments. Wählen Sie oben eine Persona aus, um sie als Cloud-API-Endpunkt bereitzustellen.",
       "select_persona": "Persona zum Bereitstellen auswählen",
       "budget_no_limit": "Kein Limit",
-      "budget_per_month": "${amount}/Monat"
+      "budget_per_month": "${amount}/Monat",
+      "deploy_button": "Bereitstellen"
     },
     "exec_detail": {
       "fetching_output": "Ausgabe wird abgerufen…",
@@ -4567,7 +4577,8 @@
       "token_expired": "Token abgelaufen",
       "token_expired_msg_prefix": "Dieses OAuth-Token ist abgelaufen",
       "token_unknown": "Token-Status unbekannt",
-      "token_unknown_msg": "Die Token-Gültigkeit konnte nicht überprüft werden. Erneuern Sie das Token, um zu bestätigen, dass es noch aktiv ist."
+      "token_unknown_msg": "Die Token-Gültigkeit konnte nicht überprüft werden. Erneuern Sie das Token, um zu bestätigen, dass es noch aktiv ist.",
+      "expired_at": "(abgelaufen {time})"
     },
     "orchestrator_url": "Orchestrator-URL",
     "reconcile": {
@@ -4606,7 +4617,8 @@
       "no_status": "Keine Statusdaten verfügbar.",
       "no_token": "Kein Token konfiguriert",
       "no_token_configured": "Kein Token konfiguriert",
-      "token_available": "Token verfügbar"
+      "token_available": "Token verfügbar",
+      "latency_title": "Round-Trip-Latenz der Integritätsprüfung: {ms} ms"
     },
     "tabs": {
       "connection": "Verbindung",

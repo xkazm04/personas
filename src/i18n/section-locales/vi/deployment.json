@@ -31,7 +31,8 @@
     "worker_disconnected": "Đã ngắt kết nối",
     "worker_executing": "Đang thực thi",
     "worker_idle": "Nhàn rỗi",
-    "workers": "Workers"
+    "workers": "Workers",
+    "gauge_aria": "Đồng hồ {label}"
   },
   "cloud_trigger_chain": "Chuỗi",
   "cloud_trigger_manual": "Thủ công",
@@ -139,7 +140,11 @@
     "pause_deployment": "Tạm dừng triển khai",
     "remove_deployment": "Xóa triển khai",
     "resume_deployment": "Tiếp tục triển khai",
-    "test_deployment": "Kiểm thử triển khai"
+    "test_deployment": "Kiểm thử triển khai",
+    "test_pass": "ĐẠT",
+    "test_fail": "LỖI",
+    "test_title_pass": "Đạt",
+    "test_title_fail": "Không đạt"
   },
   "deploying": "Đang triển khai…",
   "deployments_panel": {
@@ -149,7 +154,8 @@
     "no_deployments_yet": "Chưa có triển khai nào. Chọn một tác nhân ở trên để triển khai nó dưới dạng endpoint API đám mây.",
     "select_persona": "Chọn persona để triển khai",
     "budget_no_limit": "Không giới hạn",
-    "budget_per_month": "${amount}/tháng"
+    "budget_per_month": "${amount}/tháng",
+    "deploy_button": "Triển khai"
   },
   "exec_detail": {
     "fetching_output": "Đang lấy đầu ra…",
@@ -208,7 +214,8 @@
     "token_expired": "Token đã hết hạn",
     "token_expired_msg_prefix": "Token OAuth này đã hết hạn",
     "token_unknown": "Trạng thái token không rõ",
-    "token_unknown_msg": "Không thể xác minh tính hợp lệ của token. Làm mới token để xác nhận token vẫn còn hoạt động."
+    "token_unknown_msg": "Không thể xác minh tính hợp lệ của token. Làm mới token để xác nhận token vẫn còn hoạt động.",
+    "expired_at": "(đã hết hạn {time})"
   },
   "orchestrator_url": "URL bộ điều phối",
   "reconcile": {
@@ -247,7 +254,8 @@
     "no_status": "Không có dữ liệu trạng thái.",
     "no_token": "Chưa cấu hình mã thông báo",
     "no_token_configured": "Chưa cấu hình token",
-    "token_available": "Mã thông báo khả dụng"
+    "token_available": "Mã thông báo khả dụng",
+    "latency_title": "Độ trễ khứ hồi của kiểm tra sức khỏe: {ms} ms"
   },
   "tabs": {
     "connection": "Kết nối",

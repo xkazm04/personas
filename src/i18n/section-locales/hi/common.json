@@ -215,5 +215,6 @@
   "dispatch_run_on_queued_hint": "जागने तक कतार में",
   "dispatch_run_on_stale": "हाल में नहीं देखा गया",
   "dispatch_run_on_this_machine": "यह मशीन",
-  "md_spellcheck": "वर्तनी और व्याकरण"
+  "md_spellcheck": "वर्तनी और व्याकरण",
+  "agent_fallback_name": "एजेंट"
 }

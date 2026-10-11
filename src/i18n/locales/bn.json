@@ -3605,7 +3605,8 @@
     "dispatch_run_on_queued_hint": "জেগে ওঠা পর্যন্ত সারিতে",
     "dispatch_run_on_stale": "সম্প্রতি দেখা যায়নি",
     "dispatch_run_on_this_machine": "এই মেশিন",
-    "md_spellcheck": "বানান ও ব্যাকরণ"
+    "md_spellcheck": "বানান ও ব্যাকরণ",
+    "agent_fallback_name": "এজেন্ট"
   },
   "connector_licensing": {
     "enterprise": "এন্টারপ্রাইজ",
@@ -4355,7 +4356,10 @@
     "timed_out": "সংযোগের সময় শেষ হয়ে গেছে। সার্ভার বন্ধ থাকতে পারে অথবা URL ভুল হতে পারে।",
     "token_empty": "আপনার GitLab ব্যক্তিগত অ্যাক্সেস টোকেন লিখুন।",
     "unauthorized": "অবৈধ ক্রেডেনশিয়াল। যাচাই করে আবার চেষ্টা করুন।",
-    "url_empty": "অর্কেস্ট্রেটর URL লিখুন।"
+    "url_empty": "অর্কেস্ট্রেটর URL লিখুন।",
+    "credentials_revoked": "ক্রেডেনশিয়ালের মেয়াদ শেষ হয়েছে বা বাতিল করা হয়েছে। অনুগ্রহ করে ক্লাউড অর্কেস্ট্রেটরে আবার সংযুক্ত হন।",
+    "reconnect_exhausted": "কয়েকবার চেষ্টা করেও ক্লাউড অর্কেস্ট্রেটরে পৌঁছানো যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন। সর্বশেষ ত্রুটি: {cause}",
+    "reconnect_disconnected": "সংযোগ পরীক্ষায় বিচ্ছিন্ন বলে জানানো হয়েছে"
   },
   "deployment": {
     "api_key": "API কী",
@@ -4390,7 +4394,8 @@
       "worker_disconnected": "বিচ্ছিন্ন",
       "worker_executing": "সম্পাদনরত",
       "worker_idle": "নিষ্ক্রিয়",
-      "workers": "ওয়ার্কার"
+      "workers": "ওয়ার্কার",
+      "gauge_aria": "{label} গেজ"
     },
     "cloud_trigger_chain": "চেইন",
     "cloud_trigger_manual": "ম্যানুয়াল",
@@ -4498,7 +4503,11 @@
       "pause_deployment": "ডিপ্লয়মেন্ট বিরতি দিন",
       "remove_deployment": "ডিপ্লয়মেন্ট সরান",
       "resume_deployment": "ডিপ্লয়মেন্ট পুনরায় শুরু করুন",
-      "test_deployment": "ডিপ্লয়মেন্ট পরীক্ষা করুন"
+      "test_deployment": "ডিপ্লয়মেন্ট পরীক্ষা করুন",
+      "test_pass": "পাস",
+      "test_fail": "ব্যর্থ",
+      "test_title_pass": "উত্তীর্ণ",
+      "test_title_fail": "ব্যর্থ"
     },
     "deploying": "ডিপ্লয় হচ্ছে…",
     "deployments_panel": {
@@ -4508,7 +4517,8 @@
       "no_deployments_yet": "এখনও কোনো ডিপ্লয়মেন্ট নেই। ক্লাউড API এন্ডপয়েন্ট হিসেবে ডিপ্লয় করতে উপরে একটি পার্সোনা নির্বাচন করুন।",
       "select_persona": "ডিপ্লয় করতে একটি পার্সোনা নির্বাচন করুন",
       "budget_no_limit": "কোনো সীমা নেই",
-      "budget_per_month": "${amount}/মাস"
+      "budget_per_month": "${amount}/মাস",
+      "deploy_button": "ডিপ্লয় করুন"
     },
     "exec_detail": {
       "fetching_output": "আউটপুট আনা হচ্ছে…",
@@ -4567,7 +4577,8 @@
       "token_expired": "টোকেনের মেয়াদ শেষ",
       "token_expired_msg_prefix": "এই OAuth টোকেনের মেয়াদ শেষ হয়েছে",
       "token_unknown": "টোকেন স্ট্যাটাস অজানা",
-      "token_unknown_msg": "টোকেন বৈধতা যাচাই করা যায়নি। এটি এখনও সক্রিয় কিনা নিশ্চিত করতে টোকেন রিফ্রেশ করুন।"
+      "token_unknown_msg": "টোকেন বৈধতা যাচাই করা যায়নি। এটি এখনও সক্রিয় কিনা নিশ্চিত করতে টোকেন রিফ্রেশ করুন।",
+      "expired_at": "({time}-এ মেয়াদ শেষ)"
     },
     "orchestrator_url": "অর্কেস্ট্রেটর URL",
     "reconcile": {
@@ -4606,7 +4617,8 @@
       "no_status": "কোনো স্ট্যাটাস ডাটা নেই।",
       "no_token": "কোনো টোকেন কনফিগার করা নেই",
       "no_token_configured": "কোনো টোকেন কনফিগার করা নেই",
-      "token_available": "টোকেন উপলব্ধ"
+      "token_available": "টোকেন উপলব্ধ",
+      "latency_title": "হেলথ-চেকের রাউন্ড-ট্রিপ লেটেন্সি: {ms}ms"
     },
     "tabs": {
       "connection": "সংযোগ",

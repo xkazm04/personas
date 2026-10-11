@@ -3605,7 +3605,8 @@
     "dispatch_run_on_queued_hint": "В очереди до пробуждения",
     "dispatch_run_on_stale": "Недавно не виден",
     "dispatch_run_on_this_machine": "Этот компьютер",
-    "md_spellcheck": "Орфография и грамматика"
+    "md_spellcheck": "Орфография и грамматика",
+    "agent_fallback_name": "Агент"
   },
   "connector_licensing": {
     "enterprise": "Корпоративный",
@@ -4355,7 +4356,10 @@
     "timed_out": "Истекло время подключения. Сервер может быть недоступен или URL неверный.",
     "token_empty": "Введите персональный токен доступа GitLab.",
     "unauthorized": "Неверные учётные данные. Проверьте и попробуйте снова.",
-    "url_empty": "Введите URL оркестратора."
+    "url_empty": "Введите URL оркестратора.",
+    "credentials_revoked": "Учётные данные истекли или отозваны. Повторно подключитесь к облачному оркестратору.",
+    "reconnect_exhausted": "Не удалось связаться с облачным оркестратором после нескольких попыток. Проверьте соединение и повторите. Последняя ошибка: {cause}",
+    "reconnect_disconnected": "Проверка соединения сообщила об отключении"
   },
   "deployment": {
     "api_key": "Ключ API",
@@ -4390,7 +4394,8 @@
       "worker_disconnected": "Отключён",
       "worker_executing": "Выполняет",
       "worker_idle": "Простаивает",
-      "workers": "Воркеры"
+      "workers": "Воркеры",
+      "gauge_aria": "Индикатор: {label}"
     },
     "cloud_trigger_chain": "Цепочка",
     "cloud_trigger_manual": "Вручную",
@@ -4498,7 +4503,11 @@
       "pause_deployment": "Приостановить развёртывание",
       "remove_deployment": "Удалить развёртывание",
       "resume_deployment": "Возобновить развёртывание",
-      "test_deployment": "Тестировать развёртывание"
+      "test_deployment": "Тестировать развёртывание",
+      "test_pass": "УСПЕХ",
+      "test_fail": "СБОЙ",
+      "test_title_pass": "Пройден",
+      "test_title_fail": "Не пройден"
     },
     "deploying": "Развёртывание…",
     "deployments_panel": {
@@ -4508,7 +4517,8 @@
       "no_deployments_yet": "Развёртываний пока нет. Выберите агента выше, чтобы развернуть его как облачную API-точку.",
       "select_persona": "Выберите агента для развёртывания",
       "budget_no_limit": "Без ограничений",
-      "budget_per_month": "${amount}/мес."
+      "budget_per_month": "${amount}/мес.",
+      "deploy_button": "Развернуть"
     },
     "exec_detail": {
       "fetching_output": "Получение вывода…",
@@ -4567,7 +4577,8 @@
       "token_expired": "Токен истёк",
       "token_expired_msg_prefix": "Этот OAuth-токен истёк",
       "token_unknown": "Статус токена неизвестен",
-      "token_unknown_msg": "Не удалось проверить действительность токена. Обновите токен, чтобы подтвердить, что он ещё активен."
+      "token_unknown_msg": "Не удалось проверить действительность токена. Обновите токен, чтобы подтвердить, что он ещё активен.",
+      "expired_at": "(истёк {time})"
     },
     "orchestrator_url": "URL оркестратора",
     "reconcile": {
@@ -4606,7 +4617,8 @@
       "no_status": "Данные о статусе недоступны.",
       "no_token": "Токен не настроен",
       "no_token_configured": "Токен не настроен",
-      "token_available": "Токен доступен"
+      "token_available": "Токен доступен",
+      "latency_title": "Задержка проверки состояния (полный цикл): {ms} мс"
     },
     "tabs": {
       "connection": "Подключение",

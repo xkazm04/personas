@@ -4186,5 +4186,8 @@
   "fr:monitor.dc_deck_kind_question",
   "fr:monitor.dc_deck_kind_evolution",
   "fr:monitor.dc_deck_kind_incident",
-  "fr:monitor.dc_deck_kind_message"
+  "fr:monitor.dc_deck_kind_message",
+  "cs:common.agent_fallback_name",
+  "de:common.agent_fallback_name",
+  "fr:common.agent_fallback_name"
 ]

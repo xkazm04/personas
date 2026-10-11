@@ -11,5 +11,8 @@
   "timed_out": "연결이 시간 초과되었습니다. 서버가 다운되었거나 URL이 잘못되었을 수 있습니다.",
   "token_empty": "GitLab 개인 액세스 토큰을 입력하세요.",
   "unauthorized": "잘못된 자격 증명입니다. 확인 후 다시 시도하세요.",
-  "url_empty": "오케스트레이터 URL을 입력하세요."
+  "url_empty": "오케스트레이터 URL을 입력하세요.",
+  "credentials_revoked": "자격 증명이 만료되었거나 취소되었습니다. 클라우드 오케스트레이터에 다시 연결해 주세요.",
+  "reconnect_exhausted": "여러 번 시도했지만 클라우드 오케스트레이터에 연결할 수 없습니다. 연결을 확인하고 다시 시도해 주세요. 마지막 오류: {cause}",
+  "reconnect_disconnected": "연결 확인 결과 연결이 끊긴 것으로 나타났습니다"
 }

@@ -11,5 +11,8 @@
   "timed_out": "Délai de connexion dépassé. Le serveur est peut-être hors service ou l’URL est incorrecte.",
   "token_empty": "Veuillez entrer votre jeton d’accès personnel GitLab.",
   "unauthorized": "Identifiants invalides. Veuillez vérifier et réessayer.",
-  "url_empty": "Veuillez entrer l’URL de l’orchestrateur."
+  "url_empty": "Veuillez entrer l’URL de l’orchestrateur.",
+  "credentials_revoked": "Les identifiants ont expiré ou ont été révoqués. Reconnectez-vous à l'orchestrateur cloud.",
+  "reconnect_exhausted": "Impossible de joindre l'orchestrateur cloud après plusieurs tentatives. Vérifiez la connexion et réessayez. Dernière erreur : {cause}",
+  "reconnect_disconnected": "La vérification de connexion a signalé une déconnexion"
 }

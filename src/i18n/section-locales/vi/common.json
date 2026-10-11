@@ -215,5 +215,6 @@
   "dispatch_run_on_queued_hint": "Xếp hàng chờ đến khi máy thức dậy",
   "dispatch_run_on_stale": "Gần đây chưa thấy hoạt động",
   "dispatch_run_on_this_machine": "Máy này",
-  "md_spellcheck": "Chính tả và ngữ pháp"
+  "md_spellcheck": "Chính tả và ngữ pháp",
+  "agent_fallback_name": "Tác tử"
 }

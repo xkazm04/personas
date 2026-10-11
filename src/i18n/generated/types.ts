@@ -1312,6 +1312,7 @@ export type Translations = {
     dispatch_receipt_push_failed: string;
     dispatch_receipt_detail: string;
     md_spellcheck: string;
+    agent_fallback_name: string;
   };
   council: {
     galaxy: {
@@ -7802,6 +7803,7 @@ export type Translations = {
       no_token: string;
       no_token_configured: string;
       no_status: string;
+      latency_title: string;
     };
     api_playground: {
       title: string;
@@ -7839,6 +7841,7 @@ export type Translations = {
       active_deployments: string;
       budget_no_limit: string;
       budget_per_month: string;
+      deploy_button: string;
     };
     reconcile: {
       heading: string;
@@ -7883,6 +7886,7 @@ export type Translations = {
       token_unknown_msg: string;
       connect_anthropic_msg: string;
       token_expired_msg_prefix: string;
+      expired_at: string;
     };
     trigger_form: {
       new_cloud_trigger: string;
@@ -7913,6 +7917,10 @@ export type Translations = {
       label_invocations: string;
       label_last_called: string;
       label_created: string;
+      test_pass: string;
+      test_fail: string;
+      test_title_pass: string;
+      test_title_fail: string;
     };
     tabs: {
       connection: string;
@@ -7933,6 +7941,7 @@ export type Translations = {
       active_executions: string;
       active_execution: string;
       claude_token: string;
+      gauge_aria: string;
     };
     history: {
       just_now: string;
@@ -21260,6 +21269,9 @@ export type Translations = {
     url_empty: string;
     api_key_empty: string;
     token_empty: string;
+    credentials_revoked: string;
+    reconnect_exhausted: string;
+    reconnect_disconnected: string;
   };
   tiers: {
     starter_label: string;

@@ -11,5 +11,8 @@
   "timed_out": "Verbindung hat sich zeitlich überschritten. Der Server ist möglicherweise nicht erreichbar oder die URL ist falsch.",
   "token_empty": "Bitte GitLab Personal Access Token eingeben.",
   "unauthorized": "Ungültige Zugangsdaten. Bitte überprüfen und erneut versuchen.",
-  "url_empty": "Bitte Orchestrator-URL eingeben."
+  "url_empty": "Bitte Orchestrator-URL eingeben.",
+  "credentials_revoked": "Anmeldedaten sind abgelaufen oder widerrufen. Bitte verbinde dich erneut mit dem Cloud-Orchestrator.",
+  "reconnect_exhausted": "Der Cloud-Orchestrator war nach mehreren Versuchen nicht erreichbar. Prüfe die Verbindung und versuche es erneut. Letzter Fehler: {cause}",
+  "reconnect_disconnected": "Die Verbindungsprüfung meldete eine Trennung"
 }

@@ -11,5 +11,8 @@
   "timed_out": "Připojení vypršelo. Server může být vypnutý nebo URL může být nesprávná.",
   "token_empty": "Zadej svůj GitLab personal access token.",
   "unauthorized": "Neplatné přihlašovací údaje. Prosím ověř a zkus to znovu.",
-  "url_empty": "Zadej URL orchestrátoru."
+  "url_empty": "Zadej URL orchestrátoru.",
+  "credentials_revoked": "Přihlašovací údaje vypršely nebo byly odvolány. Znovu se připojte k cloudovému orchestrátoru.",
+  "reconnect_exhausted": "Cloudový orchestrátor se nepodařilo zastihnout ani po několika pokusech. Zkontrolujte připojení a zkuste to znovu. Poslední chyba: {cause}",
+  "reconnect_disconnected": "Kontrola připojení ohlásila odpojení"
 }

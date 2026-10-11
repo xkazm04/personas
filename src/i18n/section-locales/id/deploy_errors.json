@@ -11,5 +11,8 @@
   "timed_out": "Koneksi habis waktu. Server mungkin sedang mati atau URL mungkin salah.",
   "token_empty": "Harap masukkan token akses personal GitLab Anda.",
   "unauthorized": "Kredensial tidak valid. Harap verifikasi dan coba lagi.",
-  "url_empty": "Harap masukkan URL orkestrator."
+  "url_empty": "Harap masukkan URL orkestrator.",
+  "credentials_revoked": "Kredensial kedaluwarsa atau dicabut. Silakan hubungkan kembali ke orkestrator cloud.",
+  "reconnect_exhausted": "Orkestrator cloud tidak dapat dijangkau setelah beberapa kali percobaan. Periksa koneksi lalu coba lagi. Kesalahan terakhir: {cause}",
+  "reconnect_disconnected": "Pemeriksaan koneksi melaporkan terputus"
 }

@@ -182,10 +182,10 @@ export default function ExecutionMiniPlayer() {
   const executionSummary = useExecutionSummary(traceEntries, traceLive, finishedStatus);
 
   const personaName = useMemo(() => {
-    if (!executionPersonaId) return 'Agent';
+    if (!executionPersonaId) return t.common.agent_fallback_name;
     const p = personas.find((p) => p.id === executionPersonaId);
-    return p?.name ?? 'Agent';
-  }, [executionPersonaId, personas]);
+    return p?.name ?? t.common.agent_fallback_name;
+  }, [executionPersonaId, personas, t]);
 
   // Drag state
   const dragRef = useRef<HTMLDivElement>(null);

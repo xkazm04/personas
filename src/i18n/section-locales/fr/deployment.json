@@ -31,7 +31,8 @@
     "worker_disconnected": "Déconnecté",
     "worker_executing": "En exécution",
     "worker_idle": "Inactif",
-    "workers": "Workers"
+    "workers": "Workers",
+    "gauge_aria": "Jauge {label}"
   },
   "cloud_trigger_chain": "Chaîne",
   "cloud_trigger_manual": "Manuel",
@@ -139,7 +140,11 @@
     "pause_deployment": "Suspendre le déploiement",
     "remove_deployment": "Supprimer le déploiement",
     "resume_deployment": "Reprendre le déploiement",
-    "test_deployment": "Tester le déploiement"
+    "test_deployment": "Tester le déploiement",
+    "test_pass": "RÉUSSI",
+    "test_fail": "ÉCHEC",
+    "test_title_pass": "Réussi",
+    "test_title_fail": "Échoué"
   },
   "deploying": "Déploiement…",
   "deployments_panel": {
@@ -149,7 +154,8 @@
     "no_deployments_yet": "Aucun déploiement pour l’instant. Sélectionnez un persona ci-dessus pour le déployer comme point de terminaison API cloud.",
     "select_persona": "Sélectionnez un persona à déployer",
     "budget_no_limit": "Aucune limite",
-    "budget_per_month": "${amount}/mois"
+    "budget_per_month": "${amount}/mois",
+    "deploy_button": "Déployer"
   },
   "exec_detail": {
     "fetching_output": "Récupération de la sortie…",
@@ -208,7 +214,8 @@
     "token_expired": "Jeton expiré",
     "token_expired_msg_prefix": "Ce token OAuth a expiré",
     "token_unknown": "Statut du jeton inconnu",
-    "token_unknown_msg": "La validité du token n’a pas pu être vérifiée. Actualisez le token pour confirmer qu’il est toujours actif."
+    "token_unknown_msg": "La validité du token n’a pas pu être vérifiée. Actualisez le token pour confirmer qu’il est toujours actif.",
+    "expired_at": "(expiré {time})"
   },
   "orchestrator_url": "URL de l’orchestrateur",
   "reconcile": {
@@ -247,7 +254,8 @@
     "no_status": "Aucune donnée de statut disponible.",
     "no_token": "Aucun jeton configuré",
     "no_token_configured": "Aucun jeton configuré",
-    "token_available": "Jeton disponible"
+    "token_available": "Jeton disponible",
+    "latency_title": "Latence aller-retour du contrôle d'état : {ms} ms"
   },
   "tabs": {
     "connection": "Connexion",

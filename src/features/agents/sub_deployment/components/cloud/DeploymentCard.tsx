@@ -194,7 +194,7 @@ export function DeploymentCard({
         >
           <div className="flex items-center gap-3 min-w-0">
             <span className="font-medium shrink-0">
-              {testResult.status === 'pass' ? 'PASS' : 'FAIL'}
+              {testResult.status === 'pass' ? dt.test_pass : dt.test_fail}
             </span>
             {testResult.durationMs != null && (
               <Numeric value={testResult.durationMs} unit="ms" className="text-foreground" />

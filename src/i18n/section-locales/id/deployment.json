@@ -31,7 +31,8 @@
     "worker_disconnected": "Terputus",
     "worker_executing": "Mengeksekusi",
     "worker_idle": "Menganggur",
-    "workers": "Worker"
+    "workers": "Worker",
+    "gauge_aria": "Indikator {label}"
   },
   "cloud_trigger_chain": "Rantai",
   "cloud_trigger_manual": "Manual",
@@ -139,7 +140,11 @@
     "pause_deployment": "Jeda deployment",
     "remove_deployment": "Hapus deployment",
     "resume_deployment": "Lanjutkan deployment",
-    "test_deployment": "Uji deployment"
+    "test_deployment": "Uji deployment",
+    "test_pass": "LULUS",
+    "test_fail": "GAGAL",
+    "test_title_pass": "Lulus",
+    "test_title_fail": "Gagal"
   },
   "deploying": "Men-deploy…",
   "deployments_panel": {
@@ -149,7 +154,8 @@
     "no_deployments_yet": "Belum ada penerapan",
     "select_persona": "Pilih persona untuk di-deploy",
     "budget_no_limit": "Tanpa batas",
-    "budget_per_month": "${amount}/bln"
+    "budget_per_month": "${amount}/bln",
+    "deploy_button": "Terapkan"
   },
   "exec_detail": {
     "fetching_output": "Mengambil output…",
@@ -208,7 +214,8 @@
     "token_expired": "Token kedaluwarsa",
     "token_expired_msg_prefix": "Token kedaluwarsa",
     "token_unknown": "Status token tidak diketahui",
-    "token_unknown_msg": "Status token tidak diketahui"
+    "token_unknown_msg": "Status token tidak diketahui",
+    "expired_at": "(kedaluwarsa {time})"
   },
   "orchestrator_url": "URL Orkestrator",
   "reconcile": {
@@ -247,7 +254,8 @@
     "no_status": "Tidak ada data status tersedia.",
     "no_token": "Tidak ada token dikonfigurasi",
     "no_token_configured": "Tidak ada token yang dikonfigurasi",
-    "token_available": "Token tersedia"
+    "token_available": "Token tersedia",
+    "latency_title": "Latensi pulang-pergi pemeriksaan kesehatan: {ms} md"
   },
   "tabs": {
     "connection": "Koneksi",

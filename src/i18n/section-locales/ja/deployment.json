@@ -31,7 +31,8 @@
     "worker_disconnected": "切断",
     "worker_executing": "実行中",
     "worker_idle": "待機中",
-    "workers": "ワーカー"
+    "workers": "ワーカー",
+    "gauge_aria": "{label} のゲージ"
   },
   "cloud_trigger_chain": "チェーン",
   "cloud_trigger_manual": "手動",
@@ -139,7 +140,11 @@
     "pause_deployment": "デプロイを一時停止",
     "remove_deployment": "デプロイを削除",
     "resume_deployment": "デプロイを再開",
-    "test_deployment": "デプロイをテスト"
+    "test_deployment": "デプロイをテスト",
+    "test_pass": "合格",
+    "test_fail": "失敗",
+    "test_title_pass": "合格",
+    "test_title_fail": "失敗"
   },
   "deploying": "デプロイ中…",
   "deployments_panel": {
@@ -149,7 +154,8 @@
     "no_deployments_yet": "デプロイメントはまだありません。上からペルソナを選択してクラウドAPIエンドポイントとしてデプロイしてください。",
     "select_persona": "デプロイするペルソナを選択",
     "budget_no_limit": "上限なし",
-    "budget_per_month": "${amount}/月"
+    "budget_per_month": "${amount}/月",
+    "deploy_button": "デプロイ"
   },
   "exec_detail": {
     "fetching_output": "出力を取得中…",
@@ -208,7 +214,8 @@
     "token_expired": "トークン有効期限切れ",
     "token_expired_msg_prefix": "このOAuthトークンは期限切れです",
     "token_unknown": "トークンステータス不明",
-    "token_unknown_msg": "トークンの有効性を確認できませんでした。トークンを更新してアクティブであることを確認してください。"
+    "token_unknown_msg": "トークンの有効性を確認できませんでした。トークンを更新してアクティブであることを確認してください。",
+    "expired_at": "（{time} に期限切れ）"
   },
   "orchestrator_url": "オーケストレーターURL",
   "reconcile": {
@@ -247,7 +254,8 @@
     "no_status": "ステータスデータがありません。",
     "no_token": "トークン未設定",
     "no_token_configured": "トークンが設定されていません",
-    "token_available": "トークンあり"
+    "token_available": "トークンあり",
+    "latency_title": "ヘルスチェックの往復レイテンシ：{ms}ms"
   },
   "tabs": {
     "connection": "接続",

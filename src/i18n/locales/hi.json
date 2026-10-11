@@ -3605,7 +3605,8 @@
     "dispatch_run_on_queued_hint": "जागने तक कतार में",
     "dispatch_run_on_stale": "हाल में नहीं देखा गया",
     "dispatch_run_on_this_machine": "यह मशीन",
-    "md_spellcheck": "वर्तनी और व्याकरण"
+    "md_spellcheck": "वर्तनी और व्याकरण",
+    "agent_fallback_name": "एजेंट"
   },
   "connector_licensing": {
     "enterprise": "एंटरप्राइज़",
@@ -4355,7 +4356,10 @@
     "timed_out": "कनेक्शन का समय समाप्त। सर्वर डाउन हो सकता है या URL गलत हो सकता है।",
     "token_empty": "कृपया अपना GitLab personal access token दर्ज करें।",
     "unauthorized": "अमान्य क्रेडेंशियल। कृपया सत्यापित करें और पुनः प्रयास करें।",
-    "url_empty": "कृपया ऑर्केस्ट्रेटर URL दर्ज करें।"
+    "url_empty": "कृपया ऑर्केस्ट्रेटर URL दर्ज करें।",
+    "credentials_revoked": "क्रेडेंशियल की अवधि समाप्त हो गई है या उन्हें रद्द कर दिया गया है। कृपया क्लाउड ऑर्केस्ट्रेटर से दोबारा कनेक्ट करें।",
+    "reconnect_exhausted": "कई प्रयासों के बाद भी क्लाउड ऑर्केस्ट्रेटर तक नहीं पहुँचा जा सका। कनेक्शन जाँचें और फिर कोशिश करें। अंतिम त्रुटि: {cause}",
+    "reconnect_disconnected": "कनेक्शन जाँच में डिस्कनेक्ट बताया गया"
   },
   "deployment": {
     "api_key": "API कुंजी",
@@ -4390,7 +4394,8 @@
       "worker_disconnected": "डिस्कनेक्ट",
       "worker_executing": "निष्पादित हो रहा है",
       "worker_idle": "निष्क्रिय",
-      "workers": "वर्कर"
+      "workers": "वर्कर",
+      "gauge_aria": "{label} गेज"
     },
     "cloud_trigger_chain": "चेन",
     "cloud_trigger_manual": "मैन्युअल",
@@ -4498,7 +4503,11 @@
       "pause_deployment": "तैनाती रोकें",
       "remove_deployment": "तैनाती हटाएं",
       "resume_deployment": "तैनाती फिर शुरू करें",
-      "test_deployment": "तैनाती परीक्षण"
+      "test_deployment": "तैनाती परीक्षण",
+      "test_pass": "पास",
+      "test_fail": "विफल",
+      "test_title_pass": "उत्तीर्ण",
+      "test_title_fail": "विफल"
     },
     "deploying": "डिप्लॉय हो रहा है…",
     "deployments_panel": {
@@ -4508,7 +4517,8 @@
       "no_deployments_yet": "अभी तक कोई deployment नहीं। cloud API endpoint के रूप में deploy करने के लिए ऊपर एक पर्सोना चुनें।",
       "select_persona": "तैनात करने के लिए एक पर्सोना चुनें",
       "budget_no_limit": "कोई सीमा नहीं",
-      "budget_per_month": "${amount}/माह"
+      "budget_per_month": "${amount}/माह",
+      "deploy_button": "डिप्लॉय करें"
     },
     "exec_detail": {
       "fetching_output": "आउटपुट लोड हो रहा है…",
@@ -4567,7 +4577,8 @@
       "token_expired": "टोकन समाप्त",
       "token_expired_msg_prefix": "यह OAuth टोकन समाप्त हो गया है",
       "token_unknown": "टोकन स्थिति अज्ञात",
-      "token_unknown_msg": "टोकन वैधता सत्यापित नहीं की जा सकी। यह सक्रिय है या नहीं, इसकी पुष्टि के लिए टोकन रिफ़्रेश करें।"
+      "token_unknown_msg": "टोकन वैधता सत्यापित नहीं की जा सकी। यह सक्रिय है या नहीं, इसकी पुष्टि के लिए टोकन रिफ़्रेश करें।",
+      "expired_at": "({time} को समाप्त हुआ)"
     },
     "orchestrator_url": "ऑर्केस्ट्रेटर URL",
     "reconcile": {
@@ -4606,7 +4617,8 @@
       "no_status": "कोई स्थिति डेटा उपलब्ध नहीं है।",
       "no_token": "कोई टोकन कॉन्फ़िगर नहीं है",
       "no_token_configured": "कोई टोकन कॉन्फ़िगर नहीं",
-      "token_available": "टोकन उपलब्ध है"
+      "token_available": "टोकन उपलब्ध है",
+      "latency_title": "हेल्थ-चेक की राउंड-ट्रिप लेटेंसी: {ms}ms"
     },
     "tabs": {
       "connection": "कनेक्शन",

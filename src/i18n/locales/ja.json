@@ -3605,7 +3605,8 @@
     "dispatch_run_on_queued_hint": "起動するまでキューで待機します",
     "dispatch_run_on_stale": "最近確認されていません",
     "dispatch_run_on_this_machine": "このマシン",
-    "md_spellcheck": "スペルと文法"
+    "md_spellcheck": "スペルと文法",
+    "agent_fallback_name": "エージェント"
   },
   "connector_licensing": {
     "enterprise": "エンタープライズ",
@@ -4355,7 +4356,10 @@
     "timed_out": "接続がタイムアウトしました。サーバーがダウンしているか、URLが間違っている可能性があります。",
     "token_empty": "GitLabの個人アクセストークンを入力してください。",
     "unauthorized": "認証情報が無効です。確認して再試行してください。",
-    "url_empty": "オーケストレーターのURLを入力してください。"
+    "url_empty": "オーケストレーターのURLを入力してください。",
+    "credentials_revoked": "認証情報が期限切れか取り消されました。クラウドオーケストレーターに再接続してください。",
+    "reconnect_exhausted": "複数回試行しましたが、クラウドオーケストレーターに接続できませんでした。接続を確認して再試行してください。最後のエラー：{cause}",
+    "reconnect_disconnected": "接続チェックで切断が報告されました"
   },
   "deployment": {
     "api_key": "APIキー",
@@ -4390,7 +4394,8 @@
       "worker_disconnected": "切断",
       "worker_executing": "実行中",
       "worker_idle": "待機中",
-      "workers": "ワーカー"
+      "workers": "ワーカー",
+      "gauge_aria": "{label} のゲージ"
     },
     "cloud_trigger_chain": "チェーン",
     "cloud_trigger_manual": "手動",
@@ -4498,7 +4503,11 @@
       "pause_deployment": "デプロイを一時停止",
       "remove_deployment": "デプロイを削除",
       "resume_deployment": "デプロイを再開",
-      "test_deployment": "デプロイをテスト"
+      "test_deployment": "デプロイをテスト",
+      "test_pass": "合格",
+      "test_fail": "失敗",
+      "test_title_pass": "合格",
+      "test_title_fail": "失敗"
     },
     "deploying": "デプロイ中…",
     "deployments_panel": {
@@ -4508,7 +4517,8 @@
       "no_deployments_yet": "デプロイメントはまだありません。上からペルソナを選択してクラウドAPIエンドポイントとしてデプロイしてください。",
       "select_persona": "デプロイするペルソナを選択",
       "budget_no_limit": "上限なし",
-      "budget_per_month": "${amount}/月"
+      "budget_per_month": "${amount}/月",
+      "deploy_button": "デプロイ"
     },
     "exec_detail": {
       "fetching_output": "出力を取得中…",
@@ -4567,7 +4577,8 @@
       "token_expired": "トークン有効期限切れ",
       "token_expired_msg_prefix": "このOAuthトークンは期限切れです",
       "token_unknown": "トークンステータス不明",
-      "token_unknown_msg": "トークンの有効性を確認できませんでした。トークンを更新してアクティブであることを確認してください。"
+      "token_unknown_msg": "トークンの有効性を確認できませんでした。トークンを更新してアクティブであることを確認してください。",
+      "expired_at": "（{time} に期限切れ）"
     },
     "orchestrator_url": "オーケストレーターURL",
     "reconcile": {
@@ -4606,7 +4617,8 @@
       "no_status": "ステータスデータがありません。",
       "no_token": "トークン未設定",
       "no_token_configured": "トークンが設定されていません",
-      "token_available": "トークンあり"
+      "token_available": "トークンあり",
+      "latency_title": "ヘルスチェックの往復レイテンシ：{ms}ms"
     },
     "tabs": {
       "connection": "接続",

@@ -14,7 +14,8 @@
     "token_available": "Token available",
     "no_token": "No token configured",
     "no_token_configured": "No token configured",
-    "no_status": "No status data available."
+    "no_status": "No status data available.",
+    "latency_title": "Health-check round-trip latency: {ms}ms"
   },
   "api_playground": {
     "title": "API Playground",
@@ -51,7 +52,8 @@
     "no_deployments_yet": "No deployments yet. Select a persona above to deploy it as a cloud API endpoint.",
     "active_deployments": "Active Deployments",
     "budget_no_limit": "No limit",
-    "budget_per_month": "${amount}/mo"
+    "budget_per_month": "${amount}/mo",
+    "deploy_button": "Deploy"
   },
   "reconcile": {
     "heading": "Deployments from a previous session",
@@ -95,7 +97,8 @@
     "open_authorization_window": "Open Authorization Window",
     "token_unknown_msg": "Token validity could not be verified. Refresh the token to confirm it is still active.",
     "connect_anthropic_msg": "Connect your Anthropic account to enable OAuth-based authentication for cloud executions.",
-    "token_expired_msg_prefix": "This OAuth token has expired"
+    "token_expired_msg_prefix": "This OAuth token has expired",
+    "expired_at": "(expired {time})"
   },
   "trigger_form": {
     "new_cloud_trigger": "New Cloud Trigger",
@@ -125,7 +128,11 @@
     "budget_label": "Budget:",
     "label_invocations": "Invocations:",
     "label_last_called": "Last called:",
-    "label_created": "Created:"
+    "label_created": "Created:",
+    "test_pass": "PASS",
+    "test_fail": "FAIL",
+    "test_title_pass": "Passed",
+    "test_title_fail": "Failed"
   },
   "tabs": {
     "connection": "Connection",
@@ -145,7 +152,8 @@
     "queue_length": "Waiting in Line",
     "active_executions": "Currently Running",
     "active_execution": "Currently Running",
-    "claude_token": "Claude Token"
+    "claude_token": "Claude Token",
+    "gauge_aria": "{label} gauge"
   },
   "history": {
     "just_now": "Just now",
