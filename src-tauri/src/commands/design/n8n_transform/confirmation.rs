@@ -583,7 +583,7 @@ pub fn confirm_n8n_persona_draft(
 
                 if was_rolled_back {
                     // Clear the stale persona_id so we can retry
-                    let _ = session_repo::update(
+                    if let Err(e) = session_repo::update(
                         &state.db,
                         sid,
                         &UpdateN8nSessionInput {
@@ -591,7 +591,9 @@ pub fn confirm_n8n_persona_draft(
                             status: Some(SessionStatus::Transforming),
                             ..Default::default()
                         },
-                    );
+                    ) {
+                        tracing::warn!(session_id = %sid, error = %e, "n8n session write failed: rolled-back persona reset not persisted");
+                    }
                     tracing::info!(
                         session_id = %sid,
                         persona_id = %existing_pid,
@@ -630,7 +632,7 @@ pub fn confirm_n8n_persona_draft(
     if let Some(ref sid) = session_id {
         if let Some(persona_val) = response.get("persona") {
             if let Some(pid) = persona_val.get("id").and_then(|v| v.as_str()) {
-                let _ = session_repo::update(
+                if let Err(e) = session_repo::update(
                     &state.db,
                     sid,
                     &UpdateN8nSessionInput {
@@ -638,7 +640,9 @@ pub fn confirm_n8n_persona_draft(
                         status: Some(SessionStatus::Confirmed),
                         ..Default::default()
                     },
-                );
+                ) {
+                    tracing::error!(session_id = %sid, error = %e, "n8n session write failed: persona_id/Confirmed stamp not persisted; confirm idempotency guard is degraded");
+                }
             }
         }
     }
