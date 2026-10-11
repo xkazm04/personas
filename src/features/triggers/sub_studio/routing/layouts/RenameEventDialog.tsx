@@ -19,9 +19,9 @@ import { BaseModal } from '@/features/shared/components/modals';
 
 const TITLE_ID = 'rename-event-dialog-title';
 
-// Mirrors `RESERVED_EVENT_TYPES` in src-tauri/src/db/repos/resources/triggers.rs.
-// Kept in sync manually; the backend still rejects these authoritatively.
-const RESERVED_EVENT_TYPES = new Set([
+// Mirrors `RESERVED_EVENT_TYPES` in src-tauri/db/src/repos/resources/triggers/event_wiring.rs.
+// The parity test pins this list to the backend; the backend still rejects authoritatively.
+export const RESERVED_EVENT_TYPES = new Set([
   'webhook_received',
   'schedule_fired',
   'polling_changed',
@@ -88,6 +88,7 @@ export function RenameEventDialog({
   const [newEventType, setNewEventType] = useState(oldEventType);
   const [busy, setBusy] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const sourceReserved = reserved || RESERVED_EVENT_TYPES.has(oldEventType);
 
   // Reset the input whenever the dialog re-opens on a different row.
   useEffect(() => {
@@ -99,7 +100,7 @@ export function RenameEventDialog({
   }, [open, oldEventType]);
 
   const clientError = useMemo<string | null>(() => {
-    if (reserved) {
+    if (sourceReserved) {
       return `\`${oldEventType}\` is a built-in infrastructure event and cannot be renamed.`;
     }
     const trimmed = newEventType.trim();
@@ -113,7 +114,7 @@ export function RenameEventDialog({
       return `\`${trimmed}\` is reserved for infrastructure events and can't be used as a target.`;
     }
     return null;
-  }, [newEventType, oldEventType, reserved]);
+  }, [newEventType, oldEventType, sourceReserved]);
 
   const disabled = busy || clientError !== null;
 
@@ -182,7 +183,7 @@ export function RenameEventDialog({
               type="text"
               value={newEventType}
               onChange={e => setNewEventType(e.target.value)}
-              disabled={reserved || busy}
+              disabled={sourceReserved || busy}
               autoFocus
               onKeyDown={e => {
                 if (e.key === 'Enter' && !disabled) {
@@ -194,7 +195,7 @@ export function RenameEventDialog({
                 }
               }}
               className={`w-full px-2.5 py-1.5 typo-code rounded-card bg-secondary/30 border text-foreground focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${
-                clientError && !reserved
+                clientError && !sourceReserved
                   ? 'border-amber-400/40 focus:border-amber-400/60'
                   : 'border-primary/15 focus:border-cyan-400/50'
               }`}
