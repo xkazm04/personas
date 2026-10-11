@@ -4484,7 +4484,9 @@
       "bulk_action_resume": "Hromadné obnovení",
       "bulk_action_delete": "Hromadné smazání",
       "bulk_result_ok": "{action}: aktualizováno {count}",
-      "bulk_result_partial": "{action}: úspěšně {succeeded}, neúspěšně {failed}"
+      "bulk_result_partial": "{action}: úspěšně {succeeded}, neúspěšně {failed}",
+      "select_all": "Vybrat všechna nasazení",
+      "select_row": "Vybrat {name}"
     },
     "deploy_card": {
       "budget_label": "Rozpočet:",

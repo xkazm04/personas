@@ -125,7 +125,9 @@
     "bulk_action_resume": "Massen-Fortsetzung",
     "bulk_action_delete": "Massen-Löschung",
     "bulk_result_ok": "{action}: {count} aktualisiert",
-    "bulk_result_partial": "{action}: {succeeded} erfolgreich, {failed} fehlgeschlagen"
+    "bulk_result_partial": "{action}: {succeeded} erfolgreich, {failed} fehlgeschlagen",
+    "select_all": "Alle Bereitstellungen auswählen",
+    "select_row": "{name} auswählen"
   },
   "deploy_card": {
     "budget_label": "Budget:",

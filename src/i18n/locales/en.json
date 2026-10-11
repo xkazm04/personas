@@ -8030,7 +8030,9 @@
       "bulk_action_resume": "Bulk resume",
       "bulk_action_delete": "Bulk delete",
       "bulk_result_ok": "{action}: {count} updated",
-      "bulk_result_partial": "{action}: {succeeded} succeeded, {failed} failed"
+      "bulk_result_partial": "{action}: {succeeded} succeeded, {failed} failed",
+      "select_all": "Select all deployments",
+      "select_row": "Select {name}"
     },
     "cloud_trigger_schedule": "Scheduled (Cron)",
     "cloud_trigger_polling": "Polling",

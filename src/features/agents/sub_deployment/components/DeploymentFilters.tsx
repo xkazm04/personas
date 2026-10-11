@@ -43,6 +43,7 @@ export function DeploymentFilters({
       <div className="relative">
         <button
           type="button"
+          aria-expanded={filterOpen}
           onClick={() => setFilterOpen(!filterOpen)}
           className={`flex items-center gap-1.5 px-3 py-2 typo-body rounded-modal border transition-colors cursor-pointer ${
             targetFilter !== 'all' || statusFilter !== 'all'

@@ -4484,7 +4484,9 @@
       "bulk_action_resume": "استئناف جماعي",
       "bulk_action_delete": "حذف جماعي",
       "bulk_result_ok": "{action}: تم تحديث {count}",
-      "bulk_result_partial": "{action}: نجح {succeeded}، وفشل {failed}"
+      "bulk_result_partial": "{action}: نجح {succeeded}، وفشل {failed}",
+      "select_all": "تحديد جميع عمليات النشر",
+      "select_row": "تحديد {name}"
     },
     "deploy_card": {
       "budget_label": "الميزانية:",

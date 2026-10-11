@@ -4484,7 +4484,9 @@
       "bulk_action_resume": "일괄 재개",
       "bulk_action_delete": "일괄 삭제",
       "bulk_result_ok": "{action}: {count}개 업데이트됨",
-      "bulk_result_partial": "{action}: {succeeded}개 성공, {failed}개 실패"
+      "bulk_result_partial": "{action}: {succeeded}개 성공, {failed}개 실패",
+      "select_all": "모든 배포 선택",
+      "select_row": "{name} 선택"
     },
     "deploy_card": {
       "budget_label": "예산:",

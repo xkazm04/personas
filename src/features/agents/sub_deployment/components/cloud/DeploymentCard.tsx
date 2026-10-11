@@ -211,6 +211,7 @@ export function DeploymentCard({
           {onDismissTest && (
             <button
               type="button"
+              aria-label={t.common.dismiss}
               onClick={() => onDismissTest(d.id)}
               className="p-0.5 rounded hover:bg-primary/10 transition-colors shrink-0 cursor-pointer"
             >

@@ -125,7 +125,9 @@
     "bulk_action_resume": "একসাথে পুনরায় চালু",
     "bulk_action_delete": "একসাথে মুছুন",
     "bulk_result_ok": "{action}: {count}টি হালনাগাদ হয়েছে",
-    "bulk_result_partial": "{action}: {succeeded}টি সফল, {failed}টি ব্যর্থ"
+    "bulk_result_partial": "{action}: {succeeded}টি সফল, {failed}টি ব্যর্থ",
+    "select_all": "সব স্থাপনা নির্বাচন করুন",
+    "select_row": "{name} নির্বাচন করুন"
   },
   "deploy_card": {
     "budget_label": "বাজেট:",

@@ -312,6 +312,7 @@ export default function ExecutionMiniPlayer() {
               <Button
                 variant="ghost"
                 size="icon-sm"
+                aria-label={t.execution.stop_execution}
                 onClick={handleStop}
                 className="text-red-400/70 hover:text-red-400 hover:bg-red-500/15"
               >
@@ -324,6 +325,7 @@ export default function ExecutionMiniPlayer() {
             <Button
               variant="ghost"
               size="icon-sm"
+              aria-label={miniPlayerExpanded ? t.execution.collapse : t.execution.expand}
               onClick={toggleMiniPlayerExpanded}
             >
               {miniPlayerExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
@@ -334,6 +336,7 @@ export default function ExecutionMiniPlayer() {
             <Button
               variant="ghost"
               size="icon-sm"
+              aria-label={t.execution.unpin_mini_player}
               onClick={unpinMiniPlayer}
             >
               <PinOff className="w-3.5 h-3.5" />

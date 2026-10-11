@@ -4484,7 +4484,9 @@
       "bulk_action_resume": "Tiếp tục hàng loạt",
       "bulk_action_delete": "Xóa hàng loạt",
       "bulk_result_ok": "{action}: đã cập nhật {count}",
-      "bulk_result_partial": "{action}: {succeeded} thành công, {failed} thất bại"
+      "bulk_result_partial": "{action}: {succeeded} thành công, {failed} thất bại",
+      "select_all": "Chọn tất cả bản triển khai",
+      "select_row": "Chọn {name}"
     },
     "deploy_card": {
       "budget_label": "Ngân sách:",

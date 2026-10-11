@@ -125,7 +125,9 @@
     "bulk_action_resume": "बल्क पुनः आरंभ",
     "bulk_action_delete": "बल्क हटाएँ",
     "bulk_result_ok": "{action}: {count} अपडेट हुए",
-    "bulk_result_partial": "{action}: {succeeded} सफल, {failed} विफल"
+    "bulk_result_partial": "{action}: {succeeded} सफल, {failed} विफल",
+    "select_all": "सभी परिनियोजन चुनें",
+    "select_row": "{name} चुनें"
   },
   "deploy_card": {
     "budget_label": "बजट:",

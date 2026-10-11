@@ -4484,7 +4484,9 @@
       "bulk_action_resume": "一括再開",
       "bulk_action_delete": "一括削除",
       "bulk_result_ok": "{action}: {count} 件を更新しました",
-      "bulk_result_partial": "{action}: 成功 {succeeded} 件、失敗 {failed} 件"
+      "bulk_result_partial": "{action}: 成功 {succeeded} 件、失敗 {failed} 件",
+      "select_all": "すべてのデプロイを選択",
+      "select_row": "{name} を選択"
     },
     "deploy_card": {
       "budget_label": "予算:",

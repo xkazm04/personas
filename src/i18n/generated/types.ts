@@ -8037,6 +8037,8 @@ export type Translations = {
       bulk_action_delete: string;
       bulk_result_ok: string;
       bulk_result_partial: string;
+      select_all: string;
+      select_row: string;
     };
     cloud_trigger_schedule: string;
     cloud_trigger_polling: string;

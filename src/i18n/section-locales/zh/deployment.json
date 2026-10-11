@@ -125,7 +125,9 @@
     "bulk_action_resume": "批量恢复",
     "bulk_action_delete": "批量删除",
     "bulk_result_ok": "{action}：已更新 {count} 个",
-    "bulk_result_partial": "{action}：成功 {succeeded} 个，失败 {failed} 个"
+    "bulk_result_partial": "{action}：成功 {succeeded} 个，失败 {failed} 个",
+    "select_all": "选择所有部署",
+    "select_row": "选择 {name}"
   },
   "deploy_card": {
     "budget_label": "预算：",

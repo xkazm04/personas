@@ -1,0 +1,50 @@
+import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { DeploymentTable } from './DeploymentTable';
+import { DeploymentFilters } from './DeploymentFilters';
+import { DeploymentCard } from './cloud/DeploymentCard';
+import type { UnifiedDeployment } from './deploymentTypes';
+
+const row: UnifiedDeployment = {
+  id: 'deployment-1', target: 'cloud', personaName: 'Payroll API', personaId: null,
+  name: 'Payroll API', status: 'active', invocations: 2,
+  lastActivity: null, createdAt: null, webUrl: null,
+};
+
+describe('deployment controls have accessible state and names', () => {
+  it('names the select-all, row selection, and test-result dismiss controls', () => {
+    render(<DeploymentTable
+      displayRows={[row]} busyId={null} sortKey="name" sortDir="asc" toggleSort={vi.fn()}
+      handleAction={vi.fn()} cloudPauseDeploy={vi.fn()} cloudResumeDeploy={vi.fn()}
+      cloudRemoveDeploy={vi.fn()} gitlabUndeployAgent={vi.fn()}
+      selectedIds={new Set()} onToggleSelect={vi.fn()} onToggleSelectAll={vi.fn()}
+      testStates={{ [row.id]: { running: false, result: { status: 'pass', durationMs: 10, costUsd: null } } }}
+      onDismissTest={vi.fn()}
+    />);
+
+    expect(screen.getByRole('checkbox', { name: 'Select all deployments' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Select Payroll API' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeInTheDocument();
+  });
+
+  it('exposes whether the filter popover is expanded', () => {
+    render(<DeploymentFilters
+      search="" onSearchChange={vi.fn()} targetFilter="all" onTargetFilterChange={vi.fn()}
+      statusFilter="all" onStatusFilterChange={vi.fn()}
+    />);
+    const button = screen.getByRole('button', { name: 'Filter' });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('names the cloud card test-result dismiss control', () => {
+    render(<DeploymentCard
+      deployment={{ id: 'deployment-1', slug: 'payroll', personaId: 'persona-1', status: 'paused',
+        label: 'Payroll API', maxMonthlyBudgetUsd: null, invocationCount: 0 } as never}
+      baseUrl={null} personaName="Payroll API" onPause={vi.fn()} onResume={vi.fn()} onRemove={vi.fn()}
+      testResult={{ status: 'pass', durationMs: null, costUsd: null }} onDismissTest={vi.fn()}
+    />);
+    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeInTheDocument();
+  });
+});

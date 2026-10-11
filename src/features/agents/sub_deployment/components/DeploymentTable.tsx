@@ -89,7 +89,7 @@ export function DeploymentTable({
   onToggleSelect,
   onToggleSelectAll,
 }: DeploymentTableProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const dt = t.deployment.dashboard;
   const allSelected = displayRows.length > 0 && displayRows.every((r) => selectedIds.has(r.id));
   const someSelected = displayRows.some((r) => selectedIds.has(r.id));
@@ -101,6 +101,7 @@ export function DeploymentTable({
           <th className="px-4 py-2.5 w-10">
             <input
               type="checkbox"
+              aria-label={dt.select_all}
               checked={allSelected}
               ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected; }}
               onChange={onToggleSelectAll}
@@ -142,6 +143,7 @@ export function DeploymentTable({
               <td className="px-4 py-3">
                 <input
                   type="checkbox"
+                  aria-label={tx(dt.select_row, { name: row.name })}
                   checked={selectedIds.has(row.id)}
                   onChange={() => onToggleSelect(row.id)}
                   className="w-3.5 h-3.5 rounded border-primary/30 bg-secondary/30 accent-primary cursor-pointer"
@@ -217,6 +219,7 @@ export function DeploymentTable({
                       {onDismissTest && (
                         <button
                           type="button"
+                          aria-label={t.common.dismiss}
                           onClick={() => onDismissTest(row.id)}
                           className="p-0 ml-0.5 hover:text-foreground/80 transition-colors cursor-pointer"
                         >

@@ -125,7 +125,9 @@
     "bulk_action_resume": "Reprise groupée",
     "bulk_action_delete": "Suppression groupée",
     "bulk_result_ok": "{action} : {count} mis à jour",
-    "bulk_result_partial": "{action} : {succeeded} réussis, {failed} en échec"
+    "bulk_result_partial": "{action} : {succeeded} réussis, {failed} en échec",
+    "select_all": "Sélectionner tous les déploiements",
+    "select_row": "Sélectionner {name}"
   },
   "deploy_card": {
     "budget_label": "Budget :",
