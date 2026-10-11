@@ -199,9 +199,11 @@ export function useRoutingState({
       try {
         await linkPersonaToEvent(personaId, eventType, { useCaseId });
         await reload();
-      } catch (err) { silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:catch3")(err); }
+      } catch (err) {
+        toastCatch('features/triggers/sub_studio/routing/layouts/useRoutingState:addPersona', st.add_listener_failed)(err);
+      }
     },
-    [addPersonaForEvent, reload],
+    [addPersonaForEvent, reload, st.add_listener_failed],
   );
 
   const handleRename = useCallback(
@@ -229,9 +231,12 @@ export function useRoutingState({
         else await unlinkPersonaFromEvent(plan.triggerId);
       }
       await reload();
-    } catch (err) { silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:catch4")(err); }
-    setDisconnectTarget(null);
-  }, [disconnectTarget, reload]);
+      setDisconnectTarget(null);
+    } catch (err) {
+      // The cable is still there: keep the dialog open so the failure is read in context.
+      toastCatch('features/triggers/sub_studio/routing/layouts/useRoutingState:disconnect', st.disconnect_failed)(err);
+    }
+  }, [disconnectTarget, reload, st.disconnect_failed]);
 
   const connectedPersonaIdsForRow = useMemo(() => {
     if (!addPersonaForEvent) return new Set<string>();

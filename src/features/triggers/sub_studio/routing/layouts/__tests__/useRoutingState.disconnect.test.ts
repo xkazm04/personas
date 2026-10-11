@@ -19,12 +19,15 @@ import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 const listAllTriggers = vi.fn();
 const deleteTrigger = vi.fn();
 const unlinkPersonaFromEvent = vi.fn();
+const linkPersonaToEvent = vi.fn();
+const toastCatchInner = vi.fn();
+const toastCatch = vi.fn((...a: unknown[]) => (err: unknown) => toastCatchInner(...a, err));
 
 vi.mock('@/api/pipeline/triggers', () => ({
   listAllTriggers: (...a: unknown[]) => listAllTriggers(...a),
   deleteTrigger: (...a: unknown[]) => deleteTrigger(...a),
   unlinkPersonaFromEvent: (...a: unknown[]) => unlinkPersonaFromEvent(...a),
-  linkPersonaToEvent: vi.fn(),
+  linkPersonaToEvent: (...a: unknown[]) => linkPersonaToEvent(...a),
   renameEventType: vi.fn(),
 }));
 
@@ -32,6 +35,11 @@ vi.mock('@/api/overview/events', () => ({
   listEvents: () => Promise.resolve([]),
   listAllSubscriptions: () => Promise.resolve([]),
   deleteSubscription: vi.fn(),
+}));
+
+vi.mock('@/lib/silentCatch', async (orig) => ({
+  ...(await orig<typeof import('@/lib/silentCatch')>()),
+  toastCatch: (...a: unknown[]) => toastCatch(...a),
 }));
 
 import { useRoutingState } from '../useRoutingState';
@@ -52,6 +60,9 @@ beforeEach(() => {
   ]);
   deleteTrigger.mockReset().mockResolvedValue(true);
   unlinkPersonaFromEvent.mockReset().mockResolvedValue(true);
+  linkPersonaToEvent.mockReset().mockResolvedValue(undefined);
+  toastCatchInner.mockReset();
+  toastCatch.mockClear();
 });
 
 describe('useRoutingState disconnect', () => {
@@ -72,6 +83,32 @@ describe('useRoutingState disconnect', () => {
     expect(deleteTrigger).toHaveBeenCalledWith('S', 'B');
     expect(unlinkPersonaFromEvent).not.toHaveBeenCalled();
     expect(result.current.disconnectTarget).toBeNull();
+  });
+
+  it('a failed disconnect toasts and keeps the dialog open', async () => {
+    deleteTrigger.mockRejectedValueOnce(new Error('db locked'));
+    const { result } = renderHook(() => useRoutingState({ personas: [], teams: [] }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const connection = result.current.rows.flatMap((r) => r.connections)[0]!;
+    act(() => result.current.setDisconnectTarget({ connection, personaName: 'B', eventLabel: 'trigger_fired' }));
+
+    await act(async () => { await result.current.handleDisconnect(); });
+
+    expect(toastCatchInner).toHaveBeenCalledTimes(1);
+    expect(String(toastCatchInner.mock.calls[0]![0])).toContain('disconnect');
+    expect(result.current.disconnectTarget).not.toBeNull();
+  });
+
+  it('a failed add-listener link toasts', async () => {
+    linkPersonaToEvent.mockRejectedValueOnce(new Error('boom'));
+    const { result } = renderHook(() => useRoutingState({ personas: [], teams: [] }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    act(() => result.current.setAddPersonaForEvent({ eventType: 'trigger_fired' }));
+
+    await act(async () => { await result.current.handleAddPersona('B', null); });
+
+    expect(toastCatchInner).toHaveBeenCalledTimes(1);
+    expect(String(toastCatchInner.mock.calls[0]![0])).toContain('addPersona');
   });
 
   it('[guard] the ledger runs handleDisconnect only as the DisconnectDialog confirm', () => {

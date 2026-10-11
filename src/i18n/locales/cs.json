@@ -21134,6 +21134,7 @@
     "relay_channel_url_placeholder": "https://smee.io/vas-id-kanalu",
     "relay_confirm_delete": "Potvrdit",
     "relay_delete_failed": "Relé se nepodařilo smazat — zkuste to prosím znovu",
+    "relay_toggle_failed": "Relay se nepodařilo aktualizovat — zkuste to prosím znovu",
     "relay_delete_title": "Smazat relé",
     "relay_event_filter_field": "Filtr událostí",
     "relay_event_filter_note": "(volitelné, oddělené čárkou)",
@@ -21334,7 +21335,9 @@
       "resume_dry_run_failed": "Zkušební běh selhal, trasa zůstává pozastavená. {error}",
       "resume_route": "Obnovit trasu",
       "route_paused": "Pozastaveno",
-      "route_toggle_failed": "Trasu se nepodařilo změnit"
+      "route_toggle_failed": "Trasu se nepodařilo změnit",
+      "add_listener_failed": "Posluchače se nepodařilo přidat",
+      "disconnect_failed": "Trasu se nepodařilo odpojit"
     },
     "subscription_list": {
       "active": "Aktivní",

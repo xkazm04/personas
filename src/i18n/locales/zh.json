@@ -21134,6 +21134,7 @@
     "relay_channel_url_placeholder": "https://smee.io/your-channel-id",
     "relay_confirm_delete": "确认",
     "relay_delete_failed": "删除中继失败 — 请重试",
+    "relay_toggle_failed": "更新中继失败 — 请重试",
     "relay_delete_title": "删除中继",
     "relay_event_filter_field": "事件过滤器",
     "relay_event_filter_note": "（可选，逗号分隔）",
@@ -21334,7 +21335,9 @@
       "resume_dry_run_failed": "试运行失败，路由保持暂停。{error}",
       "resume_route": "恢复路由",
       "route_paused": "已暂停",
-      "route_toggle_failed": "无法更改此路由"
+      "route_toggle_failed": "无法更改此路由",
+      "add_listener_failed": "无法添加此监听器",
+      "disconnect_failed": "无法断开此路由"
     },
     "subscription_list": {
       "active": "活跃",

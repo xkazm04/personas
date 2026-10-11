@@ -21134,6 +21134,7 @@
     "relay_channel_url_placeholder": "https://smee.io/your-channel-id",
     "relay_confirm_delete": "पुष्टि करें",
     "relay_delete_failed": "relay हटाने में विफल — कृपया पुनः प्रयास करें",
+    "relay_toggle_failed": "रिले अपडेट नहीं हो सका — कृपया फिर प्रयास करें",
     "relay_delete_title": "relay हटाएँ",
     "relay_event_filter_field": "इवेंट फ़िल्टर",
     "relay_event_filter_note": "(वैकल्पिक, कॉमा से अलग)",
@@ -21334,7 +21335,9 @@
       "resume_dry_run_failed": "ड्राई-रन विफल, इसलिए रूट रुका रहेगा। {error}",
       "resume_route": "रूट फिर से शुरू करें",
       "route_paused": "रुका हुआ",
-      "route_toggle_failed": "यह रूट बदला नहीं जा सका"
+      "route_toggle_failed": "यह रूट बदला नहीं जा सका",
+      "add_listener_failed": "यह लिस्नर जोड़ा नहीं जा सका",
+      "disconnect_failed": "यह रूट डिस्कनेक्ट नहीं हो सका"
     },
     "subscription_list": {
       "active": "सक्रिय",

@@ -21134,6 +21134,7 @@
     "relay_channel_url_placeholder": "https://smee.io/your-channel-id",
     "relay_confirm_delete": "Konfirmasi",
     "relay_delete_failed": "Gagal menghapus relai — silakan coba lagi",
+    "relay_toggle_failed": "Gagal memperbarui relay — silakan coba lagi",
     "relay_delete_title": "Hapus relai",
     "relay_event_filter_field": "Filter peristiwa",
     "relay_event_filter_note": "(opsional, dipisahkan koma)",
@@ -21334,7 +21335,9 @@
       "resume_dry_run_failed": "Uji coba gagal, jadi rute tetap dijeda. {error}",
       "resume_route": "Lanjutkan rute",
       "route_paused": "Dijeda",
-      "route_toggle_failed": "Gagal mengubah rute ini"
+      "route_toggle_failed": "Gagal mengubah rute ini",
+      "add_listener_failed": "Gagal menambahkan listener ini",
+      "disconnect_failed": "Gagal memutuskan rute ini"
     },
     "subscription_list": {
       "active": "Aktif",

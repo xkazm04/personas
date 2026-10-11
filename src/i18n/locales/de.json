@@ -21134,6 +21134,7 @@
     "relay_channel_url_placeholder": "https://smee.io/your-channel-id",
     "relay_confirm_delete": "Bestätigen",
     "relay_delete_failed": "Relay konnte nicht gelöscht werden — bitte erneut versuchen",
+    "relay_toggle_failed": "Relay konnte nicht aktualisiert werden — bitte erneut versuchen",
     "relay_delete_title": "Relay löschen",
     "relay_event_filter_field": "Ereignisfilter",
     "relay_event_filter_note": "(optional, kommagetrennt)",
@@ -21334,7 +21335,9 @@
       "resume_dry_run_failed": "Testlauf fehlgeschlagen, die Route bleibt pausiert. {error}",
       "resume_route": "Route fortsetzen",
       "route_paused": "Pausiert",
-      "route_toggle_failed": "Route konnte nicht geändert werden"
+      "route_toggle_failed": "Route konnte nicht geändert werden",
+      "add_listener_failed": "Listener konnte nicht hinzugefügt werden",
+      "disconnect_failed": "Route konnte nicht getrennt werden"
     },
     "subscription_list": {
       "active": "Aktiv",

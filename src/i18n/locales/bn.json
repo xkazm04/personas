@@ -21134,6 +21134,7 @@
     "relay_channel_url_placeholder": "https://smee.io/your-channel-id",
     "relay_confirm_delete": "নিশ্চিত করুন",
     "relay_delete_failed": "রিলে মুছতে ব্যর্থ হয়েছে — অনুগ্রহ করে আবার চেষ্টা করুন",
+    "relay_toggle_failed": "রিলে আপডেট করা যায়নি — অনুগ্রহ করে আবার চেষ্টা করুন",
     "relay_delete_title": "রিলে মুছুন",
     "relay_event_filter_field": "ইভেন্ট ফিল্টার",
     "relay_event_filter_note": "(ঐচ্ছিক, কমা-বিভক্ত)",
@@ -21334,7 +21335,9 @@
       "resume_dry_run_failed": "ড্রাই-রান ব্যর্থ, তাই রুট বিরতিতেই থাকবে। {error}",
       "resume_route": "রুট আবার চালু করুন",
       "route_paused": "বিরতিতে",
-      "route_toggle_failed": "এই রুট পরিবর্তন করা যায়নি"
+      "route_toggle_failed": "এই রুট পরিবর্তন করা যায়নি",
+      "add_listener_failed": "এই লিসেনার যোগ করা যায়নি",
+      "disconnect_failed": "এই রুট বিচ্ছিন্ন করা যায়নি"
     },
     "subscription_list": {
       "active": "সক্রিয়",

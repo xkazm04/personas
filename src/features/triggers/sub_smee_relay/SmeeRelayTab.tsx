@@ -1,4 +1,4 @@
-import { silentCatch } from "@/lib/silentCatch";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -122,7 +122,9 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
     try {
       await smeeRelaySetStatus(relay.id, newStatus);
       await fetchRelays();
-    } catch (err) { silentCatch("features/triggers/sub_smee_relay/SmeeRelayTab:catch2")(err); }
+    } catch (err) {
+      toastCatch('features/triggers/sub_smee_relay/SmeeRelayTab:toggleStatus', t.triggers.relay_toggle_failed)(err);
+    }
   };
 
   const handleDelete = async (id: string) => {

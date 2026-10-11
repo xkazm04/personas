@@ -21134,6 +21134,7 @@
     "relay_channel_url_placeholder": "https://smee.io/your-channel-id",
     "relay_confirm_delete": "확인",
     "relay_delete_failed": "릴레이 삭제 실패 — 다시 시도해 주세요",
+    "relay_toggle_failed": "릴레이를 업데이트하지 못했습니다 — 다시 시도하세요",
     "relay_delete_title": "릴레이 삭제",
     "relay_event_filter_field": "이벤트 필터",
     "relay_event_filter_note": "(선택 사항, 쉼표로 구분)",
@@ -21334,7 +21335,9 @@
       "resume_dry_run_failed": "드라이 런에 실패하여 경로가 일시 중지 상태로 유지됩니다. {error}",
       "resume_route": "경로 재개",
       "route_paused": "일시 중지됨",
-      "route_toggle_failed": "이 경로를 변경할 수 없습니다"
+      "route_toggle_failed": "이 경로를 변경할 수 없습니다",
+      "add_listener_failed": "이 리스너를 추가하지 못했습니다",
+      "disconnect_failed": "이 경로의 연결을 끊지 못했습니다"
     },
     "subscription_list": {
       "active": "활성",

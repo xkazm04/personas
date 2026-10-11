@@ -21134,6 +21134,7 @@
     "relay_channel_url_placeholder": "https://smee.io/your-channel-id",
     "relay_confirm_delete": "Подтвердить",
     "relay_delete_failed": "Не удалось удалить ретранслятор — попробуйте снова",
+    "relay_toggle_failed": "Не удалось обновить ретранслятор — попробуйте ещё раз",
     "relay_delete_title": "Удалить ретранслятор",
     "relay_event_filter_field": "Фильтр событий",
     "relay_event_filter_note": "(необязательно, через запятую)",
@@ -21334,7 +21335,9 @@
       "resume_dry_run_failed": "Пробный запуск не прошёл, маршрут остаётся на паузе. {error}",
       "resume_route": "Возобновить маршрут",
       "route_paused": "На паузе",
-      "route_toggle_failed": "Не удалось изменить маршрут"
+      "route_toggle_failed": "Не удалось изменить маршрут",
+      "add_listener_failed": "Не удалось добавить слушателя",
+      "disconnect_failed": "Не удалось отключить маршрут"
     },
     "subscription_list": {
       "active": "Активные",
