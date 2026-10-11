@@ -28,12 +28,12 @@ export function ChannelTotem({ channels, tileSize, spacing, max = 5 }: ChannelTo
         return (
           <Tooltip
             key={`${ch.type}-${i}`}
-            content={`${ch.type}${ch.description ? ` — ${ch.description}` : ''}`}
+            content={ch.type ? `${ch.type}${ch.description ? ` — ${ch.description}` : ''}` : ch.description}
             placement="right"
           >
             <div
               role="img"
-              aria-label={ch.type}
+              aria-label={ch.type || ch.description}
               className="absolute rounded-input bg-card-bg/90 backdrop-blur border border-card-border flex items-center justify-center pointer-events-auto cursor-default"
               style={{
                 top: `calc(50% + ${offset * spacing}px)`,

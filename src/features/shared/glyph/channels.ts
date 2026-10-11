@@ -39,14 +39,41 @@ const CHANNEL_STYLES: Record<string, ChannelStyle> = {
 
 const FALLBACK_STYLE: ChannelStyle = { icon: MessageSquare, tint: '#60a5fa' };
 
-/** Turn a concatenated messageSummary (`"slack: team · email: daily"`) back
- *  into structured channel descriptors, one per `{type, description}` pair. */
+/** Recognised channel keywords inside a free-text segment, in order of first
+ *  appearance, de-duplicated (`"Slack and email daily"` -> slack, email). */
+function knownChannelsIn(text: string): string[] {
+  const found = (text.toLowerCase().match(/[a-z]+/g) ?? []).filter((w) => w in CHANNEL_STYLES);
+  return Array.from(new Set(found));
+}
+
+/** Turn a concatenated messageSummary (`"slack: team · email: daily digest"`)
+ *  back into structured channel descriptors, one per `{type, description}` pair.
+ *
+ *  The summary is prose, so a segment may not follow the `type: description`
+ *  shape. A segment is only trusted as a pair when its type is a single word;
+ *  otherwise the sentence is never promoted to a channel TYPE — recognised
+ *  channel names inside it become channels (the sentence is their description),
+ *  and a segment naming none becomes an `unstructured` entry with an empty type
+ *  so the UI can render it as plain text instead of a fake channel. */
 export function parseChannels(summary: string | undefined): ParsedChannel[] {
   if (!summary) return [];
-  return summary.split(' · ').map((seg) => {
+  const out: ParsedChannel[] = [];
+  for (const raw of summary.split(' · ')) {
+    const seg = raw.trim();
+    if (!seg) continue;
     const [t, ...rest] = seg.split(':');
-    return { type: (t ?? '').trim(), description: rest.join(':').trim() };
-  }).filter((ch) => ch.type.length > 0);
+    const type = (t ?? '').trim();
+    if (rest.length > 0 && type.length > 0 && !/\s/.test(type)) {
+      out.push({ type, description: rest.join(':').trim() });
+    } else if (rest.length === 0 && type.toLowerCase() in CHANNEL_STYLES) {
+      out.push({ type, description: '' });
+    } else {
+      const known = knownChannelsIn(seg);
+      if (known.length > 0) known.forEach((k) => out.push({ type: k, description: seg }));
+      else out.push({ type: '', description: seg, unstructured: true });
+    }
+  }
+  return out;
 }
 
 function channelStyle(type: string): ChannelStyle {
