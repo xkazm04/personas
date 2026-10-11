@@ -19,16 +19,24 @@ use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 /// Match a tool name against known connector names to infer its credential type.
+///
+/// Exact (case-insensitive) name wins. Otherwise a substring match is accepted
+/// only when exactly one connector matches: `post` is contained in both
+/// `postgres` and `posthog`, and binding either by row order would inject the
+/// wrong secret, so an ambiguous name returns `None` (needs setup) instead.
 fn infer_credential_type(tool_name: &str, connectors: &[ConnectorDefinition]) -> Option<String> {
     let lower = tool_name.to_lowercase();
-    connectors.iter().find_map(|c| {
+    if let Some(c) = connectors.iter().find(|c| c.name.to_lowercase() == lower) {
+        return Some(c.name.clone());
+    }
+    let mut partial = connectors.iter().filter(|c| {
         let cn = c.name.to_lowercase();
-        if lower.contains(&cn) || cn.contains(&lower) {
-            Some(c.name.clone())
-        } else {
-            None
-        }
-    })
+        lower.contains(&cn) || cn.contains(&lower)
+    });
+    match (partial.next(), partial.next()) {
+        (Some(only), None) => Some(only.name.clone()),
+        _ => None,
+    }
 }
 
 /// Generic tool names that act as transport/utility and rely on connector
@@ -3732,6 +3740,62 @@ fn auto_create_smee_relays(
 mod tests {
     use super::*;
     use crate::db::models::{AgentIr, AgentIrEvent};
+
+    fn connector_named(name: &str) -> ConnectorDefinition {
+        ConnectorDefinition {
+            id: name.to_string(),
+            name: name.to_string(),
+            label: name.to_string(),
+            icon_url: None,
+            color: String::new(),
+            category: String::new(),
+            fields: "[]".into(),
+            healthcheck_config: None,
+            services: "[]".into(),
+            events: "[]".into(),
+            metadata: None,
+            resources: None,
+            is_builtin: true,
+            created_at: String::new(),
+            updated_at: String::new(),
+        }
+    }
+
+    #[test]
+    fn infer_credential_type_refuses_ambiguous_substrings() {
+        let cs: Vec<_> = [
+            "resend",
+            "sendgrid",
+            "postgres",
+            "posthog",
+            "gmail",
+            "slack",
+            "slack_webhook",
+            "google_drive",
+            "onedrive",
+            "pipedrive",
+        ]
+        .iter()
+        .map(|n| connector_named(n))
+        .collect();
+        for ambiguous in ["send", "post", "drive"] {
+            assert_eq!(infer_credential_type(ambiguous, &cs), None, "{ambiguous}");
+        }
+        // Exact wins even when other connectors contain the name.
+        assert_eq!(
+            infer_credential_type("slack", &cs).as_deref(),
+            Some("slack")
+        );
+        // A unique partial match still binds.
+        assert_eq!(
+            infer_credential_type("gmail", &cs).as_deref(),
+            Some("gmail")
+        );
+        assert_eq!(
+            infer_credential_type("gmail_send", &cs).as_deref(),
+            Some("gmail")
+        );
+    }
 
     fn uc_with_subs(id: &str, subs: serde_json::Value) -> serde_json::Value {
         serde_json::json!({ "id": id, "event_subscriptions": subs })
