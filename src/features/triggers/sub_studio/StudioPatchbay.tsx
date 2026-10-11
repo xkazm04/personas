@@ -18,7 +18,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Check, Trash2, X, Filter, Eye, EyeOff, PanelLeft, PanelLeftClose, PanelRight, PanelRightClose } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Check, Trash2, X, Filter, Eye, EyeOff, PanelLeft, PanelLeftClose, PanelRight, PanelRightClose } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
@@ -102,7 +102,9 @@ export function StudioPatchbay() {
   // Ghost only into emptiness while the roster is still in flight; empty
   // illustration waits until triggers+subs have settled (law 3 / law 5).
   const showGhost = routing.loading && connected.length === 0 && c.draft.links.length === 0;
-  const showEmpty = !routing.loading && isEmpty;
+  // A failed fetch with nothing to show is an error, not a first run.
+  const showLoadError = !routing.loading && routing.loadError && connected.length === 0;
+  const showEmpty = !routing.loading && isEmpty && !showLoadError;
 
   return (
     // The testid keeps the historical "switchboard" name — the companion
@@ -180,6 +182,10 @@ export function StudioPatchbay() {
           <SystemEventAutomationsPanel automations={c.automations} onToggle={c.toggleAutomation} onRun={c.runAutomationNow} onDelete={c.removeAutomation} />
 
           {showGhost && <CableGhostRows />}
+          {showLoadError && (
+            <EmptyState icon={AlertTriangle} title={st.load_failed_title} description={st.load_failed_desc}
+              action={{ label: st.load_failed_retry, onClick: () => void routing.reload() }} />
+          )}
           {showEmpty && <EmptyState icon={Filter} title={st.no_routes_title} description={st.no_routes_desc} />}
 
           {/* Draft cables (pending, unsaved) */}
