@@ -83,7 +83,7 @@ pub async fn start_n8n_transform_background(
             }
             if let Some(token) = &existing.cancel_token {
                 if token.is_cancelled() {
-                    return Err(AppError::Internal("Transform cancelled by user".into()));
+                    return Err(cancelled_error());
                 }
             }
         }
@@ -125,7 +125,7 @@ pub async fn start_n8n_transform_background(
     }
 
     if cancel_token.is_cancelled() {
-        return Err(AppError::Internal("Transform cancelled by user".into()));
+        return Err(cancelled_error());
     }
 
     set_n8n_transform_status(&app, &transform_id, "running", None);
@@ -161,7 +161,7 @@ pub async fn start_n8n_transform_background(
             // -- Adjustment re-run: single-prompt path (no interactive questions) --
             let result = tokio::select! {
                 _ = token_for_task.cancelled() => {
-                    Err(AppError::Internal("Transform cancelled by user".into()))
+                    Err(cancelled_error())
                 }
                 res = run_n8n_transform_job(
                     &app_handle,
@@ -188,7 +188,7 @@ pub async fn start_n8n_transform_background(
             // -- Initial transform: unified prompt (may produce questions or persona) --
             let result = tokio::select! {
                 _ = token_for_task.cancelled() => {
-                    Err(AppError::Internal("Transform cancelled by user".into()))
+                    Err(cancelled_error())
                 }
                 res = run_unified_transform_turn1(
                     &app_handle,
@@ -271,7 +271,7 @@ pub async fn continue_n8n_transform(
     tokio::spawn(async move {
         let result = tokio::select! {
             _ = token_for_task.cancelled() => {
-                Err(AppError::Internal("Transform cancelled by user".into()))
+                Err(cancelled_error())
             }
             res = run_continue_transform(
                 &app_handle,
@@ -345,6 +345,31 @@ fn build_section_callbacks(
     (on_line, on_section)
 }
 
+/// Message carried by the error a cancelled transform task produces. The
+/// cancel arms and [`classify_transform_outcome`] share it so a cancel is
+/// recognised as a cancel rather than reported as a failure.
+const TRANSFORM_CANCELLED_MSG: &str = "Transform cancelled by user";
+
+fn cancelled_error() -> AppError {
+    AppError::Internal(TRANSFORM_CANCELLED_MSG.into())
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum TransformOutcome {
+    Completed,
+    Cancelled,
+    Failed,
+}
+
+/// Pure classification of a finished transform turn.
+fn classify_transform_outcome<T>(result: &Result<T, AppError>) -> TransformOutcome {
+    match result {
+        Ok(_) => TransformOutcome::Completed,
+        Err(AppError::Internal(m)) if m == TRANSFORM_CANCELLED_MSG => TransformOutcome::Cancelled,
+        Err(_) => TransformOutcome::Failed,
+    }
+}
+
 /// Handle the result from either adjustment or unified transform.
 /// Second element in the Ok tuple is unused (reserved).
 fn handle_transform_result(
@@ -354,6 +379,26 @@ fn handle_transform_result(
     workflow_name: &str,
     session_id: Option<&str>,
 ) {
+    if classify_transform_outcome(&result) == TransformOutcome::Cancelled {
+        // `cancel_or_preempt` already wrote the honest cancel status. Do not
+        // overwrite it, notify "Transform Failed", or mark the session Failed:
+        // leave the session Interrupted (resumable), as boot recovery would.
+        tracing::info!(transform_id = %transform_id, "n8n transform cancelled by user");
+        if let Some(sid) = session_id {
+            let state = app.state::<Arc<AppState>>();
+            if let Err(e) = n8n_sessions::update(
+                &state.db,
+                sid,
+                &UpdateN8nSessionInput {
+                    status: Some(SessionStatus::Interrupted),
+                    ..Default::default()
+                },
+            ) {
+                tracing::warn!(session_id = %sid, error = %e, "n8n session cancel write failed");
+            }
+        }
+        return;
+    }
     match result {
         Ok((draft, _)) => {
             set_n8n_transform_draft(transform_id, &draft);
@@ -1157,6 +1202,29 @@ pub fn parse_persona_output(
         output,
         workflow_name,
     ))
+}
+
+#[cfg(test)]
+mod outcome_tests {
+    use super::*;
+
+    #[test]
+    fn cancel_error_is_classified_as_cancelled_not_failed() {
+        let cancelled: Result<(), AppError> = Err(cancelled_error());
+        assert_eq!(
+            classify_transform_outcome(&cancelled),
+            TransformOutcome::Cancelled
+        );
+        let failed: Result<(), AppError> = Err(AppError::Internal("boom".into()));
+        assert_eq!(
+            classify_transform_outcome(&failed),
+            TransformOutcome::Failed
+        );
+        assert_eq!(
+            classify_transform_outcome(&Ok(())),
+            TransformOutcome::Completed
+        );
+    }
 }
 
 #[cfg(test)]
