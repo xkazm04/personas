@@ -25,3 +25,16 @@ describe('CloudStatusPanel activity gauges', () => {
     await waitFor(() => expect(screen.getByText('7')).toBeTruthy(), { timeout: 4000 });
   });
 });
+
+describe('CloudStatusPanel liveness after a failed poll', () => {
+  it('shows Live while polls succeed and a stale marker (no ping) after a failed poll', () => {
+    const { rerender } = render(
+      <CloudStatusPanel status={status(2, 1)} isLoading={false} onRefresh={() => {}} lastPolled={1} />,
+    );
+    expect(screen.getByTestId('cloud-status-liveness').getAttribute('data-stale')).toBe('false');
+    rerender(
+      <CloudStatusPanel status={status(2, 1)} isLoading={false} onRefresh={() => {}} lastPolled={1} stale />,
+    );
+    expect(screen.getByTestId('cloud-status-liveness').getAttribute('data-stale')).toBe('true');
+  });
+});

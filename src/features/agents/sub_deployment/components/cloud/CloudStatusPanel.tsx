@@ -19,9 +19,11 @@ export interface CloudStatusPanelProps {
   activeExecutionId?: string | null;
   /** Timestamp from usePolling -- when non-null, auto-refresh is active. */
   lastPolled?: number | null;
+  /** True after a failed poll: the numbers are the last good snapshot. */
+  stale?: boolean;
 }
 
-export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecutionId, lastPolled }: CloudStatusPanelProps) {
+export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecutionId, lastPolled, stale = false }: CloudStatusPanelProps) {
   const { t } = useTranslation();
   const dt = t.deployment;
   if (!status && isLoading) {
@@ -69,9 +71,9 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
       {/* Live indicator + Refresh button */}
       <div className="flex items-center justify-between">
         {lastPolled != null ? (
-          <div className="flex items-center gap-2 typo-caption text-foreground">
-            <LiveStatusDot tone="active" ping size="sm" />
-            {t.agents.executions.live}
+          <div className="flex items-center gap-2 typo-caption text-foreground" data-testid="cloud-status-liveness" data-stale={stale ? 'true' : 'false'}>
+            <LiveStatusDot tone={stale ? 'off' : 'active'} ping={!stale} size="sm" />
+            {stale ? t.agents.health_check.stale : t.agents.executions.live}
           </div>
         ) : <div />}
         <button

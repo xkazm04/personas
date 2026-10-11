@@ -128,7 +128,11 @@ export default function CloudDeployPanel() {
   }, [activeTab, isConnected, fetchOAuthStatus, fetchDeployments]);
 
   // Auto-poll cloud status while the Status tab is active and connected
-  const { lastRefreshed: statusLastRefreshed } = usePolling(fetchStatus, {
+  // The poll rethrows so usePolling backs off and withholds lastRefreshed; the
+  // Refresh button keeps the swallowing form (it reports through cloudError).
+  const pollStatus = useCallback(() => fetchStatus({ rethrow: true }), [fetchStatus]);
+  const refreshStatus = useCallback(() => { void fetchStatus(); }, [fetchStatus]);
+  const { lastRefreshed: statusLastRefreshed, consecutiveErrors: statusPollErrors } = usePolling(pollStatus, {
     ...POLLING_CONFIG.cloudStatus,
     enabled: isConnected && activeTab === 'status',
   });
@@ -243,7 +247,8 @@ export default function CloudDeployPanel() {
           {activeTab === 'status' && isConnected && <CloudStatusPanel
             status={status}
             isLoading={isLoadingStatus}
-            onRefresh={fetchStatus}
+            onRefresh={refreshStatus}
+            stale={statusPollErrors > 0}
             lastPolled={statusLastRefreshed}
           />}
           {activeTab === 'oauth' && isConnected && <CloudOAuthPanel
