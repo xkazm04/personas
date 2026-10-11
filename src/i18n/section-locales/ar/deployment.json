@@ -187,7 +187,9 @@
     "total_runs": "إجمالي التشغيلات",
     "fetch_output_failed": "تعذّر جلب المخرجات",
     "monthly_budget": "الميزانية الشهرية",
-    "monthly_budget_pace": "متوقع الوصول إلى {amount}"
+    "monthly_budget_pace": "متوقع الوصول إلى {amount}",
+    "load_failed": "تعذّر تحميل سجل التنفيذ.",
+    "no_executions_found": "لم يتم العثور على عمليات تنفيذ للمرشحات المحددة."
   },
   "no_targets": "لا توجد أهداف نشر متصلة",
   "oauth_panel": {
@@ -234,7 +236,8 @@
     "loading": "جارٍ تحميل المُشغّلات…",
     "loading_firings": "جارٍ التحميل…",
     "no_firings": "لا توجد إطلاقات حديثة",
-    "recent_firings": "الإطلاقات الأخيرة"
+    "recent_firings": "الإطلاقات الأخيرة",
+    "firings_load_failed": "تعذّر تحميل عمليات التشغيل الأخيرة."
   },
   "sr_connecting": "جارٍ الاتصال بمنسّق السحابة…",
   "sr_deploying": "جارٍ نشر الوكيل على السحابة",

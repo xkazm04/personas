@@ -7950,7 +7950,9 @@
       "top_errors": "Top Errors",
       "clear_filters": "Clear filters",
       "execution_history": "Execution History",
-      "fetch_output_failed": "Failed to fetch output"
+      "fetch_output_failed": "Failed to fetch output",
+      "load_failed": "Couldn't load execution history.",
+      "no_executions_found": "No executions found for the selected filters."
     },
     "schedules": {
       "header": "Cloud Triggers ({count})",
@@ -14871,7 +14873,8 @@
     "week": "Week",
     "month": "Month",
     "engine_running_title": "Scheduler running — click to pause",
-    "engine_stopped_title": "Scheduler stopped — click to start"
+    "engine_stopped_title": "Scheduler stopped — click to start",
+    "firings_load_failed": "Couldn't load recent firings."
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

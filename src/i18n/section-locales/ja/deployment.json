@@ -187,7 +187,9 @@
     "total_runs": "総実行数",
     "fetch_output_failed": "出力を取得できませんでした",
     "monthly_budget": "月間予算",
-    "monthly_budget_pace": "{amount} に達する見込み"
+    "monthly_budget_pace": "{amount} に達する見込み",
+    "load_failed": "実行履歴を読み込めませんでした。",
+    "no_executions_found": "選択したフィルターに一致する実行はありません。"
   },
   "no_targets": "デプロイ先が接続されていません",
   "oauth_panel": {
@@ -234,7 +236,8 @@
     "loading": "トリガーを読み込み中…",
     "loading_firings": "読み込み中…",
     "no_firings": "最近の発火なし",
-    "recent_firings": "最近の発火"
+    "recent_firings": "最近の発火",
+    "firings_load_failed": "最近のトリガー実行を読み込めませんでした。"
   },
   "sr_connecting": "クラウドオーケストレーターに接続中…",
   "sr_deploying": "エージェントをクラウドにデプロイ中",

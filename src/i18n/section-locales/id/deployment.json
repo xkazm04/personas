@@ -187,7 +187,9 @@
     "total_runs": "Total eksekusi",
     "fetch_output_failed": "Gagal mengambil keluaran",
     "monthly_budget": "Anggaran Bulanan",
-    "monthly_budget_pace": "Menuju {amount}"
+    "monthly_budget_pace": "Menuju {amount}",
+    "load_failed": "Tidak dapat memuat riwayat eksekusi.",
+    "no_executions_found": "Tidak ada eksekusi yang cocok dengan filter yang dipilih."
   },
   "no_targets": "Tidak ada target deployment terhubung",
   "oauth_panel": {
@@ -234,7 +236,8 @@
     "loading": "Memuat pemicu…",
     "loading_firings": "Memuat data pemicuan…",
     "no_firings": "Tidak ada pemicuan terbaru",
-    "recent_firings": "Pemicuan terbaru"
+    "recent_firings": "Pemicuan terbaru",
+    "firings_load_failed": "Tidak dapat memuat pemicuan terbaru."
   },
   "sr_connecting": "Menghubungkan ke orkestrator cloud…",
   "sr_deploying": "Men-deploy persona ke cloud",

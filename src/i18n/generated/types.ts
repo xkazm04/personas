@@ -7957,6 +7957,8 @@ export type Translations = {
       clear_filters: string;
       execution_history: string;
       fetch_output_failed: string;
+      load_failed: string;
+      no_executions_found: string;
     };
     schedules: {
       header: string;
@@ -7972,6 +7974,7 @@ export type Translations = {
       label_next_trigger: string;
       label_cron: string;
       loading_firings: string;
+      firings_load_failed: string;
     };
     dashboard: {
       title: string;

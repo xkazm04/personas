@@ -187,7 +187,9 @@
     "total_runs": "মোট রান",
     "fetch_output_failed": "আউটপুট আনা যায়নি",
     "monthly_budget": "মাসিক বাজেট",
-    "monthly_budget_pace": "{amount} এর দিকে এগোচ্ছে"
+    "monthly_budget_pace": "{amount} এর দিকে এগোচ্ছে",
+    "load_failed": "এক্সিকিউশন ইতিহাস লোড করা যায়নি।",
+    "no_executions_found": "নির্বাচিত ফিল্টারের জন্য কোনো এক্সিকিউশন পাওয়া যায়নি।"
   },
   "no_targets": "কোনো ডিপ্লয়মেন্ট টার্গেট সংযুক্ত নেই",
   "oauth_panel": {
@@ -234,7 +236,8 @@
     "loading": "ট্রিগার লোড হচ্ছে…",
     "loading_firings": "লোড হচ্ছে…",
     "no_firings": "কোনো সাম্প্রতিক ফায়ারিং নেই",
-    "recent_firings": "সাম্প্রতিক ফায়ারিং"
+    "recent_firings": "সাম্প্রতিক ফায়ারিং",
+    "firings_load_failed": "সাম্প্রতিক ট্রিগার লোড করা যায়নি।"
   },
   "sr_connecting": "ক্লাউড অর্কেস্ট্রেটরে সংযুক্ত হচ্ছে…",
   "sr_deploying": "ক্লাউডে persona ডিপ্লয় হচ্ছে",

@@ -187,7 +187,9 @@
     "total_runs": "कुल रन",
     "fetch_output_failed": "आउटपुट प्राप्त नहीं किया जा सका",
     "monthly_budget": "मासिक बजट",
-    "monthly_budget_pace": "{amount} की ओर बढ़ रहा है"
+    "monthly_budget_pace": "{amount} की ओर बढ़ रहा है",
+    "load_failed": "निष्पादन इतिहास लोड नहीं हो सका।",
+    "no_executions_found": "चुने गए फ़िल्टर के लिए कोई निष्पादन नहीं मिला।"
   },
   "no_targets": "कोई डिप्लॉयमेंट लक्ष्य कनेक्ट नहीं है",
   "oauth_panel": {
@@ -234,7 +236,8 @@
     "loading": "ट्रिगर लोड हो रहे हैं…",
     "loading_firings": "लोड हो रहा है…",
     "no_firings": "कोई हाल की फायरिंग नहीं",
-    "recent_firings": "हाल की फायरिंग"
+    "recent_firings": "हाल की फायरिंग",
+    "firings_load_failed": "हाल के ट्रिगर लोड नहीं हो सके।"
   },
   "sr_connecting": "क्लाउड ऑर्केस्ट्रेटर से कनेक्ट हो रहा है…",
   "sr_deploying": "Persona को क्लाउड पर डिप्लॉय किया जा रहा है",

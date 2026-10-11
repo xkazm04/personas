@@ -4546,7 +4546,9 @@
       "total_runs": "Total eksekusi",
       "fetch_output_failed": "Gagal mengambil keluaran",
       "monthly_budget": "Anggaran Bulanan",
-      "monthly_budget_pace": "Menuju {amount}"
+      "monthly_budget_pace": "Menuju {amount}",
+      "load_failed": "Tidak dapat memuat riwayat eksekusi.",
+      "no_executions_found": "Tidak ada eksekusi yang cocok dengan filter yang dipilih."
     },
     "no_targets": "Tidak ada target deployment terhubung",
     "oauth_panel": {
@@ -16710,7 +16712,8 @@
     "unverified_tooltip": "Tidak ada catatan run untuk slot ini — mungkin dilewati, dibatasi rate, melebihi anggaran, atau aplikasi tertutup.",
     "week": "Minggu",
     "overlap_shift": "Geser {minutes} menit",
-    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift",
+    "firings_load_failed": "Tidak dapat memuat pemicuan terbaru."
   },
   "settings": {
     "account": {

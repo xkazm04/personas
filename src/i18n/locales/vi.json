@@ -4546,7 +4546,9 @@
       "total_runs": "Tổng lần chạy",
       "fetch_output_failed": "Không thể lấy đầu ra",
       "monthly_budget": "Ngân sách hàng tháng",
-      "monthly_budget_pace": "Dự kiến đạt {amount}"
+      "monthly_budget_pace": "Dự kiến đạt {amount}",
+      "load_failed": "Không thể tải lịch sử thực thi.",
+      "no_executions_found": "Không tìm thấy lượt thực thi nào cho bộ lọc đã chọn."
     },
     "no_targets": "Chưa kết nối mục tiêu triển khai",
     "oauth_panel": {
@@ -16710,7 +16712,8 @@
     "unverified_tooltip": "Không có bản ghi chạy cho khung giờ này — có thể đã bị bỏ qua, giới hạn tốc độ, vượt ngân sách hoặc ứng dụng đã đóng.",
     "week": "Tuần",
     "overlap_shift": "Dời {minutes} phút",
-    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift",
+    "firings_load_failed": "Không thể tải các lần kích hoạt gần đây."
   },
   "settings": {
     "account": {

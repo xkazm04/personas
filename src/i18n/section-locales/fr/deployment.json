@@ -187,7 +187,9 @@
     "total_runs": "Total des exécutions",
     "fetch_output_failed": "Impossible de récupérer la sortie",
     "monthly_budget": "Budget mensuel",
-    "monthly_budget_pace": "En route vers {amount}"
+    "monthly_budget_pace": "En route vers {amount}",
+    "load_failed": "Impossible de charger l'historique des exécutions.",
+    "no_executions_found": "Aucune exécution trouvée pour les filtres sélectionnés."
   },
   "no_targets": "Aucune cible de déploiement connectée",
   "oauth_panel": {
@@ -234,7 +236,8 @@
     "loading": "Chargement des déclencheurs…",
     "loading_firings": "Chargement…",
     "no_firings": "Aucun déclenchement récent",
-    "recent_firings": "Déclenchements récents"
+    "recent_firings": "Déclenchements récents",
+    "firings_load_failed": "Impossible de charger les déclenchements récents."
   },
   "sr_connecting": "Connexion à l’orchestrateur cloud…",
   "sr_deploying": "Déploiement de l’agent dans le cloud",

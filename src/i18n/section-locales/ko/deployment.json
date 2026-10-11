@@ -187,7 +187,9 @@
     "total_runs": "총 실행 수",
     "fetch_output_failed": "출력을 가져오지 못했습니다",
     "monthly_budget": "월 예산",
-    "monthly_budget_pace": "{amount}에 이를 전망"
+    "monthly_budget_pace": "{amount}에 이를 전망",
+    "load_failed": "실행 기록을 불러오지 못했습니다.",
+    "no_executions_found": "선택한 필터에 해당하는 실행이 없습니다."
   },
   "no_targets": "연결된 배포 대상이 없습니다",
   "oauth_panel": {
@@ -234,7 +236,8 @@
     "loading": "트리거 로딩 중…",
     "loading_firings": "로딩 중…",
     "no_firings": "최근 실행 없음",
-    "recent_firings": "최근 실행"
+    "recent_firings": "최근 실행",
+    "firings_load_failed": "최근 트리거 실행을 불러오지 못했습니다."
   },
   "sr_connecting": "클라우드 오케스트레이터에 연결 중…",
   "sr_deploying": "클라우드에 에이전트 배포 중",

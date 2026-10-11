@@ -187,7 +187,9 @@
     "total_runs": "Ejecuciones totales",
     "fetch_output_failed": "No se pudo obtener la salida",
     "monthly_budget": "Presupuesto mensual",
-    "monthly_budget_pace": "En camino a {amount}"
+    "monthly_budget_pace": "En camino a {amount}",
+    "load_failed": "No se pudo cargar el historial de ejecuciones.",
+    "no_executions_found": "No se encontraron ejecuciones para los filtros seleccionados."
   },
   "no_targets": "No hay destinos de despliegue conectados",
   "oauth_panel": {
@@ -234,7 +236,8 @@
     "loading": "Cargando disparadores…",
     "loading_firings": "Cargando…",
     "no_firings": "Sin activaciones recientes",
-    "recent_firings": "Activaciones recientes"
+    "recent_firings": "Activaciones recientes",
+    "firings_load_failed": "No se pudieron cargar los disparos recientes."
   },
   "sr_connecting": "Conectando al orquestador en la nube…",
   "sr_deploying": "Desplegando agente en la nube",

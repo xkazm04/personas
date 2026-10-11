@@ -352,10 +352,25 @@ export function CloudHistoryPanel() {
         <div className="space-y-1">
           <CloudExecutionRowGhosts />
         </div>
+      ) : stale && executions.length === 0 ? (
+        // A cold load that failed has no snapshot to show: say so and offer the
+        // same request again, never the settled-empty copy.
+        <div className="py-8 text-center" role="alert" data-testid="cloud-history-load-failed">
+          <p className="typo-body text-foreground">{dt.history.load_failed}</p>
+          <button
+            type="button"
+            data-testid="cloud-history-retry"
+            onClick={() => { void fetchData('manual'); }}
+            disabled={isLoading}
+            className="mt-2 typo-caption text-primary hover:text-primary/80 disabled:opacity-40 transition-colors cursor-pointer"
+          >
+            {t.common.retry}
+          </button>
+        </div>
       ) : visibleExecutions.length === 0 ? (
         <div className="py-8 text-center">
           <p className="typo-body text-foreground">
-            {'No executions found for the selected filters.'}
+            {dt.history.no_executions_found}
           </p>
           {(filterPersona || filterStatus || errorCluster) && (
             <button

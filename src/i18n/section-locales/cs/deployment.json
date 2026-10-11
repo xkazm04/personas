@@ -187,7 +187,9 @@
     "total_runs": "Celkem spuštění",
     "fetch_output_failed": "Výstup se nepodařilo načíst",
     "monthly_budget": "Měsíční rozpočet",
-    "monthly_budget_pace": "Směřuje k {amount}"
+    "monthly_budget_pace": "Směřuje k {amount}",
+    "load_failed": "Historii spuštění se nepodařilo načíst.",
+    "no_executions_found": "Pro vybrané filtry nebyla nalezena žádná spuštění."
   },
   "no_targets": "Žádné cíle nasazení připojeny",
   "oauth_panel": {
@@ -234,7 +236,8 @@
     "loading": "Načítání spouštěčů…",
     "loading_firings": "Načítání…",
     "no_firings": "Žádná nedávná spuštění",
-    "recent_firings": "Nedávná spuštění"
+    "recent_firings": "Nedávná spuštění",
+    "firings_load_failed": "Poslední aktivace se nepodařilo načíst."
   },
   "sr_connecting": "Připojování ke cloudovému orchestrátoru…",
   "sr_deploying": "Nasazování persony do cloudu",

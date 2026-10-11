@@ -4546,7 +4546,9 @@
       "total_runs": "总运行次数",
       "fetch_output_failed": "获取输出失败",
       "monthly_budget": "月度预算",
-      "monthly_budget_pace": "预计达到 {amount}"
+      "monthly_budget_pace": "预计达到 {amount}",
+      "load_failed": "无法加载执行历史。",
+      "no_executions_found": "没有找到符合所选筛选条件的执行记录。"
     },
     "no_targets": "未连接部署目标",
     "oauth_panel": {
@@ -16710,7 +16712,8 @@
     "unverified_tooltip": "此时段没有运行记录 — 可能被跳过、受速率限制、超出预算，或应用已关闭。",
     "week": "周",
     "overlap_shift": "推迟 {minutes} 分钟",
-    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift",
+    "firings_load_failed": "无法加载最近的触发记录。"
   },
   "settings": {
     "account": {

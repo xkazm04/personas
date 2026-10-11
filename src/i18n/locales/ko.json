@@ -4546,7 +4546,9 @@
       "total_runs": "총 실행 수",
       "fetch_output_failed": "출력을 가져오지 못했습니다",
       "monthly_budget": "월 예산",
-      "monthly_budget_pace": "{amount}에 이를 전망"
+      "monthly_budget_pace": "{amount}에 이를 전망",
+      "load_failed": "실행 기록을 불러오지 못했습니다.",
+      "no_executions_found": "선택한 필터에 해당하는 실행이 없습니다."
     },
     "no_targets": "연결된 배포 대상이 없습니다",
     "oauth_panel": {
@@ -16710,7 +16712,8 @@
     "unverified_tooltip": "이 슬롯에 대한 실행 기록이 없습니다 — 건너뛰었거나, 속도 제한, 예산 초과이거나 앱이 닫혀 있었을 수 있습니다.",
     "week": "주",
     "overlap_shift": "{minutes}분 미루기",
-    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift",
+    "firings_load_failed": "최근 트리거 실행을 불러오지 못했습니다."
   },
   "settings": {
     "account": {

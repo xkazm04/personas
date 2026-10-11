@@ -187,7 +187,9 @@
     "total_runs": "总运行次数",
     "fetch_output_failed": "获取输出失败",
     "monthly_budget": "月度预算",
-    "monthly_budget_pace": "预计达到 {amount}"
+    "monthly_budget_pace": "预计达到 {amount}",
+    "load_failed": "无法加载执行历史。",
+    "no_executions_found": "没有找到符合所选筛选条件的执行记录。"
   },
   "no_targets": "未连接部署目标",
   "oauth_panel": {
@@ -234,7 +236,8 @@
     "loading": "加载触发器…",
     "loading_firings": "加载中…",
     "no_firings": "无最近触发",
-    "recent_firings": "最近触发"
+    "recent_firings": "最近触发",
+    "firings_load_failed": "无法加载最近的触发记录。"
   },
   "sr_connecting": "正在连接云端编排器…",
   "sr_deploying": "正在将智能体部署到云端",

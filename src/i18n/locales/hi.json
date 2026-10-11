@@ -4546,7 +4546,9 @@
       "total_runs": "कुल रन",
       "fetch_output_failed": "आउटपुट प्राप्त नहीं किया जा सका",
       "monthly_budget": "मासिक बजट",
-      "monthly_budget_pace": "{amount} की ओर बढ़ रहा है"
+      "monthly_budget_pace": "{amount} की ओर बढ़ रहा है",
+      "load_failed": "निष्पादन इतिहास लोड नहीं हो सका।",
+      "no_executions_found": "चुने गए फ़िल्टर के लिए कोई निष्पादन नहीं मिला।"
     },
     "no_targets": "कोई डिप्लॉयमेंट लक्ष्य कनेक्ट नहीं है",
     "oauth_panel": {
@@ -16710,7 +16712,8 @@
     "unverified_tooltip": "इस स्लॉट के लिए कोई रन रिकॉर्ड नहीं — इसे छोड़ा गया, दर-सीमित, बजट से अधिक हो सकता है, या ऐप बंद था।",
     "week": "सप्ताह",
     "overlap_shift": "{minutes} मिनट खिसकाएँ",
-    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift",
+    "firings_load_failed": "हाल के ट्रिगर लोड नहीं हो सके।"
   },
   "settings": {
     "account": {

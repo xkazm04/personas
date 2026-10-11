@@ -187,7 +187,9 @@
     "total_runs": "Gesamtläufe",
     "fetch_output_failed": "Ausgabe konnte nicht abgerufen werden",
     "monthly_budget": "Monatsbudget",
-    "monthly_budget_pace": "Auf Kurs für {amount}"
+    "monthly_budget_pace": "Auf Kurs für {amount}",
+    "load_failed": "Der Ausführungsverlauf konnte nicht geladen werden.",
+    "no_executions_found": "Keine Ausführungen für die ausgewählten Filter gefunden."
   },
   "no_targets": "Keine Deployment-Ziele verbunden",
   "oauth_panel": {
@@ -234,7 +236,8 @@
     "loading": "Auslöser werden geladen…",
     "loading_firings": "Laden…",
     "no_firings": "Keine letzten Ausführungen",
-    "recent_firings": "Letzte Ausführungen"
+    "recent_firings": "Letzte Ausführungen",
+    "firings_load_failed": "Die letzten Auslösungen konnten nicht geladen werden."
   },
   "sr_connecting": "Verbindung zum Cloud-Orchestrator wird hergestellt…",
   "sr_deploying": "Persona wird in der Cloud bereitgestellt",

@@ -187,7 +187,9 @@
     "total_runs": "Tổng lần chạy",
     "fetch_output_failed": "Không thể lấy đầu ra",
     "monthly_budget": "Ngân sách hàng tháng",
-    "monthly_budget_pace": "Dự kiến đạt {amount}"
+    "monthly_budget_pace": "Dự kiến đạt {amount}",
+    "load_failed": "Không thể tải lịch sử thực thi.",
+    "no_executions_found": "Không tìm thấy lượt thực thi nào cho bộ lọc đã chọn."
   },
   "no_targets": "Chưa kết nối mục tiêu triển khai",
   "oauth_panel": {
@@ -234,7 +236,8 @@
     "loading": "Đang tải trình kích hoạt…",
     "loading_firings": "Đang tải…",
     "no_firings": "Không có lần kích hoạt gần đây",
-    "recent_firings": "Lần kích hoạt gần đây"
+    "recent_firings": "Lần kích hoạt gần đây",
+    "firings_load_failed": "Không thể tải các lần kích hoạt gần đây."
   },
   "sr_connecting": "Đang kết nối đến bộ điều phối đám mây…",
   "sr_deploying": "Đang triển khai tác tử lên đám mây",

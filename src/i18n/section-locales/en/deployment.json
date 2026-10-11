@@ -169,7 +169,9 @@
     "top_errors": "Top Errors",
     "clear_filters": "Clear filters",
     "execution_history": "Execution History",
-    "fetch_output_failed": "Failed to fetch output"
+    "fetch_output_failed": "Failed to fetch output",
+    "load_failed": "Couldn't load execution history.",
+    "no_executions_found": "No executions found for the selected filters."
   },
   "schedules": {
     "header": "Cloud Triggers ({count})",
@@ -184,7 +186,8 @@
     "label_last_triggered": "Last triggered:",
     "label_next_trigger": "Next trigger:",
     "label_cron": "Cron:",
-    "loading_firings": "Loading..."
+    "loading_firings": "Loading...",
+    "firings_load_failed": "Couldn't load recent firings."
   },
   "dashboard": {
     "title": "Deployments",

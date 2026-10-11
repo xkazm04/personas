@@ -121,3 +121,22 @@ describe('CloudHistoryPanel: superseded requests', () => {
     expect(screen.queryByText('persona:pA')).toBeNull();
   });
 });
+
+describe('CloudHistoryPanel: failed cold load is not an empty result', () => {
+  it('a first load that fails shows a failure state with a retry, not "No executions found"', async () => {
+    listMock.mockRejectedValue(new Error('orchestrator 503'));
+    statsMock.mockResolvedValue(stats);
+    render(<CloudHistoryPanel />);
+    await act(async () => { await Promise.resolve(captured.poll!()).catch(() => undefined); });
+
+    expect(screen.getByTestId('cloud-history-load-failed')).toBeTruthy();
+    expect(screen.queryByText('No executions found for the selected filters.')).toBeNull();
+
+    listMock.mockResolvedValue([exec]);
+    const calls = listMock.mock.calls.length;
+    await act(async () => { fireEvent.click(screen.getByTestId('cloud-history-retry')); });
+    expect(listMock.mock.calls.length).toBe(calls + 1);
+    expect(screen.getByText('persona:p1')).toBeTruthy();
+    expect(screen.queryByTestId('cloud-history-load-failed')).toBeNull();
+  });
+});

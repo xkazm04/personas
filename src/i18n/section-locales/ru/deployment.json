@@ -187,7 +187,9 @@
     "total_runs": "Всего запусков",
     "fetch_output_failed": "Не удалось получить вывод",
     "monthly_budget": "Месячный бюджет",
-    "monthly_budget_pace": "Идёт к {amount}"
+    "monthly_budget_pace": "Идёт к {amount}",
+    "load_failed": "Не удалось загрузить историю запусков.",
+    "no_executions_found": "Для выбранных фильтров запусков не найдено."
   },
   "no_targets": "Нет подключённых целей развёртывания",
   "oauth_panel": {
@@ -234,7 +236,8 @@
     "loading": "Загрузка триггеров…",
     "loading_firings": "Загрузка…",
     "no_firings": "Последних запусков нет",
-    "recent_firings": "Последние запуски"
+    "recent_firings": "Последние запуски",
+    "firings_load_failed": "Не удалось загрузить последние срабатывания."
   },
   "sr_connecting": "Подключение к облачному оркестратору…",
   "sr_deploying": "Развёртывание агента в облаке",
