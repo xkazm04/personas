@@ -1225,18 +1225,19 @@ fn mark_reply_error(
 fn load_bot_token(pool: &DbPool, credential_id: &str) -> Result<String, AppError> {
     let cred = credential_repo::get_by_id(pool, credential_id)?;
     let fields: HashMap<String, String> = credential_repo::get_decrypted_fields(pool, &cred)?;
-    fields
+    let token = fields
         .get("bot_token")
         .or_else(|| fields.get("botToken"))
         .or_else(|| fields.get("token"))
-        .filter(|s| !s.trim().is_empty())
         .cloned()
         .ok_or_else(|| {
             AppError::Validation(format!(
                 "Slack credential {} has no bot_token field",
                 credential_id
             ))
-        })
+        })?;
+    personas_core::validation::require_non_empty("bot_token", &token)?;
+    Ok(token)
 }
 
 /// Slack message `ts` values are stringified Unix timestamps with microsecond
