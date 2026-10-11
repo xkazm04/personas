@@ -4595,7 +4595,8 @@
       "loading": "Cargando disparadores…",
       "loading_firings": "Cargando…",
       "no_firings": "Sin activaciones recientes",
-      "recent_firings": "Activaciones recientes"
+      "recent_firings": "Activaciones recientes",
+      "firings_load_failed": "No se pudieron cargar los disparos recientes."
     },
     "sr_connecting": "Conectando al orquestador en la nube…",
     "sr_deploying": "Desplegando agente en la nube",
@@ -16712,8 +16713,7 @@
     "unverified_tooltip": "No hay registro de ejecución para este intervalo: pudo omitirse, limitarse por tasa, superar el presupuesto o la app estaba cerrada.",
     "week": "Semana",
     "overlap_shift": "Desplazar {minutes} minutos",
-    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift",
-    "firings_load_failed": "No se pudieron cargar los disparos recientes."
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {

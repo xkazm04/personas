@@ -4595,7 +4595,8 @@
       "loading": "ट्रिगर लोड हो रहे हैं…",
       "loading_firings": "लोड हो रहा है…",
       "no_firings": "कोई हाल की फायरिंग नहीं",
-      "recent_firings": "हाल की फायरिंग"
+      "recent_firings": "हाल की फायरिंग",
+      "firings_load_failed": "हाल के ट्रिगर लोड नहीं हो सके।"
     },
     "sr_connecting": "क्लाउड ऑर्केस्ट्रेटर से कनेक्ट हो रहा है…",
     "sr_deploying": "Persona को क्लाउड पर डिप्लॉय किया जा रहा है",
@@ -16712,8 +16713,7 @@
     "unverified_tooltip": "इस स्लॉट के लिए कोई रन रिकॉर्ड नहीं — इसे छोड़ा गया, दर-सीमित, बजट से अधिक हो सकता है, या ऐप बंद था।",
     "week": "सप्ताह",
     "overlap_shift": "{minutes} मिनट खिसकाएँ",
-    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift",
-    "firings_load_failed": "हाल के ट्रिगर लोड नहीं हो सके।"
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {

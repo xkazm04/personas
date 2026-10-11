@@ -4595,7 +4595,8 @@
       "loading": "트리거 로딩 중…",
       "loading_firings": "로딩 중…",
       "no_firings": "최근 실행 없음",
-      "recent_firings": "최근 실행"
+      "recent_firings": "최근 실행",
+      "firings_load_failed": "최근 트리거 실행을 불러오지 못했습니다."
     },
     "sr_connecting": "클라우드 오케스트레이터에 연결 중…",
     "sr_deploying": "클라우드에 에이전트 배포 중",
@@ -16712,8 +16713,7 @@
     "unverified_tooltip": "이 슬롯에 대한 실행 기록이 없습니다 — 건너뛰었거나, 속도 제한, 예산 초과이거나 앱이 닫혀 있었을 수 있습니다.",
     "week": "주",
     "overlap_shift": "{minutes}분 미루기",
-    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift",
-    "firings_load_failed": "최근 트리거 실행을 불러오지 못했습니다."
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {

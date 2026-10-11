@@ -4595,7 +4595,8 @@
       "loading": "トリガーを読み込み中…",
       "loading_firings": "読み込み中…",
       "no_firings": "最近の発火なし",
-      "recent_firings": "最近の発火"
+      "recent_firings": "最近の発火",
+      "firings_load_failed": "最近のトリガー実行を読み込めませんでした。"
     },
     "sr_connecting": "クラウドオーケストレーターに接続中…",
     "sr_deploying": "エージェントをクラウドにデプロイ中",
@@ -16712,8 +16713,7 @@
     "unverified_tooltip": "このスロットの実行記録がありません — スキップ、レート制限、予算超過、またはアプリが閉じていた可能性があります。",
     "week": "週",
     "overlap_shift": "{minutes} 分ずらす",
-    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift",
-    "firings_load_failed": "最近のトリガー実行を読み込めませんでした。"
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {

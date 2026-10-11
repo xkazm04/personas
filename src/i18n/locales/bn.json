@@ -4595,7 +4595,8 @@
       "loading": "ট্রিগার লোড হচ্ছে…",
       "loading_firings": "লোড হচ্ছে…",
       "no_firings": "কোনো সাম্প্রতিক ফায়ারিং নেই",
-      "recent_firings": "সাম্প্রতিক ফায়ারিং"
+      "recent_firings": "সাম্প্রতিক ফায়ারিং",
+      "firings_load_failed": "সাম্প্রতিক ট্রিগার লোড করা যায়নি।"
     },
     "sr_connecting": "ক্লাউড অর্কেস্ট্রেটরে সংযুক্ত হচ্ছে…",
     "sr_deploying": "ক্লাউডে persona ডিপ্লয় হচ্ছে",
@@ -16712,8 +16713,7 @@
     "unverified_tooltip": "এই স্লটের জন্য কোনো রান রেকর্ড নেই — এটি এড়িয়ে যাওয়া, রেট-সীমিত, বাজেট ছাড়িয়ে যাওয়া হতে পারে, বা অ্যাপ বন্ধ ছিল।",
     "week": "সপ্তাহ",
     "overlap_shift": "{minutes} মিনিট সরান",
-    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift",
-    "firings_load_failed": "সাম্প্রতিক ট্রিগার লোড করা যায়নি।"
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {

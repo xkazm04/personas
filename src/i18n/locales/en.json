@@ -7967,7 +7967,8 @@
       "label_last_triggered": "Last triggered:",
       "label_next_trigger": "Next trigger:",
       "label_cron": "Cron:",
-      "loading_firings": "Loading..."
+      "loading_firings": "Loading...",
+      "firings_load_failed": "Couldn't load recent firings."
     },
     "dashboard": {
       "title": "Deployments",
@@ -14873,8 +14874,7 @@
     "week": "Week",
     "month": "Month",
     "engine_running_title": "Scheduler running — click to pause",
-    "engine_stopped_title": "Scheduler stopped — click to start",
-    "firings_load_failed": "Couldn't load recent firings."
+    "engine_stopped_title": "Scheduler stopped — click to start"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

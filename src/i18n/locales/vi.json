@@ -4595,7 +4595,8 @@
       "loading": "Đang tải trình kích hoạt…",
       "loading_firings": "Đang tải…",
       "no_firings": "Không có lần kích hoạt gần đây",
-      "recent_firings": "Lần kích hoạt gần đây"
+      "recent_firings": "Lần kích hoạt gần đây",
+      "firings_load_failed": "Không thể tải các lần kích hoạt gần đây."
     },
     "sr_connecting": "Đang kết nối đến bộ điều phối đám mây…",
     "sr_deploying": "Đang triển khai tác tử lên đám mây",
@@ -16712,8 +16713,7 @@
     "unverified_tooltip": "Không có bản ghi chạy cho khung giờ này — có thể đã bị bỏ qua, giới hạn tốc độ, vượt ngân sách hoặc ứng dụng đã đóng.",
     "week": "Tuần",
     "overlap_shift": "Dời {minutes} phút",
-    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift",
-    "firings_load_failed": "Không thể tải các lần kích hoạt gần đây."
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {

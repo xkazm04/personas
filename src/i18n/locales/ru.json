@@ -4595,7 +4595,8 @@
       "loading": "Загрузка триггеров…",
       "loading_firings": "Загрузка…",
       "no_firings": "Последних запусков нет",
-      "recent_firings": "Последние запуски"
+      "recent_firings": "Последние запуски",
+      "firings_load_failed": "Не удалось загрузить последние срабатывания."
     },
     "sr_connecting": "Подключение к облачному оркестратору…",
     "sr_deploying": "Развёртывание агента в облаке",
@@ -16712,8 +16713,7 @@
     "unverified_tooltip": "Нет записи о запуске для этого слота — он мог быть пропущен, ограничен по частоте, превысить бюджет, или приложение было закрыто.",
     "week": "Неделя",
     "overlap_shift": "Сдвинуть на {minutes} минут",
-    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift",
-    "firings_load_failed": "Не удалось загрузить последние срабатывания."
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {

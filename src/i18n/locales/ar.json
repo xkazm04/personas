@@ -4595,7 +4595,8 @@
       "loading": "جارٍ تحميل المُشغّلات…",
       "loading_firings": "جارٍ التحميل…",
       "no_firings": "لا توجد إطلاقات حديثة",
-      "recent_firings": "الإطلاقات الأخيرة"
+      "recent_firings": "الإطلاقات الأخيرة",
+      "firings_load_failed": "تعذّر تحميل عمليات التشغيل الأخيرة."
     },
     "sr_connecting": "جارٍ الاتصال بمنسّق السحابة…",
     "sr_deploying": "جارٍ نشر الوكيل على السحابة",
@@ -16712,8 +16713,7 @@
     "unverified_tooltip": "لا يوجد سجل تشغيل لهذه الفترة — ربما تم تخطيها أو تقييد معدلها أو تجاوزت الميزانية أو كان التطبيق مغلقًا.",
     "week": "أسبوع",
     "overlap_shift": "أزح {minutes} دقائق",
-    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift",
-    "firings_load_failed": "تعذّر تحميل عمليات التشغيل الأخيرة."
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {
