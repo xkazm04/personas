@@ -110,10 +110,25 @@ function PackageUnwrapSvg() {
   );
 }
 
-export function ImportSuccessCelebration({ importResult }: { importResult: { imported: number; skipped: number; errors: string[] } }) {
+type ImportResult = { imported: number; skipped: number; errors: string[] };
+export type ImportOutcome = 'success' | 'partial' | 'failed';
+
+/** Errors with nothing imported is a failure; errors beside imports is partial. */
+export function importOutcome(r: ImportResult): ImportOutcome {
+  if (r.errors.length === 0) return 'success';
+  return r.imported > 0 ? 'partial' : 'failed';
+}
+
+export function ImportSuccessCelebration({ importResult }: { importResult: ImportResult }) {
   const { t } = useTranslation();
   const st = t.sharing;
   const [entered, setEntered] = useState(false);
+  const outcome = importOutcome(importResult);
+  const tone = {
+    success: { box: 'border-emerald-500/20 bg-emerald-500/5', title: 'text-emerald-400', label: st.import_complete },
+    partial: { box: 'border-amber-500/20 bg-amber-500/5', title: 'text-amber-400', label: st.import_partial },
+    failed: { box: 'border-red-500/20 bg-red-500/5', title: 'text-red-400', label: st.import_failed },
+  }[outcome];
 
   useEffect(() => {
     const t = requestAnimationFrame(() => setEntered(true));
@@ -122,17 +137,17 @@ export function ImportSuccessCelebration({ importResult }: { importResult: { imp
 
   return (
     <div
-      className="rounded-modal border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3 overflow-hidden"
+      className={`rounded-modal border ${tone.box} p-4 space-y-3 overflow-hidden`}
       style={{
         transform: entered ? 'scale(1)' : 'scale(0.85)',
         opacity: entered ? 1 : 0,
         transition: 'transform 600ms cubic-bezier(0.34,1.56,0.64,1), opacity 400ms ease-out',
       }}
     >
-      <PackageUnwrapSvg />
+      {outcome === 'success' && <PackageUnwrapSvg />}
       <div className="text-center space-y-1">
-        <div className="typo-body text-emerald-400">
-          {st.import_complete}
+        <div className={`typo-body ${tone.title}`}>
+          {tone.label}
         </div>
         <div className="typo-caption text-foreground space-y-0.5">
           <p>{importResult.imported} {importResult.imported !== 1 ? 'resources' : 'resource'} imported</p>

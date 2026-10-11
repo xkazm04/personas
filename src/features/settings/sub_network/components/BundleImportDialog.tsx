@@ -8,7 +8,7 @@ import { useToastStore } from '@/stores/toastStore';
 import type { BundleImportPreview } from '@/api/network/bundle';
 import type { EnclaveVerifyResult } from '@/api/network/enclave';
 import { EnclaveVerificationView } from './EnclaveVerificationView';
-import { ImportSuccessCelebration } from './ImportSuccessCelebration';
+import { ImportSuccessCelebration, importOutcome } from './ImportSuccessCelebration';
 import { BundlePreviewContent, type DangerConfirmKind } from './BundlePreviewContent';
 import { createLogger } from "@/lib/log";
 import { errMsg } from "@/stores/storeTypes";
@@ -239,7 +239,9 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
       setImportResult(result);
       setPhase('done');
       const importedKey = result.imported === 1 ? st.imported_resources_one : st.imported_resources_other;
-      addToast(tx(importedKey, { count: result.imported }), 'success');
+      const outcome = importOutcome(result);
+      if (outcome === 'failed') addToast(st.import_failed_toast, 'error');
+      else addToast(tx(importedKey, { count: result.imported }), outcome === 'partial' ? 'warning' : 'success');
     } catch (err) {
       const msg = errMsg(err, 'Failed to import bundle');
       logger.warn('Failed to import bundle', { filePath, clipboard: !!clipboardData, error: msg });
