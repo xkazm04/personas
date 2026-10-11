@@ -91,7 +91,12 @@ export function ConfigurationPopup({
       );
       onSaved();
     } catch (err) {
-      logger.warn('Failed to save configuration settings', { error: err });
+      // IPC errors can echo the rejected payload (an API key) in their message, so
+      // log only the settings keys and the error class - never the error object.
+      logger.warn('Failed to save configuration settings', {
+        keys: fields.map((f) => f.key),
+        code: err instanceof Error ? err.name : typeof err,
+      });
       useToastStore.getState().addToast(t.agents.config_popup.failed_to_save, 'error');
     } finally {
       setSaving(false);
