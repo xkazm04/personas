@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { EventName } from '@/lib/eventRegistry';
+import { EventName, type EventPayloadMap } from '@/lib/eventRegistry';
+import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import {
   X, RefreshCw,
   Package, Clock,
@@ -45,34 +45,13 @@ export function PeerDetailDrawer({
   const [syncing, setSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<{ resourceCount: number; syncedAt: string } | null>(null);
 
-  // Listen for push-based manifest sync progress events. Not routed through
-  // useTypedTauriEvent: the registry's payload for this event name
-  // (`{sync_id, synced, total}`) doesn't match what this component reads
-  // (`{peerId, resourceCount, syncedAt}`) — a pre-existing drift out of scope
-  // here — so the explicit generic + cancelled-flag pattern is applied
-  // directly to close the async-listener-teardown race without touching that.
-  useEffect(() => {
-    let unlisten: UnlistenFn | null = null;
-    let cancelled = false;
-    listen<{ peerId: string; resourceCount: number; syncedAt: string }>(
-      EventName.P2P_MANIFEST_SYNC_PROGRESS,
-      (event) => {
-        if (cancelled) return;
-        if (event.payload.peerId === peer.peer_id) {
-          setSyncProgress({ resourceCount: event.payload.resourceCount, syncedAt: event.payload.syncedAt });
-          // Refresh manifest data in the store
-          fetchPeerManifest(peer.peer_id);
-        }
-      },
-    ).then((fn) => {
-      if (cancelled) fn();
-      else unlisten = fn;
-    });
-    return () => {
-      cancelled = true;
-      unlisten?.();
-    };
+  const onSyncProgress = useCallback((payload: EventPayloadMap[typeof EventName.P2P_MANIFEST_SYNC_PROGRESS]) => {
+    if (payload.peerId === peer.peer_id) {
+      setSyncProgress({ resourceCount: payload.resourceCount, syncedAt: payload.syncedAt });
+      fetchPeerManifest(peer.peer_id);
+    }
   }, [peer.peer_id, fetchPeerManifest]);
+  useTypedTauriEvent(EventName.P2P_MANIFEST_SYNC_PROGRESS, onSyncProgress);
 
   const state = connectionState ?? (peer.is_connected ? 'Connected' : 'Disconnected');
   const isConnected = state === 'Connected';
