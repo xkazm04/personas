@@ -3,7 +3,7 @@ import type { DryRunResult } from '@/api/pipeline/triggers';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { useTriggerOperations } from './useTriggerOperations';
 import { getWebhookUrl } from '@/lib/utils/platform/triggerConstants';
-import { useToastStore } from '@/stores/toastStore';
+import { toastCatch } from '@/lib/silentCatch';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 
 /**
@@ -103,11 +103,17 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
     setActivityError(false);
     try {
       const result = await ops.fetchActivity(triggerId);
-      setActivityLog(result.ok && result.data ? result.data : []);
-    } catch {
+      if (result.ok && result.data) {
+        setActivityLog(result.data);
+      } else {
+        setActivityLog([]);
+        setActivityError(true);
+        toastCatch('useTriggerDetail:fetchActivity')(result.error);
+      }
+    } catch (err) {
       setActivityLog([]);
       setActivityError(true);
-      useToastStore.getState().addToast('Failed to load activity log', 'error');
+      toastCatch('useTriggerDetail:fetchActivity')(err);
     } finally {
       setActivityLoading(false);
     }
@@ -118,11 +124,17 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
     setActivityError(false);
     try {
       const result = await ops.fetchActivity(triggerId);
-      setActivityLog(result.ok && result.data ? result.data : []);
-    } catch {
+      if (result.ok && result.data) {
+        setActivityLog(result.data);
+      } else {
+        setActivityLog([]);
+        setActivityError(true);
+        toastCatch('useTriggerDetail:retryActivity')(result.error);
+      }
+    } catch (err) {
       setActivityLog([]);
       setActivityError(true);
-      useToastStore.getState().addToast('Failed to load activity log', 'error');
+      toastCatch('useTriggerDetail:retryActivity')(err);
     } finally {
       setActivityLoading(false);
     }
