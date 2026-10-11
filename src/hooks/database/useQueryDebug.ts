@@ -3,6 +3,7 @@ import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream
 import { EventName } from '@/lib/eventRegistry';
 import { startQueryDebug, cancelQueryDebug } from '@/api/vault/database/dbSchema';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 export function useQueryDebug() {
   const [result, setResult] = useState<QueryResult | null>(null);
@@ -38,8 +39,16 @@ export function useQueryDebug() {
       setCorrectedQuery(null);
 
       // Set up listeners before invoking backend
-      await stream.start(debugId);
-      await startQueryDebug(credentialId, queryText, errorContext, serviceType, debugId, allowMutations);
+      try {
+        await stream.start(debugId);
+        await startQueryDebug(credentialId, queryText, errorContext, serviceType, debugId, allowMutations);
+      } catch (err) {
+        silentCatch('useQueryDebug:start')(err);
+        await stream.cleanup().catch(silentCatch('useQueryDebug:cleanup'));
+        stream.setLines((previous) => [...previous, extractMessage(err)]);
+        stream.setPhase('failed');
+        debugIdRef.current = null;
+      }
     },
     [stream],
   );
