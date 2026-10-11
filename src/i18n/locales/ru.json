@@ -20877,6 +20877,7 @@
     "dev_mode_warning": "Режим разработки — этот URL доступен только локально",
     "disabled_label": "Отключён",
     "disconnect_events_reconnect": "события. Вы можете снова подключить позже.",
+    "disconnect_confirm": "Отключить",
     "disconnect_persona_title": "Отключить агента?",
     "disconnect_will_no_longer": "больше не будет реагировать на",
     "dry_run_label": "Тестовый прогон",

@@ -12522,6 +12522,7 @@ export type Translations = {
     disconnect_persona_title: string;
     disconnect_will_no_longer: string;
     disconnect_events_reconnect: string;
+    disconnect_confirm: string;
     rename_also_updates: string;
     delete_connection_label: string;
     search_personas_placeholder: string;

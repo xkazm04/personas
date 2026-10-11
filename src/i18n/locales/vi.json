@@ -20877,6 +20877,7 @@
     "dev_mode_warning": "Chế độ dev -- URL này chỉ có thể truy cập cục bộ",
     "disabled_label": "Đã tắt",
     "disconnect_events_reconnect": "các sự kiện. Bạn có thể kết nối lại sau.",
+    "disconnect_confirm": "Ngắt kết nối",
     "disconnect_persona_title": "Ngắt kết nối tác nhân?",
     "disconnect_will_no_longer": "sẽ không còn phản ứng với",
     "dry_run_label": "Chạy thử",

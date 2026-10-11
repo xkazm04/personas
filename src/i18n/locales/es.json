@@ -20877,6 +20877,7 @@
     "dev_mode_warning": "Modo dev — esta URL solo es accesible localmente",
     "disabled_label": "Desactivado",
     "disconnect_events_reconnect": "eventos. Puedes reconectar más tarde.",
+    "disconnect_confirm": "Desconectar",
     "disconnect_persona_title": "¿Desconectar persona?",
     "disconnect_will_no_longer": "ya no reaccionará a",
     "dry_run_label": "Ejecución de prueba",

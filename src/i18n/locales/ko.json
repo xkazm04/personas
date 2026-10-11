@@ -20877,6 +20877,7 @@
     "dev_mode_warning": "개발 모드 -- 이 URL은 로컬에서만 접근 가능합니다",
     "disabled_label": "비활성화됨",
     "disconnect_events_reconnect": "이벤트. 나중에 다시 연결할 수 있습니다.",
+    "disconnect_confirm": "연결 해제",
     "disconnect_persona_title": "페르소나 연결 해제?",
     "disconnect_will_no_longer": "더 이상 반응하지 않습니다",
     "dry_run_label": "드라이 런",

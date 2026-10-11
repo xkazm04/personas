@@ -5030,10 +5030,10 @@
         ".tsx"
       ],
       "signal": {
-        "pattern": "fixed inset-0[^\"'`\\n]*(?:bg-black\\/|bg-background\\/[0-9]|bg-secondary\\/[0-9]|backdrop-blur|surface-blur)",
+        "pattern": "fixed inset-0[^\"'`\\n]*(?:(?:bg-black\\/|bg-background\\/[0-9]|bg-secondary\\/[0-9]|backdrop-blur|surface-blur)|[\"'`][^>\\n]*>\\s*<div\\s+className=[\"'`]absolute inset-0[^\"'`\\n]*(?:bg-black\\/|bg-background\\/[0-9]|bg-secondary\\/[0-9]|backdrop-blur|surface-blur))",
         "flags": "g",
         "ignoreCommentLines": true,
-        "description": "A full-viewport dimming layer painted directly on the `fixed inset-0` element — the hand-rolled modal backdrop. BaseModal never emits this shape (its container carries no paint; the scrim is a separate `absolute inset-0` child), so a match is an overlay built outside the modal host: no stack depth, no Escape arbitration, no focus trap, no focus restore."
+        "description": "A full-viewport dimming layer painted directly on the `fixed inset-0` element — the hand-rolled modal backdrop. BaseModal never emits this shape (its container carries no paint; the scrim is a separate `absolute inset-0` child), so a match is an overlay built outside the modal host: no stack depth, no Escape arbitration, no focus trap, no focus restore. Second branch (2026-10-11): the same overlay with its paint moved one element down - a literal `fixed inset-0` container whose first child is a literal `<div className=\"absolute inset-0 ...\">` scrim. BaseModal composes both classes from variables on motion.div elements, so it matches neither branch."
       },
       "baseline": {
         "files": 9,

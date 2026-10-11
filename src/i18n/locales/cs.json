@@ -20877,6 +20877,7 @@
     "dev_mode_warning": "Dev režim -- tato URL je dostupná pouze lokálně",
     "disabled_label": "Vypnuto",
     "disconnect_events_reconnect": "události. Později se můžeš znovu připojit.",
+    "disconnect_confirm": "Odpojit",
     "disconnect_persona_title": "Odpojit personu?",
     "disconnect_will_no_longer": "už nebude reagovat na",
     "dry_run_label": "Zkušební běh",

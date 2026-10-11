@@ -20877,6 +20877,7 @@
     "dev_mode_warning": "وضع التطوير — هذا العنوان لا يمكن الوصول إليه إلا محلياً",
     "disabled_label": "معطّل",
     "disconnect_events_reconnect": "الأحداث. يمكنك إعادة الربط لاحقاً.",
+    "disconnect_confirm": "فصل",
     "disconnect_persona_title": "فصل الشخصية؟",
     "disconnect_will_no_longer": "لن يتفاعل بعد الآن مع",
     "dry_run_label": "تشغيل تجريبي",

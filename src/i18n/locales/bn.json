@@ -20877,6 +20877,7 @@
     "dev_mode_warning": "ডেভ মোড -- এই URL শুধুমাত্র স্থানীয়ভাবে অ্যাক্সেসযোগ্য",
     "disabled_label": "নিষ্ক্রিয়",
     "disconnect_events_reconnect": "ইভেন্ট। আপনি পরে পুনরায় সংযোগ করতে পারেন।",
+    "disconnect_confirm": "সংযোগ বিচ্ছিন্ন করুন",
     "disconnect_persona_title": "পার্সোনা সংযোগ বিচ্ছিন্ন করবেন?",
     "disconnect_will_no_longer": "আর প্রতিক্রিয়া করবে না",
     "dry_run_label": "ড্রাই রান",

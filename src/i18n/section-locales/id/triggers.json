@@ -261,6 +261,7 @@
   "dev_mode_warning": "Mode dev -- URL ini hanya dapat dijangkau secara lokal",
   "disabled_label": "Dinonaktifkan",
   "disconnect_events_reconnect": "peristiwa. Anda dapat menyambungkan kembali nanti.",
+  "disconnect_confirm": "Putuskan",
   "disconnect_persona_title": "Putuskan persona?",
   "disconnect_will_no_longer": "tidak akan lagi merespons",
   "dry_run_label": "Uji coba",

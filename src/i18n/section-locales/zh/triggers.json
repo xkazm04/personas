@@ -261,6 +261,7 @@
   "dev_mode_warning": "开发模式 — 此 URL 仅在本地可访问",
   "disabled_label": "已禁用",
   "disconnect_events_reconnect": "事件。您可以稍后重新连接。",
+  "disconnect_confirm": "断开连接",
   "disconnect_persona_title": "断开智能体连接？",
   "disconnect_will_no_longer": "将不再响应",
   "dry_run_label": "试运行",

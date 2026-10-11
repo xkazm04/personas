@@ -261,6 +261,7 @@
   "dev_mode_warning": "Mode dev — cette URL n’est accessible que localement",
   "disabled_label": "Désactivé",
   "disconnect_events_reconnect": "Vous pouvez reconnecter l’agent ultérieurement.",
+  "disconnect_confirm": "Déconnecter",
   "disconnect_persona_title": "Déconnecter l’agent",
   "disconnect_will_no_longer": "ne recevra plus les événements de ce déclencheur.",
   "dry_run_label": "Test à blanc",

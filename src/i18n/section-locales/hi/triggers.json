@@ -261,6 +261,7 @@
   "dev_mode_warning": "डेव मोड -- यह URL केवल स्थानीय रूप से पहुँचा जा सकता है",
   "disabled_label": "अक्षम",
   "disconnect_events_reconnect": "events पर। आप बाद में पुनः कनेक्ट कर सकते हैं।",
+  "disconnect_confirm": "डिसकनेक्ट करें",
   "disconnect_persona_title": "पर्सोना डिसकनेक्ट करें?",
   "disconnect_will_no_longer": "अब प्रतिक्रिया नहीं देगा",
   "dry_run_label": "ड्राई रन",

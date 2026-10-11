@@ -20877,6 +20877,7 @@
     "dev_mode_warning": "Entwicklungsmodus -- diese URL ist nur lokal erreichbar",
     "disabled_label": "Deaktiviert",
     "disconnect_events_reconnect": "Ereignisse. Sie können später wieder verbinden.",
+    "disconnect_confirm": "Trennen",
     "disconnect_persona_title": "Persona trennen?",
     "disconnect_will_no_longer": "wird nicht mehr reagieren auf",
     "dry_run_label": "Testlauf",

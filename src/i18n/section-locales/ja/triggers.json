@@ -261,6 +261,7 @@
   "dev_mode_warning": "開発モード — このURLはローカルでのみアクセス可能",
   "disabled_label": "無効",
   "disconnect_events_reconnect": "イベント。後で再接続できます。",
+  "disconnect_confirm": "切断",
   "disconnect_persona_title": "ペルソナを切断しますか？",
   "disconnect_will_no_longer": "は以下にリアクションしなくなります",
   "dry_run_label": "ドライラン",

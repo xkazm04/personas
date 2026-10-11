@@ -672,6 +672,7 @@
   "disconnect_persona_title": "Disconnect persona?",
   "disconnect_will_no_longer": "will no longer react to",
   "disconnect_events_reconnect": "events. You can reconnect later.",
+  "disconnect_confirm": "Disconnect",
   "rename_also_updates": "Also updates historical events, persona event handlers, and trigger audit metadata.",
   "delete_connection_label": "Delete connection",
   "search_personas_placeholder": "Search personas...",
