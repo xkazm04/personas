@@ -11,6 +11,10 @@ vi.mock('../useTriggerOperations', () => ({
   useTriggerOperations: () => ({ fetchActivity }),
 }));
 vi.mock('@/lib/silentCatch', () => ({ toastCatch }));
+vi.mock('@/i18n/useTranslation', async () => {
+  const { default: t } = await import('@/i18n/locales/en.json');
+  return { useTranslation: () => ({ t, tx: (s: string, v: Record<string, unknown> = {}) => s.replace(/\{(\w+)\}/g, (_m, k: string) => String(v[k])) }) };
+});
 vi.mock('@/hooks/utility/interaction/useCopyToClipboard', () => ({
   useCopyToClipboard: () => ({ copied: false, copy: vi.fn() }),
 }));

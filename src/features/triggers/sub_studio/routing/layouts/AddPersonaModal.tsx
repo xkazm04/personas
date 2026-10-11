@@ -31,7 +31,7 @@ interface Props {
 }
 
 export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, eventLabel, onAdd, onClose }: Props) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [search, setSearch] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [capabilityStep, setCapabilityStep] = useState<Persona | null>(null);
@@ -144,15 +144,15 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
           <div className="flex-1">
             <h3 id={TITLE_ID} className="typo-heading text-foreground">
               {capabilityStep
-                ? `Scope "${capabilityStep.name}" to…`
+                ? tx(t.triggers.add_persona_scope_title, { name: capabilityStep.name })
                 : eventLabel
-                  ? `Connect persona to "${eventLabel}"`
-                  : 'Add Persona'}
+                  ? tx(t.triggers.add_persona_connect_title, { event: eventLabel })
+                  : t.triggers.add_persona_title}
             </h3>
             <p className="text-[10px] text-foreground">
               {capabilityStep
-                ? 'Pick a capability or keep this trigger persona-wide'
-                : `${availableCount} available`}
+                ? t.triggers.add_persona_scope_hint
+                : tx(t.triggers.add_persona_available, { count: availableCount })}
             </p>
           </div>
           <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t.common.close}>
@@ -227,7 +227,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                 onClick={() => setSelectedGroupId(null)}
                 className={`px-2 py-0.5 rounded-input text-[10px] font-medium transition-colors ${!selectedGroupId ? 'bg-cyan-500/15 text-cyan-400' : 'text-foreground hover:text-foreground hover:bg-secondary/40'}`}
               >
-                All
+                {t.common.all}
               </button>
               {groupsWithPersonas.map(g => (
                 <button
@@ -259,7 +259,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                     {t.triggers.clear_search_label}
                   </button>
                 </div>
-              ) : 'All personas are already connected'}
+              ) : t.triggers.add_persona_all_connected}
             </div>
           )}
 
@@ -274,7 +274,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                       <span className="text-[10px] font-semibold text-foreground uppercase tracking-wider">{group.name}</span>
                     </>
                   ) : (
-                    <span className="text-[10px] font-semibold text-foreground uppercase tracking-wider">Ungrouped</span>
+                    <span className="text-[10px] font-semibold text-foreground uppercase tracking-wider">{t.triggers.add_persona_ungrouped}</span>
                   )}
                   <span className="text-[9px] text-foreground ml-auto">{ps.length}</span>
                 </div>

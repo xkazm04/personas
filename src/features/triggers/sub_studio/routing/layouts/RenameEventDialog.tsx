@@ -84,7 +84,7 @@ export function RenameEventDialog({
   onConfirm,
   onCancel,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [newEventType, setNewEventType] = useState(oldEventType);
   const [busy, setBusy] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -101,20 +101,20 @@ export function RenameEventDialog({
 
   const clientError = useMemo<string | null>(() => {
     if (sourceReserved) {
-      return `\`${oldEventType}\` is a built-in infrastructure event and cannot be renamed.`;
+      return tx(t.triggers.rename_err_reserved_source, { name: oldEventType });
     }
     const trimmed = newEventType.trim();
-    if (trimmed.length === 0) return 'New event type cannot be empty.';
-    if (trimmed === oldEventType) return 'New name must differ from the current one.';
-    if (trimmed.length > 128) return 'Maximum length is 128 characters.';
+    if (trimmed.length === 0) return t.triggers.rename_err_empty;
+    if (trimmed === oldEventType) return t.triggers.rename_err_same;
+    if (trimmed.length > 128) return t.triggers.rename_err_too_long;
     if (!isSafeTypeString(trimmed)) {
-      return 'Only alphanumeric, underscore, hyphen, dot, colon, and forward-slash are allowed (must start with alphanumeric or underscore).';
+      return t.triggers.rename_err_chars;
     }
     if (RESERVED_EVENT_TYPES.has(trimmed)) {
-      return `\`${trimmed}\` is reserved for infrastructure events and can't be used as a target.`;
+      return tx(t.triggers.rename_err_reserved_target, { name: trimmed });
     }
     return null;
-  }, [newEventType, oldEventType, sourceReserved]);
+  }, [newEventType, oldEventType, sourceReserved, t, tx]);
 
   const disabled = busy || clientError !== null;
 

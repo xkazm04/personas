@@ -35,7 +35,7 @@ interface SmeeRelayTabProps {
 }
 
 export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const globalStatus = useSmeeRelayStatus();
   const personas = useAgentStore((s) => s.personas);
@@ -111,7 +111,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
       setTouchedFields(new Set());
       await fetchRelays();
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : 'Failed to create relay');
+      setCreateError(err instanceof Error ? err.message : t.triggers.relay_create_failed);
     } finally {
       setIsCreating(false);
     }
@@ -152,13 +152,13 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
   const urlValid = isValidSmeeChannelUrl(addUrl);
   const urlPartiallyTyped = addUrl.trim().length > 0;
 
-  const labelError = touchedFields.has('label') && !labelValid ? 'Label is required' : null;
+  const labelError = touchedFields.has('label') && !labelValid ? t.triggers.relay_err_label_required : null;
   const urlError = touchedFields.has('url') && !urlValid
     ? (!urlPartiallyTyped
-        ? 'Channel URL is required'
+        ? t.triggers.relay_err_url_required
         : !addUrl.trim().startsWith(SMEE_CHANNEL_PREFIX)
-          ? 'URL must start with https://smee.io/'
-          : 'Enter the full channel URL (e.g. https://smee.io/abc123)')
+          ? t.triggers.relay_err_url_prefix
+          : t.triggers.relay_err_url_incomplete)
     : null;
 
   const activeCount = relays.filter((r) => r.status === 'active').length;
@@ -179,12 +179,12 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
             }`} />
             <span className="typo-body text-foreground">
               {activeCount > 0
-                ? `${activeCount} relay${activeCount !== 1 ? 's' : ''} active`
+                ? tx(activeCount === 1 ? t.triggers.relay_active_one : t.triggers.relay_active_other, { count: activeCount })
                 : t.triggers.no_active_relays}
             </span>
             {totalRelayed > 0 && (
               <span className="typo-caption text-purple-400/70">
-                {totalRelayed} event{totalRelayed !== 1 ? 's' : ''} relayed
+                {tx(totalRelayed === 1 ? t.triggers.relay_events_relayed_one : t.triggers.relay_events_relayed_other, { count: totalRelayed })}
               </span>
             )}
           </div>

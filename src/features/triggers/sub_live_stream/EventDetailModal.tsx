@@ -74,7 +74,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
             type="button"
             onClick={onClose}
             className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors focus-ring"
-            aria-label="Close"
+            aria-label={t.common.close}
           >
             <X className="w-4 h-4" />
           </button>

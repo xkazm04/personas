@@ -10,7 +10,7 @@ vi.mock('@/features/shared/components/modals', () => ({
 }));
 vi.mock('@/i18n/useTranslation', async () => {
   const { default: t } = await import('@/i18n/locales/en.json');
-  return { useTranslation: () => ({ t }) };
+  return { useTranslation: () => ({ t, tx: (s: string, v: Record<string, unknown> = {}) => s.replace(/\{(\w+)\}/g, (_m, k: string) => String(v[k])) }) };
 });
 
 describe('RenameEventDialog reserved names', () => {

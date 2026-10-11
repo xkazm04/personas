@@ -6,7 +6,7 @@ import { AddPersonaModal } from '../AddPersonaModal';
 vi.mock('@/i18n/useTranslation', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/i18n/useTranslation')>();
   const { default: t } = await import('@/i18n/locales/en.json');
-  return { ...actual, useTranslation: () => ({ t }) };
+  return { ...actual, useTranslation: () => ({ t, tx: (s: string, v: Record<string, unknown> = {}) => s.replace(/\{(\w+)\}/g, (_m, k: string) => String(v[k])) }) };
 });
 vi.mock('@/features/agents/components/PersonaIcon', () => ({ PersonaIcon: () => <span /> }));
 

@@ -69,7 +69,7 @@ export function LiveStreamTab() {
     { value: 'failed', label: t.execution_status.failed },
     { value: 'pending', label: t.status_tokens.event.pending },
     { value: 'processing', label: t.status_tokens.event.processing },
-    { value: 'skipped', label: 'Skipped' },
+    { value: 'skipped', label: t.triggers.live_status_skipped },
   ];
   const personas = useAgentStore((s) => s.personas);
 
@@ -365,7 +365,7 @@ export function LiveStreamTab() {
     },
     {
       key: 'created',
-      label: 'Time',
+      label: t.triggers.col_time,
       width: '0.7fr',
       sortable: true,
       align: 'right' as const,
