@@ -284,7 +284,9 @@ impl SectionAccumulator {
     }
 
     /// Assemble all valid sections into a final N8nPersonaOutput.
-    /// Returns None if required sections (identity + prompt) are missing.
+    /// Returns None if required sections (identity + a *valid* prompt) are missing, so
+    /// callers fall back to the monolithic parse / escalation instead of shipping an
+    /// empty system prompt.
     pub fn assemble(&self, workflow_name: &str) -> Option<super::types::N8nPersonaOutput> {
         let identity = self
             .sections
@@ -293,7 +295,7 @@ impl SectionAccumulator {
         let prompt = self
             .sections
             .iter()
-            .find(|s| s.kind == SectionKind::Prompt)?;
+            .find(|s| s.kind == SectionKind::Prompt && s.validation.valid)?;
 
         let tools: Vec<super::types::N8nToolDraft> = self
             .sections
@@ -613,4 +615,62 @@ pub fn extract_known_connectors(
     }
 
     connectors
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn feed_all(acc: &mut SectionAccumulator, text: &str) {
+        for line in text.lines() {
+            acc.feed_line(line);
+        }
+        acc.flush();
+    }
+
+    #[test]
+    fn assemble_rejects_empty_prompt_section() {
+        let mut acc = SectionAccumulator::new(vec![]);
+        feed_all(
+            &mut acc,
+            "---SECTION:identity---
+{\"name\":\"x\"}
+---SECTION:prompt---
+{\"system_prompt\":\"\"}
+---SECTION:end---",
+        );
+        assert!(acc.assemble("wf").is_none());
+    }
+
+    #[test]
+    fn assemble_rejects_unparseable_prompt_section() {
+        let mut acc = SectionAccumulator::new(vec![]);
+        feed_all(
+            &mut acc,
+            "---SECTION:identity---
+{\"name\":\"x\"}
+---SECTION:prompt---
+{not json
+---SECTION:end---",
+        );
+        assert!(acc.assemble("wf").is_none());
+    }
+
+    #[test]
+    fn assemble_accepts_valid_prompt_section() {
+        let mut acc = SectionAccumulator::new(vec![]);
+        feed_all(
+            &mut acc,
+            "---SECTION:identity---
+{\"name\":\"x\"}
+---SECTION:prompt---
+{\"system_prompt\":\"You are helpful.\"}
+---SECTION:end---",
+        );
+        let out = acc.assemble("wf");
+        assert_eq!(
+            out.map(|o| o.system_prompt),
+            Some("You are helpful.".to_string())
+        );
+    }
 }
