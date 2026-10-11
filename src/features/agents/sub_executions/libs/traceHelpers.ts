@@ -37,6 +37,9 @@ const PIPELINE_STAGE_COLORS: Record<PipelineStage, { color: string; bg: string; 
 };
 
 /** Styling config for system operation span types. */
+/** Recipe execution and generation read as one family; they differ by label only. */
+const RECIPE_OPERATION_STYLE = { color: 'text-orange-400', bg: 'bg-orange-500/15', border: 'border-orange-500/25' };
+
 export const SYSTEM_OPERATION_CONFIG: Record<SystemOperationType, { label: string; color: string; bg: string; border: string }> = {
   design_conversation:    { label: 'Design Chat',       color: 'text-indigo-400',  bg: 'bg-indigo-500/15',  border: 'border-indigo-500/25' },
   credential_design:      { label: 'Cred Design',       color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/25' },
@@ -48,7 +51,8 @@ export const SYSTEM_OPERATION_CONFIG: Record<SystemOperationType, { label: strin
   subscription_evaluation:{ label: 'Subscription',      color: 'text-teal-400',    bg: 'bg-teal-500/15',    border: 'border-teal-500/25' },
   automation_design:      { label: 'Automation Design', color: 'text-cyan-400',    bg: 'bg-cyan-500/15',    border: 'border-cyan-500/25' },
   kb_ingest:              { label: 'KB Ingest',         color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
-  recipe_execution:       { label: 'Recipe',            color: 'text-orange-400',  bg: 'bg-orange-500/15',  border: 'border-orange-500/25' },
+  recipe_execution:       { label: 'Recipe',            ...RECIPE_OPERATION_STYLE },
+  recipe_generation:      { label: 'Recipe Gen',        ...RECIPE_OPERATION_STYLE },
   recipe_versioning:      { label: 'Recipe Version',    color: 'text-orange-300',  bg: 'bg-orange-400/15',  border: 'border-orange-400/25' },
   schema_proposal:        { label: 'Schema Proposal',   color: 'text-sky-400',     bg: 'bg-sky-500/15',     border: 'border-sky-500/25' },
   query_debug:            { label: 'Query Debug',       color: 'text-slate-400',   bg: 'bg-slate-500/15',   border: 'border-slate-500/25' },

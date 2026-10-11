@@ -74,7 +74,7 @@ function renderTask(cancelFn = vi.fn(async () => {})) {
   return { hook, startFn, cancelFn };
 }
 
-function renderTracedTask(startFn: () => Promise<unknown>) {
+function renderTracedTask(startFn: () => Promise<unknown>, extra: { errorMessage?: string; traceLabel?: string } = {}) {
   const cancelFn = vi.fn(async () => {});
   const hook = renderHook(() =>
     useAiArtifactTask<[], Record<string, unknown>>({
@@ -84,7 +84,8 @@ function renderTracedTask(startFn: () => Promise<unknown>) {
       completedPhase: 'preview',
       startFn,
       cancelFn,
-      errorMessage: 'Task failed',
+      errorMessage: extra.errorMessage ?? 'Task failed',
+      traceLabel: extra.traceLabel,
       traceOperation: 'credential_design',
     }),
   );
@@ -206,6 +207,27 @@ describe('useAiArtifactTask trace outcomes', () => {
     const traces = getCompletedTraces();
     expect(traces).toHaveLength(1);
     expect(rootError(traces[0]!)).toBeNull();
+  });
+});
+
+describe('useAiArtifactTask trace labels', () => {
+  const labelOf = async (extra: { errorMessage?: string; traceLabel?: string }) => {
+    __resetSystemTracesForTests();
+    const hook = renderTracedTask(async () => ({}), extra);
+    await act(async () => {
+      await hook.result.current.start();
+    });
+    act(() => hook.result.current.cancel());
+    return getCompletedTraces()[0]!.label;
+  };
+
+  it('an explicit traceLabel names the trace', async () => {
+    expect(await labelOf({ errorMessage: 'Failed to generate recipe', traceLabel: 'Recipe generation' })).toBe('Recipe generation');
+  });
+
+  it('without one, a "Failed to ..." error sentence never becomes the name', async () => {
+    expect(await labelOf({ errorMessage: 'Failed to generate recipe' })).toBe('Generate recipe');
+    expect(await labelOf({ errorMessage: 'Automation design failed' })).toBe('Automation design');
   });
 });
 

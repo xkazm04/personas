@@ -23,6 +23,7 @@ export function useRecipeVersioning() {
     backendTimeoutSecs: 300,
     errorMessage: 'Failed to generate recipe version',
     traceOperation: 'recipe_versioning',
+    traceLabel: 'Recipe version generation',
   });
 
   return useMemo(() => ({

@@ -97,6 +97,7 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
     backendTimeoutSecs: 300,
     errorMessage: 'Failed to generate provisioning plan',
     traceOperation: 'credential_negotiation',
+    traceLabel: 'Credential provisioning plan',
   });
 
   // -- Step graph resolution --

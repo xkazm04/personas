@@ -26,6 +26,7 @@ export function useRecipeExecution() {
     backendTimeoutSecs: 120,
     errorMessage: 'Failed to execute recipe',
     traceOperation: 'recipe_execution',
+    traceLabel: 'Recipe execution',
   });
 
   const output = task.result?.output ?? null;

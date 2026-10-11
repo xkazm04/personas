@@ -58,6 +58,12 @@ export interface AiArtifactTaskConfig<TArgs extends unknown[], TResult> {
    * lifecycle emits UnifiedSpan entries into the system trace timeline.
    */
   traceOperation?: SystemOperationType;
+  /**
+   * Name of the trace span. Defaults to `errorMessage` with its failure phrasing
+   * ("... failed" suffix, "Failed to ..." prefix) removed -- `errorMessage` is
+   * worded for the user who saw a failure, not for the row of a successful run.
+   */
+  traceLabel?: string;
 }
 
 export interface AiArtifactTaskState<TResult> {
@@ -83,6 +89,12 @@ export interface AiArtifactTaskActions<TArgs extends unknown[], TResult> {
 
 export type AiArtifactTaskReturn<TArgs extends unknown[], TResult> =
   AiArtifactTaskState<TResult> & AiArtifactTaskActions<TArgs, TResult>;
+
+/** Strip failure phrasing so a successful run is not named like a failure. */
+function deriveTraceLabel(errorMessage: string): string {
+  const stripped = errorMessage.replace(/ failed$/i, '').replace(/^failed to /i, '');
+  return stripped.charAt(0).toUpperCase() + stripped.slice(1);
+}
 
 // -- Hook --------------------------------------------------------
 
@@ -124,6 +136,7 @@ export function useAiArtifactTask<TArgs extends unknown[], TResult>(
     getLine = defaultGetLine,
     resolveStatus: userResolveStatus,
     traceOperation,
+    traceLabel,
   } = config;
 
   const traceSessionRef = useRef<SystemTraceSession | null>(null);
@@ -189,13 +202,13 @@ export function useAiArtifactTask<TArgs extends unknown[], TResult>(
       if (traceOperation) {
         // A restart over a live run is not a failure of that run -- abandon, don't complete(error).
         traceSessionRef.current?.abandon();
-        const label = `${errorMessage.replace(/ failed$/, '')}`;
+        const label = traceLabel ?? deriveTraceLabel(errorMessage);
         traceSessionRef.current = SystemTraceSession.start(traceOperation, label);
       }
 
       await stream.start(() => startFn(...args));
     },
-    [traceOperation, stream, errorMessage, startFn],
+    [traceOperation, stream, traceLabel, errorMessage, startFn],
   );
 
   const cancel = useCallback(() => {

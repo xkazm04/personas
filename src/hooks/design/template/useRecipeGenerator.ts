@@ -22,7 +22,8 @@ export function useRecipeGenerator() {
     idField: 'generation_id',
     backendTimeoutSecs: 300,
     errorMessage: 'Failed to generate recipe',
-    traceOperation: 'recipe_execution',
+    traceOperation: 'recipe_generation',
+    traceLabel: 'Recipe generation',
   });
 
   return useMemo(() => ({

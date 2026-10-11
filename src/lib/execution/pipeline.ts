@@ -212,6 +212,7 @@ const SYSTEM_OPERATION_TYPES = [
   'automation_design',
   'kb_ingest',
   'recipe_execution',
+  'recipe_generation',
   'recipe_versioning',
   'schema_proposal',
   'query_debug',
