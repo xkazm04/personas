@@ -425,6 +425,15 @@ async fn spawn_ingest_job(
     // runtime; blocking_lock() here is a documented panic.)
     {
         let mut jobs = ingest_jobs.lock().await;
+        // One background job per KB: a second insert would evict the running
+        // job's token (delete could no longer cancel it), and a reindex
+        // drops/recreates the vector index under a running ingest.
+        if jobs.contains_key(&kb_id) {
+            return Err(AppError::Validation(
+                "Another ingestion or reindex job is already running for this knowledge base"
+                    .into(),
+            ));
+        }
         jobs.insert(kb_id.clone(), cancel.clone());
     }
 
@@ -733,6 +742,15 @@ pub async fn reindex_kb_internal(
     // Register the cancellation token so delete_knowledge_base can cancel us.
     {
         let mut jobs = ingest_jobs.lock().await;
+        // One background job per KB: a second insert would evict the running
+        // job's token (delete could no longer cancel it), and a reindex
+        // drops/recreates the vector index under a running ingest.
+        if jobs.contains_key(&kb_id_task) {
+            return Err(AppError::Validation(
+                "Another ingestion or reindex job is already running for this knowledge base"
+                    .into(),
+            ));
+        }
         jobs.insert(kb_id_task.clone(), cancel.clone());
     }
 
