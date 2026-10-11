@@ -66,8 +66,8 @@ export function BulkActionsToolbar({
           break;
       }
       onClearSelection();
-      setConfirmingDelete(false);
     } finally {
+      setConfirmingDelete(false);
       busyRef.current = false;
       setBusyOp(null);
     }
@@ -121,10 +121,7 @@ export function BulkActionsToolbar({
             <Button
               variant="danger"
               size="sm"
-              onClick={() => {
-                setConfirmingDelete(false);
-                return handleBulk('delete');
-              }}
+              onClick={() => handleBulk('delete')}
               disabled={isBusy}
               loading={busyOp === 'delete'}
             >
