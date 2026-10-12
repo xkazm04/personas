@@ -2495,7 +2495,23 @@ def main() -> int:
     g.add_argument("--dry", action="store_true", help="show what it would claim now, claim nothing")
     g.add_argument("--stop", action="store_true", help="ask a running pool to stop after its workers settle")
     g.add_argument("--status", action="store_true", help="the running pool, its workers, its last events")
+    p = sub.add_parser("multi", help="/curator --multi: codex, grok and agy judge different conform subjects in parallel rounds")
+    p.add_argument("multi_cmd", nargs="?", default="status", choices=("status", "start", "round", "finish", "clean", "report", "reset-dropped", "withdraw", "revalidate"))
+    p.add_argument("--providers", default="codex,grok,agy", help="seats for this round, comma separated")
+    p.add_argument("--timeout-min", type=int, default=35, help="a seat still running after this is ended and settled blocked")
+    p.add_argument("--terminal-owns", action="store_true", help="waive ONLY the curator_enabled brake, as `next` does")
+    p.add_argument("--keep-raw", action="store_true", help="keep the round's prompts and outputs (debugging); default deletes them")
+    p.add_argument("--run", help="withdraw: the archived run file name in .ai/conform-runs/merged/")
+    p.add_argument("--contexts", help="withdraw: comma-separated context names whose verdict the review refused")
+    p.add_argument("--why", help="withdraw/revalidate: the review's reason, recorded with the change")
+    p.add_argument("--round", type=int, help="revalidate: the round whose kept raw answer is re-judged")
+    p.add_argument("--provider", dest="provider", help="revalidate: the seat to re-judge")
     a = ap.parse_args()
+
+    if a.cmd == "multi":
+        sys.path.insert(0, str(pathlib.Path(__file__).parent))
+        import multi
+        return multi.main(a)
 
     if a.cmd == "run-pool":
         for flag, known, given in (("--lane", LANE_SENTENCE, a.lane), ("--engine", PLAN_ROUTES, a.engine)):

@@ -25,6 +25,8 @@ description: Drive Curator's work loop from a terminal instead of from the Perso
 /curator release-stranded      release every open dispatch whose worker process is provably gone
 /curator pool                  run-pool: several conform workers at once, RAM-scaled, until a brake
 /curator pool stop|status      ask a running pool to stop after its workers settle / read it
+/curator --multi [N]           N rounds; each round codex, grok and agy judge DIFFERENT conform subjects at once
+/curator --multi report        the provider-by-topic scoreboard the rounds built
 ```
 
 `next` takes `--lane queue,plan,method,refill` to drive part of the ladder. The filter
@@ -260,6 +262,129 @@ python .claude/skills/curator/loop.py run-pool --stop     # no new claims; exits
 To stop it NOW instead: end the pool pid from `run-pool --status`, end its workers' pids, then
 `loop.py release-stranded`. If the map is ever reverted under a run (a sibling's hook stash
 that failed to restore), `loop.py merge --reapply` folds the `merged/` archive back in.
+
+## --multi - several providers, one round at a time
+
+`/curator --multi` widens conform coverage with models that are not Claude. Its code is
+`multi.py`, reached through `loop.py multi <cmd>`; the SESSION reviews every round before
+starting the next.
+
+```bash
+L=".claude/skills/curator/loop.py"
+python $L multi start --terminal-owns [--keep-raw]   # one round, DETACHED; prints pid + summary path
+python $L multi finish                               # settle a round whose driver died, from its journal
+python $L multi withdraw --run <file.json> --contexts a,b --why "<review finding>"
+python $L multi revalidate --round <n> --provider <p> --why "<validator defect>"   # needs --keep-raw
+python $L multi clean                                # delete raw dirs of finished rounds (after review)
+python $L multi report                               # scoreboard: provider, provider x category
+python $L multi reset-dropped                        # bring a limited provider back after its reset
+```
+
+**Always `start`, never `round`, from a session.** `round` runs in the foreground. Measured
+2026-10-12: Claude Code's low-memory reaper killed the background shell running round 2, and the
+round's driver with it. `start` launches a driver no shell owns (breakaway from the job), and the
+session waits on `rounds/<n>.json` with an until-loop. Each seat is journaled to
+`rounds/<n>/seats.json` the moment it spawns; if a driver still dies, `finish` waits for live seats,
+settles finished ones from their files, and RELEASES a seat that left no answer (its subject goes
+back, unscored), because nothing says whether the seat or the driver's death ended it. `start`
+and `round` both refuse while an unfinished round exists.
+
+**Seats.** `codex` (codex-cli, `gpt-6.1-sol`, effort high), `grok` (grok-cli, `grok-4.7`, high) and
+`agy` (Antigravity CLI, the newest `gemini-X.Y-flash-high` that `agy models` lists). `--providers`
+narrows them. Each round rotates which seat takes the top-ranked subject, and prefers a different
+registry category for each seat, so the scoreboard sees every provider on every kind of topic.
+
+**Why conform only.** A conform verdict can be checked mechanically against the code, so a weaker
+model's answer is evidence to verify rather than a change to trust. Registry-writing lanes
+(apply, deepen, reconcile) are not offered to these seats.
+
+**Where the subject comes from.** First her plan (in-scope `conform` items). When that is dry for
+this repo (it was on 2026-10-12, when all 27 planned conform items were in domains this repo does not
+consume), the subject comes from the map's own backlog in /conform's bare order: stale pairs, then
+strong unknowns, then probable unknowns, with `priorNotApplicable` pairs discounted. Each one is
+FILED into the operator's request queue (`conform --subject <slug>`, the note names this
+instruction) and claimed through the queue lane, so every seat has a real ledger row. A subject
+`--multi` has tried is not retried (`state.json` `tried`).
+
+**What makes a weaker seat safe.**
+- The orchestrator builds the dossier: the golden path, every technique file, and up to five pairs
+  with each context's REAL file list from `context-map.json`. The seat resolves nothing itself.
+- Seats are read-only and return one JSON object through their CLI's schema flag (codex
+  `--output-schema` in a `read-only` sandbox, grok `--json-schema`, agy `--json-schema`).
+  `multi.py` writes the run file; the registry's merger stays the map's only writer.
+- `validate()` checks every anchor: a tracked file, a non-blank line, and the seat's verbatim
+  `quote` of that line. A quote found up to three lines away, or uniquely elsewhere in the file,
+  REPAIRS the line number (counted as a repair). A quote found nowhere, a placeholder, an absolute
+  path that is not in the repo, a technique that is not the subject's, or a context outside the
+  dossier is REFUSED. A conformant pair below /conform's evidence floor, or one that calls a
+  technique a deviation, is declined with the reason. A refused pair becomes a `declined` row,
+  never a verdict.
+- **Whole-answer refusals.** A seat that provably opened nothing (codex ran no command, grok
+  answered in one turn), or whose `notes` disclaim the answer (draft, not verified, do not keep).
+- **The floor counts DISTINCT anchors.** One line reused for several techniques is one piece of
+  evidence, and a conformant pair also needs at least two techniques shown realized.
+- **Smears.** One anchor outside every context it is pinned on, carried by two or more pairs, is
+  a repo-wide fact and a verdict about none of them: all those pairs are declined.
+
+Each rule above was a measured failure, not a guess (round 1-2, 2026-10-12):
+| Seat | What it did | Rule it produced |
+|---|---|---|
+| grok 4.7 | with `--json-schema` it answered in ONE turn, opened no file, and its notes said "DRAFT ONLY - do not keep"; its one surviving verdict echoed the stale verdict the dossier showed it | grok runs without `--json-schema`; read-proof; self-disclaimer; "an earlier verdict is a claim to re-check" |
+| agy flash | four `conformant` verdicts reached the floor by anchoring 5-6 `not-applicable` techniques each on `mod tests {` or one vitest include line | distinct-anchor floor; two realized techniques |
+| codex gpt-6.1-sol | pinned one true repo-wide finding (`lefthook.yml:32`) on four UI contexts with one sentence | smear rule; "judge each context by its own code" |
+| the validator | refused codex's good round-3 answer whole because its notes honestly said "enforcement was not verified" and "no placeholder anchors" | the disclaimer rule reads only statements about the ANSWER; `revalidate` lands what a wrong rule refused |
+
+**A validator rule can be wrong too.** When the review finds the refusal was the rule's fault, fix
+the rule, then `multi revalidate` the kept raw answer: it re-judges under the current validator,
+lands the passing pairs in a NEW run file (`<dispatch>-rv.json`, so the original archive still shows
+what the old rule did), rewrites the ledger row's outcome to say so, and scores it for the seat.
+Keep `--keep-raw` on rounds you intend to review closely for exactly this reason.
+
+**`withdraw` is the review's undo.** The merger has none, and `--reapply` re-folds its archive,
+so `multi withdraw` changes all three places under the merger's own lock: the map row goes back
+to the verdict it replaced (or `unknown`), `conform-detail.json` records the withdrawal, and the
+archived run file moves the pair to `declined` so it cannot come back. It also writes a review
+row to the scoreboard, so a withdrawn verdict counts against its seat. A row a later run has
+already overwritten is left alone and reported.
+
+**Settling.** Through the merger, exactly as the pool settles a conform worker: `landed` when it
+accepted verdicts, `declined` with its reasons, `blocked` when nothing survived. The evidence is
+prefixed `[provider:model]`, so a reader can tell which seat judged it.
+
+**The usage limit.** A seat whose output carries a quota banner and no usable answer is DROPPED:
+its claim is released, its filed request cancelled, its partial answer thrown away, and
+`state.json` `dropped` keeps it out of later rounds. The other seats continue. `multi
+reset-dropped` brings a provider back once its window resets.
+
+**Cleanup is part of the round, not an afterthought.** After the round settles, `multi.py` deletes:
+the round's raw directory (prompts, stdout, the schema), each provider's own session files for
+that seat (grok `~/.grok/sessions/<cwd>/<id>` by the session id the round assigned it, plus that
+session's lines in the cwd's shared `prompt_history.jsonl` - only its own `session_id`, because the
+operator's grok history lives in the same file; agy
+`~/.gemini/antigravity-cli/{annotations,brain,conversations,presence}/<id>*` by its conversation id;
+codex runs `--ephemeral` and writes none), and any provider junk that appeared at the repo root
+(`.grok/`, `.agents/`, `.gemini/`, `.codex/`, `tmp*.{txt,json,md,...}`). Anything else new in the
+repo is LISTED in the round summary and never deleted, because siblings write this checkout too.
+What stays: `rounds/<n>.json` (the summary) and one `scoreboard.jsonl` row per seat. `--keep-raw`
+keeps the raw directory for the review; `multi clean` then deletes it, and the driver logs
+(`round.out`, `finish*.out`) once no round is pending.
+
+**Between rounds the session reviews, then hardens.** Read `rounds/<n>.json`: per seat, what came
+back, what was accepted, every repair and refusal. Spot-check two accepted anchors per seat by
+printing the line (does it SAY what the evidence claims? the validator only proves the quote is
+real). A refusal pattern that repeats across seats is a defect in the brief or the validator, so
+fix it before the next round. A seat that is merely weak is a scoreboard fact, not a defect.
+`multi report` aggregates the scoreboard by provider and by provider x category; carry the feel
+into memory once there are enough rounds to say something.
+
+**The feel after the first five rounds (2026-10-12, n = 5 seats each, one repo, all
+`software-engineering` subjects - a weak prior, not a ranking):**
+| Seat | Kept / returned | Avg wall | Reads as |
+|---|---|---|---|
+| agy `gemini-3.8-flash-high` | 20 / 25 (4 withdrawn) | ~7.5 min | fastest; strongest on llm-agent subjects (orchestration, companion, memory, eval); padded its one test-harness conformant run, then followed the distinct-anchor rule cleanly |
+| codex `gpt-6.1-sol` high | 18 / 25 (4 withdrawn, 4 revalidated) | ~11.5 min | most exhaustive (78+ commands, every technique file); best on UI and standards subjects; over-reaches with repo-wide findings unless told to judge each context by its own code |
+| grok `grok-4.7` high | 14 / 20 (1 withdrawn, 1 lost) | ~15 min | slowest, but precise once it can use tools: real security (`bundle.rs` fail-open allowlist) and module-design findings; useless under `--json-schema` |
+
 
 ## Conduct
 
