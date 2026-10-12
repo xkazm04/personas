@@ -11983,7 +11983,11 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:6 A grep across all files of fleet-session-grid for sidecar provisioning terms found zero hits; the grid operates exclusively as a frontend UI layer managing session states and dispatching process commands (spawn, kill, wake) via backend IPC, which falls under subprocess-lifecycle rather than sidecar or model provisioning.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:25f000a9ae879947",
+          "evaluatedRevision": 8
         }
       ],
       "governance": "governed"
@@ -24456,7 +24460,11 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/drive/signing/useSigning.ts:127 A search across the Drive plugin files for sidecar provisioning terms found that 'sidecar' refers strictly to Ed25519 digital signature metadata files (.sig.json) written next to user files on disk rather than provisioned executables or model weights, while OCR delegates to cloud APIs or the host CLI.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:25f000a9ae879947",
+          "evaluatedRevision": 8
         },
         {
           "subject": "eval-harness",
@@ -24731,7 +24739,11 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/fleet/sub_settings/__tests__/FleetSettingsPage.test.tsx:10 A grep across the test suite for sidecar provisioning terms found no sidecar binaries, external tool downloads, or model stores; the only installation flows tested are Claude Code webhook configuration checks and workspace markdown skill copying.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:25f000a9ae879947",
+          "evaluatedRevision": 8
         },
         {
           "subject": "agent-memory",
@@ -25048,7 +25060,11 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/obsidian-brain/openInObsidian.ts:9 A search across the context files for sidecar provisioning terms found that Obsidian integration operates via custom URL schemes (obsidian://open) and local markdown note syncing, with no sidecar binaries or model files provisioned.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:25f000a9ae879947",
+          "evaluatedRevision": 8
         },
         {
           "subject": "docs-sync",
@@ -25297,7 +25313,11 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:28 A grep across all files in plugins-radio for sidecar provisioning terms found zero hits; the 'engines' referenced are an HTML5 audio element for internet radio streams and a YouTube IFrame player, neither of which involves provisioned executables or model weights.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:25f000a9ae879947",
+          "evaluatedRevision": 8
         },
         {
           "subject": "agent-runtime-assembly",

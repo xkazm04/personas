@@ -17505,6 +17505,136 @@
           "evidence": "src/features/templates/sub_recipes/eligibility.ts:39 Slugs are compared for set membership. A slug that is not available becomes incompatible. There is no foreign-spelling ranker."
         }
       ]
+    },
+    "3c107fe6-ec95-4f45-bf31-665e9ccfe223/sidecar-provisioning": {
+      "context": "plugins-drive",
+      "subject": "sidecar-provisioning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T22:49:55.456Z",
+      "worker": "2a054a26-c0fc-413a-bc83-eaa655400626",
+      "techniques": [
+        {
+          "technique": "process-isolation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/signing/useSigning.ts:47 Drive does not run native capability sidecars in separate processes; sidecars here are document metadata files."
+        },
+        {
+          "technique": "source-pinning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/ocr/useOcr.ts:13 OCR text extraction resolves through a server-side cloud API rather than downloading binaries or model weights from a catalog."
+        },
+        {
+          "technique": "capability-detection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/knowledge/useDriveKnowledge.ts:30 Vector KB readiness is detected via in-process Tauri command availability flags rather than probing external sidecar binaries."
+        }
+      ]
+    },
+    "d7525012-ab19-4b29-99bb-0d4b6b9e084b/sidecar-provisioning": {
+      "context": "plugins-fleet-tests",
+      "subject": "sidecar-provisioning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T22:49:55.456Z",
+      "worker": "2a054a26-c0fc-413a-bc83-eaa655400626",
+      "techniques": [
+        {
+          "technique": "capability-detection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/__tests__/fleetAttention.test.ts:23 Tests verify session attention states based on PTY lifecycle events rather than external sidecar capability probes."
+        },
+        {
+          "technique": "split-trust-by-registration-path",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/sub_settings/__tests__/FleetSettingsPage.test.tsx:21 Hook tests cover webhook registration in Claude Code settings rather than out-of-process plugin trust paths."
+        },
+        {
+          "technique": "source-pinning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/sub_skills/__tests__/useSkillData.test.ts:8 Skills tested here are local markdown prompt files in .claude/skills rather than pinned binary or model artifacts."
+        }
+      ]
+    },
+    "83a8a744-2036-4e3e-9654-6fcec82334ff/sidecar-provisioning": {
+      "context": "plugins-obsidian-brain",
+      "subject": "sidecar-provisioning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T22:49:55.456Z",
+      "worker": "2a054a26-c0fc-413a-bc83-eaa655400626",
+      "techniques": [
+        {
+          "technique": "process-isolation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/obsidian-brain/openInObsidian.ts:19 Obsidian is invoked via the desktop OS protocol handler rather than an isolated sidecar process managed by the application."
+        },
+        {
+          "technique": "capability-detection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/useTwinReadiness.ts:14 Readiness in this context evaluates user twin profile configuration milestones rather than sidecar or model availability."
+        },
+        {
+          "technique": "plugin-lazy-load-and-reload",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/obsidian-brain/sub_setup/SetupPanel.tsx:19 The plugin is an in-tree React component interacting with vault filesystem APIs, not an out-of-process plugin with lifecycle reloads."
+        }
+      ]
+    },
+    "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394/sidecar-provisioning": {
+      "context": "fleet-session-grid",
+      "subject": "sidecar-provisioning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T22:49:55.456Z",
+      "worker": "2a054a26-c0fc-413a-bc83-eaa655400626",
+      "techniques": [
+        {
+          "technique": "process-isolation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:5 Fleet sessions are supervised as interactive PTY terminals under subprocess-lifecycle, not sidecars provisioned by the frontend."
+        },
+        {
+          "technique": "capability-detection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/FleetHooksPill.tsx:21 Detection here checks Claude Code webhook port configuration status, not an external binary's presence or version."
+        },
+        {
+          "technique": "source-pinning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/SkillLibraryDrawer.tsx:50 Skill loading reads markdown prompts from local repository or user paths rather than downloading pinned artifacts from a catalog."
+        }
+      ]
+    },
+    "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20/sidecar-provisioning": {
+      "context": "plugins-radio",
+      "subject": "sidecar-provisioning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T22:49:55.456Z",
+      "worker": "2a054a26-c0fc-413a-bc83-eaa655400626",
+      "techniques": [
+        {
+          "technique": "process-isolation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:11 Audio playback is managed in-browser via an iframe player and HTML5 audio element rather than an external sidecar executable."
+        },
+        {
+          "technique": "source-pinning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:10 Audio streams are fetched from web radio endpoints and YouTube rather than downloaded from a catalog of provisioned binary artifacts."
+        },
+        {
+          "technique": "grade-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/radio/hooks/useRadioState.ts:8 Radio station listings and streaming metadata are received over IPC without any model grade or variant selection."
+        }
+      ]
     }
   }
 }
