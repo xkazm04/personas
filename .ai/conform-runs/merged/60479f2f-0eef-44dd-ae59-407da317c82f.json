@@ -1,0 +1,159 @@
+{
+ "schema": "conform-run/1",
+ "worker": "60479f2f-0eef-44dd-ae59-407da317c82f",
+ "subject": "codebase-scanning",
+ "evaluatedAt": "2026-10-12T20:35:52.064991+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "plugins-dev-tools-triage",
+   "subject": "codebase-scanning",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:111 A failed standards read is converted to an empty list and marked as probed, allowing verification to report shipped standards findings as cleared without reading their sensor.",
+   "techniques": [
+    {
+     "technique": "causes-beside-the-finding-count",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/SweepButton.tsx:86 The report publishes finding counts without a distinct-cause count or a disclosure that the cause relation was not computed; SweepResult and FindingDraft carry no cause attribution."
+    },
+    {
+     "technique": "finding-lifecycle",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/emitters.ts:201 Verification uses these capped emissions as its fresh probe set; a shipped issue still above threshold but displaced from the top three becomes absent and is judged cleared by verify.ts:111."
+    },
+    {
+     "technique": "sensor-pipeline",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:104 The listStandards catch returns the successful-empty representation without recording a standards skip or read error, and the following emitter marks the origin probed."
+    }
+   ]
+  },
+  {
+   "context": "workspace-governance",
+   "subject": "codebase-scanning",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:564 Malformed static-tool output becomes zero findings and can be recorded as complete because the runner checks persistence failures but never checks the child process exit status.",
+   "techniques": [
+    {
+     "technique": "finding-lifecycle",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:615 The raw line number enters the title passed to scan_dedup_key; its normalization retains numeric tokens for short titles, so an edit above a finding can change its identity."
+    },
+    {
+     "technique": "incremental-scanning",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/infrastructure/incremental_scan.rs:214 The ledger compares only file content hashes, stores no ruleset version, and context_generation short-circuits an empty delta, so changed scanner rules do not invalidate unchanged files."
+    },
+    {
+     "technique": "llm-assisted-scanning",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:350 The standards scanner merely trims model-provided rule keys before persistence; neither this processing path nor create_standard checks membership in the shipped ruleset."
+    },
+    {
+     "technique": "sensor-pipeline",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:500 The Impeccable parser also converts invalid JSON to an empty result; parse_tool_output wraps it in Ok, allowing a broken sensor to produce a completed zero-finding scan."
+    },
+    {
+     "technique": "the-tree-is-not-the-population",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/infrastructure/incremental_scan.rs:152 Traversal removes these directories before producing its inventory, without enumerated totals, excluded counts by filter, or example paths; ScanDelta.total_files counts only surviving entries."
+    }
+   ]
+  },
+  {
+   "context": "plugins-dev-tools-context",
+   "subject": "codebase-scanning",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:165 A failed Sentry read produces the same empty runtime map as a successful read with no issues, leaving consumers unable to distinguish unavailable telemetry from absent errors.",
+   "techniques": [
+    {
+     "technique": "sensor-pipeline",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:144 The LLM-telemetry catch likewise replaces failure with successful-empty data; ContextRuntime exposes only cost and error maps, with no per-sensor failure or skipped state."
+    }
+   ]
+  },
+  {
+   "context": "companion-proactive",
+   "subject": "codebase-scanning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/companion/proactive/triggers.rs:1 This context generates operational nudges and triages existing inbox records rather than discovering defects in repository code, so the subject's scanning precondition does not hold.",
+   "techniques": []
+  }
+ ],
+ "declined": [
+  {
+   "subject": "codebase-scanning",
+   "context": "stores-slices-system",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-12T20:35:52.064991+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "codebase-scanning"
+   ],
+   "techniques": [
+    "causes-beside-the-finding-count",
+    "finding-lifecycle",
+    "sensor-pipeline"
+   ],
+   "deviations": 1,
+   "context": "plugins-dev-tools-triage",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-12T20:35:52.064991+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "codebase-scanning"
+   ],
+   "techniques": [
+    "finding-lifecycle",
+    "incremental-scanning",
+    "llm-assisted-scanning",
+    "sensor-pipeline",
+    "the-tree-is-not-the-population"
+   ],
+   "deviations": 1,
+   "context": "workspace-governance",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-12T20:35:52.064991+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "codebase-scanning"
+   ],
+   "techniques": [
+    "sensor-pipeline"
+   ],
+   "deviations": 1,
+   "context": "plugins-dev-tools-context",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-12T20:35:52.064991+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "codebase-scanning"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "companion-proactive",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

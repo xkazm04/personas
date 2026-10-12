@@ -8231,7 +8231,11 @@
           "revision": 12,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/companion/proactive/triggers.rs:1 This context generates operational nudges and triages existing inbox records rather than discovering defects in repository code, so the subject's scanning precondition does not hold.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:06416fce13bc2342",
+          "evaluatedRevision": 12
         },
         {
           "subject": "agent-instruction-files",
@@ -23294,7 +23298,11 @@
           "revision": 12,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:165 A failed Sentry read produces the same empty runtime map as a successful read with no issues, leaving consumers unable to distinguish unavailable telemetry from absent errors.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:06416fce13bc2342",
+          "evaluatedRevision": 12
         },
         {
           "subject": "mcp-tools",
@@ -24233,12 +24241,11 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:102 a failed listStandards read is caught into [] yet :111 still marks standards_finding as probed, so verify.ts:111 judges every open standards finding 'cleared' on a read that never happened - a failed sensor scored as a fixed defect",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:c352f402689ca943",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:111 A failed standards read is converted to an empty list and marked as probed, allowing verification to report shipped standards findings as cleared without reading their sensor.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:06416fce13bc2342",
           "evaluatedRevision": 12,
-          "revisionsBehind": 0,
-          "stale": true
+          "revisionsBehind": 0
         },
         {
           "subject": "quality-gates",
@@ -37852,12 +37859,11 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:564 unparseable tool stdout becomes Value::Null and parses to zero findings, and the child spawned at :113 never has its exit status read, so a crashed or misconfigured tool records 'complete' at :184 with 0 findings - a scan that could not run reads as a clean bill",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:c352f402689ca943",
+          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:564 Malformed static-tool output becomes zero findings and can be recorded as complete because the runner checks persistence failures but never checks the child process exit status.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:06416fce13bc2342",
           "evaluatedRevision": 12,
-          "revisionsBehind": 0,
-          "stale": true
+          "revisionsBehind": 0
         },
         {
           "subject": "test-harness",
