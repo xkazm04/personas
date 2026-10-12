@@ -7240,6 +7240,7 @@
     "usage_provider_claude": "Claude",
     "usage_provider_codex": "OpenAI Codex",
     "usage_provider_grok": "xAI Grok",
+    "usage_provider_agy": "Google Antigravity",
     "queue_origin_remote": "페어링된 기기",
     "remote_drawer_aria": "{device}의 원격 세션",
     "remote_from_device": "{device}로부터",

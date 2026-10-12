@@ -7,4 +7,10 @@ export type CliUsageWindow = {
 /**
  * `"primary"` or `"secondary"`.
  */
-key: string, windowMinutes: number, usedPercent: number, resetsAtMs: number | null, };
+key: string, windowMinutes: number, usedPercent: number, resetsAtMs: number | null, 
+/**
+ * The model group the window belongs to, for a provider that meters
+ * several (`agy`: "Gemini Models", "Claude and GPT models"). The strip
+ * paints one plan per group. Absent for a provider with a single plan.
+ */
+group?: string, };

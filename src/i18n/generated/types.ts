@@ -1018,6 +1018,7 @@ export type Translations = {
     usage_provider_claude: string;
     usage_provider_codex: string;
     usage_provider_grok: string;
+    usage_provider_agy: string;
     queue_origin_remote: string;
     remote_on_device: string;
     remote_state_unknown: string;

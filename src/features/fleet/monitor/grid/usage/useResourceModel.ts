@@ -30,6 +30,7 @@ import type { CliProvider } from '@/lib/bindings/CliProvider';
 import type { CliProviderUsage } from '@/lib/bindings/CliProviderUsage';
 import type { CliUsageReason } from '@/lib/bindings/CliUsageReason';
 import type { CliUsageSnapshot } from '@/lib/bindings/CliUsageSnapshot';
+import type { CliUsageWindow } from '@/lib/bindings/CliUsageWindow';
 import type { ReloginState } from '@/lib/bindings/ReloginState';
 import { meterTone, orderWindows, pace, windowProgress, type MeterTone, type Pace } from '../usageModel';
 import { CLI_PROVIDERS } from './cliProviders';
@@ -221,32 +222,36 @@ function cliProvider(id: CliProvider, usage: CliProviderUsage | undefined, settl
     // Nothing to meter is ALWAYS a worded state — never a zeroed meter.
     return { ...base, emptyReason: usage?.reason ?? 'unreadable', pending: false, plans: [] };
   }
-  const windows = [...usage.windows]
-    .sort((a, b) => a.windowMinutes - b.windowMinutes)
-    .map((w) => windowModel(
-      { key: w.key, utilizationPct: w.usedPercent, resetsAtMs: w.resetsAtMs, windowMs: w.windowMinutes * 60_000 },
-      w.windowMinutes <= SHORT_WINDOW_MAX_MINUTES ? 'short' : 'long',
-      now, usage.projected, usage.asOfMs,
-    ));
-  return {
-    ...base,
-    emptyReason: null,
-    pending: false,
-    plans: [{
-      id,
-      name: usage.planType,
-      slot: null,
-      isActive: false,
-      state: usage.projected ? 'projected' : 'ok',
-      reason: null,
-      windows,
-      asOfMs: usage.asOfMs,
-      canSwitch: false,
-      canRemove: false,
-      login: null,
-      relogin: null,
-    }],
-  };
+  // A provider that meters several model groups (`agy`) names the group on
+  // each window and gets ONE PLAN PER GROUP: each group has its own 5-hour and
+  // weekly bucket, which is the strip's two-window grammar exactly. A provider
+  // with no group (codex) stays one plan named by its plan type.
+  const groups = new Map<string | null, CliUsageWindow[]>();
+  for (const w of usage.windows) {
+    const g = w.group ?? null;
+    groups.set(g, [...(groups.get(g) ?? []), w]);
+  }
+  const plans: PlanModel[] = [...groups].map(([group, ws]) => ({
+    id: group === null ? id : `${id}:${group}`,
+    name: group ?? usage.planType,
+    slot: null,
+    isActive: false,
+    state: usage.projected ? 'projected' : 'ok',
+    reason: null,
+    windows: [...ws]
+      .sort((a, b) => a.windowMinutes - b.windowMinutes)
+      .map((w) => windowModel(
+        { key: w.key, utilizationPct: w.usedPercent, resetsAtMs: w.resetsAtMs, windowMs: w.windowMinutes * 60_000 },
+        w.windowMinutes <= SHORT_WINDOW_MAX_MINUTES ? 'short' : 'long',
+        now, usage.projected, usage.asOfMs,
+      )),
+    asOfMs: usage.asOfMs,
+    canSwitch: false,
+    canRemove: false,
+    login: null,
+    relogin: null,
+  }));
+  return { ...base, emptyReason: null, pending: false, plans };
 }
 
 /** The pure join. Same inputs, same `now` → same model. */

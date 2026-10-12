@@ -51,6 +51,7 @@ export function providerName(t: Translations, id: ProviderId): string {
     case 'claude': return t.monitor.usage_provider_claude;
     case 'codex': return t.monitor.usage_provider_codex;
     case 'grok': return t.monitor.usage_provider_grok;
+    case 'agy': return t.monitor.usage_provider_agy;
   }
 }
 

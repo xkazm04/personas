@@ -28,7 +28,7 @@ describe('PlanPlates', () => {
     render(<PlanPlates usage={feed()} />);
     const rows = screen.getAllByTestId('entry-e-plan');
     const stored = buildSimAccountsSnapshot(NOW).accounts.length;
-    expect(rows).toHaveLength(stored + 1); // + codex (grok is not installed: a worded row, not a plan)
+    expect(rows).toHaveLength(stored + 3); // + codex + agy's two model groups (grok is not installed: a worded row, not a plan)
     expect(screen.getByTestId('entry-e-provider-grok')).toBeTruthy();
   });
 

@@ -7240,6 +7240,7 @@
     "usage_provider_claude": "Claude",
     "usage_provider_codex": "OpenAI Codex",
     "usage_provider_grok": "xAI Grok",
+    "usage_provider_agy": "Google Antigravity",
     "queue_origin_remote": "Spárované zařízení",
     "remote_drawer_aria": "Vzdálená relace na {device}",
     "remote_from_device": "Z {device}",

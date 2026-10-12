@@ -3,4 +3,4 @@
 /**
  * Which CLI a usage card describes.
  */
-export type CliProvider = "codex" | "grok";
+export type CliProvider = "codex" | "grok" | "agy";

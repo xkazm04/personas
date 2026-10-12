@@ -32,6 +32,7 @@
   "*:monitor.queue_origin_autopilot",
   "*:monitor.queue_origin_curator",
   "*:monitor.queue_origin_dev_runner",
+  "*:monitor.usage_provider_agy",
   "*:monitor.usage_provider_claude",
   "*:monitor.usage_provider_codex",
   "*:monitor.usage_provider_grok",

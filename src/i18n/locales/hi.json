@@ -7240,6 +7240,7 @@
     "usage_provider_claude": "Claude",
     "usage_provider_codex": "OpenAI Codex",
     "usage_provider_grok": "xAI Grok",
+    "usage_provider_agy": "Google Antigravity",
     "queue_origin_remote": "एक पेयर किया गया डिवाइस",
     "remote_drawer_aria": "{device} पर रिमोट सेशन",
     "remote_from_device": "{device} से",

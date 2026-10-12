@@ -6,7 +6,7 @@ import type { CliProvider } from '@/lib/bindings/CliProvider';
 import type { CliUsageSnapshot } from '@/lib/bindings/CliUsageSnapshot';
 
 /** The providers this strip knows, in display order. */
-export const CLI_PROVIDERS: readonly CliProvider[] = ['codex', 'grok'];
+export const CLI_PROVIDERS: readonly CliProvider[] = ['codex', 'grok', 'agy'];
 
 /** What a rejected IPC becomes: every provider present, none readable. */
 export function unreadableCliUsage(): CliUsageSnapshot {
