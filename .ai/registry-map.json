@@ -6537,7 +6537,11 @@
           "revision": 11,
           "changedAt": "2026-09-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/mod.rs:10 The design commands module implements n8n workflow transformation and template design commands rather than a localization or translation pipeline.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
+          "evaluatedRevision": 12
         },
         {
           "subject": "agent-memory",
@@ -10680,7 +10684,11 @@
           "revision": 11,
           "changedAt": "2026-09-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/mod.rs:28 The engine module root re-exports backend agent execution and workflow infrastructure and contains no localization or translation pipeline functionality.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
+          "evaluatedRevision": 12
         },
         {
           "subject": "quality-gates",
@@ -14497,7 +14505,11 @@
           "revision": 11,
           "changedAt": "2026-09-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/i18n/locales.manifest.ts:16 The central locale descriptor omits machine-translation engine tags and single CI opt-in flags, violating the single-source registry contract and exposing all locales directly to the UI switcher.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
+          "evaluatedRevision": 12
         },
         {
           "subject": "i18n",
@@ -14679,7 +14691,11 @@
           "revision": 11,
           "changedAt": "2026-09-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 This context contains generated TypeScript type definitions from en.json and UI unit tests rather than a machine translation pipeline, derived store, or locale registry.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
+          "evaluatedRevision": 12
         },
         {
           "subject": "i18n",
@@ -31760,7 +31776,11 @@
           "revision": 11,
           "changedAt": "2026-09-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/index.ts:1 The persona layout adoption module renders interactive template configuration petal views and contains no translation pipeline or localization topology code.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
+          "evaluatedRevision": 12
         },
         {
           "subject": "test-harness",
