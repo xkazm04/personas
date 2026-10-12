@@ -118,7 +118,7 @@ export function PlanPopover({ plan, provider, usage, anchorRef, readOnly, onClos
       role="dialog"
       aria-label={plan.name ?? providerName(t, provider.id)}
       data-testid="entry-e-plan-popover"
-      className="ae-plate fixed z-50 flex flex-col gap-3 rounded-card p-3"
+      className="ae-pop flex flex-col gap-3 rounded-card p-3"
       style={{ width: WIDTH, top: pos?.top ?? 0, left: pos?.left ?? 0, visibility: pos ? 'visible' : 'hidden' }}
     >
       <header className="flex min-w-0 items-center gap-2">
