@@ -4564,23 +4564,43 @@
       "subject": "connector-catalog",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-5",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T21:42:52.142Z",
+      "worker": "d171b866-929f-47d4-936d-6f4882401ccb",
       "techniques": [
         {
-          "technique": "schema-driven-forms",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/design/phases/PreviewPhase.tsx:173 no declared-field-versus-probe cross-check before the green gate. The mint-then-fail seam is reaped (src/hooks/design/credential/useCredentialDesign.ts:125)."
+          "technique": "adapter-normalization",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:52 Chooses a browser-harvest driver. It does not normalize a provider API into a view model."
         },
         {
           "technique": "catalog-as-data",
           "verdict": "conformant",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx:99 looks up a learned recipe by catalog identity before spending a live discovery run."
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:93 Review rows are the connector declaration's fields, rendered by one field component."
         },
         {
           "technique": "matching-and-ranking",
-          "verdict": "conformant",
-          "evidence": "src/hooks/design/credential/useCredentialDesign.ts:79 reuses an existing row on exact case-insensitive identity before minting a new operator row."
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:126 The review is already bound to a chosen connector name. These steps do not rank a foreign spelling."
+        },
+        {
+          "technique": "schema-driven-forms",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/ReviewActions.tsx:147 The prop type is success and message only (line 10), and line 36 colors success green. healthcheck.rs unverifiable sets success true, and a connector with no healthcheck_config is returned as that skip result."
+        },
+        {
+          "technique": "shipped-vs-operator-ownership",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:64 Saves a credential instance. This UI does not refresh shipped catalog columns."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/design/phases/PreviewPhase.tsx:173 enables Save on canSaveCredential, which is healthcheck success alone (CredentialDesignHelpers.ts:177). That success comes from a Claude-authored probe scored without checking that it substitutes any declared field (src-tauri/src/commands/credentials/credential_design.rs:263), so a probe that never sends the credential goes green for any value and mints the connector with it.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by d171b866-929f-47d4-936d-6f4882401ccb"
         }
       ]
     },
@@ -4589,23 +4609,48 @@
       "subject": "connector-catalog",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-5",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T21:42:52.142Z",
+      "worker": "d171b866-929f-47d4-936d-6f4882401ccb",
       "techniques": [
+        {
+          "technique": "adapter-normalization",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:54 The card reads declared auth methods for badges. Picker files contain no provider-response adapter."
+        },
         {
           "technique": "catalog-as-data",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:84 the consumer forks from the union accessor."
+          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:84 connectorCategoryTags (builtinConnectors.ts:231) unions category with categories[]. Counts at line 137 also use only c.category. Purpose filtering calls getPurposeForConnector, a side map of member names, not the row."
         },
         {
           "technique": "catalog-lifecycle",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:81 no deprecation or retirement predicate exists, so a retired entry is offered forever."
+          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:24 No lifecycle axis. ConnectorDefinition has no deprecated or retired field, and ConnectorCard.tsx:70 calls onPickType for every card, so nothing can leave the offer list while still resolving."
+        },
+        {
+          "technique": "matching-and-ranking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:248 A search term only clears facet filters. The substring match on label, name, and category is useCredentialViewFSM.ts:381, outside this context, and is not scored here."
         },
         {
           "technique": "schema-driven-forms",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:177 the api_key save gate is probe success with no check that the probe references a declared field (the vacuous green)."
+          "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:177 An api_key design save is ready only when the design probe returned success and a config. credential_design.rs sets that success from HTTP status after resolving whatever headers were generated, with no check that a declared field was substituted. No config keeps save shut, so a missing probe is a lock rather than unverifiable."
+        },
+        {
+          "technique": "shipped-vs-operator-ownership",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:32 The picker selects a type to add a credential. It does not write catalog columns or run a refresh."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:84 filters and counts on the scalar category even though src/lib/credentials/builtinConnectors.ts:231 unions category with categories[], so a straddling connector is findable under only one of its categories. The filter pipeline (:81) has no lifecycle predicate because rows carry no deprecated or retired state.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by d171b866-929f-47d4-936d-6f4882401ccb"
         }
       ]
     },
@@ -4614,18 +4659,48 @@
       "subject": "connector-catalog",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-5",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T21:42:52.142Z",
+      "worker": "d171b866-929f-47d4-936d-6f4882401ccb",
       "techniques": [
         {
+          "technique": "adapter-normalization",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/TauriPlaywrightAdapter.ts:28 Browser-session driver for credential harvest. These files do not map a provider API onto a shared view model."
+        },
+        {
           "technique": "catalog-as-data",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:118 identity derived from the label."
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/resources/connectors.rs:125 The form slugs the label once (CredentialSchemaForm.tsx:118 via sanitize). create_connector calls repo::create, which rejects a taken name in the same Immediate transaction. That is the mint check the technique allows."
+        },
+        {
+          "technique": "catalog-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:171 This delete runs only in the save-failure catch, the failed-mint rollback. Schema types here have no deprecated, retired, or tombstone stage."
+        },
+        {
+          "technique": "matching-and-ranking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/McpPrefilledForm.tsx:37 Binds the new row to an existing minted name. No foreign-name ranking in these files."
         },
         {
           "technique": "schema-driven-forms",
-          "verdict": "conformant",
-          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:171 a failed credential save deletes the just-minted connector row and records a rollback failure."
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:230 deploy_key is declared on the line above and is absent from the recipe. The design healthcheck sends only those headers and treats HTTP success as success. Postgres and MongoDB do carry an explicit noHealthcheckHint and do not gate save."
+        },
+        {
+          "technique": "shipped-vs-operator-ownership",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:145 This path inserts an operator row. It does not refresh or rewrite shipped columns."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:118 mints an operator connector's identity from the typed display name (sanitize lower-cases and collapses punctuation, schemaFormTypes.ts:56), so 'My DB' and 'my-db' collide on one key and a rename cannot be expressed.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by d171b866-929f-47d4-936d-6f4882401ccb"
         }
       ]
     },
@@ -4634,16 +4709,40 @@
       "subject": "connector-catalog",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-5",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T21:42:52.142Z",
+      "worker": "d171b866-929f-47d4-936d-6f4882401ccb",
       "techniques": [
+        {
+          "technique": "adapter-normalization",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/forms/EditFormFields.tsx:44 Maps a declared field type to an input. No provider-response adapter in these files."
+        },
+        {
+          "technique": "catalog-as-data",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/import/importHelpers.ts:365 buildDesignResultFromImport fabricates a connector that has credential fields and a null probe with no reason, so an empty probe cannot be told from a forgotten one."
+        },
+        {
+          "technique": "matching-and-ranking",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/import/useCredentialImport.ts:111 When detectServiceFromKey leaves connectorName null, the import slugs the group label into a new connector name. Unrecognized secrets become the identity unrecognized. /aws/i (importHelpers.ts:131) also high-confidence-matches any key containing that substring."
+        },
         {
           "technique": "schema-driven-forms",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:98 a field-declaring row without a probe is neither probed nor explicitly marked unauthenticated."
+          "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:211 hasHealthcheck is healthcheck_config != null (line 98). The test calls checkDesign with only name, label, and fields (line 103), not the catalog recipe. The sole caller, useGalleryActions.ts handleCredentialSave, creates the credential with no health state. Dropping the gate is what the technique requires; omitting the unverifiable mark is not."
         }
       ],
-      "registryProposal": "schema-driven-forms names only the fieldless case ('explicitly marked unauthenticated'). It should say what a row that declares fields but ships no probe recipe must do: block, or save as explicitly unverified. The code's reading, where no recipe means ungated, is defensible and the technique does not settle it."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:98 reads a null healthcheck_config as 'no probe needed' and drops the save gate (:211), so a row that declares credential fields but has no probe recipe admits any typed value unverified and is never marked as unverifiable.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by d171b866-929f-47d4-936d-6f4882401ccb"
+        }
+      ]
     },
     "bcb603ad-ce58-4b76-9623-aa99ace984af/proactive-nudges": {
       "context": "companion-proactive",
@@ -17385,6 +17484,27 @@
       "evaluatedTs": "2026-10-12T20:35:52.064Z",
       "worker": "60479f2f-0eef-44dd-ae59-407da317c82f",
       "techniques": []
+    },
+    "e13cfc6c-f666-4959-81c0-2cfbc4815f04/connector-catalog": {
+      "context": "templates-recipes",
+      "subject": "connector-catalog",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T21:42:52.142Z",
+      "worker": "d171b866-929f-47d4-936d-6f4882401ccb",
+      "techniques": [
+        {
+          "technique": "catalog-as-data",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_recipes/types.ts:150 A recipe names connector slugs. It does not declare identity, auth schema, capabilities, or a probe."
+        },
+        {
+          "technique": "matching-and-ranking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_recipes/eligibility.ts:39 Slugs are compared for set membership. A slug that is not available becomes incompatible. There is no foreign-spelling ranker."
+        }
+      ]
     }
   }
 }

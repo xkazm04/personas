@@ -1,0 +1,261 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d171b866-929f-47d4-936d-6f4882401ccb",
+ "subject": "connector-catalog",
+ "evaluatedAt": "2026-10-12T21:42:52.142455+00:00",
+ "provider": "grok",
+ "model": "grok-4.7",
+ "pairs": [
+  {
+   "context": "vault-catalog-schemas",
+   "subject": "connector-catalog",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:230 The Convex subtype's probe GETs the deployment URL with an empty header map, so the required deploy_key is never substituted, and a 2xx result is stored as healthcheck_passed.",
+   "techniques": [
+    {
+     "technique": "adapter-normalization",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/TauriPlaywrightAdapter.ts:28 Browser-session driver for credential harvest. These files do not map a provider API onto a shared view model."
+    },
+    {
+     "technique": "catalog-as-data",
+     "verdict": "conformant",
+     "evidence": "src-tauri/db/src/repos/resources/connectors.rs:125 The form slugs the label once (CredentialSchemaForm.tsx:118 via sanitize). create_connector calls repo::create, which rejects a taken name in the same Immediate transaction. That is the mint check the technique allows."
+    },
+    {
+     "technique": "catalog-lifecycle",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:171 This delete runs only in the save-failure catch, the failed-mint rollback. Schema types here have no deprecated, retired, or tombstone stage."
+    },
+    {
+     "technique": "matching-and-ranking",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_catalog/components/schemas/McpPrefilledForm.tsx:37 Binds the new row to an existing minted name. No foreign-name ranking in these files."
+    },
+    {
+     "technique": "schema-driven-forms",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:230 deploy_key is declared on the line above and is absent from the recipe. The design healthcheck sends only those headers and treats HTTP success as success. Postgres and MongoDB do carry an explicit noHealthcheckHint and do not gate save."
+    },
+    {
+     "technique": "shipped-vs-operator-ownership",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:145 This path inserts an operator row. It does not refresh or rewrite shipped columns."
+    }
+   ]
+  },
+  {
+   "context": "vault-credentials-components-forms",
+   "subject": "connector-catalog",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:211 A null healthcheck_config leaves save enabled and onSave passes only field values, so a connector with fields and no probe is stored untested rather than unverifiable, while any success boolean opens the gate.",
+   "techniques": [
+    {
+     "technique": "adapter-normalization",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_credentials/components/forms/EditFormFields.tsx:44 Maps a declared field type to an input. No provider-response adapter in these files."
+    },
+    {
+     "technique": "catalog-as-data",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_credentials/components/import/importHelpers.ts:365 buildDesignResultFromImport fabricates a connector that has credential fields and a null probe with no reason, so an empty probe cannot be told from a forgotten one."
+    },
+    {
+     "technique": "matching-and-ranking",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_credentials/components/import/useCredentialImport.ts:111 When detectServiceFromKey leaves connectorName null, the import slugs the group label into a new connector name. Unrecognized secrets become the identity unrecognized. /aws/i (importHelpers.ts:131) also high-confidence-matches any key containing that substring."
+    },
+    {
+     "technique": "schema-driven-forms",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:211 hasHealthcheck is healthcheck_config != null (line 98). The test calls checkDesign with only name, label, and fields (line 103), not the catalog recipe. The sole caller, useGalleryActions.ts handleCredentialSave, creates the credential with no health state. Dropping the gate is what the technique requires; omitting the unverifiable mark is not."
+    }
+   ]
+  },
+  {
+   "context": "vault-catalog-picker",
+   "subject": "connector-catalog",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:84 The gallery keeps a connector only when its scalar category equals the filter, so a connector that also lists another tag in categories[] is missing from that category.",
+   "techniques": [
+    {
+     "technique": "adapter-normalization",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:54 The card reads declared auth methods for badges. Picker files contain no provider-response adapter."
+    },
+    {
+     "technique": "catalog-as-data",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:84 connectorCategoryTags (builtinConnectors.ts:231) unions category with categories[]. Counts at line 137 also use only c.category. Purpose filtering calls getPurposeForConnector, a side map of member names, not the row."
+    },
+    {
+     "technique": "catalog-lifecycle",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:24 No lifecycle axis. ConnectorDefinition has no deprecated or retired field, and ConnectorCard.tsx:70 calls onPickType for every card, so nothing can leave the offer list while still resolving."
+    },
+    {
+     "technique": "matching-and-ranking",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:248 A search term only clears facet filters. The substring match on label, name, and category is useCredentialViewFSM.ts:381, outside this context, and is not scored here."
+    },
+    {
+     "technique": "schema-driven-forms",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:177 An api_key design save is ready only when the design probe returned success and a config. credential_design.rs sets that success from HTTP status after resolving whatever headers were generated, with no check that a declared field was substituted. No config keeps save shut, so a missing probe is a lock rather than unverifiable."
+    },
+    {
+     "technique": "shipped-vs-operator-ownership",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:32 The picker selects a type to add a credential. It does not write catalog columns or run a refresh."
+    }
+   ]
+  },
+  {
+   "context": "vault-catalog-autocred-ui",
+   "subject": "connector-catalog",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/ReviewActions.tsx:147 Save turns on for any success flag, and the same flag paints a green check, so an unverifiable preview (no probe, success true) is shown and accepted as a passed test.",
+   "techniques": [
+    {
+     "technique": "adapter-normalization",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:52 Chooses a browser-harvest driver. It does not normalize a provider API into a view model."
+    },
+    {
+     "technique": "catalog-as-data",
+     "verdict": "conformant",
+     "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:93 Review rows are the connector declaration's fields, rendered by one field component."
+    },
+    {
+     "technique": "matching-and-ranking",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:126 The review is already bound to a chosen connector name. These steps do not rank a foreign spelling."
+    },
+    {
+     "technique": "schema-driven-forms",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/ReviewActions.tsx:147 The prop type is success and message only (line 10), and line 36 colors success green. healthcheck.rs unverifiable sets success true, and a connector with no healthcheck_config is returned as that skip result."
+    },
+    {
+     "technique": "shipped-vs-operator-ownership",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:64 Saves a credential instance. This UI does not refresh shipped catalog columns."
+    }
+   ]
+  },
+  {
+   "context": "templates-recipes",
+   "subject": "connector-catalog",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_recipes/eligibility.ts:36 Eligibility compares required connector slugs to the persona's wired set; a search of these files found no connector row, auth schema, probe recipe, or provider adapter.",
+   "techniques": [
+    {
+     "technique": "catalog-as-data",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_recipes/types.ts:150 A recipe names connector slugs. It does not declare identity, auth schema, capabilities, or a probe."
+    },
+    {
+     "technique": "matching-and-ranking",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_recipes/eligibility.ts:39 Slugs are compared for set membership. A slug that is not available becomes incompatible. There is no foreign-spelling ranker."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-12T21:42:52.142455+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "connector-catalog"
+   ],
+   "techniques": [
+    "adapter-normalization",
+    "catalog-as-data",
+    "catalog-lifecycle",
+    "matching-and-ranking",
+    "schema-driven-forms",
+    "shipped-vs-operator-ownership"
+   ],
+   "deviations": 1,
+   "context": "vault-catalog-schemas",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-12T21:42:52.142455+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "connector-catalog"
+   ],
+   "techniques": [
+    "adapter-normalization",
+    "catalog-as-data",
+    "matching-and-ranking",
+    "schema-driven-forms"
+   ],
+   "deviations": 1,
+   "context": "vault-credentials-components-forms",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-12T21:42:52.142455+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "connector-catalog"
+   ],
+   "techniques": [
+    "adapter-normalization",
+    "catalog-as-data",
+    "catalog-lifecycle",
+    "matching-and-ranking",
+    "schema-driven-forms",
+    "shipped-vs-operator-ownership"
+   ],
+   "deviations": 1,
+   "context": "vault-catalog-picker",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-12T21:42:52.142455+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "connector-catalog"
+   ],
+   "techniques": [
+    "adapter-normalization",
+    "catalog-as-data",
+    "matching-and-ranking",
+    "schema-driven-forms",
+    "shipped-vs-operator-ownership"
+   ],
+   "deviations": 1,
+   "context": "vault-catalog-autocred-ui",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-12T21:42:52.142455+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "connector-catalog"
+   ],
+   "techniques": [
+    "catalog-as-data",
+    "matching-and-ranking"
+   ],
+   "deviations": 0,
+   "context": "templates-recipes",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  }
+ ]
+}

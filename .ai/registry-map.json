@@ -33738,7 +33738,11 @@
           "revision": 4,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_recipes/eligibility.ts:36 Eligibility compares required connector slugs to the persona's wired set; a search of these files found no connector row, auth schema, probe recipe, or provider adapter.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:d78c2c6c19304554",
+          "evaluatedRevision": 4
         },
         {
           "subject": "prompt-assembly",
@@ -35243,13 +35247,12 @@
           "changedAt": "2026-09-26",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/design/phases/PreviewPhase.tsx:173 enables Save on canSaveCredential, which is healthcheck success alone (CredentialDesignHelpers.ts:177). That success comes from a Claude-authored probe scored without checking that it substitutes any declared field (src-tauri/src/commands/credentials/credential_design.rs:263), so a probe that never sends the credential goes green for any value and mints the connector with it.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:10a0b6823bd7b6d5",
-          "evaluatedRevision": 1,
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/ReviewActions.tsx:147 Save turns on for any success flag, and the same flag paints a green check, so an unverifiable preview (no probe, success true) is shown and accepted as a passed test.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:d78c2c6c19304554",
+          "evaluatedRevision": 4,
           "source": "retained",
-          "revisionsBehind": 3,
-          "stale": true
+          "revisionsBehind": 3
         },
         {
           "subject": "module-design",
@@ -35415,12 +35418,11 @@
           "changedAt": "2026-09-26",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:84 filters and counts on the scalar category even though src/lib/credentials/builtinConnectors.ts:231 unions category with categories[], so a straddling connector is findable under only one of its categories. The filter pipeline (:81) has no lifecycle predicate because rows carry no deprecated or retired state.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:10a0b6823bd7b6d5",
-          "evaluatedRevision": 1,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:84 The gallery keeps a connector only when its scalar category equals the filter, so a connector that also lists another tag in categories[] is missing from that category.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:d78c2c6c19304554",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 3
         },
         {
           "subject": "design-tokens",
@@ -35564,12 +35566,11 @@
           "changedAt": "2026-09-26",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:118 mints an operator connector's identity from the typed display name (sanitize lower-cases and collapses punctuation, schemaFormTypes.ts:56), so 'My DB' and 'my-db' collide on one key and a rename cannot be expressed.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:10a0b6823bd7b6d5",
-          "evaluatedRevision": 1,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:230 The Convex subtype's probe GETs the deployment URL with an empty header map, so the required deploy_key is never substituted, and a 2xx result is stored as healthcheck_passed.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:d78c2c6c19304554",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 3
         },
         {
           "subject": "mcp-tools",
@@ -36028,12 +36029,11 @@
           "changedAt": "2026-09-26",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:98 reads a null healthcheck_config as 'no probe needed' and drops the save gate (:211), so a row that declares credential fields but has no probe recipe admits any typed value unverified and is never marked as unverifiable.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:10a0b6823bd7b6d5",
-          "evaluatedRevision": 1,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:211 A null healthcheck_config leaves save enabled and onSave passes only field values, so a connector with fields and no probe is stored untested rather than unverifiable, while any success boolean opens the gate.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:d78c2c6c19304554",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 3
         },
         {
           "subject": "mcp-tools",
