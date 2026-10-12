@@ -1,0 +1,339 @@
+{
+  "module": "monitor/classic/sim",
+  "kit": null,
+  "label": "strip",
+  "createdAt": "2026-10-06T15:14:52.013Z",
+  "browser": "147.0.7727.15",
+  "tape": {
+    "path": "C:\\Users\\mkdol\\AppData\\Local\\Temp\\claude\\C--Users-mkdol-dolla-personas\\827c5c2d-1aca-4532-a482-98c62a1e3d17\\scratchpad\\c1b-shots\\rail-tape.json",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 20,
+    "note": "Synthetic: the test build simulation fleet, plus decision counts and three companion approvals for the Gates peek."
+  },
+  "ok": true,
+  "unknownIpcCommands": [
+    "fleet_autopilot_status",
+    "dev_servers_list",
+    "fleet_set_auto_hibernate",
+    "fleet_set_state_cutoffs"
+  ],
+  "shots": [
+    {
+      "file": "strip-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "dev_servers_list",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_auto_hibernate",
+          "args": {
+            "afterMinutes": 30,
+            "enabled": false
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_state_cutoffs",
+          "args": {
+            "staleSecs": 360,
+            "stalledSecs": 120
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_workspace_list": 1,
+        "dev_tools_list_projects": 4,
+        "dev_tools_workspace_set_active": 1,
+        "list_manual_reviews_page": 2,
+        "get_persona_summaries": 2,
+        "dev_tools_pending_counts": 2,
+        "dev_tools_undispatched_ideas": 2,
+        "fleet_autopilot_status": 2,
+        "dev_servers_list": 1,
+        "get_pending_review_counts_by_persona": 2,
+        "get_unread_report_counts_by_persona": 2,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_app_settings_bulk": 2,
+        "fleet_set_auto_hibernate": 1,
+        "fleet_set_state_cutoffs": 1,
+        "fleet_list_sessions": 1
+      },
+      "stable": true,
+      "textLength": 3813,
+      "textSample": "Persona Monitor Activity Timeline Conversations Map Board 100 12 24 6 58 3 3 7 3 1 4 0 0 21 Classic Lanes SESSIONS 10 / 10 AUTOPILOT Off SUBSCRIPTION USAGE as of Claude fleet.one@simulated.test 5h 34%",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "strip-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "dev_servers_list",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_auto_hibernate",
+          "args": {
+            "afterMinutes": 30,
+            "enabled": false
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_state_cutoffs",
+          "args": {
+            "staleSecs": 360,
+            "stalledSecs": 120
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_workspace_list": 1,
+        "dev_tools_list_projects": 4,
+        "dev_tools_workspace_set_active": 1,
+        "list_manual_reviews_page": 2,
+        "get_persona_summaries": 2,
+        "dev_tools_pending_counts": 2,
+        "dev_tools_undispatched_ideas": 2,
+        "fleet_autopilot_status": 2,
+        "dev_servers_list": 1,
+        "get_pending_review_counts_by_persona": 2,
+        "get_unread_report_counts_by_persona": 2,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_app_settings_bulk": 2,
+        "fleet_set_auto_hibernate": 1,
+        "fleet_set_state_cutoffs": 1,
+        "fleet_list_sessions": 1
+      },
+      "stable": true,
+      "textLength": 3847,
+      "textSample": "Persona Monitor Activity Timeline Conversations Map Board All 100 Running 12 Needs you 24 Failed 6 Idle 58 3 3 7 3 1 4 0 0 21 Classic Lanes SESSIONS 10 / 10 AUTOPILOT Off SUBSCRIPTION USAGE as of Clau",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "strip-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "dev_servers_list",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_auto_hibernate",
+          "args": {
+            "afterMinutes": 30,
+            "enabled": false
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_state_cutoffs",
+          "args": {
+            "staleSecs": 360,
+            "stalledSecs": 120
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_workspace_list": 1,
+        "dev_tools_list_projects": 4,
+        "dev_tools_workspace_set_active": 1,
+        "list_manual_reviews_page": 2,
+        "get_persona_summaries": 2,
+        "dev_tools_pending_counts": 2,
+        "dev_tools_undispatched_ideas": 2,
+        "fleet_autopilot_status": 2,
+        "dev_servers_list": 1,
+        "get_pending_review_counts_by_persona": 2,
+        "get_unread_report_counts_by_persona": 2,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_app_settings_bulk": 2,
+        "fleet_set_auto_hibernate": 1,
+        "fleet_set_state_cutoffs": 1,
+        "fleet_list_sessions": 1
+      },
+      "stable": true,
+      "textLength": 3813,
+      "textSample": "Persona Monitor Activity Timeline Conversations Map Board 100 12 24 6 58 3 3 7 3 1 4 0 0 21 Classic Lanes SESSIONS 10 / 10 AUTOPILOT Off SUBSCRIPTION USAGE as of Claude fleet.one@simulated.test 5h 34%",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "strip-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "dev_servers_list",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_auto_hibernate",
+          "args": {
+            "afterMinutes": 30,
+            "enabled": false
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_state_cutoffs",
+          "args": {
+            "staleSecs": 360,
+            "stalledSecs": 120
+          },
+          "answered": null
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "dev_tools_workspace_list": 1,
+        "dev_tools_list_projects": 4,
+        "dev_tools_workspace_set_active": 1,
+        "list_manual_reviews_page": 2,
+        "get_persona_summaries": 2,
+        "dev_tools_pending_counts": 2,
+        "dev_tools_undispatched_ideas": 2,
+        "fleet_autopilot_status": 2,
+        "dev_servers_list": 1,
+        "get_pending_review_counts_by_persona": 2,
+        "get_unread_report_counts_by_persona": 2,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_app_settings_bulk": 2,
+        "fleet_set_auto_hibernate": 1,
+        "fleet_set_state_cutoffs": 1,
+        "fleet_list_sessions": 1
+      },
+      "stable": true,
+      "textLength": 3847,
+      "textSample": "Persona Monitor Activity Timeline Conversations Map Board All 100 Running 12 Needs you 24 Failed 6 Idle 58 3 3 7 3 1 4 0 0 21 Classic Lanes SESSIONS 10 / 10 AUTOPILOT Off SUBSCRIPTION USAGE as of Clau",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

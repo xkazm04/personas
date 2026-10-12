@@ -3,6 +3,7 @@ import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { useTriggerOperations } from './useTriggerOperations';
 import * as api from '@/api/agents/executions';
 import { validateTrigger } from '@/api/pipeline/triggers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface TriggerHistoryStats {
   totalRuns: number;
@@ -62,6 +63,7 @@ export function useTriggerHistory(
   personaId: string,
 ): TriggerHistoryState & TriggerHistoryActions {
   const ops = useTriggerOperations(personaId);
+  const { t, tx } = useTranslation();
   const [executions, setExecutions] = useState<PersonaExecution[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -120,8 +122,8 @@ export function useTriggerHistory(
           id: execution.id,
           success: false,
           message: failedChecks
-            ? `Replay blocked — ${failedChecks}`
-            : 'Replay blocked: trigger validation failed',
+            ? tx(t.triggers.replay_blocked_with_checks, { checks: failedChecks })
+            : t.triggers.replay_blocked_invalid,
         });
         return;
       }
@@ -135,7 +137,7 @@ export function useTriggerHistory(
       setReplayResult({
         id: execution.id,
         success: true,
-        message: `Replay started: execution ${result.id.slice(0, 8)}`,
+        message: tx(t.triggers.replay_started, { id: result.id.slice(0, 8) }),
       });
       // Refresh the list to include the new execution
       void fetch();
@@ -144,7 +146,7 @@ export function useTriggerHistory(
       setReplayResult({
         id: execution.id,
         success: false,
-        message: err instanceof Error ? err.message : 'Replay failed',
+        message: err instanceof Error ? err.message : t.triggers.replay_failed,
       });
     } finally {
       if (mountedRef.current) {
@@ -152,7 +154,7 @@ export function useTriggerHistory(
         setTimeout(() => { if (mountedRef.current) setReplayResult(null); }, 6000);
       }
     }
-  }, [personaId, triggerId, fetch]);
+  }, [personaId, triggerId, fetch, t, tx]);
 
   const clearReplayResult = useCallback(() => setReplayResult(null), []);
 

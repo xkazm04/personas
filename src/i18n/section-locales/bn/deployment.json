@@ -8,7 +8,10 @@
     "send_request": "রিকোয়েস্ট পাঠান",
     "sending": "পাঠানো হচ্ছে…",
     "snippets": "স্নিপেট",
-    "title": "API প্লেগ্রাউন্ড"
+    "title": "API প্লেগ্রাউন্ড",
+    "local_run_completed": "স্থানীয় রান সম্পন্ন হয়েছে",
+    "local_run_failed": "স্থানীয় রান ব্যর্থ হয়েছে",
+    "snippets_target_endpoint": "কোডের নমুনাগুলো স্থাপিত এন্ডপয়েন্টে কল করে। প্লেগ্রাউন্ডের ফলাফল স্থানীয় রান থেকে আসে।"
   },
   "auth_code": "অথরাইজেশন কোড",
   "chart": {
@@ -28,7 +31,8 @@
     "worker_disconnected": "বিচ্ছিন্ন",
     "worker_executing": "সম্পাদনরত",
     "worker_idle": "নিষ্ক্রিয়",
-    "workers": "ওয়ার্কার"
+    "workers": "ওয়ার্কার",
+    "gauge_aria": "{label} গেজ"
   },
   "cloud_trigger_chain": "চেইন",
   "cloud_trigger_manual": "ম্যানুয়াল",
@@ -122,7 +126,9 @@
     "bulk_action_resume": "একসাথে পুনরায় চালু",
     "bulk_action_delete": "একসাথে মুছুন",
     "bulk_result_ok": "{action}: {count}টি হালনাগাদ হয়েছে",
-    "bulk_result_partial": "{action}: {succeeded}টি সফল, {failed}টি ব্যর্থ"
+    "bulk_result_partial": "{action}: {succeeded}টি সফল, {failed}টি ব্যর্থ",
+    "select_all": "সব স্থাপনা নির্বাচন করুন",
+    "select_row": "{name} নির্বাচন করুন"
   },
   "deploy_card": {
     "budget_label": "বাজেট:",
@@ -134,7 +140,11 @@
     "pause_deployment": "ডিপ্লয়মেন্ট বিরতি দিন",
     "remove_deployment": "ডিপ্লয়মেন্ট সরান",
     "resume_deployment": "ডিপ্লয়মেন্ট পুনরায় শুরু করুন",
-    "test_deployment": "ডিপ্লয়মেন্ট পরীক্ষা করুন"
+    "test_deployment": "ডিপ্লয়মেন্ট পরীক্ষা করুন",
+    "test_pass": "পাস",
+    "test_fail": "ব্যর্থ",
+    "test_title_pass": "উত্তীর্ণ",
+    "test_title_fail": "ব্যর্থ"
   },
   "deploying": "ডিপ্লয় হচ্ছে…",
   "deployments_panel": {
@@ -144,7 +154,8 @@
     "no_deployments_yet": "এখনও কোনো ডিপ্লয়মেন্ট নেই। ক্লাউড API এন্ডপয়েন্ট হিসেবে ডিপ্লয় করতে উপরে একটি পার্সোনা নির্বাচন করুন।",
     "select_persona": "ডিপ্লয় করতে একটি পার্সোনা নির্বাচন করুন",
     "budget_no_limit": "কোনো সীমা নেই",
-    "budget_per_month": "${amount}/মাস"
+    "budget_per_month": "${amount}/মাস",
+    "deploy_button": "ডিপ্লয় করুন"
   },
   "exec_detail": {
     "fetching_output": "আউটপুট আনা হচ্ছে…",
@@ -182,7 +193,9 @@
     "total_runs": "মোট রান",
     "fetch_output_failed": "আউটপুট আনা যায়নি",
     "monthly_budget": "মাসিক বাজেট",
-    "monthly_budget_pace": "{amount} এর দিকে এগোচ্ছে"
+    "monthly_budget_pace": "{amount} এর দিকে এগোচ্ছে",
+    "load_failed": "এক্সিকিউশন ইতিহাস লোড করা যায়নি।",
+    "no_executions_found": "নির্বাচিত ফিল্টারের জন্য কোনো এক্সিকিউশন পাওয়া যায়নি।"
   },
   "no_targets": "কোনো ডিপ্লয়মেন্ট টার্গেট সংযুক্ত নেই",
   "oauth_panel": {
@@ -201,7 +214,8 @@
     "token_expired": "টোকেনের মেয়াদ শেষ",
     "token_expired_msg_prefix": "এই OAuth টোকেনের মেয়াদ শেষ হয়েছে",
     "token_unknown": "টোকেন স্ট্যাটাস অজানা",
-    "token_unknown_msg": "টোকেন বৈধতা যাচাই করা যায়নি। এটি এখনও সক্রিয় কিনা নিশ্চিত করতে টোকেন রিফ্রেশ করুন।"
+    "token_unknown_msg": "টোকেন বৈধতা যাচাই করা যায়নি। এটি এখনও সক্রিয় কিনা নিশ্চিত করতে টোকেন রিফ্রেশ করুন।",
+    "expired_at": "({time}-এ মেয়াদ শেষ)"
   },
   "orchestrator_url": "অর্কেস্ট্রেটর URL",
   "reconcile": {
@@ -229,7 +243,8 @@
     "loading": "ট্রিগার লোড হচ্ছে…",
     "loading_firings": "লোড হচ্ছে…",
     "no_firings": "কোনো সাম্প্রতিক ফায়ারিং নেই",
-    "recent_firings": "সাম্প্রতিক ফায়ারিং"
+    "recent_firings": "সাম্প্রতিক ফায়ারিং",
+    "firings_load_failed": "সাম্প্রতিক ট্রিগার লোড করা যায়নি।"
   },
   "sr_connecting": "ক্লাউড অর্কেস্ট্রেটরে সংযুক্ত হচ্ছে…",
   "sr_deploying": "ক্লাউডে persona ডিপ্লয় হচ্ছে",
@@ -239,7 +254,8 @@
     "no_status": "কোনো স্ট্যাটাস ডাটা নেই।",
     "no_token": "কোনো টোকেন কনফিগার করা নেই",
     "no_token_configured": "কোনো টোকেন কনফিগার করা নেই",
-    "token_available": "টোকেন উপলব্ধ"
+    "token_available": "টোকেন উপলব্ধ",
+    "latency_title": "হেলথ-চেকের রাউন্ড-ট্রিপ লেটেন্সি: {ms}ms"
   },
   "tabs": {
     "connection": "সংযোগ",

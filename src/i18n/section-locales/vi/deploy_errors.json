@@ -11,5 +11,8 @@
   "timed_out": "Kết nối hết thời gian. Máy chủ có thể đang tắt hoặc URL không đúng.",
   "token_empty": "Vui lòng nhập token truy cập cá nhân GitLab.",
   "unauthorized": "Thông tin xác thực không hợp lệ. Vui lòng xác minh và thử lại.",
-  "url_empty": "Vui lòng nhập URL điều phối."
+  "url_empty": "Vui lòng nhập URL điều phối.",
+  "credentials_revoked": "Thông tin xác thực đã hết hạn hoặc bị thu hồi. Vui lòng kết nối lại với bộ điều phối đám mây.",
+  "reconnect_exhausted": "Không thể kết nối với bộ điều phối đám mây sau nhiều lần thử. Hãy kiểm tra kết nối và thử lại. Lỗi gần nhất: {cause}",
+  "reconnect_disconnected": "Kiểm tra kết nối báo là đã ngắt kết nối"
 }

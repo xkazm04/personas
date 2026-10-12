@@ -88,6 +88,9 @@ export type DimMetaMap = Record<GlyphDimension, DimMeta>;
 export interface ParsedChannel {
   type: string;
   description: string;
+  /** The summary segment was free text naming no known channel: `type` is
+   *  empty and `description` carries the prose. Never present it as a type. */
+  unstructured?: boolean;
 }
 
 /** Health states a capability sigil can render. Structurally identical to the

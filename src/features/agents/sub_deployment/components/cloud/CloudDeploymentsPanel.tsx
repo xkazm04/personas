@@ -169,7 +169,7 @@ export function CloudDeploymentsPanel({
             disabled={!selectedPersonaId || isDeploying}
             tone="agent"
           >
-            {isDeploying ? t.deployment.deploying : 'Deploy'}
+            {isDeploying ? t.deployment.deploying : dt.deploy_button}
           </Button>
         </div>
       </div>

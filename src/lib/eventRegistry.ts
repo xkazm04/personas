@@ -1155,9 +1155,11 @@ export interface EventPayloadMap {
 
   // P2P
   [EventName.P2P_MANIFEST_SYNC_PROGRESS]: {
-    sync_id: string;
+    peerId: string;
     synced: number;
     total: number;
+    resourceCount: number;
+    syncedAt: string;
   };
   [EventName.NETWORK_SNAPSHOT_UPDATED]: {
     status: import('@/api/network/discovery').NetworkStatusInfo;

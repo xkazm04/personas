@@ -21,6 +21,7 @@ import {
   removeMilestoneItem,
   setMilestoneItem,
   type MilestoneBucket,
+  type MilestoneKind,
 } from '@/api/devTools/milestones';
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 import { mapWithConcurrency } from '@/lib/concurrency';
@@ -46,6 +47,8 @@ export interface MilestoneLane {
   /** 'planned' | 'active' | 'shipped' - the cut's own lifecycle. */
   status: string;
   targetDate: string | null;
+  /** 'milestone' | 'deadline' - a deadline always has a `targetDate`. */
+  kind: MilestoneKind;
   /** Goal ids bound to this milestone (member rows of kind 'goal'). */
   goalIds: ReadonlySet<string>;
   /** The cut's position in the project's plan - the layered views order by it. */
@@ -57,10 +60,28 @@ export interface MilestoneLane {
   shippedAt: string | null;
 }
 
-/** Create a milestone in `planned` state. Cutting and shipping stay in Ship. */
-export async function addMilestone(projectId: string, name: string): Promise<string> {
-  const created = await createMilestone({ projectId, name: name.trim(), status: 'planned' });
+/**
+ * Create a milestone in `planned` state. Cutting and shipping stay in Ship.
+ * A `deadline` date makes it a DEADLINE - the one creation-time choice the
+ * canvas offers, because a deadline without its date is not a deadline.
+ */
+export async function addMilestone(
+  projectId: string,
+  name: string,
+  deadline: string | null = null,
+): Promise<string> {
+  const created = await createMilestone({
+    projectId,
+    name: name.trim(),
+    status: 'planned',
+    ...(deadline ? { kind: 'deadline' as const, targetDate: deadline } : {}),
+  });
   return created.id;
+}
+
+/** The stored kind, narrowed. Anything unknown reads as an ordinary milestone. */
+export function normalizeMilestoneKind(raw: string): MilestoneKind {
+  return raw === 'deadline' ? 'deadline' : 'milestone';
 }
 
 /** Delete a milestone outright. Its member rows go with it (FK cascade). */
@@ -114,6 +135,7 @@ export async function lanesFor(
       name: m.name,
       status: m.status,
       targetDate: m.targetDate,
+      kind: normalizeMilestoneKind(m.kind),
       goalIds,
       orderIndex: m.orderIndex,
       objective: m.goal,

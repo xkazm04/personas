@@ -276,18 +276,7 @@ pub async fn continue_resolved_incidents(
             }
         };
 
-        let hint = format!(
-            "A blocker that stopped a previous run has been resolved, and you are being re-run to \
-             continue that work. Incident: \"{}\".{} Pick up where the blocked run left off — do not \
-             restart from scratch if the earlier work is still valid.",
-            incident.title,
-            incident
-                .resolution_note
-                .as_deref()
-                .filter(|n| !n.trim().is_empty())
-                .map(|n| format!(" Resolution note: {n}."))
-                .unwrap_or_default(),
-        );
+        let hint = build_resume_hint(&incident.title, incident.resolution_note.as_deref());
 
         match engine
             .start_execution(
@@ -328,6 +317,23 @@ pub async fn continue_resolved_incidents(
         );
     }
     started
+}
+
+/// Build the prompt hint for a resumed run. With a resolver note it is carried
+/// verbatim; without one the hint says so explicitly (the resumed run must not
+/// assume what changed). Either way the run is told to re-measure any quantity
+/// the incident title names and to compare against that fresh reading, so a
+/// false premise (e.g. a bare commit count with no stated comparison basis) is
+/// detected instead of rebuilt from scratch.
+fn build_resume_hint(title: &str, resolution_note: Option<&str>) -> String {
+    let resolution = match resolution_note.map(str::trim).filter(|n| !n.is_empty()) {
+        Some(n) => format!(" Resolution note: {n}."),
+        None => " The resolver supplied no note, so what was actually done or changed is unknown."
+            .to_string(),
+    };
+    format!(
+        "A blocker that stopped a previous run has been resolved, and you are being re-run to          continue that work. Incident: \"{title}\".{resolution} Before acting, re-measure any          quantity the incident names (a count, a size, a status) at its source, and check what it          was compared against; if the reading no longer supports the incident's premise, say so          rather than rebuilding context. Pick up where the blocked run left off — do not restart          from scratch if the earlier work is still valid."
+    )
 }
 
 /// Drive [`continue_resolved_incidents`] from the engine handle (used by the
@@ -383,5 +389,26 @@ impl crate::engine::subscription::ReactiveSubscription for IncidentContinuationS
 
     async fn tick(&self) {
         run_tick(self.engine.clone(), self.app.clone(), self.pool.clone()).await;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::build_resume_hint;
+
+    #[test]
+    fn hint_carries_note() {
+        let h = build_resume_hint("T", Some(" pushed it "));
+        assert!(h.contains("Resolution note: pushed it."));
+        assert!(h.contains("re-measure"));
+    }
+
+    #[test]
+    fn hint_states_missing_note() {
+        for n in [None, Some("  ")] {
+            let h = build_resume_hint("T", n);
+            assert!(h.contains("supplied no note"));
+            assert!(!h.contains("Resolution note:"));
+        }
     }
 }

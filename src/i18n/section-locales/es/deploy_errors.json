@@ -11,5 +11,8 @@
   "timed_out": "Se agotó el tiempo de conexión. El servidor puede estar caído o la URL puede ser incorrecta.",
   "token_empty": "Por favor ingrese su token de acceso personal de GitLab.",
   "unauthorized": "Credenciales inválidas. Por favor verifica e intenta de nuevo.",
-  "url_empty": "Por favor ingresa la URL del orquestador."
+  "url_empty": "Por favor ingresa la URL del orquestador.",
+  "credentials_revoked": "Las credenciales han caducado o se han revocado. Vuelve a conectarte al orquestador en la nube.",
+  "reconnect_exhausted": "No se pudo contactar con el orquestador en la nube tras varios intentos. Revisa la conexión e inténtalo de nuevo. Último error: {cause}",
+  "reconnect_disconnected": "La comprobación de conexión indicó que está desconectado"
 }

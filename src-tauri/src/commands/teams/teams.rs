@@ -363,11 +363,30 @@ pub async fn execute_team(
     Ok(run_id)
 }
 
+/// Signal a registered run's flag, or say it is gone. The registry is in-memory:
+/// after a restart (or once the run finished) the gate no longer exists, and
+/// reporting success for it would tell the operator a decision took effect when
+/// it changed nothing.
+fn signal_live_run(
+    registry: &crate::process_registry::ActiveProcessRegistry,
+    domain: &str,
+    key: &str,
+    what: &str,
+) -> Result<(), AppError> {
+    if !registry.is_run_registered(domain, key) {
+        return Err(AppError::NotFound(format!(
+            "{what} {key} is no longer active (it finished or the app restarted)"
+        )));
+    }
+    registry.cancel_run(domain, key);
+    Ok(())
+}
+
 /// Cancel a running pipeline by setting its cancellation flag.
 #[tauri::command]
 pub fn cancel_pipeline(state: State<'_, Arc<AppState>>, run_id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
-    state.process_registry.cancel_run("pipeline", &run_id);
+    signal_live_run(&state.process_registry, "pipeline", &run_id, "Pipeline run")?;
     tracing::info!(run_id = %run_id, "Pipeline cancellation requested");
     Ok(true)
 }
@@ -384,9 +403,12 @@ pub fn approve_pipeline_node(
 ) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     let approval_key = format!("{}:{}", run_id, member_id);
-    state
-        .process_registry
-        .cancel_run("pipeline_approval", &approval_key);
+    signal_live_run(
+        &state.process_registry,
+        "pipeline_approval",
+        &approval_key,
+        "Pipeline approval gate",
+    )?;
     tracing::info!(run_id = %run_id, member_id = %member_id, "Pipeline node approval granted");
     Ok(true)
 }
@@ -401,7 +423,7 @@ pub fn reject_pipeline_node(
     run_id: String,
 ) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
-    state.process_registry.cancel_run("pipeline", &run_id);
+    signal_live_run(&state.process_registry, "pipeline", &run_id, "Pipeline run")?;
     tracing::info!(run_id = %run_id, "Pipeline node approval rejected — cancelling pipeline");
     Ok(true)
 }
@@ -554,3 +576,25 @@ pub async fn suggest_topology_llm(
 // ============================================================================
 // Workflow Compiler — natural language → team pipeline
 // ============================================================================
+
+#[cfg(test)]
+mod gate_signal_tests {
+    use super::*;
+    use crate::process_registry::ActiveProcessRegistry;
+    use std::sync::atomic::Ordering;
+
+    #[test]
+    fn signalling_an_unregistered_gate_is_not_found() {
+        let reg = ActiveProcessRegistry::new();
+        let err = signal_live_run(&reg, "pipeline_approval", "run1:m1", "gate").unwrap_err();
+        assert!(matches!(err, AppError::NotFound(_)));
+    }
+
+    #[test]
+    fn signalling_a_registered_gate_sets_its_flag() {
+        let reg = ActiveProcessRegistry::new();
+        let flag = reg.register_run("pipeline_approval", "run1:m1");
+        assert!(signal_live_run(&reg, "pipeline_approval", "run1:m1", "gate").is_ok());
+        assert!(flag.load(Ordering::Acquire));
+    }
+}

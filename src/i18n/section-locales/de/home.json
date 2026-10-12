@@ -59,7 +59,12 @@
     "try_it": "Ausprobieren",
     "used_badge": "Verwendet",
     "tour_continue": "Fortsetzen ({completed}/{total})",
-    "tour_in_progress": "{completed}/{total}"
+    "tour_in_progress": "{completed}/{total}",
+    "ask_title": "Athena um eine Tour bitten",
+    "ask_placeholder": "Was möchtest du lernen? z. B. einen Agenten planen",
+    "ask_submit": "Erstellen",
+    "ask_composing": "Deine Tour wird zusammengestellt …",
+    "ask_failed": "Athena konnte diese Tour nicht zusammenstellen. Formuliere das Thema um."
   },
   "nav_status": {
     "agents_active": "{count} Agent in den letzten 24 Std. aktiv",

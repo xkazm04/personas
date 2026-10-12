@@ -15,7 +15,7 @@ import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { ManualReviewItem } from '@/lib/types/types';
 import { seedMockManualReview, gcStaleManualReviews, deleteAllManualReviews } from '@/api/overview/reviews';
-import { resolveReviewRow, dispatchReviewRowAction } from '@/lib/decisions/rowWrites';
+import { resolveReviewRow } from '@/lib/decisions/rowWrites';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { toastCatch } from '@/lib/silentCatch';
 import { FILTER_LABELS, resolveReviewQueueView, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
@@ -34,8 +34,8 @@ import { DecisionModeTabs, type DecisionMode } from './DecisionModeTabs';
 import { BacklogPanel } from './backlog/BacklogPanel';
 import { useBacklogQueue } from './backlog/useBacklogQueue';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
-import type { TriageReview } from './reviewFocusHelpers';
-import { ReviewFocusFlow } from './ReviewFocusFlow';
+import { PendingDecisionList } from './PendingDecisionList';
+import { useReloadOnDeckClose } from '../libs/decisionDeckDoors';
 
 /**
  * Shape a raw `PersonaManualReview` row (as returned by the layered
@@ -233,23 +233,12 @@ export default function ManualReviewList() {
     } finally { setIsProcessing(false); }
   }, [activeReview, allReviews, isProcessing, filteredReviews, reloadQueue]);
 
-  // Phase 5b — choose a suggested action: resolve + dispatch a follow-up run
-  // (the same action model as the Quick Answer stepper). Cloud reviews record
-  // the choice as an approval (no dispatch path).
-  const handleDispatchAction = useCallback(async (id: string, action: string) => {
-    const reviewToAct = allReviews.find((r) => r.id === id) ?? activeReview;
-    if (!reviewToAct || isProcessing) return;
-    setIsProcessing(true);
-    try {
-      await dispatchReviewRowAction(reviewToAct, action);
-      const nextPending = filteredReviews.find((r) => r.id !== reviewToAct.id && r.status === 'pending');
-      if (nextPending) setActiveReviewId(nextPending.id);
-      reloadQueue();
-    } catch (err) {
-      toastCatch('manualReview:dispatchAction')(err);
-      reloadQueue();
-    } finally { setIsProcessing(false); }
-  }, [activeReview, allReviews, isProcessing, filteredReviews, reloadQueue]);
+  // ---- Pending → the Decision Deck ----------------------------------------
+  //
+  // The pending filter no longer decides inline: its rows open the global
+  // Decision Deck on the gates chip (see `PendingDecisionList`). The deck
+  // writes through the roster's doors, so the queue re-reads when it closes.
+  useReloadOnDeckClose(reloadQueue);
 
   const handleBulkAction = useCallback(async (status: ManualReviewStatus) => {
     setIsBulkProcessing(true);
@@ -460,19 +449,20 @@ export default function ManualReviewList() {
           </motion.div>
         ) : filter === 'pending' ? (
           <motion.div
-            key="focus"
-            className="flex-1 overflow-hidden"
+            key="pending"
+            className="flex-1 min-h-0 flex flex-col"
             variants={shouldAnimate ? dashboardItem : undefined}
             initial={shouldAnimate ? "hidden" : false}
             animate="show"
             exit={shouldAnimate ? "exit" : undefined}
           >
-            <ReviewFocusFlow
-              reviews={filteredReviews as TriageReview[]}
-              onApprove={(id: string, notes?: string) => handleAction(id, 'approved' as ManualReviewStatus, notes)}
-              onReject={(id: string, notes?: string) => handleAction(id, 'rejected' as ManualReviewStatus, notes)}
-              onDispatchAction={handleDispatchAction}
-              isProcessing={isProcessing}
+            <PendingDecisionList
+              reviews={filteredReviews}
+              pendingTotal={statusCounts.pending ?? 0}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelect}
+              sentinelRef={reviewQueue.sentinelRef}
+              hasMore={reviewQueue.hasMore}
             />
           </motion.div>
         ) : (

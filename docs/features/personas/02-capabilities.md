@@ -814,7 +814,7 @@ These combine across surfaces and are worth knowing:
 | File | Role |
 |---|---|
 | `src-tauri/src/engine/tool_runner.rs` | Tool kind detection + dispatch (script/API/automation) |
-| `src-tauri/src/engine/automation_runner.rs` | External platform invocation |
+| `src-tauri/engine/src/automation_runner.rs` | External platform invocation |
 | `src-tauri/engine/src/prompt/assemble.rs` | Prompt assembly (Manifest / Responsibilities / Current Focus / Capability Parameters / Episodes / memory / tools) |
 | `src-tauri/engine/src/prompt/core_section.rs` | `render_manifest_markdown`, `render_legacy_core_prose`, `render_responsibilities`, `render_responsibility_focused`, `SELF_MODEL_OP_ADDENDUM` |
 | `src-tauri/engine/src/recipe_parameters.rs` | `derive_capability_params_from_charters` + the `{{param.*}}` block |

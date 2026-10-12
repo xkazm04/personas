@@ -138,16 +138,34 @@ pub async fn approve_deliberation_proposal(
         .and_then(|p| serde_json::from_value(p.clone()).ok())
         .ok_or_else(|| AppError::Validation("Deliberation has no proposal to approve".into()))?;
 
+    // Atomic claim BEFORE spawning: a double-click / stale card / retry loses
+    // here instead of launching a second paid assignment for the same proposal.
+    if !repo::claim_proposal_approval(&pool, &deliberation_id)? {
+        return Err(AppError::Validation(
+            "This proposal was already approved or is no longer pending".into(),
+        ));
+    }
+
     let team_id = delib.team_id.clone();
     // Hand the objective to the team-assignment engine (consumes `state`).
-    let result = companion_assign_team(
+    let result = match companion_assign_team(
         state,
         app,
         team_id.clone(),
         proposal.objective.clone(),
         Some(proposal.title.clone()),
     )
-    .await?;
+    .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            // Spawn failed: release the claim so the user can retry.
+            if let Err(re) = repo::release_proposal_claim(&pool, &deliberation_id) {
+                tracing::warn!(deliberation_id = %deliberation_id, error = %re, "failed to release proposal claim after spawn failure");
+            }
+            return Err(e);
+        }
+    };
 
     // Record the approval + the spawned assignment on the deliberation.
     let approved_json = serde_json::json!({
@@ -300,6 +318,13 @@ pub async fn approve_deliberation_action(
                     action.use_case_title, e
                 ),
             );
+            // The spawn never started: free the claim so a retry (e.g. after the
+            // user adds the missing credential) is not told it is "already handled".
+            if let Err(re) =
+                repo::release_capability(&pool, &group_root, &action.use_case_id, &deliberation_id)
+            {
+                tracing::warn!(error = %re, deliberation_id = %deliberation_id, "failed to release capability claim after spawn failure");
+            }
             let _ = repo::clear_pending_action(&pool, &deliberation_id, "open");
         }
     }

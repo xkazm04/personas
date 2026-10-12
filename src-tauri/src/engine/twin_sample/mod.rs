@@ -24,7 +24,7 @@
 
 pub(crate) mod accept;
 pub(crate) mod analyze;
-pub(crate) mod guard;
+pub use personas_engine::twin_sample::guard;
 pub(crate) mod jobs;
 pub(crate) mod parse;
 pub(crate) mod prompt;

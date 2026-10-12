@@ -80,6 +80,7 @@
     "engine/background.rs": {"count":1,"sections":[7],"lines":["2479"],"contexts":["and `:884` and mirrored at `engine/background.rs:2479`; all three are persona executions. Headless"],"resolved":false},
     "engine/build_session/{mod,fix_pass}.rs": {"count":1,"sections":[7],"contexts":["`engine/build_session/{mod,fix_pass}.rs`'s session-start path."],"resolved":false},
     "engine/src/test_runner.rs": {"count":1,"sections":[7],"lines":["344"],"contexts":["(`db/src/repos/run_budget.rs::persist`, called from `engine/src/test_runner.rs:344` and"],"resolved":false},
+    "engine/team_assignment_matching.rs": {"count":1,"sections":[7],"contexts":["`engine/project_tracking/consolidator.rs`, `engine/team_assignment_matching.rs` (two sites), and"],"resolved":false},
     "gateway/src/lib.rs": {"count":2,"sections":[],"lines":["122"],"contexts":["repo with a canonical table (`gateway/src/lib.rs:122`) and **zero model literals at any call site**."],"resolved":false},
     "genome.rs": {"count":1,"sections":[12],"lines":["459"],"contexts":["and `genome.rs:459`. The *data* claim survives — the `run_budgets` table in the live database holds"],"resolved":false},
     "goalGenerator.ts": {"count":1,"sections":[],"lines":["181"],"contexts":["(`goalGenerator.ts:181`). This repo has both doctrines side by side and knows it — see §6."],"resolved":false},
@@ -230,6 +231,14 @@
       "contexts": ["`src/companion/turn_ledger.rs`, `src/companion/model_routing.rs`, `engine/src/queue.rs`,"],
       "resolvedFrom": "suffix",
       "verbatim": "engine/src/queue.rs"
+    },
+    "src-tauri/engine/src/team_assignment_matching.rs": {
+      "count": 1,
+      "sections": [],
+      "lines": ["342,495"],
+      "contexts": ["| 6 | Five headless sites pin no model → CLI account default | `cli_capabilities.rs:67`, `reviews.rs:331,814`, `team_assignment_matching.rs:342,495` | S |"],
+      "resolvedFrom": "basename",
+      "verbatim": "team_assignment_matching.rs"
     },
     "src-tauri/src/commands/credentials/shared.rs": {
       "count": 1,
@@ -446,16 +455,9 @@
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/project_tracking/consolidator.rs"
     },
-    "src-tauri/src/engine/team_assignment_matching.rs": {
-      "count": 4,
-      "sections": [7],
-      "lines": ["342","495","342,495"],
-      "contexts": ["`engine/project_tracking/consolidator.rs`, `engine/team_assignment_matching.rs` (two sites), and"],
-      "resolvedFrom": "suffix",
-      "verbatim": "engine/team_assignment_matching.rs"
-    },
     "src/": {"count":2,"sections":[],"contexts":["matches for any provider endpoint across `src/`, all ten API routes are Supabase CRUD)."],"resolved":false,"isDir":true},
     "src/commands/artist/mod.rs": {"count":1,"sections":[7],"lines":["676"],"contexts":["| `src/commands/artist/mod.rs:676` | `run_creative_cli` | headless creative job, `--model claude-sonnet-4-6` |"],"resolved":false},
+    "src/engine/team_assignment_matching.rs": {"count":2,"sections":[7],"lines":["342","495"],"contexts":["| `src/engine/team_assignment_matching.rs:342` | `match_via_llm_eval` |"],"resolved":false},
     "src/lib/harness/executor.ts": {
       "count": 2,
       "sections": [],

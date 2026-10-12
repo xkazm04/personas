@@ -166,6 +166,13 @@ pub struct BundleImportOptions {
     /// SHA-256 hash from the preview step. When set, the apply step verifies
     /// the bundle bytes match this hash before importing (TOCTOU mitigation).
     pub expected_bundle_hash: Option<String>,
+    /// The caller's explicit consent to import a bundle whose signature did
+    /// not verify: `"unknown"` for an untrusted signer, `"tamper"` for a
+    /// trusted signer whose signature fails. `apply_import` refuses an
+    /// unverified bundle unless this names the same danger it measured, so
+    /// the trust gate lives at the door that commits, not only in the dialog.
+    #[serde(default)]
+    pub acknowledged_risk: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -403,8 +410,13 @@ pub fn apply_import(
     // trust the embedded signature, and must record whether it actually
     // verified (previously hardcoded `true` regardless of outcome).
     let manifest_bytes = serde_json::to_string_pretty(&manifest)?;
-    let (sig_valid, _signer_trusted) =
+    let (sig_valid, signer_trusted) =
         verify_against_trusted_key(pool, &sig, manifest_bytes.as_bytes());
+    require_risk_acknowledgement(
+        sig_valid,
+        signer_trusted,
+        options.acknowledged_risk.as_deref(),
+    )?;
 
     let mut imported = 0u32;
     let mut skipped = 0u32;
@@ -553,6 +565,32 @@ pub fn verify_bundle(pool: &DbPool, bundle_bytes: &[u8]) -> Result<BundleVerific
 }
 
 // -- Internal helpers ----------------------------------------------------
+
+/// Refuse an unverified bundle unless the caller acknowledged the SPECIFIC
+/// danger the verdict names. Consent is kind-matched, mirroring the dialog:
+/// a "tamper" acknowledgement never unlocks an unknown signer, nor vice versa.
+fn require_risk_acknowledgement(
+    sig_valid: bool,
+    signer_trusted: bool,
+    acknowledged: Option<&str>,
+) -> Result<(), AppError> {
+    if sig_valid {
+        return Ok(());
+    }
+    let required = if signer_trusted { "tamper" } else { "unknown" };
+    if acknowledged == Some(required) {
+        tracing::warn!(
+            risk = required,
+            "Importing an unverified bundle on explicit caller acknowledgement"
+        );
+        return Ok(());
+    }
+    Err(AppError::Validation(if signer_trusted {
+        "Bundle signature does not verify against the trusted signer's key (possible tampering); import refused without acknowledgement".into()
+    } else {
+        "Bundle signer is not trusted, so its signature cannot be verified; import refused without acknowledgement".into()
+    }))
+}
 
 /// Verify a bundle signature against a **stored** trusted key rather than the
 /// key embedded in the bundle.  Returns `(signature_valid, signer_trusted)`.
@@ -1006,5 +1044,103 @@ mod import_persona_tests {
         assert_eq!(persona.description.as_deref(), Some("A described persona"));
         assert_eq!(persona.color.as_deref(), Some("#abcdef"));
         assert!(!persona.enabled);
+    }
+}
+
+#[cfg(test)]
+mod import_signature_gate_tests {
+    use super::*;
+
+    /// Build a bundle whose signer is NOT in trusted peers and is not the
+    /// local identity, so `verify_against_trusted_key` returns
+    /// `(false, false)` — the "unknown signer" verdict.
+    fn unknown_signer_bundle() -> Vec<u8> {
+        let manifest = BundleManifest {
+            format_version: 1,
+            owner_peer_id: "peer-unknown".into(),
+            owner_display_name: "Stranger".into(),
+            created_at: "2026-10-11T00:00:00Z".into(),
+            resources: vec![BundleResourceEntry {
+                resource_type: "persona".into(),
+                resource_id: "p1".into(),
+                display_name: "Stranger Persona".into(),
+                access_level: "read".into(),
+                fields_exposed: vec![],
+                tags: vec![],
+            }],
+            content_hash: "deadbeef".into(),
+        };
+        let sig = BundleSignature {
+            signer_peer_id: "peer-unknown".into(),
+            signer_public_key_b64: "AAAA".into(),
+            signature_b64: "AAAA".into(),
+            algorithm: "Ed25519".into(),
+        };
+        let persona = serde_json::json!({
+            "name": "Stranger Persona",
+            "system_prompt": "Be useful.",
+        });
+        let mut buf = Vec::new();
+        {
+            let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut buf));
+            let opts = zip::write::SimpleFileOptions::default();
+            zip.start_file("manifest.json", opts).unwrap();
+            zip.write_all(serde_json::to_string_pretty(&manifest).unwrap().as_bytes())
+                .unwrap();
+            zip.start_file("signature.json", opts).unwrap();
+            zip.write_all(serde_json::to_string_pretty(&sig).unwrap().as_bytes())
+                .unwrap();
+            zip.start_file("personas/p1.json", opts).unwrap();
+            zip.write_all(persona.to_string().as_bytes()).unwrap();
+            zip.finish().unwrap();
+        }
+        buf
+    }
+
+    fn options(ack: Option<&str>) -> BundleImportOptions {
+        serde_json::from_value(serde_json::json!({
+            "skip_conflicts": false,
+            "acknowledged_risk": ack,
+        }))
+        .unwrap()
+    }
+
+    fn persona_count(pool: &DbPool) -> usize {
+        persona_repo::get_all(pool).unwrap().len()
+    }
+
+    /// The refusal lives at the door that commits: an unverified bundle with
+    /// no acknowledgement is rejected and nothing is written.
+    #[test]
+    fn unknown_signer_without_ack_is_refused() {
+        let pool = crate::db::init_test_db().unwrap();
+        let before = persona_count(&pool);
+        let err = apply_import(&pool, &unknown_signer_bundle(), options(None))
+            .expect_err("unverified bundle must be refused without acknowledgement");
+        assert!(matches!(err, AppError::Validation(_)), "got: {err}");
+        assert_eq!(persona_count(&pool), before, "nothing may be imported");
+    }
+
+    /// Consent is kind-matched: acknowledging "tamper" does not unlock an
+    /// unknown-signer bundle, and an unrecognised kind is not consent at all.
+    #[test]
+    fn mismatched_or_bogus_ack_is_refused() {
+        let pool = crate::db::init_test_db().unwrap();
+        for ack in ["tamper", "yes"] {
+            let err = apply_import(&pool, &unknown_signer_bundle(), options(Some(ack)))
+                .expect_err("mismatched acknowledgement must be refused");
+            assert!(matches!(err, AppError::Validation(_)), "ack {ack}: {err}");
+        }
+        assert_eq!(persona_count(&pool), 0);
+    }
+
+    /// The dialog's "Import anyway" path: a matching acknowledgement imports,
+    /// and provenance still records the bundle as unverified.
+    #[test]
+    fn unknown_signer_with_matching_ack_imports() {
+        let pool = crate::db::init_test_db().unwrap();
+        let result = apply_import(&pool, &unknown_signer_bundle(), options(Some("unknown")))
+            .expect("acknowledged import proceeds");
+        assert_eq!(result.imported, 1, "errors: {:?}", result.errors);
     }
 }

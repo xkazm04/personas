@@ -19,9 +19,9 @@ import { BaseModal } from '@/features/shared/components/modals';
 
 const TITLE_ID = 'rename-event-dialog-title';
 
-// Mirrors `RESERVED_EVENT_TYPES` in src-tauri/src/db/repos/resources/triggers.rs.
-// Kept in sync manually; the backend still rejects these authoritatively.
-const RESERVED_EVENT_TYPES = new Set([
+// Mirrors `RESERVED_EVENT_TYPES` in src-tauri/db/src/repos/resources/triggers/event_wiring.rs.
+// The parity test pins this list to the backend; the backend still rejects authoritatively.
+export const RESERVED_EVENT_TYPES = new Set([
   'webhook_received',
   'schedule_fired',
   'polling_changed',
@@ -84,10 +84,11 @@ export function RenameEventDialog({
   onConfirm,
   onCancel,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [newEventType, setNewEventType] = useState(oldEventType);
   const [busy, setBusy] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const sourceReserved = reserved || RESERVED_EVENT_TYPES.has(oldEventType);
 
   // Reset the input whenever the dialog re-opens on a different row.
   useEffect(() => {
@@ -99,21 +100,21 @@ export function RenameEventDialog({
   }, [open, oldEventType]);
 
   const clientError = useMemo<string | null>(() => {
-    if (reserved) {
-      return `\`${oldEventType}\` is a built-in infrastructure event and cannot be renamed.`;
+    if (sourceReserved) {
+      return tx(t.triggers.rename_err_reserved_source, { name: oldEventType });
     }
     const trimmed = newEventType.trim();
-    if (trimmed.length === 0) return 'New event type cannot be empty.';
-    if (trimmed === oldEventType) return 'New name must differ from the current one.';
-    if (trimmed.length > 128) return 'Maximum length is 128 characters.';
+    if (trimmed.length === 0) return t.triggers.rename_err_empty;
+    if (trimmed === oldEventType) return t.triggers.rename_err_same;
+    if (trimmed.length > 128) return t.triggers.rename_err_too_long;
     if (!isSafeTypeString(trimmed)) {
-      return 'Only alphanumeric, underscore, hyphen, dot, colon, and forward-slash are allowed (must start with alphanumeric or underscore).';
+      return t.triggers.rename_err_chars;
     }
     if (RESERVED_EVENT_TYPES.has(trimmed)) {
-      return `\`${trimmed}\` is reserved for infrastructure events and can't be used as a target.`;
+      return tx(t.triggers.rename_err_reserved_target, { name: trimmed });
     }
     return null;
-  }, [newEventType, oldEventType, reserved]);
+  }, [newEventType, oldEventType, sourceReserved, t, tx]);
 
   const disabled = busy || clientError !== null;
 
@@ -182,7 +183,7 @@ export function RenameEventDialog({
               type="text"
               value={newEventType}
               onChange={e => setNewEventType(e.target.value)}
-              disabled={reserved || busy}
+              disabled={sourceReserved || busy}
               autoFocus
               onKeyDown={e => {
                 if (e.key === 'Enter' && !disabled) {
@@ -194,7 +195,7 @@ export function RenameEventDialog({
                 }
               }}
               className={`w-full px-2.5 py-1.5 typo-code rounded-card bg-secondary/30 border text-foreground focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${
-                clientError && !reserved
+                clientError && !sourceReserved
                   ? 'border-amber-400/40 focus:border-amber-400/60'
                   : 'border-primary/15 focus:border-cyan-400/50'
               }`}

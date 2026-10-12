@@ -59,8 +59,14 @@
       "verbatim": "db/src/lib.rs"
     },
     "src-tauri/db/src/repos/dev_tools.rs": {"count":1,"sections":[12],"contexts":["land in `repos/dev_tools.rs` calls that bind `?1`/`?2`, and `resolve_scope` reads them as"],"resolvedFrom":"suffix","verbatim":"repos/dev_tools.rs"},
+    "src-tauri/engine/src/db_query.rs": {
+      "count": 39,
+      "sections": [2,3,4,5,6,7,9,12],
+      "lines": ["2475","251","298","2464","89","144","637","548-552"],
+      "contexts": ["`src-tauri/engine/src/db_query.rs` (3,797 lines), `src-tauri/src/commands/credentials/db_schema.rs`,"]
+    },
     "src-tauri/src/commands/companion/approvals/approval_autopilot.rs": {"count":5,"sections":[5,7,8,9],"lines":["10-49","69"],"contexts":["`src-tauri/src/commands/companion/approvals/approval_autopilot.rs`, the whole of"]},
-    "src-tauri/src/commands/credentials/db_schema.rs": {"count":1,"sections":[],"contexts":["`src-tauri/src/engine/db_query.rs` (3,797 lines), `src-tauri/src/commands/credentials/db_schema.rs`,"]},
+    "src-tauri/src/commands/credentials/db_schema.rs": {"count":1,"sections":[],"contexts":["`src-tauri/engine/src/db_query.rs` (3,797 lines), `src-tauri/src/commands/credentials/db_schema.rs`,"]},
     "src-tauri/src/commands/credentials/nl_query.rs": {"count":3,"sections":[7,12],"contexts":["`.../nl_query.rs`, `.../query_debug.rs`, `src-tauri/src/companion/jobs/connector_use.rs`,"],"resolvedFrom":"elided-suffix","verbatim":".../nl_query.rs"},
     "src-tauri/src/commands/credentials/query_debug.rs": {
       "count": 11,
@@ -93,12 +99,6 @@
       "contexts": ["`.../operations_views.rs`, `src-tauri/src/companion/connectors.rs`,"],
       "resolvedFrom": "elided-suffix",
       "verbatim": ".../operations_views.rs"
-    },
-    "src-tauri/src/engine/db_query.rs": {
-      "count": 39,
-      "sections": [2,3,4,5,6,7,9,12],
-      "lines": ["2475","251","298","2464","89","144","637","548-552"],
-      "contexts": ["`src-tauri/src/engine/db_query.rs` (3,797 lines), `src-tauri/src/commands/credentials/db_schema.rs`,"]
     },
     "src-tauri/src/engine/project_tracking/push.rs": {"count":1,"sections":[12],"contexts":["`params![ws, dedup_key]` at `:430`. `local_http`'s other routers (`hooks.rs`, `push.rs`,"],"resolvedFrom":"basename","verbatim":"push.rs"},
     "src-tauri/src/ipc_auth.rs": {"count":2,"sections":[0,7],"lines":["227"],"contexts":["`PRIVILEGED_COMMANDS` (`ipc_auth.rs:227`), and has a typed frontend wrapper at"],"resolvedFrom":"basename","verbatim":"ipc_auth.rs"},

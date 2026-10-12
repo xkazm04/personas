@@ -1184,10 +1184,56 @@ pub fn gc_stale_manual_reviews(
     gc_stale_manual_reviews_inner(&state.db, &cutoff)
 }
 
+/// Operator "Delete all". Keeps a pending review that gates a HELD team
+/// assignment — it is the only thing `react_to_review_decision` can resume
+/// that assignment from, so deleting it would strand the assignment in
+/// `awaiting_review` forever. Every other row is hard-deleted, and each one is
+/// audited the way the GC sibling audits its resolutions. Returns the number
+/// of rows deleted.
 #[tauri::command]
 pub fn delete_all_manual_reviews(state: State<'_, Arc<AppState>>) -> Result<usize, AppError> {
     require_auth_sync(&state)?;
-    manual_repo::delete_all(&state.db)
+    delete_all_manual_reviews_inner(&state.db)
+}
+
+/// Inner of [`delete_all_manual_reviews`], callable without a `tauri::State`.
+/// Best-effort audit fan-out, as in [`gc_stale_manual_reviews_inner`]: one
+/// `policy_events` row (`review` / `bulk_delete.deleted`) per deleted review
+/// that has an execution to file it under; a review raised outside any run
+/// is covered by the summary log line only. An audit-insert failure logs warn
+/// and does not undo the delete.
+pub(crate) fn delete_all_manual_reviews_inner(pool: &crate::db::DbPool) -> Result<usize, AppError> {
+    let outcome = manual_repo::delete_all_except_held_gates(pool)?;
+    for row in &outcome.deleted {
+        let Some(execution_id) = row.execution_id.as_deref() else {
+            continue;
+        };
+        if let Err(e) = crate::db::repos::execution::policy_events::insert(
+            pool,
+            execution_id,
+            &row.persona_id,
+            row.use_case_id.as_deref(),
+            "review",
+            "bulk_delete.deleted",
+            None,
+            Some(&format!(
+                "Deleted by the operator's Delete all — review created {}",
+                row.created_at
+            )),
+        ) {
+            tracing::warn!(
+                review_id = %row.id,
+                error = %e,
+                "Bulk review delete: failed to write policy_events audit row"
+            );
+        }
+    }
+    tracing::info!(
+        deleted = outcome.deleted.len(),
+        kept_held_gates = outcome.kept_held_gates,
+        "Operator deleted all manual reviews (pending gates of held team assignments kept)"
+    );
+    Ok(outcome.deleted.len())
 }
 
 /// Inner sweep — extracted so the startup hook (which doesn't have a
@@ -3679,5 +3725,42 @@ mod ask_tests {
         let p2 = &out[1];
         assert_eq!((p2.pending, p2.critical, p2.warning, p2.info), (1, 1, 0, 0));
         assert_eq!(bucket_review_severity("medium"), "warning");
+    }
+
+    /// The operator's Delete all leaves an audit trail: one `policy_events`
+    /// row per deleted review, filed under the review's execution, so who
+    /// cleared the Approvals list is no longer invisible.
+    #[test]
+    fn delete_all_audits_every_deleted_review() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let (persona, exec, _) = fixture(&pool, 0);
+        for title in ["First", "Second"] {
+            review_repo::create(
+                &pool,
+                CreateManualReviewInput {
+                    execution_id: exec.clone(),
+                    persona_id: persona.clone(),
+                    title: title.into(),
+                    description: None,
+                    severity: None,
+                    context_data: None,
+                    suggested_actions: None,
+                    use_case_id: None,
+                    assignment_id: None,
+                    step_id: None,
+                },
+            )?;
+        }
+
+        assert_eq!(delete_all_manual_reviews_inner(&pool)?, 2);
+
+        let audit = crate::db::repos::execution::policy_events::list_by_execution(&pool, &exec)?;
+        let bulk: Vec<_> = audit
+            .iter()
+            .filter(|e| e.policy_kind == "review" && e.action == "bulk_delete.deleted")
+            .collect();
+        assert_eq!(bulk.len(), 2);
+        assert_eq!(review_repo::get_pending_count(&pool, None)?, 0);
+        Ok(())
     }
 }

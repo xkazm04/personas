@@ -25,7 +25,6 @@ import { silentCatch } from '@/lib/silentCatch';
 
 const importClassicPanel = () => import('./ClassicPanel').then((m) => ({ default: m.ClassicPanel }));
 const importLanesPanel = () => import('./LanesPanel').then((m) => ({ default: m.LanesPanel }));
-const importDeskSlot = () => import('./DeskSlot').then((m) => ({ default: m.DeskSlot }));
 const importUsageSlot = () => import('./UsageSlot').then((m) => ({ default: m.UsageSlot }));
 const importSessionModals = () => import('../../board/SessionModals').then((m) => ({ default: m.SessionModals }));
 const importOrchestration = () => import('../../orchestration/OrchestrationPanel').then((m) => ({ default: m.OrchestrationPanel }));
@@ -33,7 +32,6 @@ const importQuickChat = () => import('./QuickChatComposer').then((m) => ({ defau
 
 export const LazyClassicPanel = lazyRetry(importClassicPanel);
 export const LazyLanesPanel = lazyRetry(importLanesPanel);
-export const LazyDeskSlot = lazyRetry(importDeskSlot);
 export const LazyUsageSlot = lazyRetry(importUsageSlot);
 export const LazySessionModals = lazyRetry(importSessionModals);
 export const LazyOrchestrationPanel = lazyRetry(importOrchestration);
@@ -51,7 +49,7 @@ let preloaded = false;
 export function preloadActivityPanels(): void {
   if (preloaded) return;
   preloaded = true;
-  for (const load of [importClassicPanel, importLanesPanel, importDeskSlot, importUsageSlot]) {
+  for (const load of [importClassicPanel, importLanesPanel, importUsageSlot]) {
     void load().catch(silentCatch('fleet/activity:preload'));
   }
 }

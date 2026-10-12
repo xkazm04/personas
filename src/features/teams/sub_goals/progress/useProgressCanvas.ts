@@ -33,7 +33,8 @@ export interface ProgressCanvas {
   lanesOfGoal: (goalId: string) => string[];
   /** True while a mutation is in flight - the canvas stays interactive. */
   busy: boolean;
-  createMilestone: (projectId: string, name: string) => void;
+  /** `deadline` (a `YYYY-MM-DD` day) makes the new milestone a deadline. */
+  createMilestone: (projectId: string, name: string, deadline?: string | null) => void;
   deleteMilestone: (milestoneId: string) => void;
   /** `to === null` unbinds the goal from every milestone it is in. */
   bindGoal: (goalId: string, to: string | null) => void;
@@ -109,10 +110,10 @@ export function useProgressCanvas(projectIds: readonly string[]): ProgressCanvas
     lanesOfGoal,
     busy,
     createMilestone: useCallback(
-      (projectId: string, name: string) => {
+      (projectId: string, name: string, deadline?: string | null) => {
         const trimmed = name.trim();
         if (!trimmed) return;
-        run('GoalsProgress.createMilestone', () => addMilestone(projectId, trimmed));
+        run('GoalsProgress.createMilestone', () => addMilestone(projectId, trimmed, deadline ?? null));
       },
       [run],
     ),

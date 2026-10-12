@@ -7,7 +7,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { AsyncButton } from '@/features/shared/components/buttons';
+import { AsyncButton, Button } from '@/features/shared/components/buttons';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { statusIcon } from './CloudHistoryHelpers';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
@@ -27,6 +27,9 @@ interface TriggerListItemProps {
   isExpanded: boolean;
   firings: CloudTriggerFiring[];
   isLoadingFirings: boolean;
+  /** The firings request failed: show a retry, not the settled-empty copy. */
+  firingsFailed?: boolean;
+  onRetryFirings?: () => void;
   personaName: string;
   onToggleExpand: () => void;
   /** Return the request's promise: the control stays disarmed until it settles. */
@@ -39,6 +42,8 @@ export function TriggerListItem({
   isExpanded,
   firings,
   isLoadingFirings,
+  firingsFailed = false,
+  onRetryFirings,
   personaName,
   onToggleExpand,
   onToggleEnabled,
@@ -123,6 +128,20 @@ export function TriggerListItem({
             {isLoadingFirings ? (
               <div className="flex items-center gap-2 typo-caption text-foreground py-2">
                 <LoadingSpinner size="xs" /> {dt.loading_firings}
+              </div>
+            ) : firingsFailed ? (
+              <div className="flex items-center gap-2 typo-caption text-foreground" role="alert" data-testid="cloud-firings-failed">
+                <span>{dt.firings_load_failed}</span>
+                {onRetryFirings && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    data-testid="cloud-firings-retry"
+                    onClick={onRetryFirings}
+                  >
+                    {t.common.retry}
+                  </Button>
+                )}
               </div>
             ) : firings.length === 0 ? (
               <p className="typo-caption text-foreground">{dt.no_firings}</p>

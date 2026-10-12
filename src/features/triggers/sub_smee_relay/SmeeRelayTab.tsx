@@ -1,6 +1,6 @@
-import { silentCatch } from "@/lib/silentCatch";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, ExternalLink, Plug,
@@ -24,14 +24,18 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
 import { useToastStore } from '@/stores/toastStore';
+import { isValidSmeeChannelUrl, SMEE_CHANNEL_PREFIX } from './smeeChannelUrl';
 
+
+/** Minimum gap between per-relay stat refreshes while webhooks stream in. */
+const RELAY_REFRESH_WINDOW_MS = 1500;
 
 interface SmeeRelayTabProps {
   onSwitchToLiveStream?: () => void;
 }
 
 export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const globalStatus = useSmeeRelayStatus();
   const personas = useAgentStore((s) => s.personas);
@@ -65,16 +69,28 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 
   useEffect(() => { fetchRelays(); }, [fetchRelays]);
 
-  // Refresh relay stats when global status updates
+  // Refresh relay stats when global status updates. The counter ticks once per
+  // relayed webhook, so a push burst would otherwise cost one full list IPC per
+  // delivery: throttle to one refresh per window, trailing so the last tick lands.
+  const lastRefreshAt = useRef(0);
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (globalStatus.eventsRelayed > 0) {
-      fetchRelays();
-    }
+    if (globalStatus.eventsRelayed <= 0 || refreshTimer.current) return;
+    const wait = Math.max(0, lastRefreshAt.current + RELAY_REFRESH_WINDOW_MS - Date.now());
+    refreshTimer.current = setTimeout(() => {
+      refreshTimer.current = null;
+      lastRefreshAt.current = Date.now();
+      void fetchRelays();
+    }, wait);
   }, [globalStatus.eventsRelayed, fetchRelays]);
+  useEffect(() => () => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    refreshTimer.current = null;
+  }, []);
 
 
   const handleCreate = async () => {
-    if (!addLabel.trim() || !addUrl.startsWith('https://smee.io/')) return;
+    if (!addLabel.trim() || !isValidSmeeChannelUrl(addUrl)) return;
     setIsCreating(true);
     setCreateError(null);
     try {
@@ -95,7 +111,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
       setTouchedFields(new Set());
       await fetchRelays();
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : 'Failed to create relay');
+      setCreateError(err instanceof Error ? err.message : t.triggers.relay_create_failed);
     } finally {
       setIsCreating(false);
     }
@@ -106,7 +122,9 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
     try {
       await smeeRelaySetStatus(relay.id, newStatus);
       await fetchRelays();
-    } catch (err) { silentCatch("features/triggers/sub_smee_relay/SmeeRelayTab:catch2")(err); }
+    } catch (err) {
+      toastCatch('features/triggers/sub_smee_relay/SmeeRelayTab:toggleStatus', t.triggers.relay_toggle_failed)(err);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -131,16 +149,16 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
     setTouchedFields((prev) => (prev.has(field) ? prev : new Set(prev).add(field)));
 
   const labelValid = addLabel.trim().length > 0;
-  const urlValid = addUrl.startsWith('https://smee.io/') && addUrl.length > 'https://smee.io/'.length;
-  const urlPartiallyTyped = addUrl.length > 0;
+  const urlValid = isValidSmeeChannelUrl(addUrl);
+  const urlPartiallyTyped = addUrl.trim().length > 0;
 
-  const labelError = touchedFields.has('label') && !labelValid ? 'Label is required' : null;
+  const labelError = touchedFields.has('label') && !labelValid ? t.triggers.relay_err_label_required : null;
   const urlError = touchedFields.has('url') && !urlValid
     ? (!urlPartiallyTyped
-        ? 'Channel URL is required'
-        : !addUrl.startsWith('https://smee.io/')
-          ? 'URL must start with https://smee.io/'
-          : 'Enter the full channel URL (e.g. https://smee.io/abc123)')
+        ? t.triggers.relay_err_url_required
+        : !addUrl.trim().startsWith(SMEE_CHANNEL_PREFIX)
+          ? t.triggers.relay_err_url_prefix
+          : t.triggers.relay_err_url_incomplete)
     : null;
 
   const activeCount = relays.filter((r) => r.status === 'active').length;
@@ -161,12 +179,12 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
             }`} />
             <span className="typo-body text-foreground">
               {activeCount > 0
-                ? `${activeCount} relay${activeCount !== 1 ? 's' : ''} active`
+                ? tx(activeCount === 1 ? t.triggers.relay_active_one : t.triggers.relay_active_other, { count: activeCount })
                 : t.triggers.no_active_relays}
             </span>
             {totalRelayed > 0 && (
               <span className="typo-caption text-purple-400/70">
-                {totalRelayed} event{totalRelayed !== 1 ? 's' : ''} relayed
+                {tx(totalRelayed === 1 ? t.triggers.relay_events_relayed_one : t.triggers.relay_events_relayed_other, { count: totalRelayed })}
               </span>
             )}
           </div>
@@ -310,7 +328,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
               <button
                 type="button"
                 onClick={handleCreate}
-                disabled={isCreating || !addLabel.trim() || !addUrl.startsWith('https://smee.io/')}
+                disabled={isCreating || !addLabel.trim() || !urlValid}
                 className="flex items-center gap-2 px-4 py-2 typo-body rounded-card bg-purple-500/15 text-purple-400 border border-purple-500/25 hover:bg-purple-500/25 disabled:opacity-50 transition-colors"
               >
                 {isCreating ? <LoadingSpinner size="sm" /> : <Plug className="w-3.5 h-3.5" />}

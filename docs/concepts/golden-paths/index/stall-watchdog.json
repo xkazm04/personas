@@ -233,6 +233,14 @@
       "resolvedFrom": "suffix",
       "verbatim": "db/src/repos/system_ops.rs"
     },
+    "src-tauri/engine/src/project_tracking/subscription.rs": {
+      "count": 14,
+      "sections": [0,4,6,7,8,9],
+      "lines": ["3062-3063","3063","3075","2980-2982","1377-1424","90","1377","1394"],
+      "contexts": ["(`subscription.rs:3062-3063`, commented *\"stable → dedupes to ONE open"],
+      "resolvedFrom": "basename",
+      "verbatim": "subscription.rs"
+    },
     "src-tauri/src/commands/communication/observability/alerts.rs": {
       "count": 4,
       "sections": [6],
@@ -295,14 +303,6 @@
       "verbatim": "src/engine/leadership.rs"
     },
     "src-tauri/src/engine/pattern_miner.rs": {"count":3,"sections":[9],"lines":["367","385"],"contexts":["`impl super::subscription::… ` at `pattern_miner.rs:367`) — the doctrine's"],"resolvedFrom":"basename","verbatim":"pattern_miner.rs"},
-    "src-tauri/src/engine/project_tracking/subscription.rs": {
-      "count": 14,
-      "sections": [0,4,6,7,8,9],
-      "lines": ["3062-3063","3063","3075","2980-2982","1377-1424","90","1377","1394"],
-      "contexts": ["(`subscription.rs:3062-3063`, commented *\"stable → dedupes to ONE open"],
-      "resolvedFrom": "basename",
-      "verbatim": "subscription.rs"
-    },
     "src-tauri/src/engine/slack_poller.rs": {
       "count": 3,
       "sections": [3,6],

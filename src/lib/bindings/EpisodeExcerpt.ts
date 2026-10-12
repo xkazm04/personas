@@ -3,4 +3,25 @@
 /**
  * Compact episode projection for prompt assembly and list surfaces.
  */
-export type EpisodeExcerpt = { id: string, role: string, source: string, bodyExcerpt: string, createdAt: string, };
+export type EpisodeExcerpt = { id: string, role: string, source: string, bodyExcerpt: string, createdAt: string, 
+/**
+ * Charter (responsibility) title the episode was filed under, when linked.
+ */
+charter?: string, 
+/**
+ * Terminal status of the execution that produced the episode.
+ */
+runStatus?: string, 
+/**
+ * Wall-clock duration of that execution in ms. i64 for SQLite INTEGER;
+ * a duration stays far under 2^53, so the JS `number` pin is lossless.
+ */
+runDurationMs?: number, 
+/**
+ * Business outcome recorded on that execution ('unknown' when unset).
+ */
+businessOutcome?: string, 
+/**
+ * Execution error message (the blocker), when the run failed.
+ */
+blocker?: string, };

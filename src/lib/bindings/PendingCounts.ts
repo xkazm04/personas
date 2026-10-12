@@ -21,6 +21,40 @@
  */
 export type PendingCounts = { goalAcceptance: number, manualReviews: number, ideas: number, policyProposals: number, promotionProposals: number, 
 /**
+ * Open audit incidents: status `open` | `acknowledged` | `in_progress` -
+ * every non-terminal `IncidentStatus` (only `resolved` and `dismissed`
+ * are settled).
+ */
+openIncidents: number, 
+/**
+ * The subset of `open_incidents` at severity `critical` or `high`
+ * (decision tier 1). A subset, so it is never added to a total.
+ */
+blockingIncidents: number, 
+/**
+ * Persona reports with `is_read = 0` - the reports repo's own unread count.
+ */
+unreadReports: number, 
+/**
+ * Athena companion approvals awaiting a human: exactly what
+ * `companion_list_pending_approvals` returns (pending, inside the consent
+ * freshness window, well-formed, capped at its list limit). Filled in by
+ * the command layer, because the approvals live in the companion database.
+ */
+companionApprovals: number, 
+/**
+ * Council subjects a person can decide: derived state `ready` AND (tier
+ * `major` OR kind `architecture`), the frontend's `decidable()` rule over
+ * the council store's own `derive_council_state`.
+ */
+councilDecidable: number, 
+/**
+ * `total` + open_incidents + unread_reports + companion_approvals +
+ * council_decidable (blocking_incidents is a subset, not added). Build
+ * questions and chat are added client-side.
+ */
+decisionTotal: number, 
+/**
  * The five above. The caller adds build questions on top.
  */
 total: number, };

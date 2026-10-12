@@ -43,6 +43,9 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [firings, setFirings] = useState<CloudTriggerFiring[]>([]);
   const [isLoadingFirings, setIsLoadingFirings] = useState(false);
+  // A failed firings request is not an empty history; `firingsNonce` re-issues it.
+  const [firingsFailed, setFiringsFailed] = useState(false);
+  const [firingsNonce, setFiringsNonce] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
 
   const deployedPersonaIds = useMemo(
@@ -76,16 +79,18 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
   useEffect(() => {
     if (!expandedId) {
       setFirings([]);
+      setFiringsFailed(false);
       return;
     }
     let cancelled = false;
     setIsLoadingFirings(true);
+    setFiringsFailed(false);
     cloudListTriggerFirings(expandedId, 10)
       .then((data) => { if (!cancelled) setFirings(data); })
-      .catch((err) => { silentCatch('CloudSchedulesPanel:cloudListTriggerFirings')(err); if (!cancelled) setFirings([]); })
+      .catch((err) => { silentCatch('CloudSchedulesPanel:cloudListTriggerFirings')(err); if (!cancelled) { setFirings([]); setFiringsFailed(true); } })
       .finally(() => { if (!cancelled) setIsLoadingFirings(false); });
     return () => { cancelled = true; };
-  }, [expandedId]);
+  }, [expandedId, firingsNonce]);
 
   // Both are remote writes against the orchestrator. A rejection used to
   // surface only as an unhandled promise: no toast, the row unchanged, and
@@ -204,6 +209,8 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
                 isExpanded={expandedId === trigger.id}
                 firings={expandedId === trigger.id ? firings : []}
                 isLoadingFirings={expandedId === trigger.id && isLoadingFirings}
+                firingsFailed={expandedId === trigger.id && firingsFailed}
+                onRetryFirings={() => setFiringsNonce((n) => n + 1)}
                 personaName={personaName(trigger.personaId)}
                 onToggleExpand={() => setExpandedId(expandedId === trigger.id ? null : trigger.id)}
                 onToggleEnabled={() => handleToggle(trigger)}

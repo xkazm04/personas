@@ -55,6 +55,7 @@
     },
     "dispatcher.ts": {"count":3,"sections":[7],"lines":["461","474"],"contexts":["line that feeds its budget gate: `costUsd: msg.totalCostUsd ?? 0` (`dispatcher.ts:461`). The repo with"],"resolved":false},
     "engine/background.rs": {"count":2,"sections":[6],"lines":["2475-2528"],"contexts":["`engine/background.rs:2475-2528`, `db/src/chain.rs`'s cascade cost ceiling, `engine/deliberation.rs`'s"],"resolved":false},
+    "engine/evolution.rs": {"count":1,"sections":[7],"lines":["437"],"contexts":["- **One live consumer**: `engine/evolution.rs:437` calls `ledger().is_exceeded(&cycle_id)`. The lab and"],"resolved":false},
     "engine/prompt/cli_args.rs": {"count":1,"sections":[7],"lines":["132-136"],"contexts":["- a **per-spawn ceiling in dollars-per-call** — `engine/prompt/cli_args.rs:132-136` passes the identical"],"resolved":false},
     "incremental.rs": {"count":2,"sections":[7],"lines":["1453"],"contexts":["field **is** `Option<f64>`, into a column (`cost_usd REAL`, `incremental.rs:1453`, `:6380`) that **is**"],"resolved":false},
     "llm_spend.rs": {"count":1,"sections":[7],"lines":["100-103"],"contexts":["be a ~44,000× understatement of the real prompt if anyone priced from it. Third, `llm_spend.rs:100-103`"],"resolved":false},
@@ -68,7 +69,9 @@
       "contexts": ["documented fallback chain for a CLI-version change (`parser.rs:346-370`), and its ledger holds **217.9 M"],
       "resolved": false
     },
+    "rules.json": {"count":1,"sections":[9],"contexts":["**DO NOT MERGE this block into `rules.json`** — it carries no `baseline` and is a *discriminator proof*,"],"resolved":false},
     "run_budget.rs": {"count":2,"sections":[7],"lines":["233-235"],"contexts":["(`run_budget.rs:233-235`). The entire spend-ceiling apparatus is untested in production because nothing has"],"resolved":false},
+    "runner/mod.rs": {"count":2,"sections":[7],"lines":["2891"],"contexts":["`runner/mod.rs:2891` then writes `cost_usd: Some(metrics.cost_usd)` into an `UpdateExecutionStatus` whose"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["document does not edit `scripts/census/`."],"resolved":false,"isDir":true},
     "scripts/census/lib/engine.mjs": {
       "count": 6,
@@ -78,7 +81,6 @@
       "resolvedFrom": "basename",
       "verbatim": "engine.mjs"
     },
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**DO NOT MERGE this block into `rules.json`** — it carries no `baseline` and is a *discriminator proof*,"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/census/run-census.mjs": {
       "count": 1,
       "sections": [9],
@@ -201,6 +203,16 @@
       "resolvedFrom": "suffix",
       "verbatim": "engine/src/cost.rs"
     },
+    "src-tauri/engine/src/http_engine/openai.rs": {
+      "count": 3,
+      "sections": [5,7],
+      "lines": ["176","174"],
+      "contexts": [
+        "| Unknown model → `0.0` | `config.rs:36` and `openai.rs:176` stamp `$0` for an unpriced SKU. The comment says \"configure when the price is confirmed\"; the behaviour says \"this call was free\". Converg…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "openai.rs"
+    },
     "src-tauri/engine/src/parser.rs": {
       "count": 2,
       "sections": [3],
@@ -272,32 +284,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "engine/deliberation.rs"
     },
-    "src-tauri/src/engine/evolution.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["437"],
-      "contexts": ["- **One live consumer**: `engine/evolution.rs:437` calls `ledger().is_exceeded(&cycle_id)`. The lab and"],
-      "resolvedFrom": "suffix",
-      "verbatim": "engine/evolution.rs"
-    },
-    "src-tauri/src/engine/http_engine/config.rs": {
-      "count": 2,
-      "sections": [3],
-      "lines": ["33"],
-      "contexts": ["Sweep: both of this repo's price tables (`engine/src/cost.rs`, `src/engine/http_engine/config.rs`) read in"],
-      "resolvedFrom": "suffix",
-      "verbatim": "src/engine/http_engine/config.rs"
-    },
-    "src-tauri/src/engine/http_engine/openai.rs": {
-      "count": 3,
-      "sections": [5,7],
-      "lines": ["176","174"],
-      "contexts": [
-        "| Unknown model → `0.0` | `config.rs:36` and `openai.rs:176` stamp `$0` for an unpriced SKU. The comment says \"configure when the price is confirmed\"; the behaviour says \"this call was free\". Converg…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "openai.rs"
-    },
     "src-tauri/src/engine/mod.rs": {
       "count": 2,
       "sections": [7],
@@ -306,15 +292,8 @@
       "resolvedFrom": "suffix",
       "verbatim": "engine/mod.rs"
     },
-    "src-tauri/src/engine/runner/mod.rs": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["2891"],
-      "contexts": ["`runner/mod.rs:2891` then writes `cost_usd: Some(metrics.cost_usd)` into an `UpdateExecutionStatus` whose"],
-      "resolvedFrom": "suffix",
-      "verbatim": "runner/mod.rs"
-    },
     "src-tauri/tests/": {"count":1,"sections":[7],"contexts":["- **No Rust integration test references `cost_usd`.** `src-tauri/tests/` has zero matches."],"resolved":false,"isDir":true},
+    "src/engine/http_engine/config.rs": {"count":2,"sections":[3],"lines":["33"],"contexts":["Sweep: both of this repo's price tables (`engine/src/cost.rs`, `src/engine/http_engine/config.rs`) read in"],"resolved":false},
     "src/features/agents/sub_executions/components/runner/ExecutionPreviewPanel.tsx": {
       "count": 1,
       "sections": [7],

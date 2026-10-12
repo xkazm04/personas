@@ -215,5 +215,6 @@
   "dispatch_run_on_queued_hint": "Wartet, bis er aufwacht",
   "dispatch_run_on_stale": "Kürzlich nicht gesehen",
   "dispatch_run_on_this_machine": "Dieser Rechner",
-  "md_spellcheck": "Rechtschreibung und Grammatik"
+  "md_spellcheck": "Rechtschreibung und Grammatik",
+  "agent_fallback_name": "Agent"
 }

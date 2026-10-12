@@ -962,7 +962,17 @@ pub async fn run_pipeline(ctx: PipelineContext) {
             .await;
 
             match outcome {
-                ApprovalOutcome::Approved => {}
+                ApprovalOutcome::Approved => {
+                    // Durable record that a human let this gate through.
+                    update_node_status(
+                        &mut statuses,
+                        member_id,
+                        &[(
+                            "approved_at",
+                            serde_json::json!(chrono::Utc::now().to_rfc3339()),
+                        )],
+                    );
+                }
                 ApprovalOutcome::Cancelled => {
                     update_node_status(
                         &mut statuses,

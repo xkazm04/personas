@@ -59,7 +59,12 @@
     "try_it": "आज़माएँ",
     "used_badge": "उपयोग किया",
     "tour_continue": "जारी रखें ({completed}/{total})",
-    "tour_in_progress": "{completed}/{total}"
+    "tour_in_progress": "{completed}/{total}",
+    "ask_title": "Athena से वॉकथ्रू माँगें",
+    "ask_placeholder": "आप क्या सीखना चाहते हैं? जैसे: एजेंट को शेड्यूल करना",
+    "ask_submit": "बनाएँ",
+    "ask_composing": "आपका वॉकथ्रू तैयार हो रहा है…",
+    "ask_failed": "Athena यह वॉकथ्रू नहीं बना सकी। विषय को दूसरे शब्दों में लिखकर देखें।"
   },
   "nav_status": {
     "agents_active": "पिछले 24 घंटों में {count} एजेंट सक्रिय",

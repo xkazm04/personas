@@ -43,6 +43,8 @@
       "resolvedFrom": "suffix",
       "verbatim": "core/src/redact.rs"
     },
+    "src-tauri/engine/src/project_tracking/subscription.rs": {"count":3,"sections":[0,7],"lines":["46"],"contexts":["`push.rs` (324), `scheduler.rs` (193), `subscription.rs` (236), `pulse.rs`"],"resolvedFrom":"basename","verbatim":"subscription.rs"},
+    "src-tauri/engine/src/project_tracking/watchers/obsidian.rs": {"count":1,"sections":[7],"contexts":["Obsidian vault path whose watcher (`watchers/obsidian.rs`, 177 lines) is gated on"],"resolvedFrom":"suffix","verbatim":"watchers/obsidian.rs"},
     "src-tauri/src/commands/companion/project_tracking.rs": {"count":3,"sections":[0],"lines":["31","28-29"],"contexts":["— plus `commands/companion/project_tracking.rs` (112),"],"resolvedFrom":"suffix","verbatim":"commands/companion/project_tracking.rs"},
     "src-tauri/src/commands/fleet/stale.rs": {"count":4,"sections":[9],"lines":["135","155","180"],"contexts":["plain `pub fn`s that the commands *call* (`stale.rs:135`"],"resolvedFrom":"basename","verbatim":"stale.rs"},
     "src-tauri/src/engine/project_tracking/": {"count":1,"sections":[],"contexts":["`src-tauri/src/engine/project_tracking/` — `consolidator.rs` (528),"],"resolved":false,"isDir":true},
@@ -70,8 +72,6 @@
       "resolvedFrom": "basename",
       "verbatim": "push.rs"
     },
-    "src-tauri/src/engine/project_tracking/subscription.rs": {"count":3,"sections":[0,7],"lines":["46"],"contexts":["`push.rs` (324), `scheduler.rs` (193), `subscription.rs` (236), `pulse.rs`"],"resolvedFrom":"basename","verbatim":"subscription.rs"},
-    "src-tauri/src/engine/project_tracking/watchers/obsidian.rs": {"count":1,"sections":[7],"contexts":["Obsidian vault path whose watcher (`watchers/obsidian.rs`, 177 lines) is gated on"],"resolvedFrom":"suffix","verbatim":"watchers/obsidian.rs"},
     "src/": {"count":2,"sections":[0,7],"contexts":["**zero consumers in `src/`**. So does `projectTrackingListSubscriptions`, and"],"resolved":false,"isDir":true},
     "src/api/companion/projectTracking.ts": {"count":2,"sections":[0],"lines":["18"],"contexts":["`src/api/companion/projectTracking.ts`, `features/plugins/companion/sub_setup/SetupPanel.tsx`"]},
     "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts": {

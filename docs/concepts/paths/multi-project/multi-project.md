@@ -21,7 +21,7 @@ evidence:
   - src/features/teams/sub_factory/passport/populateDispatch.ts        # the metadata-contract populate door: lanes, freshness gates surfaced at consent, out-of-scope honesty
   - .claude/CLAUDE.md                                                  # "Two different maps currently claim this file" — the foreign-snapshot 5×-mis-sizing warning; the registry (DB) is the authority
 counter_evidence:
-  - src-tauri/src/engine/project_tracking/watchers/git.rs              # watcher failure returns Ok(vec![]) — could-not-observe spelled identically to observed-quiet past the log line
+  - src-tauri/engine/src/project_tracking/watchers/git.rs              # watcher failure returns Ok(vec![]) — could-not-observe spelled identically to observed-quiet past the log line
 deviations:
   - w11-multi-project   # anchor in docs/concepts/golden-path-deferred-fixes.md
 ---

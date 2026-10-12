@@ -102,7 +102,8 @@ export interface CloudSlice {
   cloudInitialize: () => Promise<void>;
   cloudConnectAction: (url: string, apiKey: string) => Promise<void>;
   cloudDisconnectAction: () => Promise<void>;
-  cloudFetchStatus: () => Promise<void>;
+  /** `rethrow` is for pollers: usePolling only backs off / withholds lastRefreshed on a thrown error. */
+  cloudFetchStatus: (opts?: { rethrow?: boolean }) => Promise<void>;
   cloudExecute: (personaId: string, inputData?: string) => Promise<string>;
   cloudCancel: (executionId: string) => Promise<boolean>;
   cloudFetchOAuthStatus: () => Promise<void>;
@@ -242,13 +243,14 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
     }
   },
 
-  cloudFetchStatus: async () => {
+  cloudFetchStatus: async (opts) => {
     set({ cloudIsLoadingStatus: true });
     try {
       const status = await cloudStatus();
       set({ cloudStatus: status, cloudIsLoadingStatus: false });
     } catch (err) {
       set({ cloudIsLoadingStatus: false, cloudError: translateCloudError(err) });
+      if (opts?.rethrow) throw err;
     }
   },
 

@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**175 reusable components** live under `src/features/shared/components/`.
+**173 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -87,12 +87,15 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 |---|---|
 | `DocumentBlocks` | DocumentBlocks — a section's prose as individually clickable rows (each heading, paragraph and list item), where one click selects |
 | `DocumentClosedRow` | DocumentClosedRow — one muted single-line row for a section that is not open, so the whole document stays in view. Part of Documen |
+| `DocumentGhost` | DocumentGhost - calm, static placeholder lines for a long-form document body while it loads (no spinner, no pulse); the reader's c |
 | `DocumentPage` | DocumentPage — what the open leaf holds: the author seal, the title, a one-line lede, the chapter as clickable rows with the click |
 | `DocumentRail` | DocumentRail — DocumentSurface's optional side panel: one band per section, its height the section's real line count. Part of Docu |
 | `DocumentRowEditor` | DocumentRowEditor — one row of a DocumentSurface chapter, edited in place: the clicked bullet or paragraph becomes a field in the  |
 | `DocumentSurface` | DocumentSurface — a long-form two-author document as a bound book: a to-scale side rail (parametrized), a chapter switcher with wa |
 | `DocumentTabs` | DocumentTabs — the tab buttons inside DocumentSurface's strip. Part of DocumentSurface, not a standalone primitive: it renders the |
 | `DocumentTurnHint` | DocumentTurnHint — the edge-of-chapter cue that fills as the reader keeps scrolling past the end (or top) of a DocumentSurface cha |
+| `HtmlDocumentFrame` | HtmlDocumentFrame - renders an agent-authored HTML/CSS document sanitized inside a script-free sandboxed iframe that grows to its  |
+| `ReportBody` | ReportBody - the body of a long-form document (persona report, council report): html renders in the sanitized HtmlDocumentFrame, m |
 | `useChapterScroll` | The open chapter's leaf. |
 | `useDocumentSurface` | any) is being written in, and the per-chapter drafts. |
 
@@ -269,4 +272,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_175 components, 40 without a `@catalog` description._
+_173 components, 40 without a `@catalog` description._

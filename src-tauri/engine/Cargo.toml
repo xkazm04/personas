@@ -76,6 +76,7 @@ tower-http = { workspace = true }
 hkdf = { workspace = true }
 hex = { workspace = true }
 url = { workspace = true }
+urlencoding = { workspace = true }
 zeroize = { workspace = true }
 rand = { workspace = true }
 regex = { workspace = true }

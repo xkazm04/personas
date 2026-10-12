@@ -93,6 +93,7 @@ recordings/
 !.claude/ship-loop/
 !.claude/mvp/
 !.claude/spark/
+!.claude/lens-scan/
 !.claude/kit/
 !.claude/devlog/
 !.claude/agents/
@@ -279,3 +280,6 @@ src-tauri/target-approval/
 /worker.pid
 /census_tmp.json
 test-results/
+
+# lens-scan store (ai-registry skills/lens-scan): local measurements, screenshots, derived structure
+.ai/lens-scan/

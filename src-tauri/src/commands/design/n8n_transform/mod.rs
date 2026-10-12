@@ -1,7 +1,7 @@
 pub mod cli_runner;
 pub mod confirmation;
 pub mod job_state;
-mod prompt_sanitizer;
+pub(crate) mod prompt_sanitizer;
 pub(crate) mod prompts;
 pub mod streaming;
 pub(crate) mod types;

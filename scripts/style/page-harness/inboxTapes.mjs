@@ -223,10 +223,43 @@ export function inboxTapes({ RECORDED_AT, PERSONAS }) {
     ],
   });
 
+  // ── Decision Deck over the two inboxes (decision-center wave 3, C2) ──────
+  // The same pages with the global deck opened from their own doors. The deck
+  // reads the roster: PendingCounts for the chip numbers, plus each chip's
+  // item sources (Approvals' gates queue = the reviews above + Athena's
+  // companion approvals; Incidents' queue = the incidents above).
+  const pendingCounts = {
+    goalAcceptance: 0, manualReviews: reviews.length, ideas: 0, policyProposals: 0, promotionProposals: 0,
+    openIncidents: openRows.length, blockingIncidents: openRows.filter((r) => r.severity === 'critical' || r.severity === 'high').length,
+    unreadReports: 0, companionApprovals: 0, councilDecidable: 0, decisionTotal: 0, total: 0,
+  };
+  const deckCalls = [
+    { cmd: 'dev_tools_pending_counts', response: pendingCounts },
+    { cmd: 'companion_list_pending_approvals', response: [] },
+    // The gates/proposals sources the roster's triage half reads alongside.
+    { cmd: 'policy_tuning_list', response: [] },
+    { cmd: 'evolution_list_promotion_proposals', response: [] },
+    { cmd: 'dev_tools_list_pending_acceptance', response: [] },
+    { cmd: 'dev_tools_undispatched_ideas', response: [] },
+  ];
+  const withDeck = (tape, moduleId, note) => ({ ...tape, module: moduleId, note, calls: [...tape.calls, ...deckCalls] });
+
   return {
     builders: {
       'overview/sub_manual-review': () => approvals('overview/sub_manual-review'),
       'overview/sub_incidents': () => inbox('overview/sub_incidents'),
+      'overview/sub_manual-review/deck': () => withDeck(
+        approvals('overview/sub_manual-review/deck'),
+        'overview/sub_manual-review/deck',
+        'Synthetic: the Approvals tape, with the Decision Deck opened by the pending view Decide N button on the gates chip.',
+      ),
+      'overview/sub_incidents/deck': () => withDeck(
+        // The roster's gates half reads the pending-review page even when the
+        // deck deals only incidents; an empty page keeps the report clean.
+        { ...inbox('overview/sub_incidents/deck'), calls: [...inbox('overview/sub_incidents/deck').calls, { cmd: 'list_manual_reviews_page', response: { rows: [], nextCursor: null, hasMore: false } }] },
+        'overview/sub_incidents/deck',
+        'Synthetic: the Incidents tape, with the Decision Deck opened by clicking the first open incident row.',
+      ),
     },
   };
 }

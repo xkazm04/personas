@@ -39,7 +39,17 @@
   ],
   "citations": {
     "CanvasShell.tsx": {"count":1,"sections":[9],"lines":["908"],"contexts":["reference sites (`Sidebar.tsx:175`, `CanvasShell.tsx:908`) and"],"resolved":false},
+    "Composer.tsx": {
+      "count": 3,
+      "sections": [7,9],
+      "lines": ["359","358-361"],
+      "contexts": [
+        "| **JSX-conditional (17)** | `CloudConnectionForm.tsx:123` · `ConnectorTableScopeRow.tsx:109` · `WalkthroughOfferWidget.tsx:88` · `GuidedTour.tsx:477` · `ExecutionMetricsDashboard.tsx:73` · `GlobalEx…"
+      ],
+      "resolved": false
+    },
     "ConnectionStatusIndicator.tsx": {"count":1,"sections":[7],"lines":["33-38"],"contexts":["The same shape converges. `personas-web`'s `ConnectionStatusIndicator.tsx:33-38` reports"],"resolved":false},
+    "DeckQueueRail.tsx": {"count":1,"sections":[7],"lines":["109"],"contexts":["`DeckQueueRail.tsx:109`). Only 2 carry hardcoded English (`ErrorRecoveryBanner.tsx:107`"],"resolved":false},
     "ExecuteToast.tsx": {
       "count": 1,
       "sections": [],
@@ -68,6 +78,7 @@
       ],
       "resolved": false
     },
+    "TriageDeckVariant.tsx": {"count":1,"sections":[7],"lines":["113"],"contexts":["ungated.** The 9 correct sites are worth naming as the contrast: `TriageDeckVariant.tsx:113`"],"resolved":false},
     "UndoToast.tsx": {
       "count": 1,
       "sections": [],
@@ -77,6 +88,7 @@
       ],
       "resolved": false
     },
+    "deckDialog.test.tsx": {"count":4,"sections":[7,9],"lines":["225","214-235"],"contexts":["`deckDialog.test.tsx:225` asserts a *feature* owns no region; nothing asserts that a"],"resolved":false},
     "eslint-rules/no-hardcoded-jsx-text.cjs": {
       "count": 4,
       "sections": [7,9],
@@ -103,7 +115,8 @@
       "resolved": false
     },
     "plugins/research-lab/shared/useIngestSource.ts": {"count":1,"sections":[7],"lines":["24"],"contexts":["| `plugins/research-lab/shared/useIngestSource.ts:24` | `'Indexing source…'` |"],"resolved":false},
-    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["scratch rules file, never against `scripts/census/rules.json`."]},
+    "rules.json": {"count":1,"sections":[9],"contexts":["**The positive control is deliberately NOT proposed for `rules.json`.** A census baseline"],"resolved":false},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["scratch rules file, never against `scripts/census/rules.json`."]},
     "scripts/report-hardcoded-ui-strings.mjs": {
       "count": 2,
       "sections": [7],
@@ -142,23 +155,7 @@
       "verbatim": "QuickAnswerBody.tsx"
     },
     "src/features/agents/quick-answer/__tests__/quickAnswerHonesty.test.tsx": {"count":2,"sections":[6,7],"lines":["73,82,105"],"contexts":["- **`src/features/agents/quick-answer/__tests__/quickAnswerHonesty.test.tsx:73,82,105`** —"]},
-    "src/features/agents/quick-answer/triage/TriageDeckVariant.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["113"],
-      "contexts": ["ungated.** The 9 correct sites are worth naming as the contrast: `TriageDeckVariant.tsx:113`"],
-      "resolvedFrom": "basename",
-      "verbatim": "TriageDeckVariant.tsx"
-    },
-    "src/features/agents/quick-answer/triage/__tests__/deckDialog.test.tsx": {"count":5,"sections":[6,7,9],"lines":["214-235","225"],"contexts":["- **`src/features/agents/quick-answer/triage/__tests__/deckDialog.test.tsx:214-235`** —"]},
-    "src/features/agents/quick-answer/triage/deck/DeckQueueRail.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["109"],
-      "contexts": ["`DeckQueueRail.tsx:109`). Only 2 carry hardcoded English (`ErrorRecoveryBanner.tsx:107`"],
-      "resolvedFrom": "basename",
-      "verbatim": "DeckQueueRail.tsx"
-    },
+    "src/features/agents/quick-answer/triage/__tests__/deckDialog.test.tsx": {"count":1,"sections":[6],"lines":["214-235"],"contexts":["- **`src/features/agents/quick-answer/triage/__tests__/deckDialog.test.tsx:214-235`** —"],"resolved":false},
     "src/features/agents/sub_deployment/components/cloud/CloudConnectionForm.tsx": {
       "count": 2,
       "sections": [7],
@@ -208,16 +205,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "AddressBar.tsx"
-    },
-    "src/features/companions/athena/Composer.tsx": {
-      "count": 3,
-      "sections": [7,9],
-      "lines": ["359","358-361"],
-      "contexts": [
-        "| **JSX-conditional (17)** | `CloudConnectionForm.tsx:123` · `ConnectorTableScopeRow.tsx:109` · `WalkthroughOfferWidget.tsx:88` · `GuidedTour.tsx:477` · `ExecutionMetricsDashboard.tsx:73` · `GlobalEx…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "Composer.tsx"
     },
     "src/features/companions/athena/NarrationThread.tsx": {
       "count": 5,

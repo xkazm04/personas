@@ -6,6 +6,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useWhatsNewIndicator } from '@/hooks/sidebar/useWhatsNewIndicator';
+import { useAttention } from '@/hooks/useAttention';
 // useBadgeCounts removed — badge counts now passed as props from Sidebar
 import type { HomeTab, OverviewTab, TemplateTab, SettingsTab, EventBusTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/shared/hooks/CredentialNavContext';
@@ -39,6 +40,9 @@ interface SidebarLevel2Props {
 export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0, unreadReportCount = 0, pendingEventCount = 0, directorAttentionCount = 0 }: SidebarLevel2Props) {
   const { t } = useTranslation();
   const labelOf = useSidebarLabels();
+  // A selector over the attention registry, not a poller: the count is the
+  // Decision Center roster's incidents chip (`PendingCounts.openIncidents`).
+  const openIncidentCount = useAttention('sidebar').counts.open_incidents;
   const sidebarSection = useSystemStore((s) => s.sidebarSection);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const { currentKey: credentialView, navigate } = useCredentialNav();
@@ -102,6 +106,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
   const overviewBadges: Record<string, SubNavBadge> = {};
   if (pendingReviewCount > 0) overviewBadges['manual-review'] = { count: pendingReviewCount, className: 'bg-amber-500/20 text-amber-400 border border-amber-500/30' };
   if (unreadReportCount > 0) overviewBadges['messages'] = { count: unreadReportCount, className: 'bg-blue-500/20 text-blue-400 border border-blue-500/30' };
+  if (openIncidentCount > 0) overviewBadges['incidents'] = { count: openIncidentCount, className: 'bg-status-error/15 text-status-error border border-status-error/30' };
   if (pendingEventCount > 0) overviewBadges['events'] = { count: pendingEventCount, className: 'bg-purple-500/20 text-purple-400 border border-purple-500/30' };
 
   const credentialBadges: Record<string, SubNavBadge> = {

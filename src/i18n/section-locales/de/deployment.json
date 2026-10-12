@@ -8,7 +8,10 @@
     "send_request": "Anfrage senden",
     "sending": "Wird gesendet…",
     "snippets": "Codebeispiele",
-    "title": "API-Playground"
+    "title": "API-Playground",
+    "local_run_completed": "Lokaler Lauf abgeschlossen",
+    "local_run_failed": "Lokaler Lauf fehlgeschlagen",
+    "snippets_target_endpoint": "Die Codebeispiele rufen den bereitgestellten Endpunkt auf. Die Ergebnisse im Playground stammen aus einem lokalen Lauf."
   },
   "auth_code": "Autorisierungscode",
   "chart": {
@@ -28,7 +31,8 @@
     "worker_disconnected": "Getrennt",
     "worker_executing": "Wird ausgeführt",
     "worker_idle": "Inaktiv",
-    "workers": "Worker"
+    "workers": "Worker",
+    "gauge_aria": "Anzeige {label}"
   },
   "cloud_trigger_chain": "Kette",
   "cloud_trigger_manual": "Manuell",
@@ -122,7 +126,9 @@
     "bulk_action_resume": "Massen-Fortsetzung",
     "bulk_action_delete": "Massen-Löschung",
     "bulk_result_ok": "{action}: {count} aktualisiert",
-    "bulk_result_partial": "{action}: {succeeded} erfolgreich, {failed} fehlgeschlagen"
+    "bulk_result_partial": "{action}: {succeeded} erfolgreich, {failed} fehlgeschlagen",
+    "select_all": "Alle Bereitstellungen auswählen",
+    "select_row": "{name} auswählen"
   },
   "deploy_card": {
     "budget_label": "Budget:",
@@ -134,7 +140,11 @@
     "pause_deployment": "Bereitstellung pausieren",
     "remove_deployment": "Bereitstellung entfernen",
     "resume_deployment": "Bereitstellung fortsetzen",
-    "test_deployment": "Bereitstellung testen"
+    "test_deployment": "Bereitstellung testen",
+    "test_pass": "BESTANDEN",
+    "test_fail": "FEHLER",
+    "test_title_pass": "Bestanden",
+    "test_title_fail": "Fehlgeschlagen"
   },
   "deploying": "Bereitstellen…",
   "deployments_panel": {
@@ -144,7 +154,8 @@
     "no_deployments_yet": "Noch keine Deployments. Wählen Sie oben eine Persona aus, um sie als Cloud-API-Endpunkt bereitzustellen.",
     "select_persona": "Persona zum Bereitstellen auswählen",
     "budget_no_limit": "Kein Limit",
-    "budget_per_month": "${amount}/Monat"
+    "budget_per_month": "${amount}/Monat",
+    "deploy_button": "Bereitstellen"
   },
   "exec_detail": {
     "fetching_output": "Ausgabe wird abgerufen…",
@@ -182,7 +193,9 @@
     "total_runs": "Gesamtläufe",
     "fetch_output_failed": "Ausgabe konnte nicht abgerufen werden",
     "monthly_budget": "Monatsbudget",
-    "monthly_budget_pace": "Auf Kurs für {amount}"
+    "monthly_budget_pace": "Auf Kurs für {amount}",
+    "load_failed": "Der Ausführungsverlauf konnte nicht geladen werden.",
+    "no_executions_found": "Keine Ausführungen für die ausgewählten Filter gefunden."
   },
   "no_targets": "Keine Deployment-Ziele verbunden",
   "oauth_panel": {
@@ -201,7 +214,8 @@
     "token_expired": "Token abgelaufen",
     "token_expired_msg_prefix": "Dieses OAuth-Token ist abgelaufen",
     "token_unknown": "Token-Status unbekannt",
-    "token_unknown_msg": "Die Token-Gültigkeit konnte nicht überprüft werden. Erneuern Sie das Token, um zu bestätigen, dass es noch aktiv ist."
+    "token_unknown_msg": "Die Token-Gültigkeit konnte nicht überprüft werden. Erneuern Sie das Token, um zu bestätigen, dass es noch aktiv ist.",
+    "expired_at": "(abgelaufen {time})"
   },
   "orchestrator_url": "Orchestrator-URL",
   "reconcile": {
@@ -229,7 +243,8 @@
     "loading": "Auslöser werden geladen…",
     "loading_firings": "Laden…",
     "no_firings": "Keine letzten Ausführungen",
-    "recent_firings": "Letzte Ausführungen"
+    "recent_firings": "Letzte Ausführungen",
+    "firings_load_failed": "Die letzten Auslösungen konnten nicht geladen werden."
   },
   "sr_connecting": "Verbindung zum Cloud-Orchestrator wird hergestellt…",
   "sr_deploying": "Persona wird in der Cloud bereitgestellt",
@@ -239,7 +254,8 @@
     "no_status": "Keine Statusdaten verfügbar.",
     "no_token": "Kein Token konfiguriert",
     "no_token_configured": "Kein Token konfiguriert",
-    "token_available": "Token verfügbar"
+    "token_available": "Token verfügbar",
+    "latency_title": "Round-Trip-Latenz der Integritätsprüfung: {ms} ms"
   },
   "tabs": {
     "connection": "Verbindung",

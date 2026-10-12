@@ -215,5 +215,6 @@
   "dispatch_receipt_not_pushed": "Nothing pushed",
   "dispatch_receipt_push_failed": "Push failed",
   "dispatch_receipt_detail": "Branch {branch} at {sha}",
-  "md_spellcheck": "Spelling and grammar"
+  "md_spellcheck": "Spelling and grammar",
+  "agent_fallback_name": "Agent"
 }

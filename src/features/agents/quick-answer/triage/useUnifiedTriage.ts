@@ -274,6 +274,37 @@ export interface UnifiedTriageQueue {
   reload: () => void;
 }
 
+/**
+ * The queue plus raw access to what feeds it — for the Decision Center roster,
+ * which deals these same six kinds alongside five more and must not fetch them
+ * a second time.
+ *
+ * A separate type rather than three more fields on {@link UnifiedTriageQueue}:
+ * the deck never reads them, and every consumer that builds a queue by hand
+ * (the deck's tests) would otherwise have to invent them.
+ */
+export interface UnifiedTriageSourceAccess extends UnifiedTriageQueue {
+  /**
+   * Every item every source produced, BEFORE this deck's session state (resolved,
+   * skips, kind filter) is applied. Another surface must not inherit the deck's
+   * filters or deferrals.
+   */
+  sources: TriageItem[];
+  /** The write bundle the deck routes through — see `triageDispatch`. */
+  ports: TriagePorts;
+  /** Re-read the owned sources WITHOUT ending the deck's session. */
+  revalidate: () => void;
+}
+
+export interface UnifiedTriageOptions {
+  /**
+   * When false, the four sources this hook OWNS (ideas, policy, promotions,
+   * goals) are not fetched. Defaults to true. The borrowed review/question
+   * source is `usePendingInteractions`', which has no such switch.
+   */
+  enabled?: boolean;
+}
+
 export interface UnifiedTriageHosts {
   /** Deep-link to the persona builder for questions this surface can't answer. */
   onOpenBuilder?: (personaId: string) => void;
@@ -337,8 +368,11 @@ export function resetTriageWarmCache(): void {
 export function useUnifiedTriage(
   copy: TriageCopy = DEFAULT_TRIAGE_COPY,
   hosts: UnifiedTriageHosts = {},
-): UnifiedTriageQueue {
+  options: UnifiedTriageOptions = {},
+): UnifiedTriageSourceAccess {
   const { onOpenBuilder, onOpenRun, onOpenGoalBoard } = hosts;
+  // Gates the four OWNED fetch effects below.
+  const enabled = options.enabled ?? true;
   // The BORROWED source, deferred. Its hook owns its fetch state, so this hook
   // cannot mark those landings as transitions the way it does for the four
   // sources it owns below — `useDeferredValue` is the consumer-side
@@ -374,7 +408,7 @@ export function useUnifiedTriage(
   // fetch effects below still run and revalidate. `loading` starts false when
   // warm — the deck is showing real rows, not waiting on anything it knows of.
   const [ideas, setIdeas] = useState<DevIdea[]>(() => warmCache?.ideas ?? []);
-  const [ideasLoading, setIdeasLoading] = useState(!warmCache);
+  const [ideasLoading, setIdeasLoading] = useState(enabled && !warmCache);
   /**
    * Which page to fetch. `cursor` undefined = start over (a reload); set = append
    * the next page. `gen` makes a repeat request with the SAME cursor a distinct
@@ -492,8 +526,8 @@ export function useUnifiedTriage(
   const [promotions, setPromotions] = useState<EvolutionPromotionProposal[]>(
     () => warmCache?.promotions ?? [],
   );
-  const [proposalsLoading, setProposalsLoading] = useState(!warmCache);
-  const [promotionsLoading, setPromotionsLoading] = useState(!warmCache);
+  const [proposalsLoading, setProposalsLoading] = useState(enabled && !warmCache);
+  const [promotionsLoading, setPromotionsLoading] = useState(enabled && !warmCache);
   const [proposalGen, setProposalGen] = useState(0);
 
   /**
@@ -506,7 +540,7 @@ export function useUnifiedTriage(
    * `ideaFetch.gen`.
    */
   const [goals, setGoals] = useState<PendingAcceptanceGoal[]>(() => warmCache?.goals ?? []);
-  const [goalsLoading, setGoalsLoading] = useState(!warmCache);
+  const [goalsLoading, setGoalsLoading] = useState(enabled && !warmCache);
   const [goalGen, setGoalGen] = useState(0);
 
   // Keep the warm cache current. Every path that changes one of these goes
@@ -530,10 +564,21 @@ export function useUnifiedTriage(
     [projects],
   );
 
+  // Switched off: the fetch effects below return early, and a cleanup that
+  // cancelled an in-flight landing leaves nothing else to clear its flag.
+  useEffect(() => {
+    if (enabled) return;
+    setIdeasLoading(false);
+    setProposalsLoading(false);
+    setPromotionsLoading(false);
+    setGoalsLoading(false);
+  }, [enabled]);
+
   // Ideas are the one source with no existing hook to borrow, so this owns the
   // fetch. Guarded by a generation counter rather than a ref so `reload()` and
   // `loadMore()` are plain state bumps.
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
     const appending = !!ideaFetch.cursor;
     setIdeasLoading(true);
@@ -580,19 +625,19 @@ export function useUnifiedTriage(
     return () => {
       cancelled = true;
     };
-  }, [ideaFetch, noteFailure]);
+  }, [ideaFetch, noteFailure, enabled]);
 
   // The two proposal ledgers, fetched independently rather than in one
   // `Promise.all`: they are unrelated subsystems, and one being unavailable must
   // not take the other's queue out of the deck with it.
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
     setProposalsLoading(true);
     void policyTuningList(true, PROPOSAL_PAGE_SIZE)
       .then((rows) => {
         if (cancelled) return;
-        // Transition, loading flip inside it — see the ideas effect above for
-        // why the pair must land together.
+        // Transition, loading flip inside it — the ideas effect says why.
         startTransition(() => {
           setPolicyProposals(rows);
           noteFailure('policy', null);
@@ -614,9 +659,10 @@ export function useUnifiedTriage(
     return () => {
       cancelled = true;
     };
-  }, [proposalGen, noteFailure, noteCapped]);
+  }, [proposalGen, noteFailure, noteCapped, enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
     setPromotionsLoading(true);
     void listPromotionProposals({ status: 'pending', limit: PROPOSAL_PAGE_SIZE })
@@ -641,13 +687,14 @@ export function useUnifiedTriage(
     return () => {
       cancelled = true;
     };
-  }, [proposalGen, noteFailure, noteCapped]);
+  }, [proposalGen, noteFailure, noteCapped, enabled]);
 
   // Goals get their own effect for the same reason the two proposal ledgers do:
   // an install whose goals command errors must still be dealt its reviews, its
   // ideas and its proposals. One `Promise.all` over unrelated subsystems is how
   // one unavailable source takes the whole queue down with it.
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
     setGoalsLoading(true);
     void devApi
@@ -672,7 +719,7 @@ export function useUnifiedTriage(
     return () => {
       cancelled = true;
     };
-  }, [goalGen, noteFailure]);
+  }, [goalGen, noteFailure, enabled]);
 
   // The source this hook does NOT own the fetch for reports its failure as a
   // value rather than a rejection, so it is mirrored into the same ledger
@@ -1226,6 +1273,9 @@ export function useUnifiedTriage(
   // card on every keystroke in the answer box.
   return useMemo(
     () => ({
+      sources: all,
+      ports,
+      revalidate: refreshSources,
       items: projection.items,
       cursor: projection.cursor,
       allCounts: projection.allCounts,
@@ -1254,6 +1304,9 @@ export function useUnifiedTriage(
       reload,
     }),
     [
+      all,
+      ports,
+      refreshSources,
       projection,
       interactions.loading,
       ideasLoading,

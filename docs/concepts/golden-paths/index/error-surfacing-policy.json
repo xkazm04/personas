@@ -48,17 +48,10 @@
     "crypto.rs": {"count":1,"sections":[7],"lines":["437-441"],"contexts":["(`crypto.rs:437-441`)) — testing the **prefix the variant guarantees**, not a lucky payload:"],"resolved":false},
     "http.rs": {"count":1,"sections":[0],"lines":["1909-1959"],"contexts":["part worth stealing. Note also that the REST-side twin (`http.rs:1909-1959`) is *not* type-enforced —"],"resolved":false},
     "mcp.rs": {"count":1,"sections":[10],"lines":["85-107"],"contexts":["hand (`mcp.rs:85-107`). One repo out of three, so **local calibration rather than physics** — but"],"resolved":false},
+    "redact.rs": {"count":1,"sections":[0],"lines":["1-15"],"contexts":["not on the error path.** `redact.rs:1-15` names its own cause: a **UAT finding (H4, run 2026-07-13)**,"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["Run standalone against a private rules file (never against `scripts/census/rules.json`, per the"]},
     "scripts/check-error-contract.mjs": {"count":1,"sections":[9],"contexts":["[`typed-error-contract.md`](./typed-error-contract.md) §9's `scripts/check-error-contract.mjs`."],"resolved":false},
     "src-tauri/core/src/error.rs": {"count":6,"sections":[1,6,7,9],"lines":["206-214","144-153"],"contexts":["`auto_fixable` and `failover_eligible` (`src-tauri/core/src/error.rs:206-214`) and **no frontend"]},
-    "src-tauri/core/src/redact.rs": {
-      "count": 1,
-      "sections": [0],
-      "lines": ["1-15"],
-      "contexts": ["not on the error path.** `redact.rs:1-15` names its own cause: a **UAT finding (H4, run 2026-07-13)**,"],
-      "resolvedFrom": "basename",
-      "verbatim": "redact.rs"
-    },
     "src-tauri/engine/src/tool_outcome.rs": {
       "count": 1,
       "sections": [7],

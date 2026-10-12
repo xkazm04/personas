@@ -84,29 +84,12 @@ pub fn apply_bundle_import(
         ));
     }
 
-    // TOCTOU mitigation: when a preview was performed, the hash check is mandatory.
-    if options.preview_id.is_some() && options.expected_bundle_hash.is_none() {
-        return Err(AppError::Validation(
-            "Bundle hash is required when importing a previewed bundle. \
-             Please re-preview the bundle before importing."
-                .into(),
-        ));
-    }
-    if let Some(ref expected_hash) = options.expected_bundle_hash {
-        let actual_hash = hex::encode(sha2::Sha256::digest(&bytes));
-        if actual_hash != *expected_hash {
-            tracing::error!(
-                expected = %expected_hash,
-                actual = %actual_hash,
-                "Bundle hash mismatch — file may have been swapped after preview"
-            );
-            return Err(AppError::Validation(
-                "Bundle integrity check failed: the file has changed since it was previewed. \
-                 Please re-preview the bundle before importing."
-                    .into(),
-            ));
-        }
-    }
+    enforce_preview_pin(
+        &bytes,
+        options.preview_id.as_deref(),
+        options.expected_bundle_hash.as_deref(),
+        "file",
+    )?;
 
     let result = bundle::apply_import(&state.db, &bytes, options)?;
 
@@ -120,6 +103,44 @@ pub fn apply_bundle_import(
     );
 
     Ok(result)
+}
+
+/// TOCTOU pin shared by all three import doors (file, clipboard, share link):
+/// the bytes committed must be the bytes the user previewed.
+///
+/// When a preview was performed (`preview_id` set) the preview's hash is
+/// mandatory, and whenever a hash is supplied the bytes about to be imported
+/// are re-hashed and refused on mismatch. `subject` names what changed in the
+/// user-facing message ("file", "data", "downloaded bundle").
+fn enforce_preview_pin(
+    bytes: &[u8],
+    preview_id: Option<&str>,
+    expected_hash: Option<&str>,
+    subject: &str,
+) -> Result<(), AppError> {
+    if preview_id.is_some() && expected_hash.is_none() {
+        return Err(AppError::Validation(
+            "Bundle hash is required when importing a previewed bundle. \
+             Please re-preview the bundle before importing."
+                .into(),
+        ));
+    }
+    if let Some(expected) = expected_hash {
+        let actual = hex::encode(sha2::Sha256::digest(bytes));
+        if actual != expected {
+            tracing::error!(
+                expected = %expected,
+                actual = %actual,
+                subject = %subject,
+                "Bundle hash mismatch — bytes may have been swapped after preview"
+            );
+            return Err(AppError::Validation(format!(
+                "Bundle integrity check failed: the {subject} has changed since it was previewed. \
+                 Please re-preview the bundle before importing."
+            )));
+        }
+    }
+    Ok(())
 }
 
 // -- Clipboard Export (base64) -------------------------------------------
@@ -231,33 +252,14 @@ pub fn apply_bundle_from_clipboard(
         ));
     }
 
-    // TOCTOU mitigation: when a preview was performed, the hash check is
-    // mandatory -- mirrors `apply_bundle_import`'s file-path guard. Without
-    // this, a clipboard payload swapped after the preview was shown to the
-    // user could be applied on a preview-cache miss with no integrity check.
-    if options.preview_id.is_some() && options.expected_bundle_hash.is_none() {
-        return Err(AppError::Validation(
-            "Bundle hash is required when importing a previewed bundle. \
-             Please re-preview the bundle before importing."
-                .into(),
-        ));
-    }
-    // TOCTOU mitigation: verify the bundle hash matches what was shown at preview time.
-    if let Some(ref expected_hash) = options.expected_bundle_hash {
-        let actual_hash = hex::encode(sha2::Sha256::digest(&bytes));
-        if actual_hash != *expected_hash {
-            tracing::error!(
-                expected = %expected_hash,
-                actual = %actual_hash,
-                "Bundle hash mismatch — clipboard data may have been swapped after preview"
-            );
-            return Err(AppError::Validation(
-                "Bundle integrity check failed: the data has changed since it was previewed. \
-                 Please re-preview the bundle before importing."
-                    .into(),
-            ));
-        }
-    }
+    // Without this, a clipboard payload swapped after the preview was shown to
+    // the user could be applied on a preview-cache miss with no integrity check.
+    enforce_preview_pin(
+        &bytes,
+        options.preview_id.as_deref(),
+        options.expected_bundle_hash.as_deref(),
+        "data",
+    )?;
 
     let result = bundle::apply_import(&state.db, &bytes, options)?;
 
@@ -405,7 +407,23 @@ pub async fn import_from_share_link(
         (url.clone(), None, false)
     };
 
-    let bytes = share_link::fetch_share_link(&http_url).await?;
+    // Commit the previewed bytes, not a second download: `preview_share_link`
+    // cached what the user saw under `preview_id`. Only on a cache miss do we
+    // re-fetch, and then the preview pin below refuses anything the host
+    // swapped in after the preview.
+    let cached = options
+        .preview_id
+        .as_deref()
+        .and_then(bundle::take_cached_preview_bytes);
+    let bytes = match cached {
+        Some((cached_bytes, _cached_hash)) => cached_bytes,
+        None => {
+            if let Some(pid) = options.preview_id.as_deref() {
+                tracing::warn!(preview_id = %pid, "Preview cache miss, re-fetching share link");
+            }
+            share_link::fetch_share_link(&http_url).await?
+        }
+    };
 
     if bytes.is_empty() {
         return Err(AppError::Validation(
@@ -415,6 +433,12 @@ pub async fn import_from_share_link(
 
     // Reject (or, for raw HTTP URLs, warn) before writing anything to the DB.
     verify_share_link_hash(&bytes, advertised_hash.as_deref(), from_deep_link)?;
+    enforce_preview_pin(
+        &bytes,
+        options.preview_id.as_deref(),
+        options.expected_bundle_hash.as_deref(),
+        "downloaded bundle",
+    )?;
 
     let result = bundle::apply_import(&state.db, &bytes, options)?;
 
@@ -487,5 +511,44 @@ mod share_link_hash_tests {
     fn hashless_raw_http_url_is_allowed() {
         // DECISION: a raw HTTP URL carries no hash to pin against; warn + proceed.
         assert!(verify_share_link_hash(b"anything", None, false).is_ok());
+    }
+
+    // -- Preview pin (shared by the file, clipboard and share-link doors) --
+
+    use super::enforce_preview_pin;
+
+    #[test]
+    fn preview_pin_accepts_the_previewed_bytes() {
+        let bytes = b"previewed bundle A";
+        let pinned = hash_of(bytes);
+        assert!(enforce_preview_pin(bytes, Some("pid"), Some(&pinned), "file").is_ok());
+    }
+
+    #[test]
+    fn preview_pin_rejects_bytes_swapped_after_preview() {
+        // A share host served bundle A at preview time and bundle B at import
+        // time: the hash the dialog pinned from the preview must refuse B.
+        let pinned = hash_of(b"previewed bundle A");
+        let err = enforce_preview_pin(
+            b"swapped bundle B",
+            Some("pid"),
+            Some(&pinned),
+            "downloaded bundle",
+        )
+        .expect_err("bytes that differ from the preview must be refused");
+        assert!(err.to_string().contains("integrity check failed"));
+        assert!(err.to_string().contains("downloaded bundle"));
+    }
+
+    #[test]
+    fn preview_pin_requires_a_hash_once_previewed() {
+        let err = enforce_preview_pin(b"anything", Some("pid"), None, "data")
+            .expect_err("a previewed import without a pinned hash must be refused");
+        assert!(err.to_string().contains("Bundle hash is required"));
+    }
+
+    #[test]
+    fn preview_pin_is_a_no_op_without_a_preview() {
+        assert!(enforce_preview_pin(b"anything", None, None, "file").is_ok());
     }
 }

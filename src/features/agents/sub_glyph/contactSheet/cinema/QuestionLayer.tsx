@@ -3,8 +3,7 @@
  *  Number keys pick an option, Enter moves on, Backspace goes back; a pick is
  *  only a draft here, nothing reaches the build until "Send answers". Connector
  *  questions use the real vault picker, filtered by the question's category. */
-import { useEffect, useMemo, useRef } from "react";
-import { useAppKeyboard, ROUTE_DECISION_PRIORITY } from "@/lib/keyboard/AppKeyboardProvider";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { GlyphDimension } from "@/features/shared/glyph";
@@ -13,6 +12,7 @@ import type { BuildQuestion } from "@/lib/types/buildTypes";
 import { VaultConnectorPicker } from "@/features/vault/components/VaultConnectorPicker";
 import Button from "@/features/shared/components/buttons/Button";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
+import { useQuestionKeys } from "./useQuestionKeys";
 import { COPY } from "./copy";
 
 interface QuestionLayerProps {
@@ -27,44 +27,12 @@ interface QuestionLayerProps {
   onPrev: () => void;
 }
 
-const isTyping = (el: EventTarget | null) =>
-  el instanceof HTMLElement && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
-
 export function QuestionLayer({ question, dim, index, total, draft, onDraft, onPick, onNext, onPrev }: QuestionLayerProps) {
   const color = dim ? DIM_META[dim].color : "#60a5fa";
   const options = useMemo(() => question.options ?? [], [question.options]);
   const isLast = index >= total - 1;
-  const firstOpt = useRef<HTMLButtonElement | null>(null);
   const freeText = options.includes(draft) ? "" : draft;
-
-  useEffect(() => {
-    const h = window.setTimeout(() => firstOpt.current?.focus(), 260);
-    return () => window.clearTimeout(h);
-  }, [question]);
-
-  // On the app's keyboard ladder at the route rung, so a modal or a summoned
-  // layer above the build takes its keys first.
-  useAppKeyboard((e) => {
-    if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target)) return false;
-    if (/^[1-9]$/.test(e.key)) {
-      const opt = options[Number(e.key) - 1];
-      if (opt === undefined) return false;
-      e.preventDefault();
-      onPick(opt);
-      return true;
-    }
-    if (e.key === "Enter" && draft.trim() && !(e.target instanceof HTMLButtonElement)) {
-      e.preventDefault();
-      onNext();
-      return true;
-    }
-    if (e.key === "Backspace" && index > 0) {
-      e.preventDefault();
-      onPrev();
-      return true;
-    }
-    return false;
-  }, { priority: ROUTE_DECISION_PRIORITY });
+  const firstOpt = useQuestionKeys({ question, options, index, draft, onPick, onNext, onPrev });
 
   return (
     <div className="flex-1 flex flex-col justify-center gap-4 2xl:gap-5 max-w-[760px] 2xl:max-w-[880px] w-full mx-auto">

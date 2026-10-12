@@ -10,7 +10,7 @@ techniques:
   - decision-records
   - resume-after-decision
 evidence:
-  - src-tauri/src/engine/build_session/gates.rs                 # per-capability Closed→Pending→Open FSM enforced in code because the model treats the prompt rule as advisory; intent-derived auto-open; batched question synthesis
+  - src-tauri/engine/src/build_session/gates.rs                 # per-capability Closed→Pending→Open FSM enforced in code because the model treats the prompt rule as advisory; intent-derived auto-open; batched question synthesis
   - src-tauri/db/src/repos/communication/manual_reviews.rs      # CAS single-winner verdict flip (lost CAS = loud conflict); resolved_at record; verdicts feed the learning loop; keyset-paginated queue + predicate counts
   - src-tauri/src/commands/tools/triggers.rs                    # resolve_pending_trigger_fire — only the CAS winner publishes the held event; unattended mode auto|dry_run|approval set per trigger
   - src-tauri/src/engine/pipeline_executor.rs                   # per-node approval gate; wait-indefinitely poll (the 1-hour cap force-rejected overnight approvals and was removed)

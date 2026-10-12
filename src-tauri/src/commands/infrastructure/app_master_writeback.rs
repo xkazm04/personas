@@ -448,6 +448,58 @@ pub struct FileIdeaInput {
     /// different; an exact re-filing is still deduped.
     #[serde(default)]
     pub force: Option<bool>,
+    /// The producer, when the filer is not the App Master. Only
+    /// [`FILEABLE_ORIGINS`] are accepted: `scan_sweep` hands the items a sweep
+    /// left open to Approvals over HTTP, because the outbox takes 30 findings a
+    /// pass and is read only when a Fleet session exits. `None` files as
+    /// `app-master`, exactly as before.
+    #[serde(default)]
+    pub origin: Option<String>,
+    /// The scan lens, keyed into the dedup key the way the outbox ingest keys
+    /// it (`scan:<lens>:<context>:<title>`), so an item the outbox already
+    /// filed is a dedup hit here. Read only with `origin: "scan_sweep"`.
+    #[serde(default)]
+    pub lens: Option<String>,
+}
+
+/// Origins an HTTP filing may claim instead of `app-master`.
+pub const FILEABLE_ORIGINS: [&str; 1] = ["scan_sweep"];
+
+/// The `scan_type` and dedup key a filing is written under.
+///
+/// A `scan_sweep` filing keys by its lens, matching
+/// `memory_ledger`'s outbox ingest, so the two doors share one dedup space.
+fn filing_key(input: &FileIdeaInput) -> Result<(&'static str, String), AppError> {
+    let context = trimmed(input.context_id.as_ref());
+    let title = input.title.trim();
+    match trimmed(input.origin.as_ref()) {
+        None => Ok((
+            APP_MASTER_SCAN_TYPE,
+            repo::scan_dedup_key(APP_MASTER_SCAN_TYPE, context, title),
+        )),
+        Some("scan_sweep") => {
+            let lens: String = input
+                .lens
+                .as_deref()
+                .unwrap_or("")
+                .trim()
+                .chars()
+                .filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_')
+                .map(|c| c.to_ascii_lowercase())
+                .take(60)
+                .collect();
+            let key_type = if lens.is_empty() {
+                "scan_sweep"
+            } else {
+                lens.as_str()
+            };
+            Ok(("scan_sweep", repo::scan_dedup_key(key_type, context, title)))
+        }
+        Some(other) => Err(AppError::Validation(format!(
+            "origin `{other}` cannot be filed here; expected one of {}",
+            FILEABLE_ORIGINS.join(", ")
+        ))),
+    }
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -524,11 +576,7 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
     let project = repo::get_project_by_id(db, input.project_id.trim())?;
 
     let title = input.title.trim();
-    let dedup_key = repo::scan_dedup_key(
-        APP_MASTER_SCAN_TYPE,
-        trimmed(input.context_id.as_ref()),
-        title,
-    );
+    let (scan_type, dedup_key) = filing_key(input)?;
 
     // An honest paraphrase of an item already on the backlog keys differently
     // (the key is built from the title's words), so look for one before the
@@ -577,18 +625,25 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
         }
     }
 
+    // This door's scales are 1-5 for every filer, but the repo reads a
+    // `scan_sweep` row on that producer's native 1-10 curve. Doubling is the
+    // exact inverse of its exchange rate (ceil(2v / 2) = v).
+    let native = |v: Option<i32>| match scan_type {
+        "scan_sweep" => v.map(|v| v * 2),
+        _ => v,
+    };
     let created = repo::create_idea_deduped(
         db,
         &project.id,
         trimmed(input.context_id.as_ref()),
-        APP_MASTER_SCAN_TYPE,
+        scan_type,
         trimmed(input.category.as_ref()),
         title,
         trimmed(input.description.as_ref()),
         trimmed(input.reasoning.as_ref()),
-        input.effort,
-        input.impact,
-        input.risk,
+        native(input.effort),
+        native(input.impact),
+        native(input.risk),
         None,
         None,
         &dedup_key,
@@ -744,11 +799,7 @@ pub fn file_rated_backlog_idea(
     .collect();
     if !missing.is_empty() {
         let project = repo::get_project_by_id(db, input.project_id.trim())?;
-        let dedup_key = repo::scan_dedup_key(
-            APP_MASTER_SCAN_TYPE,
-            trimmed(input.context_id.as_ref()),
-            input.title.trim(),
-        );
+        let (_, dedup_key) = filing_key(input)?;
         if repo::find_idea_by_dedup_key(db, &project.id, &dedup_key)?.is_none() {
             return Err(AppError::Validation(format!(
                 "missing {}: the filer scores every item on effort, impact and risk, \
@@ -1840,6 +1891,37 @@ mod tests {
     // ── Filing ────────────────────────────────────────────────────────────
 
     #[test]
+    fn a_scan_sweep_filing_keeps_its_origin_scales_and_outbox_key() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "file-sweep");
+        let mut input = rated_filing(&pid, "Measure caption lines with real advances", Some(4));
+        input.origin = Some("scan_sweep".into());
+        input.lens = Some("Parity-Auditor".into());
+
+        let filed = file_rated_backlog_idea(&pool, &input)?;
+        assert!(filed.created);
+        assert_eq!(filed.idea.origin.as_deref(), Some("scan_sweep"));
+        assert_eq!(filed.idea.scan_type, "scan_sweep");
+        assert_eq!(
+            (filed.idea.effort, filed.idea.impact, filed.idea.risk),
+            (Some(2), Some(3), Some(4))
+        );
+        assert_eq!(
+            filed.dedup_key,
+            repo::scan_dedup_key(
+                "parity-auditor",
+                None,
+                "Measure caption lines with real advances"
+            )
+        );
+
+        input.origin = Some("sentry_spike".into());
+        let err = file_rated_backlog_idea(&pool, &input).expect_err("not a fileable origin");
+        assert!(matches!(err, AppError::Validation(_)));
+        Ok(())
+    }
+
+    #[test]
     fn filing_the_same_item_twice_returns_the_first_row() -> Result<(), AppError> {
         let pool = init_test_db()?;
         let pid = project(&pool, "file-app");
@@ -1855,6 +1937,8 @@ mod tests {
             context_id: None,
             goal: None,
             force: None,
+            origin: None,
+            lens: None,
         };
 
         let first = file_backlog_idea(&pool, &input)?;
@@ -1905,6 +1989,8 @@ mod tests {
             context_id: None,
             goal: None,
             force: None,
+            origin: None,
+            lens: None,
         };
 
         let first = file_backlog_idea(&pool, &unrated)?;
@@ -1964,6 +2050,8 @@ mod tests {
             context_id: None,
             goal: None,
             force: None,
+            origin: None,
+            lens: None,
         };
         let first = file_backlog_idea(&pool, &filed)?;
         assert_eq!(first.idea.risk, Some(4));
@@ -2009,6 +2097,8 @@ mod tests {
             context_id: None,
             goal: None,
             force: None,
+            origin: None,
+            lens: None,
         };
         let first = file_backlog_idea(&pool, &base)?;
         let other = file_backlog_idea(
@@ -2055,6 +2145,8 @@ mod tests {
             context_id: None,
             goal: None,
             force: None,
+            origin: None,
+            lens: None,
         };
 
         // Filed with no goal while the project has one open: filed, and told.
@@ -2106,6 +2198,8 @@ mod tests {
             context_id: None,
             goal: Some("no such goal".into()),
             force: None,
+            origin: None,
+            lens: None,
         };
         let filed = file_backlog_idea(&pool, &base)?;
         assert!(filed.created, "a bad goal reference never loses the filing");
@@ -2146,6 +2240,8 @@ mod tests {
             context_id: None,
             goal: None,
             force: None,
+            origin: None,
+            lens: None,
         };
         match file_rated_backlog_idea(&pool, &unrated) {
             Err(AppError::Validation(m)) => {
@@ -2200,6 +2296,8 @@ mod tests {
             context_id: None,
             goal: None,
             force: None,
+            origin: None,
+            lens: None,
         };
         let seeded = file_backlog_idea(&pool, &unrated)?;
         assert!(seeded.created);
@@ -2240,6 +2338,8 @@ mod tests {
             context_id: None,
             goal: None,
             force: None,
+            origin: None,
+            lens: None,
         }
     }
 
@@ -2346,6 +2446,8 @@ mod tests {
             &pool,
             &FileIdeaInput {
                 force: Some(true),
+                origin: None,
+                lens: None,
                 ..paraphrase
             },
         )?;
@@ -2587,6 +2689,8 @@ mod tests {
                 context_id: None,
                 goal: None,
                 force: None,
+                origin: None,
+                lens: None,
             },
         )
         .expect_err("an unknown project cannot receive a backlog item");

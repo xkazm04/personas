@@ -7,6 +7,5 @@
     "relative_just_now": "только что",
     "relative_minutes_one": "{m} мин назад",
     "relative_minutes_other": "{m} мин назад"
-  },
-  "unknown_assistant": "Неизвестный ассистент"
+  }
 }

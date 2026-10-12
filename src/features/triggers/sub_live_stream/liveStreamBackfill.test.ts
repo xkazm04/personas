@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeBackfillIntoLiveBuffer } from './LiveStreamTab';
+import { appendPausedEvent, drainPausedQueue, mergeBackfillIntoLiveBuffer } from './LiveStreamTab';
 import type { PersonaEvent } from '@/lib/types/types';
 
 function makeEvent(id: string, overrides: Partial<PersonaEvent> = {}): PersonaEvent {
@@ -55,5 +55,26 @@ describe('LiveStreamTab mount backfill', () => {
     const merged = mergeBackfillIntoLiveBuffer(live, backfill);
     expect(merged).toHaveLength(200);
     expect(merged[0]!.id).toBe('live-0');
+  });
+});
+
+describe('LiveStreamTab pause queue', () => {
+  it('drains newest first and uses the newest copy of a repeated id', () => {
+    const queued = [
+      makeEvent('a', { status: 'pending' }),
+      makeEvent('b'),
+      makeEvent('a', { status: 'completed' }),
+      makeEvent('c'),
+    ];
+    const drained = drainPausedQueue([makeEvent('older')], queued);
+    expect(drained.map((event) => event.id)).toEqual(['c', 'b', 'a', 'older']);
+    expect(drained[2]?.status).toBe('completed');
+  });
+
+  it('keeps only the newest 200 paused events', () => {
+    let queue: PersonaEvent[] = [];
+    for (let i = 0; i < 205; i++) queue = appendPausedEvent(queue, makeEvent(`event-${i}`));
+    expect(queue).toHaveLength(200);
+    expect(queue[0]?.id).toBe('event-5');
   });
 });

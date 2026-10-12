@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { Users, RefreshCw, Wifi, AlertTriangle } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
+import { useThemeStore } from '@/stores/themeStore';
 import { useToastStore } from '@/stores/toastStore';
 import { PeerCard } from './PeerCard';
 import { PeerDetailDrawer } from './PeerDetailDrawer';
@@ -17,6 +18,7 @@ export function PeerList() {
   const connectionStates = useSystemStore((s) => s.connectionStates);
   const trustedPeers = useSystemStore((s) => s.trustedPeers);
   const networkError = useSystemStore((s) => s.networkError);
+  const networkStatus = useSystemStore((s) => s.networkStatus);
   const fetchNetworkSnapshot = useSystemStore((s) => s.fetchNetworkSnapshot);
   const connectToPeer = useSystemStore((s) => s.connectToPeer);
   const disconnectPeer = useSystemStore((s) => s.disconnectPeer);
@@ -29,7 +31,9 @@ export function PeerList() {
   const { t } = useTranslation();
   const st = t.sharing;
 
-  const trustedPeerIds = useMemo(() => new Set(trustedPeers.map((p) => p.peer_id)), [trustedPeers]);
+  const trustedPeerIds = useMemo(() => new Set(
+    trustedPeers.filter((p) => p.trust_level !== 'revoked').map((p) => p.peer_id),
+  ), [trustedPeers]);
 
   const doFetch = useCallback(async () => {
     try {
@@ -110,7 +114,12 @@ export function PeerList() {
       {loading ? (
         <PeerScanSkeleton />
       ) : discoveredPeers.length === 0 ? (
-        <RadarEmptyState />
+        networkStatus?.is_running && !networkError ? <RadarEmptyState /> : (
+          <div className="flex items-center gap-2 rounded-modal border border-border p-6 typo-caption text-foreground">
+            <Wifi className="w-4 h-4" />
+            {networkError ? st.peer_list_stale : <>{st.network_status}: <span>{st.status_offline}</span></>}
+          </div>
+        )
       ) : (
         <div className="space-y-2">
           {discoveredPeers.map((peer) => (
@@ -150,6 +159,7 @@ export function PeerList() {
 function RadarEmptyState() {
   const { t: _t } = useTranslation();
   const st = _t.sharing;
+  const reduceMotion = useThemeStore((s) => s.reduceMotion);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -205,11 +215,14 @@ function RadarEmptyState() {
       ctx!.lineWidth = 1.5;
       ctx!.stroke();
 
-      raf = requestAnimationFrame(draw);
+      if (!reduceMotion) raf = requestAnimationFrame(draw);
     }
-    raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
-  }, []);
+    if (reduceMotion) draw(0);
+    else raf = requestAnimationFrame(draw);
+    return () => {
+      if (raf !== undefined) cancelAnimationFrame(raf);
+    };
+  }, [reduceMotion]);
 
   return (
     <div

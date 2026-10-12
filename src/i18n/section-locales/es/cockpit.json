@@ -7,6 +7,5 @@
     "relative_just_now": "ahora mismo",
     "relative_minutes_one": "hace {m} min",
     "relative_minutes_other": "hace {m} min"
-  },
-  "unknown_assistant": "Asistente desconocido"
+  }
 }

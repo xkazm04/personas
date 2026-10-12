@@ -59,13 +59,14 @@ export function useAdoption() {
         // list (after any prior queued writes), so this is the race-safe
         // spot — not a pre-flight check against possibly-stale UI state.
         let alreadyAdopted = false;
-        await mutateUseCases(personaId, (existing) => {
+        const outcome = await mutateUseCases(personaId, (existing) => {
           if (existing.some((uc) => uc.source_recipe_id === recipe.id)) {
             alreadyAdopted = true;
             return existing;
           }
           return [...existing, newUseCase];
         });
+        if (!outcome.applied) throw new Error(outcome.reason);
         if (alreadyAdopted) {
           useToastStore.getState().addToast(
             tx(t.recipes_catalog.already_adopted_toast, { title: recipe.name }),
@@ -136,11 +137,12 @@ export function useAdoption() {
       setPending(true);
       try {
         let removedAny = false;
-        await mutateUseCases(personaId, (existing) => {
+        const outcome = await mutateUseCases(personaId, (existing) => {
           const kept = existing.filter((uc) => uc.source_recipe_id !== recipe.id);
           removedAny = kept.length !== existing.length;
           return kept;
         });
+        if (!outcome.applied) throw new Error(outcome.reason);
         if (!removedAny) return false; // nothing to detach — stale UI, no-op
         // Re-sync so the removed capability's parameter lines drop out of the
         // injected section (its params stay, inert, per the documented contract).

@@ -24,9 +24,18 @@
     ".claude/": {"count":1,"sections":[12],"contexts":["| `../personas-cloud` | no | no `.claude/` at all |"],"resolved":false,"isDir":true},
     ".claude/settings.json": {"count":4,"sections":[12],"contexts":["`scripts/docs/check-doc-map-paths.mjs`; `.claude/settings.json`;"]},
     "docs/": {"count":1,"sections":[12],"contexts":["a Node Stop hook, a JSON registry, markdown under `docs/`, and git history."],"resolved":false,"isDir":true},
+    "docs/feature-doc-map.json": {
+      "count": 1,
+      "sections": [12],
+      "contexts": [
+        "| `../brainiac` | **yes** — `docs/feature-doc-map.json`, 12 entries, same `{doc, sourceGlobs}` schema, same `_comment` convention | **none** — no `.claude/settings.json`, no hook, no checker, and `fe…"
+      ],
+      "resolved": false
+    },
     "docs/features/": {"count":3,"sections":[0,9],"contexts":["`docs/features/` (23,535 lines); **4,304** tracked `.ts`/`.tsx`/`.rs` files"],"resolved":false,"isDir":true},
     "docs/features/*": {"count":1,"sections":[7],"contexts":["| same commit touched **any** `docs/features/*` — what the hook accepts | 761 | 19.8% |"],"resolved":false,"isDir":true},
     "docs/features/X": {"count":1,"sections":[0],"contexts":["names.** The hook prints *\"Mapped feature doc(s) likely affected: `docs/features/X`\"*"],"resolved":false,"isDir":true},
+    "feature-doc-map.json": {"count":1,"sections":[9],"contexts":["let `feature-doc-map.json` hold only the exceptions. A derived coupling cannot"],"resolved":false},
     "scripts/": {"count":1,"sections":[9],"contexts":["`.mjs`/`.js`/`.cjs` files under `scripts/`: the tight pattern"],"resolved":false,"isDir":true},
     "scripts/census/lib/engine.mjs": {"count":2,"sections":[9],"lines":["264","253"],"contexts":["`assertRule` (`scripts/census/lib/engine.mjs:264`) treats as a *structural*"]},
     "scripts/docs/": {"count":1,"sections":[9],"contexts":["`scripts/docs/`. A two-file baseline is not a ratchet; and the compliant form"],"resolved":false,"isDir":true},
@@ -41,7 +50,7 @@
       "resolvedFrom": "basename",
       "verbatim": "check-golden-path-touch.mjs"
     },
-    "scripts/docs/feature-doc-map.json": {"count":3,"sections":[9,12],"contexts":["hook `check-golden-path-touch.mjs`; `scripts/docs/feature-doc-map.json`"]},
+    "scripts/docs/feature-doc-map.json": {"count":1,"sections":[],"contexts":["hook `check-golden-path-touch.mjs`; `scripts/docs/feature-doc-map.json`"]},
     "scripts/test/evaluate.mjs": {"count":1,"sections":[9],"contexts":["(`check-doc-sync.mjs:120`) and one false (`scripts/test/evaluate.mjs`), so"]},
     "sdk/personas-sdk.ts": {"count":1,"sections":[12],"contexts":["- The single coverage-membership difference in 7.C (`sdk/personas-sdk.ts`) is a"]},
     "src-tauri/": {"count":2,"sections":[12],"contexts":["under `src/` + `src-tauri/` after the hook's own skip filter; **4,953**"],"resolved":false,"isDir":true},

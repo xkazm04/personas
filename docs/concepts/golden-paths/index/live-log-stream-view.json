@@ -76,7 +76,15 @@
     "packages/orchestrator/src/httpApi.ts": {"count":1,"sections":[6],"lines":["1723-1730"],"contexts":["before any live frame (`packages/orchestrator/src/httpApi.ts:1723-1730`);"],"resolved":false},
     "parser.rs": {"count":3,"sections":[6,12],"lines":["56-60"],"contexts":["defect against `parser.rs`."],"resolved":false},
     "progress/TerminalBody.tsx": {"count":1,"sections":[],"contexts":["`progress/TerminalBody.tsx` (deleted 2026-09-25), `background_job.rs`, `fleet/registry.rs`'s"],"resolved":false},
+    "redact.rs": {"count":1,"sections":[8],"contexts":["makes exactly this argument for why `redact.rs` is applied at persistence and"],"resolved":false},
     "registry.rs": {"count":1,"sections":[6],"lines":["133"],"contexts":["(`registry.rs:133`) is replayed on attach (`:1015`) so a re-focused terminal"],"resolved":false},
+    "runner/mod.rs": {
+      "count": 11,
+      "sections": [0,5,7,12],
+      "lines": ["2759","2154-2166","2615-2624","2081","2013,2156","2179-2188","2156"],
+      "contexts": ["`runner/mod.rs` stream loop read in full. All **19** `scrollTop = scrollHeight`"],
+      "resolved": false
+    },
     "scripts/census/": {"count":1,"sections":[3],"contexts":["| `scripts/census/` | the ratchet mechanism. §9 |"],"resolved":false,"isDir":true},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["I read all **125** rules in `scripts/census/rules.json` before authoring (a"]},
     "scripts/check-event-registry.mjs": {
@@ -89,7 +97,6 @@
     "shared-facts.json": {"count":1,"sections":[],"contexts":["count, matching `shared-facts.json` `frontend.tsFiles`"],"resolved":false},
     "shared/components/progress/TerminalBody.tsx": {"count":2,"sections":[3,7],"contexts":["`shared/components/progress/TerminalBody.tsx` (deleted 2026-09-25) (plain `.map`, its own"],"resolved":false},
     "src-tauri/**/*.rs": {"count":1,"sections":[],"contexts":["+ generated) and **963** `src-tauri/**/*.rs`. Every one of the **26**"],"resolved":false},
-    "src-tauri/core/src/redact.rs": {"count":1,"sections":[8],"contexts":["makes exactly this argument for why `redact.rs` is applied at persistence and"],"resolvedFrom":"basename","verbatim":"redact.rs"},
     "src-tauri/engine/src/cli_process.rs": {
       "count": 1,
       "sections": [3],
@@ -140,12 +147,12 @@
       "verbatim": "fleet/registry.rs"
     },
     "src-tauri/src/engine/runner/mod.rs": {
-      "count": 15,
-      "sections": [0,5,7,12],
-      "lines": ["2179-2188","2759","2154-2166","2615-2624","2081","2013,2156","2081,2142-2147,2577-2582","2156"],
-      "contexts": ["`runner/mod.rs` stream loop read in full. All **19** `scrollTop = scrollHeight`"],
+      "count": 4,
+      "sections": [0,7],
+      "lines": ["2179-2188","2615-2624","2081,2142-2147,2577-2582"],
+      "contexts": ["| **the live stream** | `engine/runner/mod.rs:2179-2188` | **no. Nothing.** |"],
       "resolvedFrom": "suffix",
-      "verbatim": "runner/mod.rs"
+      "verbatim": "engine/runner/mod.rs"
     },
     "src/**/*.{ts,tsx}": {"count":1,"sections":[],"contexts":["**Sweep size.** All **4,829** `src/**/*.{ts,tsx}` files (the census walk's own"],"resolved":false,"isDir":true},
     "src/app/api/claude-terminal/stream/route.ts": {"count":1,"sections":[6],"lines":["219-230"],"contexts":["(`src/app/api/claude-terminal/stream/route.ts:219-230`); `ascent` fetches a"],"resolved":false},

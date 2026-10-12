@@ -54,6 +54,13 @@
     "commands/fleet/{commands,pty,external,headless}.rs": {"count":1,"sections":[],"contexts":["`commands/fleet/{commands,pty,external,headless}.rs`, `engine/prompt/cli_args.rs`,"],"resolved":false},
     "data_portability.rs": {"count":1,"sections":[7],"lines":["2194"],"contexts":["(`data_portability.rs:2194`), `export_credentials` (`:9556`) and `import_credentials` (`:9670`)."],"resolved":false},
     "db.ts": {"count":2,"sections":[6],"lines":["275-289","286"],"contexts":["`db.ts:275-289` reproduces `persona_credentials` column-for-column against"],"resolved":false},
+    "engine/db_query.rs": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["634-637"],
+      "contexts": ["| `engine/db_query.rs:634-637` | **Advertised capability kept adjacent to the dispatch** *\"so the advertised capability and the actual execution behavior can never silently drift.\"* |"],
+      "resolved": false
+    },
     "engine/prompt/cli_args.rs": {"count":1,"sections":[],"contexts":["`commands/fleet/{commands,pty,external,headless}.rs`, `engine/prompt/cli_args.rs`,"],"resolved":false},
     "eventProcessor.ts": {"count":1,"sections":[6],"lines":["30"],"contexts":["`packages/shared/src/bus.ts:5` *\"Ported from engine/bus.rs\"*, `eventProcessor.ts:30` *\"Ported from"],"resolved":false},
     "executions.rs": {"count":3,"sections":[0,7],"lines":["420"],"contexts":["`executions.rs:420` reads the persona's granted tools, then `:421-425` *appends* virtual tools, and"],"resolved":false},
@@ -155,6 +162,15 @@
       "verbatim": "db/src/repos/core/settings.rs"
     },
     "src-tauri/db/src/settings_keys.rs": {"count":2,"sections":[3],"lines":["1154-1250"],"contexts":["`db/src/repos/core/settings.rs`, `db/src/settings_keys.rs:1154-1250`,"],"resolvedFrom":"suffix","verbatim":"db/src/settings_keys.rs"},
+    "src-tauri/engine/src/credential_broker.rs": {"count":8,"sections":[0,3,6,7],"lines":["50-69","204-271","93-116","40-46"],"contexts":["drift test), `src-tauri/macros/src/lib.rs`, `src-tauri/engine/src/credential_broker.rs`,"]},
+    "src-tauri/engine/src/db_query.rs": {
+      "count": 2,
+      "sections": [3,8],
+      "lines": ["637","634-637"],
+      "contexts": [
+        "| `src-tauri/engine/src/db_query.rs:637` `connector_capability(service_type)` | **Honest capability advertising** — `FullSql` / `SelectSubset` / `KeyValue` / `IntrospectionOnly`, kept *\"immediately n…"
+      ]
+    },
     "src-tauri/engine/src/prompt/cli_args.rs": {
       "count": 2,
       "sections": [0,7],
@@ -163,7 +179,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "engine/src/prompt/cli_args.rs"
     },
-    "src-tauri/macros/src/lib.rs": {"count":3,"sections":[0,7],"lines":["58","83-90"],"contexts":["drift test), `src-tauri/macros/src/lib.rs`, `src-tauri/src/engine/credential_broker.rs`,"]},
+    "src-tauri/macros/src/lib.rs": {"count":3,"sections":[0,7],"lines":["58","83-90"],"contexts":["drift test), `src-tauri/macros/src/lib.rs`, `src-tauri/engine/src/credential_broker.rs`,"]},
     "src-tauri/src/commands/companion/approvals/approval_autopilot.rs": {
       "count": 1,
       "sections": [12],
@@ -244,15 +260,6 @@
       "lines": ["27"],
       "contexts": [
         "| `src-tauri/src/companion/jobs/operations_views.rs:27` `run_view` | **The grant that names exactly what is used**: 7 named views, clamped params, no string. Owned by [sql-console](./sql-console.md);…"
-      ]
-    },
-    "src-tauri/src/engine/credential_broker.rs": {"count":8,"sections":[0,3,6,7],"lines":["50-69","204-271","93-116","40-46"],"contexts":["drift test), `src-tauri/macros/src/lib.rs`, `src-tauri/src/engine/credential_broker.rs`,"]},
-    "src-tauri/src/engine/db_query.rs": {
-      "count": 3,
-      "sections": [3,6,8],
-      "lines": ["637","634-637"],
-      "contexts": [
-        "| `src-tauri/src/engine/db_query.rs:637` `connector_capability(service_type)` | **Honest capability advertising** — `FullSql` / `SelectSubset` / `KeyValue` / `IntrospectionOnly`, kept *\"immediately n…"
       ]
     },
     "src-tauri/src/engine/desktop_security.rs": {

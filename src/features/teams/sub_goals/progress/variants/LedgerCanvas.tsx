@@ -74,7 +74,7 @@ export function LedgerCanvas() {
               projectId={r.projectId}
               dl={dl}
               bound={r.lane !== null}
-              laneStatus={r.lane?.status ?? null}
+              lane={r.lane ?? null}
             />
             <Tooltip content={r.node.goal.title}>
               <span className="typo-label text-foreground truncate">{r.node.goal.title}</span>

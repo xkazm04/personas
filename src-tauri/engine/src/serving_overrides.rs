@@ -659,7 +659,7 @@ impl Mechanism {
     pub fn sites(self) -> &'static [Site] {
         match self {
             Self::ByomPolicySubstitution => &[Site {
-                file: "src/engine/failover.rs",
+                file: "engine/src/failover.rs",
                 marker: "policy.preferred_model",
                 family: None,
             }],
@@ -729,7 +729,7 @@ impl Mechanism {
                 family: None,
             }],
             Self::EvolutionWinnerPromotion => &[Site {
-                file: "src/engine/evolution.rs",
+                file: "engine/src/evolution.rs",
                 marker: "Provenance: field-level change-log rows commit atomically",
                 family: Some((Family::DurablePromptRewrite, 1)),
             }],

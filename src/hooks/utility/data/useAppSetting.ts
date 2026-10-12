@@ -27,6 +27,8 @@ interface UseAppSettingResult {
   loaded: boolean;
   saved: boolean;
   error: string | null;
+  /** True when the initial read rejected: `value` is then the caller default, NOT what is stored. */
+  loadFailed: boolean;
 }
 
 /**
@@ -45,6 +47,7 @@ export function useAppSetting(
   const [loaded, setLoaded] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const valueRef = useRef(value);
   valueRef.current = value;
   // `validate`/`defaultValue` are configuration, not data deps: callers pass
@@ -72,6 +75,7 @@ export function useAppSetting(
       setLoaded(false);
       setError(null);
       setSaved(false);
+      setLoadFailed(false);
     }
     isFirstLoadRef.current = false;
 
@@ -96,7 +100,12 @@ export function useAppSetting(
           }
         }
       })
-      .catch(silentCatch('hooks/utility/data/useAppSetting:loadAppSetting'))
+      .catch((err) => {
+        // Not the `error` channel: that one renders the raw message next to the
+        // control, and a read can fail on a secret-bearing key (see errorClass).
+        silentCatch('hooks/utility/data/useAppSetting:loadAppSetting')(err);
+        if (!cancelled) setLoadFailed(true);
+      })
       .finally(() => {
         if (!cancelled) setLoaded(true);
       });
@@ -141,5 +150,5 @@ export function useAppSetting(
     }
   }, [key]);
 
-  return { value, setValue, save, loaded, saved, error };
+  return { value, setValue, save, loaded, saved, error, loadFailed };
 }

@@ -50,6 +50,15 @@
       ],
       "resolved": false
     },
+    "build_session/mod.rs": {
+      "count": 2,
+      "sections": [6,7],
+      "lines": ["73-93","313-315"],
+      "contexts": [
+        "| `src/lib.rs:353-366` `RunGuard` · `build_session/mod.rs:73-93` `HandleDropGuard` | **cleanup that cannot be forgotten**, with the instruction written into the type's own doc comment. 16 `register_r…"
+      ],
+      "resolved": false
+    },
     "cli_process.rs": {
       "count": 1,
       "sections": [9],
@@ -110,6 +119,14 @@
     },
     "src-tauri/engine/src/p2p/mod.rs": {"count":1,"sections":[7],"contexts":["| `src-tauri/engine/src/p2p/mod.rs` | 8 | the `p2p` feature's `PeriodicTask` spawns |"]},
     "src-tauri/engine/src/p2p/periodic.rs": {"count":1,"sections":[10],"lines":["12"],"contexts":["(`engine/src/p2p/periodic.rs:12`) is a strictly better loop harness with a"],"resolvedFrom":"suffix","verbatim":"engine/src/p2p/periodic.rs"},
+    "src-tauri/engine/src/project_tracking/subscription.rs": {
+      "count": 8,
+      "sections": [0,6,7,9],
+      "lines": ["128","1325","1218","1427","1356","1345","3325,3379,3393,3407"],
+      "contexts": ["| the other 2 | `resume_unwind` — they *re-raise* into an enclosing `catch_unwind` (`subscription.rs:128`, `pattern_miner.rs:390`) |"],
+      "resolvedFrom": "basename",
+      "verbatim": "subscription.rs"
+    },
     "src-tauri/src/commands/core/personas.rs": {"count":1,"sections":[7],"contexts":["| `src/commands/core/personas.rs` | 5 | pool invalidation, cache refresh |"],"resolvedFrom":"suffix","verbatim":"src/commands/core/personas.rs"},
     "src-tauri/src/commands/execution/alert_evaluator.rs": {
       "count": 1,
@@ -176,9 +193,9 @@
       "verbatim": "engine/api_proxy.rs"
     },
     "src-tauri/src/engine/build_session/mod.rs": {
-      "count": 3,
-      "sections": [3,6,7],
-      "lines": ["73-93","313-315"],
+      "count": 1,
+      "sections": [3],
+      "lines": ["73-93"],
       "contexts": ["| `src/engine/build_session/mod.rs:73-93` `HandleDropGuard` | the same, plus a generation check so a stale guard cannot evict a newer handle. The strongest guard in the tree |"],
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/build_session/mod.rs"
@@ -198,14 +215,6 @@
       "contexts": ["| the other 2 | `resume_unwind` — they *re-raise* into an enclosing `catch_unwind` (`subscription.rs:128`, `pattern_miner.rs:390`) |"],
       "resolvedFrom": "basename",
       "verbatim": "pattern_miner.rs"
-    },
-    "src-tauri/src/engine/project_tracking/subscription.rs": {
-      "count": 8,
-      "sections": [0,6,7,9],
-      "lines": ["128","1325","1218","1427","1356","1345","3325,3379,3393,3407"],
-      "contexts": ["| the other 2 | `resume_unwind` — they *re-raise* into an enclosing `catch_unwind` (`subscription.rs:128`, `pattern_miner.rs:390`) |"],
-      "resolvedFrom": "basename",
-      "verbatim": "subscription.rs"
     },
     "src-tauri/src/engine/runner/mod.rs": {"count":1,"sections":[7],"contexts":["| `src/engine/runner/mod.rs` | 4 | runner side-work |"],"resolvedFrom":"suffix","verbatim":"src/engine/runner/mod.rs"},
     "src-tauri/src/freeze_monitor.rs": {

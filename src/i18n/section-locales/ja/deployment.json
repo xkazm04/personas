@@ -8,7 +8,10 @@
     "send_request": "リクエストを送信",
     "sending": "送信中…",
     "snippets": "スニペット",
-    "title": "APIプレイグラウンド"
+    "title": "APIプレイグラウンド",
+    "local_run_completed": "ローカル実行が完了しました",
+    "local_run_failed": "ローカル実行に失敗しました",
+    "snippets_target_endpoint": "コード例はデプロイ済みのエンドポイントを呼び出します。プレイグラウンドの結果はローカル実行によるものです。"
   },
   "auth_code": "認証コード",
   "chart": {
@@ -28,7 +31,8 @@
     "worker_disconnected": "切断",
     "worker_executing": "実行中",
     "worker_idle": "待機中",
-    "workers": "ワーカー"
+    "workers": "ワーカー",
+    "gauge_aria": "{label} のゲージ"
   },
   "cloud_trigger_chain": "チェーン",
   "cloud_trigger_manual": "手動",
@@ -122,7 +126,9 @@
     "bulk_action_resume": "一括再開",
     "bulk_action_delete": "一括削除",
     "bulk_result_ok": "{action}: {count} 件を更新しました",
-    "bulk_result_partial": "{action}: 成功 {succeeded} 件、失敗 {failed} 件"
+    "bulk_result_partial": "{action}: 成功 {succeeded} 件、失敗 {failed} 件",
+    "select_all": "すべてのデプロイを選択",
+    "select_row": "{name} を選択"
   },
   "deploy_card": {
     "budget_label": "予算:",
@@ -134,7 +140,11 @@
     "pause_deployment": "デプロイを一時停止",
     "remove_deployment": "デプロイを削除",
     "resume_deployment": "デプロイを再開",
-    "test_deployment": "デプロイをテスト"
+    "test_deployment": "デプロイをテスト",
+    "test_pass": "合格",
+    "test_fail": "失敗",
+    "test_title_pass": "合格",
+    "test_title_fail": "失敗"
   },
   "deploying": "デプロイ中…",
   "deployments_panel": {
@@ -144,7 +154,8 @@
     "no_deployments_yet": "デプロイメントはまだありません。上からペルソナを選択してクラウドAPIエンドポイントとしてデプロイしてください。",
     "select_persona": "デプロイするペルソナを選択",
     "budget_no_limit": "上限なし",
-    "budget_per_month": "${amount}/月"
+    "budget_per_month": "${amount}/月",
+    "deploy_button": "デプロイ"
   },
   "exec_detail": {
     "fetching_output": "出力を取得中…",
@@ -182,7 +193,9 @@
     "total_runs": "総実行数",
     "fetch_output_failed": "出力を取得できませんでした",
     "monthly_budget": "月間予算",
-    "monthly_budget_pace": "{amount} に達する見込み"
+    "monthly_budget_pace": "{amount} に達する見込み",
+    "load_failed": "実行履歴を読み込めませんでした。",
+    "no_executions_found": "選択したフィルターに一致する実行はありません。"
   },
   "no_targets": "デプロイ先が接続されていません",
   "oauth_panel": {
@@ -201,7 +214,8 @@
     "token_expired": "トークン有効期限切れ",
     "token_expired_msg_prefix": "このOAuthトークンは期限切れです",
     "token_unknown": "トークンステータス不明",
-    "token_unknown_msg": "トークンの有効性を確認できませんでした。トークンを更新してアクティブであることを確認してください。"
+    "token_unknown_msg": "トークンの有効性を確認できませんでした。トークンを更新してアクティブであることを確認してください。",
+    "expired_at": "（{time} に期限切れ）"
   },
   "orchestrator_url": "オーケストレーターURL",
   "reconcile": {
@@ -229,7 +243,8 @@
     "loading": "トリガーを読み込み中…",
     "loading_firings": "読み込み中…",
     "no_firings": "最近の発火なし",
-    "recent_firings": "最近の発火"
+    "recent_firings": "最近の発火",
+    "firings_load_failed": "最近のトリガー実行を読み込めませんでした。"
   },
   "sr_connecting": "クラウドオーケストレーターに接続中…",
   "sr_deploying": "エージェントをクラウドにデプロイ中",
@@ -239,7 +254,8 @@
     "no_status": "ステータスデータがありません。",
     "no_token": "トークン未設定",
     "no_token_configured": "トークンが設定されていません",
-    "token_available": "トークンあり"
+    "token_available": "トークンあり",
+    "latency_title": "ヘルスチェックの往復レイテンシ：{ms}ms"
   },
   "tabs": {
     "connection": "接続",

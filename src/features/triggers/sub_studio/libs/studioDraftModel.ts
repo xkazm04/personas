@@ -86,6 +86,7 @@ export function findTrigger(triggerType: string): TriggerBlockTemplate | undefin
   return TRIGGER_BLOCK_TEMPLATES.find((t) => t.triggerType === triggerType);
 }
 
-export function personaName(id: string, personas: Persona[]): string {
-  return personas.find((p) => p.id === id)?.name ?? 'Unknown persona';
+/** `unknownLabel` is the localized fallback (`t.triggers.studio.unknown_persona`). */
+export function personaName(id: string, personas: Persona[], unknownLabel: string): string {
+  return personas.find((p) => p.id === id)?.name ?? unknownLabel;
 }

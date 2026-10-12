@@ -27,7 +27,7 @@ export default function IdentitySettings() {
   const [importInput, setImportInput] = useState('');
   const [importNotes, setImportNotes] = useState('');
   const [showImportForm, setShowImportForm] = useState(false);
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const st = t.sharing;
 
   useEffect(() => {
@@ -40,9 +40,9 @@ export default function IdentitySettings() {
     try {
       await setDisplayName(nameInput.trim());
       setEditingName(false);
-      addToast('Display name updated', 'success');
+      addToast(st.display_name_updated, 'success');
     } catch {
-      addToast('Failed to update display name', 'error');
+      addToast(st.display_name_update_failed, 'error');
     }
   };
 
@@ -50,9 +50,9 @@ export default function IdentitySettings() {
     try {
       const card = await exportIdentityCard();
       copy(card);
-      addToast('Identity card copied to clipboard', 'success');
+      addToast(st.identity_card_copied, 'success');
     } catch {
-      addToast('Failed to export identity card', 'error');
+      addToast(st.identity_card_export_failed, 'error');
     }
   };
 
@@ -63,27 +63,27 @@ export default function IdentitySettings() {
       setImportInput('');
       setImportNotes('');
       setShowImportForm(false);
-      addToast(`Trusted peer "${peer.display_name}" added`, 'success');
+      addToast(tx(st.trusted_peer_added, { name: peer.display_name }), 'success');
     } catch {
-      addToast('Failed to import peer -- check the identity card', 'error');
+      addToast(st.peer_import_failed, 'error');
     }
   };
 
   const handleRevoke = async (peerId: string, name: string) => {
     try {
       await revokePeerTrust(peerId);
-      addToast(`Trust revoked for "${name}"`, 'success');
+      addToast(tx(st.trust_revoked_toast, { name }), 'success');
     } catch {
-      addToast('Failed to revoke trust', 'error');
+      addToast(st.revoke_trust_failed, 'error');
     }
   };
 
   const handleDelete = async (peerId: string, name: string) => {
     try {
       await deleteTrustedPeer(peerId);
-      addToast(`Peer "${name}" removed`, 'success');
+      addToast(tx(st.peer_removed_toast, { name }), 'success');
     } catch {
-      addToast('Failed to delete peer', 'error');
+      addToast(st.peer_delete_failed, 'error');
     }
   };
 
@@ -260,7 +260,7 @@ export default function IdentitySettings() {
                   </span>
                   {peer.trust_level !== 'revoked' && (
                     <InlineConfirm
-                      message={`Revoke trust for "${peer.display_name}"?`}
+                      message={tx(st.revoke_trust_confirm, { name: peer.display_name })}
                       onConfirm={() => handleRevoke(peer.peer_id, peer.display_name)}
                     >
                       {({ requestConfirm }) => (
@@ -276,7 +276,7 @@ export default function IdentitySettings() {
                     </InlineConfirm>
                   )}
                   <InlineConfirm
-                    message={`Remove peer "${peer.display_name}"?`}
+                    message={tx(st.remove_peer_confirm, { name: peer.display_name })}
                     onConfirm={() => handleDelete(peer.peer_id, peer.display_name)}
                   >
                     {({ requestConfirm }) => (

@@ -1,0 +1,134 @@
+{
+  "module": "decision-center/prototype",
+  "kit": "p2:peek:ready",
+  "label": "peek-ready",
+  "createdAt": "2026-10-06T12:46:23.548Z",
+  "browser": "147.0.7727.15",
+  "tape": {
+    "path": "C:\\Users\\mkdol\\AppData\\Local\\Temp\\claude\\C--Users-mkdol-dolla-personas\\827c5c2d-1aca-4532-a482-98c62a1e3d17\\scratchpad\\p2-tape.json",
+    "source": "synthetic",
+    "recordedAt": "2026-10-06T14:00:00.000Z",
+    "calls": 0,
+    "note": "Fixture roster, no IPC; ?kit=<p1|p2|p3>:<entry> picks the view. [P2: recordedAt moved to the fixture clock (fixtures.ts now = 2026-10-06T14:00Z) so ages read honestly]"
+  },
+  "ok": true,
+  "unknownIpcCommands": [],
+  "shots": [
+    {
+      "file": "peek-ready-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 493,
+      "textSample": "P1 P2 P3 strip peek modal gates proposals backlog incidents council reports chat ready Disabled reset roster 3 3 3 2 1 2 2 3 All 16 fleet tally · layout switch · simulation toggle (440 px) Ready 3 wai",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "peek-ready-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 561,
+      "textSample": "P1 P2 P3 strip peek modal gates proposals backlog incidents council reports chat ready Disabled reset roster Gates 3 Proposals 3 Backlog 3 Incidents 2 Council 1 Reports 2 Chat 2 Ready 3 Triage all 16 ",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "peek-ready-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 493,
+      "textSample": "P1 P2 P3 strip peek modal gates proposals backlog incidents council reports chat ready Disabled reset roster 3 3 3 2 1 2 2 3 All 16 fleet tally · layout switch · simulation toggle (440 px) Ready 3 wai",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "peek-ready-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 561,
+      "textSample": "P1 P2 P3 strip peek modal gates proposals backlog incidents council reports chat ready Disabled reset roster Gates 3 Proposals 3 Backlog 3 Incidents 2 Council 1 Reports 2 Chat 2 Ready 3 Triage all 16 ",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

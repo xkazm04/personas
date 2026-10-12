@@ -8,7 +8,10 @@
     "send_request": "إرسال الطلب",
     "sending": "جارٍ الإرسال…",
     "snippets": "مقاطع الكود",
-    "title": "ملعب API"
+    "title": "ملعب API",
+    "local_run_completed": "اكتمل التشغيل المحلي",
+    "local_run_failed": "فشل التشغيل المحلي",
+    "snippets_target_endpoint": "تستدعي مقاطع الشيفرة نقطة النهاية المنشورة. تأتي نتائج ساحة التجربة من تشغيل محلي."
   },
   "auth_code": "رمز التفويض",
   "chart": {
@@ -28,7 +31,8 @@
     "worker_disconnected": "غير متصل",
     "worker_executing": "قيد التنفيذ",
     "worker_idle": "خامل",
-    "workers": "العمّال"
+    "workers": "العمّال",
+    "gauge_aria": "مقياس {label}"
   },
   "cloud_trigger_chain": "سلسلة",
   "cloud_trigger_manual": "يدوي",
@@ -122,7 +126,9 @@
     "bulk_action_resume": "استئناف جماعي",
     "bulk_action_delete": "حذف جماعي",
     "bulk_result_ok": "{action}: تم تحديث {count}",
-    "bulk_result_partial": "{action}: نجح {succeeded}، وفشل {failed}"
+    "bulk_result_partial": "{action}: نجح {succeeded}، وفشل {failed}",
+    "select_all": "تحديد جميع عمليات النشر",
+    "select_row": "تحديد {name}"
   },
   "deploy_card": {
     "budget_label": "الميزانية:",
@@ -134,7 +140,11 @@
     "pause_deployment": "إيقاف النشر مؤقتاً",
     "remove_deployment": "إزالة النشر",
     "resume_deployment": "استئناف النشر",
-    "test_deployment": "اختبار النشر"
+    "test_deployment": "اختبار النشر",
+    "test_pass": "نجاح",
+    "test_fail": "فشل",
+    "test_title_pass": "ناجح",
+    "test_title_fail": "فاشل"
   },
   "deploying": "جارٍ النشر…",
   "deployments_panel": {
@@ -144,7 +154,8 @@
     "no_deployments_yet": "لا توجد عمليات نشر بعد. اختر شخصية أعلاه لنشرها كنقطة نهاية API سحابية.",
     "select_persona": "اختر وكيلاً للنشر",
     "budget_no_limit": "بلا حد",
-    "budget_per_month": "${amount}/شهريًا"
+    "budget_per_month": "${amount}/شهريًا",
+    "deploy_button": "نشر"
   },
   "exec_detail": {
     "fetching_output": "جارٍ جلب الناتج…",
@@ -182,7 +193,9 @@
     "total_runs": "إجمالي التشغيلات",
     "fetch_output_failed": "تعذّر جلب المخرجات",
     "monthly_budget": "الميزانية الشهرية",
-    "monthly_budget_pace": "متوقع الوصول إلى {amount}"
+    "monthly_budget_pace": "متوقع الوصول إلى {amount}",
+    "load_failed": "تعذّر تحميل سجل التنفيذ.",
+    "no_executions_found": "لم يتم العثور على عمليات تنفيذ للمرشحات المحددة."
   },
   "no_targets": "لا توجد أهداف نشر متصلة",
   "oauth_panel": {
@@ -201,7 +214,8 @@
     "token_expired": "انتهت صلاحية الرمز",
     "token_expired_msg_prefix": "انتهت صلاحية رمز OAuth هذا",
     "token_unknown": "حالة الرمز غير معروفة",
-    "token_unknown_msg": "تعذّر التحقق من صلاحية الرمز. حدّث الرمز للتأكد من أنه لا يزال نشطاً."
+    "token_unknown_msg": "تعذّر التحقق من صلاحية الرمز. حدّث الرمز للتأكد من أنه لا يزال نشطاً.",
+    "expired_at": "(انتهت الصلاحية {time})"
   },
   "orchestrator_url": "URL المنسّق",
   "reconcile": {
@@ -229,7 +243,8 @@
     "loading": "جارٍ تحميل المُشغّلات…",
     "loading_firings": "جارٍ التحميل…",
     "no_firings": "لا توجد إطلاقات حديثة",
-    "recent_firings": "الإطلاقات الأخيرة"
+    "recent_firings": "الإطلاقات الأخيرة",
+    "firings_load_failed": "تعذّر تحميل عمليات التشغيل الأخيرة."
   },
   "sr_connecting": "جارٍ الاتصال بمنسّق السحابة…",
   "sr_deploying": "جارٍ نشر الوكيل على السحابة",
@@ -239,7 +254,8 @@
     "no_status": "لا تتوفر بيانات حالة.",
     "no_token": "لم يتم إعداد رمز",
     "no_token_configured": "لم يتم تكوين رمز",
-    "token_available": "الرمز متوفر"
+    "token_available": "الرمز متوفر",
+    "latency_title": "زمن الاستجابة ذهابًا وإيابًا لفحص السلامة: {ms} م.ث"
   },
   "tabs": {
     "connection": "الاتصال",

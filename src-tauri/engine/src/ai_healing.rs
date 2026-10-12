@@ -233,7 +233,10 @@ fn extract_json_objects(text: &str) -> Vec<&str> {
 /// repaired. Callers use this to emit a `healing_audit_log` entry so the drop
 /// is visible instead of invisible.
 fn fix_text_was_dropped(output: &str, parsed_fix_count: usize) -> bool {
-    parsed_fix_count == 0 && output.contains("healing_fix")
+    // Compare the number of `"healing_fix"` keys the healer emitted against the
+    // number that parsed, so a PARTIAL drop (2 good blocks + 1 truncated) is
+    // audited too, not only the all-lost case.
+    output.matches("\"healing_fix\"").count() > parsed_fix_count
 }
 
 /// Process the result of a healing execution: parse fixes and apply them.
@@ -269,10 +272,10 @@ pub async fn process_healing_result(
         .unwrap_or_else(|| "AI healing completed without structured diagnosis".to_string());
 
     // Apply DB-level fixes
-    let (applied_descriptions, prompt_changed) = if !fixes.is_empty() {
+    let (applied_descriptions, prompt_changed, applied_fixes) = if !fixes.is_empty() {
         apply_db_fixes(pool, persona_id, &fixes)?
     } else {
-        (Vec::new(), false)
+        (Vec::new(), false, Vec::new())
     };
 
     if !applied_descriptions.is_empty() {
@@ -290,7 +293,7 @@ pub async fn process_healing_result(
     // the prompt is already committed to the persona row, so a snapshot failure
     // is logged but must not fail the heal.
     if prompt_changed {
-        if let Err(e) = snapshot_healed_prompt(pool, persona_id, fixes.len()) {
+        if let Err(e) = snapshot_healed_prompt(pool, persona_id, applied_fixes.len()) {
             tracing::warn!(
                 persona_id = %persona_id,
                 error = %e,
@@ -301,7 +304,9 @@ pub async fn process_healing_result(
 
     Ok(AiHealingResult {
         diagnosis,
-        fixes_applied: fixes,
+        // Only fixes that actually wrote -- refused ones (enabled flag, out-of-bounds
+        // values, missing section) must not report as applied or trigger a retry.
+        fixes_applied: applied_fixes,
         should_retry,
         healing_execution_id: String::new(), // filled in by caller
     })
@@ -325,10 +330,11 @@ fn apply_db_fixes(
     pool: &DbPool,
     persona_id: &str,
     fixes: &[HealingFix],
-) -> Result<(Vec<String>, bool), AppError> {
+) -> Result<(Vec<String>, bool, Vec<HealingFix>), AppError> {
     use rusqlite::params;
 
     let mut applied = Vec::new();
+    let mut applied_fixes: Vec<HealingFix> = Vec::new();
     let mut prompt_changed = false;
     let now = chrono::Utc::now().to_rfc3339();
 
@@ -361,6 +367,7 @@ fn apply_db_fixes(
                         )
                         .map_err(AppError::Database)?;
                         prompt_changed = true;
+                        applied_fixes.push(fix.clone());
                         applied.push(format!("Updated system_prompt: {}", fix.description));
                     }
                     "structured_prompt" => {
@@ -369,6 +376,7 @@ fn apply_db_fixes(
                             params![fix.payload, now, persona_id],
                         ).map_err(AppError::Database)?;
                         prompt_changed = true;
+                        applied_fixes.push(fix.clone());
                         applied.push(format!("Updated structured_prompt: {}", fix.description));
                     }
                     other => {
@@ -395,6 +403,7 @@ fn apply_db_fixes(
                                         params![updated, now, persona_id],
                                     ).map_err(AppError::Database)?;
                                     prompt_changed = true;
+                                    applied_fixes.push(fix.clone());
                                     applied.push(format!(
                                         "Patched section '{}': {}",
                                         other, fix.description
@@ -470,6 +479,7 @@ fn apply_db_fixes(
                                 "UPDATE personas SET timeout_ms = ?1, updated_at = ?2 WHERE id = ?3",
                                 params![timeout, now, persona_id],
                             ).map_err(AppError::Database)?;
+                                applied_fixes.push(fix.clone());
                                 applied.push(format!(
                                     "Updated timeout_ms to {}: {}",
                                     timeout, fix.description
@@ -500,6 +510,7 @@ fn apply_db_fixes(
                                 "UPDATE personas SET max_turns = ?1, updated_at = ?2 WHERE id = ?3",
                                 params![turns, now, persona_id],
                             ).map_err(AppError::Database)?;
+                                applied_fixes.push(fix.clone());
                                 applied.push(format!(
                                     "Updated max_turns to {}: {}",
                                     turns, fix.description
@@ -545,6 +556,7 @@ fn apply_db_fixes(
             "modify_file" | "run_command" => {
                 // File modifications and commands are handled directly by the CLI's
                 // own tool use -- we just log that they were requested.
+                applied_fixes.push(fix.clone());
                 applied.push(format!(
                     "CLI handled {}: {} ({})",
                     fix.fix_type, fix.target, fix.description
@@ -582,7 +594,7 @@ fn apply_db_fixes(
 
     tx.commit().map_err(AppError::Database)?;
 
-    Ok((applied, prompt_changed))
+    Ok((applied, prompt_changed, applied_fixes))
 }
 
 /// Snapshot the persona's now-current (healed) prompt as a new
@@ -1002,6 +1014,26 @@ mod tests {
     }
 
     #[test]
+    fn test_fix_text_was_dropped_detects_partial_drop() {
+        let good = r#"{"healing_fix": {"type": "modify_prompt", "target": "instructions", "description": "x", "payload": "y"}}"#;
+        let output = format!(
+            "{good}
+{good}
+{{\"healing_fix\": {{\"type\": \"modify_prompt\", \"target\": \"instru"
+        );
+        let (fixes, _d, _r) = parse_healing_output(&output);
+        assert_eq!(
+            fixes.len(),
+            2,
+            "two intact blocks parse, the truncated one does not"
+        );
+        assert!(
+            fix_text_was_dropped(&output, fixes.len()),
+            "a partial drop must be flagged"
+        );
+    }
+
+    #[test]
     fn test_fix_text_was_dropped_quiet_when_parsed() {
         let output = r#"{"healing_fix": {"type": "modify_prompt", "target": "instructions", "description": "x", "payload": "y"}}"#;
         let (fixes, _d, _r) = parse_healing_output(output);
@@ -1083,7 +1115,8 @@ mod tests {
             description: "rewrite for clarity".into(),
             payload: "HEALED".into(),
         }];
-        let (_applied, prompt_changed) = apply_db_fixes(&pool, &persona_id, &fixes).unwrap();
+        let (_applied, prompt_changed, _fixes) =
+            apply_db_fixes(&pool, &persona_id, &fixes).unwrap();
         assert!(
             prompt_changed,
             "a modify_prompt fix must report prompt_changed"
@@ -1144,10 +1177,37 @@ mod tests {
             description: "bump timeout".into(),
             payload: "900000".into(),
         }];
-        let (_applied, prompt_changed) = apply_db_fixes(&pool, &persona_id, &fixes).unwrap();
+        let (_applied, prompt_changed, _fixes) =
+            apply_db_fixes(&pool, &persona_id, &fixes).unwrap();
         assert!(
             !prompt_changed,
             "a config-only fix must not report prompt_changed",
+        );
+    }
+
+    /// A heal whose only fix is refused (enabled flag) must report no applied
+    /// fixes, so no phantom retry is scheduled on an unchanged persona.
+    #[tokio::test]
+    async fn refused_fix_is_not_reported_as_applied() {
+        let pool = init_test_db().unwrap();
+        let persona_id = mk_persona(&pool, "ORIGINAL");
+        let result = ExecutionResult {
+            output: Some(
+                r#"```healing_fix
+{"fix_type":"update_config","target":"enabled","payload":"true","description":"Re-enable persona"}
+```
+{"should_retry": true}"#
+                    .to_string(),
+            ),
+            ..Default::default()
+        };
+        let healed = process_healing_result(&pool, &persona_id, &result)
+            .await
+            .unwrap();
+        assert!(
+            healed.fixes_applied.is_empty(),
+            "refused fixes must not be reported as applied: {:?}",
+            healed.fixes_applied
         );
     }
 }

@@ -166,7 +166,7 @@
 > }
 > ```
 > ```rust
-> // src-tauri/src/engine/db_query.rs:151
+> // src-tauri/engine/src/db_query.rs:151
 > for (key, value) in fields {           // the credential fields just decrypted
 >     if !value.is_empty() { sanitized = sanitized.replace(value, &format!("[REDACTED:{key}]")); }
 > }

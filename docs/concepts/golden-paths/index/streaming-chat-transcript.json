@@ -22,6 +22,7 @@
   "citationCount": 103,
   "triggers": [],
   "citations": {
+    "ChatThread.tsx": {"count":2,"sections":[0,12],"contexts":["`src/features/agents/` — `ChatThread.tsx` and `ChatMessageContent.tsx` — is **dead"],"resolved":false},
     "chat.rs": {"count":3,"sections":[7,12],"lines":["376-386","355-365"],"contexts":["`to_message` (`chat.rs:376-386`) — against the operator's real brain: **1,068"],"resolved":false},
     "companionStore.ts": {"count":7,"sections":[0,7,9],"lines":["808-818","808","851-858"],"contexts":["`useTranscriptPages.ts` and `companionStore.ts` — and its backend half"],"resolved":false},
     "components/sections/platform-command/index.tsx": {"count":1,"sections":[],"contexts":["`components/sections/platform-command/index.tsx` (`stickToBottomRef`,"],"resolved":false},
@@ -64,15 +65,6 @@
     "src/features/agents/": {"count":1,"sections":[0],"contexts":["`src/features/agents/` — `ChatThread.tsx` and `ChatMessageContent.tsx` — is **dead"],"resolved":false,"isDir":true},
     "src/features/agents/**": {"count":1,"sections":[12],"contexts":["`src/features/agents/**`\"*. The only transcript there is `ChatThread.tsx` (+"],"resolved":false,"isDir":true},
     "src/features/agents/components/ChatMessageContent.tsx": {"count":2,"sections":[0,12],"contexts":["`src/features/agents/` — `ChatThread.tsx` and `ChatMessageContent.tsx` — is **dead"],"resolvedFrom":"basename","verbatim":"ChatMessageContent.tsx"},
-    "src/features/agents/components/ChatThread.tsx": {"count":2,"sections":[0,12],"contexts":["`src/features/agents/` — `ChatThread.tsx` and `ChatMessageContent.tsx` — is **dead"],"resolvedFrom":"basename","verbatim":"ChatThread.tsx"},
-    "src/features/agents/quick-answer/triage/deck/useDeckDialog.tsx": {
-      "count": 1,
-      "sections": [12],
-      "lines": ["113"],
-      "contexts": ["`useDeckDialog.tsx:113`) — the rule's precision is intact; only its recall moves."],
-      "resolvedFrom": "basename",
-      "verbatim": "useDeckDialog.tsx"
-    },
     "src/features/agents/sub_connectors/libs/useAutomationSetup.ts": {"count":1,"sections":[12],"lines":["238-241"],"contexts":["**`src/features/agents/sub_connectors/libs/useAutomationSetup.ts:238-241`**:"]},
     "src/features/companions/athena/chat/AthenaChatBody.tsx": {
       "count": 1,
@@ -212,6 +204,7 @@
     "src/lib/llm/{bedrock,openai,openrouter}.ts": {"count":1,"sections":[],"contexts":["request payloads (`src/lib/llm/{bedrock,openai,openrouter}.ts`). It *does* stream — a"],"resolved":false},
     "src/main.tsx": {"count":2,"sections":[0,12],"contexts":["code**: unreachable from `src/main.tsx`/`App.tsx`, transitive orphan closure **0**, tests"]},
     "src/stores/slices/agents/chatSlice.ts": {"count":1,"sections":[12],"lines":["305"],"contexts":["`stores/slices/agents/chatSlice.ts:305`. The live surface is"],"resolvedFrom":"suffix","verbatim":"stores/slices/agents/chatSlice.ts"},
+    "useDeckDialog.tsx": {"count":1,"sections":[12],"lines":["113"],"contexts":["`useDeckDialog.tsx:113`) — the rule's precision is intact; only its recall moves."],"resolved":false},
     "useReportScan.ts": {"count":1,"sections":[],"lines":["257-262"],"contexts":["(`useReportScan.ts:257-262`) — and swaps the whole report in atomically at `result`"],"resolved":false},
     "vibeman/src/app/features/TaskRunner/components/CLISessionModal.tsx": {"count":1,"sections":[],"lines":["238-242"],"contexts":["(`vibeman/src/app/features/TaskRunner/components/CLISessionModal.tsx:238-242`;"],"resolved":false},
     "vibeman/src/components/cli/CompactTerminal.tsx": {"count":1,"sections":[],"lines":["286-297"],"contexts":["signal in this sweep.** `vibeman/src/components/cli/CompactTerminal.tsx:286-297`"],"resolved":false}

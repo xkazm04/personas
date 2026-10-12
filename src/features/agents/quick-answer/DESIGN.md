@@ -1,5 +1,7 @@
 # Quick Answer — the unified triage deck
 
+> **Retired as a surface 2026-10-06 (decision-center spark).** The title-bar deck UI is gone; its model (`triage/triageTypes.ts`, adapters, `triageDispatch`, `triageQueue`, `useUnifiedTriage`) now feeds the Decision Center roster (`src/features/decision-center/`), and decisions are made in the Decision Deck. `QuickAnswerBody` survives as the Conversations "Quick" tab. The text below describes the retired deck and is kept as history.
+
 > Co-located design doc. **Rewritten 2026-07-31** (`/perfect` round 2): the
 > previous revision described a 576px anchored popover over two queues, a
 > `PendingInteraction` union and a click-outside dismiss — none of which have

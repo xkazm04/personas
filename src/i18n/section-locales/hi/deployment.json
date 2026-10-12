@@ -8,7 +8,10 @@
     "send_request": "अनुरोध भेजें",
     "sending": "भेजा जा रहा है…",
     "snippets": "स्निपेट",
-    "title": "API प्लेग्राउंड"
+    "title": "API प्लेग्राउंड",
+    "local_run_completed": "स्थानीय रन पूरा हुआ",
+    "local_run_failed": "स्थानीय रन विफल हुआ",
+    "snippets_target_endpoint": "कोड स्निपेट तैनात एंडपॉइंट को कॉल करते हैं। प्लेग्राउंड के परिणाम स्थानीय रन से आते हैं।"
   },
   "auth_code": "प्राधिकरण कोड",
   "chart": {
@@ -28,7 +31,8 @@
     "worker_disconnected": "डिस्कनेक्ट",
     "worker_executing": "निष्पादित हो रहा है",
     "worker_idle": "निष्क्रिय",
-    "workers": "वर्कर"
+    "workers": "वर्कर",
+    "gauge_aria": "{label} गेज"
   },
   "cloud_trigger_chain": "चेन",
   "cloud_trigger_manual": "मैन्युअल",
@@ -122,7 +126,9 @@
     "bulk_action_resume": "बल्क पुनः आरंभ",
     "bulk_action_delete": "बल्क हटाएँ",
     "bulk_result_ok": "{action}: {count} अपडेट हुए",
-    "bulk_result_partial": "{action}: {succeeded} सफल, {failed} विफल"
+    "bulk_result_partial": "{action}: {succeeded} सफल, {failed} विफल",
+    "select_all": "सभी परिनियोजन चुनें",
+    "select_row": "{name} चुनें"
   },
   "deploy_card": {
     "budget_label": "बजट:",
@@ -134,7 +140,11 @@
     "pause_deployment": "तैनाती रोकें",
     "remove_deployment": "तैनाती हटाएं",
     "resume_deployment": "तैनाती फिर शुरू करें",
-    "test_deployment": "तैनाती परीक्षण"
+    "test_deployment": "तैनाती परीक्षण",
+    "test_pass": "पास",
+    "test_fail": "विफल",
+    "test_title_pass": "उत्तीर्ण",
+    "test_title_fail": "विफल"
   },
   "deploying": "डिप्लॉय हो रहा है…",
   "deployments_panel": {
@@ -144,7 +154,8 @@
     "no_deployments_yet": "अभी तक कोई deployment नहीं। cloud API endpoint के रूप में deploy करने के लिए ऊपर एक पर्सोना चुनें।",
     "select_persona": "तैनात करने के लिए एक पर्सोना चुनें",
     "budget_no_limit": "कोई सीमा नहीं",
-    "budget_per_month": "${amount}/माह"
+    "budget_per_month": "${amount}/माह",
+    "deploy_button": "डिप्लॉय करें"
   },
   "exec_detail": {
     "fetching_output": "आउटपुट लोड हो रहा है…",
@@ -182,7 +193,9 @@
     "total_runs": "कुल रन",
     "fetch_output_failed": "आउटपुट प्राप्त नहीं किया जा सका",
     "monthly_budget": "मासिक बजट",
-    "monthly_budget_pace": "{amount} की ओर बढ़ रहा है"
+    "monthly_budget_pace": "{amount} की ओर बढ़ रहा है",
+    "load_failed": "निष्पादन इतिहास लोड नहीं हो सका।",
+    "no_executions_found": "चुने गए फ़िल्टर के लिए कोई निष्पादन नहीं मिला।"
   },
   "no_targets": "कोई डिप्लॉयमेंट लक्ष्य कनेक्ट नहीं है",
   "oauth_panel": {
@@ -201,7 +214,8 @@
     "token_expired": "टोकन समाप्त",
     "token_expired_msg_prefix": "यह OAuth टोकन समाप्त हो गया है",
     "token_unknown": "टोकन स्थिति अज्ञात",
-    "token_unknown_msg": "टोकन वैधता सत्यापित नहीं की जा सकी। यह सक्रिय है या नहीं, इसकी पुष्टि के लिए टोकन रिफ़्रेश करें।"
+    "token_unknown_msg": "टोकन वैधता सत्यापित नहीं की जा सकी। यह सक्रिय है या नहीं, इसकी पुष्टि के लिए टोकन रिफ़्रेश करें।",
+    "expired_at": "({time} को समाप्त हुआ)"
   },
   "orchestrator_url": "ऑर्केस्ट्रेटर URL",
   "reconcile": {
@@ -229,7 +243,8 @@
     "loading": "ट्रिगर लोड हो रहे हैं…",
     "loading_firings": "लोड हो रहा है…",
     "no_firings": "कोई हाल की फायरिंग नहीं",
-    "recent_firings": "हाल की फायरिंग"
+    "recent_firings": "हाल की फायरिंग",
+    "firings_load_failed": "हाल के ट्रिगर लोड नहीं हो सके।"
   },
   "sr_connecting": "क्लाउड ऑर्केस्ट्रेटर से कनेक्ट हो रहा है…",
   "sr_deploying": "Persona को क्लाउड पर डिप्लॉय किया जा रहा है",
@@ -239,7 +254,8 @@
     "no_status": "कोई स्थिति डेटा उपलब्ध नहीं है।",
     "no_token": "कोई टोकन कॉन्फ़िगर नहीं है",
     "no_token_configured": "कोई टोकन कॉन्फ़िगर नहीं",
-    "token_available": "टोकन उपलब्ध है"
+    "token_available": "टोकन उपलब्ध है",
+    "latency_title": "हेल्थ-चेक की राउंड-ट्रिप लेटेंसी: {ms}ms"
   },
   "tabs": {
     "connection": "कनेक्शन",

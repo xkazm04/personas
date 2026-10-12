@@ -641,12 +641,15 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
    * promise resolving into a dead component.
    */
   const mounted = useRef(true);
-  useEffect(
-    () => () => {
+  // Set true on (re)mount as well: StrictMode runs mount -> cleanup -> mount,
+  // and a ref only cleared in the cleanup stayed false for good, so `loading`
+  // never cleared in dev (the Decision Deck's gates queue sat on its ghost).
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
       mounted.current = false;
-    },
-    [],
-  );
+    };
+  }, []);
 
   /**
    * Per-feed eligibility and failure state, on refs rather than in state.

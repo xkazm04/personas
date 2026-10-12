@@ -7,9 +7,10 @@ For day-to-day development workflow, see [development.md](./development.md).
 
 ```bash
 # Develop
-npm run tauri:dev              # full app, all features
-npm run tauri:dev:lite         # fast iteration (no ML/P2P)
-npm run tauri:dev:test         # with test-automation HTTP server on :17320
+npm run tauri:dev              # DEFAULT: lite — 683 crates, no ML/P2P
+npm run tauri:dev:lite         # the same thing, kept as an alias
+npm run tauri:dev:full         # 846 crates: adds ml (ORT/fastembed) + p2p
+npm run tauri:dev:test         # lite + test-automation HTTP server on :17320
 
 # Build
 npm run tauri:build            # canonical: all targets, desktop-full features
@@ -84,6 +85,112 @@ Cargo features in `src-tauri/Cargo.toml`:
 \* `daemon` implies `desktop-full` because of unresolved `#[cfg(feature="desktop")]`
 gaps in four backend modules — see the comment on the `daemon` feature in
 `Cargo.toml` for the cleanup plan.
+
+### The dev variant map — what the cheap default cannot see
+
+**`npm run tauri:dev` is the LITE build.** It was `desktop-full` until this map was
+written, which contradicted `.claude/CLAUDE.md`'s own standing advice ("default to lite
+for daily work") — the advice was right and the default command was wrong. Today's
+`desktop-full` dev build is **`npm run tauri:dev:full`**; `tauri:dev:lite` stays as an
+alias so anything that already types it keeps working.
+
+The release path is untouched: `tauri.conf.json` still declares `desktop-full`, and
+`tauri build` / `tauri:build:stable` still ship ml + p2p. **Do not "simplify" this by
+editing `tauri.conf.json`** — it is the config `tauri build` reads, so a lite value
+there would ship an installer with no vector knowledge base and no P2P, silently.
+
+**The size of the choice, reproducible in seconds (metadata only — compiles nothing):**
+
+```bash
+cd src-tauri
+cargo tree -e normal --no-default-features --features desktop      --prefix none | sort -u | wc -l   # 683
+cargo tree -e normal --no-default-features --features desktop-full --prefix none | sort -u | wc -l   # 846
+```
+
+Measured 2026-10-07: **683 lite / 846 full**, and lite is a strict subset — `comm` over
+the two sorted sets gives **163 entries only in full and 0 only in lite**. The 163 are
+headed by `ort` + `ort-sys` + `fastembed` + `tokenizers` + `ndarray` + `hf-hub` +
+`sqlite-vec` (the `ml` half) and `quinn` + `rcgen` + `ed25519` + `mdns-sd` (the `p2p`
+half). ORT is the expensive one; `clean:ort` exists because of it.
+
+**Which work needs `npm run tauri:dev:full`:**
+
+| Work | Gate | Why lite cannot do it |
+|---|---|---|
+| Vector knowledge base, semantic search | `ml` | sqlite-vec is not linked |
+| Embeddings, fastembed, model download/cache | `ml` | fastembed + hf-hub + tokenizers are absent |
+| ONNX inference, anything touching ORT | `ml` | `ort`/`ort-sys` are absent |
+| P2P pairing, mDNS discovery, QUIC transport | `p2p` | quinn + mdns-sd + rcgen + ed25519 are absent |
+
+**What lite literally cannot exercise — absent, not broken.** Everything behind
+`#[cfg(feature = "ml")]` / `#[cfg(feature = "p2p")]` is *compiled out* of a lite build.
+It cannot throw at runtime, cannot fail a test, and cannot show up in a log: there is no
+code there. So a green lite session is **not evidence about those paths**, and "it works
+on my machine" from a lite build says nothing about the vector KB. Two consequences worth
+knowing:
+
+- A compile error that exists only under `desktop-full` is invisible to every local lite
+  gate. This has already happened: a 2026-08-21 wave deleted ~23 symbols whose only
+  consumers sat behind `ml`, verified under `--features desktop`, and produced **56
+  compile errors under `desktop-full`** with every gate green.
+- `PeriodicTask`, the better of this repo's two background-loop harnesses, lives behind
+  `p2p` — so the best primitive does not compile in the variant most development uses.
+  See [`background-loop.md`](../concepts/golden-paths/background-loop.md).
+
+**CI is the other half of this trade, and it is what keeps the gated code from rotting.**
+The `rust-features` job (`.github/workflows/ci.yml:1000`) is a compile matrix that runs
+`cargo check --workspace --features <shape>` for **`desktop-full`**, `desktop,scraper` and
+`desktop,test-automation` on every push that touches Rust (`push: master` is this
+workflow's primary trigger — development lands directly on master). The three-OS
+`rust-tests` job additionally runs `cargo test --workspace --features desktop`. So the
+code lite skips is still compiled on every Rust push; what CI does **not** do is *run*
+the `ml`/`p2p` paths, which is why a change to the vector KB still deserves one local
+`tauri:dev:full` before it lands.
+
+### Editing a template relinks the binary. That is correct.
+
+Touch any `scripts/templates/<category>/*.json` and the next cargo run recompiles the app
+crate and relinks a **143 MB** debug binary (`personas-desktop.exe`, measured
+143,516,672 bytes). Nothing is wrong: `src-tauri/build.rs` declares
+`cargo:rerun-if-changed=../scripts/templates` (`build.rs:99`) because
+`embed_template_index()` aggregates the catalog into `$OUT_DIR/template_index.json`, which
+`engine::build_session::templates` pulls in with `include_str!`. The catalog has to travel
+*inside* the binary — `tauri.conf.json` bundles only `resources/skills`, so a shipped
+installer carries no `scripts/` directory at all and an on-disk read would find nothing.
+
+**Do not "fix" this** by dropping the `rerun-if-changed` or by reading the catalog off
+disk at runtime. The first makes an edited template silently absent from the running app;
+the second is the defect the embedding was introduced to undo.
+
+### The cargo throttle
+
+Every cargo this repository launches goes through **`scripts/build/cargo-run.mjs`** — the
+sidecar build (`scripts/dev/ensure-mcp-sidecar.mjs`), the Rust test suite
+(`scripts/build/run-rust-tests.mjs`), and anything added later. It lowers this node
+process to **below-normal priority** (Windows children inherit the class at creation, so
+cargo and every rustc under it come up throttled without chasing pids) and caps the build
+at **`max(2, cores - 2)` jobs** — 10 of 12 on this host — then queues: it waits for any
+live `cargo.exe`/`rustc.exe` rather than refusing, because two concurrent cargo runs on
+this machine is the memory failure this repo keeps measuring.
+
+`tauri dev` is the exception, and only because it spawns cargo *itself* three processes
+down (`node` → tauri CLI → cargo), so there is no command line to wrap.
+`scripts/devlog/run.mjs` therefore sets the same two things by the only mechanisms that
+reach a grandchild: `os.setPriority` on itself, and **`CARGO_BUILD_JOBS`** in the child
+environment (cargo's documented env form of `--jobs`). It prints one line saying what it
+set, and it does not restore the priority afterwards — the whole dev session, Vite
+included, should stay below-normal.
+
+| Env | Effect |
+|---|---|
+| `CARGO_FULL_SEND=1` | no throttle, no queue — unattended full speed |
+| `CARGO_GUARD=off` | skip the queue only, keep priority + job cap |
+| `PERSONAS_CARGO_JOBS=<n>` | explicit job count instead of `cores - 2` |
+| `CARGO_BUILD_JOBS=<n>` | honoured as-is by the `tauri dev` path if you export it |
+
+An empty string counts as unset for all of them. **CI does not come through here**: runners
+are dedicated, `.github/workflows/*.yml` calls cargo directly, and that is deliberate —
+throttling a runner would slow every pipeline to protect a desktop that does not exist.
 
 ### What a test build gives the frontend
 
@@ -211,6 +318,208 @@ LLD-link is configured for both Windows targets in `src-tauri/.cargo/config.toml
 Stack size is bumped to 8 MB on both targets to match Linux/macOS defaults
 — sync Tauri commands deserialize on the main thread, and the default 1 MB
 stack overflows on deeply-nested payloads.
+
+## The crate split — why `app_lib` is the whole memory story
+
+`app_lib` is the crate that sets the memory ceiling for every build in this repo.
+One rustc process chews the whole thing, so the peak follows its size and **no flag
+reaches it** — not `-j`, not `debug`, not the linker settings below. Measured
+2026-10-07 on a 12-core Windows ARM host, `cargo build --lib --features desktop`:
+
+| date | app_lib LOC | peak single rustc |
+|---|---|---|
+| 2026-07-26 | 431k, one crate | 8,872 MB |
+| 2026-07-27 | after `core`/`db`/`engine` were split out | 6,201 MB |
+| 2026-10-07 **before** step 6 | 522,110 | **9,816 MB** |
+| 2026-10-07 **after** step 6 | 502,542 | **9,206 MB** |
+
+The third row is the one to notice: the crate grew back past its pre-split peak, and
+a `cargo check --lib` had reached 6,059 MB — a *check* now costs what a full *build*
+cost in July. On a 16 GB machine it does not finish. **The split is not a one-time
+fix; it is maintenance**, and the only lever that moves the peak is making `app_lib`
+smaller.
+
+Step 6 moved **39 files / 19,594 LOC** into `personas-engine` (96,489 → 116,161 LOC).
+
+### The leverage ratio — use this to price the next move
+
+19,568 LOC is **3.75%** of `app_lib` and bought **6.2%** of the peak (−610 MB).
+Roughly **1.65× superlinear**, because rustc's cost per unit grows with the size of
+the unit. Before planning further extraction, that ratio is the estimate to use —
+and the thing to re-measure, since there is no reason to expect it constant.
+
+Do **not** compare wall-clock across a split like this unless both runs had the same
+cache state. The step-6 pair read 1,298s → 476s and that number is meaningless: the
+first run compiled cold dependencies and the second did not.
+
+### How a module moves, and why no call site changes
+
+`src/engine/mod.rs` ends in `pub use personas_engine::*;`. A module that moves out
+keeps resolving under its old path, so `crate::engine::<name>` is unchanged for every
+consumer — **dropping the local `mod` decl is the whole app_lib edit.** A 20k-LOC move
+touched no callers.
+
+That glob does **not** reach a module whose parent stayed behind, because the parent's
+own `mod <dir>;` shadows it. Nine directories are split that way (`background`,
+`build_session`, `http_engine`, `platforms`, `project_tracking`, `runner`,
+`subscription`, `twin_sample`, `twin_setup`): the engine crate gets a synthesized
+`mod.rs` naming the children that moved, and app_lib's copy re-exports each one
+explicitly.
+
+### What decides whether a module can move
+
+Not what it looks like. Three rules, each learned by getting it wrong:
+
+1. **Most `crate::`-looking paths are already extracted.** `crate::db` is
+   `personas_db`; `crate::error`, `crate::utils` are `personas_core`; and twenty more
+   names are re-exported at `src/engine/mod.rs` lines 24/38/42/44/48/66 — `types`,
+   `url_safety`, `embedder`, `chain`, `run_budget`, `scheduler`, `error_taxonomy`
+   among them. All renames, no work. Counting them as blockers under-measures what is
+   movable by more than half.
+2. **A file moves only if every ENGINE module it names also moves.** This transitive
+   closure, iterated to a fixpoint, is the real constraint — and dropping one file can
+   strand another, including a parent whose child has just been dropped.
+3. **`pub(crate)` is the trap.** It means "visible to app_lib" before the move and
+   "visible to personas-engine" after, so every app_lib call site on such an item
+   breaks with E0603. Step 6 promoted 138 occurrences to `pub`. Widening visibility on an
+   unpublished internal crate changes no behaviour, which keeps the commit code motion.
+
+Two more that cost a compile round each: a build-script artifact (`include!` of
+something in app_lib's `OUT_DIR`) pins a file in place, and a crate used only through
+an inline-qualified path (`urlencoding::encode(...)`, never `use urlencoding`) is
+invisible to a dependency scan anchored on `use`.
+
+### Deleting a `mod` decl: take its attributes with it
+
+`#[cfg(test)] mod circuit_breakers_integration_tests;` — delete only the `mod` line
+and the `#[cfg(test)]` lands on **whatever item comes next**. In step 6 that was
+`mod healing_retry;`, and a live module silently vanished from every non-test build.
+The attributes must also travel *with* the module to the new crate: re-declaring that
+one unconditionally would compile an integration-test module into production builds.
+Neither failure produces a warning.
+
+### Moving code can silently remove it from a census rule
+
+**22 census rules have `roots` narrower than `src-tauri`.** Moving a file from
+`src-tauri/src/` to `src-tauri/engine/src/` takes it out of their scan, and the
+violations it held stop being counted — which the census reports as a **drop**, the
+shape that looks like a fix.
+
+Step 6 hit exactly this: `undiscriminated-credential-rejection` is rooted at
+`src-tauri/src` only, and moving `db_query.rs` took 8 of its 17 matches out of scope
+(17→9 matches, 6→5 files). `npm run census -- --update` would have made it green by
+writing the lost coverage into the ratchet — manufacturing one more of the "gates
+that ran green while checking nothing" this repo keeps finding. **Fix the rule's
+`roots`, not the baseline.** Several rules already name `src-tauri/engine/src`
+because step 5 updated them; check the rest before re-baselining anything. After the
+root fix the census was byte-identical to its pre-move state: 212 rules, 20,599
+violations across 7,940 files, no baseline edits.
+
+### What is left, and the one thing blocking it
+
+142,530 LOC of `src/engine/` is still in `app_lib`, in 155 files. The blockers:
+
+| blocked on | files |
+|---|---|
+| `crate::commands::*` | 63 |
+| `crate::companion::*` | 32 |
+| `AppState` | 31 |
+| `crate::lifecycle` | 24 |
+| `crate::notifications` | 18 |
+| `crate::cloud` | 18 |
+
+Every frontier module was checked individually; **none is blocked by anything except
+these.** `commands` is the one that matters and the one worth inverting — an engine
+that calls into the command layer has its dependency arrow backwards. 11 files are
+blocked by `AppState` alone, so a host-context trait would release those immediately.
+
+### The "portable half" is not portable yet
+
+`engine/src/lib.rs` describes itself as "the portable half … without pulling in a
+windowed `AppHandle`". `engine/Cargo.toml` depends on `tauri`, and
+`engine/src/events.rs` imports `tauri::{AppHandle, Emitter}` unconditionally. The
+crate is **extracted, not portable** — treat the header as intent.
+
+The abstraction that would close it already exists in that same file:
+`ExecutionEventEmitter`, with `TauriEmitter` and `NoOpEmitter` impls and an
+`emit_json` dyn-compatible method. The remaining work is to adopt it at the call
+sites that still take an `AppHandle` only to call `.emit()` on it, then make `tauri`
+an optional dependency. Build a new trait for this and you have duplicated a working
+one — see `.claude/rules/rust-backend.md` on unadopted abstractions.
+
+### Profile and feature levers, measured — including the ones that make it WORSE
+
+The peak is **64% frontend**, confirmed two ways on 2026-10-07: `cargo check --lib`
+peaks at 5,884 MB against a 9,212 MB `build --lib` peak, and `-Ztime-passes` (via
+`RUSTC_BOOTSTRAP=1`) shows RSS at 1.6 GB after macro expansion, 4.5 GB after
+type-check and 5.96 GB after borrowck — codegen then adds ~3.3 GB on top of a
+frontend that stays resident. Self-profile shows the shape of the cost: 2.28 M
+`evaluate_obligation` calls and 3,168 coroutines. `cargo llvm-lines` finds no
+pathology, just a flat 9.9 M IR lines.
+
+"Only splitting the crate moves the frontend" is true of the FLOOR, and it is also
+the trap: it stops you asking whether the crate type-checks code nobody asked for.
+**A leaked dependency feature is frontend cost too, and the biggest single win here
+was exactly that** — see the axum `tower-log` commit, −837 MB for one line, more than
+a 39-file code-motion wave bought.
+
+| lever | peak | verdict |
+|---|---|---|
+| drop axum's `tower-log` default | **−837 MB** (build), −825 MB (check) | **taken** — nothing here wanted `tracing/log` |
+| `debug = 0` on app_lib | −790 MB | **operator trade** — costs the line-table backtraces kept after LNK1140 |
+| `panic = "abort"` in dev | −1,070 MB | **no** — changes runtime behaviour on the ORT `catch_unwind` path |
+| `-j 2` | −800 MB | free, +25% wall; the throttle already caps at cores−2 |
+| `-j 4` | −240 MB | adds only ~45 MB once `debug = 0` is on |
+| `CARGO_INCREMENTAL=0` | **+530 MB WORSE** on build; −172 MB and much faster on *check* | check-only lane |
+| `codegen-units = 16` | **+400 MB worse** | the effective default is 256, because incremental is on |
+| `codegen-units = 1` | **+1,740 MB worse** | never |
+| `split-debuginfo`, `debug-assertions = false` | within noise | skip |
+
+Two methodology notes that cost real time. **Wall-clock is not comparable unless both
+runs had the same dependency cache state** — an identical baseline measured 750 s and
+then 420 s, so ignore wall differences under ~100 s, and ignore them entirely across a
+dependency-graph change. And **`cargo check` compiles no `#[cfg(test)]` code**, so a
+clean `check` proves less than it appears to; use `--all-targets`.
+
+### Extracting `src/commands/` — feasible, with a catch
+
+`#[tauri::command]` functions CAN live in a different crate from the one calling
+`tauri::generate_handler!`; proven with a throwaway crate outside this repo. They must
+be `pub`, because the macro's helpers are `#[macro_export]` plus `pub use`. **But the
+argument-deserialisation wrapper still expands in the handler crate**, so all 1,612
+wrappers keep costing type-check wherever `generate_handler!` lives — only the function
+bodies move. The harder blocker is a cycle: `commands/` pulls from `db`, `engine`,
+`companion` and `ipc_auth`, while 262 references run the other way into `commands::`.
+A commands crate would have to sit ABOVE `app_lib` with those back-references inverted.
+
+### Verifying a move: `cargo check` is not enough, and `super::` is a trap
+
+**`cargo check` compiles no `#[cfg(test)]` code.** Both crates reported 0 errors and
+0 warnings on a version of step 6 whose *test* build failed with 377 errors. Use
+`--all-targets` on every crate you touched, every time, before believing a move.
+
+The 377 had one cause, and it is the trap: a blanket `super::` -> `crate::` rewrite
+also rewrites `super::` inside `mod tests { use super::*; }`, where `super` is the
+file's **own** module and not its parent. Every one of those errors was a test
+referring to an item its own file defines. And the rewrite was never needed — in
+`engine/src/foo.rs` a top-level `super::` already means the engine crate root, which
+holds the same modules the app_lib `engine` module did. **Leave `super::` alone;
+rewrite only the names that were re-exports.**
+
+Two more measurement notes from the same pass:
+
+- **The movability closure is mutually recursive.** Dropping a child can strand a
+  parent (`platforms/mod.rs` losing `deploy.rs`) and un-moving a parent can strand a
+  child (`observers.rs` needing `super::ObservationPoint` from `hooks/mod.rs`). Run
+  both conditions to a *joint* fixpoint, and remember that a capitalised `super::X`
+  is an item owned by the parent's `mod.rs`, not a sibling module — filtering those
+  out as "not a module" is how a file survives a check it should fail.
+- **Know which clippy form is gated.** CI runs
+  `cargo clippy --workspace --manifest-path src-tauri/Cargo.toml --features desktop -- -D warnings`
+  — no `--all-targets`, so lib targets only. The `--all-targets` form is gated
+  nowhere and is red in both crates independently of this work (10 errors in step-5
+  engine files, 77 in app_lib `src/commands/**`). Measure against the form that
+  actually gates before concluding you broke or fixed anything.
 
 ## Profiles
 

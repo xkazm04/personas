@@ -1,30 +1,41 @@
 import {
-  Clock, Globe, Webhook, Link, Radio, Clipboard, AppWindow,
+  Clock, Globe, Webhook, Radio, Clipboard, AppWindow,
   Layers, FileEdit,
   type LucideIcon,
 } from 'lucide-react';
+import type { Translations } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
-// Trigger source templates (the 9 trigger types as chain sources)
+// Signal source templates supported by the Studio commit form.
 // ---------------------------------------------------------------------------
+
+// `type_selector` is a nested object, not a label string.
+type TriggersKey = Exclude<Extract<keyof Translations['triggers'], `type_${string}`>, 'type_selector'>;
+type StudioKey = Extract<keyof Translations['triggers']['studio'], `tpl_desc_${string}`>;
 
 export interface TriggerBlockTemplate {
   id: string;
   triggerType: string;
-  label: string;
-  description: string;
+  /** Key into `t.triggers` (existing `type_*` labels shared with the trigger forms). */
+  labelKey: TriggersKey;
+  /** Key into `t.triggers.studio` (`tpl_desc_*`). */
+  descriptionKey: StudioKey;
   icon: LucideIcon;
   color: string;
 }
 
 export const TRIGGER_BLOCK_TEMPLATES: TriggerBlockTemplate[] = [
-  { id: 'blk-schedule',   triggerType: 'schedule',       label: 'Schedule',          icon: Clock,     color: 'text-amber-400',   description: 'Cron or interval trigger' },
-  { id: 'blk-polling',    triggerType: 'polling',        label: 'Polling',           icon: Globe,     color: 'text-teal-400',    description: 'HTTP endpoint change detection' },
-  { id: 'blk-webhook',    triggerType: 'webhook',        label: 'Webhook',           icon: Webhook,   color: 'text-blue-400',    description: 'External webhook POST' },
-  { id: 'blk-chain',      triggerType: 'chain',          label: 'Chain',             icon: Link,      color: 'text-purple-400',  description: 'Fires when another persona completes' },
-  { id: 'blk-event',      triggerType: 'event_listener', label: 'Event Listener',    icon: Radio,     color: 'text-cyan-400',    description: 'Listen for published events' },
-  { id: 'blk-file',       triggerType: 'file_watcher',   label: 'File Watcher',      icon: FileEdit,  color: 'text-cyan-400',    description: 'Monitor filesystem changes' },
-  { id: 'blk-clipboard',  triggerType: 'clipboard',      label: 'Clipboard',         icon: Clipboard, color: 'text-pink-400',    description: 'Monitor clipboard content' },
-  { id: 'blk-app-focus',  triggerType: 'app_focus',      label: 'App Focus',         icon: AppWindow, color: 'text-indigo-400',  description: 'Monitor foreground app changes' },
-  { id: 'blk-composite',  triggerType: 'composite',      label: 'Composite',         icon: Layers,    color: 'text-rose-400',    description: 'Multi-condition trigger with time window' },
+  { id: 'blk-schedule',   triggerType: 'schedule',       labelKey: 'type_schedule',          icon: Clock,     color: 'text-amber-400',   descriptionKey: 'tpl_desc_schedule' },
+  { id: 'blk-polling',    triggerType: 'polling',        labelKey: 'type_polling',           icon: Globe,     color: 'text-teal-400',    descriptionKey: 'tpl_desc_polling' },
+  { id: 'blk-webhook',    triggerType: 'webhook',        labelKey: 'type_webhook',           icon: Webhook,   color: 'text-blue-400',    descriptionKey: 'tpl_desc_webhook' },
+  { id: 'blk-event',      triggerType: 'event_listener', labelKey: 'type_event_listener',    icon: Radio,     color: 'text-cyan-400',    descriptionKey: 'tpl_desc_event_listener' },
+  { id: 'blk-file',       triggerType: 'file_watcher',   labelKey: 'type_file_watcher',      icon: FileEdit,  color: 'text-cyan-400',    descriptionKey: 'tpl_desc_file_watcher' },
+  { id: 'blk-clipboard',  triggerType: 'clipboard',      labelKey: 'type_clipboard',         icon: Clipboard, color: 'text-pink-400',    descriptionKey: 'tpl_desc_clipboard' },
+  { id: 'blk-app-focus',  triggerType: 'app_focus',      labelKey: 'type_app_focus',         icon: AppWindow, color: 'text-indigo-400',  descriptionKey: 'tpl_desc_app_focus' },
+  { id: 'blk-composite',  triggerType: 'composite',      labelKey: 'type_composite',         icon: Layers,    color: 'text-rose-400',    descriptionKey: 'tpl_desc_composite' },
 ];
+
+/** Resolve a template's localized label + description (rail, chips, tooltips, search). */
+export function templateCopy(t: Translations, tpl: TriggerBlockTemplate): { label: string; description: string } {
+  return { label: t.triggers[tpl.labelKey], description: t.triggers.studio[tpl.descriptionKey] };
+}

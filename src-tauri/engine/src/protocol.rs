@@ -10,75 +10,13 @@
 //! (7-stage pipeline model with typed payloads). This Rust trait is the backend
 //! counterpart, enabling the engine to run in different modes:
 //! - Desktop mode: `TauriDispatcher` (SQLite + Tauri events + OS notifications)
-//! - Test mode: `MockProtocol` (in-memory capture for assertions)
+//! - Unit tests: `MockProtocol` (in-memory capture for assertions)
 //! - Future: HTTP/cloud dispatch, WebSocket relay, etc.
-
-use serde::Serialize;
 
 use personas_core::types::{
     ExecutionOutputEvent, ExecutionState, ExecutionStatusEvent, HeartbeatEvent, ProtocolMessage,
     StructuredExecutionEvent,
 };
-
-// =============================================================================
-// Pipeline stages -- Rust counterpart of frontend PIPELINE_STAGES
-// =============================================================================
-
-/// The 7 ordered stages of an execution pipeline.
-///
-/// Each stage represents a boundary crossing in the system, matching the
-/// frontend's `PIPELINE_STAGES` array in `pipeline.ts`.
-#[allow(dead_code)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum PipelineStage {
-    /// User triggers execution via UI.
-    Initiate,
-    /// Tauri command validates concurrency, budget, loads persona + tools.
-    Validate,
-    /// Creates PersonaExecution row in DB.
-    CreateRecord,
-    /// Engine spawns tokio task for CLI process.
-    SpawnEngine,
-    /// Runner streams stdout, parses protocol messages.
-    StreamOutput,
-    /// Runner writes final status, emits terminal event.
-    FinalizeStatus,
-    /// Frontend processes terminal event, clears state.
-    FrontendComplete,
-}
-
-#[allow(dead_code)]
-impl PipelineStage {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Initiate => "initiate",
-            Self::Validate => "validate",
-            Self::CreateRecord => "create_record",
-            Self::SpawnEngine => "spawn_engine",
-            Self::StreamOutput => "stream_output",
-            Self::FinalizeStatus => "finalize_status",
-            Self::FrontendComplete => "frontend_complete",
-        }
-    }
-
-    /// All stages in pipeline order.
-    pub const ALL: &'static [PipelineStage] = &[
-        PipelineStage::Initiate,
-        PipelineStage::Validate,
-        PipelineStage::CreateRecord,
-        PipelineStage::SpawnEngine,
-        PipelineStage::StreamOutput,
-        PipelineStage::FinalizeStatus,
-        PipelineStage::FrontendComplete,
-    ];
-}
-
-impl std::fmt::Display for PipelineStage {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
 
 // =============================================================================
 // Status finalization -- the terminal contract
@@ -88,7 +26,6 @@ impl std::fmt::Display for PipelineStage {
 ///
 /// Captures the terminal state plus metrics that the frontend needs to
 /// transition the execution to its final state.
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct StatusFinalization {
     pub execution_id: String,
@@ -98,7 +35,6 @@ pub struct StatusFinalization {
     pub cost_usd: Option<f64>,
 }
 
-#[allow(dead_code)]
 impl StatusFinalization {
     /// Convert to the event payload used by Tauri event emission.
     pub fn to_status_event(&self) -> ExecutionStatusEvent {
@@ -127,10 +63,9 @@ impl StatusFinalization {
 /// 6. `ExecutionFlow` — log only (stored at execution completion)
 /// 7. `KnowledgeAnnotation` — upsert to knowledge repo
 ///
-/// The pipeline stages (declared in `PipelineStage`) define the execution
+/// The pipeline stages (declared in `pipeline::PipelineStage`) define the execution
 /// lifecycle. The status finalization contract (`finalize_status`) marks
 /// the transition to a terminal state.
-#[allow(dead_code)]
 pub trait ExecutionProtocol {
     /// Handle a parsed protocol message from the AI output stream.
     fn dispatch_message(&mut self, msg: &ProtocolMessage);
@@ -161,7 +96,7 @@ pub trait ExecutionProtocol {
 /// Captures all dispatched messages, emitted events, and status finalizations
 /// for assertion in unit/integration tests. Enables running the engine
 /// without a database or Tauri runtime.
-#[allow(dead_code)]
+#[cfg(test)]
 #[derive(Debug, Default)]
 pub struct MockProtocol {
     pub dispatched_messages: Vec<ProtocolMessage>,
@@ -171,7 +106,7 @@ pub struct MockProtocol {
     pub finalizations: Vec<StatusFinalization>,
 }
 
-#[allow(dead_code)]
+#[cfg(test)]
 impl MockProtocol {
     pub fn new() -> Self {
         Self::default()
@@ -204,6 +139,7 @@ impl MockProtocol {
     }
 }
 
+#[cfg(test)]
 impl ExecutionProtocol for MockProtocol {
     fn dispatch_message(&mut self, msg: &ProtocolMessage) {
         self.dispatched_messages.push(msg.clone());
@@ -236,28 +172,6 @@ impl ExecutionProtocol for MockProtocol {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn pipeline_stages_count() {
-        assert_eq!(PipelineStage::ALL.len(), 7);
-    }
-
-    #[test]
-    fn pipeline_stage_as_str_matches_frontend() {
-        // These must match the frontend PIPELINE_STAGES array in pipeline.ts
-        let expected = [
-            "initiate",
-            "validate",
-            "create_record",
-            "spawn_engine",
-            "stream_output",
-            "finalize_status",
-            "frontend_complete",
-        ];
-        for (stage, expected_str) in PipelineStage::ALL.iter().zip(expected.iter()) {
-            assert_eq!(stage.as_str(), *expected_str);
-        }
-    }
 
     #[test]
     fn status_finalization_to_event() {

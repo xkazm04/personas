@@ -44,6 +44,21 @@ export function mergeBackfillIntoLiveBuffer(
   return merged.length > cap ? merged.slice(0, cap) : merged;
 }
 
+export function appendPausedEvent(queue: PersonaEvent[], event: PersonaEvent): PersonaEvent[] {
+  return [...(queue.length >= BUFFER_CAP ? queue.slice(queue.length - BUFFER_CAP + 1) : queue), event];
+}
+
+export function drainPausedQueue(previous: PersonaEvent[], queued: PersonaEvent[], cap = BUFFER_CAP): PersonaEvent[] {
+  let next = previous;
+  for (const event of queued) {
+    const existingIndex = next.findIndex((row) => row.id === event.id);
+    next = existingIndex >= 0
+      ? next.map((row, index) => index === existingIndex ? event : row)
+      : [event, ...next];
+  }
+  return next.length > cap ? next.slice(0, cap) : next;
+}
+
 export function LiveStreamTab() {
   const { t } = useTranslation();
   const reduceMotion = useReducedMotion();
@@ -54,7 +69,7 @@ export function LiveStreamTab() {
     { value: 'failed', label: t.execution_status.failed },
     { value: 'pending', label: t.status_tokens.event.pending },
     { value: 'processing', label: t.status_tokens.event.processing },
-    { value: 'skipped', label: 'Skipped' },
+    { value: 'skipped', label: t.triggers.live_status_skipped },
   ];
   const personas = useAgentStore((s) => s.personas);
 
@@ -182,7 +197,7 @@ export function LiveStreamTab() {
       // Buffer for replay on resume — but only NEW events; status updates on
       // already-displayed events still flow through to keep the UI honest.
       if (!eventIdIndex.current.has(evt.id)) {
-        pausedQueueRef.current.push(evt);
+        pausedQueueRef.current = appendPausedEvent(pausedQueueRef.current, evt);
         scheduleFlush();
         return;
       }
@@ -212,20 +227,14 @@ export function LiveStreamTab() {
     setPausedQueueCount(0);
     if (queued.length === 0) return;
     setEvents((prev) => {
-      // Drain queued in original order (oldest first), prepending each
-      let next = prev;
-      for (let i = queued.length - 1; i >= 0; i--) {
-        const evt = queued[i]!;
-        if (eventIdIndex.current.has(evt.id)) continue;
-        eventIdIndex.current.add(evt.id);
-        newEventIds.current.add(evt.id);
-        setTimeout(() => newEventIds.current.delete(evt.id), 1600);
-        next = [evt, ...next];
+      const next = drainPausedQueue(prev, queued);
+      for (const evt of next) {
+        if (!eventIdIndex.current.has(evt.id)) {
+          newEventIds.current.add(evt.id);
+          setTimeout(() => newEventIds.current.delete(evt.id), 1600);
+        }
       }
-      if (next.length > 200) {
-        for (let i = 200; i < next.length; i++) eventIdIndex.current.delete(next[i]!.id);
-        next = next.slice(0, 200);
-      }
+      eventIdIndex.current = new Set(next.map((evt) => evt.id));
       return next;
     });
   }, []);
@@ -356,7 +365,7 @@ export function LiveStreamTab() {
     },
     {
       key: 'created',
-      label: 'Time',
+      label: t.triggers.col_time,
       width: '0.7fr',
       sortable: true,
       align: 'right' as const,

@@ -37,7 +37,6 @@
     "eslint-rules/prefer-status-badge.cjs": {"count":2,"sections":[9],"contexts":["primitive\" rules, and `prefer-status-badge.cjs` already demonstrates the design"],"resolvedFrom":"basename","verbatim":"prefer-status-badge.cjs"},
     "eslint.config.js": {"count":2,"sections":[9],"contexts":["`eslint.config.js` beside its 21 peers, with three `messageId`s:"]},
     "index.ts": {"count":1,"sections":[],"contexts":["`index.ts`, `globals.css`, `.claude/Design.md`, `CATALOG.md`,"],"resolved":false},
-    "overview/sub_manual-review/components/ReviewFocusFlow.tsx": {"count":1,"sections":[8],"lines":["362,365,400,416"],"contexts":["`overview/sub_manual-review/components/ReviewFocusFlow.tsx:362,365,400,416`,"],"resolved":false},
     "overview/sub_messages/components/MessageDetailModal.tsx": {
       "count": 1,
       "sections": [7],
@@ -112,6 +111,14 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "onboarding/components/TourPanelBody.tsx"
+    },
+    "src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx": {
+      "count": 1,
+      "sections": [8],
+      "lines": ["362,365,400,416"],
+      "contexts": ["`overview/sub_manual-review/components/ReviewFocusFlow.tsx:362,365,400,416`,"],
+      "resolvedFrom": "suffix",
+      "verbatim": "overview/sub_manual-review/components/ReviewFocusFlow.tsx"
     },
     "src/features/plugins/dev-tools/sub_context/contextLedgerShared.tsx": {"count":1,"sections":[6],"lines":["324-330"],"contexts":["- **`src/features/plugins/dev-tools/sub_context/contextLedgerShared.tsx:324-330` — copy this one.** Three row actions in a row:"]},
     "src/features/plugins/fleet/FleetSpawnTaskModal.tsx": {

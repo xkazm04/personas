@@ -55,6 +55,7 @@
       ],
       "resolved": false
     },
+    "DeckSummary.tsx": {"count":1,"sections":[7],"lines":["27"],"contexts":["`Stat` is defined at `DeckSummary.tsx:27`, `DryRunModal.tsx:242`, `JudgePanel.tsx:8`,"],"resolved":false},
     "EventBusStats.tsx": {
       "count": 1,
       "sections": [6],
@@ -260,7 +261,7 @@
     "personas-web/MetricCard.tsx": {"count":2,"sections":[7,12],"lines":["39-42"],"contexts":["copy `KpiTile`'s resolution, or split arrow from colour the way `personas-web/MetricCard.tsx:39-42`"],"resolved":false},
     "personas-web/src/components/dashboard/MetricCard.tsx": {"count":1,"sections":[9],"lines":["25"],"contexts":["- `personas-web/src/components/dashboard/MetricCard.tsx:25` — clause 4's worst case, `value: string`"],"resolved":false},
     "plugins/twin/shared/TwinStat.tsx": {"count":1,"sections":[7],"lines":["30"],"contexts":["(`plugins/twin/shared/TwinStat.tsx:30`) with **zero** of them importing it."],"resolved":false},
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["against the shared `rules.json`; **the full registry was not run** (doctrine §4). Re-extracted from"],"resolvedFrom":"basename","verbatim":"rules.json"},
+    "rules.json": {"count":1,"sections":[9],"contexts":["against the shared `rules.json`; **the full registry was not run** (doctrine §4). Re-extracted from"],"resolved":false},
     "shared-facts.json": {"count":2,"sections":[7],"contexts":["**Shared facts cited:** `shared-facts.json` — 963 Rust files, 4,828 `.ts`,"],"resolved":false},
     "shared/components/display/{StatCard,Numeric}.tsx": {"count":1,"sections":[],"contexts":["rather than one reconciled number. Read in full: `shared/components/display/{StatCard,Numeric}.tsx`,"],"resolved":false},
     "sla.rs": {"count":2,"sections":[7,12],"lines":["508-511"],"contexts":["**default**. `SLADashboard.tsx:138`, backend fallback at `sla.rs:508-511`."],"resolved":false},
@@ -274,14 +275,6 @@
     },
     "src-tauri/db/src/repos/execution/metrics.rs": {"count":1,"sections":[],"contexts":["`db/src/repos/execution/metrics.rs` (`get_execution_dashboard`, 380 lines),"],"resolvedFrom":"suffix","verbatim":"db/src/repos/execution/metrics.rs"},
     "src/": {"count":2,"sections":[7],"contexts":["**Sweep.** All **4,829** `.ts`/`.tsx` under `src/` (**2,104** `.tsx`). The tile population was"],"resolved":false,"isDir":true},
-    "src/features/agents/quick-answer/triage/deck/DeckSummary.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["27"],
-      "contexts": ["`Stat` is defined at `DeckSummary.tsx:27`, `DryRunModal.tsx:242`, `JudgePanel.tsx:8`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "DeckSummary.tsx"
-    },
     "src/features/agents/quick-answer/triage/triageTypes.ts": {
       "count": 1,
       "sections": [9],

@@ -1,7 +1,15 @@
 // The ONE band of chrome above the panel. Left, the census: every agent in the
 // fleet counted by lamp, and each lamp is the filter for its own number.
-// Right, the layout switch and the keyboard walk printed as keycaps, so the
-// shortcut that exists is one the operator can see.
+// Middle, the Decision Center's strip (`DecisionHub`): one chip per kind of
+// thing waiting on a human, each opening its peek, and every peek row opening
+// the one global Decision Deck. Right, the layout switch.
+//
+// THE KEYCAP LEGEND IS GONE (2026-10-06, decision-center A3). The band printed
+// the board's `n`/`k` walk; the strip needed the width, and the decision keys
+// are printed where they act — in the peek's own footer. For the same reason
+// the tally's words show only from 2xl (1536px): below it a tag is lamp +
+// count, its word in the tooltip and the accessible name, so tally + strip +
+// switch hold one line at 1280.
 //
 // ALL IS A STATE, NOT A VERB (2026-10-04). The band used to print "N agents ·
 // M sessions" as a label and grow a Clear button once a tag was pressed — two
@@ -22,8 +30,9 @@ import { SQUARE_STATE_ORDER, type SquareState } from '../../fleetGridModel';
 import { BOARD_TABS_PREFIX } from '../../board/GridHeader';
 import { BOARD_VARIANTS, type BoardVariant } from '../../board/queue/boardVariant';
 import { PERSONA_LAMP } from './tone';
-import { Kbd, Lamp } from './parts';
+import { Lamp } from './parts';
 import type { PanelFilter } from './boardFilter';
+import { DecisionHub } from '@/features/decision-center/hub/DecisionHub';
 
 export function CommandBar({
   filter, showTally, active, onPick, onClear, layout, onLayout,
@@ -66,12 +75,13 @@ export function CommandBar({
               size="sm"
               onClick={onClear}
               aria-pressed={active === null}
+              aria-label={t.common.all}
               data-testid="fleet-grid-tally-all"
               className={`ae-win ae-focus rounded-input px-2.5 py-1 [&>span]:inline-flex [&>span]:items-center [&>span]:gap-2 ${
                 active === null ? 'is-selected is-lit ae-t-run' : 'ae-t-off'}`}
             >
               <Lamp lamp={{ tone: 'run', lit: active === null }} />
-              <span className="typo-caption text-foreground">{t.common.all}</span>
+              <span className="hidden typo-caption text-foreground 2xl:inline">{t.common.all}</span>
               <span className="typo-data tabular-nums text-foreground">{filter.agentTotal + filter.sessionTotal}</span>
             </Button>
           </Tooltip>
@@ -93,7 +103,7 @@ export function CommandBar({
                   on ? 'is-selected' : ''} ${lamp.lit && total > 0 ? `is-lit ae-t-${lamp.tone}` : ''}`}
               >
                 <Lamp lamp={{ tone: lamp.tone, lit: lamp.lit && total > 0 }} />
-                <span className="typo-caption text-foreground">{labels[s]}</span>
+                <span className="hidden typo-caption text-foreground 2xl:inline">{labels[s]}</span>
                 <span className="typo-data tabular-nums text-foreground">{total}</span>
               </Button>
               </Tooltip>
@@ -102,13 +112,9 @@ export function CommandBar({
         </div>
       )}
 
+      <DecisionHub />
+
       <div className="ml-auto flex items-center gap-3">
-        <span className="hidden items-center gap-1.5 typo-caption xl:flex" aria-hidden>
-          <Kbd>n</Kbd><Kbd>k</Kbd>
-          <span>{t.common.command_palette_navigate}</span>
-          <Kbd>↵</Kbd>
-          <span>{t.common.command_palette_select}</span>
-        </span>
         <SegmentedTabs
           size="sm"
           variant="segment"

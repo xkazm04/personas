@@ -36,12 +36,9 @@ vi.mock('@/api/agents/executions', () => ({
   getCircuitBreakerStatus: () => mockGetStatus(),
 }));
 
-// The tray's other two overlays are lazy full-surface trees; the tray is only
+// The tray's other overlays are lazy full-surface trees; the tray is only
 // asked here whether it mounts the indicator, so keep them out of the graph.
 vi.mock('@/features/fleet/monitor', () => ({ PersonaMonitor: () => null }));
-vi.mock('@/features/agents/quick-answer/QuickAnswerPopover', () => ({
-  QuickAnswerPopover: () => null,
-}));
 vi.mock('@/features/schedules/components/SchedulesOverlay', () => ({ default: () => null }));
 
 const systemState = { headerOverlay: 'none' as string, setHeaderOverlay: vi.fn() };

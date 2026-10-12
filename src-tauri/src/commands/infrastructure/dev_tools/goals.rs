@@ -428,12 +428,20 @@ pub fn dev_tools_count_pending_acceptance(
 /// Every human-decision queue's pending count in ONE round-trip — backs the
 /// title-bar review badge. See `repo::PendingCounts` for why it is one query and
 /// why build questions are not in it.
+///
+/// Companion approvals are folded in HERE, not in the repo: they live in the
+/// companion database (`state.user_db`), and the count must be exactly what
+/// `companion_list_pending_approvals` lists, so it reuses that command's own
+/// read (`pending_approval_rows`: pending, fresh, well-formed, list-capped).
 #[tauri::command]
 pub fn dev_tools_pending_counts(
     state: State<'_, Arc<AppState>>,
 ) -> Result<repo::PendingCounts, AppError> {
     require_auth_sync(&state)?;
-    repo::pending_counts(&state.db)
+    let counts = repo::pending_counts(&state.db)?;
+    let approvals =
+        crate::commands::companion::approvals::pending_approval_rows(&state.user_db)?.len();
+    Ok(counts.with_companion_approvals(u32::try_from(approvals).unwrap_or(u32::MAX)))
 }
 
 /// Accept (→ `done`, off-board) or reject (→ `in-progress`, with a comment) a

@@ -177,6 +177,13 @@
       ],
       "resolved": false
     },
+    "runner/mod.rs": {
+      "count": 15,
+      "sections": [0,3,4,5,7,9],
+      "lines": ["2914","1602","395","2527","2484-2488","1890","2908-2912","466-467"],
+      "contexts": ["(`core/src/trace.rs:443`) and `traces::save` writes it (`runner/mod.rs:2914`). One write, at the end,"],
+      "resolved": false
+    },
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["All **145** rules in `scripts/census/rules.json` were enumerated; these seven were opened and read in"]},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[9],"contexts":["specification for a different instrument, in the shape of `scripts/check-csp-hosts.mjs` and"]},
     "scripts/check-trace-reconstructability.mjs": {"count":1,"sections":[9],"contexts":["**`scripts/check-trace-reconstructability.mjs`** — a dev-time probe over a **read-only copy** of the"],"resolved":false},
@@ -251,9 +258,8 @@
     },
     "src-tauri/src/engine/dispatch.rs": {"count":1,"sections":[7],"lines":["220-224"],"contexts":["second site does the same thing: `engine/dispatch.rs:220-224` writes"],"resolvedFrom":"suffix","verbatim":"engine/dispatch.rs"},
     "src-tauri/src/engine/runner/mod.rs": {
-      "count": 16,
-      "sections": [0,3,4,5,7,9],
-      "lines": ["2914","1602","395","2527","2484-2488","1890","2908-2912","466-467"],
+      "count": 1,
+      "sections": [],
       "contexts": ["file), `src/engine/runner/mod.rs`'s trace lane, `engine/src/parser.rs`'s `result`-line branch,"],
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/runner/mod.rs"

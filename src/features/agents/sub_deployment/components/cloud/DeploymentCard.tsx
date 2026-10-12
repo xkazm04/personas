@@ -43,6 +43,7 @@ export function DeploymentCard({
 
   const endpointUrl = baseUrl ? `${baseUrl}/api/deployed/${d.slug}` : `/api/deployed/${d.slug}`;
   const isBusy = busyId === d.id;
+  const budgetPct = budgetUtilization(d);
 
   const handleAction = async (id: string, action: () => Promise<void>) => {
     setBusyId(id);
@@ -162,12 +163,14 @@ export function DeploymentCard({
               <DollarSign className="w-3 h-3" />
               {dt.budget_label} {formatCost(d.currentMonthCostUsd)} / {formatCost(d.maxMonthlyBudgetUsd)}
             </span>
-            <Numeric value={budgetUtilization(d) ?? 0} unit="percent" precision={0} />
+            {budgetPct == null
+              ? <span>{t.status_tokens.deployment.unknown}</span>
+              : <Numeric value={budgetPct} unit="percent" precision={0} />}
           </div>
           <div className="h-1.5 rounded-full bg-secondary/50 overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all ${budgetColor(budgetUtilization(d) ?? 0)}`}
-              style={{ width: `${budgetUtilization(d) ?? 0}%` }}
+              className={`h-full rounded-full transition-all ${budgetColor(budgetPct ?? 0)}`}
+              style={{ width: `${Math.min(100, budgetPct ?? 0)}%` }}
             />
           </div>
         </div>
@@ -191,7 +194,7 @@ export function DeploymentCard({
         >
           <div className="flex items-center gap-3 min-w-0">
             <span className="font-medium shrink-0">
-              {testResult.status === 'pass' ? 'PASS' : 'FAIL'}
+              {testResult.status === 'pass' ? dt.test_pass : dt.test_fail}
             </span>
             {testResult.durationMs != null && (
               <Numeric value={testResult.durationMs} unit="ms" className="text-foreground" />
@@ -208,6 +211,7 @@ export function DeploymentCard({
           {onDismissTest && (
             <button
               type="button"
+              aria-label={t.common.dismiss}
               onClick={() => onDismissTest(d.id)}
               className="p-0.5 rounded hover:bg-primary/10 transition-colors shrink-0 cursor-pointer"
             >

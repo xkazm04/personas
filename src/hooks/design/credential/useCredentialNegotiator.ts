@@ -82,7 +82,11 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
   const serviceNameRef = useRef('');
   const startedAtRef = useRef(0);
   const helpedStepsRef = useRef<Set<number>>(new Set());
-  /** Tracks completed steps via ref to avoid stale closure in completeStep callback. */
+  /**
+   * Tracks completed steps via ref to avoid stale closure in completeStep callback.
+   * Keyed by ORIGINAL plan index: the visible list is re-resolved mid-flow (steps
+   * become skipped), so a visible index does not keep naming the same step.
+   */
   const completedStepsRef = useRef<Set<number>>(new Set());
 
   const flow = useAiArtifactTask<[string, Record<string, unknown>, string[], Array<Record<string, unknown>> | undefined], NegotiationPlan>({
@@ -97,6 +101,7 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
     backendTimeoutSecs: 300,
     errorMessage: 'Failed to generate provisioning plan',
     traceOperation: 'credential_negotiation',
+    traceLabel: 'Credential provisioning plan',
   });
 
   // -- Step graph resolution --
@@ -185,12 +190,14 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
   const completeStep = useCallback((visibleIndex: number) => {
     sp.completeStep(visibleIndex);
 
-    // Track completion in ref so rapid clicks always see the latest count
-    completedStepsRef.current.add(visibleIndex);
-    const completedCount = completedStepsRef.current.size;
+    // Track completion in ref so rapid clicks always see the latest set
+    const originalIndex = resolved.visibleToOriginal[visibleIndex];
+    if (originalIndex === undefined) return;
+    completedStepsRef.current.add(originalIndex);
 
-    // Transition to done when every visible step is marked complete
-    if (flow.result && completedCount >= resolved.visible.length) {
+    // Transition to done when every currently visible step has been completed
+    const allVisibleDone = resolved.visibleToOriginal.length > 0 && resolved.visibleToOriginal.every((o) => completedStepsRef.current.has(o));
+    if (flow.result && allVisibleDone) {
       flow.setPhase('done');
 
       // Record successful playbook for future reuse
@@ -205,7 +212,7 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
         usageCount: 0,
       });
     }
-  }, [sp, flow, resolved.visible.length]);
+  }, [sp, flow, resolved.visibleToOriginal]);
 
   const goToStep = useCallback((visibleIndex: number) => {
     sp.goToStep(visibleIndex);
@@ -221,7 +228,7 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
     const step = flow.result.steps[originalIndex];
     if (!step) return;
 
-    helpedStepsRef.current.add(visibleIndex);
+    helpedStepsRef.current.add(originalIndex);
     setIsLoadingHelp(true);
     setStepHelp(null);
 

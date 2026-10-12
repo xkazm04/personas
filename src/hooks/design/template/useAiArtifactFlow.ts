@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { getActiveTranslations } from '@/i18n/useTranslation';
 import { useTauriStream, type TauriStreamOptions } from '../core/useTauriStream';
 
 // -- Types -------------------------------------------------------
@@ -88,7 +89,7 @@ export function buildResolveStatus<TResult>(
       return { error: (payload.error as string) || fallbackError };
     }
     if (status === 'cancelled') {
-      return { error: 'Operation cancelled' };
+      return { error: getActiveTranslations().errors.operation_cancelled };
     }
     return null;
   };

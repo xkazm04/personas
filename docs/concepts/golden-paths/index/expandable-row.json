@@ -57,6 +57,7 @@
       "resolved": false
     },
     "plugins/twin/sub_tone/ToneConsole.tsx": {"count":1,"sections":[6],"lines":["158-241"],"contexts":["- `plugins/twin/sub_tone/ToneConsole.tsx:158-241` and `scraper/ScraperControlRoom.tsx:157-241`"],"resolved":false},
+    "rules.json": {"count":1,"sections":[9],"contexts":["**The positive control is deliberately NOT proposed for `rules.json`.** A census baseline"],"resolved":false},
     "scripts/census/lib/engine.mjs": {
       "count": 2,
       "sections": [9],
@@ -65,7 +66,7 @@
       "resolvedFrom": "basename",
       "verbatim": "engine.mjs"
     },
-    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["All **75** rules in `scripts/census/rules.json` were read. Three are adjacent and none"]},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["All **75** rules in `scripts/census/rules.json` were read. Three are adjacent and none"]},
     "shared-facts.json": {"count":3,"sections":[7,9],"contexts":["`shared-facts.json`; everything else was measured during"],"resolved":false},
     "src/features/agents/components/allPersonas/PersonaConfigPanel.tsx": {
       "count": 2,

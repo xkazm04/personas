@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 const { logError } = vi.hoisted(() => ({ logError: vi.fn() }));
 vi.mock("@/lib/log", () => ({
   createLogger: () => ({ error: logError, warn: vi.fn(), info: vi.fn(), debug: vi.fn() }),
+  log: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 // Test needs per-call argument inspection and a deferred resolution, which the
@@ -46,6 +47,29 @@ describe("useAppSetting", () => {
     const [, meta] = logError.mock.calls[0] as [string, Record<string, unknown>];
     expect(meta).toEqual({ key: "ollama_api_key", code: "Error" });
     expect(JSON.stringify(logError.mock.calls)).not.toContain(secret);
+  });
+
+  it("reports a rejected read as loadFailed instead of a settled default", async () => {
+    mockedInvoke.mockImplementation(async () => {
+      throw new Error("ipc timeout");
+    });
+
+    const { result } = renderHook(() => useAppSetting("spend_ceiling", "0"));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.loadFailed).toBe(true);
+    expect(result.current.value).toBe("0");
+  });
+
+  it("does not flag loadFailed when the read succeeds", async () => {
+    mockedInvoke.mockImplementation(async (cmd: string, args?: unknown) => {
+      if (cmd !== "get_app_settings_bulk") return undefined;
+      const keys = (args as { keys: string[] }).keys;
+      return Object.fromEntries(keys.map((k) => [k, null]));
+    });
+
+    const { result } = renderHook(() => useAppSetting("spend_ceiling", "0"));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.loadFailed).toBe(false);
   });
 
   it("loads the stored value for its key", async () => {

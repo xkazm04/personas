@@ -47,6 +47,7 @@
     "ModuleBadge.tsx": {"count":2,"sections":[],"lines":["18-42","73"],"contexts":["`ModuleBadge.tsx:18-42` and `DashboardScopeBar.tsx:42-50` are the same pair,"],"resolved":false},
     "NodeContextMenu.tsx": {"count":2,"sections":[7],"contexts":["`NodeContextMenu.tsx` · `TeamToolbar.tsx` · `FleetListPopover.tsx` ·"],"resolved":false},
     "ProjectFilter.tsx": {"count":1,"sections":[7],"contexts":["`HomeCustomizePopover.tsx` · `MetricHelpPopover.tsx` · `ProjectFilter.tsx` ·"],"resolved":false},
+    "QuickAnswerPopover.tsx": {"count":2,"sections":[5,7],"lines":["1-13"],"contexts":["- **Naming a full-app deck a popover.** `QuickAnswerPopover.tsx:1-13` documents"],"resolved":false},
     "TeamToolbar.tsx": {"count":2,"sections":[7],"lines":["36"],"contexts":["`NodeContextMenu.tsx` · `TeamToolbar.tsx` · `FleetListPopover.tsx` ·"],"resolved":false},
     "UseCaseFixtureDropdown.tsx": {"count":1,"sections":[7],"contexts":["**The 23 with no Escape:** `PersonaSelector.tsx` · `UseCaseFixtureDropdown.tsx` ·"],"resolved":false},
     "eslint-rules/role-button-requires-keydown.cjs": {"count":1,"sections":[9],"contexts":["`role-button-requires-keydown.cjs` as the working AST precedent — and it should"],"resolvedFrom":"basename","verbatim":"role-button-requires-keydown.cjs"},
@@ -54,7 +55,8 @@
     "package.json": {"count":3,"sections":[3,7,8],"lines":["106"],"contexts":["`package.json:106` at `^0.27.19` and has **zero imports anywhere in `src/`** —"]},
     "personas-web/src/components/sections/vision-grid/platform-card-tile/usePlatformCardDisclosure.ts": {"count":1,"sections":[7],"lines":["9-51"],"contexts":["`personas-web/src/components/sections/vision-grid/platform-card-tile/usePlatformCardDisclosure.ts:9-51`,"],"resolved":false},
     "plugins/twin/shared/__tests__/ReadinessGapPopover.test.tsx": {"count":1,"sections":[7],"contexts":["`plugins/twin/shared/__tests__/ReadinessGapPopover.test.tsx` — and its seven"],"resolved":false},
-    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["All 51 rules in `scripts/census/rules.json` were read. Two are adjacent and"]},
+    "rules.json": {"count":1,"sections":[9],"contexts":["**The positive control is deliberately NOT proposed for `rules.json`.** A census"],"resolved":false},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["All 51 rules in `scripts/census/rules.json` were read. Two are adjacent and"]},
     "scripts/census/run-census.mjs": {
       "count": 1,
       "sections": [9],
@@ -83,15 +85,6 @@
       "resolvedFrom": "basename",
       "verbatim": "ExecutionMiniPlayer.tsx"
     },
-    "src/features/agents/quick-answer/QuickAnswerPopover.tsx": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["1-13"],
-      "contexts": ["- **Naming a full-app deck a popover.** `QuickAnswerPopover.tsx:1-13` documents"],
-      "resolvedFrom": "basename",
-      "verbatim": "QuickAnswerPopover.tsx"
-    },
-    "src/features/agents/quick-answer/triage/deck/useDeckDialog.tsx": {"count":5,"sections":[1,2,4,8,9],"lines":["83-107"],"contexts":["`useDeckDialog.tsx:83-107`, not re-derived."],"resolvedFrom":"basename","verbatim":"useDeckDialog.tsx"},
     "src/features/agents/sub_editor/components/ShareAgentButton.tsx": {
       "count": 2,
       "sections": [5,7],
@@ -306,6 +299,7 @@
     "src/lib/ui/BaseModal.tsx": {"count":1,"sections":[3],"lines":["8-10"],"contexts":["- **`src/lib/ui/BaseModal.tsx:8-10` — `Z_INDEX_BASE` 50 / `Z_INDEX_PORTAL_BASE` 10000 / `Z_INDEX_PER_DEPTH` 10** —"]},
     "src/styles/globals.css": {"count":1,"sections":[7],"lines":["4520,4532-4552"],"contexts":["reports 25 violations. It is wrong: `globals.css:4520,4532-4552` disables"],"resolvedFrom":"basename","verbatim":"globals.css"},
     "teams/sub_canvas/components/edges/EdgeDeleteTooltip.tsx": {"count":1,"sections":[7],"contexts":["**2. `teams/sub_canvas/components/edges/EdgeDeleteTooltip.tsx` — a popover named a"],"resolved":false},
+    "useDeckDialog.tsx": {"count":5,"sections":[1,2,4,8,9],"lines":["83-107"],"contexts":["`useDeckDialog.tsx:83-107`, not re-derived."],"resolved":false},
     "usePlatformCardDisclosure.ts": {"count":2,"sections":[8],"lines":["9-51"],"contexts":["`personas-web`'s `usePlatformCardDisclosure.ts:9-51` — a click-opened anchored"],"resolved":false}
   }
 }

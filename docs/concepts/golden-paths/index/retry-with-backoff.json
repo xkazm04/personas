@@ -49,6 +49,7 @@
     "brainiac/resilience.rs": {"count":2,"sections":[],"lines":["229-234","10-13"],"contexts":["— full jitter (ascent), equal jitter (`brainiac/resilience.rs:229-234`,"],"resolved":false},
     "build_sessions.rs": {"count":3,"sections":[7,9],"lines":["725","2640"],"contexts":["`build_sessions.rs:725` `1..=6u32` · `build_sessions.rs:2640` `1..=20u32` ·"],"resolved":false},
     "checks.ts": {"count":2,"sections":[7],"lines":["33-36","16-19"],"contexts":["at `checks.ts:33-36`. `personas-cloud` and `personas-web` only **emit** it."],"resolved":false},
+    "engine/failover.rs": {"count":1,"sections":[],"contexts":["Personas has `engine/failover.rs` (`CIRCUIT_BREAKER_THRESHOLD`) and a"],"resolved":false},
     "eventProcessor.ts": {"count":1,"sections":[],"lines":["428"],"contexts":["`personas-cloud` writes `dead_letter` (`eventProcessor.ts:428`);"],"resolved":false},
     "events.rs": {"count":1,"sections":[9],"lines":["974"],"contexts":["`events.rs:974`) and must FAIL `oauth_refresh_fail_count` (incremented at"],"resolved":false},
     "gitlab.rs": {"count":1,"sections":[9],"lines":["843"],"contexts":["flake). The other five are correct: `gitlab.rs:843` retries with an *incremented"],"resolved":false},
@@ -145,6 +146,14 @@
       "resolvedFrom": "suffix",
       "verbatim": "db/src/repos/resources/credentials.rs"
     },
+    "src-tauri/engine/src/automation_runner.rs": {
+      "count": 11,
+      "sections": [2,3,5,7,9,10,12],
+      "lines": ["350-359","78-88","89","353","99","346-349","76-107"],
+      "contexts": ["Personas' set (`automation_runner.rs:350-359`) is"],
+      "resolvedFrom": "basename",
+      "verbatim": "automation_runner.rs"
+    },
     "src-tauri/engine/src/eval.rs": {"count":2,"sections":[6,7],"lines":["480"],"contexts":["| 11 | `engine/src/eval.rs:480` | 2 | `2s` | **2 s** | ❌ flat | ❌ |"],"resolvedFrom":"suffix","verbatim":"engine/src/eval.rs"},
     "src-tauri/engine/src/execution_engine/persist.rs": {
       "count": 2,
@@ -202,15 +211,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/api_proxy.rs"
     },
-    "src-tauri/src/engine/automation_runner.rs": {
-      "count": 15,
-      "sections": [2,3,5,6,7,9,10,12],
-      "lines": ["350-359","78-88","89","60-107","353","99","346-349","76-107"],
-      "contexts": ["Personas' set (`automation_runner.rs:350-359`) is"],
-      "resolvedFrom": "basename",
-      "verbatim": "automation_runner.rs"
-    },
-    "src-tauri/src/engine/failover.rs": {"count":1,"sections":[],"contexts":["Personas has `engine/failover.rs` (`CIRCUIT_BREAKER_THRESHOLD`) and a"],"resolvedFrom":"suffix","verbatim":"engine/failover.rs"},
     "src-tauri/src/engine/incident_continuation.rs": {
       "count": 3,
       "sections": [5,7,12],
@@ -268,6 +268,15 @@
       "isDir": true
     },
     "src/components/cli/store/cliExecutionManager.ts": {"count":1,"sections":[],"lines":["605-608"],"contexts":["`src/components/cli/store/cliExecutionManager.ts:605-608`:"],"resolved":false},
+    "src/engine/automation_runner.rs": {
+      "count": 4,
+      "sections": [3,6,7],
+      "lines": ["60-107","99","350-359"],
+      "contexts": [
+        "| `src/engine/automation_runner.rs:60-107` | **the one real HTTP retry loop, and the shape to copy.** Budget from the work's own config (`retry_count.clamp(1,5)`), exponential with a named `MAX_BACKO…"
+      ],
+      "resolved": false
+    },
     "src/features/agents/sub_deployment/hooks/useCloudHealthMonitor.ts": {
       "count": 5,
       "sections": [5,6,7,12],

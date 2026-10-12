@@ -23,6 +23,7 @@
   "citationCount": 112,
   "triggers": [],
   "citations": {
+    "ManualReviewList.tsx": {"count":1,"sections":[7],"lines":["134"],"contexts":["`useUnifiedInbox.ts:97` (four), `ManualReviewList.tsx:134` (local + cloud),"],"resolved":false},
     "behavioral-signal.repository.ts": {"count":1,"sections":[],"lines":["129,142"],"contexts":["(`behavioral-signal.repository.ts:129,142`). No tiebreaker, then a `.slice()` whose cut"],"resolved":false},
     "console.rs": {"count":1,"sections":[],"lines":["547,4499,4627"],"contexts":["`console.rs:547,4499,4627`; `http.rs:1226`. **But it is split against itself** — ~10 reads in"],"resolved":false},
     "crates/brainiac-server/tests/promotions_pg.rs": {"count":1,"sections":[],"lines":["47-49"],"contexts":["`crates/brainiac-server/tests/promotions_pg.rs:47-49`:"],"resolved":false},
@@ -47,6 +48,13 @@
       "resolved": false
     },
     "executions.rs": {"count":2,"sections":[7],"lines":["311","253"],"contexts":["deferring to the SQL `ORDER BY e.created_at DESC` (`executions.rs:311`). The day buckets are"],"resolved":false},
+    "features/fleet/monitor/channels/useLensFeed.ts": {
+      "count": 2,
+      "sections": [3],
+      "lines": ["67","54-76"],
+      "contexts": ["| `features/fleet/monitor/channels/useLensFeed.ts:67` | The reference **client** comparator — and the comment explaining why it must match the server. |"],
+      "resolved": false
+    },
     "features/plugins/companion/chat/athenaChatSend.ts": {"count":1,"sections":[9],"lines":["76"],"contexts":["| TP | `features/plugins/companion/chat/athenaChatSend.ts:76` | `createdAt` drives the transcript's day separators |"],"resolved":false},
     "hooks/realtime/useRealtimeEvents.ts": {
       "count": 2,
@@ -145,7 +153,6 @@
       "resolvedFrom": "basename",
       "verbatim": "ActivityTray.tsx"
     },
-    "src/features/companions/athena/inbox/hooks/useUnifiedInbox.ts": {"count":1,"sections":[7],"lines":["97"],"contexts":["`useUnifiedInbox.ts:97` (four), `ManualReviewList.tsx:134` (local + cloud),"],"resolvedFrom":"basename","verbatim":"useUnifiedInbox.ts"},
     "src/features/fleet/monitor/channels/conversationModel.ts": {"count":2,"sections":[7],"lines":["39-41"],"contexts":["### E — `conversationModel.ts` buckets in UTC and labels in local time"],"resolvedFrom":"basename","verbatim":"conversationModel.ts"},
     "src/features/fleet/monitor/channels/mergedFeed.tsx": {"count":6,"sections":[0,7],"lines":["42"],"contexts":["`mergedFeed.tsx:42`, same directory, same `TaggedItem[]`, same `at`, does not:"],"resolvedFrom":"basename","verbatim":"mergedFeed.tsx"},
     "src/features/fleet/monitor/channels/useConversation.ts": {
@@ -158,7 +165,6 @@
       "resolvedFrom": "basename",
       "verbatim": "useConversation.ts"
     },
-    "src/features/fleet/monitor/channels/useLensFeed.ts": {"count":5,"sections":[0,3],"lines":["67","54-76"],"contexts":["tiebreaker.** `useLensFeed.ts:67` has it, with the reason written down:"],"resolvedFrom":"basename","verbatim":"useLensFeed.ts"},
     "src/features/overview/sub_activity/components/GlobalExecutionList.tsx": {
       "count": 2,
       "sections": [7],
@@ -185,7 +191,6 @@
       "resolvedFrom": "basename",
       "verbatim": "useEventLog.ts"
     },
-    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {"count":1,"sections":[7],"lines":["134"],"contexts":["`useUnifiedInbox.ts:97` (four), `ManualReviewList.tsx:134` (local + cloud),"],"resolvedFrom":"basename","verbatim":"ManualReviewList.tsx"},
     "src/features/overview/sub_memories/libs/memoryActions.ts": {
       "count": 1,
       "sections": [9],
@@ -202,6 +207,7 @@
       "resolvedFrom": "basename",
       "verbatim": "HealingTimeline.tsx"
     },
+    "src/features/overview/sub_timeline/libs/useLensFeed.ts": {"count":3,"sections":[0],"lines":["67"],"contexts":["tiebreaker.** `useLensFeed.ts:67` has it, with the reason written down:"],"resolvedFrom":"basename","verbatim":"useLensFeed.ts"},
     "src/features/plugins/dev-tools/sub_overview/overviewHelpers.ts": {
       "count": 1,
       "sections": [7],
@@ -297,6 +303,7 @@
     "teams.rs": {"count":1,"sections":[7],"lines":["347"],"contexts":["`ORDER BY created_at ASC` (`teams.rs:347`) — so an optimistic member's position in the roster"],"resolved":false},
     "tokens.rs": {"count":1,"sections":[],"lines":["132"],"contexts":["the same crates order on `created_at` alone (`tokens.rs:132`, `projects.rs:48,67`,"],"resolved":false},
     "types.ts": {"count":1,"sections":[0],"lines":["39"],"contexts":["`LIVE_FEED_WINDOW = 600` (`types.ts:39`, applied at `:46`). So the live overlay's ranking within"],"resolved":false},
-    "useTriageQueue.ts": {"count":1,"sections":[],"lines":["112-118"],"contexts":["(`useTriageQueue.ts:112-118`) ranks `b.weight - a.weight || (b.startedAt ?? \"\").localeCompare(a.startedAt ?? \"\")`"],"resolved":false}
+    "useTriageQueue.ts": {"count":1,"sections":[],"lines":["112-118"],"contexts":["(`useTriageQueue.ts:112-118`) ranks `b.weight - a.weight || (b.startedAt ?? \"\").localeCompare(a.startedAt ?? \"\")`"],"resolved":false},
+    "useUnifiedInbox.ts": {"count":1,"sections":[7],"lines":["97"],"contexts":["`useUnifiedInbox.ts:97` (four), `ManualReviewList.tsx:134` (local + cloud),"],"resolved":false}
   }
 }

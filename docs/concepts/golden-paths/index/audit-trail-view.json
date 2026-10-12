@@ -241,13 +241,21 @@
     },
     "src-tauri/db/src/repos/resources/tool_audit_log.rs": {"count":1,"sections":[],"contexts":["`tool_audit_log.rs`, `healing.rs`, `persona_change_log.rs`, `fleet_decisions.rs`,"],"resolvedFrom":"basename","verbatim":"tool_audit_log.rs"},
     "src-tauri/engine/src/bus.rs": {"count":1,"sections":[],"contexts":["(`subscription.rs`, `manual_reviews.rs`, `dispatch.rs`, `bus.rs`, `settings.rs`)."],"resolvedFrom":"basename","verbatim":"bus.rs"},
-    "src-tauri/src/engine/db_query.rs": {
+    "src-tauri/engine/src/db_query.rs": {
       "count": 2,
       "sections": [9],
       "lines": ["3692","1082"],
       "contexts": ["brace-matched `#[cfg(test)]` module (`db_query.rs:3692`, `query_builder.rs:432`) and **1**"],
       "resolvedFrom": "basename",
       "verbatim": "db_query.rs"
+    },
+    "src-tauri/engine/src/project_tracking/subscription.rs": {
+      "count": 4,
+      "sections": [0,7],
+      "lines": ["2045","2041"],
+      "contexts": ["(`subscription.rs`, `manual_reviews.rs`, `dispatch.rs`, `bus.rs`, `settings.rs`)."],
+      "resolvedFrom": "basename",
+      "verbatim": "subscription.rs"
     },
     "src-tauri/src/engine/dispatch.rs": {
       "count": 1,
@@ -256,14 +264,6 @@
       "contexts": ["**seven** separate personas on this install. `engine/dispatch.rs:355-374` sanitises the"],
       "resolvedFrom": "suffix",
       "verbatim": "engine/dispatch.rs"
-    },
-    "src-tauri/src/engine/project_tracking/subscription.rs": {
-      "count": 4,
-      "sections": [0,7],
-      "lines": ["2045","2041"],
-      "contexts": ["(`subscription.rs`, `manual_reviews.rs`, `dispatch.rs`, `bus.rs`, `settings.rs`)."],
-      "resolvedFrom": "basename",
-      "verbatim": "subscription.rs"
     },
     "src-tauri/src/engine/subscription.rs": {"count":2,"sections":[0,7],"lines":["2041,2045"],"contexts":["The whole failure is four lines apart. The writer, `src-tauri/src/engine/subscription.rs:2041,2045`:"],"resolved":false},
     "src/": {"count":2,"sections":[7],"contexts":["**Sweep size.** All **4,829** `.ts`/`.tsx` under `src/` and all **963** `.rs` under"],"resolved":false,"isDir":true},

@@ -156,3 +156,29 @@ export function laneTone(status: string): StatusToken {
   if (status === 'active') return STATUS_PALETTE.info;
   return STATUS_PALETTE.neutral;
 }
+
+/** The fields a lane's look depends on - a `MilestoneLane` satisfies it. */
+export interface LaneLookInput {
+  status: string;
+  kind: string;
+  targetDate: string | null;
+}
+
+/** A deadline whose date is behind today and that has not shipped. */
+export function isDeadlineMissed(lane: LaneLookInput, now: Date = new Date()): boolean {
+  if (lane.kind !== 'deadline' || lane.status === 'shipped' || !lane.targetDate) return false;
+  // `targetDate` is a calendar day; it is missed once that whole day is over.
+  const end = new Date(`${lane.targetDate.slice(0, 10)}T23:59:59`);
+  return !Number.isNaN(end.getTime()) && end.getTime() < now.getTime();
+}
+
+/**
+ * A lane's tone, kind-aware. An ordinary milestone keeps `laneTone`. A DEADLINE
+ * is the one kind that reads as a date commitment, so it carries its own hue
+ * until it ships: warning while it stands, error once its day has passed.
+ * Shipped is shipped for both - success, the same as every other cut.
+ */
+export function laneToneOf(lane: LaneLookInput): StatusToken {
+  if (lane.kind !== 'deadline' || lane.status === 'shipped') return laneTone(lane.status);
+  return isDeadlineMissed(lane) ? STATUS_PALETTE.error : STATUS_PALETTE.warning;
+}

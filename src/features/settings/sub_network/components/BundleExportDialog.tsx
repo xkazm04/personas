@@ -13,6 +13,7 @@ import type { EnclavePolicy } from '@/api/network/enclave';
 import type { Persona } from '@/lib/bindings/Persona';
 import { createLogger } from "@/lib/log";
 import { errMsg } from "@/stores/storeTypes";
+import { resolveError } from '@/lib/errors/errorRegistry';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger("bundle-export");
@@ -163,7 +164,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
     } catch (err) {
       const msg = errMsg(err, 'Failed to export bundle');
       logger.warn('Failed to export bundle', { selectedCount: selected.size, error: msg });
-      addToast(`Failed to export bundle: ${msg}`, 'error');
+      addToast(tx(st.failed_export_bundle, { error: resolveError(msg).message }), 'error');
     } finally {
       setExporting(false);
     }
@@ -185,7 +186,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
     } catch (err) {
       const msg = errMsg(err, 'Failed to copy bundle');
       logger.warn('Failed to copy bundle to clipboard', { selectedCount: selected.size, error: msg });
-      addToast(`Failed to copy bundle: ${msg}`, 'error');
+      addToast(tx(st.failed_copy_bundle, { error: resolveError(msg).message }), 'error');
     } finally {
       setCopying(false);
     }
@@ -207,7 +208,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
     } catch (err) {
       const msg = errMsg(err, 'Failed to create share link');
       logger.warn('Failed to create share link', { selectedCount: selected.size, error: msg });
-      addToast(`Failed to create share link: ${msg}`, 'error');
+      addToast(tx(st.failed_create_share_link, { error: resolveError(msg).message }), 'error');
     } finally {
       setCreatingLink(false);
     }
@@ -234,12 +235,12 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
 
       setExporting(true);
       const result = await sealEnclave(selectedPersonaId, policy, savePath);
-      addToast(`Enclave sealed: "${result.personaName}" (${formatBytes(result.byteSize)})`, 'success');
+      addToast(tx(st.enclave_sealed, { name: result.personaName, size: formatBytes(result.byteSize) }), 'success');
       onClose();
     } catch (err) {
       const msg = errMsg(err, 'Failed to seal enclave');
       logger.warn('Failed to seal enclave', { personaId: selectedPersonaId, error: msg });
-      addToast(`Failed to seal enclave: ${msg}`, 'error');
+      addToast(tx(st.failed_seal_enclave, { error: resolveError(msg).message }), 'error');
     } finally {
       setExporting(false);
     }

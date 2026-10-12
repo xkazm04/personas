@@ -12,7 +12,7 @@
 //     a digest the council has moved past is refused by the door, refetched,
 //     and said out loud; nothing is retried silently.
 import { useEffect, useRef, useState } from 'react';
-import { Lock, LockOpen } from 'lucide-react';
+import { Layers, Lock, LockOpen } from 'lucide-react';
 
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import Button from '@/features/shared/components/buttons/Button';
@@ -35,9 +35,15 @@ export interface GateProps {
   focusNonce: number;
   /** The fixture has no backend, and the gate says so rather than pretending. */
   fixture: boolean;
+  /**
+   * The alternative door: the same decision in the global Decision Deck
+   * (same `decideCouncilRow`, same digest). Absent when the deck cannot take
+   * it — the fixture, or no run detail to carry a digest.
+   */
+  onOpenDeck?: (origin: HTMLElement) => void;
 }
 
-export function CouncilGate({ open, why, standing, onDecide, focusNonce, fixture }: GateProps) {
+export function CouncilGate({ open, why, standing, onDecide, focusNonce, fixture, onOpenDeck }: GateProps) {
   const { t, tx } = useTranslation();
   const g = t.council.gate;
   const [armed, setArmed] = useState(false);
@@ -117,6 +123,17 @@ export function CouncilGate({ open, why, standing, onDecide, focusNonce, fixture
         ) : null}
       </div>
       <div className="flex flex-wrap items-center justify-end gap-3">
+        {onOpenDeck ? (
+          <Button
+            variant="ghost"
+            size="md"
+            icon={<Layers className="h-4 w-4" aria-hidden="true" />}
+            onClick={(e) => onOpenDeck(e.currentTarget)}
+            data-testid="council-gate-open-deck"
+          >
+            {t.overview.dc_open_in_deck}
+          </Button>
+        ) : null}
         <Button
           variant="secondary"
           size="md"

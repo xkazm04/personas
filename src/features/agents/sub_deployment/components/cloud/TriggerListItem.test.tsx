@@ -28,3 +28,18 @@ describe('TriggerListItem write controls disarm while the request is in flight',
     expect(onDelete).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('TriggerListItem firings load failure', () => {
+  it('a failed firings request shows a retry instead of "no firings"', () => {
+    const onRetry = vi.fn();
+    render(
+      <TriggerListItem
+        trigger={trigger} isExpanded firings={[]} isLoadingFirings={false} firingsFailed onRetryFirings={onRetry}
+        personaName="p" onToggleExpand={() => {}} onToggleEnabled={() => {}} onDelete={() => {}}
+      />,
+    );
+    expect(screen.getByTestId('cloud-firings-failed')).toBeTruthy();
+    fireEvent.click(screen.getByTestId('cloud-firings-retry'));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+});

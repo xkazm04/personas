@@ -23,15 +23,12 @@ vi.mock('@/api/companion', async () => {
   const actual = await vi.importActual<typeof import('@/api/companion')>('@/api/companion');
   return {
     ...actual,
-    companionListPendingApprovals: vi.fn(async () => []),
     companionListProactiveMessages: vi.fn(async () => []),
   };
 });
 
-vi.mock('@/api/overview/reviews', () => ({
-  listManualReviews: vi.fn(async () => []),
-  listManualReviewsPage: vi.fn(async () => ({ rows: [], nextCursor: null, hasMore: false })),
-}));
+/** The roster has nothing waiting: only the orb-only re-login source speaks. */
+const NO_ROSTER = { items: [], decide: async () => undefined };
 
 describe('the orb decision for a re-login that needs the operator', () => {
   beforeEach(() => {
@@ -42,7 +39,7 @@ describe('the orb decision for a re-login that needs the operator', () => {
   });
 
   it('surfaces one decision per needs-you plan, in words, with Re-login and Dismiss', async () => {
-    const queue = await buildDecisionQueueForTest();
+    const queue = await buildDecisionQueueForTest(NO_ROSTER);
     expect(queue.map((d) => d.source)).toEqual(['claude_relogin', 'claude_relogin']);
     const first = queue[0]!;
     expect(first.prompt).toBe('fleet.five@simulated.test: Sign in by hand once');
@@ -52,37 +49,37 @@ describe('the orb decision for a re-login that needs the operator', () => {
   });
 
   it('a running or done re-login is not a decision', async () => {
-    const queue = await buildDecisionQueueForTest();
+    const queue = await buildDecisionQueueForTest(NO_ROSTER);
     expect(queue.some((d) => d.sourceRef === 'sim-plan-6' || d.sourceRef === 'sim-plan-2')).toBe(false);
   });
 
   it('Re-login runs the command for that account', async () => {
-    const [first] = await buildDecisionQueueForTest();
+    const [first] = await buildDecisionQueueForTest(NO_ROSTER);
     await first!.options[0]!.run();
     expect(relogin).toHaveBeenCalledWith('sim-plan-5');
   });
 
   it('Dismiss holds the decision back for the session, and a later run is a new question', async () => {
-    const [first] = await buildDecisionQueueForTest();
+    const [first] = await buildDecisionQueueForTest(NO_ROSTER);
     await first!.options[1]!.run();
-    expect((await buildDecisionQueueForTest()).map((d) => d.sourceRef)).toEqual(['sim-plan-7']);
+    expect((await buildDecisionQueueForTest(NO_ROSTER)).map((d) => d.sourceRef)).toEqual(['sim-plan-7']);
 
     const next = buildSimAccountsSnapshot(NOW);
     next.accounts = next.accounts.map((a) =>
       a.id === 'sim-plan-5' && a.relogin ? { ...a, relogin: { ...a.relogin, startedAtMs: a.relogin.startedAtMs + 60_000 } } : a);
     list.mockResolvedValue(next);
-    expect((await buildDecisionQueueForTest()).map((d) => d.sourceRef)).toEqual(['sim-plan-5', 'sim-plan-7']);
+    expect((await buildDecisionQueueForTest(NO_ROSTER)).map((d) => d.sourceRef)).toEqual(['sim-plan-5', 'sim-plan-7']);
   });
 
   it('never raises a toast', async () => {
     const add = vi.spyOn(useToastStore.getState(), 'addToast');
-    await buildDecisionQueueForTest();
+    await buildDecisionQueueForTest(NO_ROSTER);
     expect(add).not.toHaveBeenCalled();
     add.mockRestore();
   });
 
   it('a failing read leaves the rest of the queue intact', async () => {
     list.mockRejectedValue(new Error('offline'));
-    await expect(buildDecisionQueueForTest()).resolves.toEqual([]);
+    await expect(buildDecisionQueueForTest(NO_ROSTER)).resolves.toEqual([]);
   });
 });

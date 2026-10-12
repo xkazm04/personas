@@ -69,7 +69,7 @@ inventory deliberately stays a naming layer.
 | `sidecar-provisioning` | Sidecar binaries & model provisioning | `src-tauri/src/companion/stt/downloader.rs` |
 | `fleet-orchestration` | Agent fleet orchestration | `src-tauri/src/commands/fleet/registry.rs` |
 | `agent-chaining` | Agent handoff & chaining | `src-tauri/engine/src/team_handoff.rs` |
-| `hitl-approval` | Human-in-the-loop approval | `src-tauri/src/engine/build_session/gates.rs` + reviews repo |
+| `hitl-approval` | Human-in-the-loop approval | `src-tauri/engine/src/build_session/gates.rs` + reviews repo |
 | `proactive-nudges` | Proactive nudges & attention budgeting | `src-tauri/src/companion/proactive/mod.rs` |
 | `voice-io` | Voice I/O | `src-tauri/src/companion/tts/mod.rs` |
 | `mcp-tools` | Tool protocols (MCP) | `src-tauri/src/companion/orchestration/mcp/mod.rs` |
@@ -84,7 +84,7 @@ inventory deliberately stays a naming layer.
 | `background-jobs` | Background jobs & supervised loops | `src-tauri/src/engine/background/` |
 | `webhook-ingestion` | Webhook ingestion | `src-tauri/src/engine/webhook.rs` |
 | `delivery-guarantees` | Delivery guarantees & dead-letter | stuck-event reaper + `EventGateReason` ledger |
-| `retry-backoff` | Retry, backoff & circuit breaking | `src-tauri/src/engine/failover.rs` |
+| `retry-backoff` | Retry, backoff & circuit breaking | `src-tauri/engine/src/failover.rs` |
 | `rate-limiting` | Rate limiting | `src-tauri/engine/src/rate_limiter.rs` |
 | `concurrency-guards` | Idempotency & in-flight guards | `src-tauri/engine/src/inflight_guard.rs` |
 | `admission-queue` | Execution queue & admission control | `src-tauri/engine/src/queue.rs` + `resource_governor.rs` |
@@ -117,7 +117,7 @@ inventory deliberately stays a naming layer.
 
 | slug | Subject | Canonical exemplar |
 |---|---|---|
-| `credential-vault` | Credential vault (encryption at rest · OAuth lifecycle · rotation · acquisition · brokered egress) | `src-tauri/core/src/crypto.rs` + `src-tauri/src/engine/credential_broker.rs` |
+| `credential-vault` | Credential vault (encryption at rest · OAuth lifecycle · rotation · acquisition · brokered egress) | `src-tauri/core/src/crypto.rs` + `src-tauri/engine/src/credential_broker.rs` |
 | `authorization` | Authorization & capability scoping | `src-tauri/src/ipc_auth.rs` + `scope_enforcement.rs` |
 | `device-pairing` | Device pairing & trust | `src-tauri/engine/src/pairing.rs` |
 | `signed-artifacts` | Signed artifacts & provenance | `src-tauri/src/commands/network/bundle.rs` |

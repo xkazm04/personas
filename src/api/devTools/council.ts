@@ -6,11 +6,13 @@
 // ingest door is the only path from those files into SQLite, and the decide
 // command is the only writer of a human decision.
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import { silentCatch } from "@/lib/silentCatch";
 
 import type { CouncilDecision } from "@/lib/bindings/CouncilDecision";
 import type { CouncilIngestSummary } from "@/lib/bindings/CouncilIngestSummary";
 import type { CouncilMedia } from "@/lib/bindings/CouncilMedia";
 import type { CouncilOverlay } from "@/lib/bindings/CouncilOverlay";
+import type { CouncilReport } from "@/lib/bindings/CouncilReport";
 import type { CouncilRunDetail } from "@/lib/bindings/CouncilRunDetail";
 import type { CouncilSubjectState } from "@/lib/bindings/CouncilSubjectState";
 import type { DevUseCase } from "@/lib/bindings/DevUseCase";
@@ -109,4 +111,49 @@ export async function getRegistryGalaxy(registryRoot: string): Promise<RegistryG
 /** One evidence file from inside a run directory (path-confined by the door). */
 export async function readCouncilMedia(runId: string, relPath: string): Promise<CouncilMedia> {
   return invoke<CouncilMedia>("dev_tools_council_read_media", { runId, relPath });
+}
+
+/**
+ * A run's full long-form report (`report.html`, else `report.md`), read from
+ * inside its own run directory. Rejects with `kind: "not_found"` when the run
+ * wrote no report - an absent report is never an empty string.
+ */
+export async function readCouncilReport(runId: string): Promise<CouncilReport> {
+  return invoke<CouncilReport>("dev_tools_council_read_report", { runId });
+}
+
+/**
+ * A media resolver for one council run's HTML report: a relative `src` in the
+ * report is read through the confined `read_media` door and handed back as a
+ * `blob:` URL. `dispose()` revokes every URL it created - call it when the
+ * reader closes. A file the door refuses resolves to `null` (the frame drops
+ * the reference) rather than throwing.
+ */
+export function createCouncilMediaResolver(runId: string): {
+  resolve: (src: string) => Promise<string | null>;
+  dispose: () => void;
+} {
+  const created: string[] = [];
+  let disposed = false;
+  return {
+    resolve: async (src) => {
+      let media: CouncilMedia;
+      try {
+        media = await readCouncilMedia(runId, src);
+      } catch (err) {
+        silentCatch("api/devTools/council:createCouncilMediaResolver")(err);
+        return null;
+      }
+      if (disposed) return null;
+      const url = URL.createObjectURL(
+        new Blob([new Uint8Array(media.bytes)], { type: media.mime || "application/octet-stream" }),
+      );
+      created.push(url);
+      return url;
+    },
+    dispose: () => {
+      disposed = true;
+      for (const url of created.splice(0)) URL.revokeObjectURL(url);
+    },
+  };
 }

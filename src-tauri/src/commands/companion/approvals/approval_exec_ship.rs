@@ -1262,6 +1262,7 @@ mod ship_milestone_tests {
                     CHECK(status IN ('planned','active','shipped')),
                 order_index INTEGER NOT NULL DEFAULT 0, target_date TEXT,
                 cut_at TEXT, shipped_at TEXT,
+                kind TEXT NOT NULL DEFAULT 'milestone' CHECK(kind IN ('milestone','deadline')),
                 created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
              CREATE TABLE dev_milestone_items (milestone_id TEXT NOT NULL,
                 item_kind TEXT NOT NULL CHECK(item_kind IN ('use_case','goal')),

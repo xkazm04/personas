@@ -240,16 +240,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_tool_runner/components/ToolInvocationCard.tsx"
     },
-    "src/features/companions/athena/inbox/hooks/useInboxActions.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["92"],
-      "contexts": [
-        "| `stores/slices/overview/healingSlice.ts:26` (`resolveHealingIssue(id, personaId?)`) | **The case study.** No in-flight state of any kind, so four consumers invented four answers: `HealingIssueModal…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "useInboxActions.ts"
-    },
     "src/features/companions/overseer/components/ReviewFilteredAction.tsx": {
       "count": 1,
       "sections": [6],
@@ -834,6 +824,15 @@
       "sections": [7],
       "contexts": [
         "| **15 files render `<AsyncButton>` and never pass `isLoading`** — `agents/sub_deployment/components/cloud/CloudReconcileBanner.tsx` (2) · `overview/sub_patterns/CreatePracticeModal.tsx` · `plugins/a…"
+      ],
+      "resolved": false
+    },
+    "useInboxActions.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["92"],
+      "contexts": [
+        "| `stores/slices/overview/healingSlice.ts:26` (`resolveHealingIssue(id, personaId?)`) | **The case study.** No in-flight state of any kind, so four consumers invented four answers: `HealingIssueModal…"
       ],
       "resolved": false
     }

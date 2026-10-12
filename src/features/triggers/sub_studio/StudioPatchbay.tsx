@@ -18,7 +18,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Check, Trash2, X, Filter, Eye, EyeOff, PanelLeft, PanelLeftClose, PanelRight, PanelRightClose } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Check, Trash2, X, Filter, Eye, EyeOff, PanelLeft, PanelLeftClose, PanelRight, PanelRightClose } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
@@ -102,7 +102,9 @@ export function StudioPatchbay() {
   // Ghost only into emptiness while the roster is still in flight; empty
   // illustration waits until triggers+subs have settled (law 3 / law 5).
   const showGhost = routing.loading && connected.length === 0 && c.draft.links.length === 0;
-  const showEmpty = !routing.loading && isEmpty;
+  // A failed fetch with nothing to show is an error, not a first run.
+  const showLoadError = !routing.loading && routing.loadError && connected.length === 0;
+  const showEmpty = !routing.loading && isEmpty && !showLoadError;
 
   return (
     // The testid keeps the historical "switchboard" name — the companion
@@ -146,8 +148,8 @@ export function StudioPatchbay() {
               </button>
             )}
             {c.committableLinks.length > 0 && (
-              <button type="button" onClick={() => void c.commitAll()}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-interactive text-status-success hover:bg-status-success/10 transition-colors">
+              <button type="button" onClick={() => void c.commitAll()} disabled={c.committing.size > 0}
+                className="disabled:is-disabled flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-interactive text-status-success hover:bg-status-success/10 transition-colors">
                 <Check className="w-3.5 h-3.5" /> {st.commit_all}
               </button>
             )}
@@ -180,6 +182,10 @@ export function StudioPatchbay() {
           <SystemEventAutomationsPanel automations={c.automations} onToggle={c.toggleAutomation} onRun={c.runAutomationNow} onDelete={c.removeAutomation} />
 
           {showGhost && <CableGhostRows />}
+          {showLoadError && (
+            <EmptyState icon={AlertTriangle} title={st.load_failed_title} description={st.load_failed_desc}
+              action={{ label: st.load_failed_retry, onClick: () => void routing.reload() }} />
+          )}
           {showEmpty && <EmptyState icon={Filter} title={st.no_routes_title} description={st.no_routes_desc} />}
 
           {/* Draft cables (pending, unsaved) */}
@@ -218,7 +224,7 @@ export function StudioPatchbay() {
                   <button type="button" onClick={() => { if (!blocker) void c.commitLink(link); }} disabled={!!blocker || busy}
                     title={blocker === 'signal_source' ? st.commit_blocked_source_type : blocker === 'output_match' ? st.commit_needs_output_match : viaForm ? st.configure_commit_route : st.commit_route}
                     aria-label={viaForm ? st.configure_commit_route : st.commit_route}
-                    className={`p-1.5 rounded-interactive transition-colors disabled:cursor-not-allowed ${blocker ? 'text-foreground opacity-40' : 'text-status-success/80 hover:text-status-success hover:bg-status-success/10 disabled:opacity-50'}`}>
+                    className={`p-1.5 rounded-interactive transition-colors disabled:is-disabled ${blocker ? 'text-foreground opacity-40' : 'text-status-success/80 hover:text-status-success hover:bg-status-success/10'}`}>
                     {busy ? <LoadingSpinner size="sm" /> : <Check className="w-3.5 h-3.5" />}
                   </button>
                   <button type="button" onClick={() => c.removeLink(link.id)} aria-label={st.remove_route}

@@ -33,6 +33,7 @@
     ".claude/worktrees/**": {"count":1,"sections":[],"contexts":["real source, not estimated. `.claude/worktrees/**` excluded."],"resolved":false,"isDir":true},
     "artist/persistence.rs": {"count":1,"sections":[5],"lines":["77"],"contexts":["`artist_save_composition` (`artist/persistence.rs:77`) still writes to whatever"],"resolved":false},
     "artist/transcribe.rs": {"count":1,"sections":[7],"lines":["136"],"contexts":["(`artist/transcribe.rs:136`, `infrastructure/cloud.rs:1382`) and both do so in a"],"resolved":false},
+    "commandNames.generated.ts": {"count":1,"sections":[3],"contexts":["`npm run check`) — the live gate that keeps `commandNames.generated.ts` equal"],"resolved":false},
     "commands/core/data_portability.rs": {
       "count": 1,
       "sections": [7],
@@ -242,7 +243,7 @@
       "verbatim": "test_automation.rs"
     },
     "src-tauri/tauri.conf.json": {"count":2,"sections":[5],"lines":["16","44"],"contexts":["(`tauri.conf.json:16`) and the token in `window.__IPC_TOKEN`, any code running"],"resolvedFrom":"basename","verbatim":"tauri.conf.json"},
-    "src/lib/commandNames.generated.ts": {"count":2,"sections":[3,4],"contexts":["`npm run check`) — the live gate that keeps `commandNames.generated.ts` equal"],"resolvedFrom":"basename","verbatim":"commandNames.generated.ts"},
+    "src/lib/commandNames.generated.ts": {"count":1,"sections":[4],"contexts":["refresh `src/lib/commandNames.generated.ts`."]},
     "src/lib/errors/errorRegistry.ts": {
       "count": 3,
       "sections": [7,9],

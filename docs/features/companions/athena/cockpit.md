@@ -74,8 +74,8 @@ CockpitPanel calls companionGetCockpit(), parses spec_json,
 | `src/features/home/sub_cockpit/widgetRegistry.ts` | Map from widget `kind` string → React component. **29 kinds** as of 2026-09-06. |
 | `src/features/home/sub_cockpit/widgets/PersonaOverviewWidget.tsx` | Illustrated persona card grid. Click → Agents → that persona. Config: `{limit, filter}`. |
 | `src/features/home/sub_cockpit/widgets/ConnectedServicesWidget.tsx` | Credentials + per-cred persona usage counts + health pill. Click → Connections page. Config: `{limit}`. |
-| `src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx` | Flat list of `UnifiedInboxItem`s (approvals + messages + healing + outputs). Click row → opens `DecisionDrawer`. Config: `{limit}`. |
-| `src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx` | Modal drawer with full body + per-kind action buttons (approve/reject/resolve/mark-read). Uses `useInboxActions` from the companion inbox lib. |
+| `src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx` | Top-N items of the Decision Center roster (`useDecisionRoster`, the same counts as the title-bar badge). Click row → opens `DecisionDrawer`. Config: `{limit}`. |
+| `src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx` | Modal drawer with full body + per-kind actions, deciding through the roster's `decide` (one write door per row type, `rowWrites`). |
 | `src/api/companion.ts` | `CompanionCockpitSpec`, `CompanionCockpitWidget`, `companionGetCockpit()` (`:1782`), `companionPinWidgetToCockpit()` (`:1791`), `companionUnpinWidgetFromCockpit()` (`:1812`), `COMPANION_COMPOSE_COCKPIT_EVENT`, `COMPANION_EXPLAIN_COCKPIT_EVENT`. |
 
 The 29 registered kinds fall into six families: the three data-fetching originals (`persona_overview`, `connected_services`, `decisions_panel`); four contextual ones composed programmatically by other surfaces rather than by Athena (`message_summary`, `execution_facts`, `linked_decisions`, `linked_memories`); three generic ones (`metric_spark`, `issue_list`, `text_callout`); the six explainers below; the eleven persona-design cards (`persona_walkthrough`, `template_suggestions`, `use_case_set`, `trigger_set`, `model_tier_choice`, `observability_plan`, `decision_log`, `persona_ready`, `design_capabilities`, `persona_creation_offer`, `walkthrough_offer`); and `browser_test_report` / `recent_decisions`.
@@ -132,16 +132,9 @@ Athena can also surface the same widgets *inside* the chat transcript without co
 
 Use inline cards when a UI snippet beats prose for *this turn*; compose the cockpit when the user is landing on the app or wants a persistent overview.
 
-## Data layer: `companion/inbox/`
+## Data layer: the Decision Center roster
 
-The unified-inbox abstraction (`useUnifiedInbox`, `useInboxActions`, four adapters, illustration resolver, relative-time formatter) lives under `src/features/plugins/companion/inbox/`. Consumed by the Cockpit's `DecisionsPanelWidget`, the inline `DecisionsCard`, and any future chat-card or cockpit widget that wants the same data shape.
-
-| Hook | Purpose |
-| --- | --- |
-| `useUnifiedInbox()` | Merges manualReviews + messages + healingIssues across personas into a sorted, capped `UnifiedInboxItem[]`. |
-| `useCockpitSummary()` | Header counters (runs today, active personas, connected creds, needs-me count). |
-| `useIllustration(persona)` | Deterministic 4-tier resolver mapping a Persona to one of 12 watercolor WebPs under `public/illustrations/personas/`. |
-| `useInboxActions(item)` | Per-kind action triple (primary / secondary / tertiary) that calls into the overview store. |
+The unified-inbox library (`companion/inbox/`, `UnifiedInboxItem`) was retired on 2026-10-06. The Cockpit's decision widgets read the Decision Center roster (`src/features/decision-center/useDecisionRoster.ts` + `roster/`), which every other reader (title-bar badge, Athena's orb, the Activity hub) shares, so the counts never disagree. `formatRelativeTime` moved to `src/features/home/sub_cockpit/widgets/` with its `cockpit.inbox.relative_*` keys.
 
 ## i18n
 

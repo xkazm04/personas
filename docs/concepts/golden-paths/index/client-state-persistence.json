@@ -68,6 +68,14 @@
       ],
       "resolved": false
     },
+    "keys.ts": {
+      "count": 1,
+      "sections": [9],
+      "contexts": [
+        "- **Assert non-zero extraction on both sides before comparing.** Zero keys parsed from `keys.ts`, or zero entries parsed from `ALLOWED_KEYS`, is `exit 1` with \"extractor matched nothing — the file mo…"
+      ],
+      "resolved": false
+    },
     "main.tsx": {
       "count": 2,
       "sections": [5,7],
@@ -248,16 +256,6 @@
       "resolved": false,
       "isDir": true
     },
-    "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx": {
-      "count": 1,
-      "sections": [5],
-      "lines": ["88"],
-      "contexts": [
-        "- **Writing to localStorage on the keystroke path.** `ConversationComposer.tsx:55-61` writes the channel draft in a `useEffect([draft, teamId])` — one synchronous `JSON`-free `setItem` per character…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "useDeckControls.tsx"
-    },
     "src/features/agents/quick-answer/triage/triageJournal.ts": {
       "count": 2,
       "sections": [5,7],
@@ -347,15 +345,6 @@
       "contexts": [
         "- **`src/features/plugins/obsidian-brain/useSavedVaultConfigs.ts:32-61`** — the **migration** template: read legacy key → merge → write backend → `removeItem` the legacy key, and **keep the legacy ke…"
       ]
-    },
-    "src/features/plugins/twin/experience/table/keys.ts": {
-      "count": 1,
-      "sections": [9],
-      "contexts": [
-        "- **Assert non-zero extraction on both sides before comparing.** Zero keys parsed from `keys.ts`, or zero entries parsed from `ALLOWED_KEYS`, is `exit 1` with \"extractor matched nothing — the file mo…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "keys.ts"
     },
     "src/features/settings/sub_byom/components/ByomApiKeyManager.tsx": {
       "count": 1,
@@ -707,6 +696,15 @@
         "- **`src/stores/util/dedupedStorage.ts`** — `createDedupedJSONStorage()`. The `storage:` option for **every** `persist()`. Skips a `setItem` when the serialized payload is unchanged; without it a hot…"
       ]
     },
-    "storage-baseline.json": {"count":1,"sections":[9],"contexts":["- **A missing or unparseable `storage-baseline.json` is `exit 1`,** not \"nothing to compare against\"."],"resolved":false}
+    "storage-baseline.json": {"count":1,"sections":[9],"contexts":["- **A missing or unparseable `storage-baseline.json` is `exit 1`,** not \"nothing to compare against\"."],"resolved":false},
+    "useDeckControls.tsx": {
+      "count": 1,
+      "sections": [5],
+      "lines": ["88"],
+      "contexts": [
+        "- **Writing to localStorage on the keystroke path.** `ConversationComposer.tsx:55-61` writes the channel draft in a `useEffect([draft, teamId])` — one synchronous `JSON`-free `setItem` per character…"
+      ],
+      "resolved": false
+    }
   }
 }

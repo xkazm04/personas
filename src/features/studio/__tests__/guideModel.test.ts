@@ -86,6 +86,6 @@ describe('guide strings', () => {
     const { guideStrings } = await import('../guide/guideCopy');
     // A window that loaded `studio` before `guide` existed keeps that object across a hot update.
     const stale = { studio: { build_plan: 'Build plan' } } as unknown as Parameters<typeof guideStrings>[0];
-    expect(guideStrings(stale).layout_guide).toBeUndefined();
+    expect(guideStrings(stale).goals).toBeUndefined();
   });
 });

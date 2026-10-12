@@ -71,7 +71,7 @@ A team **assignment** (goal → ordered steps routed across personas) runs in
 three cooperating layers. Keep them separate — each is good at one thing:
 
 1. **Sonnet — Preview / initial checklist.** `decompose_team_assignment_goal`
-   (`src-tauri/src/engine/team_assignment_matching.rs:decompose_goal`) turns the
+   (`src-tauri/engine/src/team_assignment_matching.rs:decompose_goal`) turns the
    plain-language goal + roster into ordered `DecomposedStep`s. One-shot, no
    state. This stays exactly as-is — it's the "what should the team do?" brain.
    Used by both the Orchestrate console (`teamStudioShared.tsx`) and

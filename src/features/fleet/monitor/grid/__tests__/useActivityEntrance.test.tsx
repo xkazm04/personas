@@ -11,7 +11,7 @@ import {
   useProgressiveReveal, useRevealTracker, __resetSurfaceRevealForTests,
 } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
-import { DESK_REST_WIDTH, DeskGhost, UsageGhost } from '../prototype/entry-e/SlotGhosts';
+import { UsageGhost } from '../prototype/entry-e/SlotGhosts';
 
 function reduceMotion(on: boolean) {
   if (on) document.documentElement.setAttribute('data-motion', 'reduce');
@@ -168,20 +168,13 @@ describe('the per-item reveal the plates and figures use', () => {
 });
 
 describe('the reserved space the lazy slots land in', () => {
-  it('holds the desk column at its resting width before the rail beat', () => {
-    render(<DeskGhost />);
-    const col = screen.getByTestId('entry-e-desk-ghost').firstElementChild as HTMLElement;
-    expect(col.style.width).toBe(`${DESK_REST_WIDTH}px`);
-    expect(col.className).toContain('border-l');
-  });
-
   it('is a panel at rest, never a spinner — nothing announces loading', () => {
-    const { container } = render(<><DeskGhost /><UsageGhost /></>);
+    const { container } = render(<UsageGhost />);
     expect(container.querySelector('[role="status"]')).toBeNull();
     expect(container.querySelector('svg')).toBeNull();
     // Both are aria-hidden, so the same element serving as the Suspense
     // fallback cannot be announced as a change either.
-    for (const id of ['entry-e-desk-ghost', 'entry-e-usage-ghost']) {
+    for (const id of ['entry-e-usage-ghost']) {
       expect(screen.getByTestId(id).getAttribute('aria-hidden')).toBe('true');
     }
   });

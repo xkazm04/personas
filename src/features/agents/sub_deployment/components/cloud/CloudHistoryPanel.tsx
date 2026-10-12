@@ -10,15 +10,24 @@ import { cloudListExecutions, cloudExecutionStats, cloudGetExecutionOutput, clou
 import type { CloudExecution, CloudExecutionStats, CloudDeployment } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
-import { formatDuration, formatCost, classifyExecutionStatus, matchesErrorCluster, monthlyBudgetRollup, budgetTone, projectMonthEndSpend } from './CloudHistoryHelpers';
+import { formatDuration, formatCost, classifyExecutionStatus, matchesErrorCluster, monthlyBudgetRollup, budgetTone, successRateTone, projectMonthEndSpend } from './CloudHistoryHelpers';
 import { formatNumeric } from '@/lib/utils/formatters';
 import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { createLatestWins } from '@/stores/util/latestWins';
+import { Button } from '@/features/shared/components/buttons';
 
 const EXEC_CASCADE_ROWS = 14;
+
+const SUCCESS_CARD_COLOR = { success: 'emerald', warning: 'amber', error: 'red' } as const;
+/** No runs in the window (null rate) renders neutral, not as the red alarm. */
+function successRateCardColor(rate: number | null | undefined) {
+  const tone = successRateTone(rate);
+  return tone ? SUCCESS_CARD_COLOR[tone] : undefined;
+}
 
 
 // ---------------------------------------------------------------------------
@@ -59,23 +68,30 @@ export function CloudHistoryPanel() {
   // good snapshot. The failed-poll trap of the registry's
   // transition-detection-and-notify technique: a failed poll yields NO
   // snapshot (the previous rows stay), and the display says so.
+  // Request sequencing: a poll started under the previous filters can resolve
+  // after the debounced filter fetch. Only the newest request may write rows,
+  // stats, staleness or the busy flag - a superseded response is dropped.
+  const latestWins = useRef(createLatestWins()).current;
   const fetchData = useCallback(async (source: 'poll' | 'manual' | 'filter' = 'poll') => {
+    const seq = latestWins.next();
     setIsLoading(true);
     try {
       const [execs, st] = await Promise.all([
         cloudListExecutions(filterPersona || undefined, filterStatus || undefined, 50),
         cloudExecutionStats(filterPersona || undefined, period),
       ]);
+      if (!latestWins.isCurrent(seq)) return;
       setExecutions(execs);
       setStats(st);
       setStale(false);
     } catch (err) {
+      if (!latestWins.isCurrent(seq)) return;
       setStale(true);
       if (source === 'manual') toastCatch('features/deployment/components/cloud/CloudHistoryPanel:refresh')(err);
       else silentCatch('features/deployment/components/cloud/CloudHistoryPanel:catch1')(err);
       if (source === 'poll') throw err;
     } finally {
-      setIsLoading(false);
+      if (latestWins.isCurrent(seq)) setIsLoading(false);
     }
   }, [filterPersona, filterStatus, period]);
 
@@ -202,7 +218,7 @@ export function CloudHistoryPanel() {
           <StatCard
             label={dt.history.success_rate}
             value={stats.successRate != null ? formatNumeric(stats.successRate, 'ratio', { precision: 0 }) : '-'}
-            color={stats.successRate != null && stats.successRate >= 0.9 ? 'emerald' : stats.successRate != null && stats.successRate >= 0.7 ? 'amber' : 'red'}
+            color={successRateCardColor(stats.successRate)}
           />
           <StatCard label={dt.history.total_cost} value={formatCost(stats.totalCostUsd)} />
           <StatCard label={dt.history.avg_duration} value={formatDuration(stats.avgDurationMs == null ? null : Number(stats.avgDurationMs))} />
@@ -345,10 +361,26 @@ export function CloudHistoryPanel() {
         <div className="space-y-1">
           <CloudExecutionRowGhosts />
         </div>
+      ) : stale && executions.length === 0 ? (
+        // A cold load that failed has no snapshot to show: say so and offer the
+        // same request again, never the settled-empty copy.
+        <div className="py-8 text-center" role="alert" data-testid="cloud-history-load-failed">
+          <p className="typo-body text-foreground">{dt.history.load_failed}</p>
+          <Button
+            variant="link"
+            size="sm"
+            data-testid="cloud-history-retry"
+            onClick={() => { void fetchData('manual'); }}
+            disabled={isLoading}
+            className="mt-2"
+          >
+            {t.common.retry}
+          </Button>
+        </div>
       ) : visibleExecutions.length === 0 ? (
         <div className="py-8 text-center">
           <p className="typo-body text-foreground">
-            {'No executions found for the selected filters.'}
+            {dt.history.no_executions_found}
           </p>
           {(filterPersona || filterStatus || errorCluster) && (
             <button

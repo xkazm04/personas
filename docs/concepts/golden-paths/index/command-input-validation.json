@@ -106,6 +106,22 @@
     },
     "src-tauri/db/src/repos/core/personas.rs": {"count":3,"sections":[3,6,8],"lines":["201-229"],"contexts":["- **`src-tauri/db/src/repos/core/personas.rs:201-229`** — eight `validate_check(pv::validate_*)`"]},
     "src-tauri/db/src/repos/resources/triggers.rs": {"count":1,"sections":[3],"lines":["16-22"],"contexts":["- **`src-tauri/db/src/repos/resources/triggers.rs:16-22`** — `validate_trigger_type` /"],"resolved":false},
+    "src-tauri/engine/src/project_tracking/watchers/git.rs": {
+      "count": 1,
+      "sections": [],
+      "lines": ["71-75"],
+      "contexts": ["publishers (`git.rs:71-75`, `okf.rs:159-163`) with a comment admitting it. **A helper is a rule you"],
+      "resolvedFrom": "basename",
+      "verbatim": "git.rs"
+    },
+    "src-tauri/engine/src/twin_sample/guard.rs": {
+      "count": 2,
+      "sections": [5],
+      "lines": ["188"],
+      "contexts": ["The sibling sweep found the same trap in `brainiac` (`guard.rs:188` `.take(MAX_PATHS)` silently"],
+      "resolvedFrom": "basename",
+      "verbatim": "guard.rs"
+    },
     "src-tauri/src/cloud/remote_commands.rs": {
       "count": 2,
       "sections": [],
@@ -173,22 +189,6 @@
       "verbatim": "radio.rs"
     },
     "src-tauri/src/commands/tools/triggers.rs": {"count":1,"sections":[8],"contexts":["enforced in `repos/core/personas.rs` for personas, in `commands/tools/triggers.rs` for"],"resolvedFrom":"suffix","verbatim":"commands/tools/triggers.rs"},
-    "src-tauri/src/engine/project_tracking/watchers/git.rs": {
-      "count": 1,
-      "sections": [],
-      "lines": ["71-75"],
-      "contexts": ["publishers (`git.rs:71-75`, `okf.rs:159-163`) with a comment admitting it. **A helper is a rule you"],
-      "resolvedFrom": "basename",
-      "verbatim": "git.rs"
-    },
-    "src-tauri/src/engine/twin_sample/guard.rs": {
-      "count": 2,
-      "sections": [5],
-      "lines": ["188"],
-      "contexts": ["The sibling sweep found the same trap in `brainiac` (`guard.rs:188` `.take(MAX_PATHS)` silently"],
-      "resolvedFrom": "basename",
-      "verbatim": "guard.rs"
-    },
     "src-tauri/src/lib.rs": {"count":1,"sections":[3],"lines":["49"],"contexts":["**The vocabulary (`src-tauri/core/src/validation/`, re-exported at `src-tauri/src/lib.rs:49`)**"]},
     "src-tauri/srcc": {"count":1,"sections":[9],"contexts":["| renamed root (`src-tauri/srcc`) | **1** | `walked 0 files but floor is 400` + `matched zero files anywhere` + both drops |"],"resolved":false,"isDir":true},
     "src/": {"count":2,"sections":[9],"contexts":["- **(b) `ValidationError.ts` and `ValidationRule.ts` each have ≥ 1 importer under `src/`,"],"resolved":false,"isDir":true},

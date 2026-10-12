@@ -19,16 +19,24 @@ use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 /// Match a tool name against known connector names to infer its credential type.
+///
+/// Exact (case-insensitive) name wins. Otherwise a substring match is accepted
+/// only when exactly one connector matches: `post` is contained in both
+/// `postgres` and `posthog`, and binding either by row order would inject the
+/// wrong secret, so an ambiguous name returns `None` (needs setup) instead.
 fn infer_credential_type(tool_name: &str, connectors: &[ConnectorDefinition]) -> Option<String> {
     let lower = tool_name.to_lowercase();
-    connectors.iter().find_map(|c| {
+    if let Some(c) = connectors.iter().find(|c| c.name.to_lowercase() == lower) {
+        return Some(c.name.clone());
+    }
+    let mut partial = connectors.iter().filter(|c| {
         let cn = c.name.to_lowercase();
-        if lower.contains(&cn) || cn.contains(&lower) {
-            Some(c.name.clone())
-        } else {
-            None
-        }
-    })
+        lower.contains(&cn) || cn.contains(&lower)
+    });
+    match (partial.next(), partial.next()) {
+        (Some(only), None) => Some(only.name.clone()),
+        _ => None,
+    }
 }
 
 /// Generic tool names that act as transport/utility and rely on connector
@@ -97,6 +105,31 @@ fn persona_uses_drive(ir: &crate::db::models::AgentIr) -> bool {
     })
 }
 
+/// One admission rule for foreign workflow bytes: the build-session import
+/// door enforces the same size caps as the n8n session / transform doors
+/// (`commands::design::n8n_limits`). Sanitizing and fencing happen where the
+/// bytes enter the prompt (`engine::build_session::runner`).
+fn validate_workflow_import_sizes(
+    workflow_json: Option<&str>,
+    parser_result_json: Option<&str>,
+) -> Result<(), AppError> {
+    use super::n8n_limits::{MAX_TRANSFORM_PAYLOAD_BYTES, MAX_WORKFLOW_JSON_BYTES};
+
+    if workflow_json.is_some_and(|wf| wf.len() > MAX_WORKFLOW_JSON_BYTES) {
+        return Err(AppError::Validation(format!(
+            "Workflow JSON too large (>{} MB). Use a smaller workflow export.",
+            MAX_WORKFLOW_JSON_BYTES / (1024 * 1024)
+        )));
+    }
+    if parser_result_json.is_some_and(|p| p.len() > MAX_TRANSFORM_PAYLOAD_BYTES) {
+        return Err(AppError::Validation(format!(
+            "Workflow analysis too large (>{} MB). Use a smaller workflow.",
+            MAX_TRANSFORM_PAYLOAD_BYTES / (1024 * 1024)
+        )));
+    }
+    Ok(())
+}
+
 /// Start a new build session for a persona. Returns the session ID.
 /// Events are streamed back via the Channel parameter.
 /// Optional workflow_json + parser_result_json enable workflow import mode.
@@ -123,6 +156,7 @@ pub async fn start_build_session(
     context: Option<String>,
 ) -> Result<String, AppError> {
     require_auth(&state).await?;
+    validate_workflow_import_sizes(workflow_json.as_deref(), parser_result_json.as_deref())?;
 
     let session_id = uuid::Uuid::new_v4().to_string();
 
@@ -175,6 +209,7 @@ pub async fn start_build_session_headless(
     context: Option<String>,
 ) -> Result<String, AppError> {
     require_auth(&state).await?;
+    validate_workflow_import_sizes(workflow_json.as_deref(), parser_result_json.as_deref())?;
 
     let session_id = uuid::Uuid::new_v4().to_string();
 
@@ -3706,6 +3741,62 @@ mod tests {
     use super::*;
     use crate::db::models::{AgentIr, AgentIrEvent};
 
+    fn connector_named(name: &str) -> ConnectorDefinition {
+        ConnectorDefinition {
+            id: name.to_string(),
+            name: name.to_string(),
+            label: name.to_string(),
+            icon_url: None,
+            color: String::new(),
+            category: String::new(),
+            fields: "[]".into(),
+            healthcheck_config: None,
+            services: "[]".into(),
+            events: "[]".into(),
+            metadata: None,
+            resources: None,
+            is_builtin: true,
+            created_at: String::new(),
+            updated_at: String::new(),
+        }
+    }
+
+    #[test]
+    fn infer_credential_type_refuses_ambiguous_substrings() {
+        let cs: Vec<_> = [
+            "resend",
+            "sendgrid",
+            "postgres",
+            "posthog",
+            "gmail",
+            "slack",
+            "slack_webhook",
+            "google_drive",
+            "onedrive",
+            "pipedrive",
+        ]
+        .iter()
+        .map(|n| connector_named(n))
+        .collect();
+        for ambiguous in ["send", "post", "drive"] {
+            assert_eq!(infer_credential_type(ambiguous, &cs), None, "{ambiguous}");
+        }
+        // Exact wins even when other connectors contain the name.
+        assert_eq!(
+            infer_credential_type("slack", &cs).as_deref(),
+            Some("slack")
+        );
+        // A unique partial match still binds.
+        assert_eq!(
+            infer_credential_type("gmail", &cs).as_deref(),
+            Some("gmail")
+        );
+        assert_eq!(
+            infer_credential_type("gmail_send", &cs).as_deref(),
+            Some("gmail")
+        );
+    }
+
     fn uc_with_subs(id: &str, subs: serde_json::Value) -> serde_json::Value {
         serde_json::json!({ "id": id, "event_subscriptions": subs })
     }
@@ -4502,3 +4593,35 @@ mod tests {
     }
 }
 // touch 1777378957
+
+#[cfg(test)]
+mod workflow_import_size_tests {
+    use super::*;
+    use crate::commands::design::n8n_limits::{
+        MAX_TRANSFORM_PAYLOAD_BYTES, MAX_WORKFLOW_JSON_BYTES,
+    };
+
+    #[test]
+    fn oversize_workflow_json_is_rejected() {
+        let wf = "x".repeat(MAX_WORKFLOW_JSON_BYTES + 1);
+        assert!(matches!(
+            validate_workflow_import_sizes(Some(&wf), Some("{}")),
+            Err(AppError::Validation(_))
+        ));
+    }
+
+    #[test]
+    fn oversize_parser_result_is_rejected() {
+        let parser = "x".repeat(MAX_TRANSFORM_PAYLOAD_BYTES + 1);
+        assert!(matches!(
+            validate_workflow_import_sizes(Some("{}"), Some(&parser)),
+            Err(AppError::Validation(_))
+        ));
+    }
+
+    #[test]
+    fn in_bounds_or_absent_import_is_admitted() {
+        assert!(validate_workflow_import_sizes(None, None).is_ok());
+        assert!(validate_workflow_import_sizes(Some("{}"), Some("{}")).is_ok());
+    }
+}

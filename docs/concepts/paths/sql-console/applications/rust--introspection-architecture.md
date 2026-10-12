@@ -11,7 +11,7 @@ Schema browsing in the vault's database surfaces runs through exactly two
 Tauri commands — `introspect_db_tables` and `introspect_db_columns`
 (`src-tauri/src/commands/credentials/db_schema.rs:185-207`, both
 `#[requires(privileged)]`) — which delegate to `introspect_tables` and
-`introspect_columns` in `src-tauri/src/engine/db_query.rs:696-835`. The
+`introspect_columns` in `src-tauri/engine/src/db_query.rs:696-835`. The
 client hook `src/hooks/database/useTableIntrospection.ts` is their only
 consumer, and the NL lane's schema context
 (`src-tauri/src/commands/credentials/nl_query.rs:348-377`) calls the same

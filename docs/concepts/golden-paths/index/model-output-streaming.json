@@ -45,7 +45,9 @@
       "resolved": false
     },
     "runner.rs": {"count":1,"sections":[0],"lines":["757"],"contexts":["`runner.rs:757`, accumulates into `SeedReport`-style totals, and persists via"],"resolved":false},
+    "runner/mod.rs": {"count":3,"sections":[0,7],"lines":["2172","2200-2210","2200"],"contexts":["received verbatim as `[STDOUT] <line>` (`runner/mod.rs:2172`) *before* parsing it, so"],"resolved":false},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[],"contexts":["(`scripts/check-csp-hosts.mjs` reported zero twice for two unrelated reasons)."]},
+    "src-tauri/engine/src/build_session/parser.rs": {"count":5,"sections":[7,12],"lines":["157-163","533","86"],"contexts":["lines, the execution stream) and `src-tauri/engine/src/build_session/parser.rs` (1,233"]},
     "src-tauri/engine/src/cli_process.rs": {"count":1,"sections":[],"contexts":["lines, the build stream) — plus `engine/src/cli_process.rs`'s line reader, the runner's"],"resolvedFrom":"suffix","verbatim":"engine/src/cli_process.rs"},
     "src-tauri/engine/src/parser.rs": {"count":4,"sections":[7,12],"lines":["340-341","86"],"contexts":["**Sweep.** Both stream parsers read in full — `src-tauri/engine/src/parser.rs` (1,577"]},
     "src-tauri/engine/src/provider/claude.rs": {
@@ -74,7 +76,6 @@
       "verbatim": "build_session/events.rs"
     },
     "src-tauri/src/engine/build_session/fanout.rs": {"count":1,"sections":[0],"contexts":["sum build cost across turns.\"* It is called from four sites in `fanout.rs` and one in"],"resolvedFrom":"basename","verbatim":"fanout.rs"},
-    "src-tauri/src/engine/build_session/parser.rs": {"count":6,"sections":[0,7,12],"lines":["141-168","157-163","533","86"],"contexts":["lines, the execution stream) and `src-tauri/src/engine/build_session/parser.rs` (1,233"]},
     "src-tauri/src/engine/build_session/runner.rs": {
       "count": 1,
       "sections": [7],
@@ -84,14 +85,15 @@
       "verbatim": "build_session/runner.rs"
     },
     "src-tauri/src/engine/runner/mod.rs": {
-      "count": 4,
-      "sections": [0,7],
-      "lines": ["2100-2600","2172","2200-2210","2200"],
+      "count": 1,
+      "sections": [],
+      "lines": ["2100-2600"],
       "contexts": ["`StreamOutput` phase (`src/engine/runner/mod.rs:2100-2600`), `build_session/{runner,fanout}.rs`,"],
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/runner/mod.rs"
     },
     "src-tauri/tests/render_plan_fixtures.rs": {"count":1,"sections":[2],"contexts":["test. `src-tauri/tests/render_plan_fixtures.rs` is the shape to copy: committed"],"resolved":false},
+    "src/engine/build_session/parser.rs": {"count":1,"sections":[0],"lines":["141-168"],"contexts":["`src/engine/build_session/parser.rs:141-168`, `extract_result_usage`, reads the same"],"resolved":false},
     "src/lib/eventRegistry.ts": {
       "count": 1,
       "sections": [7],

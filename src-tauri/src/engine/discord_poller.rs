@@ -181,12 +181,7 @@ async fn poll_channel(
 ) -> Result<usize, AppError> {
     let cursor = read_cursor(pool, persona_id, channel_id)?;
 
-    let bot_token = load_bot_token(pool, credential_id).ok_or_else(|| {
-        AppError::Validation(format!(
-            "Discord credential {} has no bot_token field",
-            credential_id
-        ))
-    })?;
+    let bot_token = load_bot_token(pool, credential_id)?;
 
     let messages = fetch_new_messages(&bot_token, channel_id, cursor.as_deref()).await?;
     if messages.is_empty() {
@@ -336,13 +331,13 @@ async fn process_pending_replies(pool: &DbPool) -> Result<usize, AppError> {
     let mut sent = 0usize;
     for row in pending {
         let bot_token = match load_bot_token(pool, &row.credential_id) {
-            Some(t) => t,
-            None => {
-                mark_reply_error(
-                    pool,
-                    &row.message_id,
-                    "credential missing bot_token at reply time",
-                )?;
+            Ok(t) => t,
+            Err(e @ AppError::Validation(_)) => {
+                mark_reply_error(pool, &row.message_id, &e.to_string())?;
+                continue;
+            }
+            Err(e) => {
+                tracing::warn!(error = %e, credential_id = %row.credential_id, "discord_poller: reply credential unavailable; retrying next tick");
                 continue;
             }
         };
@@ -392,18 +387,9 @@ async fn fetch_new_messages(
         url.push_str(&format!("&after={}", id));
     }
 
-    // Not `SHARED_HTTP`: a poller on a short loop wants an 8 s deadline, not
-    // 30 s. The host is the compile-time literal `discord.com`, and the bot
-    // token rides in `Authorization`, which reqwest strips across a host
-    // change — so neither the SSRF resolver nor a redirect policy would add
-    // anything here.
-    let client = reqwest::Client::builder()
-        .timeout(HTTP_TIMEOUT)
-        .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
-
-    let resp = client
+    let resp = crate::SHARED_HTTP
         .get(&url)
+        .timeout(HTTP_TIMEOUT)
         .header("Authorization", format!("Bot {}", bot_token))
         .header("User-Agent", "Personas-Desktop/1.0 (Discord poller)")
         .send()
@@ -496,15 +482,9 @@ async fn post_reply(
         "allowed_mentions": { "parse": [] },
     });
 
-    // Same 8 s poller deadline and same literal `discord.com` host as
-    // `fetch_new_messages` above.
-    let client = reqwest::Client::builder()
-        .timeout(HTTP_TIMEOUT)
-        .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
-
-    let resp = client
+    let resp = crate::SHARED_HTTP
         .post(&url)
+        .timeout(HTTP_TIMEOUT)
         .header("Authorization", format!("Bot {}", bot_token))
         .header("User-Agent", "Personas-Desktop/1.0 (Discord poller)")
         .header("Content-Type", "application/json")
@@ -694,16 +674,22 @@ fn mark_reply_error(pool: &DbPool, message_id: &str, error: &str) -> Result<(), 
 // Credential + execution helpers
 // ---------------------------------------------------------------------------
 
-fn load_bot_token(pool: &DbPool, credential_id: &str) -> Option<String> {
-    let cred = credential_repo::get_by_id(pool, credential_id).ok()?;
-    let fields: HashMap<String, String> =
-        credential_repo::get_decrypted_fields(pool, &cred).ok()?;
-    fields
+fn load_bot_token(pool: &DbPool, credential_id: &str) -> Result<String, AppError> {
+    let cred = credential_repo::get_by_id(pool, credential_id)?;
+    let fields: HashMap<String, String> = credential_repo::get_decrypted_fields(pool, &cred)?;
+    let token = fields
         .get("bot_token")
         .or_else(|| fields.get("botToken"))
         .or_else(|| fields.get("token"))
-        .filter(|s| !s.trim().is_empty())
         .cloned()
+        .ok_or_else(|| {
+            AppError::Validation(format!(
+                "Discord credential {} has no bot_token field",
+                credential_id
+            ))
+        })?;
+    personas_core::validation::require_non_empty("bot_token", &token)?;
+    Ok(token)
 }
 
 /// Discord IDs are snowflake u64s; their natural string ordering only matches
@@ -723,6 +709,16 @@ fn compare_snowflakes(a: &str, b: &str) -> std::cmp::Ordering {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn missing_credential_preserves_not_found_cause() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db()?;
+        assert!(matches!(
+            load_bot_token(&pool, "missing-discord-credential"),
+            Err(AppError::NotFound(_))
+        ));
+        Ok(())
+    }
 
     #[test]
     fn snowflake_compare_handles_different_lengths() {

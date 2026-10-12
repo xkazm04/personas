@@ -118,6 +118,7 @@
       ],
       "resolved": false
     },
+    "engine/fitness_driver.rs": {"count":1,"sections":[],"contexts":["`engine/fitness_driver.rs` read in full. All **14** locale files scanned for the measurement-source"],"resolved":false},
     "gate.ts": {
       "count": 1,
       "sections": [6],
@@ -220,6 +221,14 @@
       "resolvedFrom": "suffix",
       "verbatim": "db/src/repos/core/personas.rs"
     },
+    "src-tauri/engine/src/fitness_driver.rs": {
+      "count": 3,
+      "sections": [4,7,12],
+      "lines": ["337-341","337-347"],
+      "contexts": ["`rotation.rs`, `fitness_driver.rs` (3), `kpi_derivation.rs` — and each has **1–3 call sites**. That"],
+      "resolvedFrom": "basename",
+      "verbatim": "fitness_driver.rs"
+    },
     "src-tauri/engine/src/optimizer.rs": {"count":1,"sections":[7],"lines":["215"],"contexts":["`optimizer.rs:215` (< 0.5 underperformer)."],"resolvedFrom":"basename","verbatim":"optimizer.rs"},
     "src-tauri/src/commands/execution/alert_evaluator.rs": {
       "count": 2,
@@ -241,14 +250,6 @@
     },
     "src-tauri/src/db/repos/...": {"count":1,"sections":[3],"contexts":["nothing reads and nothing checks, and its file header cites a path (`src-tauri/src/db/repos/...`)"],"resolved":false,"isDir":true},
     "src-tauri/src/db/repos/core/personas.rs": {"count":1,"sections":[7],"contexts":["`src-tauri/src/db/repos/core/personas.rs` — a path that does not exist (the crate was extracted to"],"resolved":false},
-    "src-tauri/src/engine/fitness_driver.rs": {
-      "count": 4,
-      "sections": [4,7,12],
-      "lines": ["337-341","337-347"],
-      "contexts": ["`engine/fitness_driver.rs` read in full. All **14** locale files scanned for the measurement-source"],
-      "resolvedFrom": "suffix",
-      "verbatim": "engine/fitness_driver.rs"
-    },
     "src-tauri/src/engine/kpi_derivation.rs": {
       "count": 1,
       "sections": [4],

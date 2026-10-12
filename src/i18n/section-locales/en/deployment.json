@@ -14,7 +14,8 @@
     "token_available": "Token available",
     "no_token": "No token configured",
     "no_token_configured": "No token configured",
-    "no_status": "No status data available."
+    "no_status": "No status data available.",
+    "latency_title": "Health-check round-trip latency: {ms}ms"
   },
   "api_playground": {
     "title": "API Playground",
@@ -24,7 +25,10 @@
     "sending": "Sending...",
     "empty_response": "(empty response)",
     "snippets": "Snippets",
-    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
+    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }",
+    "local_run_completed": "Local run completed",
+    "local_run_failed": "Local run failed",
+    "snippets_target_endpoint": "Code snippets call the deployed endpoint. Playground results come from a local run."
   },
   "connection": {
     "orchestrator_url_label": "Cloud Server URL",
@@ -48,7 +52,8 @@
     "no_deployments_yet": "No deployments yet. Select a persona above to deploy it as a cloud API endpoint.",
     "active_deployments": "Active Deployments",
     "budget_no_limit": "No limit",
-    "budget_per_month": "${amount}/mo"
+    "budget_per_month": "${amount}/mo",
+    "deploy_button": "Deploy"
   },
   "reconcile": {
     "heading": "Deployments from a previous session",
@@ -92,7 +97,8 @@
     "open_authorization_window": "Open Authorization Window",
     "token_unknown_msg": "Token validity could not be verified. Refresh the token to confirm it is still active.",
     "connect_anthropic_msg": "Connect your Anthropic account to enable OAuth-based authentication for cloud executions.",
-    "token_expired_msg_prefix": "This OAuth token has expired"
+    "token_expired_msg_prefix": "This OAuth token has expired",
+    "expired_at": "(expired {time})"
   },
   "trigger_form": {
     "new_cloud_trigger": "New Cloud Trigger",
@@ -122,7 +128,11 @@
     "budget_label": "Budget:",
     "label_invocations": "Invocations:",
     "label_last_called": "Last called:",
-    "label_created": "Created:"
+    "label_created": "Created:",
+    "test_pass": "PASS",
+    "test_fail": "FAIL",
+    "test_title_pass": "Passed",
+    "test_title_fail": "Failed"
   },
   "tabs": {
     "connection": "Connection",
@@ -142,7 +152,8 @@
     "queue_length": "Waiting in Line",
     "active_executions": "Currently Running",
     "active_execution": "Currently Running",
-    "claude_token": "Claude Token"
+    "claude_token": "Claude Token",
+    "gauge_aria": "{label} gauge"
   },
   "history": {
     "just_now": "Just now",
@@ -166,7 +177,9 @@
     "top_errors": "Top Errors",
     "clear_filters": "Clear filters",
     "execution_history": "Execution History",
-    "fetch_output_failed": "Failed to fetch output"
+    "fetch_output_failed": "Failed to fetch output",
+    "load_failed": "Couldn't load execution history.",
+    "no_executions_found": "No executions found for the selected filters."
   },
   "schedules": {
     "header": "Cloud Triggers ({count})",
@@ -181,7 +194,8 @@
     "label_last_triggered": "Last triggered:",
     "label_next_trigger": "Next trigger:",
     "label_cron": "Cron:",
-    "loading_firings": "Loading..."
+    "loading_firings": "Loading...",
+    "firings_load_failed": "Couldn't load recent firings."
   },
   "dashboard": {
     "title": "Deployments",
@@ -246,7 +260,9 @@
     "bulk_action_resume": "Bulk resume",
     "bulk_action_delete": "Bulk delete",
     "bulk_result_ok": "{action}: {count} updated",
-    "bulk_result_partial": "{action}: {succeeded} succeeded, {failed} failed"
+    "bulk_result_partial": "{action}: {succeeded} succeeded, {failed} failed",
+    "select_all": "Select all deployments",
+    "select_row": "Select {name}"
   },
   "cloud_trigger_schedule": "Scheduled (Cron)",
   "cloud_trigger_polling": "Polling",

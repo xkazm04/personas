@@ -18,7 +18,7 @@
   "ruleIds": ["unqueryable-log-record"],
   "ruleIdsFrom": "section-9",
   "sections": [1,2,3,4,5,6,7,8,9,12],
-  "citationCount": 101,
+  "citationCount": 105,
   "triggers": [
     "\"Add a log line here so we can see what happened\"",
     "\"Should this be `info!` or `warn!`?\" / \"is this worth logging?\"",
@@ -100,6 +100,9 @@
       ],
       "resolved": false
     },
+    "redact.rs": {"count":1,"sections":[6],"lines":["56-59"],"contexts":["- **And it iterated on it in public.** `redact.rs:56-59` records a *second* fix: *\"the module doc"],"resolved":false},
+    "rules.json": {"count":1,"sections":[9],"contexts":["against `rules.json`):"],"resolved":false},
+    "runner/mod.rs": {"count":3,"sections":[5,7],"lines":["2173","389"],"contexts":["- **Writing an unsanitized foreign string to a durable sink.** `runner/mod.rs:2173`"],"resolved":false},
     "scripts/census/lib/engine.mjs": {
       "count": 1,
       "sections": [9],
@@ -108,7 +111,9 @@
       "resolvedFrom": "suffix",
       "verbatim": "lib/engine.mjs"
     },
-    "scripts/census/rules.json": {"count":3,"sections":[9],"contexts":["existing rule covers this: all **37** rules in `scripts/census/rules.json` were read; none keys on a"]},
+    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["existing rule covers this: all **37** rules in `scripts/census/rules.json` were read; none keys on a"]},
+    "scripts/devlog/fingerprint.mjs": {"count":1,"sections":[3],"contexts":["`lvl|tgt|normalize(msg)`, normalization shared with `scripts/devlog/fingerprint.mjs` and pinned by"]},
+    "scripts/devlog/fp-vectors.json": {"count":1,"sections":[3],"contexts":["`scripts/devlog/fp-vectors.json` in both test suites. Each boot's first record is `boot.start`"]},
     "scripts/secret-scan.mjs": {"count":1,"sections":[7],"contexts":["**Why no existing gate saw this:** the repo's `scripts/secret-scan.mjs` scans the *repository*; these"]},
     "server/mcp.rs": {
       "count": 1,
@@ -156,14 +161,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "core/src/error.rs"
     },
-    "src-tauri/core/src/redact.rs": {
-      "count": 1,
-      "sections": [6],
-      "lines": ["56-59"],
-      "contexts": ["- **And it iterated on it in public.** `redact.rs:56-59` records a *second* fix: *\"the module doc"],
-      "resolvedFrom": "basename",
-      "verbatim": "redact.rs"
-    },
     "src-tauri/core/src/utils/sanitization.rs": {
       "count": 4,
       "sections": [2,3,6,7],
@@ -204,21 +201,21 @@
       "verbatim": "daemon_bin.rs"
     },
     "src-tauri/src/engine/mod.rs": {"count":1,"sections":[7],"contexts":["| `db/src/repos/execution/metrics.rs`, `src/engine/mod.rs` | 7 each |"],"resolvedFrom":"suffix","verbatim":"src/engine/mod.rs"},
-    "src-tauri/src/engine/runner/mod.rs": {
-      "count": 3,
-      "sections": [5,7],
-      "lines": ["2173","389"],
-      "contexts": ["- **Writing an unsanitized foreign string to a durable sink.** `runner/mod.rs:2173`"],
-      "resolvedFrom": "suffix",
-      "verbatim": "runner/mod.rs"
-    },
     "src-tauri/src/logging.rs": {
       "count": 14,
       "sections": [2,3,4,6,7,8,9],
-      "lines": ["76-80","40","55-90","194","59-72","294","413-436","57"],
+      "lines": ["76-80","194","59-72","294","413-436","57","54","180-187"],
       "contexts": ["(`logging.rs:76-80`), so an over-used `warn!` costs a bounded, shared buffer that something else"],
       "resolvedFrom": "basename",
       "verbatim": "logging.rs"
+    },
+    "src-tauri/src/logging/jsonl.rs": {"count":1,"sections":[3],"contexts":["- **The file record** (`logging/jsonl.rs`), one object per line, an absent value omits its key:"],"resolvedFrom":"suffix","verbatim":"logging/jsonl.rs"},
+    "src-tauri/src/logging/rate_limit.rs": {
+      "count": 1,
+      "sections": [3],
+      "contexts": ["- **The rate limit** (`logging/rate_limit.rs`) — per fingerprint, the first 20 events in 60 s pass and"],
+      "resolvedFrom": "suffix",
+      "verbatim": "logging/rate_limit.rs"
     },
     "src-tauri/src/main.rs": {
       "count": 5,

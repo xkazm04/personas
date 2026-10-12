@@ -1,8 +1,9 @@
 /**
  * useAttention — unified accessor for cross-domain "attention" counts.
  *
- * Subscribes to the overview store and returns counts for every domain in
- * `ATTENTION_REGISTRY`, optionally narrowed to a scope (sidebar, dashboard,
+ * Subscribes to the overview store and the system store's `pendingCounts` (the
+ * Decision Center roster's one counts read) and returns counts for every
+ * domain in `ATTENTION_REGISTRY`, optionally narrowed to a scope (sidebar, dashboard,
  * etc.). Replaces the prior pattern where each surface (Sidebar,
  * DashboardHeaderBadges, tab indicators, ObservabilityDashboard) reached into
  * the store independently and drifted out of sync with each other.
@@ -16,6 +17,7 @@
 
 import { useShallow } from "zustand/react/shallow";
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useSystemStore } from "@/stores/systemStore";
 import {
   ATTENTION_REGISTRY,
   attentionDomainsForScope,
@@ -33,11 +35,12 @@ export interface UseAttentionResult {
 }
 
 export function useAttention(scope?: AttentionScope): UseAttentionResult {
+  const pending = useSystemStore((s) => s.pendingCounts);
   const counts = useOverviewStore(
     useShallow((s) => {
       const out = {} as AttentionCounts;
       for (const domain of ATTENTION_REGISTRY) {
-        out[domain.id] = domain.count(s);
+        out[domain.id] = domain.count({ overview: s, pending });
       }
       return out;
     }),

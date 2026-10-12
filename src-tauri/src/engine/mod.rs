@@ -1,7 +1,6 @@
 pub mod ai_helpers;
 pub mod api_proxy;
 pub mod auto_rollback;
-pub mod automation_runner;
 pub mod background;
 pub mod build_session;
 #[cfg(feature = "p2p")]
@@ -10,7 +9,6 @@ pub mod capability;
 pub mod cloud_webhook_relay;
 pub mod composite;
 pub mod connector_strategy;
-pub mod credential_broker;
 pub mod pattern_miner;
 pub mod persona_brain;
 /// Whose backlog a `propose_backlog` item belongs on — the persona's own
@@ -46,9 +44,7 @@ pub use crate::db::vector_store;
 // caller is inside personas_db and reaches it as `crate::audit_incidents_promoter`,
 // so the app_lib re-export had no users at all.
 pub use crate::db::{byom, chain, memory_recall, model_routing, quality_gate};
-pub mod brain_payload;
 pub mod curation_scheduler;
-pub mod db_query;
 pub mod deliberation;
 pub mod digest;
 pub mod director;
@@ -66,11 +62,6 @@ pub mod system_ops;
 pub use personas_core::error_taxonomy;
 pub mod app_master_probation;
 pub mod app_master_reconcile;
-pub mod evolution;
-pub mod failover;
-pub mod fitness_driver;
-pub mod genome;
-pub mod genome_critique;
 pub mod healthcheck;
 #[cfg(feature = "ml")]
 pub mod kb_extract;
@@ -79,7 +70,6 @@ pub mod kb_ingest;
 #[cfg(feature = "ml")]
 pub mod kb_scan;
 pub mod knowledge;
-pub mod knowledge_consult;
 pub mod kp_hire_request;
 pub mod kp_reporter;
 pub mod leadership;
@@ -119,7 +109,6 @@ pub mod slack_poller;
 pub mod smee_relay;
 pub mod subscription;
 pub mod team_assignment_learning;
-pub mod team_assignment_matching;
 pub mod team_assignment_orchestrator;
 pub mod team_preset_adopter;
 pub mod team_slack_relay;
@@ -134,9 +123,6 @@ pub mod twin_setup;
 #[allow(dead_code)]
 pub mod webhook;
 pub mod webhook_notifier;
-
-#[cfg(test)]
-mod circuit_breakers_integration_tests;
 
 /// Failure aftermath — healing evaluation, retry spawning, circuit breaker.
 /// Private: everything the rest of the crate needs is re-exported below or

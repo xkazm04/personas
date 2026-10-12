@@ -25,7 +25,7 @@ mod event_bus;
 mod executions;
 mod lifecycle;
 mod scheduler;
-mod state;
+pub use personas_engine::background::state;
 
 #[cfg(test)]
 mod tests;

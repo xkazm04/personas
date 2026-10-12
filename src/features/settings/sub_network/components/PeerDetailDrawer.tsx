@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { EventName } from '@/lib/eventRegistry';
+import { useCallback, useEffect, useState } from 'react';
+import { EventName, type EventPayloadMap } from '@/lib/eventRegistry';
+import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import {
   X, RefreshCw,
   Package, Clock,
@@ -38,44 +38,28 @@ export function PeerDetailDrawer({
   const syncPeerManifest = useSystemStore((s) => s.syncPeerManifest);
   const addToast = useToastStore((s) => s.addToast);
 
-  const drawerRef = useRef<HTMLDivElement>(null);
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const st = t.sharing;
 
   const [syncing, setSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<{ resourceCount: number; syncedAt: string } | null>(null);
 
-  // Listen for push-based manifest sync progress events. Not routed through
-  // useTypedTauriEvent: the registry's payload for this event name
-  // (`{sync_id, synced, total}`) doesn't match what this component reads
-  // (`{peerId, resourceCount, syncedAt}`) — a pre-existing drift out of scope
-  // here — so the explicit generic + cancelled-flag pattern is applied
-  // directly to close the async-listener-teardown race without touching that.
-  useEffect(() => {
-    let unlisten: UnlistenFn | null = null;
-    let cancelled = false;
-    listen<{ peerId: string; resourceCount: number; syncedAt: string }>(
-      EventName.P2P_MANIFEST_SYNC_PROGRESS,
-      (event) => {
-        if (cancelled) return;
-        if (event.payload.peerId === peer.peer_id) {
-          setSyncProgress({ resourceCount: event.payload.resourceCount, syncedAt: event.payload.syncedAt });
-          // Refresh manifest data in the store
-          fetchPeerManifest(peer.peer_id);
-        }
-      },
-    ).then((fn) => {
-      if (cancelled) fn();
-      else unlisten = fn;
-    });
-    return () => {
-      cancelled = true;
-      unlisten?.();
-    };
+  const onSyncProgress = useCallback((payload: EventPayloadMap[typeof EventName.P2P_MANIFEST_SYNC_PROGRESS]) => {
+    if (payload.peerId === peer.peer_id) {
+      setSyncProgress({ resourceCount: payload.resourceCount, syncedAt: payload.syncedAt });
+      fetchPeerManifest(peer.peer_id);
+    }
   }, [peer.peer_id, fetchPeerManifest]);
+  useTypedTauriEvent(EventName.P2P_MANIFEST_SYNC_PROGRESS, onSyncProgress);
 
   const state = connectionState ?? (peer.is_connected ? 'Connected' : 'Disconnected');
   const isConnected = state === 'Connected';
+  const stateLabel = {
+    Connected: st.conn_state_connected,
+    Connecting: st.conn_state_connecting,
+    Failed: st.conn_state_failed,
+    Disconnected: st.conn_state_disconnected,
+  }[state];
   const manifest: PeerManifestEntry[] = peerManifests[peer.peer_id] ?? [];
 
   useEffect(() => {
@@ -84,51 +68,13 @@ export function PeerDetailDrawer({
     }
   }, [peer.peer_id, isConnected, fetchPeerManifest]);
 
-  // Close on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
-
-  // Focus trap: keep Tab cycling within the drawer panel
-  const handleFocusTrap = useCallback((e: React.KeyboardEvent) => {
-    if (e.key !== 'Tab') return;
-    const panel = drawerRef.current;
-    if (!panel) return;
-    const focusable = panel.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    if (focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-    if (e.shiftKey) {
-      if (document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      }
-    } else {
-      if (document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-  }, []);
-
-  // Auto-focus the drawer panel on mount
-  useEffect(() => {
-    drawerRef.current?.focus();
-  }, []);
-
   const handleSync = async () => {
     setSyncing(true);
     try {
       await syncPeerManifest(peer.peer_id);
-      addToast('Manifest synced', 'success');
+      addToast(st.manifest_synced, 'success');
     } catch {
-      addToast('Failed to sync manifest', 'error');
+      addToast(st.manifest_sync_failed, 'error');
     } finally {
       setSyncing(false);
     }
@@ -155,12 +101,7 @@ export function PeerDetailDrawer({
       panelClassName="relative w-full max-w-md bg-background border-l border-border shadow-elevation-3 flex flex-col animate-in slide-in-from-right duration-200 outline-none"
       staggerChildren={false}
     >
-      <div
-        ref={drawerRef}
-        tabIndex={-1}
-        onKeyDown={handleFocusTrap}
-        className="contents"
-      >
+      <>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div className="min-w-0 flex-1">
@@ -197,7 +138,7 @@ export function PeerDetailDrawer({
               state === 'Failed' ? 'bg-red-500/10 text-red-400' :
               'bg-zinc-500/10 text-zinc-400'
             }`}>
-              {state}
+              {stateLabel}
             </span>
             {isConnected ? (
               <button
@@ -271,7 +212,7 @@ export function PeerDetailDrawer({
                   {st.shared_resources}
                   {(syncProgress || manifest.length > 0) && (
                     <span className="text-[10px] font-normal text-foreground">
-                      {syncProgress?.resourceCount ?? manifest.length} synced
+                      {tx(st.resources_synced, { count: syncProgress?.resourceCount ?? manifest.length })}
                       {syncProgress?.syncedAt && (
                         <> · {formatRelativeTime(syncProgress.syncedAt)}</>
                       )}
@@ -307,7 +248,7 @@ export function PeerDetailDrawer({
             </div>
           )}
         </div>
-      </div>
+      </>
     </BaseModal>
   );
 }

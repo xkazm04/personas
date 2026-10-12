@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import { classifyExecutionStatus, statusIcon } from './CloudHistoryHelpers';
+import { classifyExecutionStatus, statusIcon, successRateTone } from './CloudHistoryHelpers';
 
 describe('classifyExecutionStatus: one table, explicit unknown', () => {
   it.each([
@@ -44,5 +44,20 @@ describe('statusIcon renders the class, not the raw string', () => {
     const { container } = render(statusIcon('running'));
     expect(container.querySelector('svg')).toBeNull();
     expect(container.querySelector('[data-status-class="unknown"]')).toBeNull();
+  });
+});
+
+describe('successRateTone: absence is neutral', () => {
+  it.each([
+    [null, null],
+    [undefined, null],
+    [1, 'success'],
+    [0.9, 'success'],
+    [0.89, 'warning'],
+    [0.7, 'warning'],
+    [0.69, 'error'],
+    [0, 'error'],
+  ])('%s -> %s', (rate, tone) => {
+    expect(successRateTone(rate)).toBe(tone);
   });
 });

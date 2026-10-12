@@ -1,0 +1,79 @@
+//! App-wide settings fallback + default result shape.
+//!
+//! These helpers bridge between the per-persona `ModelProfile` (stored on the
+//! persona row) and global provider settings (stored in the app settings DB).
+//! When a persona doesn't specify a provider's base_url / API key, we fall
+//! back to the app-wide value — and a few callers also need a canonical "all
+//! fields zeroed" `ExecutionResult` to short-circuit with.
+
+use personas_db::settings_keys;
+use personas_db::DbPool;
+
+use personas_core::types::*;
+
+/// Apply a global settings value to a profile field when the field is empty.
+pub fn apply_global_setting(pool: &DbPool, field: &mut Option<String>, settings_key: &str) {
+    let needs_global = field.as_ref().map_or(true, |v| v.is_empty());
+    if needs_global {
+        if let Ok(Some(value)) = personas_db::repos::core::settings::get(pool, settings_key) {
+            if !value.is_empty() {
+                *field = Some(value);
+            }
+        }
+    }
+}
+
+/// Resolve global provider settings (API keys, base URLs) from the app settings DB
+/// when the per-persona model profile doesn't specify them.
+pub fn resolve_global_provider_settings(pool: &DbPool, profile: &mut ModelProfile) {
+    match profile.provider.as_deref() {
+        Some(providers::OLLAMA) => {
+            apply_global_setting(pool, &mut profile.auth_token, settings_keys::OLLAMA_API_KEY);
+        }
+        Some(providers::LITELLM) => {
+            apply_global_setting(pool, &mut profile.base_url, settings_keys::LITELLM_BASE_URL);
+            apply_global_setting(
+                pool,
+                &mut profile.auth_token,
+                settings_keys::LITELLM_MASTER_KEY,
+            );
+        }
+        Some(providers::QWEN) => {
+            // Phase 1 split engine: fill the Qwen base URL from settings; the API
+            // key is resolved at call time (keyring/env) in engine::http_engine.
+            apply_global_setting(pool, &mut profile.base_url, settings_keys::QWEN_BASE_URL);
+        }
+        _ => {}
+    }
+}
+
+/// Canonical "everything unset" `ExecutionResult`. Call sites that fail early
+/// (validation error, credential decryption failure, spawn failure) use this
+/// plus field overrides to surface the error without hand-filling a dozen
+/// zero-valued fields every time.
+pub fn default_result() -> ExecutionResult {
+    ExecutionResult {
+        success: false,
+        output: None,
+        error: None,
+        session_limit_reached: false,
+        usage_limit: None,
+        // An early-return failure (validation, credential decrypt, spawn) knows
+        // no structural class -- these paths carry a message the ladder was
+        // tuned for. Left None deliberately rather than guessed.
+        error_category: None,
+        log_file_path: None,
+        claude_session_id: None,
+        duration_ms: 0,
+        execution_flows: None,
+        model_used: None,
+        input_tokens: 0,
+        output_tokens: 0,
+        cost_usd: 0.0,
+        tool_steps: None,
+        trace_id: None,
+        execution_config: None,
+        log_truncated: false,
+        business_outcome: None,
+    }
+}

@@ -1,0 +1,318 @@
+use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use ts_rs::TS;
+
+use personas_core::error::AppError;
+
+/// Validate that an n8n workflow ID is safe to interpolate into URL paths.
+/// n8n IDs are alphanumeric (typically numeric, but cloud instances may use
+/// short alphanumeric strings). Reject anything containing path separators,
+/// query strings, or other characters that could alter the target endpoint.
+fn validate_workflow_id(id: &str) -> Result<(), AppError> {
+    if id.is_empty() {
+        return Err(AppError::Validation("Workflow ID must not be empty".into()));
+    }
+    if !id.chars().all(|c| c.is_ascii_alphanumeric()) {
+        return Err(AppError::Validation(format!(
+            "Invalid workflow ID '{id}': must be alphanumeric"
+        )));
+    }
+    Ok(())
+}
+
+/// Lightweight n8n API client for managing workflows.
+pub struct N8nClient {
+    base_url: String,
+    api_key: String,
+    http: reqwest::Client,
+}
+
+/// Summary of an n8n workflow (subset of full API response).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct N8nWorkflow {
+    pub id: String,
+    pub name: String,
+    pub active: bool,
+    #[serde(default)]
+    pub tags: Vec<N8nTag>,
+    #[serde(default)]
+    pub created_at: String,
+    #[serde(default)]
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct N8nTag {
+    pub id: String,
+    pub name: String,
+}
+
+/// Result of activating/deactivating a workflow.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct N8nActivateResult {
+    pub id: String,
+    pub active: bool,
+}
+
+/// Wrapper for the n8n API list response (supports cursor-based pagination).
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct N8nListResponse {
+    data: Vec<N8nWorkflow>,
+    next_cursor: Option<String>,
+}
+
+impl N8nClient {
+    /// Check that an HTTP response indicates success, returning the response on
+    /// success or a descriptive `AppError::Execution` on failure.
+    async fn check_response(
+        resp: reqwest::Response,
+        context: &str,
+    ) -> Result<reqwest::Response, AppError> {
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16();
+            let body = resp.text().await.unwrap_or_default();
+            return Err(AppError::Execution(format!(
+                "{context} returned HTTP {status}: {body}"
+            )));
+        }
+        Ok(resp)
+    }
+
+    /// Create from decrypted credential fields (`base_url` and `api_key`).
+    pub fn from_fields(fields: &HashMap<String, String>) -> Result<Self, AppError> {
+        let base_url = fields
+            .get("base_url")
+            .ok_or_else(|| AppError::Validation("n8n credential missing 'base_url' field".into()))?
+            .trim_end_matches('/')
+            .to_string();
+
+        if base_url.is_empty() {
+            return Err(AppError::Validation(
+                "n8n base_url must not be empty".into(),
+            ));
+        }
+        let parsed = url::Url::parse(&base_url)
+            .map_err(|e| AppError::Validation(format!("Invalid n8n base_url '{base_url}': {e}")))?;
+        match parsed.scheme() {
+            "http" | "https" => {}
+            other => {
+                return Err(AppError::Validation(format!(
+                    "n8n base_url must use http or https scheme, got '{other}'"
+                )))
+            }
+        }
+
+        let api_key = fields
+            .get("api_key")
+            .ok_or_else(|| AppError::Validation("n8n credential missing 'api_key' field".into()))?
+            .clone();
+
+        Ok(Self {
+            base_url,
+            api_key,
+            http: personas_core::http_clients::SHARED_HTTP.clone(),
+        })
+    }
+
+    /// List all workflows, following cursor-based pagination.
+    pub async fn list_workflows(&self) -> Result<Vec<N8nWorkflow>, AppError> {
+        let mut all_workflows = Vec::new();
+        let mut cursor: Option<String> = None;
+        const MAX_PAGES: usize = 50;
+
+        for _ in 0..MAX_PAGES {
+            let mut url = format!("{}/api/v1/workflows", self.base_url);
+            if let Some(ref c) = cursor {
+                url = format!("{}?cursor={}", url, urlencoding::encode(c));
+            }
+
+            let resp = self
+                .http
+                .get(&url)
+                .header("X-N8N-API-KEY", &self.api_key)
+                .send()
+                .await
+                .map_err(|e| AppError::Execution(format!("n8n API request failed: {e}")))?;
+
+            let resp = Self::check_response(resp, "n8n API").await?;
+
+            let list: N8nListResponse = resp.json().await.map_err(|e| {
+                AppError::Execution(format!("Failed to parse n8n workflow list: {e}"))
+            })?;
+
+            all_workflows.extend(list.data);
+
+            match list.next_cursor {
+                Some(c) if !c.is_empty() => cursor = Some(c),
+                _ => break,
+            }
+        }
+
+        Ok(all_workflows)
+    }
+
+    /// Get a single workflow by ID.
+    #[allow(dead_code)]
+    pub async fn get_workflow(&self, id: &str) -> Result<Value, AppError> {
+        validate_workflow_id(id)?;
+        let url = format!("{}/api/v1/workflows/{}", self.base_url, id);
+        let resp = self
+            .http
+            .get(&url)
+            .header("X-N8N-API-KEY", &self.api_key)
+            .send()
+            .await
+            .map_err(|e| AppError::Execution(format!("n8n API request failed: {e}")))?;
+
+        let resp = Self::check_response(resp, "n8n API").await?;
+
+        resp.json::<Value>()
+            .await
+            .map_err(|e| AppError::Execution(format!("Failed to parse n8n workflow: {e}")))
+    }
+
+    /// Activate a workflow.
+    pub async fn activate_workflow(&self, id: &str) -> Result<N8nActivateResult, AppError> {
+        self.set_workflow_active(id, true).await
+    }
+
+    /// Deactivate a workflow.
+    pub async fn deactivate_workflow(&self, id: &str) -> Result<N8nActivateResult, AppError> {
+        self.set_workflow_active(id, false).await
+    }
+
+    /// Create a new workflow from a JSON definition.
+    pub async fn create_workflow(&self, definition: &Value) -> Result<Value, AppError> {
+        let url = format!("{}/api/v1/workflows", self.base_url);
+        let resp = self
+            .http
+            .post(&url)
+            .header("X-N8N-API-KEY", &self.api_key)
+            .json(definition)
+            .send()
+            .await
+            .map_err(|e| AppError::Execution(format!("n8n create workflow failed: {e}")))?;
+
+        let resp = Self::check_response(resp, "n8n create workflow").await?;
+
+        resp.json::<Value>()
+            .await
+            .map_err(|e| AppError::Execution(format!("Failed to parse n8n response: {e}")))
+    }
+
+    /// Trigger a webhook URL with a JSON body.
+    pub async fn trigger_webhook(
+        &self,
+        webhook_url: &str,
+        body: &Value,
+    ) -> Result<Value, AppError> {
+        let parsed_webhook = url::Url::parse(webhook_url)
+            .map_err(|e| AppError::Validation(format!("Invalid webhook URL: {e}")))?;
+        let parsed_base = url::Url::parse(&self.base_url)
+            .map_err(|e| AppError::Validation(format!("Invalid base URL: {e}")))?;
+
+        let scheme = parsed_webhook.scheme();
+        if scheme != "https"
+            && !(scheme == "http" && parsed_webhook.host_str() == Some("localhost"))
+        {
+            return Err(AppError::Validation(
+                "Webhook URL must use https (or http for localhost)".into(),
+            ));
+        }
+
+        if parsed_webhook.host_str() != parsed_base.host_str()
+            || parsed_webhook.port_or_known_default() != parsed_base.port_or_known_default()
+        {
+            return Err(AppError::Validation(
+                "Webhook URL origin (host+port) must match the n8n instance base URL".into(),
+            ));
+        }
+
+        let resp = self
+            .http
+            .post(webhook_url)
+            .header("X-N8N-API-KEY", &self.api_key)
+            .json(body)
+            .send()
+            .await
+            .map_err(|e| AppError::Execution(format!("n8n webhook trigger failed: {e}")))?;
+
+        let resp = Self::check_response(resp, "n8n webhook").await?;
+
+        let raw = resp.text().await.map_err(|e| {
+            AppError::Execution(format!("Failed to read webhook response body: {e}"))
+        })?;
+
+        if raw.is_empty() {
+            return Ok(Value::Null);
+        }
+
+        serde_json::from_str::<Value>(&raw).map_err(|e| {
+            let preview: String = raw.chars().take(200).collect();
+            AppError::Execution(format!(
+                "Webhook returned non-JSON response: {e}. Body preview: {preview}"
+            ))
+        })
+    }
+
+    /// Internal helper to PATCH workflow active state.
+    async fn set_workflow_active(
+        &self,
+        id: &str,
+        active: bool,
+    ) -> Result<N8nActivateResult, AppError> {
+        validate_workflow_id(id)?;
+        let url = format!("{}/api/v1/workflows/{}", self.base_url, id);
+        let resp = self
+            .http
+            .patch(&url)
+            .header("X-N8N-API-KEY", &self.api_key)
+            .json(&serde_json::json!({ "active": active }))
+            .send()
+            .await
+            .map_err(|e| AppError::Execution(format!("n8n activate/deactivate failed: {e}")))?;
+
+        let resp = Self::check_response(resp, "n8n API").await?;
+
+        let wf: Value = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Execution(format!("Failed to parse n8n response: {e}")))?;
+
+        Ok(N8nActivateResult {
+            id: wf["id"].as_str().unwrap_or(id).to_string(),
+            active: wf["active"].as_bool().unwrap_or(active),
+        })
+    }
+}
+
+/// Build an n8n client from credential ID by loading and decrypting fields.
+pub fn build_client_from_credential(
+    pool: &personas_db::DbPool,
+    credential_id: &str,
+) -> Result<N8nClient, AppError> {
+    use personas_db::repos::resources::credentials as cred_repo;
+
+    let credential = cred_repo::get_by_id(pool, credential_id)?;
+    let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
+    if let Err(e) = personas_db::repos::resources::audit_log::log_decrypt(
+        pool,
+        credential_id,
+        &credential.name,
+        "platform:n8n",
+        None,
+        None,
+    ) {
+        tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
+    }
+    N8nClient::from_fields(&fields)
+}

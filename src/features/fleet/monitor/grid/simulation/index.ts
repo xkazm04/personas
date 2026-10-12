@@ -10,5 +10,4 @@ export {
 export { simHourlyRuns, SIM_HOURLY_WINDOW } from './simHourly';
 export { SIM_LOAD_AGENTS_PER_PROJECT } from './simRandom';
 export { useSimulatedBoard, type BoardInputs } from './useSimulatedBoard';
-export { buildSimRail, type SimRailLabels, type SimRailRows } from './simRail';
 export { SIM_VAULT_LOGINS, buildSimCliUsage } from './simPlans';

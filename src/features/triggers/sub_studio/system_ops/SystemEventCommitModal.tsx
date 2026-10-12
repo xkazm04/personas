@@ -5,7 +5,7 @@
  * listen for), then persists a real `SystemOpAutomation`. The Context Map
  * "Plan update" button creates the same shape directly (weekly default).
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Cog, X } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button, AsyncButton } from '@/features/shared/components/buttons';
@@ -46,6 +46,8 @@ export function SystemEventCommitModal({
   const { t } = useTranslation();
   const st = t.triggers.studio;
   const projects = useSystemStore((s) => s.projects);
+  const projectsLoading = useSystemStore((s) => s.projectsLoading);
+  const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const addToast = useToastStore((s) => s.addToast);
 
@@ -59,6 +61,17 @@ export function SystemEventCommitModal({
   // from the `signal.raised` event that fires them, so they configure nothing.
   const isDispatch = opKind === OP_SIGNAL_DISPATCH_RUNNER || opKind === OP_SIGNAL_DISPATCH_FLEET;
   const needsProject = isContextScan || isHealthIngest;
+  const requestedProjectsForOpen = useRef(false);
+
+  useEffect(() => {
+    if (!open) {
+      requestedProjectsForOpen.current = false;
+      return;
+    }
+    if (!needsProject || projects.length > 0 || requestedProjectsForOpen.current) return;
+    requestedProjectsForOpen.current = true;
+    void fetchProjects();
+  }, [open, needsProject, projects.length, fetchProjects]);
 
   const personas = useAgentStore((s) => s.personas);
   const teams = usePipelineStore((s) => s.teams);
@@ -66,6 +79,12 @@ export function SystemEventCommitModal({
   useEffect(() => { if (open && isReflection) void fetchTeams(); }, [open, isReflection, fetchTeams]);
 
   const [projectId, setProjectId] = useState(() => activeProjectId ?? projects[0]?.id ?? '');
+  useEffect(() => {
+    if (!open || !needsProject || projects.length === 0) return;
+    setProjectId((current) => projects.some((project) => project.id === current)
+      ? current
+      : projects.find((project) => project.id === activeProjectId)?.id ?? projects[0]!.id);
+  }, [open, needsProject, projects, activeProjectId]);
   const [cadence, setCadence] = useState('weekly');
   const [customCron, setCustomCron] = useState('0 3 * * 1');
   const [eventType, setEventType] = useState('');
@@ -139,7 +158,9 @@ export function SystemEventCommitModal({
             <div className="space-y-1.5">
               <label className="typo-caption text-foreground">{st.commit_project_label}</label>
               {projects.length === 0 ? (
-                <p className="typo-caption text-foreground">{st.commit_no_projects}</p>
+                <p className="typo-caption text-foreground">
+                  {!requestedProjectsForOpen.current || projectsLoading ? t.common.loading : st.commit_no_projects}
+                </p>
               ) : (
                 <ThemedSelect value={projectId} onValueChange={setProjectId}>
                   {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}

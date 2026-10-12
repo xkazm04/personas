@@ -51,6 +51,27 @@ pub struct EpisodeExcerpt {
     pub source: String,
     pub body_excerpt: String,
     pub created_at: String,
+    /// Charter (responsibility) title the episode was filed under, when linked.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub charter: Option<String>,
+    /// Terminal status of the execution that produced the episode.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub run_status: Option<String>,
+    /// Wall-clock duration of that execution in ms. i64 for SQLite INTEGER;
+    /// a duration stays far under 2^53, so the JS `number` pin is lossless.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "number")]
+    pub run_duration_ms: Option<i64>,
+    /// Business outcome recorded on that execution ('unknown' when unset).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub business_outcome: Option<String>,
+    /// Execution error message (the blocker), when the run failed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub blocker: Option<String>,
 }
 
 /// One row of `persona_attention_ledger` — an attention/consolidation pass.

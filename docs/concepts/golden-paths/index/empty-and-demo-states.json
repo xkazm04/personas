@@ -102,6 +102,15 @@
       ],
       "resolved": false
     },
+    "GoalsTimeline.tsx": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["32"],
+      "contexts": [
+        "The walk sees **3,137** files under `src/features`; `floor: 2500` matches the sibling `hand-rolled-spinner` rule rooted at the same path. The three `exclude` entries are the **only** three files unde…"
+      ],
+      "resolved": false
+    },
     "KnowledgeGraphDashboard.tsx": {
       "count": 1,
       "sections": [6],
@@ -117,6 +126,15 @@
       "lines": ["408"],
       "contexts": [
         "- `shared/components/display/FacetedDecisionTable.tsx:34-35,202-203` — required `emptyTitle`/`emptyDescription`, and 3 of 3 call sites (`BacklogTable.tsx:222`, `DispatchTable.tsx:137`, `KnowledgeTree…"
+      ],
+      "resolved": false
+    },
+    "ManualReviewList.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["367-369"],
+      "contexts": [
+        "- `EventLogList.tsx:303-306`, `CronAgentsPage.tsx:42-44`, `MessageList.tsx:279-281`, `KnowledgeGraphDashboard.tsx:193-195`, `ManualReviewList.tsx:367-369` — all five seed buttons gated on `import.met…"
       ],
       "resolved": false
     },
@@ -185,6 +203,14 @@
       "sections": [7],
       "contexts": [
         "- **`.claude/CLAUDE.md`, `docs/refactor/shared-component-reuse.md` and `CATALOG.md` recommended `feedback/EmptyState` for months. No such file exists.** The real component is `feedback/ScenarioEmptyS…"
+      ],
+      "resolved": false
+    },
+    "fleet/monitor/channels/Stream.tsx": {
+      "count": 1,
+      "sections": [7],
+      "contexts": [
+        "`agents/components/PersonaSelector.tsx` · `agents/components/PersonaSelectorModal.tsx` · `fleet/monitor/channels/Stream.tsx` · `overview/sub_director/components/AddToScopeModal.tsx` · `overview/sub_k…"
       ],
       "resolved": false
     },
@@ -441,15 +467,6 @@
       "resolvedFrom": "basename",
       "verbatim": "ReviewsRail.tsx"
     },
-    "src/features/fleet/monitor/channels/Stream.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": [
-        "`agents/components/PersonaSelector.tsx` · `agents/components/PersonaSelectorModal.tsx` · `fleet/monitor/channels/Stream.tsx` · `overview/sub_director/components/AddToScopeModal.tsx` · `overview/sub_k…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "fleet/monitor/channels/Stream.tsx"
-    },
     "src/features/fleet/monitor/live/LiveChannelOverlay.tsx": {
       "count": 1,
       "sections": [7],
@@ -516,16 +533,6 @@
       "contexts": ["- `overview/sub_incidents/components/IncidentsInbox.tsx:521` — the sole `InboxZero` call site."],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_incidents/components/IncidentsInbox.tsx"
-    },
-    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
-      "count": 1,
-      "sections": [6],
-      "lines": ["367-369"],
-      "contexts": [
-        "- `EventLogList.tsx:303-306`, `CronAgentsPage.tsx:42-44`, `MessageList.tsx:279-281`, `KnowledgeGraphDashboard.tsx:193-195`, `ManualReviewList.tsx:367-369` — all five seed buttons gated on `import.met…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "ManualReviewList.tsx"
     },
     "src/features/overview/sub_manual-review/components/backlog/BacklogTable.tsx": {
       "count": 1,
@@ -736,16 +743,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "studioStore.ts"
-    },
-    "src/features/teams/sub_goals/GoalsTimeline.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["32"],
-      "contexts": [
-        "The walk sees **3,137** files under `src/features`; `floor: 2500` matches the sibling `hand-rolled-spinner` rule rooted at the same path. The three `exclude` entries are the **only** three files unde…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "GoalsTimeline.tsx"
     },
     "src/features/teams/sub_kpis/KPIDashboard.tsx": {
       "count": 2,

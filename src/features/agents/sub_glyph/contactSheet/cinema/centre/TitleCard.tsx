@@ -22,7 +22,8 @@ interface TitleCardProps {
   children?: React.ReactNode;
 }
 
-function NameField({ name, onChange }: { name: string; onChange: (v: string) => void }) {
+/** The persona's name, renamed in place (Enter or blur commits, Esc keeps it). */
+export function NameField({ name, onChange }: { name: string; onChange: (v: string) => void }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(name);
   if (editing) {

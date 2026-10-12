@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import { CheckCircle2, PauseCircle, XCircle, Circle } from 'lucide-react';
 import type { Translations } from '@/i18n/generated/types';
 import { interpolate } from '@/i18n/useTranslation';
+import { budgetToneForPct } from './CloudHistoryHelpers';
 
 /** Monthly budget caps; `undefined` is "no limit". Labels resolve at render via `budgetPresetLabel`. */
 export const BUDGET_PRESETS = [undefined, 5, 10, 25, 50, 100] as const;
@@ -14,14 +15,16 @@ export function budgetPresetLabel(t: Translations, value: (typeof BUDGET_PRESETS
 }
 
 export function budgetUtilization(d: CloudDeployment): number | null {
-  if (!d.maxMonthlyBudgetUsd || !d.currentMonthCostUsd) return null;
-  return Math.min(100, (d.currentMonthCostUsd / d.maxMonthlyBudgetUsd) * 100);
+  if (!d.maxMonthlyBudgetUsd || d.currentMonthCostUsd == null) return null;
+  return (d.currentMonthCostUsd / d.maxMonthlyBudgetUsd) * 100;
 }
 
 export function budgetColor(pct: number): string {
-  if (pct >= 80) return 'bg-red-500';
-  if (pct >= 50) return 'bg-amber-500';
-  return 'bg-emerald-500';
+  return {
+    emerald: 'bg-emerald-500',
+    amber: 'bg-amber-500',
+    red: 'bg-red-500',
+  }[budgetToneForPct(pct)];
 }
 
 export { formatCost } from '@/lib/utils/formatters';

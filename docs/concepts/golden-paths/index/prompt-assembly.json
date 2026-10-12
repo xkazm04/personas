@@ -73,6 +73,13 @@
     "packages/shared/src/prompt.ts": {"count":1,"sections":[6],"lines":["268"],"contexts":["- **`personas-cloud` — a PORT, re-verified.** `packages/shared/src/prompt.ts:268` still"],"resolved":false},
     "prompt.test.ts": {"count":1,"sections":[6],"lines":["146"],"contexts":["test** (`prompt.test.ts:146`) — for a stated reason, provider prefix caching"],"resolved":false},
     "prompt.ts": {"count":4,"sections":[6],"lines":["157","159","123-127","118-122"],"contexts":["fence at `prompt.ts:157`, and **tracks the gap as open item 27 in its own backlog**"],"resolved":false},
+    "runner/mod.rs": {
+      "count": 16,
+      "sections": [5,7,8,9],
+      "lines": ["1113","929-932","973","850-857","830-843","538-573","731-736","861-871"],
+      "contexts": ["(`Prompt length: N characters`, `runner/mod.rs:1113`). It reproduces two append-free"],
+      "resolved": false
+    },
     "runtime_safety.rs": {
       "count": 11,
       "sections": [3,6,7,8,12],
@@ -160,12 +167,12 @@
     "src-tauri/src/engine/kpi_derivation.rs": {"count":1,"sections":[9],"contexts":["`kpi_derivation.rs` — disjoint files, opposite side of the call."],"resolvedFrom":"basename","verbatim":"kpi_derivation.rs"},
     "src-tauri/src/engine/runner/**": {"count":1,"sections":[12],"contexts":["`src-tauri/engine/src/prompt/**` (4,863 lines), `src-tauri/src/engine/runner/**`,"],"resolved":false,"isDir":true},
     "src-tauri/src/engine/runner/mod.rs": {
-      "count": 22,
-      "sections": [5,7,8,9],
-      "lines": ["1113","929-932","973","850-857","830-843","538-573","731-736","861-871"],
-      "contexts": ["(`Prompt length: N characters`, `runner/mod.rs:1113`). It reproduces two append-free"],
+      "count": 6,
+      "sections": [9],
+      "lines": ["973","1014","1042","1062","1065","1089"],
+      "contexts": ["| `src/engine/runner/mod.rs:973` | persona memories (core + active), unfenced |"],
       "resolvedFrom": "suffix",
-      "verbatim": "runner/mod.rs"
+      "verbatim": "src/engine/runner/mod.rs"
     },
     "src-tauri/src/engine/runner/team_context.rs": {
       "count": 1,

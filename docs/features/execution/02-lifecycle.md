@@ -420,7 +420,7 @@ where the persona becomes better at its job over time.
 | `src-tauri/src/engine/runner/mod.rs` | `run_execution` — the main loop |
 | `src-tauri/src/engine/runner/credentials.rs` | Tiered credential resolution + OAuth refresh + env injection |
 | `src-tauri/src/engine/runner/env.rs` | Execution env assembly (creds, `CODEBASE_ROOT_PATH`, …) |
-| `src-tauri/src/engine/runner/stages.rs` | Pipeline stage span keys |
+| `src-tauri/engine/src/runner/stages.rs` | Pipeline stage span keys |
 | `src-tauri/src/engine/cli_process.rs` | Claude CLI subprocess driver |
 | `src-tauri/src/engine/prompt/mod.rs` | Prompt assembly, memory injection |
 | `src-tauri/src/engine/recipe_parameters.rs` | `{{param.*}}` recipe-parameterization bridge |
@@ -429,7 +429,7 @@ where the persona becomes better at its job over time.
 | `src-tauri/src/engine/dispatch.rs` | Protocol / virtual-tool message → DB writes |
 | `src-tauri/src/engine/tool_runner.rs` | Tool dispatch (script/API/automation) |
 | `src-tauri/src/engine/config_merge.rs` | Cascaded config resolution |
-| `src-tauri/src/engine/failover.rs` | Provider failover chain |
+| `src-tauri/engine/src/failover.rs` | Provider failover chain |
 | `src-tauri/src/engine/trace.rs` | Trace span tree |
 | `src-tauri/src/engine/cost.rs` | Token → USD |
 | `src-tauri/src/engine/crypto.rs` | Credential decrypt + env sanitize |

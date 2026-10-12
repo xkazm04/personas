@@ -48,6 +48,15 @@
       ],
       "resolved": false
     },
+    "ManualReviewList.tsx": {
+      "count": 1,
+      "sections": [5],
+      "lines": ["250-263"],
+      "contexts": [
+        "- **`Promise.allSettled` on a batch of verdicts with the rejections discarded.** Fixed once at `ManualReviewList.tsx:250-263` (it now counts and reports failures) and still live at `KnowledgeLibrary.…"
+      ],
+      "resolved": false
+    },
     "RejectionPatternsPanel.tsx": {
       "count": 1,
       "sections": [5],
@@ -452,7 +461,8 @@
       "lines": ["100-104"],
       "contexts": [
         "| `src/features/agents/quick-answer/QuickAnswerPopover.tsx:100-104` | The 8,024-line unified triage subsystem — the app's only implementation of a fused queue, undo, session persistence, bounded skip…"
-      ]
+      ],
+      "resolved": false
     },
     "src/features/agents/quick-answer/triage/triageAdapters.ts": {
       "count": 2,
@@ -530,14 +540,12 @@
       "verbatim": "BulkActionBar.tsx"
     },
     "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["250-263","186-203"],
+      "count": 1,
+      "sections": [7],
+      "lines": ["186-203"],
       "contexts": [
-        "- **`Promise.allSettled` on a batch of verdicts with the rejections discarded.** Fixed once at `ManualReviewList.tsx:250-263` (it now counts and reports failures) and still live at `KnowledgeLibrary.…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "ManualReviewList.tsx"
+        "| `src/features/overview/sub_manual-review/components/ManualReviewList.tsx:186-203` | The verdict handler is an overloaded `(idOrStatus, statusOrNotes, maybeNotes)` with a runtime `['approved','rejec…"
+      ]
     },
     "src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx": {
       "count": 1,
@@ -545,8 +553,7 @@
       "lines": ["360,398,426,508-510,606-623"],
       "contexts": [
         "| `src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx:360,398,426,508-510,606-623` | Seven hardcoded English strings on the reference review surface, two of them wrapped in `DebtT…"
-      ],
-      "resolved": false
+      ]
     },
     "src/features/overview/sub_manual-review/components/backlog/useBacklogQueue.ts": {
       "count": 2,

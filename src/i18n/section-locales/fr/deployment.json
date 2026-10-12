@@ -8,7 +8,10 @@
     "send_request": "Envoyer la requête",
     "sending": "Envoi…",
     "snippets": "Extraits",
-    "title": "Playground API"
+    "title": "Playground API",
+    "local_run_completed": "Exécution locale terminée",
+    "local_run_failed": "Échec de l’exécution locale",
+    "snippets_target_endpoint": "Les extraits de code appellent le point de terminaison déployé. Les résultats du terrain d’essai proviennent d’une exécution locale."
   },
   "auth_code": "Code d’autorisation",
   "chart": {
@@ -28,7 +31,8 @@
     "worker_disconnected": "Déconnecté",
     "worker_executing": "En exécution",
     "worker_idle": "Inactif",
-    "workers": "Workers"
+    "workers": "Workers",
+    "gauge_aria": "Jauge {label}"
   },
   "cloud_trigger_chain": "Chaîne",
   "cloud_trigger_manual": "Manuel",
@@ -122,7 +126,9 @@
     "bulk_action_resume": "Reprise groupée",
     "bulk_action_delete": "Suppression groupée",
     "bulk_result_ok": "{action} : {count} mis à jour",
-    "bulk_result_partial": "{action} : {succeeded} réussis, {failed} en échec"
+    "bulk_result_partial": "{action} : {succeeded} réussis, {failed} en échec",
+    "select_all": "Sélectionner tous les déploiements",
+    "select_row": "Sélectionner {name}"
   },
   "deploy_card": {
     "budget_label": "Budget :",
@@ -134,7 +140,11 @@
     "pause_deployment": "Suspendre le déploiement",
     "remove_deployment": "Supprimer le déploiement",
     "resume_deployment": "Reprendre le déploiement",
-    "test_deployment": "Tester le déploiement"
+    "test_deployment": "Tester le déploiement",
+    "test_pass": "RÉUSSI",
+    "test_fail": "ÉCHEC",
+    "test_title_pass": "Réussi",
+    "test_title_fail": "Échoué"
   },
   "deploying": "Déploiement…",
   "deployments_panel": {
@@ -144,7 +154,8 @@
     "no_deployments_yet": "Aucun déploiement pour l’instant. Sélectionnez un persona ci-dessus pour le déployer comme point de terminaison API cloud.",
     "select_persona": "Sélectionnez un persona à déployer",
     "budget_no_limit": "Aucune limite",
-    "budget_per_month": "${amount}/mois"
+    "budget_per_month": "${amount}/mois",
+    "deploy_button": "Déployer"
   },
   "exec_detail": {
     "fetching_output": "Récupération de la sortie…",
@@ -182,7 +193,9 @@
     "total_runs": "Total des exécutions",
     "fetch_output_failed": "Impossible de récupérer la sortie",
     "monthly_budget": "Budget mensuel",
-    "monthly_budget_pace": "En route vers {amount}"
+    "monthly_budget_pace": "En route vers {amount}",
+    "load_failed": "Impossible de charger l'historique des exécutions.",
+    "no_executions_found": "Aucune exécution trouvée pour les filtres sélectionnés."
   },
   "no_targets": "Aucune cible de déploiement connectée",
   "oauth_panel": {
@@ -201,7 +214,8 @@
     "token_expired": "Jeton expiré",
     "token_expired_msg_prefix": "Ce token OAuth a expiré",
     "token_unknown": "Statut du jeton inconnu",
-    "token_unknown_msg": "La validité du token n’a pas pu être vérifiée. Actualisez le token pour confirmer qu’il est toujours actif."
+    "token_unknown_msg": "La validité du token n’a pas pu être vérifiée. Actualisez le token pour confirmer qu’il est toujours actif.",
+    "expired_at": "(expiré {time})"
   },
   "orchestrator_url": "URL de l’orchestrateur",
   "reconcile": {
@@ -229,7 +243,8 @@
     "loading": "Chargement des déclencheurs…",
     "loading_firings": "Chargement…",
     "no_firings": "Aucun déclenchement récent",
-    "recent_firings": "Déclenchements récents"
+    "recent_firings": "Déclenchements récents",
+    "firings_load_failed": "Impossible de charger les déclenchements récents."
   },
   "sr_connecting": "Connexion à l’orchestrateur cloud…",
   "sr_deploying": "Déploiement de l’agent dans le cloud",
@@ -239,7 +254,8 @@
     "no_status": "Aucune donnée de statut disponible.",
     "no_token": "Aucun jeton configuré",
     "no_token_configured": "Aucun jeton configuré",
-    "token_available": "Jeton disponible"
+    "token_available": "Jeton disponible",
+    "latency_title": "Latence aller-retour du contrôle d'état : {ms} ms"
   },
   "tabs": {
     "connection": "Connexion",

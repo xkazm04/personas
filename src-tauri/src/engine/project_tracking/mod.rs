@@ -27,12 +27,12 @@
 //! - Phase 6: `watchers/obsidian` (gated on Obsidian credential detection).
 
 pub mod consolidator;
-pub mod events;
-pub mod pulse;
+pub use personas_engine::project_tracking::events;
+pub use personas_engine::project_tracking::pulse;
 pub mod push;
 pub mod scheduler;
-pub mod subscription;
-pub mod watchers;
+pub use personas_engine::project_tracking::subscription;
+pub use personas_engine::project_tracking::watchers;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;

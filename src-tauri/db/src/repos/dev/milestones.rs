@@ -21,6 +21,7 @@ fn row_to_milestone(row: &Row) -> rusqlite::Result<DevMilestone> {
         target_date: row.get("target_date")?,
         cut_at: row.get("cut_at")?,
         shipped_at: row.get("shipped_at")?,
+        kind: row.get("kind")?,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -55,6 +56,10 @@ pub fn list_milestones_by_project(
     })
 }
 
+/// The two kinds a milestone row can be. See [`DevMilestone::kind`].
+pub const MILESTONE_KINDS: [&str; 2] = ["milestone", "deadline"];
+
+/// An ordinary milestone. Every door that predates deadlines lands here.
 pub fn create_milestone(
     pool: &DbPool,
     project_id: &str,
@@ -64,6 +69,44 @@ pub fn create_milestone(
     status: Option<&str>,
     target_date: Option<&str>,
 ) -> Result<DevMilestone, AppError> {
+    create_milestone_of_kind(
+        pool,
+        project_id,
+        name,
+        goal,
+        description,
+        status,
+        target_date,
+        None,
+    )
+}
+
+/// [`create_milestone`] with an explicit kind (`None` = `'milestone'`). A
+/// `'deadline'` must carry a non-empty `target_date` - a deadline without a
+/// date is not a deadline, and the check lives here so every door gets it.
+#[allow(clippy::too_many_arguments)]
+pub fn create_milestone_of_kind(
+    pool: &DbPool,
+    project_id: &str,
+    name: &str,
+    goal: Option<&str>,
+    description: Option<&str>,
+    status: Option<&str>,
+    target_date: Option<&str>,
+    kind: Option<&str>,
+) -> Result<DevMilestone, AppError> {
+    let kind = kind.unwrap_or("milestone");
+    if !MILESTONE_KINDS.contains(&kind) {
+        return Err(AppError::Validation(format!(
+            "Invalid milestone kind `{kind}`"
+        )));
+    }
+    if kind == "deadline" {
+        personas_core::validation::require_non_empty(
+            "Deadline target date",
+            target_date.unwrap_or("").trim(),
+        )?;
+    }
     if name.trim().is_empty() {
         return Err(AppError::Validation(
             "Milestone name cannot be empty".into(),
@@ -108,9 +151,9 @@ pub fn create_milestone(
         // so without this its `cut_at` would stay NULL forever and every item
         // added later would report `added_after_cut = false`.
         conn.execute(
-            "INSERT INTO dev_milestones (id, project_id, name, goal, description, status, order_index, target_date, cut_at, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?9, ?5, ?6, ?7, CASE WHEN ?5 = 'active' THEN ?8 ELSE NULL END, ?8, ?8)",
-            params![id, project_id, name.trim(), goal, status, order_index, target_date, now, description],
+            "INSERT INTO dev_milestones (id, project_id, name, goal, description, status, order_index, target_date, cut_at, kind, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?9, ?5, ?6, ?7, CASE WHEN ?5 = 'active' THEN ?8 ELSE NULL END, ?10, ?8, ?8)",
+            params![id, project_id, name.trim(), goal, status, order_index, target_date, now, description, kind],
         )?;
         drop(conn);
         get_milestone_by_id(pool, &id)
@@ -195,6 +238,28 @@ pub fn update_milestone_tracked(
         let mut newly_cut = false;
         let mut newly_shipped = false;
         let conn = pool.get()?;
+        // The create-time rule, held on update too: clearing the date would
+        // leave a deadline that commits to nothing. Checked before any column
+        // is written, so a refused patch changes nothing.
+        if target_date.is_some_and(|d| d.trim().is_empty()) {
+            let kind: String = conn
+                .query_row(
+                    "SELECT kind FROM dev_milestones WHERE id = ?1",
+                    params![id],
+                    |row| row.get("kind"),
+                )
+                .map_err(|e| match e {
+                    rusqlite::Error::QueryReturnedNoRows => {
+                        AppError::NotFound(format!("Milestone {id}"))
+                    }
+                    other => AppError::Database(other),
+                })?;
+            if kind == "deadline" {
+                return Err(AppError::Validation(
+                    "A deadline's target date cannot be cleared".into(),
+                ));
+            }
+        }
         if let Some(name) = name {
             if name.trim().is_empty() {
                 return Err(AppError::Validation(
@@ -439,7 +504,7 @@ pub fn open_milestone_for_project(
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, project_id, name, goal, description, status, order_index, target_date, \
-                    cut_at, shipped_at, created_at, updated_at
+                    cut_at, shipped_at, kind, created_at, updated_at
                FROM dev_milestones
               WHERE project_id = ?1 AND status != 'shipped'
               ORDER BY status, order_index LIMIT 1",
@@ -972,6 +1037,98 @@ mod milestone_tests {
             create_milestone(&pool, &project.id, "v2", None, None, Some("active"), None).unwrap();
         assert_eq!(active.status, "active");
         assert!(active.shipped_at.is_none());
+    }
+
+    /// A deadline is a milestone whose date is a commitment: it cannot be born
+    /// without one, nor have it cleared afterwards. Ordinary milestones keep
+    /// their old freedom, and every pre-existing door creates the ordinary kind.
+    #[test]
+    fn deadline_requires_and_keeps_its_date() {
+        let pool = crate::init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/mp8", None, None, None, None, None).unwrap();
+
+        let plain = create_milestone(&pool, &project.id, "v1", None, None, None, None).unwrap();
+        assert_eq!(plain.kind, "milestone");
+
+        for missing in [None, Some(""), Some("  ")] {
+            let err = create_milestone_of_kind(
+                &pool,
+                &project.id,
+                "Launch",
+                None,
+                None,
+                None,
+                missing,
+                Some("deadline"),
+            );
+            assert!(
+                matches!(err, Err(AppError::Validation(_))),
+                "a deadline without a date must be refused ({missing:?}), got {err:?}"
+            );
+        }
+        assert!(create_milestone_of_kind(
+            &pool,
+            &project.id,
+            "X",
+            None,
+            None,
+            None,
+            Some("2026-12-01"),
+            Some("someday"),
+        )
+        .is_err());
+
+        let d = create_milestone_of_kind(
+            &pool,
+            &project.id,
+            "Launch",
+            None,
+            None,
+            None,
+            Some("2026-12-01"),
+            Some("deadline"),
+        )
+        .unwrap();
+        assert_eq!(d.kind, "deadline");
+        assert_eq!(d.target_date.as_deref(), Some("2026-12-01"));
+
+        // Clearing is refused and changes nothing - not even the name sent with it.
+        let err = update_milestone(
+            &pool,
+            &d.id,
+            Some("Renamed"),
+            None,
+            None,
+            None,
+            Some(""),
+            None,
+        );
+        assert!(matches!(err, Err(AppError::Validation(_))), "got {err:?}");
+        let still = get_milestone_by_id(&pool, &d.id).unwrap();
+        assert_eq!(still.name, "Launch");
+        assert_eq!(still.target_date.as_deref(), Some("2026-12-01"));
+
+        // Moving the date is fine; clearing an ordinary milestone's date is too.
+        let moved = update_milestone(
+            &pool,
+            &d.id,
+            None,
+            None,
+            None,
+            None,
+            Some("2027-01-15"),
+            None,
+        )
+        .unwrap();
+        assert_eq!(moved.target_date.as_deref(), Some("2027-01-15"));
+        update_milestone(&pool, &plain.id, None, None, None, None, Some(""), None).unwrap();
+
+        // The open-milestone read carries the kind too (explicit column list).
+        let listed = list_milestones_by_project(&pool, &project.id).unwrap();
+        assert!(listed.iter().any(|m| m.kind == "deadline"));
+        assert!(open_milestone_for_project(&pool, &project.id)
+            .unwrap()
+            .is_some());
     }
 
     /// `description` / `rating` round-trip through the upsert, follow the

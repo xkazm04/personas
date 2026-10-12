@@ -65,6 +65,7 @@
       "contexts": ["(`stale.rs:1244` → `registry.rs:1192`) kills the `claude` child of any session"],
       "resolved": false
     },
+    "runner/mod.rs": {"count":2,"sections":[7,12],"lines":["2467"],"contexts":["this class already: `wait.rs:191`, `eval.rs:523`, `runner/mod.rs:2467`)."],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["I read all **135** rules in `scripts/census/rules.json` before authoring. Seven"]},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**Sweep.** All **963** `.rs` under `src-tauri/` and all **4,829** `.ts`/`.tsx`"],"resolved":false,"isDir":true},
     "src-tauri/engine/src/cli_mcp_config.rs": {"count":3,"sections":[4,7,9],"lines":["338"],"contexts":["already has this shape at `engine/src/cli_mcp_config.rs:338`."],"resolvedFrom":"suffix","verbatim":"engine/src/cli_mcp_config.rs"},
@@ -132,7 +133,6 @@
       "verbatim": "obsidian_brain/mod.rs"
     },
     "src-tauri/src/companion/orchestration/mcp/mod.rs": {"count":2,"sections":[0,12],"lines":["83-97"],"contexts":["(`companion/orchestration/mcp/mod.rs:83-97`) stores into a"],"resolvedFrom":"suffix","verbatim":"companion/orchestration/mcp/mod.rs"},
-    "src-tauri/src/engine/runner/mod.rs": {"count":2,"sections":[7,12],"lines":["2467"],"contexts":["this class already: `wait.rs:191`, `eval.rs:523`, `runner/mod.rs:2467`)."],"resolvedFrom":"suffix","verbatim":"runner/mod.rs"},
     "src-tauri/src/ipc_auth.rs": {"count":1,"sections":[0],"lines":["393"],"contexts":["one appears in `PRIVILEGED_COMMANDS` — `fleet_remove_session`** (`ipc_auth.rs:393`),"],"resolvedFrom":"basename","verbatim":"ipc_auth.rs"},
     "src/": {"count":1,"sections":[],"contexts":["under `src/` (the census walk's own counts). Read in full:"],"resolved":false,"isDir":true},
     "src/features/plugins/fleet/FleetGridPage.tsx": {

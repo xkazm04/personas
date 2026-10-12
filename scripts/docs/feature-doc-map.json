@@ -228,7 +228,8 @@
         "src-tauri/src/engine/discovery.rs",
         "src-tauri/src/engine/connector_strategy.rs",
         "src-tauri/engine/src/template_checksums.rs",
-        "src-tauri/src/engine/build_session/**"
+        "src-tauri/src/engine/build_session/**",
+        "src-tauri/engine/src/build_session/**"
       ],
       "onboardingFlows": [
         "template-picker",
@@ -243,6 +244,7 @@
       "sourceGlobs": [
         "src-tauri/src/commands/execution/**",
         "src-tauri/src/engine/background/**",
+        "src-tauri/engine/src/background/**",
         "src-tauri/engine/src/bus.rs",
         "src-tauri/core/src/scheduler.rs",
         "src-tauri/core/src/cron.rs",
@@ -253,7 +255,7 @@
         "src-tauri/engine/src/parser.rs",
         "src-tauri/core/src/trace.rs",
         "src-tauri/engine/src/cost.rs",
-        "src-tauri/src/engine/automation_runner.rs",
+        "src-tauri/engine/src/automation_runner.rs",
         "src-tauri/src/engine/tool_runner.rs"
       ],
       "onboardingFlows": [
@@ -340,7 +342,6 @@
       "doc": "docs/features/companions/athena/cockpit.md",
       "sourceGlobs": [
         "src/features/home/sub_cockpit/**",
-        "src/features/companions/athena/inbox/**",
         "src/features/companions/athena/InlineChatCard.tsx",
         "src-tauri/src/companion/brain/cockpit.rs"
       ],
@@ -379,7 +380,7 @@
       ]
     },
     {
-      "_comment": "Approvals — the manual-review queue and the focused triage flow (`ReviewFocusFlow`, which the Monitor rail also opens as a modal). Mapped to NOTHING until 2026-10-04, so every change to the surface the README's own 'Approvals' row describes was invisible to the doc-sync check. `shared/components/decisions/**` is here rather than under a shared entry because its decision rows serve this queue.",
+      "_comment": "Approvals — the manual-review queue and the focused triage flow. Mapped to NOTHING until 2026-10-04, so every change to the surface the README's own 'Approvals' row describes was invisible to the doc-sync check. `shared/components/decisions/**` is here rather than under a shared entry because its DecisionRow/DecisionActions primitives are the review queues' row and verdict controls this doc covers (TriageFocus, which shared the folder, was retired 2026-10-06 with the Decision Center consolidation).",
       "doc": "docs/features/overview/README.md",
       "sourceGlobs": [
         "src/features/overview/sub_manual-review/**",
@@ -550,7 +551,7 @@
         "src-tauri/db/src/repos/resources/teams.rs",
         "src-tauri/db/src/repos/orchestration/**",
         "src-tauri/src/engine/team_assignment_orchestrator.rs",
-        "src-tauri/src/engine/team_assignment_matching.rs"
+        "src-tauri/engine/src/team_assignment_matching.rs"
       ],
       "onboardingFlows": [
         "pipeline-project",

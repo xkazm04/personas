@@ -6,10 +6,10 @@
 // ones glow in the theme colour, the ones waiting on you glow amber, failures
 // red. Calm is the default state of the panel; light is the exception.
 //
-// Three columns, one grammar: SUPPLY on the left (the cap as a socket rack,
+// Two columns, one grammar: SUPPLY on the left (the cap as a socket rack,
 // Autopilot, subscription windows as fuel strips), the BOARD in the middle
-// (Classic bays, the Runway rack, the three Lanes), the DESK on the right
-// (everything waiting on a human). One band of chrome above them all, and
+// (Classic bays, the Runway rack, the three Lanes), the decision strip in the band above
+// (everything waiting on a human, via the Decision Center). One band of chrome above them all, and
 // under it the notepad of workspaces the board below is a sheet of.
 //
 // CONSOLIDATED 2026-10-04. This is now the Activity surface itself, not one
@@ -23,9 +23,9 @@
 // files are moved, which is a rename pass and not a design one.
 //
 // THE COLD OPEN IS CHOREOGRAPHED (WP2). This file is now a light SHELL with
-// three holes in it, and the holes are the surface's whole weight: the board
-// panel, the desk (`DeskSlot`, which carries `useRailSurface`) and the usage
-// plates (`UsageSlot`, which carries `useUsageFeed`). All three are behind
+// two holes in it, and the holes are the surface's whole weight: the board
+// panel, the usage
+// plates (`UsageSlot`, which carries `useUsageFeed`). Both are behind
 // `lazyRetry` in `activityLazy`, preloaded on the shell's first commit, and
 // admitted one beat at a time by `useActivityEntrance` — chrome, tiles, rail,
 // usage. The frame is complete before any of them arrive (`SlotGhosts`), so
@@ -40,7 +40,6 @@
 
 import { memo, Suspense, useCallback, useEffect, useState } from 'react';
 import type { PersonaCardModel } from '../../../monitorModel';
-import { FINAL_STAGE } from '../../useStagedMount';
 import { BEAT, useActivityEntrance } from '../../useActivityEntrance';
 import { useActivitySurface, type ActivitySurfaceProps } from '../useActivitySurface';
 import { useCapSetting, useQueueConfirm } from '../shared';
@@ -52,10 +51,9 @@ import { useWorkspaceScope } from './workspaceScope';
 import { WorkspaceSheet, WorkspaceTabs } from './WorkspaceTabs';
 import { SupplyDeck } from './SupplyDeck';
 import { BayGhosts } from './Ghosts';
-import { DeskGhost, UsageGhost } from './SlotGhosts';
+import { UsageGhost } from './SlotGhosts';
 import {
   LazyClassicPanel,
-  LazyDeskSlot,
   LazyLanesPanel,
   LazyOrchestrationPanel,
   LazyQuickChatComposer,
@@ -64,9 +62,6 @@ import {
   preloadActivityPanels,
 } from './activityLazy';
 import './entryE.css';
-
-/** Stable empty default — a fresh `[]` per render would re-run the desk's feeds. */
-const EMPTY_FEED_TEAMS: NonNullable<ActivitySurfaceProps['feedTeams']> = [];
 
 function ActivityEntryEImpl(props: ActivitySurfaceProps) {
   const surface = useActivitySurface(props);
@@ -85,7 +80,6 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
   const onLayout = useCallback((v: typeof layout) => setLayout(v), [setLayout]);
   const filter = usePanelFilter(surface);
   const workspaces = useWorkspaceScope(surface);
-  const ready = surface.stage >= FINAL_STAGE;
 
   const board = layout === 'classic' ? (
     <LazyClassicPanel surface={surface} filter={filter} workspaces={workspaces} selectedPersonaId={props.selectedPersonaId} onOpenRemote={props.onOpenRemote} onClearFilter={surface.clearFilter} />
@@ -135,19 +129,6 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
           </CommandFloor>
         </WorkspaceSheet>
 
-        {entrance.beat >= BEAT.rail ? (
-          <Suspense fallback={<DeskGhost />}>
-            <LazyDeskSlot
-              feedTeams={props.feedTeams ?? EMPTY_FEED_TEAMS}
-              onOpenSpeaker={props.onOpenSpeaker}
-              scope={surface.scope}
-              onClearScope={surface.clearScope}
-              simulatedRail={surface.simulatedRail}
-              ready={ready}
-              reducedMotion={surface.reducedMotion}
-            />
-          </Suspense>
-        ) : <DeskGhost />}
       </div>
 
       {(surface.terminal || surface.recap) && (

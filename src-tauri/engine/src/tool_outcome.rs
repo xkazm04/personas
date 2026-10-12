@@ -232,25 +232,30 @@ fn classify_message(msg: &str) -> (ToolErrorKind, Option<u16>, bool) {
         return (ToolErrorKind::Timeout, None, true);
     }
     // Auth signals (OAuth token expiry, 401/403).
-    if lower.contains("401")
+    // Status digits count only as standalone tokens ("HTTP 401", "401:") so a
+    // count or id like "processed 14013 rows" is not misread as an auth failure.
+    let has_401 = has_status_token(&lower, "401");
+    let has_403 = has_status_token(&lower, "403");
+    if has_401
         || lower.contains("unauthorized")
-        || lower.contains("403")
+        || has_403
         || lower.contains("forbidden")
         || lower.contains("expired_token")
         || lower.contains("invalid_token")
     {
-        let code = if lower.contains("403") || lower.contains("forbidden") {
+        let code = if has_403 || lower.contains("forbidden") {
             Some(403)
         } else {
             Some(401)
         };
         return (ToolErrorKind::Auth, code, false);
     }
-    if lower.contains("failed to connect")
-        || lower.contains("failed to spawn")
-        || lower.contains("failed to execute")
-        || lower.contains("connection refused")
-    {
+    // A spawn/exec failure (missing script, bad path) will not clear on retry:
+    // same verdict as `AppError::ProcessSpawn` in `classify_app_error`.
+    if lower.contains("failed to spawn") || lower.contains("failed to execute") {
+        return (ToolErrorKind::Transport, None, false);
+    }
+    if lower.contains("failed to connect") || lower.contains("connection refused") {
         return (ToolErrorKind::Transport, None, true);
     }
     // Explicit HTTP status shapes ("HTTP 500", "returned 429", etc.).
@@ -267,6 +272,17 @@ fn classify_message(msg: &str) -> (ToolErrorKind, Option<u16>, bool) {
         return (ToolErrorKind::ToolError, None, false);
     }
     (ToolErrorKind::Unknown, None, false)
+}
+
+/// True when `code` appears in `lower` as a standalone token (not embedded in a
+/// longer run of alphanumerics).
+fn has_status_token(lower: &str, code: &str) -> bool {
+    lower.match_indices(code).any(|(i, _)| {
+        let before = lower[..i].chars().next_back();
+        let after = lower[i + code.len()..].chars().next();
+        !before.is_some_and(|c| c.is_ascii_alphanumeric())
+            && !after.is_some_and(|c| c.is_ascii_alphanumeric())
+    })
 }
 
 /// Best-effort extraction of a 3-digit HTTP status token from a lowercased
@@ -291,6 +307,22 @@ fn extract_http_status(lower: &str) -> Option<u16> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn spawn_failure_verdict_is_the_same_through_both_doors() {
+        let typed = classify_app_error(&AppError::ProcessSpawn("x".into()));
+        let text = classify_app_error(&AppError::Execution("Failed to spawn x".into()));
+        assert_eq!(typed, text);
+        assert!(!text.2, "spawn failure is terminal");
+    }
+
+    #[test]
+    fn digits_inside_counts_are_not_auth_failures() {
+        let (kind, _, _) = classify_app_error(&AppError::Execution("processed 14013 rows".into()));
+        assert_ne!(kind, ToolErrorKind::Auth);
+        let (kind, code, _) = classify_app_error(&AppError::Execution("HTTP 403: nope".into()));
+        assert_eq!((kind, code), (ToolErrorKind::Auth, Some(403)));
+    }
 
     #[test]
     fn error_kind_tokens_are_stable_snake_case() {

@@ -1,0 +1,150 @@
+{
+  "module": "decision-center/prototype",
+  "kit": "p1:modal:report-html",
+  "label": "modal-report-html",
+  "createdAt": "2026-10-06T12:38:22.045Z",
+  "browser": "147.0.7727.15",
+  "tape": {
+    "path": "C:\\Users\\mkdol\\AppData\\Local\\Temp\\claude\\C--Users-mkdol-dolla-personas\\827c5c2d-1aca-4532-a482-98c62a1e3d17\\scratchpad\\p1\\tape.json",
+    "source": "synthetic",
+    "recordedAt": "2026-10-06T14:00:00.000Z",
+    "calls": 0,
+    "note": "P1: fixture roster, no IPC; clock frozen at the fixtures' own now so ages read true."
+  },
+  "ok": false,
+  "unknownIpcCommands": [],
+  "shots": [
+    {
+      "file": "modal-report-html-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": false,
+      "problems": [
+        "1 console error(s)"
+      ],
+      "consoleErrors": [
+        "Blocked script execution in 'about:srcdoc' because the document's frame is sandboxed and the 'allow-scripts' permission is not set."
+      ],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 557,
+      "textSample": "P1 P2 P3 strip peek modal Disabled reset roster 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 Gates 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 ",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "modal-report-html-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": false,
+      "problems": [
+        "1 console error(s)"
+      ],
+      "consoleErrors": [
+        "Blocked script execution in 'about:srcdoc' because the document's frame is sandboxed and the 'allow-scripts' permission is not set."
+      ],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 623,
+      "textSample": "P1 P2 P3 strip peek modal Disabled reset roster Triage all 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 Gates 0 1 2 3 4 5 6 7 8 9 Proposals 0 1 2 3 4 5 6 7 8 9 Backlog 0 1 2 3 4 5 6 7 8 9 Incidents 0 1 2 3",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "modal-report-html-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": false,
+      "problems": [
+        "1 console error(s)"
+      ],
+      "consoleErrors": [
+        "Blocked script execution in 'about:srcdoc' because the document's frame is sandboxed and the 'allow-scripts' permission is not set."
+      ],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 557,
+      "textSample": "P1 P2 P3 strip peek modal Disabled reset roster 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 Gates 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 ",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "modal-report-html-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": false,
+      "problems": [
+        "1 console error(s)"
+      ],
+      "consoleErrors": [
+        "Blocked script execution in 'about:srcdoc' because the document's frame is sandboxed and the 'allow-scripts' permission is not set."
+      ],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 623,
+      "textSample": "P1 P2 P3 strip peek modal Disabled reset roster Triage all 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 Gates 0 1 2 3 4 5 6 7 8 9 Proposals 0 1 2 3 4 5 6 7 8 9 Backlog 0 1 2 3 4 5 6 7 8 9 Incidents 0 1 2 3",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

@@ -23,6 +23,8 @@ export interface UseTemplateGalleryReturn {
   sortDir: string;
   setSortDir: (d: string) => void;
   isLoading: boolean;
+  /** Latest failed page fetch; null when the last fetch succeeded. */
+  error: string | null;
   refresh: () => void;
   availableConnectors: ConnectorWithCount[];
   availableCategories: CategoryWithCount[];
@@ -90,6 +92,7 @@ export function useTemplateGallery(coverageServiceTypes?: string[], perPage?: nu
     sortDir: query.sortDir,
     setSortDir: query.setSortDir,
     isLoading: query.isLoading,
+    error: query.error,
     refresh: query.refresh,
     availableConnectors: query.availableConnectors,
     availableCategories: query.availableCategories,

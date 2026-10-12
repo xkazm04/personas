@@ -93,11 +93,18 @@ pub fn list_versions(project_dir: &Path) -> Result<Vec<BuildVersion>, AppError> 
 /// Restore the working tree to a prior snapshot (files only). The owner's index
 /// and history are left alone, and `--overlay` never deletes a file: files
 /// added after the snapshot stay (a deleting restore was declined in triage).
-pub fn restore(project_dir: &Path, sha: &str) -> Result<(), AppError> {
+///
+/// The overlay overwrites every tracked file the target differs on, and the
+/// only other snapshot door is the end of a completed turn, so a hand edit or an
+/// interrupted turn's output would exist in no version. Capture the live tree
+/// onto the private ref first; if that fails the restore is refused, because an
+/// uncaptured overwrite cannot be undone.
+pub async fn restore(project_dir: &Path, sha: &str) -> Result<(), AppError> {
     // Guard against arg injection — a git short-sha is hex-ish.
     if sha.is_empty() || sha.len() > 64 || !sha.chars().all(|c| c.is_ascii_alphanumeric()) {
         return Err(AppError::Validation("invalid version id".into()));
     }
+    commit_snapshot(project_dir, "before restore").await?;
     run_git_blocking(
         project_dir,
         &[
@@ -158,10 +165,22 @@ mod tests {
         assert_eq!(versions[1].message, "athena: Built the menu");
 
         let short = &first[..7];
-        restore(&d, short).unwrap();
+        // An uncaptured hand edit made after the last turn.
+        std::fs::write(d.join("page.tsx"), "hand edit").unwrap();
+        restore(&d, short).await.unwrap();
         assert_eq!(
             std::fs::read_to_string(d.join("page.tsx")).unwrap(),
             "turn 1"
+        );
+        // The hand edit was captured before being overwritten.
+        let tip = run_git_blocking(&d, &["rev-parse", SNAPSHOT_REF]).unwrap();
+        assert_eq!(
+            run_git_blocking(&d, &["show", &format!("{tip}:page.tsx")]).unwrap(),
+            "hand edit"
+        );
+        assert_eq!(
+            list_versions(&d).unwrap()[0].message,
+            "athena: before restore"
         );
         // Overlay: nothing is deleted, and nothing was staged.
         assert!(d.join("later.tsx").exists());

@@ -64,14 +64,6 @@
       "verbatim": "commands/infrastructure/auth.rs"
     },
     "src/": {"count":4,"sections":[3,7],"contexts":["`useDebouncedSaveGroup`, plus verbatim transcriptions of the four teardown shapes found in `src/`,"],"resolved":false,"isDir":true},
-    "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx": {
-      "count": 2,
-      "sections": [6,7],
-      "lines": ["140-147","134-148"],
-      "contexts": ["Both flushes are in this repo (`useDebouncedSave.ts:82-92`, `useDeckControls.tsx:140-147`, and the"],
-      "resolvedFrom": "basename",
-      "verbatim": "useDeckControls.tsx"
-    },
     "src/features/agents/sub_editor/components/EditorBody.tsx": {
       "count": 3,
       "sections": [2,3,8],
@@ -299,6 +291,7 @@
       "resolvedFrom": "basename",
       "verbatim": "themeStore.ts"
     },
+    "useDeckControls.tsx": {"count":2,"sections":[6,7],"lines":["140-147","134-148"],"contexts":["Both flushes are in this repo (`useDebouncedSave.ts:82-92`, `useDeckControls.tsx:140-147`, and the"],"resolved":false},
     "useMediaStudio.ts": {"count":1,"sections":[7],"lines":["60"],"contexts":["3. **The composition state dies with the view.** `useMediaStudio.ts:60` is plain `useState`, and"],"resolved":false},
     "useMediaStudioPersistence.ts": {"count":3,"sections":[5,7],"lines":["86","80-107","19"],"contexts":["`useMediaStudioPersistence.ts:86` verbatim: the user's **last** edit is never persisted, because the"],"resolved":false},
     "useRenderPlan.ts": {"count":1,"sections":[6],"lines":["31-45"],"contexts":["(`useRenderPlan.ts:31-45`, `ascent/src/components/QuotaMeter.tsx:24`) are both on **reads**."],"resolved":false},

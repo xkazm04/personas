@@ -112,6 +112,7 @@
       ],
       "resolved": false
     },
+    "agents/quick-answer/triage/deck/DeckQueueRail.tsx": {"count":1,"sections":[7],"lines":["189-193"],"contexts":["(`SCHEDULE_WINDOWING_THRESHOLD = 24`), `agents/quick-answer/triage/deck/DeckQueueRail.tsx:189-193`"],"resolved":false},
     "console.rs": {
       "count": 1,
       "sections": [6],
@@ -121,6 +122,7 @@
       ],
       "resolved": false
     },
+    "fleet/monitor/channels/Stream.tsx": {"count":1,"sections":[7],"lines":["311"],"contexts":["transitions), `fleet/monitor/channels/Stream.tsx:311` (12 callsign facets),"],"resolved":false},
     "hooks/utility/interaction/{useVirtualList,useProgressiveReveal,useScrollRestoration,useEndReached}.ts": {"count":1,"sections":[],"contexts":["`hooks/utility/interaction/{useVirtualList,useProgressiveReveal,useScrollRestoration,useEndReached}.ts`,"],"resolved":false},
     "httpApi.ts": {"count":1,"sections":[6],"lines":["2372"],"contexts":["`httpApi.ts:2372`) — so it is **structurally absent** from this leaf, not silent about it. Effective"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"contexts":["`golden-path-census` **pre-push** job (`lefthook.yml`). That matters: `ci.yml` is red on 10"]},
@@ -162,14 +164,6 @@
     "src/**": {"count":1,"sections":[12],"contexts":["in `.tsx`; the exemplar is `.tsx`; the census rule's roots are `src/**` and its population is 100%"],"resolved":false,"isDir":true},
     "src/**/*.tsx": {"count":1,"sections":[9],"contexts":["read; the **76** whose roots and extensions can reach `src/**/*.tsx` were run:"],"resolved":false},
     "src/api/**": {"count":2,"sections":[0],"contexts":["All **307** `invoke<T[]>` call sites in `src/api/**` classified for whether the client asks for a"],"resolved":false,"isDir":true},
-    "src/features/agents/quick-answer/triage/deck/DeckQueueRail.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["189-193"],
-      "contexts": ["(`SCHEDULE_WINDOWING_THRESHOLD = 24`), `agents/quick-answer/triage/deck/DeckQueueRail.tsx:189-193`"],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/quick-answer/triage/deck/DeckQueueRail.tsx"
-    },
     "src/features/agents/sub_activity/ActivityList.tsx": {
       "count": 1,
       "sections": [7],
@@ -211,14 +205,6 @@
       "contexts": ["| `agents/sub_lab/components/versions_table/LabVersionsTable.tsx:325` | `rows` | prompt versions per persona |"],
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_lab/components/versions_table/LabVersionsTable.tsx"
-    },
-    "src/features/fleet/monitor/channels/Stream.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["311"],
-      "contexts": ["transitions), `fleet/monitor/channels/Stream.tsx:311` (12 callsign facets),"],
-      "resolvedFrom": "suffix",
-      "verbatim": "fleet/monitor/channels/Stream.tsx"
     },
     "src/features/overview/sub_activity/components/GlobalExecutionList.tsx": {
       "count": 1,

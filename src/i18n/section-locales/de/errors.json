@@ -19,5 +19,20 @@
   "not_found": "Die angeforderte Ressource wurde nicht gefunden",
   "rate_limited": "Zu viele Anfragen -- versuchen Sie es gleich erneut",
   "validation": "Ungültige Eingabe: {detail}",
-  "run_superseded": "An anderer Stelle in der App wurde ein neuer Lauf dieser Aufgabe gestartet, daher wurde dieser gestoppt. Starte ihn hier erneut, falls du ihn noch brauchst."
+  "run_superseded": "An anderer Stelle in der App wurde ein neuer Lauf dieser Aufgabe gestartet, daher wurde dieser gestoppt. Starte ihn hier erneut, falls du ihn noch brauchst.",
+  "stream_timeout": "Zeitüberschreitung beim Vorgang. Bitte versuche es erneut.",
+  "operation_cancelled": "Vorgang abgebrochen",
+  "oauth_timed_out": "Die {provider}-Autorisierung ist abgelaufen. Bitte versuche es erneut.",
+  "oauth_completed": "{provider}-Autorisierung abgeschlossen.",
+  "oauth_failed": "Die {provider}-Autorisierung ist fehlgeschlagen. Bitte versuche es erneut.",
+  "oauth_starting": "{provider}-Autorisierung wird gestartet ...",
+  "oauth_start_timeout": "Zeitüberschreitung beim Start der OAuth-Sitzung.",
+  "oauth_unsafe_url": "Unsichere {provider}-Autorisierungs-URL blockiert.",
+  "oauth_popup_blocked": "Die {provider}-Zustimmungsseite konnte nicht geöffnet werden. Bitte erlaube Pop-ups oder das Öffnen im externen Browser.",
+  "oauth_consent_opened": "Die {provider}-Zustimmungsseite wurde geöffnet. Schließe die Autorisierung in deinem Browser ab.",
+  "oauth_not_started": "Die {provider}-Autorisierung konnte nicht gestartet werden: {detail}",
+  "oauth_unknown_error": "unbekannter Fehler",
+  "ai_search_no_results": "Keine passenden Vorlagen gefunden.",
+  "ai_search_coverage": " ({searched} von {total} Vorlagen durchsucht)",
+  "ai_search_failed": "KI-Suche fehlgeschlagen: {detail}"
 }

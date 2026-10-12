@@ -2,6 +2,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useMemo, useRef, useState } from 'react';
 import { useScaledFontSize } from '@/stores/themeStore';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { successRateTone } from './CloudHistoryHelpers';
 
 export interface DailyPoint {
   date: string;
@@ -16,10 +17,8 @@ const LABEL_H = 16;
 const COST_LINE_COLOR = 'var(--primary)';
 
 function successColor(rate: number | null): string {
-  if (rate == null) return 'var(--muted-foreground)';
-  if (rate >= 0.9) return 'var(--status-success)';
-  if (rate >= 0.7) return 'var(--status-warning)';
-  return 'var(--status-error)';
+  const tone = successRateTone(rate);
+  return tone ? `var(--status-${tone})` : 'var(--muted-foreground)';
 }
 
 /** Tooltip labels carry a trailing colon ("Runs:"); headers and legends do not. */
@@ -27,9 +26,17 @@ function bareLabel(label: string): string {
   return label.replace(/\s*[:：]\s*$/, '');
 }
 
-function formatShortDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
+/**
+ * The backend buckets are date-only UTC days ("YYYY-MM-DD"). `new Date(iso)`
+ * parses those as UTC midnight, and local getters then print the previous day
+ * west of UTC; so build the day from its parts and format it in UTC, in the
+ * viewer's locale (D.M. / M月D日 differ). Anything unparseable is shown raw.
+ */
+export function formatShortDate(iso: string, locale?: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return iso;
+  const ms = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return new Intl.DateTimeFormat(locale, { month: 'numeric', day: 'numeric', timeZone: 'UTC' }).format(ms);
 }
 
 export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {

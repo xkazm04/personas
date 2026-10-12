@@ -53,6 +53,7 @@ const mount = () => render(<GuideStudio showVision={false} submitting={false} on
 afterEach(() => {
   cleanup();
   useStudioStore.setState({ runtimes: {}, tabOrder: [], activeId: null, draft: null });
+  useStudioHistory.setState({ goalsOpen: true });
 });
 
 describe('Guide layout', () => {
@@ -201,6 +202,24 @@ describe('Guide layout', () => {
     expect(note).toMatch(/BUILD_PLAN/);
   });
 
+  it('a hidden goals rail stays hidden, and G brings it back with the goal field focused', () => {
+    useStudioHistory.setState({ goalsOpen: false });
+    seed({});
+    mount();
+    expect(screen.queryByTestId('studio-goals-rail')).toBeNull();
+    fireEvent.keyDown(window, { key: 'g' });
+    expect(screen.getByTestId('studio-goals-rail')).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByPlaceholderText('add_goal_placeholder'));
+    expect(useStudioHistory.getState().goalsOpen).toBe(true);
+  });
+
+  it('the rail header hides the goals', () => {
+    seed({});
+    mount();
+    fireEvent.click(screen.getByLabelText('goals_hide'));
+    expect(useStudioHistory.getState().goalsOpen).toBe(false);
+  });
+
   it('asks the question on a large card with keyed options', () => {
     const phases = [
       { id: 'v', title: 'Vision', status: 'active', note: 'shop + ordering' },
@@ -270,6 +289,48 @@ describe('Guide layout', () => {
     fireEvent.keyDown(window, { key: 'o' });
     expect(screen.getByRole('menu')).toBeTruthy();
     expect(screen.getAllByRole('menuitem')).toHaveLength(GUIDE_TOOLS.length);
+  });
+
+  it('Plan over a running app shows the blueprint sheet, with the app kept warm underneath', () => {
+    // Measured live 2026-10-06: the frames were drawn after the sheet and
+    // covered it, so Plan kept showing the running app.
+    useStudioHistory.setState({ sheetStyle: 'drafting' });
+    try {
+      seed({});
+      mount();
+      const frame = screen.getByTestId('studio-preview');
+      expect(screen.queryByTestId('drafting-sheet')).toBeNull();
+      expect(frame.getAttribute('data-hidden')).toBeNull();
+      fireEvent.keyDown(window, { key: 'b' });
+      expect(screen.getByTestId('drafting-sheet')).toBeTruthy();
+      // Same element: never reloaded, only hidden and taken out of reach.
+      expect(screen.getByTestId('studio-preview')).toBe(frame);
+      expect(frame.getAttribute('data-hidden')).toBe('true');
+      expect(frame.hasAttribute('inert')).toBe(true);
+      // The sheet draws itself: no live proof inside it, which would turn the
+      // home page into a flat legend and skip the region-by-region drawing.
+      expect(screen.getByTestId('drafting-sheet').querySelector('iframe')).toBeNull();
+      fireEvent.keyDown(window, { key: 'b' });
+      expect(screen.queryByTestId('drafting-sheet')).toBeNull();
+      expect(frame.getAttribute('data-hidden')).toBeNull();
+    } finally {
+      useStudioHistory.setState({ sheetStyle: 'plan' });
+    }
+  });
+
+  it('a proposed plan on the question card reads as formatted markdown', () => {
+    seed({
+      phases: [],
+      question: 'Shall I build it this way?',
+      options: ['Yes', 'Change it'],
+      messages: [{ id: 'm1', text: '## The plan\n\n- **Menu** page\n- Gift cards', ts: 0 }],
+    });
+    mount();
+    const reason = screen.getByTestId('question-reason');
+    expect(reason.querySelector('h2')?.textContent).toBe('The plan');
+    expect(reason.querySelectorAll('li')).toHaveLength(2);
+    expect(reason.querySelector('strong')?.textContent).toBe('Menu');
+    expect(reason.textContent).not.toContain('**');
   });
 
   it('draws the drafting sheet when that sheet style is chosen, and the frame can switch back', () => {

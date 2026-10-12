@@ -112,6 +112,14 @@
       "resolvedFrom": "suffix",
       "verbatim": "db/src/repos/twin.rs"
     },
+    "src-tauri/engine/src/db_query.rs": {
+      "count": 4,
+      "sections": [6,7,9],
+      "lines": ["2581-2607","2589","464,505,699,764"],
+      "contexts": ["first.** `execute_local_sqlite_conn` (`db_query.rs:2581-2607`) executes an"],
+      "resolvedFrom": "basename",
+      "verbatim": "db_query.rs"
+    },
     "src-tauri/src/bench/db.rs": {"count":5,"sections":[3,6],"lines":["135","14"],"contexts":["`bench.db` (`src/bench/db.rs`). The third is small, has no production call"],"resolvedFrom":"suffix","verbatim":"src/bench/db.rs"},
     "src-tauri/src/commands/companion/approvals/approval_exec_core.rs": {
       "count": 3,
@@ -167,14 +175,6 @@
     },
     "src-tauri/src/engine/ai_helpers.rs": {"count":2,"sections":[7,9],"lines":["220"],"contexts":["(`data_portability.rs` 9, `db_query.rs` 4, `dispatcher.rs` 2, `ai_helpers.rs` 1,"],"resolvedFrom":"basename","verbatim":"ai_helpers.rs"},
     "src-tauri/src/engine/capability.rs": {"count":2,"sections":[7,9],"lines":["113"],"contexts":["`capability.rs` 1). **Fifteen make the second store optional; two make the"],"resolvedFrom":"basename","verbatim":"capability.rs"},
-    "src-tauri/src/engine/db_query.rs": {
-      "count": 4,
-      "sections": [6,7,9],
-      "lines": ["2581-2607","2589","464,505,699,764"],
-      "contexts": ["first.** `execute_local_sqlite_conn` (`db_query.rs:2581-2607`) executes an"],
-      "resolvedFrom": "basename",
-      "verbatim": "db_query.rs"
-    },
     "src-tauri/src/mcp_bin.rs": {"count":1,"sections":[6],"lines":["87"],"contexts":["`mcp_bin.rs:87`). That is the second-writer hazard"],"resolvedFrom":"basename","verbatim":"mcp_bin.rs"},
     "src-tauri/src/mcp_server/db.rs": {"count":1,"sections":[6],"lines":["45"],"contexts":["from the separate `personas-mcp` process (`mcp_server/db.rs:45`,"],"resolvedFrom":"suffix","verbatim":"mcp_server/db.rs"},
     "src/": {"count":2,"sections":[6,7],"contexts":["| restore | **no path exists at all** — zero references to `backups` under `src/` | n/a |"],"resolved":false,"isDir":true},

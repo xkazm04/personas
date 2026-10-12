@@ -74,14 +74,6 @@
     },
     "src/**/*.ts": {"count":1,"sections":[],"contexts":["`react|useState|zustand|localStorage` over its `src/**/*.ts` returns 0 matches in 0 files. **The"],"resolved":false},
     "src/api/devTools/devTools.ts": {"count":2,"sections":[6,7],"lines":["148-149","148"],"contexts":["(`src/api/devTools/devTools.ts:148-149`, `getActiveProject`) and has **zero call sites**. Meanwhile the"]},
-    "src/features/agents/quick-answer/triage/deck/useDeckDialog.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["112"],
-      "contexts": ["resets in the whole tree (`OrbQuickInputBar.tsx:55`, `useDeckDialog.tsx:112`, and one inside"],
-      "resolvedFrom": "basename",
-      "verbatim": "useDeckDialog.tsx"
-    },
     "src/features/companions/athena/orb/OrbQuickInputBar.tsx": {
       "count": 1,
       "sections": [7],
@@ -393,6 +385,7 @@
       ],
       "resolved": false
     },
+    "useDeckDialog.tsx": {"count":1,"sections":[7],"lines":["112"],"contexts":["resets in the whole tree (`OrbQuickInputBar.tsx:55`, `useDeckDialog.tsx:112`, and one inside"],"resolved":false},
     "vibeman/src/stores/utils/persistence.ts": {"count":2,"sections":[7],"lines":["99-155"],"contexts":["`migrate`: **1 of 4** (`vibeman`). And it is not a token effort — `vibeman/src/stores/utils/persistence.ts:99-155`"],"resolved":false}
   }
 }

@@ -1,0 +1,340 @@
+{
+  "module": "decision-center/deck",
+  "kit": "html",
+  "label": "modal-html",
+  "createdAt": "2026-10-06T15:27:34.827Z",
+  "browser": "147.0.7727.15",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 11,
+    "note": "Synthetic: every decision source the roster reads, one or two rows each; --kit <approval|backlog|incident|council|report|html|chat> picks the deck request."
+  },
+  "ok": true,
+  "unknownIpcCommands": [
+    "get_persona_summaries",
+    "list_manual_reviews_page",
+    "dev_tools_undispatched_ideas",
+    "list_memories_by_execution",
+    "list_manual_reviews"
+  ],
+  "shots": [
+    {
+      "file": "modal-html-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "get_persona_summaries",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_manual_reviews_page",
+          "args": {
+            "cursor": null,
+            "limit": 100,
+            "personaId": null,
+            "status": "pending"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "dev_tools_undispatched_ideas",
+          "args": {
+            "limit": null,
+            "projectId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "list_memories_by_execution",
+          "args": {
+            "executionId": "exec-rep-html"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "list_manual_reviews",
+          "args": {
+            "personaId": "p-research",
+            "status": "pending"
+          },
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_persona_summaries": 1,
+        "list_manual_reviews_page": 1,
+        "list_unread_reports": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1,
+        "list_memories_by_execution": 1,
+        "list_manual_reviews": 1
+      },
+      "stable": true,
+      "textLength": 40,
+      "textSample": "Persona Monitor Decisions waiting on you",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "modal-html-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "get_persona_summaries",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_manual_reviews_page",
+          "args": {
+            "cursor": null,
+            "limit": 100,
+            "personaId": null,
+            "status": "pending"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "dev_tools_undispatched_ideas",
+          "args": {
+            "limit": null,
+            "projectId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "list_memories_by_execution",
+          "args": {
+            "executionId": "exec-rep-html"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "list_manual_reviews",
+          "args": {
+            "personaId": "p-research",
+            "status": "pending"
+          },
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_persona_summaries": 1,
+        "list_manual_reviews_page": 1,
+        "list_unread_reports": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1,
+        "list_memories_by_execution": 1,
+        "list_manual_reviews": 1
+      },
+      "stable": true,
+      "textLength": 40,
+      "textSample": "Persona Monitor Decisions waiting on you",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "modal-html-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "get_persona_summaries",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_manual_reviews_page",
+          "args": {
+            "cursor": null,
+            "limit": 100,
+            "personaId": null,
+            "status": "pending"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "dev_tools_undispatched_ideas",
+          "args": {
+            "limit": null,
+            "projectId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "list_memories_by_execution",
+          "args": {
+            "executionId": "exec-rep-html"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "list_manual_reviews",
+          "args": {
+            "personaId": "p-research",
+            "status": "pending"
+          },
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_persona_summaries": 1,
+        "list_manual_reviews_page": 1,
+        "list_unread_reports": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1,
+        "list_memories_by_execution": 1,
+        "list_manual_reviews": 1
+      },
+      "stable": true,
+      "textLength": 40,
+      "textSample": "Persona Monitor Decisions waiting on you",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "modal-html-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "get_persona_summaries",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_manual_reviews_page",
+          "args": {
+            "cursor": null,
+            "limit": 100,
+            "personaId": null,
+            "status": "pending"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "dev_tools_undispatched_ideas",
+          "args": {
+            "limit": null,
+            "projectId": null
+          },
+          "answered": null
+        },
+        {
+          "cmd": "list_memories_by_execution",
+          "args": {
+            "executionId": "exec-rep-html"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "list_manual_reviews",
+          "args": {
+            "personaId": "p-research",
+            "status": "pending"
+          },
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_persona_summaries": 1,
+        "list_manual_reviews_page": 1,
+        "list_unread_reports": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1,
+        "list_memories_by_execution": 1,
+        "list_manual_reviews": 1
+      },
+      "stable": true,
+      "textLength": 40,
+      "textSample": "Persona Monitor Decisions waiting on you",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

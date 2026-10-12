@@ -5,7 +5,8 @@ import Button from '@/features/shared/components/buttons/Button';
 import {
   cloudCreateTrigger,
 } from '@/api/system/cloud';
-import { useToastStore } from '@/stores/toastStore';
+import { toastCatch } from '@/lib/silentCatch';
+import { parseCron } from '@/lib/utils/cronNextFire';
 import { CLOUD_CRON_PRESETS, cloudCronPresetLabel } from './cloudSchedulesHelpers';
 import type { Persona } from '@/lib/types/types';
 
@@ -22,10 +23,10 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
   const [createType, setCreateType] = useState<'schedule' | 'webhook'>('schedule');
   const [createCron, setCreateCron] = useState('0 * * * *');
   const [isCreating, setIsCreating] = useState(false);
-  const addToast = useToastStore((s) => s.addToast);
+  const cronInvalid = createType === 'schedule' && parseCron(createCron) === null;
 
   const handleCreate = async () => {
-    if (!createPersonaId || isCreating) return;
+    if (!createPersonaId || isCreating || cronInvalid) return;
     setIsCreating(true);
     try {
       const config = createType === 'schedule'
@@ -34,10 +35,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
       await cloudCreateTrigger(createPersonaId, createType, config, true);
       onCreated();
     } catch (err) {
-      addToast(
-        `Failed to create trigger: ${err instanceof Error ? err.message : String(err)}`,
-        'error',
-      );
+      toastCatch('CreateTriggerForm:create')(err);
     } finally {
       setIsCreating(false);
     }
@@ -104,8 +102,12 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
             value={createCron}
             onChange={(e) => setCreateCron(e.target.value)}
             placeholder="0 * * * *"
+            aria-invalid={cronInvalid}
             className="w-full px-3 py-1.5 typo-code rounded-modal bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
           />
+          {cronInvalid && (
+            <p role="alert" className="typo-caption text-status-error">{t.triggers.build_validation.cron_invalid}</p>
+          )}
           <div className="flex flex-wrap gap-1.5">
             {CLOUD_CRON_PRESETS.map((preset) => (
               <button
@@ -139,7 +141,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
           tone="agent"
           size="sm"
           onClick={handleCreate}
-          disabled={!createPersonaId}
+          disabled={!createPersonaId || cronInvalid}
           loading={isCreating}
           loadingLabel={dt.creating}
           icon={<Plus className="w-3.5 h-3.5" />}

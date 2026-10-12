@@ -49,7 +49,7 @@ Never title a one-liner just to have a title, and never squeeze a real report in
 Fields:
 - `title` (required for a report, OMITTED for a short note): A **descriptive title** that identifies the use case and context at first sight. Examples: "Weekly Tech News - Jan 15-21, 2026", "Portfolio Performance Report - March 2026", "Security Audit Results - API Gateway". NEVER use generic titles like "Execution output" — always make the title meaningful.
 - `content` (required): The message body. Use markdown formatting for a report. **Only include the final deliverable** — do not include your thinking process, internal reasoning, meta-information, or intermediate steps. The user wants the result, not how you got there.
-- `content_type` (optional): "info", "warning", "error", "success" (default: "info")
+- `content_type` (optional): "info", "warning", "error", "success" (default: "info"), or "html" (see HTML document below)
 - `priority` (optional): "low", "normal", "high", "urgent" (default: "normal")
 - `channel` (optional): "message" or "report" — forces the shape when the automatic choice would be wrong (e.g. a short note you DO want kept as an artifact). Leave it out unless you need it.
 
@@ -67,6 +67,8 @@ Each line is `Label: numeric_value`. The dashboard renders this as a horizontal 
 **Tables** — Use standard markdown tables for structured data.
 
 **Sections** — Use headings (##, ###) to organize long reports into scannable sections.
+
+**HTML document** — Markdown is the default. Only when the output is a rich visual document (a comparison, a scorecard, a briefing built on tables and highlights) you MAY set `content_type` to "html" and put one self-contained HTML document in `content`: inline `<style>` only, no scripts (they will not run), no external URLs (they are removed), images only as `data:` URIs, under 30 KB.
 
 "#;
 

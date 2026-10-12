@@ -266,6 +266,14 @@
       "resolvedFrom": "suffix",
       "verbatim": "p2p/remote_jobs.rs"
     },
+    "src-tauri/engine/src/project_tracking/subscription.rs": {
+      "count": 1,
+      "sections": [8],
+      "lines": ["1747-1775"],
+      "contexts": ["`step_failure_is_retryable` (`subscription.rs:1747-1775`) reads `persona_executions` by the"],
+      "resolvedFrom": "basename",
+      "verbatim": "subscription.rs"
+    },
     "src-tauri/engine/src/team_handoff.rs": {
       "count": 5,
       "sections": [3,5,6,7],
@@ -420,14 +428,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/pipeline_executor.rs"
     },
-    "src-tauri/src/engine/project_tracking/subscription.rs": {
-      "count": 1,
-      "sections": [8],
-      "lines": ["1747-1775"],
-      "contexts": ["`step_failure_is_retryable` (`subscription.rs:1747-1775`) reads `persona_executions` by the"],
-      "resolvedFrom": "basename",
-      "verbatim": "subscription.rs"
-    },
     "src-tauri/src/engine/shared_event_relay.rs": {
       "count": 1,
       "sections": [12],
@@ -491,7 +491,7 @@
       "resolvedFrom": "basename",
       "verbatim": "GoalTaskTable.tsx"
     },
-    "src/features/teams/sub_goals/GoalsMissions.tsx": {"count":1,"sections":[],"contexts":["`src/features/teams/sub_goals/GoalsMissions.tsx`, the four `TeamAssignment*` ts-rs bindings)."]},
+    "src/features/teams/sub_goals/GoalsMissions.tsx": {"count":1,"sections":[],"contexts":["`src/features/teams/sub_goals/GoalsMissions.tsx`, the four `TeamAssignment*` ts-rs bindings)."],"resolved":false},
     "src/features/teams/sub_teamWorkspace/teamStudio/AssignmentReplay.tsx": {
       "count": 1,
       "sections": [6],

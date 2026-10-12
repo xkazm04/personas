@@ -48,6 +48,15 @@
       ],
       "resolved": false
     },
+    "build_session/mod.rs": {
+      "count": 2,
+      "sections": [4,7],
+      "lines": ["78-93","60-97"],
+      "contexts": [
+        "3. **If the id can repeat, guard the identity.** A registry entry keyed by a client-supplied id must survive a second run under the same id. The repo has solved this four independent times: a monoton…"
+      ],
+      "resolved": false
+    },
     "companion/session.rs": {
       "count": 3,
       "sections": [3,4,7],
@@ -119,6 +128,15 @@
       "lines": ["988"],
       "contexts": [
         "- **`src-tauri/src/background_job.rs:430` — `cancel_or_preempt`.** Cancels a live job **or** pre-inserts an already-cancelled entry when the job id has not been registered yet, so a Stop that beats t…"
+      ],
+      "resolved": false
+    },
+    "runner/mod.rs": {
+      "count": 3,
+      "sections": [4,5,7],
+      "lines": ["1822-1875","2973"],
+      "contexts": [
+        "6. **Check the flag at every boundary where the cost changes** — after PID registration (closes the spawn race: `runner/mod.rs:1822-1875`), before prompt delivery, before each chunk of a batch. Not i…"
       ],
       "resolved": false
     },
@@ -454,14 +472,12 @@
       "verbatim": "fix_pass.rs"
     },
     "src-tauri/src/engine/build_session/mod.rs": {
-      "count": 3,
-      "sections": [4,6,7],
-      "lines": ["78-93","366-400","60-97"],
+      "count": 1,
+      "sections": [6],
+      "lines": ["366-400"],
       "contexts": [
-        "3. **If the id can repeat, guard the identity.** A registry entry keyed by a client-supplied id must survive a second run under the same id. The repo has solved this four independent times: a monoton…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "build_session/mod.rs"
+        "- **`src-tauri/src/engine/build_session/mod.rs:366-400` (`cancel_session`) — the multi-domain stop.** One session's work spans two registry domains (`build_session` and `build_session_oneshot`, becau…"
+      ]
     },
     "src-tauri/src/engine/build_session/runner.rs": {
       "count": 2,
@@ -536,14 +552,12 @@
       "verbatim": "consolidator.rs"
     },
     "src-tauri/src/engine/runner/mod.rs": {
-      "count": 4,
-      "sections": [4,5,6,7],
-      "lines": ["1822-1875","2973"],
+      "count": 1,
+      "sections": [6],
+      "lines": ["1822-1875"],
       "contexts": [
-        "6. **Check the flag at every boundary where the cost changes** — after PID registration (closes the spawn race: `runner/mod.rs:1822-1875`), before prompt delivery, before each chunk of a batch. Not i…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "runner/mod.rs"
+        "- **`src-tauri/src/engine/runner/mod.rs:1822-1875` — the cancellation checkpoint.** Checks the flag *immediately after PID registration*, with the comment explaining the exact race it closes (*\"if th…"
+      ]
     },
     "src-tauri/src/lib.rs": {
       "count": 3,

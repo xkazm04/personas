@@ -52,6 +52,13 @@
       ],
       "resolved": false
     },
+    "ManualReviewList.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["125","126-128"],
+      "contexts": ["| `ManualReviewList.tsx:125` | `fetchCloudReviews` | `overviewSlice.ts:510-512` `catch → log.warn + set({ cloudReviews: [] })` |"],
+      "resolved": false
+    },
     "agents/sub_glyph/GlyphCinemaLayout.tsx": {
       "count": 1,
       "sections": [9],
@@ -220,6 +227,15 @@
       ],
       "resolved": false
     },
+    "shared/chrome/useTitleBarTray.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["79-101"],
+      "contexts": [
+        "- `shared/chrome/useTitleBarTray.tsx:79-101` — the legitimate direct-coordinator escape hatch, with the reasoning written down: two badges deliberately kept as *separate* registrations on one 30s buc…"
+      ],
+      "resolved": false
+    },
     "src-tauri/": {"count":1,"sections":[],"contexts":["`src-tauri/` crates, the 100 snapshot/status commands among them, and the"],"resolved":false,"isDir":true},
     "src-tauri/**": {"count":1,"sections":[9],"contexts":["in `src-tauri/**`. **Measured: 8 definitions, 0 false positives** — it returns"],"resolved":false,"isDir":true},
     "src-tauri/db/src/cdc.rs": {
@@ -276,6 +292,16 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "engine/src/prepared_run_cache.rs"
+    },
+    "src-tauri/engine/src/project_tracking/subscription.rs": {
+      "count": 1,
+      "sections": [],
+      "lines": ["370-371"],
+      "contexts": [
+        "- **The backend already emits the change.** Subscribe. Polling on top of an event stream is the most expensive possible way to be second. **Check `db/src/cdc.rs` first**: every SQLite INSERT/UPDATE o…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "subscription.rs"
     },
     "src-tauri/engine/src/session_pool.rs": {
       "count": 2,
@@ -581,16 +607,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "engine/oauth_refresh.rs"
     },
-    "src-tauri/src/engine/project_tracking/subscription.rs": {
-      "count": 1,
-      "sections": [],
-      "lines": ["370-371"],
-      "contexts": [
-        "- **The backend already emits the change.** Subscribe. Polling on top of an event stream is the most expensive possible way to be second. **Check `db/src/cdc.rs` first**: every SQLite INSERT/UPDATE o…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "subscription.rs"
-    },
     "src-tauri/src/engine/resource_listing.rs": {
       "count": 2,
       "sections": [7,8],
@@ -769,14 +785,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_incidents/libs/useIncidentsData.ts"
-    },
-    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["125","126-128"],
-      "contexts": ["| `ManualReviewList.tsx:125` | `fetchCloudReviews` | `overviewSlice.ts:510-512` `catch → log.warn + set({ cloudReviews: [] })` |"],
-      "resolvedFrom": "basename",
-      "verbatim": "ManualReviewList.tsx"
     },
     "src/features/overview/sub_missionControl/cards/UpcomingRoutinesCard.tsx": {
       "count": 1,
@@ -959,16 +967,6 @@
       "contexts": ["| `SystemLoadFooterIcon.tsx:86` · `useUseCases.ts:81` | 2 s | 5s | 2.5× slower |"],
       "resolvedFrom": "basename",
       "verbatim": "SystemLoadFooterIcon.tsx"
-    },
-    "src/features/shared/chrome/useTitleBarTray.tsx": {
-      "count": 2,
-      "sections": [6,7],
-      "lines": ["79-101","80"],
-      "contexts": [
-        "- `shared/chrome/useTitleBarTray.tsx:79-101` — the legitimate direct-coordinator escape hatch, with the reasoning written down: two badges deliberately kept as *separate* registrations on one 30s buc…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "shared/chrome/useTitleBarTray.tsx"
     },
     "src/features/studio/studioStore.ts": {
       "count": 6,
@@ -1274,6 +1272,7 @@
         "- **Putting the polled data in the effect's dep array.** `useTeamDeliberations.ts:118-133` polls `refreshDetail(selectedId)` from an effect whose deps include `detail` — the very object the poll repl…"
       ],
       "resolved": false
-    }
+    },
+    "useTitleBarTray.tsx": {"count":1,"sections":[7],"lines":["80"],"contexts":["(`useTitleBarTray.tsx:80`) — both on the coordinator's 30s bucket, so both fire"],"resolved":false}
   }
 }

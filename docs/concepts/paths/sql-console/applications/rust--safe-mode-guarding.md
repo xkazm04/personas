@@ -8,7 +8,7 @@ stack: rust
 # The authoritative guard in the Rust executor
 
 The trusted side of the two-sided guard is `execute_query_cancellable` in
-`src-tauri/src/engine/db_query.rs:501-541`, reached from the single Tauri
+`src-tauri/engine/src/db_query.rs:501-541`, reached from the single Tauri
 command `execute_db_query` (`src-tauri/src/commands/credentials/db_schema.rs:216`,
 `#[requires(privileged)]`). Every console author — the Console tab, the
 saved-query editor pane, and the NL chat lane — calls that one command.

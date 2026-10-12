@@ -59,7 +59,12 @@
     "try_it": "Попробовать",
     "used_badge": "Использовано",
     "tour_continue": "Продолжить ({completed}/{total})",
-    "tour_in_progress": "{completed}/{total}"
+    "tour_in_progress": "{completed}/{total}",
+    "ask_title": "Попросить Athena о обзоре",
+    "ask_placeholder": "Что вы хотите узнать? Например, как запланировать агента",
+    "ask_submit": "Составить",
+    "ask_composing": "Составляю ваш обзор…",
+    "ask_failed": "Athena не смогла составить этот обзор. Попробуйте переформулировать тему."
   },
   "nav_status": {
     "agents_active": "{count} агент активен за последние 24 ч",

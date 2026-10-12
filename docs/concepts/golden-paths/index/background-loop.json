@@ -65,6 +65,7 @@
     },
     "queue.rs": {"count":1,"sections":[],"lines":["114"],"contexts":["treated as crashed\"*) and `queue.rs:114` (visibility timeout → dead-letter);"],"resolved":false},
     "resilience.rs": {"count":1,"sections":[],"lines":["229-234"],"contexts":["circuit breaker (`resilience.rs:229-234`), **sweeps none** — and its sweep claim"],"resolved":false},
+    "runner/mod.rs": {"count":1,"sections":[7],"lines":["2086"],"contexts":["`auto_cred_browser.rs:113` (`Skip`) and `runner/mod.rs:2086` (`Skip`) set it. The"],"resolved":false},
     "scheduler.rs": {"count":2,"sections":[7],"lines":["55","61"],"contexts":["only two callers are the IPC command (`scheduler.rs:55`) and the tray toggle"],"resolved":false},
     "scratchpad/rules-background-loop.json": {"count":1,"sections":[9],"contexts":["at `scratchpad/rules-background-loop.json` and a standalone driver over"],"resolved":false},
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"contexts":["`scripts/census/lib/engine.mjs`."]},
@@ -101,6 +102,14 @@
       "resolvedFrom": "suffix",
       "verbatim": "db/src/lib.rs"
     },
+    "src-tauri/engine/src/automation_runner.rs": {
+      "count": 3,
+      "sections": [6,7],
+      "lines": ["75-101","77"],
+      "contexts": [
+        "- **`src-tauri/engine/src/automation_runner.rs:75-101` — the other bounded retry.** `max_attempts` ceiling, `MAX_BACKOFF_MS = 30_000` cap, and — uniquely in this repo — re-resolves auth headers on HT…"
+      ]
+    },
     "src-tauri/engine/src/lib.rs": {
       "count": 1,
       "sections": [8],
@@ -127,6 +136,14 @@
       "contexts": [
         "- **`src-tauri/engine/src/p2p/periodic.rs:12` — `PeriodicTask`.** `new(name, interval, cancel)` / `with_dynamic_interval(name, get_interval, cancel)` / `.with_max_errors(n)` / `.with_backoff_multipli…"
       ]
+    },
+    "src-tauri/engine/src/project_tracking/subscription.rs": {
+      "count": 9,
+      "sections": [2,3,4,6,7],
+      "lines": ["1262-1271","1218","1444","2946","119","2946-3010","3102-3145","1341-1347"],
+      "contexts": ["constructions; `subscription.rs` (3,436 lines) and `background.rs` (4,158 lines)"],
+      "resolvedFrom": "basename",
+      "verbatim": "subscription.rs"
     },
     "src-tauri/src/cloud/remote_commands.rs": {
       "count": 3,
@@ -246,14 +263,6 @@
       "resolvedFrom": "basename",
       "verbatim": "daemon_bin.rs"
     },
-    "src-tauri/src/engine/automation_runner.rs": {
-      "count": 3,
-      "sections": [6,7],
-      "lines": ["75-101","77"],
-      "contexts": [
-        "- **`src-tauri/src/engine/automation_runner.rs:75-101` — the other bounded retry.** `max_attempts` ceiling, `MAX_BACKOFF_MS = 30_000` cap, and — uniquely in this repo — re-resolves auth headers on HT…"
-      ]
-    },
     "src-tauri/src/engine/background.rs": {
       "count": 1,
       "sections": [3],
@@ -313,14 +322,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "project_tracking/scheduler.rs"
     },
-    "src-tauri/src/engine/project_tracking/subscription.rs": {
-      "count": 9,
-      "sections": [2,3,4,6,7],
-      "lines": ["1262-1271","1218","1444","2946","119","2946-3010","3102-3145","1341-1347"],
-      "contexts": ["constructions; `subscription.rs` (3,436 lines) and `background.rs` (4,158 lines)"],
-      "resolvedFrom": "basename",
-      "verbatim": "subscription.rs"
-    },
     "src-tauri/src/engine/resource_governor.rs": {
       "count": 2,
       "sections": [7,9],
@@ -329,7 +330,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "engine/resource_governor.rs"
     },
-    "src-tauri/src/engine/runner/mod.rs": {"count":1,"sections":[7],"lines":["2086"],"contexts":["`auto_cred_browser.rs:113` (`Skip`) and `runner/mod.rs:2086` (`Skip`) set it. The"],"resolvedFrom":"suffix","verbatim":"runner/mod.rs"},
     "src-tauri/src/engine/slack_poller.rs": {
       "count": 4,
       "sections": [5,7,9],

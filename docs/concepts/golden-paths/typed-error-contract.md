@@ -184,7 +184,7 @@ where the contract stops.
 - `src-tauri/db/src/repos/resources/owned_devices.rs:252` — a repo-layer function that raises a
   dedicated variant (`DeviceGroupConflict`) rather than a generic bail, with the decision table in
   the doc comment at `:297`.
-- `src-tauri/src/engine/failover.rs:73-88` — `is_failover_eligible` as the breaker guard, plus a
+- `src-tauri/engine/src/failover.rs:73-88` — `is_failover_eligible` as the breaker guard, plus a
   counter + `tracing::debug!` on every unclassified error so `Unknown` growth is observable.
 - **`src/features/settings/sub_devices/lib/pairingRefusal.ts:78-95` — copy this one.** The only site
   in the repo that gets the frontend half right: `isTauriError` → `err.kind` first ("classify it

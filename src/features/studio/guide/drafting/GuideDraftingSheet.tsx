@@ -15,9 +15,13 @@ import './drafting.css';
 
 /**
  * A new project's sheet builds up across the setup wait; a reopened one
- * replays in a couple of seconds, slow enough to be seen being drawn.
+ * replays in a couple of seconds, slow enough to be seen being drawn. Plan
+ * picked over a running app replays the onboarding's own order (each region
+ * drawn and lettered under the pen, then the other pages, the brief lettered
+ * in, the goals one by one) at a pace where each part is seen landing: the
+ * region's draw and the pen's glide take 0.9 s each.
  */
-const STEP_MS = { template: 1100, sketch: 1500, replay: 380 } as const;
+const STEP_MS = { template: 1100, sketch: 1500, replay: 380, plan: 700 } as const;
 /** Unlabelled ghost frames for a reopened project whose plan has not loaded. */
 const SKELETON = ['Top bar', 'Hero', 'Content', 'Content', 'Footer'].map((title) => ({ title, purpose: '' }));
 
@@ -52,6 +56,7 @@ export default function GuideDraftingSheet({
   proofUrl,
   booting = false,
   opened = false,
+  replay = false,
 }: {
   name: string;
   sketch: SiteSketch | null;
@@ -70,6 +75,9 @@ export default function GuideDraftingSheet({
   booting?: boolean;
   /** A project opened from disk rather than created now: no stock page, no setup log. */
   opened?: boolean;
+  /** The sheet was asked for over a running app: replay the onboarding's
+   *  drawing in its order and pace (no live proof, the brief lettered in). */
+  replay?: boolean;
 }) {
   const { t } = useTranslation();
   const g = guideStrings(t);
@@ -133,7 +141,13 @@ export default function GuideDraftingSheet({
   const goalSteps = showGoalsInBlock ? goals.length : 0;
   const total = drawing === 'skeleton' ? 0 : regionsTotal + briefStep + goalSteps;
   const buildKey = `${drawing}:${pages.map((p) => `${p.title}(${p.regions.map((r) => r.title).join(',')})`).join('|')}`;
-  const stepMs = opened || drawing === 'plan' ? STEP_MS.replay : drawing === 'template' ? STEP_MS.template : STEP_MS.sketch;
+  const stepMs = replay
+    ? STEP_MS.plan
+    : opened || drawing === 'plan'
+      ? STEP_MS.replay
+      : drawing === 'template'
+        ? STEP_MS.template
+        : STEP_MS.sketch;
   const count = useBuildUp(buildKey, total, stepMs);
   const building = count < total;
   // Regions drawn so far on the page at `index`, which has `regions` of them.
@@ -277,7 +291,7 @@ export default function GuideDraftingSheet({
               stamp={stamp}
               activeGoalRef={setGoalEl}
               notesRef={setNotesEl}
-              letterBrief={!opened}
+              letterBrief={!opened || replay}
             />
           </div>
         </div>

@@ -8,7 +8,10 @@
     "send_request": "发送请求",
     "sending": "发送中…",
     "snippets": "代码片段",
-    "title": "API 测试场"
+    "title": "API 测试场",
+    "local_run_completed": "本地运行已完成",
+    "local_run_failed": "本地运行失败",
+    "snippets_target_endpoint": "代码片段调用已部署的端点。演练场结果来自本地运行。"
   },
   "auth_code": "授权码",
   "chart": {
@@ -28,7 +31,8 @@
     "worker_disconnected": "已断开",
     "worker_executing": "执行中",
     "worker_idle": "空闲",
-    "workers": "工作节点"
+    "workers": "工作节点",
+    "gauge_aria": "{label} 仪表"
   },
   "cloud_trigger_chain": "链式",
   "cloud_trigger_manual": "手动",
@@ -122,7 +126,9 @@
     "bulk_action_resume": "批量恢复",
     "bulk_action_delete": "批量删除",
     "bulk_result_ok": "{action}：已更新 {count} 个",
-    "bulk_result_partial": "{action}：成功 {succeeded} 个，失败 {failed} 个"
+    "bulk_result_partial": "{action}：成功 {succeeded} 个，失败 {failed} 个",
+    "select_all": "选择所有部署",
+    "select_row": "选择 {name}"
   },
   "deploy_card": {
     "budget_label": "预算：",
@@ -134,7 +140,11 @@
     "pause_deployment": "暂停部署",
     "remove_deployment": "删除部署",
     "resume_deployment": "恢复部署",
-    "test_deployment": "测试部署"
+    "test_deployment": "测试部署",
+    "test_pass": "通过",
+    "test_fail": "失败",
+    "test_title_pass": "通过",
+    "test_title_fail": "失败"
   },
   "deploying": "部署中…",
   "deployments_panel": {
@@ -144,7 +154,8 @@
     "no_deployments_yet": "尚无部署。在上方选择一个智能体以将其部署为云 API 端点。",
     "select_persona": "选择要部署的智能体",
     "budget_no_limit": "无限制",
-    "budget_per_month": "${amount}/月"
+    "budget_per_month": "${amount}/月",
+    "deploy_button": "部署"
   },
   "exec_detail": {
     "fetching_output": "正在获取输出…",
@@ -182,7 +193,9 @@
     "total_runs": "总运行次数",
     "fetch_output_failed": "获取输出失败",
     "monthly_budget": "月度预算",
-    "monthly_budget_pace": "预计达到 {amount}"
+    "monthly_budget_pace": "预计达到 {amount}",
+    "load_failed": "无法加载执行历史。",
+    "no_executions_found": "没有找到符合所选筛选条件的执行记录。"
   },
   "no_targets": "未连接部署目标",
   "oauth_panel": {
@@ -201,7 +214,8 @@
     "token_expired": "令牌已过期",
     "token_expired_msg_prefix": "此 OAuth 令牌已过期",
     "token_unknown": "令牌状态未知",
-    "token_unknown_msg": "无法验证令牌有效性。请刷新令牌以确认其仍然有效。"
+    "token_unknown_msg": "无法验证令牌有效性。请刷新令牌以确认其仍然有效。",
+    "expired_at": "（已于 {time} 过期）"
   },
   "orchestrator_url": "编排器 URL",
   "reconcile": {
@@ -229,7 +243,8 @@
     "loading": "加载触发器…",
     "loading_firings": "加载中…",
     "no_firings": "无最近触发",
-    "recent_firings": "最近触发"
+    "recent_firings": "最近触发",
+    "firings_load_failed": "无法加载最近的触发记录。"
   },
   "sr_connecting": "正在连接云端编排器…",
   "sr_deploying": "正在将智能体部署到云端",
@@ -239,7 +254,8 @@
     "no_status": "无状态数据。",
     "no_token": "未配置令牌",
     "no_token_configured": "未配置令牌",
-    "token_available": "令牌可用"
+    "token_available": "令牌可用",
+    "latency_title": "健康检查往返延迟：{ms} 毫秒"
   },
   "tabs": {
     "connection": "连接",

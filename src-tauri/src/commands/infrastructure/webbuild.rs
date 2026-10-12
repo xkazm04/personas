@@ -239,14 +239,21 @@ pub fn webbuild_next_ready(
     project_ids: Vec<String>,
 ) -> Result<Vec<String>, AppError> {
     require_auth_sync(&state)?;
-    let ready = project_ids
-        .into_iter()
-        .filter(|id| {
-            repo::get_project_by_id(&state.db, id)
-                .map(|p| webbuild::project::is_next_app(std::path::Path::new(&p.root_path)))
-                .unwrap_or(false)
-        })
-        .collect();
+    // A missing project is a real "not ready" verdict; any OTHER lookup failure
+    // (transient DB error) is "could not verify" and must surface as an error,
+    // not be folded into a confident false the picker captions "Not Next.js".
+    let mut ready = Vec::new();
+    for id in project_ids {
+        match repo::get_project_by_id(&state.db, &id) {
+            Ok(p) => {
+                if webbuild::project::is_next_app(std::path::Path::new(&p.root_path)) {
+                    ready.push(id);
+                }
+            }
+            Err(AppError::NotFound(_)) => {}
+            Err(e) => return Err(e),
+        }
+    }
     Ok(ready)
 }
 
@@ -316,16 +323,17 @@ pub fn webbuild_list_versions(
     crate::webbuild::versions::list_versions(std::path::Path::new(&project.root_path))
 }
 
-/// Restore the project's files to a prior snapshot (C7). Keeps git history.
+/// Restore the project's files to a prior snapshot (C7). Keeps git history, and
+/// snapshots the live tree first so uncaptured work stays recoverable.
 #[tauri::command]
-pub fn webbuild_restore_version(
+pub async fn webbuild_restore_version(
     state: State<'_, Arc<AppState>>,
     project_id: String,
     sha: String,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     let project = repo::get_project_by_id(&state.db, &project_id)?;
-    crate::webbuild::versions::restore(std::path::Path::new(&project.root_path), &sha)
+    crate::webbuild::versions::restore(std::path::Path::new(&project.root_path), &sha).await
 }
 
 /// Send a build instruction to a project's build session — a project-rooted

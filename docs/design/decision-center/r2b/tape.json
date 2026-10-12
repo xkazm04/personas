@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "module": "decision-center/prototype",
+  "source": "synthetic",
+  "recordedAt": "2026-10-06T14:00:00.000Z",
+  "note": "Fixture roster, no IPC; ?kit=<p1|p2|p3>:<entry> picks the view. [P2: recordedAt moved to the fixture clock (fixtures.ts now = 2026-10-06T14:00Z) so ages read honestly]",
+  "calls": []
+}

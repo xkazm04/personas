@@ -3,8 +3,9 @@ import type { DryRunResult } from '@/api/pipeline/triggers';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { useTriggerOperations } from './useTriggerOperations';
 import { getWebhookUrl } from '@/lib/utils/platform/triggerConstants';
-import { useToastStore } from '@/stores/toastStore';
+import { toastCatch } from '@/lib/silentCatch';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /**
  * Manages all async/interaction state for a single trigger's detail drawer:
@@ -12,6 +13,7 @@ import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboa
  */
 export function useTriggerDetail(triggerId: string, personaId: string) {
   const ops = useTriggerOperations(personaId);
+  const { t, tx } = useTranslation();
 
   // -- Test fire --
   const [testing, setTesting] = useState(false);
@@ -53,21 +55,21 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
     try {
       const result = await ops.testFire(triggerId);
       if (!result.ok) {
-        setTestResult({ success: false, message: result.error ?? 'Failed to fire trigger' });
+        setTestResult({ success: false, message: result.error ?? t.triggers.test_fire_failed });
       } else if (result.data?.execution) {
-        setTestResult({ success: true, message: `Config OK. Execution ${result.data.execution.id.slice(0, 8)} started` });
+        setTestResult({ success: true, message: tx(t.triggers.test_fire_config_ok, { id: result.data.execution.id.slice(0, 8) }) });
       } else if (result.data?.validationFailures) {
-        setTestResult({ success: false, message: `Validation failed -- ${result.data.validationFailures}` });
+        setTestResult({ success: false, message: tx(t.triggers.validation_failed_with_details, { failures: result.data.validationFailures }) });
       } else {
-        setTestResult({ success: true, message: 'Trigger fired' });
+        setTestResult({ success: true, message: t.triggers.test_fire_fired });
       }
     } catch (err) {
-      setTestResult({ success: false, message: err instanceof Error ? err.message : 'Failed to fire trigger' });
+      setTestResult({ success: false, message: err instanceof Error ? err.message : t.triggers.test_fire_failed });
     } finally {
       setTesting(false);
       testResultTimerRef.current = setTimeout(() => setTestResult(null), 8000);
     }
-  }, [triggerId, ops]);
+  }, [triggerId, ops, t, tx]);
 
   // -- Dry run ------------------------------------------------------------
 
@@ -80,16 +82,16 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
       if (result.ok && result.data) {
         setDryRunResult(result.data);
       } else {
-        setDryRunError({ message: result.error ?? 'Dry run failed' });
+        setDryRunError({ message: result.error ?? t.triggers.dry_run_failed });
         setTimeout(() => setDryRunError(null), 8000);
       }
     } catch (err) {
-      setDryRunError({ message: err instanceof Error ? err.message : 'Dry run failed' });
+      setDryRunError({ message: err instanceof Error ? err.message : t.triggers.dry_run_failed });
       setTimeout(() => setDryRunError(null), 8000);
     } finally {
       setDryRunning(false);
     }
-  }, [triggerId, ops]);
+  }, [triggerId, ops, t]);
 
   // -- Activity log -------------------------------------------------------
 
@@ -103,11 +105,17 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
     setActivityError(false);
     try {
       const result = await ops.fetchActivity(triggerId);
-      setActivityLog(result.ok && result.data ? result.data : []);
-    } catch {
+      if (result.ok && result.data) {
+        setActivityLog(result.data);
+      } else {
+        setActivityLog([]);
+        setActivityError(true);
+        toastCatch('useTriggerDetail:fetchActivity')(result.error);
+      }
+    } catch (err) {
       setActivityLog([]);
       setActivityError(true);
-      useToastStore.getState().addToast('Failed to load activity log', 'error');
+      toastCatch('useTriggerDetail:fetchActivity')(err);
     } finally {
       setActivityLoading(false);
     }
@@ -118,11 +126,17 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
     setActivityError(false);
     try {
       const result = await ops.fetchActivity(triggerId);
-      setActivityLog(result.ok && result.data ? result.data : []);
-    } catch {
+      if (result.ok && result.data) {
+        setActivityLog(result.data);
+      } else {
+        setActivityLog([]);
+        setActivityError(true);
+        toastCatch('useTriggerDetail:retryActivity')(result.error);
+      }
+    } catch (err) {
       setActivityLog([]);
       setActivityError(true);
-      useToastStore.getState().addToast('Failed to load activity log', 'error');
+      toastCatch('useTriggerDetail:retryActivity')(err);
     } finally {
       setActivityLoading(false);
     }

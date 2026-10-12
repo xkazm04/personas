@@ -90,3 +90,53 @@ describe('CloudHistoryPanel: the failed-poll trap', () => {
     expect(screen.getByTestId('cloud-history-liveness').getAttribute('data-stale')).toBe('false');
   });
 });
+
+describe('CloudHistoryPanel: superseded requests', () => {
+  it('a poll started under the old filters that lands after the new filter result is dropped', async () => {
+    const execA = { ...exec, id: 'ex-A', personaId: 'pA' };
+    const execB = { ...exec, id: 'ex-B', personaId: 'pB' };
+    let resolveA: (v: unknown[]) => void = () => {};
+    let resolveB: (v: unknown[]) => void = () => {};
+    listMock
+      .mockImplementationOnce(() => new Promise<unknown[]>((r) => { resolveA = r; }))
+      .mockImplementationOnce(() => new Promise<unknown[]>((r) => { resolveB = r; }));
+    statsMock.mockResolvedValue(stats);
+    render(<CloudHistoryPanel />);
+
+    // Poll under the OLD filters (status = all) is in flight.
+    const oldPoll = captured.poll!;
+    let pollDone: Promise<unknown> = Promise.resolve();
+    await act(async () => { pollDone = Promise.resolve(oldPoll()); });
+
+    // Operator switches the status filter; the debounced refetch starts (300ms).
+    const statusSelect = screen.getAllByRole('combobox')[1]!;
+    await act(async () => { fireEvent.change(statusSelect, { target: { value: 'failed' } }); });
+    await vi.waitFor(() => expect(listMock).toHaveBeenCalledTimes(2), { timeout: 2000 });
+
+    // New filter lands first, then the stale poll lands last.
+    await act(async () => { resolveB([execB]); await Promise.resolve(); });
+    await act(async () => { resolveA([execA]); await pollDone; });
+
+    expect(screen.getByText('persona:pB')).toBeTruthy();
+    expect(screen.queryByText('persona:pA')).toBeNull();
+  });
+});
+
+describe('CloudHistoryPanel: failed cold load is not an empty result', () => {
+  it('a first load that fails shows a failure state with a retry, not "No executions found"', async () => {
+    listMock.mockRejectedValue(new Error('orchestrator 503'));
+    statsMock.mockResolvedValue(stats);
+    render(<CloudHistoryPanel />);
+    await act(async () => { await Promise.resolve(captured.poll!()).catch(() => undefined); });
+
+    expect(screen.getByTestId('cloud-history-load-failed')).toBeTruthy();
+    expect(screen.queryByText('No executions found for the selected filters.')).toBeNull();
+
+    listMock.mockResolvedValue([exec]);
+    const calls = listMock.mock.calls.length;
+    await act(async () => { fireEvent.click(screen.getByTestId('cloud-history-retry')); });
+    expect(listMock.mock.calls.length).toBe(calls + 1);
+    expect(screen.getByText('persona:p1')).toBeTruthy();
+    expect(screen.queryByTestId('cloud-history-load-failed')).toBeNull();
+  });
+});

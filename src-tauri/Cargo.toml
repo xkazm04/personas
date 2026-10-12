@@ -66,11 +66,15 @@ walkdir = "2"
 whoami = "1"
 reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream", "multipart"], default-features = false }
 futures-util = "0.3"
-axum = { version = "0.8", features = ["ws"] }
+axum = { version = "0.8", default-features = false, features = ["ws", "form", "http1", "json", "matched-path", "original-uri", "query", "tokio", "tracing"] }
 tower-http = { version = "0.6", features = ["cors"] }
 hkdf = "0.12"
 hex = "0.4"
 url = "2"
+# Used by app_lib (OPEN_URL sanitizing) and by personas-engine (db_query and the
+# n8n platform adapter build query strings), so it is declared once here per the
+# rule at the top of this block.
+urlencoding = "2"
 sentry = { version = "0.35", default-features = false, features = [
     "backtrace", "contexts", "panic", "rustls", "reqwest"
 ] }
@@ -411,7 +415,7 @@ qrcodegen = "1.8"
 # sanitizer at all (see external-url-opening.md).
 open = { version = "5", features = ["shellexecute-on-windows"] }
 url = { workspace = true }
-urlencoding = "2"
+urlencoding = { workspace = true }
 sentry = { workspace = true }
 sentry-tracing = "0.35"
 zeroize = { workspace = true }

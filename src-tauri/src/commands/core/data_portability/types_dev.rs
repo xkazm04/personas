@@ -314,8 +314,16 @@ pub struct DevMilestoneExport {
     pub target_date: Option<String>,
     pub cut_at: Option<String>,
     pub shipped_at: Option<String>,
+    /// 'milestone' | 'deadline'. Absent in bundles written before the column
+    /// existed, and every milestone was the ordinary kind then.
+    #[serde(default = "default_milestone_kind")]
+    pub kind: String,
     pub created_at: String,
     pub updated_at: String,
+}
+
+fn default_milestone_kind() -> String {
+    "milestone".into()
 }
 
 #[derive(Debug, Serialize, Deserialize)]

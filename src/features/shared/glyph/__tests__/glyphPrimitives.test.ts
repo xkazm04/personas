@@ -119,6 +119,17 @@ describe('parseChannels', () => {
     expect(parseChannels(' · slack: team')).toEqual([{ type: 'slack', description: 'team' }]);
   });
 
+  it('never promotes a prose sentence to a channel type', () => {
+    expect(parseChannels('Slack and email daily')).toEqual([
+      { type: 'slack', description: 'Slack and email daily' },
+      { type: 'email', description: 'Slack and email daily' },
+    ]);
+    expect(parseChannels('Whenever something happens')).toEqual([
+      { type: '', description: 'Whenever something happens', unstructured: true },
+    ]);
+    expect(parseChannels('email')).toEqual([{ type: 'email', description: '' }]);
+  });
+
   it('resolves icon and tint case-insensitively with a fallback', () => {
     expect(channelIcon('SLACK')).toBe(channelIcon('slack'));
     expect(channelTint('Telegram')).toBe('#229ED9');

@@ -37,6 +37,44 @@ pub struct ImportResult {
 
 // -- Transactional persona import -----------------------------------------
 
+/// A global tool definition looked up by normalized name during import.
+struct ExistingToolDef {
+    id: String,
+    name: String,
+    requires_credential_type: Option<String>,
+    implementation_guide: Option<String>,
+}
+
+/// When an imported tool reuses an existing same-named definition, describe
+/// what the import's own definition carried that the reuse discards. `None`
+/// when the two agree (nothing was lost).
+fn reuse_divergence(
+    existing: &ExistingToolDef,
+    draft: &super::types::N8nToolDraft,
+) -> Option<String> {
+    let norm = |v: &Option<String>| {
+        v.as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+    };
+    let mut diffs: Vec<&str> = Vec::new();
+    if norm(&draft.requires_credential_type) != norm(&existing.requires_credential_type) {
+        diffs.push("credential type");
+    }
+    let draft_guide = norm(&draft.implementation_guide);
+    if draft_guide.is_some() && draft_guide != norm(&existing.implementation_guide) {
+        diffs.push("implementation guide");
+    }
+    if diffs.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "Reused existing tool definition with the same name; the imported {} differs and was not applied",
+        diffs.join(" and ")
+    ))
+}
+
 /// Create persona + all entities atomically on a single connection.
 ///
 /// All inserts happen inside a SQLite transaction. If ANY entity fails,
@@ -231,14 +269,26 @@ pub fn create_persona_atomically(
 
     let mut tools_created = 0u32;
     let mut tool_credential_map: Vec<(String, String)> = Vec::new();
+    // Disclosures for tools that reused a same-named definition whose guide or
+    // credential type differs. Kept apart from `entity_errors` until after the
+    // commit/rollback decision: they are warnings, not failures.
+    let mut reuse_notes: Vec<EntityError> = Vec::new();
 
     if let Some(ref tools) = draft.tools {
         // Load existing definitions once (on the same connection)
-        let existing_defs: Vec<(String, String)> = tx
-            .prepare("SELECT id, name FROM persona_tool_definitions")
+        let existing_defs: Vec<ExistingToolDef> = tx
+            .prepare(
+                "SELECT id, name, requires_credential_type, implementation_guide
+                 FROM persona_tool_definitions",
+            )
             .and_then(|mut stmt| {
                 stmt.query_map([], |row| {
-                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                    Ok(ExistingToolDef {
+                        id: row.get::<_, String>(0)?,
+                        name: row.get::<_, String>(1)?,
+                        requires_credential_type: row.get::<_, Option<String>>(2)?,
+                        implementation_guide: row.get::<_, Option<String>>(3)?,
+                    })
                 })
                 .and_then(|rows| rows.collect::<Result<Vec<_>, _>>())
             })
@@ -248,10 +298,19 @@ pub fn create_persona_atomically(
             let tool_name = tool_draft.name.replace(' ', "_").to_lowercase();
 
             // Check if a definition already exists
-            let tool_def_id = if let Some((id, _)) =
-                existing_defs.iter().find(|(_, n)| n == &tool_name)
+            let tool_def_id = if let Some(existing) =
+                existing_defs.iter().find(|d| d.name == tool_name)
             {
-                id.clone()
+                // Reuse-by-name is house design; the imported guide/credential
+                // type are dropped, so say so instead of reporting a clean import.
+                if let Some(note) = reuse_divergence(existing, tool_draft) {
+                    reuse_notes.push(EntityError {
+                        entity_type: "tool".into(),
+                        entity_name: tool_name.clone(),
+                        error: note,
+                    });
+                }
+                existing.id.clone()
             } else {
                 // Create new definition
                 let new_id = uuid::Uuid::new_v4().to_string();
@@ -405,6 +464,8 @@ pub fn create_persona_atomically(
         entity_results_json.as_deref(),
         error_summary.as_deref(),
     );
+
+    entity_errors.extend(reuse_notes);
 
     // Read back the created persona (now committed, safe to read)
     let persona = persona_repo::get_by_id(pool, &persona_id)?;
@@ -583,7 +644,7 @@ pub fn confirm_n8n_persona_draft(
 
                 if was_rolled_back {
                     // Clear the stale persona_id so we can retry
-                    let _ = session_repo::update(
+                    if let Err(e) = session_repo::update(
                         &state.db,
                         sid,
                         &UpdateN8nSessionInput {
@@ -591,7 +652,9 @@ pub fn confirm_n8n_persona_draft(
                             status: Some(SessionStatus::Transforming),
                             ..Default::default()
                         },
-                    );
+                    ) {
+                        tracing::warn!(session_id = %sid, error = %e, "n8n session write failed: rolled-back persona reset not persisted");
+                    }
                     tracing::info!(
                         session_id = %sid,
                         persona_id = %existing_pid,
@@ -630,7 +693,7 @@ pub fn confirm_n8n_persona_draft(
     if let Some(ref sid) = session_id {
         if let Some(persona_val) = response.get("persona") {
             if let Some(pid) = persona_val.get("id").and_then(|v| v.as_str()) {
-                let _ = session_repo::update(
+                if let Err(e) = session_repo::update(
                     &state.db,
                     sid,
                     &UpdateN8nSessionInput {
@@ -638,7 +701,9 @@ pub fn confirm_n8n_persona_draft(
                         status: Some(SessionStatus::Confirmed),
                         ..Default::default()
                     },
-                );
+                ) {
+                    tracing::error!(session_id = %sid, error = %e, "n8n session write failed: persona_id/Confirmed stamp not persisted; confirm idempotency guard is degraded");
+                }
             }
         }
     }
@@ -709,6 +774,46 @@ mod tests {
 
     fn persona_id_of(response: &serde_json::Value) -> String {
         response["persona"]["id"].as_str().unwrap().to_string()
+    }
+
+    #[test]
+    fn reusing_a_same_named_tool_with_a_different_credential_type_is_disclosed() {
+        let pool = crate::db::init_test_db().unwrap();
+        let tools = |cred: &str, guide: &str| {
+            serde_json::json!([{
+                "name": "send_email", "category": "email", "description": "d",
+                "requires_credential_type": cred, "implementation_guide": guide
+            }])
+        };
+        let mk = |cred: &str, guide: &str| -> N8nPersonaOutput {
+            serde_json::from_value(serde_json::json!({
+                "name": "Reuse Test",
+                "system_prompt": "You are a test persona.",
+                "tools": tools(cred, guide),
+            }))
+            .expect("test draft deserializes")
+        };
+        let (_, first) =
+            create_persona_atomically(&pool, &mk("sendgrid", "curl sendgrid"), None).unwrap();
+        assert!(first.entity_errors.is_empty(), "{:?}", first.entity_errors);
+        let (_, same) =
+            create_persona_atomically(&pool, &mk("sendgrid", "curl sendgrid"), None).unwrap();
+        assert!(
+            same.entity_errors.is_empty(),
+            "identical reuse is not lossy: {:?}",
+            same.entity_errors
+        );
+        let (_, second) =
+            create_persona_atomically(&pool, &mk("gmail", "curl gmail"), None).unwrap();
+        assert_eq!(second.tools_created, 1);
+        assert_eq!(second.entity_errors.len(), 1, "{:?}", second.entity_errors);
+        let note = &second.entity_errors[0];
+        assert_eq!(note.entity_type, "tool");
+        assert!(
+            note.error.contains("credential type") && note.error.contains("implementation guide"),
+            "{}",
+            note.error
+        );
     }
 
     #[test]

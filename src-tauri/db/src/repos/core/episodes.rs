@@ -98,6 +98,54 @@ pub fn list_recent(
     })
 }
 
+/// Run facts joined onto an episode (all `None` when the episode has no
+/// execution, or the execution row is gone).
+#[derive(Debug, Clone, Default)]
+pub struct EpisodeRunFacts {
+    pub charter: Option<String>,
+    pub status: Option<String>,
+    pub duration_ms: Option<i64>,
+    pub business_outcome: Option<String>,
+    pub error_message: Option<String>,
+}
+
+/// [`list_recent`] plus per-episode run facts (charter title, execution
+/// status / duration / business outcome / error) via LEFT JOINs, so the
+/// self-review prompt can reason over structured outcomes instead of prose.
+pub fn list_recent_with_runs(
+    pool: &DbPool,
+    persona_id: &str,
+    limit: u32,
+) -> Result<Vec<(PersonaEpisode, EpisodeRunFacts)>, AppError> {
+    timed_query!("persona_episodes", "episodes::list_recent_with_runs", {
+        let conn = pool.conn("episodes::list_recent_with_runs")?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT e.id, e.persona_id, e.execution_id, e.responsibility_id, e.role,
+                    e.source, e.body_excerpt, e.file_path, e.content_hash, e.chars, e.created_at,
+                    r.title, x.status, x.duration_ms, x.business_outcome, x.error_message
+             FROM persona_episodes e
+             LEFT JOIN persona_responsibilities r ON r.id = e.responsibility_id
+             LEFT JOIN persona_executions x ON x.id = e.execution_id
+             WHERE e.persona_id = ?1
+             ORDER BY e.created_at DESC, e.id DESC
+             LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![persona_id, limit], |row| {
+            Ok((
+                row_to_episode(row)?,
+                EpisodeRunFacts {
+                    charter: row.get(11)?,
+                    status: row.get(12)?,
+                    duration_ms: row.get(13)?,
+                    business_outcome: row.get(14)?,
+                    error_message: row.get(15)?,
+                },
+            ))
+        })?;
+        Ok(collect_rows(rows, "episodes::list_recent_with_runs"))
+    })
+}
+
 /// Keyset continuation of [`list_recent`]: the page strictly OLDER than the
 /// `(before_created_at, before_id)` cursor (the last row of the prior page).
 /// The compound tie-break makes same-timestamp rows paginate without loss.

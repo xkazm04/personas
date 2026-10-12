@@ -215,5 +215,6 @@
   "dispatch_run_on_queued_hint": "Dalam antrean sampai perangkat aktif",
   "dispatch_run_on_stale": "Belum terlihat baru-baru ini",
   "dispatch_run_on_this_machine": "Mesin ini",
-  "md_spellcheck": "Ejaan dan tata bahasa"
+  "md_spellcheck": "Ejaan dan tata bahasa",
+  "agent_fallback_name": "Agen"
 }

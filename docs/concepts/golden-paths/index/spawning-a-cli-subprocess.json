@@ -169,6 +169,7 @@
       ],
       "resolved": false
     },
+    "runner/mod.rs": {"count":2,"sections":[7],"lines":["1537-1605","2173"],"contexts":["(`runner/mod.rs:1537-1605`), and `ZeroizingFields` (`runner/credentials.rs:51-84`)"],"resolved":false},
     "schema.postinit.ts": {
       "count": 1,
       "sections": [],
@@ -404,14 +405,6 @@
     },
     "src-tauri/src/engine/runner/credentials.rs": {"count":3,"sections":[7],"lines":["51-84"],"contexts":["`engine/runner/credentials.rs`, `engine/mcp_tools.rs`'s spawn half,"],"resolvedFrom":"suffix","verbatim":"engine/runner/credentials.rs"},
     "src-tauri/src/engine/runner/env.rs": {"count":3,"sections":[3,6],"lines":["83","1-130"],"contexts":["`engine/src/verification_command.rs`, `engine/runner/env.rs`,"],"resolvedFrom":"suffix","verbatim":"engine/runner/env.rs"},
-    "src-tauri/src/engine/runner/mod.rs": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["1537-1605","2173"],
-      "contexts": ["(`runner/mod.rs:1537-1605`), and `ZeroizingFields` (`runner/credentials.rs:51-84`)"],
-      "resolvedFrom": "suffix",
-      "verbatim": "runner/mod.rs"
-    },
     "src-tauri/src/webbuild/devserver.rs": {
       "count": 6,
       "sections": [3,6,7],

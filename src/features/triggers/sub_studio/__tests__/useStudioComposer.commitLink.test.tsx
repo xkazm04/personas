@@ -116,6 +116,20 @@ describe('commitLink for a persona source', () => {
     expect(addToast.mock.calls.at(-1)?.[0]).toContain('jsonpath unresolvable');
     expect(addToast.mock.calls.at(-1)?.[1]).toBe('error');
   });
+
+  it.each(['dry-run', 'enable'] as const)('deletes the created trigger when %s throws', async (step) => {
+    if (step === 'dry-run') dryRunTrigger.mockRejectedValueOnce(new Error('dry-run failed'));
+    else updateTrigger.mockRejectedValueOnce(new Error('enable failed'));
+    const { result } = renderHook(() => useStudioComposer());
+
+    let ok = true;
+    await act(async () => { ok = await result.current.commitLink(PERSONA_LINK); });
+
+    expect(ok).toBe(false);
+    expect(createTrigger).toHaveBeenCalledTimes(1);
+    expect(deleteTrigger).toHaveBeenCalledWith('trg-new', 'dst-persona');
+    expect(addToast.mock.calls.at(-1)?.[1]).toBe('error');
+  });
 });
 
 describe('commitLink for a marketplace source', () => {
@@ -126,5 +140,23 @@ describe('commitLink for a marketplace source', () => {
 
     expect(createTrigger.mock.calls[0][0]).toMatchObject({ trigger_type: 'event_listener', enabled: true });
     expect(dryRunTrigger).not.toHaveBeenCalled();
+  });
+});
+
+describe('commitAll in-flight guard', () => {
+  it('a double "Save all" creates each route once', async () => {
+    localStorage.setItem(
+      'trigger_studio_draft_v1',
+      JSON.stringify({ version: 1, links: [PERSONA_LINK] }),
+    );
+    const { result } = renderHook(() => useStudioComposer());
+    expect(result.current.committableLinks).toHaveLength(1);
+
+    await act(async () => {
+      // Two clicks in the same tick: state is stale, so only a ref-backed guard sees the first.
+      await Promise.all([result.current.commitAll(), result.current.commitAll()]);
+    });
+
+    expect(createTrigger).toHaveBeenCalledTimes(1);
   });
 });

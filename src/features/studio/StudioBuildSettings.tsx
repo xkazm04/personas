@@ -64,7 +64,7 @@ export default function StudioBuildSettings({ id }: { id: string }) {
         aria-label={t.studio.build_settings}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+        className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
           open
             ? 'bg-secondary/60 text-primary'
             : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'

@@ -11,5 +11,8 @@
   "timed_out": "连接超时。服务器可能已关闭或 URL 可能不正确。",
   "token_empty": "请输入您的 GitLab 个人访问令牌。",
   "unauthorized": "凭据无效。请验证并重试。",
-  "url_empty": "请输入编排器 URL。"
+  "url_empty": "请输入编排器 URL。",
+  "credentials_revoked": "凭据已过期或被吊销。请重新连接云编排器。",
+  "reconnect_exhausted": "多次尝试后仍无法连接云编排器。请检查网络连接后重试。最近一次错误：{cause}",
+  "reconnect_disconnected": "连接检查报告已断开连接"
 }

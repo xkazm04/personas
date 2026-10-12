@@ -110,10 +110,25 @@ function PackageUnwrapSvg() {
   );
 }
 
-export function ImportSuccessCelebration({ importResult }: { importResult: { imported: number; skipped: number; errors: string[] } }) {
-  const { t } = useTranslation();
+type ImportResult = { imported: number; skipped: number; errors: string[] };
+export type ImportOutcome = 'success' | 'partial' | 'failed';
+
+/** Errors with nothing imported is a failure; errors beside imports is partial. */
+export function importOutcome(r: ImportResult): ImportOutcome {
+  if (r.errors.length === 0) return 'success';
+  return r.imported > 0 ? 'partial' : 'failed';
+}
+
+export function ImportSuccessCelebration({ importResult }: { importResult: ImportResult }) {
+  const { t, tx } = useTranslation();
   const st = t.sharing;
   const [entered, setEntered] = useState(false);
+  const outcome = importOutcome(importResult);
+  const tone = {
+    success: { box: 'border-emerald-500/20 bg-emerald-500/5', title: 'text-emerald-400', label: st.import_complete },
+    partial: { box: 'border-status-warning/20 bg-status-warning/5', title: 'text-status-warning', label: st.import_partial },
+    failed: { box: 'border-status-error/20 bg-status-error/5', title: 'text-status-error', label: st.import_failed },
+  }[outcome];
 
   useEffect(() => {
     const t = requestAnimationFrame(() => setEntered(true));
@@ -122,26 +137,26 @@ export function ImportSuccessCelebration({ importResult }: { importResult: { imp
 
   return (
     <div
-      className="rounded-modal border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3 overflow-hidden"
+      className={`rounded-modal border ${tone.box} p-4 space-y-3 overflow-hidden`}
       style={{
         transform: entered ? 'scale(1)' : 'scale(0.85)',
         opacity: entered ? 1 : 0,
         transition: 'transform 600ms cubic-bezier(0.34,1.56,0.64,1), opacity 400ms ease-out',
       }}
     >
-      <PackageUnwrapSvg />
+      {outcome === 'success' && <PackageUnwrapSvg />}
       <div className="text-center space-y-1">
-        <div className="typo-body text-emerald-400">
-          {st.import_complete}
+        <div className={`typo-body ${tone.title}`}>
+          {tone.label}
         </div>
         <div className="typo-caption text-foreground space-y-0.5">
-          <p>{importResult.imported} {importResult.imported !== 1 ? 'resources' : 'resource'} imported</p>
+          <p>{tx(importResult.imported === 1 ? st.resources_imported_one : st.resources_imported_other, { count: importResult.imported })}</p>
           {importResult.skipped > 0 && (
             <p>{t.sharing.skipped_conflicts.replace('{count}', String(importResult.skipped))}</p>
           )}
           {importResult.errors.length > 0 && (
             <div className="mt-2 text-left">
-              <p className="text-red-400">{importResult.errors.length} error{importResult.errors.length !== 1 ? 's' : ''}:</p>
+              <p className="text-red-400">{tx(importResult.errors.length === 1 ? st.import_errors_one : st.import_errors_other, { count: importResult.errors.length })}</p>
               {importResult.errors.map((e, i) => (
                 <p key={i} className="text-red-400/80 ml-2">- {e}</p>
               ))}

@@ -71,7 +71,7 @@ one-to-one onto the technique's rules:
    the fields the code shape suggests checking.
 
 The correct reader for the terminal envelope already exists one directory
-away: `src-tauri/src/engine/build_session/parser.rs:141-168`
+away: `src-tauri/engine/src/build_session/parser.rs:141-168`
 (`extract_result_usage`) reads `usage.input_tokens`/`output_tokens` from
 where the wire puts them. The capability was built for one of the repo's two
 streams and never carried to the other — the fix is a transplant within the

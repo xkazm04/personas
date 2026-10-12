@@ -8,7 +8,10 @@
     "send_request": "Отправить запрос",
     "sending": "Отправка…",
     "snippets": "Примеры кода",
-    "title": "Площадка API"
+    "title": "Площадка API",
+    "local_run_completed": "Локальный запуск завершён",
+    "local_run_failed": "Локальный запуск не удался",
+    "snippets_target_endpoint": "Примеры кода вызывают развёрнутую конечную точку. Результаты площадки получены из локального запуска."
   },
   "auth_code": "Код авторизации",
   "chart": {
@@ -28,7 +31,8 @@
     "worker_disconnected": "Отключён",
     "worker_executing": "Выполняет",
     "worker_idle": "Простаивает",
-    "workers": "Воркеры"
+    "workers": "Воркеры",
+    "gauge_aria": "Индикатор: {label}"
   },
   "cloud_trigger_chain": "Цепочка",
   "cloud_trigger_manual": "Вручную",
@@ -122,7 +126,9 @@
     "bulk_action_resume": "Массовое возобновление",
     "bulk_action_delete": "Массовое удаление",
     "bulk_result_ok": "{action}: обновлено {count}",
-    "bulk_result_partial": "{action}: успешно {succeeded}, с ошибкой {failed}"
+    "bulk_result_partial": "{action}: успешно {succeeded}, с ошибкой {failed}",
+    "select_all": "Выбрать все развёртывания",
+    "select_row": "Выбрать {name}"
   },
   "deploy_card": {
     "budget_label": "Бюджет:",
@@ -134,7 +140,11 @@
     "pause_deployment": "Приостановить развёртывание",
     "remove_deployment": "Удалить развёртывание",
     "resume_deployment": "Возобновить развёртывание",
-    "test_deployment": "Тестировать развёртывание"
+    "test_deployment": "Тестировать развёртывание",
+    "test_pass": "УСПЕХ",
+    "test_fail": "СБОЙ",
+    "test_title_pass": "Пройден",
+    "test_title_fail": "Не пройден"
   },
   "deploying": "Развёртывание…",
   "deployments_panel": {
@@ -144,7 +154,8 @@
     "no_deployments_yet": "Развёртываний пока нет. Выберите агента выше, чтобы развернуть его как облачную API-точку.",
     "select_persona": "Выберите агента для развёртывания",
     "budget_no_limit": "Без ограничений",
-    "budget_per_month": "${amount}/мес."
+    "budget_per_month": "${amount}/мес.",
+    "deploy_button": "Развернуть"
   },
   "exec_detail": {
     "fetching_output": "Получение вывода…",
@@ -182,7 +193,9 @@
     "total_runs": "Всего запусков",
     "fetch_output_failed": "Не удалось получить вывод",
     "monthly_budget": "Месячный бюджет",
-    "monthly_budget_pace": "Идёт к {amount}"
+    "monthly_budget_pace": "Идёт к {amount}",
+    "load_failed": "Не удалось загрузить историю запусков.",
+    "no_executions_found": "Для выбранных фильтров запусков не найдено."
   },
   "no_targets": "Нет подключённых целей развёртывания",
   "oauth_panel": {
@@ -201,7 +214,8 @@
     "token_expired": "Токен истёк",
     "token_expired_msg_prefix": "Этот OAuth-токен истёк",
     "token_unknown": "Статус токена неизвестен",
-    "token_unknown_msg": "Не удалось проверить действительность токена. Обновите токен, чтобы подтвердить, что он ещё активен."
+    "token_unknown_msg": "Не удалось проверить действительность токена. Обновите токен, чтобы подтвердить, что он ещё активен.",
+    "expired_at": "(истёк {time})"
   },
   "orchestrator_url": "URL оркестратора",
   "reconcile": {
@@ -229,7 +243,8 @@
     "loading": "Загрузка триггеров…",
     "loading_firings": "Загрузка…",
     "no_firings": "Последних запусков нет",
-    "recent_firings": "Последние запуски"
+    "recent_firings": "Последние запуски",
+    "firings_load_failed": "Не удалось загрузить последние срабатывания."
   },
   "sr_connecting": "Подключение к облачному оркестратору…",
   "sr_deploying": "Развёртывание агента в облаке",
@@ -239,7 +254,8 @@
     "no_status": "Данные о статусе недоступны.",
     "no_token": "Токен не настроен",
     "no_token_configured": "Токен не настроен",
-    "token_available": "Токен доступен"
+    "token_available": "Токен доступен",
+    "latency_title": "Задержка проверки состояния (полный цикл): {ms} мс"
   },
   "tabs": {
     "connection": "Подключение",

@@ -302,6 +302,85 @@ pub fn delete_all(pool: &DbPool) -> Result<usize, AppError> {
     })
 }
 
+/// The predicate [`delete_all_except_held_gates`] keeps: a still-`pending`
+/// review whose linked team assignment is HELD on it. That review is the only
+/// thing that can resume the assignment (`react_to_review_decision` acts on a
+/// decision for a review linked via `assignment_id`, and only while the
+/// assignment is `awaiting_review`/`paused` — the same status set used here).
+const HELD_GATE_PREDICATE: &str = "status = 'pending'
+     AND assignment_id IS NOT NULL
+     AND assignment_id IN (SELECT id FROM team_assignments
+                           WHERE status IN ('awaiting_review','paused'))";
+
+/// What [`delete_all_except_held_gates`] did: the rows it deleted (enough to
+/// write one audit entry each) and how many it kept because they gate a held
+/// team assignment.
+pub struct BulkReviewDeletion {
+    pub deleted: Vec<StaleReviewResolution>,
+    pub kept_held_gates: usize,
+}
+
+/// Operator "Delete all": hard-delete every review EXCEPT a pending one that
+/// gates a held team assignment (see [`HELD_GATE_PREDICATE`]). Deleting that
+/// row would strand the assignment in `awaiting_review` forever, since nothing
+/// else can decide it. Deletes a subset of what [`delete_all`] deletes, never
+/// more. Single transaction: the SELECT that names the rows and the DELETE
+/// that removes them see the same snapshot, and their counts are compared.
+/// The caller writes the audit fan-out (the repo stays free of policy_events).
+pub fn delete_all_except_held_gates(pool: &DbPool) -> Result<BulkReviewDeletion, AppError> {
+    timed_query!(
+        "manual_reviews",
+        "manual_reviews::delete_all_except_held_gates",
+        {
+            let mut conn = pool.get()?;
+            // Immediate: the SELECT decides what the DELETE removes.
+            let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+
+            let deleted: Vec<StaleReviewResolution> = {
+                let mut stmt = tx.prepare(&format!(
+                    "SELECT id, execution_id, persona_id, use_case_id, created_at
+                 FROM persona_manual_reviews
+                 WHERE NOT ({HELD_GATE_PREDICATE})"
+                ))?;
+                let rows = stmt.query_map([], |row| {
+                    Ok(StaleReviewResolution {
+                        id: row.get("id")?,
+                        execution_id: row.get("execution_id")?,
+                        persona_id: row.get("persona_id")?,
+                        use_case_id: row.get("use_case_id")?,
+                        created_at: row.get("created_at")?,
+                    })
+                })?;
+                collect_rows(rows, "manual_reviews::delete_all_except_held_gates")
+            };
+
+            let removed = tx.execute(
+                &format!("DELETE FROM persona_manual_reviews WHERE NOT ({HELD_GATE_PREDICATE})"),
+                [],
+            )?;
+            if removed != deleted.len() {
+                // Same transaction, so this only fires if a row failed to decode
+                // above (collect_rows skips it) — refuse to delete rows the audit
+                // fan-out would not name.
+                return Err(AppError::Internal(format!(
+                "manual_reviews::delete_all_except_held_gates: selected {} rows but would delete {removed}",
+                deleted.len()
+            )));
+            }
+            let kept_held_gates: usize = tx.query_row(
+                "SELECT COUNT(*) AS n FROM persona_manual_reviews",
+                [],
+                |r| r.get::<_, i64>("n"),
+            )? as usize;
+            tx.commit()?;
+            Ok(BulkReviewDeletion {
+                deleted,
+                kept_held_gates,
+            })
+        }
+    )
+}
+
 pub fn get_by_execution(
     pool: &DbPool,
     execution_id: &str,
@@ -1657,5 +1736,115 @@ mod tests {
             get_by_id(&pool, &id).unwrap().status,
             ManualReviewStatus::Approved
         );
+    }
+
+    /// Seed a team assignment and park it in `status`.
+    fn assignment_in_status(
+        pool: &DbPool,
+        persona_id: &str,
+        status: &str,
+    ) -> Result<String, AppError> {
+        use crate::models::{
+            CreateTeamAssignmentInput, CreateTeamAssignmentStepInput, CreateTeamInput,
+        };
+        use crate::repos::{orchestration::team_assignments, resources::teams};
+        let team = teams::create(
+            pool,
+            CreateTeamInput {
+                name: "Gate Squad".into(),
+                project_id: None,
+                parent_team_id: None,
+                description: None,
+                canvas_data: None,
+                team_config: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+            },
+        )?;
+        let assignment = team_assignments::create(
+            pool,
+            CreateTeamAssignmentInput {
+                team_id: team.id,
+                title: "Held on review".into(),
+                goal: "Wait for a human".into(),
+                match_strategy: None,
+                max_parallel_steps: None,
+                source: None,
+                companion_op_id: None,
+                goal_id: None,
+                steps: vec![CreateTeamAssignmentStepInput {
+                    title: "Implement".into(),
+                    description: None,
+                    assigned_persona_id: Some(persona_id.to_string()),
+                    assigned_use_case_id: None,
+                    depends_on_indices: None,
+                }],
+            },
+        )?;
+        let updated = pool.get()?.execute(
+            "UPDATE team_assignments SET status = ?1 WHERE id = ?2",
+            params![status, assignment.id],
+        )?;
+        if updated != 1 {
+            return Err(AppError::Internal(format!(
+                "seed: parked {updated} assignments, expected 1"
+            )));
+        }
+        Ok(assignment.id)
+    }
+
+    fn review_linked_to(
+        pool: &DbPool,
+        persona_id: &str,
+        execution_id: &str,
+        assignment_id: Option<&str>,
+    ) -> Result<String, AppError> {
+        Ok(create(
+            pool,
+            CreateManualReviewInput {
+                execution_id: execution_id.to_string(),
+                persona_id: persona_id.to_string(),
+                title: "Gate review".into(),
+                description: None,
+                severity: None,
+                context_data: None,
+                suggested_actions: None,
+                use_case_id: None,
+                assignment_id: assignment_id.map(str::to_string),
+                step_id: None,
+            },
+        )?
+        .id)
+    }
+
+    /// Operator "Delete all" must not delete the one row that can resume a
+    /// held team assignment (a pending review linked to an `awaiting_review`
+    /// assignment). Everything else still goes, so it deletes a subset of what
+    /// `delete_all` did and names every deleted row for the audit fan-out.
+    #[test]
+    fn bulk_delete_keeps_pending_gate_of_held_assignment() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let (persona_id, execution_id) = setup_persona_and_execution(&pool);
+        let held = assignment_in_status(&pool, &persona_id, "awaiting_review")?;
+        let finished = assignment_in_status(&pool, &persona_id, "done")?;
+
+        let gate = review_linked_to(&pool, &persona_id, &execution_id, Some(&held))?;
+        let decided = review_linked_to(&pool, &persona_id, &execution_id, Some(&held))?;
+        update_status(&pool, &decided, ManualReviewStatus::Approved, None)?;
+        let stale_link = review_linked_to(&pool, &persona_id, &execution_id, Some(&finished))?;
+        let advisory = review_linked_to(&pool, &persona_id, &execution_id, None)?;
+
+        let outcome = delete_all_except_held_gates(&pool)?;
+
+        assert_eq!(outcome.kept_held_gates, 1);
+        let mut deleted: Vec<String> = outcome.deleted.iter().map(|r| r.id.clone()).collect();
+        deleted.sort();
+        let mut expected = vec![decided, stale_link, advisory];
+        expected.sort();
+        assert_eq!(deleted, expected);
+        assert_eq!(get_by_id(&pool, &gate)?.status, ManualReviewStatus::Pending);
+        assert_eq!(get_pending_count(&pool, None)?, 1);
+        Ok(())
     }
 }

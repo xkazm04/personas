@@ -59,7 +59,12 @@
     "try_it": "Coba",
     "used_badge": "Digunakan",
     "tour_continue": "Lanjutkan ({completed}/{total})",
-    "tour_in_progress": "{completed}/{total}"
+    "tour_in_progress": "{completed}/{total}",
+    "ask_title": "Minta Athena membuat panduan",
+    "ask_placeholder": "Apa yang ingin Anda pelajari? Mis. menjadwalkan agen",
+    "ask_submit": "Buat",
+    "ask_composing": "Menyusun panduan Anda…",
+    "ask_failed": "Athena tidak dapat menyusun panduan itu. Coba ubah topiknya."
   },
   "nav_status": {
     "agents_active": "{count} agen aktif dalam 24 jam terakhir",

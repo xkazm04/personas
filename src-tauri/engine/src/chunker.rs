@@ -352,28 +352,63 @@ pub fn chunk_file(
     Ok(chunk_text(&text, max_chars, overlap_chars))
 }
 
-/// Very basic HTML tag stripper. Removes tags and decodes common entities.
+/// Basic HTML text extraction. Drops script/style bodies and decodes common entities once.
 #[cfg(feature = "ml")]
 fn strip_html_tags(html: &str) -> String {
     let mut result = String::with_capacity(html.len());
-    let mut in_tag = false;
+    let mut remaining = html;
+    while let Some(open) = remaining.find('<') {
+        append_html_text(&remaining[..open], &mut result);
+        let tag_start = &remaining[open + 1..];
+        let Some(close) = tag_start.find('>') else {
+            append_html_text(&remaining[open..], &mut result);
+            return result;
+        };
+        let tag = tag_start[..close].trim_start();
+        let name = tag
+            .split(|ch: char| ch.is_ascii_whitespace() || ch == '/')
+            .next()
+            .unwrap_or("");
+        remaining = &tag_start[close + 1..];
 
-    for ch in html.chars() {
-        match ch {
-            '<' => in_tag = true,
-            '>' => in_tag = false,
-            _ if !in_tag => result.push(ch),
-            _ => {}
+        if name.eq_ignore_ascii_case("script") || name.eq_ignore_ascii_case("style") {
+            let lower = remaining.to_ascii_lowercase();
+            let closing = format!("</{}", name.to_ascii_lowercase());
+            let Some(start) = lower.find(&closing) else {
+                return result;
+            };
+            let after_closing = &remaining[start + closing.len()..];
+            let Some(end) = after_closing.find('>') else {
+                return result;
+            };
+            remaining = &after_closing[end + 1..];
         }
     }
-
+    append_html_text(remaining, &mut result);
     result
-        .replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", "\"")
-        .replace("&#39;", "'")
-        .replace("&nbsp;", " ")
+}
+
+#[cfg(feature = "ml")]
+fn append_html_text(mut text: &str, output: &mut String) {
+    while !text.is_empty() {
+        let entity = [
+            ("&amp;", "&"),
+            ("&lt;", "<"),
+            ("&gt;", ">"),
+            ("&quot;", "\""),
+            ("&#39;", "'"),
+            ("&nbsp;", " "),
+        ]
+        .into_iter()
+        .find(|(encoded, _)| text.starts_with(encoded));
+        if let Some((encoded, decoded)) = entity {
+            output.push_str(decoded);
+            text = &text[encoded.len()..];
+        } else if let Some(ch) = text.chars().next() {
+            output.push(ch);
+            text = &text[ch.len_utf8()..];
+        }
+    }
 }
 
 #[cfg(all(test, feature = "ml"))]
@@ -405,6 +440,14 @@ mod tests {
     fn test_strip_html() {
         let html = "<p>Hello <b>world</b> &amp; friends</p>";
         assert_eq!(strip_html_tags(html), "Hello world & friends");
+    }
+
+    #[test]
+    fn html_ignores_script_and_style_bodies_and_decodes_once() {
+        assert_eq!(
+            strip_html_tags("<p>Hi</p><script>var x=1</script><style>p{color:red}</style>&amp;lt;"),
+            "Hi&lt;"
+        );
     }
 
     #[test]

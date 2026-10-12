@@ -37,6 +37,7 @@ import { ACTIVITY_MODULES } from './activitySurfaces';
 import { INBOX_MODULES } from './inboxSurfaces';
 import { MONITOR_RAIL_MODULES } from './monitorRailSurfaces';
 import { MONITOR_ACTIVITY_MODULES } from './monitorActivitySurfaces';
+import { DECISION_DECK_MODULES } from './decisionDeckSurfaces';
 import { ATHENA_CHAT_MODULES } from './athenaChatSurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
@@ -87,6 +88,8 @@ export const MODULES: Record<string, HarnessModule> = {
   // harnesses build their fleets from them.
   ...MONITOR_RAIL_MODULES,
   ...MONITOR_ACTIVITY_MODULES,
+  // The live Decision Deck (decisionDeckSurfaces.tsx, decisionDeckTapes.mjs).
+  ...DECISION_DECK_MODULES,
   ...TONE_MODULES,
   ...TRIAGE_MODULES,
   ...DATAGRID_MODULES,

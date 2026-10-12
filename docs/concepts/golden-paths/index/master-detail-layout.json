@@ -20,6 +20,7 @@
   "triggers": [],
   "citations": {
     "Gallery3D.tsx": {"count":1,"sections":[7],"lines":["114"],"contexts":["`Gallery3D.tsx:114` (`selectedIndex: number | null`) selects a position in a 3-D carousel."],"resolved":false},
+    "GoalsMissions.tsx": {"count":3,"sections":[7,12],"lines":["124","129"],"contexts":["`LabVersionsTable.tsx`, `GoalsMissions.tsx`."],"resolved":false},
     "KnowledgeApprovalsPanel.tsx": {"count":1,"sections":[7],"contexts":["`KnowledgeApprovalsPanel.tsx`, `ContextMapPage.tsx`, `LifecycleProjectPicker.tsx`,"],"resolved":false},
     "MessageList.tsx": {"count":1,"sections":[7],"contexts":["`useEventLog.ts`, `MemoriesPageDense.tsx`, `MemoriesPageGraph.tsx`, `MessageList.tsx`,"],"resolved":false},
     "PatternsPanel.tsx": {"count":2,"sections":[7],"lines":["71"],"contexts":["`PatternsPanel.tsx`, `ProfilesAtelier.tsx`, `CredentialTemplateForm.tsx`,"],"resolved":false},
@@ -89,7 +90,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "ExecutionDetailModal/ExecutionDetailContent.tsx"
     },
-    "src/features/teams/sub_goals/GoalsMissions.tsx": {"count":3,"sections":[7,12],"lines":["124","129"],"contexts":["`LabVersionsTable.tsx`, `GoalsMissions.tsx`."],"resolvedFrom":"basename","verbatim":"GoalsMissions.tsx"},
     "src/features/teams/sub_teamWorkspace/TeamCanvas.tsx": {"count":2,"sections":[2],"lines":["33-44"],"contexts":["`CredentialRelationshipGraph.tsx`, `TeamCanvas.tsx`, `ToneAtelier.tsx`,"],"resolvedFrom":"basename","verbatim":"TeamCanvas.tsx"},
     "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx": {
       "count": 1,

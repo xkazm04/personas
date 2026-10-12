@@ -8,7 +8,10 @@
     "send_request": "Odeslat požadavek",
     "sending": "Odesílání…",
     "snippets": "Snippety",
-    "title": "API Playground"
+    "title": "API Playground",
+    "local_run_completed": "Místní spuštění dokončeno",
+    "local_run_failed": "Místní spuštění selhalo",
+    "snippets_target_endpoint": "Ukázky kódu volají nasazený koncový bod. Výsledky hřiště pocházejí z místního spuštění."
   },
   "auth_code": "Autorizační kód",
   "chart": {
@@ -28,7 +31,8 @@
     "worker_disconnected": "Odpojený",
     "worker_executing": "Vykonává",
     "worker_idle": "Nečinný",
-    "workers": "Workery"
+    "workers": "Workery",
+    "gauge_aria": "Ukazatel {label}"
   },
   "cloud_trigger_chain": "Řetězec",
   "cloud_trigger_manual": "Ruční",
@@ -122,7 +126,9 @@
     "bulk_action_resume": "Hromadné obnovení",
     "bulk_action_delete": "Hromadné smazání",
     "bulk_result_ok": "{action}: aktualizováno {count}",
-    "bulk_result_partial": "{action}: úspěšně {succeeded}, neúspěšně {failed}"
+    "bulk_result_partial": "{action}: úspěšně {succeeded}, neúspěšně {failed}",
+    "select_all": "Vybrat všechna nasazení",
+    "select_row": "Vybrat {name}"
   },
   "deploy_card": {
     "budget_label": "Rozpočet:",
@@ -134,7 +140,11 @@
     "pause_deployment": "Pozastavit nasazení",
     "remove_deployment": "Odebrat nasazení",
     "resume_deployment": "Obnovit nasazení",
-    "test_deployment": "Otestovat nasazení"
+    "test_deployment": "Otestovat nasazení",
+    "test_pass": "ÚSPĚCH",
+    "test_fail": "CHYBA",
+    "test_title_pass": "Úspěšné",
+    "test_title_fail": "Neúspěšné"
   },
   "deploying": "Nasazování…",
   "deployments_panel": {
@@ -144,7 +154,8 @@
     "no_deployments_yet": "Zatím žádná nasazení. Vyber personu výše a nasaď ji jako cloudový API endpoint.",
     "select_persona": "Vyber personu k nasazení",
     "budget_no_limit": "Bez limitu",
-    "budget_per_month": "${amount}/měs."
+    "budget_per_month": "${amount}/měs.",
+    "deploy_button": "Nasadit"
   },
   "exec_detail": {
     "fetching_output": "Načítání výstupu…",
@@ -182,7 +193,9 @@
     "total_runs": "Celkem spuštění",
     "fetch_output_failed": "Výstup se nepodařilo načíst",
     "monthly_budget": "Měsíční rozpočet",
-    "monthly_budget_pace": "Směřuje k {amount}"
+    "monthly_budget_pace": "Směřuje k {amount}",
+    "load_failed": "Historii spuštění se nepodařilo načíst.",
+    "no_executions_found": "Pro vybrané filtry nebyla nalezena žádná spuštění."
   },
   "no_targets": "Žádné cíle nasazení připojeny",
   "oauth_panel": {
@@ -201,7 +214,8 @@
     "token_expired": "Token vypršel",
     "token_expired_msg_prefix": "Tento OAuth token vypršel",
     "token_unknown": "Stav tokenu neznámý",
-    "token_unknown_msg": "Platnost tokenu nebylo možné ověřit. Obnov token pro potvrzení, že je stále aktivní."
+    "token_unknown_msg": "Platnost tokenu nebylo možné ověřit. Obnov token pro potvrzení, že je stále aktivní.",
+    "expired_at": "(vypršelo {time})"
   },
   "orchestrator_url": "URL orchestrátoru",
   "reconcile": {
@@ -229,7 +243,8 @@
     "loading": "Načítání spouštěčů…",
     "loading_firings": "Načítání…",
     "no_firings": "Žádná nedávná spuštění",
-    "recent_firings": "Nedávná spuštění"
+    "recent_firings": "Nedávná spuštění",
+    "firings_load_failed": "Poslední aktivace se nepodařilo načíst."
   },
   "sr_connecting": "Připojování ke cloudovému orchestrátoru…",
   "sr_deploying": "Nasazování persony do cloudu",
@@ -239,7 +254,8 @@
     "no_status": "Žádná stavová data dostupná.",
     "no_token": "Žádný token nakonfigurován",
     "no_token_configured": "Žádný token nenakonfigurován",
-    "token_available": "Token dostupný"
+    "token_available": "Token dostupný",
+    "latency_title": "Odezva kontroly stavu (round-trip): {ms} ms"
   },
   "tabs": {
     "connection": "Připojení",

@@ -1,0 +1,134 @@
+{
+  "module": "decision-center/prototype",
+  "kit": "p1:strip-states",
+  "label": "strip-states",
+  "createdAt": "2026-10-06T12:34:45.730Z",
+  "browser": "147.0.7727.15",
+  "tape": {
+    "path": "C:\\Users\\mkdol\\AppData\\Local\\Temp\\claude\\C--Users-mkdol-dolla-personas\\827c5c2d-1aca-4532-a482-98c62a1e3d17\\scratchpad\\p1\\tape.json",
+    "source": "synthetic",
+    "recordedAt": "2026-10-06T14:00:00.000Z",
+    "calls": 0,
+    "note": "P1: fixture roster, no IPC; clock frozen at the fixtures' own now so ages read true."
+  },
+  "ok": true,
+  "unknownIpcCommands": [],
+  "shots": [
+    {
+      "file": "strip-states-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 308,
+      "textSample": "P1 P2 P3 strip peek modal Disabled reset roster 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 Gates 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 ",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "strip-states-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 374,
+      "textSample": "P1 P2 P3 strip peek modal Disabled reset roster Triage all 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 Gates 0 1 2 3 4 5 6 7 8 9 Proposals 0 1 2 3 4 5 6 7 8 9 Backlog 0 1 2 3 4 5 6 7 8 9 Incidents 0 1 2 3",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "strip-states-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 308,
+      "textSample": "P1 P2 P3 strip peek modal Disabled reset roster 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 Gates 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 ",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "strip-states-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 374,
+      "textSample": "P1 P2 P3 strip peek modal Disabled reset roster Triage all 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 Gates 0 1 2 3 4 5 6 7 8 9 Proposals 0 1 2 3 4 5 6 7 8 9 Backlog 0 1 2 3 4 5 6 7 8 9 Incidents 0 1 2 3",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

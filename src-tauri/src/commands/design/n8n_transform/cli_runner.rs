@@ -83,7 +83,7 @@ pub async fn start_n8n_transform_background(
             }
             if let Some(token) = &existing.cancel_token {
                 if token.is_cancelled() {
-                    return Err(AppError::Internal("Transform cancelled by user".into()));
+                    return Err(cancelled_error());
                 }
             }
         }
@@ -118,6 +118,7 @@ pub async fn start_n8n_transform_background(
                 cancel_outcome: None,
                 extra: N8nTransformExtra {
                     session_id: session_id.clone(),
+                    workflow_name: Some(workflow_name.clone()),
                     ..Default::default()
                 },
             },
@@ -125,7 +126,7 @@ pub async fn start_n8n_transform_background(
     }
 
     if cancel_token.is_cancelled() {
-        return Err(AppError::Internal("Transform cancelled by user".into()));
+        return Err(cancelled_error());
     }
 
     set_n8n_transform_status(&app, &transform_id, "running", None);
@@ -133,7 +134,7 @@ pub async fn start_n8n_transform_background(
     // Persist 'transforming' status to DB session so startup recovery can detect it
     if let Some(ref sid) = session_id {
         let state = app.state::<Arc<AppState>>();
-        let _ = n8n_sessions::update(
+        if let Err(e) = n8n_sessions::update(
             &state.db,
             sid,
             &UpdateN8nSessionInput {
@@ -141,7 +142,9 @@ pub async fn start_n8n_transform_background(
                 step: Some("transform".into()),
                 ..Default::default()
             },
-        );
+        ) {
+            tracing::warn!(session_id = %sid, error = %e, "n8n session write failed: Transforming status not persisted");
+        }
     }
 
     // Determine if this is an adjustment re-run or initial transform
@@ -161,7 +164,7 @@ pub async fn start_n8n_transform_background(
             // -- Adjustment re-run: single-prompt path (no interactive questions) --
             let result = tokio::select! {
                 _ = token_for_task.cancelled() => {
-                    Err(AppError::Internal("Transform cancelled by user".into()))
+                    Err(cancelled_error())
                 }
                 res = run_n8n_transform_job(
                     &app_handle,
@@ -188,7 +191,7 @@ pub async fn start_n8n_transform_background(
             // -- Initial transform: unified prompt (may produce questions or persona) --
             let result = tokio::select! {
                 _ = token_for_task.cancelled() => {
-                    Err(AppError::Internal("Transform cancelled by user".into()))
+                    Err(cancelled_error())
                 }
                 res = run_unified_transform_turn1(
                     &app_handle,
@@ -267,17 +270,20 @@ pub async fn continue_n8n_transform(
     let transform_id_for_task = transform_id.clone();
     let token_for_task = cancel_token;
     let session_id_for_task = session_id;
+    let workflow_name =
+        resolve_continue_workflow_name(get_n8n_transform_workflow_name(&transform_id).as_deref());
 
     tokio::spawn(async move {
         let result = tokio::select! {
             _ = token_for_task.cancelled() => {
-                Err(AppError::Internal("Transform cancelled by user".into()))
+                Err(cancelled_error())
             }
             res = run_continue_transform(
                 &app_handle,
                 &transform_id_for_task,
                 &claude_session_id,
                 &user_answers_json,
+                &workflow_name,
             ) => res
         };
 
@@ -286,7 +292,7 @@ pub async fn continue_n8n_transform(
             result.map(|d| (d, false)),
             &app_handle,
             &transform_id_for_task,
-            "n8n workflow", // workflow_name not available here, use generic
+            &workflow_name,
             session_id_for_task.as_deref(),
         );
     });
@@ -345,6 +351,41 @@ fn build_section_callbacks(
     (on_line, on_section)
 }
 
+/// Name used by Turn 2: the one stashed at Turn 1, else a generic label
+/// (job evicted / app restarted between turns).
+fn resolve_continue_workflow_name(stashed: Option<&str>) -> String {
+    stashed
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .unwrap_or("n8n workflow")
+        .to_string()
+}
+
+/// Message carried by the error a cancelled transform task produces. The
+/// cancel arms and [`classify_transform_outcome`] share it so a cancel is
+/// recognised as a cancel rather than reported as a failure.
+const TRANSFORM_CANCELLED_MSG: &str = "Transform cancelled by user";
+
+fn cancelled_error() -> AppError {
+    AppError::Internal(TRANSFORM_CANCELLED_MSG.into())
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum TransformOutcome {
+    Completed,
+    Cancelled,
+    Failed,
+}
+
+/// Pure classification of a finished transform turn.
+fn classify_transform_outcome<T>(result: &Result<T, AppError>) -> TransformOutcome {
+    match result {
+        Ok(_) => TransformOutcome::Completed,
+        Err(AppError::Internal(m)) if m == TRANSFORM_CANCELLED_MSG => TransformOutcome::Cancelled,
+        Err(_) => TransformOutcome::Failed,
+    }
+}
+
 /// Handle the result from either adjustment or unified transform.
 /// Second element in the Ok tuple is unused (reserved).
 fn handle_transform_result(
@@ -354,6 +395,26 @@ fn handle_transform_result(
     workflow_name: &str,
     session_id: Option<&str>,
 ) {
+    if classify_transform_outcome(&result) == TransformOutcome::Cancelled {
+        // `cancel_or_preempt` already wrote the honest cancel status. Do not
+        // overwrite it, notify "Transform Failed", or mark the session Failed:
+        // leave the session Interrupted (resumable), as boot recovery would.
+        tracing::info!(transform_id = %transform_id, "n8n transform cancelled by user");
+        if let Some(sid) = session_id {
+            let state = app.state::<Arc<AppState>>();
+            if let Err(e) = n8n_sessions::update(
+                &state.db,
+                sid,
+                &UpdateN8nSessionInput {
+                    status: Some(SessionStatus::Interrupted),
+                    ..Default::default()
+                },
+            ) {
+                tracing::warn!(session_id = %sid, error = %e, "n8n session cancel write failed");
+            }
+        }
+        return;
+    }
     match result {
         Ok((draft, _)) => {
             set_n8n_transform_draft(transform_id, &draft);
@@ -362,7 +423,7 @@ fn handle_transform_result(
             if let Some(sid) = session_id {
                 let state = app.state::<Arc<AppState>>();
                 let draft_str = serde_json::to_string(&draft).unwrap_or_default();
-                let _ = n8n_sessions::update(
+                if let Err(e) = n8n_sessions::update(
                     &state.db,
                     sid,
                     &UpdateN8nSessionInput {
@@ -372,7 +433,9 @@ fn handle_transform_result(
                         error: Some(None),
                         ..Default::default()
                     },
-                );
+                ) {
+                    tracing::warn!(session_id = %sid, error = %e, "n8n session write failed: Editing status and draft not persisted");
+                }
             }
         }
         Err(err) => {
@@ -382,7 +445,7 @@ fn handle_transform_result(
             crate::notifications::notify_n8n_transform_completed(app, workflow_name, false);
             if let Some(sid) = session_id {
                 let state = app.state::<Arc<AppState>>();
-                let _ = n8n_sessions::update(
+                if let Err(e) = n8n_sessions::update(
                     &state.db,
                     sid,
                     &UpdateN8nSessionInput {
@@ -390,7 +453,9 @@ fn handle_transform_result(
                         error: Some(Some(msg)),
                         ..Default::default()
                     },
-                );
+                ) {
+                    tracing::warn!(session_id = %sid, error = %e, "n8n session write failed: Failed status and error not persisted");
+                }
             }
         }
     }
@@ -480,6 +545,7 @@ async fn run_continue_transform(
     transform_id: &str,
     claude_session_id: &str,
     user_answers_json: &str,
+    workflow_name: &str,
 ) -> Result<N8nPersonaOutput, AppError> {
     tracing::info!(transform_id = %transform_id, "Starting unified transform Turn 2 (sectioned resume)");
 
@@ -530,7 +596,7 @@ Remember: return ONLY valid JSON with the persona object, no markdown fences."#
             // Try section assembly first, fall back to monolithic parsing
             if let Some(accumulator) = returned_accum {
                 if accumulator.has_sections() {
-                    if let Some(draft) = accumulator.assemble("n8n workflow") {
+                    if let Some(draft) = accumulator.assemble(workflow_name) {
                         emit_n8n_transform_line(
                             app,
                             transform_id,
@@ -546,7 +612,7 @@ Remember: return ONLY valid JSON with the persona object, no markdown fences."#
                 transform_id,
                 "[Milestone] Extracting persona JSON draft...",
             );
-            let draft = parse_persona_output(&output_text, "n8n workflow")
+            let draft = parse_persona_output(&output_text, workflow_name)
                 .map_err(|e| AttemptError::BadOutput(e.to_string()))?;
             emit_n8n_transform_line(app, transform_id, "[Milestone] Draft ready for review.");
             Ok(draft)
@@ -707,6 +773,46 @@ pub async fn run_claude_prompt_text(
     Ok((text, session_id))
 }
 
+/// Why a streamed CLI read was abandoned.
+#[derive(Debug, PartialEq, Eq)]
+enum StreamStall {
+    /// No line arrived within the lease.
+    Silent,
+    /// The call kept producing but ran past the hard ceiling.
+    Ceiling,
+}
+
+/// Longest silence tolerated before a streamed call is declared stuck.
+const MAX_SILENCE_LEASE_SECS: u64 = 300;
+/// A producing call may run this many times the caller's `timeout_secs`.
+const LEASE_CEILING_FACTOR: u32 = 3;
+
+fn stream_lease(timeout_secs: u64) -> std::time::Duration {
+    std::time::Duration::from_secs(timeout_secs.min(MAX_SILENCE_LEASE_SECS))
+}
+
+fn lease_ceiling(timeout_secs: u64) -> std::time::Duration {
+    std::time::Duration::from_secs(timeout_secs) * LEASE_CEILING_FACTOR
+}
+
+/// Next line, bounded by time since the last one rather than by total time.
+/// Read errors end the stream, as the loop this replaced did.
+async fn next_line_within<R>(
+    lines: &mut tokio::io::Lines<R>,
+    lease: std::time::Duration,
+    ceiling_at: tokio::time::Instant,
+) -> Result<Option<String>, StreamStall>
+where
+    R: tokio::io::AsyncBufRead + Unpin,
+{
+    let deadline = (tokio::time::Instant::now() + lease).min(ceiling_at);
+    match tokio::time::timeout_at(deadline, lines.next_line()).await {
+        Ok(read) => Ok(read.ok().flatten()),
+        Err(_) if tokio::time::Instant::now() >= ceiling_at => Err(StreamStall::Ceiling),
+        Err(_) => Err(StreamStall::Silent),
+    }
+}
+
 /// Core Claude CLI process spawning with stdout streaming, timeout, line emission,
 /// and optional section-by-section accumulation.
 ///
@@ -806,9 +912,17 @@ pub async fn run_claude_prompt_text_inner(
     let mut last_emitted_line: Option<String> = None;
     let mut captured_session_id: Option<String> = None;
 
-    let timeout_duration = std::time::Duration::from_secs(timeout_secs);
-    let stream_result = tokio::time::timeout(timeout_duration, async {
-        while let Ok(Some(line)) = reader.next_line().await {
+    // `timeout_secs` is a silence lease, not a wall clock: a call that keeps
+    // producing lines is healthy however long it takes, up to a hard ceiling.
+    let lease = stream_lease(timeout_secs);
+    let ceiling_at = tokio::time::Instant::now() + lease_ceiling(timeout_secs);
+    let stream_result = async {
+        loop {
+            let line = match next_line_within(&mut reader, lease, ceiling_at).await {
+                Ok(Some(line)) => line,
+                Ok(None) => break,
+                Err(stall) => return Err(stall),
+            };
             if line.trim().is_empty() {
                 continue;
             }
@@ -860,13 +974,23 @@ pub async fn run_claude_prompt_text_inner(
                 }
             }
         }
-    })
+        Ok(())
+    }
     .await;
 
-    if stream_result.is_err() {
+    if let Err(stall) = stream_result {
         let _ = child.kill().await;
         let _ = child.wait().await;
-        return Err(format!("Claude CLI timed out after {timeout_secs} seconds"));
+        return Err(match stall {
+            StreamStall::Silent => format!(
+                "Claude CLI timed out after {} seconds without output",
+                lease.as_secs()
+            ),
+            StreamStall::Ceiling => format!(
+                "Claude CLI timed out after {} seconds (hard ceiling)",
+                lease_ceiling(timeout_secs).as_secs()
+            ),
+        });
     }
 
     // Flush any remaining buffered section
@@ -1099,4 +1223,123 @@ pub fn parse_persona_output(
         output,
         workflow_name,
     ))
+}
+
+#[cfg(test)]
+mod outcome_tests {
+    use super::*;
+
+    #[test]
+    fn turn2_uses_stashed_workflow_name_for_fallback_persona_name() {
+        let name = resolve_continue_workflow_name(Some("Slack notifier"));
+        assert_eq!(name, "Slack notifier");
+        assert_eq!(resolve_continue_workflow_name(None), "n8n workflow");
+        assert_eq!(resolve_continue_workflow_name(Some("  ")), "n8n workflow");
+        let raw: N8nPersonaOutput = serde_json::from_str(r#"{"system_prompt":"p"}"#)
+            .map_err(|e| e.to_string())
+            .unwrap_or_else(|e| panic!("empty draft must deserialize: {e}"));
+        let draft = super::super::types::normalize_n8n_persona_draft(raw, &name);
+        assert_eq!(draft.name.as_deref(), Some("Slack notifier (n8n)"));
+    }
+
+    #[test]
+    fn cancel_error_is_classified_as_cancelled_not_failed() {
+        let cancelled: Result<(), AppError> = Err(cancelled_error());
+        assert_eq!(
+            classify_transform_outcome(&cancelled),
+            TransformOutcome::Cancelled
+        );
+        let failed: Result<(), AppError> = Err(AppError::Internal("boom".into()));
+        assert_eq!(
+            classify_transform_outcome(&failed),
+            TransformOutcome::Failed
+        );
+        assert_eq!(
+            classify_transform_outcome(&Ok(())),
+            TransformOutcome::Completed
+        );
+    }
+}
+
+#[cfg(test)]
+mod lease_tests {
+    use super::*;
+    use std::time::Duration;
+    use tokio::io::{duplex, AsyncWriteExt};
+
+    /// Drive the read loop the way `run_claude_prompt_text_inner` does and
+    /// return how many lines arrived and why it stopped.
+    async fn drain(
+        gap: Duration,
+        lines: usize,
+        lease: Duration,
+        ceiling: Duration,
+        stall_after_lines: bool,
+    ) -> (usize, Option<StreamStall>) {
+        let (mut tx, rx) = duplex(1024);
+        tokio::spawn(async move {
+            for _ in 0..lines {
+                tokio::time::sleep(gap).await;
+                if tx.write_all(b"line\n").await.is_err() {
+                    return;
+                }
+            }
+            if stall_after_lines {
+                tokio::time::sleep(Duration::from_secs(30)).await;
+            }
+        });
+        let mut reader = BufReader::new(rx).lines();
+        let ceiling_at = tokio::time::Instant::now() + ceiling;
+        let mut got = 0;
+        loop {
+            match next_line_within(&mut reader, lease, ceiling_at).await {
+                Ok(Some(_)) => got += 1,
+                Ok(None) => return (got, None),
+                Err(stall) => return (got, Some(stall)),
+            }
+        }
+    }
+
+    const GAP: Duration = Duration::from_millis(60);
+    const LEASE: Duration = Duration::from_millis(200);
+
+    // Arm A: ceiling == lease reproduces the absolute cap this replaced.
+    // Arm B: the shipped ceiling factor. Same producer, one variable.
+    #[tokio::test]
+    async fn slow_but_producing_call_dies_under_absolute_cap_and_lives_under_lease() {
+        let a = drain(GAP, 8, LEASE, LEASE, false).await;
+        assert_eq!(
+            a.1,
+            Some(StreamStall::Ceiling),
+            "arm A kills a healthy stream"
+        );
+        assert!(a.0 < 8);
+        let b = drain(GAP, 8, LEASE, LEASE * LEASE_CEILING_FACTOR, false).await;
+        assert_eq!(b, (8, None), "arm B reads the whole stream");
+    }
+
+    // Floor: the failure the cap exists for must still be caught by both arms.
+    #[tokio::test]
+    async fn silent_call_is_still_killed_by_the_lease() {
+        let started = tokio::time::Instant::now();
+        let b = drain(GAP, 3, LEASE, LEASE * LEASE_CEILING_FACTOR, true).await;
+        assert_eq!(b, (3, Some(StreamStall::Silent)));
+        assert!(
+            started.elapsed() < LEASE * LEASE_CEILING_FACTOR,
+            "dead call must not wait for the ceiling"
+        );
+    }
+
+    #[tokio::test]
+    async fn endless_producer_is_stopped_by_the_ceiling() {
+        let b = drain(GAP, 10_000, LEASE, LEASE * LEASE_CEILING_FACTOR, false).await;
+        assert_eq!(b.1, Some(StreamStall::Ceiling));
+    }
+
+    #[test]
+    fn lease_is_capped_but_ceiling_scales_with_the_caller() {
+        assert_eq!(stream_lease(120), Duration::from_secs(120));
+        assert_eq!(stream_lease(600), Duration::from_secs(300));
+        assert_eq!(lease_ceiling(600), Duration::from_secs(1800));
+    }
 }

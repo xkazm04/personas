@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { openExternalUrl } from "@/api/system/system";
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
+import { getActiveTranslations, interpolate } from '@/i18n/useTranslation';
 
 
 /**
@@ -38,7 +39,7 @@ export interface OAuthPollingConfig<
   /** Build credential field values from a successful poll result. */
   extractValues: (poll: TPollResult, prev: Record<string, string>) => Record<string, string>;
   /** Human-readable provider label (e.g. "Google", "GitHub"). */
-  label: string;
+  label: string | (() => string);
   /** Timeout (ms) for the start call. 0 = no timeout. Default 12000. */
   startTimeoutMs?: number;
 }
@@ -86,6 +87,10 @@ export function useOAuthPolling<
   // Stable refs so the poll effect doesn't re-trigger on config changes
   const configRef = useRef(config);
   configRef.current = config;
+  const currentLabel = useCallback(() => {
+    const label = configRef.current.label;
+    return typeof label === 'function' ? label() : label;
+  }, []);
 
   // Ref-based guard so the stable startConsent callback sees current authorizing state
   const isAuthorizingRef = useRef(false);
@@ -139,7 +144,7 @@ export function useOAuthPolling<
             isAuthorizingRef.current = false;
             setMessage({
               success: false,
-              message: `${configRef.current.label} authorization timed out. Please try again.`,
+              message: interpolate(getActiveTranslations().errors.oauth_timed_out, { provider: currentLabel() }),
             });
             return;
           }
@@ -157,14 +162,14 @@ export function useOAuthPolling<
           setCompletedAt(new Date().toLocaleTimeString());
           setMessage({
             success: true,
-            message: `${configRef.current.label} authorization completed.`,
+            message: interpolate(getActiveTranslations().errors.oauth_completed, { provider: currentLabel() }),
           });
           return;
         }
 
         setMessage({
           success: false,
-          message: result.error || `${configRef.current.label} authorization failed. Please try again.`,
+          message: result.error || interpolate(getActiveTranslations().errors.oauth_failed, { provider: currentLabel() }),
         });
       } catch (err) {
         if (controller.signal.aborted || gen !== generationRef.current) return;
@@ -173,7 +178,7 @@ export function useOAuthPolling<
         isAuthorizingRef.current = false;
         setMessage({
           success: false,
-          message: err instanceof Error ? err.message : 'Failed to check OAuth status.',
+          message: extractErrorDetail(err),
         });
       }
     };
@@ -184,7 +189,7 @@ export function useOAuthPolling<
       controller.abort();
       if (timer) window.clearTimeout(timer);
     };
-  }, [sessionId, isDocumentVisible]);
+  }, [sessionId, isDocumentVisible, currentLabel]);
 
   const startConsent = useCallback((...args: TStartArgs) => {
     // Prevent concurrent re-entry (e.g. double-click). The ref is used instead
@@ -192,7 +197,8 @@ export function useOAuthPolling<
     if (isAuthorizingRef.current) return;
     isAuthorizingRef.current = true;
 
-    const { startFn, label, startTimeoutMs = 12000 } = configRef.current;
+    const { startFn, startTimeoutMs = 12000 } = configRef.current;
+    const label = currentLabel();
 
     // Abort any existing poll from a previous session and invalidate its generation
     abortRef.current?.abort();
@@ -200,7 +206,7 @@ export function useOAuthPolling<
 
     setIsAuthorizing(true);
     setCompletedAt(null);
-    setMessage({ success: false, message: `Starting ${label} authorization...` });
+    setMessage({ success: false, message: interpolate(getActiveTranslations().errors.oauth_starting, { provider: label }) });
 
     const startPromise = startFn(...args);
     const withTimeout = startTimeoutMs > 0
@@ -208,7 +214,7 @@ export function useOAuthPolling<
           startPromise,
           new Promise<never>((_, reject) => {
             clearStartTimeout();
-            startTimeoutRef.current = window.setTimeout(() => reject(new Error('OAuth session start timed out.')), startTimeoutMs);
+            startTimeoutRef.current = window.setTimeout(() => reject(new Error(getActiveTranslations().errors.oauth_start_timeout)), startTimeoutMs);
           }),
         ])
       : startPromise;
@@ -218,7 +224,7 @@ export function useOAuthPolling<
         clearStartTimeout();
         const safeAuthUrl = sanitizeExternalUrl(oauthStart.authUrl);
         if (!safeAuthUrl) {
-          throw new Error(`Blocked unsafe ${configRef.current.label} authorization URL.`);
+          throw new Error(interpolate(getActiveTranslations().errors.oauth_unsafe_url, { provider: currentLabel() }));
         }
 
         let opened = false;
@@ -235,12 +241,12 @@ export function useOAuthPolling<
         }
 
         if (!opened) {
-          throw new Error(`Could not open ${configRef.current.label} consent page. Please allow popups or external browser open.`);
+          throw new Error(interpolate(getActiveTranslations().errors.oauth_popup_blocked, { provider: currentLabel() }));
         }
 
         setMessage({
           success: false,
-          message: `${configRef.current.label} consent page opened. Complete authorization in your browser.`,
+          message: interpolate(getActiveTranslations().errors.oauth_consent_opened, { provider: currentLabel() }),
         });
         setSessionId(oauthStart.sessionId);
       })
@@ -258,10 +264,10 @@ export function useOAuthPolling<
         const detail = extractErrorDetail(err);
         setMessage({
           success: false,
-          message: `${configRef.current.label} authorization did not start: ${detail}`,
+          message: interpolate(getActiveTranslations().errors.oauth_not_started, { provider: currentLabel(), detail }),
         });
       });
-  }, [clearStartTimeout]);
+  }, [clearStartTimeout, currentLabel]);
 
   const reset = useCallback(() => {
     clearStartTimeout();
@@ -297,5 +303,5 @@ function extractErrorDetail(err: unknown): string {
     if (typeof obj.error === 'string' && obj.error.length > 0) return obj.error;
     if (typeof obj.message === 'string' && obj.message.length > 0) return obj.message;
   }
-  return 'unknown error';
+  return getActiveTranslations().errors.oauth_unknown_error;
 }

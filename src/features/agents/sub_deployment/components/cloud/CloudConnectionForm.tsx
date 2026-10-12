@@ -1,6 +1,6 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { Wifi, Stethoscope, CheckCircle2, XCircle, Clock } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { FormField } from '@/features/shared/components/forms/FormField';
 import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
@@ -113,41 +113,28 @@ export function CloudConnectionForm({
       </FormField>
 
       <div className="flex items-center gap-2">
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          size="md"
           onClick={onConnect}
-          disabled={isConnecting || !url.trim() || !apiKey.trim()}
-          className="flex items-center gap-2 px-4 py-2 typo-body rounded-modal bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          disabled={!url.trim() || !apiKey.trim()}
+          loading={isConnecting}
+          loadingLabel={t.deployment.connecting}
         >
-          {isConnecting ? (
-            <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
-              <LoadingSpinner />
-              <span>{t.deployment.connecting}</span>
-              <span className="sr-only">{t.deployment.sr_connecting}</span>
-            </span>
-          ) : (
-            dt.connect
-          )}
-        </button>
+          {dt.connect}
+        </Button>
 
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="md"
           onClick={onDiagnose}
-          disabled={isDiagnosing || !url.trim() || !apiKey.trim()}
-          className="flex items-center gap-2 px-4 py-2 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          disabled={!url.trim() || !apiKey.trim()}
+          loading={isDiagnosing}
+          loadingLabel={dt.diagnosing}
+          icon={<Stethoscope className="w-4 h-4" />}
         >
-          {isDiagnosing ? (
-            <span className="inline-flex items-center gap-2">
-              <LoadingSpinner />
-              <span>{dt.diagnosing}</span>
-            </span>
-          ) : (
-            <>
-              <Stethoscope className="w-4 h-4" />
-              {dt.diagnose}
-            </>
-          )}
-        </button>
+          {dt.diagnose}
+        </Button>
       </div>
 
       {diagnostics && <DiagnosticsPanel diagnostics={diagnostics} />}

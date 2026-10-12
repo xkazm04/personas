@@ -691,7 +691,8 @@
     "dynamic_budgets_hint": "Admite ejecuciones de flota según los presupuestos en vivo de máquina, GPU y plan usando el perfil de recursos de cada mandato. Desactive para volver al límite de sesión fijo indicado arriba.",
     "dynamic_budgets_label": "Presupuestos dinámicos de flota",
     "strict_queue_order_hint": "Haz que cada envío espere su turno: una ejecución nueva se pone detrás de cualquier ejecución en espera que ya esté lista para arrancar, incluso si la flota tiene un hueco libre. El coste es real. Ese hueco puede quedarse inactivo hasta la siguiente ronda de promoción, y una ejecución que acabas de lanzar puede no arrancar aunque la flota parezca libre. Nunca se espera detrás de una ejecución retenida por un presupuesto o por su propia hora de inicio.",
-    "strict_queue_order_label": "Orden estricto de la cola"
+    "strict_queue_order_label": "Orden estricto de la cola",
+    "load_failed": "No se pudo leer el valor guardado, así que el control muestra un valor predeterminado, no el guardado. Recarga antes de cambiarlo."
   },
   "notifications": {
     "digest_description": "Notificación semanal que resume problemas de salud de todos los agentes con una puntuación de salud total",

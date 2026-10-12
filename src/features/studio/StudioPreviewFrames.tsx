@@ -9,12 +9,16 @@ import StudioPickComposer from './StudioPickComposer';
 // Warm previews (every live tab stays mounted; only the active one is shown)
 // plus the A3 orb pointer over the element a question is about. Shared by both
 // Studio layouts; the caller positions it (it fills its nearest positioned box).
+// `hidden` keeps every frame mounted and warm but out of sight and out of the
+// tab order, so the plan sheet can take the frame and the app comes back at once.
 export default function StudioPreviewFrames({
   preview,
   showPointer = true,
+  hidden = false,
 }: {
   preview: StudioPreviewState;
   showPointer?: boolean;
+  hidden?: boolean;
 }) {
   const { t } = useTranslation();
   const { previewUrls, previewRoutes, iframeNonces, activeId, active, live, pointerRect } = preview;
@@ -31,6 +35,7 @@ export default function StudioPreviewFrames({
         const route = previewRoutes[id] ?? '/';
         const nonce = iframeNonces[id] ?? 0;
         const isActive = id === activeId;
+        const shown = isActive && !hidden;
         return (
           <iframe
             key={`${id}-${nonce}`}
@@ -38,18 +43,19 @@ export default function StudioPreviewFrames({
             onLoad={() => setLoaded((m) => (m[`${id}-${nonce}`] ? m : { ...m, [`${id}-${nonce}`]: true }))}
             src={`${previewUrls[id]}${route === '/' ? '' : route}`}
             data-testid={isActive ? 'studio-preview' : undefined}
+            data-hidden={hidden || undefined}
             title={t.studio.preview_frame_title}
-            aria-hidden={!isActive}
+            aria-hidden={!shown}
             // `inert` removes a hidden warm preview from focus AND the a11y tree;
             // opacity/pointer-events alone left it reachable by the Tab key.
-            {...(isActive ? {} : { inert: true, tabIndex: -1 })}
+            {...(shown ? {} : { inert: true, tabIndex: -1 })}
             className={`absolute inset-0 h-full w-full border-0 bg-white transition-opacity duration-200 ${
-              isActive ? 'opacity-100' : 'pointer-events-none opacity-0'
+              shown ? 'opacity-100' : 'pointer-events-none opacity-0'
             }`}
           />
         );
       })}
-      {activeKey && !loaded[activeKey] && (
+      {!hidden && activeKey && !loaded[activeKey] && (
         <motion.div
           aria-hidden
           initial={{ opacity: 0 }}
@@ -67,10 +73,10 @@ export default function StudioPreviewFrames({
           <p className="typo-caption text-foreground/90">{guideStrings(t).preview_loading}</p>
         </motion.div>
       )}
-      {showPointer && live && active?.question && pointerRect ? (
+      {showPointer && !hidden && live && active?.question && pointerRect ? (
         <div
           data-testid="studio-orb-pointer"
-          className="pointer-events-none absolute z-20 rounded-lg ring-2 ring-primary transition-all duration-300"
+          className="pointer-events-none absolute z-20 rounded-card ring-2 ring-primary transition-all duration-300"
           style={{ left: pointerRect.x, top: pointerRect.y, width: pointerRect.width, height: pointerRect.height }}
         >
           <span className="absolute -right-2.5 -top-2.5 flex h-7 w-7 items-center justify-center">
@@ -80,7 +86,7 @@ export default function StudioPreviewFrames({
             </span>
           </span>
         </div>
-      ) : showPointer && live && active?.question && active.decisionArea ? (
+      ) : showPointer && !hidden && live && active?.question && active.decisionArea ? (
         <div
           className={`pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 ${
             active.decisionArea === 'top' ? 'top-16' : active.decisionArea === 'bottom' ? 'bottom-32' : 'top-1/2 -translate-y-1/2'
@@ -94,7 +100,7 @@ export default function StudioPreviewFrames({
           </span>
         </div>
       ) : null}
-      <StudioPickComposer preview={preview} />
+      {!hidden && <StudioPickComposer preview={preview} />}
     </>
   );
 }

@@ -61,6 +61,7 @@
     },
     "brainiac/crates/brainiac-server/src/openapi.rs": {"count":1,"sections":[],"lines":["425"],"contexts":["it.** `brainiac/crates/brainiac-server/src/openapi.rs:425`:"],"resolved":false},
     "census-ctr-9b2e.json": {"count":1,"sections":[9],"contexts":["`census-ctr-9b2e.json`. **The full registry was NOT run**, per the doctrine."],"resolved":false},
+    "commandNames.generated.ts": {"count":3,"sections":[2,3,12],"lines":["1-4"],"contexts":["count the way `commandNames.generated.ts:1-4` does, but **count it as documentation**: it is present"],"resolved":false},
     "companion/tours.rs": {"count":1,"sections":[0],"lines":["98"],"contexts":["`companion/tours.rs:98` refuses any anchor outside `TOUR_TESTIDS`, *and* `tours.rs:331` splices the"],"resolved":false},
     "console/src/lib/api-schema.d.ts": {"count":2,"sections":[],"contexts":["(`openapi.json`) is verified by a unit test, and hop 2 (`console/src/lib/api-schema.d.ts`, generated"],"resolved":false},
     "context-map.json": {
@@ -74,6 +75,7 @@
     "docs/": {"count":1,"sections":[9],"contexts":["`src/`, `src-tauri/`, `docs/` or `.claude/` is a value in `TASKS` **or** carries an allowlist entry"],"resolved":false,"isDir":true},
     "docs/concepts/shared-facts.json": {"count":3,"sections":[7],"contexts":["| `scripts/docs/measure-shared-facts.mjs` | `docs/concepts/shared-facts.json` | **nothing** | **STALE** |"],"resolved":false},
     "docs/measure-shared-facts.mjs": {"count":1,"sections":[],"contexts":["| **`docs/concepts/shared-facts.json`** | `docs/measure-shared-facts.mjs` | **nothing** | **STALE — `tsFiles` 4828 vs 4829** |"],"resolved":false},
+    "enSectionStrings.ts": {"count":1,"sections":[7],"contexts":["`enSectionStrings.ts`, which lives in a directory `removeDir` does not touch — can ever take the fast"],"resolved":false},
     "lefthook.yml": {"count":3,"sections":[7,9],"contexts":["**four** `tauri.*.conf.json`, `package.json`'s 84 scripts, `lefthook.yml`, `.github/workflows/ci.yml`."]},
     "measure-shared-facts.mjs": {"count":1,"sections":[7],"contexts":["`measuredAt: 2026-08-15 / commit 1e714f817`; re-running `measure-shared-facts.mjs` gives"],"resolved":false},
     "openapi.json": {"count":4,"sections":[],"contexts":["(`openapi.json`) is verified by a unit test, and hop 2 (`console/src/lib/api-schema.d.ts`, generated"],"resolved":false},
@@ -354,13 +356,7 @@
       "resolvedFrom": "basename",
       "verbatim": "pulseGlyphData.ts"
     },
-    "src/i18n/generated/enSectionStrings.ts": {
-      "count": 2,
-      "sections": [7],
-      "contexts": ["`enSectionStrings.ts`, which lives in a directory `removeDir` does not touch — can ever take the fast"],
-      "resolvedFrom": "basename",
-      "verbatim": "enSectionStrings.ts"
-    },
+    "src/i18n/generated/enSectionStrings.ts": {"count":1,"sections":[],"contexts":["| `src/i18n/generated/enSectionStrings.ts` | `i18n/split-locales.mjs` | `TASKS`, both presets | **FRESH** |"]},
     "src/i18n/generated/types.ts": {"count":1,"sections":[],"contexts":["| `src/i18n/generated/types.ts` | `i18n/gen-types.mjs` | `TASKS`, both presets | **FRESH** |"]},
     "src/i18n/section-locales/**/*.json": {"count":1,"sections":[],"contexts":["| `src/i18n/section-locales/**/*.json` — **793 files** | `i18n/split-locales.mjs` | `TASKS`, both presets | **FRESH — all 793** |"],"resolved":false},
     "src/i18n/useTranslation.ts": {"count":2,"sections":[0,7],"lines":["27"],"contexts":["at run time by `useTranslation.ts:27`'s `import.meta.glob`."],"resolvedFrom":"basename","verbatim":"useTranslation.ts"},
@@ -406,12 +402,12 @@
     },
     "src/lib/bindings/SkillEntry.ts": {"count":3,"sections":[7,12],"contexts":["to a generated file.** `src/lib/bindings/SkillEntry.ts` is modified on `master` right now: the"]},
     "src/lib/commandNames.generated.ts": {
-      "count": 5,
-      "sections": [2,3,12],
+      "count": 2,
+      "sections": [3],
       "lines": ["1-4"],
-      "contexts": ["count the way `commandNames.generated.ts:1-4` does, but **count it as documentation**: it is present"],
-      "resolvedFrom": "basename",
-      "verbatim": "commandNames.generated.ts"
+      "contexts": [
+        "| **`src/lib/commandNames.generated.ts:1-4`** | The best generated header in the repo — generator, re-run command, source file, **and the derived count** (`1585 commands`), which a reader can falsify…"
+      ]
     },
     "src/lib/commandNames.overrides.ts": {"count":1,"sections":[],"contexts":["| `src/lib/commandNames.overrides.ts` | same | same | **FRESH** (`No stale overrides found`) |"]},
     "src/lib/icons/agentIconSprite.generated.ts": {"count":1,"sections":[],"contexts":["| `src/lib/icons/agentIconSprite.generated.ts` | `generate-agent-icon-sprites.mjs` | `TASKS`, both presets | **FRESH** |"]},

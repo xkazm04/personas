@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, CalendarClock, ClipboardCheck, Search } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
@@ -9,6 +9,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTitleBarTray, TrayOverlays } from '@/features/shared/chrome/useTitleBarTray';
+import { TitleBarDecisionTooltip } from '@/features/shared/chrome/TitleBarDecisionTooltip';
 
 const ICON_SIZE = 21;
 
@@ -53,7 +54,11 @@ export default function TitleBarDock() {
           return true;
         case 'r':
           e.preventDefault();
-          tray.toggleReview();
+          // Shift+R: triage everything in the Decision Deck, skipping the hub.
+          tray.openDecisions({
+            triageAll: e.shiftKey,
+            origin: document.querySelector('[data-testid="titlebar-human-review"]'),
+          });
           return true;
         case 'm':
           e.preventDefault();
@@ -95,18 +100,30 @@ export default function TitleBarDock() {
       <CalendarClock size={icon} strokeWidth={1.6} />
     </DockAction>
   );
+  // The Decision Center badge: the roster total, opening Monitor > Activity
+  // (the hub); Shift+click opens the Decision Deck on everything instead. The
+  // tooltip reads the total back as its seven chips and names the shortcut —
+  // it stays inert (a tooltip is never something to click inside).
+  const decisionLabel = tray.quickCount > 0
+    ? tx(t.monitor.dc_consumers_badge_attention, { count: tray.quickCount })
+    : t.monitor.dc_consumers_badge;
   const review = (
     <DockAction
       {...common}
-      onClick={tray.toggleReview}
-      active={tray.reviewOpen}
+      onClick={(e) => tray.openDecisions({ triageAll: e.shiftKey, origin: e.currentTarget })}
       count={tray.quickCount}
       countClass="text-status-warning"
-      label={tray.quickCount > 0 ? tx(t.monitor.review_titlebar_attention, { count: tray.quickCount }) : t.monitor.review_titlebar}
-      title={tray.quickCount > 0 ? tx(t.monitor.review_titlebar_attention, { count: tray.quickCount }) : t.monitor.review_titlebar}
+      label={decisionLabel}
+      title={
+        <>
+          <TitleBarDecisionTooltip heading={decisionLabel} counts={tray.decisionCounts} />
+          <span className="mt-1 block typo-caption" data-testid="titlebar-triage-all-hint">
+            {t.overview.dc_badge_triage_all_hint}
+          </span>
+        </>
+      }
       testId="titlebar-human-review"
       hintKey="R"
-      quickAnswerTrigger
     >
       <ClipboardCheck width={icon} height={icon} strokeWidth={1.6} />
     </DockAction>
@@ -173,14 +190,13 @@ function DockDivider() {
 
 interface DockActionProps {
   children: ReactNode;
-  onClick: () => void;
+  onClick: (e: MouseEvent<HTMLButtonElement>) => void;
   label: string;
-  title: string;
+  title: ReactNode;
   testId: string;
   count?: number;
   countClass?: string;
   active?: boolean;
-  quickAnswerTrigger?: boolean;
   /** Key chip shown under the capsule while keyboard-nav mode is active. */
   hintKey?: string;
   showHint?: boolean;
@@ -201,7 +217,6 @@ function DockAction({
   count = 0,
   countClass,
   active,
-  quickAnswerTrigger,
   hintKey,
   showHint,
 }: DockActionProps) {
@@ -219,7 +234,6 @@ function DockAction({
         aria-pressed={active}
         aria-label={label}
         data-testid={testId}
-        {...(quickAnswerTrigger ? { 'data-quick-answer-trigger': true } : {})}
       >
         {children}
         {countEl}

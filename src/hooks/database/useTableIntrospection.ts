@@ -230,6 +230,8 @@ export function useTableIntrospection({
     const cached = _columnCache.get(cacheKey);
     if (cached) {
       setColumns(cached);
+      setColumnsError(null);
+      setColumnsLoading(false);
       return;
     }
 

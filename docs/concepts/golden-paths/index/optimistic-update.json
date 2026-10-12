@@ -168,14 +168,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "features/agents/sub_editor/libs/useDebouncedSaveGroup.ts"
     },
-    "src/features/companions/athena/inbox/hooks/useInboxActions.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["63,78"],
-      "contexts": ["`useBacklogQueue.ts:105-118`, `useDevToolsActions.ts:56-59`, `useInboxActions.ts:63,78`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "useInboxActions.ts"
-    },
     "src/features/fleet/monitor/channels/useConversation.ts": {
       "count": 3,
       "sections": [0,7],
@@ -390,6 +382,7 @@
       ],
       "resolved": false
     },
+    "useInboxActions.ts": {"count":1,"sections":[7],"lines":["63,78"],"contexts":["`useBacklogQueue.ts:105-118`, `useDevToolsActions.ts:56-59`, `useInboxActions.ts:63,78`,"],"resolved":false},
     "useInstallationRepos.ts": {
       "count": 2,
       "sections": [6,12],

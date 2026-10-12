@@ -46,6 +46,7 @@
     "CommandPanelMessagingRow.tsx": {"count":1,"sections":[7],"lines":["158"],"contexts":["`CommandPanelComposeStep.tsx:95,105` · `CommandPanelMessagingRow.tsx:158` ·"],"resolved":false},
     "CommandPanelToolsRow.tsx": {"count":1,"sections":[7],"lines":["68"],"contexts":["`CommandPanelToolsRow.tsx:68` · `CommandPanelWhenRow.tsx:98` ·"],"resolved":false},
     "CommandPanelWhenRow.tsx": {"count":1,"sections":[7],"lines":["98"],"contexts":["`CommandPanelToolsRow.tsx:68` · `CommandPanelWhenRow.tsx:98` ·"],"resolved":false},
+    "Composer.tsx": {"count":2,"sections":[7],"lines":["233","310"],"contexts":["`TwinPicker.tsx:162`, `FabricSearch.tsx:65`, `Composer.tsx:233` and `Listbox.tsx:137`"],"resolved":false},
     "CreateTemplateModal.tsx": {"count":1,"sections":[7],"contexts":["`CreateTemplateModal.tsx`, `DesignReviewRunner.tsx`, `TeamSynthesisPanel.tsx`,"],"resolved":false},
     "DesignPhaseApplied.tsx": {"count":2,"sections":[4,6],"lines":["32","21-32"],"contexts":["Landing target gets `tabIndex={-1}` (`DesignPhaseApplied.tsx:32`,"],"resolved":false},
     "DesignPhasePreview.tsx": {"count":1,"sections":[4],"lines":["85"],"contexts":["`DesignPhasePreview.tsx:85`, `DimensionPanel.tsx:65`, `SigilEditModal.tsx:93` all do"],"resolved":false},
@@ -68,7 +69,6 @@
     "PrototypeTabs.tsx": {"count":1,"sections":[7],"contexts":["`AuthMethodTabs.tsx` · `TwinVariantTabs.tsx` · `PrototypeTabs.tsx`."],"resolved":false},
     "RecipePlaygroundModal.tsx": {"count":1,"sections":[7],"contexts":["`HealingIssueModal.tsx`, `RecipePlaygroundModal.tsx`."],"resolved":false},
     "ReportPreviewDrawer.tsx": {"count":1,"sections":[7],"lines":["215"],"contexts":["consumers), `TestReportModal.tsx:68`, `ReportPreviewDrawer.tsx:215`,"],"resolved":false},
-    "ReviewFocusFlow.tsx": {"count":2,"sections":[6,7],"lines":["217"],"contexts":["`ReviewFocusFlow.tsx:217` and `BacklogFocusDeck.tsx:95` (route surfaces at"],"resolved":false},
     "StickyNoteNode.tsx": {"count":1,"sections":[7],"lines":["127"],"contexts":["`TerminalSearchBar.tsx:83` · `StickyNoteNode.tsx:127` · `DraftEditStep.tsx:107` ·"],"resolved":false},
     "TagEditorModal.tsx": {"count":1,"sections":[7],"lines":["114"],"contexts":["`AddToScopeModal.tsx:60` · `TagEditorModal.tsx:114` · `Composer.tsx:310` ·"],"resolved":false},
     "TeamCertCard.tsx": {"count":1,"sections":[7],"lines":["74"],"contexts":["`TeamCertCard.tsx:74` · `TimelinePanel.tsx:447` · `TimelineScrubber.tsx:129` ·"],"resolved":false},
@@ -78,7 +78,13 @@
     "TwinVariantTabs.tsx": {"count":1,"sections":[7],"contexts":["`AuthMethodTabs.tsx` · `TwinVariantTabs.tsx` · `PrototypeTabs.tsx`."],"resolved":false},
     "UseCaseChannelDropdown.tsx": {"count":1,"sections":[8],"lines":["15"],"contexts":["(`AddChannelButton.tsx:22`, `UseCaseChannelDropdown.tsx:15`,"],"resolved":false},
     "UseCaseDetailPanel.tsx": {"count":1,"sections":[7],"lines":["237"],"contexts":["`FixtureDropdownList.tsx:32` · `UseCaseDetailPanel.tsx:237` ·"],"resolved":false},
-    "WorkspaceTabs.tsx": {"count":1,"sections":[7],"lines":["18"],"contexts":["`StudioTabBar.tsx:17` · `WorkspaceTabs.tsx:18` · `ModeTabBar.tsx` ·"],"resolved":false},
+    "agents/quick-answer/triage/deck/useDeckDialog.tsx": {
+      "count": 1,
+      "sections": [7],
+      "contexts": ["| `agents/quick-answer/triage/deck/useDeckDialog.tsx` | **legitimate** — documented superset, and the only complete implementation in the repo |"],
+      "resolved": false
+    },
+    "deckKeyboardOwnership.test.tsx": {"count":1,"sections":[8],"contexts":["`deckKeyboardOwnership.test.tsx`. `BaseModal` has no test asserting entry focus,"],"resolved":false},
     "eslint-rules/role-button-requires-keydown.cjs": {"count":3,"sections":[3,8,9],"lines":["47-63"],"contexts":["- **`eslint-rules/role-button-requires-keydown.cjs`** — registered at **error** in"]},
     "eslint.config.js": {"count":2,"sections":[3,8],"lines":["106"],"contexts":["`eslint.config.js:106`. Currently the only machine check touching this situation. It"]},
     "scripts/census/run-census.mjs": {
@@ -95,17 +101,7 @@
     "src/features/agents/components/PersonaSelector.tsx": {"count":1,"sections":[7],"lines":["103"],"contexts":["`CapabilityRowHeader.tsx:32,39` · `PersonaSelector.tsx:103` ·"],"resolvedFrom":"basename","verbatim":"PersonaSelector.tsx"},
     "src/features/agents/components/PersonaSelectorModal.tsx": {"count":1,"sections":[7],"lines":["96"],"contexts":["`PersonaSelectorModal.tsx:96` · `DialogueComposePanel.tsx:155` ·"],"resolvedFrom":"basename","verbatim":"PersonaSelectorModal.tsx"},
     "src/features/agents/components/QuickEditPanel.tsx": {"count":1,"sections":[7],"lines":["31"],"contexts":["Against **6** correct `requestAnimationFrame` sites (`QuickEditPanel.tsx:31`,"],"resolvedFrom":"basename","verbatim":"QuickEditPanel.tsx"},
-    "src/features/agents/quick-answer/triage/__tests__/deckDialog.test.tsx": {"count":1,"sections":[8],"contexts":["`triage/__tests__/deckDialog.test.tsx` (trap cycling and trigger restore) and"],"resolvedFrom":"suffix","verbatim":"triage/__tests__/deckDialog.test.tsx"},
-    "src/features/agents/quick-answer/triage/__tests__/deckKeyboardOwnership.test.tsx": {"count":1,"sections":[8],"contexts":["`deckKeyboardOwnership.test.tsx`. `BaseModal` has no test asserting entry focus,"],"resolvedFrom":"basename","verbatim":"deckKeyboardOwnership.test.tsx"},
-    "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx": {
-      "count": 3,
-      "sections": [6,7],
-      "lines": ["607"],
-      "contexts": ["`useDeckControls.tsx:607` (the only `exclusive: true` adopter, at priority 70),"],
-      "resolvedFrom": "basename",
-      "verbatim": "useDeckControls.tsx"
-    },
-    "src/features/agents/quick-answer/triage/deck/useDeckDialog.tsx": {"count":7,"sections":[3,4,6,7,8],"lines":["98-107","85","83-96"],"contexts":["- **`src/features/agents/quick-answer/triage/deck/useDeckDialog.tsx`** — the reference"]},
+    "src/features/agents/quick-answer/triage/deck/useDeckDialog.tsx": {"count":2,"sections":[3,6],"contexts":["- **`src/features/agents/quick-answer/triage/deck/useDeckDialog.tsx`** — the reference"],"resolved":false},
     "src/features/agents/sub_activity/ActivityFilters.tsx": {
       "count": 1,
       "sections": [7],
@@ -173,14 +169,6 @@
       "resolvedFrom": "basename",
       "verbatim": "LabHistoryTable.tsx"
     },
-    "src/features/companions/athena/Composer.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["233","310"],
-      "contexts": ["`TwinPicker.tsx:162`, `FabricSearch.tsx:65`, `Composer.tsx:233` and `Listbox.tsx:137`"],
-      "resolvedFrom": "basename",
-      "verbatim": "Composer.tsx"
-    },
     "src/features/companions/athena/FleetBoldnessDial.tsx": {
       "count": 1,
       "sections": [7],
@@ -193,6 +181,7 @@
     "src/features/companions/athena/guidance/useGuidanceRunner.ts": {"count":1,"sections":[7],"lines":["168"],"contexts":["`Gallery2D.tsx:262` · `useGuidanceRunner.ts:168` · `useFleetHotkeys.ts:82` ·"],"resolvedFrom":"basename","verbatim":"useGuidanceRunner.ts"},
     "src/features/companions/overseer/components/AddToScopeModal.tsx": {"count":1,"sections":[7],"lines":["60"],"contexts":["`AddToScopeModal.tsx:60` · `TagEditorModal.tsx:114` · `Composer.tsx:310` ·"],"resolvedFrom":"basename","verbatim":"AddToScopeModal.tsx"},
     "src/features/fleet/monitor/channels/map/ChannelMap.tsx": {"count":1,"sections":[7],"lines":["242"],"contexts":["`N8nUploadStep.tsx:203` · `ChannelMap.tsx:242`."],"resolvedFrom":"basename","verbatim":"ChannelMap.tsx"},
+    "src/features/fleet/monitor/grid/prototype/entry-e/WorkspaceTabs.tsx": {"count":1,"sections":[7],"lines":["18"],"contexts":["`StudioTabBar.tsx:17` · `WorkspaceTabs.tsx:18` · `ModeTabBar.tsx` ·"],"resolvedFrom":"basename","verbatim":"WorkspaceTabs.tsx"},
     "src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx": {
       "count": 1,
       "sections": [7],
@@ -209,6 +198,7 @@
       "resolvedFrom": "basename",
       "verbatim": "IncidentsInbox.tsx"
     },
+    "src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx": {"count":2,"sections":[6,7],"lines":["217"],"contexts":["`ReviewFocusFlow.tsx:217` and `BacklogFocusDeck.tsx:95` (route surfaces at"],"resolvedFrom":"basename","verbatim":"ReviewFocusFlow.tsx"},
     "src/features/overview/sub_manual-review/components/backlog/BacklogDetailModal.tsx": {"count":1,"sections":[7],"lines":["110"],"contexts":["`PracticeDetailModal.tsx:99` · `BacklogDetailModal.tsx:110` ·"],"resolvedFrom":"basename","verbatim":"BacklogDetailModal.tsx"},
     "src/features/overview/sub_manual-review/components/backlog/BacklogFocusDeck.tsx": {"count":2,"sections":[6,7],"lines":["95"],"contexts":["`ReviewFocusFlow.tsx:217` and `BacklogFocusDeck.tsx:95` (route surfaces at"],"resolvedFrom":"basename","verbatim":"BacklogFocusDeck.tsx"},
     "src/features/overview/sub_memories/components/MemoryCard.tsx": {"count":1,"sections":[7],"lines":["174,184"],"contexts":["`MemoryCard.tsx:174,184` · `N8nParserResultsSections.tsx:27,72,126` ·"],"resolvedFrom":"basename","verbatim":"MemoryCard.tsx"},
@@ -582,6 +572,9 @@
       "verbatim": "globals.css"
     },
     "templates/draft-editor/DraftEditStep.tsx": {"count":1,"sections":[7],"lines":["119,129"],"contexts":["- **`templates/draft-editor/DraftEditStep.tsx:119,129` (deleted 2026-09-25) — the single most severe"],"resolved":false},
+    "triage/__tests__/deckDialog.test.tsx": {"count":1,"sections":[8],"contexts":["`triage/__tests__/deckDialog.test.tsx` (trap cycling and trigger restore) and"],"resolved":false},
+    "useDeckControls.tsx": {"count":3,"sections":[6,7],"lines":["607"],"contexts":["`useDeckControls.tsx:607` (the only `exclusive: true` adopter, at priority 70),"],"resolved":false},
+    "useDeckDialog.tsx": {"count":4,"sections":[4,7,8],"lines":["98-107","85","83-96"],"contexts":["add a `recoverFocus()` on the `useDeckDialog.tsx:98-107` model."],"resolved":false},
     "useDialogFocusTrap.ts": {"count":3,"sections":[5,8],"lines":["65-90"],"contexts":["for restoration (`useDialogFocusTrap.ts:65-90`), and a global `*:focus-visible`"],"resolved":false},
     "useFocusTrap.ts": {"count":1,"sections":[8],"lines":["25-30"],"contexts":["`useFocusTrap.ts:25-30` has exactly this prop** — independent confirmation the API"],"resolved":false},
     "useTimelineKeyboard.ts": {"count":1,"sections":[7],"lines":["122"],"contexts":["`DriveImageLightbox.tsx:178` · `useTimelineKeyboard.ts:122` · `Gallery3D.tsx:90` ·"],"resolved":false}

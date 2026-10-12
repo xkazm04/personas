@@ -20,10 +20,10 @@
     "7.K The model-tier advisor cannot set the model tier",
     "7.L The Persona Core model/effort picker writes into the prompt"
   ],
-  "ruleIds": ["bare-model-id-literal","hardcoded-model-choice-label","hardcoded-model-choice-label-positive-control"],
+  "ruleIds": ["bare-model-id-literal","hardcoded-model-choice-label","hardcoded-model-choice-label-positive-control","model-literal-outside-class-table"],
   "ruleIdsFrom": "section-9",
   "sections": [0,1,2,3,4,5,6,7,8,9,12,13],
-  "citationCount": 229,
+  "citationCount": 230,
   "triggers": [
     "\"let the user pick the model\", \"add a model dropdown\", \"which tier should this run on\"",
     "\"make this one use Opus\", \"this can run on Haiku, it's just classification\"",
@@ -137,6 +137,13 @@
     "policy_tuning.rs": {"count":1,"sections":[7],"contexts":["(`model_routing.rs:136`), has a settings UI, has a self-tuning writer (`policy_tuning.rs`), and a"],"resolved":false},
     "prompt/capabilities.rs": {"count":1,"sections":[13],"lines":["24"],"contexts":["`auto_triage.rs:268`, `eval.rs:607`, `prompt/capabilities.rs:24`, `test_runner/lab.rs:21`,"],"resolved":false},
     "prompt/mod.rs": {"count":2,"sections":[4,7],"lines":["1849","1849-1852"],"contexts":["unit test that guards against exactly this (`prompt/mod.rs:1849`) runs *inside* the builder, one frame"],"resolved":false},
+    "runner/mod.rs": {
+      "count": 10,
+      "sections": [0,3,6,7],
+      "lines": ["185","340-359","1806-1820","1802-1806","186"],
+      "contexts": ["(`runner/mod.rs:185`) → the sonnet floor (`runner/mod.rs:340-359`) → `build_cli_args_inner`"],
+      "resolved": false
+    },
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["Run against a private registry with a composer-unique filename (never `scripts/census/rules.json`, per"]},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[9],"contexts":["`scripts/check-csp-hosts.mjs` exists for exactly this class. `client-rule-mirroring` §9 independently"]},
     "scripts/i18n/check-coverage.mjs": {
@@ -166,6 +173,13 @@
     "shared/src/prompt.ts": {"count":1,"sections":[],"lines":["473-475"],"contexts":["`buildCliArgs` correctly emits `args.push('--model', modelProfile.model)` (`shared/src/prompt.ts:473-475`)."],"resolved":false},
     "shared/src/types.ts": {"count":1,"sections":[],"lines":["56"],"contexts":["typed field (`shared/src/types.ts:56`), persisted (`db.ts:245`), validated (`httpApi.ts:2205-2208`), and"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["Sweep: all **963** non-generated Rust files under `src-tauri/` and all **3,793** `.ts`/`.tsx` files under `src/`"],"resolved":false,"isDir":true},
+    "src-tauri/core/src/model_class.rs": {
+      "count": 1,
+      "sections": [9],
+      "contexts": [
+        "Registered 2026-10-08 with the CallClass table (`src-tauri/core/src/model_class.rs`, measurement in [`docs/tests/model-bench/haiku-5-5.md`](../../tests/model-bench/haiku-5-5.md)). `bare-model-id-lite…"
+      ]
+    },
     "src-tauri/core/src/model_ids.rs": {"count":1,"sections":[13],"contexts":["**The one way:** `src-tauri/core/src/model_ids.rs`."]},
     "src-tauri/core/src/types.rs": {
       "count": 3,
@@ -218,6 +232,14 @@
       "verbatim": "engine/src/config_merge.rs"
     },
     "src-tauri/engine/src/cost.rs": {"count":3,"sections":[7],"lines":["15-60"],"contexts":["| price table (Rust) | `engine/src/cost.rs:15-60` | substring → price |"],"resolvedFrom":"suffix","verbatim":"engine/src/cost.rs"},
+    "src-tauri/engine/src/failover.rs": {
+      "count": 3,
+      "sections": [7,13],
+      "lines": ["619-625","638-642","634"],
+      "contexts": ["`FailoverCandidate` (`failover.rs:619-625`) carries `model: Option<String>` and **no effort**, so a"],
+      "resolvedFrom": "basename",
+      "verbatim": "failover.rs"
+    },
     "src-tauri/engine/src/prompt/capabilities.rs": {
       "count": 4,
       "sections": [3,6,7],
@@ -313,14 +335,6 @@
       "resolvedFrom": "basename",
       "verbatim": "fix_pass.rs"
     },
-    "src-tauri/src/engine/failover.rs": {
-      "count": 5,
-      "sections": [7,13],
-      "lines": ["638-642","619-625","634"],
-      "contexts": ["`src/engine/failover.rs` (model chain), `engine/src/test_runner.rs` (lab cells),"],
-      "resolvedFrom": "suffix",
-      "verbatim": "src/engine/failover.rs"
-    },
     "src-tauri/src/engine/persona_brain/sleep_cycle.rs": {
       "count": 1,
       "sections": [7],
@@ -337,14 +351,7 @@
       "resolvedFrom": "basename",
       "verbatim": "consolidator.rs"
     },
-    "src-tauri/src/engine/runner/mod.rs": {
-      "count": 11,
-      "sections": [0,3,6,7],
-      "lines": ["185","340-359","1806-1820","1802-1806","186"],
-      "contexts": ["`src/companion/athena_reaction.rs`, `src/engine/runner/mod.rs` (model-resolution block),"],
-      "resolvedFrom": "suffix",
-      "verbatim": "src/engine/runner/mod.rs"
-    },
+    "src-tauri/src/engine/runner/mod.rs": {"count":1,"sections":[],"contexts":["`src/companion/athena_reaction.rs`, `src/engine/runner/mod.rs` (model-resolution block),"],"resolvedFrom":"suffix","verbatim":"src/engine/runner/mod.rs"},
     "src/": {"count":2,"sections":[],"contexts":["Sweep: all **963** non-generated Rust files under `src-tauri/` and all **3,793** `.ts`/`.tsx` files under `src/`"],"resolved":false,"isDir":true},
     "src/**/*.{ts,tsx}": {
       "count": 1,
@@ -356,6 +363,7 @@
       "isDir": true
     },
     "src/companion/session.rs": {"count":1,"sections":[7],"lines":["1789"],"contexts":["- `src/companion/session.rs:1789` — `const BUILD_TURN_EFFORT: &str = \"xhigh\";` with the rationale"],"resolved":false},
+    "src/engine/failover.rs": {"count":2,"sections":[7],"lines":["638-642"],"contexts":["`src/engine/failover.rs` (model chain), `engine/src/test_runner.rs` (lab cells),"],"resolved":false},
     "src/features/agents/components/allPersonas/PersonaConfigPanel.tsx": {
       "count": 1,
       "sections": [7],

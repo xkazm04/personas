@@ -12,6 +12,8 @@ import type { DevProjectWallSummary } from "@/lib/bindings/DevProjectWallSummary
 export type MilestoneStatus = "planned" | "active" | "shipped";
 export type MilestoneBucket = "core" | "later" | "never";
 export type MilestoneItemKind = "use_case" | "goal";
+/** A deadline is a milestone whose `targetDate` is a commitment; it requires one. */
+export type MilestoneKind = "milestone" | "deadline";
 
 export async function listMilestones(projectId: string): Promise<DevMilestone[]> {
   return invoke<DevMilestone[]>("dev_tools_list_milestones", { projectId });
@@ -27,6 +29,8 @@ export async function createMilestone(input: {
   description?: string;
   status?: MilestoneStatus;
   targetDate?: string;
+  /** Defaults to `milestone`. A `deadline` is refused without `targetDate`. */
+  kind?: MilestoneKind;
 }): Promise<DevMilestone> {
   return invoke<DevMilestone>("dev_tools_create_milestone", { ...input });
 }

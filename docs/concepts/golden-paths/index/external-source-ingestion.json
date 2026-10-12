@@ -118,6 +118,22 @@
       "resolvedFrom": "suffix",
       "verbatim": "db/src/repos/communication/events.rs"
     },
+    "src-tauri/engine/src/db_query.rs": {
+      "count": 2,
+      "sections": [7,9],
+      "lines": ["1040"],
+      "contexts": ["7 call sites, 2 files: `db_query.rs` (six, for HTTP-transported SQL results) and `smee_relay.rs:376`"],
+      "resolvedFrom": "basename",
+      "verbatim": "db_query.rs"
+    },
+    "src-tauri/engine/src/platforms/n8n.rs": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["259"],
+      "contexts": ["`raw`. That is a real miss of **3 sites** (`kpi_binding.rs:331`, `platforms/n8n.rs:259`,"],
+      "resolvedFrom": "suffix",
+      "verbatim": "platforms/n8n.rs"
+    },
     "src-tauri/engine/src/prompt/mod.rs": {
       "count": 1,
       "sections": [3],
@@ -198,14 +214,6 @@
       "resolvedFrom": "basename",
       "verbatim": "cloud_webhook_relay.rs"
     },
-    "src-tauri/src/engine/db_query.rs": {
-      "count": 2,
-      "sections": [7,9],
-      "lines": ["1040"],
-      "contexts": ["7 call sites, 2 files: `db_query.rs` (six, for HTTP-transported SQL results) and `smee_relay.rs:376`"],
-      "resolvedFrom": "basename",
-      "verbatim": "db_query.rs"
-    },
     "src-tauri/src/engine/discord_poller.rs": {
       "count": 4,
       "sections": [7,9],
@@ -221,14 +229,6 @@
       "contexts": ["`raw`. That is a real miss of **3 sites** (`kpi_binding.rs:331`, `platforms/n8n.rs:259`,"],
       "resolvedFrom": "basename",
       "verbatim": "kpi_binding.rs"
-    },
-    "src-tauri/src/engine/platforms/n8n.rs": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["259"],
-      "contexts": ["`raw`. That is a real miss of **3 sites** (`kpi_binding.rs:331`, `platforms/n8n.rs:259`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "platforms/n8n.rs"
     },
     "src-tauri/src/engine/polling.rs": {
       "count": 8,

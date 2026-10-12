@@ -81,6 +81,10 @@ export function useRoutingState({
   // live cables). Events only enrich source labels and must not hold first paint.
   const [triggersLoading, setTriggersLoading] = useState(true);
   const [subsLoading, setSubsLoading] = useState(true);
+  // A failed roster fetch must not read as "no routes yet": the ledger shows a
+  // retry state instead of the first-run illustration.
+  const [triggersFailed, setTriggersFailed] = useState(false);
+  const [subsFailed, setSubsFailed] = useState(false);
 
   const [addPersonaForEvent, setAddPersonaForEvent] = useState<AddPersonaTarget | null>(null);
   const [disconnectTarget, setDisconnectTarget] = useState<DisconnectTarget | null>(null);
@@ -94,11 +98,17 @@ export function useRoutingState({
     let stale = false;
     listAllTriggers(STUDIO_TRIGGER_LIMIT)
       .then((t) => { if (!stale) setAllTriggers(t); })
-      .catch(silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:listAllTriggers"))
+      .catch((err) => {
+        if (!stale) setTriggersFailed(true);
+        silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:listAllTriggers")(err);
+      })
       .finally(() => { if (!stale) setTriggersLoading(false); });
     listAllSubscriptions(STUDIO_SUB_LIMIT)
       .then((subs) => { if (!stale) setSubscriptions(subs); })
-      .catch(silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:listAllSubscriptions"))
+      .catch((err) => {
+        if (!stale) setSubsFailed(true);
+        silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:listAllSubscriptions")(err);
+      })
       .finally(() => { if (!stale) setSubsLoading(false); });
     listEvents(STUDIO_EVENT_LIMIT)
       .then((e) => { if (!stale) setRecentEvents(e); })
@@ -111,14 +121,20 @@ export function useRoutingState({
     // (law 1) and a slow events page cannot hold a trigger/sub refresh.
     await Promise.all([
       listAllTriggers(STUDIO_TRIGGER_LIMIT)
-        .then(setAllTriggers)
-        .catch(silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:reloadTriggers")),
+        .then((rows) => { setAllTriggers(rows); setTriggersFailed(false); })
+        .catch((err) => {
+          setTriggersFailed(true);
+          silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:reloadTriggers")(err);
+        }),
       listEvents(STUDIO_EVENT_LIMIT)
         .then(setRecentEvents)
         .catch(silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:reloadEvents")),
       listAllSubscriptions(STUDIO_SUB_LIMIT)
-        .then(setSubscriptions)
-        .catch(silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:reloadSubs")),
+        .then((rows) => { setSubscriptions(rows); setSubsFailed(false); })
+        .catch((err) => {
+          setSubsFailed(true);
+          silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:reloadSubs")(err);
+        }),
     ]);
   }, []);
 
@@ -183,9 +199,11 @@ export function useRoutingState({
       try {
         await linkPersonaToEvent(personaId, eventType, { useCaseId });
         await reload();
-      } catch (err) { silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:catch3")(err); }
+      } catch (err) {
+        toastCatch('features/triggers/sub_studio/routing/layouts/useRoutingState:addPersona', st.add_listener_failed)(err);
+      }
     },
-    [addPersonaForEvent, reload],
+    [addPersonaForEvent, reload, st.add_listener_failed],
   );
 
   const handleRename = useCallback(
@@ -213,9 +231,12 @@ export function useRoutingState({
         else await unlinkPersonaFromEvent(plan.triggerId);
       }
       await reload();
-    } catch (err) { silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:catch4")(err); }
-    setDisconnectTarget(null);
-  }, [disconnectTarget, reload]);
+      setDisconnectTarget(null);
+    } catch (err) {
+      // The cable is still there: keep the dialog open so the failure is read in context.
+      toastCatch('features/triggers/sub_studio/routing/layouts/useRoutingState:disconnect', st.disconnect_failed)(err);
+    }
+  }, [disconnectTarget, reload, st.disconnect_failed]);
 
   const connectedPersonaIdsForRow = useMemo(() => {
     if (!addPersonaForEvent) return new Set<string>();
@@ -230,6 +251,7 @@ export function useRoutingState({
     personas, teams, personaMap,
     rows, recentEvents,
     loading: triggersLoading || subsLoading,
+    loadError: triggersFailed || subsFailed,
     reload,
     addPersonaForEvent, setAddPersonaForEvent,
     disconnectTarget, setDisconnectTarget,

@@ -267,6 +267,28 @@ pub fn claim_capability(
     })
 }
 
+/// Release a capability claim after a failed spawn so an approved retry can run.
+/// Scoped to the claiming `deliberation_id` so a sibling track cannot release a
+/// claim whose spawn is still live. Returns `false` when there was no such claim.
+pub fn release_capability(
+    pool: &DbPool,
+    group_root: &str,
+    use_case_id: &str,
+    deliberation_id: &str,
+) -> Result<bool, AppError> {
+    timed_query!("deliberation", "deliberation::release_capability", {
+        let conn = pool.get()?;
+        let n = conn
+            .execute(
+                "DELETE FROM deliberation_capability_claims
+                  WHERE group_root = ?1 AND use_case_id = ?2 AND deliberation_id = ?3",
+                params![group_root, use_case_id, deliberation_id],
+            )
+            .map_err(AppError::Database)?;
+        Ok(n == 1)
+    })
+}
+
 /// Mark an approved capability as running in the background: hold its execution
 /// id and park at 'action_running' (the reaper finishes it).
 pub fn set_action_running(pool: &DbPool, id: &str, execution_id: &str) -> Result<(), AppError> {
@@ -321,6 +343,49 @@ pub fn finalize(
         )
         .map_err(AppError::Database)?;
         Ok(())
+    })
+}
+
+/// Sentinel parked in `spawned_assignment_id` while an approval is spawning its
+/// assignment, so a concurrent second approval loses the claim.
+pub const PROPOSAL_CLAIM_SENTINEL: &str = "__claiming__";
+
+/// Atomically claim a resolved, still-pending proposal for approval. Returns
+/// `true` for exactly one caller (proceed to spawn the assignment); `false` when
+/// the proposal was already approved/claimed/dismissed. A single conditional
+/// UPDATE is the arbiter, so a double-click or stale card cannot spawn twice.
+pub fn claim_proposal_approval(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    timed_query!("deliberation", "deliberation::claim_proposal_approval", {
+        let conn = pool.get()?;
+        let n = conn
+            .execute(
+                "UPDATE team_deliberations
+                    SET spawned_assignment_id = ?2, updated_at = datetime('now')
+                  WHERE id = ?1
+                    AND status = 'resolved'
+                    AND spawned_assignment_id IS NULL
+                    AND json_extract(resolution, '$.status') = 'pending'",
+                params![id, PROPOSAL_CLAIM_SENTINEL],
+            )
+            .map_err(AppError::Database)?;
+        Ok(n == 1)
+    })
+}
+
+/// Release a proposal claim after a failed spawn so the user can retry.
+/// Returns `false` when there was no claim to release (already finalized or
+/// never claimed) — the CAS verdict, not an error.
+pub fn release_proposal_claim(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    timed_query!("deliberation", "deliberation::release_proposal_claim", {
+        let conn = pool.get()?;
+        let n = conn
+            .execute(
+                "UPDATE team_deliberations SET spawned_assignment_id = NULL
+                  WHERE id = ?1 AND spawned_assignment_id = ?2",
+                params![id, PROPOSAL_CLAIM_SENTINEL],
+            )
+            .map_err(AppError::Database)?;
+        Ok(n == 1)
     })
 }
 
@@ -516,5 +581,78 @@ mod claim_capability_tests {
 
         // But a repeat within grp-A of an already-claimed capability loses.
         assert!(!claim_capability(&pool, "grp-A", "uc-code-review", "track-5").unwrap());
+    }
+
+    /// A failed spawn must release its claim so a retry can run; only the
+    /// claiming deliberation may release.
+    #[test]
+    fn release_allows_reclaim_and_only_owner_releases() {
+        let pool = init_test_db().unwrap();
+        assert!(claim_capability(&pool, "grp-R", "uc-x", "track-1").unwrap());
+
+        // A different deliberation cannot release someone else's claim.
+        assert!(!release_capability(&pool, "grp-R", "uc-x", "track-2").unwrap());
+        assert!(!claim_capability(&pool, "grp-R", "uc-x", "track-3").unwrap());
+
+        // The owner releases; the capability can be claimed again.
+        assert!(release_capability(&pool, "grp-R", "uc-x", "track-1").unwrap());
+        assert!(claim_capability(&pool, "grp-R", "uc-x", "track-3").unwrap());
+        // Releasing a claim that is gone reports false, not an error.
+        assert!(!release_capability(&pool, "grp-R", "uc-x", "track-1").unwrap());
+    }
+}
+
+#[cfg(test)]
+mod claim_proposal_tests {
+    use super::*;
+    use crate::init_test_db;
+
+    fn seed_pending(pool: &DbPool, id: &str, resolution_status: &str) {
+        try_seed_pending(pool, id, resolution_status).expect("seed deliberation");
+    }
+
+    fn try_seed_pending(
+        pool: &DbPool,
+        id: &str,
+        resolution_status: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO persona_teams (id, name, created_at, updated_at)
+             VALUES ('t-cp', 't-cp', datetime('now'), datetime('now'))
+             ON CONFLICT(id) DO NOTHING",
+            [],
+        )?;
+        conn.execute(
+            "INSERT INTO team_deliberations (id, team_id, topic, status, resolution)
+             VALUES (?1, 't-cp', 'topic', 'resolved', ?2)",
+            params![
+                id,
+                format!(r#"{{"kind":"proposal","status":"{resolution_status}"}}"#)
+            ],
+        )?;
+        Ok(())
+    }
+
+    #[test]
+    fn second_approval_loses_the_claim() {
+        let pool = init_test_db().unwrap();
+        seed_pending(&pool, "d1", "pending");
+        assert!(claim_proposal_approval(&pool, "d1").unwrap());
+        assert!(!claim_proposal_approval(&pool, "d1").unwrap());
+    }
+
+    #[test]
+    fn release_allows_retry_and_approved_or_dismissed_never_claim() {
+        let pool = init_test_db().unwrap();
+        seed_pending(&pool, "d2", "pending");
+        assert!(claim_proposal_approval(&pool, "d2").unwrap());
+        assert!(release_proposal_claim(&pool, "d2").unwrap());
+        assert!(!release_proposal_claim(&pool, "d2").unwrap());
+        assert!(claim_proposal_approval(&pool, "d2").unwrap());
+        seed_pending(&pool, "d3", "approved");
+        assert!(!claim_proposal_approval(&pool, "d3").unwrap());
+        seed_pending(&pool, "d4", "dismissed");
+        assert!(!claim_proposal_approval(&pool, "d4").unwrap());
     }
 }

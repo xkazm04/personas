@@ -215,5 +215,6 @@
   "dispatch_run_on_queued_hint": "В очереди до пробуждения",
   "dispatch_run_on_stale": "Недавно не виден",
   "dispatch_run_on_this_machine": "Этот компьютер",
-  "md_spellcheck": "Орфография и грамматика"
+  "md_spellcheck": "Орфография и грамматика",
+  "agent_fallback_name": "Агент"
 }

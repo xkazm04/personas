@@ -85,7 +85,7 @@ function DynamicBudgetsRow() {
         }}
         label={s.dynamic_budgets_label}
         size="sm"
-        disabled={!setting.loaded}
+        disabled={!setting.loaded || setting.loadFailed}
         data-testid="fleet-dynamic-budgets-toggle"
       />
       <div className="min-w-0">
@@ -124,7 +124,7 @@ function StrictQueueOrderRow() {
         }}
         label={s.strict_queue_order_label}
         size="sm"
-        disabled={!setting.loaded}
+        disabled={!setting.loaded || setting.loadFailed}
         data-testid="fleet-strict-queue-order-toggle"
       />
       <div className="min-w-0">
@@ -150,6 +150,16 @@ function isValidConcurrency(value: string): boolean {
 function isValidRoster(value: string): boolean {
   const n = Number(value);
   return Number.isInteger(n) && n >= ROSTER_MIN && n <= ROSTER_MAX;
+}
+
+/** Shown when a stored limit could not be read: the control then shows a default, not the stored value. */
+function LoadFailedNote({ text }: { text: string }) {
+  return (
+    <div role="alert" className="flex items-center gap-2 typo-caption text-status-error bg-status-error/10 rounded-input p-2">
+      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+      <span>{text}</span>
+    </div>
+  );
 }
 
 export default function LimitsSettings() {
@@ -206,9 +216,9 @@ export default function LimitsSettings() {
 
   // Disable the input's "Set" button while ceiling.value matches the persisted
   // value; ceiling.saved is set by useAppSetting after a successful save.
-  const isDirty = !ceiling.saved && ceiling.loaded;
+  const isDirty = !ceiling.saved && ceiling.loaded && !ceiling.loadFailed;
 
-  const concurrencyDirty = !concurrency.saved && concurrency.loaded;
+  const concurrencyDirty = !concurrency.saved && concurrency.loaded && !concurrency.loadFailed;
   const concurrencyNum = useMemo(() => {
     const n = Number.parseInt(concurrency.value, 10);
     return Number.isFinite(n) ? n : CONCURRENCY_DEFAULT;
@@ -223,7 +233,7 @@ export default function LimitsSettings() {
     if (Number.isFinite(n) && n > 0) setMaxParallel(n);
   }, [concurrency, setMaxParallel]);
 
-  const rosterDirty = !roster.saved && roster.loaded;
+  const rosterDirty = !roster.saved && roster.loaded && !roster.loadFailed;
   const rosterNum = useMemo(() => {
     const n = Number.parseInt(roster.value, 10);
     return Number.isFinite(n) ? n : ROSTER_DEFAULT;
@@ -236,6 +246,7 @@ export default function LimitsSettings() {
       icon: <Layers className="w-4 h-4 text-primary/80" />,
       content: (
         <div className="space-y-3">
+          {concurrency.loadFailed && <LoadFailedNote text={s.load_failed} />}
           <p className="typo-body text-foreground">{s.concurrency_hint}</p>
           <div className="flex items-center gap-2">
             <NumberStepper
@@ -292,6 +303,7 @@ export default function LimitsSettings() {
       icon: <Users className="w-4 h-4 text-primary/80" />,
       content: (
         <div className="space-y-3">
+          {roster.loadFailed && <LoadFailedNote text={s.load_failed} />}
           <p className="typo-body text-foreground">{s.roster_hint}</p>
           <div className="flex items-center gap-2">
             <NumberStepper
@@ -337,6 +349,7 @@ export default function LimitsSettings() {
       icon: <DollarSign className="w-4 h-4 text-emerald-400" />,
       content: (
         <div className="space-y-3">
+          {ceiling.loadFailed && <LoadFailedNote text={s.load_failed} />}
           <p className="typo-body text-foreground">{s.ceiling_hint}</p>
           <div className="flex items-center gap-2">
             <NumberStepper
@@ -360,7 +373,7 @@ export default function LimitsSettings() {
             >
               {ceiling.saved && !isDirty ? s.saved : s.set}
             </Button>
-            {ceilingNum === 0 && (
+            {ceilingNum === 0 && !ceiling.loadFailed && (
               <span className="typo-caption text-foreground ml-2">{s.unlimited}</span>
             )}
             {ceiling.error && (

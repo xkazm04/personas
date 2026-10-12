@@ -1,7 +1,7 @@
 ---
 subject: retry-backoff
 evidence:
-  - src-tauri/src/engine/failover.rs                          # per-provider + global breaker, documented precedence, persisted w/ 15-min TTL rehydration
+  - src-tauri/engine/src/failover.rs                          # per-provider + global breaker, documented precedence, persisted w/ 15-min TTL rehydration
   - src-tauri/db/src/repos/execution/scheduled_retries.rs     # durable retry-at schedule incl. provider-stated usage-limit reset windows
   - src-tauri/core/src/error_taxonomy.rs                      # single classification authority; Unknown lane counted, not misfiled
   - src-tauri/src/engine/polling.rs                           # per-key ladder in a TTL+LRU-bounded map with a stale-key sweep

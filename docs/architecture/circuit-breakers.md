@@ -18,13 +18,13 @@ resets the other. They share no state.
 
 ## Provider breaker — `engine/failover.rs`
 
-Implementation: [`ProviderCircuitBreaker`](../../src-tauri/src/engine/failover.rs).
+Implementation: [`ProviderCircuitBreaker`](../../src-tauri/engine/src/failover.rs).
 Persistence: [`db/repos/execution/circuit_breaker.rs`](../../src-tauri/src/db/repos/execution/circuit_breaker.rs)
 (15 minute TTL, restored on startup).
 
 **Where it runs.** Inside the runner's failover loop. Every spawn attempt
 calls `try_acquire_and_probe(kind)`; every CLI failure that
-[`failover::classify_error`](../../src-tauri/src/engine/failover.rs) flags
+[`failover::classify_error`](../../src-tauri/engine/src/failover.rs) flags
 as failover-eligible (rate limit, timeout, session limit, provider-not-found,
 network) calls `record_failure(kind)`. Every successful CLI completion calls
 `record_success(kind)`.
@@ -145,7 +145,7 @@ For a fully degraded fleet (both tripped):
 ## Tests
 
 Cross-breaker integration scenarios live in
-[`src-tauri/src/engine/circuit_breakers_integration_tests.rs`](../../src-tauri/src/engine/circuit_breakers_integration_tests.rs).
+[`src-tauri/engine/src/circuit_breakers_integration_tests.rs`](../../src-tauri/engine/src/circuit_breakers_integration_tests.rs).
 The three pinning scenarios:
 
 1. **Provider down, persona healthy.** The provider breaker opens after 5

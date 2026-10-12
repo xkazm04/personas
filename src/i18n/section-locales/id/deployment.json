@@ -8,7 +8,10 @@
     "send_request": "Kirim permintaan",
     "sending": "Mengirim…",
     "snippets": "Cuplikan",
-    "title": "API Playground"
+    "title": "API Playground",
+    "local_run_completed": "Eksekusi lokal selesai",
+    "local_run_failed": "Eksekusi lokal gagal",
+    "snippets_target_endpoint": "Cuplikan kode memanggil endpoint yang diterapkan. Hasil playground berasal dari eksekusi lokal."
   },
   "auth_code": "Kode otorisasi",
   "chart": {
@@ -28,7 +31,8 @@
     "worker_disconnected": "Terputus",
     "worker_executing": "Mengeksekusi",
     "worker_idle": "Menganggur",
-    "workers": "Worker"
+    "workers": "Worker",
+    "gauge_aria": "Indikator {label}"
   },
   "cloud_trigger_chain": "Rantai",
   "cloud_trigger_manual": "Manual",
@@ -122,7 +126,9 @@
     "bulk_action_resume": "Lanjutkan massal",
     "bulk_action_delete": "Hapus massal",
     "bulk_result_ok": "{action}: {count} diperbarui",
-    "bulk_result_partial": "{action}: {succeeded} berhasil, {failed} gagal"
+    "bulk_result_partial": "{action}: {succeeded} berhasil, {failed} gagal",
+    "select_all": "Pilih semua deployment",
+    "select_row": "Pilih {name}"
   },
   "deploy_card": {
     "budget_label": "Anggaran:",
@@ -134,7 +140,11 @@
     "pause_deployment": "Jeda deployment",
     "remove_deployment": "Hapus deployment",
     "resume_deployment": "Lanjutkan deployment",
-    "test_deployment": "Uji deployment"
+    "test_deployment": "Uji deployment",
+    "test_pass": "LULUS",
+    "test_fail": "GAGAL",
+    "test_title_pass": "Lulus",
+    "test_title_fail": "Gagal"
   },
   "deploying": "Men-deploy…",
   "deployments_panel": {
@@ -144,7 +154,8 @@
     "no_deployments_yet": "Belum ada penerapan",
     "select_persona": "Pilih persona untuk di-deploy",
     "budget_no_limit": "Tanpa batas",
-    "budget_per_month": "${amount}/bln"
+    "budget_per_month": "${amount}/bln",
+    "deploy_button": "Terapkan"
   },
   "exec_detail": {
     "fetching_output": "Mengambil output…",
@@ -182,7 +193,9 @@
     "total_runs": "Total eksekusi",
     "fetch_output_failed": "Gagal mengambil keluaran",
     "monthly_budget": "Anggaran Bulanan",
-    "monthly_budget_pace": "Menuju {amount}"
+    "monthly_budget_pace": "Menuju {amount}",
+    "load_failed": "Tidak dapat memuat riwayat eksekusi.",
+    "no_executions_found": "Tidak ada eksekusi yang cocok dengan filter yang dipilih."
   },
   "no_targets": "Tidak ada target deployment terhubung",
   "oauth_panel": {
@@ -201,7 +214,8 @@
     "token_expired": "Token kedaluwarsa",
     "token_expired_msg_prefix": "Token kedaluwarsa",
     "token_unknown": "Status token tidak diketahui",
-    "token_unknown_msg": "Status token tidak diketahui"
+    "token_unknown_msg": "Status token tidak diketahui",
+    "expired_at": "(kedaluwarsa {time})"
   },
   "orchestrator_url": "URL Orkestrator",
   "reconcile": {
@@ -229,7 +243,8 @@
     "loading": "Memuat pemicu…",
     "loading_firings": "Memuat data pemicuan…",
     "no_firings": "Tidak ada pemicuan terbaru",
-    "recent_firings": "Pemicuan terbaru"
+    "recent_firings": "Pemicuan terbaru",
+    "firings_load_failed": "Tidak dapat memuat pemicuan terbaru."
   },
   "sr_connecting": "Menghubungkan ke orkestrator cloud…",
   "sr_deploying": "Men-deploy persona ke cloud",
@@ -239,7 +254,8 @@
     "no_status": "Tidak ada data status tersedia.",
     "no_token": "Tidak ada token dikonfigurasi",
     "no_token_configured": "Tidak ada token yang dikonfigurasi",
-    "token_available": "Token tersedia"
+    "token_available": "Token tersedia",
+    "latency_title": "Latensi pulang-pergi pemeriksaan kesehatan: {ms} md"
   },
   "tabs": {
     "connection": "Koneksi",

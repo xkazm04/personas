@@ -36,10 +36,12 @@
       "verbatim": "ci.yml"
     },
     "CompanionAssignmentCards.tsx": {"count":2,"sections":[7,9],"lines":["23"],"contexts":["| `CompanionAssignmentCards.tsx:23` | `'pipeline'` | `as Parameters<typeof setSidebarSection>[0]` |"],"resolved":false},
+    "Composer.tsx": {"count":2,"sections":[7],"lines":["169-186","169"],"contexts":["| `Composer.tsx:169-186` (`pendingPrompt`, **8 producers**) | n/a (text) | — |"],"resolved":false},
     "CortexMap.tsx": {"count":1,"sections":[0],"lines":["41,46-55"],"contexts":["effect (a documented, e2e-covered flash of the wrong target); `brainiac`'s `CortexMap.tsx:41,46-55`"],"resolved":false},
     "IngestMonitor.tsx": {"count":1,"sections":[0],"lines":["41,46-55"],"contexts":["and `IngestMonitor.tsx:41,46-55` both `useState(\"starchart\")` and then `setActive` from `?view=`"],"resolved":false},
     "LazyMount.tsx": {"count":1,"sections":[0],"lines":["15"],"contexts":["and `LazyMount.tsx:15`'s own comment claims the reserved height *\"keeps scroll-map anchors"],"resolved":false},
     "LegalContent.tsx": {"count":1,"sections":[0],"lines":["49,58-74"],"contexts":["applications across the two siblings** — `personas-web`'s `LegalContent.tsx:49,58-74` initialises"],"resolved":false},
+    "ManualReviewList.tsx": {"count":2,"sections":[7],"lines":["74-79","74"],"contexts":["| `ManualReviewList.tsx:74-79` (`pendingApprovalsMode`) | n/a (a mode, not an entity) | — |"],"resolved":false},
     "MobilePageTOC.tsx": {
       "count": 1,
       "sections": [0],
@@ -177,14 +179,6 @@
     },
     "src/design/routes.ts": {"count":1,"sections":[0],"lines":["206-217"],"contexts":["`src/design/routes.ts:206-217` — `ConsoleAddress { module; view?; sel?; asOf?; filters }`, where"],"resolved":false},
     "src/features/agents/sub_editor/components/QuickStatsBar.tsx": {"count":1,"sections":[7],"lines":["94"],"contexts":["(`CommandPalette.tsx:207`, `TriggersPage.tsx:64`, `QuickStatsBar.tsx:94`,"],"resolvedFrom":"basename","verbatim":"QuickStatsBar.tsx"},
-    "src/features/companions/athena/Composer.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["169-186","169"],
-      "contexts": ["| `Composer.tsx:169-186` (`pendingPrompt`, **8 producers**) | n/a (text) | — |"],
-      "resolvedFrom": "basename",
-      "verbatim": "Composer.tsx"
-    },
     "src/features/companions/athena/ProactiveCard.tsx": {
       "count": 3,
       "sections": [2,4,7],
@@ -297,14 +291,6 @@
       "contexts": ["`incidentDeepLink.ts` modules, imported unmodified**; a **`tsc --noEmit --strict` run over a"],
       "resolvedFrom": "basename",
       "verbatim": "incidentDeepLink.ts"
-    },
-    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["74-79","74"],
-      "contexts": ["| `ManualReviewList.tsx:74-79` (`pendingApprovalsMode`) | n/a (a mode, not an entity) | — |"],
-      "resolvedFrom": "basename",
-      "verbatim": "ManualReviewList.tsx"
     },
     "src/features/overview/sub_manual-review/components/backlog/BacklogPanel.tsx": {
       "count": 2,

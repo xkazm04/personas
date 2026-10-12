@@ -7,6 +7,5 @@
     "relative_just_now": "刚刚",
     "relative_minutes_one": "{m} 分钟前",
     "relative_minutes_other": "{m} 分钟前"
-  },
-  "unknown_assistant": "未知助手"
+  }
 }

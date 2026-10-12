@@ -13,7 +13,7 @@ persona-level breaker in another, and a written contract for how they relate.
 
 ## 1. Two scopes in one component, deny-wins, global checked first
 
-`src-tauri/src/engine/failover.rs` holds `ProviderCircuitBreaker`: per-provider
+`src-tauri/engine/src/failover.rs` holds `ProviderCircuitBreaker`: per-provider
 consecutive-failure breakers (`CIRCUIT_BREAKER_THRESHOLD = 5`, `CIRCUIT_COOLDOWN`
 60s) under a global breaker that trips on **total failures across all providers
 in a rolling window** (`GLOBAL_FAILURE_THRESHOLD = 10` in

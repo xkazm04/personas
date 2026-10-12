@@ -17,7 +17,7 @@ import { cloudDiagnose, type CloudDiagnostics } from '@/api/system/cloud';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { useCloudHealthMonitor } from '@/features/agents/sub_deployment/hooks/useCloudHealthMonitor';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { DEPLOYMENT_ACCENTS } from '@/features/agents/sub_deployment/components/deploymentTokens';
 
 
@@ -128,7 +128,11 @@ export default function CloudDeployPanel() {
   }, [activeTab, isConnected, fetchOAuthStatus, fetchDeployments]);
 
   // Auto-poll cloud status while the Status tab is active and connected
-  const { lastRefreshed: statusLastRefreshed } = usePolling(fetchStatus, {
+  // The poll rethrows so usePolling backs off and withholds lastRefreshed; the
+  // Refresh button keeps the swallowing form (it reports through cloudError).
+  const pollStatus = useCallback(() => fetchStatus({ rethrow: true }), [fetchStatus]);
+  const refreshStatus = useCallback(() => { void fetchStatus(); }, [fetchStatus]);
+  const { lastRefreshed: statusLastRefreshed, consecutiveErrors: statusPollErrors } = usePolling(pollStatus, {
     ...POLLING_CONFIG.cloudStatus,
     enabled: isConnected && activeTab === 'status',
   });
@@ -150,7 +154,7 @@ export default function CloudDeployPanel() {
     try {
       const result = await cloudDiagnose(url.trim(), apiKey.trim());
       setDiagnostics(result);
-    } catch (err) { silentCatch("features/deployment/components/cloud/CloudDeployPanel:catch2")(err); } finally {
+    } catch (err) { toastCatch('CloudDeployPanel:diagnose')(err); } finally {
       setIsDiagnosing(false);
     }
   }, [url, apiKey]);
@@ -243,7 +247,8 @@ export default function CloudDeployPanel() {
           {activeTab === 'status' && isConnected && <CloudStatusPanel
             status={status}
             isLoading={isLoadingStatus}
-            onRefresh={fetchStatus}
+            onRefresh={refreshStatus}
+            stale={statusPollErrors > 0}
             lastPolled={statusLastRefreshed}
           />}
           {activeTab === 'oauth' && isConnected && <CloudOAuthPanel
@@ -288,6 +293,7 @@ export default function CloudDeployPanel() {
 // ---------------------------------------------------------------------------
 
 function LatencyBadge({ ms }: { ms: number }) {
+  const { t, tx } = useTranslation();
   const { color, bg, border } =
     ms < 200
       ? { color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' }
@@ -298,7 +304,7 @@ function LatencyBadge({ ms }: { ms: number }) {
   return (
     <span
       className={`flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-card border ${bg} ${border} ${color}`}
-      title={`Health-check round-trip latency: ${ms}ms`}
+      title={tx(t.deployment.status.latency_title, { ms })}
     >
       <Activity className="w-3 h-3" />
       {ms}ms

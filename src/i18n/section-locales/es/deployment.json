@@ -8,7 +8,10 @@
     "send_request": "Enviar solicitud",
     "sending": "Enviando…",
     "snippets": "Fragmentos",
-    "title": "Área de pruebas API"
+    "title": "Área de pruebas API",
+    "local_run_completed": "Ejecución local completada",
+    "local_run_failed": "La ejecución local falló",
+    "snippets_target_endpoint": "Los ejemplos de código llaman al endpoint desplegado. Los resultados del área de pruebas provienen de una ejecución local."
   },
   "auth_code": "Código de autorización",
   "chart": {
@@ -28,7 +31,8 @@
     "worker_disconnected": "Desconectado",
     "worker_executing": "Ejecutando",
     "worker_idle": "Inactivo",
-    "workers": "Workers"
+    "workers": "Workers",
+    "gauge_aria": "Indicador de {label}"
   },
   "cloud_trigger_chain": "Cadena",
   "cloud_trigger_manual": "Manual",
@@ -122,7 +126,9 @@
     "bulk_action_resume": "Reanudación masiva",
     "bulk_action_delete": "Eliminación masiva",
     "bulk_result_ok": "{action}: {count} actualizados",
-    "bulk_result_partial": "{action}: {succeeded} correctos, {failed} fallidos"
+    "bulk_result_partial": "{action}: {succeeded} correctos, {failed} fallidos",
+    "select_all": "Seleccionar todos los despliegues",
+    "select_row": "Seleccionar {name}"
   },
   "deploy_card": {
     "budget_label": "Presupuesto:",
@@ -134,7 +140,11 @@
     "pause_deployment": "Pausar despliegue",
     "remove_deployment": "Eliminar despliegue",
     "resume_deployment": "Reanudar despliegue",
-    "test_deployment": "Probar despliegue"
+    "test_deployment": "Probar despliegue",
+    "test_pass": "APROBADO",
+    "test_fail": "FALLO",
+    "test_title_pass": "Aprobado",
+    "test_title_fail": "Fallido"
   },
   "deploying": "Desplegando…",
   "deployments_panel": {
@@ -144,7 +154,8 @@
     "no_deployments_yet": "Aún no hay despliegues. Selecciona una persona arriba para desplegarla como endpoint de API en la nube.",
     "select_persona": "Selecciona una persona para desplegar",
     "budget_no_limit": "Sin límite",
-    "budget_per_month": "${amount}/mes"
+    "budget_per_month": "${amount}/mes",
+    "deploy_button": "Desplegar"
   },
   "exec_detail": {
     "fetching_output": "Obteniendo salida…",
@@ -182,7 +193,9 @@
     "total_runs": "Ejecuciones totales",
     "fetch_output_failed": "No se pudo obtener la salida",
     "monthly_budget": "Presupuesto mensual",
-    "monthly_budget_pace": "En camino a {amount}"
+    "monthly_budget_pace": "En camino a {amount}",
+    "load_failed": "No se pudo cargar el historial de ejecuciones.",
+    "no_executions_found": "No se encontraron ejecuciones para los filtros seleccionados."
   },
   "no_targets": "No hay destinos de despliegue conectados",
   "oauth_panel": {
@@ -201,7 +214,8 @@
     "token_expired": "Token expirado",
     "token_expired_msg_prefix": "Este token OAuth ha caducado",
     "token_unknown": "Estado del token desconocido",
-    "token_unknown_msg": "No se pudo verificar la validez del token. Refresca el token para confirmar que siga activo."
+    "token_unknown_msg": "No se pudo verificar la validez del token. Refresca el token para confirmar que siga activo.",
+    "expired_at": "(caducó {time})"
   },
   "orchestrator_url": "URL del orquestador",
   "reconcile": {
@@ -229,7 +243,8 @@
     "loading": "Cargando disparadores…",
     "loading_firings": "Cargando…",
     "no_firings": "Sin activaciones recientes",
-    "recent_firings": "Activaciones recientes"
+    "recent_firings": "Activaciones recientes",
+    "firings_load_failed": "No se pudieron cargar los disparos recientes."
   },
   "sr_connecting": "Conectando al orquestador en la nube…",
   "sr_deploying": "Desplegando agente en la nube",
@@ -239,7 +254,8 @@
     "no_status": "No hay datos de estado disponibles.",
     "no_token": "No hay token configurado",
     "no_token_configured": "Sin token configurado",
-    "token_available": "Token disponible"
+    "token_available": "Token disponible",
+    "latency_title": "Latencia de ida y vuelta de la comprobación de estado: {ms} ms"
   },
   "tabs": {
     "connection": "Conexión",

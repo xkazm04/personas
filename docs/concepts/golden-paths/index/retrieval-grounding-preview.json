@@ -27,6 +27,7 @@
     "mcp.rs": {"count":3,"sections":[12],"lines":["1036-1092","959-963","1097-1104"],"contexts":["its MCP `memory_search` payload (`mcp.rs:1036-1092`) returns per-hit `id`,"],"resolved":false},
     "prompt.rs": {"count":4,"sections":[2,7,12],"lines":["102","44-49","74-83"],"contexts":["(`prompt.rs:102`) is the shape: zero DB, borrows in-memory fields, bounded by the"],"resolved":false},
     "reviews.rs": {"count":1,"sections":[9],"lines":["1014"],"contexts":["`dev_tools.rs:3831`, `reviews.rs:1014`, `twin.rs:851`, `fix_pass.rs:309`,"],"resolved":false},
+    "runner/mod.rs": {"count":2,"sections":[7],"lines":["938","946-951"],"contexts":["injected memories. The `[MEMORY] Injected …` line (`runner/mod.rs:938`) goes to"],"resolved":false},
     "session.rs": {"count":1,"sections":[],"contexts":["path (`src-tauri/src/companion/prompt.rs`, `session.rs`,"],"resolved":false},
     "src-tauri/**/*.rs": {"count":1,"sections":[9],"contexts":["**Measured, `src-tauri/**/*.rs`, `#[cfg(test)]` stripped:**"],"resolved":false},
     "src-tauri/core/src/cron.rs": {"count":1,"sections":[9],"lines":["160"],"contexts":["`context_generation.rs:1534,1704,2073,2092`, `crypto.rs:117,1162`, `cron.rs:160`,"],"resolvedFrom":"basename","verbatim":"cron.rs"},
@@ -40,6 +41,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "repos/core/memories.rs"
     },
+    "src-tauri/engine/src/db_query.rs": {"count":1,"sections":[9],"lines":["2968"],"contexts":["`db_query.rs:2968`, `healthcheck.rs:1223`, `kb_scan.rs:109`). **There is nothing"],"resolvedFrom":"basename","verbatim":"db_query.rs"},
     "src-tauri/src/commands/credentials/vector_kb.rs": {"count":1,"sections":[],"contexts":["(`src/commands/credentials/vector_kb.rs`,"],"resolvedFrom":"suffix","verbatim":"src/commands/credentials/vector_kb.rs"},
     "src-tauri/src/commands/infrastructure/context_generation.rs": {
       "count": 1,
@@ -67,17 +69,9 @@
     },
     "src-tauri/src/companion/prompt.rs": {"count":2,"sections":[0],"lines":["102"],"contexts":["path (`src-tauri/src/companion/prompt.rs`, `session.rs`,"],"resolved":false},
     "src-tauri/src/engine/build_session/fix_pass.rs": {"count":1,"sections":[9],"lines":["309"],"contexts":["`dev_tools.rs:3831`, `reviews.rs:1014`, `twin.rs:851`, `fix_pass.rs:309`,"],"resolvedFrom":"basename","verbatim":"fix_pass.rs"},
-    "src-tauri/src/engine/db_query.rs": {"count":1,"sections":[9],"lines":["2968"],"contexts":["`db_query.rs:2968`, `healthcheck.rs:1223`, `kb_scan.rs:109`). **There is nothing"],"resolvedFrom":"basename","verbatim":"db_query.rs"},
     "src-tauri/src/engine/healthcheck.rs": {"count":1,"sections":[9],"lines":["1223"],"contexts":["`db_query.rs:2968`, `healthcheck.rs:1223`, `kb_scan.rs:109`). **There is nothing"],"resolvedFrom":"basename","verbatim":"healthcheck.rs"},
     "src-tauri/src/engine/kb_scan.rs": {"count":1,"sections":[9],"lines":["109"],"contexts":["`db_query.rs:2968`, `healthcheck.rs:1223`, `kb_scan.rs:109`). **There is nothing"],"resolvedFrom":"basename","verbatim":"kb_scan.rs"},
-    "src-tauri/src/engine/runner/mod.rs": {
-      "count": 5,
-      "sections": [0,7],
-      "lines": ["938-944","938","946-951","2473"],
-      "contexts": ["`src/engine/runner/mod.rs`), the vector-KB search path"],
-      "resolvedFrom": "suffix",
-      "verbatim": "src/engine/runner/mod.rs"
-    },
+    "src-tauri/src/engine/runner/mod.rs": {"count":3,"sections":[0,7],"lines":["938-944","2473"],"contexts":["`src/engine/runner/mod.rs`), the vector-KB search path"],"resolvedFrom":"suffix","verbatim":"src/engine/runner/mod.rs"},
     "src/companion/prompt.rs": {"count":2,"sections":[2],"lines":["44-137","102-137"],"contexts":["**Reach for:** `summarize_recall` + `RecallPreview` (`src/companion/prompt.rs:44-137`),"],"resolved":false},
     "src/features/companions/athena/RecallStrip.tsx": {"count":2,"sections":[0,2],"contexts":["retrieval — is unrepresentable on this path. `RecallStrip.tsx` renders it, and"],"resolvedFrom":"basename","verbatim":"RecallStrip.tsx"},
     "src/features/companions/athena/useTurnSidecars.ts": {
