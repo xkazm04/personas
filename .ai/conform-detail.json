@@ -17635,6 +17635,161 @@
           "evidence": "src/features/plugins/radio/hooks/useRadioState.ts:8 Radio station listings and streaming metadata are received over IPC without any model grade or variant selection."
         }
       ]
+    },
+    "cbb061cf-5c61-49d4-80d8-98b8f9b40600/agent-browser-control": {
+      "context": "browser-webview-control",
+      "subject": "agent-browser-control",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T23:41:28.562Z",
+      "worker": "dacaba91-33dc-430a-8a3f-722023bfa55f",
+      "techniques": [
+        {
+          "technique": "agent-actionable-errors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/twinDraftLane.ts:151 This error presentation targets the operator; it is outside the agent command-result boundary."
+        },
+        {
+          "technique": "effect-classed-commands",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/webview/WebviewPage.tsx:154 The address-bar callback consumes IPC rather than publishing or dispatching the agent command catalog."
+        },
+        {
+          "technique": "persistent-browser-daemon",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/browserStore.ts:240 The frontend retrieves tab metadata; browser process ownership is outside these modules."
+        },
+        {
+          "technique": "references-over-selectors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/twinDraftLane.ts:296 The operator picks the target, and the drafting model receives context without its reference."
+        },
+        {
+          "technique": "socket-scoped-surface",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/webview/hostVisibility.ts:82 This module controls host visibility through IPC; searches found no listener or page-reply socket implementation in the context."
+        }
+      ]
+    },
+    "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b/agent-browser-control": {
+      "context": "site-whitelist-management",
+      "subject": "agent-browser-control",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T23:41:28.562Z",
+      "techniques": [
+        {
+          "technique": "agent-actionable-errors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/whitelist/useWhitelistActions.ts:55 The failure is presented as an operator toast rather than an agent browser-tool result."
+        },
+        {
+          "technique": "effect-classed-commands",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/whitelist/useWhitelistActions.ts:101 This edits a policy row; it does not define the browser command effect registry."
+        },
+        {
+          "technique": "persistent-browser-daemon",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/whitelist/useWhitelistActions.ts:53 The UI delegates scanning to a backend command and owns no browser process lifecycle."
+        },
+        {
+          "technique": "references-over-selectors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:125 The editor changes tool approval policy, not runtime element naming or resolution."
+        },
+        {
+          "technique": "socket-scoped-surface",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/whitelist/WhitelistPage.tsx:16 This is a configuration route without a page host; searches found no browser listener, tunnel, or page-reply transport here."
+        }
+      ],
+      "withdrawn": {
+        "worker": "dacaba91-33dc-430a-8a3f-722023bfa55f",
+        "state": "not-applicable",
+        "at": "2026-10-12T23:42:15.813910+00:00",
+        "reason": "reviewer (sonnet): The anchor useWhitelistActions.ts:107 is just the closing `return useMemo(...)` of the hook. It doesn't show that a browser command surface is absent, so the anchor is incidental."
+      }
+    },
+    "3effd422-2610-4c8a-bc02-53aceafd827c/agent-browser-control": {
+      "context": "commands-companion",
+      "subject": "agent-browser-control",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T23:41:28.562Z",
+      "worker": "dacaba91-33dc-430a-8a3f-722023bfa55f",
+      "techniques": [
+        {
+          "technique": "agent-actionable-errors",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:484 This error bypasses the Refusal hint contract and supplies no next command; approval_lifecycle wraps and records the error without adding recovery."
+        },
+        {
+          "technique": "effect-classed-commands",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:125 write_action maintains a private command-to-action match that explicitly mirrors mcp::action_for, rather than deriving dispatch from one canonical effect registry."
+        }
+      ]
+    },
+    "1092db16-982f-4d99-b71b-14e6cf704a4f/agent-browser-control": {
+      "context": "commands-credentials",
+      "subject": "agent-browser-control",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T23:41:28.562Z",
+      "worker": "dacaba91-33dc-430a-8a3f-722023bfa55f",
+      "techniques": [
+        {
+          "technique": "persistent-browser-daemon",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1466 cleanup_orphaned_browsers is called automatically after collection and selects processes by command-line pattern, violating identity-scoped cleanup."
+        },
+        {
+          "technique": "socket-scoped-surface",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1405 This browser automation path configures a local stdio server; searches found no browser tunnel or embedded-page reply socket in this flow."
+        }
+      ]
+    },
+    "3c107fe6-ec95-4f45-bf31-665e9ccfe223/agent-browser-control": {
+      "context": "plugins-drive",
+      "subject": "agent-browser-control",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T23:41:28.562Z",
+      "worker": "dacaba91-33dc-430a-8a3f-722023bfa55f",
+      "techniques": [
+        {
+          "technique": "agent-actionable-errors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:708 This is operator feedback for a filesystem rename, not an agent browser-tool error."
+        },
+        {
+          "technique": "effect-classed-commands",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:705 The mutation is a local file operation; no browser command registry was found in this context."
+        },
+        {
+          "technique": "persistent-browser-daemon",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:326 Navigation loads directory entries; the context does not create or manage an agent browser session."
+        },
+        {
+          "technique": "references-over-selectors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/hooks/useScrollShadows.ts:22 DOM references serve the app's own scroll geometry, not agent targeting of arbitrary pages."
+        },
+        {
+          "technique": "socket-scoped-surface",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/signing/useSigning.ts:116 The signing path operates on a local filesystem path; searches found no browser listener, tunnel, or page-reply channel."
+        }
+      ]
     }
   }
 }

@@ -5225,7 +5225,11 @@
           "revision": 3,
           "changedAt": "2026-09-23",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/browser/twinDraftLane.ts:137 Context and repository searches found operator UI, IPC calls, and drafting here, with browser tool implementations elsewhere; this lane removes the target reference before giving page context to the model.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:0d439bfcafe8cabd",
+          "evaluatedRevision": 3
         },
         {
           "subject": "browser-credential-boundary",
@@ -5993,7 +5997,11 @@
           "revision": 3,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:484 A browser_login failure reports a missing whitelist entry without a literal recovery command, and the approval lifecycle persists that error text for subsequent agent turns.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:0d439bfcafe8cabd",
+          "evaluatedRevision": 3
         },
         {
           "subject": "conversation-orchestration",
@@ -6291,7 +6299,11 @@
           "revision": 3,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1466 Credential automation automatically kills every matching Playwright Chromium process instead of using recorded child identities, so completing one task can destroy another browser session.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:0d439bfcafe8cabd",
+          "evaluatedRevision": 3
         },
         {
           "subject": "agent-cli-transport",
@@ -24496,7 +24508,11 @@
           "revision": 3,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "scripts/connectors/builtin/local-drive.json:19 Context and repository searches found filesystem APIs, document processing, and UI geometry rather than an agent browser command surface, consistent with the Local Drive manifest's storage-only purpose.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:0d439bfcafe8cabd",
+          "evaluatedRevision": 3
         },
         {
           "subject": "mcp-tools",
