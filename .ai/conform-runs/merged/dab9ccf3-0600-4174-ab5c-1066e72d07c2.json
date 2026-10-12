@@ -1,0 +1,25 @@
+{
+  "schema": "conform-run/1",
+  "worker": "dab9ccf3-0600-4174-ab5c-1066e72d07c2",
+  "subject": "schema-driven-ui",
+  "evaluatedAt": "2026-10-12T12:30:46.389Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "schema-driven-ui",
+      "context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504",
+      "reason": "deviation already judged 2026-10-10 against the current subject digest sha256-b2:3a801e8a0fefc717 (revision 2, unchanged at registry bb180d5d); not stale, and no commit or working-tree change has touched its anchor files since, so a re-judge would duplicate a current verdict (InlineChatCard.tsx:52 still the report if-chain, :102 still the registry lookup)"
+    },
+    {
+      "subject": "schema-driven-ui",
+      "context": "4560e824-e952-45a9-8aef-fe88d721952e",
+      "reason": "deviation already judged 2026-10-10 against the current subject digest sha256-b2:3a801e8a0fefc717 (revision 2, unchanged at registry bb180d5d); not stale, and no commit or working-tree change has touched its anchor files since, so a re-judge would duplicate a current verdict (dispatch.rs:985 still stores widgets unchecked)"
+    },
+    {
+      "subject": "schema-driven-ui",
+      "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "reason": "not-applicable already judged 2026-10-10 against the current subject digest sha256-b2:3a801e8a0fefc717 (revision 2, unchanged at registry bb180d5d); not stale, and no commit or working-tree change has touched its anchor files since, so a re-judge would duplicate a current verdict"
+    }
+  ],
+  "consults": []
+}

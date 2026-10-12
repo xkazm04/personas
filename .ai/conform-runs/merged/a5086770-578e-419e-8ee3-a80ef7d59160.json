@@ -1,0 +1,18 @@
+{"schema":"conform-run/1","worker":"a5086770-578e-419e-8ee3-a80ef7d59160","subject":"health-checks","evaluatedAt":"2026-10-12T12:45:32Z",
+ "pairs":[
+  {"context":"6c0d30e4-99b9-4580-ba02-9a526db1d639","subject":"health-checks","bundle":"software-engineering","state":"deviation",
+   "evidence":"src/features/agents/sub_health/useHealthDigestScheduler.ts:107 all-healthy notification keys on totalIssues === 0, which excludes undetermined (src/stores/slices/agents/healthCheckSlice.ts:206) and :101 never reads undeterminedCount - a fleet whose sub-checks could not run is announced as all healthy (re-affirmed 2026-10-12 against rev 11, code unchanged since 2026-10-09)",
+   "techniques":[
+    {"technique":"health-rollup","verdict":"deviation","evidence":"src/features/agents/sub_health/useHealthDigestScheduler.ts:107 rollup summary launders could-not-determine members into the healthy side instead of surfacing them"},
+    {"technique":"three-state-outcomes","verdict":"deviation","evidence":"src/features/agents/sub_health/useHealthDigestScheduler.ts:101 undeterminedCount is computed (src/stores/slices/agents/healthCheckSlice.ts:206 excludes it from totalIssues) but the consumer never reads it, so the third state collapses into green at the notification"}]},
+  {"context":"dd45411d-8955-4579-906e-5a3b00ba16da","subject":"health-checks","bundle":"software-engineering","state":"deviation",
+   "evidence":"src-tauri/src/commands/infrastructure/system/health.rs:111 count_since(..).unwrap_or(0) turns an unreadable crash table into 'no crashes', the section is omitted and all_ok (:147) stays true - HealthCheckStatus (:22) has no could-not-determine member, so unverifiable collapses into green (re-affirmed 2026-10-12 against rev 11, code unchanged since 2026-10-09)",
+   "techniques":[
+    {"technique":"three-state-outcomes","verdict":"deviation","evidence":"src-tauri/src/commands/infrastructure/system/health.rs:22 HealthCheckStatus has Ok/Warn/Error/Inactive/Info and no could-not-determine member; :111 unwrap_or(0) collapses a failed probe into healthy"},
+    {"technique":"health-rollup","verdict":"deviation","evidence":"src-tauri/src/commands/infrastructure/system/health.rs:147 all_ok is computed over sections that silently omit the unverifiable crash check, so the summary cannot name it"}]}
+ ],
+ "declined":[],
+ "consults":[
+  {"ts":"2026-10-12T12:45:32Z","bundle":"software-engineering","subjects":["health-checks"],"techniques":["three-state-outcomes","health-rollup"],"deviations":1},
+  {"ts":"2026-10-12T12:45:32Z","bundle":"software-engineering","subjects":["health-checks"],"techniques":["three-state-outcomes","health-rollup"],"deviations":1}
+ ]}

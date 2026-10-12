@@ -1,0 +1,9 @@
+{"schema": "conform-run/1", "worker": "57c8abaf-007d-4145-b01c-a6cfac99dcfd", "subject": "companion-identity",
+ "evaluatedAt": "2026-10-12T12:43:42Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "companion-identity", "context": "5ab49df3-3442-4ea6-a405-077dec64850d", "reason": "only unjudged pair is on a governance:weak context (persona-core-codex, lexical-only match on 'companion/identity/edits'); the skill never judges weak pairs by default. Coverage question for the registry: a persona's trait/mentality codex UI is not a companion's constitution/self-model, so this looks like a vocabulary resonance, not governance."}
+ ],
+ "consults": [],
+ "note": "No work: all 12 governed pairs already carry verdicts against sha256-b2:ff529a6dc44bf233 (rev 7), which equals the registry index at bb180d5d - none stale, none arrived. Every deviation anchor file is unchanged in git since its verdict (no commits since 2026-10-08, clean in the worktree) and each anchor line still reads as recorded, so the 7 deviations stand unchanged. The map's revisionsBehind:3 on six pairs contradicts revision 7 == evaluatedRevision 7; that field looks like a map-builder artifact, not real lag."
+}

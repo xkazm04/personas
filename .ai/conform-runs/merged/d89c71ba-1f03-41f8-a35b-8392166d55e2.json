@@ -1,0 +1,14 @@
+{"schema": "conform-run/1", "worker": "d89c71ba-1f03-41f8-a35b-8392166d55e2", "subject": "background-jobs",
+ "evaluatedAt": "2026-10-12T12:42:43Z",
+ "pairs": [{"context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0", "subject": "background-jobs", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/api/pipeline/workflows.ts:15 cancelWorkflowJob resolves void while the backend writes terminal Failed at once (src-tauri/src/background_job.rs:684) and WorkflowJob omits cancel_outcome (src-tauri/src/commands/infrastructure/workflows.rs:18), so no client can show cancelling or tell cancelled from failed",
+   "evaluatedAgainst": "sha256-b2:4a1ddf4af408b961", "evaluatedRevision": 4,
+   "techniques": [
+     {"technique": "job-progress-and-cancellation", "verdict": "deviation", "evidence": "src-tauri/src/background_job.rs:684 cancel() sets JobStatus::Failed immediately (no cancelling state, no distinct cancelled terminal); src/lib/bindings/WorkflowJob.ts:3 status is an open string with no progress/phase field, only elapsed_secs and line_count"},
+     {"technique": "job-progress-and-cancellation:re-attach", "verdict": "realized", "evidence": "src/api/pipeline/workflows.ts:9 getWorkflowsOverview is a cold snapshot with a bounded output_tail per job, keyed by job_id (workflows.ts:12)"},
+     {"technique": "loop-health-telemetry", "verdict": "realized", "evidence": "src/api/pipeline/scheduler.ts:22 getSubscriptionHealth exposes per-loop alive, lastTickAt, errorCount and consecutivePanics, so a silent loop is detectable from the client"}
+   ],
+   "registryProposal": "Re-judge of the 2026-10-10 verdict against the same digest/revision: unchanged code, deviation holds. loop-supervision, tick-isolation, adaptive-cadence and startup-sweeps are realized (or not) in src-tauri backend contexts, not in this TS IPC-wrapper context; the subject would be better paired with the backend scheduler/background_job context than with api-pipeline, where only the job contract and health surface are visible."}],
+ "declined": [],
+ "consults": [{"ts": "2026-10-12T12:42:43Z", "bundle": "software-engineering", "subjects": ["background-jobs"], "techniques": ["job-progress-and-cancellation", "loop-health-telemetry"], "deviations": 1}]}

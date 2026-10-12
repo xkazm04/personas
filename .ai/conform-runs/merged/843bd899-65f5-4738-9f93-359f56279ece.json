@@ -1,0 +1,31 @@
+{"schema": "conform-run/1", "worker": "843bd899-65f5-4738-9f93-359f56279ece", "subject": "triage-queues",
+ "evaluatedAt": "2026-10-12T12:18:00Z",
+ "evaluatedAgainst": "sha256-b2:70c2c3ebc5f18a8f", "evaluatedRevision": 3,
+ "pairs": [
+  {"context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f", "subject": "triage-queues", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:70c2c3ebc5f18a8f", "evaluatedRevision": 3,
+   "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:87 a failed source is surfaced only as the EMPTY title, so when one chip's fetch fails while others load the tile shows a calm partial list and a total (chipCounts.ts:7 keeps the dark chip's last number) with no dark-source marker; supersedes the 10-09 verdict, whose useUnifiedInbox.ts anchor was deleted 10-06 (f5a1c27d2b) - ordering now IS the roster's total policy",
+   "techniques": [
+    {"technique": "source-normalization", "verdict": "deviation", "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:43 `failed` is computed from roster.errors but consumed only at :87 as emptyTitle; the headline count at :40-42 never says any source is dark"},
+    {"technique": "queue-ordering-and-identity", "verdict": "realized", "evidence": "src/features/decision-center/model/decisionOrder.ts:57 tier, then weight, oldest-first, then id - a total order the widget renders as-is, keyed by item.id (DecisionsPanelWidget.tsx:83)"},
+    {"technique": "verdict-writeback", "verdict": "realized", "evidence": "src/features/decision-center/useDecisionRoster.ts:353 an optimistic removal by id is rolled back on a failed write, a lost CAS re-reads (:351), and the drawer stays open and toasts (src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx:89)"},
+    {"technique": "focus-mode", "verdict": "not-applicable", "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:85 a row click opens one drawer; the one-at-a-time deck lives in src/features/decision-center/deck/, outside this context"},
+    {"technique": "bulk-triage", "verdict": "not-applicable", "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:80 the WidgetTable carries no selection; no multi-item verdict exists in this context"}
+   ],
+   "registryProposal": "Matcher miss: src/features/decision-center/ (roster, adapters, decisionOrder, deck, dispatch - the repo's actual unified triage queue since 10-06) is covered by no context in the map carrying triage-queues; the subject now governs it more directly than any of its five current pairs. Rescan the context map, then pair it."},
+  {"context": "11fe7642-7a1a-47c5-8910-499850aa04fe", "subject": "triage-queues", "bundle": "software-engineering",
+   "state": "unknown",
+   "evaluatedAgainst": "sha256-b2:70c2c3ebc5f18a8f", "evaluatedRevision": 3,
+   "evidence": "context-map.json lists ZERO files for plugins-companion-inbox; its anchor src/features/companions/athena/inbox/hooks/useUnifiedInbox.ts and every adapter were deleted 2026-10-06 by f5a1c27d2b (retired for the Decision Center), so the 10-09 deviation re-asserted against a file three days gone - cleared to unknown, nothing left to judge",
+   "techniques": [],
+   "registryProposal": "Method finding: the 10-09 run-pool re-stamped this deviation ('unchanged since the 10-03 verdict') against a deleted file. /conform should require that every carried anchor still resolves (git ls-files) before re-asserting a verdict, and the map builder should flag pairs on a context with zero live paths (deadContexts) instead of carrying their verdicts as current."}
+ ],
+ "declined": [
+  {"subject": "triage-queues", "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60", "reason": "verdict current: judged 2026-10-09 at the present digest/revision 3, no commits to its paths since, anchor triageQueue.ts:171 re-read and still resolves the cursor by id"},
+  {"subject": "triage-queues", "context": "ef73ca1c-fc54-4b9c-83ec-390c54929192", "reason": "verdict current: judged 2026-10-09 after the 292e242f02 merge it cites, no later commits; anchors ReviewFocusFlow.tsx:132 (index cursor) and ManualReviewList.tsx:137 (newest-first sort) re-read and still say what the deviation claims"},
+  {"subject": "triage-queues", "context": "50f50f97-be0e-4a93-8f1c-c0b967cd45d0", "reason": "verdict current: judged 2026-10-03 at revision 3, no commits to sub_triage since; sweep.ts dedup+cap anchor re-read and holds; probable-confidence lexical pair not worth a re-read this run"}
+ ],
+ "consults": [
+  {"ts": "2026-10-12T12:18:00Z", "bundle": "software-engineering", "subjects": ["triage-queues"], "techniques": ["source-normalization", "queue-ordering-and-identity", "verdict-writeback", "focus-mode", "bulk-triage"], "deviations": 1}
+ ]}

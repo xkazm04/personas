@@ -1,0 +1,215 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d7cf0cb8-dc3c-48bb-b485-09b96fff5f75",
+ "subject": "supply-chain",
+ "evaluatedAt": "2026-10-12T17:45:19.978700+00:00",
+ "provider": "grok",
+ "model": "grok-4.7",
+ "pairs": [
+  {
+   "context": "vault-dependency-graph",
+   "subject": "supply-chain",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:145 This module builds an in-memory graph of stored credentials, personas and events for blast-radius display, so the supply-chain crossings (resolved package graphs, untrusted archive unpack, install-time permission manifests, commit-time secret scans) are not in these files.",
+   "techniques": [
+    {
+     "technique": "dependency-policy-gates",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:141 The edges are credential-to-persona link kinds, not a package manifest or lockfile a policy gate could read."
+    }
+   ]
+  },
+  {
+   "context": "engine-core-infrastructure",
+   "subject": "supply-chain",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/engine/src/path_safety.rs:1 These modules are runtime engine plumbing (watch paths, JSON presets, API-path scope, workflow JSON), not a dependency graph, lockfile gate, secret scanner, or untrusted archive unpack.",
+   "techniques": [
+    {
+     "technique": "permission-manifest-scoping",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/scope_enforcement.rs:1 This is a credential API-path check. Its warn-and-proceed default was not scored as a platform capability manifest."
+    },
+    {
+     "technique": "reading-is-not-running",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/platform_rules.rs:5 Platform definitions are data JSON. No file here opens a foreign tree and evaluates it."
+    },
+    {
+     "technique": "unsafe-deserialization-off-by-default",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/team_preset_loader.rs:351 Presets are decoded into a typed struct. There is no permissive object-reconstruction loader."
+    }
+   ]
+  },
+  {
+   "context": "settings-network",
+   "subject": "supply-chain",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/bundle.rs:711 An exposure row whose field list is empty exports every field, so the allowlist's empty state is a full grant.",
+   "techniques": [
+    {
+     "technique": "archive-extraction-safety",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/engine/bundle.rs:680 Named zip entries are read into memory under an observed-byte cap and a missing-name error. Entry names are not written to disk, so path-slip quarantine does not arise here."
+    },
+    {
+     "technique": "permission-manifest-scoping",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/bundle.rs:711 Empty fields_exposed skips filtering. A corrupt list fails closed to id and name, but a present empty list is defined as expose-all."
+    },
+    {
+     "technique": "reading-is-not-running",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/bundle.rs:476 Bundle import parses persona JSON and stores it. It does not run a script shipped in the archive."
+    },
+    {
+     "technique": "unsafe-deserialization-off-by-default",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/bundle.rs:651 The manifest is typed JSON, not an object-graph or checkpoint loader."
+    }
+   ],
+   "registryProposal": "permission-manifest-scoping says deny by default but does not fix what an empty allowlist denotes. This repo uses empty as expose-all for bundle fields and as no-network for enclave domains."
+  },
+  {
+   "context": "site-whitelist-management",
+   "subject": "supply-chain",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/webbuild/server_control.rs:635 Configuring a dev server inserts a new localhost origin already enabled, so that host is reachable without the deny-by-default enable step the rest of the whitelist uses.",
+   "techniques": [
+    {
+     "technique": "permission-manifest-scoping",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/webbuild/server_control.rs:635 The gate otherwise refuses origins with no row and inserts new rows disabled. This writer adds one localhost port already enabled. An existing paused row is left alone. Bare star hosts are refused elsewhere."
+    },
+    {
+     "technique": "reading-is-not-running",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/browser/sites.rs:366 The site scan passes --strict-mcp-config so a survey does not load the working directory's MCP config and gain a shell. Page tool class is also derived in Rust from data, not by evaluating page JS."
+    }
+   ]
+  },
+  {
+   "context": "pipeline-and-automation",
+   "subject": "supply-chain",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/engine/src/enclave.rs:34 An enclave with an empty tool list is defined as unrestricted, and verify only checks the signature and content hash. It does not apply that list to a run.",
+   "techniques": [
+    {
+     "technique": "archive-extraction-safety",
+     "verdict": "conformant",
+     "evidence": "src-tauri/engine/src/enclave.rs:307 Enclave zip members are read by fixed name into memory, capped on observed bytes, and missing manifest, signature or persona entries error. They are not unpacked onto the filesystem."
+    },
+    {
+     "technique": "permission-manifest-scoping",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/enclave.rs:34 Empty allowed_domains on the next field means no network. Empty allowed_tools means every tool. The seal dialog always sends both lists empty, and no execution path was found that reads them."
+    },
+    {
+     "technique": "reading-is-not-running",
+     "verdict": "conformant",
+     "evidence": "src-tauri/engine/src/scraper.rs:166 Scrape rules are CSS, regex and JSON-pointer. The pipeline shell runner is operator-armed execution, which this technique sets aside."
+    },
+    {
+     "technique": "unsafe-deserialization-off-by-default",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/enclave.rs:279 The enclave manifest is typed JSON, not a pickled checkpoint or object graph."
+    },
+    {
+     "technique": "verification-scope",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/ollama.rs:18 The native Ollama client is feature-gated out of desktop and desktop-full and does not download a model in this file."
+    }
+   ],
+   "registryProposal": "archive-extraction-safety specifies filesystem containment and quarantine. It does not say whether an in-memory by_name read with an observed-byte cap and a required entry name meets the rule when no entry path is written to disk."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-12T17:45:19.978700+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "supply-chain"
+   ],
+   "techniques": [
+    "dependency-policy-gates"
+   ],
+   "deviations": 0,
+   "context": "vault-dependency-graph",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-12T17:45:19.978700+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "supply-chain"
+   ],
+   "techniques": [
+    "permission-manifest-scoping",
+    "reading-is-not-running",
+    "unsafe-deserialization-off-by-default"
+   ],
+   "deviations": 0,
+   "context": "engine-core-infrastructure",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-12T17:45:19.978700+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "supply-chain"
+   ],
+   "techniques": [
+    "archive-extraction-safety",
+    "permission-manifest-scoping",
+    "reading-is-not-running",
+    "unsafe-deserialization-off-by-default"
+   ],
+   "deviations": 1,
+   "context": "settings-network",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-12T17:45:19.978700+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "supply-chain"
+   ],
+   "techniques": [
+    "permission-manifest-scoping",
+    "reading-is-not-running"
+   ],
+   "deviations": 1,
+   "context": "site-whitelist-management",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-12T17:45:19.978700+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "supply-chain"
+   ],
+   "techniques": [
+    "archive-extraction-safety",
+    "permission-manifest-scoping",
+    "reading-is-not-running",
+    "unsafe-deserialization-off-by-default",
+    "verification-scope"
+   ],
+   "deviations": 1,
+   "context": "pipeline-and-automation",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  }
+ ]
+}

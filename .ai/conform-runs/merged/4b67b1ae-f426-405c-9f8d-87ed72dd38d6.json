@@ -1,0 +1,7 @@
+{"schema": "conform-run/1", "worker": "4b67b1ae-f426-405c-9f8d-87ed72dd38d6", "subject": "hash-pinned-translation-pipeline",
+ "evaluatedAt": "2026-10-12T12:39:01Z",
+ "pairs": [],
+ "declined": [{"subject": "hash-pinned-translation-pipeline", "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+   "reason": "no-op: .ai/registry-map.json (generatedAt 2026-10-01T08:52:29Z) lists ZERO pairs for this subject in any context and no orphans, so there is nothing to judge; workers may not add pairs. Missing-pairing proposal: the i18n context (2e1e105a, scripts/i18n/**, src/i18n/**, 14 locales, LLM translation via scripts/i18n/translate-extract.mjs + translate-merge.mjs) is plausibly governed by this subject - grep for sourceHash/source_hash/hash across scripts/i18n/ and src/i18n/ finds no per-unit source-hash provenance, so a reviewed pairing would likely land as a deviation (source-hash-provenance, shape-sync-is-not-content-sync: check-coverage.mjs is a shape gate only). The matcher scored it at zero despite the vocabulary overlap (translation/locale) - a matcher question for the registry. Operator may rebuild with: node ../ai-registry/scripts/build-registry-map.mjs --project personas, or add the pair via a non-worker /conform run."}],
+ "consults": []
+}

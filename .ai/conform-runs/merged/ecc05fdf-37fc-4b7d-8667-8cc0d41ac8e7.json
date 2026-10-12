@@ -1,0 +1,111 @@
+{
+  "schema": "conform-run/1",
+  "worker": "ecc05fdf-37fc-4b7d-8667-8cc0d41ac8e7",
+  "subject": "terminal-multiplexing",
+  "evaluatedAt": "2026-10-12T11:50:43.059Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "terminal-multiplexing",
+      "context": "621caefc-8ae0-42e7-89b6-8e879ad62814",
+      "reason": "already judged not-applicable (2026-10-10) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e",
+      "reason": "already judged not-applicable (2026-10-03) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "2de6333f-8375-404b-8fdc-fe0fb15d4f95",
+      "reason": "already judged conformant (2026-10-03) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "93359619-794a-4de7-a5bb-c7864e475fe7",
+      "reason": "already judged not-applicable (2026-10-09) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "89eddf81-0c57-441d-a07d-de36bf022cb5",
+      "reason": "already judged not-applicable (2026-10-06) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "1d3f934a-fae4-4cc8-a55c-a098b77b0bee",
+      "reason": "already judged not-applicable (2026-10-06) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394",
+      "reason": "already judged conformant (2026-10-06) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e",
+      "reason": "already judged deviation (2026-10-06) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "19f3a6a0-f733-47d1-94b4-a1256c8a92fc",
+      "reason": "already judged not-applicable (2026-10-10) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "c5228746-931d-4733-9cf7-84519a2c9605",
+      "reason": "already judged not-applicable (2026-10-10) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "a6843b83-43a1-4eab-ae40-26f23b949a0d",
+      "reason": "already judged not-applicable (2026-10-10) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "03e7f46a-3f19-47b8-98a5-398efed815b4",
+      "reason": "already judged not-applicable (2026-10-09) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "fb6e9de5-a01b-4434-8ed7-313c142947a1",
+      "reason": "already judged not-applicable (2026-10-09) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "2418ddaf-0e6e-446f-968f-28a4bf6e7120",
+      "reason": "already judged not-applicable (2026-10-10) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "4810daf8-0549-4899-95d2-99c81cde6455",
+      "reason": "already judged not-applicable (2026-10-10) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "d7525012-ab19-4b29-99bb-0d4b6b9e084b",
+      "reason": "already judged deviation (2026-10-09) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20",
+      "reason": "already judged not-applicable (2026-10-03) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "7741725e-8124-4899-b17e-8e39e7fcf1ed",
+      "reason": "already judged not-applicable (2026-10-09) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "dd45411d-8955-4579-906e-5a3b00ba16da",
+      "reason": "already judged not-applicable (2026-10-10) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "9fca099d-94e4-4fd0-8460-3cf5d8c85acf",
+      "reason": "already judged not-applicable (2026-10-10) against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (registry e94a2fc5); not stale, nothing to re-judge"
+    }
+  ],
+  "consults": [],
+  "note": "no-op: all 20 map pairs for terminal-multiplexing are judged at the current revision (2 conformant, 2 deviation, 16 not-applicable). The 2 deviations (fleet-terminal-manager, plugins-fleet-tests) were spot-checked and are still live: src/features/plugins/fleet/FleetBroadcastModal.tsx:136 still sends multi-line text unframed when Enter is off, src-tauri/src/commands/fleet/commands.rs:199 still infers paste-vs-press from payload shape, and no anchor file has changed since the verdicts were written. The ranking finding (8 consumer deviations) must count other consumers or other subjects; this repo holds 2."
+}

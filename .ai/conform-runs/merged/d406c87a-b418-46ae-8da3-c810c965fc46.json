@@ -1,0 +1,5 @@
+{"schema": "conform-run/1", "worker": "d406c87a-b418-46ae-8da3-c810c965fc46", "subject": "build-economics",
+ "evaluatedAt": "2026-10-12T10:20:00Z",
+ "pairs": [],
+ "declined": [{"subject": "build-economics", "context": null, "reason": "no-work (third consecutive dispatch, after merged runs ba1af589 and f9579167): .ai/registry-map.json (generatedAt 2026-10-01T08:52:29Z) holds zero build-economics pairs and subjectIndex has no build-economics key; context-map.json (last touched 08257f5618, 2026-10-12) still lists no build-toolchain path (src-tauri/Cargo.toml, vite.config, scripts/run-codegen.mjs, scripts/ensure-ort-cache.mjs, scripts/gate), so there is no context to pair. The 4 deviations that ranked this subject (registry HEAD e94a2fc5) belong to other consumers. Unblock: add a build-tooling context to context-map.json, then node ../ai-registry/scripts/build-registry-map.mjs --project personas. Until then the Curator's attention scan should stop dispatching build-economics into personas: three runs have been spent reaching the same no-op."}],
+ "consults": []}

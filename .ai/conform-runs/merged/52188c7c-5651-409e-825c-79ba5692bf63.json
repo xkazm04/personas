@@ -1,0 +1,9 @@
+{"schema": "conform-run/1", "worker": "52188c7c-5651-409e-825c-79ba5692bf63", "subject": "session-continuation",
+ "evaluatedAt": "2026-10-12T12:48:37Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "session-continuation", "context": "aebcd52a-07a3-4305-bf42-d961b4f37a62", "reason": "dev-tools-features is governance: weak (match on tools/goal/checkpoint tokens only); /conform never judges weak pairs by default - reported as a coverage question, not judged"}
+ ],
+ "consults": [],
+ "_note": "No work: 10 of 11 session-continuation pairs already carry verdicts evaluatedAgainst sha256-b2:b0eabf78abd856a4 / revision 8, which equals the registry index at bb180d5d (none stale). The 3 live deviations were spot-checked and still hold: src-tauri/src/engine/build_session/oneshot.rs:183 (attempt-count stop, MAX_TEST_RETRIES), src/lib/harness/orchestrator.ts:118 + src/lib/harness/plan-builder.ts:57 (self-reported pass rate; in-progress areas never re-picked), src-tauri/db/src/repos/resources/deliberation.rs:179 (round/status UPDATE still unconditional; the 2026-10-11 commits 51911bee09/84f7df60c0/8807423c0a added a proposal-approval CAS but did not touch the round write). Map lag: pair digests read sha256-b2:89e82a9f790ac3fb / revision 6 while the index is at revision 8; rebuild with node ../ai-registry/scripts/build-registry-map.mjs --project personas."
+}

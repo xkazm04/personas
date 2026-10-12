@@ -1,0 +1,104 @@
+{
+  "schema": "conform-run/1",
+  "worker": "53faba79-c5b8-4789-a68f-d338d86f8e2d",
+  "subject": "rate-limiting",
+  "evaluatedAt": "2026-10-12T12:28:54Z",
+  "pairs": [
+    {
+      "context": "059fdee0-40da-434a-a5cb-874bc9179a31",
+      "subject": "rate-limiting",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/management_api.rs:754 writes an api_key_audit SQLite row (plus an unlatched warn at :749) on every 429, beside the limiter once-per-streak latch at src-tauri/engine/src/rate_limiter.rs:78 - a refusal storm becomes per-request log and DB write amplification (re-verified unchanged 2026-10-12)",
+      "techniques": [
+        {
+          "technique": "storm-hygiene",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/management_api.rs:754 record_audit(...429...) per refusal; the refusal branch is not budgeted as the hot path"
+        },
+        {
+          "technique": "refusal-contract",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/management_api.rs:755 returns rate_limited_response(retry_after) computed from limiter state"
+        }
+      ]
+    },
+    {
+      "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+      "subject": "rate-limiting",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/infrastructure/tier_usage.rs:83 infers each bucket limit from its key prefix (webhook: else event_source_max), so apikey: (120, management_api.rs:408) and mcp_tool: (mcp_tools.rs:793) buckets are charted against the wrong limit and feed approaching_limit at :109 - one arithmetic for operator and caller is violated (re-verified unchanged 2026-10-12)",
+      "techniques": [
+        {
+          "technique": "limit-observability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/tier_usage.rs:83 snapshot re-derives the limit instead of reading the one the refusal used"
+        }
+      ]
+    },
+    {
+      "context": "767b2bb5-4662-4be1-ad24-c881ac334016",
+      "subject": "rate-limiting",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/webhook.rs:409 refuses 429 with no_headers() (retry-after only in body prose) although the same file sets Retry-After on its active-window path at webhook.rs:499 - header-honouring senders get nothing and guess (re-verified unchanged 2026-10-12)",
+      "techniques": [
+        {
+          "technique": "refusal-contract",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/webhook.rs:409 no_headers() on the rate-limit 429; no naked no is violated"
+        },
+        {
+          "technique": "storm-hygiene",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/webhook.rs:402 tracing::warn! on every refused webhook, unlatched, beside the limiter latch at src-tauri/engine/src/rate_limiter.rs:78"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "rate-limiting",
+      "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0",
+      "reason": "context is governance:weak (plugins-research-lab-shared); skill rule forbids judging weak pairs by default - coverage question, not a verdict"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T12:28:54Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "rate-limiting"
+      ],
+      "techniques": [
+        "storm-hygiene",
+        "refusal-contract"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T12:28:54Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "rate-limiting"
+      ],
+      "techniques": [
+        "limit-observability"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T12:28:54Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "rate-limiting"
+      ],
+      "techniques": [
+        "refusal-contract",
+        "storm-hygiene"
+      ],
+      "deviations": 1
+    }
+  ]
+}

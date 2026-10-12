@@ -1,0 +1,21 @@
+{"schema": "conform-run/1", "worker": "4eb58860-40c0-408a-bd36-a84c26a41942", "subject": "draft-editing",
+ "evaluatedAt": "2026-10-12T12:30:45Z",
+ "pairs": [
+  {"context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc", "subject": "draft-editing", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:131 on success drops the draft link by id without comparing it to the payload captured at :99, while the condition button (src/features/triggers/sub_studio/StudioPatchbay.tsx:202) and output-match inputs (:209) stay enabled during the gated create->dry-run->enable round trip, so an edit made mid-flight is silently discarded and the live trigger carries the old condition; the duplicate-create half of the 2026-10-10 verdict is fixed by 90c4f7d7ae (:110 in-flight ref, :151 Save all disabled)",
+   "techniques": [
+     {"technique": "debounced-save-groups", "verdict": "deviation", "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:131 race 2 (completion of a stale save) unhandled: clean-marking does not compare the current link to the sent payload; race 1 duplicate save now realized at :110"},
+     {"technique": "draft-model", "verdict": "partial", "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:80 every mutation is a functional setDraft producing a new value snapshot, but apply does not remember what it sent (:131, also commitFormLink :162)"},
+     {"technique": "navigation-guards", "verdict": "realized (survival layer)", "evidence": "src/features/triggers/sub_studio/libs/studioDraftModel.ts:79 the draft is persisted to localStorage so it survives remount and reload"}
+   ],
+   "registryProposal": "Race 2 in debounced-save-groups is phrased for continuous debounced saves; this case is an explicit per-item commit that removes the item from the draft on success. A one-line note that 'remove-on-commit' drafts are the same race (compare-before-remove or lock the item's controls while committing) would make it findable from the commit-gesture shape, not only the debounce shape."}
+ ],
+ "declined": [
+  {"subject": "draft-editing", "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0", "reason": "deviation judged 2026-10-10 against the current digest sha256-b2:79771a6adb7936e5 (revision 3); anchored files unchanged since (EditorDocument.tsx last touched 2026-05-21, useTabSection.ts 2026-03-27, EditorBody.tsx 2026-09-24) and anchors re-printed and still say what the evidence claims; re-judging would rewrite an identical verdict"},
+  {"subject": "draft-editing", "context": "cc76d419-f457-4fe4-833c-6869efbc9287", "reason": "deviation judged 2026-10-10 against the current digest; useUnsavedGuard.ts last touched 2026-09-17, anchors :51 and :90 re-printed and unchanged"},
+  {"subject": "draft-editing", "context": "2a54cdc2-87af-4298-b490-9eb87f230df7", "reason": "not-applicable judged 2026-10-10 against the current digest; usePresetAdoption.ts last touched 2026-08-26, anchor :30 unchanged"}
+ ],
+ "consults": [
+  {"ts": "2026-10-12T12:30:45Z", "bundle": "software-engineering", "subjects": ["draft-editing"], "techniques": ["debounced-save-groups", "draft-model", "navigation-guards"], "deviations": 1}
+ ]}

@@ -1,0 +1,154 @@
+{
+  "schema": "conform-run/1",
+  "worker": "ca8a5574-2dd0-43fb-9e4e-bb796e477ad3",
+  "subject": "app-shell",
+  "evaluatedAt": "2026-10-12T11:46:49Z",
+  "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
+  "evaluatedRevision": 6,
+  "pairs": [
+    {
+      "context": "4560e824-e952-45a9-8aef-fe88d721952e",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:67-68 filters Welcome cards by hand-copied SIMPLE_SECTIONS/DEV_MODE_SECTIONS (src/lib/utils/platform/platform.ts:102-103) instead of passesGates (src/lib/navigation/registry.ts:160), so on the default TEAM tier (src/lib/constants/uiModes.ts:65) the rail offers Plugins (registry.ts:84 minTier TEAM) while Welcome hides it - re-verified 2026-10-12, unfixed",
+      "techniques": [
+        {
+          "technique": "entitlement-gating",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:67-68 filters Welcome cards by hand-copied SIMPLE_SECTIONS/DEV_MODE_SECTIONS (src/lib/utils/platform/platform.ts:102-103) instead of passesGates (src/lib/navigation/registry.ts:160), so on the default TEAM tier (src/lib/constants/uiModes.ts:65) the rail offers Plugins (registry.ts:84 minTier TEAM) while Welcome hides it - re-verified 2026-10-12, unfixed"
+        }
+      ]
+    },
+    {
+      "context": "456eb952-9b93-4de4-bad5-79e6f101aeb1",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:73 renders IncidentsInbox with no tier check and src/stores/slices/overview/overviewSlice.ts:279 setOverviewTab writes unchecked, so src/features/companions/athena/ProactiveCard.tsx:53 (and decision/useDecisionQueue.ts:153) route to a tab the sidebar hides below TEAM (src/features/shared/chrome/sidebar/sidebarData.ts:81) - re-verified 2026-10-12, unfixed",
+      "techniques": [
+        {
+          "technique": "entitlement-gating",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:73 renders IncidentsInbox with no tier check and src/stores/slices/overview/overviewSlice.ts:279 setOverviewTab writes unchecked, so src/features/companions/athena/ProactiveCard.tsx:53 (and decision/useDecisionQueue.ts:153) route to a tab the sidebar hides below TEAM (src/features/shared/chrome/sidebar/sidebarData.ts:81) - re-verified 2026-10-12, unfixed"
+        }
+      ]
+    },
+    {
+      "context": "83a8a744-2036-4e3e-9654-6fcec82334ff",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10-15 splits six sub-panels with plain React lazy(), skipping the chunk-retry wrapper src/lib/lazyRetry.ts that sibling src/features/plugins/twin/TwinPage.tsx:19-24 uses; a transient chunk blip goes straight to the reload prompt - re-verified 2026-10-12, unfixed",
+      "techniques": [
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10-15 splits six sub-panels with plain React lazy(), skipping the chunk-retry wrapper src/lib/lazyRetry.ts that sibling src/features/plugins/twin/TwinPage.tsx:19-24 uses; a transient chunk blip goes straight to the reload prompt - re-verified 2026-10-12, unfixed"
+        }
+      ]
+    },
+    {
+      "context": "dc471d31-ae30-4ac9-b015-d51969df458d",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120-122 casts untyped sub-nav ids (id as DevToolsTab/ObsidianBrainTab/TwinTab); only top-level sections derive from the registry (src/features/shared/chrome/sidebar/sidebarData.ts:34) while the sub-nav arrays stay hand-kept - sidebarData.ts:161-164 records this cast shipping a blank page; re-verified 2026-10-12, unfixed",
+      "techniques": [
+        {
+          "technique": "navigation-model",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120-122 casts untyped sub-nav ids (id as DevToolsTab/ObsidianBrainTab/TwinTab); only top-level sections derive from the registry (src/features/shared/chrome/sidebar/sidebarData.ts:34) while the sub-nav arrays stay hand-kept - sidebarData.ts:161-164 records this cast shipping a blank page; re-verified 2026-10-12, unfixed"
+        }
+      ]
+    },
+    {
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/system/uiSlice.ts:570 setSettingsTab writes any id unchecked and src/stores/systemStore.ts:95 persists settingsTab with no restore validation (only sidebarSection is checked, systemStore.ts:234), so a retired id makes src/features/settings/components/SettingsPage.tsx:72 tabComponents[tab] undefined and Settings crashes to its boundary - same for cloudTab/homeTab (systemStore.ts:82,88); re-verified 2026-10-12, unfixed (anchor moved from uiSlice.ts:571; 0afa77a0a1 added inert/aria-hidden only)",
+      "techniques": [
+        {
+          "technique": "navigation-model",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/uiSlice.ts:570 setSettingsTab writes any id unchecked and src/stores/systemStore.ts:95 persists settingsTab with no restore validation (only sidebarSection is checked, systemStore.ts:234), so a retired id makes src/features/settings/components/SettingsPage.tsx:72 tabComponents[tab] undefined and Settings crashes to its boundary - same for cloudTab/homeTab (systemStore.ts:82,88); re-verified 2026-10-12, unfixed (anchor moved from uiSlice.ts:571; 0afa77a0a1 added inert/aria-hidden only)"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "app-shell",
+      "context": "5ab49df3-3442-4ea6-a405-077dec64850d",
+      "reason": "context persona-core-codex is governance: weak; its match (badge/sub/section tokens, score 247) is the doubtful part - coverage question for the registry, not judged"
+    },
+    {
+      "subject": "app-shell",
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+      "reason": "not-applicable verdict of 2026-10-03 is against the current digest (62a9a7fc, rev 6); not re-read this run"
+    },
+    {
+      "subject": "app-shell",
+      "context": "89eddf81-0c57-441d-a07d-de36bf022cb5",
+      "reason": "not-applicable verdict of 2026-10-03 is against the current digest (62a9a7fc, rev 6); not re-read this run"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T11:46:49Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "entitlement-gating"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T11:46:49Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "entitlement-gating"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T11:46:49Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "lazy-section-loading"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T11:46:49Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "navigation-model"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T11:46:49Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "app-shell"
+      ],
+      "techniques": [
+        "navigation-model"
+      ],
+      "deviations": 1
+    }
+  ]
+}

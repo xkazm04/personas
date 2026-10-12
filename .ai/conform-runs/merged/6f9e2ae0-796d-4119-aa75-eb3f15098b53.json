@@ -1,0 +1,9 @@
+{"schema": "conform-run/1", "worker": "6f9e2ae0-796d-4119-aa75-eb3f15098b53", "subject": "settings",
+ "evaluatedAt": "2026-10-12T12:02:27Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "settings", "context": "cab45fee-e439-4bff-9924-217b1acc17f8", "reason": "dead context: plugins-artist-hooks has no code - the Artist plugin was removed in 0697f13438 and its tables dropped (src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:1); none of its entry_points (src/features/plugins/artist/hooks/useArtistAssets.ts etc.) is in git ls-files. A verdict about absent code would orphan at the next rescan; the context should leave context-map.json instead"},
+  {"subject": "settings", "context": "b2d7acbc-0191-46e4-8a4d-87c229410c7e", "reason": "dead context: plugins-artist-media-studio-hooks has no code - removed with the Artist plugin in 0697f13438 (src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:1); its entry_points under src/features/plugins/artist/sub_media_studio/hooks/ are absent from git ls-files. The lexical match (file, save, coalescing) was on the description of deleted undo-history code, not on a settings store"},
+  {"subject": "settings", "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0", "reason": "weak governance row, and the Research Lab plugin it describes was removed in 0697f13438 (same retirement migration) - a coverage question, not a pair to judge"}
+ ],
+ "consults": []}

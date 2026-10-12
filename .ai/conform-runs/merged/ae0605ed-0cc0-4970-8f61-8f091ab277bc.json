@@ -1,0 +1,159 @@
+{
+  "schema": "conform-run/1",
+  "worker": "ae0605ed-0cc0-4970-8f61-8f091ab277bc",
+  "subject": "operator-surfaces-for-llm-spend",
+  "evaluatedAt": "2026-10-12T11:42:53Z",
+  "pairs": [
+    {
+      "context": "0ecc70bc-a005-4ff8-9a98-f362d2a75f53",
+      "subject": "operator-surfaces-for-llm-spend",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/lib/bindings/LlmSpendTotals.ts:3 totals.cost_usd is a non-nullable number with no unpriced-call count while the writer stores None for an unpriced call (src-tauri/db/src/repos/llm_spend.rs:104): the canonical payload fixes absence as $0, so no renderer can show the em-dash (re-confirmed 2026-10-12)",
+      "techniques": [
+        {
+          "technique": "single-render-layer-many-consumers",
+          "verdict": "deviation",
+          "evidence": "src/api/llmSpend.ts:10 the one spend door returns LlmSpendDashboard whose totals cannot carry absence; the honesty rule cannot be pushed into any renderer downstream"
+        }
+      ],
+      "registryProposal": "Five deviations in five contexts share one root (the totals query COALESCEs nullable cost to 0 and the binding has no unpriced count); a consumer-side fix lands once in llm_spend.rs + LlmSpendTotals. The subject could name the store-to-payload hop as where nullable-never-zero is usually lost, upstream of any renderer."
+    },
+    {
+      "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+      "subject": "operator-surfaces-for-llm-spend",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/llm_spend.rs:261 COALESCE(SUM(cost_usd), 0.0) over the nullable cost_usd column returns unpriced spend as $0.00 and the dashboard query (:259-267) counts no unpriced calls, so every LlmSpendTotals consumer inherits absence-as-zero (re-confirmed 2026-10-12)",
+      "techniques": [
+        {
+          "technique": "sql-panel-sets-over-the-relational-store",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/llm_spend.rs:261 nullable-never-zero broken in the store query itself"
+        }
+      ]
+    },
+    {
+      "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573",
+      "subject": "operator-surfaces-for-llm-spend",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_mastermind/lib/islandStats.ts:58 renders null spend (connector returned no rows, src/features/teams/sub_mastermind/lib/llmSpend.ts:27) as \"$0\" with tone good, and :59 formats with its own 0/2dp while src/features/teams/sub_factory/passport/LlmTrackingCell.tsx:89 shows the same sum as ≈$ at 2/4dp: absence graded healthy, two surfaces disagree (re-confirmed 2026-10-12)",
+      "techniques": [
+        {
+          "technique": "glyph-encoded-business-thresholds",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/islandStats.ts:58 absence routed to tone good"
+        },
+        {
+          "technique": "single-render-layer-many-consumers",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/islandStats.ts:59 a second local money formatter for the number LlmTrackingCell.tsx:89 renders differently"
+        }
+      ]
+    },
+    {
+      "context": "e8fa2ff7-145d-4c58-af83-1239b87d2c24",
+      "subject": "operator-surfaces-for-llm-spend",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:108 the spend KPI renders non-nullable cost_usd through local fmtCost (src/features/overview/sub_activity/libs/executionMetricsHelpers.ts:3) while LlmCallsTable.tsx:299 in the same context renders cost through Numeric unit=usd with an em-dash for null: two cost renderers, and the zero-coalesced total has no unpriced disclosure (re-confirmed 2026-10-12)",
+      "techniques": [
+        {
+          "technique": "single-render-layer-many-consumers",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_activity/libs/executionMetricsHelpers.ts:3 a local fmtCost beside the shared Numeric renderer used at src/features/overview/sub_activity/components/LlmCallsTable.tsx:299"
+        }
+      ]
+    },
+    {
+      "context": "2dcda6bf-9982-422b-b63f-1481c414cdab",
+      "subject": "operator-surfaces-for-llm-spend",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:243 totalCostUsd: toNum(cost) with toNum returning 0 for a missing cost (:164) and :95 r.cost_usd ?? 0: an unpriced call rolls up as $0 and isOverBudget (:560, the shared threshold predicate) grades it under budget - absence routed through the threshold (re-confirmed 2026-10-12)",
+      "techniques": [
+        {
+          "technique": "glyph-encoded-business-thresholds",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:560 the one threshold function receives a zero-coalesced cost"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "operator-surfaces-for-llm-spend",
+      "context": "942d2449-34ab-4f02-af7e-b130269d10ef",
+      "reason": "fleet-triage-columns is a dead context: its map paths are empty and both entry points (src/features/fleet/monitor/triage/triageModel.ts, MonitorProjectColumns.tsx) are absent from git ls-files; there is no code to judge. Rescan the context map rather than judge it"
+    },
+    {
+      "subject": "operator-surfaces-for-llm-spend",
+      "context": "a38e2b93-2322-4187-befa-c0443c4ca85f",
+      "reason": "weak context (glyph-definitions), lexical-only match on glyph; the skill does not judge weak pairs by default"
+    },
+    {
+      "subject": "operator-surfaces-for-llm-spend",
+      "context": "5ab49df3-3442-4ea6-a405-077dec64850d",
+      "reason": "weak context (persona-core-codex), lexical-only match on glyph; the skill does not judge weak pairs by default"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T11:42:53Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "operator-surfaces-for-llm-spend"
+      ],
+      "techniques": [
+        "single-render-layer-many-consumers"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T11:42:53Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "operator-surfaces-for-llm-spend"
+      ],
+      "techniques": [
+        "sql-panel-sets-over-the-relational-store"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T11:42:53Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "operator-surfaces-for-llm-spend"
+      ],
+      "techniques": [
+        "glyph-encoded-business-thresholds",
+        "single-render-layer-many-consumers"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T11:42:53Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "operator-surfaces-for-llm-spend"
+      ],
+      "techniques": [
+        "single-render-layer-many-consumers"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T11:42:53Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "operator-surfaces-for-llm-spend"
+      ],
+      "techniques": [
+        "glyph-encoded-business-thresholds"
+      ],
+      "deviations": 1
+    }
+  ]
+}

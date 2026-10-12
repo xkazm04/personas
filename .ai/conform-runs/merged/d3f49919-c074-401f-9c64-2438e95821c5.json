@@ -1,0 +1,173 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d3f49919-c074-401f-9c64-2438e95821c5",
+ "subject": "conversation-orchestration",
+ "evaluatedAt": "2026-10-12T18:03:11.500567+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [
+  {
+   "context": "companion-narration-ops",
+   "subject": "conversation-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/companions/athena/RecallChip.tsx:98 Disclosed memory chips in the recall strip only provide an open-in-viewer action, omitting the required correction/forgetting door into the memory store's write path.",
+   "techniques": [
+    {
+     "technique": "recall-transparency",
+     "verdict": "deviation",
+     "evidence": "src/features/companions/athena/RecallChip.tsx:98 Disclosed memory chip only opens the Brain Viewer; no 'this is wrong' or 'forget this' action exists to capture user correction."
+    },
+    {
+     "technique": "narration-promote-on-finish",
+     "verdict": "conformant",
+     "evidence": "src/features/companions/athena/NarrationThread.tsx:104 Collapsed trail derives step count and elapsed duration from retained tool entries upon turn completion."
+    },
+    {
+     "technique": "progress-beat-grammar",
+     "verdict": "conformant",
+     "evidence": "src/features/companions/athena/NarrationThread.tsx:29 Live narration log bounds displayed beats to a recent window with a count for earlier hidden rows."
+    }
+   ]
+  },
+  {
+   "context": "agents-quick-answer",
+   "subject": "conversation-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/quick-answer/QuickAnswerBody.tsx:13 Quick Answer is a human operator triage interface for pending build questions and manual review items; no resident companion conversation turn runs here, so the conversation-orchestration precondition fails for every technique.",
+   "techniques": [
+    {
+     "technique": "progress-beat-grammar",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/quick-answer/QuickAnswerBody.tsx:13 Triage review surface does not run resident companion model turns."
+    },
+    {
+     "technique": "narration-promote-on-finish",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/quick-answer/QuickAnswerBody.tsx:13 No streaming narration or settlement promotion exists for reviewer triage cards."
+    },
+    {
+     "technique": "recall-transparency",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/quick-answer/QuickAnswerBody.tsx:13 Queue items are pending reviews, not memory retrieval grounding."
+    },
+    {
+     "technique": "two-surface-doctrine",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/quick-answer/QuickAnswerBody.tsx:13 Deck/popover is an operator queue rather than an ambient presence paired with chat."
+    }
+   ]
+  },
+  {
+   "context": "plugins-companion-decision",
+   "subject": "conversation-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/companions/athena/orb/AthenaOrbLayer.tsx:162 The ambient decision shortcut uses an unremappable bare printable leader key (';') with a fixed 2000ms disarm window, violating single-character shortcut and timing adjustability requirements.",
+   "techniques": [
+    {
+     "technique": "two-surface-doctrine",
+     "verdict": "deviation",
+     "evidence": "src/features/companions/athena/orb/AthenaOrbLayer.tsx:162 Leader key uses a single printable character (';') without modifier chord or setting, has a fixed 2000ms window, and registers with priority rather than an exclusive lock while armed."
+    },
+    {
+     "technique": "layered-avatar-state-machine",
+     "verdict": "conformant",
+     "evidence": "src/features/companions/athena/orb/AthenaOrb.tsx:153 Embeds AthenaAvatar video loop beneath reactive glow and chrome layers in the floating orb presence."
+    }
+   ]
+  },
+  {
+   "context": "companion-chat-bubbles",
+   "subject": "conversation-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/companions/athena/QuickReplies.tsx:34 The 1\u20139 chip accelerator is a bare window keydown listener guarded only against text fields, bypassing the application keyboard authority so a single digit press can fire both a chip and an ambient or triage decision.",
+   "techniques": [
+    {
+     "technique": "model-proposed-quick-replies",
+     "verdict": "deviation",
+     "evidence": "src/features/companions/athena/QuickReplies.tsx:34 Bypasses AppKeyboardProvider by attaching a raw window keydown listener guarded only against text inputs."
+    },
+    {
+     "technique": "progress-beat-grammar",
+     "verdict": "conformant",
+     "evidence": "src/features/companions/athena/Bubble.tsx:111 Renders PROGRESS beats as lightweight conversational aside messages in the transcript."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "conversation-orchestration",
+   "context": "companion-ui-controls",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-12T18:03:11.500567+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "conversation-orchestration"
+   ],
+   "techniques": [
+    "narration-promote-on-finish",
+    "progress-beat-grammar",
+    "recall-transparency"
+   ],
+   "deviations": 1,
+   "context": "companion-narration-ops",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T18:03:11.500567+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "conversation-orchestration"
+   ],
+   "techniques": [
+    "narration-promote-on-finish",
+    "progress-beat-grammar",
+    "recall-transparency",
+    "two-surface-doctrine"
+   ],
+   "deviations": 0,
+   "context": "agents-quick-answer",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T18:03:11.500567+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "conversation-orchestration"
+   ],
+   "techniques": [
+    "layered-avatar-state-machine",
+    "two-surface-doctrine"
+   ],
+   "deviations": 1,
+   "context": "plugins-companion-decision",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T18:03:11.500567+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "conversation-orchestration"
+   ],
+   "techniques": [
+    "model-proposed-quick-replies",
+    "progress-beat-grammar"
+   ],
+   "deviations": 1,
+   "context": "companion-chat-bubbles",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  }
+ ]
+}

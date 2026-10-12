@@ -1,0 +1,44 @@
+{"schema": "conform-run/1", "worker": "fa3546ed-8b65-4479-831d-a0f222e353b7", "subject": "cost-metering",
+ "evaluatedAt": "2026-10-12T12:28:00Z",
+ "pairs": [
+  {"context": "cd8712a3-9546-4c21-895b-9e64a4b161b1", "subject": "cost-metering", "bundle": "software-engineering",
+   "state": "deviation", "evaluatedAgainst": "sha256-b2:b3129728f9d9c336", "evaluatedRevision": 14,
+   "evidence": "src-tauri/engine/src/http_engine/config.rs:44 cost_of prices every model outside two Qwen SKUs (:33) at $0.0, the test at :149 pins that zero, and src-tauri/engine/src/http_engine/openai.rs:232 repeats the zero branch inline - a newer remote model is free under every ceiling, and a second price authority beside src-tauri/engine/src/cost.rs:34 with the opposite unknown-model policy (re-anchored: 9708af6d23 moved http_engine out of src-tauri/src/engine; defect unchanged)",
+   "techniques": [
+    {"technique": "price-tables", "verdict": "deviation", "evidence": "src-tauri/engine/src/http_engine/config.rs:44 `None => 0.0` - unknown model priced at zero, uncounted; price-tables: never zero, default at or above the most expensive known family, counted"},
+    {"technique": "price-tables", "verdict": "deviation", "evidence": "src-tauri/engine/src/http_engine/openai.rs:232 second inline zero branch on the same table, beside src-tauri/engine/src/cost.rs:34 (mid-tier default) - two lookups with opposite unknown-model policies, a named anti-pattern"}
+   ],
+   "registryProposal": "Consumer-map note, not a corpus finding: context-map.json still lists engine-build-session's http_engine paths under src-tauri/src/engine/http_engine/, which no longer exist since 9708af6d23 moved them to src-tauri/engine/src/http_engine/; the next context rescan must pick up the new paths or the matcher loses this context's price table."},
+  {"context": "320d2cea-9761-4233-97c1-ee2eaf4d6c17", "subject": "cost-metering", "bundle": "software-engineering",
+   "state": "deviation", "evaluatedAgainst": "sha256-b2:b3129728f9d9c336", "evaluatedRevision": 14,
+   "evidence": "src-tauri/db/src/repos/execution/executions.rs:2359 SUMs cost_usd under COALESCE(..,0.0), so unpriced rows (kept None by coerce_f64 :210, mapper :294) vanish from the month figure the gate enforces, and get_monthly_spend (:2348) returns a bare f64 with no period window or floor flag; unattended consumers swallow a ledger error as $0 (src-tauri/src/engine/background/scheduler.rs:889, src-tauri/src/engine/execution.rs:3021 unwrap_or(0.0)) - undeclared, uncounted fail-open on unattended paths. Realized: one MONTHLY_SPEND_PREDICATE (:2346) counting failed/cancelled rows",
+   "techniques": [
+    {"technique": "usage-ledgers", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/execution/executions.rs:2359 COALESCE(SUM(cost_usd), 0.0) converts unknown into a definite zero at the read hop; no unpriced count travels with the total"},
+    {"technique": "budget-enforcement", "verdict": "deviation", "evidence": "src-tauri/src/engine/background/scheduler.rs:889 unwrap_or(0.0) on a ledger error - the cron path fails open, undeclared and uncounted; budget-enforcement defaults unattended paths to fail-closed"},
+    {"technique": "usage-ledgers", "verdict": "realized", "evidence": "src-tauri/db/src/repos/execution/executions.rs:2346 one shared month predicate including failed/incomplete/cancelled rows - failures are spend, period boundary in one place"}
+   ]},
+  {"context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10", "subject": "cost-metering", "bundle": "software-engineering",
+   "state": "deviation", "evaluatedAgainst": "sha256-b2:b3129728f9d9c336", "evaluatedRevision": 14,
+   "evidence": "src-tauri/src/commands/infrastructure/idea_scanner.rs:909 books spend only by observe_line on the stream's `result` line inside the 1200s timeout (:895); the timeout branch (:1071) kills the child and writes no ledger row, so failed-call spend is invisible; the observe_line shape is hand-repeated at 20 call sites across 14 files (e.g. kpi_scan.rs:846, standards_scan.rs:334) with no chokepoint, a dropped write only warns uncounted (src-tauri/db/src/repos/llm_spend.rs:30), and the dashboard command returns no unpriced share or period window (src-tauri/src/commands/infrastructure/llm_spend.rs:20)",
+   "techniques": [
+    {"technique": "usage-ledgers", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/idea_scanner.rs:1071 timeout branch kills the spawn with no failed-leg row - every call that reached the provider must be a row"},
+    {"technique": "usage-ledgers", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/llm_spend.rs:30 best-effort insert swallows a failed write with a warn and no counter - the accidental third stance the golden path refuses"},
+    {"technique": "budget-enforcement", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/kpi_scan.rs:846 one of 20 hand-repeated observe_line call sites - metered calls from more than a handful of files, no chokepoint"},
+    {"technique": "spend-observability", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/llm_spend.rs:20 dashboard returns totals for window_days with no period start/end or unpriced count"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "cost-metering", "context": "2fb16136-586e-478d-823f-38434d2d5b9a", "reason": "weak context, not judged by default; its 2026-10-10 verdict is against the current digest and no commit touched its anchors since"},
+  {"subject": "cost-metering", "context": "468953eb-0204-4013-b366-9357b2161138", "reason": "judged 2026-10-09 against current digest rev 14; no commit touched its anchors since"},
+  {"subject": "cost-metering", "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b", "reason": "judged 2026-10-09 against current digest rev 14; no commit touched its anchors since"},
+  {"subject": "cost-metering", "context": "a7ece012-8300-4780-b286-b9cea81801fc", "reason": "judged 2026-10-05 against current digest; anchors re-printed 2026-10-12 and still hold"},
+  {"subject": "cost-metering", "context": "e8fa2ff7-145d-4c58-af83-1239b87d2c24", "reason": "judged 2026-10-05 against current digest; anchors re-printed 2026-10-12 and still hold"},
+  {"subject": "cost-metering", "context": "66bc7a14-bf15-41d7-8d9a-900aa670f47e", "reason": "not-applicable judged 2026-10-09 against current digest; no change"},
+  {"subject": "cost-metering", "context": "532bbf10-3fd3-4b57-a8ea-95a957645697", "reason": "judged 2026-10-09 against current digest; no commit touched its anchors since"},
+  {"subject": "cost-metering", "context": "6a81750d-fdbf-4518-bae6-689303e1a884", "reason": "judged 2026-10-05; src-tauri/engine/src/cost.rs unchanged since and anchors :17/:34/:58 re-printed and still hold"}
+ ],
+ "consults": [
+  {"ts": "2026-10-12T12:28:00Z", "bundle": "software-engineering", "subjects": ["cost-metering"], "techniques": ["price-tables"], "deviations": 1},
+  {"ts": "2026-10-12T12:28:00Z", "bundle": "software-engineering", "subjects": ["cost-metering"], "techniques": ["usage-ledgers", "budget-enforcement"], "deviations": 1},
+  {"ts": "2026-10-12T12:28:00Z", "bundle": "software-engineering", "subjects": ["cost-metering"], "techniques": ["usage-ledgers", "budget-enforcement", "spend-observability"], "deviations": 1}
+ ]}

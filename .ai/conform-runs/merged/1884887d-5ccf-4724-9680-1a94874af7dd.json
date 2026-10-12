@@ -1,0 +1,151 @@
+{
+  "schema": "conform-run/1",
+  "worker": "1884887d-5ccf-4724-9680-1a94874af7dd",
+  "subject": "diff-comparison",
+  "evaluatedAt": "2026-10-12T11:46:09Z",
+  "pairs": [
+    {
+      "context": "03960450-6979-4412-9de3-35c897fe56d2",
+      "subject": "diff-comparison",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:169 a failed off-thread JSON diff sets [] and the header renders e.identical (:191), also shown while the job is pending; comparisonDiffCore.ts:84 compares JSON.stringify(v ?? null) per top-level key (depth one, serialized equality, absent collapsed to null); re-verified 2026-10-12, code unchanged since 2026-10-10",
+      "techniques": [
+        {
+          "technique": "computation-offload",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:169 catch path sets [] instead of a comparison-unavailable state"
+        },
+        {
+          "technique": "diff-honesty",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:191 empty diffs (failed or pending) render as identical"
+        },
+        {
+          "technique": "semantic-level-selection",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/libs/comparisonDiffCore.ts:84 equality decided by serialization at depth one with absent collapsed into null"
+        }
+      ]
+    },
+    {
+      "context": "ba0d4722-bfde-40aa-8e1d-52591719f834",
+      "subject": "diff-comparison",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_lab/components/shared/InlineDiffPreview.tsx:37 counts whitespace-separator tokens from diffStrings as words (split(/s+/) on \" \" yields 2), so the summary count disagrees with the detail; DiffViewer.tsx:54 reads no-differences when both prompts fail to parse (promptMigration.ts:263 returns {}); re-verified 2026-10-12",
+      "techniques": [
+        {
+          "technique": "diff-honesty",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/shared/InlineDiffPreview.tsx:37 summary count contradicts detail rows"
+        },
+        {
+          "technique": "presentation-modes",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/shared/DiffViewer.tsx:54 zero after a parse failure is indistinguishable from compared-no-change"
+        }
+      ]
+    },
+    {
+      "context": "83a8a744-2036-4e3e-9654-6fcec82334ff",
+      "subject": "diff-comparison",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/obsidian-brain/sub_sync/ConflictDiffView.tsx:32 slices each side at MAX_CHARS before diffing, cutting mid-line: the severed line renders as a phantom edit and divergence past the cap renders as shared, disclosed only by an unquantified footnote (:80) not at the cut; re-verified 2026-10-12",
+      "techniques": [
+        {
+          "technique": "diff-honesty",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/obsidian-brain/sub_sync/ConflictDiffView.tsx:80 truncation disclosed as a generic caption, not at the point of truncation"
+        },
+        {
+          "technique": "computation-offload",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/obsidian-brain/sub_sync/ConflictDiffView.tsx:32 budget overrun degrades to an undisclosed partial answer rather than a disclosed coarser one"
+        }
+      ]
+    },
+    {
+      "context": "fd092e44-fcec-4418-8337-ed2b7b2c8473",
+      "subject": "diff-comparison",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_teamMemory/components/timeline/TimelineControls.tsx:60 the run marker renders only when added or removed > 0, so compared-no-change, baseline-off-window (useRunDiffSummaries.ts:80) and fetch-failed (useRunDiffSummaries.ts:91, silentCatch) are the same silence; re-verified 2026-10-12",
+      "techniques": [
+        {
+          "technique": "presentation-modes",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/components/timeline/TimelineControls.tsx:60 not-compared has no distinct rendering from zero"
+        },
+        {
+          "technique": "diff-honesty",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/libs/useRunDiffSummaries.ts:91 failure swallowed and rendered as absence"
+        },
+        {
+          "technique": "pair-and-baseline-selection",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/libs/useRunDiffSummaries.ts:80 missing baseline leaves the first run unmarked with no disclosure"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-12T11:46:09Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "diff-comparison"
+      ],
+      "techniques": [
+        "computation-offload",
+        "diff-honesty",
+        "semantic-level-selection"
+      ],
+      "deviations": 3,
+      "context": "03960450-6979-4412-9de3-35c897fe56d2"
+    },
+    {
+      "ts": "2026-10-12T11:46:09Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "diff-comparison"
+      ],
+      "techniques": [
+        "diff-honesty",
+        "presentation-modes"
+      ],
+      "deviations": 2,
+      "context": "ba0d4722-bfde-40aa-8e1d-52591719f834"
+    },
+    {
+      "ts": "2026-10-12T11:46:09Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "diff-comparison"
+      ],
+      "techniques": [
+        "diff-honesty",
+        "computation-offload"
+      ],
+      "deviations": 2,
+      "context": "83a8a744-2036-4e3e-9654-6fcec82334ff"
+    },
+    {
+      "ts": "2026-10-12T11:46:09Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "diff-comparison"
+      ],
+      "techniques": [
+        "presentation-modes",
+        "diff-honesty",
+        "pair-and-baseline-selection"
+      ],
+      "deviations": 3,
+      "context": "fd092e44-fcec-4418-8337-ed2b7b2c8473"
+    }
+  ]
+}

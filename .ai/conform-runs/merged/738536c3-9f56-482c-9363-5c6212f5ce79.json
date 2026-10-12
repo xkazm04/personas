@@ -1,0 +1,59 @@
+{
+ "schema": "conform-run/1",
+ "worker": "738536c3-9f56-482c-9363-5c6212f5ce79",
+ "subject": "multi-provider-gateway-plane",
+ "evaluatedAt": "2026-10-12T12:35:10Z",
+ "pairs": [
+  {
+   "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b",
+   "subject": "multi-provider-gateway-plane",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/runner/mod.rs:2094 re-verified 2026-10-12: the remote-HTTP (Qwen/DashScope) branch returns before the failover chain applies blocked_providers (src-tauri/engine/src/failover.rs:770) and before the provider_audit insert at :3767, while src/features/settings/sub_byom/components/ByomProviderList.tsx:37 presents Qwen as policy-governed; a fully-blocked chain still surfaces as the outage text at :2398 - a compliance-tagged persona can run on an unaudited upstream, and a denial reads as an outage",
+   "techniques": [
+    {
+     "technique": "exclusive-authorship-of-a-measured-decision",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/runner/mod.rs:2094 model_profile.provider routes to DashScope outside the policy decision; the compliance trail (:3767) never records the run"
+    },
+    {
+     "technique": "policy-verdict-in-the-status-space",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/runner/mod.rs:2398 a policy that filters every candidate at src-tauri/engine/src/failover.rs:770 exits with 'All providers failed or have open circuit breakers' - refusal arrives as an outage"
+    },
+    {
+     "technique": "router-versus-candidate-failure",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/runner/mod.rs:2398 router-generated empty chain is reported with the same message as candidate exhaustion"
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "multi-provider-gateway-plane",
+   "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0",
+   "reason": "weak governance row with empty paths; a coverage question, not judged by default"
+  },
+  {
+   "subject": "multi-provider-gateway-plane",
+   "context": "89d44c76-ec4c-4388-843e-503cf6ca2507",
+   "reason": "weak governance row (progress-transform UI: ContentLoader/EstimatedProgressBar); lexical match on transform/multi/status, not judged by default"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-12T12:35:10Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "multi-provider-gateway-plane"
+   ],
+   "techniques": [
+    "exclusive-authorship-of-a-measured-decision",
+    "policy-verdict-in-the-status-space",
+    "router-versus-candidate-failure"
+   ],
+   "deviations": 1
+  }
+ ]
+}

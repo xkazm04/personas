@@ -1,0 +1,9 @@
+{"schema": "conform-run/1", "worker": "7d8378ea-9be4-4a41-a08d-bb4b2b7d7289", "subject": "judge-calibration-and-drift",
+ "evaluatedAt": "2026-10-12T12:40:43Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "judge-calibration-and-drift", "context": "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b", "reason": "NO-WORK for the named selection: the map lists this subject on only 2 contexts (plugins-drive, timing-utility-hooks), both already judged not-applicable against the current digest sha256-b2:d0f0d4aa66f81402 rev 5, so nothing is stale or unknown. MISSING PAIRING (registryProposal): lab-versions-eval scores prompt versions with an LLM judge plus a degraded keyword-heuristic fallback (src/features/agents/sub_lab/components/versions_table/VersionRatingCell.tsx:18), and the matcher never paired this subject with it. Not added because this worker may not add pairs; the next run should judge it."},
+  {"subject": "judge-calibration-and-drift", "context": "a1223fbb-1e53-471b-9829-075cce8014f8", "reason": "MISSING PAIRING (registryProposal): lab-arena runs judge seats over blind-mapped contestant outputs (src-tauri/src/commands/contest/arena.rs:266 judge_seat_key; :8 runs/blind-map.json), so the subject's precondition (an LLM judge scoring outputs) appears to hold, but the map does not pair this subject here. It is left unjudged because this worker may not add pairs."}
+ ],
+ "consults": []
+}

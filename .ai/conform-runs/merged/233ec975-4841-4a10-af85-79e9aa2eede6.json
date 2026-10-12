@@ -1,0 +1,61 @@
+{
+  "schema": "conform-run/1",
+  "worker": "233ec975-4841-4a10-af85-79e9aa2eede6",
+  "subject": "subprocess-lifecycle",
+  "evaluatedAt": "2026-10-12T12:37:17Z",
+  "pairs": [
+    {
+      "context": "2de6333f-8375-404b-8fdc-fe0fb15d4f95",
+      "subject": "subprocess-lifecycle",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/fleet/headless.rs:72 headless close/hibernate kills one pid with p.kill() (PTY lane likewise via src-tauri/src/commands/fleet/pty.rs:649 clone_killer, no polite rung) and never the tree, although src-tauri/src/webbuild/devserver.rs:595 kill_tree exists - a closed claude session orphans its MCP servers and tool shells (re-verified 2026-10-12, unchanged since 2026-10-10)",
+      "techniques": [
+        {
+          "technique": "termination-and-reaping",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:72 single-pid forcible kill, no polite rung or deadline, no tree kill; src-tauri/src/commands/fleet/commands.rs:251 documents the hard-kill-first path"
+        }
+      ]
+    },
+    {
+      "context": "6a81750d-fdbf-4518-bae6-689303e1a884",
+      "subject": "subprocess-lifecycle",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/session_pool.rs:145 the warm-session fingerprint hashes tool_count, not tool identity, and omits credentials and CLI version though session_pool.rs:9 promises credential invalidation; src-tauri/src/commands/tools/tools.rs:73 assign_tool never invalidates - swapping one tool or credential for another resumes a session built in a different world (re-verified 2026-10-12, unchanged)",
+      "techniques": [
+        {
+          "technique": "session-reuse",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/execution/executions.rs:589 passes tools.len() into compute_config_hash; the technique requires over-inclusion (executable version, behavior-altering env, tool identity) and exact-match retirement"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-12T12:37:17Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "subprocess-lifecycle"
+      ],
+      "techniques": [
+        "termination-and-reaping"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T12:37:17Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "subprocess-lifecycle"
+      ],
+      "techniques": [
+        "session-reuse"
+      ],
+      "deviations": 1
+    }
+  ]
+}

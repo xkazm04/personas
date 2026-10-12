@@ -1,0 +1,98 @@
+{
+  "schema": "conform-run/1",
+  "worker": "62daa05b-d8bf-4814-8a79-2c62edc94420",
+  "subject": "scheduling",
+  "evaluatedAt": "2026-10-12T12:48:01Z",
+  "pairs": [
+    {
+      "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
+      "subject": "scheduling",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/api/pipeline/triggers.ts:273 listRecentScheduleRuns is the only run read and RecentScheduleRun (src-tauri/src/commands/tools/triggers.rs:1522) carries no cause and no represented due time; out-of-window skips are only a tracing line (src-tauri/src/engine/background/scheduler.rs:848), so a declined fire cannot be explained through this API",
+      "techniques": [
+        {
+          "technique": "schedule-observability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/tools/triggers.rs:1522 run record crosses the IPC boundary without cause or due time; no non-fire ledger read exists - re-confirmed unchanged since the 2026-10-10 verdict"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:cd982b42588a2de5",
+      "evaluatedRevision": 6
+    },
+    {
+      "context": "4810daf8-0549-4899-95d2-99c81cde6455",
+      "subject": "scheduling",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/overview/alertSlice.ts:450 alert rules are evaluated level-triggered and suppressed only by a global 1h cooldown (:440, FIRED_COOLDOWN_MS at :210) that counts nothing - a persisting breach re-alerts hourly as if new and \"N since last notice\" is unrecoverable",
+      "techniques": [
+        {
+          "technique": "cooldown-and-debounce",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/overview/alertSlice.ts:440 a clock cooldown with no suppressed-fire count, over level-triggered evaluation at :450 - the siren-with-snooze shape the technique names as wrong"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:cd982b42588a2de5",
+      "evaluatedRevision": 6
+    },
+    {
+      "context": "56a0fd55-279d-428b-b2f6-7c89154abd6f",
+      "subject": "scheduling",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/schedules/libs/calendarHelpers.ts:19 past-unknown still collapses skipped/out-of-window/over-budget/offline into one state because the only read, src-tauri/src/commands/tools/triggers.rs:1544, returns real executions with no cause and no represented due time - verdict-survives-boundary names this exact shape",
+      "techniques": [
+        {
+          "technique": "schedule-observability",
+          "verdict": "deviation",
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:19 the consumer is forced to the undifferentiated unknown the decision rule describes; the surface itself is honest, the read contract is the gap"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:cd982b42588a2de5",
+      "evaluatedRevision": 6
+    }
+  ],
+  "declined": [
+    {
+      "subject": "scheduling",
+      "context": "417112d1-004b-41d5-a656-57997a47d818",
+      "reason": "governance weak and grounding lexical-only (useDebounce matched on the word debounce); existing not-applicable verdict at the current digest left untouched - weak rows are not judged by default"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T12:48:01Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "scheduling"
+      ],
+      "techniques": [
+        "schedule-observability"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T12:48:01Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "scheduling"
+      ],
+      "techniques": [
+        "cooldown-and-debounce"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T12:48:01Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "scheduling"
+      ],
+      "techniques": [
+        "schedule-observability"
+      ],
+      "deviations": 1
+    }
+  ]
+}

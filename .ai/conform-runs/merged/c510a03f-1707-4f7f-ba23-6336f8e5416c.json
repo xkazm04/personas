@@ -1,0 +1,183 @@
+{
+ "schema": "conform-run/1",
+ "worker": "c510a03f-1707-4f7f-ba23-6336f8e5416c",
+ "subject": "agent-memory",
+ "evaluatedAt": "2026-10-12T17:24:13.297904+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [
+  {
+   "context": "companion-core-store",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/companions/athena/types.ts:5 The companion-core-store context isolates client UI presentation concerns from the agent memory pipeline, which lives behind the IPC boundary in the backend.",
+   "techniques": [
+    {
+     "technique": "working-memory",
+     "verdict": "not-applicable",
+     "evidence": "src/features/companions/athena/types.ts:15 Tracks companion panel UI presence rather than an operative task working-memory structure."
+    },
+    {
+     "technique": "recall-injection",
+     "verdict": "not-applicable",
+     "evidence": "src/features/companions/athena/__tests__/liveTurns.test.ts:5 Tests UI streaming text partition across tabs rather than agent context recall injection."
+    }
+   ]
+  },
+  {
+   "context": "overview-manual-review",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:50 The manual review inbox presents operator approvals for persona task execution runs rather than distilled agent memory beliefs or memory governance proposals.",
+   "techniques": [
+    {
+     "technique": "memory-governance",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:50 Inbox reviews persona execution runs rather than governing agent memory belief writes."
+    },
+    {
+     "technique": "pending-beliefs-live-apart",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:29 Queue queries persona_manual_reviews for execution approvals rather than pending memory beliefs."
+    }
+   ]
+  },
+  {
+   "context": "plugins-dev-tools-skills",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_skills/SkillsManagerPage.tsx:1 The Skills Manager context provides a developer-tools management surface for workspace skill libraries and project skills rather than implementing an agent memory pipeline.",
+   "techniques": [
+    {
+     "technique": "procedure-promotion",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_skills/skillsManagerData.ts:21 Context configures frontmatter bindings for dev skills rather than promoting distilled procedures into versioned capabilities."
+    },
+    {
+     "technique": "coverage-instrumentation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx:3 Coverage pipeline dispatches static code scan sweep sessions across project contexts rather than measuring agent memory coverage."
+    }
+   ]
+  },
+  {
+   "context": "settings-network",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:34 The settings-network context manages peer-to-peer network exposure permissions and signed bundle exports rather than an agent memory pipeline.",
+   "techniques": [
+    {
+     "technique": "owner-and-counterpart-scope",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:34 Context configures P2P network resource exposure scopes rather than agent memory identity boundaries."
+    },
+    {
+     "technique": "durable-store-failure-posture",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/sub_network/components/BundleExportDialog.tsx:11 Handles bundle export network payloads rather than durable agent memory stores."
+    }
+   ]
+  },
+  {
+   "context": "stores",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/stores/systemStore.ts:2 The top-level stores context coordinates application-level UI chrome, GitLab integration, and client state rather than an agent memory pipeline.",
+   "techniques": [
+    {
+     "technique": "working-memory",
+     "verdict": "not-applicable",
+     "evidence": "src/stores/systemStore.ts:39 System store coordinates client application state across UI slices rather than LLM agent task working memory."
+    },
+    {
+     "technique": "durable-store-failure-posture",
+     "verdict": "not-applicable",
+     "evidence": "src/stores/systemStore.ts:13 Local storage persistence manages frontend client cache rather than a durable agent memory store."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-12T17:24:13.297904+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [
+    "recall-injection",
+    "working-memory"
+   ],
+   "deviations": 0,
+   "context": "companion-core-store",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T17:24:13.297904+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [
+    "memory-governance",
+    "pending-beliefs-live-apart"
+   ],
+   "deviations": 0,
+   "context": "overview-manual-review",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T17:24:13.297904+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [
+    "coverage-instrumentation",
+    "procedure-promotion"
+   ],
+   "deviations": 0,
+   "context": "plugins-dev-tools-skills",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T17:24:13.297904+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [
+    "durable-store-failure-posture",
+    "owner-and-counterpart-scope"
+   ],
+   "deviations": 0,
+   "context": "settings-network",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T17:24:13.297904+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [
+    "durable-store-failure-posture",
+    "working-memory"
+   ],
+   "deviations": 0,
+   "context": "stores",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  }
+ ]
+}

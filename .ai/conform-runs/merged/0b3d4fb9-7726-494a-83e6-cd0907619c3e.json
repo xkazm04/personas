@@ -1,0 +1,8 @@
+{"schema": "conform-run/1", "worker": "0b3d4fb9-7726-494a-83e6-cd0907619c3e", "subject": "table",
+ "evaluatedAt": "2026-10-12T11:37:15Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "table", "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400", "reason": "governance: weak - the declared domains barely cover plugins-artist-gallery; judging it against table would manufacture a verdict on a doubtful match (coverage question for the registry, not a pair to judge by default)"},
+  {"subject": "table", "context": "*", "reason": "no work: the other 8 table pairs are all judged (7 deviation, 1 not-applicable) against sha256-b2:b2b329111d190ae7 / revision 12, which is the registry index's current digest and revision at e94a2fc5; none is stale, and no anchor file has a commit after its verdict's evaluatedAt nor uncommitted edits, so re-judging would only repeat verdicts already current"}
+ ],
+ "consults": []}

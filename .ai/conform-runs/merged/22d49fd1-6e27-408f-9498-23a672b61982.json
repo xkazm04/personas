@@ -1,0 +1,95 @@
+{
+  "schema": "conform-run/1",
+  "worker": "22d49fd1-6e27-408f-9498-23a672b61982",
+  "subject": "cross-provider-benchmark-operations",
+  "evaluatedAt": "2026-10-12T12:32:43.988Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "5d538a29-a2bb-4d61-8ec2-c51bcde105fe",
+      "reason": "no work: already judged not-applicable on 2026-10-10 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b",
+      "reason": "no work: already judged not-applicable on 2026-10-09 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "reason": "no work: already judged not-applicable on 2026-10-10 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "0b0ee725-52a2-4656-9e13-07c5204de60e",
+      "reason": "no work: already judged not-applicable on 2026-10-10 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "9b0ee86c-2613-49a5-9fda-fcc4d432fb72",
+      "reason": "no work: already judged deviation on 2026-10-10 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "a1223fbb-1e53-471b-9829-075cce8014f8",
+      "reason": "no work: already judged deviation on 2026-10-10 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b",
+      "reason": "no work: already judged deviation on 2026-10-10 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "97025c06-0d64-4025-8a1f-98b90ba1c233",
+      "reason": "no work: already judged not-applicable on 2026-10-09 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "456eb952-9b93-4de4-bad5-79e6f101aeb1",
+      "reason": "no work: already judged not-applicable on 2026-10-10 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "92f6c0fc-8d5c-43a7-bab8-1851973d5198",
+      "reason": "no work: already judged not-applicable on 2026-10-09 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+      "reason": "no work: already judged not-applicable on 2026-10-10 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "b0cf3902-0739-40a8-8c76-ae594f41421b",
+      "reason": "no work: already judged not-applicable on 2026-10-10 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "2dcda6bf-9982-422b-b63f-1481c414cdab",
+      "reason": "no work: already judged not-applicable on 2026-10-09 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f",
+      "reason": "no work: already judged not-applicable on 2026-10-05 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+      "reason": "no work: already judged deviation on 2026-10-09 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "54236947-3775-4d0a-8e14-1a709dd4d8bc",
+      "reason": "no work: already judged not-applicable on 2026-10-10 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc",
+      "reason": "no work: already judged not-applicable on 2026-10-05 against the current subject digest sha256-b2:529238b95e86e429 (revision 11, registry bb180d5d); no commit or dirty edit has touched the lab/arena/test_runner/labSlice anchor files since 2026-10-09, and the four deviation anchors were printed back and still read as their evidence claims"
+    }
+  ],
+  "consults": []
+}

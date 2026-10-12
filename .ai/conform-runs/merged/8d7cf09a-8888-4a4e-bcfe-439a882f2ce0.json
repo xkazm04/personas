@@ -1,0 +1,10 @@
+{"schema": "conform-run/1", "worker": "8d7cf09a-8888-4a4e-bcfe-439a882f2ce0", "subject": "quality-regression-gating",
+ "evaluatedAt": "2026-10-12T12:42:49Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "quality-regression-gating", "context": "92f6c0fc-8d5c-43a7-bab8-1851973d5198",
+   "reason": "already judged not-applicable on 2026-10-09 against sha256-b2:2fa1e4fd027c9e92 rev 8, which equals the registry index digest at bb180d5d; not stale, re-judging would re-audit an unchanged verdict"},
+  {"subject": "quality-regression-gating", "context": "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b",
+   "reason": "registryProposal (missing pairing, not added per worker contract): lab-versions-eval is governed by this subject but the matcher did not pair it - src/features/agents/sub_lab/libs/versionMatrixRows.ts:33 computes a composite delta vs a pinned regression baseline, i.e. the run-vs-run scalar compare the golden path says this subject owns (paired-per-case-testing, baseline-carries-its-conditions, unverified-vs-regressed-exit-states). Unjudged until a pair exists."}
+ ],
+ "consults": []}

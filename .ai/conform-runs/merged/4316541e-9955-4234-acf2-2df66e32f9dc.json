@@ -1,0 +1,35 @@
+{
+  "schema": "conform-run/1",
+  "worker": "4316541e-9955-4234-acf2-2df66e32f9dc",
+  "subject": "markdown-vault",
+  "evaluatedAt": "2026-10-12T11:33:53Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "markdown-vault",
+      "context": "mastermind-popovers",
+      "reason": "already judged 2026-10-09 against the current subject digest sha256-b2:7a10f98b2d9488ac (revision 2, unchanged at registry e94a2fc5); no commits touch its anchors since, and every anchor line was re-printed and still says what the verdict claims - nothing to re-judge"
+    },
+    {
+      "subject": "markdown-vault",
+      "context": "mcp-server",
+      "reason": "already judged 2026-10-09 against the current subject digest sha256-b2:7a10f98b2d9488ac (revision 2, unchanged at registry e94a2fc5); no commits touch its anchors since, and every anchor line was re-printed and still says what the verdict claims - nothing to re-judge"
+    },
+    {
+      "subject": "markdown-vault",
+      "context": "obsidian-brain",
+      "reason": "already judged 2026-10-09 against the current subject digest sha256-b2:7a10f98b2d9488ac (revision 2, unchanged at registry e94a2fc5); no commits touch its anchors since, and every anchor line was re-printed and still says what the verdict claims - nothing to re-judge"
+    },
+    {
+      "subject": "markdown-vault",
+      "context": "plugins-obsidian-brain",
+      "reason": "already judged 2026-10-09 against the current subject digest sha256-b2:7a10f98b2d9488ac (revision 2, unchanged at registry e94a2fc5); no commits touch its anchors since, and every anchor line was re-printed and still says what the verdict claims - nothing to re-judge"
+    },
+    {
+      "subject": "markdown-vault",
+      "context": "resource-tracking",
+      "reason": "already judged 2026-10-09 against the current subject digest sha256-b2:7a10f98b2d9488ac (revision 2, unchanged at registry e94a2fc5); no commits touch its anchors since, and every anchor line was re-printed and still says what the verdict claims - nothing to re-judge"
+    }
+  ],
+  "consults": []
+}

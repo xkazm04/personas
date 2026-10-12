@@ -1,0 +1,22 @@
+{"schema":"conform-run/1","worker":"29f0765d-f59e-4740-91cd-b91741823aa4","subject":"trace-rollup-and-attribution","evaluatedAt":"2026-10-12T11:58:29Z",
+"pairs":[
+{"context":"03960450-6979-4412-9de3-35c897fe56d2","subject":"trace-rollup-and-attribution","bundle":"llm-observability","state":"deviation",
+ "evidence":"src/features/agents/sub_executions/libs/useBulkRerun.ts:115 skips null origCost into totalCostOriginal and BulkRunCohort (src/features/agents/sub_executions/libs/useBulkRerun.ts:61) carries no unmeasured-run count, so src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:90 prints a lower bound as the cohort total - re-verified 2026-10-12, files unchanged since 2026-09-03",
+ "techniques":[{"technique":"unpriced-span-accounting","verdict":"deviation","evidence":"src/features/agents/sub_executions/libs/useBulkRerun.ts:115 never coerces null to zero (ingest half realized) but the rollup omits the unmeasured count, so the total at src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:90 reads as complete"}]},
+{"context":"208f50de-5d3b-4345-9fed-1c106a7a36e9","subject":"trace-rollup-and-attribution","bundle":"llm-observability","state":"deviation",
+ "evidence":"src/features/agents/sub_executions/detail/inspector/useTraceData.ts:250 builds the waterfall via buildSpanTree (src/features/agents/sub_executions/libs/traceHelpers.ts:115), which drops cycle spans and duplicates collided ids, while src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:185 counts unifiedTrace.spans.length - the Spans tile and the rows beneath it range over different sets - re-verified 2026-10-12",
+ "techniques":[
+  {"technique":"single-shape-rule","verdict":"deviation","evidence":"src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:185 summary tile counts the raw span set while the list beneath renders the tree from src/features/agents/sub_executions/detail/inspector/useTraceData.ts:250 - the shape does not pin the collection"},
+  {"technique":"derived-trace-rollup","verdict":"deviation","evidence":"src/features/agents/sub_executions/libs/traceHelpers.ts:115 handles dangling parents (orphaned flag) but a parent cycle reaches no root and is silently dropped; duplicate span ids push one node twice"},
+  {"technique":"span-cap-truncation-signal","verdict":"realized","evidence":"src/features/agents/sub_executions/detail/inspector/TraceSummary.tsx:60 reads evicted_span_count and TraceInspector.tsx:193 warns on dropped live span events"}]},
+{"context":"a6843b83-43a1-4eab-ae40-26f23b949a0d","subject":"trace-rollup-and-attribution","bundle":"llm-observability","state":"deviation",
+ "evidence":"src/hooks/execution/useReasoningTrace.ts:100 coerces the optional ResultEvent.duration_ms (src/lib/types/terminalEvents.ts:56) to 0, and src/hooks/execution/useExecutionSummary.ts:82 hands it to src/features/agents/sub_executions/detail/views/ExecutionSummaryCard.tsx:124, whose != null guard cannot see the coercion, so an unmeasured run reads as 0 ms - re-verified 2026-10-12",
+ "techniques":[{"technique":"unpriced-span-accounting","verdict":"deviation","evidence":"src/hooks/execution/useReasoningTrace.ts:100 substitutes 0 for an absent measurement (the technique's never-coerce rule, applied to duration); cost on the next line correctly stays undefined"}],
+ "registryProposal":"unpriced-span-accounting's never-coerce rule is stated for cost but bites identically on duration and tokens; the technique (or golden path) could name 'any nullable measure' explicitly so duration coercions are recognised as the same defect"}
+],
+"declined":[],
+"consults":[
+{"ts":"2026-10-12T11:58:29Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["unpriced-span-accounting"],"deviations":1},
+{"ts":"2026-10-12T11:58:29Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["single-shape-rule","derived-trace-rollup","span-cap-truncation-signal"],"deviations":1},
+{"ts":"2026-10-12T11:58:29Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["unpriced-span-accounting"],"deviations":1}
+]}

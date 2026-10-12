@@ -1,0 +1,37 @@
+{
+ "schema": "conform-run/1",
+ "worker": "fb31e5ee-9279-4216-b79d-a710d3d84858",
+ "subject": "quality-gates",
+ "evaluatedAt": "2026-10-12T17:24:14.573641+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "quality-gates",
+   "context": "home-welcome",
+   "reason": "curator-multi refused the seat's answer: the seat disclaimed its own answer: Read-only static assessment; no files changed and no tests or gates executed. The golden path was opened before repository code, and all 27 technique files were"
+  },
+  {
+   "subject": "quality-gates",
+   "context": "settings-network",
+   "reason": "curator-multi refused the seat's answer: the seat disclaimed its own answer: Read-only static assessment; no files changed and no tests or gates executed. The golden path was opened before repository code, and all 27 technique files were"
+  },
+  {
+   "subject": "quality-gates",
+   "context": "display-table-primitives",
+   "reason": "curator-multi refused the seat's answer: the seat disclaimed its own answer: Read-only static assessment; no files changed and no tests or gates executed. The golden path was opened before repository code, and all 27 technique files were"
+  },
+  {
+   "subject": "quality-gates",
+   "context": "vault-credentials-components-forms",
+   "reason": "curator-multi refused the seat's answer: the seat disclaimed its own answer: Read-only static assessment; no files changed and no tests or gates executed. The golden path was opened before repository code, and all 27 technique files were"
+  },
+  {
+   "subject": "quality-gates",
+   "context": "scraper",
+   "reason": "curator-multi refused the seat's answer: the seat disclaimed its own answer: Read-only static assessment; no files changed and no tests or gates executed. The golden path was opened before repository code, and all 27 technique files were"
+  }
+ ],
+ "consults": []
+}

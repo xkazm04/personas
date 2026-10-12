@@ -1,0 +1,222 @@
+{
+ "schema": "conform-run/1",
+ "worker": "c0a7c919-635d-4cd8-86e5-cffd0f37bb02",
+ "subject": "agent-runtime-assembly",
+ "evaluatedAt": "2026-10-12T17:24:18.374904+00:00",
+ "provider": "grok",
+ "model": "grok-4.7",
+ "pairs": [
+  {
+   "context": "hooks-design",
+   "subject": "agent-runtime-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/hooks/design/core/useDesignAnalysis.ts:169 This context starts and displays design-studio IPC jobs from React hooks; it does not compose the hook chain, extension loader, or loop state around a model or tool call.",
+   "techniques": [
+    {
+     "technique": "semantic-hook-placement",
+     "verdict": "not-applicable",
+     "evidence": "src/hooks/design/core/useTauriStream.ts:14 The hook is a UI line buffer for design CLI output, not a placement class on a model or tool chain."
+    },
+    {
+     "technique": "bounded-projection-of-external-work",
+     "verdict": "not-applicable",
+     "evidence": "src/hooks/design/oauth/useOAuthPolling.ts:62 The UI polls an OAuth consent session; the model is not polling a tool job that outlived a turn."
+    },
+    {
+     "technique": "checkpoint-mode-custody",
+     "verdict": "not-applicable",
+     "evidence": "src/hooks/design/core/useDesignConversation.ts:25 Resume here is a design-chat transcript, not a full-versus-delta graph checkpoint mode."
+    },
+    {
+     "technique": "additive-input-at-the-call-boundary",
+     "verdict": "not-applicable",
+     "evidence": "src/hooks/design/core/useDesignAnalysis.ts:218 Answering a design question starts another design job through the API; the model-call boundary is not in this file."
+    },
+    {
+     "technique": "indeterminate-closure-on-interruption",
+     "verdict": "not-applicable",
+     "evidence": "src/hooks/design/core/useBackgroundPreview.ts:64 The hook picks a notification title for a phase it already received; it does not close an outstanding tool call."
+    },
+    {
+     "technique": "honest-hook-registry",
+     "verdict": "not-applicable",
+     "evidence": "src/hooks/design/core/useTauriStream.ts:69 The timeout bounds a UI wait for a design job, not a published extension-callback registry."
+    }
+   ],
+   "registryProposal": "The word hook in this subject is the agent extension chain. A context whose files are React hooks will match the name and still be outside the subject; the golden path never says that in one sentence."
+  },
+  {
+   "context": "byom-provider-settings",
+   "subject": "agent-runtime-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:161 This context is the operator editor that saves a provider allow, block, and routing policy; it does not assemble the code around a model call.",
+   "techniques": [
+    {
+     "technique": "assembly-identity",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:213 A new routing rule stores a requested provider name; this file does not digest a resolved hook chain."
+    },
+    {
+     "technique": "operator-tier-code-loading",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/sub_byom/components/ByomApiKeyManager.tsx:48 The settings keys name API credentials and a base URL, not a code entry point."
+    },
+    {
+     "technique": "session-scoped-capability",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:68 The allow list is an operator provider policy with one value for the app, not a capability that exists because of which client is connected."
+    },
+    {
+     "technique": "guard-input-custody",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:139 The panel refuses to overwrite a policy it could not load; the guard's read path and the file's writer set are not in this context."
+    }
+   ]
+  },
+  {
+   "context": "observability-audit-models",
+   "subject": "agent-runtime-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/core/src/models/policy_event.rs:8 These files are serde shapes for records of work that already happened; the drop they describe is attributed to engine dispatch, not performed here.",
+   "techniques": [
+    {
+     "technique": "indeterminate-closure-on-interruption",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/models/tool_audit.rs:16 The audit row has a status field and does not close an interrupted call."
+    },
+    {
+     "technique": "substituted-result-attribution",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/models/tool_audit.rs:21 error_kind separates a machine token from the message on an audit row; nothing here returns a cached or substituted tool result."
+    },
+    {
+     "technique": "guard-input-custody",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/models/audit_log.rs:4 The struct comment names an audit entry; it does not show who can write the row."
+    }
+   ]
+  },
+  {
+   "context": "prompt-assembly-engine",
+   "subject": "agent-runtime-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/engine/src/prompt/mod.rs:1 This module assembles the text the model reads and the session-reuse fingerprints of that text, which the golden path places in prompt-assembly rather than in the code around the call.",
+   "techniques": [
+    {
+     "technique": "assembly-identity",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/prompt/capabilities.rs:358 The fingerprint exists to rebuild a warm session when prompt inputs change; it is not a digest of the hook chain."
+    },
+    {
+     "technique": "operator-tier-code-loading",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/prompt/cli_args.rs:1 The module builds the model process argv; it does not load extension code from a configuration tier."
+    },
+    {
+     "technique": "rewrite-before-the-gate",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:23 The wrap fences untrusted prompt text; it is not a contributed rewrite of tool arguments before a policy gate."
+    },
+    {
+     "technique": "session-scoped-capability",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/prompt/capabilities.rs:410 Capability policy is rendered as prompt lines; the comment places the hard check in engine dispatch, outside this module."
+    },
+    {
+     "technique": "guard-input-custody",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:32 The canary is an instruction inside the prompt, not a denylist file the guard re-reads from the work tree."
+    },
+    {
+     "technique": "nested-run-is-not-its-parent",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/prompt/cli_args.rs:78 TRACEPARENT is injected into the Claude CLI subprocess of this run so traces correlate; the file does not start a second agent."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-runtime-assembly",
+   "context": "db-repos-execution",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-12T17:24:18.374904+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-runtime-assembly"
+   ],
+   "techniques": [
+    "additive-input-at-the-call-boundary",
+    "bounded-projection-of-external-work",
+    "checkpoint-mode-custody",
+    "honest-hook-registry",
+    "indeterminate-closure-on-interruption",
+    "semantic-hook-placement"
+   ],
+   "deviations": 0,
+   "context": "hooks-design",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-12T17:24:18.374904+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-runtime-assembly"
+   ],
+   "techniques": [
+    "assembly-identity",
+    "guard-input-custody",
+    "operator-tier-code-loading",
+    "session-scoped-capability"
+   ],
+   "deviations": 0,
+   "context": "byom-provider-settings",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-12T17:24:18.374904+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-runtime-assembly"
+   ],
+   "techniques": [
+    "guard-input-custody",
+    "indeterminate-closure-on-interruption",
+    "substituted-result-attribution"
+   ],
+   "deviations": 0,
+   "context": "observability-audit-models",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-12T17:24:18.374904+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-runtime-assembly"
+   ],
+   "techniques": [
+    "assembly-identity",
+    "guard-input-custody",
+    "nested-run-is-not-its-parent",
+    "operator-tier-code-loading",
+    "rewrite-before-the-gate",
+    "session-scoped-capability"
+   ],
+   "deviations": 0,
+   "context": "prompt-assembly-engine",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  }
+ ]
+}

@@ -1,0 +1,9 @@
+{"schema": "conform-run/1", "worker": "387924b4-1166-4b7c-8036-7f70482e81dc", "subject": "concurrency-guards",
+ "evaluatedAt": "2026-10-12T12:04:25Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "concurrency-guards", "context": "621caefc-8ae0-42e7-89b6-8e879ad62814", "reason": "no work: already judged not-applicable 2026-10-09 against sha256-b2:41b09d489d8f7ef9 (revision 14), which is the registry's current digest at e94a2fc5; anchor src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:50 re-read and still says what the verdict claims"},
+  {"subject": "concurrency-guards", "context": "ab849301-d5ce-4d91-a12e-0e87a0417585", "reason": "no work: already judged not-applicable 2026-10-09 against the current digest (revision 14); anchor src/features/shared/components/feedback/ConfirmDialog.tsx:40 re-read and still holds. Coverage question for the registry: in this map concurrency-guards is paired only with three UI contexts, none of them deviations, while the Rust execution/fleet backend (e.g. commands-execution 6da794b4, db-repos-execution 320d2cea, commands-fleet 2de6333f) carries no concurrency-guards pair at all - the matcher likely misses the subject on backend vocabulary (lock/mutex/in-flight/dedupe); a pairing worth adding by a run allowed to add pairs"},
+  {"subject": "concurrency-guards", "context": "9b6cc17c-3add-4152-a349-c189b15a109f", "reason": "no work: weak-governance context, already judged not-applicable 2026-10-03 against the current digest (revision 14); weak rows are not re-evaluated by default"}
+ ],
+ "consults": []}

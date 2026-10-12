@@ -1,0 +1,8 @@
+{"schema": "conform-run/1", "worker": "58946b1f-6b5f-4f65-b191-e8828c875e88", "subject": "multi-project",
+ "evaluatedAt": "2026-10-12T12:10:23Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "multi-project", "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b", "reason": "Only unjudged multi-project pair; context is governance=weak, lexical-only ('project' = research project, not a managed codebase), and its code no longer exists: 0697f13438 removed the Research Lab plugin and src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:1 retires its tables. A dead context to drop on the next context-map rescan, not a pair to judge."}
+ ],
+ "consults": []
+}

@@ -1,0 +1,5 @@
+{"schema": "conform-run/1", "worker": "37b2658c-310e-42a3-918d-3aae148f0727", "subject": "modal-stack",
+ "evaluatedAt": "2026-10-12T12:34:21Z",
+ "pairs": [],
+ "declined": [{"subject": "modal-stack", "context": "d3346f2c-d747-4d85-b6e6-c1450da57ec9", "reason": "no work: the only modal-stack pair in this map (template-gallery-modals) was judged deviation on 2026-10-10 against sha256-b2:c0c7b5eacfef8679 rev 4, which is still the registry's current digest at bb180d5d; its anchors re-read 2026-10-12 still hold (src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:310 onDelete with no confirm, :311 onClose before settle; src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:208 failure only logged), so a re-judgment would restate a current verdict"}],
+ "consults": []}

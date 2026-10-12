@@ -1,0 +1,72 @@
+{
+  "schema": "conform-run/1",
+  "worker": "320c92f9-9ce8-401d-b621-cbab8db339de",
+  "subject": "deployment-contract",
+  "evaluatedAt": "2026-10-12T12:45:09Z",
+  "pairs": [
+    {
+      "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14",
+      "subject": "deployment-contract",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:58 re-confirmed 2026-10-12: the deployment smoke test still runs local executePersona, not the endpoint the card advertises (src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:44), though src/api/system/cloud.ts:49 cloudExecutePersona exists - its pass/fail describes the local twin, not the deployment",
+      "techniques": [
+        {
+          "technique": "deploy-gate-coupling",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:58 the verifying check exercises a local twin of the deployed persona, violating point-the-check-at-the-address-production-serves (gate-sees-target)"
+        }
+      ]
+    },
+    {
+      "context": "2b61b648-d166-4255-b7b7-5d32ffdd6751",
+      "subject": "deployment-contract",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1282 re-confirmed 2026-10-12: rollback (offered at src/features/plugins/gitlab/components/DeploymentHistoryTab.tsx:55 and GitOpsVersionHistory.tsx:63) rebuilds the agent from the snapshot prompt plus CURRENT local tools/model (same at gitlab.rs:989), so rollback ships an artifact never run instead of re-pointing to the last known-good one",
+      "techniques": [
+        {
+          "technique": "environment-promotion",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1282 rollback is a rebuild from mixed historical+current inputs, not a re-point to the last known-good build"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "deployment-contract",
+      "context": "cab45fee-e439-4bff-9924-217b1acc17f8",
+      "reason": "dead context: the Artist plugin was removed in 0697f13438 (2026-09-15) and its tables retired by src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:18; context-map lists no file_paths and git ls-files has no useArtistAssets/useGallerySelection/useBlenderMcp - nothing to judge, the context should leave the map on the next rescan"
+    },
+    {
+      "subject": "deployment-contract",
+      "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400",
+      "reason": "weak governance and dead context (Artist plugin removed in 0697f13438); match was on asset/assets vocabulary only, not on the subject precondition of deploying through a hosting platform"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T12:45:09Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "deployment-contract"
+      ],
+      "techniques": [
+        "deploy-gate-coupling"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T12:45:09Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "deployment-contract"
+      ],
+      "techniques": [
+        "environment-promotion"
+      ],
+      "deviations": 1
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "schema": "conform-run/1",
+  "worker": "a7de2949-242a-4511-8cdd-ecd99cfa017e",
+  "subject": "fleet-orchestration",
+  "evaluatedAt": "2026-10-12T11:58:27Z",
+  "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+  "evaluatedRevision": 25,
+  "pairs": [
+    {
+      "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+      "evaluatedRevision": 25,
+      "evidence": "src-tauri/src/engine/build_session/fanout.rs:1353 a capability lane that fails while siblings succeed is only a tracing::warn, assemble_agent_ir (:958) ignores res.error, and only all-lanes-failed is refused (:1365), so a persona with silently unresolved capabilities reaches DraftReady with no partial account; the brief at :118 still orders 'do NOT ask clarifying questions - pick sensible defaults' (silent inference). Re-judged against rev 25.",
+      "techniques": [
+        {
+          "technique": "result-harvest",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:1353 partial lane failure is logged, never carried on the assembled product; a synthesis over 7 of 9 capabilities does not say so on its face"
+        },
+        {
+          "technique": "brief-carries-the-session",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:118 'do NOT ask clarifying questions - pick sensible defaults' turns what the worker cannot see into a guess, not a flagged question (mitigated only for providers at :106)"
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:295 lanes admitted through run_lanes under a semaphore cap (src-tauri/src/engine/build_session/orchestrator.rs:83); per-member deadline at fanout.rs:142; write sets partitioned by capability at :92"
+        }
+      ]
+    },
+    {
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+      "evaluatedRevision": 25,
+      "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 'one verdict in, one backend write out'; usePendingInteractions.ts:3 fuses pending build questions and human reviews into one review queue. 'dispatch' routes a verdict; nothing creates, tracks or harvests sessions, so the precondition fails (review-surface concerns belong to hitl-approval). Re-judged against rev 25, verdict unchanged.",
+      "techniques": []
+    },
+    {
+      "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+      "evaluatedRevision": 25,
+      "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:327 list_by_run, the harvest roster read by fleet_run_report (src-tauri/src/commands/fleet/commands.rs:587), drops any row that fails to map via filter_map(Result::ok), and list_rehydratable does the same on the restart path (:255), so a corrupt member silently leaves the run denominator and the fleet on boot - while the sibling queue read at :457 deliberately surfaces the same failure.",
+      "techniques": [
+        {
+          "technique": "result-harvest",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:327 an unmappable roster row is dropped, not failed loudly; accounts no longer sum to the roster"
+        },
+        {
+          "technique": "durable-fleet-state",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:255 rehydrate read discards unreadable rows, so an unreadable mirror entry is indistinguishable from an absent one (recovery honesty); identity-not-handles is realized at :24"
+        },
+        {
+          "technique": "session-registry",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:445 live-slot states spelled once beside registry::is_live_state; pid and PTY kept out of the mirror (:24)"
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:399 an empty state list counts nothing rather than uncapping; durable queue order surfaces corruption at :457; run total keyed on run identity in src-tauri/db/src/repos/run_budget.rs:16"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "fleet-orchestration",
+      "context": "743a0ae5-b7d0-46a6-a915-cb82c7834bf8",
+      "reason": "fleet-monitor-shell is a read surface: consumer-side session-registry (src/features/fleet/monitor/monitorModel.ts:125) and absent-status-passthrough (:154) are realized, but most of the 18 techniques have no surface here and the liveness it renders is decided outside the context - src/stores/slices/processActivitySlice.ts:423 reaps a stale running entry as status 'failed' (an inference written as a self-report; the standard wants lost/unknown). That defect belongs to the slice's context; left unknown rather than graded on a producer it does not own."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T11:58:27Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "result-harvest",
+        "brief-carries-the-session",
+        "parallel-dispatch"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-12T11:58:27Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-12T11:58:27Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "result-harvest",
+        "durable-fleet-state",
+        "session-registry",
+        "parallel-dispatch"
+      ],
+      "deviations": 2
+    }
+  ]
+}

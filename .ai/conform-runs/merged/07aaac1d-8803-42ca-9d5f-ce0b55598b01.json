@@ -1,0 +1,32 @@
+{"schema": "conform-run/1", "worker": "07aaac1d-8803-42ca-9d5f-ce0b55598b01", "subject": "agent-memory",
+ "evaluatedAt": "2026-10-12T11:42:48Z",
+ "pairs": [
+  {"context": "c413de7d-1182-4abc-8a08-9c8832254c62", "subject": "agent-memory", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:23599eae61aa7119", "evaluatedRevision": 47,
+   "evidence": "src-tauri/db/src/repos/core/memories.rs:1404 the Director cleanup this context fires (src/features/companions/overseer/components/PersonaDetailModal.tsx:109, also every cycle via src-tauri/src/engine/director.rs:1617) picks archive victims by raw importance/access_count/created_at, not the decay_score recall ranks with (src-tauri/db/src/memory_recall.rs:157), with no grace-period or low-confidence clause, and drops the archive reason (src-tauri/src/engine/director_memory.rs:65): the janitor can retire what recall is serving, including a memory written that morning, and the archive carries no audit line",
+   "techniques": [
+    {"technique": "memory-value-model", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/core/memories.rs:1404 candidate order is importance ASC, access_count ASC, created_at ASC while recall ranks by decay_score (src-tauri/db/src/memory_recall.rs:157) - a second value policy, the janitor does not import the read path's model"},
+    {"technique": "decay-and-forgetting", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/core/memories.rs:1403 admits every active/working row whatever its age or confidence (no grace-period / low-confidence conjunct), and src-tauri/src/engine/director_memory.rs:65 discards the LLM's per-item reason, so the sweep's output is a count, not an audit line; realized: reversible archive tier (src-tauri/db/src/repos/core/memories.rs:1299) and a declared blast-radius cap for the LLM pass (src-tauri/src/engine/director_memory.rs:36)"}
+   ]},
+  {"context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5", "subject": "agent-memory", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:23599eae61aa7119", "evaluatedRevision": 47,
+   "evidence": "src/features/shared/components/forms/SettingRow.tsx:34 the context is presentational form controls (inputs, pickers, toggles, validation hooks); no agent captures, consolidates, retires or recalls anything here, so the subject's precondition - an agent carrying state forward - does not hold",
+   "techniques": [],
+   "registryProposal": "lexical match on shared/filter/selector; agent-memory's use_when tokens are too generic to keep it off a forms primitive folder"},
+  {"context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049", "subject": "agent-memory", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:23599eae61aa7119", "evaluatedRevision": 47,
+   "evidence": "src/features/plugins/dev-tools/sub_projects/projectManagerTypes.tsx:5 the context holds operator-authored project config view-models, and its one derived artifact is a deterministic aggregation of context maps (src-tauri/src/commands/infrastructure/dev_tools/portfolio.rs:330), not anything an agent observed or believes; no capture, consolidation, decay or recall stage lives here",
+   "techniques": [],
+   "registryProposal": "matched on projects/project/pipeline; the cross-project metadata map it surfaces is governed by context-hierarchy or codebase-scanning, not agent-memory"}
+ ],
+ "declined": [
+  {"subject": "agent-memory", "context": "d77a22ee-23cb-42f3-a910-590f8622977f", "reason": "UI mirror store; the only obligation that reaches it is recall-injection's empty-vs-failed distinction (src/features/companions/athena/athenaStore.ts:505 has one null for both), whose root is already recorded as a deviation on companion-narration-ops (backend recall swallows the error); judging it again would double-count one defect, and the subject's other techniques have no precondition here so a conformant verdict cannot meet the evidence floor"}
+ ],
+ "consults": [
+  {"ts": "2026-10-12T11:42:48Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": ["memory-value-model", "decay-and-forgetting"], "deviations": 1},
+  {"ts": "2026-10-12T11:42:48Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-12T11:42:48Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": [], "deviations": 0}
+ ]}

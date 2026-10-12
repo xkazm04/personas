@@ -1,0 +1,160 @@
+{
+  "schema": "conform-run/1",
+  "worker": "4a2b286f-12e8-42a5-b463-b7ae3887c447",
+  "subject": "quality-gates",
+  "evaluatedAt": "2026-10-12T11:42:13.122Z",
+  "pairs": [
+    {
+      "context": "66bc7a14-bf15-41d7-8d9a-900aa670f47e",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:386 marks a passport unreadable only on `ev && !ev.scanned`; a null probe (usePassportData.ts:331 catch->null, or no root_path) derives tests/docs/evals/security as 'none' and is published as measured (usePassportData.ts:338) - an ingestion failure rendered as findings about the repo",
+      "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+      "evaluatedRevision": 53,
+      "techniques": [
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:386 the measured-nothing state is read from one flag (ev.scanned) instead of derived over every observable; ev===null falls through to passportDerive.ts:239 `!ev?.has_tests ? 'none'`, so a probe that never ran reads as 'no tests' rather than unknown"
+        },
+        {
+          "technique": "advancement-evidence-fields",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/passportHistory.ts:58 recordSnapshot appends every passport, repoUnreadable ones included, with no unknown state and no scan version, so an unreadable checkout lands in the readiness trend as a real score drop"
+        },
+        {
+          "technique": "policy-projection",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_factory/passport/atlas/atlasModel.ts:27 one inkOf maps repoUnreadable repo-dependent rows to 'unknown' and countInk/worstInk derive from it, so atlas surfaces skip identically"
+        }
+      ]
+    },
+    {
+      "context": "17f44718-7d6d-4579-91bf-86191e29595a",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:84 the adoption gate is well built but bound to no door: it is registered (src-tauri/src/ipc_shards/shard_2.rs:206) and no frontend code invokes it, while UI adoption writes the use case directly via src/features/templates/sub_recipes/libs/useAdoption.ts:62 - the gate refuses nothing a user does",
+      "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+      "evaluatedRevision": 53,
+      "techniques": [
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:105 requirements the gate could not verify fail closed with a named reason instead of scoring Eligible"
+        },
+        {
+          "technique": "gate-liveness",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:370 seeded known-bad input (corrupt tool requirements) asserted to refuse; siblings at :291, :319, :419 prove the other refusal branches red"
+        },
+        {
+          "technique": "enforcement-binding",
+          "verdict": "deviation",
+          "evidence": "src/lib/commandNames.generated.ts:25 adopt_recipe_for_persona exists only as a generated name; the action that adopts (useAdoption.ts:62 mutateUseCases) never reaches it, so the refusal is blocking by construction and advisory by wiring"
+        },
+        {
+          "technique": "chokepoint-tag-registry",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:62 the underlying capability (appending a recipe use case to design_context) is not confined to the gated wrapper; nothing proves adoption routes through recipe_adoption.rs"
+        }
+      ],
+      "registryProposal": "enforcement-binding is written for the CI-pipeline to merge-decision join; this case is the same failure inside an app: a correct, tested refusal command registered over IPC while the user-facing action writes through a different door. Worth an application or a use_when trigger (\"a gate command with no caller on the action path\")."
+    },
+    {
+      "context": "e13cfc6c-f666-4959-81c0-2cfbc4815f04",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_recipes/components/RecipeDetailPanel.tsx:50 the adopt button is gated by a second, weaker evaluator (connector slugs vs all of CONNECTOR_META, useEligibility.ts:18) than the backend gate (tool catalog + unverifiable requirements), so the UI advertises adoptable recipes the gate would refuse and then adopts them without asking it",
+      "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+      "evaluatedRevision": 53,
+      "techniques": [
+        {
+          "technique": "policy-projection",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_recipes/eligibility.ts:39 a hand-written frontend copy of the eligibility policy judges connectors only, while src-tauri/src/commands/recipes/recipe_adoption.rs:84 judges tools and unverifiable requirements - two evaluators, and the surface understates what blocks"
+        },
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_recipes/useEligibility.ts:18 available = every CONNECTOR_META key, so 'incompatible' fires only for an unknown slug and then says it \"isn't available on this setup\" (eligibility.ts:42) - a hole in the gate's own catalog reported as a fact about the user's world"
+        },
+        {
+          "technique": "enforcement-binding",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:62 adoption writes design_context.useCases directly; the backend refusal at recipe_adoption.rs:88 is never consulted on this path"
+        }
+      ]
+    },
+    {
+      "context": "bcb603ad-ce58-4b76-9623-aa99ace984af",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/companion/proactive/budget.rs:23 GLOBAL_DAILY_CAP throttles nudge delivery volume; nothing in companion/proactive refuses an artifact, change or advancement against a quality standard, so the subject's precondition (a check that can refuse a state) does not hold - governed by proactive-nudges/rate-limiting instead",
+      "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+      "evaluatedRevision": 53,
+      "techniques": []
+    }
+  ],
+  "declined": [
+    {
+      "subject": "quality-gates",
+      "context": "*",
+      "reason": "68 further probable-confidence unknown pairs left for later runs (budget 3-6); none stale, none strong-unknown. Weak contexts (plugins-research-lab-shared, progress-transform, teams-kpis, plugins-artist-gallery, plugins-research-lab-reports, glyph-definitions, triggers-test, glyph-persona-card) deliberately not judged."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T11:42:13.122Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "unmeasurable-criteria",
+        "advancement-evidence-fields",
+        "policy-projection"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T11:42:13.122Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "unmeasurable-criteria",
+        "gate-liveness",
+        "enforcement-binding",
+        "chokepoint-tag-registry"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T11:42:13.122Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "policy-projection",
+        "unmeasurable-criteria",
+        "enforcement-binding"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T11:42:13.122Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

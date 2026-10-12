@@ -1,0 +1,9 @@
+{"schema": "conform-run/1", "worker": "291dbce3-b147-49e2-a540-0012df9256f0", "subject": "design-tokens",
+ "evaluatedAt": "2026-10-12T12:06:44Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "design-tokens", "context": "14c7d145-2166-454b-aee5-d69d9d527d79", "reason": "current verdict (2026-10-10) evaluatedAgainst sha256-b2:165125b7a54d0de3 rev 7 equals the registry index at e94a2fc5; anchor files have no commits or working-tree changes since 2026-10-10 and the anchored lines still read as cited - nothing to re-judge (src/styles/globals.css:907 still the whole-html brightness filter)"},
+  {"subject": "design-tokens", "context": "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6", "reason": "current verdict (2026-10-10) evaluatedAgainst sha256-b2:165125b7a54d0de3 rev 7 equals the registry index at e94a2fc5; anchor files have no commits or working-tree changes since 2026-10-10 and the anchored lines still read as cited - nothing to re-judge (src/lib/utils/rafAnimationEngine.ts:71 still OS media query only; note the evidence's basename useMotion.ts:25 resolves to src/hooks/utility/interaction/useMotion.ts)"},
+  {"subject": "design-tokens", "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65", "reason": "current verdict (2026-10-10) evaluatedAgainst sha256-b2:165125b7a54d0de3 rev 7 equals the registry index at e94a2fc5; anchor files have no commits or working-tree changes since 2026-10-10 and the anchored lines still read as cited - nothing to re-judge (ConnectorCard.tsx:127/:144 still hue-authored orange/emerald badges)"}
+ ],
+ "consults": []}

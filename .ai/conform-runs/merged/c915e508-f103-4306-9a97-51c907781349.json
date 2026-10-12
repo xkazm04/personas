@@ -1,0 +1,123 @@
+{
+  "schema": "conform-run/1",
+  "worker": "c915e508-f103-4306-9a97-51c907781349",
+  "subject": "hitl-approval",
+  "evaluatedAt": "2026-10-12T12:51:27Z",
+  "pairs": [
+    {
+      "context": "teams-goals",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/management_api/ship.rs:603 an agent goal-assist PATCH passes its own status into update_goal, whose door (src-tauri/db/src/repos/dev/goals.rs:181) accepts done, so the gated party can move its goal past the awaiting_acceptance gate the Goals surface shows - only the App Master door refuses done (src-tauri/src/commands/infrastructure/app_master_writeback.rs:1185); and the human verdict itself is a check-then-set (src-tauri/db/src/repos/dev/portfolio.rs:360) whose record is a best-effort signal with no decider (:381)",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/management_api/ship.rs:603 a machine-facing write can set status done directly; pending->open is not reserved to the human path, while src-tauri/db/src/repos/dev/goals.rs:1046 shows completion is otherwise routed into awaiting_acceptance"
+        },
+        {
+          "technique": "decision-records",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev/portfolio.rs:381 the accept record is a separate let _ = signal written after the transition (:368), failure discarded, text Accepted by the user with no decider identity and no version of the work accepted"
+        },
+        {
+          "technique": "review-queues",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev/portfolio.rs:360 the pending check is a read before a separate update_goal write, so an accept and a reject racing from two surfaces (Triage queue and detail drawer) both pass and the last write wins silently; failure stays loud (src/stores/slices/system/devToolsProjectSlice.ts:313 rethrows)"
+        },
+        {
+          "technique": "resume-after-decision",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev/portfolio.rs:408 the rejection reason the team reworks against is carried only by a best-effort signal whose failure is discarded, so a send-back can land with its reason lost"
+        },
+        {
+          "technique": "consent-gates",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_goals/GoalHandoffPanel.tsx:76 handing a goal to the AI team (token spend) needs an inline confirm that discloses what starting will do"
+        },
+        {
+          "technique": "fail-loud-classification-default",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_goals/goalStatus.ts:55 an unrecognised goal status falls through to open with no marker, so a gate state the client cannot read is shown as an ordinary your-turn goal (the backend strict twin canonical_goal_status refuses it; the render path does not)"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:bc33acb280c8df96",
+      "evaluatedRevision": 21,
+      "registryProposal": "decision-records: the Rust repo shape here makes every cross-repo write non-atomic by construction (no repo fn takes a Transaction); an application showing a verdict+record written through one tx-scoped inner fn would give this stack a conformant target"
+    },
+    {
+      "context": "run-desk",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:45 the auto-heal classifier matches the task title and description beside its error, so a permission or timeout failure on a task described as fixing a test or type error classifies autoFixable and the Auto-heal grant retries it unattended; and src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:83 records the grant-made retry only when the task has a goal, so most unattended retries leave no record naming the grant as decider",
+      "techniques": [
+        {
+          "technique": "fail-loud-classification-default",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:45 classification reads content other than the failure, resolving misreads toward auto-retry (away from the gate); the true unknown default is correct (:49 autoFixable false)"
+        },
+        {
+          "technique": "unattended-mode",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:83 ungated retries are recorded only for goal-linked tasks; otherwise realized - session-only grant through the same handleHealTask door (:134), per-task ceiling (:78), and auto-run scoped to an enumerated snapshot (src-tauri/src/commands/infrastructure/task_executor.rs:1942) with an iteration ceiling (:1938), cancel, and per-wave checkpoints (:1991); its own ledger row is best-effort (:1956)"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:bc33acb280c8df96",
+      "evaluatedRevision": 21
+    }
+  ],
+  "declined": [
+    {
+      "subject": "hitl-approval",
+      "context": "overview-patterns",
+      "reason": "dead context: its sole map path src/features/overview/sub_patterns/PatternsPanel.tsx and every Practice* file it describes are absent from git ls-files; nothing to judge"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "fleet-triage-columns",
+      "reason": "dead context: empty file_paths in context-map.json and no monitor triageModel/MonitorProjectColumns/PersonaGlyph in git ls-files; nothing to judge"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "lib-types",
+      "reason": "budget; shared type definitions only - the match is a vocabulary resonance (review, declares) and probably not-applicable, left for a run that reads designTypes against the gate anatomy"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "vault-credentials-components-features",
+      "reason": "budget; credential anomaly/audit display panels, left unread"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T12:51:27Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "gate-state-machines",
+        "decision-records",
+        "review-queues",
+        "resume-after-decision",
+        "consent-gates",
+        "fail-loud-classification-default"
+      ],
+      "deviations": 5
+    },
+    {
+      "ts": "2026-10-12T12:51:27Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "fail-loud-classification-default",
+        "unattended-mode"
+      ],
+      "deviations": 2
+    }
+  ]
+}
