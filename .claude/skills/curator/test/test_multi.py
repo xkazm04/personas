@@ -150,7 +150,34 @@ class Commit(unittest.TestCase):
         self.assertEqual("chore(registry-map): commit conform state found uncommitted",
                          self.g("log", "-1", "--format=%s").stdout.strip())
         self.assertIn("round 7", self.g("log", "-1", "--format=%b").stdout)
-        self.assertIn("Agent-Harness: curator-multi", self.g("log", "-1", "--format=%B").stdout)
+        body = self.g("log", "-1", "--format=%B").stdout
+        for key in ("Agent-model: none", "Agent-harness: curator-multi@", "Agent-prompt: sha256:", "Agent-run: local"):
+            self.assertIn(key, body)
+
+    def test_messages_pass_the_consumer_repos_own_gates(self):
+        """The real gates, when the repos are on this machine: kp's conventional/provenance gate,
+        systedo-case's subject and attribution gates. Both refused night commits on 2026-10-12."""
+        import os
+        import subprocess
+        import tempfile
+        kiro = pathlib.Path(M.L.PERSONAS_ROOT).parent
+        gates = [(kiro / "kp", ["scripts/release/commit-msg.mjs", "--file"]),
+                 (kiro / "systedo-case", ["scripts/commit-check.mjs"]),
+                 (kiro / "systedo-case", ["scripts/commit-attribution.mjs", "--check"])]
+        gates = [(r, g) for r, g in gates if (r / g[0]).exists()]
+        if not gates:
+            self.skipTest("no consumer repo gates on this machine")
+        subject = "chore(registry-map): add 5 quality-gates conform verdicts"
+        msg = f"{subject}\n\nbody\n\n{M.provenance('gpt-6.1-sol', M.sha256_text('brief'))}\n"
+        fd, path = tempfile.mkstemp(suffix=".txt")
+        os.close(fd)
+        pathlib.Path(path).write_text(msg, encoding="utf-8")
+        try:
+            for repo, gate in gates:
+                r = subprocess.run(["node", *gate, path], cwd=repo, capture_output=True, text=True)
+                self.assertEqual(r.returncode, 0, f"{repo.name} {gate[0]}: {(r.stdout + r.stderr)[-600:]}")
+        finally:
+            os.unlink(path)
         self.assertIsNone(M.commit_as_found(self.dir, 8))  # clean now: nothing to do
 
     def test_detached_head_is_refused(self):

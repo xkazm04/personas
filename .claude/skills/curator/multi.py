@@ -35,6 +35,7 @@ and outputs live in `rounds/<n>/` only until the round is judged.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -348,7 +349,11 @@ STEP 3 - judge each technique for that context, then the pair:
      an anchor, and every technique you call conformant has its own anchor.
    - deviation: at least one technique is a deviation; the pair anchor points at where it should be.
    - not-applicable: the subject's precondition does not hold; anchor the line that shows it
-     (a manifest, config or module that proves the absence).
+     (a manifest, config or module that proves the absence). Absence must be SEARCHED for, not
+     assumed: grep the context's files and the repo for the subject's own terms first and say in
+     the consequence what the search found. A file's first line or a struct declaration does not
+     prove anything is absent (measured: two such verdicts were contradicted by tool manifests
+     the context published).
    - unknown: you are not sure. Use it freely; a wrong verdict is worse than none.
    If you cannot judge a pair at all, put it in "declined" with the reason instead.
 
@@ -941,7 +946,7 @@ def unfinished_round() -> int | None:
 
 def _journal(rdir: pathlib.Path, seats: list[dict], before: dict, keep_raw: bool) -> None:
     """Every seat, written the moment it spawns: a round whose driver dies is finished from this."""
-    keep = ("name", "model", "claim", "dossier", "dir", "pid", "create_time", "t0", "session")
+    keep = ("name", "model", "claim", "dossier", "dir", "pid", "create_time", "t0", "session", "prompt_sha")
     L._write_json(rdir / "seats.json", {"before": {k: sorted(v) for k, v in before.items()}, "keep_raw": keep_raw,
                                          "seats": [{k: (str(x[k]) if k == "dir" else x.get(k)) for k in keep} for x in seats]})
 
@@ -1007,7 +1012,8 @@ def run_round(a: argparse.Namespace) -> dict:
         sdir = rdir / f"{name}-{i}"
         sdir.mkdir(exist_ok=True)
         pf = sdir / "prompt.md"
-        pf.write_text(brief(d), encoding="utf-8")
+        prompt_text = brief(d)
+        pf.write_text(prompt_text, encoding="utf-8")
         sid = str(uuid.uuid4())
         argv, stdin, env_extra = seat_command(name, model, cfg["effort"], pf, schema_file, sdir, sid, d["repo_root"])
         env = {**L.worker_env(), **env_extra}
@@ -1023,6 +1029,7 @@ def run_round(a: argparse.Namespace) -> dict:
             except OSError:
                 pass
         seats.append({"name": name, "model": model, "claim": claim, "dossier": d, "dir": sdir, "proc": proc,
+                      "prompt_sha": sha256_text(prompt_text),
                       "pid": proc.pid, "create_time": L.proc_create_time(proc.pid),
                       "fo": fo, "fe": fe, "t0": time.time(), "session": sid if name == "grok" else None})
         _journal(rdir, seats, before, a.keep_raw)
@@ -1137,7 +1144,7 @@ def settle_round(n: int, rdir: pathlib.Path, seats: list[dict], before: dict, ke
                "subject": claim["subject"], "domain": d["domain"], "category": d["category"],
                "pairs_offered": len(d["pairs"]), "techniques": len(d["techniques"]), "wall_s": s["wall_s"],
                "exit": exit_code, "timed_out": s["timed_out"], "usage": r["usage"], "seat_error": r["error"],
-               "read_nothing": r.get("read_nothing"), "seat_dir": str(s["dir"])}
+               "read_nothing": r.get("read_nothing"), "seat_dir": str(s["dir"]), "prompt_sha": s.get("prompt_sha")}
         lost = recovered and not s["timed_out"] and r["answer"] is None and not limited
         tried_key = f"{d['repo']}:{claim['subject']}"
         if lost:
@@ -1321,10 +1328,28 @@ def withdraw(run_name: str, contexts: list[str], reason: str, root: pathlib.Path
 # --------------------------------------------------------------------------
 
 COMMIT_PATHS = (".ai/registry-map.json", ".ai/conform-detail.json", ".ai/consults.jsonl")
-# Agent-Harness/Agent-Lane: systedo-case's commit-attribution gate refuses an agent commit that
-# does not say which loop wrote it (measured 2026-10-12); every repo can count them the same way.
-TRAILER = ("Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n"
-           "Agent-Harness: curator-multi\nAgent-Lane: conform")
+_HARNESS_VERSION: str | None = None
+
+
+def provenance(model: str, prompt_sha: str) -> str:
+    """The trailer block every consumer repo's gates accept (measured 2026-10-12).
+
+    systedo-case refuses an agent commit with no `Agent-Harness`; kp refuses any `Agent-*` key
+    outside its four-key block and checks each VALUE: harness `<name>@<version>`, prompt a
+    `sha256:` digest of the prompt text, run a URL or `local`. Trailer keys are case-insensitive,
+    so kp's block satisfies both. Every value is true: the harness version is the commit that
+    last changed this file, the digest is of the brief the seat was actually given.
+    """
+    global _HARNESS_VERSION
+    if _HARNESS_VERSION is None:
+        _HARNESS_VERSION = _git(L.PERSONAS_ROOT, "log", "-1", "--format=%h", "--",
+                                ".claude/skills/curator/multi.py").stdout.strip() or "unknown"
+    return (f"Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\nAgent-model: {model}\n"
+            f"Agent-harness: curator-multi@{_HARNESS_VERSION}\nAgent-prompt: sha256:{prompt_sha}\nAgent-run: local")
+
+
+def sha256_text(text: str) -> str:
+    return hashlib.sha256((text or "").encode("utf-8")).hexdigest()
 
 
 def _git(root, *args, env=None, timeout=120):
@@ -1346,7 +1371,7 @@ def repo_busy(root) -> str | None:
     return None
 
 
-def commit_repo(root: pathlib.Path, run_names: list[str], message: str) -> dict:
+def commit_repo(root: pathlib.Path, run_names: list[str], message: str, trailers: str | None = None) -> dict:
     """Commit the map, detail, consults and this round's archived run files - nothing else.
 
     The operator's standing approval (2026-10-12) is to commit conform results in every consumer
@@ -1380,7 +1405,7 @@ def commit_repo(root: pathlib.Path, run_names: list[str], message: str) -> dict:
             return {"ok": False, "repo": str(root), "branch": branch, "error": "the commit would delete a file; refused"}
         if not staged:
             return {"ok": True, "repo": str(root), "branch": branch, "nothing": True}
-        msg = f"{message}\n\n{TRAILER}\n"
+        msg = f"{message}\n\n{trailers or provenance('none', sha256_text(message))}\n"
         r = subprocess.run(["git", "-C", str(root), "commit", "-q", "-F", "-"], input=msg, capture_output=True,
                            text=True, encoding="utf-8", errors="replace", env=env, timeout=900)
         # Verify the commit is OURS: a sibling's commit landing in between is the documented failure.
@@ -1421,10 +1446,14 @@ def commit_round(summary: dict, reviewed: str) -> list[dict]:
     c.close()
     for r in consumer_repos(registry):
         roots[r["slug"]] = r["root"]
+    models: dict[str, list[str]] = {}
+    prompts: dict[str, list[str]] = {}
     for s in summary.get("seats", []):
         if s.get("run") and s.get("repo") in roots:
             by_repo.setdefault(s["repo"], []).append(s["run"])
             subjects.setdefault(s["repo"], []).append(f"{s['subject'].split('/')[-1]} ({s['provider']})")
+            models.setdefault(s["repo"], []).append(s.get("model") or "unknown")
+            prompts.setdefault(s["repo"], []).append(s.get("prompt_sha") or "")
     out = []
     for slug, runs in by_repo.items():
         n_landed = sum(s.get("accepted", 0) for s in summary["seats"] if s.get("repo") == slug)
@@ -1438,7 +1467,10 @@ def commit_round(summary: dict, reviewed: str) -> list[dict]:
         msg = (f"{subject}\n\ncurator --multi round {summary['round']}: {', '.join(subjects[slug])}. Judged by non-Claude "
                f"seats, verified anchor by anchor by the curator validator; review: {reviewed}. Committed on the "
                f"operator's standing approval for conform results.")
-        out.append({"slug": slug, **commit_repo(roots[slug], runs, msg)})
+        ps = [p for p in prompts[slug] if p]
+        prompt_sha = ps[0] if len(ps) == 1 else sha256_text("".join(sorted(ps))) if ps else sha256_text(msg)
+        trailers = provenance("+".join(dict.fromkeys(models[slug])), prompt_sha)
+        out.append({"slug": slug, **commit_repo(roots[slug], runs, msg, trailers)})
     return out
 
 
