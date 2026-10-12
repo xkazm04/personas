@@ -535,7 +535,7 @@ def method_authorization() -> str:
     )
 
 
-def declared_domains() -> set[str] | None:
+def declared_domains(root: pathlib.Path | None = None) -> set[str] | None:
     """The bundles this repo consumes: `knowledge.domains` in `.ai/manifest.yaml`.
 
     `None` means UNKNOWN (no manifest, no such key, unreadable) and the caller must
@@ -543,7 +543,7 @@ def declared_domains() -> set[str] | None:
     flow-list shape is read with a regex so the driver stays stdlib-only.
     """
     try:
-        text = (PERSONAS_ROOT / ".ai" / "manifest.yaml").read_text(encoding="utf-8")
+        text = ((root or PERSONAS_ROOT) / ".ai" / "manifest.yaml").read_text(encoding="utf-8")
     except OSError:
         return None
     m = re.search(r"^knowledge:\s*\n(?:[ \t]+.*\n)*?[ \t]+domains:\s*\[([^\]]*)\]", text, re.M)
@@ -1727,15 +1727,18 @@ def _is_merger(pid: int) -> bool:
 
 
 def merge_runs(registry: pathlib.Path, only: list[str] | None = None, reapply: bool = False,
-               dry: bool = False, wait_ms: int = MERGE_WAIT_MS, _retry: bool = True) -> dict:
-    """Run the registry's merger over THIS repo; its JSON result, plus `exit`."""
+               dry: bool = False, wait_ms: int = MERGE_WAIT_MS, _retry: bool = True,
+               project: pathlib.Path | None = None) -> dict:
+    """Run the registry's merger over a consumer repo (THIS one unless `project` names another);
+    its JSON result, plus `exit`."""
+    project = project or PERSONAS_ROOT
     script = merger_script(registry)
     if not script:
         return {"ok": False, "error": f"no merge-conform-runs.mjs under {registry / 'scripts'}"}
     node = shutil.which("node")
     if not node:
         return {"ok": False, "error": "no `node` on PATH - the merger is a node script"}
-    argv = [node, str(script), str(PERSONAS_ROOT), "--json", "--wait-lock-ms", str(wait_ms)]
+    argv = [node, str(script), str(project), "--json", "--wait-lock-ms", str(wait_ms)]
     if only:
         argv += ["--only", ",".join(only)]
     if reapply:
@@ -1757,14 +1760,14 @@ def merge_runs(registry: pathlib.Path, only: list[str] | None = None, reapply: b
     if holder and _retry and psutil is not None and not _is_merger(int(holder)):
         # Alive, but not a merger: a merger died holding the lock and its pid was reused.
         # Re-read before removing, so a lock a NEW merger just took is never the one deleted.
-        lock = PERSONAS_ROOT / CONFORM_RUNS_REL / ".merge.lock"
+        lock = project / CONFORM_RUNS_REL / ".merge.lock"
         now_holder = _read_json(lock, {}) or {}
         if now_holder.get("pid") == holder:
             try:
                 lock.unlink()
             except OSError:
                 pass
-        out = merge_runs(registry, only, reapply, dry, wait_ms, _retry=False)
+        out = merge_runs(registry, only, reapply, dry, wait_ms, _retry=False, project=project)
         out["lock_cleared"] = f"pid {holder} held the merge lock but is not a merger"
     return out
 
@@ -2496,7 +2499,17 @@ def main() -> int:
     g.add_argument("--stop", action="store_true", help="ask a running pool to stop after its workers settle")
     g.add_argument("--status", action="store_true", help="the running pool, its workers, its last events")
     p = sub.add_parser("multi", help="/curator --multi: codex, grok and agy judge different conform subjects in parallel rounds")
-    p.add_argument("multi_cmd", nargs="?", default="status", choices=("status", "start", "round", "finish", "clean", "report", "reset-dropped", "withdraw", "revalidate"))
+    p.add_argument("multi_cmd", nargs="?", default="status",
+                   choices=("status", "night", "stop", "schedule", "unschedule", "start", "round", "finish",
+                            "commit", "clean", "report", "reset-dropped", "withdraw", "revalidate"))
+    p.add_argument("--repos", help="consumer repo slugs to judge in (default: every repo with a map on this machine)")
+    p.add_argument("--per-provider", type=int, default=1, help="seats per provider in each round")
+    p.add_argument("--until", help="night: start no round within 20 min of this local time (HH:MM)")
+    p.add_argument("--max-rounds", type=int, default=0, help="night: stop after this many rounds (0 = no cap)")
+    p.add_argument("--review", choices=("claude", "off"), default="claude", help="night: a headless Claude spot-checks each round")
+    p.add_argument("--reviewer-model", default="sonnet", help="night: the reviewer's model")
+    p.add_argument("--at", help="schedule: the daily start time (HH:MM)")
+    p.add_argument("--foreground", action="store_true", help="night: run in this process instead of detached")
     p.add_argument("--providers", default="codex,grok,agy", help="seats for this round, comma separated")
     p.add_argument("--timeout-min", type=int, default=35, help="a seat still running after this is ended and settled blocked")
     p.add_argument("--terminal-owns", action="store_true", help="waive ONLY the curator_enabled brake, as `next` does")

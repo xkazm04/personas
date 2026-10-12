@@ -1,10 +1,15 @@
-"""`/curator --multi`: several LLM providers judge different conform subjects in one round.
+"""`/curator --multi`: several LLM providers judge conform subjects across every consumer repo.
 
-Why conform, and only conform: a conform worker writes nothing but its own run file in THIS
-repo, the registry's merger is the map's single writer, and every verdict can be checked
-mechanically against the code before it lands. That makes it the one lane where a less
-capable model can contribute without being trusted - its output is evidence to verify, not a
-change to accept.
+Why conform, and only conform: a conform worker writes nothing but its own run file in the
+repo it judges, the registry's merger is that repo's map's single writer, and every verdict can
+be checked mechanically against the code before it lands. That makes it the one lane where a
+less capable model can contribute without being trusted - its output is evidence to verify,
+not a change to accept.
+
+Where it works: every consumer repo the registry's `projects.json` places on this machine and
+that carries a `.ai/registry-map.json` (Personas, pof, kp, ascent, ...). Each seat of a round
+takes one (repo, subject); repos are visited in rotation so coverage grows everywhere, not only
+where the backlog is biggest.
 
 What makes a weaker provider safe here, in order of how much it carries:
 
@@ -12,17 +17,19 @@ What makes a weaker provider safe here, in order of how much it carries:
   every technique file, each pair's context and its REAL file list from `context-map.json`,
   so the provider never resolves an index, builds a path, or picks pairs.
 * **Read-only seats, structured output.** No provider writes a file: each returns one JSON
-  object through its CLI's schema flag, and this module writes the run file itself.
+  object, and this module writes the run file itself.
 * **The validator.** Every anchor must resolve to a tracked file and a non-blank line, and the
   provider must QUOTE that line; a quote found a few lines away repairs the line number, a
   quote found nowhere rejects the anchor. The evidence floor of /conform 3 is enforced in
   code. A rejected pair becomes a `declined` row with the reason, never a verdict.
+* **The reviewer (night runs).** A headless Claude session spot-checks every landed verdict of
+  a round against the printed anchor line and returns withdrawals, which `withdraw` applies.
 
-State lives outside the repo (`~/.personas/curator-multi/`, `CURATOR_MULTI_DIR` overrides):
-`state.json` (dropped providers, rounds run), `scoreboard.jsonl` (one row per seat per
-round - the source of the provider-by-topic feel), `rounds/<n>.json` (the round's summary).
-Each round's raw prompts and outputs live in `rounds/<n>/` only until the round is judged,
-then they are deleted with every session file the providers wrote for it.
+State lives outside every repo (`~/.personas/curator-multi/`, `CURATOR_MULTI_DIR` overrides):
+`state.json` (dropped providers, rounds run, subjects tried, the repo cursor), `scoreboard.jsonl`
+(one row per seat - the source of the provider-by-topic feel), `rounds/<n>.json` (a round's
+summary), `night/<date>.{jsonl,md}` (a night's log and its morning report). A round's raw prompts
+and outputs live in `rounds/<n>/` only until the round is judged.
 """
 
 from __future__ import annotations
@@ -36,8 +43,10 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import uuid
+from datetime import datetime, timedelta
 
 import loop as L
 
@@ -89,10 +98,9 @@ def agy_flash_model() -> str:
 
 
 def seat_command(name: str, model: str, effort: str, prompt_file: pathlib.Path, schema_file: pathlib.Path,
-                 seat_dir: pathlib.Path, session_id: str) -> tuple[list[str], str | None, dict]:
+                 seat_dir: pathlib.Path, session_id: str, repo: str) -> tuple[list[str], str | None, dict]:
     """(argv, stdin text, extra env). Every seat is told to stay read-only; codex's sandbox enforces it."""
     b = bin_of(name)
-    repo = str(L.PERSONAS_ROOT)
     prompt = prompt_file.read_text(encoding="utf-8")
     if name == "codex":
         # --ephemeral: no session files to clean. read-only sandbox: no file can be written.
@@ -114,6 +122,43 @@ def seat_command(name: str, model: str, effort: str, prompt_file: pathlib.Path, 
         return ([b, "-p", prompt, "--model", model, "--output-format", "json", "--json-schema", str(schema_file),
                  "--dangerously-skip-permissions", "--disable-slash-commands", "--print-timeout", "2h"], None, {})
     raise ValueError(name)
+
+
+# --------------------------------------------------------------------------
+# Consumer repos - where the seats judge
+# --------------------------------------------------------------------------
+
+
+def consumer_repos(registry: pathlib.Path, only: list[str] | None = None) -> list[dict]:
+    """[{slug, root}] for every project the registry places on THIS machine that has a map.
+
+    Resolved the registry's own way: `projects.json` checkouts keyed by machine, relative to the
+    root in the gitignored `.machine.local.json` (which may also carry per-slug overrides).
+    Personas is always included, first, because this driver's own map lives there.
+    """
+    out = [{"slug": "personas", "root": L.PERSONAS_ROOT}]
+    try:
+        projects = L._read_json(registry / "projects.json", {}) or {}
+        machine = L._read_json(registry / ".machine.local.json", {}) or {}
+    except Exception:
+        projects, machine = {}, {}
+    name, base = machine.get("machine"), machine.get("root")
+    overrides = machine.get("overrides") or machine.get("checkouts") or {}
+    for slug, pr in (projects.get("projects") or {}).items():
+        rel = overrides.get(slug) or (pr.get("checkouts") or {}).get(name)
+        if not rel or not base or slug == "personas":
+            continue
+        root = pathlib.Path(rel) if pathlib.Path(rel).is_absolute() else pathlib.Path(base) / rel
+        if (root / L.MAP_REL).exists() and (root / ".git").exists():
+            out.append({"slug": slug, "root": root.resolve()})
+    if only:
+        out = [r for r in out if r["slug"] in only]
+    return out
+
+
+def repo_by_root(root) -> dict:
+    root = pathlib.Path(root)
+    return {"slug": root.name if root.resolve() != L.PERSONAS_ROOT else "personas", "root": root}
 
 
 # --------------------------------------------------------------------------
@@ -157,23 +202,54 @@ SCHEMA = {
 # The dossier - everything mechanical, done before the seat starts
 # --------------------------------------------------------------------------
 
-OUR_STACKS = ("typescript", "react", "tauri", "rust", "node", "vite", "zustand", "sqlite")
+DEFAULT_STACKS = ("typescript", "react", "tauri", "rust", "node", "vite", "zustand", "sqlite")
 PAIR_BUDGET = 5
+_INDEX_CACHE: dict[str, dict] = {}
 
 
 def _json(path: pathlib.Path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def subject_entry(registry: pathlib.Path, domain: str, slug: str) -> dict | None:
+def _json_or(path: pathlib.Path, default):
     try:
-        return _json(registry / "knowledge" / domain / "index.json")["subjects"][slug]
-    except (OSError, ValueError, KeyError):
-        return None
+        return _json(path)
+    except (OSError, ValueError):
+        return default
 
 
-def dossier(registry: pathlib.Path, claim: dict) -> dict | None:
-    """The subject, its techniques, and the pairs worth a read. None = nothing to judge."""
+def subject_entry(registry: pathlib.Path, domain: str, slug: str) -> dict | None:
+    key = str(registry / "knowledge" / domain / "index.json")
+    if key not in _INDEX_CACHE:
+        _INDEX_CACHE[key] = (_json_or(pathlib.Path(key), {}) or {}).get("subjects", {})
+    return _INDEX_CACHE[key].get(slug)
+
+
+_TRACKED_CACHE: dict[str, set[str]] = {}
+
+
+def tracked_files(root: pathlib.Path) -> set[str]:
+    key = str(root)
+    if key not in _TRACKED_CACHE:
+        out = subprocess.run(["git", "-C", key, "ls-files"], capture_output=True, text=True,
+                             encoding="utf-8", errors="replace").stdout
+        _TRACKED_CACHE[key] = set(out.splitlines())
+    return _TRACKED_CACHE[key]
+
+
+def repo_stacks(root: pathlib.Path) -> tuple[str, ...]:
+    """The repo's languages from `.ai/manifest.yaml` `repo.languages`, for picking applications."""
+    try:
+        m = re.search(r"^\s*languages:\s*\[([^\]]*)\]", (root / ".ai" / "manifest.yaml").read_text(encoding="utf-8"), re.M)
+    except OSError:
+        m = None
+    langs = tuple(x.strip().strip("'\"").lower() for x in m.group(1).split(",")) if m else ()
+    return tuple(x for x in langs if x) or DEFAULT_STACKS
+
+
+def dossier(registry: pathlib.Path, claim: dict, repo: dict) -> dict | None:
+    """The subject, its techniques, and the pairs worth a read in `repo`. None = nothing to judge."""
+    root = pathlib.Path(repo["root"])
     domain, slug = claim["subject"].split("/", 1)[0], claim["subject"].split("/")[-1]
     entry = subject_entry(registry, domain, slug)
     if not entry:
@@ -182,10 +258,12 @@ def dossier(registry: pathlib.Path, claim: dict) -> dict | None:
     tdir = golden.parent / "techniques"
     techniques = [{"slug": t["slug"], "file": (tdir / f"{t['slug']}.md").as_posix(),
                    "use_when": (t.get("use_when") or [])[:2]} for t in entry.get("techniques", [])]
+    stacks = repo_stacks(root)
     apps = [(registry / a["file"]).as_posix() for a in entry.get("applications", [])
-            if any(s in (a.get("stack") or "").lower() for s in OUR_STACKS)][:4]
-    rmap = _json(L.PERSONAS_ROOT / L.MAP_REL)
-    cmap = {c["id"]: c for c in _json(L.PERSONAS_ROOT / "context-map.json").get("contexts", [])}
+            if any(s in (a.get("stack") or "").lower() for s in stacks)][:4]
+    rmap = _json(root / L.MAP_REL)
+    cmap = {c["id"]: c for c in (_json_or(root / "context-map.json", {}) or {}).get("contexts", [])}
+    tracked = tracked_files(root)
     cands = []
     for row in rmap.get("contexts", []):
         if row.get("governance") in ("weak", "dead"):
@@ -199,10 +277,16 @@ def dossier(registry: pathlib.Path, claim: dict) -> dict | None:
             rank = (0 if p.get("stale") else 1 if p.get("confidence") == "strong" else 2,
                     1 if p.get("priorNotApplicable") else 0, -float(p.get("score") or 0))
             cx = cmap.get(row["context"], {})
+            # A map can outlive its tree. Measured 2026-10-12 in goat: every file of a context was
+            # gone, and a seat spent five minutes proving it. Judge only files that still exist.
+            listed = cx.get("file_paths") or row.get("paths") or []
+            present = [f for f in listed if f in tracked]
+            if listed and not present:
+                continue
             cands.append((rank, {
                 "context": row["name"], "context_id": row["context"],
                 "description": (cx.get("description") or "")[:300],
-                "files": (cx.get("file_paths") or row.get("paths") or [])[:25],
+                "files": present[:25],
                 "prior": ({"state": p.get("state"), "evidence": p.get("evidence")} if judged else None),
             }))
     cands.sort(key=lambda x: x[0])
@@ -210,7 +294,8 @@ def dossier(registry: pathlib.Path, claim: dict) -> dict | None:
     if not pairs:
         return None
     path = entry["file"].split("/")
-    return {"domain": domain, "slug": slug, "category": "/".join(path[2:-2]) or entry.get("category"),
+    return {"repo": repo["slug"], "repo_root": str(root), "domain": domain, "slug": slug,
+            "category": "/".join(path[2:-2]) or entry.get("category"),
             "golden": golden.as_posix(), "techniques": techniques, "applications": apps, "pairs": pairs}
 
 
@@ -226,9 +311,9 @@ def brief(d: dict) -> str:
         pairs.append(f"{i}. context `{p['context']}`: {p['description']}\n   files: "
                      + ", ".join(p["files"]) + prior)
     return f"""You are judging ONE subject of a knowledge registry against the code of the repository at
-{L.PERSONAS_ROOT.as_posix()} (your working directory). You are one of several model seats; every
-verdict you return is checked line by line before it is kept, so an honest "unknown" is worth more
-than a confident guess.
+{pathlib.Path(d['repo_root']).as_posix()} (your working directory). You are one of several model seats;
+every verdict you return is checked line by line before it is kept, so an honest "unknown" is worth
+more than a confident guess.
 
 HARD RULES
 - READ ONLY. Do not create, edit, move or delete any file. Do not run git commands that change
@@ -295,8 +380,8 @@ OUTPUT - reply with exactly one JSON object and nothing else:
 # --------------------------------------------------------------------------
 
 
-def _last_json_object(text: str) -> dict | None:
-    """The last top-level {...} in `text` that parses and looks like an answer."""
+def _last_json_object(text: str, key: str = "pairs") -> dict | None:
+    """The last top-level {...} in `text` that parses and carries `key`."""
     best, depth, start, in_str, esc = None, 0, None, False, False
     for i, ch in enumerate(text or ""):
         if in_str:
@@ -318,7 +403,7 @@ def _last_json_object(text: str) -> dict | None:
             if depth == 0 and start is not None:
                 try:
                     obj = json.loads(text[start:i + 1])
-                    if isinstance(obj, dict) and "pairs" in obj:
+                    if isinstance(obj, dict) and key in obj:
                         best = obj
                 except ValueError:
                     pass
@@ -326,7 +411,7 @@ def _last_json_object(text: str) -> dict | None:
 
 
 def read_seat(name: str, seat_dir: pathlib.Path, stdout: str) -> dict:
-    """{answer, session, usage, error} from a seat's envelope."""
+    """{answer, session, usage, error, read_nothing} from a seat's envelope."""
     res = {"answer": None, "session": None, "usage": None, "error": None, "read_nothing": None}
     if name == "codex":
         last = seat_dir / "last.json"
@@ -394,10 +479,11 @@ PLACEHOLDER = re.compile(r"placeholder|lorem|todo:|<path>|<line|example\.ts|src/
 
 
 class Files:
-    """Tracked files of this repo, read once, lines cached."""
+    """Tracked files of one repo, read once, lines cached."""
 
-    def __init__(self):
-        out = subprocess.run(["git", "-C", str(L.PERSONAS_ROOT), "ls-files"], capture_output=True,
+    def __init__(self, root: pathlib.Path | None = None):
+        self.root = pathlib.Path(root or L.PERSONAS_ROOT)
+        out = subprocess.run(["git", "-C", str(self.root), "ls-files"], capture_output=True,
                              text=True, encoding="utf-8", errors="replace").stdout
         self.tracked = {p: p for p in out.splitlines()}
         self.lower = {p.lower(): p for p in self.tracked}
@@ -405,7 +491,7 @@ class Files:
 
     def resolve(self, raw: str) -> str | None:
         p = raw.strip().strip("`'\"").replace("\\", "/")
-        root = L.PERSONAS_ROOT.as_posix()
+        root = self.root.as_posix()
         for prefix in (root + "/", root.lower() + "/", "./"):
             if p.lower().startswith(prefix.lower()):
                 p = p[len(prefix):]
@@ -414,7 +500,7 @@ class Files:
     def lines(self, rel: str) -> list[str]:
         if rel not in self.cache:
             try:
-                self.cache[rel] = (L.PERSONAS_ROOT / rel).read_text(encoding="utf-8", errors="replace").splitlines()
+                self.cache[rel] = (self.root / rel).read_text(encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 self.cache[rel] = []
         return self.cache[rel]
@@ -585,7 +671,7 @@ def validate(answer: dict | None, d: dict, files: Files, read_nothing: str | Non
 
 def write_run_file(claim: dict, d: dict, v: dict, seat: dict) -> str:
     rel = L.conform_run_file(claim)
-    path = L.PERSONAS_ROOT / rel
+    path = pathlib.Path(d["repo_root"]) / rel
     path.parent.mkdir(parents=True, exist_ok=True)
     ts = L.now()
     consults = [{"ts": ts, "bundle": d["domain"], "subjects": [d["slug"]],
@@ -597,7 +683,7 @@ def write_run_file(claim: dict, d: dict, v: dict, seat: dict) -> str:
            "evaluatedAt": ts, "provider": seat["name"], "model": seat["model"],
            "pairs": v["pairs"], "declined": v["declined"], "consults": consults}
     tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(run, indent=1), encoding="utf-8")
+    tmp.write_text(json.dumps(run, indent=1), encoding="utf-8", newline="")  # LF, as git stores it
     os.replace(tmp, path)
     return rel
 
@@ -608,22 +694,29 @@ def write_run_file(claim: dict, d: dict, v: dict, seat: dict) -> str:
 
 
 def load_state() -> dict:
-    return L._read_json(MULTI_DIR / "state.json", {}) or {"rounds": 0, "dropped": {}}
+    s = L._read_json(MULTI_DIR / "state.json", {}) or {}
+    s.setdefault("rounds", 0)
+    s.setdefault("dropped", {})
+    s.setdefault("tried", {})
+    s.setdefault("repo_cursor", 0)
+    # Keys tried before repos existed carry no repo; they were all Personas.
+    s["tried"] = {(k if ":" in k else f"personas:{k}"): v for k, v in s["tried"].items()}
+    return s
 
 
 def save_state(s: dict) -> None:
     L._write_json(MULTI_DIR / "state.json", s)
 
 
-def repo_untracked() -> set[str]:
-    out = subprocess.run(["git", "-C", str(L.PERSONAS_ROOT), "status", "--porcelain", "-uall"],
+def repo_untracked(root) -> set[str]:
+    out = subprocess.run(["git", "-C", str(root), "status", "--porcelain", "-uall"],
                          capture_output=True, text=True, encoding="utf-8", errors="replace").stdout
     return {l[3:].strip().strip('"') for l in out.splitlines() if l.startswith("??")}
 
 
-def grok_session_dir(session: str) -> pathlib.Path:
+def grok_session_dir(session: str, cwd) -> pathlib.Path:
     from urllib.parse import quote
-    return HOME / ".grok" / "sessions" / quote(str(L.PERSONAS_ROOT), safe="") / session
+    return HOME / ".grok" / "sessions" / quote(str(cwd), safe="") / session
 
 
 def clean_provider_sessions(seat: dict) -> list[str]:
@@ -633,10 +726,11 @@ def clean_provider_sessions(seat: dict) -> list[str]:
     if not sid or not re.fullmatch(r"[0-9a-fA-F-]{16,64}", sid):
         return gone
     if seat["name"] == "grok":
-        cands = [grok_session_dir(sid)]
+        cwd = (seat.get("dossier") or {}).get("repo_root") or L.PERSONAS_ROOT
+        cands = [grok_session_dir(sid, cwd)]
         # grok also appends each prompt to ONE history file per cwd, shared with the operator's own
         # sessions: drop only this seat's lines, matched by session id.
-        hist = grok_session_dir(sid).parent / "prompt_history.jsonl"
+        hist = grok_session_dir(sid, cwd).parent / "prompt_history.jsonl"
         try:
             lines = hist.read_text(encoding="utf-8").splitlines(keepends=True)
             kept = [x for x in lines if f'"session_id":"{sid}"' not in x.replace(" ", "")]
@@ -677,18 +771,20 @@ STRAY_OK = re.compile(r"^(\.grok|\.agents|\.gemini|\.codex|\.antigravity)(/|$)|^
 # --------------------------------------------------------------------------
 
 REQUEST_NOTE = ("Filed by /curator --multi on the operator's instruction of 2026-10-12: widen conform "
-                "coverage of this repo's map with several providers. Subject chosen by /conform's own bare "
-                "order (stale pairs, then strong unknowns, then probable unknowns), never by hand.")
+                "coverage of the consumer repos' maps with several providers. Subject chosen by /conform's own "
+                "bare order (stale pairs, then strong unknowns, then probable unknowns), never by hand.")
 
 
-def backlog_subjects(root: pathlib.Path, exclude: set[str]) -> list[tuple[str, str, float]]:
-    """(domain, slug, weight) for subjects with judgeable pairs in THIS repo's map, best first.
+def backlog_subjects(registry: pathlib.Path, repo: dict, exclude: set[str]) -> list[tuple[str, str, float]]:
+    """(domain, slug, weight) for subjects with judgeable pairs in `repo`'s map, best first.
 
     This is /conform's bare order lifted to subject level - stale pairs first, then strong
     unknowns, then probable unknowns - so the subject is the map's choice, not the driver's.
+    `exclude` holds `<repo>:<domain>/<slug>` keys.
     """
-    rmap = _json(L.PERSONAS_ROOT / L.MAP_REL)
-    declared = L.declared_domains()
+    root = pathlib.Path(repo["root"])
+    rmap = _json_or(root / L.MAP_REL, {}) or {}
+    declared = L.declared_domains(root)
     w: dict[tuple[str, str], float] = {}
     for row in rmap.get("contexts", []):
         if row.get("governance") in ("weak", "dead"):
@@ -705,8 +801,25 @@ def backlog_subjects(root: pathlib.Path, exclude: set[str]) -> list[tuple[str, s
             if p.get("priorNotApplicable"):
                 weight *= 0.3
             w[(bundle, p["subject"])] = w.get((bundle, p["subject"]), 0) + weight
-    out = [(b, s, v) for (b, s), v in w.items() if f"{b}/{s}" not in exclude and subject_entry(root, b, s)]
+    out = [(b, s, v) for (b, s), v in w.items()
+           if f"{repo['slug']}:{b}/{s}" not in exclude and subject_entry(registry, b, s)]
     return sorted(out, key=lambda x: (-x[2], x[1]))
+
+
+def backlog_size(repo: dict) -> dict:
+    """Unknown and stale pair counts on non-weak contexts: the coverage still owed."""
+    rmap = _json_or(pathlib.Path(repo["root"]) / L.MAP_REL, {}) or {}
+    unknown = stale = total = 0
+    for row in rmap.get("contexts", []):
+        if row.get("governance") in ("weak", "dead"):
+            continue
+        for p in row.get("subjects", []):
+            total += 1
+            if p.get("state") in (None, "unknown"):
+                unknown += 1
+            elif p.get("stale"):
+                stale += 1
+    return {"unknown": unknown, "stale": stale, "pairs": total}
 
 
 def file_request(c, skill: str, argument: str, note: str) -> str:
@@ -716,46 +829,73 @@ def file_request(c, skill: str, argument: str, note: str) -> str:
     return rid
 
 
-def acquire(c, root, skills, held: set[str], used_categories: set[str], state: dict, rnd: int):
-    """(claim, dossier) for one seat, or (None, None). Her plan first; then the map's backlog,
-    filed into the operator's queue so the ledger carries a real row for every seat."""
-    for _ in range(4):
-        claim = L.claim_one(c, root, skills, {"plan"}, {"conform"}, exclude_subjects=held)
-        if not claim or claim.get("declined"):
-            break
-        d = dossier(root, claim)
-        if d:
-            return claim, d
-        L.settle(c, claim, "idled", "curator-multi: no judgeable pair (every pair weak, dead or judged and current)")
-        held.add(claim["subject"])
+def _queued_keys(c) -> set[str]:
+    keys = set()
+    for r in c.execute("SELECT argument FROM curator_request WHERE skill='conform' AND state IN ('queued','dispatched')"):
+        m = re.search(r"--subject\s+(\S+)(?:.*--repo\s+(\S+))?", r["argument"] or "")
+        if m:
+            keys.add(f"{m.group(2) or 'personas'}:*/{m.group(1)}")
+    return keys
+
+
+def acquire(c, registry, skills, repos: list[dict], held: set[str], used: dict, state: dict, rnd: int):
+    """(claim, dossier) for one seat, or (None, None).
+
+    Repos are visited in rotation from `state["repo_cursor"]`, so every consumer repo gains
+    coverage. In Personas her plan comes first; everywhere the map's backlog is FILED into the
+    operator's queue and claimed through it, so the ledger carries a real row for every seat.
+    Within a round, a repo and a category no other seat holds are preferred.
+    """
     tried = state.setdefault("tried", {})
-    queued = {f"{r['argument']}" for r in c.execute("SELECT argument FROM curator_request WHERE state IN ('queued','dispatched')")}
-    excl = set(held) | {k for k in tried} | {a.replace("--subject ", "") for a in queued}
-    cands = backlog_subjects(root, excl)
-    # Different topics in one round: prefer a category no other seat of this round holds.
-    cands.sort(key=lambda x: (subject_category(root, x[0], x[1]) in used_categories,))
-    for bundle, slug, _w in cands[:6]:
-        address = f"{bundle}/{slug}"
-        tried[address] = rnd
-        rid = file_request(c, "conform", f"--subject {slug}", REQUEST_NOTE)
-        claim = L.claim_one(c, root, skills, {"queue"}, None)
-        if not claim or claim.get("declined") or claim.get("request_id") != rid:
-            if claim and not claim.get("declined"):
-                L.release(c, claim, "curator-multi: took a request it did not file")
-            c.execute("UPDATE curator_request SET state='cancelled', settled_at=?, outcome=? WHERE id=? AND state='queued'",
-                      (L.now(), "curator-multi: not claimable after filing", rid))
-            return None, None
-        claim["subject"] = address
-        claim["cwd"] = str(L.PERSONAS_ROOT)
-        d = dossier(root, claim)
-        if d:
-            return claim, d
-        L.settle(c, claim, "declined", "curator-multi: no judgeable pair at claim time")
+    queued = _queued_keys(c)
+    n = len(repos)
+    order = [repos[(state.get("repo_cursor", 0) + i) % n] for i in range(n)] if n else []
+    order.sort(key=lambda r: r["slug"] in used["repos"])  # stable: rotation order among equals
+    for repo in order:
+        if repo["slug"] == "personas":
+            for _ in range(4):
+                claim = L.claim_one(c, registry, skills, {"plan"}, {"conform"},
+                                    exclude_subjects={h.split(":", 1)[1] for h in held if h.startswith("personas:")})
+                if not claim or claim.get("declined"):
+                    break
+                d = dossier(registry, claim, repo)
+                if d:
+                    claim["repo"] = repo["slug"]
+                    _advance(state, repos, repo)
+                    return claim, d
+                L.settle(c, claim, "idled", "curator-multi: no judgeable pair (every pair weak, dead or judged and current)")
+                held.add(f"personas:{claim['subject']}")
+        excl = set(held) | set(tried)
+        cands = [x for x in backlog_subjects(registry, repo, excl)
+                 if f"{repo['slug']}:*/{x[1]}" not in queued]
+        cands.sort(key=lambda x: (subject_category(registry, x[0], x[1]) in used["categories"],))
+        for bundle, slug, _w in cands[:6]:
+            address = f"{bundle}/{slug}"
+            tried[f"{repo['slug']}:{address}"] = rnd
+            rid = file_request(c, "conform", f"--subject {slug} --repo {repo['slug']}", REQUEST_NOTE)
+            claim = L.claim_one(c, registry, skills, {"queue"}, None)
+            if not claim or claim.get("declined") or claim.get("request_id") != rid:
+                if claim and not claim.get("declined"):
+                    L.release(c, claim, "curator-multi: took a request it did not file")
+                c.execute("UPDATE curator_request SET state='cancelled', settled_at=?, outcome=? WHERE id=? AND state='queued'",
+                          (L.now(), "curator-multi: not claimable after filing", rid))
+                return None, None
+            claim.update(subject=address, cwd=str(repo["root"]), repo=repo["slug"])
+            d = dossier(registry, claim, repo)
+            if d:
+                _advance(state, repos, repo)
+                return claim, d
+            L.settle(c, claim, "declined", "curator-multi: no judgeable pair at claim time")
     return None, None
 
 
-def subject_category(root: pathlib.Path, domain: str, slug: str) -> str | None:
-    e = subject_entry(root, domain, slug)
+def _advance(state: dict, repos: list[dict], taken: dict) -> None:
+    idx = next((i for i, r in enumerate(repos) if r["slug"] == taken["slug"]), 0)
+    state["repo_cursor"] = (idx + 1) % max(len(repos), 1)
+
+
+def subject_category(registry: pathlib.Path, domain: str, slug: str) -> str | None:
+    e = subject_entry(registry, domain, slug)
     return "/".join(e["file"].split("/")[2:-2]) if e else None
 
 
@@ -773,10 +913,10 @@ def unfinished_round() -> int | None:
     return None
 
 
-def _journal(rdir: pathlib.Path, seats: list[dict], before: set[str], keep_raw: bool) -> None:
+def _journal(rdir: pathlib.Path, seats: list[dict], before: dict, keep_raw: bool) -> None:
     """Every seat, written the moment it spawns: a round whose driver dies is finished from this."""
     keep = ("name", "model", "claim", "dossier", "dir", "pid", "create_time", "t0", "session")
-    L._write_json(rdir / "seats.json", {"before": sorted(before), "keep_raw": keep_raw,
+    L._write_json(rdir / "seats.json", {"before": {k: sorted(v) for k, v in before.items()}, "keep_raw": keep_raw,
                                          "seats": [{k: (str(x[k]) if k == "dir" else x.get(k)) for k in keep} for x in seats]})
 
 
@@ -787,54 +927,67 @@ def run_round(a: argparse.Namespace) -> dict:
     state = load_state()
     n = state["rounds"] + 1
     rdir = MULTI_DIR / "rounds" / str(n)
-    rdir.mkdir(parents=True, exist_ok=True)
     wanted = [p.strip() for p in a.providers.split(",") if p.strip()]
     active = [p for p in wanted if p in PROVIDERS and p not in state["dropped"] and bin_of(p)]
     skipped = {p: ("dropped: " + state["dropped"][p]["why"]) if p in state["dropped"] else "no binary"
                for p in wanted if p not in active}
     if not active:
         return {"ok": False, "round": n, "error": "no provider left to run", "skipped": skipped}
-    # Rotate so no provider always takes the top-ranked subject.
+    # Rotate so no provider always takes the top-ranked subject; repeat for --per-provider.
     k = (n - 1) % len(active)
-    active = active[k:] + active[:k]
+    active = (active[k:] + active[:k]) * max(1, getattr(a, "per_provider", 1) or 1)
 
     c = L.connect()
-    root = L.registry_root(c)
+    registry = L.registry_root(c)
     b = L.brakes(c)
-    held = [h for h in b["held_by"] if not (a.terminal_owns and h.startswith("curator_enabled"))]
-    if held:
-        return {"ok": False, "round": n, "error": "brake", "held_by": held}
-    proj = L.projection_freshness(c, root)
-    fresh = L.corpus_freshness(root)
-    if (proj["behind"] or 0) > L.STALE_PROJECTION_BEHIND or (fresh["behind"] or 0) > L.STALE_CORPUS_BEHIND:
-        return {"ok": False, "round": n, "error": "stale", "projection": proj, "corpus": fresh}
-    skills = L.read_skills(root)
-    before = repo_untracked()
+    held_brakes = [h for h in b["held_by"] if not (a.terminal_owns and h.startswith("curator_enabled"))]
+    if held_brakes:
+        return {"ok": False, "round": n, "error": "brake", "held_by": held_brakes}
+    # Only the corpus axis matters here: the seats read the registry, and a checkout far behind its
+    # origin judges against standards upstream has already moved. Her plan's projection is not read.
+    fresh = L.corpus_freshness(registry)
+    if (fresh["behind"] or 0) > L.STALE_CORPUS_BEHIND:
+        return {"ok": False, "round": n, "error": "stale", "corpus": fresh}
+    _INDEX_CACHE.clear()
+    _TRACKED_CACHE.clear()
+    skills = L.read_skills(registry)
+    repos = consumer_repos(registry, [x.strip() for x in a.repos.split(",")] if getattr(a, "repos", None) else None)
+    rdir.mkdir(parents=True, exist_ok=True)
     agy_model = agy_flash_model() if "agy" in active else None
     schema_file = rdir / "schema.json"
     schema_file.write_text(json.dumps(SCHEMA), encoding="utf-8")
 
-    seats = []
-    used_categories: set[str] = set()
-    for name in active:
-        held_subjects = L.open_dispatch_subjects(c) | {s["claim"]["subject"] for s in seats}
-        claim, d = acquire(c, root, skills, held_subjects, used_categories, state, n)
+    seats: list[dict] = []
+    baselines: list[dict] = []
+    before: dict[str, set] = {}
+    used = {"repos": set(), "categories": set()}
+    for i, name in enumerate(active):
+        held = {f"personas:{s}" for s in L.open_dispatch_subjects(c)} | \
+               {f"{s['claim']['repo']}:{s['claim']['subject']}" for s in seats}
+        claim, d = acquire(c, registry, skills, repos, held, used, state, n)
         if not claim:
-            skipped[name] = "nothing claimable"
+            skipped[f"{name}#{i}"] = "nothing claimable"
             continue
-        used_categories.add(d["category"])
+        used["repos"].add(d["repo"])
+        used["categories"].add(d["category"])
+        if d["repo_root"] not in before:
+            before[d["repo_root"]] = repo_untracked(d["repo_root"])
+            baseline = commit_as_found(pathlib.Path(d["repo_root"]), n)
+            if baseline and not baseline.get("nothing"):
+                print(json.dumps({"event": "as_found_commit", "repo": d["repo"], **baseline}, default=str), flush=True)
+                baselines.append({"slug": d["repo"], **baseline})
         cfg = PROVIDERS[name]
         model = agy_model if name == "agy" else cfg["model"]
-        sdir = rdir / name
+        sdir = rdir / f"{name}-{i}"
         sdir.mkdir(exist_ok=True)
         pf = sdir / "prompt.md"
         pf.write_text(brief(d), encoding="utf-8")
         sid = str(uuid.uuid4())
-        argv, stdin, env_extra = seat_command(name, model, cfg["effort"], pf, schema_file, sdir, sid)
+        argv, stdin, env_extra = seat_command(name, model, cfg["effort"], pf, schema_file, sdir, sid, d["repo_root"])
         env = {**L.worker_env(), **env_extra}
         flags = (subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW) if sys.platform == "win32" else 0
         fo, fe = open(sdir / "stdout.txt", "w", encoding="utf-8"), open(sdir / "stderr.txt", "w", encoding="utf-8")
-        proc = subprocess.Popen(argv, cwd=str(L.PERSONAS_ROOT), env=env, stdout=fo, stderr=fe,
+        proc = subprocess.Popen(argv, cwd=d["repo_root"], env=env, stdout=fo, stderr=fe,
                                 stdin=subprocess.PIPE if stdin is not None else subprocess.DEVNULL,
                                 creationflags=flags, text=True, encoding="utf-8")
         if stdin is not None:
@@ -847,15 +1000,21 @@ def run_round(a: argparse.Namespace) -> dict:
                       "pid": proc.pid, "create_time": L.proc_create_time(proc.pid),
                       "fo": fo, "fe": fe, "t0": time.time(), "session": sid if name == "grok" else None})
         _journal(rdir, seats, before, a.keep_raw)
-        print(json.dumps({"event": "seat", "round": n, "provider": name, "model": model, "subject": claim["subject"],
-                          "pairs": len(d["pairs"]), "pid": proc.pid}), flush=True)
+        print(json.dumps({"event": "seat", "round": n, "provider": name, "model": model, "repo": d["repo"],
+                          "subject": claim["subject"], "pairs": len(d["pairs"]), "pid": proc.pid}), flush=True)
     c.close()
-    save_state(state)  # `tried` was written by acquire(); settle_round reloads state from disk
+    save_state(state)  # `tried` and the cursor were written by acquire(); settle_round reloads state
+    if not seats:
+        shutil.rmtree(rdir, ignore_errors=True)
+        return {"ok": True, "round": n, "seats": [], "skipped": skipped, "empty": True}
 
     for x in seats:
         x["fo"].close(), x["fe"].close()
     wait_seats(seats, a.timeout_min)
-    return settle_round(n, rdir, seats, set(before), a.keep_raw, a.timeout_min, recovered=False, skipped=skipped)
+    summary = settle_round(n, rdir, seats, before, a.keep_raw, a.timeout_min, recovered=False, skipped=skipped)
+    summary["as_found_commits"] = baselines
+    L._write_json(MULTI_DIR / "rounds" / f"{n}.json", summary)
+    return summary
 
 
 def _alive(s: dict) -> bool:
@@ -901,38 +1060,60 @@ def finish_round() -> dict:
     for x in j.get("seats", []):
         x["dir"] = pathlib.Path(x["dir"])
         x["proc"] = None
+        x["claim"].setdefault("repo", (x.get("dossier") or {}).get("repo", "personas"))
+        if x.get("dossier") is not None:
+            x["dossier"].setdefault("repo", "personas")
+            x["dossier"].setdefault("repo_root", str(L.PERSONAS_ROOT))
         seats.append(x)
-    dead_already = {x["name"] for x in seats if not _alive(x)}
+    before = j.get("before", {})
+    if isinstance(before, list):  # a journal from before repos existed: Personas only
+        before = {str(L.PERSONAS_ROOT): before}
+    dead_already = {str(x["dir"]) for x in seats if not _alive(x)}
     wait_seats(seats, 35)
     for x in seats:
-        if x["name"] in dead_already:
+        if str(x["dir"]) in dead_already:
             x["wall_s"] = None  # ended before this driver looked; its real duration is unknown
-    return settle_round(n, rdir, seats, set(j.get("before", [])), bool(j.get("keep_raw")), 35, recovered=True)
+    return settle_round(n, rdir, seats, {k: set(v) for k, v in before.items()}, bool(j.get("keep_raw")), 35,
+                        recovered=True)
 
 
-def settle_round(n: int, rdir: pathlib.Path, seats: list[dict], before: set[str], keep_raw: bool,
+def _merge_and_judge(registry, repo_root, name: str, s: dict, exit_code, timeout_min: int) -> tuple[str, str]:
+    merge = L.merge_runs(registry, only=[name], project=pathlib.Path(repo_root))
+    action, evidence = L.judge_conform(merge, name, limited=False, timed_out=s.get("timed_out", False),
+                                       exit_code=exit_code, out_tail="", tmp_left=False, timeout_min=timeout_min)
+    if action == "retry-merge":
+        merge = L.merge_runs(registry, only=[name], wait_ms=L.MERGE_WAIT_MS, project=pathlib.Path(repo_root))
+        action, evidence = L.judge_conform(merge, name, limited=False, timed_out=False, exit_code=0, out_tail="",
+                                           tmp_left=False, timeout_min=timeout_min)
+        if action == "retry-merge":
+            action, evidence = "blocked", "the merge lock stayed held; run file left for `loop.py merge`"
+    return action, evidence
+
+
+def settle_round(n: int, rdir: pathlib.Path, seats: list[dict], before: dict, keep_raw: bool,
                  timeout_min: int, recovered: bool, skipped: dict | None = None) -> dict:
     state = load_state()
-    state.setdefault("tried", {})
-    files = Files()
+    files_by_repo: dict[str, Files] = {}
     c = L.connect()
-    root = L.registry_root(c)
+    registry = L.registry_root(c)
     skipped = skipped or {}
     results = []
     for s in seats:
-        out = (s["dir"] / "stdout.txt").read_text(encoding="utf-8", errors="replace")
-        err = (s["dir"] / "stderr.txt").read_text(encoding="utf-8", errors="replace")
+        out = (s["dir"] / "stdout.txt").read_text(encoding="utf-8", errors="replace") if (s["dir"] / "stdout.txt").exists() else ""
+        err = (s["dir"] / "stderr.txt").read_text(encoding="utf-8", errors="replace") if (s["dir"] / "stderr.txt").exists() else ""
         r = read_seat(s["name"], s["dir"], out)
         s["session"] = s["session"] or r["session"]
         claim, d = s["claim"], s["dossier"]
+        repo_root = d["repo_root"]
         exit_code = s["proc"].returncode if s.get("proc") is not None else None
         limited = seat_limited(out, err, exit_code, r["answer"])
-        row = {"round": n, "ts": L.now(), "provider": s["name"], "model": s["model"], "subject": claim["subject"],
-               "domain": d["domain"], "category": d["category"], "pairs_offered": len(d["pairs"]),
-               "techniques": len(d["techniques"]), "wall_s": s["wall_s"], "exit": exit_code,
-               "timed_out": s["timed_out"], "usage": r["usage"], "seat_error": r["error"],
-               "read_nothing": r.get("read_nothing")}
+        row = {"round": n, "ts": L.now(), "provider": s["name"], "model": s["model"], "repo": d["repo"],
+               "subject": claim["subject"], "domain": d["domain"], "category": d["category"],
+               "pairs_offered": len(d["pairs"]), "techniques": len(d["techniques"]), "wall_s": s["wall_s"],
+               "exit": exit_code, "timed_out": s["timed_out"], "usage": r["usage"], "seat_error": r["error"],
+               "read_nothing": r.get("read_nothing"), "seat_dir": str(s["dir"])}
         lost = recovered and not s["timed_out"] and r["answer"] is None and not limited
+        tried_key = f"{d['repo']}:{claim['subject']}"
         if lost:
             # The driver died with it; nothing here is the seat's verdict. Give the subject back.
             L.release(c, claim, f"curator-multi: {s['name']} seat lost when the round's driver died")
@@ -940,68 +1121,62 @@ def settle_round(n: int, rdir: pathlib.Path, seats: list[dict], before: set[str]
                 c.execute("UPDATE curator_request SET state='cancelled', settled_at=?, outcome=? "
                           "WHERE id=? AND state IN ('queued','dispatched')",
                           (L.now(), "seat lost with the round's driver; subject returned", claim["request_id"]))
-            state["tried"].pop(claim["subject"], None)
+            state["tried"].pop(tried_key, None)
             row.update(outcome="lost", accepted=0, returned=0)
         elif limited:
             L.release(c, claim, f"curator-multi: {s['name']} hit its usage limit; progress thrown away")
             if claim["lane"] == "queue":  # her queue must not keep a request nobody will run
-                c.execute("UPDATE curator_request SET state='cancelled', settled_at=?, outcome=? WHERE id=? AND state='queued'",
+                c.execute("UPDATE curator_request SET state='cancelled', settled_at=?, outcome=? "
+                          "WHERE id=? AND state IN ('queued','dispatched')",
                           (L.now(), f"{s['name']} hit its usage limit; dropped from --multi", claim["request_id"]))
-                state["tried"].pop(claim["subject"], None)
+            state["tried"].pop(tried_key, None)
             state["dropped"][s["name"]] = {"round": n, "at": L.now(), "why": "usage limit: " + " ".join((err or out)[-240:].split())}
             row.update(outcome="dropped-limit", accepted=0, returned=0)
         else:
+            files = files_by_repo.setdefault(repo_root, Files(pathlib.Path(repo_root)))
             v = validate(r["answer"], d, files, r.get("read_nothing"))
             row.update(returned=v["returned"], accepted=len(v["pairs"]), declined=len(v["declined"]),
                        repairs=v["repairs"], rejections=v["rejections"][:12],
                        states={st: sum(1 for p in v["pairs"] if p["state"] == st) for st in VERDICTS[:3]})
             if v["pairs"] or v["declined"]:
                 rel = write_run_file(claim, d, v, s)
-                row["run"] = pathlib.PurePosixPath(rel).name
-                merge = L.merge_runs(root, only=[pathlib.PurePosixPath(rel).name])
-                action, evidence = L.judge_conform(merge, pathlib.PurePosixPath(rel).name, limited=False,
-                                                   timed_out=s["timed_out"], exit_code=exit_code,
-                                                   out_tail="", tmp_left=False, timeout_min=timeout_min)
-                if action == "retry-merge":
-                    merge = L.merge_runs(root, only=[pathlib.PurePosixPath(rel).name], wait_ms=L.MERGE_WAIT_MS)
-                    action, evidence = L.judge_conform(merge, pathlib.PurePosixPath(rel).name, limited=False,
-                                                       timed_out=False, exit_code=0, out_tail="", tmp_left=False,
-                                                       timeout_min=timeout_min)
-                    if action == "retry-merge":
-                        action, evidence = "blocked", "the merge lock stayed held; run file left for `loop.py merge`"
+                name = pathlib.PurePosixPath(rel).name
+                row["run"] = name
+                action, evidence = _merge_and_judge(registry, repo_root, name, s, exit_code, timeout_min)
             else:
                 why = r["error"] or ("timed out" if s["timed_out"] else "no usable answer")
                 action, evidence = "blocked", f"no verdict survived: {why}; {'; '.join(v['rejections'][:3])}"
-            evidence = f"[{s['name']}:{s['model']}] {evidence}"
+            evidence = f"[{s['name']}:{s['model']}] [{d['repo']}] {evidence}"
             action = action if action in L.TERMINAL_ITEM else "blocked"
             L.settle(c, claim, L.REQUEST_STATE[action] if claim["lane"] == "queue" else action, evidence)
             row.update(outcome=action, evidence=evidence[:500],
-                       sample=[{"context": p["context"], "state": p["state"], "evidence": p["evidence"][:300]}
-                               for p in v["pairs"][:3]])
+                       landed=[{"context": p["context"], "state": p["state"], "evidence": p["evidence"],
+                                "techniques": [t["evidence"] for t in p["techniques"]][:4],
+                                "files": next((q["files"] for q in d["pairs"] if q["context"] == p["context"]), [])[:12]}
+                               for p in v["pairs"]] if action == "landed" else [])
         row["cleaned_sessions"] = clean_provider_sessions(s)
         results.append(row)
         with open(MULTI_DIR / "scoreboard.jsonl", "a", encoding="utf-8") as f:
-            f.write(json.dumps(row, default=str) + "\n")
+            f.write(json.dumps({k: v for k, v in row.items() if k not in ("landed", "seat_dir")}, default=str) + "\n")
     c.close()
 
-    # Cleanup: the raw round dir, and provider junk that appeared in the repo during the round.
-    new = sorted(repo_untracked() - before)
+    # Cleanup: provider junk that appeared in any repo a seat ran in during the round.
     removed, left = [], []
-    for p in new:
-        if p.startswith(L.CONFORM_RUNS_REL.as_posix()):
-            continue  # the merger's own files
-        if STRAY_OK.search(p):
-            try:
-                (L.PERSONAS_ROOT / p).unlink()
-                removed.append(p)
-            except OSError:
-                left.append(p)
-        else:
-            left.append(p)
-    for top in {pathlib.PurePosixPath(p).parts[0] for p in removed}:
-        tp = L.PERSONAS_ROOT / top
-        if tp.is_dir() and not any(tp.rglob("*")):
-            shutil.rmtree(tp, ignore_errors=True)
+    for root, was in before.items():
+        for p in sorted(repo_untracked(root) - set(was)):
+            if p.startswith(L.CONFORM_RUNS_REL.as_posix()):
+                continue  # the merger's own files
+            if STRAY_OK.search(p):
+                try:
+                    (pathlib.Path(root) / p).unlink()
+                    removed.append(f"{root}: {p}")
+                except OSError:
+                    left.append(f"{root}: {p}")
+            else:
+                left.append(f"{root}: {p}")
+            top = pathlib.Path(root) / pathlib.PurePosixPath(p).parts[0]
+            if STRAY_OK.search(p) and top.is_dir() and not any(top.rglob("*")):
+                shutil.rmtree(top, ignore_errors=True)
     state["rounds"] = max(state.get("rounds", 0), n)
     save_state(state)
     summary = {"ok": True, "round": n, "seats": results, "skipped": skipped,
@@ -1028,8 +1203,8 @@ def _dump(path: pathlib.Path, obj) -> None:
     os.replace(tmp, path)
 
 
-def _take_merge_lock(wait_s: int = 120) -> pathlib.Path:
-    lock = L.PERSONAS_ROOT / L.CONFORM_RUNS_REL / ".merge.lock"
+def _take_merge_lock(root: pathlib.Path, wait_s: int = 120) -> pathlib.Path:
+    lock = root / L.CONFORM_RUNS_REL / ".merge.lock"
     end = time.time() + wait_s
     while True:
         try:
@@ -1039,99 +1214,22 @@ def _take_merge_lock(wait_s: int = 120) -> pathlib.Path:
             return lock
         except FileExistsError:
             if time.time() > end:
-                L.die("the merge lock stayed held; nothing withdrawn")
+                raise RuntimeError(f"the merge lock in {root} stayed held; nothing withdrawn")
             time.sleep(1)
 
 
-def start_detached(a: argparse.Namespace) -> dict:
-    """Launch `multi round` as a process no Claude Code shell owns.
-
-    Measured 2026-10-12: Claude Code's low-memory reaper killed the background shell running a
-    round, and the round's driver with it; the seats finished with nobody to settle them. A
-    detached driver survives the reap; the session only watches `rounds/<n>.json` appear.
-    """
-    pending = unfinished_round()
-    if pending is not None:
-        return {"ok": False, "error": f"round {pending} never finished: run `multi finish` first"}
-    argv = [sys.executable, str(pathlib.Path(L.__file__)), "multi", "round", "--providers", a.providers,
-            "--timeout-min", str(a.timeout_min)]
-    if a.terminal_owns:
-        argv.append("--terminal-owns")
-    if a.keep_raw:
-        argv.append("--keep-raw")
-    flags = 0
-    if sys.platform == "win32":
-        flags = (subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
-                 | getattr(subprocess, "CREATE_BREAKAWAY_FROM_JOB", 0x01000000) | subprocess.CREATE_NO_WINDOW)
-    log = open(MULTI_DIR / "round.out", "w", encoding="utf-8")
-    try:
-        proc = subprocess.Popen(argv, cwd=str(L.PERSONAS_ROOT), stdout=log, stderr=subprocess.STDOUT,
-                                stdin=subprocess.DEVNULL, creationflags=flags, close_fds=True)
-    except OSError:  # a job that forbids breakaway: start without it, still detached
-        flags &= ~0x01000000
-        proc = subprocess.Popen(argv, cwd=str(L.PERSONAS_ROOT), stdout=log, stderr=subprocess.STDOUT,
-                                stdin=subprocess.DEVNULL, creationflags=flags, close_fds=True)
-    n = load_state().get("rounds", 0) + 1
-    return {"ok": True, "pid": proc.pid, "round": n, "log": str(MULTI_DIR / "round.out"),
-            "summary_will_be": str(MULTI_DIR / "rounds" / f"{n}.json")}
-
-
-def revalidate(n: int, provider: str, why: str) -> dict:
-    """Re-judge a kept raw answer under the CURRENT validator and land what now passes.
-
-    For a validator defect found in review: the seat's answer was good and the rule was wrong.
-    The run file is new (`<dispatch>-rv.json`), so the original archive stays as evidence of
-    what the old rule did; the ledger row's outcome is rewritten to say so.
-    """
-    j = L._read_json(MULTI_DIR / "rounds" / str(n) / "seats.json", {}) or {}
-    seat = next((x for x in j.get("seats", []) if x["name"] == provider), None)
-    if not seat:
-        L.die(f"round {n} kept no raw seat for {provider} (needs --keep-raw)")
-    sdir = pathlib.Path(seat["dir"])
-    r = read_seat(provider, sdir, (sdir / "stdout.txt").read_text(encoding="utf-8", errors="replace"))
-    v = validate(r["answer"], seat["dossier"], Files(), r.get("read_nothing"))
-    if not v["pairs"]:
-        return {"ok": True, "landed": 0, "rejections": v["rejections"]}
-    claim = dict(seat["claim"])
-    claim["dispatch_id"] = f"{claim['dispatch_id']}-rv"
-    rel = write_run_file(claim, seat["dossier"], v, seat)
-    name = pathlib.PurePosixPath(rel).name
-    c = L.connect()
-    merge = L.merge_runs(L.registry_root(c), only=[name])
-    action, evidence = L.judge_conform(merge, name, limited=False, timed_out=False, exit_code=0, out_tail="",
-                                       tmp_left=False, timeout_min=0)
-    note = f"[{provider}:{seat['model']}] revalidated after review ({why}): {evidence}"
-    if claim["lane"] == "queue":
-        c.execute("UPDATE curator_request SET state=?, outcome=? WHERE id=?",
-                  (L.REQUEST_STATE.get(action, "failed"), note, claim["request_id"]))
-    else:
-        c.execute("UPDATE curator_plan_item SET state=?, evidence_ref=?, updated_at=? WHERE id=?",
-                  (action if action in L.TERMINAL_ITEM else "blocked", note, L.now(), claim["item_id"]))
+def find_run_repo(run_name: str) -> pathlib.Path | None:
+    c = L.connect(readonly=True)
+    registry = L.registry_root(c)
     c.close()
-    with open(MULTI_DIR / "scoreboard.jsonl", "a", encoding="utf-8") as f:
-        f.write(json.dumps({"kind": "revalidated", "ts": L.now(), "round": n, "provider": provider, "run": name,
-                            "accepted": len(v["pairs"]), "reason": why}) + "\n")
-    return {"ok": True, "action": action, "evidence": evidence, "pairs": [(x["context"], x["state"]) for x in v["pairs"]]}
+    for repo in consumer_repos(registry):
+        if (pathlib.Path(repo["root"]) / L.CONFORM_RUNS_REL / "merged" / run_name).exists():
+            return pathlib.Path(repo["root"])
+    return None
 
 
-def clean_raw() -> dict:
-    """Delete the raw dirs of every FINISHED round (kept by --keep-raw for the review)."""
-    base, gone = MULTI_DIR / "rounds", []
-    for d in sorted(x for x in base.iterdir() if x.is_dir()) if base.exists() else []:
-        if (base / f"{d.name}.json").exists():
-            shutil.rmtree(d, ignore_errors=True)
-            gone.append(str(d))
-    pending = unfinished_round()
-    if pending is None:  # the driver logs are only worth anything while a round can still be finished
-        for f in [MULTI_DIR / "round.out", *MULTI_DIR.glob("finish*.out")]:
-            if f.exists():
-                f.unlink()
-                gone.append(str(f))
-    return {"ok": True, "removed": gone, "pending": pending}
-
-
-def withdraw(run_name: str, contexts: list[str], reason: str) -> dict:
-    """Undo verdicts one run file put in the map, under the merger's lock.
+def withdraw(run_name: str, contexts: list[str], reason: str, root: pathlib.Path | None = None) -> dict:
+    """Undo verdicts one run file put in a repo's map, under that repo's merger lock.
 
     The merger has no withdraw and `--reapply` re-folds its archive, so this changes all three
     places at once: the map row goes back to the verdict it replaced (from conform-detail's
@@ -1139,15 +1237,18 @@ def withdraw(run_name: str, contexts: list[str], reason: str) -> dict:
     file moves the pair to `declined` so a later --reapply cannot bring it back. A row a later
     run has already overwritten is left alone and reported.
     """
+    root = pathlib.Path(root) if root else find_run_repo(run_name)
+    if root is None:
+        return {"ok": False, "error": f"no consumer repo holds .ai/conform-runs/merged/{run_name}"}
     worker = pathlib.PurePosixPath(run_name).stem
-    arch = L.PERSONAS_ROOT / L.CONFORM_RUNS_REL / "merged" / run_name
+    arch = root / L.CONFORM_RUNS_REL / "merged" / run_name
     if not arch.exists():
-        L.die(f"no archived run file {arch}")
-    lock = _take_merge_lock()
+        return {"ok": False, "error": f"no archived run file {arch}"}
+    lock = _take_merge_lock(root)
     try:
         run = _json(arch)
-        rmap = _json(L.PERSONAS_ROOT / L.MAP_REL)
-        detail = _json(L.PERSONAS_ROOT / DETAIL_REL)
+        rmap = _json(root / L.MAP_REL)
+        detail = _json_or(root / DETAIL_REL, {"schema": "conform-detail/1", "pairs": {}})
         rows = {r["name"]: r for r in rmap["contexts"]}
         done, left = [], []
         keep = []
@@ -1181,12 +1282,552 @@ def withdraw(run_name: str, contexts: list[str], reason: str) -> dict:
             with open(MULTI_DIR / "scoreboard.jsonl", "a", encoding="utf-8") as f:
                 f.write(json.dumps({"kind": "review", "ts": L.now(), "run": run_name, "provider": run.get("provider"),
                                     "withdrawn": len(done), "reason": reason}) + "\n")
-            _dump(L.PERSONAS_ROOT / L.MAP_REL, rmap)
-            _dump(L.PERSONAS_ROOT / DETAIL_REL, detail)
+            _dump(root / L.MAP_REL, rmap)
+            _dump(root / DETAIL_REL, detail)
             _dump(arch, run)
-        return {"ok": True, "withdrawn": done, "left": left}
+        return {"ok": True, "repo": str(root), "withdrawn": done, "left": left}
     finally:
         lock.unlink(missing_ok=True)
+
+
+# --------------------------------------------------------------------------
+# Commits - what a round changed in a repo, on the branch that repo has checked out
+# --------------------------------------------------------------------------
+
+COMMIT_PATHS = (".ai/registry-map.json", ".ai/conform-detail.json", ".ai/consults.jsonl")
+TRAILER = "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+
+
+def _git(root, *args, env=None, timeout=120):
+    return subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, encoding="utf-8",
+                          errors="replace", env=env, timeout=timeout)
+
+
+def commit_repo(root: pathlib.Path, run_names: list[str], message: str) -> dict:
+    """Commit the map, detail, consults and this round's archived run files - nothing else.
+
+    The operator's standing approval (2026-10-12) is to commit conform results in every consumer
+    repo on its CURRENTLY checked-out branch; never push. Siblings work in these checkouts, so the
+    commit uses the isolated-index ritual (a temp index seeded from HEAD, explicit paths, no
+    deletions, then the shared index resynced for these paths only), refuses a detached HEAD or a
+    merge/rebase in progress, and leaves the files uncommitted - reported - when a hook fails.
+    """
+    root = pathlib.Path(root)
+    branch = _git(root, "branch", "--show-current").stdout.strip()
+    if not branch:
+        return {"ok": False, "repo": str(root), "skipped": "detached HEAD: no active branch to commit on"}
+    gitdir = pathlib.Path(_git(root, "rev-parse", "--absolute-git-dir").stdout.strip())
+    busy = [x for x in ("MERGE_HEAD", "REBASE_HEAD", "CHERRY_PICK_HEAD", "rebase-merge", "rebase-apply") if (gitdir / x).exists()]
+    if busy:
+        return {"ok": False, "repo": str(root), "branch": branch, "skipped": f"{busy[0]} in progress"}
+    paths = [p for p in [*COMMIT_PATHS, *[f".ai/conform-runs/merged/{n}" for n in run_names]] if (root / p).exists()]
+    ignored = set(_git(root, "check-ignore", "--", *paths).stdout.split()) if paths else set()
+    paths = [p for p in paths if p not in ignored]
+    if not paths or not _git(root, "status", "--porcelain", "--", *paths).stdout.strip():
+        return {"ok": True, "repo": str(root), "branch": branch, "nothing": True}
+    fd, idx = tempfile.mkstemp(prefix="curator-multi-idx-")
+    os.close(fd)
+    env = {**os.environ, "GIT_INDEX_FILE": idx}
+    try:
+        _git(root, "read-tree", "HEAD", env=env)
+        add = _git(root, "add", "--", *paths, env=env)
+        if add.returncode:
+            return {"ok": False, "repo": str(root), "branch": branch, "error": f"git add: {add.stderr[-300:]}"}
+        staged = _git(root, "diff", "--cached", "--name-status", env=env).stdout.splitlines()
+        if any(l.startswith("D") for l in staged):
+            return {"ok": False, "repo": str(root), "branch": branch, "error": "the commit would delete a file; refused"}
+        if not staged:
+            return {"ok": True, "repo": str(root), "branch": branch, "nothing": True}
+        msg = f"{message}\n\n{TRAILER}\n"
+        r = subprocess.run(["git", "-C", str(root), "commit", "-q", "-F", "-"], input=msg, capture_output=True,
+                           text=True, encoding="utf-8", errors="replace", env=env, timeout=900)
+        # Verify the commit is OURS: a sibling's commit landing in between is the documented failure.
+        sha, subject = (_git(root, "log", "-1", "--format=%h%x00%s").stdout.strip().split("\x00") + [""])[:2]
+        if r.returncode or subject != message.splitlines()[0]:
+            return {"ok": False, "repo": str(root), "branch": branch,
+                    "error": f"commit failed or HEAD is not ours (exit {r.returncode}): {(r.stderr or r.stdout)[-400:]}"}
+        return {"ok": True, "repo": str(root), "branch": branch, "commit": sha, "files": len(staged)}
+    finally:
+        _git(root, "reset", "-q", "HEAD", "--", *paths)  # the shared index sees the new HEAD for OUR paths only
+        try:
+            os.unlink(idx)
+        except OSError:
+            pass
+
+
+def commit_as_found(root: pathlib.Path, n: int) -> dict | None:
+    """Commit the conform files' PRE-EXISTING uncommitted state before a round writes over it.
+
+    Measured 2026-10-12 in goat: the map carried an uncommitted registry rebuild from ten days
+    earlier, and the round's commit swept it in under the round's name. Committing it first, as
+    found and said so, keeps every round commit about that round alone.
+    """
+    if not _git(root, "status", "--porcelain", "--", *COMMIT_PATHS).stdout.strip():
+        return None
+    return commit_repo(root, [], f"chore(conform): commit the conform files as found before curator --multi round {n}\n\n"
+                                 "These changes were already in the working tree, uncommitted, when the round began; "
+                                 "they are committed unchanged so the round's own commit carries only its verdicts.")
+
+
+def commit_round(summary: dict, reviewed: str) -> list[dict]:
+    """One commit per repo the round landed or withdrew in."""
+    by_repo: dict[str, list[str]] = {}
+    subjects: dict[str, list[str]] = {}
+    roots = {}
+    c = L.connect(readonly=True)
+    registry = L.registry_root(c)
+    c.close()
+    for r in consumer_repos(registry):
+        roots[r["slug"]] = r["root"]
+    for s in summary.get("seats", []):
+        if s.get("run") and s.get("repo") in roots:
+            by_repo.setdefault(s["repo"], []).append(s["run"])
+            subjects.setdefault(s["repo"], []).append(f"{s['subject'].split('/')[-1]} ({s['provider']})")
+    out = []
+    for slug, runs in by_repo.items():
+        n_landed = sum(s.get("accepted", 0) for s in summary["seats"] if s.get("repo") == slug)
+        msg = (f"conform: curator --multi round {summary['round']} - {n_landed} verdict(s) on "
+               f"{', '.join(subjects[slug])}\n\nJudged by non-Claude seats, verified anchor by anchor by the curator "
+               f"validator; review: {reviewed}. Committed on the operator's standing approval for conform results.")
+        out.append({"slug": slug, **commit_repo(roots[slug], runs, msg)})
+    return out
+
+
+# --------------------------------------------------------------------------
+# The reviewer - a headless Claude session spot-checks what landed
+# --------------------------------------------------------------------------
+
+REVIEW_TIMEOUT_MIN = 25
+
+
+def review_brief(summary: dict) -> str | None:
+    items = []
+    for s in summary.get("seats", []):
+        for p in s.get("landed") or []:
+            items.append({"repo": s["repo"], "run": s["run"], "provider": s["provider"], "subject": s["subject"], **p})
+    if not items:
+        return None
+    roots = {}
+    c = L.connect(readonly=True)
+    registry = L.registry_root(c)
+    c.close()
+    for r in consumer_repos(registry):
+        roots[r["slug"]] = pathlib.Path(r["root"]).as_posix()
+    lines = []
+    for i, it in enumerate(items, 1):
+        lines.append(f"{i}. repo `{it['repo']}` at {roots.get(it['repo'])} | run `{it['run']}` | seat {it['provider']} | "
+                     f"subject `{it['subject']}` | context `{it['context']}` | {it['state']}\n"
+                     f"   evidence: {it['evidence']}\n"
+                     + "".join(f"   technique: {t}\n" for t in it["techniques"])
+                     + f"   context files: {', '.join(it['files'])}")
+    return f"""You are the reviewer of an unattended conform round. Non-Claude model seats judged code against
+knowledge-registry standards; a validator already proved each anchor's file exists and that the seat
+quoted the cited line correctly. What a validator cannot prove is whether the line SAYS what the
+evidence claims, and whether the verdict is about THIS context's code. That is your job.
+
+Rules: READ ONLY - do not edit, create or delete any file, do not run git commands that change state.
+For every verdict below, open the anchor (path:line is relative to the repo root shown; print a few
+lines around it) and, where a technique anchor carries the claim, that line too. Then decide:
+- KEEP when the cited code supports the claim and the verdict is about this context (its files or the
+  code they call). A defensible verdict you would have phrased differently is a KEEP.
+- WITHDRAW only for a clear error: the line does not say what is claimed, the claim is about a
+  different context or the repo as a whole, a conformant/not-applicable that the cited code
+  contradicts, or a verdict built on a misread. When in doubt, KEEP.
+
+Verdicts to review:
+{chr(10).join(lines)}
+
+Reply with exactly one JSON object and nothing else:
+{{"checked": <number of verdicts you opened>,
+ "withdraw": [{{"run": "<run file name>", "contexts": ["<context>", ...], "why": "<one sentence>"}}],
+ "notes": "<patterns worth fixing in the seats' brief or the validator, or empty>"}}
+"""
+
+
+def review_round(summary: dict, model: str) -> dict:
+    prompt = review_brief(summary)
+    if not prompt:
+        return {"ok": True, "skipped": "nothing landed"}
+    try:
+        claude = L.claude_bin()
+    except SystemExit:
+        return {"ok": False, "error": "no claude CLI"}
+    env = L.worker_env()
+    argv = [claude, "--print", "--dangerously-skip-permissions", "--model", model,
+            "--disallowedTools", "Edit,Write,NotebookEdit,MultiEdit"]
+    try:
+        r = subprocess.run(argv, input=prompt, cwd=str(MULTI_DIR), env=env, capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", timeout=REVIEW_TIMEOUT_MIN * 60)
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": f"the reviewer ran past {REVIEW_TIMEOUT_MIN} min"}
+    if L.usage_limited(r.stdout or "", r.stderr or "", r.returncode):
+        return {"ok": False, "limited": True, "error": "the reviewer hit the Claude usage limit"}
+    verdict = _last_json_object(r.stdout or "", key="withdraw")
+    if not verdict:
+        return {"ok": False, "error": f"no review JSON (exit {r.returncode}): {(r.stdout or r.stderr or '')[-300:]}"}
+    # Only withdrawals that name a run and contexts this round actually landed are applied.
+    landed = {s["run"]: {p["context"] for p in s.get("landed") or []} for s in summary["seats"] if s.get("run")}
+    applied, refused = [], []
+    for w in verdict.get("withdraw") or []:
+        run, ctxs = w.get("run"), [x for x in (w.get("contexts") or []) if x in landed.get(w.get("run"), set())]
+        if not ctxs:
+            refused.append(w)
+            continue
+        res = withdraw(run, ctxs, f"reviewer ({model}): {_norm(w.get('why') or '')[:300]}")
+        applied.append({"run": run, "contexts": ctxs, "why": w.get("why"), "result": res.get("withdrawn") or res.get("error")})
+    return {"ok": True, "model": model, "checked": verdict.get("checked"), "withdrawn": applied,
+            "refused": refused, "notes": _norm(verdict.get("notes") or "")[:600]}
+
+
+# --------------------------------------------------------------------------
+# The night - rounds back to back until the window closes
+# --------------------------------------------------------------------------
+
+NIGHT_DIR = MULTI_DIR / "night"
+NIGHT_STOP = MULTI_DIR / "STOP"
+MIN_FREE_GB = 6.0
+PER_SEAT_GB = 1.5
+EMPTY_ROUNDS_STOP = 3
+
+
+def _deadline(until: str | None, start: datetime) -> datetime | None:
+    if not until:
+        return None
+    hh, mm = (int(x) for x in until.split(":"))
+    d = start.replace(hour=hh, minute=mm, second=0, microsecond=0)
+    return d if d > start else d + timedelta(days=1)
+
+
+def _night_lock() -> pathlib.Path | None:
+    lock = MULTI_DIR / "night.lock"
+    for _ in range(2):
+        try:
+            fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(json.dumps({"pid": os.getpid(), "create_time": L.proc_create_time(os.getpid()), "at": L.now()}))
+            return lock
+        except FileExistsError:
+            h = L._read_json(lock, {}) or {}
+            if h.get("pid") and L.proc_alive(h.get("pid"), h.get("create_time")):
+                return None
+            lock.unlink(missing_ok=True)
+    return None
+
+
+def run_night(a: argparse.Namespace) -> dict:
+    """Rounds back to back, each reviewed and committed, until the window closes or a stop fires.
+
+    Stops on: `--until` (no round starts within 20 min of it), `--max-rounds`, the STOP file
+    (`multi stop`), a brake, a stale corpus, every provider dropped, an empty backlog, or
+    EMPTY_ROUNDS_STOP rounds in a row that landed nothing. Waits for memory rather than
+    starving a sibling session. Writes `night/<date>.jsonl` as it goes and `night/<date>.md`
+    at the end - the morning report.
+    """
+    MULTI_DIR.mkdir(parents=True, exist_ok=True)
+    NIGHT_DIR.mkdir(parents=True, exist_ok=True)
+    lock = _night_lock()
+    if lock is None:
+        return {"ok": False, "error": "another night is running (night.lock holds a live pid)"}
+    start = datetime.now()
+    tag = start.strftime("%Y-%m-%d-%H%M")
+    log_path = NIGHT_DIR / f"{tag}.jsonl"
+    deadline = _deadline(a.until, start)
+    NIGHT_STOP.unlink(missing_ok=True)
+
+    def log(event: str, **kw):
+        rec = {"ts": L.now(), "event": event, **kw}
+        print(json.dumps(rec, default=str), flush=True)
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, default=str) + "\n")
+
+    events: list[dict] = []
+    stop_reason = None
+    repos: list[dict] = []
+    coverage_before: dict = {}
+    try:
+        c = L.connect(readonly=True)
+        registry = L.registry_root(c)
+        c.close()
+        repos = consumer_repos(registry, [x.strip() for x in a.repos.split(",")] if a.repos else None)
+        coverage_before = {r["slug"]: backlog_size(r) for r in repos}
+        state = load_state()
+        if state["dropped"]:  # a new night: last night's limits have had time to reset
+            log("dropped_reset", was=list(state["dropped"]))
+            state["dropped"] = {}
+            save_state(state)
+        log("night_started", until=a.until, max_rounds=a.max_rounds, providers=a.providers, review=a.review,
+            repos=[r["slug"] for r in repos], per_provider=a.per_provider)
+        if unfinished_round() is not None:
+            fin = finish_round()
+            log("finished_stranded_round", round=fin.get("round"))
+            events.append({"round": fin.get("round"), "summary": fin, "review": {"skipped": "recovered round"},
+                           "commits": commit_round(fin, "none (recovered round)")})
+        rounds, empty_streak = 0, 0
+        while True:
+            if NIGHT_STOP.exists():
+                stop_reason = "STOP file"
+                break
+            if a.max_rounds and rounds >= a.max_rounds:
+                stop_reason = f"--max-rounds {a.max_rounds}"
+                break
+            if deadline and datetime.now() + timedelta(minutes=20) > deadline:
+                stop_reason = f"the window closes at {a.until}"
+                break
+            seats_wanted = len([p for p in a.providers.split(",") if p.strip()]) * max(1, a.per_provider)
+            need = MIN_FREE_GB + PER_SEAT_GB * seats_wanted
+            waited = 0
+            free = L.sample_free_gb()
+            while free is not None and free < need and waited < 6:
+                log("memory_wait", free_gb=round(free, 1), need_gb=need)
+                time.sleep(300)
+                waited += 1
+                free = L.sample_free_gb()
+            if free is not None and free < need:
+                stop_reason = f"memory stayed below {need} GB for 30 min"
+                break
+            rounds += 1
+            summary = run_round(a)
+            if not summary.get("ok"):
+                stop_reason = f"round refused: {summary.get('error')} {summary.get('held_by') or ''}".strip()
+                break
+            if summary.get("empty"):
+                stop_reason = "nothing claimable in any repo (backlog empty, or every subject tried)"
+                break
+            review = {"skipped": "--review off"}
+            if a.review != "off":
+                review = review_round(summary, a.reviewer_model)
+                if review.get("limited"):
+                    log("reviewer_limited")
+            reviewed = (f"{a.reviewer_model} checked {review.get('checked')}, withdrew "
+                        f"{sum(len(w['contexts']) for w in review.get('withdrawn') or [])}") if review.get("ok") and not review.get("skipped") \
+                else f"none ({review.get('skipped') or review.get('error')})"
+            commits = commit_round(summary, reviewed)
+            landed = sum(s.get("accepted") or 0 for s in summary["seats"]) - \
+                sum(len(w["contexts"]) for w in review.get("withdrawn") or [])
+            empty_streak = 0 if landed > 0 else empty_streak + 1
+            events.append({"round": summary["round"], "summary": summary, "review": review, "commits": commits})
+            log("round", round=summary["round"], landed=landed,
+                seats=[{k: s.get(k) for k in ("provider", "repo", "subject", "accepted", "outcome", "wall_s")} for s in summary["seats"]],
+                review=review, commits=commits, dropped=list(summary.get("dropped") or {}))
+            active = [p for p in a.providers.split(",") if p.strip() and p.strip() not in load_state()["dropped"]]
+            if not active:
+                stop_reason = "every provider hit its usage limit"
+                break
+            if empty_streak >= EMPTY_ROUNDS_STOP:
+                stop_reason = f"{EMPTY_ROUNDS_STOP} rounds in a row landed nothing"
+                break
+    except Exception as e:  # never die silently overnight: the report says what broke
+        stop_reason = f"crashed: {type(e).__name__}: {e}"
+        log("crashed", error=stop_reason)
+    finally:
+        lock.unlink(missing_ok=True)
+    coverage_after = {r["slug"]: backlog_size(r) for r in repos}
+    report_path = NIGHT_DIR / f"{tag}.md"
+    report_path.write_text(night_report(tag, start, stop_reason, events, coverage_before, coverage_after), encoding="utf-8")
+    log("night_ended", reason=stop_reason, report=str(report_path))
+    clean_raw()
+    return {"ok": True, "stopped": stop_reason, "rounds": len(events), "report": str(report_path)}
+
+
+def night_report(tag, start, stop_reason, events, before, after) -> str:
+    landed = sum(sum(s.get("accepted") or 0 for s in e["summary"].get("seats", [])) for e in events)
+    withdrawn = sum(sum(len(w["contexts"]) for w in (e["review"].get("withdrawn") or [])) for e in events)
+    lines = [f"# Curator night {tag}", "",
+             f"Started {start:%Y-%m-%d %H:%M}, ended {datetime.now():%H:%M}. Stopped by: **{stop_reason}**.",
+             f"{len(events)} round(s); {landed} verdict(s) landed by the validator, {withdrawn} withdrawn by the reviewer, "
+             f"**{landed - withdrawn} kept**.", "", "## Coverage (unknown + stale pairs still owed)", "",
+             "| repo | before | after | judged tonight |", "|---|---|---|---|"]
+    for slug in before:
+        b, a2 = before[slug], after.get(slug, before[slug])
+        owed_b, owed_a = b["unknown"] + b["stale"], a2["unknown"] + a2["stale"]
+        lines.append(f"| {slug} | {owed_b} | {owed_a} | {owed_b - owed_a} |")
+    lines += ["", "## Rounds", ""]
+    for e in events:
+        s = e["summary"]
+        lines.append(f"### Round {s.get('round')}")
+        for seat in s.get("seats", []):
+            lines.append(f"- {seat['provider']} on `{seat.get('repo')}` / `{seat['subject']}`: {seat.get('outcome')}, "
+                         f"{seat.get('accepted', 0)} accepted of {seat.get('returned', 0)}"
+                         + (f" ({seat['wall_s']} s)" if seat.get("wall_s") else ""))
+        rv = e["review"]
+        if rv.get("withdrawn"):
+            for w in rv["withdrawn"]:
+                lines.append(f"  - reviewer withdrew {', '.join(w['contexts'])} in `{w['run']}`: {w['why']}")
+        if rv.get("notes"):
+            lines.append(f"  - reviewer notes: {rv['notes']}")
+        if rv.get("error") or rv.get("skipped"):
+            lines.append(f"  - review: {rv.get('error') or rv.get('skipped')}")
+        for cm in e.get("commits") or []:
+            what = cm.get("commit") and f"committed {cm['commit']} on `{cm.get('branch')}`" or \
+                cm.get("skipped") or cm.get("error") or ("nothing to commit" if cm.get("nothing") else "?")
+            lines.append(f"  - {cm['slug']}: {what}")
+        lines.append("")
+    dropped = load_state()["dropped"]
+    if dropped:
+        lines += ["## Providers dropped on their usage limit", ""] + [f"- {k}: {v['why'][:200]}" for k, v in dropped.items()]
+    return "\n".join(lines) + "\n"
+
+
+# --------------------------------------------------------------------------
+# Detached starts and the schedule
+# --------------------------------------------------------------------------
+
+TASK_NAME = "PersonasCuratorNight"
+
+
+def _detached(argv: list[str], log: pathlib.Path) -> int:
+    flags = 0
+    if sys.platform == "win32":
+        flags = (subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+                 | getattr(subprocess, "CREATE_BREAKAWAY_FROM_JOB", 0x01000000) | subprocess.CREATE_NO_WINDOW)
+    out = open(log, "w", encoding="utf-8")
+    try:
+        proc = subprocess.Popen(argv, cwd=str(L.PERSONAS_ROOT), stdout=out, stderr=subprocess.STDOUT,
+                                stdin=subprocess.DEVNULL, creationflags=flags, close_fds=True)
+    except OSError:  # a job that forbids breakaway: start without it, still detached
+        flags &= ~0x01000000
+        proc = subprocess.Popen(argv, cwd=str(L.PERSONAS_ROOT), stdout=out, stderr=subprocess.STDOUT,
+                                stdin=subprocess.DEVNULL, creationflags=flags, close_fds=True)
+    return proc.pid
+
+
+def _common_args(a: argparse.Namespace) -> list[str]:
+    out = ["--providers", a.providers, "--timeout-min", str(a.timeout_min), "--per-provider", str(a.per_provider)]
+    if a.terminal_owns:
+        out.append("--terminal-owns")
+    if a.repos:
+        out += ["--repos", a.repos]
+    return out
+
+
+def start_detached(a: argparse.Namespace) -> dict:
+    """Launch `multi round` as a process no Claude Code shell owns.
+
+    Measured 2026-10-12: Claude Code's low-memory reaper killed the background shell running a
+    round, and the round's driver with it; the seats finished with nobody to settle them. A
+    detached driver survives the reap; the session only watches `rounds/<n>.json` appear.
+    """
+    pending = unfinished_round()
+    if pending is not None:
+        return {"ok": False, "error": f"round {pending} never finished: run `multi finish` first"}
+    argv = [sys.executable, str(pathlib.Path(L.__file__)), "multi", "round", *_common_args(a)]
+    if a.keep_raw:
+        argv.append("--keep-raw")
+    pid = _detached(argv, MULTI_DIR / "round.out")
+    n = load_state().get("rounds", 0) + 1
+    return {"ok": True, "pid": pid, "round": n, "log": str(MULTI_DIR / "round.out"),
+            "summary_will_be": str(MULTI_DIR / "rounds" / f"{n}.json")}
+
+
+def night_argv(a: argparse.Namespace) -> list[str]:
+    # --foreground is load-bearing: without it the detached child detaches again, forever.
+    argv = [sys.executable, str(pathlib.Path(L.__file__)), "multi", "night", "--foreground", *_common_args(a),
+            "--review", a.review, "--reviewer-model", a.reviewer_model]
+    if a.until:
+        argv += ["--until", a.until]
+    if a.max_rounds:
+        argv += ["--max-rounds", str(a.max_rounds)]
+    return argv
+
+
+def night_detached(a: argparse.Namespace) -> dict:
+    NIGHT_DIR.mkdir(parents=True, exist_ok=True)
+    held = L._read_json(MULTI_DIR / "night.lock", None)
+    if held and L.proc_alive(held.get("pid"), held.get("create_time")):
+        return {"ok": False, "error": f"a night is already running (pid {held.get('pid')} since {held.get('at')})"}
+    if "--foreground" not in night_argv(a):  # measured 2026-10-12: without it the child re-detaches forever
+        return {"ok": False, "error": "refusing to spawn a night child that would detach again"}
+    pid = _detached(night_argv(a), NIGHT_DIR / "night.out")
+    return {"ok": True, "pid": pid, "log": str(NIGHT_DIR / "night.out"), "stop_with": "loop.py multi stop"}
+
+
+def schedule(a: argparse.Namespace) -> dict:
+    """Register the night with Windows Task Scheduler: daily at `--at`, as the current user.
+
+    The task runs a small .cmd (schtasks caps /TR at 261 characters) that starts `multi night`
+    with the same flags. It runs only while the user is logged on, which is what the providers'
+    stored logins need.
+    """
+    if not a.at or not a.until:
+        return {"ok": False, "error": "schedule needs --at HH:MM and --until HH:MM"}
+    NIGHT_DIR.mkdir(parents=True, exist_ok=True)
+    cmd = MULTI_DIR / "night.cmd"
+    quoted = " ".join(f'"{x}"' if " " in x or "\\" in x else x for x in night_argv(a))
+    cmd.write_text(f'@echo off\r\ncd /d "{L.PERSONAS_ROOT}"\r\n{quoted} > "{NIGHT_DIR / "task.out"}" 2>&1\r\n',
+                   encoding="utf-8")
+    r = subprocess.run(["schtasks", "/Create", "/F", "/SC", "DAILY", "/TN", TASK_NAME, "/ST", a.at, "/TR", f'"{cmd}"'],
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
+    return {"ok": r.returncode == 0, "task": TASK_NAME, "at": a.at, "until": a.until, "runs": str(cmd),
+            "schtasks": (r.stdout or r.stderr).strip()}
+
+
+def unschedule() -> dict:
+    r = subprocess.run(["schtasks", "/Delete", "/F", "/TN", TASK_NAME], capture_output=True, text=True,
+                       encoding="utf-8", errors="replace")
+    return {"ok": r.returncode == 0, "schtasks": (r.stdout or r.stderr).strip()}
+
+
+def scheduled() -> dict | None:
+    r = subprocess.run(["schtasks", "/Query", "/TN", TASK_NAME, "/FO", "LIST"], capture_output=True, text=True,
+                       encoding="utf-8", errors="replace")
+    if r.returncode:
+        return None
+    return {k.strip(): v.strip() for k, v in (l.split(":", 1) for l in r.stdout.splitlines() if ":" in l)}
+
+
+def revalidate(n: int, provider: str, why: str) -> dict:
+    """Re-judge a kept raw answer under the CURRENT validator and land what now passes.
+
+    For a validator defect found in review: the seat's answer was good and the rule was wrong.
+    The run file is new (`<dispatch>-rv.json`), so the original archive stays as evidence of
+    what the old rule did; the ledger row's outcome is rewritten to say so.
+    """
+    j = L._read_json(MULTI_DIR / "rounds" / str(n) / "seats.json", {}) or {}
+    seat = next((x for x in j.get("seats", []) if x["name"] == provider), None)
+    if not seat:
+        L.die(f"round {n} kept no raw seat for {provider} (needs --keep-raw)")
+    d = seat["dossier"]
+    d.setdefault("repo", "personas")
+    d.setdefault("repo_root", str(L.PERSONAS_ROOT))
+    sdir = pathlib.Path(seat["dir"])
+    r = read_seat(provider, sdir, (sdir / "stdout.txt").read_text(encoding="utf-8", errors="replace"))
+    v = validate(r["answer"], d, Files(pathlib.Path(d["repo_root"])), r.get("read_nothing"))
+    if not v["pairs"]:
+        return {"ok": True, "landed": 0, "rejections": v["rejections"]}
+    claim = dict(seat["claim"])
+    claim["dispatch_id"] = f"{claim['dispatch_id']}-rv"
+    rel = write_run_file(claim, d, v, seat)
+    name = pathlib.PurePosixPath(rel).name
+    c = L.connect()
+    action, evidence = _merge_and_judge(L.registry_root(c), d["repo_root"], name, {}, 0, 0)
+    note = f"[{provider}:{seat['model']}] revalidated after review ({why}): {evidence}"
+    if claim["lane"] == "queue":
+        c.execute("UPDATE curator_request SET state=?, outcome=? WHERE id=?",
+                  (L.REQUEST_STATE.get(action, "failed"), note, claim["request_id"]))
+    else:
+        c.execute("UPDATE curator_plan_item SET state=?, evidence_ref=?, updated_at=? WHERE id=?",
+                  (action if action in L.TERMINAL_ITEM else "blocked", note, L.now(), claim["item_id"]))
+    c.close()
+    with open(MULTI_DIR / "scoreboard.jsonl", "a", encoding="utf-8") as f:
+        f.write(json.dumps({"kind": "revalidated", "ts": L.now(), "round": n, "provider": provider, "run": name,
+                            "accepted": len(v["pairs"]), "reason": why}) + "\n")
+    return {"ok": True, "action": action, "evidence": evidence, "pairs": [(x["context"], x["state"]) for x in v["pairs"]]}
+
+
+def clean_raw() -> dict:
+    """Delete the raw dirs of every FINISHED round (kept by --keep-raw for the review)."""
+    base, gone = MULTI_DIR / "rounds", []
+    for d in sorted(x for x in base.iterdir() if x.is_dir()) if base.exists() else []:
+        if (base / f"{d.name}.json").exists():
+            shutil.rmtree(d, ignore_errors=True)
+            gone.append(str(d))
+    pending = unfinished_round()
+    if pending is None:  # the driver logs are only worth anything while a round can still be finished
+        for f in [MULTI_DIR / "round.out", *MULTI_DIR.glob("finish*.out")]:
+            if f.exists():
+                f.unlink()
+                gone.append(str(f))
+    return {"ok": True, "removed": gone, "pending": pending}
 
 
 # --------------------------------------------------------------------------
@@ -1214,7 +1855,9 @@ def report() -> dict:
         # A withdrawal counts against the seat; a revalidation (the validator was wrong) for it.
         w = withdrawn.get(r.get("run"), 0)
         rv = revalidated.get((r.get("round"), r.get("provider")), 0)
-        for key in (("provider", r["provider"]), ("provider×category", f"{r['provider']} | {r.get('category')}")):
+        keys = (("provider", r["provider"]), ("provider×category", f"{r['provider']} | {r.get('category')}"),
+                ("provider×repo", f"{r['provider']} | {r.get('repo', 'personas')}"))
+        for key in keys:
             a = agg.setdefault(key[0], {}).setdefault(key[1], {"seats": 0, "returned": 0, "accepted": 0,
                                                               "repairs": 0, "rejections": 0, "landed": 0,
                                                               "wall_s": 0, "outcomes": {}})
@@ -1237,32 +1880,61 @@ def report() -> dict:
     return {"ok": True, "rows": len(rows), "state": load_state(), **agg}
 
 
+def status() -> dict:
+    c = L.connect(readonly=True)
+    registry = L.registry_root(c)
+    c.close()
+    lock = L._read_json(MULTI_DIR / "night.lock", None)
+    nights = sorted(NIGHT_DIR.glob("*.md")) if NIGHT_DIR.exists() else []
+    return {"ok": True, "state": load_state(),
+            "providers": {p: {"binary": bin_of(p), **PROVIDERS[p]} for p in PROVIDERS},
+            "repos": [{"slug": r["slug"], "root": str(r["root"]), **backlog_size(r)} for r in consumer_repos(registry)],
+            "night_running": bool(lock and L.proc_alive(lock.get("pid"), lock.get("create_time"))),
+            "stop_requested": NIGHT_STOP.exists(), "last_report": str(nights[-1]) if nights else None,
+            "scheduled": scheduled(), "unfinished_round": unfinished_round()}
+
+
 def main(a: argparse.Namespace) -> int:
     MULTI_DIR.mkdir(parents=True, exist_ok=True)
-    if a.multi_cmd == "round":
+    cmd = a.multi_cmd
+    if cmd == "round":
         out = run_round(a)
-    elif a.multi_cmd == "revalidate":
+    elif cmd == "night":
+        out = run_night(a) if a.foreground else night_detached(a)
+    elif cmd == "stop":
+        NIGHT_STOP.write_text(L.now(), encoding="utf-8")
+        out = {"ok": True, "stop_requested": True, "note": "the night finishes its running round, commits it, then ends"}
+    elif cmd == "schedule":
+        out = schedule(a)
+    elif cmd == "unschedule":
+        out = unschedule()
+    elif cmd == "revalidate":
         if not (a.round and a.provider and a.why):
             L.die("revalidate needs --round <n> --provider <name> --why <the validator defect>")
         out = revalidate(a.round, a.provider, a.why)
-    elif a.multi_cmd == "start":
+    elif cmd == "start":
         out = start_detached(a)
-    elif a.multi_cmd == "finish":
+    elif cmd == "finish":
         out = finish_round()
-    elif a.multi_cmd == "clean":
+    elif cmd == "clean":
         out = clean_raw()
-    elif a.multi_cmd == "report":
+    elif cmd == "report":
         out = report()
-    elif a.multi_cmd == "withdraw":
+    elif cmd == "withdraw":
         if not (a.run and a.contexts and a.why):
             L.die("withdraw needs --run <file.json> --contexts a,b --why <reason>")
         out = withdraw(a.run, [x.strip() for x in a.contexts.split(",")], a.why)
-    elif a.multi_cmd == "reset-dropped":
+    elif cmd == "commit":
+        if not a.round:
+            L.die("commit needs --round <n>")
+        out = {"ok": True, "commits": commit_round(L._read_json(MULTI_DIR / "rounds" / f"{a.round}.json", {}) or {},
+                                                   "by hand")}
+    elif cmd == "reset-dropped":
         s = load_state()
         s["dropped"] = {}
         save_state(s)
         out = {"ok": True, "dropped": {}}
     else:
-        out = {"ok": True, "state": load_state(), "providers": {p: {"binary": bin_of(p), **PROVIDERS[p]} for p in PROVIDERS}}
+        out = status()
     print(json.dumps(out, indent=2, default=str))
     return 0

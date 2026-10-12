@@ -27,6 +27,7 @@ description: Drive Curator's work loop from a terminal instead of from the Perso
 /curator pool stop|status      ask a running pool to stop after its workers settle / read it
 /curator --multi [N]           N rounds; each round codex, grok and agy judge DIFFERENT conform subjects at once
 /curator --multi report        the provider-by-topic scoreboard the rounds built
+/curator --multi night         unattended: rounds back to back across every consumer repo, reviewed and committed
 ```
 
 `next` takes `--lane queue,plan,method,refill` to drive part of the ladder. The filter
@@ -385,6 +386,63 @@ into memory once there are enough rounds to say something.
 | codex `gpt-6.1-sol` high | 18 / 25 (4 withdrawn, 4 revalidated) | ~11.5 min | most exhaustive (78+ commands, every technique file); best on UI and standards subjects; over-reaches with repo-wide findings unless told to judge each context by its own code |
 | grok `grok-4.7` high | 14 / 20 (1 withdrawn, 1 lost) | ~15 min | slowest, but precise once it can use tools: real security (`bundle.rs` fail-open allowlist) and module-design findings; useless under `--json-schema` |
 
+
+## --multi night - unattended coverage across every consumer repo
+
+The night is the same round, run back to back with nobody watching, so the two jobs a session did
+by hand between rounds are done by the driver: a **reviewer** and a **commit**.
+
+```bash
+L=".claude/skills/curator/loop.py"
+python $L multi night --terminal-owns --until 06:30           # detached; returns at once
+python $L multi stop                                          # finish the running round, commit it, end
+python $L multi status                                        # repos + backlog, night running?, schedule, last report
+python $L multi schedule --at 01:00 --until 06:30 --terminal-owns   # Task Scheduler, daily, as this user
+python $L multi unschedule
+```
+
+**Where it judges.** Every project the registry's `projects.json` places on this machine (resolved
+through its gitignored `.machine.local.json`) that carries a `.ai/registry-map.json` - Personas,
+pof, kp, ascent, systedo-case, politicas, goat, gravitone, tracklight, pumper, personas-web,
+athena-everywhere on 2026-10-12. `--repos a,b` narrows it. Seats take repos in ROTATION
+(`state.json` `repo_cursor`), so every repo gains coverage each night rather than the one with
+the biggest backlog; inside a repo the subject is still /conform's bare order.
+
+**The reviewer.** After each round a headless `claude -p` (Sonnet by default, `--reviewer-model`;
+Edit/Write disallowed, told read-only) receives every verdict that landed, opens each anchor, and
+returns withdrawals for clear errors only - a line that does not say what is claimed, a verdict
+about another context or the whole repo. Only withdrawals naming a run and context that round
+actually landed are applied, through `withdraw`. A reviewer that hits the Claude usage limit, times
+out or returns no JSON leaves the round **unreviewed** (said so in the commit and the report); the
+validator's checks still hold. `--review off` skips it.
+
+**The commit.** The operator's standing approval (2026-10-12): conform results are committed in
+every consumer repo **on its currently checked-out branch, never pushed**. `commit_repo` commits
+exactly `.ai/registry-map.json`, `.ai/conform-detail.json`, `.ai/consults.jsonl` and the round's
+archived run files - with the isolated-index ritual (temp index seeded from HEAD, explicit paths, no
+deletions, the commit verified to be OURS, the shared index resynced for these paths only). It
+skips a detached HEAD or a merge/rebase in progress, skips paths the repo ignores, and leaves the
+files uncommitted - reported - when a hook fails. A sibling's dirty file in that repo is never
+staged.
+
+**What stops a night**, each named in the report: `--until` (no round starts within 20 min of it),
+`--max-rounds`, `multi stop`, a brake (quiet hours, backpressure; `--terminal-owns` waives only
+`curator_enabled`), a registry checkout far behind its origin, every provider dropped on its usage
+limit, nothing claimable anywhere, three rounds in a row that kept nothing, or memory that stays
+below `6 GB + 1.5 GB per seat` for 30 minutes (it waits rather than starving a sibling). Dropped
+providers are reset at the start of each night. A crash is caught and reported, never silent.
+
+**The morning report** is `~/.personas/curator-multi/night/<date>.md`: coverage still owed per
+repo before and after, every seat, every withdrawal with its reason, every commit with its sha and
+branch. `night/<date>.jsonl` has the same as events. **Read it before the next night**; a reviewer
+note that repeats is a defect in the brief or the validator, exactly as between hand-run rounds.
+
+**A Claude session as the orchestrator** (instead of Task Scheduler): run `multi night` (it detaches
+and returns), then wait on `night.out` for `night_ended` with an until-loop, read the report, fix
+what the reviewer notes point at, and start the next. Never run `night --foreground` from a
+session: Claude Code's memory reaper kills its shell's children (measured round 2), which is why the
+default detaches. Measured 2026-10-12 too: a detached child that did not carry `--foreground`
+detached again, forever - `night_argv` now always passes it, and a test pins that.
 
 ## Conduct
 

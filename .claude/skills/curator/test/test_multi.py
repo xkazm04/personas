@@ -105,5 +105,69 @@ class Envelope(unittest.TestCase):
         self.assertFalse(M.seat_limited("about rate limiting", "", 0, {"pairs": [{}]}))
 
 
+class Commit(unittest.TestCase):
+    """commit_repo commits ONLY the conform files, on the checked-out branch, and refuses a detached HEAD."""
+
+    def setUp(self):
+        import subprocess
+        import tempfile
+        self.sp = subprocess
+        self.dir = pathlib.Path(tempfile.mkdtemp(prefix="curator-commit-"))
+        g = lambda *a: subprocess.run(["git", "-C", str(self.dir), *a], capture_output=True, text=True, check=True)
+        self.g = g
+        g("init", "-q", "-b", "main")
+        g("config", "user.email", "t@example.com")
+        g("config", "user.name", "t")
+        (self.dir / ".ai" / "conform-runs" / "merged").mkdir(parents=True)
+        (self.dir / ".ai" / "registry-map.json").write_text("{}\n")
+        (self.dir / "other.txt").write_text("a\n")
+        g("add", "-A")
+        g("commit", "-q", "-m", "init")
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+    def test_commits_only_conform_files(self):
+        (self.dir / ".ai" / "registry-map.json").write_text('{"x": 1}\n')
+        (self.dir / ".ai" / "conform-runs" / "merged" / "r1.json").write_text("{}\n")
+        (self.dir / "other.txt").write_text("sibling's unstaged edit\n")
+        out = M.commit_repo(self.dir, ["r1.json"], "conform: test round")
+        self.assertTrue(out["ok"], out)
+        self.assertEqual(out["branch"], "main")
+        files = self.g("show", "--name-only", "--format=", "HEAD").stdout.split()
+        self.assertEqual(sorted(files), [".ai/conform-runs/merged/r1.json", ".ai/registry-map.json"])
+        self.assertIn("sibling", (self.dir / "other.txt").read_text())  # untouched, still dirty
+        self.assertIn("Co-Authored-By", self.g("log", "-1", "--format=%B").stdout)
+
+    def test_nothing_to_commit(self):
+        self.assertTrue(M.commit_repo(self.dir, [], "conform: nothing").get("nothing"))
+
+    def test_pre_existing_dirt_is_committed_as_found(self):
+        (self.dir / ".ai" / "registry-map.json").write_text('{"rebuilt": true}\n')
+        out = M.commit_as_found(self.dir, 7)
+        self.assertTrue(out["ok"], out)
+        self.assertIn("as found before curator --multi round 7", self.g("log", "-1", "--format=%s").stdout)
+        self.assertIsNone(M.commit_as_found(self.dir, 8))  # clean now: nothing to do
+
+    def test_detached_head_is_refused(self):
+        self.g("checkout", "-q", "--detach")
+        (self.dir / ".ai" / "registry-map.json").write_text('{"x": 2}\n')
+        self.assertIn("detached", M.commit_repo(self.dir, [], "conform: x").get("skipped", ""))
+
+
+class Night(unittest.TestCase):
+    def test_the_detached_child_runs_in_the_foreground(self):
+        import argparse
+        a = argparse.Namespace(providers="codex", timeout_min=35, per_provider=1, terminal_owns=True, repos=None,
+                               review="claude", reviewer_model="sonnet", until="06:30", max_rounds=0)
+        self.assertIn("--foreground", M.night_argv(a))
+
+    def test_deadline_rolls_to_tomorrow(self):
+        from datetime import datetime
+        self.assertEqual(M._deadline("06:30", datetime(2026, 10, 12, 23, 0)).day, 13)
+        self.assertEqual(M._deadline("23:30", datetime(2026, 10, 12, 23, 0)).day, 12)
+
+
 if __name__ == "__main__":
     unittest.main()
