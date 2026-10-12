@@ -84,11 +84,15 @@ vi.mock('./channels', () => ({
   }),
 }));
 
-// A Timeline chunk that NEVER arrives. That is the whole point of the
+// A channel-surface chunk that NEVER arrives. That is the whole point of the
 // transition test below: a synchronous view switch would drop straight to the
 // Suspense fallback and throw the fleet board away, a transitioned one keeps
 // the committed tree on screen until the incoming one is ready.
-vi.mock('./channels/Stream', () => new Promise<never>(() => {}));
+//
+// It was the Timeline's chunk until 2026-10-06, when the Timeline moved to
+// Overview > Monitoring. The Map is the probe now — any lazy peer view does,
+// and the Map is the one left that is neither Activity nor the default.
+vi.mock('./channels/map/ChannelMap', () => new Promise<never>(() => {}));
 
 // The body and the dock are the two heavy subtrees the Monitor always mounts;
 // neither is under test. The grid doubles as the probe for the visibility
@@ -109,10 +113,8 @@ vi.mock('@/i18n/useTranslation', () => ({
         title: 'Monitor', close: 'Close', close_hint: 'Close',
         live_toggle: 'Live', live_toggle_hint: 'Live',
         activity_mode: 'Activity', activity_mode_title: 'Activity',
-        channels_layout_timeline: 'Timeline', channels_layout_timeline_hint: 'Timeline',
         channels_layout_grid: 'Conversations', channels_layout_grid_hint: 'Conversations',
         channels_layout_map: 'Map', channels_layout_map_hint: 'Map',
-        board_mode: 'Board', board_mode_title: 'Board',
         channels_no_teams: 'No teams', system: 'System',
       },
     },
@@ -243,12 +245,12 @@ describe('the view switch does not block', () => {
     expect(screen.getByTestId('grid-probe')).toBeTruthy();
 
     act(() => {
-      fireEvent.click(screen.getByTestId('monitor-view-timeline'));
+      fireEvent.click(screen.getByTestId('monitor-view-map'));
     });
 
     // THE AFFORDANCE IS INSTANT — the pill the operator pressed reads as
     // selected even though the body it opens has not arrived.
-    expect(screen.getByTestId('monitor-view-timeline').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByTestId('monitor-view-map').getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByTestId('monitor-view-activity').getAttribute('aria-pressed')).toBe('false');
     // THE OUTGOING VIEW IS STILL THERE — not replaced by a chunk fallback.
     expect(screen.queryByTestId('grid-probe')).not.toBeNull();

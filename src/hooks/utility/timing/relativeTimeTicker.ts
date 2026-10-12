@@ -27,7 +27,7 @@ import { useEffect, useReducer, useRef, useState } from 'react';
  *  1. THE CADENCE WAS CONTAGIOUS. The timer fired at the finest cadence any
  *     subscriber needed and then called EVERY subscriber on that tick. One
  *     `RelativeTime` showing a value under a minute old — a usage fetch time
- *     (`PlanPlates`), a running persona's elapsed time (`fleetboard/Tile`) —
+ *     (`PlanPlates`), a running persona's elapsed time (`monitor/grid/skin/tileState`) —
  *     therefore re-rendered the whole app at 1 Hz, including the three Activity
  *     panels that each asked for 30s. The timer's cadence is still the finest
  *     any subscriber needs (that is what keeps a 1s label honest), but a
