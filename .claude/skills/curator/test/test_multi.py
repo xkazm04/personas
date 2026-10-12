@@ -147,7 +147,10 @@ class Commit(unittest.TestCase):
         (self.dir / ".ai" / "registry-map.json").write_text('{"rebuilt": true}\n')
         out = M.commit_as_found(self.dir, 7)
         self.assertTrue(out["ok"], out)
-        self.assertIn("as found before curator --multi round 7", self.g("log", "-1", "--format=%s").stdout)
+        self.assertEqual("chore(registry-map): commit conform state found uncommitted",
+                         self.g("log", "-1", "--format=%s").stdout.strip())
+        self.assertIn("round 7", self.g("log", "-1", "--format=%b").stdout)
+        self.assertIn("Agent-Harness: curator-multi", self.g("log", "-1", "--format=%B").stdout)
         self.assertIsNone(M.commit_as_found(self.dir, 8))  # clean now: nothing to do
 
     def test_detached_head_is_refused(self):

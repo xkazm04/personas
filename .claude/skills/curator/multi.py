@@ -549,6 +549,24 @@ SELF_DISCLAIMER = re.compile(
     r"guess(ed)? without (reading|opening)", re.I)
 
 
+REF = re.compile(r"(?<![\w/:.-])((?:[\w@.-]+/)+[\w@.-]+\.[A-Za-z0-9]{1,6})(?::(\d+))?")
+
+
+def mentioned_refs_problem(files: Files, text: str) -> str | None:
+    """The first repo path (with a slash) the text names that is not a tracked file, or names a line
+    past its end. Basenames and URLs are not checked: neither can be resolved without guessing."""
+    for m in REF.finditer(text or ""):
+        raw = m.group(1)
+        if "://" in text[max(0, m.start() - 10):m.end()] or raw.startswith(("http", "www.")):
+            continue
+        rel = files.resolve(raw)
+        if not rel:
+            return f"{raw}, which is not a tracked file"
+        if m.group(2) and int(m.group(2)) > len(files.lines(rel)):
+            return f"{raw}:{m.group(2)}, past the end of the file"
+    return None
+
+
 def validate(answer: dict | None, d: dict, files: Files, read_nothing: str | None = None) -> dict:
     """Turn a seat's answer into run-file pairs + declines, with every repair and refusal counted."""
     out = {"pairs": [], "declined": [], "repairs": [], "rejections": [], "returned": 0}
@@ -625,6 +643,12 @@ def validate(answer: dict | None, d: dict, files: Files, read_nothing: str | Non
         consequence = _norm(raw.get("consequence") or "")
         if len(consequence) < 12:
             decline("no consequence sentence")
+            continue
+        # Every OTHER file the text leans on must exist too. Measured 2026-10-12: the reviewer kept
+        # noting "the claim rests on a file named in the evidence text" that nobody had checked.
+        bad_ref = mentioned_refs_problem(files, " ".join([consequence, *[t["evidence"] for t in techs]]))
+        if bad_ref:
+            decline(f"evidence leans on {bad_ref}")
             continue
         if state == "conformant":
             if tech_dev:
@@ -852,6 +876,8 @@ def acquire(c, registry, skills, repos: list[dict], held: set[str], used: dict, 
     order = [repos[(state.get("repo_cursor", 0) + i) % n] for i in range(n)] if n else []
     order.sort(key=lambda r: r["slug"] in used["repos"])  # stable: rotation order among equals
     for repo in order:
+        if repo_busy(repo["root"]):
+            continue  # the merger must not write into a tree somebody is merging or rebasing
         if repo["slug"] == "personas":
             for _ in range(4):
                 claim = L.claim_one(c, registry, skills, {"plan"}, {"conform"},
@@ -974,7 +1000,7 @@ def run_round(a: argparse.Namespace) -> dict:
             before[d["repo_root"]] = repo_untracked(d["repo_root"])
             baseline = commit_as_found(pathlib.Path(d["repo_root"]), n)
             if baseline and not baseline.get("nothing"):
-                print(json.dumps({"event": "as_found_commit", "repo": d["repo"], **baseline}, default=str), flush=True)
+                print(json.dumps({**baseline, "event": "as_found_commit", "repo": d["repo"]}, default=str), flush=True)
                 baselines.append({"slug": d["repo"], **baseline})
         cfg = PROVIDERS[name]
         model = agy_model if name == "agy" else cfg["model"]
@@ -1295,12 +1321,29 @@ def withdraw(run_name: str, contexts: list[str], reason: str, root: pathlib.Path
 # --------------------------------------------------------------------------
 
 COMMIT_PATHS = (".ai/registry-map.json", ".ai/conform-detail.json", ".ai/consults.jsonl")
-TRAILER = "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+# Agent-Harness/Agent-Lane: systedo-case's commit-attribution gate refuses an agent commit that
+# does not say which loop wrote it (measured 2026-10-12); every repo can count them the same way.
+TRAILER = ("Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n"
+           "Agent-Harness: curator-multi\nAgent-Lane: conform")
 
 
 def _git(root, *args, env=None, timeout=120):
     return subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, encoding="utf-8",
                           errors="replace", env=env, timeout=timeout)
+
+
+def repo_busy(root) -> str | None:
+    """A merge, rebase or cherry-pick genuinely in progress, else None.
+
+    Not REBASE_HEAD alone: git can leave it behind after a finished rebase. Measured 2026-10-12,
+    athena-everywhere carried one from 2026-09-17 with no rebase running, and the night skipped
+    its commit for a rebase that did not exist.
+    """
+    gitdir = pathlib.Path(_git(root, "rev-parse", "--absolute-git-dir").stdout.strip())
+    for x in ("rebase-merge", "rebase-apply", "MERGE_HEAD", "CHERRY_PICK_HEAD"):
+        if (gitdir / x).exists():
+            return f"{x} in progress"
+    return None
 
 
 def commit_repo(root: pathlib.Path, run_names: list[str], message: str) -> dict:
@@ -1316,10 +1359,9 @@ def commit_repo(root: pathlib.Path, run_names: list[str], message: str) -> dict:
     branch = _git(root, "branch", "--show-current").stdout.strip()
     if not branch:
         return {"ok": False, "repo": str(root), "skipped": "detached HEAD: no active branch to commit on"}
-    gitdir = pathlib.Path(_git(root, "rev-parse", "--absolute-git-dir").stdout.strip())
-    busy = [x for x in ("MERGE_HEAD", "REBASE_HEAD", "CHERRY_PICK_HEAD", "rebase-merge", "rebase-apply") if (gitdir / x).exists()]
+    busy = repo_busy(root)
     if busy:
-        return {"ok": False, "repo": str(root), "branch": branch, "skipped": f"{busy[0]} in progress"}
+        return {"ok": False, "repo": str(root), "branch": branch, "skipped": busy}
     paths = [p for p in [*COMMIT_PATHS, *[f".ai/conform-runs/merged/{n}" for n in run_names]] if (root / p).exists()]
     ignored = set(_git(root, "check-ignore", "--", *paths).stdout.split()) if paths else set()
     paths = [p for p in paths if p not in ignored]
@@ -1364,9 +1406,9 @@ def commit_as_found(root: pathlib.Path, n: int) -> dict | None:
     """
     if not _git(root, "status", "--porcelain", "--", *COMMIT_PATHS).stdout.strip():
         return None
-    return commit_repo(root, [], f"chore(conform): commit the conform files as found before curator --multi round {n}\n\n"
-                                 "These changes were already in the working tree, uncommitted, when the round began; "
-                                 "they are committed unchanged so the round's own commit carries only its verdicts.")
+    return commit_repo(root, [], "chore(registry-map): commit conform state found uncommitted\n\n"
+                                 f"These changes were already in the working tree, uncommitted, when curator --multi round {n} "
+                                 "began; they are committed unchanged so the round's own commit carries only its verdicts.")
 
 
 def commit_round(summary: dict, reviewed: str) -> list[dict]:
@@ -1386,9 +1428,16 @@ def commit_round(summary: dict, reviewed: str) -> list[dict]:
     out = []
     for slug, runs in by_repo.items():
         n_landed = sum(s.get("accepted", 0) for s in summary["seats"] if s.get("repo") == slug)
-        msg = (f"conform: curator --multi round {summary['round']} - {n_landed} verdict(s) on "
-               f"{', '.join(subjects[slug])}\n\nJudged by non-Claude seats, verified anchor by anchor by the curator "
-               f"validator; review: {reviewed}. Committed on the operator's standing approval for conform results.")
+        # The subject names the ARTEFACT, in a conventional type, under 72 characters. Measured
+        # 2026-10-12: kp's commit-msg gate refused a bare `conform:` type, and systedo-case's refused
+        # a subject that narrated the run ("... from curator --multi round 9 ...") at 73 characters.
+        names = sorted({x.split(" (")[0] for x in subjects[slug]})
+        subject = f"chore(registry-map): add {n_landed} {names[0]} conform verdicts" if len(names) == 1 else ""
+        if not subject or len(subject) > 72:
+            subject = f"chore(registry-map): add {n_landed} conform verdicts on {len(names)} subject(s)"
+        msg = (f"{subject}\n\ncurator --multi round {summary['round']}: {', '.join(subjects[slug])}. Judged by non-Claude "
+               f"seats, verified anchor by anchor by the curator validator; review: {reviewed}. Committed on the "
+               f"operator's standing approval for conform results.")
         out.append({"slug": slug, **commit_repo(roots[slug], runs, msg)})
     return out
 
@@ -1427,12 +1476,18 @@ evidence claims, and whether the verdict is about THIS context's code. That is y
 
 Rules: READ ONLY - do not edit, create or delete any file, do not run git commands that change state.
 For every verdict below, open the anchor (path:line is relative to the repo root shown; print a few
-lines around it) and, where a technique anchor carries the claim, that line too. Then decide:
-- KEEP when the cited code supports the claim and the verdict is about this context (its files or the
-  code they call). A defensible verdict you would have phrased differently is a KEEP.
-- WITHDRAW only for a clear error: the line does not say what is claimed, the claim is about a
-  different context or the repo as a whole, a conformant/not-applicable that the cited code
-  contradicts, or a verdict built on a misread. When in doubt, KEEP.
+lines around it), every technique anchor that carries the claim, and every OTHER file the evidence
+text names: a claim often rests on a file beside the anchor, and that is exactly where earlier
+reviews stopped checking (measured 2026-10-12: three rounds of notes said "I did not trace the
+claims beyond the cited line"). Then decide:
+- KEEP when the code you opened supports the claim and the verdict is about this context (its files
+  or the code they call). A verdict you confirmed but would have phrased differently is a KEEP.
+- WITHDRAW when the line does not say what is claimed; when a claim the verdict depends on could
+  not be confirmed in the code you opened; when the claim is about a different context or the repo
+  as a whole; when a conformant/not-applicable is contradicted by the code; and when a
+  not-applicable's anchor is INCIDENTAL - a line that sits in the context but does not itself show
+  the precondition is absent. Unconfirmed is not the same as "in doubt": if you could not confirm
+  it, withdraw it and say what you could not find; the pair goes back to unknown, which costs nothing.
 
 Verdicts to review:
 {chr(10).join(lines)}
