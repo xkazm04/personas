@@ -15487,7 +15487,11 @@
           "revision": 5,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/lib/analytics/index.ts:4 Context and repository searches found no listed delivery-analysis identifiers in this context, whose implementation instruments navigation and activation events rather than interpreting software-change history.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:e43700f2d197398b",
+          "evaluatedRevision": 5
         }
       ],
       "governance": "governed"
@@ -20261,7 +20265,11 @@
           "revision": 5,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/backlog/BacklogPanel.tsx:401 The backlog mounts a delivery-outcome scoreboard that publishes verification percentages below its declared credibility floor instead of suppressing them.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:e43700f2d197398b",
+          "evaluatedRevision": 5
         }
       ],
       "governance": "governed"
@@ -24233,7 +24241,11 @@
           "revision": 5,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/SkillScoreboard.tsx:174 The scoreboard publishes an implementation percentage from a bounded task population without its sample size, defined window or minimum-sample suppression.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:e43700f2d197398b",
+          "evaluatedRevision": 5
         },
         {
           "subject": "sidecar-provisioning",

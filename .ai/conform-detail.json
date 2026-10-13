@@ -19846,6 +19846,94 @@
           "evidence": "src/api/design/design.ts:15 Requests persona-design feasibility testing; this is not an API module claiming partial implementation of a runtime standard."
         }
       ]
+    },
+    "ef73ca1c-fc54-4b9c-83ec-390c54929192/delivery-analytics": {
+      "context": "overview-manual-review",
+      "subject": "delivery-analytics",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T21:28:35.803Z",
+      "worker": "37ebd698-557c-4604-8308-ebfbb48362f6",
+      "techniques": [
+        {
+          "technique": "delivery-metric-denominators",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sensorStats.ts:72 Followed the mounted SensorScoreboard to its computation: the declared floor is three verdicts, but one or two still produce a percentage that the component renders with '(low n)' rather than suppression."
+        }
+      ]
+    },
+    "10c96ae7-a356-4555-996b-df92fc5dc8e7/delivery-analytics": {
+      "context": "plugins-dev-tools-skills",
+      "subject": "delivery-analytics",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T21:28:35.803Z",
+      "worker": "37ebd698-557c-4604-8308-ebfbb48362f6",
+      "techniques": [
+        {
+          "technique": "delivery-metric-denominators",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/SkillScoreboard.tsx:88 Any positive task count permits publication; SkillsAnalyticsTab requests at most 30 tasks, while the rendered implementation column carries neither that population definition nor its denominator count."
+        }
+      ]
+    },
+    "0a73aef0-7c50-4be1-b990-cbddad3671bd/delivery-analytics": {
+      "context": "lib-analytics",
+      "subject": "delivery-analytics",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T21:28:35.803Z",
+      "worker": "37ebd698-557c-4604-8308-ebfbb48362f6",
+      "techniques": [
+        {
+          "technique": "attribution-channels",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/analytics/activation.ts:140 Conversion attribution concerns installation milestones, not producers of software changes."
+        },
+        {
+          "technique": "batch-size-thresholds",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/analytics/summary.ts:46 The volume being counted is navigation visits, not change size."
+        },
+        {
+          "technique": "delivery-metric-denominators",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/analytics/summary.ts:53 The population is a navigation catalog, not delivered changes or deployments."
+        },
+        {
+          "technique": "line-volume-confounded-with-edit-grammar",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/analytics/summary.ts:22 Counters are keyed by navigation dimensions and values; no producer-reported code-line comparison was found."
+        },
+        {
+          "technique": "off-platform-signal-detection",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/analytics/index.ts:43 The instrument directly emits tab-switch events rather than inferring review practice from missing artifacts."
+        },
+        {
+          "technique": "path-class-confounded-with-size",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/analytics/navCatalog.ts:60 Classification follows UI navigation entries, not repository-path risk classes."
+        },
+        {
+          "technique": "post-landing-repair-density",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/analytics/summary.ts:42 The outcome partition is visited versus ignored tabs, not repairs after a feature landing."
+        },
+        {
+          "technique": "revert-linkage",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/analytics/index.ts:58 The emitted summary derives from session visit counters, not undo events in change history."
+        },
+        {
+          "technique": "review-coverage-rate",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/analytics/sink.ts:79 The tracked feature event contains navigation identifiers and actions, not merged changes and approving parties."
+        }
+      ]
     }
   }
 }

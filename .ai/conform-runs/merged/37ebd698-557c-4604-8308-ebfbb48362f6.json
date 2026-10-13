@@ -1,0 +1,160 @@
+{
+ "schema": "conform-run/1",
+ "worker": "37ebd698-557c-4604-8308-ebfbb48362f6",
+ "subject": "delivery-analytics",
+ "evaluatedAt": "2026-10-13T21:28:35.803579+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "overview-manual-review",
+   "subject": "delivery-analytics",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_manual-review/components/backlog/BacklogPanel.tsx:401 The backlog mounts a delivery-outcome scoreboard that publishes verification percentages below its declared credibility floor instead of suppressing them.",
+   "techniques": [
+    {
+     "technique": "delivery-metric-denominators",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sensorStats.ts:72 Followed the mounted SensorScoreboard to its computation: the declared floor is three verdicts, but one or two still produce a percentage that the component renders with '(low n)' rather than suppression."
+    }
+   ]
+  },
+  {
+   "context": "plugins-dev-tools-skills",
+   "subject": "delivery-analytics",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/SkillScoreboard.tsx:174 The scoreboard publishes an implementation percentage from a bounded task population without its sample size, defined window or minimum-sample suppression.",
+   "techniques": [
+    {
+     "technique": "delivery-metric-denominators",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/SkillScoreboard.tsx:88 Any positive task count permits publication; SkillsAnalyticsTab requests at most 30 tasks, while the rendered implementation column carries neither that population definition nor its denominator count."
+    }
+   ]
+  },
+  {
+   "context": "lib-analytics",
+   "subject": "delivery-analytics",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/analytics/index.ts:4 Context and repository searches found no listed delivery-analysis identifiers in this context, whose implementation instruments navigation and activation events rather than interpreting software-change history.",
+   "techniques": [
+    {
+     "technique": "attribution-channels",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/analytics/activation.ts:140 Conversion attribution concerns installation milestones, not producers of software changes."
+    },
+    {
+     "technique": "batch-size-thresholds",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/analytics/summary.ts:46 The volume being counted is navigation visits, not change size."
+    },
+    {
+     "technique": "delivery-metric-denominators",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/analytics/summary.ts:53 The population is a navigation catalog, not delivered changes or deployments."
+    },
+    {
+     "technique": "line-volume-confounded-with-edit-grammar",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/analytics/summary.ts:22 Counters are keyed by navigation dimensions and values; no producer-reported code-line comparison was found."
+    },
+    {
+     "technique": "off-platform-signal-detection",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/analytics/index.ts:43 The instrument directly emits tab-switch events rather than inferring review practice from missing artifacts."
+    },
+    {
+     "technique": "path-class-confounded-with-size",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/analytics/navCatalog.ts:60 Classification follows UI navigation entries, not repository-path risk classes."
+    },
+    {
+     "technique": "post-landing-repair-density",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/analytics/summary.ts:42 The outcome partition is visited versus ignored tabs, not repairs after a feature landing."
+    },
+    {
+     "technique": "revert-linkage",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/analytics/index.ts:58 The emitted summary derives from session visit counters, not undo events in change history."
+    },
+    {
+     "technique": "review-coverage-rate",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/analytics/sink.ts:79 The tracked feature event contains navigation identifiers and actions, not merged changes and approving parties."
+    }
+   ],
+   "absenceTerms": [
+    "batch_size_threshold",
+    "attribution_channel"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "delivery-analytics",
+   "context": "observability-audit-models",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "delivery-analytics",
+   "context": "teams-collaboration-repo",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-13T21:28:35.803579+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "delivery-analytics"
+   ],
+   "techniques": [
+    "delivery-metric-denominators"
+   ],
+   "deviations": 1,
+   "context": "overview-manual-review",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-13T21:28:35.803579+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "delivery-analytics"
+   ],
+   "techniques": [
+    "delivery-metric-denominators"
+   ],
+   "deviations": 1,
+   "context": "plugins-dev-tools-skills",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-13T21:28:35.803579+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "delivery-analytics"
+   ],
+   "techniques": [
+    "attribution-channels",
+    "batch-size-thresholds",
+    "delivery-metric-denominators",
+    "line-volume-confounded-with-edit-grammar",
+    "off-platform-signal-detection",
+    "path-class-confounded-with-size",
+    "post-landing-repair-density",
+    "revert-linkage",
+    "review-coverage-rate"
+   ],
+   "deviations": 0,
+   "context": "lib-analytics",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}
