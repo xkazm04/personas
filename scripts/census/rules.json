@@ -3951,6 +3951,10 @@
           "reason": "the match is a mirrored payload SHAPE, not a mirrored rule: the comment describes the JSON that `confirm_n8n_persona_draft` returns as `serde_json::Value`, and the declaration it precedes is an `interface`. Hand-typed mirrors of a Rust struct are owned by bridge-type-contract.md and already counted by its `ipc-payload-typed-inline` rule; this leaf owns duplicated DECISIONS"
         },
         {
+          "path": "src/stores/slices/network/meshSlice.ts",
+          "reason": "TETHERED mirror (repo law): the client re-derives device liveness between pushed snapshots with the backend's 45 s stale bound (SNAPSHOT_STALE_AFTER_MS, core/src/models/device_mesh.rs); __tests__/meshSliceParity.test.ts reads the Rust constant at run time so the two cannot drift (spark device-mesh WP3)"
+        },
+        {
           "path": "src/api/overview/events.ts",
           "reason": "this file is the COMPLIANT form and must not be counted as a violation: the comment says the source of truth lives in `events.rs::MAX_MANUAL_RETRIES` and the DLQ tab FETCHES the value on mount, so the client never holds a second definition of the rule — exactly what §2 (b) prescribes"
         },

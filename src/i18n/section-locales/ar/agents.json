@@ -2622,7 +2622,13 @@
     "profile_tokens_over": "أكثر من {from} رمزًا",
     "profile_tokens_under": "أقل من {to} رمزًا",
     "profile_units": "{count} وحدة",
-    "profile_untagged_note": "لم يُعلَن عن شيء بعد، لذا تُحتسب عمليات التشغيل بالقيمة الافتراضية الموضحة هنا. سيُعلن الوكيل عن ملفه الشخصي الخاص عند استيقاظ القرار التالي."
+    "profile_untagged_note": "لم يُعلَن عن شيء بعد، لذا تُحتسب عمليات التشغيل بالقيمة الافتراضية الموضحة هنا. سيُعلن الوكيل عن ملفه الشخصي الخاص عند استيقاظ القرار التالي.",
+    "profile_axes_dominant": "غالبًا {axis}",
+    "profile_axes_label": "الحمل المقاس",
+    "profile_axes_learning": "قيد التعلّم ({count}/{total})",
+    "profile_axes_mismatch": "المقاس {measured}، المعلن {declared}",
+    "profile_axes_runs": "مقاس عبر {count} تشغيل",
+    "profile_source_measured": "مُحدَّد من تشغيلات مقاسة"
   },
   "role_card": {
     "assign": "إسناد",

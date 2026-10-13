@@ -2622,7 +2622,13 @@
     "profile_tokens_over": "超过 {from} 个令牌",
     "profile_tokens_under": "低于 {to} 个令牌",
     "profile_units": "{count} 个单位",
-    "profile_untagged_note": "目前尚未声明任何值，因此运行将按此处显示的默认值计费。智能体将在下次决策唤醒时声明自己的配置。"
+    "profile_untagged_note": "目前尚未声明任何值，因此运行将按此处显示的默认值计费。智能体将在下次决策唤醒时声明自己的配置。",
+    "profile_axes_dominant": "主要是 {axis}",
+    "profile_axes_label": "实测负载",
+    "profile_axes_learning": "学习中（{count}/{total}）",
+    "profile_axes_mismatch": "实测 {measured}，声明 {declared}",
+    "profile_axes_runs": "基于 {count} 次运行实测",
+    "profile_source_measured": "根据实测运行设定"
   },
   "role_card": {
     "assign": "分配",

@@ -2622,7 +2622,13 @@
     "profile_tokens_over": "di atas {from} token",
     "profile_tokens_under": "di bawah {to} token",
     "profile_units": "{count} unit",
-    "profile_untagged_note": "Belum ada yang dideklarasikan, sehingga proses dikenakan biaya sebagai default yang ditampilkan di sini. Agen akan mendeklarasikan profilnya sendiri pada bangun-keputusan berikutnya."
+    "profile_untagged_note": "Belum ada yang dideklarasikan, sehingga proses dikenakan biaya sebagai default yang ditampilkan di sini. Agen akan mendeklarasikan profilnya sendiri pada bangun-keputusan berikutnya.",
+    "profile_axes_dominant": "Dominan {axis}",
+    "profile_axes_label": "Beban terukur",
+    "profile_axes_learning": "Sedang belajar ({count}/{total})",
+    "profile_axes_mismatch": "Terukur {measured}, dideklarasikan {declared}",
+    "profile_axes_runs": "Diukur dari {count} proses",
+    "profile_source_measured": "diatur dari proses terukur"
   },
   "role_card": {
     "assign": "Tugaskan",

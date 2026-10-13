@@ -2622,7 +2622,13 @@
     "profile_tokens_over": "{from} 토큰 초과",
     "profile_tokens_under": "{to} 토큰 미만",
     "profile_units": "{count} 단위",
-    "profile_untagged_note": "아직 신고된 값이 없어 실행은 여기 표시된 기본값으로 청구됩니다. 에이전트는 다음 결정 웨이크 시 자체 프로필을 신고합니다."
+    "profile_untagged_note": "아직 신고된 값이 없어 실행은 여기 표시된 기본값으로 청구됩니다. 에이전트는 다음 결정 웨이크 시 자체 프로필을 신고합니다.",
+    "profile_axes_dominant": "주로 {axis}",
+    "profile_axes_label": "실측 부하",
+    "profile_axes_learning": "학습 중 ({count}/{total})",
+    "profile_axes_mismatch": "실측 {measured}, 신고 {declared}",
+    "profile_axes_runs": "{count}회 실행 기준 측정",
+    "profile_source_measured": "실측 실행으로 설정됨"
   },
   "role_card": {
     "assign": "할당",

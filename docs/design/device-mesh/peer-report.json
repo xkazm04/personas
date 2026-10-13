@@ -1,0 +1,2297 @@
+{
+  "module": "monitor/classic/mesh/peer",
+  "kit": null,
+  "query": null,
+  "reducedMotion": true,
+  "steps": null,
+  "label": "peer",
+  "createdAt": "2026-10-13T18:09:13.300Z",
+  "browser": "153.0.8010.12",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 24,
+    "note": "Synthetic: 30 personas shaped like the operator fleet (12 / 2 / 11 singletons / 5 teamless, 2 empty workspace groups). Plus 10 sessions in every painted state and a queue of 4 (3 dev projects tie them to bays); dev servers running / stopped / external on those 3 projects. Plus the device-mesh fixture: this device, Studio Desktop (live), Travel Laptop (stale)."
+  },
+  "ok": true,
+  "unknownIpcCommands": [
+    "dev_tools_pending_counts",
+    "fleet_autopilot_status",
+    "fleet_scheduled_tasks",
+    "fleet_cli_usage",
+    "get_network_status",
+    "fleet_set_auto_hibernate",
+    "fleet_set_state_cutoffs",
+    "list_team_channel",
+    "count_team_channel_kinds",
+    "list_remote_sessions",
+    "list_dispatch_devices"
+  ],
+  "shots": [
+    {
+      "file": "peer-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_pending_counts",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "get_network_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_auto_hibernate",
+          "args": {
+            "afterMinutes": 30,
+            "enabled": false
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_state_cutoffs",
+          "args": {
+            "staleSecs": 360,
+            "stalledSecs": 120
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-personas-desktop"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-personas-desktop"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-docs"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-docs"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-legal"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-legal"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-research"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-research"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-people"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-people"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-growth"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-growth"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-support"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-support"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-data"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-data"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-marketing"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-marketing"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-finance"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-finance"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-infra"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-infra"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-sales"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-sales"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-ops"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-ops"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "dev_tools_pending_counts",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-personas-desktop"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-docs"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-legal"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-research"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-people"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-growth"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-support"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-data"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-marketing"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-finance"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-infra"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-sales"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-ops"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-personas-desktop"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-docs"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-legal"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-research"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-people"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-growth"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-support"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-data"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-marketing"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-finance"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-infra"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-sales"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-ops"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "get_persona_summaries": 3,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_set_active": 1,
+        "dev_tools_pending_counts": 2,
+        "dev_tools_undispatched_ideas": 2,
+        "fleet_autopilot_status": 2,
+        "fleet_scheduled_tasks": 2,
+        "fleet_claude_accounts_list": 4,
+        "fleet_claude_usage": 4,
+        "fleet_cli_usage": 4,
+        "dev_servers_list": 1,
+        "get_network_status": 1,
+        "fleet_set_auto_hibernate": 1,
+        "fleet_set_state_cutoffs": 1,
+        "fleet_list_sessions": 2,
+        "get_pending_review_counts_by_persona": 2,
+        "list_manual_reviews_page": 2,
+        "get_unread_report_counts_by_persona": 2,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_app_settings_bulk": 2,
+        "list_team_channel": 13,
+        "count_team_channel_kinds": 39,
+        "list_remote_sessions": 2,
+        "list_dispatch_devices": 2,
+        "fleet_queue_snapshot": 2
+      },
+      "stable": true,
+      "textLength": 536,
+      "textSample": "Persona Monitor Activity Conversations Map 42 4 23 1 14 0 0 0 0 0 0 0 0 All 0 Classic Lanes All devices 2 of 3 reporting This device 3 0 Studio Desktop 2 3 Travel Laptop Last seen 6 min. ago SESSIONS ",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "peer-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_pending_counts",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "get_network_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_auto_hibernate",
+          "args": {
+            "afterMinutes": 30,
+            "enabled": false
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_state_cutoffs",
+          "args": {
+            "staleSecs": 360,
+            "stalledSecs": 120
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-personas-desktop"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-personas-desktop"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-docs"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-docs"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-legal"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-legal"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-research"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-research"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-people"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-people"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-growth"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-growth"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-support"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-support"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-data"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-data"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-marketing"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-marketing"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-finance"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-finance"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-infra"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-infra"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-sales"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-sales"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-ops"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-ops"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "dev_tools_pending_counts",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-personas-desktop"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-docs"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-legal"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-research"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-people"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-growth"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-support"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-data"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-marketing"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-finance"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-infra"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-sales"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-ops"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-personas-desktop"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-docs"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-legal"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-research"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-people"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-growth"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-support"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-data"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-marketing"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-finance"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-infra"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-sales"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-ops"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "get_persona_summaries": 3,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_set_active": 1,
+        "dev_tools_pending_counts": 2,
+        "dev_tools_undispatched_ideas": 2,
+        "fleet_autopilot_status": 2,
+        "fleet_scheduled_tasks": 2,
+        "fleet_claude_accounts_list": 4,
+        "fleet_claude_usage": 4,
+        "fleet_cli_usage": 4,
+        "dev_servers_list": 1,
+        "get_network_status": 1,
+        "fleet_set_auto_hibernate": 1,
+        "fleet_set_state_cutoffs": 1,
+        "fleet_list_sessions": 2,
+        "get_pending_review_counts_by_persona": 2,
+        "list_manual_reviews_page": 2,
+        "get_unread_report_counts_by_persona": 2,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_app_settings_bulk": 2,
+        "list_team_channel": 13,
+        "count_team_channel_kinds": 39,
+        "list_remote_sessions": 2,
+        "list_dispatch_devices": 2,
+        "fleet_queue_snapshot": 2
+      },
+      "stable": true,
+      "textLength": 650,
+      "textSample": "Persona Monitor Activity Conversations Map All 42 Running 4 Needs you 23 Failed 1 Idle 14 Gates 0 Proposals 0 Backlog 0 Incidents 0 Council 0 Reports 0 Chat 0 Ready to dispatch 0 Triage all 0 Classic ",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "peer-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_pending_counts",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "get_network_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_auto_hibernate",
+          "args": {
+            "afterMinutes": 30,
+            "enabled": false
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_state_cutoffs",
+          "args": {
+            "staleSecs": 360,
+            "stalledSecs": 120
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-personas-desktop"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-personas-desktop"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-docs"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-docs"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-legal"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-legal"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-research"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-research"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-people"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-people"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-growth"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-growth"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-support"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-support"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-data"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-data"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-marketing"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-marketing"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-finance"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-finance"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-infra"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-infra"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-sales"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-sales"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-ops"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-ops"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "dev_tools_pending_counts",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-personas-desktop"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-docs"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-legal"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-research"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-people"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-growth"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-support"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-data"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-marketing"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-finance"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-infra"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-sales"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-ops"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-personas-desktop"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-docs"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-legal"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-research"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-people"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-growth"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-support"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-data"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-marketing"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-finance"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-infra"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-sales"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-ops"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "get_persona_summaries": 3,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_set_active": 1,
+        "dev_tools_pending_counts": 2,
+        "dev_tools_undispatched_ideas": 2,
+        "fleet_autopilot_status": 2,
+        "fleet_scheduled_tasks": 2,
+        "fleet_claude_accounts_list": 4,
+        "fleet_claude_usage": 4,
+        "fleet_cli_usage": 4,
+        "dev_servers_list": 1,
+        "get_network_status": 1,
+        "fleet_set_auto_hibernate": 1,
+        "fleet_set_state_cutoffs": 1,
+        "fleet_list_sessions": 2,
+        "get_pending_review_counts_by_persona": 2,
+        "list_manual_reviews_page": 2,
+        "get_unread_report_counts_by_persona": 2,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_app_settings_bulk": 2,
+        "list_team_channel": 13,
+        "count_team_channel_kinds": 39,
+        "list_remote_sessions": 2,
+        "list_dispatch_devices": 2,
+        "fleet_queue_snapshot": 2
+      },
+      "stable": true,
+      "textLength": 536,
+      "textSample": "Persona Monitor Activity Conversations Map 42 4 23 1 14 0 0 0 0 0 0 0 0 All 0 Classic Lanes All devices 2 of 3 reporting This device 3 0 Studio Desktop 2 3 Travel Laptop Last seen 6 min. ago SESSIONS ",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "peer-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "dev_tools_pending_counts",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "get_network_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_auto_hibernate",
+          "args": {
+            "afterMinutes": 30,
+            "enabled": false
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_state_cutoffs",
+          "args": {
+            "staleSecs": 360,
+            "stalledSecs": 120
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-personas-desktop"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-personas-desktop"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-docs"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-docs"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-legal"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-legal"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-research"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-research"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-people"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-people"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-growth"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-growth"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-support"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-support"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-data"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-data"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-marketing"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-marketing"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-finance"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-finance"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-infra"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-infra"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-sales"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-sales"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-ops"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-ops"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "dev_tools_pending_counts",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-personas-desktop"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-docs"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-legal"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-research"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-people"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-growth"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-support"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-data"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-marketing"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-finance"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-infra"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-sales"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-ops"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-personas-desktop"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-docs"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-legal"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-research"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-people"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-growth"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-support"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-data"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-marketing"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-finance"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-infra"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-sales"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-ops"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "get_persona_summaries": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_set_active": 1,
+        "dev_tools_pending_counts": 2,
+        "dev_tools_undispatched_ideas": 2,
+        "fleet_autopilot_status": 2,
+        "fleet_scheduled_tasks": 2,
+        "fleet_claude_accounts_list": 4,
+        "fleet_claude_usage": 4,
+        "fleet_cli_usage": 4,
+        "dev_servers_list": 1,
+        "get_network_status": 1,
+        "fleet_set_auto_hibernate": 1,
+        "fleet_set_state_cutoffs": 1,
+        "fleet_list_sessions": 2,
+        "get_pending_review_counts_by_persona": 2,
+        "list_manual_reviews_page": 2,
+        "get_unread_report_counts_by_persona": 2,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_app_settings_bulk": 2,
+        "list_team_channel": 13,
+        "count_team_channel_kinds": 39,
+        "list_remote_sessions": 2,
+        "list_dispatch_devices": 2,
+        "fleet_queue_snapshot": 2
+      },
+      "stable": true,
+      "textLength": 650,
+      "textSample": "Persona Monitor Activity Conversations Map All 42 Running 4 Needs you 23 Failed 1 Idle 14 Gates 0 Proposals 0 Backlog 0 Incidents 0 Council 0 Reports 0 Chat 0 Ready to dispatch 0 Triage all 0 Classic ",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

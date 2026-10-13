@@ -2622,7 +2622,13 @@
     "profile_tokens_over": "более {from} токенов",
     "profile_tokens_under": "менее {to} токенов",
     "profile_units": "{count} ед.",
-    "profile_untagged_note": "Пока ничего не заявлено, поэтому прогоны списываются по показанному здесь значению по умолчанию. Агент заявит собственный профиль при следующем пробуждении для принятия решения."
+    "profile_untagged_note": "Пока ничего не заявлено, поэтому прогоны списываются по показанному здесь значению по умолчанию. Агент заявит собственный профиль при следующем пробуждении для принятия решения.",
+    "profile_axes_dominant": "В основном {axis}",
+    "profile_axes_label": "Измеренная нагрузка",
+    "profile_axes_learning": "Обучение ({count}/{total})",
+    "profile_axes_mismatch": "Измерено: {measured}, заявлено: {declared}",
+    "profile_axes_runs": "Измерено по {count} запускам",
+    "profile_source_measured": "задано по измеренным запускам"
   },
   "role_card": {
     "assign": "Назначить",

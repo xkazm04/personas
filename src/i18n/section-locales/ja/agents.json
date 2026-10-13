@@ -2622,7 +2622,13 @@
     "profile_tokens_over": "{from}トークン以上",
     "profile_tokens_under": "{to}トークン未満",
     "profile_units": "{count}ユニット",
-    "profile_untagged_note": "まだ何も申告されていないため、実行はここに表示されているデフォルト値で計上されます。エージェントは次回の判断ウェイク時に自身のプロファイルを申告します。"
+    "profile_untagged_note": "まだ何も申告されていないため、実行はここに表示されているデフォルト値で計上されます。エージェントは次回の判断ウェイク時に自身のプロファイルを申告します。",
+    "profile_axes_dominant": "主に{axis}",
+    "profile_axes_label": "実測負荷",
+    "profile_axes_learning": "学習中（{count}/{total}）",
+    "profile_axes_mismatch": "実測 {measured}、申告 {declared}",
+    "profile_axes_runs": "{count}回の実行から測定",
+    "profile_source_measured": "実測の実行から設定"
   },
   "role_card": {
     "assign": "割り当て",

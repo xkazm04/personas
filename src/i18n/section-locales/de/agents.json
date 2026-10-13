@@ -2622,7 +2622,13 @@
     "profile_tokens_over": "über {from} Tokens",
     "profile_tokens_under": "unter {to} Tokens",
     "profile_units": "{count} Einheiten",
-    "profile_untagged_note": "Noch nichts deklariert, daher werden Läufe mit dem hier gezeigten Standardwert berechnet. Der Agent deklariert sein eigenes Profil bei seinem nächsten Entscheidungs-Wakeup."
+    "profile_untagged_note": "Noch nichts deklariert, daher werden Läufe mit dem hier gezeigten Standardwert berechnet. Der Agent deklariert sein eigenes Profil bei seinem nächsten Entscheidungs-Wakeup.",
+    "profile_axes_dominant": "Überwiegend {axis}",
+    "profile_axes_label": "Gemessene Last",
+    "profile_axes_learning": "Lernt ({count}/{total})",
+    "profile_axes_mismatch": "Gemessen {measured}, angegeben {declared}",
+    "profile_axes_runs": "Gemessen über {count} Läufe",
+    "profile_source_measured": "aus gemessenen Läufen festgelegt"
   },
   "role_card": {
     "assign": "Zuweisen",

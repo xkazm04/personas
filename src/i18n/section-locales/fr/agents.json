@@ -2622,7 +2622,13 @@
     "profile_tokens_over": "plus de {from} tokens",
     "profile_tokens_under": "moins de {to} tokens",
     "profile_units": "{count} unités",
-    "profile_untagged_note": "Rien n'est encore déclaré, donc les exécutions sont facturées avec la valeur par défaut affichée ici. L'agent déclarera son propre profil à son prochain réveil de décision."
+    "profile_untagged_note": "Rien n'est encore déclaré, donc les exécutions sont facturées avec la valeur par défaut affichée ici. L'agent déclarera son propre profil à son prochain réveil de décision.",
+    "profile_axes_dominant": "Surtout {axis}",
+    "profile_axes_label": "Charge mesurée",
+    "profile_axes_learning": "Apprentissage ({count}/{total})",
+    "profile_axes_mismatch": "Mesuré {measured}, déclaré {declared}",
+    "profile_axes_runs": "Mesuré sur {count} exécutions",
+    "profile_source_measured": "défini d'après des exécutions mesurées"
   },
   "role_card": {
     "assign": "Assigner",

@@ -4190,5 +4190,7 @@
   "fr:monitor.dc_deck_kind_message",
   "cs:common.agent_fallback_name",
   "de:common.agent_fallback_name",
-  "fr:common.agent_fallback_name"
+  "fr:common.agent_fallback_name",
+  "cs:monitor.mesh_reach_offline",
+  "de:monitor.mesh_reach_offline"
 ]

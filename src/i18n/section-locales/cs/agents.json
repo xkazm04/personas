@@ -2622,7 +2622,13 @@
     "profile_tokens_over": "nad {from} tokenů",
     "profile_tokens_under": "pod {to} tokenů",
     "profile_units": "{count} jednotek",
-    "profile_untagged_note": "Zatím nic nedeklarováno, takže běhy se účtují jako výchozí hodnota zobrazená zde. Agent deklaruje svůj vlastní profil při příštím rozhodovacím probuzení."
+    "profile_untagged_note": "Zatím nic nedeklarováno, takže běhy se účtují jako výchozí hodnota zobrazená zde. Agent deklaruje svůj vlastní profil při příštím rozhodovacím probuzení.",
+    "profile_axes_dominant": "Převážně {axis}",
+    "profile_axes_label": "Naměřená zátěž",
+    "profile_axes_learning": "Učení ({count}/{total})",
+    "profile_axes_mismatch": "Naměřeno {measured}, deklarováno {declared}",
+    "profile_axes_runs": "Naměřeno z {count} běhů",
+    "profile_source_measured": "nastaveno z naměřených běhů"
   },
   "role_card": {
     "assign": "Přiřadit",

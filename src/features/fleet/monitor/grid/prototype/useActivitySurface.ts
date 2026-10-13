@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
+import { useShallow } from 'zustand/react/shallow';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -16,7 +17,7 @@ import type { FeedTeam } from '../../channels/types';
 import { useStagedMount } from '../useStagedMount';
 import { useChannelBubbles } from '../useChannelBubbles';
 import { useFleetSessions } from '../useFleetSessions';
-import { useBoardModel } from '../useBoardModel';
+import { useBoardModel, type MeshBoardInput } from '../useBoardModel';
 import { useRemoteBoard } from '../remote/useRemoteBoard';
 import { useAttentionCursor } from '../useAttentionCursor';
 import { NO_BOARD_FILTER, type BoardFilter } from '../boardFilter';
@@ -107,11 +108,16 @@ export function useActivitySurface({
   const clearFilter = useCallback(() => setFilter(NO_BOARD_FILTER), []);
 
   const remote = useRemoteBoard(board.projects, !simulating);
-  const model = useBoardModel(board.cards, board.personas, board.teams, board.sessions, filter, remote);
+  // The device mesh (spark device-mesh): the strip's filter narrows BOTH models,
+  // since it chooses which device's board is drawn, not which cards match.
+  const mesh = useSystemStore(useShallow((s): MeshBoardInput => ({
+    devices: s.meshDevices, liveness: s.meshLiveness, filter: s.meshFilter,
+  })));
+  const model = useBoardModel(board.cards, board.personas, board.teams, board.sessions, filter, remote, mesh);
   // The same board with no narrowing. `model` drops every session row while a
   // state filter is on (it narrows personas only); a surface that filters
   // sessions too starts from this one and applies its own predicate.
-  const unfilteredModel = useBoardModel(board.cards, board.personas, board.teams, board.sessions, NO_BOARD_FILTER, remote);
+  const unfilteredModel = useBoardModel(board.cards, board.personas, board.teams, board.sessions, NO_BOARD_FILTER, remote, mesh);
   useAttentionCursor(model, board.cards, select);
 
   const { scope, toggleScope, clearScope } = useRailScope(board.projects);

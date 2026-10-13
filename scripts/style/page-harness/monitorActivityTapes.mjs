@@ -122,6 +122,18 @@ export function monitorActivityTapes({ RECORDED_AT }) {
       'monitor/lanes': () => withSessions(board['monitor/board'](), 'monitor/lanes', NOTE),
       'monitor/classic/sim': () => sim('monitor/classic/sim'),
       'monitor/lanes/sim': () => sim('monitor/lanes/sim'),
+      // Device mesh: the same Classic / Lanes tapes; the mesh comes from the
+      // seeded fixture (meshFixture.ts), so the mesh reads are answered empty.
+      ...Object.fromEntries(['monitor/classic/mesh', 'monitor/classic/mesh/peer', 'monitor/classic/mesh/stale', 'monitor/lanes/mesh/move']
+        .map((id) => [id, () => {
+          const tape = withSessions(board['monitor/board'](), id, `${NOTE} Plus the device-mesh fixture: this device, Studio Desktop (live), Travel Laptop (stale).`);
+          return { ...tape, calls: [...tape.calls, { cmd: 'mesh_device_snapshots', response: [] }, { cmd: 'resource_live_samples', response: [] }] };
+        }])),
+      'monitor/charter/measured': () => ({
+        ...board['monitor/board'](),
+        module: 'monitor/charter/measured',
+        note: 'The charter card alone; its measured row is pre-seeded in the module cache, so it calls no IPC of its own.',
+      }),
     },
   };
 }
