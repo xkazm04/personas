@@ -19076,6 +19076,216 @@
           "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:62 Popover uses absolute/fixed CSS positioning offsets without world-screen camera coordinate transformations."
         }
       ]
+    },
+    "621caefc-8ae0-42e7-89b6-8e879ad62814/node-boot-and-declarative-bootstrap": {
+      "context": "api-key-management",
+      "subject": "node-boot-and-declarative-bootstrap",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T10:08:17.938Z",
+      "worker": "7833b1e7-4da2-498a-a882-6267747bc81e",
+      "techniques": [
+        {
+          "technique": "ordered-boot-dag",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/components/McpServerInfoPanel.tsx:63 Probes the local MCP HTTP server liveness on a periodic timer from UI rather than establishing an ordered boot dependency DAG."
+        },
+        {
+          "technique": "reload-partition",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:87 Fetches user API keys over IPC on UI mount without declaring or evaluating reloadable versus restart-only configuration key partitions."
+        },
+        {
+          "technique": "once-only-bootstrap-with-marker",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/components/CreatedKeyDialog.tsx:57 Displays a one-time plaintext key reveal for manual client configuration rather than executing an unattended once-only first-start bootstrap with marker."
+        },
+        {
+          "technique": "config-objects-are-api-immutable",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:51 Filters out the backend's internal system key from the user-facing settings list rather than maintaining a distinct record type or reconciliation mechanism for config-declared objects."
+        },
+        {
+          "technique": "request-chain-not-dsl",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:25 Configures scoped permission grants for interactive user key generation rather than interpreting an ordered declarative bootstrap request chain with response references."
+        },
+        {
+          "technique": "seal-before-storage-plugins",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx:54 Queries audit logs for existing API key usage over IPC with no responsibility for pre-storage seal mechanisms or storage plugin provider declarations."
+        }
+      ],
+      "registryProposal": "The candidate scanner's lexical match rules for node-boot-and-declarative-bootstrap map to api-key-management due to generic tokens ('api', 'key', 'external') despite the context containing only frontend settings management UI."
+    },
+    "a7ece012-8300-4780-b286-b9cea81801fc/node-boot-and-declarative-bootstrap": {
+      "context": "observability-audit-models",
+      "subject": "node-boot-and-declarative-bootstrap",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T10:08:17.938Z",
+      "worker": "7833b1e7-4da2-498a-a882-6267747bc81e",
+      "techniques": [
+        {
+          "technique": "ordered-boot-dag",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/observability.rs:15 Defines metric enum types for runtime observability thresholds rather than declaring a stateful boot DAG."
+        },
+        {
+          "technique": "reload-partition",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:23 Models settings change audit entries for user settings mutations rather than partitioning configuration into reloadable and restart-only keys."
+        },
+        {
+          "technique": "once-only-bootstrap-with-marker",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/credential.rs:32 Models stored credential schema records without implementing first-start detection, unattended unsealing, or bootstrap failure markers."
+        },
+        {
+          "technique": "config-objects-are-api-immutable",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/audit_log.rs:8 Models credential audit event records rather than declaring configuration-born object types or reconciling configuration with API objects."
+        },
+        {
+          "technique": "request-chain-not-dsl",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/tool_audit.rs:8 Models execution audit records for individual tool invocations rather than defining declarative request chains with history references."
+        },
+        {
+          "technique": "seal-before-storage-plugins",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/audit_incident.rs:29 Defines lifecycle status states for audit incidents with no involvement in pre-storage seal mechanisms or loadable plugin catalogs."
+        }
+      ],
+      "registryProposal": "Lexical scoring matched observability-audit-models on 'audit', 'log', and 'tool', but pure domain type definitions do not govern runtime startup sequencing or configuration reload policies."
+    },
+    "ee9d4d9e-0414-4460-b159-5d9c7c4108a7/node-boot-and-declarative-bootstrap": {
+      "context": "vault-credentials-components-features",
+      "subject": "node-boot-and-declarative-bootstrap",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T10:08:17.938Z",
+      "worker": "7833b1e7-4da2-498a-a882-6267747bc81e",
+      "techniques": [
+        {
+          "technique": "ordered-boot-dag",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/features/AnomalyScorePanel.tsx:19 Renders failure rate bars and error classification indicators in a UI card rather than sequencing stateful components in a boot DAG."
+        },
+        {
+          "technique": "reload-partition",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/features/CredentialRotationSection.tsx:44 Displays rotation policies and countdowns for individual credentials rather than declaring a partition between reloadable and restart-only configuration keys."
+        },
+        {
+          "technique": "once-only-bootstrap-with-marker",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/features/CredentialIntelligence.tsx:53 Coordinates tabs for credential audit, stats, and dependents in the UI rather than orchestrating a once-only bootstrap sequence with failure markers."
+        },
+        {
+          "technique": "config-objects-are-api-immutable",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/features/CredentialScopeSection.tsx:24 Presents scoped resource chip lists for user editing via a modal picker rather than managing config-born object immutability or startup reconciliation."
+        },
+        {
+          "technique": "request-chain-not-dsl",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/features/CredentialEventConfig.tsx:21 Configures event template triggers and webhooks for credentials rather than executing ordered bootstrap request chains with history references."
+        },
+        {
+          "technique": "seal-before-storage-plugins",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/features/AuditLogTable.tsx:22 Filters client audit log entries across operation types without declaring pre-storage seal mechanisms or storage plugin providers."
+        }
+      ],
+      "registryProposal": "The candidate scanner matched vault-credentials-components-features on 'rotation', 'credential', and 'log', confusing credential lifecycle UI with stateful service initialization and bootstrap."
+    },
+    "0ecc70bc-a005-4ff8-9a98-f362d2a75f53/node-boot-and-declarative-bootstrap": {
+      "context": "api-overview",
+      "subject": "node-boot-and-declarative-bootstrap",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T10:08:17.938Z",
+      "worker": "7833b1e7-4da2-498a-a882-6267747bc81e",
+      "techniques": [
+        {
+          "technique": "ordered-boot-dag",
+          "verdict": "not-applicable",
+          "evidence": "src/api/overview/healthcheckApi.ts:6 Invokes Tauri IPC to run on-demand healthchecks on credential designs rather than managing stateful boot DAG order."
+        },
+        {
+          "technique": "reload-partition",
+          "verdict": "not-applicable",
+          "evidence": "src/api/overview/observability.ts:24 Invokes IPC to retrieve observability metric summaries for the UI without declaring reloadable configuration key partitions."
+        },
+        {
+          "technique": "once-only-bootstrap-with-marker",
+          "verdict": "not-applicable",
+          "evidence": "src/api/overview/incidents.ts:17 Queries audit incident rows over IPC for triage without executing first-start initialisation or tracking bootstrap markers."
+        },
+        {
+          "technique": "config-objects-are-api-immutable",
+          "verdict": "not-applicable",
+          "evidence": "src/api/overview/reviews.ts:23 Exposes review deletion over IPC with no concept of configuration-born objects or API immutability rules."
+        },
+        {
+          "technique": "request-chain-not-dsl",
+          "verdict": "not-applicable",
+          "evidence": "src/api/systemOps.ts:59 Fetches system operation metadata catalogs over IPC rather than defining ordered bootstrap request chains with history references."
+        },
+        {
+          "technique": "seal-before-storage-plugins",
+          "verdict": "not-applicable",
+          "evidence": "src/api/llmSpend.ts:10 Fetches aggregated LLM spend metrics from the backend with no involvement in pre-storage seal mechanisms or plugin catalogs."
+        }
+      ],
+      "registryProposal": "Scoring on tokens 'api', 'network', and 'audit' causes false-positive matches against IPC wrappers that only bridge desktop UI to backend commands."
+    },
+    "63a0a6fc-fa9a-453c-943d-4579b83f0ca3/node-boot-and-declarative-bootstrap": {
+      "context": "stores",
+      "subject": "node-boot-and-declarative-bootstrap",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T10:08:17.938Z",
+      "worker": "7833b1e7-4da2-498a-a882-6267747bc81e",
+      "techniques": [
+        {
+          "technique": "ordered-boot-dag",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/authStore.ts:37 Performs client-side async auth query on startup with graceful degradation rather than establishing an ordered boot dependency DAG."
+        },
+        {
+          "technique": "reload-partition",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/systemStore.ts:64 Defines partial state persistence for local UI storage rather than declaring reloadable versus restart-only configuration key partitions."
+        },
+        {
+          "technique": "once-only-bootstrap-with-marker",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/systemStore.ts:96 Persists user UI onboarding completion flags in localStorage rather than executing an unattended once-only first-start bootstrap with storage failure marker."
+        },
+        {
+          "technique": "config-objects-are-api-immutable",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/i18nStore.ts:16 Mutates UI locale preferences in client memory without managing distinct configuration-born record types or API mutation refusals."
+        },
+        {
+          "technique": "request-chain-not-dsl",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/commandPaletteStore.ts:37 Manages modal open and scope state for the UI command palette rather than running ordered bootstrap request chains with history references."
+        },
+        {
+          "technique": "seal-before-storage-plugins",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/toastStore.ts:48 Models transient UI notifications in the client with no responsibility for pre-storage seal mechanisms or storage plugin provider catalogs."
+        }
+      ],
+      "registryProposal": "Generic lexical tokens 'stores', 'api', and 'root' match client UI state management stores despite having no connection to server/node boot architecture."
     }
   }
 }

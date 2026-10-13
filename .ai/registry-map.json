@@ -4258,7 +4258,11 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 Searched for unseal, boot_dag, reload_partition, bootstrap_marker, and request_chain with zero hits across context files; api-key-management provides React client UI and HTTP URL constants for managing external MCP API keys rather than orchestrating stateful node boot or declarative bootstrap.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:1c83f54ea0028875",
+          "evaluatedRevision": 3
         },
         {
           "subject": "quality-gates",
@@ -4602,7 +4606,11 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/api/overview/health.ts:18 Searched for unseal, boot_dag, reload_partition, bootstrap_marker, and request_chain with zero hits across context directories; api-overview provides client-side IPC invoke bindings for Overview dashboard metrics, incidents, reviews, and healthchecks rather than executing a stateful node boot sequence or declarative bootstrap.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:1c83f54ea0028875",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"
@@ -18449,7 +18457,11 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:13 Searched for unseal, boot_dag, reload_partition, bootstrap_marker, and request_chain with zero hits across context directory src-tauri/core/src/models; observability-audit-models defines Rust serialization structs for audit logs, metrics, and domain entities rather than controlling node boot sequencing, unsealing, or declarative bootstrap.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:1c83f54ea0028875",
+          "evaluatedRevision": 3
         },
         {
           "subject": "audit-logging",
@@ -28969,7 +28981,11 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/stores/systemStore.ts:39 Searched for unseal, boot_dag, reload_partition, bootstrap_marker, and request_chain with zero hits across context directories; stores manages client-side Zustand state slices, UI persistence, and IPC subscriptions for the frontend rather than executing a stateful backend node startup DAG or declarative bootstrap.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:1c83f54ea0028875",
+          "evaluatedRevision": 3
         },
         {
           "subject": "agent-runtime-assembly",
@@ -35986,7 +36002,11 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/features/CredentialRotationSection.tsx:59 Searched for unseal, boot_dag, reload_partition, bootstrap_marker, and request_chain with zero hits across context directory src/features/vault/sub_credentials/components; vault-credentials-components-features provides React UI panels for credential anomaly scores, rotation schedules, and audit display rather than stateful node startup or declarative bootstrap.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:1c83f54ea0028875",
+          "evaluatedRevision": 3
         },
         {
           "subject": "authorization",
