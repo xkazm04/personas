@@ -11989,7 +11989,11 @@
           "revision": 3,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/fleet/FleetTerminalOverlay.tsx:294 The terminal grid is a document-fixed div under the app title bar; a search of src/features/plugins/fleet for alwaysOnTop, setIgnoreCursorEvents, globalShortcut, AXUIElement, and SendInput returned no hits, and session commands are text written to a PTY.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:eb941b25ec740109",
+          "evaluatedRevision": 3
         },
         {
           "subject": "session-continuation",
@@ -17697,7 +17701,11 @@
           "revision": 3,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/notepad/NotepadOverlayHost.tsx:423 The pad is a portaled dialog that leaves the app title bar reachable; a search of src/features/notepad for alwaysOnTop, setIgnoreCursorEvents, globalShortcut, AXUIElement, and SendInput returned no hits.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:eb941b25ec740109",
+          "evaluatedRevision": 3
         },
         {
           "subject": "test-harness",
@@ -21985,7 +21993,11 @@
           "revision": 3,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:53 The sigil editor is an absolute layer over the in-page sigil; a search of src/features/shared/glyph/persona-layout for alwaysOnTop, setIgnoreCursorEvents, globalShortcut, AXUIElement, and SendInput returned no hits.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:eb941b25ec740109",
+          "evaluatedRevision": 3
         },
         {
           "subject": "prompt-assembly",
@@ -28431,7 +28443,11 @@
           "revision": 3,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 The fullest surface in this context is a dialog painted under the app title bar; a search of src/features/shared/components for alwaysOnTop, setIgnoreCursorEvents, globalShortcut, AXUIElement, and SendInput returned no hits, so no host capability, foreign window, or synthesized input is present.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:eb941b25ec740109",
+          "evaluatedRevision": 3
         },
         {
           "subject": "client-fetch-cache",

@@ -1,0 +1,212 @@
+{
+  "schema": "conform-run/1",
+  "worker": "5776a53e-f892-4da5-8247-972bc619bce1",
+  "subject": "native-shell-integration",
+  "evaluatedAt": "2026-10-13T11:30:27.173676+00:00",
+  "provider": "grok",
+  "model": "grok-4.7",
+  "pairs": [
+    {
+      "context": "shared-components-layout",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 The fullest surface in this context is a dialog painted under the app title bar; a search of src/features/shared/components for alwaysOnTop, setIgnoreCursorEvents, globalShortcut, AXUIElement, and SendInput returned no hits, so no host capability, foreign window, or synthesized input is present.",
+      "techniques": [
+        {
+          "technique": "non-stealing-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:67 Fixed document layer under the in-app title bar; the technique applies to a native window over another application."
+        },
+        {
+          "technique": "layout-resolved-input-synthesis",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:12 Keys stay inside the product dialog; nothing is synthesized into a foreign application."
+        },
+        {
+          "technique": "capability-presence-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/ContentLayout.tsx:39 The shell is a document content area. There is no per-host capability class to declare."
+        }
+      ],
+      "absenceTerms": [
+        "alwaysOnTop",
+        "setIgnoreCursorEvents",
+        "globalShortcut",
+        "AXUIElement",
+        "SendInput"
+      ],
+      "registryProposal": "The path already excludes an in-window surface, but a context whose files are named overlay is easy to score as if a CSS portal were a native window. The golden path should say a document-fixed layer inside the product webview is out of scope."
+    },
+    {
+      "context": "fleet-session-grid",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/plugins/fleet/FleetTerminalOverlay.tsx:294 The terminal grid is a document-fixed div under the app title bar; a search of src/features/plugins/fleet for alwaysOnTop, setIgnoreCursorEvents, globalShortcut, AXUIElement, and SendInput returned no hits, and session commands are text written to a PTY.",
+      "techniques": [
+        {
+          "technique": "non-stealing-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/FleetTerminalOverlay.tsx:283 The grid yields to the app's own title bar. It is a working surface inside the product, not a window over another application."
+        },
+        {
+          "technique": "layout-resolved-input-synthesis",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:148 A skill is inserted as characters plus CR on the session PTY. No virtual-key chord is synthesized."
+        },
+        {
+          "technique": "permission-gate-vector",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/fleetAttention.ts:23 This is a parked-session classifier token on the fleet DTO, not a host grant the UI polls."
+        }
+      ],
+      "absenceTerms": [
+        "alwaysOnTop",
+        "setIgnoreCursorEvents",
+        "globalShortcut",
+        "AXUIElement",
+        "SendInput"
+      ]
+    },
+    {
+      "context": "notepad-core",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/notepad/NotepadOverlayHost.tsx:423 The pad is a portaled dialog that leaves the app title bar reachable; a search of src/features/notepad for alwaysOnTop, setIgnoreCursorEvents, globalShortcut, AXUIElement, and SendInput returned no hits.",
+      "techniques": [
+        {
+          "technique": "non-stealing-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/NotepadOverlayHost.tsx:419 The pad is an in-app dialog that keeps the product's own window controls live. No other application's focus is at stake."
+        },
+        {
+          "technique": "native-owned-stream",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/notepadStore.ts:808 The shell listens for a named local Tauri event and refetches a row. There is no connection, idle timeout, or reconnect loop in this context."
+        }
+      ],
+      "absenceTerms": [
+        "alwaysOnTop",
+        "setIgnoreCursorEvents",
+        "globalShortcut",
+        "AXUIElement",
+        "SendInput"
+      ]
+    },
+    {
+      "context": "persona-glyph-layout",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:53 The sigil editor is an absolute layer over the in-page sigil; a search of src/features/shared/glyph/persona-layout for alwaysOnTop, setIgnoreCursorEvents, globalShortcut, AXUIElement, and SendInput returned no hits.",
+      "techniques": [
+        {
+          "technique": "non-stealing-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:55 Click-through is pointer-events over the sigil inside the page, and the editor takes focus on open because the user edits it."
+        },
+        {
+          "technique": "query-transparent-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/glyph/persona-layout/PersonaHero.tsx:308 Input passes through a CSS box over the sigil. Nothing queries the element under the cursor in another application."
+        }
+      ],
+      "absenceTerms": [
+        "alwaysOnTop",
+        "setIgnoreCursorEvents",
+        "globalShortcut",
+        "AXUIElement",
+        "SendInput"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "native-shell-integration",
+      "context": "triggers-studio",
+      "reason": "withdrawn after review: reviewer (sonnet): The studio palette in triggerStudioConstants.ts:32-34 offers host-observing trigger blocks (file_watcher, clipboard, app_focus), so \"no per-host capability\" and \"nothing host-level\" is contradicted, and the anchors cited (SmeeRelayTab, studioCommit header, SystemEventAutomationsPanel header) do not "
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-13T11:30:27.173676+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "native-shell-integration"
+      ],
+      "techniques": [
+        "capability-presence-contract",
+        "layout-resolved-input-synthesis",
+        "non-stealing-overlay"
+      ],
+      "deviations": 0,
+      "context": "shared-components-layout",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-13T11:30:27.173676+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "native-shell-integration"
+      ],
+      "techniques": [
+        "capability-presence-contract",
+        "native-owned-stream",
+        "permission-gate-vector"
+      ],
+      "deviations": 0,
+      "context": "triggers-studio",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-13T11:30:27.173676+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "native-shell-integration"
+      ],
+      "techniques": [
+        "layout-resolved-input-synthesis",
+        "non-stealing-overlay",
+        "permission-gate-vector"
+      ],
+      "deviations": 0,
+      "context": "fleet-session-grid",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-13T11:30:27.173676+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "native-shell-integration"
+      ],
+      "techniques": [
+        "native-owned-stream",
+        "non-stealing-overlay"
+      ],
+      "deviations": 0,
+      "context": "notepad-core",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-13T11:30:27.173676+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "native-shell-integration"
+      ],
+      "techniques": [
+        "non-stealing-overlay",
+        "query-transparent-overlay"
+      ],
+      "deviations": 0,
+      "context": "persona-glyph-layout",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    }
+  ]
+}
