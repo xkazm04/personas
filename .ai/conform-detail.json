@@ -3516,83 +3516,64 @@
       "subject": "docs-sync",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-9",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T00:40:06.480Z",
+      "worker": "6b7b192b-9fc1-420f-8f52-aa30f13ca3a2",
       "techniques": [
         {
           "technique": "source-doc-mapping",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:649 the map is consumed in the doc-to-source direction only; no coverage measure of unmapped source exists, and the repo's only map check (scripts/docs/check-doc-map-paths.mjs) still validates only that named paths resolve."
+          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:661 Map is doc→prefix only. glob_prefix widens a file glob to its directory; empty sourceGlobs entries are dropped. No inverse coverage walk and no unmapped-area allowlist. Stale verdict cited :649, which is the rescan throttle, not this lookup."
+        },
+        {
+          "technique": "coupled-surface-inventory",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:379 Grep of doc_rot.rs finds no read of onboardingFlows or marketingModule. The scanner's own header types an entry as {doc, sourceGlobs} only, so a missed tour or marketing surface cannot be named here."
         },
         {
           "technique": "doc-rot-detection",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:669 a doc with no discoverable coupling is counted unverifiable rather than clean (doctrine at :16), and truncation is priority-ordered and stable (:39, flagged via docs_truncated at :126)."
+          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:906 Broken outranks stale, and unscoped is unverifiable rather than clean, with a test that the two labels differ. Per-directory omission is scored under checked-vs-skipped, not here."
         },
         {
           "technique": "checked-vs-skipped-denominators",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:116 skipped projects carry reason classes (projects_skipped_fresh, projects_no_git at :118) beside unverifiable (:123), so a run that checked nothing is not reported like a clean one."
-        },
-        {
-          "technique": "same-change-enforcement",
-          "verdict": "unread",
-          "evidence": ""
-        },
-        {
-          "technique": "coupled-surface-inventory",
-          "verdict": "unread",
-          "evidence": ""
-        },
-        {
-          "technique": "dated-corrections",
-          "verdict": "unread",
-          "evidence": ""
-        },
-        {
-          "technique": "catch-up-markers",
-          "verdict": "unread",
-          "evidence": ""
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:294 That take, and collect_docs_tree's return when MAX_DIRS_VISITED trips, drop files with no skipped or not-enumerated count. docs_truncated flips only when the tracked list hits MAX_DOCS_PER_REPO. projects_no_git and unverifiable are separate fields, so the git-absent case is not this gap."
         },
         {
           "technique": "cross-repo-drift-detection",
-          "verdict": "unread",
-          "evidence": ""
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:8 Freshness is one project's local git log of the doc against paths in that same tree. gitlab.rs in this context is connect and deploy, not a watch-set query of another repo."
         },
         {
           "technique": "source-as-data-without-the-app",
-          "verdict": "unread",
-          "evidence": ""
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:365 The coupling registry is a JSON file read as data, not an application module, so the import-the-app failure does not arise. Invalid JSON hits the same continue as a missing file and is not given its own counter."
         },
         {
           "technique": "earned-verification-state",
-          "verdict": "unread",
-          "evidence": ""
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:548 No review-date stamp is written onto the document. Status is recomputed from git commit times; a path absent from the horizon map becomes ts 0."
         },
         {
           "technique": "repair-rides-the-open-page",
-          "verdict": "unread",
-          "evidence": ""
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:152 Reads while dirty are counted for ranking. Nothing in this scanner resolves staleness because a document was opened."
         },
         {
           "technique": "rendered-surface-coupling",
-          "verdict": "unread",
-          "evidence": ""
-        },
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:199 The tracked population is markdown. Grep of doc_rot.rs for digest, png, or svg found no figure coupling."
+        }
+      ],
+      "registryProposal": "Say explicitly that doc-rot-detection's document-keyed ladder does not discharge source-doc-mapping's inverse coverage gate, and name which checker owes the walk of source files that match no entry.",
+      "superseded": [
         {
-          "technique": "negative-claims-are-pinned",
-          "verdict": "unread",
-          "evidence": ""
-        },
-        {
-          "technique": "prose-as-an-execution-surface",
-          "verdict": "unread",
-          "evidence": ""
-        },
-        {
-          "technique": "translations-drift-against-the-product",
-          "verdict": "unread",
-          "evidence": ""
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:649 coupling is only ever looked up doc -> sources; nothing counts the source files that match no doc-map entry, so an unmapped share of a tree is invisible to the scan, and map coverage (not just membership) is the gate source-doc-mapping requires.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by 6b7b192b-9fc1-420f-8f52-aa30f13ca3a2"
         }
       ]
     },
@@ -17790,6 +17771,46 @@
           "evidence": "src/features/plugins/drive/signing/useSigning.ts:116 The signing path operates on a local filesystem path; searches found no browser listener, tunnel, or page-reply channel."
         }
       ]
+    },
+    "1db5c86e-3237-4d2a-8e2f-1426d680757c/docs-sync": {
+      "context": "lib-execution",
+      "subject": "docs-sync",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T00:40:06.480Z",
+      "worker": "6b7b192b-9fc1-420f-8f52-aa30f13ca3a2",
+      "techniques": []
+    },
+    "876c0b4e-6472-4544-a21b-56e7529fb6b3/docs-sync": {
+      "context": "vault-shared-vector",
+      "subject": "docs-sync",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T00:40:06.480Z",
+      "worker": "6b7b192b-9fc1-420f-8f52-aa30f13ca3a2",
+      "techniques": []
+    },
+    "83a8a744-2036-4e3e-9654-6fcec82334ff/docs-sync": {
+      "context": "plugins-obsidian-brain",
+      "subject": "docs-sync",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T00:40:06.480Z",
+      "worker": "6b7b192b-9fc1-420f-8f52-aa30f13ca3a2",
+      "techniques": []
+    },
+    "c5f662f2-458b-4b5d-b03b-e4acf8f54049/docs-sync": {
+      "context": "plugins-dev-tools-projects",
+      "subject": "docs-sync",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T00:40:06.480Z",
+      "worker": "6b7b192b-9fc1-420f-8f52-aa30f13ca3a2",
+      "techniques": []
     }
   }
 }

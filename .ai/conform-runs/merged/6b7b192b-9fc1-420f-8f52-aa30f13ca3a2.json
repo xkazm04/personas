@@ -1,0 +1,170 @@
+{
+ "schema": "conform-run/1",
+ "worker": "6b7b192b-9fc1-420f-8f52-aa30f13ca3a2",
+ "subject": "docs-sync",
+ "evaluatedAt": "2026-10-13T00:40:06.480700+00:00",
+ "provider": "grok",
+ "model": "grok-4.7",
+ "pairs": [
+  {
+   "context": "workspace-governance",
+   "subject": "docs-sync",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:661 The rot scan consumes the doc map only as document keys and never counts source files that match no entry, so an unmapped share of a tree cannot fail this scan.",
+   "techniques": [
+    {
+     "technique": "source-doc-mapping",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:661 Map is doc\u2192prefix only. glob_prefix widens a file glob to its directory; empty sourceGlobs entries are dropped. No inverse coverage walk and no unmapped-area allowlist. Stale verdict cited :649, which is the rescan throttle, not this lookup."
+    },
+    {
+     "technique": "coupled-surface-inventory",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:379 Grep of doc_rot.rs finds no read of onboardingFlows or marketingModule. The scanner's own header types an entry as {doc, sourceGlobs} only, so a missed tour or marketing surface cannot be named here."
+    },
+    {
+     "technique": "doc-rot-detection",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:906 Broken outranks stale, and unscoped is unverifiable rather than clean, with a test that the two labels differ. Per-directory omission is scored under checked-vs-skipped, not here."
+    },
+    {
+     "technique": "checked-vs-skipped-denominators",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:294 That take, and collect_docs_tree's return when MAX_DIRS_VISITED trips, drop files with no skipped or not-enumerated count. docs_truncated flips only when the tracked list hits MAX_DOCS_PER_REPO. projects_no_git and unverifiable are separate fields, so the git-absent case is not this gap."
+    },
+    {
+     "technique": "cross-repo-drift-detection",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:8 Freshness is one project's local git log of the doc against paths in that same tree. gitlab.rs in this context is connect and deploy, not a watch-set query of another repo."
+    },
+    {
+     "technique": "source-as-data-without-the-app",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:365 The coupling registry is a JSON file read as data, not an application module, so the import-the-app failure does not arise. Invalid JSON hits the same continue as a missing file and is not given its own counter."
+    },
+    {
+     "technique": "earned-verification-state",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:548 No review-date stamp is written onto the document. Status is recomputed from git commit times; a path absent from the horizon map becomes ts 0."
+    },
+    {
+     "technique": "repair-rides-the-open-page",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:152 Reads while dirty are counted for ranking. Nothing in this scanner resolves staleness because a document was opened."
+    },
+    {
+     "technique": "rendered-surface-coupling",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:199 The tracked population is markdown. Grep of doc_rot.rs for digest, png, or svg found no figure coupling."
+    }
+   ],
+   "registryProposal": "Say explicitly that doc-rot-detection's document-keyed ladder does not discharge source-doc-mapping's inverse coverage gate, and name which checker owes the walk of source files that match no entry."
+  },
+  {
+   "context": "lib-execution",
+   "subject": "docs-sync",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/execution/pipeline.ts:48 Grep of src/lib/execution for feature-doc-map, doc_rot, sourceGlobs, unverifiable, guide-sync, onboardingFlows, marketingModule, reviewDate, and watchSet found nothing; the only documentation here is in-module stage labels, and driftMiddleware's stale is a persona execution snapshot.",
+   "techniques": []
+  },
+  {
+   "context": "vault-shared-vector",
+   "subject": "docs-sync",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/vault/shared/vector/ingest/IngestDirectoryPicker.tsx:29 Grep of src/features/vault/shared/vector for feature-doc-map, doc_rot, sourceGlobs, unverifiable, guide-sync, onboardingFlows, marketingModule, reviewDate, and watchSet found nothing; *.md here is an ingest glob for knowledge-base files, and DocumentsTab lists KbDocument rows.",
+   "techniques": []
+  },
+  {
+   "context": "plugins-obsidian-brain",
+   "subject": "docs-sync",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/obsidian-brain/sub_sync/SyncPanel.tsx:107 Grep of src/features/plugins/obsidian-brain for feature-doc-map, doc_rot, sourceGlobs, unverifiable, guide-sync, onboardingFlows, marketingModule, reviewDate, watchSet, and doc-sync found nothing; sync pushes and pulls persona notes to a vault, and revitalize prune/merge/refresh are vault-note goals, not a source-to-prose coupling scan.",
+   "techniques": []
+  },
+  {
+   "context": "plugins-dev-tools-projects",
+   "subject": "docs-sync",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_projects/pipeline/ProjectPipelineView.tsx:53 Grep of src/features/plugins/dev-tools/sub_projects for feature-doc-map, doc_rot, sourceGlobs, unverifiable, guide-sync, onboardingFlows, marketingModule, reviewDate, watchSet, and doc-sync found nothing; docs_required is only conjoined into a read-only practice label, and this view does not read a diff or a coupling map.",
+   "techniques": []
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-13T00:40:06.480700+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "docs-sync"
+   ],
+   "techniques": [
+    "checked-vs-skipped-denominators",
+    "coupled-surface-inventory",
+    "cross-repo-drift-detection",
+    "doc-rot-detection",
+    "earned-verification-state",
+    "rendered-surface-coupling",
+    "repair-rides-the-open-page",
+    "source-as-data-without-the-app",
+    "source-doc-mapping"
+   ],
+   "deviations": 1,
+   "context": "workspace-governance",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-13T00:40:06.480700+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "docs-sync"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "lib-execution",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-13T00:40:06.480700+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "docs-sync"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "vault-shared-vector",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-13T00:40:06.480700+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "docs-sync"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "plugins-obsidian-brain",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-13T00:40:06.480700+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "docs-sync"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "plugins-dev-tools-projects",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  }
+ ]
+}

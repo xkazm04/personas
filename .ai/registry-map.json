@@ -15672,7 +15672,11 @@
           "revision": 14,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/lib/execution/pipeline.ts:48 Grep of src/lib/execution for feature-doc-map, doc_rot, sourceGlobs, unverifiable, guide-sync, onboardingFlows, marketingModule, reviewDate, and watchSet found nothing; the only documentation here is in-module stage labels, and driftMiddleware's stale is a persona execution snapshot.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:fd96220db75846a1",
+          "evaluatedRevision": 14
         },
         {
           "subject": "agent-runtime-assembly",
@@ -23996,7 +24000,11 @@
           "revision": 14,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/pipeline/ProjectPipelineView.tsx:53 Grep of src/features/plugins/dev-tools/sub_projects for feature-doc-map, doc_rot, sourceGlobs, unverifiable, guide-sync, onboardingFlows, marketingModule, reviewDate, watchSet, and doc-sync found nothing; docs_required is only conjoined into a read-only practice label, and this view does not read a diff or a coupling map.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:fd96220db75846a1",
+          "evaluatedRevision": 14
         },
         {
           "subject": "embedded-preview",
@@ -25096,7 +25104,11 @@
           "revision": 14,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/obsidian-brain/sub_sync/SyncPanel.tsx:107 Grep of src/features/plugins/obsidian-brain for feature-doc-map, doc_rot, sourceGlobs, unverifiable, guide-sync, onboardingFlows, marketingModule, reviewDate, watchSet, and doc-sync found nothing; sync pushes and pulls persona notes to a vault, and revitalize prune/merge/refresh are vault-note goals, not a source-to-prose coupling scan.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:fd96220db75846a1",
+          "evaluatedRevision": 14
         },
         {
           "subject": "mcp-tools",
@@ -37310,7 +37322,11 @@
           "revision": 14,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/shared/vector/ingest/IngestDirectoryPicker.tsx:29 Grep of src/features/vault/shared/vector for feature-doc-map, doc_rot, sourceGlobs, unverifiable, guide-sync, onboardingFlows, marketingModule, reviewDate, and watchSet found nothing; *.md here is an ingest glob for knowledge-base files, and DocumentsTab lists KbDocument rows.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:fd96220db75846a1",
+          "evaluatedRevision": 14
         },
         {
           "subject": "settings",
@@ -37873,12 +37889,11 @@
           "changedAt": "2026-09-25",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:649 coupling is only ever looked up doc -> sources; nothing counts the source files that match no doc-map entry, so an unmapped share of a tree is invisible to the scan, and map coverage (not just membership) is the gate source-doc-mapping requires.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:c16a15d29d96e263",
-          "evaluatedRevision": 13,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:661 The rot scan consumes the doc map only as document keys and never counts source files that match no entry, so an unmapped share of a tree cannot fail this scan.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:fd96220db75846a1",
+          "evaluatedRevision": 14,
+          "revisionsBehind": 1
         },
         {
           "subject": "codebase-scanning",
