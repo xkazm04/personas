@@ -10650,7 +10650,11 @@
           "revision": 2,
           "changedAt": "2026-09-04",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/mod.rs:185 Context and repository searches for the listed terms found no matches, and the inspected hooks serve application side effects, outside the standard's embedded language-engine precondition.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:08d3fea13f40733a",
+          "evaluatedRevision": 2
         },
         {
           "subject": "mcp-tools",
@@ -10962,7 +10966,11 @@
           "revision": 2,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:454 Context and repository searches for the listed terms found no matches, and the consolidator executes a CLI subprocess, outside the embedded language-engine precondition.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:08d3fea13f40733a",
+          "evaluatedRevision": 2
         },
         {
           "subject": "prompt-assembly",
@@ -34298,7 +34306,11 @@
           "revision": 2,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/engine/src/eval.rs:623 Context and repository searches for the listed terms found no matches, and evaluation launches an external CLI process, so the embedded language-engine contract is not applicable.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:08d3fea13f40733a",
+          "evaluatedRevision": 2
         },
         {
           "subject": "prompt-assembly",

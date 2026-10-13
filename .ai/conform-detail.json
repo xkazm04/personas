@@ -19934,6 +19934,170 @@
           "evidence": "src/lib/analytics/sink.ts:79 The tracked feature event contains navigation identifiers and actions, not merged changes and approving parties."
         }
       ]
+    },
+    "059fdee0-40da-434a-a5cb-874bc9179a31/engine-host-contract": {
+      "context": "engine-core-infrastructure",
+      "subject": "engine-host-contract",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T21:59:22.408Z",
+      "worker": "818a1a0e-7df8-405b-a895-d4290c188a83",
+      "techniques": [
+        {
+          "technique": "contained-async-module-loader",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/team_preset_loader.rs:299 The loader deserializes team-preset configuration; it does not resolve guest-language module imports."
+        },
+        {
+          "technique": "idle-aware-job-loop",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/curation_scheduler.rs:11 Scheduled work becomes database job rows, outside the standard's in-memory promise-job queues."
+        },
+        {
+          "technique": "monotonic-and-wall-clock-split",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/file_watcher.rs:147 This measures filesystem-event debounce durations; no guest timer/date clock interface was found."
+        },
+        {
+          "technique": "null-and-blocking-executors",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:327 A named application job awaits a Rust handler; there is no language-context promise executor to default."
+        },
+        {
+          "technique": "spec-mirrored-hook-surface",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/mod.rs:200 The override refreshes the desktop tray; it is not an operation authored by a language specification."
+        },
+        {
+          "technique": "untraceable-jobs-as-roots",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:126 Jobs persist serialized parameters in SQLite; the inspected context has no traced guest heap and external promise-job queue."
+        }
+      ]
+    },
+    "6a81750d-fdbf-4518-bae6-689303e1a884/engine-host-contract": {
+      "context": "test-runner-lab",
+      "subject": "engine-host-contract",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T21:59:22.408Z",
+      "worker": "818a1a0e-7df8-405b-a895-d4290c188a83",
+      "techniques": [
+        {
+          "technique": "idle-aware-job-loop",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/resource_governor.rs:43 This loop samples host resource pressure; it does not drain language-engine microtasks, timers, and finalization jobs."
+        },
+        {
+          "technique": "monotonic-and-wall-clock-split",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/output_assertions.rs:93 Time measures assertion latency; the context exposes no guest timers or dates requiring a host clock seam."
+        },
+        {
+          "technique": "null-and-blocking-executors",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/test_runner/execution.rs:263 Test execution uses a subprocess driver, not a builder selecting an embedded engine's promise executor."
+        },
+        {
+          "technique": "spec-mirrored-hook-surface",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/hooks_sidecar.rs:4 These are Claude Code lifecycle hooks, not specification-defined language-engine host operations."
+        },
+        {
+          "technique": "untraceable-jobs-as-roots",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/queue.rs:38 The opened queued-execution record contains execution identifiers and scheduling metadata; no traced guest-value captures were found."
+        }
+      ]
+    },
+    "d5c5e7fe-6353-41eb-800b-dc11adee0775/engine-host-contract": {
+      "context": "engine-project-tracking",
+      "subject": "engine-host-contract",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T21:59:22.408Z",
+      "worker": "818a1a0e-7df8-405b-a895-d4290c188a83",
+      "techniques": [
+        {
+          "technique": "contained-async-module-loader",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:469 The consolidator supplies prompt bytes through subprocess stdin; it does not implement a guest-module import hook."
+        },
+        {
+          "technique": "idle-aware-job-loop",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/project_tracking/scheduler.rs:54 This drives periodic project consolidation, not an embedded language's job queues."
+        },
+        {
+          "technique": "monotonic-and-wall-clock-split",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/project_tracking/push.rs:213 Monotonic time limits consolidation requests; no guest timer/date clock contract was found."
+        },
+        {
+          "technique": "null-and-blocking-executors",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2358 The persona runner launches CLI processes; it does not choose a language-engine job executor."
+        },
+        {
+          "technique": "spec-mirrored-hook-surface",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:272 The opened surrounding code identifies this as an application observer event, with no language-specification hook table to mirror."
+        },
+        {
+          "technique": "untraceable-jobs-as-roots",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:484 The spawned reader retains an Arc-owned Rust stderr buffer; no traced guest heap or promise captures were found."
+        }
+      ]
+    },
+    "de8b648f-7971-452b-88dc-773b215c5f09/engine-host-contract": {
+      "context": "pipeline-and-automation",
+      "subject": "engine-host-contract",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T21:59:22.408Z",
+      "techniques": [
+        {
+          "technique": "contained-async-module-loader",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/design_context.rs:43 Design context is deserialized configuration data; no guest-language import resolver was found."
+        },
+        {
+          "technique": "idle-aware-job-loop",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/automation_runner.rs:98 This waits between webhook retries, not between language-engine microtasks and macrotasks."
+        },
+        {
+          "technique": "monotonic-and-wall-clock-split",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/automation_runner.rs:54 Time measures an automation invocation; no guest timer/date interface requiring injectable clocks was found."
+        },
+        {
+          "technique": "null-and-blocking-executors",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:615 Deterministic pipeline commands execute through an external shell, not an embedded language's promise executor."
+        },
+        {
+          "technique": "spec-mirrored-hook-surface",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:106 This emits application pipeline status through Tauri; no language-specification override surface was found."
+        },
+        {
+          "technique": "untraceable-jobs-as-roots",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:416 Pipeline work creates database execution records; no external queue holding traced guest-heap captures was found."
+        }
+      ],
+      "withdrawn": {
+        "worker": "818a1a0e-7df8-405b-a895-d4290c188a83",
+        "state": "not-applicable",
+        "at": "2026-10-13T22:00:03.738061+00:00",
+        "reason": "reviewer (sonnet): The main anchor, automation_runner.rs:28, is only the GitHub-dispatch branch. It doesn't show that no embedded language engine exists, and the 'persisted persona pipeline executions' part of the evidence isn't at that line. The technique anchor at pipeline_executor.rs:615 does confirm a shell subpro"
+      }
     }
   }
 }
