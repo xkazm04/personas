@@ -95,6 +95,50 @@ class Validate(unittest.TestCase):
         self.assertEqual([d["context"] for d in v["declined"]], ["ctx-a"])
 
 
+class Absence(unittest.TestCase):
+    """not-applicable must name its search, and the driver re-runs it (night 2026-10-12: 26% of
+    agy's not-applicable verdicts were withdrawn, most one grep away from contradiction)."""
+
+    def setUp(self):
+        import subprocess
+        import tempfile
+        self.dir = pathlib.Path(tempfile.mkdtemp(prefix="curator-absence-"))
+        g = lambda *a: subprocess.run(["git", "-C", str(self.dir), *a], capture_output=True, text=True, check=True)
+        g("init", "-q")
+        (self.dir / "src" / "feature").mkdir(parents=True)
+        (self.dir / "src" / "feature" / "a.ts").write_text("export const a = 1; // the main entry\n")
+        (self.dir / "src" / "feature" / "b.ts").write_text("const tools = readMcpManifest();\n")
+        g("add", "-A")
+        self.files = M.Files(self.dir)
+        self.d = {"domain": "software-engineering", "slug": "s", "techniques": [{"slug": "t1"}],
+                  "pairs": [{"context": "feat", "context_id": "f", "files": ["src/feature/a.ts"]}]}
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+    def na(self, terms):
+        a = {"subject": "s", "notes": "", "declined": [], "pairs": [{
+            "context": "feat", "state": "not-applicable", "anchor": "src/feature/a.ts:1",
+            "quote": "export const a = 1; // the main entry", "consequence": "nothing in this context serves tools",
+            "techniques": [], "registryProposal": "", "absence_terms": terms}]}
+        return M.validate(a, self.d, self.files)
+
+    def test_a_hit_in_a_sibling_file_refuses_the_absence(self):
+        v = self.na(["mcp", "tool registry"])
+        self.assertEqual(v["pairs"], [])
+        self.assertTrue(any("absence contradicted" in r and "b.ts" in r for r in v["rejections"]), v["rejections"])
+
+    def test_a_clean_search_lands_with_its_terms(self):
+        v = self.na(["websocket", "stream"])
+        self.assertEqual(len(v["pairs"]), 1)
+        self.assertEqual(v["pairs"][0]["absenceTerms"], ["websocket", "stream"])
+
+    def test_no_terms_is_declined(self):
+        self.assertEqual(self.na([])["pairs"], [])
+        self.assertEqual(self.na(["ws"])["pairs"], [])  # too short to be a search
+
+
 class Envelope(unittest.TestCase):
     def test_last_json_object_skips_a_placeholder_draft(self):
         text = 'thinking {"pairs": [], "subject": "placeholder"} then {"pairs": [1], "subject": "s"}'

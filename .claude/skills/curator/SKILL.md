@@ -437,6 +437,18 @@ repo before and after, every seat, every withdrawal with its reason, every commi
 branch. `night/<date>.jsonl` has the same as events. **Read it before the next night**; a reviewer
 note that repeats is a defect in the brief or the validator, exactly as between hand-run rounds.
 
+**What the first full night measured (2026-10-12 23:28 to 06:40, rounds 14-41, 84 seats).** 335
+verdicts landed, the reviewer withdrew 43, **292 kept**, every one of the 12 repos gained 11-32;
+no failed commit, no reviewer failure, no timeout; 4 memory waits (~20 min) near 03:00.
+
+| Finding | Rule it produced |
+|---|---|
+| a quarter of agy's 90 not-applicable verdicts were withdrawn (codex 6%, grok 13%): the absence they claimed was one grep away - a `#[cfg(test)]` module, an `e.mcp` read, a prompt constant | every not-applicable names its `absence_terms`; the validator re-runs that search over the context's directories and any hit refuses it; the reviewer sees the terms and judges whether they were the right ones |
+| deviations are reliable: codex 5%, grok 2% withdrawn | none - this is the seats' strength; route deviation-heavy subjects to them when routing exists |
+| consult-check recorded a `missed` row on every conform-ledger commit; the next round committed it as found, which drew another - 7 needless commits per repo and 48 false misses | fixed in the registry (`b6b67b76`: a commit of only the conform ledger is skipped); the false rows were dropped, matched to our commits by timestamp |
+| an "about code outside the context" rule replayed on the night caught 0 of the reviewer's 4 off-context withdrawals and would have refused 7 good deviations (a test, a store, an engine the context relies on) | NOT adopted - measured before building; the reviewer judges scope better than a path rule |
+| each round waits for its slowest seat: 27% of seat time idle | not yet changed - continuous per-provider slots would recover roughly a third more verdicts a night |
+
 **A Claude session as the orchestrator** (instead of Task Scheduler): run `multi night` (it detaches
 and returns), then wait on `night.out` for `night_ended` with an until-loop, read the report, fix
 what the reviewer notes point at, and start the next. Never run `night --foreground` from a

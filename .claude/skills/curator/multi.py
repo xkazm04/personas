@@ -179,12 +179,15 @@ SCHEMA = {
         "subject": {"type": "string"},
         "pairs": {"type": "array", "items": {
             "type": "object", "additionalProperties": False,
-            "required": ["context", "state", "anchor", "quote", "consequence", "techniques", "registryProposal"],
+            "required": ["context", "state", "anchor", "quote", "consequence", "techniques", "registryProposal",
+                         "absence_terms"],
             "properties": {
                 "context": {"type": "string"},
                 "state": {"type": "string", "enum": VERDICTS},
                 "anchor": _anchor, "quote": _quote,
                 "consequence": {"type": "string", "description": "one sentence"},
+                "absence_terms": {"type": "array", "items": {"type": "string"},
+                                  "description": "not-applicable only: the 2-5 terms you searched for and did not find"},
                 "techniques": {"type": "array", "items": {
                     "type": "object", "additionalProperties": False,
                     "required": ["technique", "verdict", "anchor", "quote", "note"],
@@ -353,7 +356,11 @@ STEP 3 - judge each technique for that context, then the pair:
      assumed: grep the context's files and the repo for the subject's own terms first and say in
      the consequence what the search found. A file's first line or a struct declaration does not
      prove anything is absent (measured: two such verdicts were contradicted by tool manifests
-     the context published).
+     the context published). Put the 2-5 terms you searched for in "absence_terms" - the
+     subject's own vocabulary as it would appear in code (identifiers, config keys, e.g. "mcp",
+     "#[cfg(test)]", "prompt"). The driver re-runs that search over this context's directories,
+     and ANY hit refuses the verdict, so search properly before you claim absence. Leave
+     "absence_terms" empty for every other state.
    - unknown: you are not sure. Use it freely; a wrong verdict is worse than none.
    If you cannot judge a pair at all, put it in "declined" with the reason instead.
 
@@ -374,7 +381,8 @@ OUTPUT - reply with exactly one JSON object and nothing else:
             "anchor": "src/x/y.ts:41", "quote": "<line 41 verbatim>", "consequence": "<one sentence>",
             "techniques": [{{"technique": "<technique slug>", "verdict": "conformant|deviation|not-applicable|unread",
                             "anchor": "src/x/y.ts:41", "quote": "<that line verbatim>", "note": "<short>"}}],
-            "registryProposal": "<a finding about the standard itself, or empty string>"}}],
+            "registryProposal": "<a finding about the standard itself, or empty string>",
+            "absence_terms": ["<not-applicable only: terms you searched and did not find>"]}}],
  "declined": [{{"context": "<context name>", "reason": "<why>"}}],
  "notes": "<anything the reviewer should know, or empty string>"}}
 """
@@ -572,6 +580,35 @@ def mentioned_refs_problem(files: Files, text: str) -> str | None:
     return None
 
 
+def search_scope(files: list[str]) -> list[str]:
+    """Where an absence claim is checked: each context file's own directory when that directory
+    is specific (two or more levels deep), else the file itself. `src` or the repo root would
+    turn every common word into a contradiction."""
+    scope = set()
+    for f in files:
+        parent = pathlib.PurePosixPath(f).parent
+        scope.add(str(parent) if len(parent.parts) >= 2 else f)
+    return sorted(scope)
+
+
+def absence_contradicted(files: Files, ctx_files: list[str], terms: list[str]) -> str | None:
+    """`path:line 'term'` for the first tracked line in the context's scope that contains one of
+    the terms the seat says it searched for and did not find, else None."""
+    scope = search_scope([f for f in ctx_files if f in files.tracked])
+    if not scope or not terms:
+        return None
+    args = ["git", "-C", str(files.root), "grep", "-n", "-i", "-F", "-I"]
+    for t in terms:
+        args += ["-e", t]
+    r = subprocess.run([*args, "--", *scope], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    hits = [l for l in r.stdout.splitlines() if l.strip()]
+    if not hits:
+        return None
+    path, line, text = (hits[0].split(":", 2) + ["", ""])[:3]
+    term = next((t for t in terms if t.lower() in text.lower()), terms[0])
+    return f"{path}:{line} contains '{term}' ({len(hits)} hit(s) in the context's directories)"
+
+
 def validate(answer: dict | None, d: dict, files: Files, read_nothing: str | None = None) -> dict:
     """Turn a seat's answer into run-file pairs + declines, with every repair and refusal counted."""
     out = {"pairs": [], "declined": [], "repairs": [], "rejections": [], "returned": 0}
@@ -670,8 +707,23 @@ def validate(answer: dict | None, d: dict, files: Files, read_nothing: str | Non
         if state == "deviation" and not any(t["verdict"] == "deviation" for t in techs) and not tech_dev:
             decline("deviation with no technique named as the deviation")
             continue
+        terms: list[str] = []
+        if state == "not-applicable":
+            # Measured night 2026-10-12: a quarter of agy's not-applicable verdicts were withdrawn,
+            # most because the absence they claimed was one grep away (a `#[cfg(test)]` module, an
+            # `e.mcp` read). The seat names its search; the driver re-runs it and any hit refuses.
+            terms = [t.strip() for t in (raw.get("absence_terms") or []) if isinstance(t, str) and len(t.strip()) >= 3][:5]
+            if len(terms) < 2:
+                decline("not-applicable without the 2+ search terms that prove the absence")
+                continue
+            hit = absence_contradicted(files, ctx.get("files") or [], terms)
+            if hit:
+                decline(f"absence contradicted: {hit}")
+                continue
         pair = {"context": name, "subject": d["slug"], "bundle": d["domain"], "state": state,
                 "evidence": f"{fixed} {consequence}", "techniques": techs}
+        if terms:
+            pair["absenceTerms"] = terms
         if _norm(raw.get("registryProposal") or ""):
             pair["registryProposal"] = _norm(raw["registryProposal"])
         out["pairs"].append(pair)
@@ -1185,6 +1237,7 @@ def settle_round(n: int, rdir: pathlib.Path, seats: list[dict], before: dict, ke
             row.update(outcome=action, evidence=evidence[:500],
                        landed=[{"context": p["context"], "state": p["state"], "evidence": p["evidence"],
                                 "techniques": [t["evidence"] for t in p["techniques"]][:4],
+                                "absence_terms": p.get("absenceTerms") or [],
                                 "files": next((q["files"] for q in d["pairs"] if q["context"] == p["context"]), [])[:12]}
                                for p in v["pairs"]] if action == "landed" else [])
         row["cleaned_sessions"] = clean_provider_sessions(s)
@@ -1500,6 +1553,9 @@ def review_brief(summary: dict) -> str | None:
                      f"subject `{it['subject']}` | context `{it['context']}` | {it['state']}\n"
                      f"   evidence: {it['evidence']}\n"
                      + "".join(f"   technique: {t}\n" for t in it["techniques"])
+                     + (f"   absence searched for (driver re-ran it over the context's directories: no hit): "
+                        f"{', '.join(it.get('absence_terms') or [])} - were these the RIGHT terms for this subject?\n"
+                        if it.get("absence_terms") else "")
                      + f"   context files: {', '.join(it['files'])}")
     return f"""You are the reviewer of an unattended conform round. Non-Claude model seats judged code against
 knowledge-registry standards; a validator already proved each anchor's file exists and that the seat
