@@ -16,6 +16,7 @@ pub mod external_api_keys;
 #[cfg(feature = "p2p")]
 pub mod identity;
 pub mod mcp_gateways;
+pub mod mesh_probes;
 pub mod n8n_sessions;
 pub mod notification_subscriptions;
 pub mod oauth_token_metrics;

@@ -211,6 +211,11 @@ pub struct MeshProbeVerdict {
     /// The test id, e.g. `t1_ping` .. `t7_cli_mail`.
     pub test_id: String,
     pub passed: bool,
+    /// The test was not run (e.g. the push test without `--allow-push`). A
+    /// skip is `passed: false, skipped: true`, so a surface can tell "not
+    /// run" from "failed". Absent on the wire reads as `false`.
+    #[serde(default)]
+    pub skipped: bool,
     pub detail: Option<String>,
     pub at_ms: f64,
 }

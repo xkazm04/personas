@@ -73,5 +73,26 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+    // Contract amendment A2 (after WP4): a test that was not run is a SKIP,
+    // not a failure. `passed:false, skipped:true` keeps the old reading for
+    // every row written before the column existed (they were all real runs).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "mesh_probe_results.skipped",
+            description: "Probe verdicts can record a skipped test",
+            already_applied: |conn| {
+                Ok(!has_table(conn, "mesh_probe_results")?
+                    || has_column(conn, "mesh_probe_results", "skipped")?)
+            },
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE mesh_probe_results ADD COLUMN skipped INTEGER NOT NULL DEFAULT 0 \
+                     CHECK (skipped IN (0, 1));",
+                )
+            },
+        },
+    )?;
     Ok(())
 }

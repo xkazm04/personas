@@ -95,15 +95,20 @@ function sameLiveness(a: Record<string, MeshLiveness>, b: Record<string, MeshLiv
 /** What a returned job means for the row that asked. */
 export function outcomeOfJob(job: RemoteJob): MeshOutcome {
   const base = { jobId: job.id, peerId: job.peerId };
+  // A mesh verb's own outcome (`meshReceipt`) outranks the job status: the
+  // peer can run the job to completion and still refuse the verb.
+  const verbRefusal = job.meshReceipt && !job.meshReceipt.ok ? job.meshReceipt.detail ?? null : null;
   switch (job.status) {
     case 'queued':
       return { ...base, state: 'queued', reason: null };
     case 'refused':
     case 'failed':
     case 'cancelled':
-      return { ...base, state: 'refused', reason: job.refusalReason ?? job.summary ?? null };
+      return { ...base, state: 'refused', reason: verbRefusal ?? job.refusalReason ?? job.summary ?? null };
     default:
-      return { ...base, state: 'accepted', reason: null };
+      return job.meshReceipt && !job.meshReceipt.ok
+        ? { ...base, state: 'refused', reason: verbRefusal }
+        : { ...base, state: 'accepted', reason: null };
   }
 }
 

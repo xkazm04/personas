@@ -651,6 +651,7 @@ mod tests {
             instruction: "go".into(),
             payload_json: None,
             receipt: None,
+            mesh_receipt: None,
             status: RemoteJobStatus::Queued,
             summary: None,
             refusal_reason: None,

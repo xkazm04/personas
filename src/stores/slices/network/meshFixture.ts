@@ -84,7 +84,7 @@ export function seedMeshFixture(opts: MeshFixtureOptions = {}): string[] {
   });
 
   const studio = device(FIXTURE_STUDIO_PEER_ID, 'Studio Desktop', now, {
-    lastProbe: { peerId: FIXTURE_STUDIO_PEER_ID, testId: 't4_queue_move', passed: true, detail: 'Accepted in 1.2 s', atMs: now - 40 * 60_000 },
+    lastProbe: { peerId: FIXTURE_STUDIO_PEER_ID, testId: 't4_queue_move', passed: true, skipped: false, detail: 'Accepted in 1.2 s', atMs: now - 40 * 60_000 },
   }, {
     host: { cpuShare: 0.71, ramShare: 0.34, gpuShare: 0.82 },
     running: 2,
@@ -106,7 +106,7 @@ export function seedMeshFixture(opts: MeshFixtureOptions = {}): string[] {
     reachability: 'offline',
     liveness: 'unknown',
     receivedAtMs: now - 6 * 60_000,
-    lastProbe: { peerId: FIXTURE_LAPTOP_PEER_ID, testId: 't2_snapshot', passed: false, detail: 'No snapshot within 45 s', atMs: now - 6 * 60_000 },
+    lastProbe: { peerId: FIXTURE_LAPTOP_PEER_ID, testId: 't2_snapshot', passed: false, skipped: false, detail: 'No snapshot within 45 s', atMs: now - 6 * 60_000 },
   }, {
     host: { cpuShare: 0.08, ramShare: 0.22, gpuShare: null },
     queued: 1,

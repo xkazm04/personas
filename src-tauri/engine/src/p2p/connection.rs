@@ -489,16 +489,79 @@ impl ConnectionManager {
         pairing: Arc<DevicePairing>,
         remote_jobs: Arc<RemoteJobs>,
     ) -> Result<(), AppError> {
+        // Look up the peer's address from the discovered_peers table
+        let addr = self.resolve_peer_address(peer_id)?;
+        self.dial(
+            Some(peer_id),
+            addr,
+            manifest_sync,
+            messages,
+            pairing,
+            remote_jobs,
+        )
+        .await
+        .map(|_| ())
+    }
+
+    /// Dial a raw `ip:port` and complete the same signed handshake as
+    /// [`Self::connect_to_peer`], learning the peer's id FROM the handshake.
+    /// Returns that peer id.
+    ///
+    /// **DEV-ONLY (one-box two-node mesh; SECURITY-SENSITIVE).** The only
+    /// caller is `NetworkService::connect_to_address`, which refuses unless
+    /// this is an isolated instance (`p2p::one_box`). It grants nothing a LAN
+    /// peer could not already get: the handshake still proves the key behind
+    /// the peer id, and an authenticated connection is still NOT a trusted
+    /// one - every job and snapshot frame passes the `owned_devices` gate.
+    pub async fn connect_to_address(
+        &self,
+        addr: SocketAddr,
+        manifest_sync: Arc<ManifestSync>,
+        messages: Arc<MessageRouter>,
+        pairing: Arc<DevicePairing>,
+        remote_jobs: Arc<RemoteJobs>,
+    ) -> Result<String, AppError> {
+        let key = format!("addr:{addr}");
+        let _guard = {
+            let mut connecting = self.connecting.lock().unwrap_or_else(|e| e.into_inner());
+            if !connecting.insert(key.clone()) {
+                return Err(AppError::Validation(format!(
+                    "A connection to {addr} is already being attempted"
+                )));
+            }
+            ConnectingGuard {
+                set: &self.connecting,
+                peer_id: key,
+            }
+        };
+        self.dial(None, addr, manifest_sync, messages, pairing, remote_jobs)
+            .await
+    }
+
+    /// Dial `addr`, run the initiator side of the signed handshake, register
+    /// the connection and start its dispatch loop. `expected_peer_id` is
+    /// checked against the handshake when known; either way the returned id
+    /// is the one the peer PROVED.
+    async fn dial(
+        &self,
+        expected_peer_id: Option<&str>,
+        addr: SocketAddr,
+        manifest_sync: Arc<ManifestSync>,
+        messages: Arc<MessageRouter>,
+        pairing: Arc<DevicePairing>,
+        remote_jobs: Arc<RemoteJobs>,
+    ) -> Result<String, AppError> {
         self.metrics
             .connection_attempts
             .fetch_add(1, Ordering::Relaxed);
         let connect_start = std::time::Instant::now();
 
-        // Look up the peer's address from the discovered_peers table
-        let addr = self.resolve_peer_address(peer_id)?;
-
         // Establish QUIC connection
-        tracing::info!(peer_id = %peer_id, addr = %addr, "Connecting to peer");
+        tracing::info!(
+            peer_id = %expected_peer_id.unwrap_or("(by address)"),
+            addr = %addr,
+            "Connecting to peer"
+        );
 
         let quinn_conn = self.transport.connect(addr).await?;
 
@@ -572,11 +635,16 @@ impl ConnectionManager {
             };
 
         // Verify peer_id matches what we expected
-        if remote_peer_id != peer_id {
-            return Err(AppError::Validation(format!(
-                "Peer ID mismatch: expected {}, got {}",
-                peer_id, remote_peer_id
-            )));
+        if let Some(expected) = expected_peer_id {
+            if remote_peer_id != expected {
+                return Err(AppError::Validation(format!(
+                    "Peer ID mismatch: expected {}, got {}",
+                    expected, remote_peer_id
+                )));
+            }
+        }
+        if remote_peer_id == self.local_peer_id {
+            return Err(AppError::Validation("Cannot connect to self".into()));
         }
 
         // Authenticate the responder: nonce shape, peer_id↔public-key binding,
@@ -614,6 +682,8 @@ impl ConnectionManager {
         .await?;
 
         tracing::debug!(peer_id = %remote_peer_id, "Signed handshake verified (initiator)");
+        // From here on the peer is the one the handshake PROVED.
+        let peer_id: &str = &remote_peer_id;
 
         // Clone the connection handle for the dispatch loop before moving into storage.
         let dispatch_conn = quinn_conn.clone();
@@ -638,7 +708,7 @@ impl ConnectionManager {
         if !self.try_insert_connection(peer_id, conn, true).await? {
             // Lost the tie-break — the incoming connection from this peer wins.
             tracing::debug!(peer_id = %peer_id, "Outgoing connection lost tie-break, aborting");
-            return Ok(());
+            return Ok(peer_id.to_string());
         }
 
         // Persist DB state BEFORE bumping success metrics. If the DB write fails,
@@ -674,7 +744,7 @@ impl ConnectionManager {
             remote_jobs,
         );
 
-        Ok(())
+        Ok(peer_id.to_string())
     }
 
     /// Handle an incoming QUIC connection (accept Hello, send HelloAck),

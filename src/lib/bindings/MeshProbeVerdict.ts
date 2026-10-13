@@ -8,4 +8,10 @@ export type MeshProbeVerdict = { peerId: string,
 /**
  * The test id, e.g. `t1_ping` .. `t7_cli_mail`.
  */
-testId: string, passed: boolean, detail: string | null, atMs: number, };
+testId: string, passed: boolean, 
+/**
+ * The test was not run (e.g. the push test without `--allow-push`). A
+ * skip is `passed: false, skipped: true`, so a surface can tell "not
+ * run" from "failed". Absent on the wire reads as `false`.
+ */
+skipped: boolean, detail: string | null, atMs: number, };

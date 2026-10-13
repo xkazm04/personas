@@ -11,8 +11,11 @@ pub struct NetworkConfig {
     pub port: u16,
     pub auto_connect: bool,
     pub max_peers: usize,
+    #[ts(type = "number")]
     pub health_check_interval_secs: u64,
+    #[ts(type = "number")]
     pub manifest_sync_interval_secs: u64,
+    #[ts(type = "number")]
     pub stale_peer_timeout_secs: u64,
 }
 
@@ -161,13 +164,20 @@ pub enum DisconnectReason {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectionMetricsSnapshot {
+    #[ts(type = "number")]
     pub connections_established: u64,
+    #[ts(type = "number")]
     pub connections_dropped_health: u64,
+    #[ts(type = "number")]
     pub connections_dropped_user: u64,
+    #[ts(type = "number")]
     pub connections_dropped_shutdown: u64,
+    #[ts(type = "number")]
     pub connections_dropped_protocol: u64,
+    #[ts(type = "number")]
     pub connections_rejected_capacity: u64,
     /// Total outbound connection attempts (including failures).
+    #[ts(type = "number")]
     pub connection_attempts: u64,
     /// Average time from connect start to Connected state (ms), if any connections established.
     pub avg_connect_duration_ms: Option<f64>,

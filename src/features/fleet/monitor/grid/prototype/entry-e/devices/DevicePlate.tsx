@@ -40,6 +40,15 @@ function ProbeGlyph({ device }: { device: MeshDeviceView }) {
       </Tooltip>
     );
   }
+  // A skipped test is neither a pass nor a failure: neutral glyph, and its
+  // detail ("skipped: <why>") carries the meaning.
+  if (probe.skipped) {
+    return (
+      <Tooltip delay={300} content={<span className="flex flex-col"><span>{probe.testId}</span>{probe.detail && <span>{probe.detail}</span>}</span>}>
+        <CircleDashed className="h-3.5 w-3.5 flex-shrink-0 text-foreground" aria-label={probe.detail ?? probe.testId} data-testid="mesh-probe-skipped" />
+      </Tooltip>
+    );
+  }
   const Icon = probe.passed ? CircleCheck : CircleX;
   const verdict = tx(probe.passed ? m.mesh_probe_passed : m.mesh_probe_failed, { test: probe.testId });
   return (

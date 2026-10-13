@@ -2,4 +2,7 @@
 import type { AccessLevel } from "./AccessLevel";
 import type { ResourceType } from "./ResourceType";
 
+/**
+ * A resource the user has chosen to expose to the P2P network.
+ */
 export type ExposedResource = { id: string, resource_type: ResourceType, resource_id: string, display_name: string, description: string | null, fields_exposed: string, access_level: AccessLevel, requires_auth: boolean, tags: string, created_at: string, expires_at: string | null, };

@@ -14,6 +14,7 @@ import type { MeshDeviceView } from '@/lib/bindings/MeshDeviceView';
 import type { RemoteJob } from '@/lib/bindings/RemoteJob';
 import type { SystemStore } from '../../storeTypes';
 import {
+  outcomeOfJob,
   agentOutcomeKey,
   createMeshSlice,
   effectiveLiveness,
@@ -45,7 +46,7 @@ const sample = (runId: string): LiveResourceSample => ({
 
 const job = (over: Partial<RemoteJob>): RemoteJob => ({
   id: 'job-1', direction: 'outbound', peerId: 'peer-a', peerDisplayName: 'A', kind: 'mesh_verb', instruction: '',
-  payloadJson: null, receipt: null, status: 'pending', summary: null, refusalReason: null, lastSeq: 0,
+  payloadJson: null, receipt: null, meshReceipt: null, status: 'pending', summary: null, refusalReason: null, lastSeq: 0,
   createdAt: '', updatedAt: '', completedAt: null, ...over,
 });
 
@@ -141,5 +142,15 @@ describe('meshSlice', () => {
     });
     await h.get().refreshLiveSamples();
     expect(Object.keys(h.get().liveSamples)).toEqual(['pushed']);
+  });
+});
+
+describe('outcomeOfJob reads the verb receipt', () => {
+  it('a completed job whose verb was refused is a refusal with the receipt reason', () => {
+    const out = outcomeOfJob(job({ status: 'completed', meshReceipt: { verb: 'persona_set_enabled', ok: false, detail: 'project_off' } }));
+    expect(out).toMatchObject({ state: 'refused', reason: 'project_off' });
+  });
+  it('an ok receipt is accepted', () => {
+    expect(outcomeOfJob(job({ status: 'completed', meshReceipt: { verb: 'ping', ok: true, detail: '1.1.0 desktop' } })).state).toBe('accepted');
   });
 });

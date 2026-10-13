@@ -314,10 +314,67 @@ pub fn measure_for_persona(
     )
 }
 
+/// The dominant axis of each persona's NEWEST summarised run, keyed by
+/// persona id (the device mesh's `DeviceAgent.dominant`). Personas with no
+/// summarised run are absent. One query for the whole roster.
+pub fn latest_dominant_by_persona(
+    pool: &DbPool,
+) -> Result<HashMap<String, ResourceAxis>, AppError> {
+    timed_query!(
+        "run_resource_summaries",
+        "run_resources::latest_dominant_by_persona",
+        {
+            let conn = pool.conn("run_resources::latest_dominant_by_persona")?;
+            let mut stmt = conn.prepare(
+                "WITH ranked AS (
+                     SELECT persona_id, dominant,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY persona_id
+                                ORDER BY ended_at_ms DESC, rowid DESC
+                            ) AS rn
+                     FROM run_resource_summaries
+                     WHERE persona_id IS NOT NULL
+                 )
+                 SELECT persona_id, dominant FROM ranked WHERE rn = 1",
+            )?;
+            let rows = stmt.query_map([], |row| {
+                let persona_id: String = row.get("persona_id")?;
+                let dominant: String = row.get("dominant")?;
+                let axis = ResourceAxis::parse(&dominant)
+                    .ok_or_else(|| bad_token("dominant", &dominant))?;
+                Ok((persona_id, axis))
+            })?;
+            Ok(
+                collect_rows(rows, "run_resources::latest_dominant_by_persona")
+                    .into_iter()
+                    .collect(),
+            )
+        }
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::init_test_db;
+
+    #[test]
+    fn latest_dominant_is_the_newest_run_per_persona() {
+        let pool = init_test_db().unwrap();
+        // p1: an old cpu-heavy run, then a newer ram-heavy one.
+        insert(&pool, &summary("e1", Some("p1"), None, 0.9, 0.1, None, 1.0)).unwrap();
+        insert(&pool, &summary("e2", Some("p1"), None, 0.1, 0.8, None, 2.0)).unwrap();
+        insert(
+            &pool,
+            &summary("e3", Some("p2"), None, 0.1, 0.1, Some(0.7), 1.0),
+        )
+        .unwrap();
+        insert(&pool, &summary("e4", None, None, 0.9, 0.1, None, 9.0)).unwrap();
+        let latest = latest_dominant_by_persona(&pool).unwrap();
+        assert_eq!(latest.len(), 2, "a run with no persona is not anyone's");
+        assert_eq!(latest.get("p1"), Some(&ResourceAxis::Ram));
+        assert_eq!(latest.get("p2"), Some(&ResourceAxis::Gpu));
+    }
 
     fn summary(
         run_id: &str,

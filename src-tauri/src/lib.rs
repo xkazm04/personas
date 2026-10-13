@@ -54,6 +54,10 @@ mod logging;
 /// MCP tool implementations (also compiled into the `personas-mcp` binary).
 /// Exposed from the lib so the split engine can call tools in-process.
 pub mod mcp_server;
+/// The device mesh's app-layer half: this device's snapshot, the `mesh_verb`
+/// executor, and the queue move (spark device-mesh). The wire is the engine's.
+#[cfg(feature = "p2p")]
+mod mesh;
 mod notifications;
 /// Active-process / run bookkeeping for CLI-backed commands.
 /// Moved out of the crate root in W1; re-exported below so every existing

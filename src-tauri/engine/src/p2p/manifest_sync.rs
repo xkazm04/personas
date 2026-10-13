@@ -51,10 +51,14 @@ impl ManifestSyncCounters {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestSyncMetrics {
+    #[ts(type = "number")]
     pub sync_rounds: u64,
+    #[ts(type = "number")]
     pub sync_successes: u64,
+    #[ts(type = "number")]
     pub sync_failures: u64,
     pub avg_sync_duration_ms: Option<f64>,
+    #[ts(type = "number")]
     pub total_entries_received: u64,
 }
 

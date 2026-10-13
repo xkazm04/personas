@@ -64,7 +64,8 @@ use tauri::{AppHandle, Emitter, Listener, Manager};
 
 use crate::db::models::{
     FleetSessionJobPayload, FleetSessionJobReceipt, RemoteJob, RemoteJobDirection, RemoteJobStatus,
-    RemoteSessionCommand, REMOTE_JOB_KIND_FLEET_SESSION,
+    RemoteSessionCommand, REMOTE_JOB_KIND_CLI_MAIL, REMOTE_JOB_KIND_FLEET_SESSION,
+    REMOTE_JOB_KIND_MESH_VERB,
 };
 use crate::db::repos::resources::remote_jobs as repo;
 use crate::engine::event_registry::event_name;
@@ -153,6 +154,13 @@ impl RemoteJobExecutor for AthenaRemoteJobs {
         let app = self.app.clone();
         if job.kind == REMOTE_JOB_KIND_FLEET_SESSION {
             crate::commands::fleet::remote_exec::execute(app, job, handle).await;
+            return;
+        }
+        // A device-mesh verb is one closed, local action (switch a persona,
+        // reorder the queue), not an Athena turn: the mesh executor runs it
+        // and answers with a receipt. Her master switch does not apply.
+        if job.kind == REMOTE_JOB_KIND_MESH_VERB {
+            crate::mesh::verbs::execute(app, job, handle).await;
             return;
         }
         if athena_switched_off(&app) {
@@ -529,6 +537,12 @@ fn episode_worthy(job: &RemoteJob) -> bool {
     if job.direction != RemoteJobDirection::Outbound {
         return false;
     }
+    // The device mesh's machine traffic - a verb's receipt, a CLI mail's
+    // delivery - is coordination, not something she did or was asked: one
+    // episode per toggle or per mail would flood her recall window.
+    if job.kind == REMOTE_JOB_KIND_MESH_VERB || job.kind == REMOTE_JOB_KIND_CLI_MAIL {
+        return false;
+    }
     job.status.is_terminal() || (job.status == RemoteJobStatus::Running && job.last_seq == 1)
 }
 
@@ -798,6 +812,7 @@ mod tests {
             instruction: "go".into(),
             payload_json: None,
             receipt: None,
+            mesh_receipt: None,
             status,
             summary: None,
             refusal_reason: None,
@@ -858,6 +873,19 @@ mod tests {
                 status,
                 1
             )));
+        }
+    }
+
+    /// The device mesh's machine traffic never becomes an episode: a toggle
+    /// or a mailbox delivery is coordination, not a memory.
+    #[test]
+    fn mesh_verbs_and_cli_mail_earn_no_episode() {
+        for kind in [REMOTE_JOB_KIND_MESH_VERB, REMOTE_JOB_KIND_CLI_MAIL] {
+            for status in [RemoteJobStatus::Running, RemoteJobStatus::Completed] {
+                let mut j = job(RemoteJobDirection::Outbound, status, 1);
+                j.kind = kind.into();
+                assert!(!episode_worthy(&j), "{kind} {status:?}");
+            }
         }
     }
 
