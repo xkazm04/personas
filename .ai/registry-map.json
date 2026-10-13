@@ -16780,7 +16780,11 @@
           "revision": 5,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:28 Searched for toWorld, toScreen, zoom-to-point, and force-directed with zero hits across context directories; mastermind-popovers provides HTML modal and popover drill-down overlays rather than a 2D spatial canvas graph.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:59c31182b8b6b4db",
+          "evaluatedRevision": 5
         }
       ],
       "governance": "governed"
@@ -28441,7 +28445,11 @@
           "revision": 5,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/layout/ContentLayout.tsx:51 Searched for toWorld, toScreen, zoom-to-point, and force-directed with zero hits across context directories; shared-components-layout provides page shell and document scaffolding primitives rather than a 2D spatial canvas graph.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:59c31182b8b6b4db",
+          "evaluatedRevision": 5
         },
         {
           "subject": "accessibility",
@@ -34836,13 +34844,16 @@
           "score": 0,
           "why": [],
           "confidence": "strong",
-          "state": "unknown",
+          "state": "not-applicable",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "added by /conform triage 2026-08-29: the golden path precondition governs this context; the matcher paired on vocabulary",
+          "evidence": "src/features/triggers/sub_studio/TriggerStudioCanvas.tsx:17 Searched for toWorld, toScreen, zoom-to-point, and force-directed with zero hits across context files; TriggerStudioCanvas delegates to StudioPatchbay, which renders a linear ledger list rather than a 2D spatial canvas graph.",
           "digest": "sha256-b2:59c31182b8b6b4db",
           "revision": 5,
-          "changedAt": "2026-09-26"
+          "changedAt": "2026-09-26",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:59c31182b8b6b4db",
+          "evaluatedRevision": 5
         },
         {
           "subject": "draft-editing",
@@ -36893,12 +36904,11 @@
           "changedAt": "2026-09-26",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:42 hover state lives in the canvas component and each unmemoized node gets a fresh closure (:145), so every hover re-renders every node and edge; node markup (:192) has no role, tabIndex or key handler.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256-b2:de04d3ae6ea0cc73",
-          "evaluatedRevision": 4,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:42 Local hover state in GraphCanvas triggers parent re-renders that re-evaluate the full node and edge collection, defeating memoization and causing frame drops on continuous pointer moves.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:59c31182b8b6b4db",
+          "evaluatedRevision": 5,
+          "revisionsBehind": 1
         },
         {
           "subject": "supply-chain",

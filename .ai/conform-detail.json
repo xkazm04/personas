@@ -3388,69 +3388,94 @@
       "subject": "canvas-graph",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-6",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T09:28:13.108Z",
       "techniques": [
         {
-          "technique": "viewport-transform",
-          "verdict": "unknown",
-          "evidence": "src/features/teams/sub_canvas/ - path does not exist; nothing to read."
-        },
-        {
-          "technique": "render-budget",
-          "verdict": "unknown",
-          "evidence": "src/features/teams/sub_canvas/ - path does not exist; nothing to read."
+          "technique": "canvas-accessibility",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:58 Portfolio level navigation manages project focus states, but no 2D spatial canvas roving focus exists."
         },
         {
           "technique": "direct-manipulation",
-          "verdict": "unknown",
-          "evidence": "src/features/teams/sub_canvas/ - path does not exist; nothing to read."
-        },
-        {
-          "technique": "graph-layout",
-          "verdict": "unknown",
-          "evidence": "src/features/teams/sub_canvas/ - path does not exist; nothing to read."
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_assignments/useAssignmentProgressListener.ts:19 Assignments listen to backend orchestrator progress events rather than direct pointer manipulation or node dragging."
         },
         {
           "technique": "edge-management",
-          "verdict": "unknown",
-          "evidence": "src/features/teams/sub_canvas/ - path does not exist; nothing to read."
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:4 Soundings visualizes relations as ocean currents in a custom depth chart, not as vector graph edges between draggable nodes."
         },
         {
-          "technique": "canvas-accessibility",
-          "verdict": "unknown",
-          "evidence": "src/features/teams/sub_canvas/ - path does not exist; nothing to read."
+          "technique": "graph-layout",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:7 The legacy Hex Mosaic canvas was retired on 2026-09-25 and DAG canvas auto-layout is absent from the context."
+        },
+        {
+          "technique": "render-budget",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_assignments/useAssignmentNotificationDispatcher.ts:14 Status sets manage notification deduplication for assignments outside the UI rendering path."
+        },
+        {
+          "technique": "viewport-transform",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_assignments/index.ts:1 Context exports assignment tracking listeners with no viewport transform or camera coordinate conversions."
         }
       ],
-      "registryProposal": "Not a standard question but a map-health one, and it recurs: this context row names twelve vanished paths, and the docs-sync context row names a thirteenth (src-tauri/src/commands/infrastructure/git_checkpoint.rs), as do three paths in execution-detail-inspector (ExecutionDetailContent.tsx, executionDetailTypes.ts, inspector/ToolCallCard.tsx). The map builder should verify path existence at generation time and mark a row whose paths have largely disappeared as stale rather than emitting it for judgement; a worker cannot distinguish 'the feature was deleted' from 'the feature was renamed and the subject still governs it'."
+      "withdrawn": {
+        "worker": "d849730c-222f-4517-b5fc-14d6ef2ca524",
+        "state": "not-applicable",
+        "at": "2026-10-13T09:29:18.060315+00:00",
+        "reason": "reviewer (sonnet): The primary anchor useAssignmentProgressListener.ts:10 is only a hook signature, so it does not show that a graph canvas is absent. MastermindPage.tsx:58 is an import line, not the 'portfolio navigation' the seat describes. The same file imports clearCanvasFocus and publishCanvasScene, and its heade"
+      }
     },
     "77b8c703-0803-42bc-808a-f255725cc293/canvas-graph": {
       "context": "vault-dependency-graph",
       "subject": "canvas-graph",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-9",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T09:28:13.108Z",
+      "worker": "d849730c-222f-4517-b5fc-14d6ef2ca524",
       "techniques": [
         {
           "technique": "render-budget",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:145 onClick={() => onNodeClick(node.id)} is a new closure per node per render into an unmemoized component, so hover (:42) re-renders the whole graph."
+          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:145 Each node receives an inline arrow callback allocated anew on every render, defeating child memoization during hover state changes."
         },
         {
           "technique": "canvas-accessibility",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:192 node markup (a motion.g with pointer handlers only) has no role, no tabIndex, no key handler and no list twin, so keyboard and screen-reader users cannot reach any credential node."
+          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:192 Interactive SVG node elements render with mouse click and hover handlers but lack role, tabIndex, and keyboard listeners for roving focus."
+        },
+        {
+          "technique": "edge-management",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:120 Edges attach to node centers instead of deriving boundary anchor geometry using node radii, and edges have no fat hit-testing stroke."
         },
         {
           "technique": "graph-layout",
-          "verdict": "conformant",
-          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:55 layout is a memoized, pure, deterministic derivation (computeGraphLayout) over nodes, edges and container size."
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_dependencies/graphLayout.ts:65 Node spacing is parameterized on members.length and distance on ordinal index, causing runtime arrivals to re-seat every node in the cluster."
+        },
+        {
+          "technique": "viewport-transform",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:55 Layout positions scale directly to container pixel dimensions with no coordinate authority module or screen-to-world conversion."
         },
         {
           "technique": "direct-manipulation",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:198 the only pointer interaction is click-to-select; there is no drag, connect or rewire."
+          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:93 The credential dependency view is a read-only topology visualization without drag-and-drop node placement or edge-authoring interactions."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:42 hover state lives in the canvas component and each unmemoized node gets a fresh closure (:145), so every hover re-renders every node and edge; node markup (:192) has no role, tabIndex or key handler.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by d849730c-222f-4517-b5fc-14d6ef2ca524"
         }
       ]
     },
@@ -18926,6 +18951,129 @@
           "technique": "recycle-by-content-type",
           "verdict": "not-applicable",
           "evidence": "src/features/shared/chrome/CommandPaletteResults.tsx:84 Result buttons use React identity; this context does not manage a reusable host-content pool."
+        }
+      ]
+    },
+    "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc/canvas-graph": {
+      "context": "triggers-studio",
+      "subject": "canvas-graph",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T09:28:13.108Z",
+      "worker": "d849730c-222f-4517-b5fc-14d6ef2ca524",
+      "techniques": [
+        {
+          "technique": "canvas-accessibility",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:118 Accessible attributes exist on drawer buttons of the patchbay ledger, but canvas roving focus across 2D spatial nodes does not apply."
+        },
+        {
+          "technique": "direct-manipulation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:181 Patch cables are selected via modal options and card clicks in a scrolling ledger rather than spatial drag-and-drop gestures or pointer capture."
+        },
+        {
+          "technique": "edge-management",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:92 Routes are rendered as structured list rows in a ledger rather than vector paths requiring anchor computation or fat-stroke hit testing."
+        },
+        {
+          "technique": "graph-layout",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:72 Routing state structures rows for a vertical ledger without auto-layout algorithms or 2D node placement coordinates."
+        },
+        {
+          "technique": "render-budget",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:245 Progressive reveal tracks row cascades in a DOM list; viewport culling and pan transform isolation do not apply."
+        },
+        {
+          "technique": "viewport-transform",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/TriggerStudioCanvas.tsx:16 The entry container uses CSS flex layout for the ledger without world-screen coordinate conversions or camera transforms."
+        }
+      ]
+    },
+    "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0/canvas-graph": {
+      "context": "shared-components-layout",
+      "subject": "canvas-graph",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T09:28:13.108Z",
+      "worker": "d849730c-222f-4517-b5fc-14d6ef2ca524",
+      "techniques": [
+        {
+          "technique": "canvas-accessibility",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/PanelTabBar.tsx:73 Tab bar implements keyboard navigation for linear tabs, but spatial 2D roving canvas focus is not applicable."
+        },
+        {
+          "technique": "direct-manipulation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/SectionCard.tsx:103 Cards render static or collapsible document containers without pointer capture or drag-to-connect interactions."
+        },
+        {
+          "technique": "edge-management",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/ActionRow.tsx:18 ActionRow organizes horizontal button toolbars without graph edges or edge-management routing."
+        },
+        {
+          "technique": "graph-layout",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/settings/SettingsScaffold.tsx:5 SettingsScaffold organizes sections with a vertical scroll-spy nav rail rather than 2D graph auto-layout algorithms."
+        },
+        {
+          "technique": "render-budget",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/DeferUntilIdle.tsx:56 DeferUntilIdle schedules below-fold DOM commits via requestIdleCallback; viewport culling and pan transform budgeting do not apply."
+        },
+        {
+          "technique": "viewport-transform",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/ContentLayout.tsx:3 Content layout manages native document scrolling with header scroll shadows rather than a 2D camera viewport transform."
+        }
+      ]
+    },
+    "ca705961-f138-494a-b0fe-f882c674d25a/canvas-graph": {
+      "context": "mastermind-popovers",
+      "subject": "canvas-graph",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T09:28:13.108Z",
+      "worker": "d849730c-222f-4517-b5fc-14d6ef2ca524",
+      "techniques": [
+        {
+          "technique": "canvas-accessibility",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:20 Popover handles Escape key for modal dismissal, but canvas roving keyboard navigation does not apply to floating list overlays."
+        },
+        {
+          "technique": "direct-manipulation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:63 Pointer events stop propagation to prevent dismissing the popover shell; no node dragging or canvas gestures exist."
+        },
+        {
+          "technique": "edge-management",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/DimListPopover.tsx:36 List items render colored status indicator dots in an HTML list rather than graph edges."
+        },
+        {
+          "technique": "graph-layout",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/DimListPopover.tsx:18 Popover takes caller-clamped viewport coordinate offsets for popup positioning rather than executing graph auto-layout algorithms."
+        },
+        {
+          "technique": "render-budget",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/useEventCallback.ts:9 Provides referentially stable callback wrappers for event handlers, but viewport culling and spatial render budgeting do not apply to popovers."
+        },
+        {
+          "technique": "viewport-transform",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:62 Popover uses absolute/fixed CSS positioning offsets without world-screen camera coordinate transformations."
         }
       ]
     }
