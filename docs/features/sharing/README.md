@@ -236,6 +236,119 @@ branch remote/ab12cd34/ef56ab78 at 0123456, verified".
 paired device that is not connected returns a `queued` job instead of failing
 with `NetworkOffline`. It goes out when the two devices next see each other.
 
+### `mesh.rs` - the device mesh
+
+Paired devices keep each other's state current and can act on each other through four commands
+(`src/api/network/mesh.ts`):
+
+| Command | What it does |
+|---|---|
+| `mesh_device_snapshots` | THIS device first (`isSelf`, always `live`, its snapshot built now), then every paired device - home first, then by name - with its reachability, its last snapshot, `liveness`, when that snapshot landed here (`receivedAtMs`) and its newest probe verdict (`lastProbe`). Empty while the device link is not running. |
+| `mesh_send_verb(peerId, payload)` | Runs one closed `MeshVerbPayload` on a paired device as a durable `mesh_verb` remote job. Returns the outbound job; an offline device gets it `queued` and runs it when it wakes. The outcome arrives as the job's `meshReceipt` (`ok`, or `ok: false` with the reason). |
+| `mesh_queue_move(sessionId, peerId)` | Moves one QUEUED local fleet entry to a paired device (below). |
+| `mesh_probe_results(peerId)` | The onboarding/probe verdicts recorded against one device, newest first. A skipped test is `passed: false, skipped: true`. |
+
+#### Snapshots: what one device tells the others
+
+A `DeviceSnapshot` carries the sender's whole-host CPU and RAM share (GPU is `null`: no
+whole-host GPU reading exists yet), how many runs are live (fleet sessions plus started persona
+executions), its queue (held `notBefore` entries included), and every persona with its
+`enabled` switch, its project and that project's switch, whether it is running, and the
+dominant resource axis of its newest measured run.
+
+- It travels ONLY to paired devices that are connected, over the authenticated link - never
+  to a stranger and never over mDNS. A snapshot from an unpaired peer is dropped, and one that
+  claims to be a different device than the one that sent it is refused.
+- It is sent on every 15 s health tick, right after a link comes up, and within 2 s of a change
+  (the queue changed, a fleet session changed state, or a mesh verb switched something). A
+  persona switched in this device's own UI reaches peers on the next tick.
+- The receiver keeps only the latest one, in memory. A snapshot older than 45 s by the
+  RECEIVER's clock reads `unknown`, never `live`, and the device strip hears about that change
+  once (`network:device-snapshot`). After a restart every peer is `unknown` until its next
+  snapshot lands.
+
+#### Verbs: what one device may ask another to do
+
+A `mesh_verb` job runs exactly one of: `ping` (the receipt carries `"<version> <features>"`),
+`persona_set_enabled`, `project_set_enabled`, `queue_reorder`, `queue_cancel`,
+`queue_start_now`. Each goes through the same door its local twin uses: the persona switch is the
+one the cloud's pause/resume uses (an OFF->ON flip records a wake, and a persona whose project is
+switched off is refused with `project_off: <project>`), the project switch is the project
+switch, and the three queue verbs are the Monitor's own queue commands. A verb never acts on
+something the receiving device does not have: an unknown persona, project or session answers
+`ok: false` with `not_found: ...`. A refusal finishes the job as `failed`; it is never reported
+as a success.
+
+#### Moving queued work to another device
+
+`mesh_queue_move` is cancel-after-accept:
+
+- The entry must still be queued here (`not_queued` otherwise), its project must have a GitHub
+  URL (`no_github_url`: the other device finds the project by it), and the other device must be
+  CONNECTED. An offline device is refused (`peer_offline`) and no job is created, because a job
+  that waited in the outbox would run there while the entry also ran here.
+- The entry goes out as an ordinary `fleet_session` remote job through the one dispatch path
+  (the branch is minted there). Only when the other device accepts it is the local entry
+  cancelled, with the reason `moved:<peer8>`. A refusal leaves the entry where it was and
+  returns the refused job with its reason. If the send loses its answer mid-way, the outbox
+  job is withdrawn and the entry stays: there is always exactly one copy.
+
+#### The CLI mailbox
+
+A `cli_mail` remote job (topic + a body of at most 16 KB) is how two Claude Code CLIs
+coordinate through their apps (the `/mesh-onboard` skill, via the `/mesh` door). The receiving
+device stores it as the inbound job and completes it on arrival; reading it back
+(`RemoteJobs::list_cli_mail(sinceMs, topicPrefix)`) returns it oldest first and does not delete
+it. A body over 16 KB is refused by the sender and, if it got past that, by the receiver.
+
+Mesh verbs and CLI mail never become Athena episodes: they are coordination, not memory.
+
+### The `/mesh` door - driving the mesh from a terminal
+
+The in-app HTTP server (`local_http`, `127.0.0.1:17400+`) mounts a `/mesh` router
+(`src-tauri/src/local_http/mesh.rs`) so a Claude Code session in a terminal can drive ITS OWN
+app's mesh: the `/mesh-onboard` skill (`scripts/mesh/`) pairs two desktops and runs the mutual
+tests through it, and the two CLIs never need the operator to relay a message.
+
+- **Auth.** The same layer as `/dev-tools`: the `Host` allowlist plus the local token
+  (`x-personas-local-token`), read from the handshake file. An auth refusal is plain text
+  (401); an unrouted path is an empty 404; every refusal a `/mesh` handler makes is
+  `{ "error", "code" }` with `code` one of `bad_request`, `not_found`, `refused`,
+  `p2p_unavailable`, `peer_not_paired`, `code_mismatch`, `no_pending_pairing`, `internal`.
+  No route ever returns the token.
+- **Routes.** `status`, `diagnostics`, `devices`, `connect`, `pair/request`, `pair/pending`,
+  `pair/confirm`, `verb`, `dispatch`, `session-command`, `queue/move`, `queue/enqueue-test`,
+  `queue/cancel-test`, `projects`, `mail` (GET and POST), `jobs/{id}`, `probe`. Each is one call
+  into the same engine/fleet path the app's own commands use; the wire contract is the
+  Director's `mesh-door-contract.md`.
+- **Pairing with a typed code.** `pair/request` (on the device with the SMALLER peer id) returns
+  the six-digit code it shows. `pair/pending` lists pairings in flight with their expiry and
+  NEVER carries the code. `pair/confirm { peerId, code }` on the other device checks the typed
+  code against the fingerprint that device derived itself (digits only, so `042-917`,
+  `042 917` and `042917` are one code; constant-time compare). A wrong code is `409
+  code_mismatch` and the pairing stays for a retype; the fifth wrong code withdraws it (the
+  initiator is told) and every failure answers only after a fixed 350 ms. No pairing waiting is
+  `404 no_pending_pairing`. The app's own Confirm button is unchanged.
+- **Diagnostics** (`GET /mesh/diagnostics`): `p2p_built`, `network_running`, `udp_bound`,
+  `firewall_rule` (an enabled inbound rule allows UDP on the QUIC port for this app, and no block
+  rule covers it; read with `netsh advfirewall firewall show rule name=all dir=in verbose`),
+  `network_profile` (every network carrying LAN traffic is Private or Domain; read with
+  `Get-NetConnectionProfile`), `mdns_sees_peers` (a discovered device refreshed in the last
+  60 s). Each red check carries the exact command or Settings path that fixes it. A probe that
+  cannot run (or prints localized output) is red with `could not read: <why>`, never green. On
+  macOS/Linux the two Windows checks read `not checked on this platform`.
+- **Onboarding-only routes.** `queue/enqueue-test` puts a HEADLESS fleet entry for a project on
+  this device (`Reply with the single word MESH-OK and exit.`, origin Manual, run label
+  `mesh-onboard`, gate 10 minutes ahead so it never starts here) through the fleet's one
+  admission door; `queue/cancel-test` cancels such an entry and nothing else. Both refuse
+  without the header `x-mesh-onboard: 1`.
+- **One-box testing (dev only).** An instance started with `PERSONAS_DATA_DIR` ALSO writes its
+  handshake to `<PERSONAS_DATA_DIR>/local-http.json` (same restrict-then-rename write), so a
+  terminal can drive one of two instances on the same machine; `/mesh/status.dataDirIsolated`
+  says so, and only such an instance accepts `connect { address: "ip:port" }`. Without the env
+  nothing changes. Note: both isolated instances still overwrite the default
+  `~/.personas/local-http.json`.
+
 ### `exposure.rs` — locally exposed resources
 
 | Command | Behavior |
@@ -279,10 +392,32 @@ Pairing (above) makes two of the operator's own machines trust each other. Once 
 
 Code: `src/stores/slices/network/remoteSessionsSlice.ts` (state, the p2p gate, the reconcile), `src/lib/network/remoteSessionModel.ts` (the client liveness rule, merge and receipt verdict, pure and tested), `src/features/shared/dispatch/` (the picker, the remote dispatch, the receipt line), `src/features/settings/sub_devices/` (the history).
 
+### Two devices on one machine (dev only)
+
+For testing, two isolated instances can form a mesh on ONE machine. Every part of this is
+OFF unless `PERSONAS_DATA_DIR` is set (an isolated test instance):
+
+- `PERSONAS_P2P_PORT` replaces the QUIC port (4242 by default);
+- the identity key lives in its own OS-keyring entry,
+  `ed25519-identity-key:<first 12 hex of sha256(the data dir)>`, so the two instances (and the
+  operator's real install) never share a private key;
+- `NetworkService::connect_to_address("ip:port")` dials a peer by address (the `/mesh/connect
+  {address}` door). Pairing is unchanged: a peer connected this way is authenticated, not
+  trusted.
+
+Without `PERSONAS_DATA_DIR` the port, the keyring entry and the refusal to dial by address are
+exactly what they were before.
+
 ## Storage and engine
 
 - Bundle and share-link semantics live in `src-tauri/src/engine/bundle.rs` + `src-tauri/src/engine/share_link.rs`.
 - P2P transport (mDNS, QUIC, manifest sync) lives in `src-tauri/src/engine/p2p/` — see the network-exposure execution surface in code for cancellation discipline and IPv6 dual-stack binding.
+- The device mesh adds `engine::p2p::mesh` (the snapshot cache, liveness, and the send on the
+  health tick, on link-up and on change), the `mesh_verb` / `cli_mail` kinds in
+  `engine::p2p::remote_jobs`, and an app-layer half in `src-tauri/src/mesh/` (the snapshot
+  provider, the verb executor and the queue move), installed at boot before the network starts.
+  `mesh_probe_results` rows live in the append-only `mesh_probe_results` table (`skipped` column
+  added by `e66_device_mesh`).
 
 ## Deep links
 
@@ -298,3 +433,8 @@ Code: `src/stores/slices/network/remoteSessionsSlice.ts` (state, the p2p gate, t
 - **The p2p feature is not exercised by CI.** It compiles only under `desktop-full`, while CI runs `--features desktop`. The non-gated pieces (the owned-devices repo, the command-registration structural test) do run there.
 - The device link has **not been verified across two live machines.** Everything above is covered by unit tests, wire round-trips and both cargo feature configurations; the handshake, ceremony and job round-trip have never run over real QUIC between two processes.
 - IPv6 mDNS and dual-stack QUIC binding were enabled mid-2026 — share-link hosts on IPv6 LAN addresses now resolve correctly. Pre-fix bundles created against the old IPv4-only formatting may need reissuing if their hosts moved.
+- A persona switched in this device's own UI has no change event, so peers see it on the next
+  15 s snapshot rather than within 2 s.
+- Host GPU share is always `null` in a snapshot: the measured-resources GPU reader is
+  per-process.
+- Unpairing a device does not cancel work already running for it (a recorded deviation).

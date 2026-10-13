@@ -123,6 +123,35 @@ to one of the operator's other paired devices.
   `remote_instruct`, and corrects the reachability rule: an unreachable device
   is no longer a dead end, so "sent" is never the word for a queued send.
 
+### Acting on another device's agents and queue (`mesh_set_agent_enabled`, `mesh_queue_move`)
+
+With the device mesh, Athena can act on a paired device's state, not only send it work:
+
+- **`mesh_set_agent_enabled { device?, persona, enabled }`** switches ONE agent on that device
+  on or off. The persona is matched by id or exact name against that device's last snapshot
+  (the names on this machine mean nothing there); an unknown or ambiguous name is refused with
+  the reason, and a device that has not reported yet is refused with "it reports every 15 s".
+  It goes out as one `persona_set_enabled` mesh verb, so it is that device's own switch:
+  nothing is copied, nothing double-fires.
+- **`mesh_queue_move { session, device? }`** moves one of THIS device's QUEUED fleet sessions
+  there through the same path as the Monitor's "Move to": the entry is cancelled here only once
+  the other device accepts, a refusal leaves it queued here, and only a connected device can
+  take it.
+- **Consent.** Exactly `remote_instruct`'s rule (`gate_remote_instruct`): autonomous mode OFF
+  reaches the home device only, behind an approval card, and refuses any other device; ON fires
+  to any paired device. Both ops are in `DEVICE_GATED_ACTIONS`, so the autopilot routes them to
+  the device arm before its generic path, and each executor re-checks the rule at fire time.
+  Neither is on any auto-fire list.
+- **What she sees.** Her Paired devices block now gives each device's last reported load
+  (CPU / RAM / GPU share, rounded; GPU left out when that device cannot read it), its running
+  and queued counts, and the two resource axes its agents most often lean on, e.g.
+  `- **Desk** - home device · reachable · load cpu 12% ram 41% · 1 running, 2 queued · agents mostly cpu (3), ram (2)`.
+  A report older than 45 s reads `load unknown`. The block's budget rose from 200 to 360
+  tokens; it still costs nothing when nothing is paired.
+- **Outcome.** A mesh verb's result lands on the job's receipt and the device's Monitor plate,
+  not as a note back to her, so she says she asked rather than promising a report.
+- Constitution v71 teaches both ops.
+
 ## Footer avatar & hold-to-talk
 
 The footer initiation control is Athena's actual animated avatar (`AthenaAvatar`), not a generic glyph — her idle/thinking/speaking video reflects what she's doing at a glance. The button has two gestures:
