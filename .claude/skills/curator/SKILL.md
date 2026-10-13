@@ -401,6 +401,13 @@ python $L multi schedule --at 01:00 --until 06:30 --terminal-owns   # Task Sched
 python $L multi unschedule
 ```
 
+**The task lives at `\Personas\CuratorNight`** (Task Scheduler folder `\Personas\`; its Description is
+`Curator night|<at>-<until>`). That folder is what the app's Activity board lists on its
+**Schedules** plate - a lamp, the next start in Prague time and an on/off switch - so the operator
+sees and flips the night from the Monitor; `schtasks /Change /TN \Personas\CuratorNight /DISABLE`
+does the same from a shell. `schedule` deletes the root-level `PersonasCuratorNight` it used before
+2026-10-13.
+
 **Where it judges.** Every project the registry's `projects.json` places on this machine (resolved
 through its gitignored `.machine.local.json`) that carries a `.ai/registry-map.json` - Personas,
 pof, kp, ascent, systedo-case, politicas, goat, gravitone, tracklight, pumper, personas-web,

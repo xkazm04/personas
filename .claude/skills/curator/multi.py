@@ -2064,7 +2064,10 @@ def night_report(tag, start, stop_reason, events, before, after) -> str:
 # Detached starts and the schedule
 # --------------------------------------------------------------------------
 
-TASK_NAME = "PersonasCuratorNight"
+# In the `\Personas\` Task Scheduler folder, which the app's Supply deck lists as the operator's
+# scheduled work (fleet_scheduled_tasks). Its Description is `<title>|<window>`: the plate's line.
+TASK_NAME = "\\Personas\\CuratorNight"
+LEGACY_TASK_NAMES = ("PersonasCuratorNight",)  # the root-level name before 2026-10-13
 
 
 def _detached(argv: list[str], log: pathlib.Path) -> int:
@@ -2162,8 +2165,20 @@ def schedule(a: argparse.Namespace) -> dict:
     r = subprocess.run(["schtasks", "/Create", "/F", "/SC", "DAILY", "/TN", TASK_NAME, "/ST", a.at,
                         "/TR", f'"{runner}" "{launcher}"'],
                        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    described = None
+    if r.returncode == 0:
+        # schtasks has no description flag; the plate reads `<title>|<window>` from it.
+        folder, leaf = TASK_NAME.rsplit("\\", 1)
+        ps = (f"$t = Get-ScheduledTask -TaskPath '{folder}\\' -TaskName '{leaf}'; "
+              f"$t.Description = 'Curator night|{a.at}-{a.until}'; Set-ScheduledTask -InputObject $t | Out-Null")
+        d = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", ps],
+                           capture_output=True, text=True, encoding="utf-8", errors="replace")
+        described = d.returncode == 0 or (d.stderr or "").strip()[:300]
+        for legacy in LEGACY_TASK_NAMES:  # one task, one place: retire the root-level original
+            subprocess.run(["schtasks", "/Delete", "/F", "/TN", legacy], capture_output=True, text=True,
+                           encoding="utf-8", errors="replace")
     return {"ok": r.returncode == 0, "task": TASK_NAME, "at": a.at, "until": a.until, "runs": f"{runner} {launcher}",
-            "schtasks": (r.stdout or r.stderr).strip()}
+            "described": described, "schtasks": (r.stdout or r.stderr).strip()}
 
 
 def unschedule() -> dict:
