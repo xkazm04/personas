@@ -37,6 +37,7 @@ test('helpers: short8 matches the app rule, roles, codes, terminal states, recei
   assert.equal(normalizeCode('042-91'), null);
   for (const s of ['queued', 'pending', 'running']) assert.equal(isTerminal(s), false);
   for (const s of ['completed', 'failed', 'refused', 'cancelled']) assert.equal(isTerminal(s), true);
+  assert.deepEqual(jobReceipt({ meshReceipt: { verb: 'ping', ok: true, detail: '1.2.3 p2p' }, receipt: null }), { verb: 'ping', ok: true, detail: '1.2.3 p2p' }, 'amendment A1: meshReceipt first');
   assert.deepEqual(jobReceipt({ receiptJson: '{"verb":"ping","ok":true,"detail":"1.2.3 p2p"}' }), { verb: 'ping', ok: true, detail: '1.2.3 p2p' });
   assert.deepEqual(jobReceipt({ receiptJson: null, receipt: { branch: 'remote/a/b' } }), { branch: 'remote/a/b' });
   assert.equal(jobReceipt({ receiptJson: null, receipt: null }), null);

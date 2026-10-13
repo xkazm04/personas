@@ -231,6 +231,7 @@ export async function runSuite({
         await client.probe({
           peerId, testId,
           passed: rec.local.outcome === 'passed',
+          skipped: rec.local.outcome === 'skipped',
           detail: rec.local.outcome === 'skipped' ? `skipped: ${rec.local.detail}` : rec.local.detail,
         });
         rec.probe = { recorded: true };
@@ -486,13 +487,28 @@ const ACTS = {
       return q.some((e) => e.sessionId === sessionId);
     };
     await ctx.waitFor('entry_visible', async () => ((await inQueue()) ? { done: true } : { done: false, observed: 'the held entry is not in this device\'s queue' }), timing.entryVisibleMs);
-    const sent = await ctx.step('move_sent', () => sendJob(() => client.queueMove(sessionId, peerId)));
-    if (sent.status === 'refused') ctx.fail('move_sent', `the peer refused the move: ${sent.refusalReason}; held entry ${short8(sessionId)} stays queued here and will run the one-word prompt locally in 10 min`);
-    await ctx.waitFor('move_accepted', async () => {
-      const j = await client.job(sent.id);
-      if (j.status === 'refused') throw new StepFailure('move_accepted', `the peer refused the move: ${j.refusalReason}`);
-      return j.status === 'queued' ? { done: false, observed: 'move job still queued (peer offline?)' } : { done: true, value: j.status };
-    }, timing.moveAcceptMs);
+    // A refused move leaves the held entry queued here (cancel-after-accept); cancel it so the
+    // one-word prompt never runs locally once its 10 min gate passes (amendment A4).
+    const cancelHeld = () => client.cancelTest(sessionId).then((r) => (r && r.cancelled ? 'held entry cancelled here' : 'held entry was no longer queued'));
+    let sent;
+    try {
+      sent = await ctx.step('move_sent', () => sendJob(() => client.queueMove(sessionId, peerId)));
+    } catch (e) {
+      throw await cleanup(e, 'cancel-test', cancelHeld);
+    }
+    if (sent.status === 'refused') {
+      const e = new StepFailure('move_sent', `the peer refused the move: ${sent.refusalReason}`);
+      throw await cleanup(e, 'cancel-test', cancelHeld);
+    }
+    try {
+      await ctx.waitFor('move_accepted', async () => {
+        const j = await client.job(sent.id);
+        if (j.status === 'refused') throw new StepFailure('move_accepted', `the peer refused the move: ${j.refusalReason}`);
+        return j.status === 'queued' ? { done: false, observed: 'move job still queued (peer offline?)' } : { done: true, value: j.status };
+      }, timing.moveAcceptMs);
+    } catch (e) {
+      throw await cleanup(e, 'cancel-test', cancelHeld);
+    }
     await ctx.waitFor('entry_gone', async () => ((await inQueue()) ? { done: false, observed: 'the moved entry is still queued here' } : { done: true }), timing.entryGoneMs);
     const job = await ctx.waitJob('wait_peer_terminal', sent.id, timing.moveTerminalMs);
     requireCompleted(ctx, 'wait_peer_terminal', job);

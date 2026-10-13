@@ -66,6 +66,12 @@ pub(super) const ALLOWED_ACTIONS: &[&str] = &[
     // device (its own branch, pushed, verified on return). Same device rule as
     // `remote_instruct` (`DEVICE_GATED_ACTIONS`), same surface in a lite build.
     "remote_fleet_dispatch",
+    // The device mesh (spark device-mesh, wave 3 #11): switch one of a paired
+    // device's agents on or off, and move one of THIS device's queued fleet
+    // entries there. Both carry the same device rule (`DEVICE_GATED_ACTIONS`,
+    // `gate_remote_instruct`) and are on no auto-fire list.
+    "mesh_set_agent_enabled",
+    "mesh_queue_move",
     // Layered voice. A REFLECTION-originated register change: the sleep cycle
     // files it as an approval row directly and the executor applies it with
     // source `reflection`. The chat op of the same name never reaches the
@@ -723,6 +729,8 @@ const OP_SECTIONS: &[OpSection] = &[
             op!("fleet_resume", Approval, "", r#"{pid,cwd,confidence,decision_class}"#),
             op!("remote_instruct", Approval, "", r#"{device?,instruction} (no device = home)"#),
             op!("remote_fleet_dispatch", Approval, "", r#"{device?,project,prompt,mode?:headless|interactive}"#),
+            op!("mesh_set_agent_enabled", Approval, "", r#"{device?,persona,enabled}"#),
+            op!("mesh_queue_move", Approval, "", r#"{session,device?}"#),
             op!("continue_autonomously", Auto, "", r#"{rationale} (autonomous mode only)"#),
         ],
     },
@@ -808,7 +816,10 @@ fn op_docs() -> impl Iterator<Item = &'static OpDoc> {
 // 12,700 -> 12,895 (2026-09-25, Lifecycle v2): exactly the 195 characters the
 // `describe_lifecycle` and `show_lifecycle_proposal` rows plus the section
 // title's ", lifecycles" add; the existing ~20-character headroom is unchanged.
-pub(crate) const OP_REFERENCE_MAX_CHARS: usize = 12_895;
+// 12,895 -> 12,988 (2026-10-13, device mesh): exactly the 93 characters the
+// two compact rows `mesh_set_agent_enabled` and `mesh_queue_move` add to the
+// fleet section; the headroom is unchanged.
+pub(crate) const OP_REFERENCE_MAX_CHARS: usize = 12_988;
 
 /// The compact markdown op reference the chat-class prompt family carries in
 /// place of the constitution's per-op prose. One line per op: name, gate,
@@ -1025,6 +1036,19 @@ mod tests {
                     doc.name
                 );
             }
+        }
+    }
+
+    /// The mesh ops reach a paired device, so their ONLY unattended path is
+    /// the device arm (`DEVICE_GATED_ACTIONS`): they are approval actions and
+    /// sit on no auto-fire list.
+    #[test]
+    fn the_mesh_ops_are_approval_actions_on_no_auto_fire_list() {
+        for op in ["mesh_set_agent_enabled", "mesh_queue_move"] {
+            assert!(ALLOWED_ACTIONS.contains(&op), "{op}");
+            assert!(!CHAT_AUTO_FIRE_APPROVAL_ACTIONS.contains(&op), "{op}");
+            assert!(!AUTO_FIRE_ACTIONS.contains(&op), "{op}");
+            assert!(!READ_OPS.contains(&op), "{op}");
         }
     }
 

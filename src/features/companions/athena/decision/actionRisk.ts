@@ -74,8 +74,8 @@ const LOW_RISK: readonly string[] = [
  * The grouping, and why each group is here: deletes and identity rewrites are
  * destructive; build / arena / breed / evolve / dev_* / analyze / browser_test
  * spawn processes or CLI turns that cost money; fleet_* type into live
- * terminals; browser_* act on real web apps; remote_instruct and remote_fleet_dispatch reach another
- * device; reconnect_credential opens the operator's browser; the KPI verbs
+ * terminals; browser_* act on real web apps; remote_instruct, remote_fleet_dispatch and the mesh_*
+ * ops reach another device; reconnect_credential opens the operator's browser; the KPI verbs
  * change what the autonomous loop optimizes for; enqueue_* / ship / assign /
  * schedule / canvas_* / skill_sync / backlog_apply_triage all set work in
  * motion beyond a single row.
@@ -93,6 +93,8 @@ const ELEVATED_RISK: readonly string[] = [
   'companion_evolve_persona',
   'remote_instruct',
   'remote_fleet_dispatch',
+  'mesh_set_agent_enabled',
+  'mesh_queue_move',
   'set_ship_scope',
   'ship_milestone_lifecycle',
   'enqueue_dev_job',

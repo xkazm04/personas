@@ -19,16 +19,30 @@
 //! `companion::remote_jobs::install` (which routes `mesh_verb` jobs to
 //! [`verbs::execute`]).
 
+pub mod diagnostics;
 pub mod queue_move;
 pub mod snapshot;
 pub mod verbs;
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use tauri::{AppHandle, Listener};
 
 use crate::engine::event_registry::event_name;
+use crate::engine::p2p::mesh::Mesh;
 use crate::engine::p2p::NetworkService;
+
+/// The mesh [`install`] wired, for readers that hold no `AppState`: Athena's
+/// device prompt section (`companion::prompt::devices`) reads each paired
+/// device's cached snapshot through it. A process-global one-way latch (set
+/// once at boot, never reset), so HMR and tests cannot leave it half-built.
+static INSTALLED: OnceLock<Arc<Mesh>> = OnceLock::new();
+
+/// The installed mesh, or `None` before boot wired it (or in a process that
+/// never starts the network).
+pub fn installed_mesh() -> Option<Arc<Mesh>> {
+    INSTALLED.get().cloned()
+}
 
 /// Install the snapshot provider and the change hooks. Called once at boot,
 /// before `NetworkService::start`.
@@ -49,6 +63,7 @@ pub async fn install(app: &AppHandle, network: &Arc<NetworkService>) {
         .mesh
         .set_provider(Arc::new(snapshot::AppSnapshotProvider::new(app.clone())))
         .await;
+    let _ = INSTALLED.set(network.mesh.clone());
     for event in [
         event_name::FLEET_QUEUE_CHANGED,
         event_name::FLEET_SESSION_STATE,

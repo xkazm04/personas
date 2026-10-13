@@ -79,12 +79,13 @@ export function normalizeCode(raw) {
 }
 
 /**
- * The receipt of a job, parsed. The contract names `receiptJson` (a JSON string carrying a
- * MeshVerbReceipt or FleetSessionJobReceipt) while the RemoteJob binding carries `receipt` (a parsed
- * FleetSessionJobReceipt); this reads either and returns null when neither is present.
+ * The receipt of a job, parsed. The app's RemoteJob carries a `mesh_verb` outcome in `meshReceipt`
+ * (contract amendment A1) and a `fleet_session` outcome in `receipt`; the original contract named
+ * `receiptJson` (a JSON string), still read as a fallback. Null when none is present.
  */
 export function jobReceipt(job) {
   if (!job) return null;
+  if (job.meshReceipt && typeof job.meshReceipt === 'object') return job.meshReceipt;
   if (typeof job.receiptJson === 'string' && job.receiptJson) {
     try { return JSON.parse(job.receiptJson); } catch { return null; }
   }
@@ -204,6 +205,10 @@ export class MeshClient {
   enqueueTest(projectId) {
     return this.request('POST', '/queue/enqueue-test', { body: { projectId }, headers: { 'x-mesh-onboard': '1' } });
   }
+  /** Cancel a held `mesh-onboard` entry this device still holds (amendment A4). -> {cancelled}. */
+  cancelTest(sessionId) {
+    return this.request('POST', '/queue/cancel-test', { body: { sessionId }, headers: { 'x-mesh-onboard': '1' } });
+  }
   projects() { return this.request('GET', '/projects'); }
   /** The dev-tools door's project list (snake_case DevProject rows); the fallback when /mesh/projects is not served. */
   devToolsProjects() { return this.request('GET', '/projects', { prefix: '/dev-tools' }); }
@@ -216,7 +221,10 @@ export class MeshClient {
   }
   mail({ since, topic } = {}) { return this.request('GET', '/mail', { query: { since, topic } }); }
   job(id) { return this.request('GET', `/jobs/${encodeURIComponent(id)}`); }
-  probe({ peerId, testId, passed, detail }) {
-    return this.request('POST', '/probe', { body: { peerId, testId, passed: !!passed, detail: detail ?? null, atMs: Date.now() } });
+  /** A skip is `passed:false, skipped:true` (amendment A2). */
+  probe({ peerId, testId, passed, skipped = false, detail }) {
+    return this.request('POST', '/probe', {
+      body: { peerId, testId, passed: !!passed && !skipped, skipped: !!skipped, detail: detail ?? null, atMs: Date.now() },
+    });
   }
 }

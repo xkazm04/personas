@@ -23,7 +23,7 @@ function jobRow({ id, peer, kind, payload }) {
   return {
     id, direction: 'outbound', peerId: peer.peerId, peerDisplayName: peer.displayName, kind, instruction: '',
     payloadJson: payload === undefined ? null : JSON.stringify(payload),
-    receipt: null, receiptJson: null, status: 'pending', summary: null, refusalReason: null, lastSeq: 0,
+    receipt: null, meshReceipt: null, status: 'pending', summary: null, refusalReason: null, lastSeq: 0,
     createdAt: now, updatedAt: now, completedAt: null,
   };
 }
@@ -163,10 +163,18 @@ export class StubDoor {
         const proj = this.projects.find((x) => x.id === body.projectId);
         if (!proj) return ERR(404, 'not_found', 'no such project');
         const sessionId = `sess-${crypto.randomBytes(6).toString('hex')}`;
-        this.queue.push({ sessionId, title: 'mesh-onboard', projectLabel: proj.name, rank: this.queue.length, machineUnits: 1, gpu: 'none', prompt: 'Reply with the single word MESH-OK and exit.', project: proj });
+        this.queue.push({ sessionId, title: 'mesh-onboard', projectLabel: proj.name, rank: this.queue.length, machineUnits: 1, gpu: 'none', prompt: 'Reply with the single word MESH-OK and exit.', runLabel: 'mesh-onboard', project: proj });
         return { body: { sessionId } };
       }
       case 'POST /mesh/queue/move': return this.queueMove(body);
+      case 'POST /mesh/queue/cancel-test': {
+        if (headers['x-mesh-onboard'] !== '1') return ERR(403, 'refused', 'onboarding only: x-mesh-onboard header missing');
+        const idx = this.queue.findIndex((e) => e.sessionId === body.sessionId);
+        if (idx < 0) return { body: { cancelled: false } };
+        if (this.queue[idx].runLabel !== 'mesh-onboard') return ERR(400, 'bad_request', 'cancel-test only cancels mesh-onboard entries');
+        this.queue.splice(idx, 1);
+        return { body: { cancelled: true } };
+      }
       case 'GET /mesh/projects': return { body: { projects: this.projects } };
       case 'POST /mesh/probe':
         this.probes.push(body);
@@ -257,7 +265,7 @@ export class StubDoor {
         if (a) a.enabled = !!payload.enabled;
         receipt = { verb: payload.verb, ok: !!a, detail: a ? null : 'no such persona' };
       } else receipt = { verb: payload.verb, ok: false, detail: 'not modelled by the stub' };
-      return this.set(j, 'completed', { receiptJson: JSON.stringify(receipt), summary: receipt.detail });
+      return this.set(j, 'completed', { meshReceipt: receipt, summary: receipt.detail });
     }
     return this.set(j, 'failed', { summary: `unknown kind ${kind}` });
   }
@@ -271,7 +279,7 @@ export class StubDoor {
       this.later(this.jobStepMs * 2, () => {
         const pushes = /commit/i.test(payload.prompt || '') && this.pushSha;
         const receipt = { sessionId: `sess-${short8(j.id)}`, branch, pushedSha: pushes ? crypto.randomBytes(20).toString('hex') : null, pushError: pushes ? null : 'no commits', verified: pushes ? true : null };
-        this.set(j, 'completed', { receipt, receiptJson: JSON.stringify(receipt), summary: 'FLEET:DONE' });
+        this.set(j, 'completed', { receipt, summary: 'FLEET:DONE' });
       });
     });
   }

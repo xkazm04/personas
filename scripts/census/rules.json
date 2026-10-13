@@ -2901,6 +2901,10 @@
           "reason": "2026-08-22: covered by local_http's router-level admission layer (Host allowlist + X-Personas-Local-Token), applied once over the composed tree in local_http::start"
         },
         {
+          "path": "src-tauri/src/local_http/mesh.rs",
+          "reason": "2026-10-14 (spark device-mesh WP2b): covered by local_http's router-level admission layer (Host allowlist + X-Personas-Local-Token), like dev_tools_http.rs; route test without_the_token_nothing_reaches_a_handler drives the real build_app"
+        },
+        {
           "path": "src-tauri/src/commands/fleet/hooks.rs",
           "reason": "2026-08-22: same layer. The credential is baked into the installed curl command; a hook carrying no/stale token reads as drifted and startup re-installs it"
         },
@@ -3877,8 +3881,8 @@
         "description": "the compile-time crate version written into a struct field, a serialized JSON key, or a transmitted protocol constant, as that record's whole build identity. PROXY FOR the stack-free condition: \"an artifact, telemetry event or protocol handshake claims to identify the build that produced it, and names only a value that many materially different builds share.\" MEASURED BY EXECUTION 2026-08-16 against the real artifacts on disk, not by reading source: src-tauri/target/release/personas-desktop.exe (137.6 MiB) contains the literal 'desktop-full' ZERO times and carries no git sha, no build timestamp and no feature list, so the ONLY way to determine which cargo feature set produced it was to grep it for third-party crate names left behind by the optional dependencies (quinn 247 occurrences and mdns 114 => the p2p feature was on; fastembed 10, sqlite-vec 41, onnxruntime 2 => ml was on). dist/assets/*.js (1,399 chunks, 30.9 MiB) survives with ZERO occurrences of the string 'import.meta.env' - every build-time value is fully inlined - and BUILD_MAX_TIER is minified away, so the bundle cannot report which of build:starter/build:team/build:builder produced it, and dist/index.html carries no version, no tier and no date. Both Sentry inits set release from this same version constant (src-tauri/src/main.rs:87, src/lib/sentry.ts:202) and NEITHER sets Sentry's `dist` field, which exists precisely to separate builds within one release - so a crash from tauri:dev:lite, tauri:build:stable, a starter bundle and a builder bundle all arrive tagged 1.1.0 with nothing to tell them apart. THE FIX IS A TYPE, NOT MORE CALL SITES: one BuildIdentity struct constructed once from the version PLUS the compiled feature set (a cfg!-derived list; there are currently ZERO cfg!(feature=..) tests in 963 .rs files) PLUS a build.rs-forwarded commit sha, ts-rs-exported so the frontend and every export bundle carry the same shape. Every match below then becomes a field of one value instead of a hand-written version string. PRECONDITION (must be re-derived per repo): this proxy keys on Rust's env!(\"CARGO_PKG_VERSION\") and on struct-field / JSON-key / associated-const syntax. A repo that stamps identity from package.json at bundle time (NEXT_PUBLIC_APP_VERSION), from a Docker label, or from an npm-injected npm_package_version scores ZERO here while the same condition is present - measured across five sibling repos on 2026-08-16, NONE of the five can report its own commit sha, branch, build timestamp or build profile at runtime, so the condition is fleet-wide and only the markup is local."
       },
       "baseline": {
-        "files": 11,
-        "matches": 12
+        "files": 12,
+        "matches": 13
       },
       "floor": 900
     },

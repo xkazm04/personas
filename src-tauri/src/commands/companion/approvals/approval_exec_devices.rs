@@ -1,8 +1,12 @@
-//! `approval_exec_devices` — the two device ops. `remote_instruct` hands an
+//! `approval_exec_devices` — the device ops. `remote_instruct` hands an
 //! instruction to one of the operator's OTHER paired devices, where that
 //! device's own Athena runs it as a normal turn; `remote_fleet_dispatch` sends
 //! a whole fleet session there, which runs on its own branch, pushes it, and
-//! comes back as a verified SHA.
+//! comes back as a verified SHA. The two mesh ops (spark device-mesh, wave 3
+//! #11) act on a paired device's state: `mesh_set_agent_enabled` flips one of
+//! ITS personas through the `persona_set_enabled` mesh verb, and
+//! `mesh_queue_move` moves one of THIS device's queued fleet entries there
+//! (cancel-after-accept, `crate::mesh::queue_move`).
 //!
 //! Part of the approval module family (split from the former approvals.rs god
 //! file, 2026-07-24); shared imports and types live in `mod.rs`.
@@ -50,8 +54,13 @@ use crate::db::repos::resources::owned_devices as devices_repo;
 
 /// The ops that carry the mode-conditional device rule. The autopilot routes
 /// every name here into [`auto_resolve_remote_instruct`] BEFORE its generic
-/// auto-fire path, so neither can ever be fired by action name alone.
-pub(crate) const DEVICE_GATED_ACTIONS: &[&str] = &["remote_instruct", "remote_fleet_dispatch"];
+/// auto-fire path, so none can ever be fired by action name alone.
+pub(crate) const DEVICE_GATED_ACTIONS: &[&str] = &[
+    "remote_instruct",
+    "remote_fleet_dispatch",
+    "mesh_set_agent_enabled",
+    "mesh_queue_move",
+];
 
 /// Is `action` one of the device-gated ops?
 pub(crate) fn is_device_gated(action: &str) -> bool {
@@ -310,8 +319,218 @@ pub(crate) async fn execute_remote_instruct(
     send_instruction(state, &target, &instruction).await
 }
 
-/// The autonomous-mode arm for BOTH device ops (`remote_instruct` and
-/// `remote_fleet_dispatch`, see [`DEVICE_GATED_ACTIONS`]), called from
+// -- The mesh ops (spark device-mesh, wave 3 #11) ---------------------------
+
+/// The `persona` of a `mesh_set_agent_enabled`: an id or a name, as Athena
+/// heard it. Resolved against the OTHER device's snapshot, never this one's.
+fn persona_of(params: &serde_json::Value) -> Result<String, AppError> {
+    let text = params
+        .get("persona")
+        .or_else(|| params.get("persona_id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    personas_core::validation::require_non_empty("persona", &text)?;
+    Ok(text)
+}
+
+/// `enabled` must be stated: a missing switch direction is not "on".
+fn enabled_of(params: &serde_json::Value) -> Result<bool, AppError> {
+    params
+        .get("enabled")
+        .and_then(|v| v.as_bool())
+        .ok_or_else(|| AppError::Validation("Say whether to turn it on or off (`enabled`).".into()))
+}
+
+/// The FULL fleet session id of a `mesh_queue_move`.
+fn session_of(params: &serde_json::Value) -> Result<String, AppError> {
+    let text = params
+        .get("session")
+        .or_else(|| params.get("session_id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    personas_core::validation::require_non_empty("session", &text)?;
+    Ok(text)
+}
+
+/// One agent on the other device, by exact persona id, else by a unique
+/// case-insensitive name. The list is that device's last snapshot: the only
+/// account of its personas this device has.
+pub(crate) fn resolve_peer_agent(
+    agents: &[crate::db::models::DeviceAgent],
+    device: &str,
+    requested: &str,
+) -> Result<crate::db::models::DeviceAgent, AppError> {
+    if let Some(exact) = agents.iter().find(|a| a.persona_id == requested) {
+        return Ok(exact.clone());
+    }
+    let mut by_name = agents
+        .iter()
+        .filter(|a| a.name.trim().eq_ignore_ascii_case(requested));
+    match (by_name.next(), by_name.next()) {
+        (Some(one), None) => Ok(one.clone()),
+        (Some(_), Some(_)) => Err(AppError::Validation(format!(
+            "\"{device}\" has more than one agent called \"{requested}\". Name it by its id."
+        ))),
+        _ => Err(AppError::NotFound(format!(
+            "\"{device}\" has no agent called \"{requested}\" in its last report."
+        ))),
+    }
+}
+
+/// What Athena says after a mesh verb went out. A verb's outcome lands on the
+/// job's receipt and on the device's Monitor plate; it does NOT come back as a
+/// note in her context, so promising "I'll tell you" would be a false promise.
+#[cfg_attr(not(feature = "p2p"), allow(dead_code))]
+fn verb_sent_message(target: &OwnedDevice, job: &RemoteJob, what: &str) -> String {
+    let name = &target.display_name;
+    match job.status {
+        RemoteJobStatus::Refused => format!(
+            "\"{name}\" declined that. {}",
+            job.refusal_reason.clone().unwrap_or_default()
+        ),
+        RemoteJobStatus::Queued => format!(
+            "\"{name}\" is not reachable right now, so {what} is queued until {name} wakes."
+        ),
+        _ => format!(
+            "Asked \"{name}\" to {what}. The change shows on its plate in the Monitor once it lands."
+        ),
+    }
+}
+
+/// What Athena says after a queue move, from the job `move_queued` returned.
+#[cfg_attr(not(feature = "p2p"), allow(dead_code))]
+fn move_message(target: &OwnedDevice, job: &RemoteJob, session: &str) -> String {
+    let name = &target.display_name;
+    let short: String = session.chars().take(8).collect();
+    match job.status {
+        RemoteJobStatus::Pending | RemoteJobStatus::Running => format!(
+            "Moved session {short} to \"{name}\": it accepted, so the entry here is cancelled."
+        ),
+        RemoteJobStatus::Refused => format!(
+            "\"{name}\" declined the move ({}). Session {short} is still queued here.",
+            job.refusal_reason.clone().unwrap_or_default()
+        ),
+        _ => {
+            format!("\"{name}\" stopped answering mid-move, so session {short} stayed queued here.")
+        }
+    }
+}
+
+/// Execute an approved (or auto-fired) `mesh_set_agent_enabled`: the device
+/// rule first, then ONE `persona_set_enabled` mesh verb to that device.
+pub(crate) async fn execute_mesh_set_agent_enabled(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let persona = persona_of(params)?;
+    let enabled = enabled_of(params)?;
+    let target = resolve_remote_target(&state.db, params)?;
+    let autonomous = crate::commands::companion::chat::autonomous_mode_enabled(&state.db);
+    if let RemoteInstructGate::Refused(reason) = gate_remote_instruct(autonomous, &target) {
+        return Err(AppError::Forbidden(reason));
+    }
+    send_agent_switch(state, &target, &persona, enabled).await
+}
+
+/// Execute an approved (or auto-fired) `mesh_queue_move`: the device rule
+/// first, then the ONE queue-move path the Monitor's "Move to" uses.
+pub(crate) async fn execute_mesh_queue_move(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let session = session_of(params)?;
+    let target = resolve_remote_target(&state.db, params)?;
+    let autonomous = crate::commands::companion::chat::autonomous_mode_enabled(&state.db);
+    if let RemoteInstructGate::Refused(reason) = gate_remote_instruct(autonomous, &target) {
+        return Err(AppError::Forbidden(reason));
+    }
+    send_queue_move(state, app, &target, &session).await
+}
+
+#[cfg(feature = "p2p")]
+async fn send_agent_switch(
+    state: &State<'_, Arc<AppState>>,
+    target: &OwnedDevice,
+    persona: &str,
+    enabled: bool,
+) -> Result<ExecuteResult, AppError> {
+    let net = state.network.clone().ok_or_else(|| {
+        AppError::NetworkOffline(
+            "The device link is not running yet. Try again in a moment.".into(),
+        )
+    })?;
+    let (snapshot, _, _) = net
+        .mesh
+        .cached(&target.peer_id, crate::engine::p2p::mesh::now_ms());
+    let agents = snapshot.map(|s| s.agents).ok_or_else(|| {
+        AppError::Validation(format!(
+            "\"{}\" has not reported its agents to this device yet; it does every 15 s while the two are connected.",
+            target.display_name
+        ))
+    })?;
+    let agent = resolve_peer_agent(&agents, &target.display_name, persona)?;
+    let job = net
+        .remote_jobs
+        .send_mesh_verb(
+            &target.peer_id,
+            &crate::db::models::MeshVerbPayload::PersonaSetEnabled {
+                persona_id: agent.persona_id.clone(),
+                enabled,
+            },
+        )
+        .await?;
+    let what = format!(
+        "turn \"{}\" {}",
+        agent.name,
+        if enabled { "on" } else { "off" }
+    );
+    Ok(ExecuteResult::message(verb_sent_message(
+        target, &job, &what,
+    )))
+}
+
+#[cfg(feature = "p2p")]
+async fn send_queue_move(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    target: &OwnedDevice,
+    session: &str,
+) -> Result<ExecuteResult, AppError> {
+    let ports = crate::mesh::queue_move::AppPorts {
+        app: app.clone(),
+        state: state.inner().clone(),
+    };
+    let job = crate::mesh::queue_move::move_queued(&ports, session, &target.peer_id).await?;
+    Ok(ExecuteResult::message(move_message(target, &job, session)))
+}
+
+#[cfg(not(feature = "p2p"))]
+async fn send_agent_switch(
+    _state: &State<'_, Arc<AppState>>,
+    target: &OwnedDevice,
+    _persona: &str,
+    _enabled: bool,
+) -> Result<ExecuteResult, AppError> {
+    Err(no_device_link(target))
+}
+
+#[cfg(not(feature = "p2p"))]
+async fn send_queue_move(
+    _state: &State<'_, Arc<AppState>>,
+    _app: &tauri::AppHandle,
+    target: &OwnedDevice,
+    _session: &str,
+) -> Result<ExecuteResult, AppError> {
+    Err(no_device_link(target))
+}
+
+/// The autonomous-mode arm for EVERY device op (`remote_instruct`,
+/// `remote_fleet_dispatch` and the two mesh ops, see [`DEVICE_GATED_ACTIONS`]), called from
 /// `auto_resolve_if_allowed` BEFORE the generic auto-fire path.
 ///
 /// Returns `Ok(true)` when the proposal was resolved here (fired, or fired and
@@ -351,10 +570,11 @@ pub(crate) async fn auto_resolve_remote_instruct(
     // From here the manual path's shape, exactly: atomic pending→running, run,
     // finalize, log the outcome as an episode.
     let (action, params) = load_pending(&state, &approval.id)?;
-    let executed = if action == "remote_fleet_dispatch" {
-        execute_remote_fleet_dispatch(&state, &params).await
-    } else {
-        execute_remote_instruct(&state, &params).await
+    let executed = match action.as_str() {
+        "remote_fleet_dispatch" => execute_remote_fleet_dispatch(&state, &params).await,
+        "mesh_set_agent_enabled" => execute_mesh_set_agent_enabled(&state, &params).await,
+        "mesh_queue_move" => execute_mesh_queue_move(&state, app, &params).await,
+        _ => execute_remote_instruct(&state, &params).await,
     };
     let (status_text, log) = match executed {
         Ok(r) => (APPROVAL_STATUS_APPROVED, r.message),
@@ -560,9 +780,166 @@ mod tests {
     /// The successor of `remote_instruct_is_not_on_the_generic_allowlist`: the
     /// allowlist is gone, so what keeps a device op from firing by its name
     /// alone is the autopilot routing every one of them into the device arm.
+    // -- the mesh ops: all four consent cells, each ----------------------
+
+    /// The decision `execute_mesh_*` and the autopilot arm both make: the
+    /// SAME rule as `remote_instruct`, reached because the op is device-gated.
+    fn mesh_gate(op: &str, autonomous: bool, target: &OwnedDevice) -> RemoteInstructGate {
+        assert!(is_device_gated(op), "{op} must be device-gated");
+        gate_remote_instruct(autonomous, target)
+    }
+
+    #[test]
+    fn mesh_ops_mode_off_home_file_an_approval_card() {
+        for op in ["mesh_set_agent_enabled", "mesh_queue_move"] {
+            assert_eq!(
+                mesh_gate(op, false, &device("Desktop", true)),
+                RemoteInstructGate::NeedsApproval,
+                "{op}"
+            );
+        }
+    }
+
+    #[test]
+    fn mesh_ops_mode_off_non_home_are_refused_with_a_reason() {
+        for op in ["mesh_set_agent_enabled", "mesh_queue_move"] {
+            assert!(
+                matches!(
+                    mesh_gate(op, false, &device("Work laptop", false)),
+                    RemoteInstructGate::Refused(reason) if reason.contains("Work laptop") && reason.contains("home")
+                ),
+                "{op}"
+            );
+        }
+    }
+
+    #[test]
+    fn mesh_ops_mode_on_home_autofire() {
+        for op in ["mesh_set_agent_enabled", "mesh_queue_move"] {
+            assert_eq!(
+                mesh_gate(op, true, &device("Desktop", true)),
+                RemoteInstructGate::Autofire,
+                "{op}"
+            );
+        }
+    }
+
+    #[test]
+    fn mesh_ops_mode_on_non_home_autofire() {
+        for op in ["mesh_set_agent_enabled", "mesh_queue_move"] {
+            assert_eq!(
+                mesh_gate(op, true, &device("Work laptop", false)),
+                RemoteInstructGate::Autofire,
+                "{op}"
+            );
+        }
+    }
+
+    fn agent(id: &str, name: &str) -> crate::db::models::DeviceAgent {
+        crate::db::models::DeviceAgent {
+            persona_id: id.into(),
+            name: name.into(),
+            enabled: false,
+            project_id: None,
+            project_enabled: None,
+            dominant: None,
+            running: false,
+        }
+    }
+
+    #[test]
+    fn a_peer_agent_resolves_by_id_then_unique_name() {
+        let agents = [
+            agent("p-1", "Scraper"),
+            agent("p-2", "Digest"),
+            agent("p-3", "digest"),
+        ];
+        assert_eq!(
+            resolve_peer_agent(&agents, "Desk", "p-2").unwrap().name,
+            "Digest"
+        );
+        assert_eq!(
+            resolve_peer_agent(&agents, "Desk", "scraper")
+                .unwrap()
+                .persona_id,
+            "p-1"
+        );
+        let twice = resolve_peer_agent(&agents, "Desk", "DIGEST").unwrap_err();
+        assert!(twice.to_string().contains("more than one"), "{twice}");
+        let none = resolve_peer_agent(&agents, "Desk", "Ghost").unwrap_err();
+        assert!(matches!(none, AppError::NotFound(_)), "{none}");
+        assert!(none.to_string().contains("Desk"), "{none}");
+    }
+
+    #[test]
+    fn mesh_op_params_are_required_and_typed() {
+        assert!(persona_of(&serde_json::json!({})).is_err());
+        assert_eq!(
+            persona_of(&serde_json::json!({ "persona": " Scraper " })).unwrap(),
+            "Scraper"
+        );
+        assert!(
+            enabled_of(&serde_json::json!({})).is_err(),
+            "no direction is not 'on'"
+        );
+        assert!(enabled_of(&serde_json::json!({ "enabled": "yes" })).is_err());
+        assert!(!enabled_of(&serde_json::json!({ "enabled": false })).unwrap());
+        assert!(session_of(&serde_json::json!({ "session": "" })).is_err());
+        assert_eq!(
+            session_of(&serde_json::json!({ "session_id": "sess-1" })).unwrap(),
+            "sess-1"
+        );
+    }
+
+    #[test]
+    fn mesh_messages_never_promise_a_report_back_and_name_the_outcome() {
+        let target = device("Desk", false);
+        let mut job = RemoteJob {
+            id: "j".into(),
+            direction: crate::db::models::RemoteJobDirection::Outbound,
+            peer_id: "peer-Desk".into(),
+            peer_display_name: "Desk".into(),
+            kind: "mesh_verb".into(),
+            instruction: "x".into(),
+            payload_json: None,
+            receipt: None,
+            mesh_receipt: None,
+            status: RemoteJobStatus::Running,
+            summary: None,
+            refusal_reason: None,
+            last_seq: 0,
+            created_at: "now".into(),
+            updated_at: "now".into(),
+            completed_at: None,
+        };
+        let sent = verb_sent_message(&target, &job, "turn \"Scraper\" off");
+        assert!(
+            sent.starts_with("Asked \"Desk\" to turn \"Scraper\" off"),
+            "{sent}"
+        );
+        assert!(!sent.contains("I'll tell you"), "{sent}");
+        assert!(move_message(&target, &job, "sess-123456789").contains("accepted"));
+        job.status = RemoteJobStatus::Queued;
+        assert!(verb_sent_message(&target, &job, "x").contains("queued until Desk wakes"));
+        job.status = RemoteJobStatus::Refused;
+        job.refusal_reason = Some("project_not_found".into());
+        let refused = move_message(&target, &job, "sess-123456789");
+        assert!(
+            refused.contains("project_not_found") && refused.contains("still queued here"),
+            "{refused}"
+        );
+        job.status = RemoteJobStatus::Cancelled;
+        assert!(move_message(&target, &job, "s").contains("stayed queued here"));
+    }
+
     #[test]
     fn device_ops_never_reach_the_generic_autopilot_path() {
-        for op in ["remote_instruct", "remote_fleet_dispatch"] {
+        for op in [
+            "remote_instruct",
+            "remote_fleet_dispatch",
+            "mesh_set_agent_enabled",
+            "mesh_queue_move",
+        ] {
             assert!(is_device_gated(op), "{op} must go through the device rule");
         }
         assert!(!is_device_gated("fleet_spawn"));

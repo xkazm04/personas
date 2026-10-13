@@ -141,6 +141,12 @@ pub fn start_local_http(app: &tauri::App, st: &mut StartupTimer) {
         "dev-tools",
         commands::infrastructure::dev_tools_http::router(app.handle().clone()),
     );
+    // Device mesh CLI door (spark device-mesh, WP2b) — a terminal's Claude
+    // Code session drives THIS app's mesh: discover, pair with the typed
+    // code, verbs, mail, queue moves, probe verdicts. Behind the shared
+    // token layer like every non-exempt prefix.
+    #[cfg(feature = "p2p")]
+    local_http::register_router("mesh", local_http::mesh::router(app.handle().clone()));
     // Contest preview — read-only GET of a contest arena's files for the
     // sandboxed variant iframe. SECURITY-SENSITIVE: authenticates itself with
     // a per-boot path token (see `commands::contest::preview`), which is why

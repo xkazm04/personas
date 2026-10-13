@@ -72,6 +72,8 @@ test('happy path: pair once, all of t1-t7 pass with t5 skipped, verdicts recorde
   assert.equal(b.probes.length, 7);
   assert.equal(a.probes.find((p) => p.testId === 't5_fleet_push').passed, false);
   assert.match(a.probes.find((p) => p.testId === 't5_fleet_push').detail, /^skipped:/);
+  assert.equal(a.probes.find((p) => p.testId === 't5_fleet_push').skipped, true, 'amendment A2: a skip says so');
+  assert.equal(a.probes.find((p) => p.testId === 't1_ping').skipped, false);
   assert.equal(b.agents.find((x) => x.personaId === 'b-off').enabled, false);
   assert.equal(b.agents.find((x) => x.personaId === 'b-on').enabled, true, 'an enabled agent is never touched');
   assert.equal(a.queue.length, 0, 'the moved test entry left this queue');
@@ -268,7 +270,7 @@ test('t5 with --allow-push: verified push, then the remote branch is deleted and
   assert.equal(dispatched.body.payload.githubUrl, 'https://github.com/xkazm04/personas.git');
 });
 
-test('t4 refused move: FAILED at move_sent, and the held entry stays queued here (cancel-after-accept)', async (t) => {
+test('t4 refused move: FAILED at move_sent, the held entry was never lost, and cancel-test cleans it up', async (t) => {
   const [a, b] = await stubPair();
   t.after(() => Promise.all([a.stop(), b.stop()]));
   const code = await pairUp(a, b);
@@ -282,7 +284,9 @@ test('t4 refused move: FAILED at move_sent, and the held entry stays queued here
   assert.equal(t4.result, 'failed');
   assert.equal(t4.thisSide.stalledAt, 'move_sent');
   assert.match(t4.thisSide.detail, /project_not_found/);
-  assert.equal(a.queue.length, 1, 'a refused move never loses the entry');
+  assert.ok(a.calls.some((c) => c.path === '/mesh/queue/cancel-test' && c.body.sessionId), 'the refused move is cleaned up (A4)');
+  assert.match(t4.thisSide.detail, /\[cleanup: cancel-test: held entry cancelled here\]/);
+  assert.equal(a.queue.length, 0, 'the held entry stayed until cancel-test removed it, never moved');
   assert.equal(t4.peerSide.outcome, 'passed');
 });
 
