@@ -4104,7 +4104,11 @@
           "revision": 1,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/api/agents/personas.ts:54 These modules forward persona operations through Tauri IPC, and context and repository searches found no guest_context or register_global constructs establishing an embeddable guest-language runtime.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:9cfe5aba03ea1a19",
+          "evaluatedRevision": 1
         }
       ],
       "governance": "governed"
@@ -4959,7 +4963,11 @@
           "revision": 1,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/api/design/design.ts:9 These modules expose application design and system commands through Tauri IPC, and context and repository searches found no guest_context or register_global constructs establishing a guest-language runtime implementation.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:9cfe5aba03ea1a19",
+          "evaluatedRevision": 1
         },
         {
           "subject": "node-boot-and-declarative-bootstrap",
@@ -23509,7 +23517,11 @@
           "revision": 1,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:175 The context runtime projects application telemetry onto codebase contexts, and context and repository searches found no guest_context or register_global constructs establishing a guest-language engine or API registrar.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:9cfe5aba03ea1a19",
+          "evaluatedRevision": 1
         },
         {
           "subject": "cross-provider-benchmark-operations",
@@ -31237,7 +31249,11 @@
           "revision": 1,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/passport/improve/useImproveEngine.ts:23 The improvement engine coordinates project scans and remediation actions, and context and repository searches found no guest_context or register_global constructs establishing an embeddable guest-language runtime.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:9cfe5aba03ea1a19",
+          "evaluatedRevision": 1
         },
         {
           "subject": "readiness-passports",
@@ -38181,7 +38197,11 @@
           "revision": 1,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:253 Governance scanning invokes an external Claude process to assess repositories, and context and repository searches found no guest_context or register_global constructs establishing a guest-language runtime implementation.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:9cfe5aba03ea1a19",
+          "evaluatedRevision": 1
         },
         {
           "subject": "agent-cli-transport",
