@@ -1794,6 +1794,7 @@ def _night_lock() -> pathlib.Path | None:
 EMPTY_SEATS_STOP = 9          # consecutive finished seats that kept nothing (3 rounds' worth)
 NOTHING_CLAIMABLE_RETRY_S = 600
 TRANSIENT_BACKOFF_S = 300
+BARREN_UNITS = 2
 FLOW_POLL_S = 5
 
 
@@ -1820,6 +1821,10 @@ def run_flow(a, log, events: list, deadline, registry, repos: list[dict]) -> str
     posting: list[tuple[dict, object]] = []
     idle_until: dict[str, float] = {}
     dry_until: dict[str, float] = {}   # nothing claimable - the only idleness that can end a night
+    # A repo whose last BARREN_UNITS units kept nothing is skipped for the rest of the night.
+    # Measured 2026-10-13: goat's map has outlived its tree; 8 seats in 5 h found 1-2 real pairs
+    # each and mostly declined. Its backlog still counts; it waits for a map rebuild.
+    repo_dry: dict[str, int] = {}
     started = empty_streak = 0
     stop = None
     last_hold = None
@@ -1875,6 +1880,12 @@ def run_flow(a, log, events: list, deadline, registry, repos: list[dict]) -> str
                 landed = sum(x.get("accepted") or 0 for x in summary["seats"]) - \
                     sum(len(w["contexts"]) for w in review.get("withdrawn") or [])
                 empty_streak = 0 if landed > 0 else empty_streak + 1
+                for x in summary["seats"]:
+                    if x.get("outcome") == "transient":
+                        continue  # an outage says nothing about the repo
+                    repo_dry[x.get("repo")] = 0 if landed > 0 else repo_dry.get(x.get("repo"), 0) + 1
+                    if repo_dry[x.get("repo")] == BARREN_UNITS:
+                        log("repo_barren", repo=x.get("repo"), units=BARREN_UNITS)
                 events.append({"round": summary["round"], "summary": summary, "review": review, "commits": commits})
                 log("round", round=summary["round"], landed=landed,
                     seats=[{k: x.get(k) for k in ("provider", "repo", "subject", "accepted", "outcome", "wall_s")} for x in summary["seats"]],
@@ -1919,7 +1930,8 @@ def run_flow(a, log, events: list, deadline, registry, repos: list[dict]) -> str
                                {s2.get("repo") for summ, _ in posting for s2 in summ.get("seats", [])}
                         held = {f"personas:{x}" for x in L.open_dispatch_subjects(c)} | \
                                {f"{u['seat']['claim']['repo']}:{u['seat']['claim']['subject']}" for u in running.values()}
-                        used = {"repos": busy, "busy": busy,
+                        barren = {r for r, k in repo_dry.items() if k >= BARREN_UNITS}
+                        used = {"repos": busy, "busy": busy | barren,
                                 "categories": {u["seat"]["dossier"]["category"] for u in running.values()}}
                         u = spawn_unit(a, c, registry, skills, repos, slot.split("#")[0], held, used, agy_model)
                     finally:
