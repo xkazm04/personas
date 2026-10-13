@@ -18544,6 +18544,226 @@
         }
       ],
       "registryProposal": "The standard's requirement that step validity guards be written twice (on the control and inside the transition) is directly affirmed by this component where omitting both leaves the rail unguarded."
+    },
+    "739b6d67-2c36-41ee-9794-a74bc0b25cfd/narrative-scroll-surface": {
+      "context": "display-table-primitives",
+      "subject": "narrative-scroll-surface",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T08:24:42.750Z",
+      "worker": "5ecdf088-86b2-4c09-b7bf-faf878c5a76c",
+      "techniques": [
+        {
+          "technique": "illustration-carries-the-claim",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/EmptyIllustration.tsx:12 EmptyIllustration renders a placeholder icon with heading and CTA for empty data states, not an informative or decorative illustration evidencing an explanatory claim."
+        },
+        {
+          "technique": "motion-carries-the-mechanism",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/MotionizedGlyph.tsx:6 MotionizedGlyph animates traced SVG paths with CSS keyframe entrance and ambient presets rather than animating a mechanism via an authored beat list."
+        },
+        {
+          "technique": "no-orientation-tax",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/SortableHeader.tsx:39 SortableHeader provides accessible column sorting controls for tables rather than an index or you-are-here progress readout for narrative navigation."
+        },
+        {
+          "technique": "reveal-without-loss",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/GroupedVirtualList.tsx:2 GroupedVirtualList uses TanStack Virtual virtualization to mount only visible rows in large lists rather than revealing narrative content via opacity/transform."
+        },
+        {
+          "technique": "scroll-bound-progression",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/ScrollShadowContainer.tsx:35 ScrollShadowContainer evaluates binary boundary booleans for edge shadow styling rather than driving station progress curves bound to scroll position."
+        },
+        {
+          "technique": "sequence-as-spine",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/DataGrid.tsx:2 DataGrid is a paginated grid for record manipulation with selection and drag handles, with no sequential narrative stations or visual spine."
+        }
+      ],
+      "registryProposal": "The candidate scanner's keyword rules for narrative-scroll-surface trigger false-positive matches against generic application tokens such as 'station' (radio stations), 'steps' (onboarding wizards), 'reveal' (table row loading ripples), and 'motion' (UI animation preferences).",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "Precondition unmet: that subject governs an explanatory/marketing page whose reader \"arrived from a link ... no task to complete\" and whose spine is scroll-bound sequence; this module is a schema-driven comparison primitive inside the app shell — src/features/shared/components/display/UnifiedTable.tsx:99-102 takes columns/data/getRowKey and nothing under that directory renders a narrative sequence. Matched at 705 on the words display/scroll (src/features/shared/components/display/ScrollShadowContainer.tsx:1, a shadow affordance for an overflowing region).",
+          "evaluatedAt": "2026-09-20",
+          "worker": null,
+          "reason": "replaced by 5ecdf088-86b2-4c09-b7bf-faf878c5a76c"
+        }
+      ]
+    },
+    "cc76d419-f457-4fe4-833c-6869efbc9287/narrative-scroll-surface": {
+      "context": "hooks-utility-interaction",
+      "subject": "narrative-scroll-surface",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T08:24:42.750Z",
+      "worker": "5ecdf088-86b2-4c09-b7bf-faf878c5a76c",
+      "techniques": [
+        {
+          "technique": "illustration-carries-the-claim",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useTrackedElementRect.ts:8 useTrackedElementRect tracks element bounding rectangles for floating overlays, containing no illustrations or claim mockups."
+        },
+        {
+          "technique": "motion-carries-the-mechanism",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:57 useReducedMotion provides OS and application-level motion preference booleans rather than orchestrating a mechanism explainer beat list."
+        },
+        {
+          "technique": "no-orientation-tax",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:9 useRovingTabIndex manages keyboard focus for composite UI widgets like tablists, not a sequential station readout or rail navigation."
+        },
+        {
+          "technique": "reveal-without-loss",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useVirtualList.ts:4 useVirtualList integrates TanStack Virtual to conditionally render in-viewport rows rather than managing scroll-bound reveal styling."
+        },
+        {
+          "technique": "scroll-bound-progression",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useScrollShadow.ts:18 useScrollShadow updates edge shadow states based on scroll overflow boundaries rather than mapping scroll progression to station curves."
+        },
+        {
+          "technique": "sequence-as-spine",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useScrollRestoration.ts:4 useScrollRestoration persists container scroll positions across navigation switches rather than providing a sequential spine for narrative content."
+        }
+      ]
+    },
+    "36783fec-01fa-40d5-8620-cf65ae691d27/narrative-scroll-surface": {
+      "context": "overview-empty-states",
+      "subject": "narrative-scroll-surface",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T08:24:42.750Z",
+      "worker": "5ecdf088-86b2-4c09-b7bf-faf878c5a76c",
+      "techniques": [
+        {
+          "technique": "illustration-carries-the-claim",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/illustrations/index.ts:22 Hero illustration metadata points to static Leonardo-generated asset PNG files for empty overview tabs without any claim evidence."
+        },
+        {
+          "technique": "motion-carries-the-mechanism",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx:10 MotionEmptyState uses a one-shot entrance animation on mount rather than a timeline of beats modeling an underlying mechanism."
+        },
+        {
+          "technique": "no-orientation-tax",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/parts.tsx:7 EmptyStateActions renders button CTAs for an empty view rather than managing navigation orientation or a reading-progress index."
+        },
+        {
+          "technique": "reveal-without-loss",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/IllustrationEmptyState.tsx:16 The empty state applies mount-time entrance animation to an in-app illustration without any scroll-dependent reveal mechanics."
+        },
+        {
+          "technique": "scroll-bound-progression",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/KnowledgeMotif.tsx:9 KnowledgeMotif draws an SVG node graph for empty knowledge tabs on mount without scroll progression."
+        },
+        {
+          "technique": "sequence-as-spine",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:9 ActivityMotif renders an isolated SVG waveform glyph for an empty overview tab, not a connected narrative sequence."
+        }
+      ]
+    },
+    "aa2197a5-6b7c-46ff-a6cd-8172d2984f50/narrative-scroll-surface": {
+      "context": "onboarding-components",
+      "subject": "narrative-scroll-surface",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T08:24:42.750Z",
+      "techniques": [
+        {
+          "technique": "illustration-carries-the-claim",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/TourSpotlight.tsx:25 TourSpotlight renders a dimming overlay highlight cut-out around live DOM elements rather than display illustrations evidencing factual claims."
+        },
+        {
+          "technique": "motion-carries-the-mechanism",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/TourProgressArc.tsx:12 TourProgressArc renders an SVG ring showing fractional completion rather than an explainer animation derived from a beat list."
+        },
+        {
+          "technique": "no-orientation-tax",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/StepProgress.tsx:24 StepProgress provides a clickable step navigation list with jump handlers for an interactive in-app wizard rather than a passive you-are-here reading indicator."
+        },
+        {
+          "technique": "reveal-without-loss",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/TourPanelBody.tsx:194 Tour content transitions occur via explicit Next and Previous button clicks, not through scroll-bound reveals."
+        },
+        {
+          "technique": "scroll-bound-progression",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/TourNarrativeDeck.tsx:98 The narrative deck modal card enforces maximum dimensions and local scrolling without any scroll-bound progression curves."
+        },
+        {
+          "technique": "sequence-as-spine",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/OnboardingOverlay.tsx:49 OnboardingOverlay coordinates a modal multi-step task wizard for user account and system setup rather than rendering an explanatory narrative spine."
+        }
+      ],
+      "withdrawn": {
+        "worker": "5ecdf088-86b2-4c09-b7bf-faf878c5a76c",
+        "state": "not-applicable",
+        "at": "2026-10-13T08:25:11.467684+00:00",
+        "reason": "reviewer (sonnet): The evidence anchor tourConstants.ts:31 is `export const TOUR_RAIL_WIDTH = 292;`, a width constant that doesn't show the module is an in-app guided tour rather than a narrative scroll surface, so the anchor is incidental."
+      }
+    },
+    "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20/narrative-scroll-surface": {
+      "context": "plugins-radio",
+      "subject": "narrative-scroll-surface",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T08:24:42.750Z",
+      "worker": "5ecdf088-86b2-4c09-b7bf-faf878c5a76c",
+      "techniques": [
+        {
+          "technique": "illustration-carries-the-claim",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/radio/components/NowPlayingCard.tsx:35 NowPlayingCard displays audio stream metadata, album art, and playback controls rather than informative illustrations evidencing claims."
+        },
+        {
+          "technique": "motion-carries-the-mechanism",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/radio/components/EqualizerBars.tsx:28 EqualizerBars renders simulated audio equalizer bouncing bars driven by an isPlaying boolean, not an authored beat-list mechanism animation."
+        },
+        {
+          "technique": "no-orientation-tax",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/radio/components/StationPicker.tsx:17 StationPicker provides a dropdown menu to select radio broadcast stations rather than an index or reading progress rail."
+        },
+        {
+          "technique": "reveal-without-loss",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/radio/components/TitleCrossfade.tsx:20 TitleCrossfade applies a 300ms text crossfade on track title changes in the audio footer rather than handling scroll reveal."
+        },
+        {
+          "technique": "scroll-bound-progression",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:36 The audio player polls track playback progress at 1000ms intervals rather than evaluating scroll position progression curves."
+        },
+        {
+          "technique": "sequence-as-spine",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/radio/hooks/useYouTubePlayer.ts:22 YouTube player integration manages media playback commands and events with no relationship to narrative sequence spines."
+        }
+      ]
     }
   }
 }

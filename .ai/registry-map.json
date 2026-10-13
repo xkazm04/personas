@@ -10137,12 +10137,11 @@
           "changedAt": "2026-09-26",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "Precondition unmet: that subject governs an explanatory/marketing page whose reader \"arrived from a link ... no task to complete\" and whose spine is scroll-bound sequence; this module is a schema-driven comparison primitive inside the app shell — src/features/shared/components/display/UnifiedTable.tsx:99-102 takes columns/data/getRowKey and nothing under that directory renders a narrative sequence. Matched at 705 on the words display/scroll (src/features/shared/components/display/ScrollShadowContainer.tsx:1, a shadow affordance for an overflowing region).",
-          "evaluatedAt": "2026-09-20",
-          "evaluatedAgainst": "sha256:aabd5cfef103cfb6",
-          "evaluatedRevision": 1,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:480 Grep for subject terms (scroll-bound, filmstrip, orientation-tax, sequence-as-spine) across this directory found zero occurrences because the module implements schema-driven in-app table and list presentation primitives rather than an explanatory narrative scroll sequence.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:e93abcf9f70a6c36",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 2
         },
         {
           "subject": "quality-gates",
@@ -14361,7 +14360,11 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useProgressiveReveal.ts:78 Grep for subject terms (scroll-bound, filmstrip, orientation-tax, sequence-as-spine) across this directory found zero occurrences because the module provides generic interaction and accessibility utility hooks rather than an explanatory narrative scroll surface.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:e93abcf9f70a6c36",
+          "evaluatedRevision": 3
         },
         {
           "subject": "motion",
@@ -19524,7 +19527,11 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:22 Grep for subject terms (scroll-bound, filmstrip, orientation-tax, sequence-as-spine) across this directory found zero occurrences because the module implements presentation prototypes for empty states in overview tabs rather than an explanatory narrative scroll surface.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:e93abcf9f70a6c36",
+          "evaluatedRevision": 3
         },
         {
           "subject": "async-ui-states",
@@ -25403,7 +25410,11 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/radio/components/RadioPage.tsx:17 Grep for subject terms (scroll-bound, filmstrip, orientation-tax, sequence-as-spine) across this directory found zero occurrences because the module implements an internet and YouTube radio player interface inside the app shell rather than an explanatory narrative scroll surface.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:e93abcf9f70a6c36",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"
