@@ -1454,12 +1454,11 @@ pub fn drive_reveal_in_os(app: AppHandle, rel_path: String) -> Result<(), AppErr
 
     #[cfg(target_os = "windows")]
     {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        use personas_core::utils::process::NoWindow;
         // `explorer /select,<path>` highlights the file in its parent folder.
         std::process::Command::new("explorer")
+            .no_window()
             .arg(format!("/select,{}", abs.display()))
-            .creation_flags(CREATE_NO_WINDOW)
             .spawn()
             .map_err(|e| AppError::Internal(format!("Failed to reveal in Explorer: {e}")))?;
     }

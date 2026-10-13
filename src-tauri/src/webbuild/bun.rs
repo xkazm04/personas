@@ -91,17 +91,8 @@ pub async fn run(
 /// as the Whisper/Piper sidecars — no flashing conhost). Shared by the one-shot
 /// runner and the dev-server spawn so behaviour is identical.
 pub(crate) fn hide_window(cmd: &mut tokio::process::Command) {
-    #[cfg(windows)]
-    {
-        // `creation_flags` is an inherent method on tokio's Command (no
-        // `CommandExt` import needed, unlike std::process::Command).
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        cmd.creation_flags(CREATE_NO_WINDOW);
-    }
-    #[cfg(not(windows))]
-    {
-        let _ = cmd;
-    }
+    use personas_core::utils::process::NoWindow;
+    cmd.no_window();
 }
 
 #[cfg(test)]

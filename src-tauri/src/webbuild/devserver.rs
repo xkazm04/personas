@@ -595,11 +595,10 @@ pub(crate) fn http_responds(port: u16) -> bool {
 pub(crate) fn kill_tree(pid: u32) -> Result<(), String> {
     #[cfg(windows)]
     let out = {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        use personas_core::utils::process::NoWindow;
         std::process::Command::new("taskkill")
+            .no_window()
             .args(["/F", "/T", "/PID", &pid.to_string()])
-            .creation_flags(CREATE_NO_WINDOW)
             .stdin(Stdio::null())
             .output()
             .map_err(|e| format!("run taskkill: {e}"))?
@@ -667,11 +666,10 @@ fn parse_lock_pid(body: &str) -> Option<u32> {
 /// kill against killing an unrelated process that recycled a dead orphan's pid.
 #[cfg(windows)]
 fn pid_is_node(pid: u32) -> bool {
-    use std::os::windows::process::CommandExt;
-    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    use personas_core::utils::process::NoWindow;
     std::process::Command::new("tasklist")
+        .no_window()
         .args(["/FI", &format!("PID eq {pid}"), "/FO", "CSV", "/NH"])
-        .creation_flags(CREATE_NO_WINDOW)
         .stdin(Stdio::null())
         .output()
         .map(|o| {
