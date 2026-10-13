@@ -550,6 +550,25 @@ board never shows a number the loop would not act on. The tick logs the pacing
 line in its summary and announces a hold once per transition, the way the
 governor's stop is announced.
 
+#### Schedules plate: the operator's scheduled tasks, so a nightly job is never forgotten
+
+Below the Autopilot plate, the Supply deck (`SupplyDeck.tsx`) carries a **Schedules** plate
+(`SchedulePlate.tsx`) listing every Windows Task Scheduler task in the `\Personas\` folder. Today
+that is the `/curator --multi` night (`\Personas\CuratorNight`, 23:00-07:00); anything else
+scheduled into the folder appears with no code change. Each line is a lamp (green while enabled,
+amber while running, dark when off), the task's title, its next start in **Prague time**
+(`Europe/Prague`, whatever zone the machine runs in), and a switch that enables or disables it.
+The line's tooltip adds the declared window, the last run and its result. The plate renders
+nothing until something is scheduled, and nothing off Windows.
+
+The task's `Description` carries what the line shows, as `<title>|<window>`. The read
+(`fleet_scheduled_tasks`) and the switch (`fleet_scheduled_task_set_enabled`, which accepts only a
+name the `\Personas\` listing holds and returns the refreshed list) run PowerShell's
+`Get-ScheduledTask`/`Enable-ScheduledTask` windowless and get times as UTC epoch milliseconds,
+never as `schtasks` locale text. The plate polls every 30 s while the window is visible. Turning a
+task off stops it starting tomorrow; a night already running ends on its own window
+(`loop.py multi stop` ends it after its running units).
+
 #### Orchestration panel — the next tick, read-only
 
 Opened from the Activity board's Autopilot plate (`SupplyDeck.tsx`), the

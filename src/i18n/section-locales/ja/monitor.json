@@ -1085,5 +1085,18 @@
   "dc_hub_triage_all_none": "待機中のものはありません",
   "dc_hub_triage_all_short": "すべて",
   "dc_hub_triage_all_walk_tip": "{count} 件すべてを緊急度の高い順に確認",
-  "grid_rail_triage_modal_aria": "レビューの詳細"
+  "grid_rail_triage_modal_aria": "レビューの詳細",
+  "schedule_last_failed": "コード {code} で終了",
+  "schedule_last_ok": "正常に完了",
+  "schedule_last_run": "前回の実行 {when}",
+  "schedule_never_ran": "まだ実行されていません",
+  "schedule_next": "次回 {when}",
+  "schedule_off": "オフ",
+  "schedule_running": "実行中",
+  "schedule_time_zone": "時刻はプラハ時間",
+  "schedule_toggle_aria": "{title} をスケジュールどおりに実行",
+  "schedule_toggle_failed": "スケジュールされたタスクを切り替えられませんでした",
+  "schedule_window": "稼働時間 {window}",
+  "schedules": "スケジュール",
+  "schedules_aria": "このコンピューターのスケジュールされたタスク"
 }

@@ -1085,5 +1085,18 @@
   "dc_hub_triage_all_none": "कुछ भी प्रतीक्षा में नहीं",
   "dc_hub_triage_all_short": "सभी",
   "dc_hub_triage_all_walk_tip": "सभी {count} क्रम से देखें, सबसे ज़रूरी पहले",
-  "grid_rail_triage_modal_aria": "समीक्षा विवरण"
+  "grid_rail_triage_modal_aria": "समीक्षा विवरण",
+  "schedule_last_failed": "कोड {code} के साथ समाप्त",
+  "schedule_last_ok": "सफलतापूर्वक पूरा हुआ",
+  "schedule_last_run": "पिछला रन {when}",
+  "schedule_never_ran": "अभी तक नहीं चला",
+  "schedule_next": "अगला {when}",
+  "schedule_off": "बंद",
+  "schedule_running": "अभी चल रहा है",
+  "schedule_time_zone": "समय प्राग समय में",
+  "schedule_toggle_aria": "{title} को शेड्यूल के अनुसार चलाएँ",
+  "schedule_toggle_failed": "शेड्यूल किया गया कार्य बदला नहीं जा सका",
+  "schedule_window": "कार्य समय {window}",
+  "schedules": "शेड्यूल",
+  "schedules_aria": "इस कंप्यूटर पर शेड्यूल किए गए कार्य"
 }

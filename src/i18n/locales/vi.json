@@ -7596,7 +7596,20 @@
     "dc_hub_triage_all_none": "Không có gì đang chờ",
     "dc_hub_triage_all_short": "Tất cả",
     "dc_hub_triage_all_walk_tip": "Duyệt cả {count} mục theo thứ tự, khẩn cấp nhất trước",
-    "grid_rail_triage_modal_aria": "Chi tiết duyệt"
+    "grid_rail_triage_modal_aria": "Chi tiết duyệt",
+    "schedule_last_failed": "kết thúc với mã {code}",
+    "schedule_last_ok": "đã hoàn tất",
+    "schedule_last_run": "Lần chạy gần nhất {when}",
+    "schedule_never_ran": "Chưa chạy lần nào",
+    "schedule_next": "tiếp theo {when}",
+    "schedule_off": "tắt",
+    "schedule_running": "đang chạy",
+    "schedule_time_zone": "Thời gian theo giờ Praha",
+    "schedule_toggle_aria": "Chạy {title} theo lịch",
+    "schedule_toggle_failed": "Không thể chuyển đổi tác vụ đã lên lịch",
+    "schedule_window": "Hoạt động {window}",
+    "schedules": "Lịch chạy",
+    "schedules_aria": "Các tác vụ đã lên lịch trên máy tính này"
   },
   "onboarding": {
     "adopt_button": "Thiết lập tác nhân",

@@ -319,6 +319,8 @@ pub(super) fn shard(
         commands::fleet::cli_usage::fleet_cli_usage,
         commands::fleet::autopilot::fleet_autopilot_status,
         commands::fleet::autopilot::fleet_dispatch_preview,
+        commands::fleet::schedules::fleet_scheduled_tasks,
+        commands::fleet::schedules::fleet_scheduled_task_set_enabled,
         commands::fleet::claude_accounts::fleet_claude_accounts_list,
         commands::fleet::claude_accounts::fleet_claude_account_capture,
         commands::fleet::claude_accounts::fleet_claude_account_switch,

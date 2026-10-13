@@ -1085,5 +1085,18 @@
   "dc_hub_triage_all_none": "لا شيء في الانتظار",
   "dc_hub_triage_all_short": "الكل",
   "dc_hub_triage_all_walk_tip": "تصفّح كل {count} بالترتيب، الأكثر إلحاحًا أولًا",
-  "grid_rail_triage_modal_aria": "تفاصيل المراجعة"
+  "grid_rail_triage_modal_aria": "تفاصيل المراجعة",
+  "schedule_last_failed": "انتهت بالرمز {code}",
+  "schedule_last_ok": "اكتملت بنجاح",
+  "schedule_last_run": "آخر تشغيل {when}",
+  "schedule_never_ran": "لم تُشغَّل بعد",
+  "schedule_next": "التالي {when}",
+  "schedule_off": "متوقفة",
+  "schedule_running": "قيد التشغيل الآن",
+  "schedule_time_zone": "الأوقات بتوقيت براغ",
+  "schedule_toggle_aria": "تشغيل {title} حسب الجدول",
+  "schedule_toggle_failed": "تعذّر تبديل المهمة المجدولة",
+  "schedule_window": "تعمل {window}",
+  "schedules": "الجداول",
+  "schedules_aria": "المهام المجدولة على هذا الكمبيوتر"
 }

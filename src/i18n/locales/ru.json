@@ -7596,7 +7596,20 @@
     "dc_hub_triage_all_none": "Ничего не ожидает",
     "dc_hub_triage_all_short": "Все",
     "dc_hub_triage_all_walk_tip": "Пройти все ({count}) по порядку, сначала срочные",
-    "grid_rail_triage_modal_aria": "Детали проверки"
+    "grid_rail_triage_modal_aria": "Детали проверки",
+    "schedule_last_failed": "завершилась с кодом {code}",
+    "schedule_last_ok": "завершилась успешно",
+    "schedule_last_run": "Последний запуск {when}",
+    "schedule_never_ran": "Ещё не запускалась",
+    "schedule_next": "следующий {when}",
+    "schedule_off": "выкл.",
+    "schedule_running": "выполняется",
+    "schedule_time_zone": "Время по Праге",
+    "schedule_toggle_aria": "Запускать {title} по расписанию",
+    "schedule_toggle_failed": "Не удалось переключить запланированную задачу",
+    "schedule_window": "Работает {window}",
+    "schedules": "Расписания",
+    "schedules_aria": "Запланированные задачи на этом компьютере"
   },
   "onboarding": {
     "adopt_button": "Настроить агента",

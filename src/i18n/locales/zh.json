@@ -7596,7 +7596,20 @@
     "dc_hub_triage_all_none": "没有待处理项",
     "dc_hub_triage_all_short": "全部",
     "dc_hub_triage_all_walk_tip": "按紧急程度依次处理全部 {count} 项",
-    "grid_rail_triage_modal_aria": "审核详情"
+    "grid_rail_triage_modal_aria": "审核详情",
+    "schedule_last_failed": "以代码 {code} 结束",
+    "schedule_last_ok": "已成功完成",
+    "schedule_last_run": "上次运行 {when}",
+    "schedule_never_ran": "尚未运行",
+    "schedule_next": "下次 {when}",
+    "schedule_off": "已关闭",
+    "schedule_running": "正在运行",
+    "schedule_time_zone": "时间为布拉格时间",
+    "schedule_toggle_aria": "按计划运行 {title}",
+    "schedule_toggle_failed": "无法切换计划任务",
+    "schedule_window": "运行时段 {window}",
+    "schedules": "计划",
+    "schedules_aria": "本机上的计划任务"
   },
   "onboarding": {
     "adopt_button": "设置智能体",

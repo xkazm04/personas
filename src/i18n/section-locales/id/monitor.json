@@ -1085,5 +1085,18 @@
   "dc_hub_triage_all_none": "Tidak ada yang menunggu",
   "dc_hub_triage_all_short": "Semua",
   "dc_hub_triage_all_walk_tip": "Telusuri semua {count} berurutan, yang paling mendesak dulu",
-  "grid_rail_triage_modal_aria": "Detail peninjauan"
+  "grid_rail_triage_modal_aria": "Detail peninjauan",
+  "schedule_last_failed": "berakhir dengan kode {code}",
+  "schedule_last_ok": "selesai dengan baik",
+  "schedule_last_run": "Terakhir dijalankan {when}",
+  "schedule_never_ran": "Belum pernah dijalankan",
+  "schedule_next": "berikutnya {when}",
+  "schedule_off": "mati",
+  "schedule_running": "sedang berjalan",
+  "schedule_time_zone": "Waktu dalam zona waktu Praha",
+  "schedule_toggle_aria": "Jalankan {title} sesuai jadwal",
+  "schedule_toggle_failed": "Tidak dapat mengubah tugas terjadwal",
+  "schedule_window": "Bekerja {window}",
+  "schedules": "Jadwal",
+  "schedules_aria": "Tugas terjadwal di komputer ini"
 }

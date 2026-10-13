@@ -1085,5 +1085,18 @@
   "dc_hub_triage_all_none": "Nada en espera",
   "dc_hub_triage_all_short": "Todo",
   "dc_hub_triage_all_walk_tip": "Recorrer los {count} en orden, lo más urgente primero",
-  "grid_rail_triage_modal_aria": "Detalles de la revisión"
+  "grid_rail_triage_modal_aria": "Detalles de la revisión",
+  "schedule_last_failed": "terminó con código {code}",
+  "schedule_last_ok": "terminó correctamente",
+  "schedule_last_run": "Última ejecución {when}",
+  "schedule_never_ran": "Aún no se ha ejecutado",
+  "schedule_next": "próxima {when}",
+  "schedule_off": "desactivada",
+  "schedule_running": "en ejecución",
+  "schedule_time_zone": "Horas en hora de Praga",
+  "schedule_toggle_aria": "Ejecutar {title} según lo programado",
+  "schedule_toggle_failed": "No se pudo cambiar la tarea programada",
+  "schedule_window": "Trabaja {window}",
+  "schedules": "Programaciones",
+  "schedules_aria": "Tareas programadas en este equipo"
 }

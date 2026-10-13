@@ -1085,5 +1085,18 @@
   "dc_hub_triage_all_none": "Nic nečeká",
   "dc_hub_triage_all_short": "Vše",
   "dc_hub_triage_all_walk_tip": "Projít všech {count} popořadě, nejnaléhavější první",
-  "grid_rail_triage_modal_aria": "Detail revize"
+  "grid_rail_triage_modal_aria": "Detail revize",
+  "schedule_last_failed": "skončila s kódem {code}",
+  "schedule_last_ok": "proběhla v pořádku",
+  "schedule_last_run": "Naposledy {when}",
+  "schedule_never_ran": "Zatím neproběhla",
+  "schedule_next": "další {when}",
+  "schedule_off": "vypnuto",
+  "schedule_running": "právě běží",
+  "schedule_time_zone": "Časy v pražském čase",
+  "schedule_toggle_aria": "Spouštět {title} podle plánu",
+  "schedule_toggle_failed": "Naplánovanou úlohu se nepodařilo přepnout",
+  "schedule_window": "Pracuje {window}",
+  "schedules": "Plány",
+  "schedules_aria": "Naplánované úlohy na tomto počítači"
 }

@@ -7596,7 +7596,20 @@
     "dc_hub_triage_all_none": "대기 중인 항목 없음",
     "dc_hub_triage_all_short": "전체",
     "dc_hub_triage_all_walk_tip": "대기 중인 {count}건을 긴급한 순서대로 처리",
-    "grid_rail_triage_modal_aria": "검토 상세"
+    "grid_rail_triage_modal_aria": "검토 상세",
+    "schedule_last_failed": "코드 {code}(으)로 종료됨",
+    "schedule_last_ok": "정상적으로 완료됨",
+    "schedule_last_run": "마지막 실행 {when}",
+    "schedule_never_ran": "아직 실행되지 않음",
+    "schedule_next": "다음 {when}",
+    "schedule_off": "꺼짐",
+    "schedule_running": "실행 중",
+    "schedule_time_zone": "시간은 프라하 시간 기준",
+    "schedule_toggle_aria": "{title} 일정대로 실행",
+    "schedule_toggle_failed": "예약된 작업을 전환할 수 없습니다",
+    "schedule_window": "작동 시간 {window}",
+    "schedules": "일정",
+    "schedules_aria": "이 컴퓨터의 예약된 작업"
   },
   "onboarding": {
     "adopt_button": "에이전트 설정",

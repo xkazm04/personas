@@ -1083,6 +1083,7 @@ export type { SavedView } from "./SavedView";
 export type { ScanAgentMeta } from "./ScanAgentMeta";
 export type { ScanDelta } from "./ScanDelta";
 export type { ScanFileEntry } from "./ScanFileEntry";
+export type { ScheduledTaskView } from "./ScheduledTaskView";
 export type { ScheduleMissedRuns } from "./ScheduleMissedRuns";
 export type { SchedulerStats } from "./SchedulerStats";
 export type { SchemaProposalSnapshot } from "./SchemaProposalSnapshot";

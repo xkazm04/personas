@@ -7596,7 +7596,20 @@
     "dc_hub_triage_all_none": "Rien en attente",
     "dc_hub_triage_all_short": "Tout",
     "dc_hub_triage_all_walk_tip": "Parcourir les {count} dans l'ordre, le plus urgent d'abord",
-    "grid_rail_triage_modal_aria": "Détails de la révision"
+    "grid_rail_triage_modal_aria": "Détails de la révision",
+    "schedule_last_failed": "terminée avec le code {code}",
+    "schedule_last_ok": "terminée avec succès",
+    "schedule_last_run": "Dernière exécution {when}",
+    "schedule_never_ran": "Pas encore exécutée",
+    "schedule_next": "prochaine {when}",
+    "schedule_off": "désactivée",
+    "schedule_running": "en cours",
+    "schedule_time_zone": "Heures de Prague",
+    "schedule_toggle_aria": "Exécuter {title} selon le planning",
+    "schedule_toggle_failed": "Impossible de modifier la tâche planifiée",
+    "schedule_window": "Fonctionne {window}",
+    "schedules": "Plannings",
+    "schedules_aria": "Tâches planifiées sur cet ordinateur"
   },
   "onboarding": {
     "adopt_button": "Configurer l’agent",

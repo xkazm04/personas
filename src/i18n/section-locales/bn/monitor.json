@@ -1085,5 +1085,18 @@
   "dc_hub_triage_all_none": "কিছুই অপেক্ষায় নেই",
   "dc_hub_triage_all_short": "সব",
   "dc_hub_triage_all_walk_tip": "সবগুলো {count}টি ক্রমানুসারে দেখুন, সবচেয়ে জরুরি আগে",
-  "grid_rail_triage_modal_aria": "পর্যালোচনার বিবরণ"
+  "grid_rail_triage_modal_aria": "পর্যালোচনার বিবরণ",
+  "schedule_last_failed": "কোড {code} দিয়ে শেষ হয়েছে",
+  "schedule_last_ok": "সফলভাবে শেষ হয়েছে",
+  "schedule_last_run": "শেষ রান {when}",
+  "schedule_never_ran": "এখনও চালানো হয়নি",
+  "schedule_next": "পরবর্তী {when}",
+  "schedule_off": "বন্ধ",
+  "schedule_running": "এখন চলছে",
+  "schedule_time_zone": "সময় প্রাগ সময় অনুযায়ী",
+  "schedule_toggle_aria": "{title} সময়সূচি অনুযায়ী চালান",
+  "schedule_toggle_failed": "নির্ধারিত কাজটি পরিবর্তন করা যায়নি",
+  "schedule_window": "কাজের সময় {window}",
+  "schedules": "সময়সূচি",
+  "schedules_aria": "এই কম্পিউটারে নির্ধারিত কাজ"
 }
