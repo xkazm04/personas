@@ -933,6 +933,8 @@ def acquire(c, registry, skills, repos: list[dict], held: set[str], used: dict, 
     order = [repos[(state.get("repo_cursor", 0) + i) % n] for i in range(n)] if n else []
     order.sort(key=lambda r: r["slug"] in used["repos"])  # stable: rotation order among equals
     for repo in order:
+        if repo["slug"] in used.get("busy", ()):
+            continue  # a live unit is judging, reviewing or committing there; one writer per repo
         if repo_busy(repo["root"]):
             continue  # the merger must not write into a tree somebody is merging or rebasing
         if repo["slug"] == "personas":
@@ -1059,34 +1061,11 @@ def run_round(a: argparse.Namespace) -> dict:
             if baseline and not baseline.get("nothing"):
                 print(json.dumps({**baseline, "event": "as_found_commit", "repo": d["repo"]}, default=str), flush=True)
                 baselines.append({"slug": d["repo"], **baseline})
-        cfg = PROVIDERS[name]
-        model = agy_model if name == "agy" else cfg["model"]
-        sdir = rdir / f"{name}-{i}"
-        sdir.mkdir(exist_ok=True)
-        pf = sdir / "prompt.md"
-        prompt_text = brief(d)
-        pf.write_text(prompt_text, encoding="utf-8")
-        sid = str(uuid.uuid4())
-        argv, stdin, env_extra = seat_command(name, model, cfg["effort"], pf, schema_file, sdir, sid, d["repo_root"])
-        env = {**L.worker_env(), **env_extra}
-        flags = (subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW) if sys.platform == "win32" else 0
-        fo, fe = open(sdir / "stdout.txt", "w", encoding="utf-8"), open(sdir / "stderr.txt", "w", encoding="utf-8")
-        proc = subprocess.Popen(argv, cwd=d["repo_root"], env=env, stdout=fo, stderr=fe,
-                                stdin=subprocess.PIPE if stdin is not None else subprocess.DEVNULL,
-                                creationflags=flags, text=True, encoding="utf-8")
-        if stdin is not None:
-            try:
-                proc.stdin.write(stdin)
-                proc.stdin.close()
-            except OSError:
-                pass
-        seats.append({"name": name, "model": model, "claim": claim, "dossier": d, "dir": sdir, "proc": proc,
-                      "prompt_sha": sha256_text(prompt_text),
-                      "pid": proc.pid, "create_time": L.proc_create_time(proc.pid),
-                      "fo": fo, "fe": fe, "t0": time.time(), "session": sid if name == "grok" else None})
+        seat = _launch(name, agy_model, claim, d, rdir / f"{name}-{i}", schema_file)
+        seats.append(seat)
         _journal(rdir, seats, before, a.keep_raw)
-        print(json.dumps({"event": "seat", "round": n, "provider": name, "model": model, "repo": d["repo"],
-                          "subject": claim["subject"], "pairs": len(d["pairs"]), "pid": proc.pid}), flush=True)
+        print(json.dumps({"event": "seat", "round": n, "provider": name, "model": seat["model"], "repo": d["repo"],
+                          "subject": claim["subject"], "pairs": len(d["pairs"]), "pid": seat["pid"]}), flush=True)
     c.close()
     save_state(state)  # `tried` and the cursor were written by acquire(); settle_round reloads state
     if not seats:
@@ -1100,6 +1079,65 @@ def run_round(a: argparse.Namespace) -> dict:
     summary["as_found_commits"] = baselines
     L._write_json(MULTI_DIR / "rounds" / f"{n}.json", summary)
     return summary
+
+
+def _launch(name: str, agy_model: str | None, claim: dict, d: dict, sdir: pathlib.Path,
+            schema_file: pathlib.Path) -> dict:
+    """Start one provider seat on one dossier; the seat dict the settle path reads."""
+    cfg = PROVIDERS[name]
+    model = (agy_model or "gemini-3.8-flash-high") if name == "agy" else cfg["model"]
+    sdir.mkdir(parents=True, exist_ok=True)
+    pf = sdir / "prompt.md"
+    prompt_text = brief(d)
+    pf.write_text(prompt_text, encoding="utf-8")
+    sid = str(uuid.uuid4())
+    argv, stdin, env_extra = seat_command(name, model, cfg["effort"], pf, schema_file, sdir, sid, d["repo_root"])
+    env = {**L.worker_env(), **env_extra}
+    flags = (subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW) if sys.platform == "win32" else 0
+    fo, fe = open(sdir / "stdout.txt", "w", encoding="utf-8"), open(sdir / "stderr.txt", "w", encoding="utf-8")
+    proc = subprocess.Popen(argv, cwd=d["repo_root"], env=env, stdout=fo, stderr=fe,
+                            stdin=subprocess.PIPE if stdin is not None else subprocess.DEVNULL,
+                            creationflags=flags, text=True, encoding="utf-8")
+    if stdin is not None:
+        try:
+            proc.stdin.write(stdin)
+            proc.stdin.close()
+        except OSError:
+            pass
+    return {"name": name, "model": model, "claim": claim, "dossier": d, "dir": sdir, "proc": proc,
+            "prompt_sha": sha256_text(prompt_text), "pid": proc.pid, "create_time": L.proc_create_time(proc.pid),
+            "fo": fo, "fe": fe, "t0": time.time(), "session": sid if name == "grok" else None}
+
+
+def spawn_unit(a, c, registry, skills, repos: list[dict], name: str, held: set[str], used: dict,
+               agy_model: str | None) -> dict | None:
+    """ONE seat as its own unit (`rounds/<n>/`, journaled, settled alone). None = nothing claimable.
+
+    The continuous night is made of these: a unit ends when its seat does, so a fast provider
+    takes its next subject while a slow one is still reading. Reusing the round machinery for a
+    one-seat round keeps the journal, `finish`, the scoreboard and the commit path unchanged.
+    """
+    state = load_state()
+    n = state["rounds"] + 1
+    claim, d = acquire(c, registry, skills, repos, held, used, state, n)
+    if not claim:
+        save_state(state)
+        return None
+    state["rounds"] = n
+    save_state(state)
+    rdir = MULTI_DIR / "rounds" / str(n)
+    rdir.mkdir(parents=True, exist_ok=True)
+    schema_file = rdir / "schema.json"
+    schema_file.write_text(json.dumps(SCHEMA), encoding="utf-8")
+    before = {d["repo_root"]: repo_untracked(d["repo_root"])}
+    baselines = []
+    baseline = commit_as_found(pathlib.Path(d["repo_root"]), n)
+    if baseline and not baseline.get("nothing"):
+        baselines.append({"slug": d["repo"], **baseline})
+    seat = _launch(name, agy_model, claim, d, rdir / f"{name}-0", schema_file)
+    _journal(rdir, [seat], before, False)
+    seat["fo"].close(), seat["fe"].close()  # the child holds its own handles
+    return {"n": n, "rdir": rdir, "seat": seat, "before": before, "baselines": baselines}
 
 
 def _alive(s: dict) -> bool:
@@ -1657,6 +1695,152 @@ def _night_lock() -> pathlib.Path | None:
     return None
 
 
+EMPTY_SEATS_STOP = 9          # consecutive finished seats that kept nothing (3 rounds' worth)
+NOTHING_CLAIMABLE_RETRY_S = 600
+FLOW_POLL_S = 5
+
+
+def _reviewed_phrase(review: dict, model: str) -> str:
+    if review.get("ok") and not review.get("skipped"):
+        return f"{model} checked {review.get('checked')}, withdrew {sum(len(w['contexts']) for w in review.get('withdrawn') or [])}"
+    return f"none ({review.get('skipped') or review.get('error')})"
+
+
+def run_flow(a, log, events: list, deadline, registry, repos: list[dict]) -> str:
+    """Continuous seats: every provider slot takes its next subject the moment its seat settles.
+
+    Measured 2026-10-13: rounds waited for their slowest seat (grok ~12 min against agy's ~7),
+    leaving 27% of seat time idle. Here each slot runs at its own provider's speed. A finished
+    seat is settled on this thread (validate, merge, ledger) and its review + commit go to a
+    worker, so a 10-minute review never holds a slot empty. One live unit per repo: a repo held
+    by a running, reviewing or committing unit is never assigned another, so a commit carries
+    exactly its own unit's verdicts.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    names = [p.strip() for p in a.providers.split(",") if p.strip() in PROVIDERS and bin_of(p.strip())]
+    slots = [f"{p}#{i}" for i in range(max(1, a.per_provider)) for p in names]
+    running: dict[str, dict] = {}
+    posting: list[tuple[dict, object]] = []
+    idle_until: dict[str, float] = {}
+    started = empty_streak = 0
+    stop = None
+    last_hold = None
+    agy_model = agy_flash_model() if "agy" in names else None
+    pool = ThreadPoolExecutor(max_workers=3)
+
+    def post(summary: dict) -> tuple[dict, list]:
+        review = review_round(summary, a.reviewer_model) if a.review != "off" else {"skipped": "--review off"}
+        return review, commit_round(summary, _reviewed_phrase(review, a.reviewer_model))
+
+    def hold(why: str):
+        nonlocal last_hold
+        if why != last_hold:
+            log("held", why=why)
+            last_hold = why
+
+    errors = 0
+    try:
+        while True:
+          try:
+            # 1. settle every seat that ended (or ran past its ceiling)
+            for slot, u in list(running.items()):
+                s = u["seat"]
+                over = time.time() - s["t0"] > a.timeout_min * 60
+                if _alive(s) and not over:
+                    continue
+                s["timed_out"] = _alive(s)
+                if s["timed_out"]:
+                    L.kill_tree(int(s["pid"]))
+                    try:
+                        s["proc"].wait(timeout=60)
+                    except subprocess.TimeoutExpired:
+                        pass
+                s["wall_s"] = round(time.time() - s["t0"])
+                summary = settle_round(u["n"], u["rdir"], [s], u["before"], False, a.timeout_min, recovered=False)
+                summary["as_found_commits"] = u["baselines"]
+                del running[slot]
+                posting.append((summary, pool.submit(post, summary)))
+            # 2. collect finished reviews and commits
+            for item in [x for x in posting if x[1].done()]:
+                posting.remove(item)
+                summary, fut = item
+                try:
+                    review, commits = fut.result()
+                except Exception as e:  # a failed post never kills the night; it is reported
+                    review, commits = {"ok": False, "error": f"post crashed: {e}"}, []
+                landed = sum(x.get("accepted") or 0 for x in summary["seats"]) - \
+                    sum(len(w["contexts"]) for w in review.get("withdrawn") or [])
+                empty_streak = 0 if landed > 0 else empty_streak + 1
+                events.append({"round": summary["round"], "summary": summary, "review": review, "commits": commits})
+                log("round", round=summary["round"], landed=landed,
+                    seats=[{k: x.get(k) for k in ("provider", "repo", "subject", "accepted", "outcome", "wall_s")} for x in summary["seats"]],
+                    review=review, commits=commits, dropped=list(summary.get("dropped") or {}))
+            # 3. should the night stop taking new work?
+            dropped = load_state()["dropped"]
+            if stop is None:
+                if NIGHT_STOP.exists():
+                    stop = "STOP file"
+                elif a.max_rounds and started >= a.max_rounds:
+                    stop = f"--max-rounds {a.max_rounds} seats started"
+                elif deadline and datetime.now() + timedelta(minutes=20) > deadline:
+                    stop = f"the window closes at {deadline:%H:%M}"
+                elif all(s.split("#")[0] in dropped for s in slots):
+                    stop = "every provider hit its usage limit"
+                elif empty_streak >= EMPTY_SEATS_STOP:
+                    stop = f"{EMPTY_SEATS_STOP} seats in a row kept nothing"
+                elif not running and not posting and slots and all(idle_until.get(s, 0) > time.time() for s in slots):
+                    stop = "nothing claimable in any repo (backlog empty, or every subject tried)"
+                if stop:
+                    log("draining", reason=stop, running=len(running), posting=len(posting))
+            if stop and not running and not posting:
+                return stop
+            # 4. fill idle slots
+            if stop is None:
+                for slot in slots:
+                    if slot in running or slot.split("#")[0] in dropped or idle_until.get(slot, 0) > time.time():
+                        continue
+                    free = L.sample_free_gb(samples=3, gap_s=0.3)
+                    if free is not None and free < MIN_FREE_GB + PER_SEAT_GB:
+                        hold(f"memory: {free:.1f} GB free, {MIN_FREE_GB + PER_SEAT_GB} needed")
+                        break
+                    c = L.connect()
+                    try:
+                        b = L.brakes(c)
+                        held_brakes = [h for h in b["held_by"] if not (a.terminal_owns and h.startswith("curator_enabled"))]
+                        if held_brakes:
+                            hold("brake: " + "; ".join(held_brakes))
+                            break
+                        skills = L.read_skills(registry)
+                        busy = {u["seat"]["dossier"]["repo"] for u in running.values()} | \
+                               {s2.get("repo") for summ, _ in posting for s2 in summ.get("seats", [])}
+                        held = {f"personas:{x}" for x in L.open_dispatch_subjects(c)} | \
+                               {f"{u['seat']['claim']['repo']}:{u['seat']['claim']['subject']}" for u in running.values()}
+                        used = {"repos": busy, "busy": busy,
+                                "categories": {u["seat"]["dossier"]["category"] for u in running.values()}}
+                        u = spawn_unit(a, c, registry, skills, repos, slot.split("#")[0], held, used, agy_model)
+                    finally:
+                        c.close()
+                    if u is None:
+                        idle_until[slot] = time.time() + NOTHING_CLAIMABLE_RETRY_S
+                        log("slot_idle", slot=slot, retry_in_min=NOTHING_CLAIMABLE_RETRY_S // 60)
+                        continue
+                    last_hold = None
+                    running[slot] = u
+                    started += 1
+                    s = u["seat"]
+                    log("seat", unit=u["n"], slot=slot, provider=s["name"], model=s["model"], repo=s["dossier"]["repo"],
+                        subject=s["claim"]["subject"], pairs=len(s["dossier"]["pairs"]), pid=s["pid"])
+            errors = 0
+          except Exception as e:  # a locked database or a transient OSError: retry; running seats are journaled
+            errors += 1
+            log("loop_error", error=f"{type(e).__name__}: {e}", consecutive=errors)
+            if errors >= 10:
+                raise
+          time.sleep(FLOW_POLL_S)
+    finally:
+        pool.shutdown(wait=True)
+
+
 def run_night(a: argparse.Namespace) -> dict:
     """Rounds back to back, each reviewed and committed, until the window closes or a stop fires.
 
@@ -1675,6 +1859,8 @@ def run_night(a: argparse.Namespace) -> dict:
     tag = start.strftime("%Y-%m-%d-%H%M")
     log_path = NIGHT_DIR / f"{tag}.jsonl"
     deadline = _deadline(a.until, start)
+    if getattr(a, "hours", None):
+        deadline = start + timedelta(hours=a.hours)
     NIGHT_STOP.unlink(missing_ok=True)
 
     def log(event: str, **kw):
@@ -1700,65 +1886,12 @@ def run_night(a: argparse.Namespace) -> dict:
             save_state(state)
         log("night_started", until=a.until, max_rounds=a.max_rounds, providers=a.providers, review=a.review,
             repos=[r["slug"] for r in repos], per_provider=a.per_provider)
-        if unfinished_round() is not None:
+        while unfinished_round() is not None:  # a continuous night can leave several
             fin = finish_round()
             log("finished_stranded_round", round=fin.get("round"))
-            events.append({"round": fin.get("round"), "summary": fin, "review": {"skipped": "recovered round"},
-                           "commits": commit_round(fin, "none (recovered round)")})
-        rounds, empty_streak = 0, 0
-        while True:
-            if NIGHT_STOP.exists():
-                stop_reason = "STOP file"
-                break
-            if a.max_rounds and rounds >= a.max_rounds:
-                stop_reason = f"--max-rounds {a.max_rounds}"
-                break
-            if deadline and datetime.now() + timedelta(minutes=20) > deadline:
-                stop_reason = f"the window closes at {a.until}"
-                break
-            seats_wanted = len([p for p in a.providers.split(",") if p.strip()]) * max(1, a.per_provider)
-            need = MIN_FREE_GB + PER_SEAT_GB * seats_wanted
-            waited = 0
-            free = L.sample_free_gb()
-            while free is not None and free < need and waited < 6:
-                log("memory_wait", free_gb=round(free, 1), need_gb=need)
-                time.sleep(300)
-                waited += 1
-                free = L.sample_free_gb()
-            if free is not None and free < need:
-                stop_reason = f"memory stayed below {need} GB for 30 min"
-                break
-            rounds += 1
-            summary = run_round(a)
-            if not summary.get("ok"):
-                stop_reason = f"round refused: {summary.get('error')} {summary.get('held_by') or ''}".strip()
-                break
-            if summary.get("empty"):
-                stop_reason = "nothing claimable in any repo (backlog empty, or every subject tried)"
-                break
-            review = {"skipped": "--review off"}
-            if a.review != "off":
-                review = review_round(summary, a.reviewer_model)
-                if review.get("limited"):
-                    log("reviewer_limited")
-            reviewed = (f"{a.reviewer_model} checked {review.get('checked')}, withdrew "
-                        f"{sum(len(w['contexts']) for w in review.get('withdrawn') or [])}") if review.get("ok") and not review.get("skipped") \
-                else f"none ({review.get('skipped') or review.get('error')})"
-            commits = commit_round(summary, reviewed)
-            landed = sum(s.get("accepted") or 0 for s in summary["seats"]) - \
-                sum(len(w["contexts"]) for w in review.get("withdrawn") or [])
-            empty_streak = 0 if landed > 0 else empty_streak + 1
-            events.append({"round": summary["round"], "summary": summary, "review": review, "commits": commits})
-            log("round", round=summary["round"], landed=landed,
-                seats=[{k: s.get(k) for k in ("provider", "repo", "subject", "accepted", "outcome", "wall_s")} for s in summary["seats"]],
-                review=review, commits=commits, dropped=list(summary.get("dropped") or {}))
-            active = [p for p in a.providers.split(",") if p.strip() and p.strip() not in load_state()["dropped"]]
-            if not active:
-                stop_reason = "every provider hit its usage limit"
-                break
-            if empty_streak >= EMPTY_ROUNDS_STOP:
-                stop_reason = f"{EMPTY_ROUNDS_STOP} rounds in a row landed nothing"
-                break
+            events.append({"round": fin.get("round"), "summary": fin, "review": {"skipped": "recovered unit"},
+                           "commits": commit_round(fin, "none (recovered unit)")})
+        stop_reason = run_flow(a, log, events, deadline, registry, repos)
     except Exception as e:  # never die silently overnight: the report says what broke
         stop_reason = f"crashed: {type(e).__name__}: {e}"
         log("crashed", error=stop_reason)
@@ -1868,6 +2001,8 @@ def night_argv(a: argparse.Namespace) -> list[str]:
             "--review", a.review, "--reviewer-model", a.reviewer_model]
     if a.until:
         argv += ["--until", a.until]
+    if getattr(a, "hours", None):
+        argv += ["--hours", str(a.hours)]
     if a.max_rounds:
         argv += ["--max-rounds", str(a.max_rounds)]
     return argv

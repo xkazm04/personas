@@ -2505,6 +2505,7 @@ def main() -> int:
     p.add_argument("--repos", help="consumer repo slugs to judge in (default: every repo with a map on this machine)")
     p.add_argument("--per-provider", type=int, default=1, help="seats per provider in each round")
     p.add_argument("--until", help="night: start no round within 20 min of this local time (HH:MM)")
+    p.add_argument("--hours", type=float, help="night: run this many hours from now (instead of --until)")
     p.add_argument("--max-rounds", type=int, default=0, help="night: stop after this many rounds (0 = no cap)")
     p.add_argument("--review", choices=("claude", "off"), default="claude", help="night: a headless Claude spot-checks each round")
     p.add_argument("--reviewer-model", default="sonnet", help="night: the reviewer's model")
