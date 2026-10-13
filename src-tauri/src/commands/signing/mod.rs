@@ -1,4 +1,3 @@
-use std::path::Path;
 use std::sync::Arc;
 
 use chrono::Utc;
@@ -18,17 +17,12 @@ use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
-/// Hash file contents with SHA-256, return hex string prefixed with "sha256:".
-fn hash_file(path: &Path) -> Result<String, AppError> {
-    let bytes =
-        std::fs::read(path).map_err(|e| AppError::Validation(format!("Cannot read file: {e}")))?;
-    Ok(hash_bytes(&bytes))
-}
-
-/// Hash an in-memory byte slice with SHA-256 (same `sha256:` prefix format as
-/// [`hash_file`]). Use this when you already hold the bytes to avoid a
-/// second disk read — required for [`sign_document`] which otherwise had a
-/// TOCTOU window between hashing and signing.
+/// Hash an in-memory byte slice with SHA-256, returned as a `sha256:`-prefixed
+/// hex string. Callers hash the bytes they already hold rather than re-reading
+/// the file - required for [`sign_document`], which otherwise had a TOCTOU
+/// window between hashing and signing. (A path-taking `hash_file` had no
+/// caller left and was removed when `p2p` joined `desktop` and clippy began
+/// compiling this module.)
 fn hash_bytes(bytes: &[u8]) -> String {
     let digest = Sha256::digest(bytes);
     format!("sha256:{}", hex::encode(digest))
@@ -283,7 +277,7 @@ pub fn export_signature_sidecar(
         metadata: sig
             .metadata
             .as_deref()
-            .map(|m| serde_json::from_str(m))
+            .map(serde_json::from_str)
             .transpose()
             .map_err(|e| AppError::Validation(format!("Invalid metadata JSON: {e}")))?,
     };
