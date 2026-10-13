@@ -2449,18 +2449,17 @@
       "subject": "media-playback",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-7",
-      "techniques": [
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T10:48:10.851Z",
+      "worker": "e1e7642f-d11c-499c-a7cc-bd418133c06f",
+      "techniques": [],
+      "superseded": [
         {
-          "technique": "playback-clock",
-          "verdict": "not-applicable",
-          "evidence": "context-map.json:7614 `\"file_paths\": []`. src/features/plugins/artist/sub_media_studio/ no longer exists in the tree."
-        },
-        {
-          "technique": "transport-contract",
-          "verdict": "not-applicable",
-          "evidence": "context-map.json:7614 `\"file_paths\": []`. There is no transport surface in this context."
+          "state": "not-applicable",
+          "evidence": "context-map.json:7614 shows this context's file_paths is empty. The Artist plugin, including CompositionPreview.tsx and hooks/useTimelinePlayback.ts, was removed in 0697f13438 (2026-09-15), so no playback clock or transport exists here to judge. The old deviation dissolved by deletion, not by a fix; the row's entry_points still name the deleted files.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by e1e7642f-d11c-499c-a7cc-bd418133c06f"
         }
       ]
     },
@@ -2469,18 +2468,17 @@
       "subject": "media-playback",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-7",
-      "techniques": [
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T10:48:10.851Z",
+      "worker": "e1e7642f-d11c-499c-a7cc-bd418133c06f",
+      "techniques": [],
+      "superseded": [
         {
-          "technique": "media-resource-lifecycle",
-          "verdict": "not-applicable",
-          "evidence": "context-map.json:7655 `\"file_paths\": []`. src/features/plugins/artist/sub_media_studio/hooks/ no longer exists."
-        },
-        {
-          "technique": "playback-clock",
-          "verdict": "not-applicable",
-          "evidence": "context-map.json:7655 `\"file_paths\": []`. There is no clock in this context."
+          "state": "not-applicable",
+          "evidence": "context-map.json:7655 shows this context's file_paths is empty. useMediaExport.ts and the other Media Studio hooks were removed with the Artist plugin in 0697f13438 (2026-09-15), so there is no export or playback pipeline to judge. The old deviation dissolved by deletion, not by a fix.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by e1e7642f-d11c-499c-a7cc-bd418133c06f"
         }
       ]
     },
@@ -19286,6 +19284,77 @@
         }
       ],
       "registryProposal": "Generic lexical tokens 'stores', 'api', and 'root' match client UI state management stores despite having no connection to server/node boot architecture."
+    },
+    "a3b615d2-05d8-47bd-ad92-672c6b42b0f3/media-playback": {
+      "context": "output-stream-parser",
+      "subject": "media-playback",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T10:48:10.851Z",
+      "worker": "e1e7642f-d11c-499c-a7cc-bd418133c06f",
+      "techniques": []
+    },
+    "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20/media-playback": {
+      "context": "plugins-radio",
+      "subject": "media-playback",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T10:48:10.851Z",
+      "worker": "e1e7642f-d11c-499c-a7cc-bd418133c06f",
+      "techniques": [
+        {
+          "technique": "committed-buffer-steering",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/radio/hooks/useYouTubePlayer.ts:143 Catalog videos are loaded by identity; this is not steering an application producer's committed output."
+        },
+        {
+          "technique": "engine-adapters",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/radio/hooks/useYouTubePlayer.ts:17 The wrapper exposes raw engine state codes for the footer to translate, and controls branch on engine identity rather than adapter-declared capabilities."
+        },
+        {
+          "technique": "generated-supply-margin",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:261 The application consumes an existing stream URL rather than producing media units ahead of playback."
+        },
+        {
+          "technique": "media-resource-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/radio/hooks/useRadioState.ts:78 If the awaited radio-state subscription resolves after cleanup, its disposer is assigned without being called, leaving the subscription allocated."
+        },
+        {
+          "technique": "self-conditioned-supply",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/radio/hooks/useYouTubePlayer.ts:141 Cueing an existing video does not condition a producer's continuation on its previously committed output."
+        },
+        {
+          "technique": "sender-declared-playout-bound",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:256 Radio consumes third-party streams and owns no media sender on which to declare a packet-level playout bound."
+        },
+        {
+          "technique": "source-resilience",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:315 Malformed video IDs advance immediately before the blacklist skip-budget check, allowing a catalog of multiple malformed IDs to cycle without consuming that budget."
+        },
+        {
+          "technique": "transport-contract",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:605 An explicit stalled event is mapped to ordinary buffering, whose handler supplies no renewed progress watchdog."
+        }
+      ]
+    },
+    "a6843b83-43a1-4eab-ae40-26f23b949a0d/media-playback": {
+      "context": "hooks-execution",
+      "subject": "media-playback",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T10:48:10.851Z",
+      "worker": "e1e7642f-d11c-499c-a7cc-bd418133c06f",
+      "techniques": []
     }
   }
 }

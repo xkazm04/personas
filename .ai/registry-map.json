@@ -13878,8 +13878,12 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 2
+          "state": "not-applicable",
+          "priorNotApplicable": 2,
+          "evidence": "src/hooks/execution/useReplayTimeline.ts:4 Inspection found timestamped text-log replay rather than audio or video playback, and searches found no HTMLAudioElement or AudioContext anywhere in the execution-hook directory.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:122990080db4f70e",
+          "evaluatedRevision": 6
         },
         {
           "subject": "eval-harness",
@@ -18796,8 +18800,12 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "strong",
-          "state": "unknown",
-          "priorNotApplicable": 2
+          "state": "not-applicable",
+          "priorNotApplicable": 2,
+          "evidence": "src-tauri/engine/src/parser.rs:121 Inspection found CLI-record parsing, execution notifications, credential operations and desktop command dispatch, while searches found no AudioContext, HTMLAudioElement, rodio or cpal in this context's engine directories.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:122990080db4f70e",
+          "evaluatedRevision": 6
         },
         {
           "subject": "multi-provider-gateway-plane",
@@ -22761,13 +22769,12 @@
           "changedAt": "2026-09-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "context-map.json:7614 shows this context's file_paths is empty. The Artist plugin, including CompositionPreview.tsx and hooks/useTimelinePlayback.ts, was removed in 0697f13438 (2026-09-15), so no playback clock or transport exists here to judge. The old deviation dissolved by deletion, not by a fix; the row's entry_points still name the deleted files.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:eb721ed85a1084b6",
-          "evaluatedRevision": 5,
+          "evidence": "context-map.json:7555 Source searches found no CompositionPreview or useTimelinePlayback implementation, the recorded Media Studio directory does not exist, and this context has no current media transport to judge.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:122990080db4f70e",
+          "evaluatedRevision": 6,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "test-harness",
@@ -22826,13 +22833,12 @@
           "changedAt": "2026-09-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "context-map.json:7655 shows this context's file_paths is empty. useMediaExport.ts and the other Media Studio hooks were removed with the Artist plugin in 0697f13438 (2026-09-15), so there is no export or playback pipeline to judge. The old deviation dissolved by deletion, not by a fix.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:eb721ed85a1084b6",
-          "evaluatedRevision": 5,
+          "evidence": "context-map.json:7596 Source searches found no useTimelinePlayback or useMediaExport implementation, the recorded hooks directory does not exist, and this context has no current playback pipeline to judge.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:122990080db4f70e",
+          "evaluatedRevision": 6,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "undo-history",
@@ -25316,8 +25322,12 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 2
+          "state": "deviation",
+          "priorNotApplicable": 2,
+          "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:548 After successful playback cancels the startup watchdog, stream waiting only reports buffering without arming a progress deadline, so a subsequent stall can remain buffering indefinitely.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:122990080db4f70e",
+          "evaluatedRevision": 6
         },
         {
           "subject": "voice-io",
