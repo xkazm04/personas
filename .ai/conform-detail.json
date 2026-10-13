@@ -18078,6 +18078,242 @@
       "evaluatedTs": "2026-10-13T02:51:06.630Z",
       "worker": "1da68e92-379f-45b9-aa00-c5e612b95ccd",
       "techniques": []
+    },
+    "b39776f5-3909-41e3-b69f-14c9a6c70bec/client-fetch-cache": {
+      "context": "home-learning",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T03:51:17.040Z",
+      "worker": "ba79c104-b902-4b06-89cf-aae6027aacf0",
+      "techniques": [
+        {
+          "technique": "admission-hypothesis",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/live_roadmap.rs:54 One named slot admits only the roadmap document the home view and its hourly poll re-read; nothing else can enter."
+        },
+        {
+          "technique": "similarity-keyed-admission",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/live_roadmap.rs:32 The question is one exact URL, not a resemblance; a hit is identity."
+        },
+        {
+          "technique": "swr-design",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/live_roadmap.rs:178 One threshold is the whole policy. Failure does keep the stored document and leaves fetched_at at cached_at, but there is no stale window that paints and revalidates, and no ceiling that refuses an arbitrarily old rescue."
+        },
+        {
+          "technique": "in-flight-dedup",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/live_roadmap.rs:388 Concurrent identical fetches are expected and race on the cache file. useLiveRoadmap.run awaits fetchLiveRoadmap with no join, so a refresh overlapping the poll launches a second flight."
+        },
+        {
+          "technique": "cache-key-discipline",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/live_roadmap.rs:180 Locale is not a missing axis: the payload holds every language and the view picks one after the read. The persistent slot is unversioned, and a fresh hit returns the stored document without checking schema_version, so a shape bump does not orphan the file until TTL."
+        },
+        {
+          "technique": "warm-remount-caches",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:43 Remount starts with no roadmap, so the first paint is the bundled snapshot. The disk copy is reached only after the invoke returns; it is not a synchronous warm paint of the last live result."
+        },
+        {
+          "technique": "prefetch-and-defer",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:99 The only remote read is the roadmap tab's own document. The poll is held while that tab is not the visible home tab; there is no hover prefetch and no below-fold remote fetch in these files."
+        },
+        {
+          "technique": "parse-and-derive-caches",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/roadmapItems.ts:139 Display items are a pure projection invoked from render. No content-keyed memo exists in the listed files."
+        },
+        {
+          "technique": "plural-policy-claims",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:58 Repo search shows this hook as the only production caller. force is a refresh bypass from that same caller, not a second reader's TTL."
+        },
+        {
+          "technique": "portable-read-definitions",
+          "verdict": "conformant",
+          "evidence": "src/api/liveRoadmap.ts:149 Key, transport, and TTL live in one plain function the hook calls; the component does not re-declare the invoke."
+        },
+        {
+          "technique": "sibling-entry-warmth",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/HomeReleases.tsx:51 The hero is one item from the list already built. There is no second detail read waiting on a field the row holds."
+        }
+      ],
+      "registryProposal": "Say which of the four policies still bind when the population is a single named document. Admission and plural claims have nothing to reconcile on a one-slot cache; two freshness thresholds and an in-flight join still do."
+    },
+    "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0/client-fetch-cache": {
+      "context": "shared-components-layout",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T03:51:17.040Z",
+      "worker": "ba79c104-b902-4b06-89cf-aae6027aacf0",
+      "techniques": [
+        {
+          "technique": "prefetch-and-defer",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/DeferUntilIdle.tsx:79 Idle scheduling commits children to the DOM. It does not prefetch or defer a fetch."
+        }
+      ]
+    },
+    "9fca099d-94e4-4fd0-8460-3cf5d8c85acf/client-fetch-cache": {
+      "context": "templates-generated-gallery-cards",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T03:51:17.040Z",
+      "worker": "ba79c104-b902-4b06-89cf-aae6027aacf0",
+      "techniques": [
+        {
+          "technique": "admission-hypothesis",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:7 Admits derivations of review objects something still holds, and the collector drops them when the gallery replaces those objects."
+        },
+        {
+          "technique": "similarity-keyed-admission",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:18 Two different review objects cannot share an entry. The key is reference identity, not a cut-point."
+        },
+        {
+          "technique": "cache-key-discipline",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:76 Once a score is stored, later calls skip compute even though installedConnectorNames and credentialServiceTypes are answer-changing and are not in the key."
+        },
+        {
+          "technique": "prefetch-and-defer",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCardData.ts:89 The heavy verification waits for hover or expand; the row mount uses the cheap origin check."
+        },
+        {
+          "technique": "parse-and-derive-caches",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:77 Reference identity plus WeakMap eviction is declared and fits a pure parse. The readiness derivation also reads vault sets, so it is not a function of the keyed content."
+        },
+        {
+          "technique": "plural-policy-claims",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:21 Callers pass the review, not a TTL or eviction option, so there are no competing claims on one entry."
+        },
+        {
+          "technique": "portable-read-definitions",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCardData.ts:15 The parse doors are plain functions in one module; card data and gallery actions both import them rather than re-declaring the parse."
+        },
+        {
+          "technique": "sibling-entry-warmth",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/CompactRow.tsx:33 The detail modal receives the row's review object. There is no second detail fetch to seed from a partial summary."
+        }
+      ]
+    },
+    "208f50de-5d3b-4345-9fed-1c106a7a36e9/client-fetch-cache": {
+      "context": "execution-detail-inspector",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T03:51:17.040Z",
+      "worker": "ba79c104-b902-4b06-89cf-aae6027aacf0",
+      "techniques": [
+        {
+          "technique": "similarity-keyed-admission",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/traceInspectorTypes.ts:110 The only dedupe here is exact span_id on a live event. Fetches are addressed by execution id and persona id."
+        },
+        {
+          "technique": "swr-design",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/views/ExecutionLogViewer.tsx:70 After the first successful log read, opening the log again serves that string with no age, no revalidation, and no stale ceiling for as long as the viewer stays mounted."
+        },
+        {
+          "technique": "in-flight-dedup",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:117 useChainTrace issues the same call on detail mount and neither side shares a pending promise, so a trace-tab open while the chain read is in flight is a second flight. The cancelled flag drops the result; it does not join."
+        },
+        {
+          "technique": "warm-remount-caches",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:74 Leaving the trace tab unmounts the inspector. Coming back paints from empty state and refetches; nothing module-scoped holds the last trace."
+        },
+        {
+          "technique": "prefetch-and-defer",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_executions/detail/ExecutionDetail.tsx:133 TraceInspector, and therefore its fetch, mounts only when the trace tab is selected. The chain read stays eager because the tab strip needs hasChain."
+        },
+        {
+          "technique": "parse-and-derive-caches",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:241 Tree building is a per-hook memo of the current trace. It does not accumulate a content-keyed store across edits."
+        },
+        {
+          "technique": "portable-read-definitions",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:8 useTraceData and useChainTrace both call that one imported function with the execution id and persona id. They do not each re-type a fetcher."
+        },
+        {
+          "technique": "sibling-entry-warmth",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/ExecutionDetail.tsx:134 useChainTrace already holds this run's ExecutionTrace, including the solo-trace case, but the inspector is given only the execution record and always fetches. The cold path still works because the fetch is not suppressed."
+        }
+      ]
+    },
+    "0a6ae5fd-fb42-446c-9602-0d2abdd220d5/client-fetch-cache": {
+      "context": "vault-shared-playground",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T03:51:17.040Z",
+      "worker": "ba79c104-b902-4b06-89cf-aae6027aacf0",
+      "techniques": [
+        {
+          "technique": "similarity-keyed-admission",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/shared/playground/tabs/apiExplorerHelpers.ts:5 Endpoint merge keys are canonical method plus path. Unequal endpoints do not share an entry."
+        },
+        {
+          "technique": "swr-design",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/playground/tabs/ExecutionsTab.tsx:31 Audit, saved API definition, rotation status, and the MCP tool list are one-shot holds. The stored health probe is separately labelled isStale, and that label does not give these reads a fresh window or a ceiling."
+        },
+        {
+          "technique": "in-flight-dedup",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/playground/CredentialPlaygroundModal.tsx:57 Every call launches getRotationStatus. A refresh during the mount effect does not join the flight already in the air. ExecutionsTab's cancelled flag drops a late result and does not share it."
+        },
+        {
+          "technique": "warm-remount-caches",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/playground/tabs/ExecutionsTab.tsx:25 The executions tab is mounted only while selected, so leaving it throws away the list the user just saw and the next visit starts empty and refetches."
+        },
+        {
+          "technique": "prefetch-and-defer",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/shared/playground/PlaygroundTabContent.tsx:79 The audit fetch mounts with the executions tab, and MCP tool discovery waits for the Discover button. Neither runs when the modal opens onto Overview."
+        },
+        {
+          "technique": "parse-and-derive-caches",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/shared/playground/prettyJson.ts:8 JSON reindent runs on each call and stores nothing. No content-keyed derive cache is in these files."
+        },
+        {
+          "technique": "portable-read-definitions",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/shared/playground/tabs/ExecutionsTab.tsx:4 The tab calls the shared API function with the credential id. It does not re-declare the command."
+        },
+        {
+          "technique": "sibling-entry-warmth",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/shared/playground/CredentialPlaygroundModal.tsx:34 The modal is handed the credential record. Tabs do not open a detail whose summary is a list row they must borrow."
+        }
+      ]
     }
   }
 }

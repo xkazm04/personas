@@ -11164,7 +11164,11 @@
           "revision": 15,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:74 The trace lives in the inspector's state, the inspector unmounts when the user leaves the trace tab, and the next visit starts null and calls getExecutionTrace again.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
+          "evaluatedRevision": 15
         },
         {
           "subject": "quality-gates",
@@ -13280,13 +13284,16 @@
           "score": 0,
           "why": [],
           "confidence": "strong",
-          "state": "unknown",
+          "state": "deviation",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "added by /conform triage 2026-08-29: the golden path precondition governs this context; the matcher paired on vocabulary",
+          "evidence": "src-tauri/src/commands/live_roadmap.rs:43 The roadmap cache the home view calls has a single one-hour TTL: younger than that it skips the network, older than that it blocks on the fetch, and a failed refresh may still paint a disk copy of any age.",
           "digest": "sha256-b2:20824426732ffb6a",
           "revision": 15,
-          "changedAt": "2026-09-25"
+          "changedAt": "2026-09-25",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
+          "evaluatedRevision": 15
         }
       ],
       "governance": "governed"
@@ -28384,7 +28391,11 @@
           "revision": 15,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/layout/DeferUntilIdle.tsx:4 Searched the listed layout, button, and kanban files for fetch, cache, invoke, and useQuery: the hits are comments (a data-fetch ghost note, a prefetched JS chunk, a stale closure). Nothing here issues a request or keeps a response; DeferUntilIdle only delays a render commit and cancels that callback on cleanup.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
+          "evaluatedRevision": 15
         },
         {
           "subject": "canvas-graph",
@@ -33357,7 +33368,11 @@
           "revision": 15,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:77 The review derive cache stores an adoption score that reads the vault's connector and credential sets, but the WeakMap key is only the review object, so the first score is reused after those sets change.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
+          "evaluatedRevision": 15
         },
         {
           "subject": "agent-memory",
@@ -37235,7 +37250,11 @@
           "revision": 15,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/shared/playground/tabs/ExecutionsTab.tsx:31 The activity list is loaded once into component state when the executions tab mounts and kept with no fresh window, no background revalidation, and no stale ceiling until the tab unmounts and the state is discarded.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
+          "evaluatedRevision": 15
         }
       ],
       "governance": "governed"
