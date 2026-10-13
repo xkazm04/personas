@@ -318,7 +318,7 @@ def dossier(registry: pathlib.Path, claim: dict, repo: dict) -> dict | None:
             "golden": golden.as_posix(), "techniques": techniques, "applications": apps, "pairs": pairs}
 
 
-def brief(d: dict) -> str:
+def brief(d: dict, provider: str | None = None) -> str:
     T = len(d["techniques"])
     need = math.ceil(T / 2)
     tech = "\n".join(f"   - `{t['slug']}`: {t['file']}" + (f"  (use when: {'; '.join(t['use_when'])})" if t["use_when"] else "")
@@ -329,6 +329,10 @@ def brief(d: dict) -> str:
         prior = f"\n   Earlier verdict (now stale, re-judge it): {p['prior']['state']} - {p['prior']['evidence']}" if p["prior"] else ""
         pairs.append(f"{i}. context `{p['context']}`: {p['description']}\n   files: "
                      + ", ".join(p["files"]) + prior)
+    refused = [st for st, act in PROVIDER_POLICY.get(provider or "", {}).items() if act == "decline"]
+    seat_rule = (f"- From THIS seat, {' and '.join(refused)} is not accepted: when you believe the subject does "
+                 f"not apply, return state \"unknown\" (or put the pair in \"declined\") and spend your effort on "
+                 f"pairs where you can show a deviation or a conformant realization.\n") if refused else ""
     return f"""You are judging ONE subject of a knowledge registry against the code of the repository at
 {pathlib.Path(d['repo_root']).as_posix()} (your working directory). You are one of several model seats;
 every verdict you return is checked line by line before it is kept, so an honest "unknown" is worth
@@ -342,7 +346,7 @@ HARD RULES
 - USE YOUR TOOLS: open the standard and the code files before answering. An answer from a seat
   that opened no file is refused whole, and so is one whose notes call itself a draft.
 - An earlier verdict shown below is a claim to re-check, not an answer to copy.
-- Judge each context by ITS OWN code. A fact about the whole repo (a hook, a CI job) repeated
+{seat_rule}- Judge each context by ITS OWN code. A fact about the whole repo (a hook, a CI job) repeated
   on several contexts is a verdict about none of them: write it once in "notes", and judge the
   context on its files or mark it unknown. Repeated off-context anchors are refused.
 
@@ -636,7 +640,30 @@ def absence_contradicted(files: Files, ctx_files: list[str], terms: list[str]) -
     return f"{path}:{line} contains '{term}' ({len(hits)} hit(s) in the context's directories)"
 
 
-def validate(answer: dict | None, d: dict, files: Files, read_nothing: str | None = None) -> dict:
+# Per-provider refusals, from measured withdrawal rates (5-hour continuous run, 2026-10-13: of
+# what landed, the reviewer withdrew agy's not-applicable 29%, deviation 19%; codex's 16% / 3%;
+# grok's 15% / 8%). agy's not-applicable also gamed the absence search with registry jargon. A
+# refused state becomes a decline - the pair stays unknown for a seat that judges it better.
+PROVIDER_POLICY = {"agy": {"not-applicable": "decline"}}
+
+
+def jargon_terms(d: dict, terms: list[str]) -> list[str]:
+    """Search terms that are the registry's vocabulary rather than the code's: a technique or the
+    subject slug, or a hyphen/underscore compound made only of their words. A search for
+    `dated-capability-matrix` finds nothing in any repo, so it proves no absence."""
+    slugs = {t["slug"].lower() for t in d.get("techniques", [])} | {d.get("slug", "").lower()}
+    words = {w for s in slugs for w in re.split(r"[-_]", s) if w}
+    out = []
+    for t in terms:
+        tl = t.lower().strip()
+        parts = [w for w in re.split(r"[-_\s]", tl) if w]
+        if tl in slugs or (len(parts) >= 2 and all(w in words for w in parts)):
+            out.append(t)
+    return out
+
+
+def validate(answer: dict | None, d: dict, files: Files, read_nothing: str | None = None,
+             provider: str | None = None) -> dict:
     """Turn a seat's answer into run-file pairs + declines, with every repair and refusal counted."""
     out = {"pairs": [], "declined": [], "repairs": [], "rejections": [], "returned": 0}
     if not isinstance(answer, dict):
@@ -680,6 +707,9 @@ def validate(answer: dict | None, d: dict, files: Files, read_nothing: str | Non
             continue
         if state == "unknown":
             out["declined"].append({"subject": d["slug"], "context": name, "reason": "the seat returned unknown"})
+            continue
+        if PROVIDER_POLICY.get(provider or "", {}).get(state) == "decline":
+            decline(f"{state} is not accepted from {provider} (measured withdrawal rate; PROVIDER_POLICY)")
             continue
         techs, cited_anchors = [], set()
         tech_dev = False
@@ -740,6 +770,10 @@ def validate(answer: dict | None, d: dict, files: Files, read_nothing: str | Non
             # most because the absence they claimed was one grep away (a `#[cfg(test)]` module, an
             # `e.mcp` read). The seat names its search; the driver re-runs it and any hit refuses.
             terms = [t.strip() for t in (raw.get("absence_terms") or []) if isinstance(t, str) and len(t.strip()) >= 3][:5]
+            jargon = jargon_terms(d, terms)
+            if jargon:
+                out["rejections"].append(f"{name}: registry vocabulary is not a code search: {jargon}")
+                terms = [t for t in terms if t not in jargon]
             if len(terms) < 2:
                 decline("not-applicable without the 2+ search terms that prove the absence")
                 continue
@@ -1115,7 +1149,7 @@ def _launch(name: str, agy_model: str | None, claim: dict, d: dict, sdir: pathli
     model = (agy_model or "gemini-3.8-flash-high") if name == "agy" else cfg["model"]
     sdir.mkdir(parents=True, exist_ok=True)
     pf = sdir / "prompt.md"
-    prompt_text = brief(d)
+    prompt_text = brief(d, name)
     pf.write_text(prompt_text, encoding="utf-8")
     sid = str(uuid.uuid4())
     argv, stdin, env_extra = seat_command(name, model, cfg["effort"], pf, schema_file, sdir, sid, d["repo_root"])
@@ -1296,7 +1330,7 @@ def settle_round(n: int, rdir: pathlib.Path, seats: list[dict], before: dict, ke
             row.update(outcome="dropped-limit", accepted=0, returned=0)
         else:
             files = files_by_repo.setdefault(repo_root, Files(pathlib.Path(repo_root)))
-            v = validate(r["answer"], d, files, r.get("read_nothing"))
+            v = validate(r["answer"], d, files, r.get("read_nothing"), provider=s["name"])
             row.update(returned=v["returned"], accepted=len(v["pairs"]), declined=len(v["declined"]),
                        repairs=v["repairs"], rejections=v["rejections"][:12],
                        states={st: sum(1 for p in v["pairs"] if p["state"] == st) for st in VERDICTS[:3]})
@@ -1540,6 +1574,10 @@ def commit_repo(root: pathlib.Path, run_names: list[str], message: str, trailers
                            text=True, encoding="utf-8", errors="replace", env=env, timeout=900)
         # Verify the commit is OURS: a sibling's commit landing in between is the documented failure.
         sha, subject = (_git(root, "log", "-1", "--format=%h%x00%s").stdout.strip().split("\x00") + [""])[:2]
+        if r.returncode == 0 and subject != message.splitlines()[0]:
+            found = _find_replaced_message(root, paths, message)
+            if found:
+                return found | {"repo": str(root), "branch": branch, "files": len(staged)}
         if r.returncode or subject != message.splitlines()[0]:
             return {"ok": False, "repo": str(root), "branch": branch,
                     "error": f"commit failed or HEAD is not ours (exit {r.returncode}): {(r.stderr or r.stdout)[-400:]}"}
@@ -1550,6 +1588,25 @@ def commit_repo(root: pathlib.Path, run_names: list[str], message: str, trailers
             os.unlink(idx)
         except OSError:
             pass
+
+
+def _find_replaced_message(root: pathlib.Path, paths: list[str], message: str) -> dict | None:
+    """Our commit landed under another session's message: `.git/COMMIT_EDITMSG` is ONE file per
+    checkout, and a sibling committing in the same instant can swap it (measured 2026-10-13 in
+    systedo-case: our three conform files committed as `refactor(app): ...`). Find the commit
+    among the last few that changed exactly our paths; record our message on it as a git note
+    (ref `curator`) instead of rewriting a shared branch."""
+    log = _git(root, "log", "-8", "--format=%H", "--", paths[0]).stdout.split()
+    want = set(paths)
+    for full in log:
+        changed = set(_git(root, "show", "--name-only", "--format=", full).stdout.split())
+        if changed and changed <= want:
+            note = f"curator --multi: this commit's real message is:\n\n{message}"
+            _git(root, "notes", "--ref=curator", "add", "-f", "-m", note, full)
+            subject = _git(root, "log", "-1", "--format=%s", full).stdout.strip()
+            return {"ok": True, "commit": full[:10], "message_replaced": subject,
+                    "note": "the true message is in `git notes --ref=curator show`"}
+    return None
 
 
 def commit_as_found(root: pathlib.Path, n: int) -> dict | None:
@@ -2127,7 +2184,7 @@ def revalidate(n: int, provider: str, why: str) -> dict:
     d.setdefault("repo_root", str(L.PERSONAS_ROOT))
     sdir = pathlib.Path(seat["dir"])
     r = read_seat(provider, sdir, (sdir / "stdout.txt").read_text(encoding="utf-8", errors="replace"))
-    v = validate(r["answer"], d, Files(pathlib.Path(d["repo_root"])), r.get("read_nothing"))
+    v = validate(r["answer"], d, Files(pathlib.Path(d["repo_root"])), r.get("read_nothing"), provider=provider)
     if not v["pairs"]:
         return {"ok": True, "landed": 0, "rejections": v["rejections"]}
     claim = dict(seat["claim"])

@@ -447,7 +447,19 @@ no failed commit, no reviewer failure, no timeout; 4 memory waits (~20 min) near
 | deviations are reliable: codex 5%, grok 2% withdrawn | none - this is the seats' strength; route deviation-heavy subjects to them when routing exists |
 | consult-check recorded a `missed` row on every conform-ledger commit; the next round committed it as found, which drew another - 7 needless commits per repo and 48 false misses | fixed in the registry (`b6b67b76`: a commit of only the conform ledger is skipped); the false rows were dropped, matched to our commits by timestamp |
 | an "about code outside the context" rule replayed on the night caught 0 of the reviewer's 4 off-context withdrawals and would have refused 7 good deviations (a test, a store, an engine the context relies on) | NOT adopted - measured before building; the reviewer judges scope better than a path rule |
-| each round waits for its slowest seat: 27% of seat time idle | not yet changed - continuous per-provider slots would recover roughly a third more verdicts a night |
+| each round waits for its slowest seat: 27% of seat time idle | fixed: continuous slots (below) |
+
+**What the 5-hour continuous run measured (2026-10-13, units 43-145, 102 seats).** 376 landed,
+**316 kept**, ~66 kept per active hour against the barrier night's ~40; seats spread 8-9 per
+repo; no reviewer error, no memory wait.
+
+| Finding | Rule it produced |
+|---|---|
+| the detached driver had NO console, so every console child (the claude reviewer for minutes, each git and node call) opened a visible window on the operator's desktop - a probe proved it | the driver launches with CREATE_NO_WINDOW (a hidden console its children inherit), every Popen in the driver defaults to CREATE_NO_WINDOW, and the scheduled task runs `pythonw` on a launcher instead of a `.cmd` |
+| codex: "Selected model is at capacity" was settled `blocked` and its subject marked tried | provider-side failures (capacity, overload, 5xx, reset) release the claim, return the subject and back the slot off 5 min |
+| agy picked registry jargon as absence terms (`dated-capability-matrix`, `orientation-tax`) so the grep could never hit; its not-applicable was still withdrawn 29%, deviation 19% (codex 16%/3%, grok 15%/8%) | jargon terms are refused; `PROVIDER_POLICY` stops accepting not-applicable from agy (its brief says so up front); agy keeps its deviations and conformants |
+| `.git/COMMIT_EDITMSG` is one file per checkout: a sibling committing in the same instant swapped our message in systedo-case (our 3 conform files landed as `refactor(app): ...`) | the commit is found by its exact paths and reported as ours with the true message in `git notes --ref=curator`; a shared branch is never rewritten |
+| goat's map has outlived its tree: seats find 1-2 real pairs and honestly decline | none in the driver - goat needs a context scan and a map rebuild |
 
 **A Claude session as the orchestrator** (instead of Task Scheduler): run `multi night` (it detaches
 and returns), then wait on `night.out` for `night_ended` with an until-loop, read the report, fix

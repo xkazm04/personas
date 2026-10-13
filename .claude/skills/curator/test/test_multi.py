@@ -134,6 +134,27 @@ class Absence(unittest.TestCase):
         self.assertEqual(len(v["pairs"]), 1)
         self.assertEqual(v["pairs"][0]["absenceTerms"], ["websocket", "stream"])
 
+    def test_registry_jargon_is_not_a_search(self):
+        """agy, 2026-10-13: terms like `dated-capability-matrix` can never appear in code, so a
+        grep for them 'proves' every absence."""
+        self.d["techniques"] = [{"slug": "dated-capability-matrix"}, {"slug": "output-normalization"}]
+        self.assertEqual(M.jargon_terms(self.d, ["dated-capability-matrix", "capability-matrix", "spawnSync",
+                                                 "output normalization"]),
+                         ["dated-capability-matrix", "capability-matrix", "output normalization"])
+        v = self.na(["dated-capability-matrix", "output-normalization", "websocket"])
+        self.assertEqual(v["pairs"], [])  # one real term left: below the two-term floor
+
+    def test_provider_policy_refuses_agy_not_applicable(self):
+        a = {"subject": "s", "notes": "", "declined": [], "pairs": [{
+            "context": "feat", "state": "not-applicable", "anchor": "src/feature/a.ts:1",
+            "quote": "export const a = 1; // the main entry", "consequence": "nothing in this context serves tools",
+            "techniques": [], "registryProposal": "", "absence_terms": ["websocket", "stream"]}]}
+        self.assertEqual(M.validate(a, self.d, self.files, provider="agy")["pairs"], [])
+        self.assertEqual(len(M.validate(a, self.d, self.files, provider="codex")["pairs"]), 1)
+        self.assertIn("not accepted", M.brief({**self.d, "repo_root": str(self.dir), "golden": "g",
+                                               "applications": [], "techniques": [{"slug": "t1", "file": "f", "use_when": []}],
+                                               "pairs": []}, "agy"))
+
     def test_no_terms_is_declined(self):
         self.assertEqual(self.na([])["pairs"], [])
         self.assertEqual(self.na(["ws"])["pairs"], [])  # too short to be a search
@@ -188,6 +209,18 @@ class Commit(unittest.TestCase):
         self.assertEqual(sorted(files), [".ai/conform-runs/merged/r1.json", ".ai/registry-map.json"])
         self.assertIn("sibling", (self.dir / "other.txt").read_text())  # untouched, still dirty
         self.assertIn("Co-Authored-By", self.g("log", "-1", "--format=%B").stdout)
+
+    def test_a_message_swapped_by_a_sibling_is_found_and_noted(self):
+        """systedo-case 2026-10-13: COMMIT_EDITMSG is shared, and our commit landed under a sibling's
+        subject. It must be reported as ours (with a note), not as a failure."""
+        (self.dir / ".ai" / "registry-map.json").write_text('{"x": 3}\n')
+        self.g("add", ".ai/registry-map.json")
+        self.g("commit", "-q", "-m", "refactor(app): somebody else's subject")
+        out = M._find_replaced_message(self.dir, [".ai/registry-map.json", ".ai/conform-detail.json"],
+                                       "chore(registry-map): add 1 x conform verdicts")
+        self.assertTrue(out and out["ok"], out)
+        self.assertEqual(out["message_replaced"], "refactor(app): somebody else's subject")
+        self.assertIn("add 1 x conform verdicts", self.g("notes", "--ref=curator", "show", "HEAD").stdout)
 
     def test_nothing_to_commit(self):
         self.assertTrue(M.commit_repo(self.dir, [], "conform: nothing").get("nothing"))
