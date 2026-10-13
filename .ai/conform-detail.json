@@ -18764,6 +18764,170 @@
           "evidence": "src/features/plugins/radio/hooks/useYouTubePlayer.ts:22 YouTube player integration manages media playback commands and events with no relationship to narrative sequence spines."
         }
       ]
+    },
+    "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0/render-mount-pipeline": {
+      "context": "shared-components-layout",
+      "subject": "render-mount-pipeline",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T08:54:23.472Z",
+      "worker": "44acfca5-45fc-4738-b5d0-ed6b16becaf1",
+      "techniques": [
+        {
+          "technique": "blueprint-then-mount",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/ActionRow.tsx:27 Browser flex layout and React reconciliation supply the layout/host boundary excluded by this technique."
+        },
+        {
+          "technique": "edge-sorted-incremental-mount",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/kanban/KanbanBoard.tsx:189 The board renders its column items directly; it does not implement a scrolling visibility window over render units."
+        },
+        {
+          "technique": "mount-binders-versus-attach-binders",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/ContentLayout.tsx:261 The scroll subscription has React-effect cleanup; there is no retained-host binder lifecycle or blueprint rebinding."
+        },
+        {
+          "technique": "mount-references-across-features",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/SectionCard.tsx:216 Collapse owns this subtree's closing lifecycle; no visibility window independently requests its unmount."
+        },
+        {
+          "technique": "preempt-and-continue-shared-computation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/DeferUntilIdle.tsx:72 Deferral schedules a readiness update, not a waiter joining background layout computation."
+        },
+        {
+          "technique": "recycle-by-content-type",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/kanban/KanbanBoard.tsx:193 Cards are keyed React elements; this context does not acquire or release pooled host content."
+        }
+      ]
+    },
+    "a576c14f-1edd-4da4-8d11-527161a3b5b3/render-mount-pipeline": {
+      "context": "teams-teamworkspace",
+      "subject": "render-mount-pipeline",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T08:54:23.472Z",
+      "worker": "44acfca5-45fc-4738-b5d0-ed6b16becaf1",
+      "techniques": [
+        {
+          "technique": "blueprint-then-mount",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamWorkspace/presetStudio/PresetConnectionGraph.tsx:147 Graph coordinates feed declarative SVG; React and the document runtime create and reconcile hosts."
+        },
+        {
+          "technique": "edge-sorted-incremental-mount",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamWorkspace/TeamList.tsx:251 The list renders all sorted teams rather than maintaining a viewport-dependent mount window."
+        },
+        {
+          "technique": "mount-binders-versus-attach-binders",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamWorkspace/presetStudio/PresetConnectionGraph.tsx:85 Container observation follows a React effect; there is no separate detached-but-mounted host or binder update protocol."
+        },
+        {
+          "technique": "mount-references-across-features",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamWorkspace/teamStudio/teamStudioShared.tsx:173 Menu exit retention is delegated to the animation toolkit, without a competing viewport unmount policy."
+        },
+        {
+          "technique": "preempt-and-continue-shared-computation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamWorkspace/teamStudio/boardShared.tsx:179 The shared in-flight operation here fetches assignment data; it is not resumable layout shared by frame and background waiters."
+        },
+        {
+          "technique": "recycle-by-content-type",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamWorkspace/presetStudio/PresetConnectionGraph.tsx:209 Graph nodes are keyed SVG/document elements, with no application-owned host-content recycling pool."
+        }
+      ]
+    },
+    "14c7d145-2166-454b-aee5-d69d9d527d79/render-mount-pipeline": {
+      "context": "appearance-settings",
+      "subject": "render-mount-pipeline",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T08:54:23.472Z",
+      "worker": "44acfca5-45fc-4738-b5d0-ed6b16becaf1",
+      "techniques": [
+        {
+          "technique": "blueprint-then-mount",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceThemingSection.tsx:53 The browser resolves CSS grid positions; this component does not design a layout-to-mount blueprint."
+        },
+        {
+          "technique": "edge-sorted-incremental-mount",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceThemingSection.tsx:54 All themes in the selected grid render directly, without scrolling-dependent mount decisions."
+        },
+        {
+          "technique": "mount-binders-versus-attach-binders",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceThemeSwatch.tsx:56 React owns this declarative event handler; no retained-content binder or independent host-attachment clock is implemented."
+        },
+        {
+          "technique": "mount-references-across-features",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/ThemePreview.tsx:53 The toolkit retains crossfade content for animation; no visibility window competes to unmount it."
+        },
+        {
+          "technique": "preempt-and-continue-shared-computation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceThemeSwatch.tsx:33 This memo computes contrast synchronously; it is not background layout with callers having different deadlines."
+        },
+        {
+          "technique": "recycle-by-content-type",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceThemingSection.tsx:55 Swatches use React component identity; no application-owned host pool is being keyed or recycled."
+        }
+      ]
+    },
+    "dc471d31-ae30-4ac9-b015-d51969df458d/render-mount-pipeline": {
+      "context": "shared-chrome",
+      "subject": "render-mount-pipeline",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T08:54:23.472Z",
+      "worker": "44acfca5-45fc-4738-b5d0-ed6b16becaf1",
+      "techniques": [
+        {
+          "technique": "blueprint-then-mount",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:210 Native flex layout and React reconciliation supply the document-runtime boundary."
+        },
+        {
+          "technique": "edge-sorted-incremental-mount",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/chrome/CommandPaletteResults.tsx:78 Palette results render directly inside their scroller; no visibility-dependent render-unit mount pass runs."
+        },
+        {
+          "technique": "mount-binders-versus-attach-binders",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:73 Drawer keyboard handling has React-effect cleanup, without a separate retained-host binder lifecycle."
+        },
+        {
+          "technique": "mount-references-across-features",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:227 Navigation state controls the panel as one subtree; scrolling does not independently unmount its focused descendants."
+        },
+        {
+          "technique": "preempt-and-continue-shared-computation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:102 The animation-frame callback restores a DOM scroll offset; it does not join shared background layout."
+        },
+        {
+          "technique": "recycle-by-content-type",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/chrome/CommandPaletteResults.tsx:84 Result buttons use React identity; this context does not manage a reusable host-content pool."
+        }
+      ]
     }
   }
 }

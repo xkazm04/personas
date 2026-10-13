@@ -5161,7 +5161,11 @@
           "revision": 1,
           "changedAt": "2026-09-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceSettings.tsx:42 Appearance renders a fixed settings scaffold and browser-laid-out controls, and context searches found no virtualizer, range extractor, render-unit API or mount-binder API implementing the subject.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:df020f172eb32893",
+          "evaluatedRevision": 1
         },
         {
           "subject": "voice-io",
@@ -28005,7 +28009,11 @@
           "revision": 1,
           "changedAt": "2026-09-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:264 Chrome uses browser scroll containers and React-rendered navigation/results, and context searches found no virtualizer, range extractor, render-unit API or mount-binder API owning a custom mount pipeline.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:df020f172eb32893",
+          "evaluatedRevision": 1
         },
         {
           "subject": "accessibility",
@@ -28305,7 +28313,11 @@
           "revision": 1,
           "changedAt": "2026-09-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/layout/ContentLayout.tsx:293 These primitives use browser scrolling and React-managed children, and context searches found no virtualizer, range extractor, render-unit API or mount-binder API establishing a custom mount pipeline.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:df020f172eb32893",
+          "evaluatedRevision": 1
         },
         {
           "subject": "prompt-assembly",
@@ -31650,7 +31662,11 @@
           "revision": 1,
           "changedAt": "2026-09-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_teamWorkspace/presetStudio/PresetConnectionGraph.tsx:204 The workspace describes eagerly rendered React/SVG elements, and context searches found no virtualizer, range extractor, render-unit API or mount-binder API owning their mounting.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:df020f172eb32893",
+          "evaluatedRevision": 1
         },
         {
           "subject": "test-harness",
