@@ -99,6 +99,8 @@ pub mod project_tracking;
 pub mod recipe_seed;
 pub mod resource_governor;
 pub mod resource_listing;
+/// Measured CPU/RAM/GPU of every live run, and the per-run summaries.
+pub mod resources;
 pub mod rotation;
 pub mod runner;
 #[cfg(feature = "p2p")]

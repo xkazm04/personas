@@ -752,6 +752,20 @@ fn transition_inner(
     TransitionOutcome::Changed
 }
 
+/// Tell the resource sampler a session's child process started. Sync and
+/// non-blocking (one short lock of the sampler's own map), so it is safe under
+/// the registry lock; the sampler never takes the registry lock while holding
+/// its own.
+fn track_fleet_child(session: &FleetSessionInner) {
+    crate::engine::resources::track_run(
+        crate::db::models::RunKind::Fleet,
+        &session.id,
+        session.child_pid,
+        session.persona_id.as_deref(),
+        None,
+    );
+}
+
 impl FleetRegistry {
     /// Inserts a freshly-spawned session. Returns the same id back for
     /// caller convenience.
@@ -778,6 +792,9 @@ impl FleetRegistry {
     pub fn adopt_spawn(&self, spawned: FleetSessionInner) -> bool {
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         let Some(existing) = map.get_mut(&spawned.id) else {
+            // The ONE door every spawn lane lands on: the resource sampler
+            // learns the session's `childPid` here (spark device-mesh WP1).
+            track_fleet_child(&spawned);
             map.insert(spawned.id.clone(), spawned);
             return false;
         };
@@ -831,6 +848,7 @@ impl FleetRegistry {
         if existing.title.is_none() {
             existing.title = spawned.title;
         }
+        track_fleet_child(existing);
         true
     }
 

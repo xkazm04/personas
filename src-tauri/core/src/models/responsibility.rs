@@ -287,7 +287,61 @@ impl MachineLoad {
             Self::Exclusive => 8,
         }
     }
+
+    /// The load a MEASURED share of this device (`0..=1`, CPU of all logical
+    /// cores or resident RAM of total RAM) maps to: at least
+    /// [`MEASURED_SHARE_EXCLUSIVE`] is exclusive, [`MEASURED_SHARE_HEAVY`]
+    /// heavy, [`MEASURED_SHARE_MODERATE`] moderate, anything lower light. The
+    /// thresholds are `units / 16`, so a tag's units and the share that earns
+    /// it double together. A NaN share reads as light.
+    pub fn from_measured_share(share: f64) -> MachineLoad {
+        if share >= MEASURED_SHARE_EXCLUSIVE {
+            Self::Exclusive
+        } else if share >= MEASURED_SHARE_HEAVY {
+            Self::Heavy
+        } else if share >= MEASURED_SHARE_MODERATE {
+            Self::Moderate
+        } else {
+            Self::Light
+        }
+    }
+
+    /// The machine tag a run's measurement maps to: the heavier of what its
+    /// CPU share and its RAM share map to (spark device-mesh D8).
+    pub fn from_measured(cpu_share: f64, ram_share: f64) -> MachineLoad {
+        let cpu = Self::from_measured_share(cpu_share);
+        let ram = Self::from_measured_share(ram_share);
+        if ram.units() > cpu.units() {
+            ram
+        } else {
+            cpu
+        }
+    }
 }
+
+// ---- Profile loop: measured shares -> tags (spark device-mesh, D8) ---------
+//
+// The ONE home of the numbers the profile loop and `responsibility_measured`
+// share. Beside `MachineLoad::units` on purpose: a tag's units and the share
+// that earns it are one table, and both the db crate (the measured read) and
+// the engine crate (the profile write) depend on this crate.
+
+/// A measured share at or above this maps to [`MachineLoad::Exclusive`].
+pub const MEASURED_SHARE_EXCLUSIVE: f64 = 0.5;
+/// ... at or above this to [`MachineLoad::Heavy`].
+pub const MEASURED_SHARE_HEAVY: f64 = 0.25;
+/// ... at or above this to [`MachineLoad::Moderate`]; below it is light.
+pub const MEASURED_SHARE_MODERATE: f64 = 0.125;
+/// A measured GPU share at or above this maps to [`GpuClass::Exclusive`].
+pub const MEASURED_GPU_SHARE_EXCLUSIVE: f64 = 0.5;
+/// ... at or above this to [`GpuClass::Shared`]; below it is `none`.
+pub const MEASURED_GPU_SHARE_SHARED: f64 = 0.05;
+/// A charter's profile is derived from measurement only once it has at least
+/// this many summarised runs; below it the measurement is shown but maps to
+/// no tags.
+pub const MEASURED_PROFILE_MIN_RUNS: u32 = 5;
+/// The per-run values are medianed over the charter's newest this-many runs.
+pub const MEASURED_PROFILE_WINDOW: u32 = 20;
 
 /// Whether a run needs the GPU. `Exclusive` takes the fleet's single GPU
 /// token; `Shared` is informational only.
@@ -299,6 +353,24 @@ pub enum GpuClass {
     None,
     Shared,
     Exclusive,
+}
+
+impl GpuClass {
+    /// The class a MEASURED GPU share maps to: at least
+    /// [`MEASURED_GPU_SHARE_EXCLUSIVE`] is exclusive,
+    /// [`MEASURED_GPU_SHARE_SHARED`] shared, anything lower `none`. A `None`
+    /// share (the platform could not read GPU engines) maps to NO class, never
+    /// to `none`: "no reading" and "used no GPU" are different facts.
+    pub fn from_measured_share(share: Option<f64>) -> Option<GpuClass> {
+        let share = share?;
+        Some(if share >= MEASURED_GPU_SHARE_EXCLUSIVE {
+            Self::Exclusive
+        } else if share >= MEASURED_GPU_SHARE_SHARED {
+            Self::Shared
+        } else {
+            Self::None
+        })
+    }
 }
 
 /// How hard the reasoning is - the input to difficulty-based model routing.
@@ -401,6 +473,41 @@ pub struct ResourceProfile {
     /// RFC 3339 instant of the last self-declaration or operator edit.
     #[serde(default)]
     pub declared_at: Option<String>,
+    /// Whether `difficulty` was DECLARED (by the persona or the operator)
+    /// rather than defaulted. Model routing reads only a declared difficulty
+    /// (see [`ResourceProfile::declared_difficulty`]), because a declared one
+    /// outranks the persona's own model.
+    ///
+    /// `None` is every profile stored before the measurement loop existed and
+    /// every self/operator write: it means "declared unless `source` is
+    /// `measured`", which is exactly the old rule (any stored profile was
+    /// declared). The measurement loop writes `Some(..)` explicitly: it
+    /// carries forward whether the profile it replaced had a declared
+    /// difficulty, so measuring a charter never makes a defaulted `standard`
+    /// look declared and never forgets a persona's declared one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub difficulty_declared: Option<bool>,
+}
+
+impl ResourceProfile {
+    /// The difficulty routing may act on: `Some` only when someone declared
+    /// it. See [`ResourceProfile::difficulty_declared`].
+    pub fn declared_difficulty(&self) -> Option<Difficulty> {
+        let declared = self
+            .difficulty_declared
+            .unwrap_or(self.source != ProfileSource::Measured);
+        declared.then_some(self.difficulty)
+    }
+
+    /// Whether the persona or the operator authored this profile (as opposed
+    /// to the measurement loop or nobody).
+    pub fn is_authored(&self) -> bool {
+        matches!(
+            self.source,
+            ProfileSource::SelfDeclared | ProfileSource::Operator
+        )
+    }
 }
 
 /// The runtime envelope a charter carries beyond its governance fields — the
@@ -781,6 +888,10 @@ pub struct ResponsibilityMeasured {
     /// (`run_resource_summaries`). The axes below are over those runs; all are
     /// `None` while it is 0.
     pub resource_runs: u32,
+    /// How many summarised runs the profile loop needs before it maps the
+    /// measurement onto tags ([`MEASURED_PROFILE_MIN_RUNS`]). Shipped on the
+    /// payload so the editor's "learning (n/N)" never keeps its own copy.
+    pub resource_runs_required: u32,
     /// Median of the per-run 95th-percentile CPU share (0..=1).
     pub cpu_p95_share: Option<f64>,
     /// Median of the per-run peak RAM share (0..=1).
@@ -847,6 +958,31 @@ mod tests {
     }
 
     #[test]
+    fn declared_difficulty_keeps_the_pre_measurement_rule_and_honours_the_flag() {
+        let authored = ResourceProfile {
+            difficulty: Difficulty::Hard,
+            source: ProfileSource::SelfDeclared,
+            ..Default::default()
+        };
+        assert_eq!(authored.declared_difficulty(), Some(Difficulty::Hard));
+        // A measured profile without the flag is NOT a declaration.
+        let measured = ResourceProfile {
+            source: ProfileSource::Measured,
+            ..Default::default()
+        };
+        assert_eq!(measured.declared_difficulty(), None);
+        // The loop carries a persona's declared difficulty forward explicitly.
+        let carried = ResourceProfile {
+            difficulty: Difficulty::Hard,
+            source: ProfileSource::Measured,
+            difficulty_declared: Some(true),
+            ..Default::default()
+        };
+        assert_eq!(carried.declared_difficulty(), Some(Difficulty::Hard));
+        assert!(!carried.is_authored() && authored.is_authored());
+    }
+
+    #[test]
     fn resource_profile_wire_strings_are_the_closed_vocabulary() {
         let p = ResourceProfile {
             machine: MachineLoad::Exclusive,
@@ -857,8 +993,12 @@ mod tests {
             pinned: true,
             rationale: Some("renders video".into()),
             declared_at: Some("2026-09-18T00:00:00Z".into()),
+            difficulty_declared: None,
         };
         let v = serde_json::to_value(&p).expect("serializes");
+        // `None` is omitted, so every profile stored before the field existed
+        // round-trips byte-identically.
+        assert!(v.get("difficultyDeclared").is_none(), "{v}");
         assert_eq!(v["machine"], "exclusive");
         assert_eq!(v["gpu"], "shared");
         assert_eq!(v["difficulty"], "hard");
@@ -885,6 +1025,39 @@ mod tests {
             serde_json::to_value(ProfileSource::Default).expect("serializes"),
             "default"
         );
+    }
+
+    #[test]
+    fn measured_shares_map_onto_the_closed_tags() {
+        let m = MachineLoad::from_measured_share;
+        assert_eq!(m(0.0), MachineLoad::Light);
+        assert_eq!(m(0.124), MachineLoad::Light);
+        assert_eq!(m(0.125), MachineLoad::Moderate);
+        assert_eq!(m(0.25), MachineLoad::Heavy);
+        assert_eq!(m(0.5), MachineLoad::Exclusive);
+        assert_eq!(m(1.0), MachineLoad::Exclusive);
+        assert_eq!(m(f64::NAN), MachineLoad::Light);
+        // The heavier axis wins, whichever it is.
+        assert_eq!(MachineLoad::from_measured(0.3, 0.05), MachineLoad::Heavy);
+        assert_eq!(
+            MachineLoad::from_measured(0.05, 0.6),
+            MachineLoad::Exclusive
+        );
+        // Each threshold is the tag's units over 16.
+        for tag in [
+            MachineLoad::Moderate,
+            MachineLoad::Heavy,
+            MachineLoad::Exclusive,
+        ] {
+            assert_eq!(m(f64::from(tag.units()) / 16.0), tag);
+        }
+
+        let g = GpuClass::from_measured_share;
+        assert_eq!(g(None), None, "no reading is no class, never `none`");
+        assert_eq!(g(Some(0.0)), Some(GpuClass::None));
+        assert_eq!(g(Some(0.049)), Some(GpuClass::None));
+        assert_eq!(g(Some(0.05)), Some(GpuClass::Shared));
+        assert_eq!(g(Some(0.5)), Some(GpuClass::Exclusive));
     }
 
     #[test]

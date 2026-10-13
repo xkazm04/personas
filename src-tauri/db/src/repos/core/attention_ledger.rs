@@ -15,6 +15,7 @@ use crate::models::{
     AttentionLedgerEntry, AttentionLoopSummary, ConsolidationPoint, EffortBand,
     ResponsibilityMeasured,
 };
+use crate::repos::resources::run_resources;
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use crate::PoolExt;
@@ -687,9 +688,15 @@ row_mapper!(row_to_measured -> MeasuredRow {
 ///   `measured_effort = None`: "not measured", never "measured as small".
 /// * Cost is the ledger's own `cost_usd` when the pass recorded one, else the
 ///   joined execution's.
-/// * `peak_rss_mb` is always `None`: no per-session or per-execution resident
-///   memory is persisted anywhere keyed to a pass (the monitor's process
-///   samples are in-memory only).
+/// * `peak_rss_mb` is always `None` (a legacy MB field): resident memory is
+///   now measured as a SHARE of this device, below.
+/// * The resource axes (`resource_runs`, the three medians, `dominant`, the
+///   mapped tags) come from `run_resource_summaries`, not from passes: a
+///   charter is measured per finished RUN of its worker, keyed by the charter
+///   the run served ([`run_resources::measure_for_persona`]). A charter with
+///   measured runs but no pass is still listed, with `passes = 0`. The tags
+///   stay `None` until [`personas_core::models::MEASURED_PROFILE_MIN_RUNS`]
+///   runs, and the GPU tag stays `None` while no run had a GPU reading.
 ///
 /// Not a [`crate::query_builder::QueryBuilder`] shape: this is one fixed
 /// windowed aggregate with no caller-driven filter, order or page.
@@ -731,32 +738,117 @@ pub fn measured_per_responsibility(
             )?;
             let rows =
                 stmt.query_map(params![persona_id, MEASURED_PASS_WINDOW], row_to_measured)?;
-            Ok(
-                collect_rows(rows, "attention_ledger::measured_per_responsibility")
-                    .into_iter()
-                    .map(|r| {
-                        let avg_tokens = r.avg_tokens.map(|t| t.round().max(0.0) as i64);
-                        ResponsibilityMeasured {
-                            responsibility_id: r.responsibility_id,
-                            passes: u32::try_from(r.passes).unwrap_or(u32::MAX),
-                            avg_cost_usd: r.avg_cost_usd,
-                            avg_tokens: avg_tokens.unwrap_or(0),
-                            peak_rss_mb: None,
-                            measured_effort: avg_tokens
-                                .map(|t| EffortBand::from_total_tokens(t.unsigned_abs())),
-                            // Filled from run_resource_summaries (spark
-                            // device-mesh WP1).
-                            resource_runs: 0,
-                            cpu_p95_share: None,
-                            ram_peak_share: None,
-                            gpu_p95_share: None,
-                            dominant: None,
-                            measured_machine: None,
-                            measured_gpu: None,
-                        }
-                    })
-                    .collect(),
-            )
+            let passes = collect_rows(rows, "attention_ledger::measured_per_responsibility");
+            drop(stmt);
+            drop(conn);
+            let mut resources = run_resources::measure_for_persona(pool, persona_id)?;
+            let mut out: Vec<ResponsibilityMeasured> = passes
+                .into_iter()
+                .map(|r| {
+                    let avg_tokens = r.avg_tokens.map(|t| t.round().max(0.0) as i64);
+                    let mut m = ResponsibilityMeasured {
+                        responsibility_id: r.responsibility_id,
+                        passes: u32::try_from(r.passes).unwrap_or(u32::MAX),
+                        avg_cost_usd: r.avg_cost_usd,
+                        avg_tokens: avg_tokens.unwrap_or(0),
+                        peak_rss_mb: None,
+                        measured_effort: avg_tokens
+                            .map(|t| EffortBand::from_total_tokens(t.unsigned_abs())),
+                        ..Default::default()
+                    };
+                    if let Some(measure) = resources.remove(&m.responsibility_id) {
+                        fill_resources(&mut m, &measure);
+                    }
+                    m
+                })
+                .collect();
+            // A charter whose runs were measured but that has no attention
+            // pass (a trigger- or operator-dispatched run carrying
+            // `_responsibility`) still reports its resources, with 0 passes.
+            out.extend(resources.into_iter().map(|(responsibility_id, measure)| {
+                let mut m = ResponsibilityMeasured {
+                    responsibility_id,
+                    ..Default::default()
+                };
+                fill_resources(&mut m, &measure);
+                m
+            }));
+            for m in &mut out {
+                m.resource_runs_required = crate::models::MEASURED_PROFILE_MIN_RUNS;
+            }
+            out.sort_by(|a, b| a.responsibility_id.cmp(&b.responsibility_id));
+            Ok(out)
+        }
+    )
+}
+
+/// Copy a charter's measured resources (`run_resource_summaries`) onto its
+/// row. The tags come from [`run_resources::ResourceMeasure::tags`] - the same
+/// mapping the profile loop writes with - so the badge the editor shows and
+/// the profile the loop writes can never disagree.
+fn fill_resources(m: &mut ResponsibilityMeasured, measure: &run_resources::ResourceMeasure) {
+    m.resource_runs = measure.runs;
+    m.cpu_p95_share = Some(measure.cpu_p95_share);
+    m.ram_peak_share = Some(measure.ram_peak_share);
+    m.gpu_p95_share = measure.gpu_p95_share;
+    m.dominant = Some(measure.dominant);
+    if let Some((machine, gpu)) = measure.tags() {
+        m.measured_machine = Some(machine);
+        m.measured_gpu = gpu;
+    }
+}
+
+/// Which worker handle a dispatch row names in its `stats_json`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WorkerHandle {
+    /// `stats_json.sessionId` - a fleet session.
+    FleetSession,
+    /// `stats_json.executionId` - a persona execution.
+    Execution,
+}
+
+impl WorkerHandle {
+    fn json_path(self) -> &'static str {
+        match self {
+            Self::FleetSession => "$.sessionId",
+            Self::Execution => "$.executionId",
+        }
+    }
+}
+
+/// The `(persona_id, responsibility_id)` of the newest attention pass that
+/// dispatched the worker `worker_id`, or `None` when no pass names it (a
+/// manual session, a trigger-fired execution). This is how a finished run is
+/// charged to the charter it served: the fleet session row carries no charter
+/// id, the dispatch row does.
+///
+/// Reads the FLAT per-charter shape (`dispatch_decided_charter`'s blob), which
+/// is what every dispatch row carries; a full scan of the attention rows that
+/// name a charter, run once per finished run.
+pub fn charter_for_worker(
+    pool: &DbPool,
+    handle: WorkerHandle,
+    worker_id: &str,
+) -> Result<Option<(String, String)>, AppError> {
+    timed_query!(
+        "persona_attention_ledger",
+        "attention_ledger::charter_for_worker",
+        {
+            let conn = pool.conn("attention_ledger::charter_for_worker")?;
+            Ok(conn
+                .query_row(
+                    "SELECT persona_id, responsibility_id
+                     FROM persona_attention_ledger
+                     WHERE kind = 'attention'
+                       AND responsibility_id IS NOT NULL
+                       AND json_valid(stats_json)
+                       AND json_extract(stats_json, ?1) = ?2
+                     ORDER BY started_at DESC, id DESC
+                     LIMIT 1",
+                    params![handle.json_path(), worker_id],
+                    |row| Ok((row.get("persona_id")?, row.get("responsibility_id")?)),
+                )
+                .optional()?)
         }
     )
 }
@@ -1251,6 +1343,114 @@ mod tests {
         assert_eq!(rows[0].passes, MEASURED_PASS_WINDOW);
         assert_eq!(rows[0].avg_tokens, 10_000);
         assert_eq!(rows[0].measured_effort, Some(EffortBand::S));
+        Ok(())
+    }
+
+    fn insert_charter(pool: &DbPool, persona_id: &str, id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO persona_responsibilities (id, persona_id, title, created_at, updated_at)
+             VALUES (?1, ?2, 'charter', datetime('now'), datetime('now'))",
+            params![id, persona_id],
+        )?;
+        Ok(())
+    }
+
+    fn measured_run(pool: &DbPool, run: &str, charter: &str, cpu: f64, ram: f64) {
+        use crate::models::{ResourceAxis, RunKind, RunResourceSummary};
+        let s = RunResourceSummary {
+            run_kind: RunKind::Fleet,
+            run_id: run.into(),
+            // A fleet run whose persona never resolved still counts toward
+            // the charter: ownership is read from the charter row.
+            persona_id: None,
+            responsibility_id: Some(charter.into()),
+            cpu_p95_share: cpu,
+            ram_peak_share: ram,
+            gpu_p95_share: None,
+            dominant: ResourceAxis::dominant(cpu, ram, None),
+            samples: 4,
+            started_at_ms: 0.0,
+            ended_at_ms: 1.0,
+        };
+        assert!(run_resources::insert(pool, &s).expect("insert"));
+    }
+
+    #[test]
+    fn measured_aggregate_carries_the_resource_axes_and_their_tags() -> Result<(), AppError> {
+        use crate::models::{MachineLoad, ResourceAxis, MEASURED_PROFILE_MIN_RUNS};
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1")?;
+        insert_charter(&pool, "p1", "resp-a")?;
+        insert_charter(&pool, "p1", "resp-runs-only")?;
+        measured_pass(&pool, "resp-a", None, "2026-01-01T00:00:00Z")?;
+
+        // Thin: measured, but below the tag threshold - axes yes, tags no.
+        measured_run(&pool, "r0", "resp-a", 0.30, 0.10);
+        let rows = measured_per_responsibility(&pool, "p1")?;
+        let a = rows
+            .iter()
+            .find(|r| r.responsibility_id == "resp-a")
+            .expect("a");
+        assert_eq!(a.passes, 1);
+        assert_eq!(a.resource_runs, 1);
+        assert_eq!(a.cpu_p95_share, Some(0.30));
+        assert_eq!(a.ram_peak_share, Some(0.10));
+        assert_eq!(a.gpu_p95_share, None, "no reading stays null");
+        assert_eq!(a.dominant, Some(ResourceAxis::Cpu));
+        assert_eq!((a.measured_machine, a.measured_gpu), (None, None));
+
+        for i in 1..MEASURED_PROFILE_MIN_RUNS {
+            measured_run(&pool, &format!("r{i}"), "resp-a", 0.30, 0.10);
+        }
+        // A charter with runs but no attention pass is still listed.
+        measured_run(&pool, "solo", "resp-runs-only", 0.01, 0.6);
+        let rows = measured_per_responsibility(&pool, "p1")?;
+        assert_eq!(rows.len(), 2);
+        let a = &rows[0];
+        assert_eq!(a.responsibility_id, "resp-a");
+        assert_eq!(a.resource_runs, MEASURED_PROFILE_MIN_RUNS);
+        assert_eq!(a.measured_machine, Some(MachineLoad::Heavy));
+        assert_eq!(a.measured_gpu, None, "an unread GPU maps to no class");
+        let solo = &rows[1];
+        assert_eq!(solo.responsibility_id, "resp-runs-only");
+        assert_eq!((solo.passes, solo.resource_runs), (0, 1));
+        assert_eq!(solo.dominant, Some(ResourceAxis::Ram));
+        Ok(())
+    }
+
+    #[test]
+    fn charter_for_worker_follows_the_dispatch_row() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1")?;
+        measured_pass(
+            &pool,
+            "resp-a",
+            Some(r#"{"charterId":"resp-a","sessionId":"sess-1"}"#.to_string()),
+            "2026-01-01T00:00:00Z",
+        )?;
+        measured_pass(
+            &pool,
+            "resp-b",
+            Some(r#"{"executionId":"exec-9"}"#.to_string()),
+            "2026-01-01T00:01:00Z",
+        )?;
+        assert_eq!(
+            charter_for_worker(&pool, WorkerHandle::FleetSession, "sess-1")?,
+            Some(("p1".to_string(), "resp-a".to_string()))
+        );
+        assert_eq!(
+            charter_for_worker(&pool, WorkerHandle::Execution, "exec-9")?,
+            Some(("p1".to_string(), "resp-b".to_string()))
+        );
+        // The handle kind matters, and an unknown worker is None.
+        assert_eq!(
+            charter_for_worker(&pool, WorkerHandle::Execution, "sess-1")?,
+            None
+        );
+        assert_eq!(
+            charter_for_worker(&pool, WorkerHandle::FleetSession, "nope")?,
+            None
+        );
         Ok(())
     }
 }

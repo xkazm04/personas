@@ -555,7 +555,10 @@ pub async fn run_execution(
             model_profile.take(),
             override_named,
             None,
-            ch.spec.resource_profile.as_ref().map(|p| p.difficulty),
+            ch.spec
+                .resource_profile
+                .as_ref()
+                .and_then(|p| p.declared_difficulty()),
         );
     }
 
@@ -2473,6 +2476,15 @@ pub async fn run_execution(
     // Register child PID immediately after spawn to minimise the window where
     // cancel_execution cannot kill the process (no PID in the map yet).
     driver.register_pid(&child_pids, &execution_id).await;
+    // Measured resources: the sampler learns this run's root pid, persona and
+    // focused charter here, beside the cancel map (spark device-mesh WP1).
+    crate::engine::resources::track_run(
+        crate::db::models::RunKind::Execution,
+        &execution_id,
+        driver.pid(),
+        Some(&persona.id),
+        focused_charter.as_ref().map(|c| c.id.as_str()),
+    );
 
     // Cost observability: stamp the model/effort this run was ACTUALLY
     // spawned with (extracted from the final argv, so failover/resume paths
@@ -2509,6 +2521,7 @@ pub async fn run_execution(
         logger.log("[CANCELLED] Execution cancelled during spawn, killing process");
         driver.kill().await;
         driver.unregister_pid(&child_pids, &execution_id).await;
+        crate::engine::resources::end_run(crate::db::models::RunKind::Execution, &execution_id);
         logger.close();
 
         emit_to(
@@ -2602,6 +2615,7 @@ pub async fn run_execution(
         logger.log("[CANCELLED] Execution cancelled before prompt delivery, killing process");
         driver.kill().await;
         driver.unregister_pid(&child_pids, &execution_id).await;
+        crate::engine::resources::end_run(crate::db::models::RunKind::Execution, &execution_id);
         logger.close();
 
         emit_to(
@@ -2655,6 +2669,7 @@ pub async fn run_execution(
         logger.close();
         driver.kill().await;
         driver.unregister_pid(&child_pids, &execution_id).await;
+        crate::engine::resources::end_run(crate::db::models::RunKind::Execution, &execution_id);
         let duration_ms = start_time.elapsed().as_millis() as u64;
         let final_trace = trace.finalize(None, None, None, Some(error_msg.clone()));
         let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
@@ -3387,6 +3402,7 @@ pub async fn run_execution(
 
     // Unregister child PID (process has exited)
     driver.unregister_pid(&child_pids, &execution_id).await;
+    crate::engine::resources::end_run(crate::db::models::RunKind::Execution, &execution_id);
 
     let exit_code = exit_status.map(|s| s.code().unwrap_or(-1)).unwrap_or(-1);
 

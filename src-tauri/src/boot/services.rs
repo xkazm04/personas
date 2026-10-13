@@ -153,6 +153,8 @@ pub fn start_local_http(app: &tauri::App, st: &mut StartupTimer) {
     // Both fire-and-forget; the staleness ticker is safe everywhere,
     // the JSONL watcher is desktop-only because `notify` is feature-gated.
     commands::fleet::stale::spawn_ticker(app.handle().clone());
+    // Measured resources: parks until a fleet session or execution is live.
+    engine::resources::spawn_sampler(app.handle().clone());
     // Fleet mobile companion — LAN server restarts only when a live
     // device pairing already exists (fleet_pair_device starts it fresh).
     commands::fleet::companion_api::start_if_paired(app.handle().clone());

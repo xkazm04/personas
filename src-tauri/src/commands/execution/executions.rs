@@ -443,7 +443,10 @@ pub(crate) async fn execute_persona_inner(
                 resolved,
                 override_named,
                 cascade.as_ref(),
-                ch.spec.resource_profile.as_ref().map(|p| p.difficulty),
+                ch.spec
+                    .resource_profile
+                    .as_ref()
+                    .and_then(|p| p.declared_difficulty()),
             );
             // Re-serialize only when routing had something to say for a
             // persona with no profile, or an existing one parsed: an

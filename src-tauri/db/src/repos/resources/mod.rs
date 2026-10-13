@@ -28,6 +28,7 @@ pub mod recipe_suggestions;
 pub mod recipes;
 pub mod remote_jobs;
 pub mod rotation;
+pub mod run_resources;
 pub mod settings_audit_log;
 #[cfg(feature = "p2p")]
 pub mod signing;

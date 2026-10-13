@@ -21,4 +21,19 @@ rationale: string | null,
 /**
  * RFC 3339 instant of the last self-declaration or operator edit.
  */
-declaredAt: string | null, };
+declaredAt: string | null, 
+/**
+ * Whether `difficulty` was DECLARED (by the persona or the operator)
+ * rather than defaulted. Model routing reads only a declared difficulty
+ * (see [`ResourceProfile::declared_difficulty`]), because a declared one
+ * outranks the persona's own model.
+ *
+ * `None` is every profile stored before the measurement loop existed and
+ * every self/operator write: it means "declared unless `source` is
+ * `measured`", which is exactly the old rule (any stored profile was
+ * declared). The measurement loop writes `Some(..)` explicitly: it
+ * carries forward whether the profile it replaced had a declared
+ * difficulty, so measuring a charter never makes a defaulted `standard`
+ * look declared and never forgets a persona's declared one.
+ */
+difficultyDeclared?: boolean, };

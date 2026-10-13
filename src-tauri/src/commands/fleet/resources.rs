@@ -2,10 +2,8 @@
 //! and what finished runs consumed (CPU / RAM / GPU as shares of this device).
 //!
 //! The sampler, the process-tree sum and the GPU-engine read live in
-//! `engine::resources`; the persisted summaries in `run_resource_summaries`.
-//!
-//! WP0 (contract freeze): stubs with the final signatures. The bodies land in
-//! spark device-mesh WP1.
+//! `engine::resources`; the persisted summaries in `run_resource_summaries`
+//! (`db::repos::resources::run_resources`). Both commands are adapters.
 
 use tauri::State;
 
@@ -22,7 +20,7 @@ pub async fn resource_live_samples(
     state: State<'_, std::sync::Arc<AppState>>,
 ) -> Result<Vec<LiveResourceSample>, AppError> {
     require_auth(&state).await?;
-    Ok(Vec::new())
+    Ok(crate::engine::resources::live_samples())
 }
 
 /// A persona's finished-run summaries, newest first (at most `limit`, default
@@ -34,6 +32,10 @@ pub async fn resource_run_summaries(
     limit: Option<u32>,
 ) -> Result<Vec<RunResourceSummary>, AppError> {
     require_auth(&state).await?;
-    let _ = (persona_id, limit);
-    Ok(Vec::new())
+    let db = state.db.clone();
+    tokio::task::spawn_blocking(move || {
+        crate::db::repos::resources::run_resources::list_for_persona(&db, &persona_id, limit)
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("resource_run_summaries: task failed: {e}")))?
 }

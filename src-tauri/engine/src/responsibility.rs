@@ -309,14 +309,17 @@ pub fn effective_profile(spec: &ResponsibilitySpec) -> ResourceProfile {
     spec.resource_profile.clone().unwrap_or_default()
 }
 
-/// Who is writing a profile. There is no third writer: a template or a
-/// migration that carries a profile is the operator's act.
+/// Who is writing a profile. A template or a migration that carries a
+/// profile is the operator's act; the third writer is the measurement.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProfileWriter {
     /// The persona, self-declaring on a decide wake.
     Persona,
     /// The operator, through the charter editor.
     Operator,
+    /// The profile loop (spark device-mesh), from measured runs
+    /// ([`apply_measured_profile`]). Rewrites `machine` and `gpu` only.
+    Measured,
 }
 
 /// Why a profile write changed nothing.
@@ -325,6 +328,9 @@ pub enum ProfileRefusal {
     /// The operator pinned the stored profile; a persona never overwrites it
     /// (it may still say it disagrees in its decide rationale).
     Pinned,
+    /// The stored profile is the operator's (pinned or not); measurement
+    /// never overwrites it - the editor shows a mismatch badge instead.
+    OperatorAuthored,
 }
 
 impl ProfileRefusal {
@@ -332,6 +338,7 @@ impl ProfileRefusal {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Pinned => "profile_pinned",
+            Self::OperatorAuthored => "profile_operator",
         }
     }
 }
@@ -342,6 +349,9 @@ impl std::fmt::Display for ProfileRefusal {
             Self::Pinned => f.write_str(
                 "the operator pinned this resource profile; a persona self-declaration \
                  does not overwrite a pinned profile",
+            ),
+            Self::OperatorAuthored => f.write_str(
+                "the operator authored this resource profile; measurement does not                  overwrite it",
             ),
         }
     }
@@ -355,7 +365,14 @@ impl std::fmt::Display for ProfileRefusal {
 ///   profile back to the persona), `declared_at = now`.
 /// * **Persona** - REFUSED with [`ProfileRefusal::Pinned`] when the stored
 ///   profile is pinned (nothing changes). Otherwise `source = self`,
-///   `pinned = false`, `declared_at = now` - a persona can never pin.
+///   `pinned = false`, `declared_at = now` - a persona can never pin. A
+///   `measured` profile is not pinned, so a persona's later self-declaration
+///   replaces it.
+/// * **Measured** - REFUSED with [`ProfileRefusal::Pinned`] on a pinned
+///   profile and [`ProfileRefusal::OperatorAuthored`] on any operator profile.
+///   Otherwise ONLY `machine` and `gpu` are taken from `incoming`; difficulty,
+///   effort and rationale stay as stored (or the defaults when nothing was),
+///   with `source = measured`, `pinned = false`, `declared_at = now`.
 pub fn merge_profile(
     existing: Option<&ResourceProfile>,
     incoming: ResourceProfile,
@@ -363,9 +380,12 @@ pub fn merge_profile(
 ) -> Result<ResourceProfile, ProfileRefusal> {
     let declared_at = Some(chrono::Utc::now().to_rfc3339());
     match writer {
+        // An authored write declares its difficulty: `difficulty_declared`
+        // goes back to `None` ("declared unless measured").
         ProfileWriter::Operator => Ok(ResourceProfile {
             source: ProfileSource::Operator,
             declared_at,
+            difficulty_declared: None,
             ..incoming
         }),
         ProfileWriter::Persona => {
@@ -376,7 +396,33 @@ pub fn merge_profile(
                 source: ProfileSource::SelfDeclared,
                 pinned: false,
                 declared_at,
+                difficulty_declared: None,
                 ..incoming
+            })
+        }
+        ProfileWriter::Measured => {
+            if existing.is_some_and(|e| e.pinned) {
+                return Err(ProfileRefusal::Pinned);
+            }
+            if existing.is_some_and(|e| e.source == ProfileSource::Operator) {
+                return Err(ProfileRefusal::OperatorAuthored);
+            }
+            // Measuring never changes whether the difficulty was declared:
+            // a persona's declared difficulty keeps routing, and a charter
+            // that never declared one keeps resolving to the persona's own
+            // model instead of the defaulted `standard` (which routing would
+            // otherwise read as a declaration and move an opus persona to
+            // sonnet).
+            let difficulty_declared =
+                Some(existing.and_then(|e| e.declared_difficulty()).is_some());
+            Ok(ResourceProfile {
+                machine: incoming.machine,
+                gpu: incoming.gpu,
+                source: ProfileSource::Measured,
+                pinned: false,
+                declared_at,
+                difficulty_declared,
+                ..existing.cloned().unwrap_or_default()
             })
         }
     }
@@ -447,6 +493,71 @@ pub fn declare_profile(
         return Err(AppError::NotFound(format!("Responsibility {charter_id}")));
     }
     Ok(ProfileWriteOutcome::Written(merged))
+}
+
+/// What [`apply_measured_profile`] did with a charter's measurement.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MeasuredProfileOutcome {
+    /// Fewer than [`personas_core::models::MEASURED_PROFILE_MIN_RUNS`]
+    /// summarised runs; nothing was read into the profile.
+    TooFewRuns,
+    /// The stored profile already says what the measurement says (and is
+    /// already `measured`); nothing was written, `updated_at` untouched.
+    Unchanged,
+    /// Written through [`declare_profile`]; the profile as stored.
+    Written(ResourceProfile),
+    /// Pinned or operator-authored; nothing changed. The mismatch is
+    /// reported by `responsibility_measured`, not written.
+    Refused(ProfileRefusal),
+}
+
+/// THE PROFILE LOOP (spark device-mesh, D8): fold a charter's measured runs
+/// (`run_resource_summaries`) back into its resource profile. Called once per
+/// newly summarised run of the charter.
+///
+/// Once the charter has at least `MEASURED_PROFILE_MIN_RUNS` runs, the medians
+/// over its newest `MEASURED_PROFILE_WINDOW` map to a machine tag and (when any
+/// run had a GPU reading) a GPU class - one mapping, `ResourceMeasure::tags`.
+/// An unread GPU leaves the stored GPU class as it is: "no reading" is not
+/// "used no GPU". The write goes through [`declare_profile`] as
+/// [`ProfileWriter::Measured`], so the pin rule in [`merge_profile`] is the
+/// only thing that decides whether it lands. A write that would change
+/// nothing is skipped, so a steady charter does not bump `updated_at` (the
+/// attention loop's staleness order) on every run.
+pub fn apply_measured_profile(
+    pool: &DbPool,
+    charter_id: &str,
+) -> Result<MeasuredProfileOutcome, AppError> {
+    use personas_db::repos::resources::run_resources;
+
+    let Some((machine, gpu)) =
+        run_resources::measure_for_responsibility(pool, charter_id)?.and_then(|m| m.tags())
+    else {
+        return Ok(MeasuredProfileOutcome::TooFewRuns);
+    };
+    let Some(charter) = repo::get_by_id(pool, charter_id)? else {
+        return Err(AppError::NotFound(format!("Responsibility {charter_id}")));
+    };
+    let stored = charter.spec.resource_profile.as_ref();
+    let gpu = gpu.unwrap_or_else(|| stored.map(|p| p.gpu).unwrap_or_default());
+    // Tags that already match are left alone WHATEVER the source: re-stamping
+    // a self-declared profile that the measurement confirms would make the
+    // persona's next identical declaration a "change", and the two writers
+    // would flip the source back and forth on every wake.
+    if stored.is_some_and(|p| p.machine == machine && p.gpu == gpu) {
+        return Ok(MeasuredProfileOutcome::Unchanged);
+    }
+    let incoming = ResourceProfile {
+        machine,
+        gpu,
+        ..ResourceProfile::default()
+    };
+    Ok(
+        match declare_profile(pool, charter_id, incoming, ProfileWriter::Measured)? {
+            ProfileWriteOutcome::Written(p) => MeasuredProfileOutcome::Written(p),
+            ProfileWriteOutcome::Refused(r) => MeasuredProfileOutcome::Refused(r),
+        },
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -1777,5 +1888,223 @@ mod tests {
         assert!(matches!(validate(&charter), Err(AppError::Validation(_))));
         charter.spec.resource_profile = Some(heavy_profile());
         validate(&charter).unwrap();
+    }
+
+    // -- Profile loop (spark device-mesh, WP1) --------------------------------
+
+    use personas_db::models::{
+        ResourceAxis, RunKind, RunResourceSummary, MEASURED_PROFILE_MIN_RUNS,
+    };
+    use personas_db::repos::core::attention_ledger;
+    use personas_db::repos::resources::run_resources;
+
+    /// One summarised run of `charter`: CPU 0.3 (heavy), RAM 0.05, GPU 0.6
+    /// (exclusive).
+    fn measured_run(pool: &DbPool, charter: &str, n: u32) {
+        let s = RunResourceSummary {
+            run_kind: RunKind::Execution,
+            run_id: format!("{charter}-run-{n}"),
+            persona_id: Some("p1".into()),
+            responsibility_id: Some(charter.into()),
+            cpu_p95_share: 0.3,
+            ram_peak_share: 0.05,
+            gpu_p95_share: Some(0.6),
+            dominant: ResourceAxis::Gpu,
+            samples: 6,
+            started_at_ms: f64::from(n) * 1_000.0,
+            ended_at_ms: f64::from(n) * 1_000.0 + 500.0,
+        };
+        assert!(run_resources::insert(pool, &s).unwrap());
+    }
+
+    fn measured_runs(pool: &DbPool, charter: &str, count: u32) {
+        for n in 0..count {
+            measured_run(pool, charter, n);
+        }
+    }
+
+    #[test]
+    fn measured_merge_rewrites_only_machine_and_gpu_and_respects_the_pin() {
+        let incoming = ResourceProfile {
+            machine: MachineLoad::Exclusive,
+            gpu: GpuClass::Shared,
+            difficulty: Difficulty::Light,
+            rationale: Some("forged".into()),
+            pinned: true,
+            ..Default::default()
+        };
+        // Over a self-declaration: the persona's other tags survive.
+        let declared = ResourceProfile {
+            source: ProfileSource::SelfDeclared,
+            ..heavy_profile()
+        };
+        let merged =
+            merge_profile(Some(&declared), incoming.clone(), ProfileWriter::Measured).unwrap();
+        assert_eq!(
+            (merged.machine, merged.gpu),
+            (MachineLoad::Exclusive, GpuClass::Shared)
+        );
+        assert_eq!(merged.difficulty, Difficulty::Hard);
+        assert_eq!(merged.effort, EffortBand::L);
+        assert_eq!(merged.rationale.as_deref(), Some("trains a model"));
+        assert_eq!(merged.source, ProfileSource::Measured);
+        assert!(!merged.pinned, "measurement never pins");
+        assert!(merged.declared_at.is_some());
+        // The persona's declared difficulty still routes after measurement.
+        assert_eq!(merged.declared_difficulty(), Some(Difficulty::Hard));
+        // Over nothing: the defaults fill the rest.
+        let fresh = merge_profile(None, incoming.clone(), ProfileWriter::Measured).unwrap();
+        assert_eq!(fresh.difficulty, Difficulty::Standard);
+        assert_eq!(fresh.rationale, None);
+        // ...and the defaulted `standard` is NOT a declaration: an untagged
+        // charter keeps resolving to its persona's own model.
+        assert_eq!(fresh.declared_difficulty(), None);
+        // Measuring a measured profile keeps the flag it had.
+        let again = merge_profile(Some(&fresh), incoming.clone(), ProfileWriter::Measured).unwrap();
+        assert_eq!(again.declared_difficulty(), None);
+        // A persona declaring afterwards makes it declared again.
+        let redeclared =
+            merge_profile(Some(&again), declared.clone(), ProfileWriter::Persona).unwrap();
+        assert_eq!(redeclared.declared_difficulty(), Some(Difficulty::Hard));
+        // Pinned, and operator-authored even unpinned, are refused.
+        let pinned = ResourceProfile {
+            source: ProfileSource::Operator,
+            pinned: true,
+            ..Default::default()
+        };
+        assert_eq!(
+            merge_profile(Some(&pinned), incoming.clone(), ProfileWriter::Measured),
+            Err(ProfileRefusal::Pinned)
+        );
+        let operator = ResourceProfile {
+            source: ProfileSource::Operator,
+            ..Default::default()
+        };
+        assert_eq!(
+            merge_profile(Some(&operator), incoming, ProfileWriter::Measured),
+            Err(ProfileRefusal::OperatorAuthored)
+        );
+        assert_eq!(
+            ProfileRefusal::OperatorAuthored.as_str(),
+            "profile_operator"
+        );
+        // A persona's later self-declaration replaces a measured profile.
+        let replaced = merge_profile(Some(&merged), heavy_profile(), ProfileWriter::Persona)
+            .expect("a measured profile is not pinned");
+        assert_eq!(replaced.source, ProfileSource::SelfDeclared);
+        assert_eq!(replaced.machine, MachineLoad::Heavy);
+    }
+
+    #[test]
+    fn profile_loop_waits_for_five_runs_then_measures_an_unpinned_default() {
+        let pool = init_test_db().unwrap();
+        insert_persona(&pool, "p1").unwrap();
+        let charter = profile_charter(&pool, ResponsibilitySpec::default());
+        assert_eq!(charter.spec.resource_profile, None);
+
+        measured_runs(&pool, &charter.id, MEASURED_PROFILE_MIN_RUNS - 1);
+        assert_eq!(
+            apply_measured_profile(&pool, &charter.id).unwrap(),
+            MeasuredProfileOutcome::TooFewRuns
+        );
+        let after = repo::get_by_id(&pool, &charter.id).unwrap().expect("row");
+        assert_eq!(after.spec.resource_profile, None, "4 runs change nothing");
+
+        measured_run(&pool, &charter.id, MEASURED_PROFILE_MIN_RUNS);
+        let MeasuredProfileOutcome::Written(written) =
+            apply_measured_profile(&pool, &charter.id).unwrap()
+        else {
+            panic!("the fifth run writes");
+        };
+        let stored = repo::get_by_id(&pool, &charter.id)
+            .unwrap()
+            .expect("row")
+            .spec
+            .resource_profile
+            .expect("profile");
+        assert_eq!(stored, written);
+        assert_eq!(stored.source, ProfileSource::Measured);
+        assert_eq!(stored.machine, MachineLoad::Heavy);
+        assert_eq!(stored.gpu, GpuClass::Exclusive);
+        assert_eq!(
+            (
+                stored.difficulty,
+                stored.effort,
+                stored.rationale.as_deref()
+            ),
+            (Difficulty::Standard, EffortBand::M, None),
+            "difficulty, effort and rationale are left as they were"
+        );
+        assert!(!stored.pinned);
+
+        // A steady measurement does not re-write (or re-stamp) the row.
+        assert_eq!(
+            apply_measured_profile(&pool, &charter.id).unwrap(),
+            MeasuredProfileOutcome::Unchanged
+        );
+        // A persona's later self-declaration replaces it through the same door.
+        assert!(matches!(
+            declare_profile(&pool, &charter.id, heavy_profile(), ProfileWriter::Persona).unwrap(),
+            ProfileWriteOutcome::Written(ResourceProfile {
+                source: ProfileSource::SelfDeclared,
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn profile_loop_leaves_pinned_and_operator_profiles_and_reports_the_mismatch() {
+        let pool = init_test_db().unwrap();
+        insert_persona(&pool, "p1").unwrap();
+        let light = ResourceProfile {
+            machine: MachineLoad::Light,
+            gpu: GpuClass::None,
+            ..Default::default()
+        };
+        // Through the operator door: `source = operator`, pinned as given.
+        let pinned = profile_charter(
+            &pool,
+            ResponsibilitySpec {
+                resource_profile: Some(ResourceProfile {
+                    pinned: true,
+                    ..light.clone()
+                }),
+                ..Default::default()
+            },
+        );
+        let operator = profile_charter(
+            &pool,
+            ResponsibilitySpec {
+                resource_profile: Some(light),
+                ..Default::default()
+            },
+        );
+        for (charter, refusal) in [
+            (&pinned, ProfileRefusal::Pinned),
+            (&operator, ProfileRefusal::OperatorAuthored),
+        ] {
+            let before = charter.spec.resource_profile.clone().expect("declared");
+            assert_eq!(before.source, ProfileSource::Operator);
+            measured_runs(&pool, &charter.id, MEASURED_PROFILE_MIN_RUNS);
+            assert_eq!(
+                apply_measured_profile(&pool, &charter.id).unwrap(),
+                MeasuredProfileOutcome::Refused(refusal)
+            );
+            let after = repo::get_by_id(&pool, &charter.id).unwrap().expect("row");
+            assert_eq!(after.spec.resource_profile, Some(before), "unchanged");
+        }
+        // ... and `responsibility_measured` carries the measured tags, so the
+        // editor can badge the mismatch against the declared `light / none`.
+        let rows = attention_ledger::measured_per_responsibility(&pool, "p1").unwrap();
+        for charter in [&pinned, &operator] {
+            let m = rows
+                .iter()
+                .find(|r| r.responsibility_id == charter.id)
+                .expect("measured row");
+            assert_eq!(m.resource_runs, MEASURED_PROFILE_MIN_RUNS);
+            assert_eq!(m.measured_machine, Some(MachineLoad::Heavy));
+            assert_eq!(m.measured_gpu, Some(GpuClass::Exclusive));
+            assert_eq!(m.dominant, Some(ResourceAxis::Gpu));
+        }
     }
 }

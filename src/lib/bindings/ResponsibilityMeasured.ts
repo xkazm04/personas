@@ -34,6 +34,12 @@ measuredEffort: EffortBand | null,
  */
 resourceRuns: number, 
 /**
+ * How many summarised runs the profile loop needs before it maps the
+ * measurement onto tags ([`MEASURED_PROFILE_MIN_RUNS`]). Shipped on the
+ * payload so the editor's "learning (n/N)" never keeps its own copy.
+ */
+resourceRunsRequired: number, 
+/**
  * Median of the per-run 95th-percentile CPU share (0..=1).
  */
 cpuP95Share: number | null, 
