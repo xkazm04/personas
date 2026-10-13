@@ -17811,6 +17811,222 @@
       "evaluatedTs": "2026-10-13T00:40:06.480Z",
       "worker": "6b7b192b-9fc1-420f-8f52-aa30f13ca3a2",
       "techniques": []
+    },
+    "4be04ef0-88db-4f48-859c-92e6ba4d203f/generated-workflow-candidates": {
+      "context": "template-gallery-search",
+      "subject": "generated-workflow-candidates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T01:50:07.728Z",
+      "worker": "0658beda-da38-4507-ae64-8a7cc3de2e60",
+      "techniques": [
+        {
+          "technique": "candidates-as-ordinary-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/TemplateSearchBarTypes.ts:15 Gallery search filters templates by connector integration counts rather than managing runnable generated candidate artifact packages."
+        },
+        {
+          "technique": "score-keyed-candidate-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/SortDropdown.tsx:23 Gallery UI sorts templates by user metadata like creation timestamp rather than evaluating validation scores across trained candidates."
+        },
+        {
+          "technique": "search-as-candidate-mutation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/suggestions/SearchChipInput.tsx:37 Search here is an interactive chip-based query input UI with autocomplete prefixes for browsing, not hyperparameter candidate mutation."
+        },
+        {
+          "technique": "stage-level-result-caching",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/AdminToolsDropdown.tsx:48 Admin dropdown handles UI deduplication actions rather than multi-stage result caching or execution resumption."
+        },
+        {
+          "technique": "template-filling-with-provenance",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/suggestions/useStructuredQuery.ts:26 The query parser structures user-typed search prefixes into filter tokens instead of populating templates from dataset statistics."
+        },
+        {
+          "technique": "two-tier-data-statistics",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:15 Filters components by counting UI template occurrences rather than aggregating dataset measurements into per-case and summary statistic tiers."
+        }
+      ],
+      "registryProposal": "Lexical indexers pairing on 'template', 'search', or 'generated' should be constrained against matching UI template galleries whose requirements are governed by templates-scaffolding."
+    },
+    "9fca099d-94e4-4fd0-8460-3cf5d8c85acf/generated-workflow-candidates": {
+      "context": "templates-generated-gallery-cards",
+      "subject": "generated-workflow-candidates",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T01:50:07.728Z",
+      "techniques": [
+        {
+          "technique": "candidates-as-ordinary-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/TemplateVirtualList.tsx:26 Virtual scrolling list displays persona design review records rather than runnable candidate directories."
+        },
+        {
+          "technique": "score-keyed-candidate-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/buildComparison.ts:31 Compares templates across qualitative design feasibility and adoption counts rather than ranking candidate models by a declared scalar validation score."
+        },
+        {
+          "technique": "search-as-candidate-mutation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCompare.ts:5 Template comparison UI manages manual side-by-side selection of up to 3 templates rather than driving parameter mutations via a search backend."
+        },
+        {
+          "technique": "stage-level-result-caching",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:18 In-memory WeakMap caches parsed JSON fields for UI row rendering instead of checking on-disk results to resume execution stages."
+        },
+        {
+          "technique": "template-filling-with-provenance",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useAdoptionCompletionNotifier.ts:16 Polls adoption background job snapshots to trigger desktop notifications upon adoption completion rather than deriving candidate configurations from dataset measurements."
+        },
+        {
+          "technique": "two-tier-data-statistics",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/TemplateCategoryPills.tsx:27 Renders connector category chips from template metadata rather than exposing schema-constrained two-tier dataset measurements."
+        }
+      ],
+      "withdrawn": {
+        "worker": "0658beda-da38-4507-ae64-8a7cc3de2e60",
+        "state": "not-applicable",
+        "at": "2026-10-13T01:50:59.004710+00:00",
+        "reason": "reviewer (sonnet): The anchor GeneratedReviewsTab.tsx:49 is only a function declaration and doesn't show the precondition is absent; the technique anchors support the claim, but the primary anchor is incidental."
+      }
+    },
+    "8a57c65c-06fd-45c9-9d32-d50c89c4c705/generated-workflow-candidates": {
+      "context": "template-generation",
+      "subject": "generated-workflow-candidates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T01:50:07.728Z",
+      "worker": "0658beda-da38-4507-ae64-8a7cc3de2e60",
+      "techniques": [
+        {
+          "technique": "candidates-as-ordinary-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/DesignReviewRunner.tsx:39 Design runner modal executes UI test suites for persona prompt designs rather than exporting runnable candidate directory packages."
+        },
+        {
+          "technique": "score-keyed-candidate-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/DesignReviewTerminal.tsx:113 Terminal summary counts passed and failed design test cases rather than ranking candidates on a declared validation score key."
+        },
+        {
+          "technique": "search-as-candidate-mutation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:36 State hook toggles test execution modes across predefined, custom, and batch inputs rather than interfacing with a hyperparameter search backend."
+        },
+        {
+          "technique": "stage-level-result-caching",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/sources/BatchSourceView.tsx:34 Batch source view accepts markdown and text file uploads as test suites rather than resuming multi-stage cached execution on disk."
+        },
+        {
+          "technique": "template-filling-with-provenance",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/sources/CustomSourceView.tsx:20 Collects custom human-typed instructions to draft persona templates instead of mapping statistics placeholders to candidate configurations with fill provenance."
+        },
+        {
+          "technique": "two-tier-data-statistics",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/sources/ModeTabBar.tsx:18 Configures test suite mode tabs rather than defining or consuming per-sample and summary dataset measurement tiers."
+        }
+      ]
+    },
+    "7dddb34a-3a9b-4ce0-832f-55ea352c12b5/generated-workflow-candidates": {
+      "context": "templates-generated-adoption-ucpicker",
+      "subject": "generated-workflow-candidates",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T01:50:07.728Z",
+      "techniques": [
+        {
+          "technique": "candidates-as-ordinary-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerTypes.ts:12 Configures UI destination types (notification, in-app messaging) for template adoption rather than runnable candidate package layouts."
+        },
+        {
+          "technique": "score-keyed-candidate-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx:884 Seeds questionnaire default values during template adoption rather than sorting candidates on a declared validation score key."
+        },
+        {
+          "technique": "search-as-candidate-mutation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/useUcPickerState.ts:30 State hook manages UI selection of use cases and delivery triggers rather than driving hyperparameter candidate mutation."
+        },
+        {
+          "technique": "stage-level-result-caching",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/AdoptionWizardModal.tsx:33 Tracks adoption modal interactive UI lifecycle phases rather than verifying disk-backed results to resume pipeline execution stages."
+        },
+        {
+          "technique": "template-filling-with-provenance",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucForgeEditor.tsx:23 Configures interactive route toggles for event destinations rather than recording template placeholder substitution mappings from dataset statistics."
+        },
+        {
+          "technique": "two-tier-data-statistics",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/chronology/TestReportModal.tsx:31 Displays UI test results per tool/connector during adoption rather than measuring datasets across per-sample and summary statistic schemas."
+        }
+      ],
+      "withdrawn": {
+        "worker": "0658beda-da38-4507-ae64-8a7cc3de2e60",
+        "state": "not-applicable",
+        "at": "2026-10-13T01:50:59.096510+00:00",
+        "reason": "reviewer (sonnet): The evidence says 'candidates' matches refer to credential connectors, but my grep of the ucPicker context found no 'candidate' matches, and the anchor ucPicker.tsx:34 is just a component declaration."
+      }
+    },
+    "b26fe932-b123-4b9e-8d1c-bbbf4e508265/generated-workflow-candidates": {
+      "context": "api-system",
+      "subject": "generated-workflow-candidates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T01:50:07.728Z",
+      "worker": "0658beda-da38-4507-ae64-8a7cc3de2e60",
+      "techniques": [
+        {
+          "technique": "candidates-as-ordinary-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "src/api/templates/templateAdopt.ts:30 IPC wrapper fetches template adoption job state snapshots rather than saving candidate packages to disk."
+        },
+        {
+          "technique": "score-keyed-candidate-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/api/system/systemMetrics.ts:11 Collects system CPU and memory hardware utilization metrics rather than scoring trained model candidates."
+        },
+        {
+          "technique": "search-as-candidate-mutation",
+          "verdict": "not-applicable",
+          "evidence": "src/api/system/settings.ts:10 Exposes IPC calls for application configuration key-value storage rather than managing a hyperparameter search space."
+        },
+        {
+          "technique": "stage-level-result-caching",
+          "verdict": "not-applicable",
+          "evidence": "src/api/design/design.ts:17 Provides IPC wrappers to cancel persona design analysis rather than implementing a staged resume-aware runner."
+        },
+        {
+          "technique": "template-filling-with-provenance",
+          "verdict": "not-applicable",
+          "evidence": "src/api/templates/templateAdopt.ts:149 Verifies static template file integrity against backend checksum manifests rather than recording placeholder fill derivations from statistics."
+        },
+        {
+          "technique": "two-tier-data-statistics",
+          "verdict": "not-applicable",
+          "evidence": "src/api/system/tierUsage.ts:8 Queries account billing tier usage snapshots rather than schema-enforced two-tier dataset measurements."
+        }
+      ]
     }
   }
 }

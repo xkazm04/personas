@@ -4848,7 +4848,11 @@
           "revision": 1,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/api/system/system.ts:14 Grep across the context's 20 files for subject terms (candidate, hyperparameter, partition, two-tier, stage-level, score-keyed) returned zero matches; this module provides IPC client wrappers for desktop system metrics, settings, persona design analysis, and template adoption rather than managing machine learning candidate generation workflows.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:acd501ca62d5c9f0",
+          "evaluatedRevision": 1
         },
         {
           "subject": "agent-memory",
@@ -32489,7 +32493,11 @@
           "revision": 1,
           "changedAt": "2026-09-03",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/searchConstants.ts:135 Grep across the context's files for subject terms (candidate, statistic, hyperparameter, partition, provenance) returned zero matches; this module implements user-facing gallery search and filter controls over template metadata (such as readiness and adoption count) rather than automated dataset-driven candidate generation.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:acd501ca62d5c9f0",
+          "evaluatedRevision": 1
         },
         {
           "subject": "templates-scaffolding",
@@ -32638,7 +32646,11 @@
           "revision": 1,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:82 Grep across the context's files for subject terms (candidate, hyperparameter, partition, two-tier, stage-level, score-keyed) returned zero matches; this module implements an interactive runner modal for testing AI persona template creation against predefined natural-language prompts rather than automated dataset-measured workflow candidate generation.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:acd501ca62d5c9f0",
+          "evaluatedRevision": 1
         },
         {
           "subject": "translation-pipeline-topology",
