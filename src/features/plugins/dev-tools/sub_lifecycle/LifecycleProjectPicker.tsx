@@ -1,4 +1,3 @@
-import { useEffect, useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { FolderKanban, AlertCircle, GitBranch } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
@@ -11,8 +10,8 @@ import { LT } from './lifecycleView/system/lcType';
 interface LifecycleProjectPickerProps {
   /**
    * Allow "No active project" so the page can scope to a whole workspace or
-   * every project (Goals, KPIs). Pages that act on ONE project leave this off
-   * and the picker keeps a project selected.
+   * every project. On by default: nothing is auto-selected, a project is only
+   * active once the user picks one (and that pick is persisted).
    */
   allowNone?: boolean;
 }
@@ -23,20 +22,9 @@ interface LifecycleProjectPickerProps {
  * pull requests, which need a repo). Colour by meaning: a linked repo reads in
  * the success tokens, a missing one in the warning tokens.
  */
-export function LifecycleProjectPicker({ allowNone = false }: LifecycleProjectPickerProps) {
+export function LifecycleProjectPicker({ allowNone = true }: LifecycleProjectPickerProps) {
   const { t } = useTranslation();
-  const { projects, scoped, activeProjectId, activeProject, setActiveProject } = useWorkspaceSwitch();
-
-  const firstByName = useMemo(
-    () => [...scoped].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))[0] ?? null,
-    [scoped],
-  );
-
-  // Single-project pages always act on a project: select the first (by name)
-  // in the active workspace when none is active.
-  useEffect(() => {
-    if (!allowNone && !activeProjectId && firstByName) void setActiveProject(firstByName.id);
-  }, [allowNone, activeProjectId, firstByName, setActiveProject]);
+  const { projects, activeProject } = useWorkspaceSwitch();
 
   // No projects at all: a compact inline CTA.
   if (projects.length === 0) {
