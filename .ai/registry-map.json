@@ -8555,8 +8555,12 @@
           "revision": 19,
           "changedAt": "2026-09-30",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 3
+          "state": "not-applicable",
+          "priorNotApplicable": 3,
+          "evidence": "src-tauri/core/src/engine_kind.rs:29 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; core provides foundational CLI engine enums and system limits rather than speech recognition or synthesis pipelines.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+          "evaluatedRevision": 20
         },
         {
           "subject": "guest-execution-bounding",
@@ -22297,8 +22301,12 @@
           "revision": 19,
           "changedAt": "2026-09-30",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 3
+          "state": "not-applicable",
+          "priorNotApplicable": 3,
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:351 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; pipeline-and-automation executes multi-persona team graphs across persona and command nodes without speech I/O processing.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+          "evaluatedRevision": 20
         },
         {
           "subject": "supply-chain",
@@ -27537,8 +27545,12 @@
           "revision": 19,
           "changedAt": "2026-09-30",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 3
+          "state": "not-applicable",
+          "priorNotApplicable": 3,
+          "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:34 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; settings-network manages P2P exposure of static resources and cryptographic bundle exchange without speech input or audio playback surfaces.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+          "evaluatedRevision": 20
         },
         {
           "subject": "agent-memory",
@@ -34157,8 +34169,12 @@
           "revision": 19,
           "changedAt": "2026-09-30",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 3
+          "state": "not-applicable",
+          "priorNotApplicable": 3,
+          "evidence": "src-tauri/engine/src/eval.rs:70 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; test-runner-lab evaluates persona execution outputs solely via text assertions and tool accuracy strategies rather than processing audio or speech channels.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+          "evaluatedRevision": 20
         },
         {
           "subject": "mcp-tools",
@@ -35472,8 +35488,12 @@
           "revision": 19,
           "changedAt": "2026-09-30",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 3
+          "state": "not-applicable",
+          "priorNotApplicable": 3,
+          "evidence": "src/features/vault/sub_catalog/components/design/credentialDesignModalTypes.ts:9 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; vault-catalog-autocred-ui drives browser-based credential extraction and design dialogs without voice capture or speech synthesis.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+          "evaluatedRevision": 20
         },
         {
           "subject": "agent-memory",

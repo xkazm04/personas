@@ -1,0 +1,243 @@
+{
+ "schema": "conform-run/1",
+ "worker": "0d1f8670-3002-4701-98d8-6af401cfaf33",
+ "subject": "voice-io",
+ "evaluatedAt": "2026-10-13T12:00:13.603533+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [
+  {
+   "context": "test-runner-lab",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/engine/src/eval.rs:70 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; test-runner-lab evaluates persona execution outputs solely via text assertions and tool accuracy strategies rather than processing audio or speech channels.",
+   "techniques": [
+    {
+     "technique": "engine-abstraction",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/eval.rs:47 Evaluation execution methods in the lab are restricted to LLM scoring and heuristic fallbacks over text output, with no speech recognition or synthesis engine adapters."
+    },
+    {
+     "technique": "stt-pipeline",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/output_assertions.rs:85 The output assertion engine evaluates declarative text patterns against completed output strings without audio input capture, level metering, or transcription pipelines."
+    },
+    {
+     "technique": "tts-pipeline",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/capability_contract.rs:47 Declared capability requirements track credentials, connectors, personas, and automations, with no audio playback queue or speech synthesis requirements."
+    }
+   ],
+   "absenceTerms": [
+    "microphone",
+    "speech-to-text",
+    "text-to-speech",
+    "whisper"
+   ]
+  },
+  {
+   "context": "settings-network",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:34 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; settings-network manages P2P exposure of static resources and cryptographic bundle exchange without speech input or audio playback surfaces.",
+   "techniques": [
+    {
+     "technique": "voice-setup-experience",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/components/SettingsPage.tsx:8 SettingsPage routes solely to account, appearance, notifications, radio, engine, byom, portability, network, devices, admin, api-keys, history, and limits tabs, lacking a voice setup or speech onboarding flow."
+    },
+    {
+     "technique": "caller-scoped-voice-binding",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/sub_network/components/IdentitySettings.tsx:14 P2P network identities manage cryptographic peer trust and device pairing records, with no automated caller speech binding or voice identity resolution."
+    },
+    {
+     "technique": "voice-ux-integration",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/sub_network/components/BundleExportDialog.tsx:24 Network bundle export handles cryptographic archive generation and temporary clipboard sharing without read-aloud controls, narration arbiters, or speech mute architecture."
+    }
+   ],
+   "absenceTerms": [
+    "microphone",
+    "speech-to-text",
+    "text-to-speech",
+    "whisper"
+   ]
+  },
+  {
+   "context": "core",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/core/src/engine_kind.rs:29 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; core provides foundational CLI engine enums and system limits rather than speech recognition or synthesis pipelines.",
+   "techniques": [
+    {
+     "technique": "engine-abstraction",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/engine_kind.rs:19 The engine kind enum in core models solely headless CLI execution backends (ClaudeCode), with no voice synthesis or speech recognition engine abstractions."
+    },
+    {
+     "technique": "on-device-vs-cloud",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/limits.rs:15 Execution limits govern headless persona timeouts without residency decisions, on-device model provisioning, or cloud speech fallback logic."
+    },
+    {
+     "technique": "duplex-agent-sessions",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/lifecycle.rs:3 Core lifecycle state machines model entity statuses and transitions declaratively, containing no vendor duplex voice sessions or audio socket protocols."
+    }
+   ],
+   "absenceTerms": [
+    "microphone",
+    "speech-to-text",
+    "text-to-speech",
+    "whisper"
+   ]
+  },
+  {
+   "context": "vault-catalog-autocred-ui",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/vault/sub_catalog/components/design/credentialDesignModalTypes.ts:9 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; vault-catalog-autocred-ui drives browser-based credential extraction and design dialogs without voice capture or speech synthesis.",
+   "techniques": [
+    {
+     "technique": "stt-pipeline",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredConsent.tsx:18 Consent step gates automated browser harvesting of developer portal credentials, with no microphone device acquisition, level metering, or voice activity detection."
+    },
+    {
+     "technique": "transcript-handoff-receipts",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:36 AutoCredPanel orchestrates Playwright-guided browser sessions to fill form credentials directly into vault storage, without system clipboard paste injection or transcript handoff receipts."
+    },
+    {
+     "technique": "voice-ux-integration",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/SetupSteps.tsx:49 SetupHeader presents visual wizard status for browser-driven credential setup without speech overlay controls or narration arbiters."
+    }
+   ],
+   "absenceTerms": [
+    "microphone",
+    "speech-to-text",
+    "text-to-speech",
+    "whisper"
+   ]
+  },
+  {
+   "context": "pipeline-and-automation",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/pipeline_executor.rs:351 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; pipeline-and-automation executes multi-persona team graphs across persona and command nodes without speech I/O processing.",
+   "techniques": [
+    {
+     "technique": "spoken-intent-parsing",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/pipeline_executor.rs:135 Pipeline edge conditions evaluate JSON fields and operators on node output text, with no spoken grammar parsing or confidence-gated speech command matching."
+    },
+    {
+     "technique": "unattended-caller-attribution",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/failure_signature.rs:28 Failure signatures detect deterministic execution errors and recursion loops without managing unattended caller voice output or automated synthesis attribution."
+    },
+    {
+     "technique": "transcript-normalization",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/credential_design.rs:9 Credential design prompt assembly creates connector schemas from text instructions without normalizing speech disfluencies or converting transcripts for readers."
+    }
+   ],
+   "absenceTerms": [
+    "microphone",
+    "speech-to-text",
+    "text-to-speech",
+    "whisper"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-13T12:00:13.603533+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [
+    "engine-abstraction",
+    "stt-pipeline",
+    "tts-pipeline"
+   ],
+   "deviations": 0,
+   "context": "test-runner-lab",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-13T12:00:13.603533+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [
+    "caller-scoped-voice-binding",
+    "voice-setup-experience",
+    "voice-ux-integration"
+   ],
+   "deviations": 0,
+   "context": "settings-network",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-13T12:00:13.603533+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [
+    "duplex-agent-sessions",
+    "engine-abstraction",
+    "on-device-vs-cloud"
+   ],
+   "deviations": 0,
+   "context": "core",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-13T12:00:13.603533+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [
+    "stt-pipeline",
+    "transcript-handoff-receipts",
+    "voice-ux-integration"
+   ],
+   "deviations": 0,
+   "context": "vault-catalog-autocred-ui",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-13T12:00:13.603533+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [
+    "spoken-intent-parsing",
+    "transcript-normalization",
+    "unattended-caller-attribution"
+   ],
+   "deviations": 0,
+   "context": "pipeline-and-automation",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  }
+ ]
+}
