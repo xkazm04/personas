@@ -7,9 +7,9 @@ For day-to-day development workflow, see [development.md](./development.md).
 
 ```bash
 # Develop
-npm run tauri:dev              # DEFAULT: lite — 683 crates, no ML/P2P
+npm run tauri:dev              # DEFAULT: lite — 721 crates, no ML (P2P included since 2026-10-13)
 npm run tauri:dev:lite         # the same thing, kept as an alias
-npm run tauri:dev:full         # 846 crates: adds ml (ORT/fastembed) + p2p
+npm run tauri:dev:full         # 848 crates: adds ml (ORT/fastembed)
 npm run tauri:dev:test         # lite + test-automation HTTP server on :17320
 
 # Build
@@ -75,7 +75,7 @@ Cargo features in `src-tauri/Cargo.toml`:
 
 | Feature | Implies | What it adds |
 |---------|---------|--------------|
-| `desktop`         | —                          | tray, clipboard, notifications, keyring, screen capture, window state, updater |
+| `desktop`         | p2p                        | tray, clipboard, notifications, keyring, screen capture, window state, updater, and (since 2026-10-13) the device mesh |
 | `ml`              | —                          | sqlite-vec + fastembed + ort (ONNX Runtime) |
 | `p2p`             | —                          | ed25519, mdns-sd, quinn, rcgen |
 | `desktop-full`    | desktop + ml + p2p         | full production set |
@@ -107,6 +107,10 @@ cargo tree -e normal --no-default-features --features desktop      --prefix none
 cargo tree -e normal --no-default-features --features desktop-full --prefix none | sort -u | wc -l   # 846
 ```
 
+**Since 2026-10-13 `desktop` implies `p2p`** (spark device-mesh: the device mesh must exist in the build the
+operator runs every day). Re-measured that day: **721 lite / 848 full**; the difference is now the `ml`
+half alone. The paragraph below is the 2026-10-07 measurement, kept for the record.
+
 Measured 2026-10-07: **683 lite / 846 full**, and lite is a strict subset — `comm` over
 the two sorted sets gives **163 entries only in full and 0 only in lite**. The 163 are
 headed by `ort` + `ort-sys` + `fastembed` + `tokenizers` + `ndarray` + `hf-hub` +
@@ -120,7 +124,6 @@ half). ORT is the expensive one; `clean:ort` exists because of it.
 | Vector knowledge base, semantic search | `ml` | sqlite-vec is not linked |
 | Embeddings, fastembed, model download/cache | `ml` | fastembed + hf-hub + tokenizers are absent |
 | ONNX inference, anything touching ORT | `ml` | `ort`/`ort-sys` are absent |
-| P2P pairing, mDNS discovery, QUIC transport | `p2p` | quinn + mdns-sd + rcgen + ed25519 are absent |
 
 **What lite literally cannot exercise — absent, not broken.** Everything behind
 `#[cfg(feature = "ml")]` / `#[cfg(feature = "p2p")]` is *compiled out* of a lite build.

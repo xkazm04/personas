@@ -353,7 +353,8 @@ impl EffortBand {
     }
 }
 
-/// Who put the profile there. Wire values `"default" | "self" | "operator"`.
+/// Who put the profile there. Wire values
+/// `"default" | "self" | "operator" | "measured"`.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "snake_case")]
@@ -366,6 +367,10 @@ pub enum ProfileSource {
     SelfDeclared,
     /// The operator edited it by hand (which also pins it).
     Operator,
+    /// The profile loop rewrote `machine` / `gpu` from measured runs
+    /// (`run_resource_summaries`). Never applied to a pinned or operator
+    /// profile; a persona's later self-declaration may replace it.
+    Measured,
 }
 
 /// What a run of a charter costs - declared by the persona, pinnable by the
@@ -772,6 +777,22 @@ pub struct ResponsibilityMeasured {
     /// `avg_tokens` mapped through [`EffortBand::from_total_tokens`]; `None`
     /// when there are no passes to measure.
     pub measured_effort: Option<EffortBand>,
+    /// How many finished runs of this charter have a resource summary
+    /// (`run_resource_summaries`). The axes below are over those runs; all are
+    /// `None` while it is 0.
+    pub resource_runs: u32,
+    /// Median of the per-run 95th-percentile CPU share (0..=1).
+    pub cpu_p95_share: Option<f64>,
+    /// Median of the per-run peak RAM share (0..=1).
+    pub ram_peak_share: Option<f64>,
+    /// Median of the per-run GPU share; `None` also when no run had a reading.
+    pub gpu_p95_share: Option<f64>,
+    pub dominant: Option<crate::models::ResourceAxis>,
+    /// The profile tags the measurement maps to (the backend's ONE mapping, so
+    /// the editor never re-derives it). A mismatch against the declared
+    /// profile is shown as a badge on a pinned or operator profile.
+    pub measured_machine: Option<MachineLoad>,
+    pub measured_gpu: Option<GpuClass>,
 }
 
 #[cfg(test)]

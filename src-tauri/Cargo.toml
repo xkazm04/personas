@@ -243,10 +243,15 @@ serde_json = { workspace = true }
 
 [features]
 default = []
-# Core desktop feature — all UI/desktop plugins, no heavy ML/P2P.
-# Use this for fast local builds (~5 min faster than desktop-full).
+# Core desktop feature — all UI/desktop plugins plus the device mesh (P2P),
+# no heavy ML. Use this for fast local builds (~5 min faster than desktop-full).
 # All #[cfg(feature = "desktop")] gates pass with this feature.
+#
+# `p2p` joined `desktop` on 2026-10-13 (spark device-mesh): the mesh must exist
+# in the daily lite build, not only in desktop-full. Its crates are small
+# (quinn, rcgen, mdns-sd, rmp-serde, socket2); ORT stays behind `ml`.
 desktop = [
+    "p2p",
     # Forwards the OS-keychain code path in personas-core::crypto. Without this,
     # that crate compiles its mobile "keychain unavailable" stub instead.
     "personas-core/desktop",
@@ -604,7 +609,7 @@ lto = true
 codegen-units = 1
 
 [target.'cfg(windows)'.dependencies]
-windows = { workspace = true, features = ["Win32_UI_WindowsAndMessaging", "Win32_System_Threading", "Win32_System_ProcessStatus"] }
+windows = { workspace = true, features = ["Win32_UI_WindowsAndMessaging", "Win32_System_Threading", "Win32_System_ProcessStatus", "Win32_System_Performance"] }
 
 [lints]
 workspace = true

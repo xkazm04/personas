@@ -286,6 +286,11 @@ export const EventName = {
   /** One chunk of a subscribed remote session's terminal output (lossy tail). */
   REMOTE_SESSION_OUTPUT: 'network:remote-session-output',
   /**
+   * Device mesh: one paired device's latest snapshot landed here, or its
+   * liveness turned `unknown`. Payload: that device's whole `MeshDeviceView`.
+   */
+  DEVICE_SNAPSHOT: 'network:device-snapshot',
+  /**
    * A paired device asked THIS device to run something and the answering turn
    * started / finished. The turn is `suppress_chat`, so this is the ONLY signal
    * the frontend gets — it drives the ambient orb notice, nothing else.
@@ -352,6 +357,8 @@ export const EventName = {
   FLEET_SESSION_EXITED: 'fleet-session-exited',
   FLEET_REGISTRY_CHANGED: 'fleet-registry-changed',
   FLEET_QUEUE_CHANGED: 'fleet-queue-changed',
+  /** Latest CPU/RAM/GPU sample of every live run, every 5 s while any is live. */
+  FLEET_RESOURCE_SAMPLE: 'fleet-resource-sample',
   // Claude plan re-login progress (spark claude-plan-switch); payload = ReloginState.
   FLEET_CLAUDE_RELOGIN_PROGRESS: 'fleet-claude-relogin-progress',
 
@@ -1179,6 +1186,7 @@ export interface EventPayloadMap {
   [EventName.REMOTE_JOB_UPDATED]: import('@/lib/bindings/RemoteJob').RemoteJob;
   [EventName.REMOTE_SESSION_UPDATED]: import('@/lib/bindings/RemoteSessionView').RemoteSessionView;
   [EventName.REMOTE_SESSION_OUTPUT]: import('@/lib/bindings/RemoteSessionOutputChunk').RemoteSessionOutputChunk;
+  [EventName.DEVICE_SNAPSHOT]: import('@/lib/bindings/MeshDeviceView').MeshDeviceView;
   [EventName.REMOTE_JOB_TURN]: import('@/lib/network/remoteJobNotice').RemoteJobTurnEvent;
 
   // Notification delivery
@@ -1295,6 +1303,7 @@ export interface EventPayloadMap {
   [EventName.FLEET_REGISTRY_CHANGED]: { kind: 'added' | 'removed' | 'updated'; session_id: string };
   // Rust: personas_core::events::QueueChangedPayload (camelCase) — see src/lib/bindings/QueueChangedPayload.ts.
   [EventName.FLEET_QUEUE_CHANGED]: { kind: 'enqueued' | 'promoted' | 'reordered' | 'cancelled' | 'cap_changed'; sessionId: string | null };
+  [EventName.FLEET_RESOURCE_SAMPLE]: import('@/lib/bindings/LiveResourceSample').LiveResourceSample[];
   [EventName.FLEET_CLAUDE_RELOGIN_PROGRESS]: ReloginState;
 
   // Contest plugin. Rust: commands::contest::types::ContestChangedPayload (camelCase).

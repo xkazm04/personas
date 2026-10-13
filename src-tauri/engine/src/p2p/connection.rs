@@ -1037,7 +1037,8 @@ impl ConnectionManager {
             | Message::RemoteSessionOutputSubscribe { .. }
             | Message::RemoteSessionOutput { .. }
             | Message::RemoteJobCommand { .. }
-            | Message::RemoteJobCommandAck { .. }) => {
+            | Message::RemoteJobCommandAck { .. }
+            | Message::DeviceSnapshot { .. }) => {
                 for reply in remote_jobs.handle_message(peer_id, job).await? {
                     protocol::write_message(send, &reply).await?;
                 }

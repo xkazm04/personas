@@ -1039,6 +1039,11 @@ impl RemoteJobs {
                 Ok(Vec::new())
             }
 
+            // Device mesh snapshot: behind the same pairing gate as every job
+            // frame above. Applied to the mesh state cache (spark device-mesh,
+            // WP2a); until then it is accepted and dropped.
+            Message::DeviceSnapshot { .. } => Ok(Vec::new()),
+
             other => Err(AppError::Internal(format!(
                 "handle_message called with a non-remote-job frame: {other:?}"
             ))),
@@ -1600,6 +1605,7 @@ fn frame_name(msg: &Message) -> &'static str {
         Message::RemoteSessionOutput { .. } => "RemoteSessionOutput",
         Message::RemoteJobCommand { .. } => "RemoteJobCommand",
         Message::RemoteJobCommandAck { .. } => "RemoteJobCommandAck",
+        Message::DeviceSnapshot { .. } => "DeviceSnapshot",
         _ => "other",
     }
 }

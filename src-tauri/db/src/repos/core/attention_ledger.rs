@@ -744,6 +744,15 @@ pub fn measured_per_responsibility(
                             peak_rss_mb: None,
                             measured_effort: avg_tokens
                                 .map(|t| EffortBand::from_total_tokens(t.unsigned_abs())),
+                            // Filled from run_resource_summaries (spark
+                            // device-mesh WP1).
+                            resource_runs: 0,
+                            cpu_p95_share: None,
+                            ram_peak_share: None,
+                            gpu_p95_share: None,
+                            dominant: None,
+                            measured_machine: None,
+                            measured_gpu: None,
                         }
                     })
                     .collect(),
