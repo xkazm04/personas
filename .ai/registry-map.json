@@ -10431,7 +10431,11 @@
           "revision": 3,
           "changedAt": "2026-09-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:440 Context and repository searches found connector testing, localized persona naming and incidental translation references, but no translation-quality measurement attached to this build gate, whose tested subjects are tools and connectors.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:cfe21e4fea74ddc1",
+          "evaluatedRevision": 4
         },
         {
           "subject": "session-continuation",
@@ -10847,7 +10851,11 @@
           "revision": 3,
           "changedAt": "2026-09-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:390 Subject-term searches returned no matches in the context files, while repository matches belonged to localization artifacts elsewhere, and the consolidator produces project narratives, directions and tensions rather than translation measurements.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:cfe21e4fea74ddc1",
+          "evaluatedRevision": 4
         },
         {
           "subject": "test-harness",
@@ -20120,7 +20128,11 @@
           "revision": 3,
           "changedAt": "2026-09-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:44 Context and repository searches found localized interface labels and queues for persona reviews and development ideas, but no translation-review corpus or translation-quality measurement in this inbox.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:cfe21e4fea74ddc1",
+          "evaluatedRevision": 4
         },
         {
           "subject": "agent-instruction-files",

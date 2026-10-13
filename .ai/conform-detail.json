@@ -18027,6 +18027,57 @@
           "evidence": "src/api/system/tierUsage.ts:8 Queries account billing tier usage snapshots rather than schema-enforced two-tier dataset measurements."
         }
       ]
+    },
+    "cd8712a3-9546-4c21-895b-9e64a4b161b1/translation-quality-measurement": {
+      "context": "engine-build-session",
+      "subject": "translation-quality-measurement",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T02:51:06.630Z",
+      "worker": "1da68e92-379f-45b9-aa00-c5e612b95ccd",
+      "techniques": []
+    },
+    "2e1e105a-866c-4039-9620-7ed5d0d30b17/translation-quality-measurement": {
+      "context": "i18n",
+      "subject": "translation-quality-measurement",
+      "bundle": "localization",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T02:51:06.630Z",
+      "techniques": [
+        {
+          "technique": "deterministic-checks-before-estimates",
+          "verdict": "deviation",
+          "evidence": "scripts/i18n/lib/untranslated.mjs:116 Source placeholders are converted to a Set and only target additions are tested; missing placeholders and changed multiplicities escape this repair detector, which plan-gaps.mjs calls at line 71."
+        }
+      ],
+      "withdrawn": {
+        "worker": "1da68e92-379f-45b9-aa00-c5e612b95ccd",
+        "state": "deviation",
+        "at": "2026-10-13T02:51:47.864391+00:00",
+        "reason": "reviewer (sonnet): The doc comment at untranslated.mjs:100-111 says dropped placeholders are deliberately not flagged because they are often correct transcreation (e.g. Arabic `_one` values omit {count}), so a missing placeholder is not a mechanically decidable defect and the claim is contradicted by the code."
+      }
+    },
+    "ef73ca1c-fc54-4b9c-83ec-390c54929192/translation-quality-measurement": {
+      "context": "overview-manual-review",
+      "subject": "translation-quality-measurement",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T02:51:06.630Z",
+      "worker": "1da68e92-379f-45b9-aa00-c5e612b95ccd",
+      "techniques": []
+    },
+    "d5c5e7fe-6353-41eb-800b-dc11adee0775/translation-quality-measurement": {
+      "context": "engine-project-tracking",
+      "subject": "translation-quality-measurement",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T02:51:06.630Z",
+      "worker": "1da68e92-379f-45b9-aa00-c5e612b95ccd",
+      "techniques": []
     }
   }
 }
