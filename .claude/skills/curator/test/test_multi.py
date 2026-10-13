@@ -144,6 +144,11 @@ class Envelope(unittest.TestCase):
         text = 'thinking {"pairs": [], "subject": "placeholder"} then {"pairs": [1], "subject": "s"}'
         self.assertEqual(M._last_json_object(text)["pairs"], [1])
 
+    def test_capacity_is_transient_not_a_verdict(self):
+        err = '{"type": "turn.failed", "error": {"message": "Selected model is at capacity. Please try a different model."}}'
+        self.assertEqual(M.seat_transient("", "", err), "at capacity")
+        self.assertIsNone(M.seat_transient("finished judging", "", ""))
+
     def test_limit_only_without_an_answer(self):
         self.assertTrue(M.seat_limited("", "You've hit your usage limit", 1, None))
         self.assertFalse(M.seat_limited("about rate limiting", "", 0, {"pairs": [{}]}))

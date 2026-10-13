@@ -52,6 +52,21 @@ from datetime import datetime, timedelta
 import loop as L
 
 MULTI_DIR = pathlib.Path(os.environ.get("CURATOR_MULTI_DIR") or (pathlib.Path.home() / ".personas" / "curator-multi"))
+
+if sys.platform == "win32":
+    # Nothing this driver starts may open a window on the operator's desktop (measured 2026-10-13:
+    # the unattended night popped a console for every reviewer, git and node call). Every child -
+    # here and in loop.py, which shares this process - gets CREATE_NO_WINDOW unless it asked for a
+    # console or detachment of its own, with which the flag cannot combine.
+    _popen_init = subprocess.Popen.__init__
+
+    def _windowless_init(self, *args, **kwargs):
+        flags = kwargs.get("creationflags", 0) or 0
+        if not flags & (subprocess.CREATE_NEW_CONSOLE | subprocess.DETACHED_PROCESS):
+            kwargs["creationflags"] = flags | subprocess.CREATE_NO_WINDOW
+        _popen_init(self, *args, **kwargs)
+
+    subprocess.Popen.__init__ = _windowless_init
 HOME = pathlib.Path.home()
 
 # --------------------------------------------------------------------------
@@ -472,6 +487,18 @@ def read_seat(name: str, seat_dir: pathlib.Path, stdout: str) -> dict:
         if env.get("denied_actions"):
             res["error"] = (res["error"] or "") + f" denied_actions {json.dumps(env['denied_actions'])[:300]}"
     return res
+
+
+TRANSIENT_SIGNATURES = ("at capacity", "overloaded", "temporarily unavailable", "service unavailable",
+                        "503", "502 bad gateway", "internal server error", "connection reset",
+                        "timed out waiting", "econnreset", "network error")
+
+
+def seat_transient(stdout: str, stderr: str, seat_error: str) -> str | None:
+    """The provider failed for a reason that is neither the work nor its quota, else None.
+    Only consulted when no answer came back, like the limit check."""
+    blob = " ".join([(seat_error or ""), (stderr or "")[-2000:], (stdout or "")[-2000:]]).lower()
+    return next((s for s in TRANSIENT_SIGNATURES if s in blob), None)
 
 
 def seat_limited(stdout: str, stderr: str, exit_code: int | None, answer: dict | None) -> bool:
@@ -1235,16 +1262,28 @@ def settle_round(n: int, rdir: pathlib.Path, seats: list[dict], before: dict, ke
                "pairs_offered": len(d["pairs"]), "techniques": len(d["techniques"]), "wall_s": s["wall_s"],
                "exit": exit_code, "timed_out": s["timed_out"], "usage": r["usage"], "seat_error": r["error"],
                "read_nothing": r.get("read_nothing"), "seat_dir": str(s["dir"]), "prompt_sha": s.get("prompt_sha")}
-        lost = recovered and not s["timed_out"] and r["answer"] is None and not limited
+        transient = (not limited and r["answer"] is None and
+                     seat_transient(out, err, r.get("error") or ""))
+        lost = (recovered and not s["timed_out"] and r["answer"] is None and not limited) or transient
         tried_key = f"{d['repo']}:{claim['subject']}"
         if lost:
-            # The driver died with it; nothing here is the seat's verdict. Give the subject back.
-            L.release(c, claim, f"curator-multi: {s['name']} seat lost when the round's driver died")
+            # Nothing here is the seat's verdict - the driver died with it, or the provider was briefly
+            # unavailable (measured 2026-10-13: codex "Selected model is at capacity" after 86 s). Give
+            # the subject back so a later seat judges it; the flow backs this slot off for a while.
+            why = f"provider unavailable: {transient}" if transient else "seat lost when the round's driver died"
+            L.release(c, claim, f"curator-multi: {s['name']} {why}")
             if claim["lane"] == "queue":
                 c.execute("UPDATE curator_request SET state='cancelled', settled_at=?, outcome=? "
                           "WHERE id=? AND state IN ('queued','dispatched')",
-                          (L.now(), "seat lost with the round's driver; subject returned", claim["request_id"]))
+                          (L.now(), f"{why}; subject returned", claim["request_id"]))
             state["tried"].pop(tried_key, None)
+            if transient:
+                row.update(outcome="transient", accepted=0, returned=0, transient=transient)
+                row["cleaned_sessions"] = clean_provider_sessions(s)
+                results.append(row)
+                with open(MULTI_DIR / "scoreboard.jsonl", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({k: v for k, v in row.items() if k not in ("landed", "seat_dir")}, default=str) + "\n")
+                continue
             row.update(outcome="lost", accepted=0, returned=0)
         elif limited:
             L.release(c, claim, f"curator-multi: {s['name']} hit its usage limit; progress thrown away")
@@ -1697,6 +1736,7 @@ def _night_lock() -> pathlib.Path | None:
 
 EMPTY_SEATS_STOP = 9          # consecutive finished seats that kept nothing (3 rounds' worth)
 NOTHING_CLAIMABLE_RETRY_S = 600
+TRANSIENT_BACKOFF_S = 300
 FLOW_POLL_S = 5
 
 
@@ -1722,6 +1762,7 @@ def run_flow(a, log, events: list, deadline, registry, repos: list[dict]) -> str
     running: dict[str, dict] = {}
     posting: list[tuple[dict, object]] = []
     idle_until: dict[str, float] = {}
+    dry_until: dict[str, float] = {}   # nothing claimable - the only idleness that can end a night
     started = empty_streak = 0
     stop = None
     last_hold = None
@@ -1759,6 +1800,12 @@ def run_flow(a, log, events: list, deadline, registry, repos: list[dict]) -> str
                 summary = settle_round(u["n"], u["rdir"], [s], u["before"], False, a.timeout_min, recovered=False)
                 summary["as_found_commits"] = u["baselines"]
                 del running[slot]
+                if any(x.get("outcome") == "transient" for x in summary.get("seats", [])):
+                    # The provider was briefly unavailable: back this slot off instead of handing it
+                    # another subject into the same outage.
+                    idle_until[slot] = time.time() + TRANSIENT_BACKOFF_S
+                    log("slot_backoff", slot=slot, minutes=TRANSIENT_BACKOFF_S // 60,
+                        why=summary["seats"][0].get("transient"))
                 posting.append((summary, pool.submit(post, summary)))
             # 2. collect finished reviews and commits
             for item in [x for x in posting if x[1].done()]:
@@ -1788,7 +1835,7 @@ def run_flow(a, log, events: list, deadline, registry, repos: list[dict]) -> str
                     stop = "every provider hit its usage limit"
                 elif empty_streak >= EMPTY_SEATS_STOP:
                     stop = f"{EMPTY_SEATS_STOP} seats in a row kept nothing"
-                elif not running and not posting and slots and all(idle_until.get(s, 0) > time.time() for s in slots):
+                elif not running and not posting and slots and all(dry_until.get(s, 0) > time.time() for s in slots):
                     stop = "nothing claimable in any repo (backlog empty, or every subject tried)"
                 if stop:
                     log("draining", reason=stop, running=len(running), posting=len(posting))
@@ -1821,7 +1868,7 @@ def run_flow(a, log, events: list, deadline, registry, repos: list[dict]) -> str
                     finally:
                         c.close()
                     if u is None:
-                        idle_until[slot] = time.time() + NOTHING_CLAIMABLE_RETRY_S
+                        idle_until[slot] = dry_until[slot] = time.time() + NOTHING_CLAIMABLE_RETRY_S
                         log("slot_idle", slot=slot, retry_in_min=NOTHING_CLAIMABLE_RETRY_S // 60)
                         continue
                     last_hold = None
@@ -1954,8 +2001,12 @@ TASK_NAME = "PersonasCuratorNight"
 def _detached(argv: list[str], log: pathlib.Path) -> int:
     flags = 0
     if sys.platform == "win32":
-        flags = (subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
-                 | getattr(subprocess, "CREATE_BREAKAWAY_FROM_JOB", 0x01000000) | subprocess.CREATE_NO_WINDOW)
+        # A HIDDEN console, never no console. Measured 2026-10-13: with DETACHED_PROCESS the driver
+        # had no console, so every console program it started (the claude reviewer, git, node)
+        # opened its own VISIBLE window on the operator's desktop. CREATE_NO_WINDOW gives it a
+        # console without a window, which every child inherits.
+        flags = (subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW
+                 | getattr(subprocess, "CREATE_BREAKAWAY_FROM_JOB", 0x01000000))
     out = open(log, "w", encoding="utf-8")
     try:
         proc = subprocess.Popen(argv, cwd=str(L.PERSONAS_ROOT), stdout=out, stderr=subprocess.STDOUT,
@@ -2022,20 +2073,27 @@ def night_detached(a: argparse.Namespace) -> dict:
 def schedule(a: argparse.Namespace) -> dict:
     """Register the night with Windows Task Scheduler: daily at `--at`, as the current user.
 
-    The task runs a small .cmd (schtasks caps /TR at 261 characters) that starts `multi night`
-    with the same flags. It runs only while the user is logged on, which is what the providers'
-    stored logins need.
+    The task runs `pythonw` on a tiny launcher (schtasks caps /TR at 261 characters) that starts
+    `multi night` with the same flags, windowless. It was a .cmd until 2026-10-13, which held a
+    visible console open on the desktop for the whole night. It runs only while the user is logged
+    on, which is what the providers' stored logins need.
     """
     if not a.at or not a.until:
         return {"ok": False, "error": "schedule needs --at HH:MM and --until HH:MM"}
     NIGHT_DIR.mkdir(parents=True, exist_ok=True)
-    cmd = MULTI_DIR / "night.cmd"
-    quoted = " ".join(f'"{x}"' if " " in x or "\\" in x else x for x in night_argv(a))
-    cmd.write_text(f'@echo off\r\ncd /d "{L.PERSONAS_ROOT}"\r\n{quoted} > "{NIGHT_DIR / "task.out"}" 2>&1\r\n',
-                   encoding="utf-8")
-    r = subprocess.run(["schtasks", "/Create", "/F", "/SC", "DAILY", "/TN", TASK_NAME, "/ST", a.at, "/TR", f'"{cmd}"'],
+    launcher = MULTI_DIR / "night_task.py"
+    launcher.write_text(
+        "import subprocess, sys\n"
+        f"argv = {night_argv(a)!r}\n"
+        f"with open({str(NIGHT_DIR / 'task.out')!r}, 'w', encoding='utf-8') as out:\n"
+        "    sys.exit(subprocess.call(argv, cwd=" + repr(str(L.PERSONAS_ROOT)) + ", stdout=out, stderr=subprocess.STDOUT,\n"
+        "                             stdin=subprocess.DEVNULL, creationflags=0x08000000))\n", encoding="utf-8")
+    pyw = pathlib.Path(sys.executable).with_name("pythonw.exe")
+    runner = str(pyw if pyw.exists() else sys.executable)
+    r = subprocess.run(["schtasks", "/Create", "/F", "/SC", "DAILY", "/TN", TASK_NAME, "/ST", a.at,
+                        "/TR", f'"{runner}" "{launcher}"'],
                        capture_output=True, text=True, encoding="utf-8", errors="replace")
-    return {"ok": r.returncode == 0, "task": TASK_NAME, "at": a.at, "until": a.until, "runs": str(cmd),
+    return {"ok": r.returncode == 0, "task": TASK_NAME, "at": a.at, "until": a.until, "runs": f"{runner} {launcher}",
             "schtasks": (r.stdout or r.stderr).strip()}
 
 
