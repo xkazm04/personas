@@ -34604,7 +34604,11 @@
           "revision": 2,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:122 Searches for requeue and reconcile found no context matches; the dispatcher returns configuration for event sources while the panels edit or display it, so this context owns no convergence loop.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:fc5a1774272e601e",
+          "evaluatedRevision": 2
         },
         {
           "subject": "settings",
@@ -34794,7 +34798,11 @@
           "revision": 2,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:115 Searches for requeue and reconcile found no context matches; Studio creates routing records through explicit commit operations rather than repeatedly converging keys through a derived queue.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:fc5a1774272e601e",
+          "evaluatedRevision": 2
         },
         {
           "subject": "model-routing",
@@ -35183,7 +35191,11 @@
           "revision": 2,
           "changedAt": "2026-09-17",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:172 Searches for requeue and reconcile found no context matches; this surface submits trigger configuration and presents execution status rather than implementing declared-versus-observed-state convergence.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:fc5a1774272e601e",
+          "evaluatedRevision": 2
         },
         {
           "subject": "eval-harness",

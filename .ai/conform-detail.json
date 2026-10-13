@@ -20098,6 +20098,129 @@
         "at": "2026-10-13T22:00:03.738061+00:00",
         "reason": "reviewer (sonnet): The main anchor, automation_runner.rs:28, is only the GitHub-dispatch branch. It doesn't show that no embedded language engine exists, and the 'persisted persona pipeline executions' part of the evidence isn't at that line. The technique anchor at pipeline_executor.rs:615 does confirm a shell subpro"
       }
+    },
+    "0dabb588-48ce-4c35-b425-c344fd723ce7/convergence-loop-and-requeue": {
+      "context": "triggers-triggers",
+      "subject": "convergence-loop-and-requeue",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T22:51:20.003Z",
+      "worker": "e20d9cd9-6026-4bd4-8484-4ed11ff0c3be",
+      "techniques": [
+        {
+          "technique": "drain-a-derived-queue",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/PendingTriggerApprovals.tsx:40 These entries are held event firings requiring an approval decision, not reconstructible next-look requests in a converger."
+        },
+        {
+          "technique": "error-policy-as-a-separate-function",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:168 This handles form validation failure; no failed convergence pass needs a next-look policy."
+        },
+        {
+          "technique": "keyed-queue-with-earliest-wins",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:96 The timer debounces schedule-preview reads, not convergence requests competing for a keyed queue slot."
+        },
+        {
+          "technique": "own-writes-are-not-triggers",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/TriggerListItem.tsx:47 This is a user-requested configuration update, not a convergence pass writing into its own watched input."
+        },
+        {
+          "technique": "per-key-exclusion-under-a-global-cap",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/RateLimitControls.tsx:116 The control edits trigger-execution concurrency configuration; it does not schedule convergence passes."
+        },
+        {
+          "technique": "told-that-not-why",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/TriggerRow.tsx:75 The callback conveys an explicit toggle operation, not a notification waking a full-state reconciler."
+        }
+      ]
+    },
+    "f197653d-267c-4a91-bffc-b3be17434877/convergence-loop-and-requeue": {
+      "context": "trigger-config",
+      "subject": "convergence-loop-and-requeue",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T22:51:20.003Z",
+      "worker": "e20d9cd9-6026-4bd4-8484-4ed11ff0c3be",
+      "techniques": [
+        {
+          "technique": "drain-a-derived-queue",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/TriggerConfig.tsx:75 The action deletes a selected trigger record; it is not shutdown of a derived work queue."
+        },
+        {
+          "technique": "error-policy-as-a-separate-function",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:53 The function rejects invalid configuration without executing a convergence pass or deciding a retry interval."
+        },
+        {
+          "technique": "keyed-queue-with-earliest-wins",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/CompositeConfig.tsx:98 This edits the composite event-matching window, not a queued key's next-look deadline."
+        },
+        {
+          "technique": "own-writes-are-not-triggers",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/FileWatcherConfig.tsx:35 The panel edits watch-path form state; it does not write files into the configured watched paths."
+        },
+        {
+          "technique": "per-key-exclusion-under-a-global-cap",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/CompositePartialMatchIndicator.tsx:27 The recurring operation reads status for display, rather than applying declared state through convergence workers."
+        },
+        {
+          "technique": "told-that-not-why",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:92 Event type is intentional event-listener configuration, not a wake reason passed to a full-state converger."
+        }
+      ]
+    },
+    "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc/convergence-loop-and-requeue": {
+      "context": "triggers-studio",
+      "subject": "convergence-loop-and-requeue",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T22:51:20.003Z",
+      "worker": "e20d9cd9-6026-4bd4-8484-4ed11ff0c3be",
+      "techniques": [
+        {
+          "technique": "drain-a-derived-queue",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/routing/layouts/useRoutingState.ts:116 Cleanup suppresses stale roster-fetch results; there is no derived convergence queue or running-pass drain here."
+        },
+        {
+          "technique": "error-policy-as-a-separate-function",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:140 A failed user commit produces feedback and leaves the draft available; it is not a failed convergence pass requiring requeue policy."
+        },
+        {
+          "technique": "keyed-queue-with-earliest-wins",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:188 Save-all commits distinct draft links, each representing a separate requested route rather than redundant next-look notifications."
+        },
+        {
+          "technique": "own-writes-are-not-triggers",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioDraftModel.ts:79 Draft persistence has no storage-event watcher in this context that feeds the write back into a convergence loop."
+        },
+        {
+          "technique": "per-key-exclusion-under-a-global-cap",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:110 This guards duplicate manual commits for a draft link; it does not govern convergence passes under a global execution cap."
+        },
+        {
+          "technique": "told-that-not-why",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/routeCodec.ts:117 The route intentionally forwards upstream execution output to another persona, which is event-driven work rather than full-state convergence."
+        }
+      ]
     }
   }
 }
