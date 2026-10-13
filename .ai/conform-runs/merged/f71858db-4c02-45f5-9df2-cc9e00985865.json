@@ -1,0 +1,339 @@
+{
+ "schema": "conform-run/1",
+ "worker": "f71858db-4c02-45f5-9df2-cc9e00985865",
+ "subject": "wizard-flows",
+ "evaluatedAt": "2026-10-13T07:33:43.046178+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [
+  {
+   "context": "agents-design",
+   "subject": "wizard-flows",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_design/index.ts:5 A grep across the context's directories for wizard constructs ('canAdvance', 'canJumpTo', 'canCommit', 'stepComplete', 'WIZARD_STEPS') yielded 0 code matches, confirming the design wizard was retired in favor of an unsequenced four-tab editor.",
+   "techniques": [
+    {
+     "technique": "step-state-model",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_design/libs/designStateHelpers.ts:8 Wizard selection and state helper hooks were retired with the agent-manifest rebase."
+    },
+    {
+     "technique": "ai-driven-elicitation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_design/index.ts:3 The LLM design question panel and wizard chrome were retired."
+    },
+    {
+     "technique": "progress-communication",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_design/index.ts:4 PhaseIndicator and phase panels were removed in the rebase."
+    },
+    {
+     "technique": "branching-and-skipping",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_design/DesignHub.tsx:52 The hub consists of four unsequenced subtabs rather than a branching step graph."
+    },
+    {
+     "technique": "snapshot-and-resume",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:46 Tool runner resets state on persona switch; no wizard snapshot or resume exists."
+    },
+    {
+     "technique": "frontier-batched-elicitation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_tool_runner/components/ToolRunnerPanel.tsx:28 Tools are invoked individually on demand rather than through question elicitation batches."
+    }
+   ],
+   "absenceTerms": [
+    "canAdvance",
+    "canJumpTo",
+    "canCommit",
+    "stepComplete",
+    "WIZARD_STEPS"
+   ],
+   "registryProposal": "When a previously sequenced wizard is replaced by an unsequenced hub or matrix surface, the standard's distinction between wizards and independent settings surfaces accurately characterizes the architecture."
+  },
+  {
+   "context": "template-adoption-persona-layout",
+   "subject": "wizard-flows",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:106 The persona layout adoption card tracks active questions by array index rather than stable question identity, and session dimension states are restored silently on mount without an explicit resume offer.",
+   "techniques": [
+    {
+     "technique": "step-state-model",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:146 Question navigation is driven by numeric array index clamping rather than stable question identity."
+    },
+    {
+     "technique": "progress-communication",
+     "verdict": "conformant",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:454 The dimension model derives why continuation is blocked from underlying predicates, explaining missing capabilities, remaining questions, or blocked credentials."
+    },
+    {
+     "technique": "branching-and-skipping",
+     "verdict": "conformant",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:213 Question relevance is derived as a predicate over disabled dimensions and policies, excluding unneeded questions from the flow without deleting user answers."
+    },
+    {
+     "technique": "snapshot-and-resume",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:114 Stored session dimension states are restored silently on mount into local state without offering an explicit resume or discard prompt."
+    },
+    {
+     "technique": "commit-boundary",
+     "verdict": "conformant",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutBuild.tsx:316 The build step enforces a review-and-test stage before committing via onApproveTest to promote the draft persona."
+    },
+    {
+     "technique": "frontier-batched-elicitation",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:249 Questions in a dimension are advanced sequentially one at a time via goNext rather than batched along the dependency frontier with system-recommended answers."
+    },
+    {
+     "technique": "ai-driven-elicitation",
+     "verdict": "conformant",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutBuild.tsx:197 Build-time pending questions generated during agent resolution are presented via GlyphAnswerCard and promoted into cell states."
+    }
+   ],
+   "registryProposal": "Matrix or control-surface layouts that replace paginated steppers still inherit wizard-flow obligations for step identity and resume disclosure when guiding multi-question setup."
+  },
+  {
+   "context": "template-adoption-questionnaire",
+   "subject": "wizard-flows",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStoryThread.tsx:195 The questionnaire thread navigates and indexes questions by numeric array index rather than stable identity, and lacks downstream invalidation when earlier answers are modified.",
+   "techniques": [
+    {
+     "technique": "step-state-model",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireCategoryRail.tsx:10 Category buckets track rail jump targets by numeric array index rather than stable question identifiers."
+    },
+    {
+     "technique": "progress-communication",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStoryThread.tsx:140 The thread state classifier partitions items into answered, current, blocked, and pending, omitting the required needs-attention state for revisited or invalidated answers."
+    },
+    {
+     "technique": "frontier-batched-elicitation",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireHeroQuestion.tsx:49 Questions are displayed strictly one by one rather than in batched dependency frontiers, and options lack recommended answers with one-line justifications."
+    },
+    {
+     "technique": "branching-and-skipping",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_generated/adoption/questionnaire/useQuestionnaireKeyboardNav.ts:72 Updating an answer directly triggers onAnswerUpdated without invalidating or warning about transitive downstream dependencies."
+    },
+    {
+     "technique": "snapshot-and-resume",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/adoption/questionnaire/types.ts:2 The questionnaire module contains presentation widgets only; persistence and snapshot storage are handled by the parent adoption view."
+    },
+    {
+     "technique": "ai-driven-elicitation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/adoption/questionnaire/types.ts:11 Adoption questions are static template questions rather than an LLM-driven generative interview with rubric scoring."
+    },
+    {
+     "technique": "commit-boundary",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/adoption/questionnaire/useQuestionnaireKeyboardNav.ts:15 Final submit and commit boundary execution are delegated to the outer adoption parent via callback."
+    }
+   ],
+   "registryProposal": "Questionnaire components extracted as reusable presentation widgets need clear ownership boundaries distinguishing widget-level styling from flow-level step state models."
+  },
+  {
+   "context": "templates-n8n-steps",
+   "subject": "wizard-flows",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/templates/sub_n8n/widgets/N8nStepIndicator.tsx:7 The step indicator hardcodes a private two-step list that drifts from the five-step model declared in the reducer, while abandoned transform sessions lack an automated expiry schedule.",
+   "techniques": [
+    {
+     "technique": "step-state-model",
+     "verdict": "conformant",
+     "evidence": "src/features/templates/sub_n8n/reducers/navigationReducer.ts:74 GO_TO_STEP transitions are guarded inside the reducer by checking preconditions against fullState and returning unchanged slice on failure."
+    },
+    {
+     "technique": "progress-communication",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_n8n/widgets/N8nStepIndicator.tsx:90 Step circles distinguish only completed (check) vs active/upcoming states, lacking a three-state distinction that includes needs attention."
+    },
+    {
+     "technique": "snapshot-and-resume",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_n8n/hooks/useN8nSession.ts:133 While import sessions debounce and mirror state to SQLite, abandoned sessions lack an automated expiry schedule or TTL reaper."
+    },
+    {
+     "technique": "commit-boundary",
+     "verdict": "conformant",
+     "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardLifecycleHandlers.ts:53 On confirmed save, the persona draft is applied, the SQLite session is reaped with session.remove(), and transform snapshots are cleared."
+    },
+    {
+     "technique": "ai-driven-elicitation",
+     "verdict": "conformant",
+     "evidence": "src/features/templates/sub_n8n/reducers/transformReducer.ts:59 AI-generated transform questions are parsed and promoted into typed question definitions in the reducer."
+    },
+    {
+     "technique": "branching-and-skipping",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_n8n/hooks/useN8nImportReducer.ts:30 The import wizard defines a fixed linear 5-step sequence without dynamic branching or conditionally skipped steps."
+    },
+    {
+     "technique": "frontier-batched-elicitation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_n8n/hooks/useN8nImportReducer.ts:52 Pre-transform questions lack dependency graph frontier batching and do not supply adjudication recommendations."
+    }
+   ],
+   "registryProposal": "The standard correctly identifies indicator drift when visual stepper components maintain a separate subset of visible steps rather than deriving visibility from the step registry."
+  },
+  {
+   "context": "scraper",
+   "subject": "wizard-flows",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/scraper/ScrapeEditorWizard.tsx:46 The scraper editor wizard allows jumping to any step from the rail and clicking Next without validating preconditions or gating transitions.",
+   "techniques": [
+    {
+     "technique": "step-state-model",
+     "verdict": "deviation",
+     "evidence": "src/features/scraper/ScrapeEditorWizard.tsx:103 The Next button unconditionally increments the step index without evaluating whether the current step is valid, lacking an in-transition guard."
+    },
+    {
+     "technique": "progress-communication",
+     "verdict": "deviation",
+     "evidence": "src/features/scraper/ScrapeEditorWizard.tsx:53 Step markers only distinguish two states (complete checkmark or unvisited/active number) rather than three states (complete, needs attention, not yet reached)."
+    },
+    {
+     "technique": "commit-boundary",
+     "verdict": "conformant",
+     "evidence": "src/features/scraper/ScrapeEditorWizard.tsx:99 Terminal save is guarded by canSave and loading state to prevent double fires, with saveBlockedReason explaining preview requirements."
+    },
+    {
+     "technique": "ai-driven-elicitation",
+     "verdict": "conformant",
+     "evidence": "src/features/scraper/LlmRuleBuilder.tsx:39 LLM-generated scraping rules are promoted into typed, editable field structures and empty generator output is surfaced as an error."
+    },
+    {
+     "technique": "branching-and-skipping",
+     "verdict": "not-applicable",
+     "evidence": "src/features/scraper/EditorSteps.tsx:32 The scraper pipeline is a fixed 5-step linear progression without conditional branching or skipped steps."
+    },
+    {
+     "technique": "snapshot-and-resume",
+     "verdict": "not-applicable",
+     "evidence": "src/features/scraper/useScrapeForm.ts:161 The editor creates no external resources or background work before save, so an in-memory draft is the legitimate zero tier."
+    },
+    {
+     "technique": "frontier-batched-elicitation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/scraper/EditorSteps.tsx:26 The surface is a standard form pipeline rather than a question elicitation interview with dependency graphs."
+    }
+   ],
+   "registryProposal": "The standard's requirement that step validity guards be written twice (on the control and inside the transition) is directly affirmed by this component where omitting both leaves the rail unguarded."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-13T07:33:43.046178+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "wizard-flows"
+   ],
+   "techniques": [
+    "ai-driven-elicitation",
+    "branching-and-skipping",
+    "frontier-batched-elicitation",
+    "progress-communication",
+    "snapshot-and-resume",
+    "step-state-model"
+   ],
+   "deviations": 0,
+   "context": "agents-design",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-13T07:33:43.046178+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "wizard-flows"
+   ],
+   "techniques": [
+    "ai-driven-elicitation",
+    "branching-and-skipping",
+    "commit-boundary",
+    "frontier-batched-elicitation",
+    "progress-communication",
+    "snapshot-and-resume",
+    "step-state-model"
+   ],
+   "deviations": 1,
+   "context": "template-adoption-persona-layout",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-13T07:33:43.046178+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "wizard-flows"
+   ],
+   "techniques": [
+    "ai-driven-elicitation",
+    "branching-and-skipping",
+    "commit-boundary",
+    "frontier-batched-elicitation",
+    "progress-communication",
+    "snapshot-and-resume",
+    "step-state-model"
+   ],
+   "deviations": 1,
+   "context": "template-adoption-questionnaire",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-13T07:33:43.046178+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "wizard-flows"
+   ],
+   "techniques": [
+    "ai-driven-elicitation",
+    "branching-and-skipping",
+    "commit-boundary",
+    "frontier-batched-elicitation",
+    "progress-communication",
+    "snapshot-and-resume",
+    "step-state-model"
+   ],
+   "deviations": 1,
+   "context": "templates-n8n-steps",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-13T07:33:43.046178+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "wizard-flows"
+   ],
+   "techniques": [
+    "ai-driven-elicitation",
+    "branching-and-skipping",
+    "commit-boundary",
+    "frontier-batched-elicitation",
+    "progress-communication",
+    "snapshot-and-resume",
+    "step-state-model"
+   ],
+   "deviations": 1,
+   "context": "scraper",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  }
+ ]
+}
