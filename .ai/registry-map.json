@@ -20935,14 +20935,10 @@
           "revision": 6,
           "changedAt": "2026-09-30",
           "confidence": "probable",
+          "source": "conform",
           "state": "deviation",
           "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 splits the doubled read by array position on a series that only carries non-empty buckets (pivotToolUsage.ts:49 keys off observed dates), so a quiet interval silently labels part of the current period as the baseline. [re-judged 2026-09-22: triage re-stamp, not a fresh read: every file this context owns is unchanged since the verdict, the standard only GAINED techniques since (none it names was edited, the golden path body was not edited), and an added requirement cannot clear a deviation; each cited line was then checked by hand and still shows the cited construct]",
-          "evaluatedAt": "2026-09-22",
-          "evaluatedAgainst": "sha256-b2:8137e4905509e509",
-          "evaluatedRevision": 3,
-          "source": "conform",
-          "revisionsBehind": 3,
-          "stale": true
+          "evaluatedAt": "2026-09-22"
         },
         {
           "subject": "mcp-tools",
@@ -27264,11 +27260,7 @@
           "confidence": "probable",
           "state": "conformant",
           "evidence": "src/features/schedules/libs/calendarHelpers.ts:43 snaps day boundaries in the local zone and dayKey (:153) keys buckets with the same local getters; the UTC-key/local-label split recorded against ScheduleRowHistoryPanel.tsx went away with that file (deleted in 5447a03ef8) and no surviving file in the context repeats it.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256-b2:8137e4905509e509",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 3,
-          "stale": true
+          "evaluatedAt": "2026-09-23"
         },
         {
           "subject": "eval-harness",

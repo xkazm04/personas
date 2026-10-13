@@ -2044,80 +2044,110 @@
       "subject": "analytics-time-windows",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-3",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T12:47:07.654Z",
       "techniques": [
         {
           "technique": "half-open-interval-policy",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30-32 — `points.length - periodDays` is a positional cut, which only reproduces the half-open boundary on a dense series; pivotToolUsageOverTime zero-fills across tools but never across dates, so the series is sparse by construction."
-        },
-        {
-          "technique": "canonical-zone-single-source",
-          "verdict": "deviation",
-          "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:86 computes 'today' in UTC via toISOString while :45-46 parses and formats the same dates in the browser's local zone with a hardcoded en-US locale; no zone constant is declared anywhere in the module that constructs the window."
-        },
-        {
-          "technique": "calendar-arithmetic",
-          "verdict": "deviation",
-          "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:95 counts the custom range's days with `ceil(ms / (1000*60*60*24))`, the literal fixed-day divisor the technique names as a smell; across a seasonal shift the count shown to the user is off by one."
-        },
-        {
-          "technique": "range-precedence-resolution",
-          "verdict": "deviation",
-          "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:90-95 validates the range and derives its length at the call site rather than inside the resolver (OverviewFilterContext.tsx:66-77), and the resolver returns start/end/days with no provenance and no clamp report — a surface showing 30 days cannot say which source chose it."
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 Positional array cut violates the dense-series caveat because non-empty bucket feeds shift the boundary during quiet intervals."
         },
         {
           "technique": "baseline-as-window-start",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:23-33 compares volume metrics (cost, executions, invocations) that are period totals with no value at an instant; the technique's own rule sends those to a matched prior window fetched as one doubled read, which is what this does."
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:25 Precondition does not hold: usage and token counts are flow/event metrics without state, where point baseline is not applicable."
+        },
+        {
+          "technique": "calendar-arithmetic",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:10 Precondition does not hold: dashboard presets offer rolling technical durations (24h, 7d, 30d, 90d) rather than calendar-aligned monthly/quarterly boundaries."
+        },
+        {
+          "technique": "canonical-zone-single-source",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:86 Custom range popover truncates in UTC via toISOString while formatRangeLabel parses in local time, lacking a unified canonical zone accessor."
         },
         {
           "technique": "cohort-matched-comparison",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_usage/libs/pivotToolUsage.ts:23-53 — the unit of these windows is a dated occurrence count, not an entity with a durable identity, so there is no cohort to intersect; the technique routes this to a matched-span comparison instead."
+          "evidence": "src/features/overview/sub_usage/libs/pivotToolUsage.ts:31 Precondition does not hold: aggregated tool invocations represent event counts across time rather than a cohort of evolving entity identities."
+        },
+        {
+          "technique": "range-precedence-resolution",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:24 Precondition does not hold: component receives range state via props without resolving multi-source precedence or returning provenance."
         }
-      ]
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 splits the doubled read by array position on a series that only carries non-empty buckets (pivotToolUsage.ts:49 keys off observed dates), so a quiet interval silently labels part of the current period as the baseline. [re-judged 2026-09-22: triage re-stamp, not a fresh read: every file this context owns is unchanged since the verdict, the standard only GAINED techniques since (none it names was edited, the golden path body was not edited), and an added requirement cannot clear a deviation; each cited line was then checked by hand and still shows the cited construct]",
+          "evaluatedAt": "2026-09-22",
+          "worker": null,
+          "reason": "replaced by 91382f36-fb69-46e2-9349-71da7ab161be"
+        }
+      ],
+      "withdrawn": {
+        "worker": "91382f36-fb69-46e2-9349-71da7ab161be",
+        "state": "deviation",
+        "at": "2026-10-13T12:48:34.239549+00:00",
+        "reason": "reviewer (sonnet): I could not confirm that the series is sparse: the only caller of mergePreviousPeriod is in sub_activity/useExecutionMetrics.ts, outside this context, and I did not find the backend code that builds daily_points, so I could not tell whether quiet days are zero-filled."
+      }
     },
     "56a0fd55-279d-428b-b2f6-7c89154abd6f/analytics-time-windows": {
       "context": "schedules-components",
       "subject": "analytics-time-windows",
       "bundle": "software-engineering",
       "state": "conformant",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-9",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T12:47:07.654Z",
       "techniques": [
         {
-          "technique": "half-open-interval-policy",
+          "technique": "calendar-arithmetic",
           "verdict": "conformant",
-          "evidence": "src/features/schedules/libs/calendarHelpers.ts:64 week end = start + 7 days (exclusive end), iterated with cursor < end; the human label is derived from end - 1ms rather than a second stored bound."
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:346 Derives run-matching tolerance dynamically from slot spacing by capping tolerance at half the gap to neighbouring slots."
         },
         {
           "technique": "canonical-zone-single-source",
           "verdict": "conformant",
-          "evidence": "src/features/schedules/libs/calendarHelpers.ts:153 dayKey buckets with local getFullYear/getMonth/getDate, matching the local setHours snap at :43 and the toLocale* labels - one zone for snapping, keying and labelling."
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:154 Day bucket keys and day boundary snapping consistently use local date getters to prevent cross-zone skew."
         },
         {
-          "technique": "calendar-arithmetic",
+          "technique": "half-open-interval-policy",
           "verdict": "conformant",
-          "evidence": "src/features/schedules/libs/calendarHelpers.ts:49 addDays uses setDate (calendar days, DST-safe); no fixed 86400-second arithmetic for named periods."
-        },
-        {
-          "technique": "range-precedence-resolution",
-          "verdict": "not-applicable",
-          "evidence": "src/features/schedules/components/ScheduleCalendar.tsx:40 the range has one source (local anchor state, no stored preference or request param), the technique's single-source exemption."
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:135 Month grid generation advances with cursor < end, strictly upholding the half-open interval policy."
         },
         {
           "technique": "baseline-as-window-start",
           "verdict": "not-applicable",
-          "evidence": "src/features/schedules/components/ScheduleCalendar.tsx:52 the range feeds only event placement; the calendar renders no delta or change-over-period figure."
+          "evidence": "src/features/schedules/libs/scheduleHelpers.ts:8 Precondition does not hold: calendar visualizes trigger schedules and execution states rather than computing period-over-period metric deltas."
         },
         {
           "technique": "cohort-matched-comparison",
           "verdict": "not-applicable",
-          "evidence": "src/features/schedules/components/ScheduleCalendar.tsx:52 no period-over-period movement is computed anywhere in the context; there is no population delta to cohort-match."
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:7 Precondition does not hold: events represent discrete fire slots rather than an evolving population of entities with measurable movement."
+        },
+        {
+          "technique": "range-precedence-resolution",
+          "verdict": "not-applicable",
+          "evidence": "src/features/schedules/components/ScheduleCalendar.tsx:40 Precondition does not hold: calendar anchors to current date without resolving conflicting range preferences or org defaults."
         }
-      ]
+      ],
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:43 snaps day boundaries in the local zone and dayKey (:153) keys buckets with the same local getters; the UTC-key/local-label split recorded against ScheduleRowHistoryPanel.tsx went away with that file (deleted in 5447a03ef8) and no surviving file in the context repeats it.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by 91382f36-fb69-46e2-9349-71da7ab161be"
+        }
+      ],
+      "withdrawn": {
+        "worker": "91382f36-fb69-46e2-9349-71da7ab161be",
+        "state": "conformant",
+        "at": "2026-10-13T12:48:34.139115+00:00",
+        "reason": "reviewer (sonnet): The not-applicable anchor scheduleHelpers.ts:8 is just the ScheduleEntry interface declaration and does not show that period-over-period deltas are absent; the 'avoids split-brain' claim is also unconfirmed, because fire times come from the backend in each agent's own timezone (useCronPreview.ts pas"
+      }
     },
     "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e/terminal-multiplexing": {
       "context": "fleet-terminal-manager",
