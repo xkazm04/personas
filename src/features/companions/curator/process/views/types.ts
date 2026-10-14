@@ -21,4 +21,6 @@ export interface ProcessViewProps {
   view: DevInstance[];
   model: SpineModel;
   base: SpineModel;
+  /** Pick a repository (or null for the whole mode) from inside the figure. */
+  onRepoChange?: (repo: string | null) => void;
 }

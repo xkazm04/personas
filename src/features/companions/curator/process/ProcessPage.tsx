@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useState, type ComponentType } from 'react';
+import { startTransition, Suspense, useCallback, useMemo, useState, type ComponentType } from 'react';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { GitCommitVertical } from 'lucide-react';
 import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
@@ -39,6 +39,8 @@ export default function ProcessPage() {
   const [repoPick, setRepoPick] = useState<string | null>(null);
   const [viewId, setViewId] = useState<ProcessViewId>('spine');
   const View = VIEW_COMPONENTS[viewId];
+  // A transition keeps the current view painted while a lazy view's chunk arrives, instead of a blank Suspense beat.
+  const pickView = useCallback((v: ProcessViewId) => startTransition(() => setViewId(v)), []);
 
   const all = useMemo(() => (reading ? devInstances(reading) : []), [reading]);
   const byMode = useMemo(() => MODES.map((m) => all.filter((x) => x.mode === m)), [all]);
@@ -73,7 +75,7 @@ export default function ProcessPage() {
             <SegmentedTabs<ProcessViewId>
               tabs={VIEWS.map((v) => ({ id: v, label: p[`view_${v}`], testId: `process-view-${v}` }))}
               activeTab={viewId}
-              onTabChange={setViewId}
+              onTabChange={pickView}
               ariaLabel={p.view_aria}
               idPrefix={VIEW_TABS}
               size="sm"
@@ -113,7 +115,7 @@ export default function ProcessPage() {
               <p className="py-16 text-center typo-body">{p.empty}</p>
             ) : (
               <Suspense fallback={null}>
-                <View reading={reading} mode={mode} repo={repo} cohort={cohort} view={view} model={model} base={base} />
+                <View reading={reading} mode={mode} repo={repo} cohort={cohort} view={view} model={model} base={base} onRepoChange={setRepoPick} />
               </Suspense>
             )}
           </div>
