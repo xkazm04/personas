@@ -2,7 +2,7 @@
 // `/mesh-onboard`'s CLI: pair two Personas apps and run the mutual tests through their /mesh doors.
 //
 //   node scripts/mesh/onboard.mjs preflight
-//   node scripts/mesh/onboard.mjs discover [--timeout 600] [--peer <id>]
+//   node scripts/mesh/onboard.mjs discover [--timeout 600] [--peer <id>] [--address <ip:port>]
 //   node scripts/mesh/onboard.mjs pair --peer <id> [--confirm <code> | --wait] [--timeout 600]
 //   node scripts/mesh/onboard.mjs test --peer <id> [--allow-push] [--only t1_ping,t3_toggle] [--fresh]
 //   node scripts/mesh/onboard.mjs report --peer <id>
@@ -162,7 +162,17 @@ export async function main(argv, io = {}) {
       const timeoutMs = secs(args.timeout, 600);
       say(`looking for the other machine on the LAN (up to ${Math.round(timeoutMs / 1000)} s)`);
       let lastConnect = 0;
+      let lastDial = 0;
       const found = await waitFor(async () => {
+        // The explicit-address fallback for a LAN that drops multicast: dial
+        // the named LAN address every 15 s until the peer shows up. The link
+        // is authenticated by its handshake, not trusted; pairing still needs
+        // the typed code.
+        if (args.address && Date.now() - lastDial > 15_000 * scale) {
+          lastDial = Date.now();
+          const c = await client.connectAddress(args.address).catch((e) => ({ connected: false, detail: e.message }));
+          if (!c.connected) say(`dial ${args.address}: ${c.detail || 'not connected yet'}`);
+        }
         const d = await client.devices();
         const seen = (d.discovered || []).filter((p) => p.peerId !== selfId);
         // A paired device that is not in the discovery list still counts when it is connected.
@@ -183,7 +193,7 @@ export async function main(argv, io = {}) {
       if (!found) {
         let failing = [];
         try { failing = ((await client.diagnostics()).checks || []).filter((c) => !c.ok).map(({ id, detail, fix }) => ({ id, detail, fix })); } catch { /* the timeout is the finding */ }
-        emit({ ok: false, step: 'discover', error: 'timeout', detail: `no peer appeared within ${Math.round(timeoutMs / 1000)} s`, failing, fix: failing.find((f) => f.fix)?.fix || 'Make sure the Personas app is running on the other machine, both machines are on the same LAN, and the network profile is Private on both.' });
+        emit({ ok: false, step: 'discover', error: 'timeout', detail: `no peer appeared within ${Math.round(timeoutMs / 1000)} s`, failing, fix: failing.find((f) => f.fix)?.fix || 'Make sure the Personas app is running on the other machine, both machines are on the same LAN, and the network profile is Private on both. If the firewall checks are green but nothing appears, the network drops multicast (mDNS): run `discover --address <other machine ip>:<its quicPort>` on BOTH machines (preflight prints the quicPort of each machine).' });
         return EXIT.timeout;
       }
       if (found.length > 1) {

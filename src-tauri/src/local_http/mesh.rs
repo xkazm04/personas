@@ -13,7 +13,7 @@
 //! | `GET  /mesh/status` | [`status`] | `NetworkService` facts |
 //! | `GET  /mesh/diagnostics` | [`diagnostics`] | `mesh::diagnostics::run` |
 //! | `GET  /mesh/devices` | [`devices`] | `mesh_device_snapshots` + `discovered_peers` |
-//! | `POST /mesh/connect` | [`connect`] | `connect_peer` / `connect_to_address` (one-box only) |
+//! | `POST /mesh/connect` | [`connect`] | `connect_peer` / `connect_to_address` (LAN addresses only) |
 //! | `POST /mesh/pair/request` | [`pair_request`] | `DevicePairing::request` |
 //! | `GET  /mesh/pair/pending` | [`pair_pending`] | `DevicePairing::list_pending` (never the code) |
 //! | `POST /mesh/pair/confirm` | [`pair_confirm`] | `DevicePairing::confirm_with_code` |
@@ -761,13 +761,10 @@ impl MeshDoor for AppDoor {
         let state = self.state()?;
         let net = Self::network(&state)?;
         if let Some(address) = req.address {
-            // DEV-ONLY one-box path (SECURITY-SENSITIVE): refused here AND in
-            // the engine unless this instance is isolated.
-            if !crate::engine::p2p::one_box::is_isolated() {
-                return Err(DoorError::refused(
-                    "`address` is a dev-only one-box feature: this instance has no PERSONAS_DATA_DIR",
-                ));
-            }
+            // SECURITY-SENSITIVE: an operator-named address. The engine
+            // refuses anything outside the local network (`lan_dial_refusal`)
+            // and the link is authenticated, not trusted: pairing still needs
+            // the typed code.
             let peer_id = net.connect_to_address(&address).await?;
             return Ok(ConnectOut {
                 connected: true,

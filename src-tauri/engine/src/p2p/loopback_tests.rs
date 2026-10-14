@@ -839,7 +839,7 @@ async fn settled(pool: &DbPool, job_id: &str) -> RemoteJob {
 /// `discovered_peers` row beforehand, the peer id is LEARNED from the signed
 /// handshake, and the address is then recorded so the auto-connect sweep can
 /// re-dial it. Pairing is untouched: the new link is authenticated, not
-/// trusted. The env-gated public door refuses outside an isolated instance.
+/// trusted. The public door refuses non-LAN addresses.
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn a_peer_dialled_by_address_proves_its_id_and_is_remembered() {
     let laptop = node("Laptop").await;
@@ -880,12 +880,12 @@ async fn a_peer_dialled_by_address_proves_its_id_and_is_remembered() {
             .await,
         Err(AppError::Validation(_))
     ));
-    if super::one_box::isolated_data_dir().is_none() {
-        assert!(matches!(
-            laptop.svc.connect_to_address(&address).await,
-            Err(AppError::Forbidden(_))
-        ));
-    }
+    // The public door keeps the LAN-only rule: a public address is refused
+    // before any socket is opened.
+    assert!(matches!(
+        laptop.svc.connect_to_address("8.8.8.8:4242").await,
+        Err(AppError::Forbidden(_))
+    ));
 }
 
 /// Every `MeshVerbPayload` variant crosses the wire and comes back as a

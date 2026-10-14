@@ -595,26 +595,30 @@ impl NetworkService {
         announce_stale(&self.mesh, &self.connections, &self.mdns, now_ms).await
     }
 
-    /// **DEV-ONLY (one-box two-node mesh; SECURITY-SENSITIVE).** Dial a raw
-    /// `ip:port` and run the normal signed handshake; returns the peer id the
-    /// other side proved. Refused with [`AppError::Forbidden`] unless this is
-    /// an isolated instance (`PERSONAS_DATA_DIR` set; `one_box`). The address
-    /// is then recorded as mDNS would have, so the auto-connect sweep re-dials
-    /// it. Pairing is unchanged: a peer connected this way is authenticated,
-    /// not trusted.
+    /// **SECURITY-SENSITIVE.** Dial a raw `ip:port` an operator named and run
+    /// the normal signed handshake; returns the peer id the other side proved.
+    /// The fallback for a LAN that drops multicast (mDNS) while unicast works.
+    ///
+    /// Refused with [`AppError::Forbidden`] unless the address is on the local
+    /// network (see [`lan_dial_refusal`]): this door never dials the internet,
+    /// a public address, or a wildcard. An isolated one-box instance
+    /// (`PERSONAS_DATA_DIR`) dials the same range, which includes loopback.
+    /// The address is then recorded as mDNS would have, so the auto-connect
+    /// sweep re-dials it. Pairing is unchanged: a peer connected this way is
+    /// authenticated by its handshake, not trusted; trust still needs the
+    /// typed code.
     pub async fn connect_to_address(&self, address: &str) -> Result<String, AppError> {
-        if !one_box::is_isolated() {
-            return Err(AppError::Forbidden(
-                "Connecting by address is a dev-only one-box feature: it needs PERSONAS_DATA_DIR."
-                    .into(),
-            ));
+        let addr: std::net::SocketAddr = address.trim().parse().map_err(|e| {
+            AppError::Validation(format!("'{address}' is not an ip:port address: {e}"))
+        })?;
+        if let Some(why) = lan_dial_refusal(&addr) {
+            return Err(AppError::Forbidden(why));
         }
         self.connect_to_address_unchecked(address).await
     }
 
-    /// [`Self::connect_to_address`] past the one-box gate. Kept private to the
-    /// crate: the loopback tests (one process, no env) are the only other
-    /// caller.
+    /// [`Self::connect_to_address`] past the LAN-range gate. Kept private to the
+    /// crate: the loopback tests are the only other caller.
     pub(crate) async fn connect_to_address_unchecked(
         &self,
         address: &str,
@@ -886,5 +890,68 @@ async fn build_snapshot(
         messaging_metrics,
         connection_metrics,
         manifest_sync_metrics,
+    }
+}
+
+/// Why a raw dial to `addr` is refused, or `None` when it is on the local
+/// network: loopback, RFC 1918 / CGNAT-excluded private v4, link-local, or v6
+/// unique-local / link-local. Port 0, wildcard and multicast are refused.
+/// Pure so the whole table is unit-tested.
+pub fn lan_dial_refusal(addr: &std::net::SocketAddr) -> Option<String> {
+    use std::net::IpAddr;
+    if addr.port() == 0 {
+        return Some("The address needs a port, e.g. 10.0.0.141:4242.".into());
+    }
+    let ip = addr.ip();
+    if ip.is_unspecified() || ip.is_multicast() {
+        return Some(format!("{ip} is not a device address."));
+    }
+    let local = match ip {
+        IpAddr::V4(v4) => v4.is_loopback() || v4.is_private() || v4.is_link_local(),
+        IpAddr::V6(v6) => {
+            let seg = v6.segments();
+            v6.is_loopback()
+                || (seg[0] & 0xfe00) == 0xfc00 // unique-local fc00::/7
+                || (seg[0] & 0xffc0) == 0xfe80 // link-local fe80::/10
+        }
+    };
+    (!local).then(|| {
+        format!("{ip} is not on the local network: connecting by address only dials LAN addresses.")
+    })
+}
+
+#[cfg(test)]
+mod lan_dial_tests {
+    use super::lan_dial_refusal;
+
+    fn refused(a: &str) -> bool {
+        lan_dial_refusal(&a.parse().unwrap()).is_some()
+    }
+
+    #[test]
+    fn only_local_network_addresses_may_be_dialled() {
+        for ok in [
+            "10.0.0.141:4242",
+            "192.168.1.5:4242",
+            "172.16.4.2:4242",
+            "169.254.3.3:4242",
+            "127.0.0.1:4243",
+            "[fd12:3456::1]:4242",
+            "[fe80::1]:4242",
+            "[::1]:4242",
+        ] {
+            assert!(!refused(ok), "{ok} should be allowed");
+        }
+        for bad in [
+            "8.8.8.8:4242",
+            "100.100.1.1:4242", // CGNAT / Tailscale is not this LAN
+            "0.0.0.0:4242",
+            "224.0.0.251:5353",
+            "10.0.0.141:0",
+            "[2001:db8::1]:4242",
+            "172.32.0.1:4242",
+        ] {
+            assert!(refused(bad), "{bad} should be refused");
+        }
     }
 }

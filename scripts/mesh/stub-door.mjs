@@ -137,6 +137,16 @@ export class StubDoor {
       case 'GET /mesh/devices':
         return { body: this.devicesView() };
       case 'POST /mesh/connect': {
+        // An explicit LAN address reaches a peer mDNS cannot see (hidden): the
+        // dialled peer then shows up in discovery, as the real door records it.
+        if (body && body.address) {
+          const byAddr = (this.lan || []).find((d) => d !== this && d.address === body.address);
+          if (!byAddr) return { body: { connected: false, detail: `nothing answered at ${body.address}` } };
+          this.dialled = this.dialled || new Set();
+          this.dialled.add(byAddr.peerId);
+          this.connected.add(byAddr.peerId); byAddr.connected.add(this.peerId);
+          return { body: { connected: true, detail: `connected to ${byAddr.peerId}` } };
+        }
         const o = this.other(body && body.peerId);
         if (!o || o.hidden) return { body: { connected: false, detail: 'peer not discovered' } };
         this.connected.add(o.peerId); o.connected.add(this.peerId);
@@ -204,7 +214,7 @@ export class StubDoor {
       const up = o && this.connected.has(id);
       devices.push({ peerId: id, displayName: o ? o.displayName : id, isSelf: false, isHome: false, reachability: up ? 'connected' : 'offline', liveness: up ? 'live' : 'unknown', snapshot: up ? o.snapshot() : null, receivedAtMs: up ? Date.now() - 400 : null, lastProbe: null });
     }
-    const discovered = (this.lan || []).filter((d) => d !== this && !d.hidden).map((d) => ({ peerId: d.peerId, displayName: d.displayName, lastSeenMs: Date.now(), paired: this.paired.has(d.peerId), connected: this.connected.has(d.peerId) }));
+    const discovered = (this.lan || []).filter((d) => d !== this && (!d.hidden || (this.dialled && this.dialled.has(d.peerId)))).map((d) => ({ peerId: d.peerId, displayName: d.displayName, lastSeenMs: Date.now(), paired: this.paired.has(d.peerId), connected: this.connected.has(d.peerId) }));
     return { devices, discovered };
   }
 
