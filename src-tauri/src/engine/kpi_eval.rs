@@ -232,10 +232,12 @@ async fn run_shell_bounded(cwd: &str, cmd: &str) -> Result<String, AppError> {
     })?
     .map_err(|e| AppError::Internal(format!("Failed to run measurement command: {e}")))?;
 
-    let mut text = String::from_utf8_lossy(&out.stdout).into_owned();
-    if !out.stderr.is_empty() {
+    // `cmd /C` writes its own lines in the console's OEM code page, not UTF-8.
+    let mut text = personas_core::utils::process::decode_output(&out.stdout);
+    let stderr = personas_core::utils::process::decode_output(&out.stderr);
+    if !stderr.is_empty() {
         text.push('\n');
-        text.push_str(&String::from_utf8_lossy(&out.stderr));
+        text.push_str(&stderr);
     }
     // Exit code is NOT a failure by itself: lint counters exit non-zero when
     // errors exist — which is exactly the number being measured.

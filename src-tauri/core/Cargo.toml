@@ -95,9 +95,10 @@ libc = { workspace = true }
 # crypto uses DPAPI (CryptProtectData) and validation opens files with explicit
 # share flags. Core needs Win32_Foundation, Win32_Security_Cryptography and
 # Win32_Storage_FileSystem, which is the workspace spec as-is; the desktop and
-# engine crates add three more on top.
+# engine crates add three more on top. utils::process::decode_output adds the
+# two that read a child's console code page and convert from it.
 [target.'cfg(windows)'.dependencies]
-windows = { workspace = true }
+windows = { workspace = true, features = ["Win32_Globalization", "Win32_System_Console"] }
 
 [lints]
 workspace = true
