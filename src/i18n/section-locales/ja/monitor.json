@@ -372,7 +372,7 @@
   "strip_open_hint": "モニターを開く",
   "strip_queued": "{count} 件待機中",
   "strip_running": "{count} 件実行中",
-  "subtitle": "{ペルソナs} ペルソナs · {attention} need attention · {running} running",
+  "subtitle": "{personas} ペルソナ · {attention} 件が要確認 · {running} 件が実行中",
   "system": "システム",
   "title": "ペルソナモニター",
   "titlebar": "ペルソナモニター",

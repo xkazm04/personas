@@ -860,7 +860,7 @@
     "connector_status_missing": "没有凭据",
     "connector_status_ready": "就绪",
     "ledger_clean": "文件中的内容都已计入",
-    "ledger_deselected": "{count} 项由你取消勾选",
+    "ledger_deselected": "{count} 项由您取消勾选",
     "ledger_detected": "源文件中有 {count} 个{noun}",
     "ledger_noun_element": "元素",
     "ledger_noun_job": "作业",

@@ -261,7 +261,7 @@
     "agent": "代理",
     "app": "应用",
     "external": "来自外部",
-    "you": "你的操作"
+    "you": "您的操作"
   },
   "event_source": {
     "app_focus": "应用焦点",
@@ -298,7 +298,7 @@
     "test": "测试数据",
     "trigger": "触发器",
     "trigger_engine": "触发器",
-    "user": "你",
+    "user": "您",
     "vault": "保险库",
     "webhook": "Webhook"
   }

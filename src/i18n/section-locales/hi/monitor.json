@@ -372,7 +372,7 @@
   "strip_open_hint": "मॉनिटर खोलें",
   "strip_queued": "{count} कतार में",
   "strip_running": "{count} चल रहे",
-  "subtitle": "{पर्सोनाs} पर्सोनाs · {attention} need attention · {running} running",
+  "subtitle": "{personas} पर्सोना · {attention} को ध्यान चाहिए · {running} चल रहे हैं",
   "system": "सिस्टम",
   "title": "पर्सोना मॉनिटर",
   "titlebar": "पर्सोना मॉनिटर",
