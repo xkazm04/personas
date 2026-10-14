@@ -21,6 +21,7 @@ import {
   readCatalog,
   locales,
   untranslatedKeys,
+  brokenPlaceholderKeys,
   loadAllowlist,
 } from './lib/untranslated.mjs';
 
@@ -66,9 +67,18 @@ for (const lang of langs) {
   total += keys.length;
 }
 
+// A translated placeholder name renders literally ({人格s} on screen). Same dead-key
+// exclusion as above; reported and failed under --strict alongside untranslated values.
+const brokenPh = {};
+let brokenTotal = 0;
+for (const lang of langs) {
+  const keys = brokenPlaceholderKeys(en, readCatalog(lang)).filter((k) => !dead.has(k));
+  if (keys.length) { brokenPh[lang] = keys; brokenTotal += keys.length; }
+}
+
 if (asJson) {
-  console.log(JSON.stringify({ total, allowlisted: allow.size, byLang: report }, null, 2));
-  process.exit(strict && total ? 1 : 0);
+  console.log(JSON.stringify({ total, allowlisted: allow.size, byLang: report, brokenPlaceholders: brokenPh }, null, 2));
+  process.exit(strict && (total || brokenTotal) ? 1 : 0);
 }
 
 const enProse = Object.keys(en).length;
@@ -97,4 +107,9 @@ if (total) {
   console.log('\nNo untranslated values. Every locale renders in its own language.');
 }
 
-process.exit(strict && total ? 1 : 0);
+if (brokenTotal) {
+  console.log(`\n${brokenTotal} string-instances carry a placeholder the English source does not have (renders literally):`);
+  for (const [lang, keys] of Object.entries(brokenPh)) keys.forEach((k) => console.log(`  ${lang}: ${k}`));
+}
+
+process.exit(strict && (total || brokenTotal) ? 1 : 0);

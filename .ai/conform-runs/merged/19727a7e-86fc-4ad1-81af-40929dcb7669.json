@@ -1,0 +1,211 @@
+{
+ "schema": "conform-run/1",
+ "worker": "19727a7e-86fc-4ad1-81af-40929dcb7669",
+ "subject": "quality-gates",
+ "evaluatedAt": "2026-10-14T09:29:49.324Z",
+ "pairs": [
+  {
+   "context": "6c0d30e4-99b9-4580-ba02-9a526db1d639",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_health/healthScoring.ts:55 computeHealthScore returns a grade painted by the editor badge and Arena herald (src/features/agents/sub_health/healthScoring.ts:26); the only \"blocked\" status (src/features/agents/sub_health/types.ts:67) is mapped from text (useHealthCheck.ts:93) and no path refuses a run, save or deploy on it, so no refusal precondition holds - diagnostic, not a gate. Re-checked at revision 54.",
+   "techniques": []
+  },
+  {
+   "context": "89eddf81-0c57-441d-a07d-de36bf022cb5",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/components/display/Numeric.tsx:62 Numeric is a read-only renderer; nothing in the display formatters can refuse a change, commit or release; matched on display/count tokens only. Re-checked at revision 54.",
+   "techniques": []
+  },
+  {
+   "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:160 tells the fixer to drop the failing capability, and src-tauri/src/engine/build_session/oneshot.rs:635 re-runs run_tool_tests over the fixer-edited IR, so the oracle is rewritable by the party it judges (oracle-frozen-during-repair); a persona left with zero tools then passes at src-tauri/src/engine/build_session/tool_tests.rs:60 (\"nothing to exercise\"). Mitigated, not closed, by evaluate_promote_gate (oneshot.rs:408) holding unverified outcomes. Anchors re-verified, drifted from fix_pass.rs:158 and oneshot.rs:635 only in the first.",
+   "techniques": [
+    {
+     "technique": "oracle-frozen-during-repair",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:160 fixer may delete the failing capability, then oneshot.rs:635 re-tests the edited IR"
+    }
+   ]
+  },
+  {
+   "context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/harness/verifier.ts:54 builds the count gate as `grep ... | wc -l` (line 54), whose exit is always 0, so src/lib/harness/verifier.ts:107 reports passed:true at any count and the zero-only branch at src/lib/harness/verifier.ts:118 sits in the catch and never runs; custom gates are also required:false (src/lib/harness/verifier.ts:63) - unfireable by construction. Re-verified unchanged at revision 54.",
+   "techniques": [
+    {
+     "technique": "severity-by-construction",
+     "verdict": "deviation",
+     "evidence": "src/lib/harness/verifier.ts:63 required:false plus verifier.ts:107 unconditional pass"
+    },
+    {
+     "technique": "gate-liveness",
+     "verdict": "deviation",
+     "evidence": "src/lib/harness/verifier.ts:118 zero-count branch unreachable from a wc -l pipeline"
+    }
+   ]
+  },
+  {
+   "context": "959baa73-f18f-42c8-8569-466939b9050d",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/notepad/plan/ShipControlBar.tsx:150 disables ship unless shipVerdict is go, but the server write it guards (src/features/notepad/plan/useProjectPlan.ts:347 -> src-tauri/db/src/repos/dev/milestones.rs:296) re-checks only cut-before-ship (its own comment at milestones.rs:296 says the exit-criteria check lives client-side), and src-tauri/src/commands/companion/approvals/approval_exec_ship.rs:1153 enforces only an objective-goal subset, so the full verdict is a UI courtesy (gate-laddering) and any other caller of the update command ships a milestone over nogo criteria. Re-verified at revision 54; anchors moved from milestones.rs:248.",
+   "techniques": [
+    {
+     "technique": "gate-laddering",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/dev/milestones.rs:296 server enforces cut-before-ship only; criteria gate is client-side at ShipControlBar.tsx:150"
+    }
+   ]
+  },
+  {
+   "context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/components/forms/useFieldValidation.ts:33 useFieldValidation gates user input in a form, governed by the form subject; nothing in the context is an engineering check over a tree, commit or release. Re-checked at revision 54.",
+   "techniques": []
+  },
+  {
+   "context": "7e214a7d-44c6-4e6c-8b54-b30f4483ce12",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_factory/passport/improve/goldenStandard.ts:122 scoreAgainstRubric returns a percentage consumed only by src/features/teams/sub_factory/passport/improve/GoldenGauge.tsx:9 (render) and src/features/teams/sub_factory/passport/improve/improvePlan.ts:70 (rank); nothing refuses on it - assessment, which the golden path hands to conformance-checking/readiness-passports. Re-checked at revision 54.",
+   "techniques": []
+  },
+  {
+   "context": "d5c5e7fe-6353-41eb-800b-dc11adee0775",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/project_tracking/mod.rs:52 the only \"gate\" is the master enable toggle for the tracker (a feature switch), and push.rs:10 gates by admission auth; the context absorbs signals and consolidates them, and refuses no tree, commit or release on quality.",
+   "techniques": []
+  },
+  {
+   "context": "1db5c86e-3237-4d2a-8e2f-1426d680757c",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/execution/pipeline.ts:662 lets a middleware abort by throwing, but no registered middleware does: src/lib/execution/middleware/budgetMiddleware.ts:11 only invalidates a spend cache and returns the payload; no throw exists under src/lib/execution/middleware/, so the context observes and records rather than refuses on quality.",
+   "techniques": []
+  },
+  {
+   "context": "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_lab/libs/labFeedbackLoop.ts:39 WEAKNESS_THRESHOLD/STRENGTH_THRESHOLD (50/80) only classify scores into weaknesses and strengths for display and feedback (labFeedbackLoop.ts:72); the version matrix and economics panel render, nothing refuses a promote or release on them.",
+   "techniques": []
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-14T09:29:49.324Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-14T09:29:49.324Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-14T09:29:49.324Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "oracle-frozen-during-repair"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-14T09:29:49.324Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "severity-by-construction",
+    "gate-liveness"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-14T09:29:49.324Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "gate-laddering"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-14T09:29:49.324Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-14T09:29:49.324Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-14T09:29:49.324Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-14T09:29:49.324Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-14T09:29:49.324Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

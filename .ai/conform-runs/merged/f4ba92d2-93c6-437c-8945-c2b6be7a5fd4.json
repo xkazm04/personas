@@ -1,0 +1,252 @@
+{
+ "schema": "conform-run/1",
+ "worker": "f4ba92d2-93c6-437c-8945-c2b6be7a5fd4",
+ "subject": "accessibility",
+ "evaluatedAt": "2026-10-14T12:00:00Z",
+ "pairs": [
+  {
+   "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+   "subject": "accessibility",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/shared/components/display/UnifiedTable.tsx:620 keeps an index-keyed visual-only focusedIndex on a scroll container tab stop whose outline is removed (:726, :761, :881) with no aria-activedescendant, so the shared table every list surface inherits is silent to a screen reader and the highlight teleports after a resort; src/features/shared/components/display/ColumnResize.tsx:126 is a pointer-only role=separator (:130 onPointerDown) with no keyboard resize",
+   "techniques": [
+    {
+     "technique": "keyboard-navigation-models",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/display/UnifiedTable.tsx:620 index-keyed focus, no real focus or activedescendant"
+    },
+    {
+     "technique": "primitive-level-a11y",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/display/ColumnResize.tsx:130 pointer-only primitive inherited by every table"
+    }
+   ]
+  },
+  {
+   "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+   "subject": "accessibility",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/shared/components/feedback/AriaLiveProvider.tsx:98 keys the live REGION (key=polite-N) so each announcement mounts a fresh region already holding text (live-region-architecture: silent on most pairings); src/features/shared/components/feedback/ConfirmDialog.tsx:59 hard-codes isOpen so callers close by unmounting and the focus restore at src/lib/ui/BaseModal.tsx:231 never runs; src/features/shared/components/feedback/Banner.tsx:111 and src/features/shared/components/feedback/LoadingSpinner.tsx:15 own pre-populated role regions instead of calling the provider. Realized: provider mounted at src/App.tsx:388, serial drain AriaLiveProvider.tsx:58, named dismiss Banner.tsx:145",
+   "techniques": [
+    {
+     "technique": "live-region-architecture",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/feedback/AriaLiveProvider.tsx:98 region remounts per message"
+    },
+    {
+     "technique": "name-and-description-wiring",
+     "verdict": "realized",
+     "evidence": "src/features/shared/components/feedback/Banner.tsx:145 aria-label on icon dismiss"
+    },
+    {
+     "technique": "preference-respect",
+     "verdict": "realized",
+     "evidence": "src/features/shared/components/feedback/Reveal.tsx:25 gates animation on useMotion shouldAnimate"
+    }
+   ]
+  },
+  {
+   "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+   "subject": "accessibility",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/home/sub_cockpit/widgets/LinkedDecisionsWidget.tsx:109 mounts role=alert already holding its error text (also RecentDecisionsWidget.tsx:86, WalkthroughOfferWidget.tsx:118 in the same folder), so the failure is silent on most pairings; src/features/home/sub_cockpit/widgets/VerdictWidget.tsx:58 marks a dangerous option only by a Dot tone icon (aria-hidden), no text or name carries the danger",
+   "techniques": [
+    {
+     "technique": "live-region-architecture",
+     "verdict": "deviation",
+     "evidence": "src/features/home/sub_cockpit/widgets/LinkedDecisionsWidget.tsx:109 pre-populated role=alert"
+    },
+    {
+     "technique": "name-and-description-wiring",
+     "verdict": "deviation",
+     "evidence": "src/features/home/sub_cockpit/widgets/VerdictWidget.tsx:58 danger carried by colour dot only"
+    }
+   ]
+  },
+  {
+   "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+   "subject": "accessibility",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:11 the shared roving mechanism is index-keyed and has zero consumers (grep finds only its own file; tablists hand-roll arrows, e.g. src/features/shared/components/layout/SegmentedTabs.tsx:83), and src/hooks/utility/interaction/useCopyToClipboard.ts:44 sets a visual-only copied flag no consumer announces",
+   "techniques": [
+    {
+     "technique": "keyboard-navigation-models",
+     "verdict": "deviation",
+     "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:11 index-keyed and unused"
+    },
+    {
+     "technique": "live-region-architecture",
+     "verdict": "deviation",
+     "evidence": "src/hooks/utility/interaction/useCopyToClipboard.ts:44 transient outcome not announced"
+    }
+   ]
+  },
+  {
+   "context": "dc471d31-ae30-4ac9-b015-d51969df458d",
+   "subject": "accessibility",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/shared/chrome/CommandPalette.tsx:447 names the palette input by placeholder alone and arrow selection is visual-only (src/features/shared/chrome/CommandPaletteResults.tsx:80 isSelected styling, no combobox/listbox roles or aria-activedescendant in either file), so the app-wide keyboard path is silent as selection moves; src/features/shared/chrome/notifications/NotificationCenter.tsx:195 hard-codes English aria-label Dismiss on a button at opacity-0 until hover (:194)",
+   "techniques": [
+    {
+     "technique": "name-and-description-wiring",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/chrome/CommandPalette.tsx:447 placeholder as sole name"
+    },
+    {
+     "technique": "keyboard-navigation-models",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/chrome/CommandPaletteResults.tsx:80 visual-only selection"
+    },
+    {
+     "technique": "hidden-but-mounted-inertness",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/chrome/notifications/NotificationCenter.tsx:194 focusable control invisible until hover"
+    }
+   ]
+  },
+  {
+   "context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5",
+   "subject": "accessibility",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/shared/components/forms/KeyValueEditor.tsx:169 names its key/value inputs by placeholder alone and the trash button at :183 has no aria-label (no aria-label anywhere in the file); src/features/shared/components/forms/PasswordToggleField.tsx:113 tabIndex=-1 removes the reveal control from the tab order; src/features/shared/components/forms/PillGroup.tsx:58 is a radiogroup with no arrow model whose preset pills stay mounted while faded to opacity-0 at :62",
+   "techniques": [
+    {
+     "technique": "name-and-description-wiring",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/forms/KeyValueEditor.tsx:169 placeholder-only names"
+    },
+    {
+     "technique": "keyboard-navigation-models",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/forms/PillGroup.tsx:58 radiogroup without arrow model"
+    },
+    {
+     "technique": "hidden-but-mounted-inertness",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/forms/PillGroup.tsx:62 faded pills remain focusable"
+    }
+   ]
+  },
+  {
+   "context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0",
+   "subject": "accessibility",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/shared/components/buttons/CopyButton.tsx:76 names its icon-only form by native title alone (no aria-label in the file) and :133 swaps the visible label to copiedLabel with no announcement; src/features/shared/components/buttons/Button.tsx:152 offers icon-only sizes while ButtonProps (:96) requires no accessible name, so nameless icon buttons compile",
+   "techniques": [
+    {
+     "technique": "name-and-description-wiring",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/buttons/CopyButton.tsx:76 title as last-resort name"
+    },
+    {
+     "technique": "primitive-level-a11y",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/buttons/Button.tsx:152 primitive does not require a name"
+    },
+    {
+     "technique": "live-region-architecture",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/buttons/CopyButton.tsx:133 label swap unannounced"
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-14T12:00:00Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "accessibility"
+   ],
+   "techniques": [
+    "keyboard-navigation-models",
+    "primitive-level-a11y"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-14T12:00:00Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "accessibility"
+   ],
+   "techniques": [
+    "live-region-architecture",
+    "name-and-description-wiring",
+    "preference-respect"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-14T12:00:00Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "accessibility"
+   ],
+   "techniques": [
+    "live-region-architecture",
+    "name-and-description-wiring"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-14T12:00:00Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "accessibility"
+   ],
+   "techniques": [
+    "keyboard-navigation-models",
+    "live-region-architecture"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-14T12:00:00Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "accessibility"
+   ],
+   "techniques": [
+    "hidden-but-mounted-inertness",
+    "keyboard-navigation-models",
+    "name-and-description-wiring"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-14T12:00:00Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "accessibility"
+   ],
+   "techniques": [
+    "hidden-but-mounted-inertness",
+    "keyboard-navigation-models",
+    "name-and-description-wiring"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-14T12:00:00Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "accessibility"
+   ],
+   "techniques": [
+    "live-region-architecture",
+    "name-and-description-wiring",
+    "primitive-level-a11y"
+   ],
+   "deviations": 1
+  }
+ ]
+}

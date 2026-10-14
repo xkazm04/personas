@@ -54,7 +54,7 @@
   "col_action": "操作",
   "col_environment": "环境",
   "attention_title": "需要处理",
-  "attention_none": "没有需要你处理的事项",
+  "attention_none": "没有需要您处理的事项",
   "attention_none_hint": "这台机器上的所有检查均已通过。",
   "attention_count": "{count} 项待处理",
   "detail_title": "检查详情",

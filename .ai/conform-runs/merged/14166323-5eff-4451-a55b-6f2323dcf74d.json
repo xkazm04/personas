@@ -1,0 +1,155 @@
+{
+ "schema": "conform-run/1",
+ "worker": "14166323-5eff-4451-a55b-6f2323dcf74d",
+ "subject": "eval-harness",
+ "evaluatedAt": "2026-10-14T09:17:43.272Z",
+ "pairs": [
+  {
+   "context": "908be532-ef83-412b-8da3-caff9ff4d8ad",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/eval_runs.rs:1 the Certification Command Center UI this context described was deleted (8a2ce465f6); only a read-only bundle reader remains, which runs no scenarios and judges nothing, so the prior deviation anchor JudgePanel.tsx:64 no longer exists",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+   "evaluatedRevision": 37,
+   "registryProposal": "Context 'overview-certification' is dead in context-map.json (file_paths empty, entry points deleted 2026-09-22); the map should drop or retire it. Its stale deviation was about code that no longer exists."
+  },
+  {
+   "context": "0ecc70bc-a005-4ff8-9a98-f362d2a75f53",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/api/overview/reviews.ts:14 pure IPC passthrough wrappers; the certification wrapper was removed with the Command Center and no scenario, judge or aggregation logic lives here (lexical match on certification/reviews/eval only)",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+   "evaluatedRevision": 37
+  },
+  {
+   "context": "743a0ae5-b7d0-46a6-a915-cb82c7834bf8",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/fleet/monitor/monitorModel.ts:1 pure state machine colouring persona cards from execution state; no scenarios, scores or judge, the 'model' match is a view-model",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+   "evaluatedRevision": 37
+  },
+  {
+   "context": "ef73ca1c-fc54-4b9c-83ec-390c54929192",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:1 human decision inbox labels and status helpers; it queues items for people, it does not measure a system",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+   "evaluatedRevision": 37
+  },
+  {
+   "context": "336089a8-bb18-449c-a62e-ca76b02097fb",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "tests/playwright/companion-bridge.ts:1 deterministic Playwright driver over the test-automation HTTP server; the deterministic lane belongs to test-harness, which this subject explicitly excludes",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+   "evaluatedRevision": 37
+  },
+  {
+   "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:1 'matrix' is persona assembly plus a one-capability dry-run preview, not a model x variant x scenario eval matrix",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+   "evaluatedRevision": 37
+  },
+  {
+   "context": "9b0ee86c-2613-49a5-9fda-fcc4d432fb72",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/migrations/incremental/e01_execution_and_use_cases.rs:502 lab_eval_results keys a scenario by scenario_name TEXT with no stable id or content version, and src-tauri/db/src/repos/lab/eval.rs:105 persists no judge model, rubric or packet version, so a score cannot be attributed to an instrument and cross-run trends can mix judge upgrades with system change",
+   "techniques": [
+    {
+     "technique": "scenario-design",
+     "verdict": "deviation: identity is name-equality, which the technique says breaks on edit",
+     "evidence": "src-tauri/db/src/migrations/incremental/e01_execution_and_use_cases.rs:502 scenario_name TEXT NOT NULL"
+    },
+    {
+     "technique": "judge-stability",
+     "verdict": "deviation: no judge packet or resolved model stamped on result rows",
+     "evidence": "src-tauri/db/src/repos/lab/eval.rs:105 INSERT lists eval_method but no judge model or rubric version"
+    },
+    {
+     "technique": "reliability-aggregation",
+     "verdict": "deviation: one row per (scenario, model, version), no trial index, so only a single-trial score is representable",
+     "evidence": "src-tauri/db/src/repos/lab/eval.rs:50 result_order scenario_name, model_id, version_number"
+    },
+    {
+     "technique": "failure-not-empty-success",
+     "verdict": "partly realized: status and error_message keep a failed cell distinct from a score, and eval_method records heuristic fallback",
+     "evidence": "src-tauri/db/src/repos/lab/eval.rs:117 persists status and eval_method beside scores"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+   "evaluatedRevision": 37
+  },
+  {
+   "context": "ba0d4722-bfde-40aa-8e1d-52591719f834",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_lab/components/shared/ScenarioDetailPanel.tsx:176 the headline score is a fixed 40/40/20 composite of tool accuracy, output quality and protocol, and src/features/agents/sub_lab/components/shared/LabQualityBadge.tsx:14 colours a single average against fixed 75/50 cutoffs with no trial count or variance, so a metric-role contract and spread are not expressible",
+   "techniques": [
+    {
+     "technique": "metric-role-contract",
+     "verdict": "deviation: composite averages metrics with different consequences",
+     "evidence": "src/features/agents/sub_lab/components/shared/ScenarioDetailPanel.tsx:120 compositeScoreFromRow(ta, oq, pc)"
+    },
+    {
+     "technique": "resolution-precondition",
+     "verdict": "deviation: badge shows a mean without spread or N",
+     "evidence": "src/features/agents/sub_lab/components/shared/LabQualityBadge.tsx:14 scoreVariant(score) on avgCompositeScore"
+    },
+    {
+     "technique": "failure-not-empty-success",
+     "verdict": "realized: unscored renders as empty bar and a dash, not zero",
+     "evidence": "src/features/agents/sub_lab/components/shared/ScenarioDetailPanel.tsx:81 isUnscored = score == null"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+   "evaluatedRevision": 37
+  }
+ ],
+ "declined": [
+  {
+   "subject": "eval-harness",
+   "context": "b164f847-45d6-4c9e-85bc-a1308375085d",
+   "reason": "unread; budget spent on stale pair then strong unknowns then probable pairs most likely to govern"
+  },
+  {
+   "subject": "eval-harness",
+   "context": "320d2cea-9761-4233-97c1-ee2eaf4d6c17",
+   "reason": "db-repos-execution not read this run"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-14T09:17:43.272Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [
+    "scenario-design",
+    "judge-stability",
+    "reliability-aggregation",
+    "metric-role-contract",
+    "resolution-precondition"
+   ],
+   "deviations": 2
+  }
+ ]
+}

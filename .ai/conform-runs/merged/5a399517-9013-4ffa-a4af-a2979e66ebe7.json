@@ -1,0 +1,70 @@
+{
+ "schema": "conform-run/1",
+ "worker": "5a399517-9013-4ffa-a4af-a2979e66ebe7",
+ "subject": "table",
+ "evaluatedAt": "2026-10-14T00:00:00Z",
+ "pairs": [
+  {
+   "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400",
+   "subject": "table",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:1 retires the Artist plugin (artist_assets dropped at :18); git ls-files lists no src/features/plugins/artist, so the gallery context has no code and no table surface to judge",
+   "techniques": [],
+   "registryProposal": "Context plugins-artist-gallery has paths [] and its code was removed; the context map entry is dead and should be dropped on the next scan (map governance is weak)."
+  }
+ ],
+ "declined": [
+  {
+   "subject": "table",
+   "context": "4be04ef0-88db-4f48-859c-92e6ba4d203f",
+   "reason": "already judged 2026-10-06..10-09 against current digest sha256-b2:b2b329111d190ae7 revision 12; not stale, no re-read needed"
+  },
+  {
+   "subject": "table",
+   "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+   "reason": "already judged 2026-10-06..10-09 against current digest sha256-b2:b2b329111d190ae7 revision 12; not stale, no re-read needed"
+  },
+  {
+   "subject": "table",
+   "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b",
+   "reason": "already judged 2026-10-06..10-09 against current digest sha256-b2:b2b329111d190ae7 revision 12; not stale, no re-read needed"
+  },
+  {
+   "subject": "table",
+   "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757",
+   "reason": "already judged 2026-10-06..10-09 against current digest sha256-b2:b2b329111d190ae7 revision 12; not stale, no re-read needed"
+  },
+  {
+   "subject": "table",
+   "context": "a8857307-216c-46e0-9571-e05e8cf06112",
+   "reason": "already judged 2026-10-06..10-09 against current digest sha256-b2:b2b329111d190ae7 revision 12; not stale, no re-read needed"
+  },
+  {
+   "subject": "table",
+   "context": "b4439e30-fcff-4095-97dd-d9d7da2247dd",
+   "reason": "already judged 2026-10-06..10-09 against current digest sha256-b2:b2b329111d190ae7 revision 12; not stale, no re-read needed"
+  },
+  {
+   "subject": "table",
+   "context": "e62d5595-2bbd-480a-a757-2d3a126545a0",
+   "reason": "already judged 2026-10-06..10-09 against current digest sha256-b2:b2b329111d190ae7 revision 12; not stale, no re-read needed"
+  },
+  {
+   "subject": "table",
+   "context": "e8fa2ff7-145d-4c58-af83-1239b87d2c24",
+   "reason": "already judged 2026-10-06..10-09 against current digest sha256-b2:b2b329111d190ae7 revision 12; not stale, no re-read needed"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-14T00:00:00Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "table"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

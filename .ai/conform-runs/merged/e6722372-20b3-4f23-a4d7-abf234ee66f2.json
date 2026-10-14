@@ -1,0 +1,232 @@
+{
+ "schema": "conform-run/1",
+ "worker": "e6722372-20b3-4f23-a4d7-abf234ee66f2",
+ "subject": "agent-cli-transport",
+ "evaluatedAt": "2026-10-14T13:00:00Z",
+ "pairs": [
+  {
+   "context": "1d8a480b-eac4-4110-a60e-47a6ab281c97",
+   "subject": "agent-cli-transport",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:12 props take an already-parsed BuildQuestion and an onAnswer callback; no file in sub_glyph spawns, probes, resumes or approves for a CLI child, so the transport's precondition (a coding-agent CLI spawned as a model transport) is unmet",
+   "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+   "evaluatedRevision": 9,
+   "techniques": [
+    {
+     "technique": "availability-probe",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:12 presentational card, no probe"
+    },
+    {
+     "technique": "thread-custody-across-resume",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_glyph/GlyphRefineComposer.tsx:1 composer only emits text upward, holds no thread id"
+    }
+   ]
+  },
+  {
+   "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+   "subject": "agent-cli-transport",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/engine/src/prompt/cli_args.rs:107 and :329 build_cli_args/build_resume_cli_args emit --dangerously-skip-permissions unconditionally with no mode vocabulary (generate/readonly-scan/edit), so no caller of this transport can obtain a provably non-writing run",
+   "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+   "evaluatedRevision": 9,
+   "techniques": [
+    {
+     "technique": "permission-stance-enforcement",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/prompt/cli_args.rs:107 single full-access stance, no read-only layers; :329 resume repeats it"
+    },
+    {
+     "technique": "subscription-auth-selection",
+     "verdict": "realized",
+     "evidence": "src-tauri/engine/src/cli_process.rs:45 force_subscription_auth strips reserved vars at the shared spawn door; cli_args.rs:206 strips CLAUDECODE/CLAUDE_CODE nesting markers"
+    }
+   ]
+  },
+  {
+   "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+   "subject": "agent-cli-transport",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:202 the agent_ir fix pass is a generate-shaped one-shot (JSON in/out) yet spawns with --dangerously-skip-permissions and cwd=home (:210) through a hand-rolled Command::new (:211) beside the shared headless door, so a 'generate' call holds write access over the operator's home dir and it never strips CLAUDECODE/CLAUDE_CODE (no occurrence in the file) so it can start as a nested session; auth strip (:218) and shim-immune resolver (:196) are now correctly reused",
+   "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+   "evaluatedRevision": 9,
+   "techniques": [
+    {
+     "technique": "permission-stance-enforcement",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:202 skip-permissions with home cwd (:210) for a no-workspace call"
+    },
+    {
+     "technique": "subscription-auth-selection",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:211 session-nesting markers not removed; only force_subscription_auth (:218) applied"
+    },
+    {
+     "technique": "availability-probe",
+     "verdict": "realized",
+     "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:196 resolves via base_cli_invocation -> claude_cli_invocation (cli.rs:767)"
+    }
+   ]
+  },
+  {
+   "context": "dd45411d-8955-4579-906e-5a3b00ba16da",
+   "subject": "agent-cli-transport",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/infrastructure/system/binary_probe.rs:61-64 command_exists_in_path resolves via where/which and :71-73 command_version spawns a bare Command::new(command), bypassing cli_process::claude_cli_invocation (src-tauri/engine/src/cli_process.rs:69); the health probe can report claude present or missing where the real spawn disagrees (availability-probe: resolve like the spawn will)",
+   "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+   "evaluatedRevision": 9,
+   "techniques": [
+    {
+     "technique": "availability-probe",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/infrastructure/system/binary_probe.rs:48 probes exists+version through PATH lookup, not the spawn resolver, and proves no authorization"
+    }
+   ]
+  },
+  {
+   "context": "63edaec0-367e-4553-a6ee-bfd4144be305",
+   "subject": "agent-cli-transport",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:252-253 run_standards_scan hand-builds its spawn from headless_claude_args and never calls force_subscription_auth (no occurrence in the file; build_cli_args env_removals at src-tauri/engine/src/prompt/cli_args.rs:206-220 carry no ANTHROPIC_* key), so a metered key in the app env silently bills every standards scan, while the shared door spawn_headless_claude (cli_process.rs:426) bakes the strip in; the scan also runs with skip-permissions in the project root (cli_args.rs:107) as a scanner wearing an editor's stance",
+   "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+   "evaluatedRevision": 9,
+   "techniques": [
+    {
+     "technique": "subscription-auth-selection",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:255 own Command::new + env loops instead of the one spawn door"
+    },
+    {
+     "technique": "permission-stance-enforcement",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:256 cwd=root_path with full-access args from cli_args.rs:107, no read-only layer"
+    }
+   ]
+  },
+  {
+   "context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504",
+   "subject": "agent-cli-transport",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/companion/session/launch.rs:280 Athena's attended Claude chat turn runs with --dangerously-skip-permissions and full native tools while the host has an approval queue (src/features/companions/athena/ApprovalCard.tsx:10) that never receives the child's own tool requests; host-routed-approval-round-trip is unrealized though a person is within reach of the turn",
+   "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+   "evaluatedRevision": 9,
+   "techniques": [
+    {
+     "technique": "host-routed-approval-round-trip",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/companion/session/launch.rs:280 pre-set full-access stance in an attended session"
+    },
+    {
+     "technique": "permission-stance-enforcement",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/companion/session/launch.rs:280 no read-only layering for the chat turn"
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-cli-transport",
+   "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "895b4bb2-16fd-4e8e-aae8-11315fe6436b",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "cbb061cf-5c61-49d4-80d8-98b8f9b40600",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "d5c5e7fe-6353-41eb-800b-dc11adee0775",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "a6843b83-43a1-4eab-ae40-26f23b949a0d",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "107445f8-c266-4671-8160-f854bd79319e",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "767b2bb5-4662-4be1-ad24-c881ac334016",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "1092db16-982f-4d99-b71b-14e6cf704a4f",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "50bf2ad0-3da7-4405-991a-6e22695903a2",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "b7c818bf-fe04-44ff-aa8d-7cd51e0fc67f",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "11fe7642-7a1a-47c5-8910-499850aa04fe",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  },
+  {
+   "subject": "agent-cli-transport",
+   "context": "0aded02d-f5c5-4e24-8366-90783fb343b1",
+   "reason": "carried verdict on a different subject revision (8 vs 9) not re-read this pass; left for a later run"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-14T13:00:00Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-cli-transport"
+   ],
+   "techniques": [
+    "permission-stance-enforcement",
+    "subscription-auth-selection",
+    "availability-probe",
+    "host-routed-approval-round-trip"
+   ],
+   "deviations": 5
+  }
+ ]
+}

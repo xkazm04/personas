@@ -112,10 +112,19 @@ export const hasICU = (s) => ICU_SYNTAX.test(String(s));
 export function brokenPlaceholderKeys(en, loc) {
   return Object.keys(en).filter((k) => {
     if (!(k in loc)) return false;
-    const src = new Set(phList(en[k]));
-    return phList(loc[k]).some((p) => !src.has(p));
+    const src = new Set(braceSpans(en[k]));
+    return braceSpans(loc[k]).some((p) => !src.has(p));
   });
 }
+
+/**
+ * Any `{name}` brace span, in any script. The substituting regex above is ASCII
+ * word-class, so it cannot SEE a translated name like {人格s}: the first version of the
+ * check compared ASCII spans only and passed seven live broken strings. Names with
+ * a comma (ICU), a quote (JSON example) or whitespace are not placeholders.
+ */
+const BRACE_SPAN = /\{[^{}\s,":]+\}/g;
+const braceSpans = (s) => String(s).match(BRACE_SPAN) || [];
 
 /** Load `<lang>:<key>` / `*:<key>` exemptions for values intentionally left in English. */
 export function loadAllowlist(file = 'docs/i18n/untranslated-allowlist.json') {

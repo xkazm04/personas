@@ -1,0 +1,300 @@
+{
+  "schema": "conform-run/1",
+  "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+  "subject": "prompt-assembly",
+  "evaluatedAt": "2026-10-14T09:14:33.447Z",
+  "pairs": [
+    {
+      "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:227 still opens the build prompt with a competence claim ('You are a senior AI agent architect. The user wants:') and :229 interpolates the volatile \"{intent}\"{lang_preamble}{context_section} ahead of the standing framework text, so no two builds share a byte-stable prefix and the primacy position buys nothing measured (re-judged against revision 43; verdict unchanged)",
+      "techniques": [
+        {
+          "technique": "task-envelope",
+          "verdict": "deviation: expertise-claim opening, not a locate/done/check opening",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:227 'You are a senior AI agent architect.'"
+        },
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation: per-call values (intent, language, user context) sit upstream of the standing framework, inverting the stability gradient",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:229 {intent}{lang_preamble}{context_section} precede '## The Capability Framework' at :231"
+        },
+        {
+          "technique": "context-budgeting",
+          "verdict": "realized for the one elastic input: user context is capped and the cut is announced",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:94 MAX_CONTEXT_CHARS cap, :100 '[reference context truncated]' notice, framed as reference not instructions at :107"
+        }
+      ],
+      "registryProposal": "task-envelope: its identity-vs-competence test ('does removing the line change what the model is allowed to do') is hard to apply to a builder prompt whose role line also frames the output schema; an example of a mixed role+schema opening would help a judge.",
+      "evaluatedAt": "2026-10-14",
+      "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
+      "evaluatedRevision": 43
+    },
+    {
+      "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/prompt/assemble.rs:112 assemble_prompt still returns a bare String and the runner appends layers after it returns (src-tauri/src/engine/runner/mod.rs:1488 format!(\"{prompt_text}{mem_section}\"), :1550, :1582, :1617, :1666; src-tauri/engine/src/prepared_run_cache.rs:156 does the same for the memory layer), so memory and other late layers sit outside the budget tripwire, the untrusted fence and any fingerprint: the unsealed door. Partial progress since the 2026-09-23 verdict: spawn-time text now goes through append_spawn_time_section (assemble.rs:1236) but that is a named post-return append, not a section input.",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation: door does not seal; at least six post-return concatenations",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1488 and src-tauri/engine/src/prepared_run_cache.rs:156"
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation: an unresolved {{var}} ships literally to the model and is only warn-logged; no fail/default/omit choice per variable",
+          "evidence": "src-tauri/engine/src/prompt/variables.rs:122 returns the raw placeholder; the warn is at :128"
+        },
+        {
+          "technique": "pinned-prompt-clock",
+          "verdict": "deviation: {{now}}/{{today}}/{{iso8601}} are read from the wall clock on every render, so any persona template that uses them is byte-unstable per call (and {{now}} per second)",
+          "evidence": "src-tauri/engine/src/prompt/variables.rs:18 chrono::Utc::now() and :24 'today'; run_budget_section also embeds clock times at assemble.rs:1201 (tail, so acceptable by the gradient)"
+        },
+        {
+          "technique": "context-budgeting",
+          "verdict": "deviation: the budget is a tripwire that never truncates, so there is no degradation ladder and a huge prompt ships",
+          "evidence": "src-tauri/engine/src/prompt/budget.rs:85 'Never truncates, never errors'; warn_over_budget at :87"
+        },
+        {
+          "technique": "fingerprinting-and-cache-keys",
+          "verdict": "partial: capability-set and core fingerprints exist and are content-hashed, but there is no whole-prompt stamp and the capability digest is id@title only",
+          "evidence": "src-tauri/engine/src/prompt/capabilities.rs:364 active_capabilities_fingerprint (id@title) and :399 core_fingerprint; fnv1a_64 at budget.rs:76"
+        }
+      ],
+      "registryProposal": "evaluatedAgainst written from the registry index digest (sha256-b2:7436fd55a7cb2500, rev 43); carried verdict was against rev 37",
+      "evaluatedAt": "2026-10-14",
+      "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
+      "evaluatedRevision": 43
+    },
+    {
+      "context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/design/n8n_transform/prompts.rs:364 and :439 both open with 'You are a senior Personas architect', the same expertise-claim opening as the build prompt; and sanitize_json_payload cuts the workflow at 50,000 bytes with no notice (prompt_sanitizer.rs:155 truncate_safe, :201 use), so the model reasons over a silently partial workflow in the transform prompt.",
+      "techniques": [
+        {
+          "technique": "task-envelope",
+          "verdict": "deviation: competence-claim opening in both builders",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/prompts.rs:364 and :439"
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "realized for trust: every workflow-derived span is sanitized then wrapped in a nonce-tagged boundary, and empty optional spans are omitted rather than rendered empty",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/prompt_sanitizer.rs:171 wrap_xml_boundary with random nonce; prompts.rs:326-328 wrap workflow data, :330-355 filter-empty then wrap with the section omitted when absent"
+        },
+        {
+          "technique": "context-budgeting",
+          "verdict": "partial: the unified prompt names its 5000-char cut ('first 5000 chars') but the transform prompt's 50,000-byte cap is silent",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/prompts.rs:506 labels the cut; prompt_sanitizer.rs:201 does not"
+        },
+        {
+          "technique": "layered-composition",
+          "verdict": "realized in shape: standing fragments come from named builders and the untrusted workflow data trails them",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/prompts.rs:75 build_credential_adaptation_rules, :91 build_protocol_docs, :168, :224 composed in order at :381 before the workflow data wrapped at :326-328"
+        }
+      ],
+      "evaluatedAt": "2026-10-14",
+      "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
+      "evaluatedRevision": 43
+    },
+    {
+      "context": "b0e9ba6b-7737-43ec-b551-9bcc1b71d76f",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/athena_reaction.rs:650 interpolates signal title/detail and channel history (model- and persona-authored text) into the batch decision prompt with no boundary or sanitizer (the file has no fence call), and :665 places those volatile {blocks} ahead of the standing 'YOUR DECISIONS' doctrine; :1039 does the same with a step's error and output tail in the review-resolution prompt. This context's own prompt families are hand-built format! strings; the sealed, budgeted assembler (companion/prompt/) lives outside this context's paths.",
+      "techniques": [
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation: untrusted spans are placed in the prompt raw at call-site format strings",
+          "evidence": "src-tauri/src/companion/athena_reaction.rs:650 ({detail}, {history}, {ledger}) and :1039 (Error / Last output (tail))"
+        },
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation: volatile per-call blocks lead and the stable doctrine trails; each family is a hand-concatenated string",
+          "evidence": "src-tauri/src/companion/athena_reaction.rs:665 {blocks}YOUR DECISIONS"
+        },
+        {
+          "technique": "fingerprinting-and-cache-keys",
+          "verdict": "realized (ledger half): block sizes and hashes of what was sent are persisted per turn",
+          "evidence": "src-tauri/src/companion/turn_ledger.rs:146 prompt_block_hashes_json and :149 total_prompt_chars"
+        },
+        {
+          "technique": "context-budgeting",
+          "verdict": "partial: batch history is capped per team (5 lines when batching) but there is no total budget or ladder",
+          "evidence": "src-tauri/src/companion/athena_reaction.rs:619 doc comment and the cut at athena_reaction.rs:628"
+        }
+      ],
+      "registryProposal": "coverage: src-tauri/src/companion/prompt/** (the companion's sealed assembler with per-block budgets) belongs to no context in context-map.json, so the best-conformant prompt code in the repo is not judged by any pair; a context for it would likely earn a conformant verdict.",
+      "evaluatedAt": "2026-10-14",
+      "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
+      "evaluatedRevision": 43
+    },
+    {
+      "context": "3effd422-2610-4c8a-bc02-53aceafd827c",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/companion/fleet_bridge.rs:572 builds the fleet-orchestration directive with an inline format! at the command call site, embedding the unfenced session digest and screen blocks ({digest} at :575, {blocks} at :576) ahead of the standing outcome rules; approval_exec_dev.rs:535 does the same with the user's {scenario} at :543. This is the call-site concatenation the layered-composition technique names as sprawl.",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation: prompt text born at command call sites (fleet_bridge.rs:572, approval_exec_dev.rs:535, approvals/app_master_hire.rs:132), no shared assembler, volatile content before standing rules",
+          "evidence": "src-tauri/src/commands/companion/fleet_bridge.rs:572-576"
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation: session screen content and user scenario text interpolated with no trust class or boundary",
+          "evidence": "src-tauri/src/commands/companion/fleet_bridge.rs:575-576 and src-tauri/src/commands/companion/approvals/approval_exec_dev.rs:543"
+        }
+      ],
+      "evaluatedAt": "2026-10-14",
+      "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
+      "evaluatedRevision": 43
+    },
+    {
+      "context": "17f44718-7d6d-4579-91bf-86191e29595a",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:34 opens with a role claim ('You are an API recipe designer for the ...') and :37 interpolates the user's free-text {description} raw into the task layer, unfenced and uncapped.",
+      "techniques": [
+        {
+          "technique": "task-envelope",
+          "verdict": "deviation: expertise-claim opening; a JSON-shape done criterion exists but no check step",
+          "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:34"
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation: user text enters unclassified, with no boundary or cap",
+          "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:37 {description}"
+        }
+      ],
+      "evaluatedAt": "2026-10-14",
+      "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
+      "evaluatedRevision": 43
+    },
+    {
+      "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/brain/reflection.rs:182 and recall_synthesis.rs:235 render stored conversation episodes (user text and prior model output) verbatim into the one-shot prompts with no boundary and no total budget, and consolidation.rs:1173 / recall_synthesis.rs:220 open with a role claim; four separate hand-built builders (reflection.rs:146, consolidation.rs:1166, recall_synthesis.rs:217, profile_synthesis.rs:289) share no assembler.",
+      "techniques": [
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation: episode content is untrusted-class and is placed unwrapped",
+          "evidence": "src-tauri/src/companion/brain/reflection.rs:182 and src-tauri/src/companion/brain/recall_synthesis.rs:235"
+        },
+        {
+          "technique": "layered-composition",
+          "verdict": "partial: each builder orders standing instructions before the volatile material, but there are four independent assemblers with no shared door",
+          "evidence": "src-tauri/src/companion/brain/reflection.rs:146 and src-tauri/src/companion/brain/consolidation.rs:1166"
+        },
+        {
+          "technique": "task-envelope",
+          "verdict": "partial: competence-claim openings, but consolidation states a machine-checkable done rule (every proposal cites a source episode id)",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1173 role opening; rule 1 at consolidation.rs:1180"
+        }
+      ],
+      "evaluatedAt": "2026-10-14",
+      "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
+      "evaluatedRevision": 43
+    },
+    {
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "precondition unmet: the editor is a client-side form over stored persona fields and assembles no prompt; src/features/agents/sub_editor/hooks/useEditorDraft.ts:53 only copies selectedPersona.system_prompt into draft state, and assembly lives in src-tauri/engine/src/prompt/assemble.rs:112",
+      "techniques": [],
+      "registryProposal": "matcher hit on 'prompt' vocabulary; the editor edits the identity layer's source text, it does not assemble",
+      "evaluatedAt": "2026-10-14",
+      "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
+      "evaluatedRevision": 43
+    },
+    {
+      "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "precondition unmet: the deployment tab sends one canned smoke-test string, not an assembled prompt family; src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:17 DEFAULT_TEST_PROMPT is a literal passed to executePersona at :58",
+      "techniques": [],
+      "registryProposal": "matcher hit on 'prompt'/'persona' vocabulary",
+      "evaluatedAt": "2026-10-14",
+      "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
+      "evaluatedRevision": 43
+    },
+    {
+      "context": "89eddf81-0c57-441d-a07d-de36bf022cb5",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "precondition unmet: read-only time/number display primitives with no model call or prompt text; src/features/shared/components/display/Numeric.tsx:1 imports only react and renders values",
+      "techniques": [],
+      "registryProposal": "pair is lexical; the display formatters have no relation to prompt assembly",
+      "evaluatedAt": "2026-10-14",
+      "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
+      "evaluatedRevision": 43
+    },
+    {
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "precondition unmet: cockpit widgets render a build summary Athena already produced and assemble nothing; src/features/home/sub_cockpit/widgets/PersonaReadyWidget.tsx:90 only lists summary.system_prompt_outline as a display row",
+      "techniques": [],
+      "registryProposal": "matcher hit on 'system_prompt_outline' field name",
+      "evaluatedAt": "2026-10-14",
+      "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
+      "evaluatedRevision": 43
+    },
+    {
+      "context": "7741725e-8124-4899-b17e-8e39e7fcf1ed",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "precondition unmet: the studio UI holds canned i18n vision starters that seed a text box, and the assembly of the build prompt happens server-side; src/features/studio/StudioVisionStart.tsx:23 STARTERS are label/vision keys applied at :100 applyStarter",
+      "techniques": [],
+      "registryProposal": "matcher hit on 'prompt starters'",
+      "evaluatedAt": "2026-10-14",
+      "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
+      "evaluatedRevision": 43
+    }
+  ],
+  "declined": [
+    {
+      "subject": "prompt-assembly",
+      "context": "c5228746-931d-4733-9cf7-84519a2c9605",
+      "reason": "hooks-design (strong) not read this run: client hooks that stream design output; builds no prompt text I could find in the sampled paths but the 34-file list was not fully read"
+    },
+    {
+      "subject": "prompt-assembly",
+      "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+      "reason": "recipe-build-models (strong) is Rust data models; absence not anchored yet, left for a later run"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-14T09:14:33.447Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "prompt-assembly"
+      ],
+      "techniques": [
+        "layered-composition",
+        "variable-interpolation",
+        "task-envelope",
+        "pinned-prompt-clock",
+        "context-budgeting",
+        "fingerprinting-and-cache-keys"
+      ],
+      "deviations": 7
+    }
+  ]
+}

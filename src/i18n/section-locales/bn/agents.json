@@ -238,7 +238,7 @@
     "describe_agent": "আপনার এজেন্ট কী করবে বর্ণনা করুন",
     "enhance_with_ai": "AI দিয়ে উন্নত করুন",
     "enhancing": "উন্নত হচ্ছে…",
-    "error_retry": "কিছু ভুল হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।",
+    "error_retry": "কিছু ভুল হয়েছে। আবার চেষ্টা করুন।",
     "processing": "প্রক্রিয়া হচ্ছে…"
   },
   "builder_preview": {
@@ -784,7 +784,7 @@
     "latency_label": "লেটেন্সি",
     "off": "বন্ধ",
     "partial_load": "আংশিক লোড: {warnings}",
-    "rank": "র‌্যাংক",
+    "rank": "র‍্যাংক",
     "running": "চলছে…",
     "save_failed_retry": "সংরক্ষণ ব্যর্থ — পরবর্তী সম্পাদনায় পুনরায় চেষ্টা করবে",
     "save_switch": "সংরক্ষণ করুন ও পরিবর্তন করুন",
@@ -846,7 +846,7 @@
     "design_sub_prompt": "প্রম্পট",
     "effective_config": "কার্যকর কনফিগ",
     "execute": "এক্সিকিউট করুন",
-    "execute_failed": "এক্সিকিউশন শুরু করতে ব্যর্থ। অনুগ্রহ করে আবার চেষ্টা করুন।",
+    "execute_failed": "এক্সিকিউশন শুরু করতে ব্যর্থ। আবার চেষ্টা করুন।",
     "execution_cancelled": "এক্সিকিউশন বাতিল হয়েছে",
     "execution_in_progress": "এক্সিকিউশন চলছে",
     "execution_started": "এক্সিকিউশন শুরু হয়েছে",
@@ -907,7 +907,7 @@
     "provider_litellm": "LiteLLM (প্রক্সি)",
     "provider_ollama": "Ollama (স্থানীয়)",
     "quality": "মান",
-    "rank": "র‌্যাংক",
+    "rank": "র‍্যাংক",
     "run_comparison": "তুলনা চালান",
     "running": "চলছে…",
     "save_failed_retry": "সংরক্ষণ ব্যর্থ — পরবর্তী সম্পাদনায় পুনরায় চেষ্টা করবে",
@@ -952,7 +952,7 @@
     "cloud_banner_signin": "ক্লাউড ফিচার আনলক করতে সাইন ইন করুন",
     "design_wizard_banner": "AI ডিজাইন উইজার্ড দিয়ে এই টেমপ্লেট কাস্টমাইজ করুন",
     "discard": "বাতিল",
-    "no_persona": "কোনো persona নির্বাচিত নয়",
+    "no_persona": "কোনো পার্সোনা নির্বাচিত নয়",
     "save_and_switch": "সংরক্ষণ ও পরিবর্তন",
     "save_failed": "{tabs} সংরক্ষণ ব্যর্থ",
     "save_failed_generic": "পরিবর্তন সংরক্ষণ ব্যর্থ",
@@ -2679,7 +2679,7 @@
   },
   "sidebar": {
     "clear_filters": "সব ফিল্টার মুছুন",
-    "empty": "কোনো persona নেই",
+    "empty": "কোনো পার্সোনা নেই",
     "no_match": "কোনো এজেন্ট ফিল্টারে মেলেনি"
   },
   "sigil_edit_active": "এই সক্ষমতার জন্য সক্রিয়",
