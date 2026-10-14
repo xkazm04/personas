@@ -728,6 +728,7 @@ def take_next(
     lanes: set[str] | None = None,
     plan_engines: set[str] | None = None,
     exclude_subjects: set[str] | None = None,
+    request_id: str | None = None,
 ) -> dict | None:
     """Decide AND claim, in the app's own order. `None` = nothing to take.
 
@@ -745,10 +746,17 @@ def take_next(
     # the operator's queue before her plan.
     want = (lambda name: lanes is None or name in lanes)
 
-    # 1. The operator's queue, oldest first, always.
-    row = c.execute(
-        "SELECT * FROM curator_request WHERE state = 'queued' ORDER BY created_at ASC, id ASC LIMIT 1"
-    ).fetchone()
+    # 1. The operator's queue, oldest first, always. `request_id` pins the claim to ONE row: a
+    # driver that files a request and claims it at once (`--multi`) must get THAT row, not an
+    # older one another lane filed. Measured 2026-10-14: 242 queued `intake apply` requests from
+    # the parallel night sat ahead, so every `--multi` claim took one of them, cancelled its own
+    # and the night ended in 12 s on "nothing claimable".
+    if request_id is not None:
+        row = c.execute("SELECT * FROM curator_request WHERE state = 'queued' AND id = ?", (request_id,)).fetchone()
+    else:
+        row = c.execute(
+            "SELECT * FROM curator_request WHERE state = 'queued' ORDER BY created_at ASC, id ASC LIMIT 1"
+        ).fetchone()
     if row and want("queue"):
         why = vet_autonomous(skills, row["skill"], row["argument"])
         # The operator's lane may name an undocumented skill - a request IS an
@@ -1882,11 +1890,12 @@ def open_dispatch_subjects(c: sqlite3.Connection) -> set[str]:
 
 
 def claim_one(c: sqlite3.Connection, root: pathlib.Path, skills: dict, lanes: set[str] | None,
-              plan_engines: set[str] | None, exclude_subjects: set[str] | None = None) -> dict | None:
+              plan_engines: set[str] | None, exclude_subjects: set[str] | None = None,
+              request_id: str | None = None) -> dict | None:
     """`next`'s claim and bookkeeping, shared with the pool. A claim whose dispatch row
     cannot be written is released, never left `dispatched` with nothing behind it."""
     claim = take_next(c, root, skills, dry=False, lanes=lanes, plan_engines=plan_engines,
-                      exclude_subjects=exclude_subjects)
+                      exclude_subjects=exclude_subjects, request_id=request_id)
     if claim and not claim.get("declined"):
         try:
             claim["head"] = claim.get("head") or git_head(root)
