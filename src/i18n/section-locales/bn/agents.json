@@ -238,7 +238,7 @@
     "describe_agent": "আপনার এজেন্ট কী করবে বর্ণনা করুন",
     "enhance_with_ai": "AI দিয়ে উন্নত করুন",
     "enhancing": "উন্নত হচ্ছে…",
-    "error_retry": "কিছু ভুল হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।",
+    "error_retry": "কিছু ভুল হয়েছে। আবার চেষ্টা করুন।",
     "processing": "প্রক্রিয়া হচ্ছে…"
   },
   "builder_preview": {
@@ -846,7 +846,7 @@
     "design_sub_prompt": "প্রম্পট",
     "effective_config": "কার্যকর কনফিগ",
     "execute": "এক্সিকিউট করুন",
-    "execute_failed": "এক্সিকিউশন শুরু করতে ব্যর্থ। অনুগ্রহ করে আবার চেষ্টা করুন।",
+    "execute_failed": "এক্সিকিউশন শুরু করতে ব্যর্থ। আবার চেষ্টা করুন।",
     "execution_cancelled": "এক্সিকিউশন বাতিল হয়েছে",
     "execution_in_progress": "এক্সিকিউশন চলছে",
     "execution_started": "এক্সিকিউশন শুরু হয়েছে",
