@@ -116,7 +116,7 @@
   "channels_none": "无",
   "channels_select_prompt": "在上方选择团队以监控其频道",
   "channels_teams_label": "团队",
-  "clear_filter": "Show all 人格s",
+  "clear_filter": "显示全部人格",
   "clipboard_fix_found_summary": "{errorType} 与知识库中的“{kbName}”匹配。",
   "close": "关闭监视器",
   "close_hint": "关闭(Esc)",

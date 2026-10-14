@@ -1091,7 +1091,7 @@
     "chain_partial": "此 chain 中的部分运行未显示 — 可能属于另一个 persona。",
     "chain_spans_count": "{count} 个 span",
     "chain_subtitle": "按顺序排列的、由此 chain trace 关联的运行",
-    "chain_title": "执行 Chain",
+    "chain_title": "执行链",
     "chain_total_cost": "链成本",
     "chain_total_duration": "总计：{duration}",
     "circuit_breaker": "熔断器",

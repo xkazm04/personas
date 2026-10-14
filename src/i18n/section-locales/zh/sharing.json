@@ -76,7 +76,7 @@
   "expose_resource": "暴露资源",
   "exposed_resources": "暴露的资源",
   "exposure_removed_toast": "已移除资源共享",
-  "fields_exposed": "{plural} {count} 字段 暴露",
+  "fields_exposed": "已暴露 {count} 个字段",
   "first_seen": "首次发现",
   "forget_device": "取消设备配对",
   "forget_device_confirm": "要取消与 {device} 的配对吗？",
