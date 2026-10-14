@@ -2,6 +2,7 @@ import type { UnlistenFn } from '@tauri-apps/api/event';
 
 import type { CharterAct } from '@/lib/bindings/CharterAct';
 import type { CharterActFilter } from '@/lib/bindings/CharterActFilter';
+import type { DecisionLanesSnapshot } from '@/lib/bindings/DecisionLanesSnapshot';
 import type { MandateActOutcome } from '@/lib/bindings/MandateActOutcome';
 import type { MandateChange } from '@/lib/bindings/MandateChange';
 import type { MandateSignInput } from '@/lib/bindings/MandateSignInput';
@@ -40,10 +41,20 @@ export const listCharterActs = (filter?: CharterActFilter) =>
 
 /**
  * Revert one act. An irreversible act is refused with error kind `forbidden`;
- * an already reverted or superseded one with `validation`.
+ * an already reverted or superseded one with `validation`. A router act's
+ * source row is restored first (report unread, incident reopened).
  */
 export const revertCharterAct = (id: string) =>
   invokeWithTimeout<MandateActOutcome>('charter_act_revert', { id });
+
+/**
+ * Every pending decision item's lane, clause, charter and coalesce key, as the
+ * Rust router computes it (WP3). Join on `itemId` (= `DecisionItem.id`). A
+ * source in `failedSources` failed to load: render it failed, never 0.
+ * Build questions and chat threads are not in it (frontend-derived kinds).
+ */
+export const getDecisionLanesSnapshot = () =>
+  invokeWithTimeout<DecisionLanesSnapshot>('decision_lanes_snapshot');
 
 /** Follow every recorded act (decisions, envelope changes, reverts). */
 export function listenCharterActs(handler: (act: CharterAct) => void): Promise<UnlistenFn> {

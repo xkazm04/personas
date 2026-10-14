@@ -255,3 +255,143 @@ pub(crate) fn mark_reverted_in(
     )?;
     Ok(n > 0)
 }
+
+/// Whether an item has been acted on, as the router's idempotency reads it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ItemActState {
+    /// At least one act on the item still stands; the newest standing one.
+    Standing { act_id: String },
+    /// Every act on the item was reverted: the operator took it back, so the
+    /// router must not act on it again.
+    Reverted,
+}
+
+/// Bound on one `IN (...)` list, well under SQLite's 999 host parameters.
+const IN_CHUNK: usize = 400;
+
+/// For every id in `item_ids` that has ANY act of `item_kind`, whether one of
+/// those acts still stands. An id missing from the map was never acted on.
+/// Envelope acts (`mandate`) and revert acts (`act.revert`) are separate
+/// kinds, so they never answer for a decision item.
+pub fn item_act_states(
+    pool: &DbPool,
+    item_kind: &str,
+    item_ids: &[String],
+) -> Result<std::collections::HashMap<String, ItemActState>, AppError> {
+    let mut out = std::collections::HashMap::new();
+    if item_ids.is_empty() {
+        return Ok(out);
+    }
+    timed_query!("charter_acts", "charter_acts::item_act_states", {
+        let conn = pool.conn("charter_acts::item_act_states")?;
+        for chunk in item_ids.chunks(IN_CHUNK) {
+            let marks = vec!["?"; chunk.len()].join(", ");
+            let sql = format!(
+                "SELECT item_id, id, reverted_at FROM charter_acts
+                 WHERE item_kind = ? AND item_id IN ({marks})
+                 ORDER BY created_at ASC, rowid ASC"
+            );
+            let mut binds: Vec<&dyn rusqlite::ToSql> = Vec::with_capacity(chunk.len() + 1);
+            binds.push(&item_kind);
+            for id in chunk {
+                binds.push(id);
+            }
+            let mut stmt = conn.prepare(&sql)?;
+            let rows = stmt.query_map(binds.as_slice(), |r| {
+                Ok((
+                    r.get::<_, String>("item_id")?,
+                    r.get::<_, String>("id")?,
+                    r.get::<_, Option<String>>("reverted_at")?,
+                ))
+            })?;
+            for (item_id, act_id, reverted_at) in
+                collect_rows(rows, "charter_acts::item_act_states")
+            {
+                match reverted_at {
+                    // Oldest first, so the last standing act written wins.
+                    None => {
+                        out.insert(item_id, ItemActState::Standing { act_id });
+                    }
+                    Some(_) => {
+                        out.entry(item_id).or_insert(ItemActState::Reverted);
+                    }
+                }
+            }
+        }
+        Ok(out)
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_db;
+    use crate::models::DecideScope;
+
+    fn seed(pool: &DbPool) {
+        pool.conn("charter_acts test")
+            .unwrap()
+            .execute_batch(
+                "INSERT INTO personas (id, name, system_prompt, enabled, created_at, updated_at)
+                    VALUES ('steward','Steward','sp',1,datetime('now'),datetime('now'));
+                 INSERT INTO persona_responsibilities
+                    (id, persona_id, title, domain, scope_rung, status, project_id, source,
+                     created_at, updated_at)
+                 VALUES ('c1','steward','App master','software_engineering',2,'active','proj',
+                         'kp-hire',datetime('now'),datetime('now'));",
+            )
+            .unwrap();
+    }
+
+    fn act(item: &str) -> NewCharterAct {
+        NewCharterAct {
+            charter_id: "c1".into(),
+            item_kind: "report".into(),
+            item_id: item.into(),
+            verdict: "filed as evidence".into(),
+            actor: CharterActor::Router,
+            scope: Some(DecideScope::ReportRead),
+            reversible: true,
+            cost_usd: None,
+            shown_json: None,
+            origin_device: None,
+        }
+    }
+
+    #[test]
+    fn item_states_tell_standing_from_reverted_from_never_acted() {
+        let pool = init_test_db().unwrap();
+        seed(&pool);
+        let standing = append(&pool, &act("r1")).unwrap();
+        let gone = append(&pool, &act("r2")).unwrap();
+        crate::repos::core::mandates::revert(&pool, &gone.id, None).unwrap();
+
+        let ids: Vec<String> = ["r1", "r2", "r3"].iter().map(|s| s.to_string()).collect();
+        let states = item_act_states(&pool, "report", &ids).unwrap();
+        assert_eq!(
+            states.get("r1"),
+            Some(&ItemActState::Standing {
+                act_id: standing.id
+            })
+        );
+        assert_eq!(states.get("r2"), Some(&ItemActState::Reverted));
+        assert_eq!(states.get("r3"), None, "never acted");
+        // Another kind never answers for a report.
+        assert!(item_act_states(&pool, "review", &ids).unwrap().is_empty());
+        assert!(item_act_states(&pool, "report", &[]).unwrap().is_empty());
+    }
+
+    #[test]
+    fn item_states_survive_more_ids_than_one_in_list_holds() {
+        let pool = init_test_db().unwrap();
+        seed(&pool);
+        append(&pool, &act("r-999")).unwrap();
+        let ids: Vec<String> = (0..1000).map(|i| format!("r-{i}")).collect();
+        let states = item_act_states(&pool, "report", &ids).unwrap();
+        assert_eq!(states.len(), 1);
+        assert!(matches!(
+            states.get("r-999"),
+            Some(ItemActState::Standing { .. })
+        ));
+    }
+}

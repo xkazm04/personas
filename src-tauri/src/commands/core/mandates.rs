@@ -23,6 +23,7 @@ use crate::db::models::{
 };
 use crate::db::repos::core::{charter_acts, mandates};
 use crate::db::DbPool;
+use crate::engine::mandate_router::DecisionLanesSnapshot;
 use crate::error::AppError;
 use crate::AppState;
 
@@ -156,8 +157,10 @@ pub async fn charter_acts_list(
 }
 
 /// Revert one act. An irreversible act is refused as `Forbidden`; an already
-/// reverted or superseded one as `Validation`. Returns the refreshed mandate
-/// and the `act.revert` act.
+/// reverted or superseded one as `Validation`. A router act's inverse door runs
+/// first (a filed report goes back to unread, an acknowledged incident is
+/// reopened; an incident something else moved since is refused as
+/// `Validation`). Returns the refreshed mandate and the `act.revert` act.
 #[tauri::command]
 pub async fn charter_act_revert(
     state: State<'_, Arc<AppState>>,
@@ -165,7 +168,22 @@ pub async fn charter_act_revert(
     id: String,
 ) -> Result<MandateActOutcome, AppError> {
     door(state.inner(), &app, "charter_act_revert", move |pool| {
-        mandates::revert(pool, &id, None).map_err(AppError::from)
+        crate::engine::mandate_sweep::revert_with_undo(pool, &id)
+    })
+    .await
+}
+
+/// Every pending item the Decision Center shows, with the lane, clause,
+/// charter and coalesce key the router gives it (WP3). `failedSources` names
+/// every source that did not load; its items are absent, never zero.
+#[tauri::command]
+pub async fn decision_lanes_snapshot(
+    state: State<'_, Arc<AppState>>,
+) -> Result<DecisionLanesSnapshot, AppError> {
+    let pool = state.db.clone();
+    let user_db = state.user_db.clone();
+    run_blocking("decision_lanes_snapshot", move || {
+        crate::engine::mandate_lanes::build_snapshot(&pool, &user_db)
     })
     .await
 }

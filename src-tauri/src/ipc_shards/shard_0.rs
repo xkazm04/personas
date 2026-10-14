@@ -89,6 +89,8 @@ pub(super) fn shard(
         commands::core::mandates::mandate_resume,
         commands::core::mandates::charter_acts_list,
         commands::core::mandates::charter_act_revert,
+        // The router's lanes on the payload (spark mandate-lanes, WP3)
+        commands::core::mandates::decision_lanes_snapshot,
         commands::core::memory_compile::compile_persona_memories,
         // Core -- Memory curation runs (persona_background_job framework)
         commands::core::persona_jobs::enqueue_persona_memory_reflection,
