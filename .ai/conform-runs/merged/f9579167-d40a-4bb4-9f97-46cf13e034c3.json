@@ -1,0 +1,6 @@
+{"schema": "conform-run/1", "worker": "f9579167-d40a-4bb4-9f97-46cf13e034c3", "subject": "build-economics",
+ "evaluatedAt": "2026-10-10T01:47:54Z",
+ "pairs": [],
+ "declined": [{"subject": "build-economics", "context": null,
+   "reason": "no-work: .ai/registry-map.json (generatedAt 2026-10-01, 215 contexts, 1756 pairs) lists zero build-economics pairs and subjectIndex has no build-economics key, although the subject (rev 7, changedAt 2026-09-06, digest sha256-b2:2dc0e92ddb23f674) predates the build. The ranking's 4 consumer deviations are other consumers'. Root cause is a context-map coverage hole, not a matcher miss: none of the 219 contexts in context-map.json lists src-tauri/Cargo.toml, vite.config, scripts/run-codegen.mjs, scripts/ensure-ort-cache.mjs or scripts/check-build-cache.mjs, so no context exists to pair. Coverage proposal: the build tooling here plainly realizes this subject (src-tauri/Cargo.toml:245 desktop vs desktop-full feature split = capability-feature-gating / dev-variant-design; ensure-ort-cache + check-build-cache = cache-budgeting; scripts/gate warm daemon = build-measurement) - a build-tooling context in context-map.json would make it judgeable on the next map rebuild (node ../ai-registry/scripts/build-registry-map.mjs --project personas)."}],
+ "consults": []}

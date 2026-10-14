@@ -11,7 +11,9 @@
 // it - the state in words, the project where the list is board-wide, and the
 // age as its figure. The age is also DRAWN along the foot (the Board's run-age
 // bar: a log scale full at four hours), so a forgotten session is the long
-// bar. The tooltip and the `aria-label` are the full reading.
+// bar. The tooltip and the `aria-label` are the full reading. While the
+// session is live and measured, row two also carries its resource glyph: the
+// axis it mostly consumes of this device, its share drawn under the icon.
 
 import { memo, type KeyboardEvent } from 'react';
 import { ScanEye } from 'lucide-react';
@@ -26,6 +28,7 @@ import { compactAge } from './tone';
 import { pileSkin, sessionPileKey } from './pileSkin';
 import { useSessionMenu } from './SessionMenu';
 import { sessionStateIcon, useSessionSummary } from './sessionBits';
+import { SessionResource } from './devices/DeviceGlyph';
 
 export const SESSION_LINE_H = 50;
 
@@ -94,7 +97,9 @@ export const SessionLine = memo(function SessionLine({
             <State className="h-3.5 w-3.5 flex-shrink-0" aria-hidden />
             {skin.pile !== 'working' && <span className="min-w-0 flex-shrink truncate">{f.stateLabel}</span>}
             {project && <span className={`min-w-0 flex-1 truncate ${skin.pile !== 'working' ? 'ae-sep' : ''}`}>{project}</span>}
-            <span className="ml-auto flex-shrink-0 tabular-nums">{compactAge(age)}</span>
+            <span className="ml-auto flex flex-shrink-0 items-center gap-1.5 tabular-nums">
+              <SessionResource sessionId={session.id} />{compactAge(age)}
+            </span>
           </span>
         </span>
         <i className="fb-age" aria-hidden style={{ width: `${runAgeFraction(f.startedAt, Math.floor(now / 60_000)) * 100}%` }} />

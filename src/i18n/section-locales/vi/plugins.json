@@ -3826,7 +3826,13 @@
       "where_contest": "Cuộc thi",
       "where_count": "{count} cuộc thi",
       "where_ledger": "Sổ cái",
-      "where_variant": "Biến thể"
+      "where_variant": "Biến thể",
+      "by_area": "Theo lĩnh vực tác vụ",
+      "by_model": "Theo mô hình",
+      "tile_contests": "Cuộc thi",
+      "tile_decided": "Đã quyết định",
+      "tile_models": "Mô hình tham gia",
+      "tile_top": "Mô hình dẫn đầu"
     }
   }
 }

@@ -36,7 +36,7 @@ import type { DispatchPreviewView } from '@/lib/bindings/DispatchPreviewView';
 import { countHeld, type DispatchPreviewState } from './useDispatchPreview';
 import { LaneChip, PersonaIdentity, VerdictChip } from './parts';
 
-const TH = 'px-3 py-2 text-left typo-label text-foreground';
+const TH = 'px-3 py-2 text-left typo-caption font-mono uppercase tracking-widest text-foreground';
 const TD = 'px-3 py-2 align-middle typo-caption text-foreground';
 
 function Counter({ value, label, tone }: { value: number; label: string; tone: string }) {

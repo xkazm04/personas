@@ -1,0 +1,18 @@
+{"schema": "conform-run/1", "worker": "b1101ce6-de04-4a30-a0c7-14db21a3c63f", "subject": "undo-history",
+ "evaluatedAt": "2026-10-10T12:03:50Z",
+ "pairs": [
+  {"context": "1ff7809a-171b-4baa-9c9b-12d888b017f0", "subject": "undo-history", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:224 clears redo only inside pushUndo, which runs after the 800ms debounce (src/features/agents/sub_editor/libs/useEditorSave.ts:217) and the IPC await (useEditorSave.ts:185), and undo (EditorDocument.tsx:228) neither cancels nor awaits the pending save, so redo after a divergent edit stays live and Ctrl+Z inside the debounce window reverts the previous step while the open edit is still pending; re-confirmed 2026-10-10, code unchanged since the 2026-10-05 verdict, digest and revision 3 unchanged",
+   "techniques": [
+    {"technique": "redo-semantics", "verdict": "deviation", "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:224 redo is truncated only when the debounced save lands, so redo stays enabled during the open edit after an undo"},
+    {"technique": "gesture-coalescing", "verdict": "deviation", "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:217 the open step is closed by an 800ms save timer, not by the gesture, and undo at EditorDocument.tsx:228 does not close or cancel the open step first"}
+   ],
+   "registryProposal": "Missing pairing, matcher plus context-map coverage gap: the Reversible Agent change journal (src-tauri/db/src/repos/execution/change_journal.rs:10 undo_execution reverse-replays the journal in one transaction from preupdate-hook before-images, with conflict parking) is an undo at the 'operation completed' checkpoint scale this subject owns (checkpoint-restore, execution-emitted-inverse). It sits in NO context of context-map.json (db-repos-execution 320d2cea lists 22 files under repos/execution and omits change_journal.rs), so no pair can exist until a context rescan picks it up; then pair undo-history with it."}
+ ],
+ "declined": [
+  {"subject": "undo-history", "context": "b2d7acbc-0191-46e4-8a4d-87c229410c7e", "reason": "already not-applicable on 2026-10-09 against the current digest sha256-b2:6b331b14c940f6a7 (revision 3); context-map.json:7596 file_paths is still empty, so there is no code to re-read and re-stamping would add nothing"}
+ ],
+ "consults": [
+  {"ts": "2026-10-10T12:03:50Z", "bundle": "software-engineering", "subjects": ["undo-history"], "techniques": ["redo-semantics", "gesture-coalescing"], "deviations": 1}
+ ]}

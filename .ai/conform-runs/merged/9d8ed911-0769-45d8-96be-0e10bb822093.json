@@ -1,0 +1,41 @@
+{"schema": "conform-run/1", "worker": "9d8ed911-0769-45d8-96be-0e10bb822093", "subject": "agent-cli-transport",
+ "evaluatedAt": "2026-10-12T11:52:43Z",
+ "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad", "evaluatedRevision": 9,
+ "pairs": [
+  {"context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba", "subject": "agent-cli-transport", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad", "evaluatedRevision": 9,
+   "evidence": "src/stores/slices/system/uiSlice.ts:46 the morning-briefing provenance carries the fallback rung ('athena'|'fallback'|'quiet') but no descent reason: CLI absent, timeout, parse failure and empty-widget output all collapse into 'fallback' because the command turns every call_claude_text error into Ok(None) with only a log line (src-tauri/src/commands/companion/briefing.rs:62), so a fleet living on the deterministic floor is undiagnosable from the surface",
+   "techniques": [
+     {"technique": "fallback-ladder", "verdict": "deviation", "evidence": "src/stores/slices/system/uiSlice.ts:46 rung label travels with the result (realized) but 'descent has a reason' is not: useMorningBriefing.ts:146 defaults to 'fallback' for every failure class and briefing.rs:62 discards the error before the IPC boundary"},
+     {"technique": "output-normalization", "verdict": "not-applicable", "evidence": "src/stores/slices/system/devToolsScannerSlice.ts:89 scan slices hold only the scan_id; envelope parsing and completion live in the backend and in other contexts' event listeners"},
+     {"technique": "availability-probe", "verdict": "not-applicable", "evidence": "src/stores/slices/system/setupSlice.ts:33 the setup wizard stores a tool PICK, not a probe result; no slice in this context holds CLI installed/authorized state"}
+   ],
+   "registryProposal": "fallback-ladder could name the half-realized shape seen here explicitly: a provenance label that distinguishes model/fallback/quiet but carries no reason field, with the backend error swallowed at the IPC door - it passes a 'rung label travels' check while failing 'descent has a reason'."},
+  {"context": "b7c818bf-fe04-44ff-aa8d-7cd51e0fc67f", "subject": "agent-cli-transport", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad", "evaluatedRevision": 9,
+   "evidence": "src/features/agents/components/ChatThread.tsx:25 pure presentational primitives (chat thread, avatars, icon pickers, quick-edit model picker) that spawn no CLI and consume no envelope; ChatThread has no importer in src/ at all, so no technique's precondition (spawning a headless coding-agent CLI or rendering its probe/fallback/failure classes) holds here",
+   "techniques": [
+     {"technique": "output-normalization", "verdict": "not-applicable", "evidence": "src/features/agents/components/ChatThread.tsx:15 takes an already-normalized prose error prop and has zero importers; the live persona-chat failure path is judged on stores-slices-agents"},
+     {"technique": "dated-capability-matrix", "verdict": "not-applicable", "evidence": "src/features/agents/components/QuickEditPanel.tsx:5 picks a model id from the model catalog; it encodes no CLI capability"}
+   ],
+   "registryProposal": "Matched lexically on thread/selector/chat - UI 'thread' vocabulary resonating with thread-custody-across-resume; the subject's precondition (a host spawning an agent CLI) does not hold for presentational chat primitives."},
+  {"context": "50bf2ad0-3da7-4405-991a-6e22695903a2", "subject": "agent-cli-transport", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad", "evaluatedRevision": 9,
+   "evidence": "src/features/companions/athena/NarrationThread.tsx:7 renders already-parsed beats and tool calls of Athena's turn and DevOpLedger.tsx:46 reads a persisted dev-op ledger; nothing here spawns, probes, resumes or approves for a CLI child - Athena's spawn stance and approval routing are judged on companion-chat-bubbles",
+   "techniques": [
+     {"technique": "host-routed-approval-round-trip", "verdict": "not-applicable", "evidence": "src/features/companions/athena/TurnSummaryChip.tsx:37 only scrolls to the ApprovalCard list; the approval surface and its deviation live in companion-chat-bubbles"},
+     {"technique": "thread-custody-across-resume", "verdict": "not-applicable", "evidence": "src/features/companions/athena/NarrationThread.tsx:12 the trail is session-scoped display state, not a stored child thread id"}
+   ],
+   "registryProposal": "Lexical match on thread/turn/chat; narration 'thread' is a display trail, not a CLI thread - a technique-shaped resonance, not governance."}
+ ],
+ "declined": [
+  {"subject": "agent-cli-transport", "context": "1d8a480b-eac4-4110-a60e-47a6ab281c97", "reason": "glyph-persona-card is governance: weak (score 272, tokens capability/answer/managed); per the skill a weak pair is reported as a coverage question, not judged"}
+ ],
+ "consults": [
+  {"ts": "2026-10-12T11:52:43Z", "bundle": "software-engineering", "subjects": ["agent-cli-transport"], "techniques": ["fallback-ladder", "output-normalization", "availability-probe"], "deviations": 1},
+  {"ts": "2026-10-12T11:52:43Z", "bundle": "software-engineering", "subjects": ["agent-cli-transport"], "techniques": ["output-normalization", "dated-capability-matrix"], "deviations": 0},
+  {"ts": "2026-10-12T11:52:43Z", "bundle": "software-engineering", "subjects": ["agent-cli-transport"], "techniques": ["host-routed-approval-round-trip", "thread-custody-across-resume"], "deviations": 0}
+ ]}

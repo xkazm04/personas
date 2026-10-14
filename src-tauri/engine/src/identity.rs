@@ -19,6 +19,44 @@ use personas_db::DbPool;
 /// Keyring service identifier for the Ed25519 private key.
 const KEYRING_SERVICE: &str = "personas-desktop";
 const KEYRING_ENTRY: &str = "ed25519-identity-key";
+/// How many bytes of `sha256(data dir)` scope an isolated instance's keyring
+/// entry: 6 bytes, printed as 12 hex characters (the one-box contract).
+/// Enough to keep a handful of test instances on one machine apart; it is a
+/// name, not a secret.
+const KEYRING_SCOPE_BYTES: usize = 6;
+
+/// The OS-keyring entry that holds THIS instance's identity key.
+///
+/// **SECURITY-SENSITIVE (spark device-mesh, one-box; human review).** A
+/// normal install reads and writes the historical [`KEYRING_ENTRY`], byte for
+/// byte. Only an isolated instance (`PERSONAS_DATA_DIR` set, see
+/// `p2p::one_box`) gets an entry scoped by its data dir, because the keyring
+/// is per OS user: two instances on one machine would otherwise share one
+/// private key while each database holds its own public key, and the second
+/// to start would fail every signature with `KeyringLost`.
+#[cfg_attr(not(feature = "desktop"), allow(dead_code))]
+fn keyring_entry() -> String {
+    keyring_entry_name(crate::p2p::one_box::isolated_data_dir().as_deref())
+}
+
+/// [`keyring_entry`] over an explicit isolated data dir (the testable half):
+/// `None` is [`KEYRING_ENTRY`] unchanged; `Some(dir)` is
+/// `ed25519-identity-key:<first 12 hex of sha256(dir)>`, the dir being the
+/// canonical path `one_box::isolated_data_dir` resolved.
+pub fn keyring_entry_name(isolated_data_dir: Option<&std::path::Path>) -> String {
+    match isolated_data_dir {
+        None => KEYRING_ENTRY.to_string(),
+        Some(dir) => {
+            let digest = Sha256::digest(dir.to_string_lossy().as_bytes());
+            let short: String = digest
+                .iter()
+                .take(KEYRING_SCOPE_BYTES)
+                .map(|b| format!("{b:02x}"))
+                .collect();
+            format!("{KEYRING_ENTRY}:{short}")
+        }
+    }
+}
 
 /// Cached local identity. Mutable so `reinitialize_identity` can atomically
 /// publish the new identity to in-flight callers (mDNS register, Hello
@@ -194,7 +232,7 @@ fn store_private_key(signing_key: &SigningKey) -> Result<(), AppError> {
 
     #[cfg(feature = "desktop")]
     {
-        let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_ENTRY)
+        let entry = keyring::Entry::new(KEYRING_SERVICE, &keyring_entry())
             .map_err(|e| AppError::Internal(format!("Keyring entry creation failed: {e}")))?;
         entry
             .set_password(&encoded)
@@ -218,7 +256,7 @@ fn store_private_key(signing_key: &SigningKey) -> Result<(), AppError> {
 fn load_private_key() -> Result<SigningKey, AppError> {
     #[cfg(feature = "desktop")]
     {
-        let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_ENTRY)
+        let entry = keyring::Entry::new(KEYRING_SERVICE, &keyring_entry())
             .map_err(|e| AppError::Internal(format!("Keyring entry creation failed: {e}")))?;
         let encoded = entry
             .get_password()
@@ -542,5 +580,42 @@ mod tests {
         );
 
         lock_holder.join().unwrap();
+    }
+
+    /// One-box (SECURITY-SENSITIVE): without an isolated data dir the
+    /// keyring entry is the historical name, byte for byte; with one it is
+    /// scoped by the first 12 hex of sha256 of the canonical dir, so two
+    /// instances on one machine never share a private key.
+    #[test]
+    fn keyring_entry_is_unchanged_without_a_data_dir_and_scoped_with_one() {
+        assert_eq!(keyring_entry_name(None), "ed25519-identity-key");
+
+        let a = std::path::Path::new("C:/personas-one-box/a");
+        let b = std::path::Path::new("C:/personas-one-box/b");
+        let scoped = keyring_entry_name(Some(a));
+        let expected = {
+            // Independently: the whole digest in hex, cut at 12 characters.
+            let d = Sha256::digest(a.to_string_lossy().as_bytes());
+            let hex: String = d.iter().map(|x| format!("{x:02x}")).collect();
+            format!("ed25519-identity-key:{}", &hex[..12])
+        };
+        assert_eq!(scoped, expected);
+        assert_eq!(scoped.len(), "ed25519-identity-key:".len() + 12);
+        assert_ne!(
+            scoped,
+            keyring_entry_name(Some(b)),
+            "one entry per data dir"
+        );
+        assert_eq!(scoped, keyring_entry_name(Some(a)), "stable across calls");
+
+        // The env-reading half resolves "no data dir" to the same name.
+        assert_eq!(
+            keyring_entry_name(crate::p2p::one_box::isolated_data_dir_from(None).as_deref()),
+            "ed25519-identity-key"
+        );
+        assert_eq!(
+            keyring_entry_name(crate::p2p::one_box::isolated_data_dir_from(Some("  ")).as_deref()),
+            "ed25519-identity-key"
+        );
     }
 }

@@ -1,0 +1,159 @@
+{
+  "schema": "conform-run/1",
+  "worker": "f9423480-bb6c-424a-9616-ef7002896726",
+  "subject": "cross-provider-benchmark-operations",
+  "evaluatedAt": "2026-10-10T12:07:04Z",
+  "pairs": [
+    {
+      "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "tests/playwright/companion-stop-button.spec.ts:12 the context is Playwright UI specs that force companion state synthetically via the test bridge to avoid real LLM turns; no model targets, no case set, no scorecard - lexical match on spec/controls/stop",
+      "techniques": [
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "tests/playwright/companion-stop-button.spec.ts:12 stream state is injected; no model is run, let alone a provider x model matrix"
+        },
+        {
+          "technique": "async-run-queue-with-cancel",
+          "verdict": "not-applicable",
+          "evidence": "tests/playwright/companion-stop-button.spec.ts:12 the Stop button under test cancels a chat stream, not a benchmark run"
+        }
+      ]
+    },
+    {
+      "context": "a1223fbb-1e53-471b-9829-075cce8014f8",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:283 pre-flight is consent-only with no ceiling and the arena run wires none (src-tauri/engine/src/test_runner/modes.rs:269 should_halt_budget always false); ArenaResultsView.tsx:190 crowns the highest composite mean Best - a multi-model arena spends uncapped and an untested mean reads as the winner (re-confirmed 2026-10-10, unchanged since 2026-10-05)",
+      "techniques": [
+        {
+          "technique": "budget-preflight-and-ceiling",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/modes.rs:269 arena callbacks hard-wire should_halt_budget to false; the estimate at src/features/agents/sub_lab/components/arena/arenaSpendEstimate.ts:90 counts unpriced duels but nothing enforces a ceiling"
+        },
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:190 the render layer writes the Best badge from the highest mean, which the technique reserves for regression gating"
+        }
+      ],
+      "registryProposal": "The attention-scan finding that dispatched this run cited 2 consumer deviations; the map carries 4 on this subject (db-repos-lab, lab-arena, lab-versions-eval, stores-slices-agents), all one root cause in the lab runner (no frozen dataset, no partial state, no arena ceiling). The scan may be counting from an older map snapshot."
+    },
+    {
+      "context": "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:554 the exported report says every version was graded on the same generated scenario set so ratings are directly comparable, yet scenarios regenerate per run (src-tauri/engine/src/test_runner/scenarios.rs:66, 600s cache only) and :203 badges the highest mean Best (evalAggregation.ts:229 winnerId = aggs[0]) - the artifact asserts comparability and a winner the runs never earned (re-confirmed 2026-10-10)",
+      "techniques": [
+        {
+          "technique": "axes-and-caveats-live-at-the-surface",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:554 the caveat surface states the opposite of the real comparability of the runs"
+        },
+        {
+          "technique": "dataset-sampling-anonymize-freeze",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/scenarios.rs:66 scenarios come from a TTL cache over fresh LLM generation, never a frozen versioned set"
+        },
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:229 winnerId is simply the top mean, rendered as Best at src/features/agents/sub_lab/libs/reportGenerator.ts:203"
+        }
+      ]
+    },
+    {
+      "context": "9b0ee86c-2613-49a5-9fda-fcc4d432fb72",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 persists an arena run with no dataset version/frozen flag and no determinism stamp; src-tauri/core/src/models/lab.rs:13 LabRunStatus has no Partial state, so a budget-halted run finalizes Completed (src-tauri/engine/src/test_runner/lab.rs:551) - runs cannot be compared and a halted run stores as a full one (re-confirmed 2026-10-10)",
+      "techniques": [
+        {
+          "technique": "dataset-sampling-anonymize-freeze",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 the run row records models and use-case filter but no dataset version"
+        },
+        {
+          "technique": "determinism-stamping",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 no generation/judge pinning stamp is stored on the run"
+        },
+        {
+          "technique": "budget-preflight-and-ceiling",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/lab.rs:13 status enum lacks partial; src-tauri/engine/src/test_runner/lab.rs:551 a halted_by_budget run finalizes Completed"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+      "reason": "deviation judged 2026-10-09, after the last commit to its anchors (b041c6d5a6, 2026-10-08), against the current digest; not re-read"
+    },
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "5d538a29-a2bb-4d61-8ec2-c51bcde105fe",
+      "reason": "not-applicable judged 2026-10-10 against the current digest sha256-b2:529238b95e86e429 (rev 11); not re-read"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T12:07:04Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "cross-provider-benchmark-operations"
+      ],
+      "techniques": [
+        "target-matrix-runs",
+        "async-run-queue-with-cancel"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T12:07:04Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "cross-provider-benchmark-operations"
+      ],
+      "techniques": [
+        "budget-preflight-and-ceiling",
+        "target-matrix-runs"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T12:07:04Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "cross-provider-benchmark-operations"
+      ],
+      "techniques": [
+        "axes-and-caveats-live-at-the-surface",
+        "dataset-sampling-anonymize-freeze",
+        "target-matrix-runs"
+      ],
+      "deviations": 3
+    },
+    {
+      "ts": "2026-10-10T12:07:04Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "cross-provider-benchmark-operations"
+      ],
+      "techniques": [
+        "dataset-sampling-anonymize-freeze",
+        "determinism-stamping",
+        "budget-preflight-and-ceiling"
+      ],
+      "deviations": 3
+    }
+  ]
+}

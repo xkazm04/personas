@@ -526,6 +526,31 @@ impl MdnsService {
         })
     }
 
+    /// Record the address a peer was dialled at directly (the dev-only one-box
+    /// `connect_to_address`), as the row mDNS would have written, so the
+    /// auto-connect sweep can re-dial it and reachability reads it as seen.
+    /// An existing row keeps its trust status and gains this address.
+    pub fn record_dialled_address(
+        &self,
+        peer_id: &str,
+        display_name: &str,
+        addr: std::net::SocketAddr,
+    ) -> Result<(), AppError> {
+        let conn = self.pool.get()?;
+        let addresses = serde_json::to_string(&[addr.to_string()])?;
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO discovered_peers (peer_id, display_name, addresses, last_seen_at, first_seen_at, is_connected, metadata, trust_status)
+             VALUES (?1, ?2, ?3, ?4, ?4, 1, NULL, 'unverified')
+             ON CONFLICT(peer_id) DO UPDATE SET
+                addresses = ?3,
+                last_seen_at = ?4,
+                is_connected = 1",
+            rusqlite::params![peer_id, sanitise_display_name(display_name), addresses, now],
+        )?;
+        Ok(())
+    }
+
     /// Whether this device has EVER seen `peer_id` on the LAN (a discovered_peers
     /// row exists, however old). Reachability reads a row without a live
     /// connection as stale.

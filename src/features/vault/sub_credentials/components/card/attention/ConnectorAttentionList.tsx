@@ -108,6 +108,7 @@ export function ConnectorAttentionList({ onOpen }: { onOpen: (credentialId: stri
                     size="xs"
                     variant="secondary"
                     icon={<RefreshCw className="w-3 h-3" />}
+                    className="whitespace-nowrap"
                     onClick={() => retryCliCapture(item)}
                   >
                     {a.retry_capture}
@@ -116,12 +117,13 @@ export function ConnectorAttentionList({ onOpen }: { onOpen: (credentialId: stri
                   <Button
                     size="xs"
                     variant="secondary"
+                    iconRight={<ChevronRight className="w-3 h-3" />}
+                    className="whitespace-nowrap"
                     onClick={() => onOpen(item.credentialId)}
                     data-testid="reauth-reconnect"
                     aria-label={tx(a.open_aria, { name: item.credentialName })}
                   >
                     {item.kind === 'reauth' ? a.reconnect : a.review}
-                    <ChevronRight className="w-3 h-3" />
                   </Button>
                 )}
               </div>

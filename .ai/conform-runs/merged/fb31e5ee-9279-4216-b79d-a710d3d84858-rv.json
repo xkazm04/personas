@@ -1,0 +1,155 @@
+{
+ "schema": "conform-run/1",
+ "worker": "fb31e5ee-9279-4216-b79d-a710d3d84858-rv",
+ "subject": "quality-gates",
+ "evaluatedAt": "2026-10-12T17:26:57.381612+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "home-welcome",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_welcome/lib/connectorScope.ts:13 The inspected Welcome logic produces informational health, navigation and resume signals rather than authorizing advancement through a quality gate.",
+   "techniques": [
+    {
+     "technique": "renameable-detector-keys",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_welcome/lib/connectorScope.ts:2 The literal connector names classify a display count; renaming does not evade a blocking detector here."
+    }
+   ]
+  },
+  {
+   "context": "display-table-primitives",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/components/display/DataGrid.tsx:3 These modules implement presentation and interaction primitives rather than a quality-check decision that authorizes advancement.",
+   "techniques": [
+    {
+     "technique": "severity-by-construction",
+     "verdict": "not-applicable",
+     "evidence": "src/features/shared/components/display/StatusBadge.tsx:5 These are badge presentation variants; this component does not connect severity to a gate's refusal."
+    }
+   ]
+  },
+  {
+   "context": "vault-credentials-components-forms",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_credentials/components/forms/CredentialEditForm.tsx:27 The connector design-check path supplies transport errors without a probe state, so the form renders them as failed probes instead of preserving a could-not-run outcome.",
+   "techniques": [
+    {
+     "technique": "gate-liveness",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/credentials/credential_design.rs:280 Request-send errors return success:false without a state at lines 280\u2013289; checkDesign copies the boolean, and resolveProbeOutcome at src/lib/credentials/healthState.ts:110 classifies it as failed."
+    }
+   ]
+  },
+  {
+   "context": "scraper",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/scraper/useScraperData.ts:95 The editor checks preview evidence locally, but the persistence and scheduling action accepts enabled configurations without requiring that evidence.",
+   "techniques": [
+    {
+     "technique": "blocking-by-input-determinism",
+     "verdict": "conformant",
+     "evidence": "src/features/scraper/useScrapeForm.ts:230 The editor's gate applies the standard's activation exception: enabled scrapes require a live preview, while disarmed drafts may be saved."
+    },
+    {
+     "technique": "instrument-answers-only-its-own-question",
+     "verdict": "conformant",
+     "evidence": "src/features/scraper/EditorSteps.tsx:132 Generated extraction rules are checked by the live extraction instrument, rather than treating successful LLM rule generation as proof of extraction."
+    },
+    {
+     "technique": "refusal-names-a-reachable-remedy",
+     "verdict": "conformant",
+     "evidence": "src/i18n/locales/en.json:19014 The wizard renders this refusal text and provides both named remedies through its Preview and Schedule steps."
+    },
+    {
+     "technique": "self-reported-gate-inputs",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/scraper.rs:521 config_save derives a scheduled activation from caller-supplied enabled and cron values without requiring preview evidence; the frontend's preview record therefore does not fence the actual activation surface."
+    },
+    {
+     "technique": "unmeasurable-criteria",
+     "verdict": "conformant",
+     "evidence": "src/features/scraper/useScrapeForm.ts:216 Within the editor, absent or mismatched preview evidence cannot become a passing activation verdict."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "quality-gates",
+   "context": "settings-network",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-12T17:26:57.381612+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "renameable-detector-keys"
+   ],
+   "deviations": 0,
+   "context": "home-welcome",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-12T17:26:57.381612+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "severity-by-construction"
+   ],
+   "deviations": 0,
+   "context": "display-table-primitives",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-12T17:26:57.381612+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "gate-liveness"
+   ],
+   "deviations": 1,
+   "context": "vault-credentials-components-forms",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-12T17:26:57.381612+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "blocking-by-input-determinism",
+    "instrument-answers-only-its-own-question",
+    "refusal-names-a-reachable-remedy",
+    "self-reported-gate-inputs",
+    "unmeasurable-criteria"
+   ],
+   "deviations": 1,
+   "context": "scraper",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

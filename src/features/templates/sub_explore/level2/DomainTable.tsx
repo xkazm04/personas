@@ -178,7 +178,7 @@ function Th({ col, label, sort, onSort }: {
 }) {
   const on = sort.col === col;
   return (
-    <th className="px-3 py-2 text-left">
+    <th className="px-3 py-2 text-left typo-caption font-mono uppercase tracking-widest text-foreground">
       <button type="button" onClick={() => onSort(col)} className={`inline-flex items-center gap-1 typo-label ${on ? 'text-foreground' : 'text-foreground opacity-55 hover:opacity-80'}`}>
         {label}
         {on && (sort.dir === 1 ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}

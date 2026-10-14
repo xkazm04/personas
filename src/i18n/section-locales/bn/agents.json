@@ -2622,7 +2622,13 @@
     "profile_tokens_over": "{from} টোকেনের বেশি",
     "profile_tokens_under": "{to} টোকেনের কম",
     "profile_units": "{count} ইউনিট",
-    "profile_untagged_note": "এখনও কিছু ঘোষণা করা হয়নি, তাই রানগুলো এখানে দেখানো ডিফল্ট মান হিসেবে চার্জ করা হয়। এজেন্ট তার পরবর্তী সিদ্ধান্ত-জাগরণে নিজের প্রোফাইল ঘোষণা করবে।"
+    "profile_untagged_note": "এখনও কিছু ঘোষণা করা হয়নি, তাই রানগুলো এখানে দেখানো ডিফল্ট মান হিসেবে চার্জ করা হয়। এজেন্ট তার পরবর্তী সিদ্ধান্ত-জাগরণে নিজের প্রোফাইল ঘোষণা করবে।",
+    "profile_axes_dominant": "বেশিরভাগ {axis}",
+    "profile_axes_label": "পরিমাপকৃত লোড",
+    "profile_axes_learning": "শেখা চলছে ({count}/{total})",
+    "profile_axes_mismatch": "পরিমাপকৃত {measured}, ঘোষিত {declared}",
+    "profile_axes_runs": "{count}টি রান থেকে পরিমাপকৃত",
+    "profile_source_measured": "পরিমাপকৃত রান থেকে নির্ধারিত"
   },
   "role_card": {
     "assign": "নির্ধারণ করুন",

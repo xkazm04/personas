@@ -713,6 +713,19 @@ export type Translations = {
     autopilot_aria: string;
     autopilot_unavailable: string;
     autopilot_toggle_failed: string;
+    schedules: string;
+    schedules_aria: string;
+    schedule_next: string;
+    schedule_off: string;
+    schedule_running: string;
+    schedule_last_run: string;
+    schedule_last_ok: string;
+    schedule_last_failed: string;
+    schedule_never_ran: string;
+    schedule_window: string;
+    schedule_time_zone: string;
+    schedule_toggle_aria: string;
+    schedule_toggle_failed: string;
     autopilot_eligible: string;
     autopilot_slots: string;
     autopilot_behind: string;
@@ -1018,6 +1031,7 @@ export type Translations = {
     usage_provider_claude: string;
     usage_provider_codex: string;
     usage_provider_grok: string;
+    usage_provider_agy: string;
     queue_origin_remote: string;
     remote_on_device: string;
     remote_state_unknown: string;
@@ -1044,6 +1058,42 @@ export type Translations = {
     remote_steer_queued: string;
     remote_receipt_title: string;
     remote_session_gone: string;
+    mesh_strip_aria: string;
+    mesh_all: string;
+    mesh_devices_live: string;
+    mesh_this_device: string;
+    mesh_home: string;
+    mesh_reach_connected: string;
+    mesh_reach_stale: string;
+    mesh_reach_offline: string;
+    mesh_not_reporting: string;
+    mesh_plate_scope: string;
+    mesh_plate_clear: string;
+    mesh_running: string;
+    mesh_queued: string;
+    mesh_axis_cpu: string;
+    mesh_axis_ram: string;
+    mesh_axis_gpu: string;
+    mesh_glyph_axis: string;
+    mesh_glyph_share: string;
+    mesh_probe_none: string;
+    mesh_probe_passed: string;
+    mesh_probe_failed: string;
+    mesh_rail_aria: string;
+    mesh_queue_title: string;
+    mesh_agent_turn_on: string;
+    mesh_agent_turn_off: string;
+    mesh_agent_stale: string;
+    mesh_agent_project_off: string;
+    mesh_outcome_pending: string;
+    mesh_outcome_queued: string;
+    mesh_outcome_refused: string;
+    mesh_refusal_project_off: string;
+    mesh_refusal_unknown: string;
+    mesh_move_to: string;
+    mesh_move_aria: string;
+    mesh_move_pending: string;
+    mesh_move_waits: string;
     grid_column_contest_open: string;
     grid_column_contest_unlinked: string;
     layers_all_workspaces: string;
@@ -5697,6 +5747,12 @@ export type Translations = {
       profile_source_self: string;
       profile_source_pinned: string;
       profile_source_operator: string;
+      profile_source_measured: string;
+      profile_axes_label: string;
+      profile_axes_runs: string;
+      profile_axes_learning: string;
+      profile_axes_mismatch: string;
+      profile_axes_dominant: string;
       profile_source_unsaved: string;
       profile_no_rationale: string;
       profile_pin_label: string;
@@ -8404,6 +8460,7 @@ export type Translations = {
     dc_decide_tip: string;
     dc_pending_list_aria: string;
     dc_select_review: string;
+    dc_col_decision: string;
     dc_open_in_deck: string;
     dc_open_in_deck_hint: string;
     dc_decided_elsewhere: string;
@@ -19456,6 +19513,12 @@ export type Translations = {
         score_variant: string;
         sort_label: string;
         standings: string;
+        tile_contests: string;
+        tile_decided: string;
+        tile_models: string;
+        tile_top: string;
+        by_model: string;
+        by_area: string;
         podium_history: string;
         variant_key: string;
         station_status: {
@@ -23546,17 +23609,6 @@ export type Translations = {
     enable_description: string;
     station_toggle_label: string;
     auto_resume_description: string;
-  };
-  cockpit: {
-    inbox: {
-      relative_just_now: string;
-      relative_minutes_one: string;
-      relative_minutes_other: string;
-      relative_hours_one: string;
-      relative_hours_other: string;
-      relative_days_one: string;
-      relative_days_other: string;
-    };
   };
   kpis: {
     overview: {

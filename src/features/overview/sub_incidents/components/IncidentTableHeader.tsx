@@ -51,7 +51,7 @@ export function IncidentTableHeader({
       className="sticky top-0 z-30 grid h-9 items-center border-b border-primary/10 bg-background/95 backdrop-blur-sm"
       style={{ gridTemplateColumns: gridTemplate }}
     >
-      <div role="columnheader" className="relative flex items-center px-4 typo-label text-foreground">
+      <div role="columnheader" className="relative flex items-center px-4 typo-caption font-mono uppercase tracking-widest text-foreground">
         {t.overview.incidents.col_incident}
         <ColumnResizeHandle
           label={t.shared.resize_column}
@@ -102,7 +102,7 @@ export function IncidentTableHeader({
         />
       </div>
 
-      <div role="columnheader" className="flex items-center justify-end px-4 typo-label text-foreground">
+      <div role="columnheader" className="flex items-center justify-end px-4 typo-caption font-mono uppercase tracking-widest text-foreground">
         {t.common.actions}
       </div>
     </div>

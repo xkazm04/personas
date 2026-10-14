@@ -122,6 +122,7 @@
     "tauri:dev:test:full": "cross-env PERSONAS_INSPECTOR=1 node scripts/devlog/run.mjs -- --features test-automation",
     "devlog": "node scripts/devlog/cli.mjs",
     "test:devlog": "node --test scripts/devlog/__tests__/*.test.mjs",
+    "mesh:onboard": "node scripts/mesh/onboard.mjs",
     "prepare": "lefthook install || true",
     "check:i18n:untranslated": "node scripts/i18n/check-untranslated.mjs --strict",
     "i18n:plan-gaps": "node scripts/i18n/plan-gaps.mjs",

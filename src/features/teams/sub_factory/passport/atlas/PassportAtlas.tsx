@@ -105,7 +105,7 @@ export function PassportAtlas({ passports, onOpen, rescanningProject, onRescanPr
   // is not a reason to shrink the type of the passport document beside it.
   return (
     <KitHost testId="passport-atlas">
-      <Surface dense>
+      <Surface fluid>
         {project ? (
           <AtlasPassport
             p={project}

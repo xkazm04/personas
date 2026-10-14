@@ -1,0 +1,174 @@
+{
+  "schema": "conform-run/1",
+  "worker": "9ebe8ebc-d959-44d6-95eb-aa0350cfc7a4",
+  "subject": "llm-call-telemetry-model",
+  "evaluatedAt": "2026-10-09T16:37:30Z",
+  "pairs": [
+    {
+      "context": "2fb16136-586e-478d-823f-38434d2d5b9a",
+      "subject": "llm-call-telemetry-model",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:192 the budget UI feed sums cost_usd with COALESCE(e.spend, 0.0) beside max_budget_usd and carries no unpriced count, over the same rows the gate src-tauri/src/engine/execution.rs:3021 enforces on (get_monthly_spend(..).unwrap_or(0.0)), which runner/mod.rs:3991 always writes as Some(f64) - phantom-zero spend gives a cap headroom it does not have.",
+      "techniques": [
+        {
+          "technique": "nullable-cost-never-zero",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:3991 writes Some(metrics.cost_usd) from the non-optional src-tauri/core/src/types.rs:526 even when no result line was seen; src-tauri/db/src/repos/execution/executions.rs:2359 COALESCE(SUM(cost_usd),0.0) feeds the budget decision, which the technique bans outside a presentation layer that renders the unpriced count"
+        },
+        {
+          "technique": "token-usage-quadruple",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/execution.rs:43 cache_read_tokens is a non-null i64 documented as '0 when the CLI reported no cache usage' (:41), conflating an absence with a measured miss; cache writes are modelled as their own counter (:46), which matches the technique's fifth-class guidance"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:9f199f8ff9e7a925",
+      "evaluatedRevision": 7,
+      "registryProposal": "commands-communication is marked governance:weak, yet metrics.rs carries the budget-spend read model the subject governs directly; the weak score undersells a real pairing (vocabulary 'spend/budget' vs 'cost/price book')."
+    },
+    {
+      "context": "a7ece012-8300-4780-b286-b9cea81801fc",
+      "subject": "llm-call-telemetry-model",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src-tauri/core/src/models/llm_spend.rs:46 LlmSpendTotals sums a nullable cost_usd (:30) into a bare f64 with no unpriced-call count, and LlmSpendInsert (:20) carries no cost_source, so a window with unpriced rows reads as fully priced and self-reported CLI cost is indistinguishable from book cost.",
+      "techniques": [
+        {
+          "technique": "nullable-cost-never-zero",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/llm_spend.rs:46 totals disclose no unpriced count; the same COALESCE(SUM(cost_usd),0.0) drives the daily brake at src-tauri/db/src/repos/llm_spend.rs:135; no cost_source on the insert at :20"
+        },
+        {
+          "technique": "token-usage-quadruple",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/llm_spend.rs:29 the row stores cache_creation_tokens as its own optional counter (conformant at the row), but LlmSpendTotals at :46 aggregates only cache_read_tokens, so cache-write tokens - billed at a premium - are dropped from every rollup"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:9f199f8ff9e7a925",
+      "evaluatedRevision": 7
+    },
+    {
+      "context": "2dcda6bf-9982-422b-b63f-1481c414cdab",
+      "subject": "llm-call-telemetry-model",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:38 LlmPinpoint.totalCostUsd is non-nullable and the mappers substitute 0 for a missing provider cost (:95 r.cost_usd ?? 0, :402 toNum(r.costUSD)) - the phantom zero; the shape (:28) has no cached-input/reasoning counters, so those classes are folded away.",
+      "techniques": [
+        {
+          "technique": "nullable-cost-never-zero",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:95 r.cost_usd ?? 0 turns an unpriced call into $0; costIsEstimate (:40) is a partial provenance stamp only"
+        },
+        {
+          "technique": "token-usage-quadruple",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:28 LlmPinpoint carries only inputTokens/outputTokens; cached and reasoning classes the tracing tools report are not representable"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:9f199f8ff9e7a925",
+      "evaluatedRevision": 7
+    },
+    {
+      "context": "621caefc-8ae0-42e7-89b6-8e879ad62814",
+      "subject": "llm-call-telemetry-model",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx:2 the only event record here is a management-API request trail; none of the context's 8 files holds an LLM call event, token counter, cost field or ingest path, so the subject's receiving-schema precondition fails.",
+      "techniques": [],
+      "evaluatedAgainst": "sha256-b2:9f199f8ff9e7a925",
+      "evaluatedRevision": 7
+    },
+    {
+      "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+      "subject": "llm-call-telemetry-model",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/commands/infrastructure/llm_spend.rs:20 is a pass-through to repo::dashboard with no schema of its own, and the other 10 files in this context hold no LLM call record or cost/token field; the governing sites live in observability-audit-models and the db repos.",
+      "techniques": [],
+      "evaluatedAgainst": "sha256-b2:9f199f8ff9e7a925",
+      "evaluatedRevision": 7
+    },
+    {
+      "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7",
+      "subject": "llm-call-telemetry-model",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:3 imports the shared-event catalog types: this context is the shared-event feed subscription UI and none of its 7 files declares a cost, token or model field; the match was lexical on 'event'/'feed'.",
+      "techniques": [],
+      "evaluatedAgainst": "sha256-b2:9f199f8ff9e7a925",
+      "evaluatedRevision": 7
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-09T16:37:30Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "llm-call-telemetry-model"
+      ],
+      "techniques": [
+        "nullable-cost-never-zero",
+        "token-usage-quadruple"
+      ],
+      "deviations": 1,
+      "context": "2fb16136-586e-478d-823f-38434d2d5b9a"
+    },
+    {
+      "ts": "2026-10-09T16:37:30Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "llm-call-telemetry-model"
+      ],
+      "techniques": [
+        "nullable-cost-never-zero",
+        "token-usage-quadruple"
+      ],
+      "deviations": 1,
+      "context": "a7ece012-8300-4780-b286-b9cea81801fc"
+    },
+    {
+      "ts": "2026-10-09T16:37:30Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "llm-call-telemetry-model"
+      ],
+      "techniques": [
+        "nullable-cost-never-zero",
+        "token-usage-quadruple"
+      ],
+      "deviations": 1,
+      "context": "2dcda6bf-9982-422b-b63f-1481c414cdab"
+    },
+    {
+      "ts": "2026-10-09T16:37:30Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "llm-call-telemetry-model"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "621caefc-8ae0-42e7-89b6-8e879ad62814"
+    },
+    {
+      "ts": "2026-10-09T16:37:30Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "llm-call-telemetry-model"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10"
+    },
+    {
+      "ts": "2026-10-09T16:37:30Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "llm-call-telemetry-model"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7"
+    }
+  ]
+}

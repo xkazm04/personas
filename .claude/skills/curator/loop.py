@@ -23,23 +23,32 @@ What is deliberately the SAME as the app:
 
 What is deliberately DIFFERENT, and said out loud rather than papered over:
 
-* **One worker at a time.** The app holds a fleet with a worker cap; this has a
-  terminal. `--workers` is not offered because two children writing one registry
-  checkout is the single-writer violation harvest's own law names.
+* **Parallel for `conform` only.** `run-pool` runs several workers at once, but
+  only `conform` workers run beside each other: each writes ONE run file,
+  `.ai/conform-runs/<dispatch-id>.json`, in this repo and never the map, and the
+  registry's `merge-conform-runs.mjs` is the single writer that folds run files
+  into `.ai/registry-map.json` under a lock. Every lane that writes the REGISTRY
+  checkout (deepen, apply, reconcile, the queue, method and standing lanes) has
+  ONE slot, because two children writing one checkout is the single-writer
+  violation harvest's own law names. No two running workers share a subject.
 * **No fleet session.** `curator_dispatch.session_id` carries `cli:<uuid>`, so a
   reader can tell which driver started a run. The Gaps drawer's "no dispatch row"
   case is about the inverse and is unaffected.
 * **This script settles its own work.** In the app the reconcile sleep does it.
   Here there is no sleep, so each pass settles before it takes the next item;
-  an abandoned pass is `release`d rather than left claimed forever.
+  an abandoned pass is `release`d rather than left claimed forever, and
+  `release-stranded` releases one whose worker process is provably gone.
 
 Usage:
     loop.py status                 what the ladder would do next, and what stops her
     loop.py gaps                   impediments, attrition and growth (read-only)
     loop.py next                   decide AND claim the next piece of work -> JSON
     loop.py release --claim <json> put an unstarted claim back
+    loop.py release-stranded [--dispatch <id>] [--dry]   release claims whose worker is dead
     loop.py settle  --claim <json> --state <s> --evidence <text>
     loop.py work    --claim <json> [--timeout-min N]   spawn the worker, wait, report
+    loop.py merge   [--only <file.json>] [--reapply] [--dry]   fold conform run files into the map
+    loop.py run-pool [--max N] [--dry | --stop | --status]  N workers, RAM-scaled, until a brake
     loop.py commits --claim <json> --since <sha>       record what it committed
     loop.py growth                 take one growth sample from the instruments
 """
@@ -47,7 +56,9 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import math
 import os
 import pathlib
 import re
@@ -55,9 +66,15 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import time
 import uuid
 from datetime import datetime, timezone
 from typing import NoReturn
+
+try:  # pid liveness with a creation time, and free memory; `run-pool` refuses without it
+    import psutil
+except ImportError:  # pragma: no cover - degrade, never pretend
+    psutil = None
 
 # --------------------------------------------------------------------------
 # Where things are
@@ -518,7 +535,7 @@ def method_authorization() -> str:
     )
 
 
-def declared_domains() -> set[str] | None:
+def declared_domains(root: pathlib.Path | None = None) -> set[str] | None:
     """The bundles this repo consumes: `knowledge.domains` in `.ai/manifest.yaml`.
 
     `None` means UNKNOWN (no manifest, no such key, unreadable) and the caller must
@@ -526,7 +543,7 @@ def declared_domains() -> set[str] | None:
     flow-list shape is read with a regex so the driver stays stdlib-only.
     """
     try:
-        text = (PERSONAS_ROOT / ".ai" / "manifest.yaml").read_text(encoding="utf-8")
+        text = ((root or PERSONAS_ROOT) / ".ai" / "manifest.yaml").read_text(encoding="utf-8")
     except OSError:
         return None
     m = re.search(r"^knowledge:\s*\n(?:[ \t]+.*\n)*?[ \t]+domains:\s*\[([^\]]*)\]", text, re.M)
@@ -632,12 +649,7 @@ def compose(claim: dict) -> str:
     if claim["skill"] == "conform":
         # Runs in the CONSUMER repo (Personas), whose own rules forbid pushing and whose
         # working tree other sessions share, so the registry-side authorization is replaced.
-        out.append(
-            "\nYou are running inside the consumer repository, not the registry. Write verdicts "
-            "to `.ai/registry-map.json` only and change no other file. Do NOT commit, push, "
-            "stash, or touch any file you did not write; the operator reads the diff and "
-            "commits it."
-        )
+        out.append("\n" + conform_run_protocol(claim))
     else:
         out.append("\n" + authorization())
     out.append(
@@ -646,6 +658,53 @@ def compose(claim: dict) -> str:
         "nothing is a result and is recorded as one."
     )
     return "".join(out)
+
+
+CONFORM_RUNS_REL = pathlib.Path(".ai") / "conform-runs"
+
+
+def conform_run_file(claim: dict) -> str:
+    """The ONE file a conform worker writes, relative to this repo. Named by the
+    dispatch id, so two workers can never be handed the same path."""
+    return (CONFORM_RUNS_REL / f"{claim.get('dispatch_id') or claim['session_id'].split(':')[-1]}.json").as_posix()
+
+
+def conform_run_protocol(claim: dict) -> str:
+    """What a conform worker writes instead of the map: the merger's input contract.
+
+    Every conform worker gets this, alone or in a pool. A worker that edits
+    `.ai/registry-map.json` in place races every sibling judging another subject
+    in the same checkout, so the map has exactly one writer: the registry's
+    `scripts/merge-conform-runs.mjs`, which takes a lock and folds run files in
+    newest-verdict-wins.
+    """
+    rel = conform_run_file(claim)
+    worker = pathlib.PurePosixPath(rel).stem
+    return (
+        "You are running inside the consumer repository, not the registry, and other conform "
+        "workers may be judging other subjects in this same checkout at the same time. So you "
+        "do NOT edit `.ai/registry-map.json`. Write every verdict to ONE run file, "
+        f"`{rel}`, and a single merger folds it into the map under a lock after you exit. "
+        f"Write it whole to `{rel}.tmp` first and rename it to `{rel}` when it is complete: a "
+        "half-written file is treated as no result. Its shape is the merger's contract:\n\n"
+        "```json\n"
+        f'{{"schema": "conform-run/1", "worker": "{worker}", "subject": "<slug>",\n'
+        ' "evaluatedAt": "<ISO-8601 UTC timestamp of when you finished judging>",\n'
+        ' "pairs": [{"context": "<the context id from the map>", "subject": "<slug>", '
+        '"bundle": "<bundle>",\n'
+        '            "state": "conformant | deviation | not-applicable | unknown",\n'
+        '            "evidence": "<path>:<line> <consequence> - one line, the path as git ls-files prints it",\n'
+        '            "techniques": [{"technique": "<slug>", "verdict": "...", "evidence": "<path>:<line> ..."}],\n'
+        '            "registryProposal": "<optional: a finding about the registry>"}],\n'
+        ' "declined": [{"subject": "<slug>", "context": "<context id>", "reason": "<why it is left unjudged>"}],\n'
+        ' "consults": [<each object step 5 would append to .ai/consults.jsonl>]}\n'
+        "```\n\n"
+        "That one file replaces every other write in the skill's steps 4 and 5: do not append to "
+        "`.ai/consults.jsonl` (the merger appends your `consults`), do not write the step-5 "
+        "run-result file (this file is the result), and do not add a pair (name a missing "
+        "pairing in `registryProposal`). Change no other file. Do NOT commit, push, stash, or "
+        "touch any file you did not write."
+    )
 
 
 LANE_SENTENCE = {
@@ -668,12 +727,17 @@ def take_next(
     dry: bool,
     lanes: set[str] | None = None,
     plan_engines: set[str] | None = None,
+    exclude_subjects: set[str] | None = None,
 ) -> dict | None:
     """Decide AND claim, in the app's own order. `None` = nothing to take.
 
     The claim is a compare-and-set inside an IMMEDIATE transaction, so if the app
     is running too, whichever driver gets there first wins and the other reads
     zero affected rows.
+
+    `exclude_subjects` skips plan items whose subject a running worker already
+    holds - the pool's "never two workers on one subject" rule. Like the lane
+    filter it only SKIPS; the next item down is taken, never a reordered one.
     """
     stamp = now()
     # `None` means every lane, which is the loop's normal shape. A filter never
@@ -731,6 +795,8 @@ def take_next(
         ).fetchall()
         row, derived = None, None
         for cand in rows:
+            if exclude_subjects and cand["subject_id"] in exclude_subjects:
+                continue  # a running worker holds this subject
             if cand["engine"] in DERIVED_ROUTES:
                 derived = derive_plan_argument(cand, root)
                 if derived is None:
@@ -1371,7 +1437,45 @@ def run_json(node: str, cwd: pathlib.Path, args: list[str], timeout: int):
 # --------------------------------------------------------------------------
 
 LIMIT_SIGNATURES = ("usage limit", "session limit", "usage-credits", "limit will reset",
-                    "limit resets", "hit your")
+                    "limit resets", "hit your", "limit reached")
+# A limit banner is the LAST thing a limited run prints, and a limited run prints little.
+# The tail and the length bound exist because a conform worker judging the subject
+# `usage-limit-governance` writes "usage limit" all through an honest, finished report.
+LIMIT_TAIL_CHARS = 800
+LIMIT_MAX_STDOUT = 1500
+
+
+def usage_limited(out: str, err: str, exit_code: int | None) -> bool:
+    """Whether a run ended on the subscription's usage limit, not on its work.
+
+    stderr is read whole; stdout only in its tail, and only when the run failed or
+    said almost nothing - a long successful report that MENTIONS a limit is a report.
+    """
+    if any(s in (err or "").lower() for s in LIMIT_SIGNATURES):
+        return True
+    out = out or ""
+    if exit_code not in (None, 0) or len(out.strip()) < LIMIT_MAX_STDOUT:
+        return any(s in out[-LIMIT_TAIL_CHARS:].lower() for s in LIMIT_SIGNATURES)
+    return False
+
+
+def claude_bin() -> str:
+    claude = shutil.which("claude") or shutil.which("claude.cmd")
+    if not claude:
+        die("no `claude` on PATH - this skill drives the CLI and cannot run without it")
+    return claude
+
+
+def worker_env() -> dict:
+    """The child's environment: both env families stripped, as `fleet/headless.rs` does."""
+    env = {k: v for k, v in os.environ.items()
+           if k not in SUBSCRIPTION_RESERVED_ENV and k not in CLAUDE_NESTING_ENV}
+    env["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1"
+    # 0 = wait for background tasks indefinitely. The default 600 s ceiling killed a
+    # `harvest auto` mid fan-out (6 of 7 lanes returned, edit uncommitted); the work
+    # timeout (--timeout-min) is the real bound.
+    env["CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS"] = "0"
+    return env
 
 
 def run_worker(c: sqlite3.Connection, claim: dict, timeout_min: int) -> int:
@@ -1388,17 +1492,8 @@ def run_worker(c: sqlite3.Connection, claim: dict, timeout_min: int) -> int:
     a failure of the work and must not settle the item as blocked: the item goes
     back to `planned` so the next pass, after the limit resets, can take it.
     """
-    claude = shutil.which("claude") or shutil.which("claude.cmd")
-    if not claude:
-        die("no `claude` on PATH - this skill drives the CLI and cannot run without it")
-    env = {k: v for k, v in os.environ.items()
-           if k not in SUBSCRIPTION_RESERVED_ENV and k not in CLAUDE_NESTING_ENV}
-    env["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1"
-    # 0 = wait for background tasks indefinitely. The default 600 s ceiling killed a
-    # `harvest auto` mid fan-out (6 of 7 lanes returned, edit uncommitted); the work
-    # timeout (--timeout-min) is the real bound.
-    env["CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS"] = "0"
-    argv = [claude, "--print", "--dangerously-skip-permissions", claim["brief"]]
+    env = worker_env()
+    argv = [claude_bin(), "--print", "--dangerously-skip-permissions", claim["brief"]]
     # `--print` buffers the whole run, so there is no progress until it exits. The
     # pid is printed first and written beside the claim so the driving session can
     # watch the process rather than reconstruct it from a command-line grep - the
@@ -1430,8 +1525,7 @@ def run_worker(c: sqlite3.Connection, claim: dict, timeout_min: int) -> int:
         err = f"{err or ''}\ntimed out after {timeout_min} min"
         code = 124
     out, err = out or "", err or ""
-    screen = f"{out}\n{err}".lower()
-    limited = any(s in screen for s in LIMIT_SIGNATURES)
+    limited = usage_limited(out, err, code)
     print(json.dumps({
         "ok": code == 0 and not limited,
         "exit": code,
@@ -1440,6 +1534,913 @@ def run_worker(c: sqlite3.Connection, claim: dict, timeout_min: int) -> int:
         "stderr_tail": err[-2000:],
     }, indent=2))
     return 0
+
+
+# --------------------------------------------------------------------------
+# Memory - how many workers this machine can hold right now
+# --------------------------------------------------------------------------
+
+# The method is /appmaster's (`appmaster/lib/memory.mjs` sampleFreeGb, `contract.mjs`
+# MEM), so the two loops read one machine the same way: the MEDIAN of five readings of
+# AVAILABLE physical memory, 0.6 s apart, so one spike does not flip a decision.
+#
+# RESERVE_GB     6.0  free memory the pool never spends. It is MEM.gateMinFreeGb, what one
+#                     gate run needs (a ~2.6 GB typecheck plus a test run): while this pool
+#                     runs, a sibling session can still verify its own work.
+# PER_WORKER_GB  2.5  charged per worker. Two live `claude.exe` sessions read 0.27 and 0.83 GB
+#                     resident on 2026-10-09; a conform worker adds rg/node children and grows
+#                     over a 30-minute read. MEM charges an /appmaster builder 1.5 GB above a
+#                     4 GB floor; this is the same order with headroom, and NOT a measurement
+#                     of a conform worker - re-measure before tightening it.
+# MAX_WORKERS    4    the ceiling memory never sets. The subscription's usage window is the
+#                     binding constraint, and four workers spend it four times as fast.
+#
+# N is a TARGET TOTAL, recomputed from a fresh sample before every claim. A running worker
+# has already taken its memory out of `free`, so the formula charges it twice. That is
+# deliberate, the same conservatism as MEM's per-builder reserve: a worker that has just
+# started has not grown yet, and the next claim must not be admitted against memory the
+# last one is about to take.
+RESERVE_GB = 6.0
+PER_WORKER_GB = 2.5
+MAX_WORKERS = 4
+MEM_SAMPLES = 5
+MEM_SAMPLE_GAP_S = 0.6
+
+
+def _read_free_bytes() -> int | None:
+    if psutil is not None:
+        try:
+            return int(psutil.virtual_memory().available)
+        except Exception:
+            return None
+    node = shutil.which("node")  # os.freemem() is what /appmaster reads
+    if not node:
+        return None
+    try:
+        r = subprocess.run([node, "-e", "process.stdout.write(String(require('os').freemem()))"],
+                           capture_output=True, text=True, timeout=20)
+        return int(r.stdout.strip())
+    except Exception:
+        return None
+
+
+def sample_free_gb(samples: int = MEM_SAMPLES, gap_s: float = MEM_SAMPLE_GAP_S,
+                   read=_read_free_bytes, sleep=time.sleep) -> float | None:
+    """Median available memory in GB, or None when it cannot be read.
+
+    `CURATOR_FAKE_FREE_GB` overrides the machine (tests, and a dry run that wants to
+    show what a smaller machine would do).
+    """
+    fake = os.environ.get("CURATOR_FAKE_FREE_GB")
+    if fake:
+        try:
+            return float(fake)
+        except ValueError:
+            pass
+    xs: list[float] = []
+    for i in range(samples):
+        v = read()
+        if v is not None:
+            xs.append(v / 2 ** 30)
+        if i < samples - 1:
+            sleep(gap_s)
+    if not xs:
+        return None
+    xs.sort()
+    return xs[len(xs) // 2]
+
+
+def workers_allowed(free_gb: float | None, max_workers: int = MAX_WORKERS,
+                    reserve_gb: float = RESERVE_GB, per_worker_gb: float = PER_WORKER_GB) -> int:
+    """`min(max, floor((free - reserve) / per_worker))`, never below zero.
+
+    Unreadable memory allows ONE worker - the serial loop this replaced. Unknown is not
+    plenty, and refusing every claim on a missing reading would stop her for nothing.
+    """
+    if max_workers <= 0:
+        return 0
+    if free_gb is None or math.isnan(free_gb):
+        return 1
+    return max(0, min(max_workers, math.floor((free_gb - reserve_gb) / per_worker_gb)))
+
+
+# --------------------------------------------------------------------------
+# Processes - liveness by pid AND creation time, never by a row's age
+# --------------------------------------------------------------------------
+
+# A process whose image starts with one of these can be a worker: the native `claude.exe`,
+# or the npm build under node/bun.
+WORKER_IMAGES = ("claude", "node", "bun")
+
+
+def proc_alive(pid: int | None, create_time: float | None = None, tolerance_s: float = 2.0) -> bool:
+    """Whether THIS process still runs. A pid that exists with a different creation time
+    is a reused pid, not our worker. Anything that cannot be decided answers alive: a
+    wrong "alive" costs a held claim, a wrong "dead" releases a live worker's subject."""
+    if not pid:
+        return False
+    if psutil is None:
+        return True
+    try:
+        p = psutil.Process(int(pid))
+        if not p.is_running() or p.status() == psutil.STATUS_ZOMBIE:
+            return False
+        if create_time is not None and abs(p.create_time() - float(create_time)) > tolerance_s:
+            return False
+        return True
+    except psutil.NoSuchProcess:
+        return False
+    except Exception:
+        return True
+
+
+def proc_create_time(pid: int) -> float | None:
+    try:
+        return psutil.Process(pid).create_time() if psutil is not None else None
+    except Exception:
+        return None
+
+
+def live_workers_matching(needles: list[str]) -> list[dict]:
+    """Live worker-image processes whose command line names any needle.
+
+    A CLI worker carries its whole brief in argv (dispatch id, subject, argument); a
+    fleet worker carries `--session-id <claude session>`. Needles under six characters
+    are dropped - too short to identify anything.
+    """
+    needles = [n for n in needles if n and len(n) >= 6]
+    if not needles or psutil is None:
+        return []
+    hits = []
+    for p in psutil.process_iter(["pid", "name", "cmdline"]):
+        try:
+            name = (p.info.get("name") or "").lower()
+            if not name.startswith(WORKER_IMAGES):
+                continue
+            cmd = " ".join(p.info.get("cmdline") or [])
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+        hit = next((n for n in needles if n in cmd), None)
+        if hit:
+            hits.append({"pid": p.info["pid"], "name": p.info.get("name"), "matched": hit})
+    return hits
+
+
+def kill_tree(pid: int) -> None:
+    """End a worker and its children. Called only on a pid whose creation time matched."""
+    try:
+        if sys.platform == "win32":
+            subprocess.run(["taskkill", "/T", "/F", "/PID", str(pid)], capture_output=True, timeout=60)
+            return
+        if psutil is not None:
+            p = psutil.Process(pid)
+            for ch in p.children(recursive=True):
+                ch.kill()
+            p.kill()
+    except Exception:
+        pass
+
+
+# --------------------------------------------------------------------------
+# The merger - the map's one writer
+# --------------------------------------------------------------------------
+
+MERGER_CANDIDATES = (pathlib.Path("scripts") / "merge-conform-runs.mjs",
+                     pathlib.Path("scripts") / "experiments" / "merge-conform-runs.mjs")
+# How long one merge call waits for another merger's lock. A merge takes about a
+# second; two minutes is a stuck holder, and the pool retries on its next tick.
+MERGE_WAIT_MS = 120_000
+MAP_REL = pathlib.Path(".ai") / "registry-map.json"
+
+
+def merger_script(registry: pathlib.Path) -> pathlib.Path | None:
+    return next((registry / rel for rel in MERGER_CANDIDATES if (registry / rel).exists()), None)
+
+
+def _is_merger(pid: int) -> bool:
+    try:
+        return "merge-conform-runs" in " ".join(psutil.Process(pid).cmdline())
+    except psutil.NoSuchProcess:
+        return False
+    except Exception:
+        return True
+
+
+def merge_runs(registry: pathlib.Path, only: list[str] | None = None, reapply: bool = False,
+               dry: bool = False, wait_ms: int = MERGE_WAIT_MS, _retry: bool = True,
+               project: pathlib.Path | None = None) -> dict:
+    """Run the registry's merger over a consumer repo (THIS one unless `project` names another);
+    its JSON result, plus `exit`."""
+    project = project or PERSONAS_ROOT
+    script = merger_script(registry)
+    if not script:
+        return {"ok": False, "error": f"no merge-conform-runs.mjs under {registry / 'scripts'}"}
+    node = shutil.which("node")
+    if not node:
+        return {"ok": False, "error": "no `node` on PATH - the merger is a node script"}
+    argv = [node, str(script), str(project), "--json", "--wait-lock-ms", str(wait_ms)]
+    if only:
+        argv += ["--only", ",".join(only)]
+    if reapply:
+        argv.append("--reapply")
+    if dry:
+        argv.append("--dry")
+    try:
+        r = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           timeout=wait_ms / 1000 + 300)
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": "the merger did not finish"}
+    try:
+        out = json.loads(r.stdout)
+    except ValueError:
+        out = {"ok": False, "error": f"unreadable merger output (exit {r.returncode}): "
+                                     f"{(r.stdout or '')[-300:]} {(r.stderr or '')[-300:]}"}
+    out["exit"] = r.returncode
+    holder = (out.get("holder") or {}).get("pid") if out.get("contended") else None
+    if holder and _retry and psutil is not None and not _is_merger(int(holder)):
+        # Alive, but not a merger: a merger died holding the lock and its pid was reused.
+        # Re-read before removing, so a lock a NEW merger just took is never the one deleted.
+        lock = project / CONFORM_RUNS_REL / ".merge.lock"
+        now_holder = _read_json(lock, {}) or {}
+        if now_holder.get("pid") == holder:
+            try:
+                lock.unlink()
+            except OSError:
+                pass
+        out = merge_runs(registry, only, reapply, dry, wait_ms, _retry=False, project=project)
+        out["lock_cleared"] = f"pid {holder} held the merge lock but is not a merger"
+    return out
+
+
+def map_digest() -> str | None:
+    try:
+        return hashlib.sha256((PERSONAS_ROOT / MAP_REL).read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+# --------------------------------------------------------------------------
+# Judging what a pool worker left behind - mechanical, and only on evidence it can read
+# --------------------------------------------------------------------------
+
+
+def judge_conform(merge: dict | None, run_name: str, *, limited: bool, timed_out: bool,
+                  exit_code: int | None, out_tail: str, tmp_left: bool, timeout_min: int) -> tuple[str, str]:
+    """(action, evidence). Action: a plan-item state, `release`, or `retry-merge`.
+
+    The run file is the worker's verdict and the merger is the reader: a pool never settles
+    a conform item from an exit code. `landed` means the merger accepted verdicts, and the
+    counts it reports are the evidence.
+    """
+    if merge is not None:
+        if merge.get("contended"):
+            h = merge.get("holder") or {}
+            return "retry-merge", f"the merge lock is held by live pid {h.get('pid')} since {h.get('at')}"
+        if not merge.get("ok"):
+            return "blocked", (f"the merger could not run ({merge.get('error')}); the run file is "
+                               f"left at {CONFORM_RUNS_REL.as_posix()}/{run_name}")
+        f = next((x for x in merge.get("files") or [] if x.get("file") == run_name), None)
+        if f is None:
+            return "blocked", "the merger did not report this run file"
+        st = f.get("status")
+        if st == "incomplete":
+            return "blocked", "the worker exited and its run file is not valid JSON"
+        if st == "not-a-run-file":
+            return "blocked", "the run file carries no pairs[] - not the conform-run shape"
+        if st in ("skipped", "missing"):
+            return "blocked", f"the merger refused the run file: {f.get('note') or st}"
+        mine = lambda xs: [s.split(": ", 1)[1] for s in xs or [] if s.startswith(run_name + ": ")]
+        counts = (f"{f.get('merged', 0)} merged, {f.get('unchanged', 0)} unchanged, "
+                  f"{f.get('older', 0)} older than the map, {f.get('declined', 0)} declined, "
+                  f"{f.get('skipped', 0)} below the floor, of {f.get('pairs', 0)} pair verdict(s)")
+        if f.get("status") == "already-merged":
+            return "landed", f"the run file was already merged; {counts}"
+        if f.get("merged", 0) + f.get("unchanged", 0) > 0:
+            return "landed", (f"{counts}; states {json.dumps(merge.get('states') or {})}; archived at "
+                              f"{CONFORM_RUNS_REL.as_posix()}/merged/{run_name}")
+        if f.get("pairs", 0) == 0 and f.get("declined", 0) == 0:
+            return "idled", f"the run file judged no pair; the worker's last words: {out_tail}"
+        if f.get("skipped", 0) > 0:
+            return "declined", f"{counts}; the merger refused: {'; '.join(mine(merge.get('skipped'))[:3])}"
+        if f.get("declined", 0) > 0:
+            return "declined", f"{counts}; {'; '.join(mine(merge.get('declined'))[:3])}"
+        return "idled", f"{counts} - every verdict was older than the one the map holds"
+    if limited:
+        return "release", "the worker hit the subscription's usage limit before writing a run file"
+    if tmp_left:
+        return "blocked", "the worker left only a half-written run file (.tmp)"
+    if timed_out:
+        # The ceiling is a symptom, not a cause: what the worker was doing when it fired is the
+        # tell, and nothing else keeps it once the process is gone (fault-signature-catalogue).
+        return "blocked", f"timed out after {timeout_min} min with no run file; the worker's last words: {out_tail}"
+    return "blocked", f"exit {exit_code}, no run file; the worker's last words: {out_tail}"
+
+
+def judge_serial(claim: dict, *, commits: int, limited: bool, timed_out: bool,
+                 exit_code: int | None, out_tail: str, timeout_min: int) -> tuple[str, str]:
+    """(action, evidence) for a lane that writes the registry. Commits are the evidence."""
+    if limited and commits == 0:
+        return "release", "the worker hit the subscription's usage limit before committing anything"
+    if timed_out:
+        return "blocked", (f"timed out after {timeout_min} min; {commits} registry commit(s) since dispatch; "
+                           f"the worker's last words: {out_tail}")
+    if exit_code not in (None, 0):
+        return "blocked", f"exit {exit_code}; the worker's last words: {out_tail}"
+    if commits > 0:
+        return "landed", (f"{commits} registry commit(s) since {claim.get('head')} - the range can include "
+                          f"a sibling's commits; the worker's last words: {out_tail}")
+    return "idled", f"no registry commit; the worker's last words: {out_tail}"
+
+
+REQUEST_STATE = {"landed": "landed", "idled": "declined", "declined": "declined", "blocked": "failed"}
+
+
+def slot_of(claim: dict) -> str:
+    """`parallel` only for a conform worker that runs in THIS repo and writes its own run
+    file. Everything that writes the registry checkout shares the one `serial` slot."""
+    cwd = claim.get("cwd")
+    if claim.get("skill") == "conform" and cwd and pathlib.Path(cwd).resolve() == PERSONAS_ROOT:
+        return "parallel"
+    return "serial"
+
+
+def admission_filters(lanes: set[str], engines: set[str], serial_busy: bool) -> tuple[set[str], set[str]]:
+    """The lanes and engines the NEXT claim may come from. While the serial slot is
+    taken, only conform plan items - the one parallel-safe kind - stay admissible."""
+    if serial_busy:
+        return lanes & {"plan"}, engines & {"conform"}
+    return set(lanes), set(engines)
+
+
+def open_dispatch_subjects(c: sqlite3.Connection) -> set[str]:
+    """Subjects any driver (this pool, another terminal, the app) has an open dispatch on."""
+    rows = c.execute(
+        "SELECT i.subject_id FROM curator_dispatch d JOIN curator_plan_item i ON i.id = d.plan_item_id "
+        " WHERE d.settled_at IS NULL"
+    ).fetchall()
+    return {r["subject_id"] for r in rows if r["subject_id"]}
+
+
+def claim_one(c: sqlite3.Connection, root: pathlib.Path, skills: dict, lanes: set[str] | None,
+              plan_engines: set[str] | None, exclude_subjects: set[str] | None = None) -> dict | None:
+    """`next`'s claim and bookkeeping, shared with the pool. A claim whose dispatch row
+    cannot be written is released, never left `dispatched` with nothing behind it."""
+    claim = take_next(c, root, skills, dry=False, lanes=lanes, plan_engines=plan_engines,
+                      exclude_subjects=exclude_subjects)
+    if claim and not claim.get("declined"):
+        try:
+            claim["head"] = claim.get("head") or git_head(root)
+            claim["dispatch_id"] = record_dispatch(c, claim, root)
+            claim["cwd"] = claim.get("cwd") or str(root)
+            claim["brief"] = compose(claim)
+        except Exception:
+            release(c, claim, "the claim could not be recorded")
+            raise
+    return claim
+
+
+# --------------------------------------------------------------------------
+# Stranded claims - released only when their worker is provably gone
+# --------------------------------------------------------------------------
+
+POOL_DIR = pathlib.Path(os.environ.get("CURATOR_POOL_DIR") or (pathlib.Path.home() / ".personas" / "curator-pool"))
+
+
+def _read_json(path: pathlib.Path, default=None):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return default
+
+
+def _write_json(path: pathlib.Path, obj) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + f".tmp-{os.getpid()}")
+    tmp.write_text(json.dumps(obj, indent=2, default=str), encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def pool_holder(pool_dir: pathlib.Path) -> dict | None:
+    """The live pool's lock record, or None when no pool runs."""
+    h = _read_json(pool_dir / "pool.lock")
+    if h and proc_alive(h.get("pid"), h.get("create_time")):
+        return h
+    return None
+
+
+def stranded(c: sqlite3.Connection, pool_dir: pathlib.Path, dispatch: str | None = None) -> list[dict]:
+    """Every unsettled dispatch, with the evidence for whether its worker still runs.
+
+    **Liveness is a process, never a row's age** (the 2026-09-10 incident: three live
+    workers killed because their rows had not moved in nine hours). In order: the pool's
+    own record of the worker (pid AND creation time), then any live worker process whose
+    command line names the dispatch, its session, the fleet's claude session id, or its
+    argument. Only when all of that comes back empty is the worker gone.
+    """
+    holder = pool_holder(pool_dir)
+    q = "SELECT * FROM curator_dispatch WHERE settled_at IS NULL"
+    args: tuple = ()
+    if dispatch:
+        q += " AND id LIKE ?"
+        args = (dispatch + "%",)
+    out = []
+    for d in c.execute(q + " ORDER BY created_at", args).fetchall():
+        rec = _read_json(pool_dir / "workers" / f"{d['id']}.json")
+        alive, why = False, ""
+        if rec and holder:
+            alive, why = True, f"owned by the running pool (pid {holder.get('pid')})"
+        elif rec and rec.get("pid") and proc_alive(rec["pid"], rec.get("create_time")):
+            alive, why = True, f"its worker pid {rec['pid']} is alive"
+        else:
+            sid = d["session_id"] or ""
+            needles = [d["id"], sid, sid.split(":", 1)[-1], d["argument"] or ""]
+            if sid and not sid.startswith("cli:") and table_exists(c, "fleet_sessions"):
+                row = c.execute("SELECT claude_session_id FROM fleet_sessions WHERE id = ?", (sid,)).fetchone()
+                if row and row["claude_session_id"]:
+                    needles.append(row["claude_session_id"])
+            hits = live_workers_matching(needles)
+            if hits:
+                alive, why = True, f"live process {hits[0]['pid']} ({hits[0]['name']}) names {hits[0]['matched']!r}"
+            else:
+                why = ("no pool record with a live pid, and no live claude/node process names its "
+                       "dispatch, session or argument")
+        item = None
+        if d["plan_item_id"]:
+            item = c.execute(
+                "SELECT i.state, i.subject_id, r.superseded_by FROM curator_plan_item i "
+                "JOIN curator_plan_run r ON r.id = i.plan_run_id WHERE i.id = ?", (d["plan_item_id"],)
+            ).fetchone()
+        out.append({
+            "dispatch_id": d["id"], "lane": d["lane"], "skill": d["skill"], "argument": d["argument"],
+            "session_id": d["session_id"], "created_at": d["created_at"],
+            "plan_item_id": d["plan_item_id"], "request_id": d["request_id"],
+            "item_state": item["state"] if item else None,
+            "subject": item["subject_id"] if item else None,
+            "plan_superseded": bool(item and item["superseded_by"]),
+            "alive": alive, "evidence": why,
+        })
+    return out
+
+
+# --------------------------------------------------------------------------
+# The pool
+# --------------------------------------------------------------------------
+
+POOL_POLL_SEC = 15           # how often a running pool looks at its workers
+FRESHNESS_EVERY_SEC = 120    # how often it re-measures the projection and corpus axes
+LIMIT_DOZE_MIN = 30          # --on-limit doze: minutes between usage-limit probes
+MAX_LOOP_ERRORS = 5          # consecutive failed iterations before the pool stops itself
+MERGE_RETRY_WAIT_MS = 10_000  # a retried merge waits briefly; the next tick tries again
+
+
+class Pool:
+    """N workers, RAM-scaled; conform in parallel, everything else through one slot.
+
+    State lives OUTSIDE the repo (`~/.personas/curator-pool/`), so a weekend run does not
+    dirty a checkout other sessions commit in: `pool.lock`, `pool.jsonl` (every event),
+    `workers/<dispatch>.json` + `.out` + `.err` while a worker runs, `done/` after, and
+    `STOP`, whose presence ends the pool after its running workers settle.
+
+    Workers are their own process group, so a pool that dies leaves them running; the next
+    pool ADOPTS them from `workers/` by pid and creation time, and settles the ones that
+    finished meanwhile from the files they left.
+    """
+
+    def __init__(self, a: argparse.Namespace, pool_dir: pathlib.Path = POOL_DIR):
+        self.a = a
+        self.dir = pool_dir
+        self.workers_dir = pool_dir / "workers"
+        self.done_dir = pool_dir / "done"
+        self.running: list[dict] = []
+        self.claimed = 0
+        self.limit_hit = False
+        self.doze_until = 0.0
+        self.need_replan = False
+        self.fresh_at = 0.0
+        self.map_digest = map_digest()
+        self.last_hold = None
+        self.lanes = {x.strip() for x in a.lane.split(",")} if a.lane else {"plan"}
+        self.engines = {x.strip() for x in a.engine.split(",")} if a.engine else {"conform"}
+
+    # ---- bookkeeping
+    def log(self, event: str, **kw) -> None:
+        rec = {"ts": now(), "event": event, **kw}
+        line = json.dumps(rec, default=str)
+        print(line, flush=True)
+        try:
+            self.dir.mkdir(parents=True, exist_ok=True)
+            with open(self.dir / "pool.jsonl", "a", encoding="utf-8") as f:
+                f.write(line + "\n")
+        except OSError:
+            pass
+
+    def save(self, w: dict) -> None:
+        _write_json(self.workers_dir / f"{w['dispatch_id']}.json", {k: v for k, v in w.items() if k != "popen"})
+
+    def retire(self, w: dict, outcome: dict) -> None:
+        self.done_dir.mkdir(parents=True, exist_ok=True)
+        rec = {k: v for k, v in w.items() if k != "popen"}
+        rec["outcome"] = outcome
+        _write_json(self.done_dir / f"{w['dispatch_id']}.json", rec)
+        for suffix in (".json", ".out", ".err"):
+            src = self.workers_dir / f"{w['dispatch_id']}{suffix}"
+            if suffix == ".json":
+                src.unlink(missing_ok=True)
+            elif src.exists():
+                os.replace(src, self.done_dir / src.name)
+
+    def subjects_held(self, c: sqlite3.Connection) -> set[str]:
+        return {w["subject"] for w in self.running if w.get("subject")} | open_dispatch_subjects(c)
+
+    # ---- lifecycle
+    def take_lock(self) -> dict | None:
+        """Exclusive create; a lock whose pid (and creation time) is dead is replaced once."""
+        self.dir.mkdir(parents=True, exist_ok=True)
+        path = self.dir / "pool.lock"
+        body = json.dumps({"pid": os.getpid(), "create_time": proc_create_time(os.getpid()),
+                           "started_at": now(), "argv": sys.argv[1:]})
+        for _ in range(2):
+            try:
+                fd = os.open(str(path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    f.write(body)
+                return None
+            except FileExistsError:
+                held = pool_holder(self.dir)
+                if held:
+                    return held
+                path.unlink(missing_ok=True)
+        return _read_json(path, {}) or {"pid": None, "started_at": "unknown"}
+
+    def drop_lock(self) -> None:
+        h = _read_json(self.dir / "pool.lock")
+        if h and h.get("pid") == os.getpid():
+            (self.dir / "pool.lock").unlink(missing_ok=True)
+
+    def adopt(self, c: sqlite3.Connection) -> None:
+        """Pick up workers a previous pool started. Never kills; settles the finished."""
+        if not self.workers_dir.exists():
+            return
+        for f in sorted(self.workers_dir.glob("*.json")):
+            w = _read_json(f)
+            if not w or not w.get("dispatch_id"):
+                continue
+            row = c.execute("SELECT settled_at FROM curator_dispatch WHERE id = ?", (w["dispatch_id"],)).fetchone()
+            if row is None or row["settled_at"]:
+                self.retire(w, {"action": "already-settled", "evidence": "settled outside this pool"})
+                continue
+            if not w.get("pid"):
+                hits = live_workers_matching([w["dispatch_id"]])
+                if hits:
+                    w["pid"], w["create_time"] = hits[0]["pid"], proc_create_time(hits[0]["pid"])
+            w["popen"] = None
+            self.running.append(w)
+            self.log("adopted", dispatch=w["dispatch_id"], subject=w.get("subject"), pid=w.get("pid"),
+                     alive=proc_alive(w.get("pid"), w.get("create_time")))
+
+    # ---- spawning
+    def spawn(self, claim: dict) -> None:
+        did = claim["dispatch_id"]
+        self.workers_dir.mkdir(parents=True, exist_ok=True)
+        w = {
+            "dispatch_id": did, "claim": claim, "slot": slot_of(claim), "subject": claim.get("subject"),
+            "skill": claim.get("skill"), "argument": claim.get("argument"), "lane": claim.get("lane"),
+            "pid": None, "create_time": None, "started_at": now(), "started_ts": time.time(),
+            "timeout_min": self.a.timeout_min,
+            "stdout": str(self.workers_dir / f"{did}.out"), "stderr": str(self.workers_dir / f"{did}.err"),
+        }
+        self.save(w)
+        flags = 0
+        if sys.platform == "win32":
+            # Its own group: a Ctrl+C or a reaped shell that ends the pool does not end the worker.
+            flags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW
+        with open(w["stdout"], "w", encoding="utf-8") as fo, open(w["stderr"], "w", encoding="utf-8") as fe:
+            proc = subprocess.Popen(
+                [claude_bin(), "--print", "--dangerously-skip-permissions", claim["brief"]],
+                cwd=claim["cwd"], env=worker_env(), stdin=subprocess.DEVNULL, stdout=fo, stderr=fe,
+                creationflags=flags,
+            )
+        w["pid"], w["create_time"], w["popen"] = proc.pid, proc_create_time(proc.pid), proc
+        self.save(w)
+        self.running.append(w)
+        self.claimed += 1
+        self.log("spawned", dispatch=did, slot=w["slot"], subject=w["subject"], skill=w["skill"],
+                 argument=w["argument"], pid=proc.pid, running=len(self.running))
+
+    # ---- reaping
+    def reap(self, c: sqlite3.Connection, root: pathlib.Path) -> None:
+        for w in list(self.running):
+            if w.get("merging"):
+                self.finish(c, root, w, w.get("exit_code"))
+                continue
+            popen = w.get("popen")
+            ended = popen.poll() is not None if popen else not proc_alive(w.get("pid"), w.get("create_time"))
+            timed_out = time.time() - float(w.get("started_ts") or time.time()) > float(w["timeout_min"]) * 60
+            if not ended and not timed_out:
+                continue
+            if not ended:
+                kill_tree(int(w["pid"]))
+                if popen:
+                    try:
+                        popen.wait(timeout=60)
+                    except subprocess.TimeoutExpired:
+                        pass
+                w["timed_out"] = True
+            w["exit_code"] = popen.returncode if popen else None
+            self.finish(c, root, w, w["exit_code"])
+
+    def finish(self, c: sqlite3.Connection, root: pathlib.Path, w: dict, exit_code: int | None) -> None:
+        read = lambda p: pathlib.Path(p).read_text(encoding="utf-8", errors="replace") if pathlib.Path(p).exists() else ""
+        out, err = read(w["stdout"]), read(w["stderr"])
+        limited = usage_limited(out, err, exit_code)
+        tail = " ".join(out.strip()[-400:].split()) or " ".join(err.strip()[-300:].split()) or "(no output)"
+        claim = w["claim"]
+        if w["slot"] == "parallel":
+            run_name = f"{w['dispatch_id']}.json"
+            run_path = PERSONAS_ROOT / CONFORM_RUNS_REL / run_name
+            tmp = run_path.with_name(run_name + ".tmp")
+            merge = None
+            archived = PERSONAS_ROOT / CONFORM_RUNS_REL / "merged" / run_name
+            if not run_path.exists() and archived.exists():
+                # A hand-run `loop.py merge` (or the previous pool) folded it in first.
+                merge = {"ok": True, "states": {}, "files": [{"file": run_name, "status": "already-merged"}]}
+            elif run_path.exists() or w.get("merging"):
+                current = map_digest()
+                if current != self.map_digest:
+                    # Something other than the merger wrote the map since the last merge: a
+                    # worker that ignored the run-file protocol, or a sibling session.
+                    self.log("map_written_outside_merger", dispatch=w["dispatch_id"])
+                merge = merge_runs(root, only=[run_name],
+                                   wait_ms=MERGE_RETRY_WAIT_MS if w.get("merging") else MERGE_WAIT_MS)
+                if merge.get("ok"):
+                    self.map_digest = map_digest()
+            action, evidence = judge_conform(
+                merge, run_name, limited=limited, timed_out=bool(w.get("timed_out")), exit_code=exit_code,
+                out_tail=tail, tmp_left=tmp.exists() and not run_path.exists(), timeout_min=w["timeout_min"])
+            if action == "retry-merge":
+                if not w.get("merging"):
+                    self.log("merge_deferred", dispatch=w["dispatch_id"], why=evidence)
+                w["merging"] = True
+                self.save(w)
+                return  # keeps its slot until the merge lands; nothing is settled unread
+            if tmp.exists() and not run_path.exists():
+                inc = self.dir / "incomplete"
+                inc.mkdir(parents=True, exist_ok=True)
+                os.replace(tmp, inc / tmp.name)
+        else:
+            commits = 0
+            head = claim.get("head")
+            if head:
+                r = subprocess.run(["git", "-C", str(root), "rev-list", "--count", f"{head}..HEAD"],
+                                   capture_output=True, text=True, timeout=60)
+                commits = int(r.stdout.strip()) if r.returncode == 0 and r.stdout.strip().isdigit() else 0
+            action, evidence = judge_serial(claim, commits=commits, limited=limited,
+                                            timed_out=bool(w.get("timed_out")), exit_code=exit_code,
+                                            out_tail=tail, timeout_min=w["timeout_min"])
+            if action == "landed" and head:
+                record_commits(c, claim, root, head)
+        if action == "release":
+            release(c, claim, evidence)
+            self.limit_hit = True
+            self.doze_until = time.time() + self.a.doze_min * 60
+        else:
+            state = REQUEST_STATE[action] if claim["lane"] == "queue" else action
+            settle(c, claim, state if claim["lane"] in ("queue", "plan") else None, evidence)
+        self.running.remove(w)
+        self.retire(w, {"action": action, "evidence": evidence, "exit_code": exit_code,
+                        "usage_limited": limited, "finished_at": now()})
+        self.log("settled", dispatch=w["dispatch_id"], subject=w.get("subject"), action=action,
+                 evidence=evidence[:600], running=len(self.running))
+
+    # ---- admission
+    def probe_limit(self) -> bool:
+        """True while the usage limit still holds. A one-line prompt, no claim, no row.
+        Run from the pool's own directory, so the probe loads no project's instructions."""
+        try:
+            self.dir.mkdir(parents=True, exist_ok=True)
+            r = subprocess.run([claude_bin(), "--print", "Reply with the single word OK."],
+                               cwd=str(self.dir), env=worker_env(), stdin=subprocess.DEVNULL,
+                               capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=180)
+        except subprocess.TimeoutExpired:
+            return True
+        return usage_limited(r.stdout or "", r.stderr or "", r.returncode)
+
+    def hold(self, why: str, key: str | None = None) -> None:
+        """Log a hold once per KIND of hold. `key` names the kind when `why` carries a
+        changing figure: keyed on the text, a memory hold logged every poll as free memory
+        moved (seen live on 2026-10-09, a line every 15 s)."""
+        key = key or why
+        if key != self.last_hold:
+            self.log("held", why=why, running=len(self.running))
+            self.last_hold = key
+
+    def admit(self, c: sqlite3.Connection, root: pathlib.Path, skills: dict) -> str | None:
+        """Claim and spawn at most one worker. Returns a reason to STOP the pool, or None."""
+        b = brakes(c)
+        if self.a.terminal_owns and not b["enabled"]:
+            b["held_by"] = [h for h in b["held_by"] if not h.startswith("curator_enabled")]
+        if any(h.startswith("curator_enabled") for h in b["held_by"]):
+            return b["held_by"][0] + " (pass --terminal-owns when the operator handed her to this terminal)"
+        if b["held_by"]:
+            self.hold("; ".join(b["held_by"]))
+            return None
+        if time.time() - self.fresh_at > FRESHNESS_EVERY_SEC:
+            self.fresh_at = time.time()
+            if "plan" in self.lanes:
+                proj = projection_freshness(c, root)
+                if (proj["behind"] or 0) > STALE_PROJECTION_BEHIND:
+                    self.need_replan = True
+                    self.log("projection_stale", behind=proj["behind"], projected_at=proj["projected_at"])
+            fresh = corpus_freshness(root)
+            if not self.a.allow_stale and (fresh["behind"] or 0) > STALE_CORPUS_BEHIND:
+                return (f"the registry checkout is {fresh['behind']} commits behind {fresh['upstream']}: the "
+                        "plan is ranked from a stale corpus - the operator brings it up to date")
+        if self.need_replan:
+            if self.running:
+                self.hold("the projection is stale; draining running workers before re-projecting")
+                return None
+            self.log("reprojecting")
+            out = reproject(PERSONAS_ROOT)
+            if not out.get("ok"):
+                return f"the re-projection failed: {out.get('error')}"
+            self.need_replan = False
+            self.log("reprojected", **{k: out.get(k) for k in ("run_id", "items", "changed") if k in out})
+            return None
+        free = sample_free_gb()
+        n = workers_allowed(free, self.a.max)
+        if len(self.running) >= n:
+            self.hold(f"{len(self.running)} running of {n} allowed ({free if free is None else round(free, 1)} GB free)",
+                      key=f"memory:{len(self.running)}/{n}")
+            return None
+        # The registry checkout has at most one writer: while it does, only parallel-safe work.
+        lanes, engines = admission_filters(self.lanes, self.engines,
+                                           any(w["slot"] == "serial" for w in self.running))
+        if not lanes or not engines:
+            self.hold("the serial slot is busy and no parallel-safe lane is enabled")
+            return None
+        claim = claim_one(c, root, skills, lanes, engines, exclude_subjects=self.subjects_held(c))
+        if claim is None:
+            if not self.running:
+                return "the ladder is empty for the lanes this pool drives"
+            self.hold("nothing claimable while the running workers hold their subjects")
+            return None
+        if claim.get("declined"):
+            self.log("declined", lane=claim["lane"], why=claim["declined"])
+            return None
+        self.last_hold = None
+        try:
+            self.spawn(claim)
+        except Exception as e:  # a claim with no worker behind it goes straight back
+            release(c, claim, f"spawn failed: {e}")
+            return f"could not spawn a worker: {e}"
+        return None
+
+    def run(self) -> int:
+        if psutil is None:
+            die("run-pool needs psutil (pid liveness with a creation time): pip install psutil")
+        claude_bin()
+        held = self.take_lock()
+        if held:
+            die(f"a pool is already running (pid {held.get('pid')}, since {held.get('started_at')})")
+        stop_file = self.dir / "STOP"
+        if stop_file.exists():
+            stop_file.unlink()
+            self.log("stale_stop_cleared")
+        self.log("started", pid=os.getpid(), max=self.a.max, lanes=sorted(self.lanes), engines=sorted(self.engines),
+                 timeout_min=self.a.timeout_min, on_limit=self.a.on_limit, max_items=self.a.max_items)
+        stop_reason, errors = None, 0
+        try:
+            c = connect()
+            root = registry_root(c)
+            self.adopt(c)
+            c.close()
+            while True:
+                admitted = False
+                try:
+                    c = connect()
+                    try:
+                        self.reap(c, root)
+                        if stop_reason is None and stop_file.exists():
+                            stop_reason = "STOP file"
+                        if stop_reason is None and self.a.max_items and self.claimed >= self.a.max_items:
+                            stop_reason = f"--max-items {self.a.max_items} claimed"
+                        if stop_reason and not self.running:
+                            break
+                        admitted = False
+                        if stop_reason is None and self.limit_hit:
+                            if self.a.on_limit == "stop":
+                                stop_reason = "the subscription's usage limit"
+                            elif not self.running and time.time() >= self.doze_until:
+                                if self.probe_limit():
+                                    self.doze_until = time.time() + self.a.doze_min * 60
+                                    self.log("still_limited", next_probe_in_min=self.a.doze_min)
+                                else:
+                                    self.limit_hit = False
+                                    self.log("limit_lifted")
+                            else:
+                                self.hold("dozing on the usage limit")
+                        elif stop_reason is None:
+                            before = self.claimed
+                            stop_reason = self.admit(c, root, read_skills(root))
+                            admitted = self.claimed > before
+                    finally:
+                        c.close()
+                    errors = 0
+                except Exception as e:  # a locked database, a transient OSError: retry, then stop
+                    errors += 1
+                    self.log("loop_error", error=f"{type(e).__name__}: {e}", consecutive=errors)
+                    admitted = False
+                    if errors >= MAX_LOOP_ERRORS:
+                        stop_reason = stop_reason or f"{errors} consecutive failed iterations: {e}"
+                        if not self.running or errors >= MAX_LOOP_ERRORS * 4:
+                            break
+                if not admitted:
+                    time.sleep(self.a.poll_sec)
+        except KeyboardInterrupt:
+            stop_reason = "interrupted - running workers continue and the next pool adopts them"
+        finally:
+            self.drop_lock()
+        self.log("stopped", reason=stop_reason, claimed=self.claimed, still_running=len(self.running))
+        return 0
+
+
+def pool_status(pool_dir: pathlib.Path) -> dict:
+    holder = pool_holder(pool_dir)
+    workers = []
+    for f in sorted((pool_dir / "workers").glob("*.json")) if (pool_dir / "workers").exists() else []:
+        w = _read_json(f) or {}
+        if not w.get("dispatch_id"):
+            continue
+        workers.append({
+            "dispatch_id": w["dispatch_id"], "slot": w.get("slot"), "subject": w.get("subject"),
+            "pid": w.get("pid"), "alive": proc_alive(w.get("pid"), w.get("create_time")),
+            "merging": bool(w.get("merging")),
+            "minutes": round((time.time() - float(w.get("started_ts") or time.time())) / 60, 1),
+            "timeout_min": w.get("timeout_min"),
+        })
+    done = sorted((pool_dir / "done").glob("*.json"), key=lambda p: p.stat().st_mtime) if (pool_dir / "done").exists() else []
+    recent = []
+    for f in done[-10:]:
+        d = _read_json(f) or {}
+        o = d.get("outcome") or {}
+        recent.append({"dispatch_id": d.get("dispatch_id"), "subject": d.get("subject"),
+                       "action": o.get("action"), "evidence": (o.get("evidence") or "")[:240]})
+    tail = []
+    try:
+        tail = [json.loads(x) for x in (pool_dir / "pool.jsonl").read_text(encoding="utf-8").splitlines()[-15:]]
+    except (OSError, ValueError):
+        pass
+    return {"ok": True, "pool_dir": str(pool_dir), "pool": holder, "running": holder is not None,
+            "stop_requested": (pool_dir / "STOP").exists(), "workers": workers,
+            "settled_recent": recent, "log_tail": tail}
+
+
+def pool_dry(a: argparse.Namespace) -> dict:
+    """What `run-pool` would claim right now, in order, without claiming anything."""
+    c = connect(readonly=True)
+    root = registry_root(c)
+    skills = read_skills(root)
+    lanes = {x.strip() for x in a.lane.split(",")} if a.lane else {"plan"}
+    engines = {x.strip() for x in a.engine.split(",")} if a.engine else {"conform"}
+    free = sample_free_gb()
+    n = workers_allowed(free, a.max)
+    b = brakes(c)
+    if a.terminal_owns and not b["enabled"]:
+        b["held_by"] = [h for h in b["held_by"] if not h.startswith("curator_enabled")]
+        b["waived"] = "curator_enabled (--terminal-owns)"
+    proj = projection_freshness(c, root)
+    excl = open_dispatch_subjects(c)
+    planned, serial_busy = [], False
+    for _ in range(min(n, a.max_items) if a.max_items else n):
+        ln, en = admission_filters(lanes, engines, serial_busy)
+        if not ln or not en:
+            break
+        claim = take_next(c, root, skills, dry=True, lanes=ln, plan_engines=en, exclude_subjects=excl)
+        if not claim or claim.get("declined"):
+            if claim:
+                planned.append({"declined": claim["declined"], "lane": claim["lane"]})
+            break
+        claim["cwd"] = claim.get("cwd") or str(root)
+        slot = slot_of(claim)
+        serial_busy = serial_busy or slot == "serial"
+        planned.append({"slot": slot, "lane": claim["lane"], "item_id": claim.get("item_id"),
+                        "subject": claim.get("subject"), "skill": claim.get("skill"),
+                        "argument": claim.get("argument"), "cwd": claim["cwd"]})
+        if claim.get("subject"):
+            excl.add(claim["subject"])
+    return {
+        "ok": True, "dry": True,
+        "memory": {"free_gb": None if free is None else round(free, 1), "reserve_gb": RESERVE_GB,
+                   "per_worker_gb": PER_WORKER_GB, "max": a.max, "workers_allowed": n,
+                   "formula": "min(max, floor((free_gb - reserve_gb) / per_worker_gb))"},
+        "lanes": sorted(lanes), "engines": sorted(engines),
+        "brakes": {"held_by": b["held_by"], "waived": b.get("waived")},
+        "projection": proj,
+        "would_reproject_first": (proj["behind"] or 0) > STALE_PROJECTION_BEHIND and "plan" in lanes,
+        "subjects_already_held": sorted(open_dispatch_subjects(c)),
+        "planned_claims": planned,
+        "pool": {"running": pool_holder(POOL_DIR) is not None, "dir": str(POOL_DIR)},
+    }
 
 
 def main() -> int:
@@ -1473,7 +2474,105 @@ def main() -> int:
     p.add_argument("--evidence", required=True)
     p = sub.add_parser("release"); p.add_argument("--claim", required=True); p.add_argument("--why", default="released by the terminal driver")
     p = sub.add_parser("commits"); p.add_argument("--claim", required=True); p.add_argument("--since", required=True)
+    p = sub.add_parser("release-stranded", help="release open dispatches whose worker process is provably gone")
+    p.add_argument("--dispatch", help="only this dispatch id (a prefix is enough)")
+    p.add_argument("--dry", action="store_true", help="report the evidence, release nothing")
+    p = sub.add_parser("merge", help="fold conform run files into .ai/registry-map.json (the registry's merger)")
+    p.add_argument("--only", help="comma-separated run file names in .ai/conform-runs/")
+    p.add_argument("--reapply", action="store_true", help="re-fold the merged/ archive (recovery after a revert)")
+    p.add_argument("--dry", action="store_true")
+    p = sub.add_parser("run-pool", help="N workers, RAM-scaled: conform in parallel, registry lanes serial")
+    p.add_argument("--max", type=int, default=MAX_WORKERS, help=f"worker ceiling (default {MAX_WORKERS}); memory may allow fewer")
+    p.add_argument("--lane", help="ladder lanes this pool drives (default: plan)")
+    p.add_argument("--engine", help="plan engines this pool drives (default: conform). Any engine but "
+                                    "conform runs in the ONE serial slot, because it writes the registry")
+    p.add_argument("--terminal-owns", action="store_true", help="waive ONLY the curator_enabled brake, as `next` does")
+    p.add_argument("--allow-stale", action="store_true", help="keep claiming from a corpus behind its origin")
+    p.add_argument("--timeout-min", type=int, default=45, help="a worker older than this is ended and settled")
+    p.add_argument("--max-items", type=int, default=0, help="stop claiming after this many claims (0 = no cap)")
+    p.add_argument("--on-limit", choices=("stop", "doze"), default="stop",
+                   help="on the usage limit: stop after the running workers settle, or doze and probe")
+    p.add_argument("--doze-min", type=int, default=LIMIT_DOZE_MIN, help="minutes between usage-limit probes")
+    p.add_argument("--poll-sec", type=int, default=POOL_POLL_SEC)
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--dry", action="store_true", help="show what it would claim now, claim nothing")
+    g.add_argument("--stop", action="store_true", help="ask a running pool to stop after its workers settle")
+    g.add_argument("--status", action="store_true", help="the running pool, its workers, its last events")
+    p = sub.add_parser("multi", help="/curator --multi: codex, grok and agy judge different conform subjects in parallel rounds")
+    p.add_argument("multi_cmd", nargs="?", default="status",
+                   choices=("status", "night", "stop", "schedule", "unschedule", "start", "round", "finish",
+                            "commit", "clean", "report", "reset-dropped", "withdraw", "revalidate"))
+    p.add_argument("--repos", help="consumer repo slugs to judge in (default: every repo with a map on this machine)")
+    p.add_argument("--per-provider", type=int, default=1, help="seats per provider in each round")
+    p.add_argument("--until", help="night: start no round within 20 min of this local time (HH:MM)")
+    p.add_argument("--hours", type=float, help="night: run this many hours from now (instead of --until)")
+    p.add_argument("--max-rounds", type=int, default=0, help="night: stop after this many rounds (0 = no cap)")
+    p.add_argument("--review", choices=("claude", "off"), default="claude", help="night: a headless Claude spot-checks each round")
+    p.add_argument("--reviewer-model", default="sonnet", help="night: the reviewer's model")
+    p.add_argument("--at", help="schedule: the daily start time (HH:MM)")
+    p.add_argument("--foreground", action="store_true", help="night: run in this process instead of detached")
+    p.add_argument("--providers", default="codex,grok,agy", help="seats for this round, comma separated")
+    p.add_argument("--timeout-min", type=int, default=35, help="a seat still running after this is ended and settled blocked")
+    p.add_argument("--terminal-owns", action="store_true", help="waive ONLY the curator_enabled brake, as `next` does")
+    p.add_argument("--keep-raw", action="store_true", help="keep the round's prompts and outputs (debugging); default deletes them")
+    p.add_argument("--run", help="withdraw: the archived run file name in .ai/conform-runs/merged/")
+    p.add_argument("--contexts", help="withdraw: comma-separated context names whose verdict the review refused")
+    p.add_argument("--why", help="withdraw/revalidate: the review's reason, recorded with the change")
+    p.add_argument("--round", type=int, help="revalidate: the round whose kept raw answer is re-judged")
+    p.add_argument("--provider", dest="provider", help="revalidate: the seat to re-judge")
     a = ap.parse_args()
+
+    if a.cmd == "multi":
+        sys.path.insert(0, str(pathlib.Path(__file__).parent))
+        import multi
+        return multi.main(a)
+
+    if a.cmd == "run-pool":
+        for flag, known, given in (("--lane", LANE_SENTENCE, a.lane), ("--engine", PLAN_ROUTES, a.engine)):
+            bad = {x.strip() for x in (given or "").split(",") if x.strip()} - set(known)
+            if bad:
+                die(f"unknown {flag} value(s): {sorted(bad)}; known: {sorted(known)}")
+        if a.status:
+            print(json.dumps(pool_status(POOL_DIR), indent=2, default=str))
+            return 0
+        if a.stop:
+            POOL_DIR.mkdir(parents=True, exist_ok=True)
+            (POOL_DIR / "STOP").write_text(now(), encoding="utf-8")
+            print(json.dumps({"ok": True, "stop_requested": True, "pool": pool_holder(POOL_DIR),
+                              "note": "the pool claims nothing more and exits once its running workers settle"}, indent=2))
+            return 0
+        if a.dry:
+            print(json.dumps(pool_dry(a), indent=2, default=str))
+            return 0
+        if a.lane and "refill" in a.lane and app_running():
+            die("the app is running and the standing lane writes the registry's queue file it also writes; "
+                "drive --lane queue,plan, or switch her off in the app first")
+        return Pool(a).run()
+
+    if a.cmd == "merge":
+        c = connect(readonly=True)
+        root = registry_root(c)
+        only = [x.strip() for x in a.only.split(",") if x.strip()] if a.only else None
+        out = merge_runs(root, only=only, reapply=a.reapply, dry=a.dry)
+        print(json.dumps(out, indent=2, default=str))
+        return 0 if out.get("ok") else 1
+
+    if a.cmd == "release-stranded":
+        if psutil is None:
+            die("release-stranded needs psutil to prove a worker is gone: pip install psutil")
+        c = connect(readonly=a.dry)
+        rows = stranded(c, POOL_DIR, a.dispatch)
+        released = []
+        for r in rows:
+            if r["alive"] or a.dry:
+                continue
+            claim = {"lane": r["lane"], "item_id": r["plan_item_id"], "request_id": r["request_id"],
+                     "dispatch_id": r["dispatch_id"]}
+            release(c, claim, f"release-stranded: {r['evidence']}")
+            r["released"] = True
+            released.append(r["dispatch_id"])
+        print(json.dumps({"ok": True, "dry": a.dry, "stranded": rows, "released": released}, indent=2, default=str))
+        return 0
 
     if a.cmd in ("status", "gaps"):
         c = connect(readonly=True)
@@ -1495,6 +2594,7 @@ def main() -> int:
             "projection": proj,
             "projection_is_stale": (proj["behind"] or 0) > STALE_PROJECTION_BEHIND,
             "app_running": app_running(),
+            "pool_running": pool_holder(POOL_DIR) is not None,
             "brakes": brakes(c),
             "plan": plan_summary(c),
             "queue_file": {k: lane[k] for k in ("exists", "queued", "fingerprint")},
@@ -1564,12 +2664,11 @@ def main() -> int:
         plan_engines = {x.strip() for x in a.engine.split(",")} if a.engine else None
         if plan_engines and not plan_engines <= set(PLAN_ROUTES):
             die(f"unknown engine(s): {sorted(plan_engines - set(PLAN_ROUTES))}; known: {sorted(PLAN_ROUTES)}")
-        claim = take_next(c, root, skills, dry=a.dry, lanes=lanes, plan_engines=plan_engines)
-        if claim and not claim.get("declined") and not a.dry:
-            claim["head"] = claim.get("head") or git_head(root)
-            claim["dispatch_id"] = record_dispatch(c, claim, root)
-            claim["brief"] = compose(claim)
-            claim["cwd"] = claim.get("cwd") or str(root)
+        if a.dry:
+            claim = take_next(c, root, skills, dry=True, lanes=lanes, plan_engines=plan_engines)
+        else:
+            # Subjects another driver (a running pool, the app) holds are skipped, never doubled.
+            claim = claim_one(c, root, skills, lanes, plan_engines, exclude_subjects=open_dispatch_subjects(c))
         print(json.dumps({"ok": True, "claim": claim}, indent=2, default=str))
         return 0
 

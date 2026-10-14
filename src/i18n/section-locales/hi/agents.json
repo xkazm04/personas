@@ -2622,7 +2622,13 @@
     "profile_tokens_over": "{from} टोकन से अधिक",
     "profile_tokens_under": "{to} टोकन से कम",
     "profile_units": "{count} इकाइयाँ",
-    "profile_untagged_note": "अभी तक कुछ भी घोषित नहीं किया गया है, इसलिए रन यहाँ दिखाए गए डिफ़ॉल्ट मूल्य के रूप में चार्ज किए जाते हैं। एजेंट अपने अगले निर्णय-जागरण पर अपनी स्वयं की प्रोफ़ाइल घोषित करेगा।"
+    "profile_untagged_note": "अभी तक कुछ भी घोषित नहीं किया गया है, इसलिए रन यहाँ दिखाए गए डिफ़ॉल्ट मूल्य के रूप में चार्ज किए जाते हैं। एजेंट अपने अगले निर्णय-जागरण पर अपनी स्वयं की प्रोफ़ाइल घोषित करेगा।",
+    "profile_axes_dominant": "ज़्यादातर {axis}",
+    "profile_axes_label": "मापा गया लोड",
+    "profile_axes_learning": "सीख रहा है ({count}/{total})",
+    "profile_axes_mismatch": "मापा गया {measured}, घोषित {declared}",
+    "profile_axes_runs": "{count} रन के आधार पर मापा गया",
+    "profile_source_measured": "मापे गए रन से तय किया गया"
   },
   "role_card": {
     "assign": "असाइन करें",

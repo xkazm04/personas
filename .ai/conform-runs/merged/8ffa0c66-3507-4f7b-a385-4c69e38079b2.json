@@ -1,0 +1,30 @@
+{
+  "schema": "conform-run/1",
+  "worker": "8ffa0c66-3507-4f7b-a385-4c69e38079b2",
+  "subject": "draft-editing",
+  "evaluatedAt": "2026-10-10T12:03:01Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "draft-editing",
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+      "reason": "no work: standing deviation already judged 2026-10-10 against the registry digest current at e6f59b26 (sha256-b2:79771a6adb7936e5, revision 3, revisionsBehind 0); its anchor files have no commits since 2026-10-08 and no uncommitted edits, and every anchor line re-printed still says what the evidence claims - a re-judgment would duplicate a same-day verdict, not add one"
+    },
+    {
+      "subject": "draft-editing",
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+      "reason": "no work: standing deviation already judged 2026-10-10 against the registry digest current at e6f59b26 (sha256-b2:79771a6adb7936e5, revision 3, revisionsBehind 0); its anchor files have no commits since 2026-10-08 and no uncommitted edits, and every anchor line re-printed still says what the evidence claims - a re-judgment would duplicate a same-day verdict, not add one"
+    },
+    {
+      "subject": "draft-editing",
+      "context": "2a54cdc2-87af-4298-b490-9eb87f230df7",
+      "reason": "no work: standing not-applicable already judged 2026-10-10 against the registry digest current at e6f59b26 (sha256-b2:79771a6adb7936e5, revision 3, revisionsBehind 0); its anchor files have no commits since 2026-10-08 and no uncommitted edits, and every anchor line re-printed still says what the evidence claims - a re-judgment would duplicate a same-day verdict, not add one"
+    },
+    {
+      "subject": "draft-editing",
+      "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc",
+      "reason": "no work: standing deviation already judged 2026-10-10 against the registry digest current at e6f59b26 (sha256-b2:79771a6adb7936e5, revision 3, revisionsBehind 0); its anchor files have no commits since 2026-10-08 and no uncommitted edits, and every anchor line re-printed still says what the evidence claims - a re-judgment would duplicate a same-day verdict, not add one"
+    }
+  ],
+  "consults": []
+}

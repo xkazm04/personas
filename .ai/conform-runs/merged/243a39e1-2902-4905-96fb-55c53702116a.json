@@ -1,0 +1,55 @@
+{
+  "schema": "conform-run/1",
+  "worker": "243a39e1-2902-4905-96fb-55c53702116a",
+  "subject": "plan-entitlements",
+  "evaluatedAt": "2026-10-12T12:23:55.124Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "plan-entitlements",
+      "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14",
+      "reason": "already judged not-applicable on 2026-10-03 against sha256-b2:58f21c0561a86e45 rev 7, identical to the registry index at e94a2fc5 (digest sha256-b2:58f21c0561a86e45, rev 7); not stale, no re-judgment owed"
+    },
+    {
+      "subject": "plan-entitlements",
+      "context": "12d5948a-76a4-4db1-ac6a-ac554eb12020",
+      "reason": "already judged not-applicable on 2026-10-03 against sha256-b2:58f21c0561a86e45 rev 7, identical to the registry index at e94a2fc5 (digest sha256-b2:58f21c0561a86e45, rev 7); not stale, no re-judgment owed"
+    },
+    {
+      "subject": "plan-entitlements",
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "reason": "already judged not-applicable on 2026-10-03 against sha256-b2:58f21c0561a86e45 rev 7, identical to the registry index at e94a2fc5 (digest sha256-b2:58f21c0561a86e45, rev 7); not stale, no re-judgment owed"
+    },
+    {
+      "subject": "plan-entitlements",
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+      "reason": "already judged not-applicable on 2026-10-09 against sha256-b2:58f21c0561a86e45 rev 7, identical to the registry index at e94a2fc5 (digest undefined, rev undefined); not stale, no re-judgment owed"
+    },
+    {
+      "subject": "plan-entitlements",
+      "context": "959baa73-f18f-42c8-8569-466939b9050d",
+      "reason": "already judged not-applicable on 2026-10-03 against sha256-b2:58f21c0561a86e45 rev 7, identical to the registry index at e94a2fc5 (digest sha256-b2:58f21c0561a86e45, rev 7); not stale, no re-judgment owed"
+    },
+    {
+      "subject": "plan-entitlements",
+      "context": "90f639de-ffc7-4225-b67f-1566e5d66b8b",
+      "reason": "already judged not-applicable on 2026-10-03 against sha256-b2:58f21c0561a86e45 rev 7, identical to the registry index at e94a2fc5 (digest sha256-b2:58f21c0561a86e45, rev 7); not stale, no re-judgment owed"
+    },
+    {
+      "subject": "plan-entitlements",
+      "context": "37cd64d2-bd42-47b9-8c17-7ea1b466135c",
+      "reason": "already judged not-applicable on 2026-10-03 against sha256-b2:58f21c0561a86e45 rev 7, identical to the registry index at e94a2fc5 (digest sha256-b2:58f21c0561a86e45, rev 7); not stale, no re-judgment owed"
+    },
+    {
+      "subject": "plan-entitlements",
+      "context": "dc471d31-ae30-4ac9-b015-d51969df458d",
+      "reason": "already judged not-applicable on 2026-10-09 against sha256-b2:58f21c0561a86e45 rev 7, identical to the registry index at e94a2fc5 (digest undefined, rev undefined); not stale, no re-judgment owed"
+    },
+    {
+      "subject": "plan-entitlements",
+      "context": "a576c14f-1edd-4da4-8d11-527161a3b5b3",
+      "reason": "already judged not-applicable on 2026-10-03 against sha256-b2:58f21c0561a86e45 rev 7, identical to the registry index at e94a2fc5 (digest sha256-b2:58f21c0561a86e45, rev 7); not stale, no re-judgment owed"
+    }
+  ],
+  "consults": []
+}

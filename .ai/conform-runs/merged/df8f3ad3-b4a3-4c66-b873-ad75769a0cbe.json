@@ -1,0 +1,45 @@
+{
+  "schema": "conform-run/1",
+  "worker": "df8f3ad3-b4a3-4c66-b873-ad75769a0cbe",
+  "subject": "browser-credential-boundary",
+  "evaluatedAt": "2026-10-12T11:48:23.860Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "browser-credential-boundary",
+      "context": "cf38b51d-aebb-4b36-bb8e-68a494a3662f",
+      "reason": "already judged conformant against the current digest sha256-b2:d3eef10e9ed8459f rev 3 (registry e94a2fc5 index agrees), not stale; no commits touch the context paths since the 2026-10-10 re-verification, so a re-read would re-buy a current verdict"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "cbb061cf-5c61-49d4-80d8-98b8f9b40600",
+      "reason": "already judged not-applicable against the current digest sha256-b2:d3eef10e9ed8459f rev 3 (registry e94a2fc5 index agrees), not stale; no commits touch the context paths since the 2026-10-10 re-verification, so a re-read would re-buy a current verdict"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "1092db16-982f-4d99-b71b-14e6cf704a4f",
+      "reason": "already judged deviation against the current digest sha256-b2:d3eef10e9ed8459f rev 3 (registry e94a2fc5 index agrees), not stale; no commits touch the context paths since the 2026-10-10 re-verification, so a re-read would re-buy a current verdict"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "e61f931c-25d7-4532-9ec7-ab6f3fc377e2",
+      "reason": "already judged not-applicable against the current digest sha256-b2:d3eef10e9ed8459f rev 3 (registry e94a2fc5 index agrees), not stale; no commits touch the context paths since the 2026-10-10 re-verification, so a re-read would re-buy a current verdict"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b",
+      "reason": "already judged conformant against the current digest sha256-b2:d3eef10e9ed8459f rev 3 (registry e94a2fc5 index agrees), not stale; no commits touch the context paths since the 2026-10-10 re-verification, so a re-read would re-buy a current verdict"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7",
+      "reason": "already judged conformant against the current digest sha256-b2:d3eef10e9ed8459f rev 3 (registry e94a2fc5 index agrees), not stale; no commits touch the context paths since the 2026-10-10 re-verification, so a re-read would re-buy a current verdict"
+    },
+    {
+      "subject": "browser-credential-boundary",
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "reason": "already judged conformant against the current digest sha256-b2:d3eef10e9ed8459f rev 3 (registry e94a2fc5 index agrees), not stale; no commits touch the context paths since the 2026-10-10 re-verification, so a re-read would re-buy a current verdict"
+    }
+  ],
+  "consults": []
+}

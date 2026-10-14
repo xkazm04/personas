@@ -124,6 +124,24 @@ test('worktree: a top-level package\'s own node_modules is junctioned too, and u
   S.updateRun(run, { state: 'released' });
 });
 
+test('worktree: a workspace package two levels down is junctioned too (pnpm workspaces)', () => {
+  // athena-portable keeps its packages in apps/desktop, packages/athena-bridge and examples/*
+  fs.mkdirSync(path.join(root, 'packages', 'bridge'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'packages', 'bridge', 'package.json'), '{"name":"bridge"}\n');
+  sh(root, 'add', 'packages/bridge/package.json'); sh(root, 'commit', '-q', '-m', 'bridge');
+  fs.mkdirSync(path.join(root, 'packages', 'bridge', 'node_modules'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'packages', 'bridge', 'node_modules', 'marker.txt'), 'bridge deps');
+  assert.deepEqual(WT.nodeModulesDirs(root), ['', path.join('packages', 'bridge'), 'pkg']);
+  const run = plan();
+  const wt = WT.createWorktree(run, {});
+  const link = path.join(wt.worktree, 'packages', 'bridge', 'node_modules');
+  assert.equal(fs.lstatSync(link).isSymbolicLink(), true, 'packages/bridge/node_modules must be a junction');
+  const res = WT.removeWorktree({ ...run, ...wt });
+  assert.equal(res.removed, true);
+  assert.equal(fs.readFileSync(path.join(root, 'packages', 'bridge', 'node_modules', 'marker.txt'), 'utf8'), 'bridge deps', 'the real nested node_modules survives');
+  S.updateRun(run, { state: 'released' });
+});
+
 test('worktree: an unmerged branch is never deleted', () => {
   const run = plan();
   const wt = WT.createWorktree(run, {});

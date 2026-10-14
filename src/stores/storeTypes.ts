@@ -42,6 +42,7 @@ import type { NetworkSlice } from "./slices/network/networkSlice";
 import type { DevicesSlice } from "./slices/network/devicesSlice";
 import type { RemoteJobsSlice } from "./slices/network/remoteJobsSlice";
 import type { RemoteSessionsSlice } from "./slices/network/remoteSessionsSlice";
+import type { MeshSlice } from "./slices/network/meshSlice";
 import type { SetupSlice } from "./slices/system/setupSlice";
 import type { AmbientContextSlice } from "./slices/system/ambientContextSlice";
 import type { ObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
@@ -259,6 +260,7 @@ export type SystemStore = CoreState &
   DevicesSlice &
   RemoteJobsSlice &
   RemoteSessionsSlice &
+  MeshSlice &
   SetupSlice &
   AmbientContextSlice &
   ObsidianBrainSlice &

@@ -1,0 +1,62 @@
+{
+  "schema": "conform-run/1",
+  "worker": "1f48c08a-2585-4aa1-afd0-47ee558e6723",
+  "subject": "prompt-safety",
+  "evaluatedAt": "2026-10-12T12:37:02Z",
+  "pairs": [
+    {
+      "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+      "subject": "prompt-safety",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/runner/mod.rs:1375 recalled agent-memory title/content (and team memory at :1605) is interpolated raw and appended after assembly (:1485, :1614), outside every <untrusted_*> fence and past the canary, although the door exists (src-tauri/engine/src/prompt/assemble.rs:92); an agent-written memory carrying an injection reaches every later run unfenced, and team memory is framed as hard rules",
+      "evaluatedAgainst": "sha256-b2:51087132dbd1c9fb",
+      "evaluatedRevision": 7,
+      "techniques": [
+        {
+          "technique": "untrusted-span-fencing",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1375 memory spans bypass wrap_untrusted_section; src-tauri/engine/src/prompt/runtime_safety.rs:19 nonce is SystemTime^counter^const (predictable, not crypto), :29 wraps without checking the nonce is absent from content or neutralizing untrusted_ lookalikes; fence built 3x (runtime_safety.rs:26, src-tauri/src/companion/brain/sleep_cycle/prompts.rs:32, src-tauri/src/commands/design/n8n_transform/prompt_sanitizer.rs:173)"
+        },
+        {
+          "technique": "canary-tripwires",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:39 canary string is emitted only; no Rust/TS code reads it or the nonce back out of output, so a tripped canary settles as an ordinary success"
+        },
+        {
+          "technique": "input-caps-and-clamps",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:98 clamp runs before neutralization (:102-163), the reverse of the technique fixed door order; src-tauri/engine/src/prompt/assemble.rs:1047 declares no aggregate untrusted-content ceiling (placement-trust dual ceiling with pointer marker at runtime_safety.rs:180 IS realized)"
+        },
+        {
+          "technique": "promoted-span-framing (golden path)",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1603 team shared memory is framed as settled decisions and hard rules (licence, not calibration) with no neutralization pass"
+        }
+      ],
+      "registryProposal": "Fence implementations are copied in three modules with the same time-xor nonce; untrusted-span-fencing could name the per-subsystem re-implementation of the fence builder (distinct from shared machinery + per-site prose) as a smell with a census-style detection (grep format!(\"untrusted_{label}_), since one bad nonce generator then has to be fixed three times."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "prompt-safety",
+      "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+      "reason": "techniques output-sanitization, model-output-as-untrusted, payoff-removal, session-capability-conjunction, inspection-coverage-is-a-verdict, cross-language-rule-parity were not read against code in this run: they govern output/acting/session surfaces largely outside the prompt-assembly context; the pair verdict rests on the three anchored input-side deviations"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T12:37:02Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "prompt-safety"
+      ],
+      "techniques": [
+        "untrusted-span-fencing",
+        "canary-tripwires",
+        "input-caps-and-clamps"
+      ],
+      "deviations": 1
+    }
+  ]
+}

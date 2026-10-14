@@ -48,7 +48,9 @@ pub mod queue;
 pub mod queue_lanes;
 pub mod registry;
 pub mod remote_exec;
+pub mod resources;
 pub mod run;
+pub mod schedules;
 pub mod screen_activity;
 pub mod stale;
 #[cfg(feature = "desktop")]

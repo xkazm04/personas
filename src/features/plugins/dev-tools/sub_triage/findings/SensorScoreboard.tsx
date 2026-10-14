@@ -73,7 +73,7 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
           <tr className="text-left">
             {['Sensor', 'Raised', 'Shipped', 'Cleared', 'Moved', 'Unchanged', 'Regressed', 'Verify'].map((h) => (
               // style-deviation: the operator asked the heads dimmed again at Gate 2. 70% is the doctrine's one muting level (typo-caption's ink) at label size; the old 45% sat on the light-theme legibility floor (census illegible-foreground-alpha). No token pairs label size with the muting.
-              <th key={h} className="px-3 py-1.5 typo-label text-foreground/70">
+              <th key={h} className="px-3 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">
                 {h}
               </th>
             ))}

@@ -106,6 +106,15 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
     try {
       const projects = await devApi.listProjects(status);
       set({ projects, projectsLoading: false, error: null });
+      // Reconcile the persisted selection with reality, once per list that is
+      // unfiltered: a project deleted elsewhere falls back to "all projects",
+      // a surviving one is re-mirrored into the backend (its copy is in-memory
+      // and empty after every restart).
+      const persisted = get().activeProjectId;
+      if (persisted && !status) {
+        if (projects.some((p) => p.id === persisted)) void devApi.setActiveProject(persisted);
+        else set({ activeProjectId: null });
+      }
     } catch (err) {
       reportError(err, "Failed to fetch projects", set, { stateUpdates: { projectsLoading: false } });
     }
@@ -187,9 +196,12 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
   },
 
   setActiveProject: async (id) => {
+    // The selection is a persisted UI preference: commit it BEFORE the backend
+    // mirror, so a rejected IPC call (e.g. auth not ready right after launch)
+    // can no longer drop the pick and leave the previous one to be restored.
+    set({ activeProjectId: id, error: null });
     try {
       await devApi.setActiveProject(id);
-      set({ activeProjectId: id, error: null });
     } catch (err) {
       reportError(err, "Failed to set active project", set);
     }

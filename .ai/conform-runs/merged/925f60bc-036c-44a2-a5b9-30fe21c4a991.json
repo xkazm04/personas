@@ -1,0 +1,144 @@
+{
+  "schema": "conform-run/1",
+  "worker": "925f60bc-036c-44a2-a5b9-30fe21c4a991",
+  "subject": "quality-gates",
+  "evaluatedAt": "2026-10-12T17:10:35.225873+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [
+    {
+      "context": "engine-core-infrastructure",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": ".github/workflows/ci.yml:978 The blocking Rust policy job combines moving advisory data with deterministic checks, allowing unrelated changes to inherit externally introduced failures.",
+      "techniques": [
+        {
+          "technique": "blocking-by-input-determinism",
+          "verdict": "deviation",
+          "evidence": ".github/workflows/ci.yml:978 Advisories are unsplit from licenses, bans and sources; deny.toml makes vulnerabilities errors, and ci-verdict requires rust-deny."
+        },
+        {
+          "technique": "gate-liveness",
+          "verdict": "conformant",
+          "evidence": "scripts/census/self-test.mjs:384 For the shared census, a deliberately drifting fixture must produce a failing verdict."
+        },
+        {
+          "technique": "hook-hygiene",
+          "verdict": "deviation",
+          "evidence": "lefthook.yml:63 Default Lefthook pre-commit handling hides and restores partially staged working-tree content."
+        },
+        {
+          "technique": "severity-by-construction",
+          "verdict": "conformant",
+          "evidence": "scripts/census/run-census.mjs:146 The shared census converts detected drift into a nonzero exit, propagated at line 322."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "quality-gates",
+      "context": "home-welcome",
+      "reason": "withdrawn after review: one repo-wide finding (lefthook.yml:32, the hook stashes partially staged files) pasted onto four UI contexts whose own code it is not about"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "settings-network",
+      "reason": "withdrawn after review: one repo-wide finding (lefthook.yml:32, the hook stashes partially staged files) pasted onto four UI contexts whose own code it is not about"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "display-table-primitives",
+      "reason": "withdrawn after review: one repo-wide finding (lefthook.yml:32, the hook stashes partially staged files) pasted onto four UI contexts whose own code it is not about"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "vault-credentials-components-forms",
+      "reason": "withdrawn after review: one repo-wide finding (lefthook.yml:32, the hook stashes partially staged files) pasted onto four UI contexts whose own code it is not about"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T17:10:35.225873+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "gate-liveness",
+        "hook-hygiene",
+        "severity-by-construction"
+      ],
+      "deviations": 1,
+      "context": "home-welcome",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-12T17:10:35.225873+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "blocking-by-input-determinism",
+        "gate-liveness",
+        "hook-hygiene",
+        "severity-by-construction"
+      ],
+      "deviations": 1,
+      "context": "engine-core-infrastructure",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-12T17:10:35.225873+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "gate-liveness",
+        "hook-hygiene",
+        "severity-by-construction"
+      ],
+      "deviations": 1,
+      "context": "settings-network",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-12T17:10:35.225873+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "gate-liveness",
+        "hook-hygiene",
+        "severity-by-construction"
+      ],
+      "deviations": 1,
+      "context": "display-table-primitives",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-12T17:10:35.225873+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "gate-liveness",
+        "hook-hygiene",
+        "severity-by-construction"
+      ],
+      "deviations": 1,
+      "context": "vault-credentials-components-forms",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}

@@ -242,6 +242,12 @@ pub enum Message {
     Ping,
     /// Keep-alive pong response.
     Pong,
+    /// Device mesh, sender -> every paired peer: the sender's latest
+    /// `DeviceSnapshot` (load, agents, queue) as JSON. LATEST-WINS, like
+    /// [`Message::RemoteSessionMirror`]: never numbered, persisted or replayed;
+    /// the receiver re-derives liveness from how long ago the last one landed.
+    /// Appended LAST so every earlier variant keeps its positional index.
+    DeviceSnapshot { json: String },
 }
 
 /// An entry in the manifest exchange.

@@ -1,0 +1,231 @@
+{
+  "schema": "conform-run/1",
+  "worker": "b9065c40-0f9e-46fc-a8a2-b36a03aad8fa",
+  "subject": "test-harness",
+  "evaluatedAt": "2026-10-12T16:43:32.807825+00:00",
+  "provider": "agy",
+  "model": "gemini-3.8-flash-high",
+  "pairs": [
+    {
+      "context": "commands-execution",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/eval_runs.rs:839 The test loops over summaries with an archive containing zero judged runs and passes vacuously without asserting any judge panel contract.",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/eval_runs.rs:839 The test iterates list_summaries over an archive with 0 judged runs and exits green without ever entering the assertion block."
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/eval_runs.rs:843 Because detail.judge is never Some in the archive, the test cannot fail when the judge panel contract breaks."
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:117 Cheap in-memory JSON string payloads test array parsing and validation logic efficiently."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/execution/assertions.rs:188 Pure parsing and validation functions execute without shared state or live database handles."
+        },
+        {
+          "technique": "suite-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Rust unit tests run within the cargo test framework; lane boundaries are declared in CI matrix configs."
+        },
+        {
+          "technique": "approval-snapshots-with-guarded-update",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:118 Assertions check specific integers and validation errors rather than recording approval snapshots."
+        },
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/execution/assertions.rs:189 Tokens are internal IPC strings parsed directly rather than scripts emitted for foreign interpreters."
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/execution/assertions.rs:204 Tests invoke command parsers directly rather than scanning source files."
+        },
+        {
+          "technique": "live-app-harness",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Runs in-process unit tests without launching the desktop Tauri application shell."
+        },
+        {
+          "technique": "dynamic-verifier-classes",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 No sanitizers or verifier instrumentation are configured in this command unit suite."
+        },
+        {
+          "technique": "flake-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Synchronous unit tests with no retry or quarantine policy."
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Does not assert side effects on external unowned remote services."
+        }
+      ],
+      "registryProposal": "unreached-decisions-pin-nothing: add a rule and linter for test assertions enclosed in conditional blocks or loops over static fixtures that execute zero iterations, passing vacuously when expected data variants are absent."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "test-harness",
+      "context": "recipe-build-models",
+      "reason": "withdrawn after review: conformant padded to the evidence floor: one generic anchor (mod tests {, vitest.config.ts:17) reused for 5-6 not-applicable techniques; 9-10 distinct anchors of 12 needed"
+    },
+    {
+      "subject": "test-harness",
+      "context": "notepad-plan",
+      "reason": "withdrawn after review: conformant padded to the evidence floor: one generic anchor (mod tests {, vitest.config.ts:17) reused for 5-6 not-applicable techniques; 9-10 distinct anchors of 12 needed"
+    },
+    {
+      "subject": "test-harness",
+      "context": "plugins-dev-tools-projects",
+      "reason": "withdrawn after review: conformant padded to the evidence floor: one generic anchor (mod tests {, vitest.config.ts:17) reused for 5-6 not-applicable techniques; 9-10 distinct anchors of 12 needed"
+    },
+    {
+      "subject": "test-harness",
+      "context": "lib-personas",
+      "reason": "withdrawn after review: conformant padded to the evidence floor: one generic anchor (mod tests {, vitest.config.ts:17) reused for 5-6 not-applicable techniques; 9-10 distinct anchors of 12 needed"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T16:43:32.807825+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "approval-snapshots-with-guarded-update",
+        "assert-through-the-reader",
+        "dynamic-verifier-classes",
+        "far-side-oracle",
+        "fixture-economics",
+        "flake-lifecycle",
+        "gate-scope-is-not-report-scope",
+        "isolation-lanes",
+        "live-app-harness",
+        "negative-control-tests",
+        "pin-the-call-not-the-name",
+        "recorded-interaction-fixtures",
+        "suite-partitioning",
+        "unreached-decisions-pin-nothing"
+      ],
+      "deviations": 0,
+      "context": "recipe-build-models",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-12T16:43:32.807825+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "approval-snapshots-with-guarded-update",
+        "assert-through-the-reader",
+        "dynamic-verifier-classes",
+        "far-side-oracle",
+        "fixture-economics",
+        "flake-lifecycle",
+        "isolation-lanes",
+        "live-app-harness",
+        "negative-control-tests",
+        "pin-the-call-not-the-name",
+        "suite-partitioning",
+        "unreached-decisions-pin-nothing"
+      ],
+      "deviations": 0,
+      "context": "notepad-plan",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-12T16:43:32.807825+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "approval-snapshots-with-guarded-update",
+        "assert-through-the-reader",
+        "dynamic-verifier-classes",
+        "far-side-oracle",
+        "fixture-economics",
+        "flake-lifecycle",
+        "isolation-lanes",
+        "live-app-harness",
+        "negative-control-tests",
+        "pin-the-call-not-the-name",
+        "suite-partitioning",
+        "unreached-decisions-pin-nothing"
+      ],
+      "deviations": 1,
+      "context": "commands-execution",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-12T16:43:32.807825+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "approval-snapshots-with-guarded-update",
+        "assert-through-the-reader",
+        "dynamic-verifier-classes",
+        "far-side-oracle",
+        "fixture-economics",
+        "flake-lifecycle",
+        "isolation-lanes",
+        "live-app-harness",
+        "negative-control-tests",
+        "pin-the-call-not-the-name",
+        "suite-partitioning",
+        "unreached-decisions-pin-nothing"
+      ],
+      "deviations": 0,
+      "context": "plugins-dev-tools-projects",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-12T16:43:32.807825+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "approval-snapshots-with-guarded-update",
+        "assert-through-the-reader",
+        "dynamic-verifier-classes",
+        "far-side-oracle",
+        "fixture-economics",
+        "flake-lifecycle",
+        "isolation-lanes",
+        "live-app-harness",
+        "negative-control-tests",
+        "pin-the-call-not-the-name",
+        "suite-partitioning",
+        "unreached-decisions-pin-nothing"
+      ],
+      "deviations": 0,
+      "context": "lib-personas",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    }
+  ]
+}

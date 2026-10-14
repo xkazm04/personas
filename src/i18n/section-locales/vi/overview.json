@@ -2105,5 +2105,6 @@
   "dc_open_in_deck_hint": "Mở mục này trong Trung tâm quyết định (Enter)",
   "dc_pending_lead": "Mỗi đánh giá đang chờ sẽ mở trong Trung tâm quyết định, với đầy đủ nội dung và cùng phím như mọi quyết định khác.",
   "dc_pending_list_aria": "Đánh giá đang chờ",
-  "dc_select_review": "Chọn đánh giá"
+  "dc_select_review": "Chọn đánh giá",
+  "dc_col_decision": "Quyết định"
 }

@@ -242,6 +242,30 @@ pub fn list(
     Ok(rows)
 }
 
+/// The newest `limit` jobs of one `kind` in one direction, returned OLDEST
+/// first. The CLI mailbox (`cli_mail`) reads its inbound rows through this;
+/// the caller filters by time and topic, because `created_at` is RFC 3339
+/// text and not safe to compare as a string across fractional-second widths.
+pub fn list_by_kind(
+    pool: &DbPool,
+    direction: RemoteJobDirection,
+    kind: &str,
+    limit: u32,
+) -> Result<Vec<RemoteJob>, AppError> {
+    let conn = pool.get()?;
+    let limit = limit.clamp(1, 1000) as i64;
+    let mut rows = conn
+        .prepare(&format!(
+            "SELECT {COLUMNS} FROM remote_jobs
+             WHERE direction = ?1 AND kind = ?2
+             ORDER BY created_at DESC, rowid DESC LIMIT ?3"
+        ))?
+        .query_map(rusqlite::params![direction.as_str(), kind, limit], map_job)?
+        .collect::<Result<Vec<_>, _>>()?;
+    rows.reverse();
+    Ok(rows)
+}
+
 /// Jobs in a non-terminal state for one peer — what a reconnect must resume.
 pub fn list_unfinished_for_peer(
     pool: &DbPool,
@@ -422,9 +446,10 @@ fn transition(
 
 // -- Receipt and mirror -------------------------------------------------------
 
-/// Store a job's completion receipt (a serialized `FleetSessionJobReceipt`).
-/// The caller validates the JSON; this layer stores it verbatim, and
-/// [`map_job`] reads an unparseable value back as absent.
+/// Store a job's completion receipt (a serialized `FleetSessionJobReceipt`
+/// for `fleet_session`, `MeshVerbReceipt` for `mesh_verb`). The caller
+/// validates the JSON; this layer stores it verbatim, and [`map_job`] reads it
+/// back by the job's kind, an unparseable value as absent.
 pub fn set_receipt(pool: &DbPool, id: &str, receipt_json: &str) -> Result<(), AppError> {
     timed_query!("remote_jobs", "remote_jobs::set_receipt", {
         let conn = pool.get()?;
@@ -640,6 +665,27 @@ pub fn list_notes(pool: &DbPool, job_id: &str) -> Result<Vec<RemoteJobNote>, App
 fn map_job(row: &rusqlite::Row<'_>) -> rusqlite::Result<RemoteJob> {
     let direction: String = row.get(1)?;
     let status: String = row.get(6)?;
+    let kind: String = row.get(4)?;
+    // One `receipt_json` column, two receipt shapes: which one it holds is
+    // decided by the job's kind, never by trying both parsers. An unparseable
+    // receipt reads as absent rather than failing the whole listing, for the
+    // same reason an unknown status token does below.
+    let receipt_json: Option<String> = row.get("receipt_json")?;
+    let (receipt, mesh_receipt) = match kind.as_str() {
+        crate::models::REMOTE_JOB_KIND_MESH_VERB => (
+            None,
+            receipt_json
+                .as_deref()
+                .and_then(|raw| serde_json::from_str(raw).ok()),
+        ),
+        crate::models::REMOTE_JOB_KIND_FLEET_SESSION => (
+            receipt_json
+                .as_deref()
+                .and_then(|raw| serde_json::from_str(raw).ok()),
+            None,
+        ),
+        _ => (None, None),
+    };
     Ok(RemoteJob {
         id: row.get(0)?,
         // A row whose token no longer parses is treated as the safe default
@@ -648,7 +694,7 @@ fn map_job(row: &rusqlite::Row<'_>) -> rusqlite::Result<RemoteJob> {
         direction: RemoteJobDirection::parse(&direction).unwrap_or(RemoteJobDirection::Inbound),
         peer_id: row.get(2)?,
         peer_display_name: row.get(3)?,
-        kind: row.get(4)?,
+        kind,
         instruction: row.get(5)?,
         status: RemoteJobStatus::parse(&status).unwrap_or(RemoteJobStatus::Failed),
         summary: row.get(7)?,
@@ -658,11 +704,8 @@ fn map_job(row: &rusqlite::Row<'_>) -> rusqlite::Result<RemoteJob> {
         updated_at: row.get(11)?,
         completed_at: row.get(12)?,
         payload_json: row.get("payload_json")?,
-        // An unparseable receipt reads as absent rather than failing the whole
-        // listing, for the same reason an unknown status token does above.
-        receipt: row
-            .get::<_, Option<String>>("receipt_json")?
-            .and_then(|raw| serde_json::from_str(&raw).ok()),
+        receipt,
+        mesh_receipt,
     })
 }
 
@@ -1123,5 +1166,77 @@ mod tests {
                 .expect("delete");
         }
         assert!(list_notes(&pool, "job-1").expect("notes").is_empty());
+    }
+
+    /// A1: the one `receipt_json` column is read by KIND. A `mesh_verb`
+    /// receipt lands in `mesh_receipt`, a `fleet_session` one in `receipt`,
+    /// and neither ever leaks into the other field.
+    #[test]
+    fn a_mesh_verb_receipt_maps_to_mesh_receipt_only() {
+        let pool = test_pool();
+        create_inbound_with_payload(
+            &pool,
+            "verb-1",
+            "peerA",
+            "Laptop",
+            "mesh_verb",
+            "ping",
+            Some(r#"{"verb":"ping"}"#),
+        )
+        .expect("inbound verb");
+        set_receipt(
+            &pool,
+            "verb-1",
+            r#"{"verb":"ping","ok":true,"detail":"1.0 p2p"}"#,
+        )
+        .expect("receipt");
+        let job = get(&pool, "verb-1").expect("get").unwrap();
+        assert!(job.receipt.is_none(), "not a fleet receipt");
+        let r = job.mesh_receipt.expect("mesh receipt parsed");
+        assert!(r.ok);
+        assert_eq!(r.detail.as_deref(), Some("1.0 p2p"));
+
+        // The same JSON on an instruction job is nobody's receipt.
+        outbound(&pool, "job-instruction");
+        set_receipt(
+            &pool,
+            "job-instruction",
+            r#"{"verb":"ping","ok":true,"detail":null}"#,
+        )
+        .expect("receipt");
+        let job = get(&pool, "job-instruction").expect("get").unwrap();
+        assert!(job.receipt.is_none() && job.mesh_receipt.is_none());
+    }
+
+    #[test]
+    fn list_by_kind_returns_the_newest_window_oldest_first() -> Result<(), AppError> {
+        let pool = test_pool();
+        for i in 0..3 {
+            create_inbound_with_payload(
+                &pool,
+                &format!("mail-{i}"),
+                "peerA",
+                "Laptop",
+                "cli_mail",
+                "mail",
+                Some(r#"{"topic":"t","body":"b"}"#),
+            )?;
+            pool.get()?.execute(
+                "UPDATE remote_jobs SET created_at = ?2 WHERE id = ?1",
+                rusqlite::params![format!("mail-{i}"), format!("2026-10-13T10:00:0{i}Z")],
+            )?;
+        }
+        outbound(&pool, "not-mail");
+        let all = list_by_kind(&pool, RemoteJobDirection::Inbound, "cli_mail", 10).unwrap();
+        assert_eq!(
+            all.iter().map(|j| j.id.as_str()).collect::<Vec<_>>(),
+            vec!["mail-0", "mail-1", "mail-2"]
+        );
+        let newest = list_by_kind(&pool, RemoteJobDirection::Inbound, "cli_mail", 2).unwrap();
+        assert_eq!(
+            newest.iter().map(|j| j.id.as_str()).collect::<Vec<_>>(),
+            vec!["mail-1", "mail-2"]
+        );
+        Ok(())
     }
 }

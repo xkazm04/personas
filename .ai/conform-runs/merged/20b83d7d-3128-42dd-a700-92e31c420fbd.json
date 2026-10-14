@@ -1,0 +1,37 @@
+{"schema": "conform-run/1", "worker": "20b83d7d-3128-42dd-a700-92e31c420fbd", "subject": "voice-io",
+ "evaluatedAt": "2026-10-12T12:41:29Z",
+ "pairs": [
+  {"context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a", "subject": "voice-io", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src-tauri/src/companion/jobs/connector_use.rs:1312 Athena's ElevenLabs generate_tts interpolates a model-supplied voice_id straight into the API URL, bypassing the existing voice-id door (src-tauri/src/companion/tts/mod.rs:128, which already names ElevenLabs ids and rejects '../'), and pins model eleven_turbo_v2_5 (:1319) outside any engine adapter, so a hallucinated or path-shaped id reaches the vendor with the user's key and a retired model fails with no normalization",
+   "techniques": [
+    {"technique": "speech-ready-text", "verdict": "deviation", "evidence": "src-tauri/src/companion/jobs/connector_use.rs:1312 the length bound exists (:1299, 1000 chars) but the voice identifier is never sanitized; the one door that bounds length and sanitizes voice ids (src-tauri/src/companion/tts/mod.rs:128) is not called on this path"},
+    {"technique": "engine-abstraction", "verdict": "deviation", "evidence": "src-tauri/src/companion/jobs/connector_use.rs:1319 a second ElevenLabs synthesis path with its own hardcoded model id lives in connector dispatch beside the companion tts adapters (src-tauri/src/companion/tts/mod.rs), so no retired-model normalization or capability probe covers it"},
+    {"technique": "render-acceptance", "verdict": "unknown", "evidence": "src-tauri/src/companion/jobs/connector_use.rs:1340 writes whatever bytes a 200 returned (zero bytes included) to the drive, but the op is approval-gated (src-tauri/src/companion/connectors.rs:194) and the clip is a file, not live playback, so whether a person auditions it before use was not established"},
+    {"technique": "stt-pipeline", "verdict": "not-applicable", "evidence": "src-tauri/src/companion/brain/profile_synthesis.rs:197 the brain only counts voice turns; no capture or transcription lives in this context"}
+   ],
+   "registryProposal": "speech-ready-text bundles identifier sanitization into the markup door; a tool-call synthesis path whose text is model-authored for the ear legitimately skips the markup pass (its own 'When not to apply') yet still needs the id/length bounds - stating that the bounds survive a bypass of the markup pass as its own rule (or moving id sanitization to engine-abstraction's validation door) would make this case easier to judge."},
+  {"context": "7741725e-8124-4899-b17e-8e39e7fcf1ed", "subject": "voice-io", "bundle": "software-engineering", "state": "not-applicable",
+   "evidence": "src/features/studio/StudioBuildSettings.tsx:95 'voice' in Studio is a written-style picker (how much Athena explains, per the header at :11); none of the context's 19 files captures, transcribes, synthesizes or plays audio",
+   "techniques": []},
+  {"context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e", "subject": "voice-io", "bundle": "software-engineering", "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/teams/team_channel.rs:84 'voice' here is a message author (internal vs slack) and 'synthesis' across the 33 design/teams command files is LLM text; no file carries an audio, tts or transcription path",
+   "techniques": []},
+  {"context": "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20", "subject": "voice-io", "bundle": "software-engineering", "state": "not-applicable",
+   "evidence": "src/features/plugins/radio/hooks/useRadioState.ts:8 the radio surface consumes only station/now-playing/state APIs; re-checked against rev 20, none of its 14 files captures, transcribes, synthesizes or speaks (zero speech/tts/getUserMedia/voice references), and streaming music is the 'producing/plumbing media' boundary the golden path hands elsewhere",
+   "techniques": []},
+  {"context": "50bf2ad0-3da7-4405-991a-6e22695903a2", "subject": "voice-io", "bundle": "software-engineering", "state": "not-applicable",
+   "evidence": "src/features/companions/athena/NarrationThread.tsx:2 'narration' is the visible progress-beat timeline; re-checked against rev 20, none of the nine components reaches speech, tts, read-aloud or playback, so the tts-pipeline/voice-ux-integration preconditions do not hold",
+   "techniques": []}
+ ],
+ "declined": [
+  {"subject": "voice-io", "context": "09cf4f1d-dc6f-4c3d-b15f-6686c6ce1eb7", "reason": "plugins-artist-media-studio has zero file_paths in context-map.json and an empty paths list in the map (a dead context); nothing to read"},
+  {"subject": "voice-io", "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b", "reason": "weak governance row; left as a coverage question, not judged by default"},
+  {"subject": "voice-io", "context": "*remaining unknown probable pairs*", "reason": "budget: 5 pairs judged this run; ~25 probable-confidence unknown pairs (api-pipeline, notepad-core, hooks-utility-data, settings-network, ...) all carry priorNotApplicable:3 and lexical-only matches, left for later runs"}
+ ],
+ "consults": [
+  {"ts": "2026-10-12T12:41:29Z", "bundle": "software-engineering", "subjects": ["voice-io"], "techniques": ["speech-ready-text", "engine-abstraction", "render-acceptance", "stt-pipeline"], "deviations": 2},
+  {"ts": "2026-10-12T12:41:29Z", "bundle": "software-engineering", "subjects": ["voice-io"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-12T12:41:29Z", "bundle": "software-engineering", "subjects": ["voice-io"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-12T12:41:29Z", "bundle": "software-engineering", "subjects": ["voice-io"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-12T12:41:29Z", "bundle": "software-engineering", "subjects": ["voice-io"], "techniques": [], "deviations": 0}
+ ]}

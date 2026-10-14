@@ -81,8 +81,7 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
 
 const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   // `releases` — the What's New / roadmap surface (home/sub_releases).
-  // `cockpit` — inbox strings surfaced by home/sub_cockpit widgets.
-  home: ['home', 'onboarding', 'system_health', 'releases', 'cockpit'],
+  home: ['home', 'onboarding', 'system_health', 'releases'],
   overview: ['overview', 'director', 'execution', 'execution_status', 'event_types', 'alerts', 'models'],
   // `ship` — the Factory L2 Ship tab (milestone convergence layer).
   // `mastermind` — the teams/sub_mastermind canvas.
@@ -109,8 +108,7 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   'design-reviews': ['design', 'feedback_labels', 'templates', 'recipes', 'explore'],
   // `twin` — plugins/twin (629 keys; also feeds the plugins sidebar nav).
   // `project_overview` — plugins/dev-tools project overview + LLM monitoring.
-  // `cockpit` — companions/athena inbox helpers.
-  plugins: ['plugins', 'gitlab', 'pipeline', 'twin', 'project_overview', 'cockpit'],
+  plugins: ['plugins', 'gitlab', 'pipeline', 'twin', 'project_overview'],
   // `companions` — the category's own strings (nav, states, blockers, the
   //   three identities, the landing, the Setup pages).
   // `director` — Overseer's reviews page, which moved here from Overview.

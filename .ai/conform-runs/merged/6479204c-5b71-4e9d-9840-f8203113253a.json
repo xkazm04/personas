@@ -1,0 +1,35 @@
+{
+  "schema": "conform-run/1",
+  "worker": "6479204c-5b71-4e9d-9840-f8203113253a",
+  "subject": "triage-queues",
+  "evaluatedAt": "2026-10-10T11:47:49Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "triage-queues",
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "reason": "verdict already current: judged against sha256-b2:70c2c3ebc5f18a8f (revision 3, the registry index digest at e6f59b26), no commit or working-tree change in its paths since evaluatedAt, and its anchor line printed back unchanged - re-judging would duplicate a verdict, not add one (evaluated 2026-10-09)"
+    },
+    {
+      "subject": "triage-queues",
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "reason": "verdict already current: judged against sha256-b2:70c2c3ebc5f18a8f (revision 3, the registry index digest at e6f59b26), no commit or working-tree change in its paths since evaluatedAt, and its anchor line printed back unchanged - re-judging would duplicate a verdict, not add one (evaluated 2026-10-09)"
+    },
+    {
+      "subject": "triage-queues",
+      "context": "ef73ca1c-fc54-4b9c-83ec-390c54929192",
+      "reason": "verdict already current: judged against sha256-b2:70c2c3ebc5f18a8f (revision 3, the registry index digest at e6f59b26), no commit or working-tree change in its paths since evaluatedAt, and its anchor line printed back unchanged - re-judging would duplicate a verdict, not add one (evaluated 2026-10-09)"
+    },
+    {
+      "subject": "triage-queues",
+      "context": "11fe7642-7a1a-47c5-8910-499850aa04fe",
+      "reason": "verdict already current: judged against sha256-b2:70c2c3ebc5f18a8f (revision 3, the registry index digest at e6f59b26), no commit or working-tree change in its paths since evaluatedAt, and its anchor line printed back unchanged - re-judging would duplicate a verdict, not add one (evaluated 2026-10-09)"
+    },
+    {
+      "subject": "triage-queues",
+      "context": "50f50f97-be0e-4a93-8f1c-c0b967cd45d0",
+      "reason": "verdict already current: judged against sha256-b2:70c2c3ebc5f18a8f (revision 3, the registry index digest at e6f59b26), no commit or working-tree change in its paths since evaluatedAt, and its anchor line printed back unchanged - re-judging would duplicate a verdict, not add one (evaluated 2026-10-03)"
+    }
+  ],
+  "consults": []
+}

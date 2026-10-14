@@ -1,0 +1,182 @@
+{
+  "schema": "conform-run/1",
+  "worker": "355b5e64-0b0c-4653-90dc-20ba063609ed",
+  "subject": "markdown-vault",
+  "evaluatedAt": "2026-10-09T15:48:34Z",
+  "pairs": [
+    {
+      "context": "7f6d3238-7136-4361-af8f-bca556ae2042",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/mcp_server/tools.rs:1492 still keys the sidecar note by slugify(title) with no minted id, and :1513 atomically replaces whatever sits at that path with no divergence check, so two titles that slugify alike overwrite each other and an MCP rewrite silently replaces a note the human edited",
+      "techniques": [
+        {
+          "technique": "vault-as-database",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1492 identity derived from the title slug, no minted id in the frontmatter; escaping is realized at :1507 yaml_quote(title)"
+        },
+        {
+          "technique": "editor-interop",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1513 atomic_write is realized (no torn note), but it overwrites an existing human-edited note last-writer-wins with no existence or divergence check"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+      "evaluatedRevision": 2
+    },
+    {
+      "context": "0c029a55-8e0a-47aa-a636-6e941425a7dc",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:482 still counts an orphan as any note with no backlink while lint.rs:120 exempts entry points, so Graph stats and the lint report give two orphan counts and neither names its predicate; graph.rs:778 spawns a debounce loop that never exits and stop_watcher (:822) drops only the watcher",
+      "techniques": [
+        {
+          "technique": "link-graph-extraction",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:482 orphan_count with no exemption vs src-tauri/src/commands/obsidian_brain/lint.rs:120 is_likely_entry_point exemption; count-carries-predicate unmet"
+        },
+        {
+          "technique": "editor-interop",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:778 debounce thread is a bare loop with no shutdown; src-tauri/src/commands/obsidian_brain/graph.rs:822 stop clears only the watcher handle, so the watcher does not name its reaper"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+      "evaluatedRevision": 2
+    },
+    {
+      "context": "83a8a744-2036-4e3e-9654-6fcec82334ff",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/obsidian-brain/sub_browse/parseNote.ts:36 still strips wrapping quotes without YAML-unescaping, so a field the app wrote through yaml_quote (src-tauri/src/commands/obsidian_brain/markdown.rs:17) displays with literal backslash escapes and the Browse panel disagrees with the Rust reader about the app own records",
+      "techniques": [
+        {
+          "technique": "vault-as-database",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/obsidian-brain/sub_browse/parseNote.ts:36 regex quote strip with no unescape; the emit-then-parse round trip against src-tauri/src/commands/obsidian_brain/markdown.rs:17 fails for any value with a quote, backslash or newline"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+      "evaluatedRevision": 2
+    },
+    {
+      "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:834 still rewrites every projected note with a plain std::fs::write, keeping no last-synced base and running no three-way comparison although an importer reads edits back, so a human edit not yet imported is silently overwritten and a reader can see a torn file; :813 replaces \" with ' in titles and fails the round trip",
+      "techniques": [
+        {
+          "technique": "mirror-indexes",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:834 projection overwrites unconditionally while an import path exists; neither a declared one-way contract in the note nor a base for three-way sync"
+        },
+        {
+          "technique": "editor-interop",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:834 truncating std::fs::write, not temp-then-rename"
+        },
+        {
+          "technique": "vault-as-database",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:813 hand-rolled quote replacement instead of yaml_quote; minted id is realized at :811 personas_id"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+      "evaluatedRevision": 2
+    },
+    {
+      "context": "ca705961-f138-494a-b0fe-f882c674d25a",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_mastermind/lib/MemorySection.tsx:39 still routes a failed Sync-to-vault into silentCatch and :37 toasts only when vaultConfigured, so the only door to the memory-ledger projection reports nothing on failure or no-op while it fires a full overwrite of projected notes (src-tauri/src/commands/infrastructure/memory_ledger.rs:834) with no conflict surfaced",
+      "techniques": [
+        {
+          "technique": "editor-interop",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/MemorySection.tsx:39 sync failure swallowed by silentCatch; conflicts are neither detected nor escalated to the human"
+        },
+        {
+          "technique": "mirror-indexes",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/MemorySection.tsx:37 the sync affordance never states the overwrite contract of the projection it triggers"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+      "evaluatedRevision": 2
+    }
+  ],
+  "declined": [
+    {
+      "subject": "markdown-vault",
+      "context": "*",
+      "reason": "the 20 not-applicable pairs (credential-vault, notepad, agents-editor contexts) were judged against the current digest sha256-b2:7a10f98b2d9488ac rev 2 between 2026-09-23 and 2026-10-06 and are neither stale nor unknown; only the 5 deviations were re-verified against current code"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T15:48:34Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "markdown-vault"
+      ],
+      "techniques": [
+        "vault-as-database",
+        "editor-interop"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T15:48:34Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "markdown-vault"
+      ],
+      "techniques": [
+        "link-graph-extraction",
+        "editor-interop"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T15:48:34Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "markdown-vault"
+      ],
+      "techniques": [
+        "vault-as-database"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T15:48:34Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "markdown-vault"
+      ],
+      "techniques": [
+        "mirror-indexes",
+        "editor-interop",
+        "vault-as-database"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T15:48:34Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "markdown-vault"
+      ],
+      "techniques": [
+        "editor-interop",
+        "mirror-indexes"
+      ],
+      "deviations": 1
+    }
+  ]
+}

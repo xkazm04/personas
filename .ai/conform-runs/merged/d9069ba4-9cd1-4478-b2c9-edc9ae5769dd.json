@@ -1,0 +1,88 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d9069ba4-9cd1-4478-b2c9-edc9ae5769dd",
+  "subject": "session-continuation",
+  "evaluatedAt": "2026-10-10T14:31:19.902Z",
+  "pairs": [
+    {
+      "context": "fd961ee9-bf7c-4ec7-90c3-a728045d3d44",
+      "subject": "session-continuation",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
+      "evaluatedRevision": 8,
+      "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:174 \"Run to budget\" is a second continuation loop over the same deliberation the autonomous tick advances (src-tauri/src/engine/deliberation.rs:1010) with no refuse/adopt policy, and the round write is blind (src-tauri/db/src/repos/resources/deliberation.rs:179), so the two double-spend a round and a stale snapshot can overwrite an escalated/paused status back to open",
+      "techniques": [
+        {
+          "technique": "single-loop-authority",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:174 client while-loop calls advanceTeamDeliberation while DeliberationSubscription::tick (src-tauri/src/engine/deliberation.rs:1010) advances every open/converging row; no single authority, no conflict policy, no compare-before-write"
+        },
+        {
+          "technique": "stuck-loop-detection",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:313 runAllTracks swallows each track advance error and re-advances the still-open track next pass; a moderator failure (src-tauri/src/engine/deliberation.rs:812 returns before cost or round move) repeats identically in a tight loop with a toast per pass and no failure-signature stop"
+        },
+        {
+          "technique": "continuation-as-state",
+          "verdict": "realized",
+          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:178 the keep-going condition is the persisted deliberation status re-read every round against an enumerated continue set (:39); nothing is carried in prompt text"
+        },
+        {
+          "technique": "boundary-applied-stop",
+          "verdict": "realized",
+          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:190 Stop clears runningRef and the loop exits at the next round boundary after the in-flight advance lands, never mid-round"
+        },
+        {
+          "technique": "compaction-checkpoint",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/deliberation.rs:812 each round rebuilds moderator context from the DB; no long-lived model context is compacted"
+        }
+      ],
+      "registryProposal": "single-loop-authority frames the second loop as a host evaluator or a nested mode; a common shape it does not name is an operator-driven client loop beside a server scheduler tick on the same persisted record, where the authority conflict shows up as a blind read-modify-write. Worth one sentence and an example, and a seam note to background-jobs."
+    },
+    {
+      "context": "4810daf8-0549-4899-95d2-99c81cde6455",
+      "subject": "session-continuation",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
+      "evaluatedRevision": 8,
+      "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:67 the only loop here is a 60s scheduler interval (background-jobs territory), and healing is one triggerHealing call per click (src/features/overview/sub_observability/libs/useHealingPanelState.ts:35) whose stream the overlay only renders; no session turn boundary or stop decision lives in this context",
+      "techniques": []
+    }
+  ],
+  "declined": [
+    {
+      "subject": "session-continuation",
+      "context": "aebcd52a-07a3-4305-bf42-d961b4f37a62",
+      "reason": "governance: weak - the dev-tools command files matched on goal/checkpoint vocabulary; judging a weak row manufactures verdicts, left as a coverage question"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T14:31:19.902Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "session-continuation"
+      ],
+      "techniques": [
+        "single-loop-authority",
+        "stuck-loop-detection",
+        "continuation-as-state",
+        "boundary-applied-stop",
+        "compaction-checkpoint"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T14:31:19.902Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "session-continuation"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

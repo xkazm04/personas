@@ -1,0 +1,61 @@
+{
+  "schema": "conform-run/1",
+  "worker": "91382f36-fb69-46e2-9349-71da7ab161be",
+  "subject": "analytics-time-windows",
+  "evaluatedAt": "2026-10-13T12:47:07.654089+00:00",
+  "provider": "agy",
+  "model": "gemini-3.8-flash-high",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "analytics-time-windows",
+      "context": "schedules-components",
+      "reason": "withdrawn after review: reviewer (sonnet): The not-applicable anchor scheduleHelpers.ts:8 is just the ScheduleEntry interface declaration and does not show that period-over-period deltas are absent; the 'avoids split-brain' claim is also unconfirmed, because fire times come from the backend in each agent's own timezone (useCronPreview.ts pas"
+    },
+    {
+      "subject": "analytics-time-windows",
+      "context": "overview-usage-charts",
+      "reason": "withdrawn after review: reviewer (sonnet): I could not confirm that the series is sparse: the only caller of mergePreviousPeriod is in sub_activity/useExecutionMetrics.ts, outside this context, and I did not find the backend code that builds daily_points, so I could not tell whether quiet days are zero-filled."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-13T12:47:07.654089+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "analytics-time-windows"
+      ],
+      "techniques": [
+        "baseline-as-window-start",
+        "calendar-arithmetic",
+        "canonical-zone-single-source",
+        "cohort-matched-comparison",
+        "half-open-interval-policy",
+        "range-precedence-resolution"
+      ],
+      "deviations": 0,
+      "context": "schedules-components",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-13T12:47:07.654089+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "analytics-time-windows"
+      ],
+      "techniques": [
+        "baseline-as-window-start",
+        "calendar-arithmetic",
+        "canonical-zone-single-source",
+        "cohort-matched-comparison",
+        "half-open-interval-policy",
+        "range-precedence-resolution"
+      ],
+      "deviations": 1,
+      "context": "overview-usage-charts",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    }
+  ]
+}

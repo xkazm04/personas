@@ -280,6 +280,10 @@ pub(crate) async fn execute_approval_action(
         // device, through the same device rule and the same dispatch path as
         // the "Run on" picker.
         "remote_fleet_dispatch" => execute_remote_fleet_dispatch(&state, params).await,
+        // The device mesh: a paired device's agent switch, and moving one of
+        // this device's queued entries there. Same device rule, inside each.
+        "mesh_set_agent_enabled" => execute_mesh_set_agent_enabled(&state, params).await,
+        "mesh_queue_move" => execute_mesh_queue_move(&state, &app, params).await,
         // Ship layer — act on a milestone that already exists. The CREATE path
         // is the editable `show_ship_milestone` chat card, not an approval.
         "set_ship_scope" => execute_set_ship_scope(&state, params),

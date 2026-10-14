@@ -322,6 +322,10 @@ event_names! {
     // One chunk of a subscribed remote session's terminal output (lossy tail).
     // Payload: `RemoteSessionOutputChunk`.
     REMOTE_SESSION_OUTPUT      => "network:remote-session-output",
+    // Device mesh: a paired device's latest `DeviceSnapshot` landed here (or
+    // its liveness turned `unknown`). Payload: `MeshDeviceView` for that one
+    // device - the whole view, so a listener that missed one converges.
+    DEVICE_SNAPSHOT            => "network:device-snapshot",
     // Payload: `RemoteJobTurnEvent` — the answering turn for a job another
     // paired device asked THIS one to run, started or finished. That turn runs
     // with `suppress_chat`, so this is the ONLY signal the frontend gets; the
@@ -406,6 +410,10 @@ event_names! {
     // The dispatch queue moved: a row was enqueued / promoted / reordered /
     // cancelled, or the live-session cap changed. Payload: `QueueChangedPayload`.
     FLEET_QUEUE_CHANGED        => "fleet-queue-changed",
+    // Measured resources: the latest CPU/RAM/GPU sample of every LIVE run
+    // (fleet session or persona execution), every 5 s while any run is live.
+    // Latest-wins. Payload: `LiveResourceSample[]`.
+    FLEET_RESOURCE_SAMPLE      => "fleet-resource-sample",
 
     // Contest plugin: a seat changed state or an autopilot chain step moved.
     // Payload: `commands::contest::types::ContestChangedPayload`

@@ -1,6 +1,6 @@
 // Shared model for the incidents ledger: the sortable column set with its own
 // widths (so the sticky column header and the rows below it compose the SAME
-// grid template and can never drift), and the sort-header cell.
+// grid template and can never drift).
 //
 // 2026-10-05: the ledger became a real one-line table. Every column now has a
 // CELL under it — before this, `source` had a header and no cell, and the
@@ -9,11 +9,10 @@
 // the status filter (Open / Critical / Acked / Resolved), so a per-row status
 // value was a column spent restating what the active tile already says.
 
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { Translations } from '@/i18n/generated/types';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
-import type { IncidentSortKey, SortDirection } from '../../libs/useIncidentLedger';
+import type { IncidentSortKey } from '../../libs/useIncidentLedger';
 
 export interface LedgerColumn {
   key: IncidentSortKey | 'actions';
@@ -69,55 +68,4 @@ export function isNewSince(incident: AuditIncident, lastSeenAt: string | null): 
   if (!lastSeenAt) return false;
   const cutoff = Date.parse(lastSeenAt);
   return !Number.isNaN(cutoff) && Date.parse(incident.createdAt) > cutoff;
-}
-
-/**
- * One column header. Sortable columns are buttons carrying the active
- * direction arrow; `actions` is a plain label (nothing to order by).
- *
- * The cell is `relative` and renders `resizeHandle` last, because that is the
- * contract `ColumnResizeHandle` declares — it pins itself to the host cell's
- * right edge.
- */
-export function LedgerSortHeader({
-  column, label, sortKey, sortDir, onToggle, resizeHandle,
-}: {
-  column: LedgerColumn;
-  label: string;
-  sortKey: IncidentSortKey;
-  sortDir: SortDirection;
-  onToggle: (key: IncidentSortKey) => void;
-  resizeHandle?: ReactNode;
-}) {
-  const active = column.key === sortKey;
-  const justify = column.align === 'right' ? 'justify-end' : 'justify-start';
-  const labelCls = 'typo-caption font-mono uppercase tracking-widest';
-
-  const Arrow = sortDir === 'asc' ? ChevronUp : ChevronDown;
-
-  const inner = column.key === 'actions' ? (
-    <span className={`flex min-w-0 items-center ${justify} ${labelCls} text-foreground`}>{label}</span>
-  ) : (
-    <button
-      type="button"
-      onClick={() => onToggle(column.key as IncidentSortKey)}
-      aria-label={label}
-      className={`flex min-w-0 items-center gap-1 ${justify} ${labelCls} rounded-interactive transition-colors focus-ring ${
-        active ? 'text-primary' : 'text-foreground hover:text-primary/80'
-      }`}
-    >
-      <span className="truncate">{label}</span>
-      <Arrow className={`h-3 w-3 shrink-0 transition-opacity ${active ? 'opacity-100' : 'opacity-0'}`} aria-hidden="true" />
-    </button>
-  );
-
-  return (
-    // The wrapper is the flex container, so a right-aligned column aligns
-    // HERE. `justify-end` on the inner button alone is a no-op: the button is
-    // content-sized, so it has no free space of its own to push against.
-    <div className={`relative flex min-w-0 items-center pr-2 ${justify}`}>
-      {inner}
-      {resizeHandle}
-    </div>
-  );
 }

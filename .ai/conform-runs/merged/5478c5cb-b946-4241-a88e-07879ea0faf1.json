@@ -1,0 +1,45 @@
+{
+  "schema": "conform-run/1",
+  "worker": "5478c5cb-b946-4241-a88e-07879ea0faf1",
+  "subject": "accessibility",
+  "evaluatedAt": "2026-10-12T11:33:58.545Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "accessibility",
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "reason": "already judged deviation on 2026-10-09 against the current subject digest sha256-b2:5e30485ee0c7c123 (revision 7, unchanged at registry e94a2fc5); not stale, the anchored files have no commits or working-tree edits since, and the anchor line re-read on 2026-10-12 still shows the defect - re-judging would duplicate a fresh verdict"
+    },
+    {
+      "subject": "accessibility",
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "reason": "already judged deviation on 2026-10-06 against the current subject digest sha256-b2:5e30485ee0c7c123 (revision 7, unchanged at registry e94a2fc5); not stale, the anchored files have no commits or working-tree edits since, and the anchor line re-read on 2026-10-12 still shows the defect - re-judging would duplicate a fresh verdict"
+    },
+    {
+      "subject": "accessibility",
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "reason": "already judged deviation on 2026-10-10 against the current subject digest sha256-b2:5e30485ee0c7c123 (revision 7, unchanged at registry e94a2fc5); not stale, the anchored files have no commits or working-tree edits since, and the anchor line re-read on 2026-10-12 still shows the defect - re-judging would duplicate a fresh verdict"
+    },
+    {
+      "subject": "accessibility",
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+      "reason": "already judged deviation on 2026-10-10 against the current subject digest sha256-b2:5e30485ee0c7c123 (revision 7, unchanged at registry e94a2fc5); not stale, the anchored files have no commits or working-tree edits since, and the anchor line re-read on 2026-10-12 still shows the defect - re-judging would duplicate a fresh verdict"
+    },
+    {
+      "subject": "accessibility",
+      "context": "dc471d31-ae30-4ac9-b015-d51969df458d",
+      "reason": "already judged deviation on 2026-10-09 against the current subject digest sha256-b2:5e30485ee0c7c123 (revision 7, unchanged at registry e94a2fc5); not stale, the anchored files have no commits or working-tree edits since, and the anchor line re-read on 2026-10-12 still shows the defect - re-judging would duplicate a fresh verdict"
+    },
+    {
+      "subject": "accessibility",
+      "context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5",
+      "reason": "already judged deviation on 2026-10-09 against the current subject digest sha256-b2:5e30485ee0c7c123 (revision 7, unchanged at registry e94a2fc5); not stale, the anchored files have no commits or working-tree edits since, and the anchor line re-read on 2026-10-12 still shows the defect - re-judging would duplicate a fresh verdict"
+    },
+    {
+      "subject": "accessibility",
+      "context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0",
+      "reason": "already judged deviation on 2026-10-09 against the current subject digest sha256-b2:5e30485ee0c7c123 (revision 7, unchanged at registry e94a2fc5); not stale, the anchored files have no commits or working-tree edits since, and the anchor line re-read on 2026-10-12 still shows the defect - re-judging would duplicate a fresh verdict"
+    }
+  ],
+  "consults": []
+}

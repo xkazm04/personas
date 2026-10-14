@@ -1,0 +1,172 @@
+{
+  "schema": "conform-run/1",
+  "worker": "e7c2d5ef-e106-465b-aabe-0358e22133e4",
+  "subject": "sql-console",
+  "evaluatedAt": "2026-10-10T01:34:28Z",
+  "pairs": [
+    {
+      "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae",
+      "subject": "sql-console",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:48 copies a NULL cell as the text 'NULL' (formatCell :221), so a copied NULL is indistinguishable from the string 'NULL'; src/features/vault/sub_databases/SqlEditor.tsx:34 runs the whole buffer (no run-selection, no schema-aware completion) - below the editor floor",
+      "techniques": [
+        {
+          "technique": "result-fidelity",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:48 copy of a NULL cell yields the text 'NULL' (the grid marker at :164 is italic only, same text), so NULL leaves the console as a string; stale-success is honest - src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:43 clears result and error on every run"
+        },
+        {
+          "technique": "editor-ergonomics",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/SqlEditor.tsx:34 Ctrl+Enter executes the whole buffer: no run-selection/statement-at-cursor and no completion fed from the introspection cache; cancel is realized at src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:62"
+        },
+        {
+          "technique": "safe-mode-guarding",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/hooks/useQuerySafeMode.ts:24 safe mode defaults on; :34 voids a pending consent when its runQuery target changes; authority stands at src-tauri/src/engine/db_query.rs:703 and :720 (mutation + batch refusal)"
+        },
+        {
+          "technique": "introspection-architecture",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:6 the client SQL builders were deleted; introspection is requested by name from the backend (the surviving client door sits in the tabs context, judged there)"
+        }
+      ],
+      "registryProposal": "The trusted-side executor src-tauri/src/engine/db_query.rs sits in context output-stream-parser and query_debug.rs in commands-credentials; neither carries a sql-console pair, so the guard, the scrubber and two live result-fidelity defects (local SQLite :2807 stops at 500 rows and :2836 always reports truncated:false - the console then shows \"500 rows\" with no truncation notice; :2814 ships i64 as a JSON number, rounded past 2^53 in the webview) are invisible to this subject. Pair output-stream-parser (or re-home db_query.rs) and commands-credentials with sql-console."
+    },
+    {
+      "context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857",
+      "subject": "sql-console",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:59 asserts only the text 'NULL', which a literal string 'NULL' satisfies identically, so the NULL marker can regress with the suite green; :80 matches /truncated/ without the 500-row bound",
+      "techniques": [
+        {
+          "technique": "result-fidelity",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:59 NULL test cannot tell SQL NULL from the string 'NULL'; :80 truncation test does not assert the bound is announced"
+        },
+        {
+          "technique": "safe-mode-guarding",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/__tests__/safeModeUtils.test.ts:24 CTE-hidden DELETE, :51 stacked batch, :69 keyword in a literal, :87 keyword in a comment, :99 unclosed comment fails closed - all four canonical obfuscations pinned"
+        }
+      ]
+    },
+    {
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "subject": "sql-console",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:43 composes a Redis TYPE \"<key>\" command client-side with hand-rolled escaping and executes it via executeDbQuery - a live second introspection door that introspectionQueries.ts:6 says was deleted; history (ConsoleTab.tsx:92) records successes only",
+      "techniques": [
+        {
+          "technique": "introspection-architecture",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:43 client-built, executed (not emitted) introspection command with its own escaping"
+        },
+        {
+          "technique": "editor-ergonomics",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/ConsoleTab.tsx:92 history entries are {query,timestamp} written only from the runner's onSuccess (:97), so a failed run leaves no trace and no entry carries verdict, timing or a durable id; dedup and a named bound are realized; cancel at src/features/vault/sub_databases/tabs/QueryToolbar.tsx:89"
+        },
+        {
+          "technique": "safe-mode-guarding",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/tabs/MutationConfirmBanner.tsx:44 the consent shows the whole statement in a scrolling pre, never sliced"
+        },
+        {
+          "technique": "nl-assist-gating",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:256 generated SQL runs through the same executeDbQuery door, gated by the shared useQuerySafeMode at :292; a run-target change cancels the pending consent"
+        },
+        {
+          "technique": "dialect-capability-declaration",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/tabs/ConnectorCapabilityNote.tsx:27 the capability note is fetched from the backend declaration (src-tauri/src/engine/db_query.rs:822, next to the execute dispatch)"
+        }
+      ],
+      "registryProposal": "src-tauri/src/commands/credentials/query_debug.rs:421 (AI query-debug repair loop, context commands-credentials, unpaired) executes model-extracted SQL with no per-statement human step; when allow_mutations is on, a generated mutation auto-runs - nl-assist-gating says never. Worth a sql-console pair on that context."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "sql-console",
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+      "reason": "agents-editor: probable-confidence not-applicable already judged against the current digest sha256-b2:60a26f15745fd8c1 (revision 1, 0 behind) with an anchored precondition; not re-read this run"
+    },
+    {
+      "subject": "sql-console",
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "reason": "display-table-primitives: probable-confidence not-applicable already judged against the current digest sha256-b2:60a26f15745fd8c1 (revision 1, 0 behind) with an anchored precondition; not re-read this run"
+    },
+    {
+      "subject": "sql-console",
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "reason": "feedback-primitives: probable-confidence not-applicable already judged against the current digest sha256-b2:60a26f15745fd8c1 (revision 1, 0 behind) with an anchored precondition; not re-read this run"
+    },
+    {
+      "subject": "sql-console",
+      "context": "d3346f2c-d747-4d85-b6e6-c1450da57ec9",
+      "reason": "template-gallery-modals: probable-confidence not-applicable already judged against the current digest sha256-b2:60a26f15745fd8c1 (revision 1, 0 behind) with an anchored precondition; not re-read this run"
+    },
+    {
+      "subject": "sql-console",
+      "context": "2a54cdc2-87af-4298-b490-9eb87f230df7",
+      "reason": "templates-draft-editor: probable-confidence not-applicable already judged against the current digest sha256-b2:60a26f15745fd8c1 (revision 1, 0 behind) with an anchored precondition; not re-read this run"
+    },
+    {
+      "subject": "sql-console",
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433",
+      "reason": "vault-catalog-autocred-ui: probable-confidence not-applicable already judged against the current digest sha256-b2:60a26f15745fd8c1 (revision 1, 0 behind) with an anchored precondition; not re-read this run"
+    },
+    {
+      "subject": "sql-console",
+      "context": "b62fa237-32b4-41c3-bf56-3e498b643da9",
+      "reason": "vault-credentials-components-forms: probable-confidence not-applicable already judged against the current digest sha256-b2:60a26f15745fd8c1 (revision 1, 0 behind) with an anchored precondition; not re-read this run"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T01:34:28Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "sql-console"
+      ],
+      "techniques": [
+        "result-fidelity",
+        "editor-ergonomics",
+        "safe-mode-guarding",
+        "introspection-architecture"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T01:34:28Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "sql-console"
+      ],
+      "techniques": [
+        "result-fidelity",
+        "safe-mode-guarding"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T01:34:28Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "sql-console"
+      ],
+      "techniques": [
+        "introspection-architecture",
+        "editor-ergonomics",
+        "safe-mode-guarding",
+        "nl-assist-gating",
+        "dialect-capability-declaration"
+      ],
+      "deviations": 2
+    }
+  ]
+}

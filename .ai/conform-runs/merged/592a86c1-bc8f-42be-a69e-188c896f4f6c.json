@@ -1,0 +1,81 @@
+{
+  "schema": "conform-run/1",
+  "worker": "592a86c1-bc8f-42be-a69e-188c896f4f6c",
+  "subject": "usage-limit-governance",
+  "evaluatedAt": "2026-10-12T11:59:40Z",
+  "pairs": [
+    {
+      "context": "6da794b4-7a5f-4087-a4d4-fb8a416456e5",
+      "subject": "usage-limit-governance",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/execution/executions.rs:474 admits against terminal-status-only spend (src-tauri/db/src/repos/execution/executions.rs:2346) read before the insert, so queued/running runs are invisible and a burst overshoots by up to N budgets; src-tauri/engine/src/http_engine/openai.rs:232 stamps unpriced remote models $0.0, so that traffic spends against the cap for free (re-confirmed; openai.rs anchor moved from src-tauri/src/engine/)",
+      "techniques": [
+        {
+          "technique": "concurrent-admission-integrity",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/execution/executions.rs:472 get_monthly_spend is a check-then-act read with no per-persona exclusive section, and the predicate at src-tauri/db/src/repos/execution/executions.rs:2346 excludes queued/running rows - concurrent launches all pass on pre-burst spend"
+        },
+        {
+          "technique": "cost-evidence-and-imputation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/http_engine/openai.rs:232 None => 0.0 (and src-tauri/engine/src/http_engine/config.rs:44 cost_of) writes unpriced spend as zero instead of null+imputation; the enforcing cap reads it as headroom and never refuses as unmeasurable"
+        },
+        {
+          "technique": "metric-window-threshold-action-model",
+          "verdict": "partial",
+          "evidence": "src-tauri/src/commands/execution/executions.rs:470 cost metric x UTC calendar-month window x max_budget_usd threshold x hard-stop action; budget>0 guard treats non-positive as no cap rather than rejecting at write time; no observe-only or soft-warning tier on the local cap"
+        },
+        {
+          "technique": "graduated-throttle-with-deterministic-shed",
+          "verdict": "not-realized",
+          "evidence": "src-tauri/src/commands/execution/executions.rs:474 single >= wall, no ramp - acceptable for a per-persona monthly cap with low event rate, not counted toward the deviation"
+        }
+      ],
+      "registryProposal": "Boundary question: the golden path places a program capping its OWN emitted traffic on the builder side, outside this subject; Personas caps the runs it itself launches, so this pair may be a technique-shaped resonance (concurrent-admission-integrity and cost-evidence-and-imputation apply regardless). The registry should say whether a local-first multi-agent runner capping per-agent spend is governed here or by cost-metering, so the six consumer deviations it ranks on are not partly a routing artifact."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "usage-limit-governance",
+      "context": "e8fa2ff7-145d-4c58-af83-1239b87d2c24",
+      "reason": "already judged not-applicable 2026-10-09 against the current subject digest sha256-b2:a784035133baaaba (rev 5); no commits since under its paths and no budget/threshold concept appeared - re-judging would repeat the read"
+    },
+    {
+      "subject": "usage-limit-governance",
+      "context": "7901fd6c-0346-430b-aefe-fc4cd623b167",
+      "reason": "already judged not-applicable 2026-10-09 against the current subject digest sha256-b2:a784035133baaaba (rev 5); no commits since under its paths and no budget/threshold concept appeared - re-judging would repeat the read"
+    },
+    {
+      "subject": "usage-limit-governance",
+      "context": "66bc7a14-bf15-41d7-8d9a-900aa670f47e",
+      "reason": "already judged not-applicable 2026-10-09 against the current subject digest sha256-b2:a784035133baaaba (rev 5); no commits since under its paths and no budget/threshold concept appeared - re-judging would repeat the read"
+    },
+    {
+      "subject": "usage-limit-governance",
+      "context": "a4174786-a5fb-4145-a1b3-f02826fac64a",
+      "reason": "already judged not-applicable 2026-10-09 against the current subject digest sha256-b2:a784035133baaaba (rev 5); no commits since under its paths and no budget/threshold concept appeared - re-judging would repeat the read"
+    },
+    {
+      "subject": "usage-limit-governance",
+      "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+      "reason": "already judged not-applicable 2026-10-09 against the current subject digest sha256-b2:a784035133baaaba (rev 5); no commits since under its paths and no budget/threshold concept appeared - re-judging would repeat the read"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T11:59:40Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "usage-limit-governance"
+      ],
+      "techniques": [
+        "concurrent-admission-integrity",
+        "cost-evidence-and-imputation",
+        "metric-window-threshold-action-model",
+        "graduated-throttle-with-deterministic-shed"
+      ],
+      "deviations": 1
+    }
+  ]
+}

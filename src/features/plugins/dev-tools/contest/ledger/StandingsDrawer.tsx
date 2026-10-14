@@ -1,41 +1,47 @@
-// Standings: what each decided contest gave the owner (its winning still, the
-// seat that built it, its round) and how far each seat's record can be
-// trusted: a record matrix over the last decided contests, and each seat's
-// win rate with its 95% Wilson interval (stats.ts), so 1 win of 1 does not
-// outrank 6 of 10.
+// Standings: a quick overview of what the contests have been about and who
+// wins them. Totals up top, then every model's record (entered / won) and every
+// task area's contest count with its most successful model. The 95% Wilson
+// caveat (stats.ts) stays as one line underneath, so a rate is never read as a
+// verdict on a handful of contests.
 import { useMemo } from 'react';
-import { Trophy, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ContestSummary } from '@/lib/bindings/ContestSummary';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { formatPercent } from '@/lib/utils/formatters';
 
 import { MIN_RANKABLE_SAMPLE, seatWinRates } from '../stats';
-import { keyOf, variantName } from './ledgerModel';
-import { cssVars, drawerPanelClass, formatDay, Kbd, Seat, Still } from './parts';
+import { drawerPanelClass, Kbd } from './parts';
+import { standingsOverview } from './standingsOverview';
 
 const TITLE_ID = 'ledger-standings-title';
-/** Matrix columns: the last dozen decided contests. */
-const MATRIX_COLS = 12;
 
 export interface StandingsDrawerProps {
   contests: ContestSummary[];
   wide: boolean;
-  onPick: (key: string) => void;
   onClose: () => void;
 }
 
-export function StandingsDrawer({ contests, wide, onPick, onClose }: StandingsDrawerProps) {
-  const { t, tx, language } = useTranslation();
+function Tile({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+  return (
+    <div className="ov-tile">
+      <div className="ov-tile-v tab">{value}</div>
+      <div className="ov-tile-l">{label}</div>
+      {sub && <div className="ov-tile-s tab">{sub}</div>}
+    </div>
+  );
+}
+
+export function StandingsDrawer({ contests, wide, onClose }: StandingsDrawerProps) {
+  const { t, tx } = useTranslation();
   const s = t.plugins.contest;
   const L = s.ledger;
-  const decided = useMemo(() => contests.filter((c) => c.phase === 'decided').sort((a, b) => a.date.localeCompare(b.date)), [contests]);
-  const podiums = useMemo(() => decided.filter((c) => c.winner).slice().reverse(), [decided]);
+  const overview = useMemo(() => standingsOverview(contests), [contests]);
   const board = useMemo(() => seatWinRates(contests), [contests]);
-  const cols = decided.slice(-MATRIX_COLS);
+  const topModel = overview.models.find((m) => m.wins > 0) ?? null;
+  const pct = (ratio: number) => formatPercent(ratio, { fromRatio: true, precision: 0 });
 
   return (
     <BaseModal isOpen onClose={onClose} titleId={TITLE_ID} placement="right-drawer" portal panelClassName={drawerPanelClass(wide)}>
@@ -51,145 +57,58 @@ export function StandingsDrawer({ contests, wide, onPick, onClose }: StandingsDr
           </Button>
         </div>
         <div className="dr-body stand">
-          <section aria-label={L.podium_history}>
-            <div className="sect-h">
-              {L.podium_history}
-              <span className="n">{podiums.length}</span>
-              <span className="r">{L.newest_first}</span>
-            </div>
-            {podiums.length === 0 ? (
-              <div className="hint">{L.podium_empty}</div>
-            ) : (
-              podiums.map((p) => {
-                const v = p.ledger.variants.find((x) => x.key === p.winner) ?? null;
-                return (
-                  <div
-                    key={keyOf(p)}
-                    className="pod"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => onPick(keyOf(p))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        onPick(keyOf(p));
-                      }
-                    }}
-                    data-testid={`ledger-podium-${p.contestId}`}
-                  >
-                    <span className="thumb">
-                      <Still src={v?.still ?? null} label="" />
-                    </span>
-                    <div className="min-w-0">
-                      <div className="p1">{p.title}</div>
-                      <div className="p2">
-                        <Trophy className="w-3.5 h-3.5 shrink-0 text-status-success" aria-hidden />
-                        <b>{p.winner}</b>
-                        {v && variantName(v)}
-                        {p.winnerSeatSpec && (
-                          <>
-                            <span className="sep">·</span>
-                            <Seat spec={p.winnerSeatSpec} quiet />
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="p3">
-                      {p.round ? tx(L.round_n, { n: p.round }) : L.first_round}
-                      <br />
-                      {formatDay(p.date, language)}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </section>
-          <section aria-label={L.record_title}>
-            <div className="sect-h">
-              {L.record_title}
-              <span className="n">{tx(L.record_decided, { count: board.decided })}</span>
-              <span className="r">
-                <Tooltip content={board.separated ? s.stats_separated_hint : s.stats_not_separated_hint}>
-                  <span className="chip" style={cssVars({ '--c': board.separated ? 'var(--status-success)' : 'var(--status-warning)' })}>
-                    {board.separated ? s.stats_separated : s.stats_not_separated}
-                  </span>
-                </Tooltip>
-              </span>
-            </div>
-            {board.rows.length === 0 ? (
-              <div className="hint">{s.stats_empty}</div>
-            ) : (
-              <table className="matrix" data-testid="ledger-matrix">
-                <thead>
-                  <tr>
-                    <th className="l">{s.col_spec}</th>
-                    {cols.map((c, i) => (
-                      <th key={keyOf(c)}>
-                        <Tooltip content={c.title}>
-                          <span>{i + 1}</span>
-                        </Tooltip>
-                      </th>
-                    ))}
-                    <th>{s.col_entered}</th>
-                    <th>{s.col_wins}</th>
-                    <th className="l">{s.col_interval}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {board.rows.map((r) => {
-                    const rate = r.entered ? r.wins / r.entered : 0;
+          {overview.decided === 0 ? (
+            <div className="hint">{s.stats_empty}</div>
+          ) : (
+            <>
+              <div className="ov-tiles" data-testid="ledger-overview">
+                <Tile label={L.tile_contests} value={overview.contests} />
+                <Tile label={L.tile_decided} value={overview.decided} />
+                <Tile label={L.tile_models} value={overview.models.length} />
+                <Tile label={L.tile_top} value={topModel?.model ?? '-'} sub={topModel ? `${topModel.wins}/${topModel.entered}` : undefined} />
+              </div>
+              <section aria-label={L.by_model}>
+                <div className="sect-h">
+                  {L.by_model}
+                  <span className="n">{tx(L.record_decided, { count: overview.decided })}</span>
+                </div>
+                <div className="ov-rows">
+                  {overview.models.map((m) => {
+                    const rate = m.entered ? m.wins / m.entered : 0;
                     return (
-                      <tr key={r.spec}>
-                        <td className="l">
-                          <Seat spec={r.spec} />
-                        </td>
-                        {cols.map((c) => {
-                          const entered = c.seatSpecs.includes(r.spec);
-                          const won = c.winnerSeatSpec === r.spec;
-                          return (
-                            <td key={keyOf(c)}>
-                              {entered && (
-                                <Tooltip content={tx(won ? L.matrix_won : L.matrix_entered, { title: c.title })}>
-                                  <span className={won ? 'won' : 'ent'}>{won ? '●' : '○'}</span>
-                                </Tooltip>
-                              )}
-                            </td>
-                          );
-                        })}
-                        <td>{r.entered}</td>
-                        <td>{r.wins}</td>
-                        <td className="l">
-                          <span className="inline-flex items-center gap-2">
-                            <span className="wbar" role="img" aria-label={tx(s.stats_interval_aria, { low: formatPercent(r.low, { fromRatio: true, precision: 0 }), high: formatPercent(r.high, { fromRatio: true, precision: 0 }) })}>
-                              <i className="ax" />
-                              <i className="iv" style={{ left: `${(r.low * 100).toFixed(1)}%`, width: `${((r.high - r.low) * 100).toFixed(1)}%` }} />
-                              <i className="pt" style={{ left: `${(rate * 100).toFixed(1)}%` }} />
-                            </span>
-                            <span className="mu tab">
-                              {formatPercent(r.low, { fromRatio: true, precision: 0 })}–{formatPercent(r.high, { fromRatio: true, precision: 0 })}
-                            </span>
-                          </span>
-                        </td>
-                      </tr>
+                      <div key={m.model} className="ov-row" data-testid={`ledger-model-${m.model}`}>
+                        <span className="ov-name">{m.model}</span>
+                        <span className="ov-bar" role="img" aria-label={pct(rate)}>
+                          <i style={{ width: `${(rate * 100).toFixed(1)}%` }} />
+                        </span>
+                        <span className="ov-n tab">{m.wins}/{m.entered}</span>
+                        <span className="ov-n tab">{pct(rate)}</span>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
-            )}
-            <div className="mlegend">
-              {cols.map((c, i) => (
-                <span key={keyOf(c)}>
-                  <b>{i + 1}</b>
-                  {c.title}
-                </span>
-              ))}
-              {decided.length > cols.length && <span className="mu">{tx(L.matrix_showing, { shown: cols.length, total: decided.length })}</span>}
-            </div>
-            <div className="hint" style={{ marginTop: 10 }}>
-              {board.separated ? s.stats_separated_hint : s.stats_not_separated_hint}
-              {board.decided < MIN_RANKABLE_SAMPLE && ` ${tx(s.stats_small_sample, { n: MIN_RANKABLE_SAMPLE })}`} {L.matrix_key}
-            </div>
-          </section>
+                </div>
+              </section>
+              <section aria-label={L.by_area}>
+                <div className="sect-h">
+                  {L.by_area}
+                  <span className="n">{overview.areas.length}</span>
+                </div>
+                <div className="ov-rows">
+                  {overview.areas.map((a) => (
+                    <div key={a.project} className="ov-row ov-area">
+                      <span className="ov-name">{a.project}</span>
+                      <span className="ov-n tab">{a.decided}/{a.contests}</span>
+                      <span className="ov-top">{a.topModel ?? '-'}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+              <div className="hint">
+                {board.separated ? s.stats_separated_hint : s.stats_not_separated_hint}
+                {board.decided < MIN_RANKABLE_SAMPLE && ` ${tx(s.stats_small_sample, { n: MIN_RANKABLE_SAMPLE })}`}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </BaseModal>

@@ -1,0 +1,159 @@
+{
+  "schema": "conform-run/1",
+  "worker": "b6169742-7a25-4f53-9506-024738171072",
+  "subject": "multi-project",
+  "evaluatedAt": "2026-10-10T11:48:34Z",
+  "pairs": [
+    {
+      "context": "d5c5e7fe-6353-41eb-800b-dc11adee0775",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/lib.rs:1563 re-confirmed: dev_tools_project_subscription has no unwatched-since/reason column, so a blind tick (src-tauri/src/engine/project_tracking/scheduler.rs:198) is only a warn log and a blind project still renders exactly like a quiet one on every surface",
+      "techniques": [
+        {
+          "technique": "passive-signal-ingestion",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/lib.rs:1563 could-not-observe is not durable state (no unwatched-since, no reason, no last-successfully-observed); the cursor gate IS realized at src-tauri/src/engine/project_tracking/scheduler.rs:194 (stamp only on should_stamp), closed vocabulary at src-tauri/src/engine/project_tracking/events.rs:24, announced-lane debounce at src-tauri/src/engine/project_tracking/push.rs:44, pulse cost accounting at src-tauri/src/engine/project_tracking/consolidator.rs:188"
+        },
+        {
+          "technique": "project-identity-and-joins",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/project_tracking/subscription.rs:22 subscriptions and events key on project_id (FK to companion_known_project.id); path is a denormalized field only"
+        }
+      ],
+      "registryProposal": "passive-signal-ingestion names baseline cadence plus probe acceleration; this repo realizes only the announced lane (push.rs:44 debounce) on a fixed 1h tick (scheduler.rs:36). The technique could say explicitly whether an announced lane alone satisfies acceleration, since it decides the verdict for push-instrumented portfolios."
+    },
+    {
+      "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_projects/useProjectPulse.ts:115 unchanged since the 09-23 verdict: the Manage wall still fetches a 200-row idea page per project and folds attention/pulse at view time - no stored summary row, a second pulse beside the engine digest, and a failed fetch (:119) paints the same as never-scanned",
+      "techniques": [
+        {
+          "technique": "portfolio-drill-hierarchy",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/useProjectPulse.ts:115 wall cost grows with N x 200 raw idea rows, not N x a pre-digested summary row with a named recomputation"
+        },
+        {
+          "technique": "passive-signal-ingestion",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/useProjectPulse.ts:119 a failed per-project read is silentCatch-ed and left as a cache miss, which the file says paints identically to never-measured (could-not-observe collapsed into unwatched/unknown); the wall pulse also bypasses the engine_project_pulse digest"
+        },
+        {
+          "technique": "project-identity-and-joins",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/useProjectManagerActions.ts:46 admission dedupes by root_path equality and silently activates the match - a different project later occupying the same path is merged into the old record, and a re-clone at a new path mints a twin; no remote fingerprint, no surfaced choice"
+        },
+        {
+          "technique": "per-project-tabs-and-state",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/useProjectManagerData.ts:38 the active workspace grouping bounds the table, select-all and bulk-archive (scopeProjects), as the grouping-strip rule demands"
+        }
+      ]
+    },
+    {
+      "context": "a4174786-a5fb-4145-a1b3-f02826fac64a",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_factory/passport/atlas/variants/instrument/InstrumentParts.tsx:45 re-judged after the 10-06 Atlas commits: the new primary wall dial renders a bare composite score with no anchor policy, and passportModel.ts:316 scoreTint still grades it against fixed 80/60/40 cut-offs recorded nowhere as the dimension anchor - a reader cannot tell fleet-relative from fixed",
+      "techniques": [
+        {
+          "technique": "cross-project-comparison",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:316 fixed-threshold grading with no recorded or rendered anchor policy; the divergence ranking IS realized at src/features/teams/sub_factory/passport/atlas/atlasModel.ts:56 (gap sort = |auto - prod|)"
+        },
+        {
+          "technique": "portfolio-drill-hierarchy",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:176 Atlas/Wall are two lenses over the same passports at one level; per-project header stats come from one batched projectWallSummary call at :82; level parity: an unreadable checkout reads unknown at src/features/teams/sub_factory/passport/atlas/atlasModel.ts:27 and its dial shows ? at InstrumentParts.tsx:45"
+        },
+        {
+          "technique": "project-identity-and-joins",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:305 the passport slug IS the minted project_id, so Atlas keys, wall summaries and roadmaps join by id; shared display names are only qualified by folder at render"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "multi-project",
+      "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b",
+      "reason": "weak governance, empty paths, lexical-only match: a coverage question for the registry, not a pair to judge"
+    },
+    {
+      "subject": "multi-project",
+      "context": "ca705961-f138-494a-b0fe-f882c674d25a",
+      "reason": "judged 2026-10-09 against the current digest (rev 3); nothing to re-judge"
+    },
+    {
+      "subject": "multi-project",
+      "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573",
+      "reason": "judged 2026-10-03 against the current digest; liveState.ts/sceneStore.ts unchanged since"
+    },
+    {
+      "subject": "multi-project",
+      "context": "9967adb9-e895-4dcd-b296-ab49a19ab122",
+      "reason": "not-applicable verdict of 2026-10-03 current against digest; sub_overview unchanged since"
+    },
+    {
+      "subject": "multi-project",
+      "context": "7741725e-8124-4899-b17e-8e39e7fcf1ed",
+      "reason": "re-judged 2026-10-10 against the current digest"
+    },
+    {
+      "subject": "multi-project",
+      "context": "54236947-3775-4d0a-8e14-1a709dd4d8bc",
+      "reason": "re-judged 2026-10-10 against the current digest"
+    },
+    {
+      "subject": "multi-project",
+      "context": "d7b7eb04-730f-4450-9a68-affc95f93267",
+      "reason": "not-applicable verdict of 2026-10-03 current against digest; l2/ unchanged since"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T11:48:34Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "multi-project"
+      ],
+      "techniques": [
+        "passive-signal-ingestion",
+        "project-identity-and-joins"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T11:48:34Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "multi-project"
+      ],
+      "techniques": [
+        "portfolio-drill-hierarchy",
+        "passive-signal-ingestion",
+        "project-identity-and-joins",
+        "per-project-tabs-and-state"
+      ],
+      "deviations": 3
+    },
+    {
+      "ts": "2026-10-10T11:48:34Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "multi-project"
+      ],
+      "techniques": [
+        "cross-project-comparison",
+        "portfolio-drill-hierarchy",
+        "project-identity-and-joins"
+      ],
+      "deviations": 1
+    }
+  ]
+}

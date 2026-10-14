@@ -1,0 +1,47 @@
+{
+  "schema": "conform-run/1",
+  "worker": "0235c3a7-3c51-4fda-9ce9-a4bc662c5d33",
+  "subject": "structured-output",
+  "evaluatedAt": "2026-10-09T16:41:17Z",
+  "pairs": [
+    {
+      "context": "876c0b4e-6472-4544-a21b-56e7529fb6b3",
+      "subject": "structured-output",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:d51aec71411ccb2b",
+      "evaluatedRevision": 15,
+      "evidence": "src-tauri/src/engine/kb_extract.rs:161 a per-document extraction failure is only warn-logged and :169 then finalizes the run 'completed' with error None, so a run where every document failed reads as a clean run that found 0 entities (extraction-failed spelled as empty); rows also bypass any domain door (:314 entityType never checked against the approved schema, :307 absent confidence becomes 1.0)",
+      "techniques": [
+        {"technique": "schema-validation-and-repair", "verdict": "deviation", "evidence": "src-tauri/src/engine/kb_extract.rs:307 absent confidence is filled with 1.0, the maximum legal value, and :314 entity_type is inserted unchecked although the prompt says it 'must be one of the schema types' - shape-only serde door, no domain check; the one retry (src-tauri/engine/src/cli_process.rs:624) re-sends the unchanged prompt (kb_extract.rs:200) on a stronger model rather than feeding back path-addressed errors, though it is bounded and its exhaustion is a typed AppError::Validation"},
+        {"technique": "extraction-strategies", "verdict": "deviation", "evidence": "src-tauri/src/engine/kb_extract.rs:230 the only rung is extract_fenced_block; there is no whole-text parse, balanced-span or tolerant-repair rung, so a clean unfenced JSON reply is rejected and spends the escalation call"},
+        {"technique": "extraction-observability", "verdict": "deviation", "evidence": "src-tauri/src/engine/kb_extract.rs:161 per-document failures exist only as a tracing::warn line; the run row records entity_count alone, with no failed-document count or failure category, so a drift from 2% to 50% failures is invisible on the surface"},
+        {"technique": "artifact-lifecycle", "verdict": "deviation", "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:1255 the run is spawned with its handle discarded; the Err path at :1261 writes 'failed' to the row but emits no terminal progress event (only kb_extract.rs:169's completed path does), and a panic leaves the row 'running' forever"},
+        {"technique": "answer-coverage-gating", "verdict": "not-applicable", "evidence": "src-tauri/src/engine/kb_extract.rs:187 the extraction request is open-ended ('one object per real instance you find'), not an enumerated set of units, so an empty row list is a legitimate outcome per document"}
+      ],
+      "registryProposal": "schema-validation-and-repair could name 'escalate the identical prompt to a stronger model' as a distinct, weaker cousin of the error-fed repair loop: bounded and honest on exhaustion, but it spends a model turn without telling the producer what failed, and a reader can easily mistake it for the sanctioned repair loop."
+    },
+    {
+      "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91",
+      "subject": "structured-output",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:d51aec71411ccb2b",
+      "evaluatedRevision": 15,
+      "evidence": "src/lib/types/types.ts:451 OverviewTab no longer has a 'patterns' tab: 6ea91dd77b deleted all 28 files of src/features/overview/sub_patterns/ (the context's only mapped path, PatternsPanel.tsx, no longer exists, and context-map.json lists no file_paths for it), so no model output is extracted here at all - a dead context, not a conformant one",
+      "techniques": [],
+      "registryProposal": "Dead context: overview-patterns has zero live files (context-map.json file_paths is empty and its one mapped path was deleted on 2026-10-04). The next build-registry-map.mjs run / context rescan should retire it rather than keep re-ranking its pairs as unknown."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "structured-output",
+      "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b",
+      "reason": "plugins-research-lab-reports is marked governance: weak; the skill does not judge weak pairs by default because the match itself is the doubtful part. Left unknown and raised as a coverage question."
+    }
+  ],
+  "consults": [
+    {"ts": "2026-10-09T16:41:17Z", "bundle": "software-engineering", "subjects": ["structured-output"], "techniques": ["schema-validation-and-repair", "extraction-strategies", "extraction-observability", "artifact-lifecycle", "answer-coverage-gating"], "deviations": 1},
+    {"ts": "2026-10-09T16:41:17Z", "bundle": "software-engineering", "subjects": ["structured-output"], "techniques": [], "deviations": 0}
+  ]
+}

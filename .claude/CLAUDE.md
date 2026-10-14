@@ -35,9 +35,9 @@ Quick reference of the most common scripts:
 
 | You're working on… | Use | Why |
 |--|--|--|
-| UI/UX, frontend logic, Tauri command wiring, schema, triggers, recipes, observability — the **other 95% of the app** | `npm run tauri:dev` (now lite) | Skips `ml` + `p2p` → no ORT/fastembed compile. **683 crates vs 846** (`cargo tree -e normal --features desktop\|desktop-full`, counted 2026-10-07); smaller link surface; smaller incremental rebuilds |
+| UI/UX, frontend logic, Tauri command wiring, schema, triggers, recipes, observability — the **other 95% of the app** | `npm run tauri:dev` (now lite) | Skips `ml` → no ORT/fastembed compile. **721 crates vs 848** (`cargo tree -e normal --features desktop\|desktop-full`, re-counted 2026-10-13 after `p2p` joined `desktop`); smaller link surface; smaller incremental rebuilds |
 | Vector knowledge base, embeddings, fastembed, ONNX inference, semantic search | `npm run tauri:dev:full` | These code paths are gated behind `ml` and only compile in `desktop-full` — under lite they are **absent, not broken**: compiled out, so they cannot throw and cannot fail a test |
-| P2P / mDNS / QUIC transport | `npm run tauri:dev:full` | Gated behind `p2p`, same absent-not-broken caveat |
+| P2P / mDNS / QUIC transport, the device mesh | `npm run tauri:dev` (lite) | `p2p` joined `desktop` on 2026-10-13 (spark device-mesh), so every desktop build carries it. Its unit + two-node loopback tests still run only with `npm run test:rust -- --p2p` |
 | MCP-driven UI test automation (test-automation HTTP server on :17320) | `npm run tauri:dev:test` (lite + test-automation) or `tauri:dev:test:full` (full + test-automation) | Pick by what the test needs |
 | Verifying a release-shaped build locally (LTO, optimized) | `npm run tauri:build:stable` | Slow (~20 min) but matches what ships |
 

@@ -1,0 +1,32 @@
+{"schema":"conform-run/1","worker":"d4084794-36d3-47ae-a15d-2a086b31d22e","subject":"guided-tours","evaluatedAt":"2026-10-10T11:53:22Z",
+"pairs":[
+{"context":"aa2197a5-6b7c-46ff-a6cd-8172d2984f50","subject":"guided-tours","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/onboarding/components/GuidedTour.tsx:267 Escape only minimizes the panel while tourActive stays true, so the dimming (src/features/onboarding/components/TourSpotlight.tsx:75) stays on screen - the leave gesture is reinterpreted, never a full exit; re-verified unchanged at HEAD 2026-10-10",
+ "techniques":[
+  {"technique":"overlay-precedence","verdict":"deviation","evidence":"src/features/onboarding/components/GuidedTour.tsx:267 Escape -> setIsMinimized(true); TourSpotlight.tsx:63 still renders on tourActive, so escape is reinterpreted as minimize"},
+  {"technique":"missing-anchor-degradation","verdict":"realized","evidence":"src/features/onboarding/components/TourSpotlight.tsx:63 dimming renders only with a resolved rect and flags tourHighlightMissing (:15) instead of dismissing, so a missing anchor never strands under a dimmed void"},
+  {"technique":"narration-and-pacing","verdict":"realized","evidence":"src/features/onboarding/components/useTourNarration.ts:86 stopCurrent kills playback on step change rather than letting the clip pace the reader"}]},
+{"context":"c06088ef-d143-4aa4-b60a-9d6f7aff9aba","subject":"guided-tours","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/stores/slices/system/tourSlice.ts:1573 allDone = steps.every(...) is vacuously true when getActiveTourSteps (:1111) returns [] for an unregistered tour, and finishTour (:1637) records it completed - zero steps found scored as success; also :1459 hydrates tourActiveTourId to getting-started, so the running tour is not part of the resume record; re-verified at HEAD 2026-10-10",
+ "techniques":[
+  {"technique":"tour-lifecycle","verdict":"deviation","evidence":"src/stores/slices/system/tourSlice.ts:1112 getTourById(id)?.steps ?? [] feeds an every() at :1573 that marks a lost dynamic tour complete; :1459 drops which-tour-was-running on restart"},
+  {"technique":"action-driven-advancement","verdict":"realized","evidence":"src/stores/slices/system/tourSlice.ts:215 each step declares completeOn: TourEventKey, an observed product event; skip on last incomplete step closes without recording completion (:1567-1577)"},
+  {"technique":"anchor-contracts","verdict":"realized","evidence":"src/stores/slices/system/__tests__/tourAnchors.test.ts:124 drift gate asserts every tour highlightTestId is rendered as a testid in src/"}]},
+{"context":"b39776f5-3909-41e3-b69f-14c9a6c70bec","subject":"guided-tours","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/home/sub_learning/HomeLearning.tsx:22 feeds every tour card the LAST ACTIVE tour's tourStepCompleted (passed at :50, counted per card in src/features/home/sub_learning/TourSections.tsx:24); persisted per-tour progress is never read, so a paused non-active tour renders as fresh; re-verified at HEAD 2026-10-10",
+ "techniques":[
+  {"technique":"tour-lifecycle","verdict":"deviation","evidence":"src/features/home/sub_learning/HomeLearning.tsx:22 the funnel surface reads one tour's step map for all tours; tourCards.tsx:9 documents the limitation and filters by step id instead of reading the per-tour ledger"}]},
+{"context":"b30528dc-8655-4b38-800e-8cb73e96d618","subject":"guided-tours","bundle":"software-engineering","state":"deviation",
+ "evidence":"tests/playwright/getting-started-tour-mock.spec.ts:10 the tour e2e suite guards only completeOn wiring; none of the 4 tour specs removes an anchor (first-step included) or presses Escape / opens a modal against a running tour - never-strand and exit have no fresh-profile coverage; re-verified at HEAD 2026-10-10",
+ "techniques":[
+  {"technique":"tour-lifecycle","verdict":"deviation","evidence":"tests/playwright/getting-started-tour-mock.spec.ts:10 fresh-profile verification covers advancement wiring only, not degradation or exit paths"},
+  {"technique":"missing-anchor-degradation","verdict":"deviation","evidence":"tests/playwright/getting-started-tour-mock.spec.ts:10 the technique requires verifying never-strand with the FIRST anchor removed; no spec under tests/playwright does"}],
+ "registryProposal":"This context is companion/athena Playwright specs; the guided-tours pairing is earned only by the 4 tour specs in its file_paths. The verdict is about test coverage of the tour, which overlaps the fresh-profile clause of tour-lifecycle - consider whether a test-coverage-shaped deviation belongs on the test context or should be folded into the product contexts' tour-lifecycle verdicts."}
+],
+"declined":[],
+"consults":[
+ {"ts":"2026-10-10T11:53:22Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["overlay-precedence","missing-anchor-degradation","narration-and-pacing"],"deviations":1},
+ {"ts":"2026-10-10T11:53:22Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["tour-lifecycle","action-driven-advancement","anchor-contracts"],"deviations":1},
+ {"ts":"2026-10-10T11:53:22Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["tour-lifecycle"],"deviations":1},
+ {"ts":"2026-10-10T11:53:22Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["tour-lifecycle","missing-anchor-degradation"],"deviations":1}
+]}

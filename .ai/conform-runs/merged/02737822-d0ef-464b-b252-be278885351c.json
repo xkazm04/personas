@@ -1,0 +1,110 @@
+{
+  "schema": "conform-run/1",
+  "worker": "02737822-d0ef-464b-b252-be278885351c",
+  "subject": "async-ui-states",
+  "evaluatedAt": "2026-10-12T12:26:00Z",
+  "pairs": [
+    {
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "subject": "async-ui-states",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/components/feedback/SuspenseFallback.tsx:14 renders LoadingSpinner, which paints nothing (src/features/shared/components/feedback/LoadingSpinner.tsx:9 spinners disabled app-wide), so code arrival at every SuspenseFallback site is a blank py-12 hole with an undelayed role=status, not a chrome-consistent placeholder - re-verified 2026-10-12, files untouched since the 2026-10-10 verdict",
+      "techniques": [
+        {
+          "technique": "placeholder-design",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/feedback/SuspenseFallback.tsx:14 code-arrival fallback is an invisible spinner in a centered py-12 box: blank hole, no geometry, no appearance delay"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:c71d22c8deba8577",
+      "evaluatedRevision": 4
+    },
+    {
+      "context": "36783fec-01fa-40d5-8620-cf65ae691d27",
+      "subject": "async-ui-states",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:46 EmptyStateContent takes no cause input, so ManualReviewList keys empty on the FILTERED count (src/features/overview/sub_manual-review/components/ManualReviewList.tsx:174) and a filter excluding every review lands on the first-run hero offering create-persona (ManualReviewList.tsx:445) instead of a no-match state - re-verified 2026-10-12",
+      "techniques": [
+        {
+          "technique": "empty-state-design",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:445 first-run create-persona action rendered for a filtered-to-zero queue; no-match cause is unrepresentable in src/features/overview/shared/emptyStatePrototype/types.ts:46"
+        },
+        {
+          "technique": "failure-states",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:130 empty is reached only after rows/loading/error are ruled out, so a failed fetch renders InlineErrorBanner with retry, not inbox-zero"
+        },
+        {
+          "technique": "state-model",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:127 visible rows win over loading, so a refetch never demotes a populated queue to the ghost"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:c71d22c8deba8577",
+      "evaluatedRevision": 4
+    },
+    {
+      "context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0",
+      "subject": "async-ui-states",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/components/buttons/AsyncButton.tsx:110 renders Button without `loading` (omitted at AsyncButton.tsx:13), so the width lock (src/features/shared/components/buttons/Button.tsx:165) never engages and the busy label swap reflows the pressed button; AND src/features/shared/components/layout/RouteChunkSkeleton.tsx:40 rides its 150ms delay on animation-delay, which src/styles/globals.css:4884 erases under prefers-reduced-motion, so reduced-motion users get the ghost on frame one - re-verified 2026-10-12",
+      "techniques": [
+        {
+          "technique": "action-busy-states",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/buttons/AsyncButton.tsx:110 Button rendered without loading prop, so Button.tsx:165 min-width lock never fires and the busy swap shifts layout"
+        },
+        {
+          "technique": "placeholder-design",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/layout/RouteChunkSkeleton.tsx:40 appearance delay lives on animationDelay; src/styles/globals.css:4884 .animate-fade-in gets animation:none under reduced motion, the exact trap the technique names"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:c71d22c8deba8577",
+      "evaluatedRevision": 4
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-12T12:26:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "async-ui-states"
+      ],
+      "techniques": [
+        "placeholder-design"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T12:26:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "async-ui-states"
+      ],
+      "techniques": [
+        "empty-state-design",
+        "failure-states",
+        "state-model"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T12:26:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "async-ui-states"
+      ],
+      "techniques": [
+        "action-busy-states",
+        "placeholder-design"
+      ],
+      "deviations": 1
+    }
+  ]
+}

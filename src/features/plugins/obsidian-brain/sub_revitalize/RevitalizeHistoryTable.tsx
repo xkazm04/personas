@@ -63,11 +63,11 @@ export default function RevitalizeHistoryTable() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-primary/10">
-                <th className="typo-label text-foreground/90 py-2 pr-3">{ob.revitalize_history_col_when}</th>
-                <th className="typo-label text-foreground/90 py-2 pr-3">{ob.revitalize_history_col_vault}</th>
-                <th className="typo-label text-foreground/90 py-2 pr-3">{ob.revitalize_history_col_result}</th>
-                <th className="typo-label text-foreground/90 py-2 pr-3">{ob.revitalize_history_col_cleaned}</th>
-                <th className="typo-label text-foreground/90 py-2 text-right">{ob.revitalize_history_col_tokens}</th>
+                <th className="py-2 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground">{ob.revitalize_history_col_when}</th>
+                <th className="py-2 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground">{ob.revitalize_history_col_vault}</th>
+                <th className="py-2 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground">{ob.revitalize_history_col_result}</th>
+                <th className="py-2 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground">{ob.revitalize_history_col_cleaned}</th>
+                <th className="py-2 text-right typo-caption font-mono uppercase tracking-widest text-foreground">{ob.revitalize_history_col_tokens}</th>
               </tr>
             </thead>
             <tbody>

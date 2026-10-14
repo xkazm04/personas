@@ -1,0 +1,27 @@
+{"schema": "conform-run/1", "worker": "17e89aaa-5c95-47c8-bc7c-f265e9d4f96f", "subject": "versioning-snapshots",
+ "evaluatedAt": "2026-10-12T12:26:00Z",
+ "pairs": [
+  {"context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b", "subject": "versioning-snapshots", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/execution/metrics.rs:310 promote_to_production still demotes the incumbent by retagging it 'experimental' and writes no activation record - a retired production version reads as never-promoted and which version was live when is unanswerable (re-verified 2026-10-12, unchanged)",
+   "techniques": [{"technique": "promotion-lifecycle", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/execution/metrics.rs:310 demotion re-tags to 'experimental' (no retired state, no recorded trigger/evidence): prohibitions 5 and 6"},
+                  {"technique": "restore-semantics", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/execution/metrics.rs:310 the re-activation variant runs without a durable record of the activation (prohibition 7)"}]},
+  {"context": "9b0ee86c-2613-49a5-9fda-fcc4d432fb72", "subject": "versioning-snapshots", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/lab/versions.rs:45 create_version (IMMEDIATE tx, parent edge, full-graph copy) still has zero production callers - only its own tests at :185-:230 - while live captures go to persona_prompt_versions through hand-rolled writers (src-tauri/src/commands/execution/lab.rs:630, src-tauri/src/commands/design/build_sessions.rs:2726): the one correct capture door is dead",
+   "techniques": [{"technique": "snapshot-scope", "verdict": "deviation", "evidence": "src-tauri/src/commands/execution/lab.rs:630 inserts a prompt-only row with system_prompt NULL, bypassing the full-graph door at src-tauri/db/src/repos/lab/versions.rs:45"},
+                  {"technique": "version-identity", "verdict": "realized-in-dead-code", "evidence": "src-tauri/db/src/repos/lab/versions.rs:45 derives number and parent inside one IMMEDIATE tx, but no production path reaches it"}]},
+  {"context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd", "subject": "versioning-snapshots", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src-tauri/src/webbuild/versions.rs:107 capture-before-restore now lands (805da23a73, 2026-10-11) but the restore itself mints no version and records no source: the pre-restore snapshot is labelled 'before restore' without the target sha, and --overlay (:112) keeps files added later, so the result is an unlabelled chimera nobody can later read as 'restored from X'",
+   "techniques": [{"technique": "restore-semantics", "verdict": "partial", "evidence": "src-tauri/src/webbuild/versions.rs:107 prohibitions 1 and 3 now met; prohibition 5/7 and 'restore mints a version' still unmet - no post-restore snapshot naming the source"},
+                  {"technique": "snapshot-scope", "verdict": "realized", "evidence": "src-tauri/src/webbuild/versions.rs:45 snapshot_worktree captures the whole tree onto a private ref, atomically"},
+                  {"technique": "version-identity", "verdict": "realized", "evidence": "src-tauri/src/webbuild/versions.rs:79 identity is the git commit sha, minted by git at capture and never caller-supplied"}]},
+  {"context": "7741725e-8124-4899-b17e-8e39e7fcf1ed", "subject": "versioning-snapshots", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/features/studio/StudioVersions.tsx:123 the confirm still warns the restore cannot be undone - now false, since the backend captures the live tree first (src-tauri/src/webbuild/versions.rs:107) - and success at :55 reloads silently instead of saying what was restored from which version",
+   "techniques": [{"technique": "restore-semantics", "verdict": "deviation", "evidence": "src/features/studio/StudioVersions.tsx:55 success says nothing ('success says what it did'); :123 misstates the restore as irreversible, steering operators away from browsing that is now safe"}]}
+ ],
+ "declined": [],
+ "consults": [
+  {"ts": "2026-10-12T12:26:00Z", "bundle": "software-engineering", "subjects": ["versioning-snapshots"], "techniques": ["promotion-lifecycle", "restore-semantics"], "deviations": 1},
+  {"ts": "2026-10-12T12:26:00Z", "bundle": "software-engineering", "subjects": ["versioning-snapshots"], "techniques": ["snapshot-scope", "version-identity"], "deviations": 1},
+  {"ts": "2026-10-12T12:26:00Z", "bundle": "software-engineering", "subjects": ["versioning-snapshots"], "techniques": ["restore-semantics", "snapshot-scope", "version-identity"], "deviations": 1},
+  {"ts": "2026-10-12T12:26:00Z", "bundle": "software-engineering", "subjects": ["versioning-snapshots"], "techniques": ["restore-semantics"], "deviations": 1}
+ ]}

@@ -1,0 +1,75 @@
+{
+  "schema": "conform-run/1",
+  "worker": "216ef4e6-cae0-493d-a37b-1c96ac7659c3",
+  "subject": "table",
+  "evaluatedAt": "2026-10-09T16:00:17Z",
+  "evaluatedAgainst": "sha256-b2:b2b329111d190ae7",
+  "evaluatedRevision": 12,
+  "pairs": [
+    {
+      "context": "4be04ef0-88db-4f48-859c-92e6ba4d203f",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:b2b329111d190ae7",
+      "evaluatedRevision": 12,
+      "evidence": "src/features/templates/sub_generated/gallery/search/TemplateSearchFilterRow.tsx:59 prints loadedCount/total from allItems.length (GeneratedReviewsTab.tsx:234) and the server total, while useGalleryActions.ts:137 narrows the rendered rows by coverage/component/difficulty/setup on the client over the server-paged window and :166 sorts 'Ready to Deploy' inside it - the count and the order answer about the loaded pages, not the catalog (client-server-split: never split an axis across tiers; count-carries-predicate); src-tauri/db/src/repos/communication/reviews.rs:591 orders LIMIT/OFFSET pages with no id tiebreaker, so 'Most Adopted' (adoption_count, mostly tied) skips and repeats templates across load-more pages.",
+      "techniques": [
+        {"technique": "client-server-split", "verdict": "deviation", "evidence": "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:137 coverage filter (default 'full') and :166 readiness sort run client-side over pages the server windowed under 'trending' (src/hooks/design/template/useGalleryQuery.ts:165) - a template beyond the loaded pages can never surface as ready"},
+        {"technique": "filtering", "verdict": "deviation", "evidence": "src/features/templates/sub_generated/gallery/search/TemplateSearchFilterRow.tsx:59 count carries neither the client predicates nor says 'shown'; src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:86 coverage chip counts tally only the loaded window; src/hooks/design/template/useGalleryQuery.ts:143 text filter commits by keystroke debounce against a server round trip. Latest-wins is realized at useGalleryQuery.ts:179"},
+        {"technique": "sorting", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/communication/reviews.rs:591 ORDER BY {order_col} with no identity tiebreaker; :515 maps 'Most Adopted' (searchConstants.ts:141) to adoption_count, where most templates tie at 0"},
+        {"technique": "pagination", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/communication/reviews.rs:591 OFFSET over a non-total order - load-more page boundaries fall inside tie runs, so rows are skipped or duplicated"},
+        {"technique": "loading-and-empty-states", "verdict": "deviation", "evidence": "src/hooks/design/template/useGalleryQuery.ts:188 a failed page fetch only logs; the hook exposes no error state, so a failure renders as zero results (error is not empty)"}
+      ]
+    },
+    {
+      "context": "b4439e30-fcff-4095-97dd-d9d7da2247dd",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:b2b329111d190ae7",
+      "evaluatedRevision": 12,
+      "evidence": "src/features/settings/sub_portability/components/ExportSelectionModal.tsx:3 the surface is an export picker for hand-picking identity-dominant records (icon + name pick rows, no column model, no sort/window axes) - the golden path's precondition, comparison across uniform attributes, does not hold; its own 'when not to use' routes this to a list.",
+      "techniques": [],
+      "registryProposal": "Technique-shaped resonance: filtering's record-keyed-selection rule bites this pick-list though the table subject does not govern it. ExportSelectionModal.tsx:104 'select shown' plus per-scope search keep ticks across filter and scope changes, and ManifestCart.tsx:48 prints selected/total per kind (useExportPicker.ts:394) with no 'hidden by the current filter' figure - the undisclosed gathering form. The selection-across-filter invariant lives only inside table/filtering, whose precondition a pick-list fails; lift it to a shared law or carry it in a list/selection subject so pick-lists are governed."
+    },
+    {
+      "context": "e8fa2ff7-145d-4c58-af83-1239b87d2c24",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:b2b329111d190ae7",
+      "evaluatedRevision": 12,
+      "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:182 filters by model and time window, and :294 sorts by cost, only over the pages loaded so far while :351 grows the window from the server; :332 sets that filtered length beside a server total taken under no predicate (client-server-split: never split one axis across tiers; count-carries-predicate). Re-judged after 8d04860cb3 moved the 2026-10-01 anchors; the defect is unchanged.",
+      "techniques": [
+        {"technique": "client-server-split", "verdict": "deviation", "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:182 client filter and :294 client cost sort below the server window grown at :351"},
+        {"technique": "filtering", "verdict": "deviation", "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:332 'showing count of total' pairs a client-filtered count with an unfiltered server total"}
+      ]
+    },
+    {
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:b2b329111d190ae7",
+      "evaluatedRevision": 12,
+      "evidence": "src/features/shared/components/display/UnifiedTable.tsx:557 still sorts by String(row[key]).localeCompare with no identity tiebreaker, and :560 inverts desc with reverse() - ties reshuffle between refreshes, numbers and dates collate as strings unless a caller passes sortFn, and a caller's absent-last comparator flips to absent-first on desc. Re-confirmed 2026-10-09: no commit since the 2026-10-01 verdict.",
+      "techniques": [
+        {"technique": "sorting", "verdict": "deviation", "evidence": "src/features/shared/components/display/UnifiedTable.tsx:557 string comparison, no tiebreaker; :560 reverse() for desc moves absent values to the top"}
+      ]
+    }
+  ],
+  "declined": [
+    {"subject": "table", "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400", "reason": "plugins-artist-gallery is governance: weak and matched on 'sort, toggle' only; an image/3D asset gallery is identity-dominant (cards), which the golden path's 'when not to use' excludes - a coverage question, not a pair to judge by default"},
+    {"subject": "table", "context": "a8857307-216c-46e0-9571-e05e8cf06112", "reason": "judged deviation 2026-10-06 against the current digest (rev 12); not stale, not re-read this run"},
+    {"subject": "table", "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b", "reason": "judged deviation 2026-10-06 against the current digest (rev 12); not stale, not re-read this run"},
+    {"subject": "table", "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757", "reason": "judged deviation 2026-10-06 against the current digest (rev 12); not stale, not re-read this run"},
+    {"subject": "table", "context": "e62d5595-2bbd-480a-a757-2d3a126545a0", "reason": "judged deviation 2026-10-06 against the current digest (rev 12); not stale, not re-read this run"}
+  ],
+  "consults": [
+    {"ts": "2026-10-09T16:00:17Z", "bundle": "software-engineering", "subjects": ["table"], "techniques": ["client-server-split", "filtering", "sorting", "pagination", "loading-and-empty-states"], "deviations": 1},
+    {"ts": "2026-10-09T16:00:17Z", "bundle": "software-engineering", "subjects": ["table"], "techniques": ["filtering"], "deviations": 0},
+    {"ts": "2026-10-09T16:00:17Z", "bundle": "software-engineering", "subjects": ["table"], "techniques": ["client-server-split", "filtering"], "deviations": 1},
+    {"ts": "2026-10-09T16:00:17Z", "bundle": "software-engineering", "subjects": ["table"], "techniques": ["sorting"], "deviations": 1}
+  ]
+}

@@ -504,7 +504,7 @@ export default function MemoriesPageDense() {
               to sort descending." label. role="row" on the container mirrors the
               sibling faux tables (GlobalExecutionList, ReportList). */}
           <div role="row" className="flex items-center border-b border-primary/10 bg-background/80 flex-shrink-0 relative z-10">
-            <div role="columnheader" className={`${COL_WIDTHS.type} flex justify-center px-2 py-2 typo-label text-foreground`}>{mui.col_type}</div>
+            <div role="columnheader" className={`${COL_WIDTHS.type} flex justify-center px-2 py-2 typo-caption font-mono uppercase tracking-widest text-foreground`}>{mui.col_type}</div>
             <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.title} label={t.overview.memory_detail.title_label} active={sortField === 'title'} dir={sortDir} onSort={() => handleSort('title')} align="left" />
             <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.persona} label={t.overview.reports.columns.persona} active={sortField === 'persona'} dir={sortDir} onSort={() => handleSort('persona')} align="left" />
             <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.importance} label={t.overview.memory_detail.importance_label} active={sortField === 'importance'} dir={sortDir} onSort={() => handleSort('importance')} align="left" />

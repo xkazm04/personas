@@ -272,7 +272,11 @@ async fn exec_one(command: &str, cwd: &Path, timeout: Duration) -> CommandExec {
         c.args(["-c", command]);
         c
     };
+    // No console window: a gate suite run from the desktop app would otherwise
+    // open one for `cmd` and hand it down to every npm/cargo child it starts.
+    use personas_core::utils::process::NoWindow;
     let spawn = child_cmd
+        .no_window()
         .current_dir(cwd)
         .env("CI", "1")
         .stdin(std::process::Stdio::null())

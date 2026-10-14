@@ -455,7 +455,18 @@
         "src-tauri/src/commands/fleet/**",
         "src/stores/slices/system/fleetSlice.ts",
         "src/api/fleet/**",
-        "src/features/shared/dispatch/**"
+        "src/features/shared/dispatch/**",
+        "src-tauri/src/engine/resources/**",
+        "src-tauri/db/src/repos/resources/run_resources.rs"
+      ]
+    },
+    {
+      "_comment": "Charter responsibilities and measured run resources (spark device-mesh). Its own entry so a change to these model files points at the capabilities doc, not the personas README.",
+      "doc": "docs/features/personas/02-capabilities.md",
+      "sourceGlobs": [
+        "src-tauri/core/src/models/responsibility.rs",
+        "src-tauri/core/src/models/run_resources.rs",
+        "src-tauri/engine/src/responsibility.rs"
       ]
     },
     {
@@ -528,7 +539,10 @@
         "src-tauri/src/companion/prompt/devices.rs",
         "src/api/network/**",
         "src/stores/slices/network/**",
-        "src/lib/network/**"
+        "src/lib/network/**",
+        "src-tauri/src/mesh/**",
+        "src-tauri/src/local_http/mesh.rs",
+        "scripts/mesh/**"
       ]
     },
     {

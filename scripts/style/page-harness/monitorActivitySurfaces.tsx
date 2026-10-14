@@ -9,6 +9,18 @@
  *   monitor/classic/sim   the test build's 100-persona load fleet, Classic
  *   monitor/lanes/sim     the load fleet's sessions and its 30-row queue, Lanes
  *
+ * Device mesh (spark device-mesh), on the Classic / Lanes tapes plus the mesh
+ * fixture (`meshFixture.ts`: this device, Studio Desktop live, Travel Laptop
+ * stale; live samples on three sessions and two personas):
+ *
+ *   monitor/classic/mesh        the device strip, and Studio's bay in the rail
+ *   monitor/classic/mesh/peer   the board scoped to Studio Desktop (its agents'
+ *                               on/off switches, its queue)
+ *   monitor/classic/mesh/stale  the board scoped to the stale Travel Laptop
+ *   monitor/lanes/mesh/move     a local queued rung's "Move to..." menu, open
+ *   monitor/charter/measured    the charter card's measured load with a
+ *                               mismatch badge on a pinned profile
+ *
  * Each variant drives the real controls: the header's Activity tab and the
  * board's layout switch.
  */
@@ -85,8 +97,17 @@ const steps = (layout: 'classic' | 'lanes'): Step[] => [
   { selector: `[data-testid="fleet-board-variant-${layout}"]` },
 ];
 
-function monitor(layout: 'classic' | 'lanes', simulate: boolean): HarnessModule {
-  const plan = steps(layout);
+const STUDIO = 'fixture-studio-7c1e9a04';
+const LAPTOP = 'fixture-laptop-3a90f4c2';
+
+async function prepareMesh(): Promise<void> {
+  await prepareFleet();
+  const { seedMeshFixture } = await import('@/stores/slices/network/meshFixture');
+  seedMeshFixture({ sessionIds: ['s-run-1', 's-run-2', 's-run-3'], personaIds: ['p-board-10', 'p-board-25'] });
+}
+
+function monitor(layout: 'classic' | 'lanes', simulate: boolean, extra: Step[] = [], mesh = false): HarnessModule {
+  const plan = [...steps(layout), ...extra];
   return {
     load: async () => {
       const { PersonaMonitor } = await import('@/features/fleet/monitor/PersonaMonitor');
@@ -96,13 +117,60 @@ function monitor(layout: 'classic' | 'lanes', simulate: boolean): HarnessModule 
         },
       };
     },
-    prepare: simulate ? prepareSimulation : prepareFleet,
+    prepare: simulate ? prepareSimulation : mesh ? prepareMesh : prepareFleet,
   };
 }
+
+/** The charter card on a pinned "heavy" profile whose runs measure "exclusive". */
+const charterMeasured: HarnessModule = {
+  load: async () => {
+    const [{ CharterResourceCard }, layout] = await Promise.all([
+      import('@/features/agents/sub_responsibilities/components/CharterResourceCard'),
+      import('@/features/shared/components/layout/ContentLayout'),
+    ]);
+    const { measuredCache } = await import('@/features/agents/sub_responsibilities/libs/useCharterMeasured');
+    measuredCache.set('p-board-10', [{
+      responsibilityId: 'charter-render', passes: 9, avgCostUsd: 0.42, avgTokens: 180_000, peakRssMb: null,
+      measuredEffort: 'm', resourceRuns: 9, cpuP95Share: 0.64, ramPeakShare: 0.31, gpuP95Share: 0.07,
+      dominant: 'cpu', measuredMachine: 'exclusive', measuredGpu: 'shared',
+    }]);
+    const charter = {
+      id: 'charter-render', title: 'Render the nightly preview',
+      spec: { resourceProfile: {
+        machine: 'heavy', gpu: 'none', difficulty: 'standard', effort: 'm', source: 'operator', pinned: true,
+        rationale: null, declaredAt: null,
+      } },
+    } as never;
+    return {
+      default: function CharterHost() {
+        // The measured row sits under the four pickers; bring it into the frame.
+        useEffect(() => {
+          const t = setTimeout(() => document.querySelector('[data-testid="resp-profile-axes"]')?.scrollIntoView({ block: 'center' }), 300);
+          return () => clearTimeout(t);
+        }, []);
+        return (
+          <layout.ContentBox>
+            <layout.ContentHeader title="Charter" subtitle="Render the nightly preview" />
+            <layout.ContentBody>
+              <div className="max-w-4xl">
+                <CharterResourceCard charter={charter} personaId="p-board-10" onPatch={async () => undefined} />
+              </div>
+            </layout.ContentBody>
+          </layout.ContentBox>
+        );
+      },
+    };
+  },
+};
 
 export const MONITOR_ACTIVITY_MODULES: Record<string, HarnessModule> = {
   'monitor/classic': monitor('classic', false),
   'monitor/lanes': monitor('lanes', false),
   'monitor/classic/sim': monitor('classic', true),
   'monitor/lanes/sim': monitor('lanes', true),
+  'monitor/classic/mesh': monitor('classic', false, [], true),
+  'monitor/classic/mesh/peer': monitor('classic', false, [{ selector: `[data-testid="mesh-plate"][data-peer-id="${STUDIO}"]` }], true),
+  'monitor/classic/mesh/stale': monitor('classic', false, [{ selector: `[data-testid="mesh-plate"][data-peer-id="${LAPTOP}"]` }], true),
+  'monitor/lanes/mesh/move': monitor('lanes', false, [{ selector: '[data-testid="mesh-move-to"]' }], true),
+  'monitor/charter/measured': charterMeasured,
 };

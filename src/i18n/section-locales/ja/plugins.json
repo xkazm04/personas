@@ -3826,7 +3826,13 @@
       "where_contest": "コンテスト",
       "where_count": "{count} 件のコンテスト",
       "where_ledger": "台帳",
-      "where_variant": "バリアント"
+      "where_variant": "バリアント",
+      "by_area": "タスク領域別",
+      "by_model": "モデル別",
+      "tile_contests": "コンテスト",
+      "tile_decided": "決定済み",
+      "tile_models": "使用モデル",
+      "tile_top": "トップモデル"
     }
   }
 }

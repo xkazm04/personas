@@ -1,0 +1,74 @@
+{
+  "schema": "conform-run/1",
+  "worker": "a4ba6095-627c-4904-88e6-7f32690d9ac3",
+  "subject": "scoring-rubrics",
+  "evaluatedAt": "2026-10-09T17:30:14Z",
+  "pairs": [
+    {
+      "context": "92f6c0fc-8d5c-43a7-bab8-1851973d5198",
+      "subject": "scoring-rubrics",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:124 feeds signal.successRate into the heaviest (0.30) dimension ignoring successRateSource, which src/stores/slices/overview/personaHealthSlice.ts:415 sets to 100 for an unmeasured persona, so an idle agent collects full marks; re-confirmed 2026-10-09, code unchanged since the 2026-10-05 verdict",
+      "evaluatedAgainst": "sha256-b2:476078a37f34137d",
+      "evaluatedRevision": 3,
+      "techniques": [
+        {
+          "technique": "unmeasured-honesty",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/overview/personaHealthSlice.ts:415 unknown success becomes 100 and src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:124 consumes it with no coverage floor or disclosure; unmeasured speed/cost are excluded from the composite (:143) but enter dimension re-ranking and the fleet benchmark as a fabricated 50 (src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:71, src/features/overview/sub_leaderboard/libs/leaderboardRanking.ts:38, src/features/overview/sub_leaderboard/libs/useLeaderboardData.ts:22)"
+        },
+        {
+          "technique": "normalization",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:127 scores cost on dailyBurnRate (spend volume) although the header (:8) and display (:150) claim cost per execution, so busy agents are penalised for activity the Activity dimension rewards"
+        },
+        {
+          "technique": "weight-design",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:58 WEIGHTS carry no per-dimension rationale, no sum assertion and no rubric version"
+        },
+        {
+          "technique": "gap-ranking",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:182 tie-break is successRate, not a stable id, and no per-entry gap list or next action is derived anywhere in the context"
+        },
+        {
+          "technique": "rubric-stability",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:107 computeLeaderboard has no golden fixtures or tests (no *.test.* in the context) and no version stamped on scores"
+        },
+        {
+          "technique": "score-explanation",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_leaderboard/components/leaderboardViewHelpers.ts:43 copies the 80/60/40 tier table and src/features/overview/sub_leaderboard/components/LeaderboardMatrixView.tsx:258 applies it to single dimensions too, while the computed tier, weights, contributions and coverage are never rendered"
+        },
+        {
+          "technique": "weight-lenses",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:58 one weight vector grades one population (personas); the lens precondition, unlike populations under one rubric, does not hold"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-09T17:30:14Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "scoring-rubrics"
+      ],
+      "techniques": [
+        "unmeasured-honesty",
+        "normalization",
+        "weight-design",
+        "gap-ranking",
+        "rubric-stability",
+        "score-explanation",
+        "weight-lenses"
+      ],
+      "deviations": 6
+    }
+  ]
+}

@@ -17,6 +17,12 @@ import { filterCards, isBoardFilterActive, NO_BOARD_FILTER, type BoardFilter } f
 import { contestOfGroupKey, type SessionGrouping } from './fleetSessionModel';
 import { columnRows, remoteRows, type ColumnRow } from './gridGeometry';
 import { deviceColumnId, NO_REMOTE, withOrphansOnDevices, type RemoteGrouping } from './remote/remoteBoardModel';
+import type { DeviceAgent } from '@/lib/bindings/DeviceAgent';
+import type { DeviceQueueEntry } from '@/lib/bindings/DeviceQueueEntry';
+import type { DeviceReachability } from '@/lib/bindings/DeviceReachability';
+import type { MeshDeviceView } from '@/lib/bindings/MeshDeviceView';
+import type { MeshLiveness } from '@/lib/bindings/MeshLiveness';
+import type { RemoteSessionView } from '@/lib/bindings/RemoteSessionView';
 
 /** Stable empty list so a session-less column never rebuilds its rows. */
 const EMPTY_SESSIONS: FleetSession[] = [];
@@ -84,6 +90,114 @@ export interface BoardModel {
   empty: boolean;
   /** The board is narrowed, so `empty` means "nothing matches", not "nobody here". */
   filtered: boolean;
+  /**
+   * One column per paired device the board shows (device mesh): every LIVE
+   * peer under 'All', the scoped peer alone under a peer filter, none under
+   * 'This device'. Empty without a mesh, so a one-machine board is unchanged.
+   */
+  peerColumns: PeerColumn[];
+  /** The peer the board is scoped to, or `null` ('All' and 'This device'). */
+  peerScope: string | null;
+}
+
+/** A paired device's column: its agents, its queue, and what this device sent it. */
+export interface PeerColumn {
+  peerId: string;
+  displayName: string;
+  isHome: boolean;
+  reachability: DeviceReachability;
+  /** The snapshot cannot be believed now (`unknown`): drawn greyed, verbs off. */
+  stale: boolean;
+  receivedAtMs: number | null;
+  agents: DeviceAgent[];
+  queue: DeviceQueueEntry[];
+  /** Remote sessions sent to this device that no local project column claims. */
+  remotes: RemoteSessionView[];
+}
+
+/** The device filter's input: the mesh as the store holds it. */
+export interface MeshBoardInput {
+  devices: readonly MeshDeviceView[];
+  liveness: Readonly<Record<string, MeshLiveness>>;
+  /** `'all'` or a device's `peerId` (this device's included). */
+  filter: string;
+}
+
+export const NO_MESH: MeshBoardInput = { devices: [], liveness: {}, filter: 'all' };
+
+const NO_PEERS: PeerColumn[] = [];
+
+function peerColumn(d: MeshDeviceView, stale: boolean, remotes: RemoteSessionView[]): PeerColumn {
+  return {
+    peerId: d.peerId,
+    displayName: d.displayName.trim() || d.peerId.slice(0, 8),
+    isHome: d.isHome,
+    reachability: d.reachability,
+    stale,
+    receivedAtMs: d.receivedAtMs,
+    agents: d.snapshot?.agents ?? [],
+    queue: d.snapshot?.queue ?? [],
+    remotes,
+  };
+}
+
+interface MeshedBoard {
+  columns: BoardColumn[];
+  ungrouped: PersonaCardModel[];
+  traySessions: FleetSession[];
+  peerColumns: PeerColumn[];
+  peerScope: string | null;
+}
+
+/**
+ * The device filter over a built board. Pure, so it is tested without React.
+ *
+ *  - 'All' keeps the board and adds a column per LIVE peer. A peer's "On
+ *    <device>" column (sessions sent there that no local project claims) is
+ *    folded INTO that peer's column, so one device reads as one column.
+ *  - 'This device' (the self peer id) is the board exactly as it was.
+ *  - A peer shows only that peer's column - live or not, greyed when stale -
+ *    holding every session this device sent it, wherever it had landed.
+ *  - A filter naming no device in the mesh reads as 'All'.
+ */
+export function applyMeshFilter(
+  base: Omit<MeshedBoard, 'peerColumns' | 'peerScope'>,
+  remote: RemoteGrouping,
+  mesh: MeshBoardInput,
+): MeshedBoard {
+  const peers = mesh.devices.filter((d) => !d.isSelf);
+  if (peers.length === 0) return { ...base, peerColumns: NO_PEERS, peerScope: null };
+  const scoped = mesh.devices.find((d) => d.peerId === mesh.filter) ?? null;
+  if (scoped?.isSelf) return { ...base, peerColumns: NO_PEERS, peerScope: null };
+
+  if (scoped) {
+    const remotes = [...[...remote.byTeam.values()].flat(), ...remote.byDevice.flatMap((g) => g.views)]
+      .filter((v) => v.peerId === scoped.peerId)
+      .sort((a, b) => b.createdAtMs - a.createdAtMs);
+    const stale = mesh.liveness[scoped.peerId] !== 'live';
+    return {
+      columns: [], ungrouped: [], traySessions: [],
+      peerColumns: [peerColumn(scoped, stale, remotes)],
+      peerScope: scoped.peerId,
+    };
+  }
+
+  const live = peers.filter((d) => d.snapshot !== null && mesh.liveness[d.peerId] === 'live');
+  if (live.length === 0) return { ...base, peerColumns: NO_PEERS, peerScope: null };
+  const liveIds = new Set(live.map((d) => d.peerId));
+  const folded = new Map<string, RemoteSessionView[]>();
+  const columns = base.columns.filter((c) => {
+    const peerId = c.remoteDevice?.peerId;
+    if (!peerId || !liveIds.has(peerId)) return true;
+    folded.set(peerId, c.rows.flatMap((r) => (r.kind === 'remote' ? [r.view] : [])));
+    return false;
+  });
+  return {
+    ...base,
+    columns: columns.length === base.columns.length ? base.columns : columns,
+    peerColumns: live.map((d) => peerColumn(d, false, folded.get(d.peerId) ?? [])),
+    peerScope: null,
+  };
 }
 
 export function useBoardModel(
@@ -94,6 +208,8 @@ export function useBoardModel(
   filter: BoardFilter = NO_BOARD_FILTER,
   /** Sessions this device sent to paired devices. A filtered board carries none. */
   remote: RemoteGrouping = NO_REMOTE,
+  /** The device mesh and its filter (see `applyMeshFilter`). */
+  mesh: MeshBoardInput = NO_MESH,
 ): BoardModel {
   const visible = useMemo(() => filterCards(cards, filter), [cards, filter]);
   const grouped = useMemo(() => groupFleet(visible, personas, teams), [visible, personas, teams]);
@@ -200,15 +316,21 @@ export function useBoardModel(
     [teamColumns, contestColumns],
   );
 
+  const meshed = useMemo(
+    () => applyMeshFilter({ columns, ungrouped: grouped.ungrouped, traySessions }, remote, mesh),
+    [columns, grouped.ungrouped, traySessions, remote, mesh],
+  );
+
   // `every` over an empty list is true, which is the pre-groups behaviour
-  // verbatim: no columns + no tray = empty.
+  // verbatim: no columns + no tray = empty. A peer column is content.
   const empty =
-    columns.every((c) => c.rows.length === 0)
-    && grouped.ungrouped.length === 0
-    && traySessions.length === 0;
+    meshed.columns.every((c) => c.rows.length === 0)
+    && meshed.ungrouped.length === 0
+    && meshed.traySessions.length === 0
+    && meshed.peerColumns.length === 0;
 
   return useMemo(
-    () => ({ columns, ungrouped: grouped.ungrouped, traySessions, totals, empty, filtered }),
-    [columns, grouped.ungrouped, traySessions, totals, empty, filtered],
+    () => ({ ...meshed, totals, empty, filtered }),
+    [meshed, totals, empty, filtered],
   );
 }

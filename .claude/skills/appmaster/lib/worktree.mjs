@@ -50,16 +50,26 @@ const lstatOrNull = (p) => { try { return fs.lstatSync(p); } catch { return null
  * The package dirs whose node_modules a worktree needs, relative to the root: the root itself, and
  * each top-level directory holding both a package.json and an installed node_modules (2026-10-07:
  * firetv's gate is `cd desk && npm run test:rules`, and desk/node_modules was never linked, so every
- * firetv run failed "Run `npm install` in desk/ first").
+ * firetv run failed "Run `npm install` in desk/ first"). Workspace packages one level further down
+ * count too (2026-10-09: athena-portable's pnpm workspace keeps them in apps/desktop,
+ * packages/athena-bridge and examples/*, and with only the root linked every gate failed 'tsc is not
+ * recognized'). Deeper than two levels is not scanned: no managed repo nests packages deeper.
  */
 export function nodeModulesDirs(root) {
   const rels = [''];
-  let entries = [];
-  try { entries = fs.readdirSync(root, { withFileTypes: true }); } catch { return rels; }
-  for (const e of entries) {
-    if (!e.isDirectory() || e.name.startsWith('.') || e.name === 'node_modules') continue;
-    const dir = path.join(root, e.name);
-    if (fs.existsSync(path.join(dir, 'package.json')) && fs.existsSync(path.join(dir, 'node_modules'))) rels.push(e.name);
+  const isPackage = (dir) => fs.existsSync(path.join(dir, 'package.json')) && fs.existsSync(path.join(dir, 'node_modules'));
+  const subdirs = (dir) => {
+    try {
+      return fs.readdirSync(dir, { withFileTypes: true })
+        .filter((e) => e.isDirectory() && !e.name.startsWith('.') && e.name !== 'node_modules')
+        .map((e) => e.name);
+    } catch { return []; }
+  };
+  for (const name of subdirs(root)) {
+    if (isPackage(path.join(root, name))) { rels.push(name); continue; }
+    for (const sub of subdirs(path.join(root, name))) {
+      if (isPackage(path.join(root, name, sub))) rels.push(path.join(name, sub));
+    }
   }
   return rels;
 }

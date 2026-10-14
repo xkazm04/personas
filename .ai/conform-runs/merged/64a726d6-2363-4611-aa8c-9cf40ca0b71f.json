@@ -1,0 +1,53 @@
+{
+  "schema": "conform-run/1",
+  "worker": "64a726d6-2363-4611-aa8c-9cf40ca0b71f",
+  "subject": "prompt-assembly",
+  "evaluatedAt": "2026-10-12T16:43:31.733041+00:00",
+  "provider": "grok",
+  "model": "grok-4.7",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "prompt-assembly",
+      "context": "prompt-assembly-engine",
+      "reason": "pair anchor refused: src-tauri/src/commands/execution/executions.rs:696 does not contain the quoted text"
+    },
+    {
+      "subject": "prompt-assembly",
+      "context": "companion-narration-ops",
+      "reason": "pair anchor refused: src/features/companions/athena/NarrationThread.tsx:1 has no quote to verify"
+    },
+    {
+      "subject": "prompt-assembly",
+      "context": "recipe-build-models",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "prompt-assembly",
+      "context": "stores-slices-system",
+      "reason": "pair anchor refused: src/stores/slices/system/devToolsSlice.ts:1 has no quote to verify"
+    },
+    {
+      "subject": "prompt-assembly",
+      "context": "engine-build-session",
+      "reason": "withdrawn after review: grok answered in one turn without opening a file; its own notes said DRAFT ONLY - do not keep"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T16:43:31.733041+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "prompt-assembly"
+      ],
+      "techniques": [
+        "history-compaction",
+        "task-envelope"
+      ],
+      "deviations": 1,
+      "context": "engine-build-session",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    }
+  ]
+}

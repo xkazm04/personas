@@ -3826,7 +3826,13 @@
       "where_contest": "Soutěž",
       "where_count": "{count} soutěží",
       "where_ledger": "Přehled",
-      "where_variant": "Varianta"
+      "where_variant": "Varianta",
+      "by_area": "Podle typu úkolu",
+      "by_model": "Podle modelu",
+      "tile_contests": "Soutěže",
+      "tile_decided": "Rozhodnuto",
+      "tile_models": "Použité modely",
+      "tile_top": "Nejlepší model"
     }
   }
 }

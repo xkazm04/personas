@@ -1,0 +1,76 @@
+{
+  "schema": "conform-run/1",
+  "worker": "3429d36b-b462-4b05-bc18-7d9e1c2e1e35",
+  "subject": "agent-memory",
+  "evaluatedAt": "2026-10-09T15:39:28Z",
+  "pairs": [
+    {
+      "context": "71d36b74-2b52-4759-a000-b505ddf27915",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge() still hard-DELETEs both originals; persona_memory_sources is ON DELETE CASCADE (src-tauri/db/src/migrations/incremental/e16_living_agent.rs:107) and the merged INSERT (:1643) carries no fact_key and no source rows, so a merge destroys both items' episode provenance and fact identity with no supersedence link or tombstone. Re-judged at revision 47; verdict unchanged, consequence sharper.",
+      "techniques": [
+        {"technique": "consolidation", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge closes two beliefs by deletion rather than supersedence; the one consolidation door create_consolidated (:549) does write provenance rows and refuses source-less drafts, so the store has two grades of merged item"},
+        {"technique": "decay-and-forgetting", "verdict": "deviation", "evidence": "src-tauri/db/src/migrations/incremental/e16_living_agent.rs:107 cascade means the merge door orphans provenance silently; the non-destructive retire exists at src-tauri/db/src/repos/core/memories.rs:1283 (archive_by_ids) and user delete tombstones fact-keyed rows at :1436, so only the merge door violates forgetting-never-orphans-provenance"},
+        {"technique": "scope-before-similarity", "verdict": "realized", "evidence": "src-tauri/db/src/repos/core/memories.rs:1581 merge refuses cross-persona pairs, and the merged row inherits the source persona"}
+      ]
+    },
+    {
+      "context": "e62d5595-2bbd-480a-a757-2d3a126545a0",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:152 resolves a duplicate through mergeMemoriesAction, the hard-DELETE merge at src-tauri/db/src/repos/core/memories.rs:1662, whose cascade drops both originals' provenance rows: the review surface's one consolidating action replaces a family with an unauditable item. Re-judged at revision 47; verdict unchanged.",
+      "techniques": [
+        {"technique": "consolidation", "verdict": "deviation", "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:152 merge supersedes nothing and links nothing; the contradiction branch is tested before the duplicate branch (src/features/overview/sub_memories/libs/memoryConflicts.ts:144 precedes :156), which does realize the technique's test-contradiction-first rule"},
+        {"technique": "decay-and-forgetting", "verdict": "deviation", "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:152 merge deletes as repair; keep_a/keep_b retire by demotion to archive at :127, the conformant path"},
+        {"technique": "scope-before-similarity", "verdict": "realized", "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:152 is guarded above by core and cross-persona refusals that mirror src-tauri/db/src/repos/core/memories.rs:1581"}
+      ]
+    },
+    {
+      "context": "fd092e44-fcec-4418-8337-ed2b7b2c8473",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:477 evict_excess, run automatically after every pipeline run (src-tauri/src/engine/pipeline_executor.rs:1097), hard-DELETEs the lowest-importance auto memories, and the UI delete (src/features/teams/sub_teamMemory/useTeamMemories.ts:146) is a hard DELETE at team_memories.rs:289: the cap and the retire both skip demotion tiers, so a scoring bug becomes permanent amnesia. Correction to the prior verdict: edits are not unaudited, since update appends a 20-deep revision log (team_memories.rs:226).",
+      "techniques": [
+        {"technique": "decay-and-forgetting", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:477 an automated cap pass deletes rather than archives, the trapdoor the demotion-tiers rule forbids; manual (run_id NULL) rows are exempt from the cap entirely, so the operator pool has no cap at all"},
+        {"technique": "consolidation", "verdict": "deviation", "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:171 corrects a belief by in-place UPDATE; the prior value survives only as a capped revision entry in tags (src-tauri/db/src/repos/resources/team_memories.rs:226), not as a superseded item recall or audit can reach as lineage"},
+        {"technique": "memory-governance", "verdict": "partial", "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:226 the revision log answers 'what did it say before' for operator edits, but deletion at :289 leaves no record answering 'who removed it and why'"}
+      ]
+    },
+    {
+      "context": "0f1b56ac-cd96-4355-993e-dc445a20e63e",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/fleet/monitor/channels/ConversationBriefing.tsx:178 pins a channel row verbatim into team long-term memory with persona_id set to the speaker (:182) and provenance only {source:'conversation-pin'} (:187), with no pointer to the channel item, run or approving operator; the row is then injected into scanner prompts (src-tauri/src/commands/infrastructure/idea_scanner.rs:623), so a belief recalled as a persona's own cannot answer who wrote it, from what, approved by whom.",
+      "techniques": [
+        {"technique": "memory-governance", "verdict": "deviation", "evidence": "src/features/fleet/monitor/channels/ConversationBriefing.tsx:187 the write records neither the evidence's author nor the operator's approval; the audit question terminates at a tag, not a real event, and a pinned step or tool line whose author is a third party is stored as standing 'context'"},
+        {"technique": "episodic-capture", "verdict": "deviation", "evidence": "src/features/fleet/monitor/channels/ConversationBriefing.tsx:178 the body is the raw utterance (transcript altitude) and carries no pointer to the raw evidence it came from (item.id is used only for the local pinned Set)"},
+        {"technique": "recall-injection", "verdict": "not-judged", "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:128 the injection read orders by importance and recency only; the label and budget obligations live in the scanner prompt builder, outside this context"}
+      ],
+      "registryProposal": "agent-memory's write-path techniques assume a distiller between capture and belief; an operator 'pin this line' action is a fourth writer the corpus only names as 'the human's direct edit'. Worth a decision rule: a human pin is a review-lane adoption and must record the source item id and the original author, not just the act."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-memory",
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "reason": "Read, not judged: the deck is the human gate for two memory-adjacent loops, idea rejection to constraint memory and evolution-promotion rejection (it forwards the note at src/features/agents/quick-answer/triage/triageDispatch.ts:216; the gate keeps the rejected proposal and note at src-tauri/src/commands/execution/evolution.rs:308, consistent with rejected-revision-leaves-its-evidence). Only 1-2 of 30 techniques apply, so the evidence floor (half the subject's techniques) blocks conformant. Whether the reviser reads the record lives in the engine, outside this context."
+    },
+    {
+      "subject": "agent-memory",
+      "context": "d77a22ee-23cb-42f3-a910-590f8622977f",
+      "reason": "Budget: strong unknown left for the next run. Its recall-preview state likely carries the empty-vs-failed recall deviation already recorded on companion-narration-ops, which needs reading before it is repeated."
+    }
+  ],
+  "consults": [
+    {"ts": "2026-10-09T15:39:28Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": ["consolidation", "decay-and-forgetting", "scope-before-similarity"], "deviations": 1},
+    {"ts": "2026-10-09T15:39:28Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": ["consolidation", "decay-and-forgetting", "scope-before-similarity"], "deviations": 1},
+    {"ts": "2026-10-09T15:39:28Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": ["decay-and-forgetting", "consolidation", "memory-governance"], "deviations": 1},
+    {"ts": "2026-10-09T15:39:28Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": ["memory-governance", "episodic-capture", "recall-injection"], "deviations": 1},
+    {"ts": "2026-10-09T15:39:28Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": ["rejected-revision-leaves-its-evidence"], "deviations": 0}
+  ]
+}

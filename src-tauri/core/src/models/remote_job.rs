@@ -133,6 +133,10 @@ pub struct RemoteJob {
     /// The completion receipt of a `fleet_session` job. `None` until terminal,
     /// and always `None` for `instruction`.
     pub receipt: Option<FleetSessionJobReceipt>,
+    /// The outcome of a `mesh_verb` job (the receiving device's verdict on
+    /// the verb, `ok` or a reason). `None` until terminal, and always `None`
+    /// for every other kind; `receipt` stays the `fleet_session` receipt.
+    pub mesh_receipt: Option<super::MeshVerbReceipt>,
     pub status: RemoteJobStatus,
     /// The final answer (or the failure reason). `None` until terminal.
     pub summary: Option<String>,

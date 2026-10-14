@@ -114,6 +114,7 @@ use ts_rs::TS;
 pub struct BundleExportResult {
     pub bundle_hash: String,
     pub resource_count: u32,
+    #[ts(type = "number")]
     pub byte_size: u64,
 }
 

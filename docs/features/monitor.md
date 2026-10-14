@@ -550,6 +550,25 @@ board never shows a number the loop would not act on. The tick logs the pacing
 line in its summary and announces a hold once per transition, the way the
 governor's stop is announced.
 
+#### Schedules plate: the operator's scheduled tasks, so a nightly job is never forgotten
+
+Below the Autopilot plate, the Supply deck (`SupplyDeck.tsx`) carries a **Schedules** plate
+(`SchedulePlate.tsx`) listing every Windows Task Scheduler task in the `\Personas\` folder. Today
+that is the `/curator --multi` night (`\Personas\CuratorNight`, 23:00-07:00); anything else
+scheduled into the folder appears with no code change. Each line is a lamp (green while enabled,
+amber while running, dark when off), the task's title, its next start in **Prague time**
+(`Europe/Prague`, whatever zone the machine runs in), and a switch that enables or disables it.
+The line's tooltip adds the declared window, the last run and its result. The plate renders
+nothing until something is scheduled, and nothing off Windows.
+
+The task's `Description` carries what the line shows, as `<title>|<window>`. The read
+(`fleet_scheduled_tasks`) and the switch (`fleet_scheduled_task_set_enabled`, which accepts only a
+name the `\Personas\` listing holds and returns the refreshed list) run PowerShell's
+`Get-ScheduledTask`/`Enable-ScheduledTask` windowless and get times as UTC epoch milliseconds,
+never as `schtasks` locale text. The plate polls every 30 s while the window is visible. Turning a
+task off stops it starting tomorrow; a night already running ends on its own window
+(`loop.py multi stop` ends it after its running units).
+
 #### Orchestration panel — the next tick, read-only
 
 Opened from the Activity board's Autopilot plate (`SupplyDeck.tsx`), the
@@ -765,6 +784,81 @@ verbs locally, so every layout and every symbol can be walked without a real fle
 The frontend-fed live-slot scheduler that used to sit in Fleet → Settings
 (`fleetLiveSlotsEnabled` / `fleet_set_live_slots`) is retired: the cap is the
 setting above and nothing else.
+
+#### Devices in the mesh (spark device-mesh, 2026-10-13)
+
+Once this desktop is paired with another Personas desktop, a **device strip**
+appears under the command band. With no paired device it renders nothing at all.
+
+- **Plates.** The first plate is *All devices* ("2 of 3 reporting"). Next comes
+  *This device*, then one plate per paired device. Each plate shows:
+  - the device name, with a house on the home device;
+  - a reachability lamp (connected, stale or offline);
+  - three thin bars for CPU, RAM and GPU as shares of that machine. A device
+    that cannot read its GPU draws no GPU bar;
+  - running and queued counts;
+  - the last mutual-test verdict, with the test, its time and its detail in the
+    tooltip.
+
+  The bars carry the numbers; the percentages are in the tooltip. A device whose
+  snapshot is older than 45 s reads as **not reporting**: its plate greys out
+  and the bars give way to "Last seen 6 min. ago". The strip checks this every
+  5 s while it is mounted, so a device that goes quiet turns grey even when no
+  event says so.
+- **Filter.** A plate scopes the board, and pressing the lit plate again goes
+  back to All.
+  - *All* keeps the local board and adds a rail on the right with one bay per
+    reporting device. Each bay holds that device's agents, its queue, and any
+    sessions sent there that no local project column claims. That last group
+    used to be the "On <device>" column.
+  - *A paired device* shows only that device's bay, wide, even when the device
+    is not reporting. The bay holds every session this desktop sent it.
+  - *This device* shows the board unchanged.
+- **Peer agents.** These are the device's personas drawn as ordinary agent
+  lines, with the device glyph, the resource axis that device reported, and an
+  on/off switch. The switch runs `persona_set_enabled` on that device as a
+  `mesh_verb` job.
+  - The switch is off while the device is not reporting.
+  - A persona whose project is switched off on its device cannot be turned on
+    from here, and the tooltip says why.
+  - The answer appears on the line, never as a toast: "Queued until it wakes",
+    or "<device> refused: <reason>". `project_off` is shown in words.
+- **Peer queue.** The device's queue is the same ladder as the local one.
+  Reordering, *Start now* and *Cancel* run on that device (`queue_reorder` with
+  the full order, `queue_start_now`, `queue_cancel`), behind the same confirms.
+  A refused reorder snaps the ladder back.
+- **Move to…** Every local queued rung has a *Move to…* menu listing the paired
+  devices; a device that is not reporting is marked "the move waits until it
+  wakes".
+  - While the move is pending, the rung reads "Moving to <device>".
+  - The local entry is cancelled (`moved:<peer8>`) only once the device accepts,
+    and that is what removes the rung.
+  - On a refusal the rung stays, with the device's reason on it.
+- **Resource glyph.** A live fleet session and a running persona carry a small
+  glyph of the axis they mostly use (CPU, RAM or GPU). The share of this machine
+  is drawn under the icon and given in the tooltip.
+  - A local persona with no live run uses the axis its recent measured runs
+    show.
+  - A peer's agent uses the axis its device reported.
+  - With no measurement there is no glyph.
+- Data: `meshSlice` (store) over `mesh_device_snapshots`, the
+  `network:device-snapshot` event, `resource_live_samples` and the
+  `fleet-resource-sample` event. Each listener attaches before its reconcile
+  read, and a read never overwrites a newer push.
+
+#### Charter card: measured load
+
+The charter's *Declared against measured* box now also shows **Measured load**:
+CPU, RAM and GPU drawn with the strip's three-bar grammar (the median of each
+run's p95 CPU, peak RAM and GPU share).
+
+- The box reads "Measured over N runs", or "Learning (N/5)" until the profile
+  loop has five runs to act on.
+- When a pinned or operator-set profile's measurement maps to different tags, a
+  badge names both, for example "Measured Exclusive · GPU Shared, declared
+  Heavy · GPU None". The tags come from the backend's mapping and are never
+  re-derived on the client.
+- A profile the loop rewrote is labelled *set from measured runs*.
 
 ### Remote sessions
 

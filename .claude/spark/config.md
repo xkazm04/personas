@@ -64,6 +64,11 @@ by the 1.1.0 generic rewrite.
   `cargo test --workspace` beside a sibling's running app while writing THIS overlay.
 - Never bare `cargo test` on Windows (the lib unit-test binary dies in the loader, exit 127);
   `npm run test:rust` embeds the comctl32-v6 manifest post-link.
+- WP0 that MOVES a cargo feature into a lane (e.g. `p2p` into `desktop`) runs, in WP0, that lane's
+  `cargo clippy ... -D warnings`, BOTH export_bindings lanes WITH the feature, and `check:command-features`:
+  code the lane never compiled meets its gates for the first time. device-mesh 2026-10-13 found it late, three
+  times: clippy red in `commands/signing` (dead fn), 27 stale p2p bindings CI would regenerate (22 `u64` -> need
+  `#[ts(type = "number")]`), 50 command-feature baseline entries.
 
 ## Rituals
 
@@ -138,6 +143,16 @@ Authority: `.claude/CLAUDE.md` (parallel-safety primitives apply in full).
   2026-09-21 to 09-25). Name the migration in WP0 from the highest e-number on BOTH local master and
   `origin/master`, and re-check both before landing; a rename is mechanical (file, `mod` line, `run`
   call, doc references), the `id` marker string stays. Promoted 2026-09-25 (lifecycle-v2).
+- Every builder brief that starts or kills processes carries this rule verbatim: kill ONLY pids captured from
+  your own `spawn()` return values, plus descendants created AFTER that spawn; never walk parent pids; print
+  the command line before each kill and require it to contain your own data dir or exe path. device-mesh WP2a
+  (2026-10-13) followed a reused parent pid and killed another session's `tail -f` monitor; the operator's
+  standing rule ("read cmdline, THEN kill") lived only in memory, never in a brief. Promoted on that sighting
+  because a kill is irreversible.
+- A design that adds a NEW WRITER to a record other code already reads (a provenance-bearing profile, a
+  status, a flag) names, in Phase 2, every reader and what it assumes about who wrote the field. device-mesh
+  WP1: three routing readers treated any stored difficulty as declared, so the measurement writer would have
+  moved untagged opus charters to sonnet; the builder caught it, the scout had not looked.
 
 ## Context map
 `context-map.json` at the repo root. Note the standing three-way disagreement documented in

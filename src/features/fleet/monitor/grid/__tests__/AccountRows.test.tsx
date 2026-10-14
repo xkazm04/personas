@@ -68,8 +68,8 @@ describe('AccountRows', () => {
   it('renders one row per account across every provider, plus a worded row for an empty provider', () => {
     renderRows();
     const rows = screen.getAllByTestId('fleet-usage-account');
-    // Seven Claude plans + the one Codex plan; Grok (not installed) is the empty row.
-    expect(rows.map((r) => r.getAttribute('data-provider'))).toEqual(['claude', 'claude', 'claude', 'claude', 'claude', 'claude', 'claude', 'codex']);
+    // Seven Claude plans + the one Codex plan + agy's two model groups; Grok (not installed) is the empty row.
+    expect(rows.map((r) => r.getAttribute('data-provider'))).toEqual(['claude', 'claude', 'claude', 'claude', 'claude', 'claude', 'claude', 'codex', 'agy', 'agy']);
     const empty = screen.getByTestId('fleet-usage-empty');
     expect(empty).toHaveAttribute('data-provider', 'grok');
     expect(empty).toHaveAttribute('data-reason', 'not_installed');
@@ -285,7 +285,7 @@ describe('AccountRows', () => {
     const { container } = render(
       <AccountRows model={model({ accounts: null, cli: null })} onSwitch={vi.fn()} onRemove={vi.fn()} />,
     );
-    expect(screen.getAllByTestId('fleet-usage-ghost-row')).toHaveLength(3);
+    expect(screen.getAllByTestId('fleet-usage-ghost-row')).toHaveLength(4);
     expect(screen.queryByTestId('fleet-usage-account')).toBeNull();
     // A ghost is boxes only: no glyph of any kind, so nothing that could turn.
     expect(container.querySelectorAll('svg')).toHaveLength(0);

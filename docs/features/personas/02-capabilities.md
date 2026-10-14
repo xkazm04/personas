@@ -81,24 +81,28 @@ on the Rust enum (`core/src/models/responsibility.rs`):
 | `difficulty` | `light` · `standard` · `hard` | how hard the reasoning is; the input to model routing (below) | none |
 | `effort` | `s` · `m` · `l` · `xl` | how many plan tokens a run burns, total input + output: `s` under 50k, `m` 50k to 250k, `l` 250k to 1M, `xl` over 1M | 1 / 2 / 4 / 8 plan units |
 
-Beside the tags: `source` (`default` · `self` · `operator`), `pinned`,
+Beside the tags: `source` (`default` · `self` · `operator` · `measured`), `pinned`,
 `rationale` (one line, at most 500 characters) and `declaredAt` (RFC 3339).
 
 **An absent profile is the default profile**: light / none / standard / m,
 `source: default`. `responsibility::effective_profile(spec)` is the one reader;
 a session with no charter at all is charged the same default.
 
-**Who writes it.** Two writers, one rule (`responsibility::merge_profile`).
+**Who writes it.** Three writers, one rule (`responsibility::merge_profile`).
 Provenance is stamped from the writer and is never taken from the payload:
 
 | Writer | Door | Result |
 |---|---|---|
 | The operator (charter editor) | `update_persona_responsibility` / `create_persona_responsibility` | `source: operator`, `pinned` as sent (the editor sends `true`), `declaredAt: now`. A spec saved WITHOUT a profile keeps the stored one, so an older editor cannot erase a pin by omission; a profile saved unchanged is not re-stamped |
 | The persona (decide wake) | `responsibility::declare_profile` | refused with `profile_pinned` when the stored profile is pinned, and nothing changes; otherwise `source: self`, `pinned: false`, `declaredAt: now`. Writes the one key `$.resourceProfile`, so a background wake cannot revert a concurrent edit to the rest of the spec |
+| The measurement (profile loop) | `responsibility::apply_measured_profile`, through `declare_profile` | refused with `profile_pinned` on a pinned profile and `profile_operator` on ANY operator profile (pinned or not), and nothing changes; otherwise ONLY `machine` and `gpu` are rewritten, `difficulty`, `effort` and `rationale` stay as stored, `source: measured`, `pinned: false`, `declaredAt: now`. Skipped whenever the stored `machine` and `gpu` already equal the measured tags, whatever the source, so a steady charter does not bump `updated_at` every run and a persona whose declaration the measurement confirms keeps `source: self` |
 
 The pin is the operator's lock. A persona never overwrites a pinned profile; it
 may still say it disagrees in its decide rationale. Only an operator-authored
 profile can be pinned, and unpinning is how the operator hands the profile back.
+
+A `measured` profile is not pinned, so the persona's next self-declaration
+replaces it (`source: self`), and the next summarised run may measure it again.
 
 **The decide wake.** The decision prompt carries a `RESOURCE STATE` block (plan
 units in use against the budget, the pace factor and how far ahead or behind
@@ -161,8 +165,38 @@ the `effort` tag). The ledger has no token columns, so tokens come from the
 execution a pass spawned (`stats_json.executionId`). A pass whose worker was a
 fleet session has no persisted token or cost figure: it counts as a pass and
 reads `avgTokens: 0`, `measuredEffort: null`, meaning not measured rather than
-small. `peakRssMb` is always `null` today, because no resident-memory figure is
-persisted for a run.
+small. `peakRssMb` is a legacy field and always `null`; resident
+memory is measured as a share of the device, below.
+
+**Measured resources and the profile loop.** Every finished run of a charter
+(a persona execution, or a fleet session the attention loop dispatched for it)
+leaves one `run_resource_summaries` row: its 95th-percentile CPU share, peak
+RAM share and 95th-percentile GPU share of THIS device, the dominant axis, and
+how many 5 s samples it was computed from. A run is charged to a charter by the
+`_responsibility` its execution input named, or else by the attention pass that
+dispatched it (`stats_json.sessionId` / `executionId`).
+
+`responsibility_measured` adds, per charter: `resourceRuns` (all its summaries),
+the MEDIANS `cpuP95Share`, `ramPeakShare`, `gpuP95Share` over its newest 20
+runs, `dominant`, and `measuredMachine` / `measuredGpu`, the tags those medians
+map to. A charter with measured runs but no attention pass is listed with
+`passes: 0`. The tags stay `null` until the charter has **5** runs, and
+`measuredGpu` stays `null` while no run had a GPU reading (non-Windows, or no
+GPU engine counters): unknown, never `none`.
+
+The mapping (one home: `core/src/models/responsibility.rs`, beside
+`MachineLoad::units`): `machine` = the heavier of what CPU and RAM map to, a
+share of at least 0.5 is `exclusive`, 0.25 `heavy`, 0.125 `moderate`, else
+`light` (each threshold is the tag's units / 16); `gpu`: at least 0.5 is
+`exclusive`, 0.05 `shared`, else `none`.
+
+At 5 runs and after every later run, an UNPINNED, non-operator profile is
+rewritten to those tags (`source: measured`), so queue admission charges what
+the charter measurably costs. When no run had a GPU reading the stored `gpu`
+class is kept. A pinned or operator profile never changes; the editor shows
+the measured tags beside it as a mismatch instead.
+
+**Measurement never makes a difficulty look declared.** Model routing reads only a DECLARED difficulty (`ResourceProfile::declared_difficulty`), because a declared one outranks the persona's own model. A measured rewrite carries forward whether the profile it replaced had a declared difficulty (`difficultyDeclared`), so an untagged charter keeps resolving to its persona's model after it is measured, and a persona's declared difficulty keeps routing. `responsibility_measured` also ships `resourceRunsRequired` (5), so the editor never keeps its own copy of the threshold.
 
 ---
 
@@ -178,7 +212,8 @@ Parameters and has four pickers:
 
 The chip in the card header says where the values came from: **default** (nothing stored; the greyed values are
 what a run is charged as, and the persona declares its own on its next decide wake), **self-declared** (with when,
-and the persona's reason on hover), **pinned by you**, or **set by you, not pinned**. Changing any value pins the
+and the persona's reason on hover), **pinned by you**, **set by you, not pinned**, or **measured** (rewritten from
+the charter's last runs; see below). Changing any value pins the
 profile; the persona never overwrites a pinned profile. Turning **Pin this profile** off and saving hands it back:
 the persona may replace the values on a later wake. Nothing is written until Save. Other charter editors never
 touch the profile.
@@ -188,6 +223,14 @@ over the most recent 20 passes. When the measured band differs from the declared
 says so ("Measured XL over 12 passes, declared M") — the cue to correct and pin. "Not measured yet" means there
 are no recorded executions with token data; passes that ran as fleet sessions store no tokens or cost, so a
 charter that only runs in the fleet stays unmeasured.
+
+**Measured resources** shows, once the charter has finished runs, the median
+CPU, RAM and GPU share of this computer its runs used and which of the three
+dominated. After 5 runs an unpinned profile follows the measurement on its own:
+Machine load and GPU change to what was measured and the chip reads
+**measured**. A profile you set (pinned or not) is never changed; when the
+measurement disagrees with it, a mismatch badge says what was measured. GPU
+reads "unknown" on a computer that cannot report per-process GPU use.
 
 Settings -> Limits -> Concurrency -> **Dynamic fleet budgets** (`fleet.dynamic_budgets`, on by default) is the kill
 switch: off, the fleet ignores resource profiles and admits runs against the fixed session cap only.

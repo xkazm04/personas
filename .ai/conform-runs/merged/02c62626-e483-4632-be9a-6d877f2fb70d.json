@@ -1,0 +1,16 @@
+{"schema": "conform-run/1", "worker": "02c62626-e483-4632-be9a-6d877f2fb70d", "subject": "background-jobs",
+ "evaluatedAt": "2026-10-10T02:25:30Z",
+ "pairs": [{"context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0", "subject": "background-jobs", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/api/pipeline/workflows.ts:15 cancelWorkflowJob resolves void while the backend writes the terminal state at once as Failed (src-tauri/src/background_job.rs:684) and the WorkflowJob projection omits cancel_outcome (src-tauri/src/commands/infrastructure/workflows.rs:18), so no caller can show cancelling or tell cancelled from failed",
+   "techniques": [
+     {"technique": "job-progress-and-cancellation", "verdict": "deviation", "evidence": "src-tauri/src/background_job.rs:684 cancel() jumps straight to JobStatus::Failed with no cancelling state; src-tauri/src/commands/infrastructure/workflows.rs:66 folds cancelled jobs into failed_count, collapsing cancelled and failed into one endpoint; the snapshot field that would separate them (src-tauri/src/background_job.rs:221 cancel_outcome) is dropped by the projection at src-tauri/src/commands/infrastructure/workflows.rs:18 despite the command's own doc promising it at :134"},
+     {"technique": "loop-supervision", "verdict": "unknown", "evidence": "not judged: the supervisor lives in src-tauri/src/background_job.rs, which is outside this API-wrapper context"},
+     {"technique": "tick-isolation", "verdict": "unknown", "evidence": "not judged: tick bodies are backend code outside this context"},
+     {"technique": "adaptive-cadence", "verdict": "unknown", "evidence": "not judged: no polling cadence lives in src/api/pipeline/"},
+     {"technique": "loop-health-telemetry", "verdict": "unknown", "evidence": "not judged: src/api/pipeline/scheduler.ts:13 exposes getSchedulerStatus but the health surface itself is backend code"},
+     {"technique": "startup-sweeps", "verdict": "unknown", "evidence": "not judged: src/api/pipeline/scheduler.ts:40 wraps missed-run listing, but the sweep and its policy belong to scheduling and the backend"}
+   ],
+   "registryProposal": "Coverage gap on the consumer side, not a corpus hole: the repo's actual background runtime (src-tauri/src/background_job.rs - BackgroundJobManager, CancelOutcome, spawn_guarded) appears in no context of context-map.json, so background-jobs is paired only with an IPC-wrapper context and loop-supervision/tick-isolation/loop-health-telemetry can never be judged here. Also: src/api/pipeline/workflows.ts has zero importers in src/ and its WorkflowJob/WorkflowsOverview bindings are orphan-allowlisted (no TS derive), so the deviation is latent - the first UI wired to this API inherits it."}],
+ "declined": [],
+ "consults": [{"ts": "2026-10-10T02:25:30Z", "bundle": "software-engineering", "subjects": ["background-jobs"], "techniques": ["job-progress-and-cancellation"], "deviations": 1}]}

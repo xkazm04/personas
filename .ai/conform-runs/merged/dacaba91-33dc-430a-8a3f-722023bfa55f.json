@@ -1,0 +1,209 @@
+{
+  "schema": "conform-run/1",
+  "worker": "dacaba91-33dc-430a-8a3f-722023bfa55f",
+  "subject": "agent-browser-control",
+  "evaluatedAt": "2026-10-12T23:41:28.562953+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [
+    {
+      "context": "browser-webview-control",
+      "subject": "agent-browser-control",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/browser/twinDraftLane.ts:137 Context and repository searches found operator UI, IPC calls, and drafting here, with browser tool implementations elsewhere; this lane removes the target reference before giving page context to the model.",
+      "techniques": [
+        {
+          "technique": "agent-actionable-errors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/twinDraftLane.ts:151 This error presentation targets the operator; it is outside the agent command-result boundary."
+        },
+        {
+          "technique": "effect-classed-commands",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/webview/WebviewPage.tsx:154 The address-bar callback consumes IPC rather than publishing or dispatching the agent command catalog."
+        },
+        {
+          "technique": "persistent-browser-daemon",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/browserStore.ts:240 The frontend retrieves tab metadata; browser process ownership is outside these modules."
+        },
+        {
+          "technique": "references-over-selectors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/twinDraftLane.ts:296 The operator picks the target, and the drafting model receives context without its reference."
+        },
+        {
+          "technique": "socket-scoped-surface",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/webview/hostVisibility.ts:82 This module controls host visibility through IPC; searches found no listener or page-reply socket implementation in the context."
+        }
+      ]
+    },
+    {
+      "context": "commands-companion",
+      "subject": "agent-browser-control",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:484 A browser_login failure reports a missing whitelist entry without a literal recovery command, and the approval lifecycle persists that error text for subsequent agent turns.",
+      "techniques": [
+        {
+          "technique": "agent-actionable-errors",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:484 This error bypasses the Refusal hint contract and supplies no next command; approval_lifecycle wraps and records the error without adding recovery."
+        },
+        {
+          "technique": "effect-classed-commands",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:125 write_action maintains a private command-to-action match that explicitly mirrors mcp::action_for, rather than deriving dispatch from one canonical effect registry."
+        }
+      ]
+    },
+    {
+      "context": "commands-credentials",
+      "subject": "agent-browser-control",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1466 Credential automation automatically kills every matching Playwright Chromium process instead of using recorded child identities, so completing one task can destroy another browser session.",
+      "techniques": [
+        {
+          "technique": "persistent-browser-daemon",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1466 cleanup_orphaned_browsers is called automatically after collection and selects processes by command-line pattern, violating identity-scoped cleanup."
+        },
+        {
+          "technique": "socket-scoped-surface",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1405 This browser automation path configures a local stdio server; searches found no browser tunnel or embedded-page reply socket in this flow."
+        }
+      ]
+    },
+    {
+      "context": "plugins-drive",
+      "subject": "agent-browser-control",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "scripts/connectors/builtin/local-drive.json:19 Context and repository searches found filesystem APIs, document processing, and UI geometry rather than an agent browser command surface, consistent with the Local Drive manifest's storage-only purpose.",
+      "techniques": [
+        {
+          "technique": "agent-actionable-errors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:708 This is operator feedback for a filesystem rename, not an agent browser-tool error."
+        },
+        {
+          "technique": "effect-classed-commands",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:705 The mutation is a local file operation; no browser command registry was found in this context."
+        },
+        {
+          "technique": "persistent-browser-daemon",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:326 Navigation loads directory entries; the context does not create or manage an agent browser session."
+        },
+        {
+          "technique": "references-over-selectors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/hooks/useScrollShadows.ts:22 DOM references serve the app's own scroll geometry, not agent targeting of arbitrary pages."
+        },
+        {
+          "technique": "socket-scoped-surface",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/signing/useSigning.ts:116 The signing path operates on a local filesystem path; searches found no browser listener, tunnel, or page-reply channel."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-browser-control",
+      "context": "site-whitelist-management",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor useWhitelistActions.ts:107 is just the closing `return useMemo(...)` of the hook. It doesn't show that a browser command surface is absent, so the anchor is incidental."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T23:41:28.562953+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-browser-control"
+      ],
+      "techniques": [
+        "agent-actionable-errors",
+        "effect-classed-commands",
+        "persistent-browser-daemon",
+        "references-over-selectors",
+        "socket-scoped-surface"
+      ],
+      "deviations": 0,
+      "context": "browser-webview-control",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-12T23:41:28.562953+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-browser-control"
+      ],
+      "techniques": [
+        "agent-actionable-errors",
+        "effect-classed-commands",
+        "persistent-browser-daemon",
+        "references-over-selectors",
+        "socket-scoped-surface"
+      ],
+      "deviations": 0,
+      "context": "site-whitelist-management",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-12T23:41:28.562953+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-browser-control"
+      ],
+      "techniques": [
+        "agent-actionable-errors",
+        "effect-classed-commands"
+      ],
+      "deviations": 1,
+      "context": "commands-companion",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-12T23:41:28.562953+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-browser-control"
+      ],
+      "techniques": [
+        "persistent-browser-daemon",
+        "socket-scoped-surface"
+      ],
+      "deviations": 1,
+      "context": "commands-credentials",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-12T23:41:28.562953+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-browser-control"
+      ],
+      "techniques": [
+        "agent-actionable-errors",
+        "effect-classed-commands",
+        "persistent-browser-daemon",
+        "references-over-selectors",
+        "socket-scoped-surface"
+      ],
+      "deviations": 0,
+      "context": "plugins-drive",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}

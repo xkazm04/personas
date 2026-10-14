@@ -113,8 +113,8 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
           <table className="w-full typo-body">
             <thead>
               <tr className="bg-secondary/30 border-b border-primary/8">
-                <th className="px-3 py-2 text-left font-semibold text-foreground w-1/3">{vt.header_col}</th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground">{vt.value_col}</th>
+                <th className="px-3 py-2 text-left w-1/3 typo-caption font-mono uppercase tracking-widest text-foreground">{vt.header_col}</th>
+                <th className="px-3 py-2 text-left typo-caption font-mono uppercase tracking-widest text-foreground">{vt.value_col}</th>
               </tr>
             </thead>
             <tbody>

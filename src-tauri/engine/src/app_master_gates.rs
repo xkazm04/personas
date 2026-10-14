@@ -1466,24 +1466,16 @@ fn sha_matches(a: &str, b: &str) -> bool {
 
 /// Run one git command in `cwd`, returning trimmed stdout. Errors carry
 /// git's own stderr, bounded.
+///
+/// Spawned through [`crate::git_checkpoint::run_git`], the app's one git argv
+/// owner, for its `CREATE_NO_WINDOW` flag. This helper used to spawn its own
+/// child without it, and the reconcile tick runs inside the desktop app: on
+/// 2026-10-14 every one of its git calls opened a console window on the
+/// operator's desktop, several per second for the length of a tick.
 pub async fn git(cwd: &Path, args: &[&str]) -> Result<String, String> {
-    let out = tokio::process::Command::new("git")
-        .args(args)
-        .current_dir(cwd)
-        .output()
+    crate::git_checkpoint::run_git(cwd, args)
         .await
-        .map_err(|e| format!("git {}: {e}", args.join(" ")))?;
-    if !out.status.success() {
-        return Err(truncate(
-            &format!(
-                "git {} failed: {}",
-                args.join(" "),
-                String::from_utf8_lossy(&out.stderr)
-            ),
-            MAX_FIRST_ERROR_CHARS,
-        ));
-    }
-    Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
+        .map_err(|e| truncate(&e, MAX_FIRST_ERROR_CHARS))
 }
 
 /// Resolve the project's main branch: the recorded `main_branch` if it exists
@@ -1518,20 +1510,33 @@ pub async fn resolve_main_branch(cwd: &Path, recorded: Option<&str>) -> Option<S
 
 /// Local branches under [`PROPOSAL_BRANCH_PREFIX`].
 pub async fn list_proposal_branches(cwd: &Path) -> Result<Vec<String>, String> {
+    Ok(list_proposal_tips(cwd)
+        .await?
+        .into_iter()
+        .map(|(branch, _)| branch)
+        .collect())
+}
+
+/// Local branches under [`PROPOSAL_BRANCH_PREFIX`] with their tip shas, in one
+/// git call — the reconciler used to follow the listing with a `rev-parse` per
+/// branch.
+pub async fn list_proposal_tips(cwd: &Path) -> Result<Vec<(String, String)>, String> {
     let out = git(
         cwd,
         &[
             "for-each-ref",
-            "--format=%(refname:short)",
+            "--format=%(refname:short)%09%(objectname)",
             &format!("refs/heads/{PROPOSAL_BRANCH_PREFIX}*"),
         ],
     )
     .await?;
     Ok(out
         .lines()
-        .map(str::trim)
-        .filter(|l| !l.is_empty())
-        .map(str::to_string)
+        .filter_map(|l| {
+            let (branch, sha) = l.trim().split_once('\t')?;
+            let (branch, sha) = (branch.trim(), sha.trim());
+            (!branch.is_empty() && !sha.is_empty()).then(|| (branch.to_string(), sha.to_string()))
+        })
         .collect())
 }
 
@@ -1580,13 +1585,41 @@ pub async fn branch_commits(
 /// stated rather than papered over. It reads as "not merged", which
 /// under-reports rather than over-reports the holder's delivery.
 pub async fn is_merged(cwd: &Path, main_branch: &str, tip: &str) -> bool {
-    tokio::process::Command::new("git")
-        .args(["merge-base", "--is-ancestor", tip, main_branch])
-        .current_dir(cwd)
-        .output()
+    // The exit status is the answer: non-zero (or a failed spawn) is "not an
+    // ancestor", which the runner reports as `Err`.
+    git(cwd, &["merge-base", "--is-ancestor", tip, main_branch])
         .await
-        .map(|o| o.status.success())
-        .unwrap_or(false)
+        .is_ok()
+}
+
+/// The tips of every proposal branch that has landed on `main_branch`, in one
+/// git call. The reconciler checks unmerged proposals against this set instead
+/// of running one `merge-base --is-ancestor` per proposal; only a proposal
+/// whose branch is gone or has moved since the recorded tip still needs
+/// [`is_merged`].
+pub async fn merged_proposal_tips(
+    cwd: &Path,
+    main_branch: &str,
+) -> Result<std::collections::HashSet<String>, String> {
+    let out = git(
+        cwd,
+        &[
+            "for-each-ref",
+            "--format=%(objectname)",
+            "--merged",
+            main_branch,
+            // The same pattern as discovery, so "merged" is asked of exactly
+            // the branches [`list_proposal_tips`] reported.
+            &format!("refs/heads/{PROPOSAL_BRANCH_PREFIX}*"),
+        ],
+    )
+    .await?;
+    Ok(out
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(str::to_string)
+        .collect())
 }
 
 /// When the work landed: the committer date of the earliest main-branch commit
@@ -1629,6 +1662,29 @@ pub async fn find_revert(
     if commits.is_empty() {
         return None;
     }
+    let log = main_log_since(cwd, main_branch, since, 500).await?;
+    find_revert_in(&log, since, commits)
+}
+
+/// One commit on the main branch, as revert detection reads it.
+#[derive(Debug, Clone)]
+pub struct MainCommit {
+    pub sha: String,
+    /// Committer date, ISO 8601 strict.
+    pub date: String,
+    pub body: String,
+}
+
+/// `main_branch` since `since`, newest first, at most `limit` commits. The
+/// reconciler reads this ONCE per project from the oldest merge it still
+/// watches, and matches every merged proposal against it with
+/// [`find_revert_in`], instead of one `git log` per proposal per tick.
+pub async fn main_log_since(
+    cwd: &Path,
+    main_branch: &str,
+    since: &str,
+    limit: usize,
+) -> Option<Vec<MainCommit>> {
     let out = git(
         cwd,
         &[
@@ -1636,25 +1692,52 @@ pub async fn find_revert(
             main_branch,
             &format!("--since={since}"),
             "--format=%H%x1f%cI%x1f%B%x1e",
-            "-500",
+            &format!("-{limit}"),
         ],
     )
     .await
     .ok()?;
+    let mut log = Vec::new();
     for entry in out.split('\u{1e}') {
         let entry = entry.trim_start_matches(['\n', '\r']);
         if entry.trim().is_empty() {
             continue;
         }
         let mut parts = entry.splitn(3, '\u{1f}');
-        let sha = parts.next()?.trim().to_string();
-        let date = parts.next()?.trim().to_string();
-        let body = parts.next().unwrap_or("");
-        if message_reverts(body, commits) {
-            return Some((date, sha));
-        }
+        let (Some(sha), Some(date)) = (parts.next(), parts.next()) else {
+            continue;
+        };
+        log.push(MainCommit {
+            sha: sha.trim().to_string(),
+            date: date.trim().to_string(),
+            body: parts.next().unwrap_or("").to_string(),
+        });
     }
-    None
+    Some(log)
+}
+
+/// The newest commit in `log` committed at or after `since` that reverts one of
+/// `commits`. Returns `(iso_date, revert_sha)`. A date that does not parse is
+/// kept in the window rather than dropped: a revert cannot precede the merge it
+/// takes back, so the looser reading cannot invent one.
+pub fn find_revert_in(
+    log: &[MainCommit],
+    since: &str,
+    commits: &[ProposalCommit],
+) -> Option<(String, String)> {
+    if commits.is_empty() {
+        return None;
+    }
+    let since = chrono::DateTime::parse_from_rfc3339(since).ok();
+    log.iter()
+        .filter(
+            |c| match (since, chrono::DateTime::parse_from_rfc3339(&c.date)) {
+                (Some(s), Ok(d)) => d >= s,
+                _ => true,
+            },
+        )
+        .find(|c| message_reverts(&c.body, commits))
+        .map(|c| (c.date.clone(), c.sha.clone()))
 }
 
 // ---------------------------------------------------------------------------
@@ -1788,7 +1871,9 @@ fn dep_dir_candidates(source_root: &Path) -> Vec<&'static str> {
 fn link_dir(source: &Path, link: &Path) -> Result<(), String> {
     #[cfg(windows)]
     {
+        use personas_core::utils::process::NoWindow;
         let out = std::process::Command::new("cmd")
+            .no_window()
             .args(["/C", "mklink", "/J"])
             .arg(link)
             .arg(source)
@@ -3259,6 +3344,68 @@ mod tests {
         assert!(at.contains('T'), "expected an ISO date, got {at}");
         // The merge commit is the landing point, and it is named.
         assert!(sha.is_some());
+    }
+
+    #[tokio::test]
+    async fn one_listing_names_each_tip_and_one_more_says_which_landed() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        repo.git(&["checkout", "-b", "autopilot/landed"]).unwrap();
+        let landed = repo.commit("l.txt", "l", "fix: landed").unwrap();
+        repo.git(&["checkout", "main"]).unwrap();
+        repo.git(&["checkout", "-b", "autopilot/open"]).unwrap();
+        let open = repo.commit("o.txt", "o", "fix: open").unwrap();
+        repo.git(&["checkout", "main"]).unwrap();
+        repo.git(&["merge", "--no-ff", "-m", "Merge landed", "autopilot/landed"])
+            .unwrap();
+
+        let mut tips = list_proposal_tips(repo.path()).await.unwrap();
+        tips.sort();
+        assert_eq!(
+            tips,
+            vec![
+                ("autopilot/landed".to_string(), landed.clone()),
+                ("autopilot/open".to_string(), open.clone()),
+            ]
+        );
+        let merged = merged_proposal_tips(repo.path(), "main").await.unwrap();
+        assert!(merged.contains(&landed));
+        assert!(!merged.contains(&open));
+        // The set and the per-tip question agree.
+        assert!(is_merged(repo.path(), "main", &landed).await);
+        assert!(!is_merged(repo.path(), "main", &open).await);
+    }
+
+    #[test]
+    fn a_shared_main_log_judges_each_proposal_only_from_its_own_merge() {
+        let log = vec![
+            MainCommit {
+                sha: "f".repeat(40),
+                date: "2026-10-10T00:00:00+00:00".into(),
+                body: "Revert \"fix: late\"".into(),
+            },
+            MainCommit {
+                sha: "e".repeat(40),
+                date: "2026-09-01T00:00:00+00:00".into(),
+                body: "Revert \"fix: early\"".into(),
+            },
+        ];
+        let late = vec![c(&"a".repeat(40), "fix: late")];
+        let early = vec![c(&"b".repeat(40), "fix: early")];
+        // Each revert is found inside its own proposal's window...
+        assert_eq!(
+            find_revert_in(&log, "2026-10-01T00:00:00+00:00", &late).map(|(_, s)| s),
+            Some("f".repeat(40))
+        );
+        assert_eq!(
+            find_revert_in(&log, "2026-08-01T00:00:00+00:00", &early).map(|(_, s)| s),
+            Some("e".repeat(40))
+        );
+        // ...and a commit older than the merge is not a revert of it, even
+        // though the shared log (read from the OLDEST merge) carries it.
+        assert!(find_revert_in(&log, "2026-09-15T00:00:00+00:00", &early).is_none());
     }
 
     #[tokio::test]

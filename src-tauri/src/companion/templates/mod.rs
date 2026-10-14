@@ -610,7 +610,17 @@ pub const RESEARCH_PROMPT_MD: &str = include_str!("research-prompt.md");
 /// it). Teaches the id / label / preset / params rules the validator enforces,
 /// that the operator unticks changes on the card, and that confirm installs
 /// repo bindings through a Run Desk task (pending, then live).
-pub const CONSTITUTION_VERSION: u32 = 70;
+///
+/// v71 (device mesh, wave 3 #11): two device-gated ops act on a paired
+/// device's state — `mesh_set_agent_enabled {device?, persona, enabled}`
+/// (one of THAT device's agents, matched by name against its last report) and
+/// `mesh_queue_move {session, device?}` (one of THIS device's queued fleet
+/// entries, cancelled here only once the other device accepts). Both carry
+/// `remote_instruct`'s consent rule. Teaches that the Paired devices block now
+/// shows each device's load and what its agents mostly consume, that "load
+/// unknown" is said rather than guessed, and that a mesh op's outcome lands on
+/// the Monitor plate, not as a note back to her.
+pub const CONSTITUTION_VERSION: u32 = 71;
 
 #[cfg(test)]
 mod tests {
@@ -638,10 +648,21 @@ mod tests {
 
     #[test]
     fn the_constitution_teaches_the_lifecycle_toolset_at_v70() {
-        assert_eq!(CONSTITUTION_VERSION, 70);
+        assert!(CONSTITUTION_VERSION >= 70);
         assert!(CONSTITUTION_MD.contains("\n### Lifecycle ("));
         assert!(CONSTITUTION_MD.contains("\"action\": \"describe_lifecycle\""));
         assert!(CONSTITUTION_MD.contains("\"action\": \"show_lifecycle_proposal\""));
         assert!(CONSTITUTION_MD.contains("`describe_lifecycle` ALWAYS comes first"));
+    }
+
+    #[test]
+    fn the_constitution_teaches_the_mesh_ops_at_v71() {
+        assert_eq!(CONSTITUTION_VERSION, 71);
+        assert!(CONSTITUTION_MD.contains("\"action\": \"mesh_set_agent_enabled\""));
+        assert!(CONSTITUTION_MD.contains("\"action\": \"mesh_queue_move\""));
+        assert!(
+            CONSTITUTION_MD.contains("only when that device ACCEPTS is the entry here cancelled")
+        );
+        assert!(CONSTITUTION_MD.contains("exactly `remote_instruct`'s consent rule"));
     }
 }

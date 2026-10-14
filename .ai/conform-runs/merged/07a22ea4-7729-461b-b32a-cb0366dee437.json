@@ -1,0 +1,163 @@
+{
+  "schema": "conform-run/1",
+  "worker": "07a22ea4-7729-461b-b32a-cb0366dee437",
+  "subject": "client-state",
+  "evaluatedAt": "2026-10-09T16:12:22Z",
+  "pairs": [
+    {
+      "context": "d9cffe6c-a868-4ed4-b5e8-6c8add36918a",
+      "subject": "client-state",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_lifecycle/journey/useLifecycleSnapshot.ts:28 the snapshot loader keeps four module caches (:28-34) and useStepDetail.ts:22 two more with no test-reset hatch while their siblings ship one (useLifecycleHistory.ts:129), so LifecyclePage.test.tsx:235 escapes a warm copy only by inventing a fresh project id per case; and the loaders commit to the shared cache unguarded (useLifecycleSnapshot.ts:46, useStepDetail.ts:34, useLifecycleHistory.ts:49): an older-revision reply settling after a newer one leaves the older copy warm for the next mount (the latest-wins check lives only in the hook, :103)",
+      "techniques": [
+        {
+          "technique": "singleton-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/journey/useLifecycleSnapshot.ts:28 snapshotCache/inFlight/snapshotJson/fetchedAt and src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer2/useStepDetail.ts:22 detailCache/inFlight have no reset hatch; src/features/plugins/dev-tools/sub_lifecycle/journey/__tests__/LifecyclePage.test.tsx:235 isolates by a unique project id instead (siblings realize it: src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/history/useLifecycleHistory.ts:129, src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/useLifecycleView.ts:54 bounded, with __resetLastOpenedForTests)"
+        },
+        {
+          "technique": "async-race-guards",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/journey/useLifecycleSnapshot.ts:46 the data-operation layer commits every settled reply to the module cache with no revision/attempt check (same at src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer2/useStepDetail.ts:34, src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/history/useLifecycleHistory.ts:49); realized at the hook (:103 createLatestWins) and in keyed dedup removed on success and failure (:52)"
+        },
+        {
+          "technique": "status-fsms",
+          "verdict": "realized",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer1/setup/useSetup.ts:34 explicit DetectState; src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/measure/measureSession.tsx:33 enumerated MeasurePhase; the snapshot hook holds data and last error as two axes (a failure with a warm copy keeps the copy)"
+        },
+        {
+          "technique": "effect-identity-and-latched-callbacks",
+          "verdict": "realized",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/useLifecycleInstall.ts:38 refetch latched in a ref; src/features/plugins/dev-tools/sub_lifecycle/journey/useLifecycleSnapshot.ts:115 deps are the address (projectId, revision, gen); src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer1/setup/useSetup.ts:73 cancelled flag on teardown"
+        },
+        {
+          "technique": "invalidation-strategy",
+          "verdict": "realized",
+          "evidence": "src/stores/devToolsLiveStore.ts:76 markLifecycleChanged bumps lifecycleRevision from the DEV_TOOLS_LIFECYCLE_CHANGED event (src/lib/eventBridge.ts:1020); every loader keys its refetch on it, no polling"
+        },
+        {
+          "technique": "store-slicing",
+          "verdict": "realized",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/journey/useLifecycleSnapshot.ts:45 the writer keeps the cached object when the reply is JSON-identical (reference stability is the writer's job); src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/useLifecycleView.ts:117 narrow single-field selector"
+        },
+        {
+          "technique": "optimistic-write-path",
+          "verdict": "realized",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/overseer/useOverseerHandoff.ts:67 commits what setLifecycleWatch returned, never optimistic"
+        },
+        {
+          "technique": "persistence-and-migration",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/useLifecycleView.ts:54 the only remembered state is session module memory, never persisted; no storage writes in the context"
+        },
+        {
+          "technique": "rehydration-narrowing",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/useLifecycleView.ts:54 nothing is rehydrated"
+        },
+        {
+          "technique": "identity-scoped-eviction",
+          "verdict": "not-applicable",
+          "evidence": ".ai/manifest.yaml:100 one operator per install, no identity flip to evict on"
+        }
+      ],
+      "registryProposal": "context-map.json describes this context as prompt competitions (CompetitionList, StrategyLeaderboard) but no such file exists under sub_lifecycle; the code is the Lifecycle pipeline view and the row lists only two file_paths. The description is stale; a context rescan would re-match it."
+    },
+    {
+      "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573",
+      "subject": "client-state",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:236 every scans (re)load still sets loading before the await, so failStatus at :257 sees loading and returns failed, never stale: a failed background reload over held data flips the family to failed, and the error goes only to silentCatch (:255), so even a correct stale would carry no evidence",
+      "techniques": [
+        {
+          "technique": "status-fsms",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:83 failStatus maps only loaded/stale to stale, and :236 overwrites the held status with loading first, so the data-presence rule never fires on a real reload"
+        },
+        {
+          "technique": "async-race-guards",
+          "verdict": "realized",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:235 per-family latest-wins token, checked on success and failure"
+        }
+      ]
+    },
+    {
+      "context": "ade5a251-866a-4352-9a03-012d78fe9b74",
+      "subject": "client-state",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:67 still pins failStatus(loading) -> failed in isolation; the one failure case (:226) drives invalidateScans and asserts the rows survive, never scansStatus, so the failed-reload transition every real refresh takes is still unwitnessed at the store level",
+      "techniques": [
+        {
+          "technique": "status-fsms",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:226 asserts kept data, not the status a failed loadScans reload lands in"
+        }
+      ]
+    },
+    {
+      "context": "532bbf10-3fd3-4b57-a8ea-95a957645697",
+      "subject": "client-state",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/overview/overviewSlice.ts:640 fetchExecutionDashboard(days) still has no latest-wins token (the repo owns src/stores/util/latestWins.ts), so a slow 30-day answer landing after a 7-day one overwrites it and stamps executionDashboardDays (:649); src/stores/slices/overview/alertSlice.ts:259 still swallows a failed history read into bare loading=false, so failure reads as an empty history",
+      "techniques": [
+        {
+          "technique": "async-race-guards",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/overview/overviewSlice.ts:649 unconditional commit of data and days"
+        },
+        {
+          "technique": "status-fsms",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/overview/alertSlice.ts:260 failure lands as loading=false with no error state"
+        }
+      ]
+    },
+    {
+      "context": "0aded02d-f5c5-4e24-8366-90783fb343b1",
+      "subject": "client-state",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/storeTypes.ts:183 one scalar isLoading in CoreState is still written by both fetchPersonas (src/stores/slices/agents/personaSlice.ts:208) and fetchDetail (:302), so whichever settles first (:224, :324) clears the busy state while the other is still in flight",
+      "techniques": [
+        {
+          "technique": "status-fsms",
+          "verdict": "deviation",
+          "evidence": "src/stores/storeTypes.ts:183 status scope does not match the concurrency of the operations it tracks"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "client-state",
+      "context": "417112d1-004b-41d5-a656-57997a47d818",
+      "reason": "timing-utility-hooks is governance: weak and the skill does not judge weak rows by default. A glance shows usePolling is effect-identity-and-latched-callbacks territory (fetch latched at src/hooks/utility/timing/usePolling.ts:104), so it is raised as a coverage question and left for a deliberate run."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T16:12:22Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "client-state"
+      ],
+      "techniques": [
+        "singleton-lifecycle",
+        "async-race-guards",
+        "status-fsms",
+        "effect-identity-and-latched-callbacks",
+        "invalidation-strategy",
+        "store-slicing",
+        "optimistic-write-path",
+        "persistence-and-migration",
+        "rehydration-narrowing",
+        "identity-scoped-eviction"
+      ],
+      "deviations": 5
+    }
+  ]
+}

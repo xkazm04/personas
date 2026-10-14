@@ -1,0 +1,8 @@
+{"schema": "conform-run/1", "worker": "751d5fbe-baee-404b-8b1c-ee8c2f088f29", "subject": "undo-history",
+ "evaluatedAt": "2026-10-10T02:00:32Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "undo-history", "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0", "reason": "no work: deviation judged 2026-10-09 against sha256-b2:6b331b14c940f6a7 (revision 3), which is still the registry index digest at 32d7899f; EditorDocument.tsx and useEditorSave.ts last changed 2026-09-06 and are clean in the tree; all six evidence anchors re-printed and still say what the verdict claims"},
+  {"subject": "undo-history", "context": "b2d7acbc-0191-46e4-8a4d-87c229410c7e", "reason": "no work: not-applicable judged 2026-10-09 against the current digest (revision 3); context-map.json still lists empty file_paths and git ls-files still finds no media_studio code outside i18n"}
+ ],
+ "consults": []}

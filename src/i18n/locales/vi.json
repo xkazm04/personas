@@ -2628,7 +2628,13 @@
       "profile_tokens_over": "trên {from} token",
       "profile_tokens_under": "dưới {to} token",
       "profile_units": "{count} đơn vị",
-      "profile_untagged_note": "Chưa có gì được khai báo, vì vậy các lượt chạy được tính theo giá trị mặc định hiển thị ở đây. Tác nhân sẽ khai báo hồ sơ riêng của nó vào lần thức dậy quyết định tiếp theo."
+      "profile_untagged_note": "Chưa có gì được khai báo, vì vậy các lượt chạy được tính theo giá trị mặc định hiển thị ở đây. Tác nhân sẽ khai báo hồ sơ riêng của nó vào lần thức dậy quyết định tiếp theo.",
+      "profile_axes_dominant": "Chủ yếu {axis}",
+      "profile_axes_label": "Tải đo được",
+      "profile_axes_learning": "Đang học ({count}/{total})",
+      "profile_axes_mismatch": "Đo được {measured}, khai báo {declared}",
+      "profile_axes_runs": "Đo qua {count} lần chạy",
+      "profile_source_measured": "được đặt từ các lần chạy đo được"
     },
     "role_card": {
       "assign": "Gán",
@@ -3376,17 +3382,6 @@
     "palette_agent_enabled": "Đã bật tác nhân",
     "palette_health_complete": "Hoàn tất kiểm tra tình trạng",
     "palette_toggle_failed": "Không thể chuyển trạng thái tác nhân"
-  },
-  "cockpit": {
-    "inbox": {
-      "relative_days_one": "{d} ngày trước",
-      "relative_days_other": "{d} ngày trước",
-      "relative_hours_one": "{h} giờ trước",
-      "relative_hours_other": "{h} giờ trước",
-      "relative_just_now": "vừa xong",
-      "relative_minutes_one": "{m} phút trước",
-      "relative_minutes_other": "{m} phút trước"
-    }
   },
   "common": {
     "_comment_refine": "Generic refine action used in adoption + scratch build phases",
@@ -7240,6 +7235,7 @@
     "usage_provider_claude": "Claude",
     "usage_provider_codex": "OpenAI Codex",
     "usage_provider_grok": "xAI Grok",
+    "usage_provider_agy": "Google Antigravity",
     "queue_origin_remote": "Một thiết bị đã ghép nối",
     "remote_drawer_aria": "Phiên từ xa trên {device}",
     "remote_from_device": "Từ {device}",
@@ -7595,7 +7591,56 @@
     "dc_hub_triage_all_none": "Không có gì đang chờ",
     "dc_hub_triage_all_short": "Tất cả",
     "dc_hub_triage_all_walk_tip": "Duyệt cả {count} mục theo thứ tự, khẩn cấp nhất trước",
-    "grid_rail_triage_modal_aria": "Chi tiết duyệt"
+    "grid_rail_triage_modal_aria": "Chi tiết duyệt",
+    "schedule_last_failed": "kết thúc với mã {code}",
+    "schedule_last_ok": "đã hoàn tất",
+    "schedule_last_run": "Lần chạy gần nhất {when}",
+    "schedule_never_ran": "Chưa chạy lần nào",
+    "schedule_next": "tiếp theo {when}",
+    "schedule_off": "tắt",
+    "schedule_running": "đang chạy",
+    "schedule_time_zone": "Thời gian theo giờ Praha",
+    "schedule_toggle_aria": "Chạy {title} theo lịch",
+    "schedule_toggle_failed": "Không thể chuyển đổi tác vụ đã lên lịch",
+    "schedule_window": "Hoạt động {window}",
+    "schedules": "Lịch chạy",
+    "schedules_aria": "Các tác vụ đã lên lịch trên máy tính này",
+    "mesh_agent_project_off": "Dự án của agent này đang tắt trên {device}. Hãy bật dự án ở đó trước.",
+    "mesh_agent_stale": "{device} không báo cáo, nên không thể bật/tắt agent của nó từ đây",
+    "mesh_agent_turn_off": "Tắt {name} trên {device}",
+    "mesh_agent_turn_on": "Bật {name} trên {device}",
+    "mesh_all": "Tất cả thiết bị",
+    "mesh_axis_cpu": "CPU",
+    "mesh_axis_gpu": "GPU",
+    "mesh_axis_ram": "RAM",
+    "mesh_devices_live": "{live}/{total} đang báo cáo",
+    "mesh_glyph_axis": "Chủ yếu {axis}",
+    "mesh_glyph_share": "Chủ yếu {axis}: {share} của thiết bị này",
+    "mesh_home": "Thiết bị chính",
+    "mesh_move_aria": "Chuyển {name} sang thiết bị khác",
+    "mesh_move_pending": "Đang chuyển sang {device}",
+    "mesh_move_to": "Chuyển đến…",
+    "mesh_move_waits": "Không báo cáo: việc chuyển sẽ chờ đến khi thiết bị thức dậy",
+    "mesh_not_reporting": "Không báo cáo",
+    "mesh_outcome_pending": "Đang gửi đến {device}",
+    "mesh_outcome_queued": "Xếp hàng chờ đến khi thiết bị thức dậy",
+    "mesh_outcome_refused": "{device} từ chối: {reason}",
+    "mesh_plate_clear": "Hiện lại mọi thiết bị",
+    "mesh_plate_scope": "Chỉ hiện {device}",
+    "mesh_probe_failed": "{test} không đạt",
+    "mesh_probe_none": "Chưa có bài kiểm tra tương hỗ nào chạy với thiết bị này",
+    "mesh_probe_passed": "{test} đạt",
+    "mesh_queue_title": "Hàng chờ trên {device}",
+    "mesh_queued": "{count} đang chờ",
+    "mesh_rail_aria": "Các thiết bị khác",
+    "mesh_reach_connected": "Đã kết nối",
+    "mesh_reach_offline": "Ngoại tuyến",
+    "mesh_reach_stale": "Kết nối đã lỗi thời",
+    "mesh_refusal_project_off": "dự án của nó đang tắt ở đó",
+    "mesh_refusal_unknown": "không nêu lý do",
+    "mesh_running": "{count} đang chạy",
+    "mesh_strip_aria": "Các thiết bị trong mạng lưới",
+    "mesh_this_device": "Thiết bị này"
   },
   "onboarding": {
     "adopt_button": "Thiết lập tác nhân",
@@ -10315,7 +10360,8 @@
     "dc_open_in_deck_hint": "Mở mục này trong Trung tâm quyết định (Enter)",
     "dc_pending_lead": "Mỗi đánh giá đang chờ sẽ mở trong Trung tâm quyết định, với đầy đủ nội dung và cùng phím như mọi quyết định khác.",
     "dc_pending_list_aria": "Đánh giá đang chờ",
-    "dc_select_review": "Chọn đánh giá"
+    "dc_select_review": "Chọn đánh giá",
+    "dc_col_decision": "Quyết định"
   },
   "pipeline": {
     "accept_suggestion": "Chấp nhận gợi ý",
@@ -14672,7 +14718,13 @@
         "where_contest": "Cuộc thi",
         "where_count": "{count} cuộc thi",
         "where_ledger": "Sổ cái",
-        "where_variant": "Biến thể"
+        "where_variant": "Biến thể",
+        "by_area": "Theo lĩnh vực tác vụ",
+        "by_model": "Theo mô hình",
+        "tile_contests": "Cuộc thi",
+        "tile_decided": "Đã quyết định",
+        "tile_models": "Mô hình tham gia",
+        "tile_top": "Mô hình dẫn đầu"
       }
     }
   },

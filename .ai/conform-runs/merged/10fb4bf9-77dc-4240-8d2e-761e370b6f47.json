@@ -1,0 +1,45 @@
+{"schema": "conform-run/1", "worker": "10fb4bf9-77dc-4240-8d2e-761e370b6f47", "subject": "llm-call-telemetry-model",
+ "evaluatedAt": "2026-10-12T11:56:23Z",
+ "pairs": [
+  {"context": "a7ece012-8300-4780-b286-b9cea81801fc", "subject": "llm-call-telemetry-model", "bundle": "llm-observability",
+   "state": "deviation",
+   "evidence": "src-tauri/core/src/models/llm_spend.rs:46 LlmSpendTotals sums a nullable cost_usd (:30) into a bare f64 with no unpriced-call count, and LlmSpendInsert (:20) carries no cost_source, so a window with unpriced rows reads as fully priced and self-reported CLI cost is indistinguishable from book cost (re-confirmed 2026-10-12; file unchanged since 10-09 verdict).",
+   "techniques": [
+    {"technique": "nullable-cost-never-zero", "verdict": "deviation", "evidence": "src-tauri/core/src/models/llm_spend.rs:46 totals struct has no unpriced count beside the summed nullable cost at :30"},
+    {"technique": "metadata-attribution-keys", "verdict": "deviation", "evidence": "src-tauri/core/src/models/llm_spend.rs:20 insert carries no cost_source, so estimated vs book cost cannot announce itself"}
+   ],
+   "evaluatedAgainst": "sha256-b2:9f199f8ff9e7a925", "evaluatedRevision": 7},
+  {"context": "2dcda6bf-9982-422b-b63f-1481c414cdab", "subject": "llm-call-telemetry-model", "bundle": "llm-observability",
+   "state": "deviation",
+   "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:38 LlmPinpoint.totalCostUsd is non-nullable and mappers substitute 0 for missing provider cost (:95 r.cost_usd ?? 0, :402 toNum(r.costUSD)) - phantom zero; the shape (:28) has no cached-input/reasoning counters (re-confirmed 2026-10-12; no commits since 10-09).",
+   "techniques": [
+    {"technique": "nullable-cost-never-zero", "verdict": "deviation", "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:95 totalCostUsd: r.cost_usd ?? 0"},
+    {"technique": "token-usage-quadruple", "verdict": "deviation", "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:28 LlmPinpoint declares no cached-input or reasoning token counters"}
+   ],
+   "evaluatedAgainst": "sha256-b2:9f199f8ff9e7a925", "evaluatedRevision": 7},
+  {"context": "2fb16136-586e-478d-823f-38434d2d5b9a", "subject": "llm-call-telemetry-model", "bundle": "llm-observability",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:192 budget feed sums COALESCE(e.spend, 0.0) beside max_budget_usd with no unpriced count, over rows the gate src-tauri/src/engine/execution.rs:3021 enforces on (get_monthly_spend(..).unwrap_or(0.0)), which src-tauri/src/engine/runner/mod.rs:3996 always writes as Some(f64) - phantom-zero spend gives a cap headroom it does not have (anchor re-pinned from :3991, drifted by 3797ab2173).",
+   "techniques": [
+    {"technique": "nullable-cost-never-zero", "verdict": "deviation", "evidence": "src-tauri/src/engine/execution.rs:3021 let monthly_spend = exec_repo::get_monthly_spend(pool, persona_id).unwrap_or(0.0);"}
+   ],
+   "evaluatedAgainst": "sha256-b2:9f199f8ff9e7a925", "evaluatedRevision": 7,
+   "registryProposal": "This context is weak-governed; the cost-cap defect it carries is really budget-gate code (engine/execution.rs) - consider usage-limit-governance as the governing subject for the gate half."},
+  {"context": "621caefc-8ae0-42e7-89b6-8e879ad62814", "subject": "llm-call-telemetry-model", "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx:2 the only event record here is a management-API request trail; no LLM call event, token counter, cost field or ingest path in the context, so the receiving-schema precondition fails (re-confirmed 2026-10-12).",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:9f199f8ff9e7a925", "evaluatedRevision": 7},
+  {"context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10", "subject": "llm-call-telemetry-model", "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/infrastructure/llm_spend.rs:20 is a pass-through to repo::dashboard with no schema of its own; the governing sites live in observability-audit-models and the db repos (re-confirmed 2026-10-12).",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:9f199f8ff9e7a925", "evaluatedRevision": 7}
+ ],
+ "declined": [
+  {"subject": "llm-call-telemetry-model", "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7", "reason": "weak-governed context; existing not-applicable verdict (2026-10-09, rev 7) is current against the subject digest and src/features/triggers/sub_shared has no commits since - nothing to re-judge."}
+ ],
+ "consults": [
+  {"ts": "2026-10-12T11:56:23Z", "bundle": "llm-observability", "subjects": ["llm-call-telemetry-model"], "techniques": ["nullable-cost-never-zero", "metadata-attribution-keys", "token-usage-quadruple"], "deviations": 3}
+ ]
+}

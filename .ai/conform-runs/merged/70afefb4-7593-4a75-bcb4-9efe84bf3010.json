@@ -1,0 +1,25 @@
+{
+  "schema": "conform-run/1",
+  "worker": "70afefb4-7593-4a75-bcb4-9efe84bf3010",
+  "subject": "schema-driven-ui",
+  "evaluatedAt": "2026-10-09T17:19:09.316Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "schema-driven-ui",
+      "context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504",
+      "reason": "current deviation verdict - all three pairs already carry a verdict against the current subject digest sha256-b2:3a801e8a0fefc717 (revision 2, registry HEAD b9446491), judged 2026-10-05, and no anchored file has a commit or working-tree change since; re-judging would re-read an unchanged standard against unchanged code"
+    },
+    {
+      "subject": "schema-driven-ui",
+      "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "reason": "current not-applicable verdict - all three pairs already carry a verdict against the current subject digest sha256-b2:3a801e8a0fefc717 (revision 2, registry HEAD b9446491), judged 2026-10-05, and no anchored file has a commit or working-tree change since; re-judging would re-read an unchanged standard against unchanged code"
+    },
+    {
+      "subject": "schema-driven-ui",
+      "context": "4560e824-e952-45a9-8aef-fe88d721952e",
+      "reason": "current deviation verdict - all three pairs already carry a verdict against the current subject digest sha256-b2:3a801e8a0fefc717 (revision 2, registry HEAD b9446491), judged 2026-10-05, and no anchored file has a commit or working-tree change since; re-judging would re-read an unchanged standard against unchanged code"
+    }
+  ],
+  "consults": []
+}

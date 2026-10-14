@@ -1,0 +1,63 @@
+{
+  "schema": "conform-run/1",
+  "worker": "a62153a5-f0fe-45cd-9af0-c585cfd62a3c",
+  "subject": "retry-backoff",
+  "evaluatedAt": "2026-10-10T02:40:23Z",
+  "pairs": [
+    {
+      "context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f",
+      "subject": "retry-backoff",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:4ca1a8af506f44d9",
+      "evaluatedRevision": 13,
+      "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:100 the heal cap is looked up by row id in session memory while every retry mints a new row (src-tauri/db/src/repos/dev/tasks.rs:944) whose persisted attempt is never checked, so auto-heal retries each child failure afresh and the lineage has no bound",
+      "techniques": [
+        {
+          "technique": "durable-retries",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev/tasks.rs:963 writes attempt+1 into the new row but nothing reads it as a budget, and the parent stays failed (no supersession), so tasksPage(['failed']) behind Retry failed and Heal all re-retries already-retried parents and forks the lineage"
+        },
+        {
+          "technique": "error-classification-for-retry",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:45 classifies by regex over error + description + title, so the task's own instruction text ('fix the failing test') picks the class; the unknown fallback at :49 is honest and not auto-retried"
+        },
+        {
+          "technique": "retry-observability",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:61 the over-cap stop is a toast and no exhausted state is written to the row; the lineage itself is retry-only (src-tauri/db/src/repos/dev/tasks.rs:952 is the sole parent_task_id writer)"
+        },
+        {
+          "technique": "storm-control",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskControls.tsx:143 bulk retry re-queues every failed row regardless of class or attempt, and auto-heal (SelfHealingPanel.tsx:136) has no cross-item cap when one environmental cause fails the whole queue"
+        },
+        {
+          "technique": "backoff-design",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:39 the time-healing class (timeout) is excluded from auto-heal; the auto-fixable classes are healed by a new agent run, not by waiting, so there is no delay ladder to tune"
+        }
+      ],
+      "registryProposal": "Two findings. (1) error-classification-for-retry warns against message matching but not against matching the WORK's own text: here the regex reads the task title and description, so an instruction that mentions a failure decides the retry class. Proposed rule: classify from the failure evidence, never from the input that produced it. (2) Missing pairing: src-tauri/src/engine/healing_retry.rs (delayed/chained retry plus a persona failure-count circuit breaker) is this repo's strongest retry-backoff surface and belongs to no context in context-map.json, so the subject reaches only this UI context."
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-10T02:40:23Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "retry-backoff"
+      ],
+      "techniques": [
+        "durable-retries",
+        "error-classification-for-retry",
+        "retry-observability",
+        "storm-control",
+        "backoff-design"
+      ],
+      "deviations": 1
+    }
+  ]
+}

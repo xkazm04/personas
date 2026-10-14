@@ -2628,7 +2628,13 @@
       "profile_tokens_over": "более {from} токенов",
       "profile_tokens_under": "менее {to} токенов",
       "profile_units": "{count} ед.",
-      "profile_untagged_note": "Пока ничего не заявлено, поэтому прогоны списываются по показанному здесь значению по умолчанию. Агент заявит собственный профиль при следующем пробуждении для принятия решения."
+      "profile_untagged_note": "Пока ничего не заявлено, поэтому прогоны списываются по показанному здесь значению по умолчанию. Агент заявит собственный профиль при следующем пробуждении для принятия решения.",
+      "profile_axes_dominant": "В основном {axis}",
+      "profile_axes_label": "Измеренная нагрузка",
+      "profile_axes_learning": "Обучение ({count}/{total})",
+      "profile_axes_mismatch": "Измерено: {measured}, заявлено: {declared}",
+      "profile_axes_runs": "Измерено по {count} запускам",
+      "profile_source_measured": "задано по измеренным запускам"
     },
     "role_card": {
       "assign": "Назначить",
@@ -3376,17 +3382,6 @@
     "palette_agent_enabled": "Агент включён",
     "palette_health_complete": "Проверка состояния завершена",
     "palette_toggle_failed": "Не удалось переключить агента"
-  },
-  "cockpit": {
-    "inbox": {
-      "relative_days_one": "{d} дн назад",
-      "relative_days_other": "{d} дн назад",
-      "relative_hours_one": "{h} ч назад",
-      "relative_hours_other": "{h} ч назад",
-      "relative_just_now": "только что",
-      "relative_minutes_one": "{m} мин назад",
-      "relative_minutes_other": "{m} мин назад"
-    }
   },
   "common": {
     "_comment_refine": "Generic refine action used in adoption + scratch build phases",
@@ -6882,7 +6877,7 @@
     "strip_open_hint": "Открыть монитор",
     "strip_queued": "{count} в очереди",
     "strip_running": "{count} выполняется",
-    "subtitle": "{персонаs} персонаs · {attention} need attention · {running} running",
+    "subtitle": "{personas} персон · {attention} требуют внимания · {running} выполняются",
     "system": "Система",
     "title": "Монитор персон",
     "titlebar": "Монитор персон",
@@ -7240,6 +7235,7 @@
     "usage_provider_claude": "Claude",
     "usage_provider_codex": "OpenAI Codex",
     "usage_provider_grok": "xAI Grok",
+    "usage_provider_agy": "Google Antigravity",
     "queue_origin_remote": "Сопряжённое устройство",
     "remote_drawer_aria": "Удалённая сессия на {device}",
     "remote_from_device": "С {device}",
@@ -7595,7 +7591,56 @@
     "dc_hub_triage_all_none": "Ничего не ожидает",
     "dc_hub_triage_all_short": "Все",
     "dc_hub_triage_all_walk_tip": "Пройти все ({count}) по порядку, сначала срочные",
-    "grid_rail_triage_modal_aria": "Детали проверки"
+    "grid_rail_triage_modal_aria": "Детали проверки",
+    "schedule_last_failed": "завершилась с кодом {code}",
+    "schedule_last_ok": "завершилась успешно",
+    "schedule_last_run": "Последний запуск {when}",
+    "schedule_never_ran": "Ещё не запускалась",
+    "schedule_next": "следующий {when}",
+    "schedule_off": "выкл.",
+    "schedule_running": "выполняется",
+    "schedule_time_zone": "Время по Праге",
+    "schedule_toggle_aria": "Запускать {title} по расписанию",
+    "schedule_toggle_failed": "Не удалось переключить запланированную задачу",
+    "schedule_window": "Работает {window}",
+    "schedules": "Расписания",
+    "schedules_aria": "Запланированные задачи на этом компьютере",
+    "mesh_agent_project_off": "Его проект отключён на {device}. Сначала включите проект там.",
+    "mesh_agent_stale": "{device} не отправляет данные, поэтому его агентов нельзя переключать отсюда",
+    "mesh_agent_turn_off": "Выключить {name} на {device}",
+    "mesh_agent_turn_on": "Включить {name} на {device}",
+    "mesh_all": "Все устройства",
+    "mesh_axis_cpu": "CPU",
+    "mesh_axis_gpu": "GPU",
+    "mesh_axis_ram": "RAM",
+    "mesh_devices_live": "{live} из {total} на связи",
+    "mesh_glyph_axis": "В основном {axis}",
+    "mesh_glyph_share": "В основном {axis}: {share} этого устройства",
+    "mesh_home": "Домашнее устройство",
+    "mesh_move_aria": "Переместить {name} на другое устройство",
+    "mesh_move_pending": "Перемещение на {device}",
+    "mesh_move_to": "Переместить на…",
+    "mesh_move_waits": "Не на связи: перемещение дождётся его пробуждения",
+    "mesh_not_reporting": "Не на связи",
+    "mesh_outcome_pending": "Отправка на {device}",
+    "mesh_outcome_queued": "В очереди до пробуждения",
+    "mesh_outcome_refused": "{device} отклонило: {reason}",
+    "mesh_plate_clear": "Снова показать все устройства",
+    "mesh_plate_scope": "Показать только {device}",
+    "mesh_probe_failed": "{test}: не пройден",
+    "mesh_probe_none": "Взаимных тестов с этим устройством ещё не было",
+    "mesh_probe_passed": "{test}: пройден",
+    "mesh_queue_title": "Очередь на {device}",
+    "mesh_queued": "В очереди: {count}",
+    "mesh_rail_aria": "Другие устройства",
+    "mesh_reach_connected": "Подключено",
+    "mesh_reach_offline": "Не в сети",
+    "mesh_reach_stale": "Соединение устарело",
+    "mesh_refusal_project_off": "его проект там отключён",
+    "mesh_refusal_unknown": "причина не указана",
+    "mesh_running": "Выполняется: {count}",
+    "mesh_strip_aria": "Устройства в сети",
+    "mesh_this_device": "Это устройство"
   },
   "onboarding": {
     "adopt_button": "Настроить агента",
@@ -10315,7 +10360,8 @@
     "dc_open_in_deck_hint": "Открыть в Центре решений (Enter)",
     "dc_pending_lead": "Каждое ожидающее ревью открывается в Центре решений с полным описанием и теми же клавишами, что и любое другое решение.",
     "dc_pending_list_aria": "Ожидающие ревью",
-    "dc_select_review": "Выбрать ревью"
+    "dc_select_review": "Выбрать ревью",
+    "dc_col_decision": "Решение"
   },
   "pipeline": {
     "accept_suggestion": "Принять предложение",
@@ -14672,7 +14718,13 @@
         "where_contest": "Конкурс",
         "where_count": "{count} конкурсов",
         "where_ledger": "Реестр",
-        "where_variant": "Вариант"
+        "where_variant": "Вариант",
+        "by_area": "По областям задач",
+        "by_model": "По моделям",
+        "tile_contests": "Конкурсы",
+        "tile_decided": "Решено",
+        "tile_models": "Задействованные модели",
+        "tile_top": "Лучшая модель"
       }
     }
   },

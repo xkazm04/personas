@@ -37,6 +37,11 @@
 //   `useActivityEntrance` — when a REGION is admitted (the four coarse beats).
 //   `useProgressiveReveal` + `RevealItem` — when an ITEM inside a region
 //     enters (the dock's three figures, the usage column's provider plates).
+//
+// THE DEVICE MESH (spark device-mesh). Under the command band sits the device
+// strip (`devices/DeviceStrip`), which renders nothing until a device is
+// paired; its filter is composed around the board by `devices/MeshBoard`. The
+// live resource samples are subscribed here, once, for every line's glyph.
 
 import { memo, Suspense, useCallback, useEffect, useState } from 'react';
 import type { PersonaCardModel } from '../../../monitorModel';
@@ -52,6 +57,9 @@ import { WorkspaceSheet, WorkspaceTabs } from './WorkspaceTabs';
 import { SupplyDeck } from './SupplyDeck';
 import { BayGhosts } from './Ghosts';
 import { UsageGhost } from './SlotGhosts';
+import { DeviceStrip } from './devices/DeviceStrip';
+import { MeshBoard } from './devices/MeshBoard';
+import { useResourceSamples } from './devices/useResourceSamples';
 import {
   LazyClassicPanel,
   LazyLanesPanel,
@@ -80,6 +88,7 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
   const onLayout = useCallback((v: typeof layout) => setLayout(v), [setLayout]);
   const filter = usePanelFilter(surface);
   const workspaces = useWorkspaceScope(surface);
+  useResourceSamples();
 
   const board = layout === 'classic' ? (
     <LazyClassicPanel surface={surface} filter={filter} workspaces={workspaces} selectedPersonaId={props.selectedPersonaId} onOpenRemote={props.onOpenRemote} onClearFilter={surface.clearFilter} />
@@ -102,6 +111,7 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
         layout={layout}
         onLayout={onLayout}
       />
+      <DeviceStrip />
       <WorkspaceTabs scope={workspaces} />
 
       <div className="flex min-h-0 flex-1">
@@ -121,9 +131,11 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
           <CommandFloor layout={layout} className="flex min-h-0 min-w-0 flex-1 flex-col">
             <SessionMenuProvider onOpenTerminal={surface.setTerminal} onOpenRecap={surface.setRecap}>
               <PersonaMenuProvider onQuickChat={setQuickChat}>
-                {entrance.beat >= BEAT.tiles ? (
-                  <Suspense fallback={<BayGhosts />}>{board}</Suspense>
-                ) : <BayGhosts />}
+                <MeshBoard surface={surface} onOpenRemote={props.onOpenRemote}>
+                  {entrance.beat >= BEAT.tiles ? (
+                    <Suspense fallback={<BayGhosts />}>{board}</Suspense>
+                  ) : <BayGhosts />}
+                </MeshBoard>
               </PersonaMenuProvider>
             </SessionMenuProvider>
           </CommandFloor>

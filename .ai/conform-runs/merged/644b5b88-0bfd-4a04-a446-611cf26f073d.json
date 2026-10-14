@@ -1,0 +1,22 @@
+{"schema": "conform-run/1", "worker": "644b5b88-0bfd-4a04-a446-611cf26f073d", "subject": "model-routing",
+ "evaluatedAt": "2026-10-09T17:15:57Z",
+ "pairs": [
+  {"context": "94b0b4ea-9adb-44d7-8222-4e2345de455b", "subject": "model-routing", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:161 applies an edited BYOM policy in place, stored as bare unversioned JSON (src-tauri/db/src/byom.rs:305) that no audit row cites (src/lib/bindings/ProviderAuditEntry.ts:6); src-tauri/src/engine/failover.rs:770 silently drops blocked providers and an emptied chain surfaces as the generic src-tauri/src/engine/runner/mod.rs:2393 message - reconfirmed 2026-10-09 after c917b2d3f8 touched failover.rs",
+   "techniques": [
+    {"technique": "policy-governance", "verdict": "deviation", "evidence": "src-tauri/db/src/byom.rs:305 persists the policy under one settings key with no version, diff, blast radius or approver; src/lib/bindings/ProviderAuditEntry.ts:6 carries rule names but no policy version, so an audit cannot tell 'rule violated' from 'rule did not exist yet'"},
+    {"technique": "routing-policy", "verdict": "deviation", "evidence": "src-tauri/src/engine/failover.rs:770 filters blocked providers out of the chain without a reason, and src-tauri/src/engine/runner/mod.rs:2393 reports the empty chain as 'All providers failed or have open circuit breakers', not a named policy-exhausted failure"},
+    {"technique": "consumer-overrides", "verdict": "conformant", "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:77 and :84 surface the routing and compliance rule that decided each call"}
+   ],
+   "registryProposal": "Missing pairings: the repo's routing core is unpaired with model-routing. src-tauri/core/src/model_class.rs:1 (CallClass table, cites turn-classification by name) and src-tauri/core/src/model_ids.rs sit in NO context; src-tauri/db/src/model_routing.rs is in 'db' and src-tauri/src/companion/model_routing.rs in 'companion', both unpaired; src-tauri/src/engine/failover.rs is in 'test-runner-lab', unpaired. The five existing pairs are a UI settings surface plus four display/trigger contexts judged not-applicable, so this subject's verdicts here never reach the code that actually routes. Fix belongs to the context map (a model-routing context) and the matcher, not to this run."}
+ ],
+ "declined": [
+  {"subject": "model-routing", "context": "ba0d4722-bfde-40aa-8e1d-52591719f834", "reason": "already not-applicable against the current digest sha256-b2:5484901d8df95b15 (rev 21) on 2026-10-05; no file in the context changed since"},
+  {"subject": "model-routing", "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757", "reason": "already not-applicable against the current digest (rev 21) on 2026-10-05; no file in the context changed since"},
+  {"subject": "model-routing", "context": "54236947-3775-4d0a-8e14-1a709dd4d8bc", "reason": "already not-applicable against the current digest (rev 21) on 2026-10-05; the commits since are Atlas-matrix visual refactors and add no model, effort or provider selection"},
+  {"subject": "model-routing", "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc", "reason": "already not-applicable against the current digest (rev 21) on 2026-10-05; no file in the context changed since"}
+ ],
+ "consults": [
+  {"ts": "2026-10-09T17:15:57Z", "bundle": "software-engineering", "subjects": ["model-routing"], "techniques": ["policy-governance", "routing-policy", "consumer-overrides"], "deviations": 2}
+ ]}

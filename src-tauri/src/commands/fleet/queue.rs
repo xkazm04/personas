@@ -1715,7 +1715,57 @@ fn release_tasks_of(app: &AppHandle, session_id: &str) {
 /// a dispatcher whose own job was cancelled while its session still waited
 /// (the Dev runner) calls this directly.
 pub fn cancel_dispatch(app: &AppHandle, session_id: &str) -> Result<(), AppError> {
-    match registry().cancel_queued(session_id) {
+    finish_cancel(
+        app,
+        session_id,
+        registry().cancel_queued(session_id),
+        "cancelled",
+    )
+}
+
+/// [`cancel_dispatch`] with a stated reason in place of `cancelled` - the
+/// device mesh's queue move retires the local entry as `moved:<peer8>` once
+/// the other device has accepted it. Same transition (`Queued -> Exited`,
+/// through the registry's door, under its lock), same errors, same
+/// renumber / task release / announcement.
+pub fn cancel_dispatch_with_reason(
+    app: &AppHandle,
+    session_id: &str,
+    reason: &str,
+) -> Result<(), AppError> {
+    let outcome = {
+        let mut map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        map.get_mut(session_id).map(|session| {
+            if !matches!(session.state, FleetSessionState::Queued) {
+                return false;
+            }
+            let out = super::registry::apply_transition(
+                session,
+                FleetSessionState::Exited,
+                reason,
+                "queue:cancel",
+            );
+            if out.changed() {
+                session.queue_rank = None;
+            }
+            out.changed()
+        })
+    };
+    finish_cancel(app, session_id, outcome, reason)
+}
+
+/// Everything after the registry transition of a cancel: `outcome` is what
+/// the transition returned (`None` unknown id, `Some(false)` not queued).
+fn finish_cancel(
+    app: &AppHandle,
+    session_id: &str,
+    outcome: Option<bool>,
+    reason: &str,
+) -> Result<(), AppError> {
+    match outcome {
         None => {
             return Err(AppError::NotFound(format!(
                 "queued session not found: {session_id}"
@@ -1728,7 +1778,7 @@ pub fn cancel_dispatch(app: &AppHandle, session_id: &str) -> Result<(), AppError
         }
         Some(true) => {}
     }
-    super::debug_log::lifecycle(session_id, "cancelled", "removed from the dispatch queue");
+    super::debug_log::lifecycle(session_id, reason, "removed from the dispatch queue");
     // The state emit persists the row and — Exited not being live — schedules
     // a promotion pass, which is a harmless no-op here (no slot was freed).
     super::pty::emit_session_state(
@@ -1736,7 +1786,7 @@ pub fn cancel_dispatch(app: &AppHandle, session_id: &str) -> Result<(), AppError
         session_id,
         Some(state_to_token(FleetSessionState::Queued)),
         state_to_token(FleetSessionState::Exited),
-        Some("cancelled".to_string()),
+        Some(reason.to_string()),
     );
     let ranks = registry().renumber_queue(&[]);
     persist_ranks(app, &ranks);

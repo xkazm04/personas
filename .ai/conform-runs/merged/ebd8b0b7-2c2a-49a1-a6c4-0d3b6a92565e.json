@@ -1,0 +1,30 @@
+{
+  "schema": "conform-run/1",
+  "worker": "ebd8b0b7-2c2a-49a1-a6c4-0d3b6a92565e",
+  "subject": "embedded-db",
+  "evaluatedAt": "2026-10-12T12:30:54Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "embedded-db",
+      "context": "0b0ee725-52a2-4656-9e13-07c5204de60e",
+      "reason": "current deviation verdict already judged against sha256-b2:0722fec97cff5b66 rev 15, which is the registry index's current digest at bb180d5d, so not stale; no db-crate commits since the verdict and every anchor re-printed unchanged - nothing to re-judge"
+    },
+    {
+      "subject": "embedded-db",
+      "context": "e8fa2ff7-145d-4c58-af83-1239b87d2c24",
+      "reason": "current not-applicable verdict already judged against sha256-b2:0722fec97cff5b66 rev 15, which is the registry index's current digest at bb180d5d, so not stale; no db-crate commits since the verdict and every anchor re-printed unchanged - nothing to re-judge"
+    },
+    {
+      "subject": "embedded-db",
+      "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3",
+      "reason": "current not-applicable verdict already judged against sha256-b2:0722fec97cff5b66 rev 15, which is the registry index's current digest at bb180d5d, so not stale; no db-crate commits since the verdict and every anchor re-printed unchanged - nothing to re-judge"
+    },
+    {
+      "subject": "embedded-db",
+      "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474",
+      "reason": "current not-applicable verdict already judged against sha256-b2:0722fec97cff5b66 rev 15, which is the registry index's current digest at bb180d5d, so not stale; no db-crate commits since the verdict and every anchor re-printed unchanged - nothing to re-judge"
+    }
+  ],
+  "consults": []
+}

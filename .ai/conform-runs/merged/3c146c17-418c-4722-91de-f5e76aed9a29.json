@@ -1,0 +1,48 @@
+{"schema": "conform-run/1", "worker": "3c146c17-418c-4722-91de-f5e76aed9a29", "subject": "credential-vault",
+ "evaluatedAt": "2026-10-12T12:21:00Z",
+ "pairs": [
+  {"context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857", "subject": "credential-vault", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/vault/sub_databases/__tests__/DatabaseCard.test.tsx:6 the suite's credential fixtures are CredentialMetadata only (no value field) and ChatTab tests drive the explorer by credentialId (ChatTab.test.tsx:69); the test context retains, seals, probes or brokers no foreign secret, so no custody technique has a seat here.",
+   "techniques": [
+     {"technique": "brokered-egress", "verdict": "not-applicable", "evidence": "src/features/vault/sub_databases/__tests__/ChatTab.test.tsx:69 tests render with an id only; the brokering itself lives in vault-database-shell (already judged conformant)"},
+     {"technique": "health-probing", "verdict": "not-applicable", "evidence": "src/features/vault/sub_databases/__tests__/DatabaseListView.test.tsx:36 healthcheck fields are null fixtures; no probe outcome is asserted, so the unreachable-vs-rejected gap recorded on vault-databases-tabs is untested but not realized here"}
+   ],
+   "registryProposal": "This pair was added by /conform triage 2026-08-29 on a 'precondition' grounding for a category:test context. A test suite of a custody surface does not itself hold custody; the golden path could state whether a test context is governed (e.g. by pinning the three-state probe vocabulary) or always out of scope, so triage stops adding test-only pairs."},
+  {"context": "3d2f5f87-37f7-4a94-96d3-932ebc2bf2c7", "subject": "credential-vault", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/shared/hooks/health/useBulkHealthcheck.ts:84 'Test all' still mirrors each outcome into the per-card cache as {success, message}, dropping the typed state the wire carries (src/lib/bindings/CredentialHealthcheckOutcome.ts:5), so an unverifiable credential (success:true) paints verified and :95 lists every unreachable one under needs-attention.",
+   "techniques": [
+     {"technique": "health-probing", "verdict": "deviation", "evidence": "src/features/vault/shared/hooks/health/useBulkHealthcheck.ts:84 the compatibility boolean replaces HealthProbeState on the way into the cache - the 'fourth narrowing' the technique names"}
+   ]},
+  {"context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65", "subject": "credential-vault", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:267 still classifies probe failures by substring-matching backend prose (also :308 'skipped automatic healthcheck') and :256 regexes an HTTP status out of the message, so the verdict kind dies at the boundary and breaks on the first reworded message.",
+   "techniques": [
+     {"technique": "health-probing", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:256 regexes an HTTP status out of message prose - the verdict-survives-boundary decay the technique names verbatim"}
+   ]},
+  {"context": "c4a2fa9d-1b41-4141-894b-c90663aa0433", "subject": "credential-vault", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:107 still masks a captured field only when the template types it 'password' (and :108 allowCopy), so a captured API key typed 'text' renders in cleartext on the confirming screen while the seal treats it as secret - two classifiers with opposite defaults.",
+   "techniques": [
+     {"technique": "encryption-at-rest", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:107 the screen's predicate fails open where the golden path's one-classification rule requires an undeclared field to default to secret"}
+   ]},
+  {"context": "cf38b51d-aebb-4b36-bb8e-68a494a3662f", "subject": "credential-vault", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/api/vault/oauthGatewayApi.ts:31 still sends the OAuth client secret across IPC as plaintext (also startOAuth at :58) while credential field values cross session-encrypted (src/api/vault/credentials.ts:115), so one class of foreign secret bypasses the envelope the rest of the vault uses.",
+   "techniques": [
+     {"technique": "brokered-egress", "verdict": "deviation", "evidence": "src/api/vault/oauthGatewayApi.ts:58 a retained foreign secret crosses a process boundary as a plain value outside the session envelope"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "credential-vault", "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7", "reason": "2026-10-03 deviation, anchor file unchanged since; outside this run's budget of 5 - left for the next run rather than skimmed"},
+  {"subject": "credential-vault", "context": "b62fa237-32b4-41c3-bf56-3e498b643da9", "reason": "2026-10-03 deviation, anchor file unchanged since; outside this run's budget of 5"},
+  {"subject": "credential-vault", "context": "all other credential-vault pairs", "reason": "judged 2026-10-09/10 against the current digest sha256-b2:1c57e44b947c96ef (revision 4); nothing to re-judge"}
+ ],
+ "consults": [
+  {"ts":"2026-10-12T12:21:00Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["brokered-egress","health-probing"],"deviations":0},
+  {"ts":"2026-10-12T12:21:00Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["health-probing"],"deviations":1},
+  {"ts":"2026-10-12T12:21:00Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["health-probing"],"deviations":1},
+  {"ts":"2026-10-12T12:21:00Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["encryption-at-rest"],"deviations":1},
+  {"ts":"2026-10-12T12:21:00Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["brokered-egress"],"deviations":1}
+ ]}

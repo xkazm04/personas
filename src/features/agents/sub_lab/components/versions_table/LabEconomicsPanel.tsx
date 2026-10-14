@@ -44,11 +44,11 @@ export function LabEconomicsPanel({ personaId }: { personaId: string }) {
         <table className="w-full text-left">
           <thead>
             <tr className="typo-caption text-foreground">
-              <th className="py-1 pr-3 font-normal">{t.agents.lab.eco_col_model}</th>
-              <th className="py-1 px-3 font-normal text-right">{t.agents.lab.eco_col_attempted}</th>
-              <th className="py-1 px-3 font-normal text-right">{t.agents.lab.eco_col_resolved}</th>
-              <th className="py-1 px-3 font-normal text-right">{t.agents.lab.eco_col_rate}</th>
-              <th className="py-1 pl-3 font-normal text-right">{t.agents.lab.eco_col_cost_success}</th>
+              <th className="py-1 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.eco_col_model}</th>
+              <th className="py-1 px-3 text-right typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.eco_col_attempted}</th>
+              <th className="py-1 px-3 text-right typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.eco_col_resolved}</th>
+              <th className="py-1 px-3 text-right typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.eco_col_rate}</th>
+              <th className="py-1 pl-3 text-right typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.eco_col_cost_success}</th>
             </tr>
           </thead>
           <tbody>

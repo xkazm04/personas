@@ -445,10 +445,10 @@ export function PersonaConfigPanel() {
         <table className="w-full typo-caption">
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/20">
-              <th className="text-left px-3 py-2 font-medium text-foreground">{s.agent}</th>
-              <th className="text-left px-3 py-2 font-medium text-foreground">{s.workspace_level}</th>
+              <th className="text-left px-3 py-2 typo-caption font-mono uppercase tracking-widest text-foreground">{s.agent}</th>
+              <th className="text-left px-3 py-2 typo-caption font-mono uppercase tracking-widest text-foreground">{s.workspace_level}</th>
               {FIELDS.map((f) => (
-                <th key={f.key} className="text-left px-3 py-2 font-medium text-foreground">{s[f.labelKey]}</th>
+                <th key={f.key} className="text-left px-3 py-2 typo-caption font-mono uppercase tracking-widest text-foreground">{s[f.labelKey]}</th>
               ))}
             </tr>
           </thead>

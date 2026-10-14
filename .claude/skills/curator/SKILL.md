@@ -22,6 +22,12 @@ description: Drive Curator's work loop from a terminal instead of from the Perso
 /curator project               re-project her plan from the current checkout, no app needed
 /curator growth                take one growth sample from the registry's own instruments
 /curator release               put a stranded claim back after an aborted pass
+/curator release-stranded      release every open dispatch whose worker process is provably gone
+/curator pool                  run-pool: several conform workers at once, RAM-scaled, until a brake
+/curator pool stop|status      ask a running pool to stop after its workers settle / read it
+/curator --multi [N]           N rounds; each round codex, grok and agy judge DIFFERENT conform subjects at once
+/curator --multi report        the provider-by-topic scoreboard the rounds built
+/curator --multi night         unattended: rounds back to back across every consumer repo, reviewed and committed
 ```
 
 `next` takes `--lane queue,plan,method,refill` to drive part of the ladder. The filter
@@ -30,7 +36,7 @@ queue before her plan. Two situations need it and both have happened: the app is
 owns the standing lane, or her plan is still the one projected from an older checkout and
 only the queue file is current.
 
-`next --engine conform,deepen,apply,reconcile` filters the PLAN lane the same way (skip, never reorder). `--engine conform` is the one that cannot publish registry content: `conform` workers run in this repo, write only `.ai/registry-map.json` and are told never to commit or push, while `apply` and `deepen` workers commit in the registry and may push its default branch. Use it when the registry's `main` carries commits that are not Curator's.
+`next --engine conform,deepen,apply,reconcile` filters the PLAN lane the same way (skip, never reorder). `--engine conform` is the one that cannot publish registry content: `conform` workers run in this repo, write only their own run file under `.ai/conform-runs/` and are told never to commit or push, while `apply` and `deepen` workers commit in the registry and may push its default branch. Use it when the registry's `main` carries commits that are not Curator's.
 
 `next --terminal-owns` waives ONLY the `curator_enabled` brake, for when the operator switched
 the app's tick off precisely so this terminal drives her (quiet hours and backpressure still
@@ -42,8 +48,14 @@ Plan items of engine `apply` and `conform` are dispatchable: the item cannot car
 argument, so `loop.py` derives it at claim time. `apply` becomes `/intake apply <technique>`
 with the first technique in the subject's index entry that has no application row (none left
 = the item is skipped, never guessed). `conform` becomes `/conform --subject <slug>` and runs
-in THIS repo, whose `.ai/registry-map.json` it writes; that worker is told not to commit or
-push, so the operator reads and commits the map diff.
+in THIS repo. **It never writes `.ai/registry-map.json`.** It writes ONE run file,
+`.ai/conform-runs/<dispatch-id>.json` (the brief carries the shape), and the registry's
+`scripts/merge-conform-runs.mjs` - `loop.py merge` - is the map's only writer: it takes a
+lock, keeps the newer verdict when two disagree and records the older in
+`.ai/conform-detail.json`, refuses `unknown` and anchors on a blank line, appends the run's
+`consults` to `.ai/consults.jsonl`, and archives the file in `.ai/conform-runs/merged/`. A file
+merged twice changes nothing. The worker is told not to commit or push, so the operator reads
+and commits the map diff.
 
 `conform` items are also filtered by scope: the scan ranks a subject without knowing which
 bundles this repo consumes, so `loop.py` skips any item whose domain is not in
@@ -189,6 +201,11 @@ python .claude/skills/curator/loop.py settle --claim claim.json --state idled --
 python .claude/skills/curator/loop.py commits --claim claim.json --since <head-at-dispatch>
 ```
 
+A **conform** pass is judged through the merger, not from stdout: run
+`loop.py merge --only <dispatch-id>.json` first and read its per-file counts (`merged`,
+`unchanged`, `older`, `declined`, `skipped` with reasons). Verdicts it accepted are `landed`;
+a run file whose every verdict it refused is `declined`, with its reasons.
+
 `commits` records what the checkout gained as hers. **Read its caveat before trusting the
 number**: the range is `since..HEAD` in a checkout other sessions also write, so a commit
 somebody else landed inside the window is credited too. The app has the same defect and it
@@ -196,6 +213,267 @@ has been observed live. Pass the sha the claim actually started from.
 
 Take one growth sample per loop, not per pass (`loop.py growth`) - it runs the registry's
 instruments and costs about ten seconds.
+
+## The pool - several workers at once
+
+`loop.py run-pool` is the unattended form: it claims with the same ladder, runs a worker per
+claim in parallel, settles each as it ends, merges after each settle, and re-projects when the
+projection goes stale. Measure it with `--dry` first, which claims nothing and lists what it
+would take, in order, with the memory figures it decided on.
+
+**What may run beside what.** Only `conform` workers run in parallel: each runs in THIS repo
+and writes only its own run file, so N of them share nothing but the merger's lock. Every lane
+that writes the registry checkout (deepen, apply, reconcile, the queue, method and standing
+lanes) has ONE serial slot, and while it is taken only conform plan items are admitted. No
+two running workers - nor a worker and any other driver's open dispatch - ever hold one
+subject. The default is `--lane plan --engine conform`; anything wider is opt-in.
+
+**How many.** `N = min(--max, floor((free_gb - 6) / 2.5))`, recomputed from a fresh sample
+(the median of five, /appmaster's method) before EVERY claim. The constants are named and
+argued in `loop.py` (`RESERVE_GB`, `PER_WORKER_GB`, `MAX_WORKERS = 4`); unreadable memory
+allows one worker. A running worker is charged twice on purpose - it has not grown yet.
+
+**How it settles, and how that differs from a pass you drive.** A pool settles mechanically,
+from evidence it can read: for conform, the merger's counts for that worker's run file (no
+run file is `blocked`, a lock held by a live merger defers the settle rather than guessing);
+for a registry lane, the commits since dispatch, with the `commits` caveat in the evidence.
+Every settle carries the worker's last words, and `~/.personas/curator-pool/done/` keeps each
+worker's whole stdout. That is weaker than a session reading the output, which is why the
+operator reads the map diff before committing it.
+
+**State lives outside the repo** - `~/.personas/curator-pool/` (`CURATOR_POOL_DIR` overrides):
+`pool.lock`, `pool.jsonl` (every event), `workers/` while a worker runs, `done/` after, and
+`STOP`. Workers run in their own process group, so a pool that dies leaves them running; the
+next pool adopts them by pid AND creation time and settles the ones that ended meanwhile.
+
+**The usage limit.** `--on-limit stop` (the default) stops after the running workers settle,
+as a pass does. `--on-limit doze` stops claiming, then every `--doze-min` (30) sends a one-line
+probe - no claim, no row - and resumes when the limit has lifted. A limited worker's item is
+released, never settled.
+
+```bash
+# the weekend run - in the background, so a reaped shell does not take the pool with it
+mkdir -p ~/.personas/curator-pool
+python .claude/skills/curator/loop.py run-pool --terminal-owns --on-limit doze \
+  >> ~/.personas/curator-pool/pool.out 2>&1
+python .claude/skills/curator/loop.py run-pool --status   # pool, workers, last events
+python .claude/skills/curator/loop.py run-pool --stop     # no new claims; exits once its workers settle
+```
+
+To stop it NOW instead: end the pool pid from `run-pool --status`, end its workers' pids, then
+`loop.py release-stranded`. If the map is ever reverted under a run (a sibling's hook stash
+that failed to restore), `loop.py merge --reapply` folds the `merged/` archive back in.
+
+## --multi - several providers, one round at a time
+
+`/curator --multi` widens conform coverage with models that are not Claude. Its code is
+`multi.py`, reached through `loop.py multi <cmd>`; the SESSION reviews every round before
+starting the next.
+
+```bash
+L=".claude/skills/curator/loop.py"
+python $L multi start --terminal-owns [--keep-raw]   # one round, DETACHED; prints pid + summary path
+python $L multi finish                               # settle a round whose driver died, from its journal
+python $L multi withdraw --run <file.json> --contexts a,b --why "<review finding>"
+python $L multi revalidate --round <n> --provider <p> --why "<validator defect>"   # needs --keep-raw
+python $L multi clean                                # delete raw dirs of finished rounds (after review)
+python $L multi report                               # scoreboard: provider, provider x category
+python $L multi reset-dropped                        # bring a limited provider back after its reset
+```
+
+**Always `start`, never `round`, from a session.** `round` runs in the foreground. Measured
+2026-10-12: Claude Code's low-memory reaper killed the background shell running round 2, and the
+round's driver with it. `start` launches a driver no shell owns (breakaway from the job), and the
+session waits on `rounds/<n>.json` with an until-loop. Each seat is journaled to
+`rounds/<n>/seats.json` the moment it spawns; if a driver still dies, `finish` waits for live seats,
+settles finished ones from their files, and RELEASES a seat that left no answer (its subject goes
+back, unscored), because nothing says whether the seat or the driver's death ended it. `start`
+and `round` both refuse while an unfinished round exists.
+
+**Seats.** `codex` (codex-cli, `gpt-6.1-sol`, effort high), `grok` (grok-cli, `grok-4.7`, high) and
+`agy` (Antigravity CLI, the newest `gemini-X.Y-flash-high` that `agy models` lists). `--providers`
+narrows them. Each round rotates which seat takes the top-ranked subject, and prefers a different
+registry category for each seat, so the scoreboard sees every provider on every kind of topic.
+
+**Why conform only.** A conform verdict can be checked mechanically against the code, so a weaker
+model's answer is evidence to verify rather than a change to trust. Registry-writing lanes
+(apply, deepen, reconcile) are not offered to these seats.
+
+**Where the subject comes from.** First her plan (in-scope `conform` items). When that is dry for
+this repo (it was on 2026-10-12, when all 27 planned conform items were in domains this repo does not
+consume), the subject comes from the map's own backlog in /conform's bare order: stale pairs, then
+strong unknowns, then probable unknowns, with `priorNotApplicable` pairs discounted. Each one is
+FILED into the operator's request queue (`conform --subject <slug>`, the note names this
+instruction) and claimed through the queue lane, so every seat has a real ledger row. A subject
+`--multi` has tried is not retried (`state.json` `tried`).
+
+**What makes a weaker seat safe.**
+- The orchestrator builds the dossier: the golden path, every technique file, and up to five pairs
+  with each context's REAL file list from `context-map.json`. The seat resolves nothing itself.
+- Seats are read-only and return one JSON object through their CLI's schema flag (codex
+  `--output-schema` in a `read-only` sandbox, grok `--json-schema`, agy `--json-schema`).
+  `multi.py` writes the run file; the registry's merger stays the map's only writer.
+- `validate()` checks every anchor: a tracked file, a non-blank line, and the seat's verbatim
+  `quote` of that line. A quote found up to three lines away, or uniquely elsewhere in the file,
+  REPAIRS the line number (counted as a repair). A quote found nowhere, a placeholder, an absolute
+  path that is not in the repo, a technique that is not the subject's, or a context outside the
+  dossier is REFUSED. A conformant pair below /conform's evidence floor, or one that calls a
+  technique a deviation, is declined with the reason. A refused pair becomes a `declined` row,
+  never a verdict.
+- **Whole-answer refusals.** A seat that provably opened nothing (codex ran no command, grok
+  answered in one turn), or whose `notes` disclaim the answer (draft, not verified, do not keep).
+- **The floor counts DISTINCT anchors.** One line reused for several techniques is one piece of
+  evidence, and a conformant pair also needs at least two techniques shown realized.
+- **Smears.** One anchor outside every context it is pinned on, carried by two or more pairs, is
+  a repo-wide fact and a verdict about none of them: all those pairs are declined.
+
+Each rule above was a measured failure, not a guess (round 1-2, 2026-10-12):
+| Seat | What it did | Rule it produced |
+|---|---|---|
+| grok 4.7 | with `--json-schema` it answered in ONE turn, opened no file, and its notes said "DRAFT ONLY - do not keep"; its one surviving verdict echoed the stale verdict the dossier showed it | grok runs without `--json-schema`; read-proof; self-disclaimer; "an earlier verdict is a claim to re-check" |
+| agy flash | four `conformant` verdicts reached the floor by anchoring 5-6 `not-applicable` techniques each on `mod tests {` or one vitest include line | distinct-anchor floor; two realized techniques |
+| codex gpt-6.1-sol | pinned one true repo-wide finding (`lefthook.yml:32`) on four UI contexts with one sentence | smear rule; "judge each context by its own code" |
+| the validator | refused codex's good round-3 answer whole because its notes honestly said "enforcement was not verified" and "no placeholder anchors" | the disclaimer rule reads only statements about the ANSWER; `revalidate` lands what a wrong rule refused |
+
+**A validator rule can be wrong too.** When the review finds the refusal was the rule's fault, fix
+the rule, then `multi revalidate` the kept raw answer: it re-judges under the current validator,
+lands the passing pairs in a NEW run file (`<dispatch>-rv.json`, so the original archive still shows
+what the old rule did), rewrites the ledger row's outcome to say so, and scores it for the seat.
+Keep `--keep-raw` on rounds you intend to review closely for exactly this reason.
+
+**`withdraw` is the review's undo.** The merger has none, and `--reapply` re-folds its archive,
+so `multi withdraw` changes all three places under the merger's own lock: the map row goes back
+to the verdict it replaced (or `unknown`), `conform-detail.json` records the withdrawal, and the
+archived run file moves the pair to `declined` so it cannot come back. It also writes a review
+row to the scoreboard, so a withdrawn verdict counts against its seat. A row a later run has
+already overwritten is left alone and reported.
+
+**Settling.** Through the merger, exactly as the pool settles a conform worker: `landed` when it
+accepted verdicts, `declined` with its reasons, `blocked` when nothing survived. The evidence is
+prefixed `[provider:model]`, so a reader can tell which seat judged it.
+
+**The usage limit.** A seat whose output carries a quota banner and no usable answer is DROPPED:
+its claim is released, its filed request cancelled, its partial answer thrown away, and
+`state.json` `dropped` keeps it out of later rounds. The other seats continue. `multi
+reset-dropped` brings a provider back once its window resets.
+
+**Cleanup is part of the round, not an afterthought.** After the round settles, `multi.py` deletes:
+the round's raw directory (prompts, stdout, the schema), each provider's own session files for
+that seat (grok `~/.grok/sessions/<cwd>/<id>` by the session id the round assigned it, plus that
+session's lines in the cwd's shared `prompt_history.jsonl` - only its own `session_id`, because the
+operator's grok history lives in the same file; agy
+`~/.gemini/antigravity-cli/{annotations,brain,conversations,presence}/<id>*` by its conversation id;
+codex runs `--ephemeral` and writes none), and any provider junk that appeared at the repo root
+(`.grok/`, `.agents/`, `.gemini/`, `.codex/`, `tmp*.{txt,json,md,...}`). Anything else new in the
+repo is LISTED in the round summary and never deleted, because siblings write this checkout too.
+What stays: `rounds/<n>.json` (the summary) and one `scoreboard.jsonl` row per seat. `--keep-raw`
+keeps the raw directory for the review; `multi clean` then deletes it, and the driver logs
+(`round.out`, `finish*.out`) once no round is pending.
+
+**Between rounds the session reviews, then hardens.** Read `rounds/<n>.json`: per seat, what came
+back, what was accepted, every repair and refusal. Spot-check two accepted anchors per seat by
+printing the line (does it SAY what the evidence claims? the validator only proves the quote is
+real). A refusal pattern that repeats across seats is a defect in the brief or the validator, so
+fix it before the next round. A seat that is merely weak is a scoreboard fact, not a defect.
+`multi report` aggregates the scoreboard by provider and by provider x category; carry the feel
+into memory once there are enough rounds to say something.
+
+**The feel after the first five rounds (2026-10-12, n = 5 seats each, one repo, all
+`software-engineering` subjects - a weak prior, not a ranking):**
+| Seat | Kept / returned | Avg wall | Reads as |
+|---|---|---|---|
+| agy `gemini-3.8-flash-high` | 20 / 25 (4 withdrawn) | ~7.5 min | fastest; strongest on llm-agent subjects (orchestration, companion, memory, eval); padded its one test-harness conformant run, then followed the distinct-anchor rule cleanly |
+| codex `gpt-6.1-sol` high | 18 / 25 (4 withdrawn, 4 revalidated) | ~11.5 min | most exhaustive (78+ commands, every technique file); best on UI and standards subjects; over-reaches with repo-wide findings unless told to judge each context by its own code |
+| grok `grok-4.7` high | 14 / 20 (1 withdrawn, 1 lost) | ~15 min | slowest, but precise once it can use tools: real security (`bundle.rs` fail-open allowlist) and module-design findings; useless under `--json-schema` |
+
+
+## --multi night - unattended coverage across every consumer repo
+
+The night is the same round, run back to back with nobody watching, so the two jobs a session did
+by hand between rounds are done by the driver: a **reviewer** and a **commit**.
+
+```bash
+L=".claude/skills/curator/loop.py"
+python $L multi night --terminal-owns --until 06:30           # detached; returns at once
+python $L multi stop                                          # finish the running round, commit it, end
+python $L multi status                                        # repos + backlog, night running?, schedule, last report
+python $L multi schedule --at 01:00 --until 06:30 --terminal-owns   # Task Scheduler, daily, as this user
+python $L multi unschedule
+```
+
+**The task lives at `\Personas\CuratorNight`** (Task Scheduler folder `\Personas\`; its Description is
+`Curator night|<at>-<until>`). That folder is what the app's Activity board lists on its
+**Schedules** plate - a lamp, the next start in Prague time and an on/off switch - so the operator
+sees and flips the night from the Monitor; `schtasks /Change /TN \Personas\CuratorNight /DISABLE`
+does the same from a shell. `schedule` deletes the root-level `PersonasCuratorNight` it used before
+2026-10-13.
+
+**Where it judges.** Every project the registry's `projects.json` places on this machine (resolved
+through its gitignored `.machine.local.json`) that carries a `.ai/registry-map.json` - Personas,
+pof, kp, ascent, systedo-case, politicas, goat, gravitone, tracklight, pumper, personas-web,
+athena-everywhere on 2026-10-12. `--repos a,b` narrows it. Seats take repos in ROTATION
+(`state.json` `repo_cursor`), so every repo gains coverage each night rather than the one with
+the biggest backlog; inside a repo the subject is still /conform's bare order.
+
+**The reviewer.** After each round a headless `claude -p` (Sonnet by default, `--reviewer-model`;
+Edit/Write disallowed, told read-only) receives every verdict that landed, opens each anchor, and
+returns withdrawals for clear errors only - a line that does not say what is claimed, a verdict
+about another context or the whole repo. Only withdrawals naming a run and context that round
+actually landed are applied, through `withdraw`. A reviewer that hits the Claude usage limit, times
+out or returns no JSON leaves the round **unreviewed** (said so in the commit and the report); the
+validator's checks still hold. `--review off` skips it.
+
+**The commit.** The operator's standing approval (2026-10-12): conform results are committed in
+every consumer repo **on its currently checked-out branch, never pushed**. `commit_repo` commits
+exactly `.ai/registry-map.json`, `.ai/conform-detail.json`, `.ai/consults.jsonl` and the round's
+archived run files - with the isolated-index ritual (temp index seeded from HEAD, explicit paths, no
+deletions, the commit verified to be OURS, the shared index resynced for these paths only). It
+skips a detached HEAD or a merge/rebase in progress, skips paths the repo ignores, and leaves the
+files uncommitted - reported - when a hook fails. A sibling's dirty file in that repo is never
+staged.
+
+**What stops a night**, each named in the report: `--until` (no round starts within 20 min of it),
+`--max-rounds`, `multi stop`, a brake (quiet hours, backpressure; `--terminal-owns` waives only
+`curator_enabled`), a registry checkout far behind its origin, every provider dropped on its usage
+limit, nothing claimable anywhere, three rounds in a row that kept nothing, or memory that stays
+below `6 GB + 1.5 GB per seat` for 30 minutes (it waits rather than starving a sibling). Dropped
+providers are reset at the start of each night. A crash is caught and reported, never silent.
+
+**The morning report** is `~/.personas/curator-multi/night/<date>.md`: coverage still owed per
+repo before and after, every seat, every withdrawal with its reason, every commit with its sha and
+branch. `night/<date>.jsonl` has the same as events. **Read it before the next night**; a reviewer
+note that repeats is a defect in the brief or the validator, exactly as between hand-run rounds.
+
+**What the first full night measured (2026-10-12 23:28 to 06:40, rounds 14-41, 84 seats).** 335
+verdicts landed, the reviewer withdrew 43, **292 kept**, every one of the 12 repos gained 11-32;
+no failed commit, no reviewer failure, no timeout; 4 memory waits (~20 min) near 03:00.
+
+| Finding | Rule it produced |
+|---|---|
+| a quarter of agy's 90 not-applicable verdicts were withdrawn (codex 6%, grok 13%): the absence they claimed was one grep away - a `#[cfg(test)]` module, an `e.mcp` read, a prompt constant | every not-applicable names its `absence_terms`; the validator re-runs that search over the context's directories and any hit refuses it; the reviewer sees the terms and judges whether they were the right ones |
+| deviations are reliable: codex 5%, grok 2% withdrawn | none - this is the seats' strength; route deviation-heavy subjects to them when routing exists |
+| consult-check recorded a `missed` row on every conform-ledger commit; the next round committed it as found, which drew another - 7 needless commits per repo and 48 false misses | fixed in the registry (`b6b67b76`: a commit of only the conform ledger is skipped); the false rows were dropped, matched to our commits by timestamp |
+| an "about code outside the context" rule replayed on the night caught 0 of the reviewer's 4 off-context withdrawals and would have refused 7 good deviations (a test, a store, an engine the context relies on) | NOT adopted - measured before building; the reviewer judges scope better than a path rule |
+| each round waits for its slowest seat: 27% of seat time idle | fixed: continuous slots (below) |
+
+**What the 5-hour continuous run measured (2026-10-13, units 43-145, 102 seats).** 376 landed,
+**316 kept**, ~66 kept per active hour against the barrier night's ~40; seats spread 8-9 per
+repo; no reviewer error, no memory wait.
+
+| Finding | Rule it produced |
+|---|---|
+| the detached driver had NO console, so every console child (the claude reviewer for minutes, each git and node call) opened a visible window on the operator's desktop - a probe proved it | the driver launches with CREATE_NO_WINDOW (a hidden console its children inherit), every Popen in the driver defaults to CREATE_NO_WINDOW, and the scheduled task runs `pythonw` on a launcher instead of a `.cmd` |
+| codex: "Selected model is at capacity" was settled `blocked` and its subject marked tried | provider-side failures (capacity, overload, 5xx, reset) release the claim, return the subject and back the slot off 5 min |
+| agy picked registry jargon as absence terms (`dated-capability-matrix`, `orientation-tax`) so the grep could never hit; its not-applicable was still withdrawn 29%, deviation 19% (codex 16%/3%, grok 15%/8%) | jargon terms are refused; `PROVIDER_POLICY` stops accepting not-applicable from agy (its brief says so up front); agy keeps its deviations and conformants |
+| `.git/COMMIT_EDITMSG` is one file per checkout: a sibling committing in the same instant swapped our message in systedo-case (our 3 conform files landed as `refactor(app): ...`) | the commit is found by its exact paths and reported as ours with the true message in `git notes --ref=curator`; a shared branch is never rewritten |
+| goat's map has outlived its tree: seats find 1-2 real pairs and honestly decline | none in the driver - goat needs a context scan and a map rebuild |
+
+**A Claude session as the orchestrator** (instead of Task Scheduler): run `multi night` (it detaches
+and returns), then wait on `night.out` for `night_ended` with an until-loop, read the report, fix
+what the reviewer notes point at, and start the next. Never run `night --foreground` from a
+session: Claude Code's memory reaper kills its shell's children (measured round 2), which is why the
+default detaches. Measured 2026-10-12 too: a detached child that did not carry `--foreground`
+detached again, forever - `night_argv` now always passes it, and a test pins that.
 
 ## Conduct
 
@@ -239,7 +517,12 @@ and resumes; this driver does not, and pretending otherwise would burn the reset
   and this one may lag it.
 - **Stranded claims are yours to clear.** If a pass is interrupted, `release` the claim in
   the same session. An item left `dispatched` with nothing running is the leak the Gaps
-  drawer counts as `open_dispatches`, and it will still be there tomorrow.
+  drawer counts as `open_dispatches`, and it will still be there tomorrow. For one nobody
+  holds a claim file for, `loop.py release-stranded` (`--dry` first) releases it **only when
+  its worker process is provably gone**: a pool record whose pid and creation time no longer
+  match, and no live claude/node process whose command line names its dispatch, session,
+  fleet session or argument. Never on the row's age - a row records the last transition,
+  not a heartbeat, and three live workers were once killed on that reading.
 
 ## Ending a session
 

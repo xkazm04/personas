@@ -1,0 +1,22 @@
+{"schema":"conform-run/1","worker":"efe0cdc1-8d71-42e1-b6bf-7d6c6922dccc","subject":"undo-history",
+ "evaluatedAt":"2026-10-12T12:31:00Z",
+ "pairs":[
+  {"context":"1ff7809a-171b-4baa-9c9b-12d888b017f0","subject":"undo-history","bundle":"software-engineering","state":"deviation",
+   "evidence":"src/features/agents/sub_editor/libs/EditorDocument.tsx:224 truncates redo only inside pushUndo, reached after the 800ms debounce (src/features/agents/sub_editor/libs/useEditorSave.ts:217) and the IPC await, and undo (EditorDocument.tsx:228) neither closes nor cancels the pending save, so redo stays live after a divergent edit and Ctrl+Z inside the window reverts the previous step while the open edit then lands on top; re-confirmed 2026-10-12, code unchanged",
+   "techniques":[
+    {"technique":"redo-semantics","verdict":"deviation","evidence":"src/features/agents/sub_editor/libs/EditorDocument.tsx:224 redo is truncated on the save landing, not on the edit; redo control stays enabled for >=800ms after a divergent edit"},
+    {"technique":"gesture-coalescing","verdict":"deviation","evidence":"src/features/agents/sub_editor/libs/EditorDocument.tsx:228 undo does not close/flush the open debounced step, so it reverts the previous step while the current one accumulates (prohibition 5)"},
+    {"technique":"stack-policy","verdict":"conformant","evidence":"src/features/agents/sub_editor/libs/EditorDocument.tsx:222 hard cap MAX_UNDO_DEPTH=50 with oldest-first shift; clearHistory tied to the persona-switch event at src/features/agents/sub_editor/hooks/useEditorDraft.ts:88"},
+    {"technique":"undo-model-selection","verdict":"conformant","evidence":"src/features/agents/sub_editor/libs/useEditorSave.ts:121 snapshot of the small draft slice (prev/next per key set), persisted through the same op builder as the forward save (useEditorSave.ts:141)"},
+    {"technique":"undo-scope","verdict":"conformant","evidence":"src/features/agents/sub_editor/libs/useEditorSave.ts:185 undo entries capture only SETTINGS_KEYS/MODEL_KEYS document fields, restored through the one save door, no view state"}
+   ]},
+  {"context":"b2d7acbc-0191-46e4-8a4d-87c229410c7e","subject":"undo-history","bundle":"software-engineering","state":"not-applicable",
+   "evidence":"context-map.json:7596 file_paths is empty and the entry point src/features/plugins/artist/sub_media_studio/hooks/useMediaStudio.ts is not in git ls-files; the 80-step undo was deleted with the Artist plugin, so no surface exists to judge; reconfirmed 2026-10-12",
+   "techniques":[],
+   "registryProposal":"Dead context (no files) still matched at 827 on description vocabulary alone; the map builder should not pair subjects onto contexts with empty file_paths."}
+ ],
+ "declined":[],
+ "consults":[
+  {"ts":"2026-10-12T12:31:00Z","bundle":"software-engineering","subjects":["undo-history"],"techniques":["redo-semantics","gesture-coalescing","stack-policy","undo-model-selection","undo-scope"],"deviations":2},
+  {"ts":"2026-10-12T12:31:00Z","bundle":"software-engineering","subjects":["undo-history"],"techniques":[],"deviations":0}
+ ]}

@@ -1,0 +1,60 @@
+{
+  "schema": "conform-run/1",
+  "worker": "93f3d2c4-0ec8-4de0-b040-582e782758aa",
+  "subject": "sql-console",
+  "evaluatedAt": "2026-10-12T12:00:46.169Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "sql-console",
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+      "reason": "already not-applicable (evaluated 2026-10-03) against sha256-b2:60a26f15745fd8c1, which is still the registry digest at e94a2fc5 (revision 1); no commit or dirty change under src/features/vault/sub_databases since 2026-10-09, and the deviation anchors re-read 2026-10-12 still say what their evidence claims - nothing to re-judge"
+    },
+    {
+      "subject": "sql-console",
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "reason": "already not-applicable (evaluated 2026-10-03) against sha256-b2:60a26f15745fd8c1, which is still the registry digest at e94a2fc5 (revision 1); no commit or dirty change under src/features/vault/sub_databases since 2026-10-09, and the deviation anchors re-read 2026-10-12 still say what their evidence claims - nothing to re-judge"
+    },
+    {
+      "subject": "sql-console",
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "reason": "already not-applicable (evaluated 2026-10-03) against sha256-b2:60a26f15745fd8c1, which is still the registry digest at e94a2fc5 (revision 1); no commit or dirty change under src/features/vault/sub_databases since 2026-10-09, and the deviation anchors re-read 2026-10-12 still say what their evidence claims - nothing to re-judge"
+    },
+    {
+      "subject": "sql-console",
+      "context": "d3346f2c-d747-4d85-b6e6-c1450da57ec9",
+      "reason": "already not-applicable (evaluated 2026-10-03) against sha256-b2:60a26f15745fd8c1, which is still the registry digest at e94a2fc5 (revision 1); no commit or dirty change under src/features/vault/sub_databases since 2026-10-09, and the deviation anchors re-read 2026-10-12 still say what their evidence claims - nothing to re-judge"
+    },
+    {
+      "subject": "sql-console",
+      "context": "2a54cdc2-87af-4298-b490-9eb87f230df7",
+      "reason": "already not-applicable (evaluated 2026-10-03) against sha256-b2:60a26f15745fd8c1, which is still the registry digest at e94a2fc5 (revision 1); no commit or dirty change under src/features/vault/sub_databases since 2026-10-09, and the deviation anchors re-read 2026-10-12 still say what their evidence claims - nothing to re-judge"
+    },
+    {
+      "subject": "sql-console",
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433",
+      "reason": "already not-applicable (evaluated 2026-09-23) against sha256-b2:60a26f15745fd8c1, which is still the registry digest at e94a2fc5 (revision 1); no commit or dirty change under src/features/vault/sub_databases since 2026-10-09, and the deviation anchors re-read 2026-10-12 still say what their evidence claims - nothing to re-judge"
+    },
+    {
+      "subject": "sql-console",
+      "context": "b62fa237-32b4-41c3-bf56-3e498b643da9",
+      "reason": "already not-applicable (evaluated 2026-10-03) against sha256-b2:60a26f15745fd8c1, which is still the registry digest at e94a2fc5 (revision 1); no commit or dirty change under src/features/vault/sub_databases since 2026-10-09, and the deviation anchors re-read 2026-10-12 still say what their evidence claims - nothing to re-judge"
+    },
+    {
+      "subject": "sql-console",
+      "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae",
+      "reason": "already deviation (evaluated 2026-10-10) against sha256-b2:60a26f15745fd8c1, which is still the registry digest at e94a2fc5 (revision 1); no commit or dirty change under src/features/vault/sub_databases since 2026-10-09, and the deviation anchors re-read 2026-10-12 still say what their evidence claims - nothing to re-judge"
+    },
+    {
+      "subject": "sql-console",
+      "context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857",
+      "reason": "already deviation (evaluated 2026-10-10) against sha256-b2:60a26f15745fd8c1, which is still the registry digest at e94a2fc5 (revision 1); no commit or dirty change under src/features/vault/sub_databases since 2026-10-09, and the deviation anchors re-read 2026-10-12 still say what their evidence claims - nothing to re-judge"
+    },
+    {
+      "subject": "sql-console",
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "reason": "already deviation (evaluated 2026-10-10) against sha256-b2:60a26f15745fd8c1, which is still the registry digest at e94a2fc5 (revision 1); no commit or dirty change under src/features/vault/sub_databases since 2026-10-09, and the deviation anchors re-read 2026-10-12 still say what their evidence claims - nothing to re-judge"
+    }
+  ],
+  "consults": []
+}

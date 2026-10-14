@@ -1,0 +1,220 @@
+{
+ "schema": "conform-run/1",
+ "worker": "332d5829-60c2-4fbe-9865-a6f46bbb5d40",
+ "subject": "eval-harness",
+ "evaluatedAt": "2026-10-12T17:10:33.987566+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [
+  {
+   "context": "test-runner-lab",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/engine/src/eval.rs:616 Routes LLM evaluation through CallClass::Verdict resolving to SONNET_CURRENT without recording the concrete model identifier or judge packet version onto the result record, allowing model roster updates to silently drift the measurement baseline.",
+   "techniques": [
+    {
+     "technique": "judge-stability",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/eval.rs:609 The LLM judge routes through CallClass::Verdict pointing to SONNET_CURRENT, an alias that silently shifts under roster bumps, without recording judge identity or packet version onto the result row."
+    },
+    {
+     "technique": "scenario-design",
+     "verdict": "conformant",
+     "evidence": "src-tauri/engine/src/test_runner/scenarios.rs:36 Scenario cache key scopes persona ID and tools while deliberately excluding candidate prompt, ensuring version comparisons evaluate against identical questions."
+    },
+    {
+     "technique": "eval-economics",
+     "verdict": "conformant",
+     "evidence": "src-tauri/engine/src/test_runner/lab.rs:30 Bounds concurrent CLI cell execution via bounded concurrency primitive to avoid rate limit stampedes."
+    },
+    {
+     "technique": "assertion-vs-judgment",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/eval.rs:503 Inverts the standard layering by invoking the LLM judge first and only executing deterministic heuristics as a fallback upon LLM failure."
+    }
+   ]
+  },
+  {
+   "context": "lib-harness",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/harness/types.ts:3 Defines an autonomous code implementation work loop gated by deterministic build checks (tsc, lint, vite build) rather than an eval harness that evaluates and scores non-deterministic model outputs across versions.",
+   "techniques": [
+    {
+     "technique": "assertion-vs-judgment",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/harness/types.ts:3 Precondition fails: Autonomous engineering loop uses deterministic compiler/linter checks rather than scoring non-deterministic model outputs."
+    },
+    {
+     "technique": "metric-role-contract",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/harness/verifier.ts:13 Gates are binary build checks (typecheck, lint, build) without statistical or multi-metric evaluation."
+    }
+   ]
+  },
+  {
+   "context": "lab-versions-eval",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:193 Evaluates persona versions by sorting on an unconstrained weighted composite score and designating the top entry as winner without pre-declared thresholds or resolution verification against within-condition variance.",
+   "techniques": [
+    {
+     "technique": "metric-role-contract",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:180 Blends tool accuracy, output quality, and protocol compliance into an unconstrained weighted composite score rather than optimizing one metric against constraints."
+    },
+    {
+     "technique": "resolution-precondition",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:193 Ranks versions by composite score and assigns winner without checking whether between-condition spread exceeds within-condition noise."
+    },
+    {
+     "technique": "outcome-conditioned-cost",
+     "verdict": "conformant",
+     "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:110 Separates incomplete trials from scored runs, tracking scoredCost and scoredTokens alongside total unconditioned figures."
+    },
+    {
+     "technique": "comparison-modes",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:229 Crowns the top matrix version as winner without reporting per-cell win/loss margins."
+    }
+   ]
+  },
+  {
+   "context": "lab-arena",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:131 In head-to-head persona arena matches, ties in win count are artificially broken by alphabetical model name comparison rather than preserving ties or completing position-mirrored controls.",
+   "techniques": [
+    {
+     "technique": "comparison-modes",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:131 Forces a winner on tied win totals using alphabetical model name comparison rather than preserving ties or executing mirrored position controls."
+    },
+    {
+     "technique": "uncontrolled-games-beside-the-win-rate",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:117 Counts single-direction match winner outcomes without position swap controls or accounting for excluded/uncontrolled games."
+    },
+    {
+     "technique": "pairing-schedule",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:119 Maintains cumulative win tallies without checking comparison graph connectivity or rater exposure balance."
+    },
+    {
+     "technique": "eval-economics",
+     "verdict": "conformant",
+     "evidence": "src/features/agents/sub_lab/use-cases/MockModePanel.tsx:35 Provides mock execution mode for use cases allowing UI inspection without spending model calls."
+    }
+   ]
+  },
+  {
+   "context": "overview-leaderboard",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:11 Ranks personas based on live operational health telemetry (heartbeats, latency, burn rate) from the health dashboard rather than running an eval harness against declared test scenarios.",
+   "techniques": [
+    {
+     "technique": "metric-role-contract",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:11 Precondition does not hold: dashboard monitors production health telemetry, not model evaluation scenarios."
+    },
+    {
+     "technique": "resolution-precondition",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardRanking.ts:47 Presentation-only re-ranking of live fleet telemetry rather than statistical evaluation trials."
+    }
+   ],
+   "registryProposal": "The overview-leaderboard context was mapped to eval-harness due to ranking/leaderboard keywords, but operates exclusively on live fleet telemetry rather than evaluation scenarios. Its composite score arithmetic belongs to scoring-rubrics, so its pairing with eval-harness should be retired."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-12T17:10:33.987566+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [
+    "assertion-vs-judgment",
+    "eval-economics",
+    "judge-stability",
+    "scenario-design"
+   ],
+   "deviations": 1,
+   "context": "test-runner-lab",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T17:10:33.987566+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [
+    "assertion-vs-judgment",
+    "metric-role-contract"
+   ],
+   "deviations": 0,
+   "context": "lib-harness",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T17:10:33.987566+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [
+    "comparison-modes",
+    "metric-role-contract",
+    "outcome-conditioned-cost",
+    "resolution-precondition"
+   ],
+   "deviations": 1,
+   "context": "lab-versions-eval",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T17:10:33.987566+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [
+    "comparison-modes",
+    "eval-economics",
+    "pairing-schedule",
+    "uncontrolled-games-beside-the-win-rate"
+   ],
+   "deviations": 1,
+   "context": "lab-arena",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T17:10:33.987566+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [
+    "metric-role-contract",
+    "resolution-precondition"
+   ],
+   "deviations": 0,
+   "context": "overview-leaderboard",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  }
+ ]
+}

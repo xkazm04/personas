@@ -114,7 +114,8 @@ pub fn list_attention_ledger(
 /// passes, shown beside the declared `spec.resourceProfile` (read-only). What
 /// the ledger can and cannot measure is documented on the repo fn
 /// (`attention_ledger::measured_per_responsibility`): fleet-session passes
-/// carry no token figure, and no resident-memory figure is persisted at all.
+/// carry no token figure. CPU / RAM / GPU come from `run_resource_summaries`
+/// (the measured-resources sampler), as shares of this device.
 ///
 /// Async over `spawn_blocking`, unlike its older siblings here: it is a
 /// windowed aggregate with a JSON join, and a sync command runs rusqlite on

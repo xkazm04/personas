@@ -28,6 +28,8 @@ use axum::Router;
 use tokio::net::TcpListener;
 
 pub mod auth;
+#[cfg(feature = "p2p")]
+pub mod mesh;
 
 /// Where the server starts scanning for a free port. Picked to be visibly
 /// distinct from common dev ports and from the test-automation port (17320).
@@ -177,15 +179,45 @@ fn handshake_body(port: u16) -> serde_json::Value {
     })
 }
 
+/// The DEV-ONLY second handshake of an isolated instance:
+/// `<PERSONAS_DATA_DIR>/local-http.json`, or `None` when the env is unset or
+/// blank (read exactly as `boot::paths::resolve_app_data_dir` reads it).
+///
+/// Two isolated instances on one machine both overwrite the default
+/// `~/.personas/local-http.json`, so a terminal driving ONE of them (the
+/// `/mesh-onboard` client: `PERSONAS_DATA_DIR` set → this file first) needs a
+/// handshake that is only that instance's.
+pub fn isolated_handshake_path() -> Option<PathBuf> {
+    isolated_handshake_path_from(std::env::var("PERSONAS_DATA_DIR").ok().as_deref())
+}
+
+fn isolated_handshake_path_from(data_dir: Option<&str>) -> Option<PathBuf> {
+    let dir = data_dir.map(str::trim).filter(|d| !d.is_empty())?;
+    Some(PathBuf::from(dir).join("local-http.json"))
+}
+
 /// Write `{port, token, pid}` so the app's own skills (`project-populate`,
 /// `kpi-sim`, and anything driving `/dev-tools` from a terminal) can present
 /// the credential. Best effort: a failure here degrades those skills, it must
 /// never stop the server.
+///
+/// An isolated instance (`PERSONAS_DATA_DIR` set) ALSO writes the same
+/// document to [`isolated_handshake_path`], with the same restrict-then-rename
+/// ordering. Without the env only the default path is written, as before.
 fn write_handshake(port: u16) {
     let Some(path) = handshake_path() else {
         tracing::warn!("local_http: home dir not resolvable; handshake file not written");
         return;
     };
+    write_handshake_at(&path, port);
+    if let Some(isolated) = isolated_handshake_path() {
+        write_handshake_at(&isolated, port);
+    }
+}
+
+/// One handshake file at `path`. SECURITY-SENSITIVE: the token is restricted
+/// to the current user BEFORE it is visible at `path` (see below).
+fn write_handshake_at(path: &std::path::Path, port: u16) {
     if let Some(parent) = path.parent() {
         if let Err(e) = std::fs::create_dir_all(parent) {
             tracing::warn!(error = %e, "local_http: could not create ~/.personas");
@@ -231,7 +263,7 @@ fn write_handshake(port: u16) {
         );
         return;
     }
-    if let Err(e) = tmp.persist(&path) {
+    if let Err(e) = tmp.persist(path) {
         tracing::warn!(error = %e, path = %path.display(), "local_http: handshake persist failed");
         return;
     }
@@ -353,6 +385,32 @@ mod tests {
             !body["token"].as_str().unwrap_or_default().is_empty(),
             "an empty token would 401 every consumer"
         );
+    }
+
+    /// The dev-only second handshake exists only for an isolated instance, and
+    /// sits in ITS data dir under the name the `/mesh` client reads.
+    #[test]
+    fn isolated_handshake_lands_in_the_data_dir_only_when_set() {
+        assert_eq!(isolated_handshake_path_from(None), None);
+        assert_eq!(isolated_handshake_path_from(Some("   ")), None);
+        assert_eq!(
+            isolated_handshake_path_from(Some(" C:/smoke/data-A ")),
+            Some(PathBuf::from("C:/smoke/data-A").join("local-http.json"))
+        );
+    }
+
+    /// The same restrict-then-rename write, at an arbitrary path: the file
+    /// lands complete, with the keys the client reads.
+    #[test]
+    fn a_handshake_written_at_a_path_carries_port_token_and_pid() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("local-http.json");
+        write_handshake_at(&path, 17409);
+        let body: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).expect("written")).unwrap();
+        assert_eq!(body["port"], 17409);
+        assert_eq!(body["token"], *auth::local_token());
+        assert_eq!(body["pid"], std::process::id());
     }
 
     #[tokio::test]

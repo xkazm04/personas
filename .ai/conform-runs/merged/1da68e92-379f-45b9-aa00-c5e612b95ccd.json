@@ -1,0 +1,98 @@
+{
+  "schema": "conform-run/1",
+  "worker": "1da68e92-379f-45b9-aa00-c5e612b95ccd",
+  "subject": "translation-quality-measurement",
+  "evaluatedAt": "2026-10-13T02:51:06.630215+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [
+    {
+      "context": "engine-build-session",
+      "subject": "translation-quality-measurement",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:440 Context and repository searches found connector testing, localized persona naming and incidental translation references, but no translation-quality measurement attached to this build gate, whose tested subjects are tools and connectors.",
+      "techniques": []
+    },
+    {
+      "context": "overview-manual-review",
+      "subject": "translation-quality-measurement",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:44 Context and repository searches found localized interface labels and queues for persona reviews and development ideas, but no translation-review corpus or translation-quality measurement in this inbox.",
+      "techniques": []
+    },
+    {
+      "context": "engine-project-tracking",
+      "subject": "translation-quality-measurement",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:390 Subject-term searches returned no matches in the context files, while repository matches belonged to localization artifacts elsewhere, and the consolidator produces project narratives, directions and tensions rather than translation measurements.",
+      "techniques": []
+    }
+  ],
+  "declined": [
+    {
+      "subject": "translation-quality-measurement",
+      "context": "i18n-generated",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "translation-quality-measurement",
+      "context": "i18n",
+      "reason": "withdrawn after review: reviewer (sonnet): The doc comment at untranslated.mjs:100-111 says dropped placeholders are deliberately not flagged because they are often correct transcreation (e.g. Arabic `_one` values omit {count}), so a missing placeholder is not a mechanically decidable defect and the claim is contradicted by the code."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-13T02:51:06.630215+00:00",
+      "bundle": "localization",
+      "subjects": [
+        "translation-quality-measurement"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "engine-build-session",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-13T02:51:06.630215+00:00",
+      "bundle": "localization",
+      "subjects": [
+        "translation-quality-measurement"
+      ],
+      "techniques": [
+        "deterministic-checks-before-estimates"
+      ],
+      "deviations": 1,
+      "context": "i18n",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-13T02:51:06.630215+00:00",
+      "bundle": "localization",
+      "subjects": [
+        "translation-quality-measurement"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "overview-manual-review",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-13T02:51:06.630215+00:00",
+      "bundle": "localization",
+      "subjects": [
+        "translation-quality-measurement"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "engine-project-tracking",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}

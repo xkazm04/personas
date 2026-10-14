@@ -1,5 +1,5 @@
 //! Passive usage readers for the OTHER coding CLIs on this machine (Codex,
-//! Grok), for the Monitor's usage strip.
+//! Grok, Antigravity), for the Monitor's usage strip.
 //!
 //! Strictly read-only and strictly informational: nothing here feeds
 //! auto-rotate, `usage_governor` or pacing - those stay Claude-only. A
@@ -7,9 +7,11 @@
 //! the command always answers with one entry per provider.
 //!
 //! [`codex`] reads the CLI's own session logs; [`grok`] reports presence
-//! only. Both sit behind one in-memory cache, so any number of open Monitors
-//! cost one disk walk per [`CACHE_TTL`].
+//! only; [`agy`] asks the CLI's own free `/quota` command. All sit behind
+//! in-memory caches, so any number of open Monitors cost one disk walk (and at
+//! most one `agy` spawn per [`AGY_TTL`]).
 
+mod agy;
 mod codex;
 mod grok;
 
@@ -32,6 +34,12 @@ const CACHE_TTL: Duration = Duration::from_secs(45);
 /// The Grok probe spawns processes (`--version`, `models`), and whether a CLI
 /// is installed does not change minute to minute.
 const GROK_PROBE_TTL: Duration = Duration::from_secs(600);
+/// `agy -p "/quota"` is a process spawn (free of quota, not of latency), so it
+/// is polled slower than the strip's cadence. Its figures move with use, and a
+/// 5-hour bucket does not need sub-minute freshness.
+const AGY_TTL: Duration = Duration::from_secs(120);
+/// `/quota` answers in well under a second; a spawn that has not by now is hung.
+const AGY_TIMEOUT: Duration = Duration::from_secs(15);
 
 /// Which CLI a usage card describes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
@@ -40,6 +48,7 @@ const GROK_PROBE_TTL: Duration = Duration::from_secs(600);
 pub enum CliProvider {
     Codex,
     Grok,
+    Agy,
 }
 
 /// Why a provider has no usage windows to show.
@@ -69,6 +78,12 @@ pub struct CliUsageWindow {
     pub used_percent: f64,
     #[ts(type = "number | null")]
     pub resets_at_ms: Option<i64>,
+    /// The model group the window belongs to, for a provider that meters
+    /// several (`agy`: "Gemini Models", "Claude and GPT models"). The strip
+    /// paints one plan per group. Absent for a provider with a single plan.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub group: Option<String>,
 }
 
 /// One provider's card.
@@ -164,6 +179,44 @@ async fn grok_card() -> CliProviderUsage {
     card
 }
 
+async fn agy_cache_card() -> CliProviderUsage {
+    if let Some(card) = fresh(agy_cache(), AGY_TTL) {
+        return card;
+    }
+    let card = agy_card().await;
+    store(agy_cache(), card.clone());
+    card
+}
+
+fn agy_cache() -> &'static Cached<CliProviderUsage> {
+    static C: OnceLock<Cached<CliProviderUsage>> = OnceLock::new();
+    C.get_or_init(|| Mutex::new(None))
+}
+
+/// Spawn `agy -p "/quota" --output-format json` and shape the reply. The argv
+/// goes through `capture_output` as an ARRAY: no shell sees `/quota`, so no
+/// MSYS path rewrite can turn it into a real (billed) prompt.
+async fn agy_card() -> CliProviderUsage {
+    use personas_core::types::CliArgs;
+
+    let Some(exe) = agy::resolve_agy_exe() else {
+        return CliProviderUsage::not_installed(CliProvider::Agy);
+    };
+    let cli_args = CliArgs {
+        command: exe.to_string_lossy().into_owned(),
+        args: agy::QUOTA_ARGS.iter().map(|a| (*a).to_string()).collect(),
+        env_overrides: Vec::new(),
+        env_removals: Vec::new(),
+        cwd: Some(std::env::temp_dir()),
+    };
+    match crate::engine::cli_process::capture_output(&cli_args, AGY_TIMEOUT).await {
+        Ok(out) if out.status.success() => agy::card_from_reply_now(&out.stdout),
+        Ok(_) | Err(_) => {
+            CliProviderUsage::absent(CliProvider::Agy, true, CliUsageReason::Unreadable)
+        }
+    }
+}
+
 async fn codex_card() -> CliProviderUsage {
     // A directory walk plus file reads: off the async runtime. A panicked
     // read is a card state like any other failure.
@@ -175,21 +228,21 @@ async fn codex_card() -> CliProviderUsage {
         })
 }
 
-/// `[codex, grok]`, cached for [`CACHE_TTL`]. Unreadable states are cached
+/// `[codex, grok, agy]`, cached for [`CACHE_TTL`]. Unreadable states are cached
 /// too: a missing CLI must not be re-probed by every poll.
 async fn cached_snapshot() -> CliUsageSnapshot {
     if let Some(snap) = fresh(snapshot_cache(), CACHE_TTL) {
         return snap;
     }
-    let (codex, grok) = tokio::join!(codex_card(), grok_card());
+    let (codex, grok, agy) = tokio::join!(codex_card(), grok_card(), agy_cache_card());
     let snap = CliUsageSnapshot {
-        providers: vec![codex, grok],
+        providers: vec![codex, grok, agy],
     };
     store(snapshot_cache(), snap.clone());
     snap
 }
 
-/// Codex + Grok usage as the Monitor's strip reads it.
+/// Codex + Grok + Antigravity usage as the Monitor's strip reads it.
 #[tauri::command]
 pub async fn fleet_cli_usage(
     state: State<'_, Arc<AppState>>,
@@ -214,6 +267,7 @@ mod tests {
                 window_minutes: 300,
                 used_percent: 12.5,
                 resets_at_ms: None,
+                group: None,
             }],
             as_of_ms: Some(1),
             projected: false,
@@ -226,6 +280,12 @@ mod tests {
         assert_eq!(v["windows"][0]["windowMinutes"], 300);
         assert_eq!(v["windows"][0]["usedPercent"], 12.5);
         assert!(v["windows"][0]["resetsAtMs"].is_null());
+        // `group` is absent, not null, for a single-plan provider.
+        assert!(v["windows"][0].get("group").is_none());
+        assert_eq!(
+            serde_json::to_value(CliProvider::Agy).expect("serializes"),
+            "agy"
+        );
 
         let absent = CliProviderUsage::not_installed(CliProvider::Grok);
         let v = serde_json::to_value(&absent).expect("serializes");

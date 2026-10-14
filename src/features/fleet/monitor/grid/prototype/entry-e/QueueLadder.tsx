@@ -5,7 +5,8 @@
 // is sent once on release. The arrows stay as the keyboard way (Alt+Up/Down
 // on a focused rung too); Start now and Cancel go through the confirms.
 // While the panel is filtered the ladder shows a subset, so dragging is off:
-// a subset has no honest "between" to drop into.
+// a subset has no honest "between" to drop into. A paired device's queue
+// (`peer`) is the same ladder; its order and verbs are sent to that device.
 
 import { memo, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { Reorder, useDragControls } from 'framer-motion';
@@ -16,10 +17,11 @@ import type { LocalOrder } from '../../board/queue/useLocalOrder';
 import { QueueRung } from './QueueRung';
 
 function Item({
-  item, index, total, maxWait, now, compact, flash, order, reducedMotion, onStart, onCancel,
+  item, index, total, maxWait, now, compact, flash, order, reducedMotion, onStart, onCancel, peer,
 }: {
   item: QueueItem; index: number; total: number; maxWait: number; now: number; compact: boolean; flash: boolean;
   order: LocalOrder; reducedMotion: boolean; onStart: (i: QueueItem) => void; onCancel: (i: QueueItem) => void;
+  peer: boolean;
 }) {
   const { t } = useTranslation();
   const controls = useDragControls();
@@ -54,6 +56,7 @@ function Item({
         onNudge={order.nudge}
         onStart={onStart}
         onCancel={onCancel}
+        peer={peer}
         lifted={lifted}
         grip={(
           <DragHandle
@@ -70,7 +73,7 @@ function Item({
 }
 
 export const QueueLadder = memo(function QueueLadder({
-  order, items: shown, now, compact = false, focusKey, reducedMotion, draggable, onStart, onCancel,
+  order, items: shown, now, compact = false, focusKey, reducedMotion, draggable, onStart, onCancel, peer = false,
 }: {
   order: LocalOrder;
   /** The rungs to paint - `order.items`, or the filtered subset of it. */
@@ -83,6 +86,8 @@ export const QueueLadder = memo(function QueueLadder({
   draggable: boolean;
   onStart: (item: QueueItem) => void;
   onCancel: (item: QueueItem) => void;
+  /** The ladder is a paired device's queue. */
+  peer?: boolean;
 }) {
   const { t } = useTranslation();
   const maxWait = shown.reduce((mx, i) => Math.max(
@@ -91,7 +96,7 @@ export const QueueLadder = memo(function QueueLadder({
     i.notBeforeMs !== null ? i.notBeforeMs - now : 0,
   ), 0);
   const rung = (item: QueueItem, i: number) => ({
-    item, index: i, total: shown.length, maxWait, now, compact, flash: focusKey === `s:${item.sessionId}`, onStart, onCancel,
+    item, index: i, total: shown.length, maxWait, now, compact, flash: focusKey === `s:${item.sessionId}`, onStart, onCancel, peer,
   });
 
   if (!draggable) {

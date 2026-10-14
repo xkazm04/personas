@@ -22,13 +22,17 @@ use tokio::sync::Notify;
 
 use personas_core::error::AppError;
 use personas_db::models::{
-    FleetSessionJobPayload, FleetSessionJobReceipt, RemoteJobStatus, RemoteSessionCommand,
-    RemoteSessionMode, REMOTE_JOB_KIND_FLEET_SESSION,
+    DeviceAgent, DeviceHostLoad, DeviceQueueEntry, DeviceSnapshot, FleetSessionJobPayload,
+    FleetSessionJobReceipt, GpuClass, MeshLiveness, MeshVerbPayload, MeshVerbReceipt, RemoteJob,
+    RemoteJobStatus, RemoteSessionCommand, RemoteSessionMode, ResourceAxis,
+    REMOTE_JOB_KIND_CLI_MAIL, REMOTE_JOB_KIND_FLEET_SESSION, REMOTE_JOB_KIND_MESH_VERB,
+    SNAPSHOT_STALE_AFTER_MS,
 };
 use personas_db::repos::resources::owned_devices as owned_repo;
 use personas_db::repos::resources::remote_jobs as repo;
 use personas_db::DbPool;
 
+use super::mesh::DeviceSnapshotProvider;
 use super::protocol::{self, Message};
 use super::remote_jobs::{RemoteJobAssignment, RemoteJobExecutor, RemoteJobHandle};
 use super::NetworkService;
@@ -514,6 +518,38 @@ async fn an_unpaired_identity_is_refused_and_leaves_nothing_behind() {
     }
     tokio::time::sleep(Duration::from_millis(300)).await;
 
+    // Device mesh: a verb and a snapshot from the same stranger fare no
+    // better. The verb is refused with a reason; the snapshot is dropped.
+    let verb = stranger
+        .svc
+        .remote_jobs
+        .send_mesh_verb(
+            &home.id,
+            &MeshVerbPayload::PersonaSetEnabled {
+                persona_id: "p1".into(),
+                enabled: true,
+            },
+        )
+        .await
+        .expect("an answered refusal is not an error");
+    assert_eq!(verb.status, RemoteJobStatus::Refused);
+    assert!(verb.refusal_reason.unwrap_or_default().contains("paired"));
+    let (mut send, _recv) = stranger
+        .svc
+        .connections
+        .open_stream(&home.id)
+        .await
+        .expect("stream");
+    protocol::write_message(
+        &mut send,
+        &Message::DeviceSnapshot {
+            json: serde_json::to_string(&snapshot_of(&stranger, 0.5)).unwrap(),
+        },
+    )
+    .await
+    .expect("write");
+    tokio::time::sleep(Duration::from_millis(300)).await;
+
     assert!(
         repo::list(&home.pool, None, 50).unwrap().is_empty(),
         "no row for an unpaired sender"
@@ -522,4 +558,543 @@ async fn an_unpaired_identity_is_refused_and_leaves_nothing_behind() {
         home.svc.remote_jobs.emitted.lock().unwrap().is_empty(),
         "nothing from an unpaired sender reaches the UI"
     );
+    assert!(
+        home.svc
+            .mesh
+            .cached(&stranger.id, super::mesh::now_ms())
+            .0
+            .is_none(),
+        "a stranger's snapshot is never cached"
+    );
+    assert!(home.svc.mesh.emitted.lock().unwrap().is_empty());
+}
+
+// -- Device mesh (spark device-mesh, WP2a) ------------------------------------
+
+/// A device's snapshot body as its provider would build it. The engine
+/// overwrites `peer_id`, `display_name` and `sent_at_ms` on the way out.
+fn snapshot_of(node: &Node, cpu: f64) -> DeviceSnapshot {
+    DeviceSnapshot {
+        peer_id: node.id.clone(),
+        display_name: node.name.clone(),
+        app_version: "0.0.0-test".into(),
+        sent_at_ms: 0.0,
+        host: DeviceHostLoad {
+            cpu_share: cpu,
+            ram_share: 0.25,
+            gpu_share: None,
+        },
+        running: 1,
+        queued: 1,
+        agents: vec![DeviceAgent {
+            persona_id: format!("{}-writer", node.name),
+            name: "Writer".into(),
+            enabled: true,
+            project_id: Some("proj".into()),
+            project_enabled: Some(true),
+            dominant: Some(ResourceAxis::Cpu),
+            running: true,
+        }],
+        queue: vec![DeviceQueueEntry {
+            session_id: "s-1".into(),
+            title: "Queued work".into(),
+            project_label: Some("Repo".into()),
+            rank: 1,
+            machine_units: 2,
+            gpu: GpuClass::None,
+        }],
+    }
+}
+
+/// The app layer's provider, standing in: a fixed body per node.
+struct FixedProvider(DeviceSnapshot);
+
+#[async_trait::async_trait]
+impl DeviceSnapshotProvider for FixedProvider {
+    async fn build(&self) -> Result<DeviceSnapshot, AppError> {
+        Ok(self.0.clone())
+    }
+}
+
+async fn provide(node: &Node, cpu: f64) {
+    node.svc
+        .mesh
+        .set_provider(Arc::new(FixedProvider(snapshot_of(node, cpu))))
+        .await;
+}
+
+fn snapshot_events(node: &Node) -> Vec<serde_json::Value> {
+    node.svc
+        .mesh
+        .emitted
+        .lock()
+        .unwrap()
+        .iter()
+        .filter(|(e, _)| *e == event_name::DEVICE_SNAPSHOT)
+        .map(|(_, v)| v.clone())
+        .collect()
+}
+
+/// Snapshots flow BOTH ways over the real wire (on link-up and on a
+/// broadcast), a snapshot claiming to be another device is refused, and a
+/// view older than the stale window turns `unknown` - announced exactly once.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn snapshots_flow_both_ways_refuse_impostors_and_go_stale() {
+    let laptop = node("Laptop").await;
+    let desktop = node("Desktop").await;
+    trust(&laptop, &desktop);
+    trust(&desktop, &laptop);
+    know_address(&laptop, &desktop).expect("address");
+    provide(&laptop, 0.10).await;
+    provide(&desktop, 0.70).await;
+
+    // Link-up sends each side's snapshot to the other.
+    connect(&laptop, &desktop).await;
+    wait_for!("laptop holds desktop's snapshot", {
+        laptop
+            .svc
+            .mesh
+            .cached(&desktop.id, super::mesh::now_ms())
+            .0
+            .is_some()
+    });
+    wait_for!("desktop holds laptop's snapshot", {
+        desktop
+            .svc
+            .mesh
+            .cached(&laptop.id, super::mesh::now_ms())
+            .0
+            .is_some()
+    });
+    let (snap, received_at, liveness) = laptop.svc.mesh.cached(&desktop.id, super::mesh::now_ms());
+    let snap = snap.unwrap();
+    assert_eq!(snap.peer_id, desktop.id, "stamped by the sending engine");
+    assert_eq!(snap.host.cpu_share, 0.70);
+    assert_eq!(snap.agents[0].dominant, Some(ResourceAxis::Cpu));
+    assert_eq!(liveness, MeshLiveness::Live);
+    assert!(snap.sent_at_ms > 0.0);
+
+    // The view was announced on arrival, live and connected.
+    let events = snapshot_events(&laptop);
+    let last = events
+        .iter()
+        .rev()
+        .find(|v| v["peerId"] == desktop.id.as_str())
+        .expect("a device-snapshot event for desktop");
+    assert_eq!(last["liveness"], "live");
+    assert_eq!(last["reachability"], "connected");
+    assert_eq!(last["isSelf"], false);
+    assert_eq!(
+        last["displayName"], "Desktop",
+        "the paired name, not the claim"
+    );
+
+    // A broadcast carries a CHANGE across: desktop's load moves.
+    provide(&desktop, 0.90).await;
+    assert_eq!(
+        desktop.svc.mesh.broadcast().await,
+        1,
+        "one paired peer is connected"
+    );
+    wait_for!("laptop sees desktop's new load", {
+        laptop
+            .svc
+            .mesh
+            .cached(&desktop.id, super::mesh::now_ms())
+            .0
+            .is_some_and(|s| s.host.cpu_share == 0.90)
+    });
+
+    // An impostor frame: desktop (paired, authenticated) claims to be laptop.
+    let before = laptop.svc.mesh.cached(&desktop.id, super::mesh::now_ms()).1;
+    let mut forged = snapshot_of(&desktop, 0.01);
+    forged.peer_id = laptop.id.clone();
+    let (mut send, _recv) = desktop
+        .svc
+        .connections
+        .open_stream(&laptop.id)
+        .await
+        .expect("stream");
+    protocol::write_message(
+        &mut send,
+        &Message::DeviceSnapshot {
+            json: serde_json::to_string(&forged).unwrap(),
+        },
+    )
+    .await
+    .expect("write");
+    tokio::time::sleep(Duration::from_millis(300)).await;
+    assert!(
+        laptop
+            .svc
+            .mesh
+            .cached(&laptop.id, super::mesh::now_ms())
+            .0
+            .is_none(),
+        "nothing is stored under the claimed id"
+    );
+    assert_eq!(
+        laptop.svc.mesh.cached(&desktop.id, super::mesh::now_ms()).1,
+        before,
+        "nor does the impostor frame refresh the sender's own entry"
+    );
+
+    // The roster: this device first, then the paired one with its snapshot.
+    let roster = laptop.svc.mesh_device_snapshots().await.expect("roster");
+    assert_eq!(roster.len(), 2);
+    assert!(roster[0].is_self && roster[0].peer_id == laptop.id);
+    assert_eq!(roster[0].liveness, MeshLiveness::Live);
+    assert_eq!(
+        roster[0].snapshot.as_ref().map(|s| s.host.cpu_share),
+        Some(0.10)
+    );
+    assert_eq!(roster[1].peer_id, desktop.id);
+    assert_eq!(roster[1].liveness, MeshLiveness::Live);
+    assert!(roster[1].received_at_ms.is_some());
+
+    // Staleness: past the window by THIS device's clock, the view turns
+    // unknown, and the transition is announced exactly once.
+    let at = received_at.unwrap();
+    let still = laptop
+        .svc
+        .mesh_expire_at(at + SNAPSHOT_STALE_AFTER_MS - 1_000.0)
+        .await;
+    assert!(still.is_empty(), "not stale inside the window");
+    let stale_at = laptop
+        .svc
+        .mesh
+        .cached(&desktop.id, super::mesh::now_ms())
+        .1
+        .unwrap()
+        + SNAPSHOT_STALE_AFTER_MS
+        + 1_000.0;
+    let turned = laptop.svc.mesh_expire_at(stale_at).await;
+    assert_eq!(turned, vec![desktop.id.clone()]);
+    assert_eq!(
+        laptop.svc.mesh.cached(&desktop.id, stale_at).2,
+        MeshLiveness::Unknown
+    );
+    let unknown_events = snapshot_events(&laptop)
+        .into_iter()
+        .filter(|v| v["peerId"] == desktop.id.as_str() && v["liveness"] == "unknown")
+        .count();
+    assert_eq!(unknown_events, 1, "announced on the transition");
+    assert!(
+        laptop
+            .svc
+            .mesh_expire_at(stale_at + 15_000.0)
+            .await
+            .is_empty(),
+        "and never again while it stays stale"
+    );
+}
+
+/// The receiving device's stand-in for the app's mesh executor: it knows one
+/// persona (`p1`), one project (`proj`) and one queued session (`s-1`).
+#[derive(Clone, Default)]
+struct MeshStub {
+    seen: Arc<Mutex<Vec<MeshVerbPayload>>>,
+}
+
+#[async_trait::async_trait]
+impl RemoteJobExecutor for MeshStub {
+    async fn execute(&self, job: RemoteJobAssignment, handle: RemoteJobHandle) {
+        assert_eq!(job.kind, REMOTE_JOB_KIND_MESH_VERB);
+        let payload: MeshVerbPayload =
+            serde_json::from_str(job.payload_json.as_deref().unwrap()).unwrap();
+        self.seen.lock().unwrap().push(payload.clone());
+        let known = match &payload {
+            MeshVerbPayload::Ping => true,
+            MeshVerbPayload::PersonaSetEnabled { persona_id, .. } => persona_id == "p1",
+            MeshVerbPayload::ProjectSetEnabled { project_id, .. } => project_id == "proj",
+            MeshVerbPayload::QueueReorder { session_ids } => session_ids.iter().all(|s| s == "s-1"),
+            MeshVerbPayload::QueueCancel { session_id }
+            | MeshVerbPayload::QueueStartNow { session_id } => session_id == "s-1",
+        };
+        let receipt = MeshVerbReceipt {
+            verb: payload.verb().into(),
+            ok: known,
+            detail: Some(if !known {
+                "not_found: not on this device".into()
+            } else if payload == MeshVerbPayload::Ping {
+                "0.0.0-test desktop,p2p".into()
+            } else {
+                "done".into()
+            }),
+        };
+        // `execute` already runs on its own task (the engine spawns it), and
+        // finishing is one row write plus one frame: done inline.
+        handle.finish_mesh_verb(&receipt).await.expect("finish");
+    }
+}
+
+async fn settled(pool: &DbPool, job_id: &str) -> RemoteJob {
+    wait_for!("the job settles", {
+        status(pool, job_id).is_some_and(|s| s.is_terminal())
+    });
+    repo::get(pool, job_id).unwrap().unwrap()
+}
+
+/// One-box dial by address (the `/mesh/connect {address}` door): no
+/// `discovered_peers` row beforehand, the peer id is LEARNED from the signed
+/// handshake, and the address is then recorded so the auto-connect sweep can
+/// re-dial it. Pairing is untouched: the new link is authenticated, not
+/// trusted. The env-gated public door refuses outside an isolated instance.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn a_peer_dialled_by_address_proves_its_id_and_is_remembered() {
+    let laptop = node("Laptop").await;
+    let desktop = node("Desktop").await;
+    let address = format!("127.0.0.1:{}", desktop.port);
+
+    let learned = laptop
+        .svc
+        .connect_to_address_unchecked(&address)
+        .await
+        .expect("dial by address");
+    assert_eq!(learned, desktop.id, "the id the handshake proved");
+    wait_for!("both ends see the link", {
+        laptop.svc.connections.is_connected(&desktop.id).await
+            && desktop.svc.connections.is_connected(&laptop.id).await
+    });
+    assert!(
+        laptop.svc.mdns.has_discovered_row(&desktop.id).unwrap(),
+        "the dialled address is recorded"
+    );
+    assert!(
+        owned_repo::get_owned_device(&laptop.pool, &desktop.id)
+            .unwrap()
+            .is_none(),
+        "connected is not paired"
+    );
+    // Dialling yourself is refused after the handshake names you.
+    let self_addr = format!("127.0.0.1:{}", laptop.port);
+    assert!(laptop
+        .svc
+        .connect_to_address_unchecked(&self_addr)
+        .await
+        .is_err());
+    assert!(matches!(
+        laptop
+            .svc
+            .connect_to_address_unchecked("not-an-address")
+            .await,
+        Err(AppError::Validation(_))
+    ));
+    if super::one_box::isolated_data_dir().is_none() {
+        assert!(matches!(
+            laptop.svc.connect_to_address(&address).await,
+            Err(AppError::Forbidden(_))
+        ));
+    }
+}
+
+/// Every `MeshVerbPayload` variant crosses the wire and comes back as a
+/// receipt on the originator; an unknown target is `ok: false, not_found`
+/// (a failed job, never a silent success); an offline peer's verb waits in
+/// the outbox and runs when the link returns.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn every_mesh_verb_travels_and_its_receipt_comes_back() {
+    let laptop = node("Laptop").await;
+    let desktop = node("Desktop").await;
+    trust(&laptop, &desktop);
+    trust(&desktop, &laptop);
+    know_address(&laptop, &desktop).expect("address");
+    let stub = MeshStub::default();
+    desktop
+        .svc
+        .remote_jobs
+        .set_executor(Arc::new(stub.clone()))
+        .await;
+    connect(&laptop, &desktop).await;
+
+    let verbs = [
+        MeshVerbPayload::Ping,
+        MeshVerbPayload::PersonaSetEnabled {
+            persona_id: "p1".into(),
+            enabled: false,
+        },
+        MeshVerbPayload::ProjectSetEnabled {
+            project_id: "proj".into(),
+            enabled: true,
+        },
+        MeshVerbPayload::QueueReorder {
+            session_ids: vec!["s-1".into()],
+        },
+        MeshVerbPayload::QueueCancel {
+            session_id: "s-1".into(),
+        },
+        MeshVerbPayload::QueueStartNow {
+            session_id: "s-1".into(),
+        },
+    ];
+    let jobs = &laptop.svc.remote_jobs;
+    for verb in &verbs {
+        let sent = jobs.send_mesh_verb(&desktop.id, verb).await.expect("send");
+        assert_eq!(sent.kind, REMOTE_JOB_KIND_MESH_VERB);
+        let done = settled(&laptop.pool, &sent.id).await;
+        assert_eq!(done.status, RemoteJobStatus::Completed, "{verb:?}");
+        let receipt = done.mesh_receipt.expect("the receipt came back");
+        assert_eq!(receipt.verb, verb.verb());
+        assert!(receipt.ok);
+        assert!(done.receipt.is_none(), "never read as a fleet receipt");
+        if *verb == MeshVerbPayload::Ping {
+            assert_eq!(receipt.detail.as_deref(), Some("0.0.0-test desktop,p2p"));
+        }
+    }
+    assert_eq!(
+        stub.seen.lock().unwrap().as_slice(),
+        &verbs,
+        "the runner received exactly what was sent"
+    );
+
+    // Unknown target: ok:false with the reason, as a FAILED job.
+    let ghost = jobs
+        .send_mesh_verb(
+            &desktop.id,
+            &MeshVerbPayload::PersonaSetEnabled {
+                persona_id: "ghost".into(),
+                enabled: true,
+            },
+        )
+        .await
+        .expect("send");
+    let ghost = settled(&laptop.pool, &ghost.id).await;
+    assert_eq!(ghost.status, RemoteJobStatus::Failed);
+    let r = ghost
+        .mesh_receipt
+        .expect("a refusal still carries its receipt");
+    assert!(!r.ok);
+    assert!(r.detail.unwrap().starts_with("not_found"));
+
+    // Offline: queued in the outbox, run on the next link-up.
+    drop_link(&laptop, &desktop).await;
+    let queued = jobs
+        .send_mesh_verb(&desktop.id, &MeshVerbPayload::Ping)
+        .await
+        .expect("queued, not refused");
+    assert_eq!(queued.status, RemoteJobStatus::Queued);
+    connect(&laptop, &desktop).await;
+    let drained = settled(&laptop.pool, &queued.id).await;
+    assert_eq!(drained.status, RemoteJobStatus::Completed);
+    assert!(drained.mesh_receipt.unwrap().ok);
+}
+
+/// CLI mail: stored and completed on arrival, read back oldest first by
+/// topic prefix; a body over 16 KB is refused on BOTH sides - by the sender
+/// before anything is written, and by the receiver for a frame that skipped
+/// the sender's check.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn cli_mail_round_trips_and_an_oversized_body_is_refused() {
+    let laptop = node("Laptop").await;
+    let desktop = node("Desktop").await;
+    trust(&laptop, &desktop);
+    trust(&desktop, &laptop);
+    know_address(&laptop, &desktop).expect("address");
+    connect(&laptop, &desktop).await;
+    let since = super::mesh::now_ms() - 1_000.0;
+
+    let jobs = &laptop.svc.remote_jobs;
+    for (topic, body) in [
+        ("onboard/t1", "first"),
+        ("onboard/t7", "echo 42"),
+        ("other", "x"),
+    ] {
+        let sent = jobs
+            .send_cli_mail(&desktop.id, topic, body)
+            .await
+            .expect("send");
+        assert_eq!(sent.kind, REMOTE_JOB_KIND_CLI_MAIL);
+        let done = settled(&laptop.pool, &sent.id).await;
+        assert_eq!(
+            done.status,
+            RemoteJobStatus::Completed,
+            "delivered = completed"
+        );
+    }
+    let mail = desktop
+        .svc
+        .remote_jobs
+        .list_cli_mail(since, Some("onboard/"))
+        .expect("read");
+    assert_eq!(
+        mail.iter()
+            .map(|m| (m.topic.as_str(), m.body.as_str()))
+            .collect::<Vec<_>>(),
+        vec![("onboard/t1", "first"), ("onboard/t7", "echo 42")],
+        "oldest first, filtered by prefix"
+    );
+    assert!(mail.iter().all(|m| m.peer_id == laptop.id));
+    assert_eq!(
+        desktop
+            .svc
+            .remote_jobs
+            .list_cli_mail(since, None)
+            .unwrap()
+            .len(),
+        3
+    );
+    assert!(desktop
+        .svc
+        .remote_jobs
+        .list_cli_mail(super::mesh::now_ms() + 60_000.0, None)
+        .unwrap()
+        .is_empty());
+    // Reading does not delete.
+    assert_eq!(
+        desktop
+            .svc
+            .remote_jobs
+            .list_cli_mail(since, None)
+            .unwrap()
+            .len(),
+        3
+    );
+
+    // Over 16 KB, sender side: refused before any row exists.
+    let big = "x".repeat(personas_db::models::CLI_MAIL_MAX_BYTES + 1);
+    let before = repo::list(&laptop.pool, None, 100).unwrap().len();
+    assert!(matches!(
+        jobs.send_cli_mail(&desktop.id, "onboard/big", &big).await,
+        Err(AppError::Validation(_))
+    ));
+    assert_eq!(repo::list(&laptop.pool, None, 100).unwrap().len(), before);
+
+    // Over 16 KB, receiver side: a raw request that skipped the check.
+    let (mut send, mut recv) = laptop
+        .svc
+        .connections
+        .open_stream(&desktop.id)
+        .await
+        .expect("stream");
+    protocol::write_message(
+        &mut send,
+        &Message::RemoteJobRequest {
+            job_id: "raw-big-mail".into(),
+            kind: REMOTE_JOB_KIND_CLI_MAIL.into(),
+            instruction: "CLI mail: onboard/big".into(),
+            origin_display_name: "Laptop".into(),
+            payload_json: Some(
+                serde_json::json!({ "topic": "onboard/big", "body": big }).to_string(),
+            ),
+        },
+    )
+    .await
+    .expect("write");
+    let ack = tokio::time::timeout(WAIT, protocol::decode(&mut recv))
+        .await
+        .expect("answered in time")
+        .expect("an ack");
+    match ack {
+        Message::RemoteJobAck {
+            accepted, reason, ..
+        } => {
+            assert!(!accepted);
+            assert!(
+                reason.unwrap_or_default().contains("too large"),
+                "the refusal names the limit"
+            );
+        }
+        other => panic!("expected a refusal ack, got {other:?}"),
+    }
+    assert!(repo::get(&desktop.pool, "raw-big-mail").unwrap().is_none());
 }

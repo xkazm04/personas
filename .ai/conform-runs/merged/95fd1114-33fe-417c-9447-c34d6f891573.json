@@ -1,0 +1,76 @@
+{
+  "schema": "conform-run/1",
+  "worker": "95fd1114-33fe-417c-9447-c34d6f891573",
+  "subject": "settings",
+  "evaluatedAt": "2026-10-10T01:31:42Z",
+  "pairs": [
+    {
+      "context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/webbuild/bun.rs:23 a PERSONAS_BUN_BIN that is set but names no file is treated as absent and resolution falls through to PATH (:27) with no log or provenance, so a mistyped override silently runs a different Bun; the test at :112 pins that fall-through as intended",
+      "techniques": [
+        {"technique": "cross-source-precedence-chain", "verdict": "deviation", "evidence": "src-tauri/src/webbuild/bun.rs:23 present-and-malformed override is skipped like an absent one (malformed must stop), and resolve_bun returns a bare PathBuf naming neither the winning source nor the skipped override"},
+        {"technique": "key-registry", "verdict": "not-applicable", "evidence": "src-tauri/src/webbuild/bun.rs:21 the context's only configuration is environment-sourced (PERSONAS_BUN_BIN, and PERSONAS_HOME at src-tauri/src/webbuild/project.rs:19); no settings:: read or write exists under src-tauri/src/webbuild"},
+        {"technique": "typed-accessors", "verdict": "not-applicable", "evidence": "src-tauri/src/webbuild/bun.rs:21 no app_settings key is read in this context, so there is no stored value to type"}
+      ],
+      "registryProposal": "Missing pairing: webbuild's bun.rs resolves a sidecar runtime binary (env override -> PATH), which is squarely software-engineering/sidecar-provisioning's territory; settings governs only through its cross-source-precedence-chain technique. Consider pairing sidecar-provisioning here, and consider whether sidecar-provisioning should cite cross-source-precedence-chain for binary-location chains."
+    },
+    {
+      "context": "97025c06-0d64-4025-8a1f-98b90ba1c233",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_model_config/libs/OllamaCloudPresets.ts:6 exports a second hand-written copy of the backend key ollama_api_key (src-tauri/db/src/settings_keys.rs:28) that nothing imports, while the only writer uses a raw literal (src/features/settings/sub_byom/components/ByomApiKeyManager.tsx:48): two vocabularies, so a backend rename leaves both compiling against an orphan key",
+      "techniques": [
+        {"technique": "key-registry", "verdict": "deviation", "evidence": "src/features/agents/sub_model_config/libs/OllamaCloudPresets.ts:6 caller-side key constant is neither generated from nor tested against the store allowlist, and is unused (0 importers) while the real call site passes a literal"},
+        {"technique": "typed-accessors", "verdict": "not-applicable", "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:63 the context's remaining code is static model catalogues; the useEffectiveConfig/ModelSelector settings surface was deleted (d71e0eb948, c7d45f0d55)"},
+        {"technique": "save-experience", "verdict": "not-applicable", "evidence": "src/features/agents/sub_model_config/libs/OllamaCloudPresets.ts:6 no save surface remains in this context; only two lib files are left"}
+      ],
+      "registryProposal": "The key this context names is a secret held in plaintext app_settings (src-tauri/db/src/settings_keys.rs:1357 states the column has no encryption hook). The golden path says 'secrets are not settings' only under Boundaries; no technique gives a decision rule or migration path for an existing secret-bearing key. A short technique section (or a pointer into credential-vault) on evicting a secret already in the settings store would make that boundary judgeable."
+    },
+    {
+      "context": "876c0b4e-6472-4544-a21b-56e7529fb6b3",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/shared/vector/tabs/SettingsTab.tsx:57 the 'Settings' tab renders per-knowledge-base entity fields (chunk size, embedding model from the KnowledgeBase row imported at :9) and its one action is kbReindex (:10); no app settings key is read or written, so the settings-store precondition does not hold",
+      "techniques": [
+        {"technique": "key-registry", "verdict": "not-applicable", "evidence": "src/features/vault/shared/vector/tabs/SettingsTab.tsx:9 per-entity configuration lives on the KnowledgeBase entity, which key-registry itself names as the right home for per-entity config"}
+      ]
+    },
+    {
+      "context": "f197653d-267c-4a91-bffc-b3be17434877",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:43 builds a per-trigger config record handed to onCreateTrigger (src/features/triggers/sub_triggers/TriggerAddForm.tsx:172) and stored on the trigger entity; the context never touches the application settings key space",
+      "techniques": [
+        {"technique": "key-registry", "verdict": "not-applicable", "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:43 open per-entity config belongs in the owning entity's storage per key-registry, which is where it goes"}
+      ]
+    },
+    {
+      "context": "ad601e35-b998-4029-97a5-77487f00d561",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/lib/types/types.ts:454 the only settings-named type here is SettingsTab, a navigation-tab union, not a key or settings record; the context defines entity and UI types and declares no app settings shape, accessor or key",
+      "techniques": [
+        {"technique": "key-registry", "verdict": "not-applicable", "evidence": "src/lib/types/types.ts:454 a navigation enum, not a settings key vocabulary"}
+      ]
+    }
+  ],
+  "declined": [
+    {"subject": "settings", "context": "cab45fee-e439-4bff-9924-217b1acc17f8", "reason": "dead context: context-map.json lists zero file_paths and its entry points under src/features/plugins/artist/hooks do not exist; nothing to read"},
+    {"subject": "settings", "context": "b2d7acbc-0191-46e4-8a4d-87c229410c7e", "reason": "dead context: zero file_paths and src/features/plugins/artist/sub_media_studio/hooks does not exist; nothing to read"},
+    {"subject": "settings", "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0", "reason": "governance weak: the skill never judges weak pairs by default; a coverage question, not a verdict"}
+  ],
+  "consults": [
+    {"ts": "2026-10-10T01:31:42Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["cross-source-precedence-chain", "key-registry", "typed-accessors"], "deviations": 1},
+    {"ts": "2026-10-10T01:31:42Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["key-registry", "typed-accessors", "save-experience"], "deviations": 1},
+    {"ts": "2026-10-10T01:31:42Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["key-registry"], "deviations": 0},
+    {"ts": "2026-10-10T01:31:42Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["key-registry"], "deviations": 0},
+    {"ts": "2026-10-10T01:31:42Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["key-registry"], "deviations": 0}
+  ]
+}

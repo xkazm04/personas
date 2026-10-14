@@ -1,0 +1,30 @@
+{
+ "schema": "conform-run/1",
+ "worker": "ea7be7b0-9ada-467f-a884-bcaab0c8e40e",
+ "subject": "scheduling",
+ "evaluatedAt": "2026-10-10T14:28:31Z",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "scheduling",
+   "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
+   "reason": "already judged 2026-10-10 against sha256-b2:cd982b42588a2de5 (revision 6), which is the registry index digest at e5babec3; not stale, nothing to re-judge"
+  },
+  {
+   "subject": "scheduling",
+   "context": "4810daf8-0549-4899-95d2-99c81cde6455",
+   "reason": "already judged 2026-10-10 against sha256-b2:cd982b42588a2de5 (revision 6), which is the registry index digest at e5babec3; not stale, nothing to re-judge"
+  },
+  {
+   "subject": "scheduling",
+   "context": "56a0fd55-279d-428b-b2f6-7c89154abd6f",
+   "reason": "already judged 2026-10-10 against sha256-b2:cd982b42588a2de5 (revision 6), which is the registry index digest at e5babec3; not stale, nothing to re-judge; note the row carries revisionsBehind: 1 while revision and evaluatedRevision are both 6 - a stale derived field for the builder to recompute, not a stale verdict"
+  },
+  {
+   "subject": "scheduling",
+   "context": "417112d1-004b-41d5-a656-57997a47d818",
+   "reason": "already judged 2026-10-10 against sha256-b2:cd982b42588a2de5 (revision 6), which is the registry index digest at e5babec3; not stale, nothing to re-judge; weak context, already not-applicable"
+  }
+ ],
+ "consults": []
+}

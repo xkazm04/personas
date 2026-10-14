@@ -1,0 +1,40 @@
+{
+  "schema": "conform-run/1",
+  "worker": "1e0dcb31-e7cf-44b3-ab8c-9d7cb8a908ca",
+  "subject": "llm-call-telemetry-model",
+  "evaluatedAt": "2026-10-10T11:29:10Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "llm-call-telemetry-model",
+      "context": "621caefc-8ae0-42e7-89b6-8e879ad62814",
+      "reason": "already judged 2026-10-09 against the current subject (sha256-b2:9f199f8ff9e7a925, revision 7 at registry e6f59b26; revisionsBehind 0); every anchor re-printed on 2026-10-10 still says what the evidence claims and no commit or working-tree change has touched the anchored files since 2026-10-08 - re-judging would duplicate a current verdict (standing state: not-applicable)"
+    },
+    {
+      "subject": "llm-call-telemetry-model",
+      "context": "2fb16136-586e-478d-823f-38434d2d5b9a",
+      "reason": "already judged 2026-10-09 against the current subject (sha256-b2:9f199f8ff9e7a925, revision 7 at registry e6f59b26; revisionsBehind 0); every anchor re-printed on 2026-10-10 still says what the evidence claims and no commit or working-tree change has touched the anchored files since 2026-10-08 - re-judging would duplicate a current verdict (standing state: deviation)"
+    },
+    {
+      "subject": "llm-call-telemetry-model",
+      "context": "a7ece012-8300-4780-b286-b9cea81801fc",
+      "reason": "already judged 2026-10-09 against the current subject (sha256-b2:9f199f8ff9e7a925, revision 7 at registry e6f59b26; revisionsBehind 0); every anchor re-printed on 2026-10-10 still says what the evidence claims and no commit or working-tree change has touched the anchored files since 2026-10-08 - re-judging would duplicate a current verdict (standing state: deviation)"
+    },
+    {
+      "subject": "llm-call-telemetry-model",
+      "context": "2dcda6bf-9982-422b-b63f-1481c414cdab",
+      "reason": "already judged 2026-10-09 against the current subject (sha256-b2:9f199f8ff9e7a925, revision 7 at registry e6f59b26; revisionsBehind 0); every anchor re-printed on 2026-10-10 still says what the evidence claims and no commit or working-tree change has touched the anchored files since 2026-10-08 - re-judging would duplicate a current verdict (standing state: deviation)"
+    },
+    {
+      "subject": "llm-call-telemetry-model",
+      "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+      "reason": "already judged 2026-10-09 against the current subject (sha256-b2:9f199f8ff9e7a925, revision 7 at registry e6f59b26; revisionsBehind 0); every anchor re-printed on 2026-10-10 still says what the evidence claims and no commit or working-tree change has touched the anchored files since 2026-10-08 - re-judging would duplicate a current verdict (standing state: not-applicable)"
+    },
+    {
+      "subject": "llm-call-telemetry-model",
+      "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7",
+      "reason": "already judged 2026-10-09 against the current subject (sha256-b2:9f199f8ff9e7a925, revision 7 at registry e6f59b26; revisionsBehind 0); every anchor re-printed on 2026-10-10 still says what the evidence claims and no commit or working-tree change has touched the anchored files since 2026-10-08 - re-judging would duplicate a current verdict (standing state: not-applicable)"
+    }
+  ],
+  "consults": []
+}

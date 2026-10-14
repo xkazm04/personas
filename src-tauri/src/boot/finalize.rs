@@ -131,6 +131,9 @@ pub fn spawn_p2p_autostart(
             // which a paired device's request is refused by a device
             // that can, in fact, run it.
             companion::remote_jobs::install(&p2p_app_handle, &ns).await;
+            // The device mesh's snapshot provider, likewise before `start()`:
+            // until it is in, this device sends no snapshot.
+            crate::mesh::install(&p2p_app_handle, &ns).await;
             tokio::time::sleep(std::time::Duration::from_secs(3)).await;
             if let Ok(identity) = engine::identity::get_or_create_identity(&ns_pool) {
                 if let Err(e) = ns

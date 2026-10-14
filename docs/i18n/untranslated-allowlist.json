@@ -32,6 +32,7 @@
   "*:monitor.queue_origin_autopilot",
   "*:monitor.queue_origin_curator",
   "*:monitor.queue_origin_dev_runner",
+  "*:monitor.usage_provider_agy",
   "*:monitor.usage_provider_claude",
   "*:monitor.usage_provider_codex",
   "*:monitor.usage_provider_grok",
@@ -4189,5 +4190,7 @@
   "fr:monitor.dc_deck_kind_message",
   "cs:common.agent_fallback_name",
   "de:common.agent_fallback_name",
-  "fr:common.agent_fallback_name"
+  "fr:common.agent_fallback_name",
+  "cs:monitor.mesh_reach_offline",
+  "de:monitor.mesh_reach_offline"
 ]

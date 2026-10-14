@@ -1,0 +1,11 @@
+{"schema": "conform-run/1", "worker": "d0c7438b-d24d-43cc-ab95-d5320dd5b6ee", "subject": "hash-pinned-translation-pipeline",
+ "evaluatedAt": "2026-10-10T02:15:00Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "hash-pinned-translation-pipeline", "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+   "reason": "no-op: the map (generatedAt 2026-10-01T08:52:29Z, software-engineering digest sha256-b2:8115664a3a7ecbc6) lists this subject in ZERO contexts, so --subject has no pair to judge and this worker may not add one. MISSING-PAIRING PROPOSAL (matcher miss, not a hole): context 'i18n' (2e1e105a) meets the golden path's precondition - 14 locales, an LLM translation-subagent pipeline (scripts/i18n/translate-extract.mjs -> translate-merge.mjs) - and the subject's own wall rule ('if answering requires knowing what the source looked like when the translation was made, it belongs here') puts locale freshness under it. First read, unjudged: scripts/i18n/translate-merge.mjs:74 writes each translated value as a bare string with no source-hash pin, and no script under scripts/i18n/ computes a hash, so every i18n gate (check-coverage, check-untranslated, check-escapes) is shape sync only - a likely source-hash-provenance / shape-sync-is-not-content-sync deviation once the pair exists. Rebuild with: node ../ai-registry/scripts/build-registry-map.mjs --project personas, or add the pair via an interactive /conform."},
+  {"subject": "hash-pinned-translation-pipeline", "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+   "reason": "no-op: no pair in the map. 'i18n-generated' holds only generated key types and parity tests (src/i18n/generated/types.ts) - catalog-subject territory per the golden path's walls section, so this subject probably does NOT govern it; listed only so the next run does not re-propose it."}
+ ],
+ "consults": []
+}

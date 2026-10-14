@@ -407,6 +407,7 @@ mod tests {
             instruction: "fix it".into(),
             payload_json: Some(serde_json::to_string(&payload).unwrap()),
             receipt: None,
+            mesh_receipt: None,
             status,
             summary: None,
             refusal_reason: None,

@@ -1,0 +1,220 @@
+{
+  "schema": "conform-run/1",
+  "worker": "bcd9e9fb-7483-4daf-916f-0868b1f7a42d",
+  "subject": "fleet-orchestration",
+  "evaluatedAt": "2026-10-10T11:26:21Z",
+  "pairs": [
+    {
+      "context": "03960450-6979-4412-9de3-35c897fe56d2",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+      "evaluatedRevision": 25,
+      "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:260 a member past the poll deadline or cancelled returns early in status 'running' (set at :235; the vocabulary at :39 has no timed-out class) and BulkRerunReport.tsx:220 renders it as running after the cohort completes, so the roster never accounts a cut-off member; the idempotency key at :244 is minted from Date.now() (the attempt, not the work) and cannot dedupe a repeated batch. Re-verified 2026-10-10 against rev 25.",
+      "techniques": [
+        {
+          "technique": "result-harvest",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:39 BulkRunStatus is pending|running|success|failed with no timed-out/cut-off account, so a straggler stays 'running' (:260) and the accounts never sum to the roster"
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:244 idempotencyKey derives from Date.now(), not from the work; the cap MAX_CONCURRENT=3 (:11) is realized"
+        }
+      ]
+    },
+    {
+      "context": "0f1b56ac-cd96-4355-993e-dc445a20e63e",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+      "evaluatedRevision": 25,
+      "evidence": "src/features/teams/sub_collab/useTeamChannel.ts:67 persona presence is re-derived from channel history ('working' only while the last step_running row is under 10 min old), and src/features/fleet/monitor/channels/types.ts:21 re-declares that ad-hoc union as PresenceMap: a second status vocabulary beside the registry's, in which an expired staleness window silently drops the persona to no-presence instead of an unknown/lost account.",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/types.ts:21 PresenceMap is a private 'working'|'waiting' union, re-declared rather than imported from useTeamChannel.ts:37, read off channel rows rather than the registry"
+        },
+        {
+          "technique": "evidence-outranks-a-liveness-claim",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_collab/useTeamChannel.ts:67 an expired PRESENCE_WORK_WINDOW_MS lands the persona on absence (not working) rather than on unknown"
+        }
+      ]
+    },
+    {
+      "context": "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+      "evaluatedRevision": 25,
+      "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 excludes only exited|hibernated from broadcast targets, so writer-less queued (src-tauri/src/commands/fleet/types.rs:34) and expired rows stay targetable; each write fails at src-tauri/src/commands/fleet/registry.rs:1473 'session writer dropped', and the failure retarget re-selects exactly those rows, which can never succeed. Bounded pool (:154) remains realized. Re-verified 2026-10-10 against rev 25.",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 hand-picks two of the closed FleetSessionState values instead of deriving 'has a PTY writer' from the vocabulary; queued and expired fall through"
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:154 broadcast fans out through mapWithConcurrency at BROADCAST_CONCURRENCY, not an unbounded Promise.all"
+        }
+      ]
+    },
+    {
+      "context": "959baa73-f18f-42c8-8569-466939b9050d",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+      "evaluatedRevision": 25,
+      "evidence": "src/features/notepad/plan/ShipDispatch.tsx:129 dispatches a write-capable Fleet worker into the shared repo root with a goal brief (:45 'implement it') that restates no invariant (commit/push/branch discipline, write scope) and never tells the worker what it cannot see; the dispatch spawns then names in two steps (src/features/teams/sub_factory/passport/passportFleet.tsx:66-67), so a failed rename leaves an anonymous worker the derived-key check cannot find and a retry spawns a duplicate.",
+      "techniques": [
+        {
+          "technique": "brief-carries-the-session",
+          "verdict": "deviation",
+          "evidence": "src/features/notepad/plan/ShipDispatch.tsx:45 the brief says EXECUTE with no restated commit/push/write-scope invariant and no 'you have none of the conversation' line"
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/passportFleet.tsx:66 spawnSession then renameSession (:67) is not an atomic key reservation (rev 25: if naming can fail, treat that as the dispatch failing); the derived key and pre-spawn duplicate refusal (:65) are realized"
+        }
+      ]
+    },
+    {
+      "context": "50f50f97-be0e-4a93-8f1c-c0b967cd45d0",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+      "evaluatedRevision": 25,
+      "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 spawns a Fleet session for a finding with no dispatch-key check (is one already running for this idea?) and discards the returned session id, so the task row created at :80 is never bound to the session: a re-fired signal opens a duplicate and nothing can find the session again. Re-verified 2026-10-10 against rev 25.",
+      "techniques": [
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 no key derived from the idea, no registry check, no name; the id spawnSession returns is dropped"
+        },
+        {
+          "technique": "brief-carries-the-session",
+          "verdict": "unknown",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:57 dispatchPrompt(idea) body not re-read this run"
+        }
+      ]
+    },
+    {
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+      "evaluatedRevision": 25,
+      "evidence": "src/stores/slices/system/fleetSlice.ts:357 (and :385 on EXITED) stamps lastActivityMs = Date.now() on every FLEET_SESSION_STATE event, a value the payload never carries, while the registry deliberately withholds that stamp for parked completions (src-tauri/src/commands/fleet/registry.rs:696 apply_transition_parked, used by mark_finished at :2287): a finished session reads as just-active and sorts to the top until the next full refresh. Re-verified 2026-10-10 against rev 25.",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/fleetSlice.ts:357 the consumer writes the registry's liveness-bookkeeping field itself instead of reading it, contradicting registry.rs:696"
+        },
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/fleetSlice.ts:385 the exited event is treated as activity, so the last-heard-from timestamp is fabricated client-side"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "fleet-orchestration",
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "reason": "stale not-applicable on agents-quick-answer (evaluated against sha256:a03459c799a53308); rev 25 changed only parallel-dispatch and completion-claim-verification, neither touching its precondition argument; left for a --stale run, budget spent on the rev-24 deviations"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "743a0ae5-b7d0-46a6-a915-cb82c7834bf8",
+      "reason": "fleet-monitor-shell: unknown with 2 of 18 techniques anchored; conformant needs 9 anchors, more than this budgeted run could read honestly"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T11:26:21Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "result-harvest",
+        "parallel-dispatch"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T11:26:21Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "session-registry",
+        "evidence-outranks-a-liveness-claim"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T11:26:21Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "session-registry",
+        "parallel-dispatch"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T11:26:21Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "brief-carries-the-session",
+        "parallel-dispatch"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T11:26:21Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "parallel-dispatch",
+        "brief-carries-the-session"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T11:26:21Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "session-registry",
+        "lifecycle-signals"
+      ],
+      "deviations": 2
+    }
+  ]
+}

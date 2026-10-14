@@ -2117,7 +2117,13 @@ fn build_decision_context_with_mode(
                 can_hire: c.spec.can_hire.unwrap_or(false),
                 authority: c.spec.authority.unwrap_or(false),
                 profile: personas_engine::responsibility::effective_profile(&c.spec),
-                profile_declared: c.spec.resource_profile.is_some(),
+                // A measured profile is not a declaration: the persona still
+                // sees its charter as undeclared and may declare one.
+                profile_declared: c
+                    .spec
+                    .resource_profile
+                    .as_ref()
+                    .is_some_and(|p| p.is_authored()),
                 profile_pinned: c.spec.resource_profile.as_ref().is_some_and(|p| p.pinned),
                 measured: measured.get(&c.id).cloned(),
             }
@@ -3129,7 +3135,10 @@ fn codex_model_effort(
 fn declared_difficulty(
     c: &crate::db::models::PersonaResponsibility,
 ) -> Option<crate::db::models::Difficulty> {
-    c.spec.resource_profile.as_ref().map(|p| p.difficulty)
+    c.spec
+        .resource_profile
+        .as_ref()
+        .and_then(|p| p.declared_difficulty())
 }
 /// One charter's `spec.modelOverride` (or `None`) resolved into a concrete
 /// model id, through the SAME chain `execute_persona_inner` walks: the override

@@ -24,6 +24,7 @@ import { autopilotReadout, autopilotTone } from '../../board/autopilotReadout';
 import type { ReactNode } from 'react';
 import type { useCapSetting } from '../shared';
 import { AutopilotTip } from './AutopilotTip';
+import { SchedulePlate } from './SchedulePlate';
 import { Engraved, Lamp } from './parts';
 import type { Tone } from './tone';
 
@@ -154,6 +155,7 @@ export function SupplyDeck({
     <aside className="flex w-[264px] flex-shrink-0 flex-col gap-2 overflow-y-auto border-r border-border p-2.5" data-testid="entry-e-supply">
       <CapRack cap={cap} running={running} overAdmitted={overAdmitted} />
       <AutopilotPlate onOpenOrchestration={onOpenOrchestration} />
+      <SchedulePlate />
       {usageSlot}
     </aside>
   );

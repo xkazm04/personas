@@ -28,6 +28,13 @@ const self: ResourceProfile = {
   declaredAt: '2026-09-17T10:00:00Z',
 };
 
+/** A measured row; the resource fields default to "no resource run yet". */
+const row = (over: Partial<ResponsibilityMeasured>): ResponsibilityMeasured => ({
+  responsibilityId: 'c1', passes: 0, avgCostUsd: 0, avgTokens: 0, peakRssMb: null, measuredEffort: null,
+  resourceRuns: 0, resourceRunsRequired: 5, cpuP95Share: null, ramPeakShare: null, gpuP95Share: null, dominant: null,
+  measuredMachine: null, measuredGpu: null, ...over,
+});
+
 const checked = (testId: string) => screen.getByTestId(testId).getAttribute('aria-checked');
 
 beforeEach(() => {
@@ -83,7 +90,7 @@ describe('CharterResourceCard', () => {
 
   it('highlights a measured band that differs from the declared one', async () => {
     getMeasured.mockResolvedValue([
-      { responsibilityId: 'c1', passes: 12, avgCostUsd: 1.4, avgTokens: 1_400_000, peakRssMb: null, measuredEffort: 'xl' },
+      row({ passes: 12, avgCostUsd: 1.4, avgTokens: 1_400_000, measuredEffort: 'xl' }),
     ]);
     render(<CharterResourceCard charter={charter(self)} personaId="p-mismatch" onPatch={vi.fn()} />);
     await screen.findByTestId('resp-profile-mismatch');
@@ -93,7 +100,7 @@ describe('CharterResourceCard', () => {
 
   it('a matching band is not a mismatch', async () => {
     getMeasured.mockResolvedValue([
-      { responsibilityId: 'c1', passes: 3, avgCostUsd: 0.2, avgTokens: 90_000, peakRssMb: null, measuredEffort: 'm' },
+      row({ passes: 3, avgCostUsd: 0.2, avgTokens: 90_000, measuredEffort: 'm' }),
     ]);
     render(<CharterResourceCard charter={charter(self)} personaId="p-match" onPatch={vi.fn()} />);
     await screen.findByTestId('resp-profile-measured-band');
@@ -102,11 +109,58 @@ describe('CharterResourceCard', () => {
 
   it('fleet-only passes (measuredEffort null) read as not measured', async () => {
     getMeasured.mockResolvedValue([
-      { responsibilityId: 'c1', passes: 5, avgCostUsd: 0, avgTokens: 0, peakRssMb: null, measuredEffort: null },
+      row({ passes: 5 }),
     ]);
     render(<CharterResourceCard charter={charter(self)} personaId="p-fleet" onPatch={vi.fn()} />);
     await screen.findByTestId('resp-profile-not-measured');
     expect(screen.getByTestId('resp-profile-measured')).toHaveAttribute('data-mismatch', 'false');
+  });
+
+  it('measured load: three bars over the runs, "learning" before the loop can act', async () => {
+    getMeasured.mockResolvedValue([
+      row({ resourceRuns: 3, cpuP95Share: 0.42, ramPeakShare: 0.18, gpuP95Share: null, dominant: 'cpu' }),
+    ]);
+    render(<CharterResourceCard charter={charter(self)} personaId="p-learning" onPatch={vi.fn()} />);
+    const axes = await screen.findByTestId('resp-profile-axes');
+    expect(axes).toHaveAttribute('data-learning', 'true');
+    expect(screen.getByTestId('resp-profile-axes-runs')).toHaveTextContent('Learning (3/5)');
+    // A null GPU draws no bar.
+    expect(screen.getByTestId('resp-profile-axes-bars').querySelectorAll('[data-axis]')).toHaveLength(2);
+  });
+
+  it('measured over enough runs, unpinned: no mismatch badge even when the tags differ', async () => {
+    getMeasured.mockResolvedValue([
+      row({ resourceRuns: 8, cpuP95Share: 0.7, ramPeakShare: 0.2, gpuP95Share: 0.3, dominant: 'cpu', measuredMachine: 'exclusive', measuredGpu: 'shared' }),
+    ]);
+    render(<CharterResourceCard charter={charter(self)} personaId="p-runs" onPatch={vi.fn()} />);
+    await screen.findByTestId('resp-profile-axes');
+    expect(screen.getByTestId('resp-profile-axes-runs')).toHaveTextContent('Measured over 8 runs');
+    expect(screen.queryByTestId('resp-profile-axes-mismatch')).toBeNull();
+  });
+
+  it('a pinned profile the measurement disagrees with gets a badge naming both values', async () => {
+    getMeasured.mockResolvedValue([
+      row({ resourceRuns: 6, cpuP95Share: 0.7, ramPeakShare: 0.2, gpuP95Share: 0.01, dominant: 'cpu', measuredMachine: 'exclusive', measuredGpu: 'none' }),
+    ]);
+    render(<CharterResourceCard charter={charter({ ...self, pinned: true })} personaId="p-pin-mismatch" onPatch={vi.fn()} />);
+    const badge = await screen.findByTestId('resp-profile-axes-mismatch');
+    // machine differs (heavy -> exclusive); gpu agrees (none) and is not named.
+    expect(badge).toHaveTextContent('Measured Exclusive, declared Heavy');
+  });
+
+  it('an operator profile whose measured tags agree gets no badge', async () => {
+    getMeasured.mockResolvedValue([
+      row({ resourceRuns: 6, cpuP95Share: 0.3, ramPeakShare: 0.2, dominant: 'cpu', measuredMachine: 'heavy', measuredGpu: 'none' }),
+    ]);
+    render(<CharterResourceCard charter={charter({ ...self, source: 'operator' })} personaId="p-op-match" onPatch={vi.fn()} />);
+    await screen.findByTestId('resp-profile-axes');
+    expect(screen.queryByTestId('resp-profile-axes-mismatch')).toBeNull();
+  });
+
+  it("a profile the loop set reads as measured, not as the operator's", async () => {
+    render(<CharterResourceCard charter={charter({ ...self, source: 'measured' })} personaId="p-src" onPatch={vi.fn()} />);
+    expect(screen.getByTestId('resp-profile-source')).toHaveTextContent('set from measured runs');
+    await screen.findByTestId('resp-profile-not-measured');
   });
 
   it('fetches once per persona: a second mount paints from the warm cache', async () => {

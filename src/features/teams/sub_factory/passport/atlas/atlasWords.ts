@@ -31,7 +31,6 @@ export const ATLAS_WORDS = {
   gaps: 'Gaps',
   auto: 'Auto',
   prod: 'Prod',
-  below: (n: number) => `${n} below`,
   noMatch: 'No projects match',
   noMatchHint: 'Try a name or a repository path.',
   clearSearch: 'Clear search',

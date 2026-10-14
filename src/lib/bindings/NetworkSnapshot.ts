@@ -6,4 +6,8 @@ import type { ManifestSyncMetrics } from "./ManifestSyncMetrics";
 import type { MessagingMetrics } from "./MessagingMetrics";
 import type { NetworkStatusInfo } from "./NetworkStatusInfo";
 
-export type NetworkSnapshot = { status: NetworkStatusInfo, health: ConnectionHealth, discoveredPeers: DiscoveredPeer[], messagingMetrics: MessagingMetrics, connectionMetrics: ConnectionMetricsSnapshot, manifestSyncMetrics: ManifestSyncMetrics, };
+/**
+ * Combined snapshot of network status, health, and discovered peers.
+ * Used to batch 3 separate polls into a single IPC call.
+ */
+export type NetworkSnapshot = { status: NetworkStatusInfo, health: ConnectionHealth, discoveredPeers: Array<DiscoveredPeer>, messagingMetrics: MessagingMetrics, connectionMetrics: ConnectionMetricsSnapshot, manifestSyncMetrics: ManifestSyncMetrics, };

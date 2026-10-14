@@ -1,0 +1,35 @@
+{
+  "schema": "conform-run/1",
+  "worker": "7a2f4de1-2c43-48e5-8ef6-d303455f1398",
+  "subject": "markdown-vault",
+  "evaluatedAt": "2026-10-10T11:02:19Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "markdown-vault",
+      "context": "ca705961-f138-494a-b0fe-f882c674d25a",
+      "reason": "already judged deviation on 2026-10-09 against the current digest sha256-b2:7a10f98b2d9488ac (revision 2, registry e6f59b26); git log shows no commit since 2026-10-08 and no uncommitted edit to the anchored files, so a re-judgment would duplicate a current verdict"
+    },
+    {
+      "subject": "markdown-vault",
+      "context": "7f6d3238-7136-4361-af8f-bca556ae2042",
+      "reason": "already judged deviation on 2026-10-09 against the current digest sha256-b2:7a10f98b2d9488ac (revision 2, registry e6f59b26); git log shows no commit since 2026-10-08 and no uncommitted edit to the anchored files, so a re-judgment would duplicate a current verdict"
+    },
+    {
+      "subject": "markdown-vault",
+      "context": "0c029a55-8e0a-47aa-a636-6e941425a7dc",
+      "reason": "already judged deviation on 2026-10-09 against the current digest sha256-b2:7a10f98b2d9488ac (revision 2, registry e6f59b26); git log shows no commit since 2026-10-08 and no uncommitted edit to the anchored files, so a re-judgment would duplicate a current verdict"
+    },
+    {
+      "subject": "markdown-vault",
+      "context": "83a8a744-2036-4e3e-9654-6fcec82334ff",
+      "reason": "already judged deviation on 2026-10-09 against the current digest sha256-b2:7a10f98b2d9488ac (revision 2, registry e6f59b26); git log shows no commit since 2026-10-08 and no uncommitted edit to the anchored files, so a re-judgment would duplicate a current verdict"
+    },
+    {
+      "subject": "markdown-vault",
+      "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+      "reason": "already judged deviation on 2026-10-09 against the current digest sha256-b2:7a10f98b2d9488ac (revision 2, registry e6f59b26); git log shows no commit since 2026-10-08 and no uncommitted edit to the anchored files, so a re-judgment would duplicate a current verdict"
+    }
+  ],
+  "consults": []
+}

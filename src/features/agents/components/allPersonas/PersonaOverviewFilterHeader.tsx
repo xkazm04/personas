@@ -110,7 +110,7 @@ export function PersonaOverviewFilterHeader({
         // so a filterable column header is typographically identical to the
         // plain and sortable headers it sits beside. `-mx-1.5` cancels the
         // button's own padding, keeping the label on the cell's text x-axis.
-        className={`group inline-flex items-center gap-1.5 px-1.5 py-1 -mx-1.5 rounded-input typo-label transition-colors ${
+        className={`group inline-flex items-center gap-1.5 px-1.5 py-1 -mx-1.5 rounded-input typo-caption font-mono uppercase tracking-widest transition-colors ${
           isFiltered
             ? 'text-primary bg-primary/8 hover:bg-primary/12'
             : 'text-foreground hover:text-foreground hover:bg-secondary/40'

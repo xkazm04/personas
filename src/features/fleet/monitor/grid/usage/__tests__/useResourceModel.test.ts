@@ -23,11 +23,11 @@ function inputs(over: Partial<ResourceInputs> = {}): ResourceInputs {
 }
 
 describe('buildResourceModel', () => {
-  it('orders providers claude, codex, grok — whatever order the backend used', () => {
+  it('orders providers claude, codex, grok, agy — whatever order the backend used', () => {
     const cli = buildSimCliUsage(NOW);
     const m = buildResourceModel(inputs({ cli: { providers: [...cli.providers].reverse() } }));
-    expect(m.providers.map((p) => p.id)).toEqual(['claude', 'codex', 'grok']);
-    expect(m.providers.map((p) => p.readOnly)).toEqual([false, true, true]);
+    expect(m.providers.map((p) => p.id)).toEqual(['claude', 'codex', 'grok', 'agy']);
+    expect(m.providers.map((p) => p.readOnly)).toEqual([false, true, true, true]);
   });
 
   it('carries the per-model weekly windows on the Claude plan that has them', () => {

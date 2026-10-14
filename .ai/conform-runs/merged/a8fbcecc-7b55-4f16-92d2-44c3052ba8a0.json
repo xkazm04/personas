@@ -1,0 +1,30 @@
+{"schema": "conform-run/1", "worker": "a8fbcecc-7b55-4f16-92d2-44c3052ba8a0", "subject": "schema-driven-ui",
+ "evaluatedAt": "2026-10-10T12:06:01Z",
+ "pairs": [
+  {"context": "4560e824-e952-45a9-8aef-fe88d721952e", "subject": "schema-driven-ui", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/companion/dispatcher/dispatch.rs:985 compose_cockpit stores the emitted widgets array without checking a single kind, so a hallucinated kind or bad config first surfaces in front of the user; the vocabulary is hand-synced in four places (widgetRegistry.ts:9, catalog.rs:784, briefing.rs:48, dispatch.rs:996)",
+   "techniques": [
+    {"technique": "spec-validation-and-repair", "verdict": "deviation", "evidence": "src-tauri/src/companion/dispatcher/dispatch.rs:985 widgets stored raw at dispatch; src/features/home/sub_cockpit/widgetRegistry.ts:55 config is Record<string, unknown> with no per-kind contract to validate against"},
+    {"technique": "emitter-registry-sync", "verdict": "deviation", "evidence": "src/features/home/sub_cockpit/widgetRegistry.ts:9 tells the author to hand-update constitution.md; src-tauri/src/companion/dispatcher/dispatch.rs:996 EXPLAIN_KINDS is a parallel kind list, the two-authorities problem the technique names"}
+   ],
+   "registryProposal": "Re-confirmation of the 2026-10-05 verdict at HEAD (anchors unchanged, subject digest unchanged). The prior anchor dispatch.rs:992 now lands on a comment ('Unlike compose_cockpit, widget kinds are validated here'); :985 is the line that stores the unvalidated widgets."},
+  {"context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504", "subject": "schema-driven-ui", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/companions/athena/InlineChatCard.tsx:52 six chat-only kinds (:52,:62,:71,:80,:89,:98) are special-cased by an if-chain before the registry lookup at :102, a second unregistered vocabulary with no config contract; each new kind edits the dispatcher",
+   "techniques": [
+    {"technique": "registry-mapping", "verdict": "deviation", "evidence": "src/features/companions/athena/InlineChatCard.tsx:52 dispatch has two paths (conditional chain, then lookup at :102); the technique's 'dispatch is a lookup, not a conditional' rule"},
+    {"technique": "node-vocabulary-design", "verdict": "realized", "evidence": "src/features/companions/athena/InlineChatCard.tsx:106 an unknown kind renders an error tile naming the kind, not an empty render"}
+   ],
+   "registryProposal": "Upward lesson for registry-mapping: the six special-cased kinds are deliberately unpinnable because they write on confirm (comments at InlineChatCard.tsx:57-61, :65-70). The technique would serve this better by naming a per-entry capability flag (pinnable / consent-bound) on the registration, so 'chat-only' stays in the registry instead of forking dispatch."},
+  {"context": "b30528dc-8655-4b38-800e-8cb73e96d618", "subject": "schema-driven-ui", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "tests/playwright/companion-design-cards.spec.ts:8 injects synthetic chat-card state and asserts DOM; the context is Playwright specs only and owns no spec vocabulary, registry, validator or renderer (matched on spec/button tokens)",
+   "techniques": []}
+ ],
+ "declined": [],
+ "consults": [
+  {"ts": "2026-10-10T12:06:01Z", "bundle": "software-engineering", "subjects": ["schema-driven-ui"], "techniques": ["spec-validation-and-repair", "emitter-registry-sync"], "deviations": 1},
+  {"ts": "2026-10-10T12:06:01Z", "bundle": "software-engineering", "subjects": ["schema-driven-ui"], "techniques": ["registry-mapping", "node-vocabulary-design"], "deviations": 1},
+  {"ts": "2026-10-10T12:06:01Z", "bundle": "software-engineering", "subjects": ["schema-driven-ui"], "techniques": [], "deviations": 0}
+ ]}

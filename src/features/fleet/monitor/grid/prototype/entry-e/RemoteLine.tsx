@@ -1,13 +1,16 @@
 // A session running on ANOTHER device, as a line of its bay: the same Board
 // tile a local session wears (`SessionLine`), folded into the same piles, with
 // a laptop on the puck where a local card has its origin, and the device
-// under the title. A remote row whose state could not be read is off.
+// under the title. A remote row whose state could not be read is off. The
+// device line carries the mesh's device glyph, the same mark a peer's agents
+// wear, so 'All' reads which device every line is on.
 
 import { memo } from 'react';
 import { Laptop } from 'lucide-react';
 import type { RemoteSessionView } from '@/lib/bindings/RemoteSessionView';
 import { effectiveRemoteState } from '@/lib/network/remoteSessionModel';
 import { pileSkin, sessionPileKey } from './pileSkin';
+import { DeviceGlyph } from './devices/DeviceGlyph';
 
 export const RemoteLine = memo(function RemoteLine({
   view, now, onOpen,
@@ -34,7 +37,10 @@ export const RemoteLine = memo(function RemoteLine({
       <span className="fb-face fb-ink ae-puck" aria-hidden><Laptop className="h-4 w-4" /></span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate typo-heading">{title}</span>
-        <span className="truncate typo-label">{device}</span>
+        <span className="flex min-w-0 items-center gap-1 typo-label">
+          <DeviceGlyph peerId={view.peerId} name={device} />
+          <span className="truncate">{device}</span>
+        </span>
       </span>
     </div>
   );

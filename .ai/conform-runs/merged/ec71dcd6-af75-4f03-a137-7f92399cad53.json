@@ -1,0 +1,18 @@
+{"schema": "conform-run/1", "worker": "ec71dcd6-af75-4f03-a137-7f92399cad53", "subject": "scoring-rubrics",
+ "evaluatedAt": "2026-10-12T12:38:20Z",
+ "evaluatedAgainst": "sha256-b2:476078a37f34137d", "evaluatedRevision": 3,
+ "pairs": [{"context": "92f6c0fc-8d5c-43a7-bab8-1851973d5198", "subject": "scoring-rubrics", "bundle": "software-engineering",
+  "state": "deviation",
+  "evaluatedAgainst": "sha256-b2:476078a37f34137d", "evaluatedRevision": 3,
+  "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:124 feeds signal.successRate into the heaviest (0.30) dimension ignoring successRateSource, which src/stores/slices/overview/personaHealthSlice.ts:415 sets to 100 for an unmeasured persona, so an idle agent collects full marks; re-judged 2026-10-12, 6 of 7 techniques deviate (weight-lenses n/a), code unchanged since 2026-09-24",
+  "techniques": [
+   {"technique": "unmeasured-honesty", "verdict": "deviation", "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:124 unknown success (=100, personaHealthSlice.ts:415) enters the composite as a ceiling and also feeds heartbeatScore; speed/cost are excluded+renormalized (:136-147) but no coverage travels with the score and no coverage floor exists"},
+   {"technique": "weight-design", "verdict": "deviation", "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:58 one vector in one place, but no asserted sum, no per-weight rationale and no rubric version"},
+   {"technique": "normalization", "verdict": "deviation", "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:87 activity is cohort-relative to the raw max (one outlier compresses everyone), and polarity inversion is an inline formula at :74/:81 rather than a declared per-dimension property"},
+   {"technique": "score-explanation", "verdict": "deviation", "evidence": "src/features/overview/sub_leaderboard/components/LeaderboardMatrixView.tsx:258 bands each dimension cell with the composite's 80/60/40 thresholds (re-declared at leaderboardViewHelpers.ts:43 beside assignTier at leaderboardScoring.ts:97), shows no weight or contribution, and renders an absent speed/cost as a neutral 50 instead of 'not measured'"},
+   {"technique": "gap-ranking", "verdict": "deviation", "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:34 LeaderboardEntry carries no gap list or next action; the tie-break at :182 ends on successRate, not on stable persona identity, so equal rows can reorder"},
+   {"technique": "rubric-stability", "verdict": "deviation", "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:58 no version stamp beside the weights and no golden fixtures (git ls-files has no leaderboard test)"},
+   {"technique": "weight-lenses", "verdict": "not-applicable", "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:58 one population (personas) graded under one vector; no per-class weighting is claimed"}
+  ]}],
+ "declined": [],
+ "consults": [{"ts": "2026-10-12T12:38:20Z", "bundle": "software-engineering", "subjects": ["scoring-rubrics"], "techniques": ["unmeasured-honesty", "weight-design", "normalization", "score-explanation", "gap-ranking", "rubric-stability", "weight-lenses"], "deviations": 6}]}

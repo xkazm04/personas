@@ -2622,7 +2622,13 @@
     "profile_tokens_over": "trên {from} token",
     "profile_tokens_under": "dưới {to} token",
     "profile_units": "{count} đơn vị",
-    "profile_untagged_note": "Chưa có gì được khai báo, vì vậy các lượt chạy được tính theo giá trị mặc định hiển thị ở đây. Tác nhân sẽ khai báo hồ sơ riêng của nó vào lần thức dậy quyết định tiếp theo."
+    "profile_untagged_note": "Chưa có gì được khai báo, vì vậy các lượt chạy được tính theo giá trị mặc định hiển thị ở đây. Tác nhân sẽ khai báo hồ sơ riêng của nó vào lần thức dậy quyết định tiếp theo.",
+    "profile_axes_dominant": "Chủ yếu {axis}",
+    "profile_axes_label": "Tải đo được",
+    "profile_axes_learning": "Đang học ({count}/{total})",
+    "profile_axes_mismatch": "Đo được {measured}, khai báo {declared}",
+    "profile_axes_runs": "Đo qua {count} lần chạy",
+    "profile_source_measured": "được đặt từ các lần chạy đo được"
   },
   "role_card": {
     "assign": "Gán",

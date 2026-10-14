@@ -243,7 +243,7 @@ export default function ReportList() {
           onReset={() => colWidths.clearColumn('persona')}
         />
       </div>
-      <div role="columnheader" className="relative flex items-center px-4 py-1.5 typo-label text-foreground">
+      <div role="columnheader" className="relative flex items-center px-4 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">
         {t.overview.reports_view.col_title}
         <ColumnResizeHandle
           label={t.shared.resize_column}
@@ -277,7 +277,7 @@ export default function ReportList() {
           onReset={() => colWidths.clearColumn('status')}
         />
       </div>
-      <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground">{t.overview.reports_view.col_created}</div>
+      <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">{t.overview.reports_view.col_created}</div>
     </div>
   );
 

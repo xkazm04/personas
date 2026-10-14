@@ -1,0 +1,30 @@
+{
+  "schema": "conform-run/1",
+  "worker": "48cf0c60-207d-4ec1-892a-da8f678041ab",
+  "subject": "agent-chaining",
+  "evaluatedAt": "2026-10-10T02:05:07Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "agent-chaining",
+      "context": "03960450-6979-4412-9de3-35c897fe56d2",
+      "reason": "agents-executions-components: already judged 2026-10-09 (deviation) against sha256-b2:596d59ae9fc2d310 rev 12, which is the registry index digest at 32d7899f (revisionsBehind 0); no commit since touches the anchored chain code, and every anchor was re-printed and still says what its evidence claims - re-judging would duplicate a current verdict"
+    },
+    {
+      "subject": "agent-chaining",
+      "context": "208f50de-5d3b-4345-9fed-1c106a7a36e9",
+      "reason": "execution-detail-inspector: already judged 2026-10-09 (deviation) against sha256-b2:596d59ae9fc2d310 rev 12, which is the registry index digest at 32d7899f (revisionsBehind 0); no commit since touches the anchored chain code, and every anchor was re-printed and still says what its evidence claims - re-judging would duplicate a current verdict"
+    },
+    {
+      "subject": "agent-chaining",
+      "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+      "reason": "i18n-generated: already judged 2026-10-09 (deviation) against sha256-b2:596d59ae9fc2d310 rev 12, which is the registry index digest at 32d7899f (revisionsBehind 0); no commit since touches the anchored chain code, and every anchor was re-printed and still says what its evidence claims - re-judging would duplicate a current verdict"
+    },
+    {
+      "subject": "agent-chaining",
+      "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc",
+      "reason": "triggers-studio: already judged 2026-10-09 (deviation) against sha256-b2:596d59ae9fc2d310 rev 12, which is the registry index digest at 32d7899f (revisionsBehind 0); no commit since touches the anchored chain code, and every anchor was re-printed and still says what its evidence claims - re-judging would duplicate a current verdict"
+    }
+  ],
+  "consults": []
+}

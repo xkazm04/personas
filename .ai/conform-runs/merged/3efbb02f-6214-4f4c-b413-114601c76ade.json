@@ -1,0 +1,171 @@
+{
+  "schema": "conform-run/1",
+  "worker": "3efbb02f-6214-4f4c-b413-114601c76ade",
+  "subject": "voice-io",
+  "evaluatedAt": "2026-10-10T02:19:28Z",
+  "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+  "evaluatedRevision": 20,
+  "pairs": [
+    {
+      "context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/sub_voice/voiceEngineShared.tsx:145 the Voice settings install is a second implementation of the setup install (useCreateAthenaInstall.ts:3 \"Mirrors VoiceEngineInstallBlock\") and its preview (:322/:330) has no latest-wins gate, so a stopped or superseded synthesis still plays - the drift voice-setup-experience rule 5 predicts; rev-19 findings persist (athenaSlice.ts:353 browser STT default, BubbleReadAloud.tsx:65 raw markdown to synthesis)",
+      "techniques": [
+        {
+          "technique": "voice-setup-experience",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/sub_voice/voiceEngineShared.tsx:145 settings VoiceEngineInstallBlock duplicates the wizard install hook (src/features/companions/athena/sub_create/engine/useCreateAthenaInstall.ts:3) instead of re-entering the flow; :330 play(url) runs after a stop during synthesis, while the wizard gates it (src/features/companions/athena/sub_create/engine/useCreateAthenaVoices.ts:132)"
+        },
+        {
+          "technique": "on-device-vs-cloud",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/athenaSlice.ts:353 athenaSttEngine defaults to browser, whose audio goes to the OS vendor cloud (src/i18n/locales/en.json:19447); capture must default on-device with cloud opt-in, and the setup card labels it only \"Browser\" (src/i18n/locales/en.json:20486)"
+        },
+        {
+          "technique": "speech-ready-text",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/BubbleReadAloud.tsx:65 synthesizes raw markdown content, bypassing the door at src/features/companions/athena/chat/athenaChatSpeech.ts:9 that the live voice path uses"
+        },
+        {
+          "technique": "tts-pipeline",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/BubbleReadAloud.tsx:73 play() starts after an unmount mid-synthesis (no cancellation reaches the synthesis gap) and src/features/companions/athena/voicePlayback.ts:47 hands callers the raw audio element"
+        }
+      ],
+      "registryProposal": "Judged against index digest sha256-b2:fa1c8ca716f872dc rev 20, which includes the UNCOMMITTED voice-setup-experience technique in the registry working tree; the map pair still carries b7d28920c42693f8 rev 19.",
+      "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+      "evaluatedRevision": 20
+    },
+    {
+      "context": "bcb603ad-ce58-4b76-9623-aa99ace984af",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/tts/kokoro.rs:222 spawns a fresh sherpa process per utterance, reloading the model every call (~1.5s of a 2.6-3.0s preview), so the default live engine pays the process boundary on every reply (real-time-synthesis-budget); whisper.rs:210 no-speech is AppError::Internal like a crash; kokoro_installer.rs:44 install lock is per-process only",
+      "techniques": [
+        {
+          "technique": "real-time-synthesis-budget",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/tts/kokoro.rs:222 tokio::process::Command::new per utterance; kokoro.rs:47 documents the ~310MB model reload on each one-shot call - no resident engine"
+        },
+        {
+          "technique": "stt-pipeline",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/stt/whisper.rs:210 an empty transcript (no speech) returns AppError::Internal, indistinguishable from engine failure"
+        },
+        {
+          "technique": "engine-abstraction",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/stt/whisper.rs:101 engine_status reports installed as a single is_some bool, collapsing absent and broken"
+        },
+        {
+          "technique": "voice-setup-experience",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/tts/kokoro_installer.rs:44 INSTALL_INFLIGHT is a process-static guard over the shared per-user engine home (src-tauri/src/companion/tts/mod.rs:36), so a second app installing at once is not excluded (rule 7); realized: verify-after-extract at kokoro_installer.rs:159 and the af_heart_is_sid_3 pin at src-tauri/src/companion/tts/kokoro_catalog.rs:91"
+        }
+      ],
+      "registryProposal": "Judged against index digest sha256-b2:fa1c8ca716f872dc rev 20, which includes the UNCOMMITTED voice-setup-experience technique in the registry working tree; the map pair still carries b7d28920c42693f8 rev 19.",
+      "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+      "evaluatedRevision": 20
+    },
+    {
+      "context": "3effd422-2610-4c8a-bc02-53aceafd827c",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/companion/stt.rs:33 companion_stt_transcribe returns a bare String, so no-speech crosses IPC as AppError::Internal text (src-tauri/src/companion/stt/whisper.rs:210) and src/features/companions/athena/useLocalDictation.ts:266 renders err.message - silence, no-speech and engine failure cannot stay three typed facts across the boundary",
+      "techniques": [
+        {
+          "technique": "stt-pipeline",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/stt.rs:33 Result<String, AppError> carries no typed no-speech outcome; verdict-survives-boundary is violated at the IPC seam"
+        },
+        {
+          "technique": "voice-setup-experience",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/companion/voice.rs:166 companion_tts_kokoro_download takes no URL - the client asks for a component and addresses stay constants in the installer (rule 2)"
+        }
+      ],
+      "registryProposal": "Judged against index digest sha256-b2:fa1c8ca716f872dc rev 20, which includes the UNCOMMITTED voice-setup-experience technique in the registry working tree; the map pair still carries b7d28920c42693f8 rev 19.",
+      "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+      "evaluatedRevision": 20
+    },
+    {
+      "context": "3f38546e-e970-4837-97f7-f0504aa32daf",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/useHoldToTalk.ts:117 runs whichever option a bare spoken digit names, including approve (src/features/companions/athena/decision/useDecisionQueue.ts:112), with no confirmation, and src/features/companions/athena/decision/actionRisk.ts:23 never gates execution - destructive spoken actions must confirm with the interpretation echoed back",
+      "techniques": [
+        {
+          "technique": "spoken-intent-parsing",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/useHoldToTalk.ts:117 runDecisionOption(opt) straight from parseSpokenDecision with no cost-of-being-wrong gate or echoed confirmation"
+        }
+      ],
+      "registryProposal": "Judged against index digest sha256-b2:fa1c8ca716f872dc rev 20, which includes the UNCOMMITTED voice-setup-experience technique in the registry working tree; the map pair still carries b7d28920c42693f8 rev 19. Prior evidence for this pair cited useDecisionQueue.ts and actionRisk.ts without the decision/ folder; those anchors did not resolve and are corrected here.",
+      "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+      "evaluatedRevision": 20
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-10T02:19:28Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [
+        "voice-setup-experience",
+        "on-device-vs-cloud",
+        "speech-ready-text",
+        "tts-pipeline"
+      ],
+      "deviations": 4,
+      "context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504"
+    },
+    {
+      "ts": "2026-10-10T02:19:28Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [
+        "real-time-synthesis-budget",
+        "stt-pipeline",
+        "engine-abstraction",
+        "voice-setup-experience"
+      ],
+      "deviations": 4,
+      "context": "bcb603ad-ce58-4b76-9623-aa99ace984af"
+    },
+    {
+      "ts": "2026-10-10T02:19:28Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [
+        "stt-pipeline",
+        "voice-setup-experience"
+      ],
+      "deviations": 1,
+      "context": "3effd422-2610-4c8a-bc02-53aceafd827c"
+    },
+    {
+      "ts": "2026-10-10T02:19:28Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [
+        "spoken-intent-parsing"
+      ],
+      "deviations": 1,
+      "context": "3f38546e-e970-4837-97f7-f0504aa32daf"
+    }
+  ]
+}

@@ -1,0 +1,288 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d849730c-222f-4517-b5fc-14d6ef2ca524",
+  "subject": "canvas-graph",
+  "evaluatedAt": "2026-10-13T09:28:13.108036+00:00",
+  "provider": "agy",
+  "model": "gemini-3.8-flash-high",
+  "pairs": [
+    {
+      "context": "vault-dependency-graph",
+      "subject": "canvas-graph",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:42 Local hover state in GraphCanvas triggers parent re-renders that re-evaluate the full node and edge collection, defeating memoization and causing frame drops on continuous pointer moves.",
+      "techniques": [
+        {
+          "technique": "render-budget",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:145 Each node receives an inline arrow callback allocated anew on every render, defeating child memoization during hover state changes."
+        },
+        {
+          "technique": "canvas-accessibility",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:192 Interactive SVG node elements render with mouse click and hover handlers but lack role, tabIndex, and keyboard listeners for roving focus."
+        },
+        {
+          "technique": "edge-management",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:120 Edges attach to node centers instead of deriving boundary anchor geometry using node radii, and edges have no fat hit-testing stroke."
+        },
+        {
+          "technique": "graph-layout",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_dependencies/graphLayout.ts:65 Node spacing is parameterized on members.length and distance on ordinal index, causing runtime arrivals to re-seat every node in the cluster."
+        },
+        {
+          "technique": "viewport-transform",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:55 Layout positions scale directly to container pixel dimensions with no coordinate authority module or screen-to-world conversion."
+        },
+        {
+          "technique": "direct-manipulation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:93 The credential dependency view is a read-only topology visualization without drag-and-drop node placement or edge-authoring interactions."
+        }
+      ]
+    },
+    {
+      "context": "triggers-studio",
+      "subject": "canvas-graph",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/triggers/sub_studio/TriggerStudioCanvas.tsx:17 Searched for toWorld, toScreen, zoom-to-point, and force-directed with zero hits across context files; TriggerStudioCanvas delegates to StudioPatchbay, which renders a linear ledger list rather than a 2D spatial canvas graph.",
+      "techniques": [
+        {
+          "technique": "canvas-accessibility",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:118 Accessible attributes exist on drawer buttons of the patchbay ledger, but canvas roving focus across 2D spatial nodes does not apply."
+        },
+        {
+          "technique": "direct-manipulation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:181 Patch cables are selected via modal options and card clicks in a scrolling ledger rather than spatial drag-and-drop gestures or pointer capture."
+        },
+        {
+          "technique": "edge-management",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:92 Routes are rendered as structured list rows in a ledger rather than vector paths requiring anchor computation or fat-stroke hit testing."
+        },
+        {
+          "technique": "graph-layout",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:72 Routing state structures rows for a vertical ledger without auto-layout algorithms or 2D node placement coordinates."
+        },
+        {
+          "technique": "render-budget",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:245 Progressive reveal tracks row cascades in a DOM list; viewport culling and pan transform isolation do not apply."
+        },
+        {
+          "technique": "viewport-transform",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/TriggerStudioCanvas.tsx:16 The entry container uses CSS flex layout for the ledger without world-screen coordinate conversions or camera transforms."
+        }
+      ],
+      "absenceTerms": [
+        "toWorld",
+        "toScreen",
+        "zoom-to-point",
+        "force-directed"
+      ]
+    },
+    {
+      "context": "shared-components-layout",
+      "subject": "canvas-graph",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/shared/components/layout/ContentLayout.tsx:51 Searched for toWorld, toScreen, zoom-to-point, and force-directed with zero hits across context directories; shared-components-layout provides page shell and document scaffolding primitives rather than a 2D spatial canvas graph.",
+      "techniques": [
+        {
+          "technique": "canvas-accessibility",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/PanelTabBar.tsx:73 Tab bar implements keyboard navigation for linear tabs, but spatial 2D roving canvas focus is not applicable."
+        },
+        {
+          "technique": "direct-manipulation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/SectionCard.tsx:103 Cards render static or collapsible document containers without pointer capture or drag-to-connect interactions."
+        },
+        {
+          "technique": "edge-management",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/ActionRow.tsx:18 ActionRow organizes horizontal button toolbars without graph edges or edge-management routing."
+        },
+        {
+          "technique": "graph-layout",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/settings/SettingsScaffold.tsx:5 SettingsScaffold organizes sections with a vertical scroll-spy nav rail rather than 2D graph auto-layout algorithms."
+        },
+        {
+          "technique": "render-budget",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/DeferUntilIdle.tsx:56 DeferUntilIdle schedules below-fold DOM commits via requestIdleCallback; viewport culling and pan transform budgeting do not apply."
+        },
+        {
+          "technique": "viewport-transform",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/layout/ContentLayout.tsx:3 Content layout manages native document scrolling with header scroll shadows rather than a 2D camera viewport transform."
+        }
+      ],
+      "absenceTerms": [
+        "toWorld",
+        "toScreen",
+        "zoom-to-point",
+        "force-directed"
+      ]
+    },
+    {
+      "context": "mastermind-popovers",
+      "subject": "canvas-graph",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:28 Searched for toWorld, toScreen, zoom-to-point, and force-directed with zero hits across context directories; mastermind-popovers provides HTML modal and popover drill-down overlays rather than a 2D spatial canvas graph.",
+      "techniques": [
+        {
+          "technique": "canvas-accessibility",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:20 Popover handles Escape key for modal dismissal, but canvas roving keyboard navigation does not apply to floating list overlays."
+        },
+        {
+          "technique": "direct-manipulation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:63 Pointer events stop propagation to prevent dismissing the popover shell; no node dragging or canvas gestures exist."
+        },
+        {
+          "technique": "edge-management",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/DimListPopover.tsx:36 List items render colored status indicator dots in an HTML list rather than graph edges."
+        },
+        {
+          "technique": "graph-layout",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/DimListPopover.tsx:18 Popover takes caller-clamped viewport coordinate offsets for popup positioning rather than executing graph auto-layout algorithms."
+        },
+        {
+          "technique": "render-budget",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/useEventCallback.ts:9 Provides referentially stable callback wrappers for event handlers, but viewport culling and spatial render budgeting do not apply to popovers."
+        },
+        {
+          "technique": "viewport-transform",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:62 Popover uses absolute/fixed CSS positioning offsets without world-screen camera coordinate transformations."
+        }
+      ],
+      "absenceTerms": [
+        "toWorld",
+        "toScreen",
+        "zoom-to-point",
+        "force-directed"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "canvas-graph",
+      "context": "teams-canvas",
+      "reason": "withdrawn after review: reviewer (sonnet): The primary anchor useAssignmentProgressListener.ts:10 is only a hook signature, so it does not show that a graph canvas is absent. MastermindPage.tsx:58 is an import line, not the 'portfolio navigation' the seat describes. The same file imports clearCanvasFocus and publishCanvasScene, and its heade"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-13T09:28:13.108036+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "canvas-graph"
+      ],
+      "techniques": [
+        "canvas-accessibility",
+        "direct-manipulation",
+        "edge-management",
+        "graph-layout",
+        "render-budget",
+        "viewport-transform"
+      ],
+      "deviations": 1,
+      "context": "vault-dependency-graph",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-13T09:28:13.108036+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "canvas-graph"
+      ],
+      "techniques": [
+        "canvas-accessibility",
+        "direct-manipulation",
+        "edge-management",
+        "graph-layout",
+        "render-budget",
+        "viewport-transform"
+      ],
+      "deviations": 0,
+      "context": "triggers-studio",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-13T09:28:13.108036+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "canvas-graph"
+      ],
+      "techniques": [
+        "canvas-accessibility",
+        "direct-manipulation",
+        "edge-management",
+        "graph-layout",
+        "render-budget",
+        "viewport-transform"
+      ],
+      "deviations": 0,
+      "context": "teams-canvas",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-13T09:28:13.108036+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "canvas-graph"
+      ],
+      "techniques": [
+        "canvas-accessibility",
+        "direct-manipulation",
+        "edge-management",
+        "graph-layout",
+        "render-budget",
+        "viewport-transform"
+      ],
+      "deviations": 0,
+      "context": "shared-components-layout",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-13T09:28:13.108036+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "canvas-graph"
+      ],
+      "techniques": [
+        "canvas-accessibility",
+        "direct-manipulation",
+        "edge-management",
+        "graph-layout",
+        "render-budget",
+        "viewport-transform"
+      ],
+      "deviations": 0,
+      "context": "mastermind-popovers",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    }
+  ]
+}

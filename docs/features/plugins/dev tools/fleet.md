@@ -471,6 +471,47 @@ promotion unbinds its still-`queued` task rows
 (`dev_tasks::release_tasks_for_unstarted_session`) so the idea is
 re-dispatchable — exactly what a drain-deferred task used to be.
 
+### Measured resources (spark device-mesh)
+
+Every live fleet session and persona execution is sampled for CPU, RAM and GPU
+across its whole process tree - the CLI plus everything it spawned, so a
+`cargo build` a session starts is that session's cost (`engine::resources`).
+
+- **One sampler**, every 5 s, and only while at least one run is live; with none
+  it parks (no polling). Each tick is ONE process-table refresh
+  (`sysinfo`, `ProcessesToUpdate::All`) and ONE GPU read (PDH
+  `\GPU Engine(*)\Utilization Percentage`, instances matched to pids by their
+  `pid_<n>` prefix), then a walk from each run's root pid. A child counts only
+  if it started no earlier than its parent, so a recycled Windows pid cannot
+  adopt a stranger.
+- **Shares of this device**: CPU% summed over the tree / (100 x logical cores);
+  resident RAM summed / total RAM; GPU engine utilisation summed, clamped to 1.
+  GPU is `null` off Windows, when the counters are unavailable, and on the first
+  tick (PDH needs two collections for a rate) - never `0`.
+- **Live**: `fleet-resource-sample` (payload `LiveResourceSample[]`, every live
+  run's latest sample) after every tick, and again when a run leaves the live
+  set; `resource_live_samples` returns the same set for a listener that mounted
+  late.
+- **Where the sampler hears about runs**: `FleetRegistry::adopt_spawn` (the one
+  door every spawn lane lands a `childPid` on) and `pty::finalize_child_exit`
+  (both child lanes, every exit branch: exit, doze, reap, hibernate - a woken
+  session gets a new id, so each process life is its own run); for executions,
+  the runner's `register_pid` / `unregister_pid`. A root that disappears without
+  an end hook is ended by the sampler itself.
+- **Summaries**: when a run ends, one append-only `run_resource_summaries` row
+  (p95 CPU, peak RAM, p95 GPU, dominant axis, sample count, start/end) -
+  none for a run shorter than one tick; `(run_kind, run_id)` is unique, so a
+  repeated end writes nothing. `resource_run_summaries(personaId, limit?)`
+  lists a persona's newest first (default 50, max 500).
+- **Feeds admission**: a summary of a charter's run triggers the profile loop
+  (see `docs/features/personas/02-capabilities.md`, Resource profile), and
+  admission reads the charter's profile fresh at dispatch
+  (`attention::dispatch_resources` -> `effective_profile`), so a measured profile
+  is charged from the next dispatch with no change to `budgets.rs`.
+
+Sessions the fleet did not dispatch for a charter (manual, Athena, contest
+seats) are measured and summarised but feed no profile.
+
 ## Run harvest — what the fleet delivered
 
 Every dispatch used to end with the operator hand-compiling the same report:

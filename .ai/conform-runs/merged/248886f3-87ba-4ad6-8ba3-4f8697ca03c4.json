@@ -1,0 +1,36 @@
+{"schema": "conform-run/1", "worker": "248886f3-87ba-4ad6-8ba3-4f8697ca03c4", "subject": "companion-runtime",
+ "evaluatedAt": "2026-10-10T02:10:24Z",
+ "pairs": [
+  {"context": "bcb603ad-ce58-4b76-9623-aa99ace984af", "subject": "companion-runtime", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 collect_all folds every trigger's Err into an empty Vec with no log (also :328 dev_goal_nudges, incident_triggers.rs:99), so a failed goal/backlog/incident read is indistinguishable from 'nothing to report' and the tick's warn at commands/companion/mod.rs:657 never sees it; conversation_resume latches at triggers.rs:207 before reading, so one failed read loses welcome-back for the process. credential_triggers.rs:106 is the in-repo contrast that logs.",
+   "techniques": [
+    {"technique": "signal-economy-contract", "verdict": "deviation", "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 swallowed trigger errors break 'tell a quiet companion from a broken one'; the producer-side report-or-absorb itself is realized at src-tauri/src/companion/proactive/execution_review.rs:816 (drop/digest/deep_dive counts on the turn ledger, decided before any turn is minted)"},
+    {"technique": "autonomous-cycle-hosting", "verdict": "realized", "evidence": "src-tauri/src/companion/proactive/execution_review.rs:697 in-process single-flight InflightGuard; :717 wake-window admission gate before the cursor; :131/:136 declared scan/batch caps with overflow counted (:173); :734 two-phase cursor advances only on success; src-tauri/src/companion/proactive/budget.rs:23 conservative default delivery ceiling"},
+    {"technique": "metered-llm-seam", "verdict": "realized", "evidence": "src-tauri/src/companion/proactive/execution_review.rs:752 the triage leg goes through src-tauri/src/companion/athena_reaction.rs:420 cli_text_tracked_on with required leg kind + tier, one ledger row per call and failures recorded via record_failed_leg"}
+   ],
+   "registryProposal": "Upward lesson for signal-economy-contract: this repo's execution_review.rs records the triage verdict split (drop/digest/deep_dive) as the turn-ledger outcome of the very leg that decided it, which makes 'the ratio is the instrument' fall out of the metering row for free - worth an application (rust--signal-economy-contract). Also: the technique names failure-not-empty-success for cycles but not for the CANDIDATE-GATHERING stage that feeds the gate; a per-source unwrap_or_default is the commonest way the quiet/broken distinction dies and deserves one sentence."},
+  {"context": "336089a8-bb18-449c-a62e-ca76b02097fb", "subject": "companion-runtime", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "tests/playwright/companion-bridge.ts:5 drives the real running app over HTTP -> JS bridge -> DOM and sends turns by typing into the composer (:266-269), holding no turn logic, store, model leg or catalog; per host-seam-contracts an e2e suite driving the shipped app is a different instrument, so no runtime technique's precondition holds here.",
+   "techniques": [
+    {"technique": "host-seam-contracts", "verdict": "not-applicable", "evidence": "tests/playwright/companion-bridge.ts:268 sendMessageNoWait fills the UI composer rather than calling or re-implementing the turn, so it is neither a second consumer nor a parity copy"}
+   ]},
+  {"context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a", "subject": "companion-runtime", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/companion/brain/cockpit.rs:3 lets compose_cockpit overwrite the singleton spec and still no cockpit reset command exists, while the dashboard reset at src-tauri/src/companion/brain/dashboard.rs:176 is still #[allow(dead_code)] awaiting a command (re-confirmed 2026-10-10, unchanged since 2026-10-05); a model-composed arrangement has no one-action way back to the default.",
+   "techniques": [
+    {"technique": "action-catalog-single-source", "verdict": "deviation", "evidence": "src-tauri/src/companion/brain/dashboard.rs:176 a restore function with no control wired to it is a mechanism, not a reset"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "companion-runtime", "context": "3effd422-2610-4c8a-bc02-53aceafd827c", "reason": "judged 2026-10-05 against the current digest (rev 4), not stale; not re-read this run"},
+  {"subject": "companion-runtime", "context": "b0e9ba6b-7737-43ec-b551-9bcc1b71d76f", "reason": "judged 2026-10-05 against the current digest (rev 4), not stale; not re-read this run"},
+  {"subject": "companion-runtime", "context": "d77a22ee-23cb-42f3-a910-590f8622977f", "reason": "judged 2026-10-05 against the current digest; actionLabel still has no pinning test (no *.test.ts references it) but the full pair was not re-read"},
+  {"subject": "companion-runtime", "context": "3f38546e-e970-4837-97f7-f0504aa32daf", "reason": "judged 2026-10-05 against the current digest (rev 4), not stale; not re-read this run"}
+ ],
+ "consults": [
+  {"ts": "2026-10-10T02:10:24Z", "bundle": "software-engineering", "subjects": ["companion-runtime"], "techniques": ["signal-economy-contract", "autonomous-cycle-hosting", "metered-llm-seam"], "deviations": 1},
+  {"ts": "2026-10-10T02:10:24Z", "bundle": "software-engineering", "subjects": ["companion-runtime"], "techniques": ["host-seam-contracts"], "deviations": 0},
+  {"ts": "2026-10-10T02:10:24Z", "bundle": "software-engineering", "subjects": ["companion-runtime"], "techniques": ["action-catalog-single-source"], "deviations": 1}
+ ]}

@@ -1,0 +1,23 @@
+{"schema": "conform-run/1", "worker": "b6578228-7275-4d60-b894-846f1af6a2cb", "subject": "terminal-multiplexing",
+ "evaluatedAt": "2026-10-10T11:25:34Z",
+ "pairs": [
+  {"context": "19f3a6a0-f733-47d1-94b4-a1256c8a92fc", "subject": "terminal-multiplexing", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_glyph/commandPanel/commandPanelHelpers.ts:16 the 'command panel' is a form of intent rows (IntentDraft = Record<IntentKey, string>) plus picker modals that compose a one-shot execution; no file in its 15 paths imports @xterm, touches a PTY or writes keystrokes (grepped), so the subject's precondition - a PTY-backed interactive session with an emulator - does not hold; the match on command/multi/full is lexical",
+   "techniques": [
+    {"technique": "keystroke-injection", "verdict": "not-applicable", "evidence": "src/features/agents/sub_glyph/commandPanel/commandPanelHelpers.ts:16 the draft is structured form text handed to an execution dispatcher, never bytes written to a device"},
+    {"technique": "attach-detach-lifecycle", "verdict": "not-applicable", "evidence": "src/features/agents/sub_glyph/commandPanel/commandPanelHelpers.ts:16 no session exists in this context to attach, park or detach"}
+   ]},
+  {"context": "2418ddaf-0e6e-446f-968f-28a4bf6e7120", "subject": "terminal-multiplexing", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_n8n/hooks/useN8nTransform.ts:77 the wizard's only 'session' consumes a one-shot transform run through useCorrelatedCliStream (run-id-filtered output/status Tauri events over piped CLI output); no PTY, emulator, resize or keystroke path in its 13 paths (grepped), so the subject's precondition does not hold - this is streaming-output/background-jobs territory, the match on session/lifecycle is lexical",
+   "techniques": [
+    {"technique": "bounded-replay-buffers", "verdict": "not-applicable", "evidence": "src/features/templates/sub_n8n/hooks/useN8nTransform.ts:77 output arrives as correlated line events for a finished-shape job, not a PTY byte stream to replay into an emulator"},
+    {"technique": "pty-management", "verdict": "not-applicable", "evidence": "src/features/templates/sub_n8n/hooks/useN8nTransform.ts:77 no pseudo-terminal is spawned or resized for the transform; repo-wide portable_pty lives only in src-tauri/src/commands/fleet/"}
+   ]}
+ ],
+ "declined": [],
+ "consults": [
+  {"ts": "2026-10-10T11:25:34Z", "bundle": "software-engineering", "subjects": ["terminal-multiplexing"], "techniques": ["keystroke-injection", "attach-detach-lifecycle"], "deviations": 0},
+  {"ts": "2026-10-10T11:25:34Z", "bundle": "software-engineering", "subjects": ["terminal-multiplexing"], "techniques": ["bounded-replay-buffers", "pty-management"], "deviations": 0}
+ ]}

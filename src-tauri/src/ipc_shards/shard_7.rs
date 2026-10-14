@@ -147,6 +147,12 @@ pub(super) fn shard(
         commands::network::remote_sessions::remote_session_command,
         commands::network::remote_sessions::remote_session_subscribe_output,
         commands::network::remote_sessions::list_dispatch_devices,
+        // Network -- Device mesh (snapshots, verbs, queue move, probes).
+        // Registered in EVERY build; the bodies gate on `p2p`.
+        commands::network::mesh::mesh_device_snapshots,
+        commands::network::mesh::mesh_send_verb,
+        commands::network::mesh::mesh_queue_move,
+        commands::network::mesh::mesh_probe_results,
         // Network -- Exposure Manifest (Invisible Apps Phase 1)
         #[cfg(feature = "p2p")]
         commands::network::exposure::list_exposed_resources,
@@ -315,10 +321,15 @@ pub(super) fn shard(
         commands::fleet::transcript_read::fleet_token_summary,
         commands::fleet::transcript_read::fleet_session_recap,
         commands::fleet::monitor_stats::fleet_monitor_stats,
+        // Measured resources per run (CPU / RAM / GPU).
+        commands::fleet::resources::resource_live_samples,
+        commands::fleet::resources::resource_run_summaries,
         commands::fleet::claude_usage::fleet_claude_usage,
         commands::fleet::cli_usage::fleet_cli_usage,
         commands::fleet::autopilot::fleet_autopilot_status,
         commands::fleet::autopilot::fleet_dispatch_preview,
+        commands::fleet::schedules::fleet_scheduled_tasks,
+        commands::fleet::schedules::fleet_scheduled_task_set_enabled,
         commands::fleet::claude_accounts::fleet_claude_accounts_list,
         commands::fleet::claude_accounts::fleet_claude_account_capture,
         commands::fleet::claude_accounts::fleet_claude_account_switch,

@@ -1,0 +1,23 @@
+{"schema": "conform-run/1", "worker": "2c3a8a66-c7e8-4d61-8ed7-3aa9172d9c2e", "subject": "judge-calibration-and-drift",
+ "evaluatedAt": "2026-10-09T17:35:40Z",
+ "evaluatedAgainst": "sha256-b2:d0f0d4aa66f81402", "evaluatedRevision": 5,
+ "pairs": [
+  {"context": "3c107fe6-ec95-4f45-bf31-665e9ccfe223", "subject": "judge-calibration-and-drift", "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:d0f0d4aa66f81402", "evaluatedRevision": 5,
+   "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 the Drive plugin is file-system CRUD/search IPC (driveList, driveMove, driveSearch); none of its 17 files contain an LLM judge, score, rubric or golden set, so the subject's precondition (an LLM judge scoring outputs) does not hold - the match came from the lexical tokens drive/drop/selection",
+   "techniques": [
+     {"technique": "golden-set-agreement-measurement", "verdict": "not-applicable", "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 no judge exists to agree with humans; grep for judge|kappa|calibrat|rubric|score over the context's 17 file_paths returns nothing"},
+     {"technique": "trust-bar-verdict", "verdict": "not-applicable", "evidence": "src/features/plugins/drive/hooks/useDrive.ts:18 driveSearch is a filename/content search, not a judged score that could gate anything"},
+     {"technique": "scheduled-recalibration", "verdict": "not-applicable", "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 no judge in service, nothing to recalibrate"},
+     {"technique": "windowed-score-drop-alerting", "verdict": "not-applicable", "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 no score series is produced by this context"},
+     {"technique": "repeatability-floor", "verdict": "not-applicable", "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 no judge verdict to re-score"}
+   ],
+   "registryProposal": "Spurious lexical pairing (why: drive/drop/selection, grounding use_when). Meanwhile the repo's REAL LLM judges are not paired with this subject anywhere: src-tauri/src/commands/eval_runs.rs:838 (context commands-execution 6da794b4-7a5f-4087-a4d4-fb8a416456e5, judge panel on eval runs), src-tauri/src/commands/contest/driver.rs:717 (context commands-contest e4b48fb7-3763-4955-8ea9-01fd48aa0cf7, contest judges), and src-tauri/src/bench/db.rs:80 (judge_model column per dimension score; file is in no context). Propose adding judge-calibration-and-drift pairs to those two contexts (source: conform) and judging them next; the matcher scores zero there because the repo says judge/panel/bench/contest, not calibration/kappa/golden set."}
+ ],
+ "declined": [
+  {"subject": "judge-calibration-and-drift", "context": "417112d1-004b-41d5-a656-57997a47d818", "reason": "context is governance: weak (timing-utility-hooks: debounce, polling, RAF, animated number, relative-time ticker); the match itself (number/labels/updates) is the doubtful part and the skill forbids judging weak pairs - reported as a coverage question instead. Nothing in src/hooks/utility/timing references a judge."}
+ ],
+ "consults": [
+  {"ts": "2026-10-09T17:35:40Z", "bundle": "llm-observability", "subjects": ["judge-calibration-and-drift"], "techniques": ["golden-set-agreement-measurement", "trust-bar-verdict", "scheduled-recalibration", "windowed-score-drop-alerting", "repeatability-floor"], "deviations": 0}
+ ]}

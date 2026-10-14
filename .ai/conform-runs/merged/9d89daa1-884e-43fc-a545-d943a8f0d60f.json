@@ -1,0 +1,22 @@
+{"schema":"conform-run/1","worker":"9d89daa1-884e-43fc-a545-d943a8f0d60f","subject":"guided-tours","evaluatedAt":"2026-10-12T12:21:28Z",
+"pairs":[
+{"context":"aa2197a5-6b7c-46ff-a6cd-8172d2984f50","subject":"guided-tours","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/onboarding/components/GuidedTour.tsx:267 Escape sets local isMinimized while tourActive stays true, and TourSpotlight gates only on tourActive (src/features/onboarding/components/TourSpotlight.tsx:63), so the z-9998 dimming at :75 survives the leave gesture - escape reinterpreted, never a full exit; re-verified at HEAD d9a1e89b72 2026-10-12",
+ "techniques":[{"technique":"overlay-precedence","verdict":"deviation","evidence":"src/features/onboarding/components/GuidedTour.tsx:267 Escape -> setIsMinimized(true); dimming kept by src/features/onboarding/components/TourSpotlight.tsx:63 (gates on tourActive only)"}]},
+{"context":"c06088ef-d143-4aa4-b60a-9d6f7aff9aba","subject":"guided-tours","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/stores/slices/system/tourSlice.ts:1573 allDone = steps.every(...) is vacuously true when getActiveTourSteps (:1111) returns [] for an unresolvable tour, so finishTour (:1637) records it completed - zero steps scored as success; :1459 hydrates tourActiveTourId to the default, dropping the which-tour half of resume; re-verified at HEAD d9a1e89b72 2026-10-12",
+ "techniques":[{"technique":"tour-lifecycle","verdict":"deviation","evidence":"src/stores/slices/system/tourSlice.ts:1573 vacuous every() over empty step list -> finishTour; :1459 tourActiveTourId: defaultTourId on hydrate"}]},
+{"context":"b39776f5-3909-41e3-b69f-14c9a6c70bec","subject":"guided-tours","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/home/sub_learning/HomeLearning.tsx:22 feeds every tour card the active tour's tourStepCompleted (passed at :50, counted per card at src/features/home/sub_learning/TourSections.tsx:25); persisted per-tour progress is never read, so a paused non-active tour renders as fresh; re-verified at HEAD d9a1e89b72 2026-10-12 (28efdb5312 touched the file, not this path)",
+ "techniques":[{"technique":"tour-lifecycle","verdict":"deviation","evidence":"src/features/home/sub_learning/TourSections.tsx:25 done = completedStepsOf(tour, stepCompleted) from the single active-tour map"}]},
+{"context":"b30528dc-8655-4b38-800e-8cb73e96d618","subject":"guided-tours","bundle":"software-engineering","state":"deviation",
+ "evidence":"tests/playwright/getting-started-tour-mock.spec.ts:10 the tour e2e suite guards only the completeOn contract; none of the 4 tour specs removes an anchor (first step included) or presses Escape against a running tour - never-strand and exit lack fresh-profile coverage; re-verified at HEAD d9a1e89b72 2026-10-12 (grep for Escape/remove in tests/playwright/*tour* returns nothing)",
+ "techniques":[{"technique":"missing-anchor-degradation","verdict":"deviation","evidence":"tests/playwright/getting-started-tour-mock.spec.ts:10 no first-anchor-removed case"},{"technique":"tour-lifecycle","verdict":"deviation","evidence":"tests/playwright/getting-started-tour-mock.spec.ts:10 fresh-profile suite covers completeOn only"}]}
+],
+"declined":[],
+"consults":[
+{"ts":"2026-10-12T12:21:28Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["overlay-precedence"],"deviations":1},
+{"ts":"2026-10-12T12:21:28Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["tour-lifecycle"],"deviations":1},
+{"ts":"2026-10-12T12:21:28Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["tour-lifecycle"],"deviations":1},
+{"ts":"2026-10-12T12:21:28Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["missing-anchor-degradation","tour-lifecycle"],"deviations":1}
+]}

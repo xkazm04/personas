@@ -1,0 +1,145 @@
+{
+ "schema": "conform-run/1",
+ "worker": "77f63aba-94ce-4126-a004-1ff8e3762723",
+ "subject": "operator-surfaces-for-llm-spend",
+ "evaluatedAt": "2026-10-10T01:11:50Z",
+ "pairs": [
+  {
+   "context": "e8fa2ff7-145d-4c58-af83-1239b87d2c24",
+   "subject": "operator-surfaces-for-llm-spend",
+   "bundle": "llm-observability",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:108 the spend KPI total still renders a non-nullable cost_usd through the local fmtCost (src/features/overview/sub_activity/libs/executionMetricsHelpers.ts:3, 2dp) while LlmCallsTable.tsx:299 in the same context renders cost through Numeric unit=usd with an em-dash for null: two cost renderers in one context, and the zero-coalesced total carries no unpriced disclosure (re-confirmed 2026-10-10)",
+   "techniques": [
+    {
+     "technique": "single-render-layer-many-consumers",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_activity/libs/executionMetricsHelpers.ts:3 a local fmtCost (2dp, <$0.01) beside src/features/overview/sub_activity/components/LlmCallsTable.tsx:299 Numeric unit=usd and src/features/settings/sub_byom/components/ByomAuditLog.tsx:40 (4dp, - for null): three formatters for one quantity"
+    },
+    {
+     "technique": "glyph-encoded-business-thresholds",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:108 numericValue={totals!.cost_usd} receives the COALESCE-to-0 total, so an all-unpriced window reads $0.00 instead of an em-dash; the per-row cell at src/features/overview/sub_activity/components/LlmCallsTable.tsx:298 does realize nullable-never-zero"
+    },
+    {
+     "technique": "agent-prompts-as-dashboards",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:108 a panel KPI tile; no agent tool or prompt catalog in this context"
+    },
+    {
+     "technique": "read-tools-default-writes-gated",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_activity/libs/useLlmSpend.ts:8 a tab-local read of llm_spend_dashboard; no agent tool surface in this context"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:56f3abeffc1687c8",
+   "evaluatedRevision": 2
+  },
+  {
+   "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+   "subject": "operator-surfaces-for-llm-spend",
+   "bundle": "llm-observability",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/llm_spend.rs:261 COALESCE(SUM(cost_usd), 0.0) over the nullable cost_usd column still returns unpriced spend as $0.00, and the dashboard query (:259-267) counts no unpriced calls, so every consumer of LlmSpendTotals inherits absence-as-zero (re-confirmed 2026-10-10)",
+   "techniques": [
+    {
+     "technique": "sql-panel-sets-over-the-relational-store",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/llm_spend.rs:261 COALESCE(SUM(cost_usd), 0.0): nullable costs do not stay nullable in the aggregate"
+    },
+    {
+     "technique": "single-render-layer-many-consumers",
+     "verdict": "deviation",
+     "evidence": "src/lib/bindings/LlmSpendTotals.ts:3 cost_usd: number with no unpriced count: the canonical payload cannot carry the disclosure a shared renderer would need"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:56f3abeffc1687c8",
+   "evaluatedRevision": 2,
+   "registryProposal": "matcher: the token \"glyph\" pulls operator-surfaces-for-llm-spend onto every persona-sigil context in this repo (6 of 13 pairs, all judged or declined not-applicable/weak); the glyph-encoded-business-thresholds use_when could require a money or severity term alongside glyph so a capability sigil stops matching"
+  },
+  {
+   "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573",
+   "subject": "operator-surfaces-for-llm-spend",
+   "bundle": "llm-observability",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_mastermind/lib/islandStats.ts:58 still renders null spend (connector returned no rows: src/features/teams/sub_mastermind/lib/llmSpend.ts:27) as \"$0\" with tone good, and :59 formats the 30d sum with its own 0/2dp while src/features/teams/sub_factory/passport/LlmTrackingCell.tsx:89 shows it as ≈$ at 2/4dp: absence graded healthy, two surfaces disagree on one number (re-confirmed 2026-10-10)",
+   "techniques": [
+    {
+     "technique": "glyph-encoded-business-thresholds",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_mastermind/lib/islandStats.ts:58 llmSpend === null maps to value $0 and tone good: absence routed into a healthy grade"
+    },
+    {
+     "technique": "single-render-layer-many-consumers",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_mastermind/lib/islandStats.ts:59 local toFixed(0)/toFixed(2) with no estimate marker vs src/features/teams/sub_factory/passport/LlmTrackingCell.tsx:89 ≈$ at 2/4dp"
+    },
+    {
+     "technique": "agent-prompts-as-dashboards",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_mastermind/lib/islandStats.ts:58 a scene stat tile; no agent tool or prompt surface in this context"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:56f3abeffc1687c8",
+   "evaluatedRevision": 2
+  }
+ ],
+ "declined": [
+  {
+   "subject": "operator-surfaces-for-llm-spend",
+   "context": "942d2449-34ab-4f02-af7e-b130269d10ef",
+   "reason": "dead context: both entry points (src/features/fleet/monitor/triage/MonitorProjectColumns.tsx, triageModel.ts) were deleted in 926796dfce (\"the orphaned monitor/triage/ directory\") and context-map.json lists no file_paths; there is no code to judge and a deleted file cannot anchor a not-applicable. Retire or re-scope the context on the next context scan"
+  },
+  {
+   "subject": "operator-surfaces-for-llm-spend",
+   "context": "a38e2b93-2322-4187-befa-c0443c4ca85f",
+   "reason": "governance weak and grounding lexical-only (glyph/agent/capabilities); the skill never judges weak rows by default. Coverage question: the same glyph resonance was already judged not-applicable in shared-glyph, persona-glyph-layout, glyph-persona-card and glyph-command-panel"
+  },
+  {
+   "subject": "operator-surfaces-for-llm-spend",
+   "context": "5ab49df3-3442-4ea6-a405-077dec64850d",
+   "reason": "governance weak and grounding lexical-only (glyph/agents/catalog); not judged by default. Same lexical glyph resonance as the four glyph contexts already judged not-applicable"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-10T01:11:50Z",
+   "bundle": "llm-observability",
+   "subjects": [
+    "operator-surfaces-for-llm-spend"
+   ],
+   "techniques": [
+    "single-render-layer-many-consumers",
+    "glyph-encoded-business-thresholds",
+    "agent-prompts-as-dashboards",
+    "read-tools-default-writes-gated"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-10T01:11:50Z",
+   "bundle": "llm-observability",
+   "subjects": [
+    "operator-surfaces-for-llm-spend"
+   ],
+   "techniques": [
+    "sql-panel-sets-over-the-relational-store",
+    "single-render-layer-many-consumers"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-10T01:11:50Z",
+   "bundle": "llm-observability",
+   "subjects": [
+    "operator-surfaces-for-llm-spend"
+   ],
+   "techniques": [
+    "glyph-encoded-business-thresholds",
+    "single-render-layer-many-consumers",
+    "agent-prompts-as-dashboards"
+   ],
+   "deviations": 1
+  }
+ ]
+}

@@ -359,13 +359,13 @@ function TableHead() {
   return (
     <thead>
       <tr className="border-b border-primary/10 bg-secondary/20 typo-label text-muted-foreground">
-        <th className="px-4 py-2.5 font-medium">Scrape</th>
-        <th className="px-4 py-2.5 font-medium">Sources</th>
-        <th className="px-4 py-2.5 font-medium">Fields</th>
-        <th className="px-4 py-2.5 font-medium">Schedule</th>
-        <th className="px-4 py-2.5 font-medium">Last run</th>
-        <th className="px-4 py-2.5 font-medium">Status</th>
-        <th className="px-4 py-2.5" />
+        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">Scrape</th>
+        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">Sources</th>
+        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">Fields</th>
+        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">Schedule</th>
+        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">Last run</th>
+        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">Status</th>
+        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground" />
       </tr>
     </thead>
   );

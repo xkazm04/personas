@@ -1,0 +1,40 @@
+{
+ "schema": "conform-run/1",
+ "worker": "8160aa03-0772-42d3-a36f-043e04d781fa",
+ "subject": "llm-call-telemetry-model",
+ "evaluatedAt": "2026-10-10T01:24:38.121Z",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "llm-call-telemetry-model",
+   "context": "621caefc-8ae0-42e7-89b6-8e879ad62814",
+   "reason": "no work: verdict (not-applicable) was judged 2026-10-09 against sha256-b2:9f199f8ff9e7a925 / revision 7, which is the registry index digest and revision at HEAD 32d7899f; no anchored file has a commit since 2026-10-08 or a working-tree change, and the deviation anchors still read as recorded - re-judging would only restate it"
+  },
+  {
+   "subject": "llm-call-telemetry-model",
+   "context": "2fb16136-586e-478d-823f-38434d2d5b9a",
+   "reason": "no work: verdict (deviation) was judged 2026-10-09 against sha256-b2:9f199f8ff9e7a925 / revision 7, which is the registry index digest and revision at HEAD 32d7899f; no anchored file has a commit since 2026-10-08 or a working-tree change, and the deviation anchors still read as recorded - re-judging would only restate it (context is governance: weak; its standing deviation was judged despite the weak-context default)"
+  },
+  {
+   "subject": "llm-call-telemetry-model",
+   "context": "a7ece012-8300-4780-b286-b9cea81801fc",
+   "reason": "no work: verdict (deviation) was judged 2026-10-09 against sha256-b2:9f199f8ff9e7a925 / revision 7, which is the registry index digest and revision at HEAD 32d7899f; no anchored file has a commit since 2026-10-08 or a working-tree change, and the deviation anchors still read as recorded - re-judging would only restate it"
+  },
+  {
+   "subject": "llm-call-telemetry-model",
+   "context": "2dcda6bf-9982-422b-b63f-1481c414cdab",
+   "reason": "no work: verdict (deviation) was judged 2026-10-09 against sha256-b2:9f199f8ff9e7a925 / revision 7, which is the registry index digest and revision at HEAD 32d7899f; no anchored file has a commit since 2026-10-08 or a working-tree change, and the deviation anchors still read as recorded - re-judging would only restate it"
+  },
+  {
+   "subject": "llm-call-telemetry-model",
+   "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+   "reason": "no work: verdict (not-applicable) was judged 2026-10-09 against sha256-b2:9f199f8ff9e7a925 / revision 7, which is the registry index digest and revision at HEAD 32d7899f; no anchored file has a commit since 2026-10-08 or a working-tree change, and the deviation anchors still read as recorded - re-judging would only restate it"
+  },
+  {
+   "subject": "llm-call-telemetry-model",
+   "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7",
+   "reason": "no work: verdict (not-applicable) was judged 2026-10-09 against sha256-b2:9f199f8ff9e7a925 / revision 7, which is the registry index digest and revision at HEAD 32d7899f; no anchored file has a commit since 2026-10-08 or a working-tree change, and the deviation anchors still read as recorded - re-judging would only restate it"
+  }
+ ],
+ "consults": []
+}

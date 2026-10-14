@@ -1,5 +1,6 @@
 import { ArrowUp } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { TABLE_HEAD_LABEL } from './tableTokens';
 
 export type SortDirection = 'asc' | 'desc';
 
@@ -86,7 +87,7 @@ export function SortableHeader({
       type="button"
       onClick={onSort}
       aria-label={ariaLabel}
-      className={`group flex items-center gap-1 w-full h-full ${padding} typo-label text-foreground transition-colors hover:text-muted-foreground/90 focus-ring rounded-card select-none ${
+      className={`group flex items-center gap-1 w-full h-full ${padding} ${TABLE_HEAD_LABEL} text-foreground transition-colors hover:text-muted-foreground/90 focus-ring rounded-card select-none ${
         align === 'right' ? 'justify-end' : 'justify-start'
       } ${buttonClassName}`}
     >

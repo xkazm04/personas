@@ -6,10 +6,15 @@
 //! NOT run anything: the execution seam is [`RemoteJobExecutor`], and the app
 //! layer supplies the implementation.
 //!
-//! Two kinds travel: `instruction` (a natural-language ask, the text is the
-//! whole request) and `fleet_session` (a `FleetSessionJobPayload` in
+//! Four kinds travel: `instruction` (a natural-language ask, the text is the
+//! whole request), `fleet_session` (a `FleetSessionJobPayload` in
 //! `payload_json`; its live mirror and output tail live in
-//! [`super::remote_sessions`]).
+//! [`super::remote_sessions`]), and the device mesh's two (spark
+//! device-mesh): `mesh_verb` (one closed `MeshVerbPayload`, answered with a
+//! `MeshVerbReceipt`) and `cli_mail` (a small `CliMailPayload` the receiver
+//! stores and completes on arrival - the CLI mailbox, read back through
+//! [`RemoteJobs::list_cli_mail`]). The mesh's latest-wins snapshots are not
+//! jobs; they pass the same pairing gate here and live in [`super::mesh`].
 //!
 //! ```text
 //!  A (originator)                              B (runner, a PAIRED device)
@@ -81,15 +86,17 @@ use tokio::sync::RwLock;
 
 use personas_core::error::AppError;
 use personas_db::models::{
-    FleetSessionJobPayload, FleetSessionJobReceipt, RemoteJob, RemoteJobDirection, RemoteJobStatus,
-    RemoteSessionCommand, RemoteSessionOutputChunk, RemoteSessionView,
-    REMOTE_JOB_KIND_FLEET_SESSION, REMOTE_JOB_KIND_INSTRUCTION,
+    CliMail, CliMailPayload, FleetSessionJobPayload, FleetSessionJobReceipt, MeshVerbPayload,
+    MeshVerbReceipt, RemoteJob, RemoteJobDirection, RemoteJobStatus, RemoteSessionCommand,
+    RemoteSessionOutputChunk, RemoteSessionView, CLI_MAIL_MAX_BYTES, REMOTE_JOB_KIND_CLI_MAIL,
+    REMOTE_JOB_KIND_FLEET_SESSION, REMOTE_JOB_KIND_INSTRUCTION, REMOTE_JOB_KIND_MESH_VERB,
 };
 use personas_db::repos::resources::owned_devices as owned_devices_repo;
 use personas_db::repos::resources::remote_jobs as repo;
 use personas_db::DbPool;
 
 use super::connection::ConnectionManager;
+use super::mesh::Mesh;
 use super::protocol::{self, Message};
 use super::remote_sessions::{self, SessionLanes};
 use crate::event_registry::{emit_event, event_name};
@@ -113,6 +120,11 @@ const MAX_COMMAND_TEXT_BYTES: usize = 16 * 1024;
 /// Hard cap on one received output chunk (base64 of an
 /// [`remote_sessions::OUTPUT_ENTRY_MAX_BYTES`] entry, with headroom).
 const MAX_OUTPUT_CHUNK_B64: usize = 64 * 1024;
+/// Hard cap on a CLI mail topic.
+const MAX_MAIL_TOPIC_BYTES: usize = 256;
+/// How many of the newest inbound CLI mails [`RemoteJobs::list_cli_mail`]
+/// looks through. The mailbox is a coordination channel, not an archive.
+const CLI_MAIL_READ_WINDOW: u32 = 1000;
 
 // -- The seam -----------------------------------------------------------
 //
@@ -133,15 +145,17 @@ pub struct RemoteJobAssignment {
     pub peer_id: String,
     /// The peer's display name, for "Laptop asked you to…" phrasing.
     pub origin_display_name: String,
-    /// Job discriminator: [`REMOTE_JOB_KIND_INSTRUCTION`] or
-    /// [`REMOTE_JOB_KIND_FLEET_SESSION`].
+    /// Job discriminator: [`REMOTE_JOB_KIND_INSTRUCTION`],
+    /// [`REMOTE_JOB_KIND_FLEET_SESSION`] or [`REMOTE_JOB_KIND_MESH_VERB`]
+    /// (`cli_mail` never reaches an executor: it completes on arrival).
     pub kind: String,
     /// The instruction, verbatim. For `fleet_session` it is the human-readable
     /// line the originator's history shows; the request itself is the payload.
     pub instruction: String,
     /// The kind-specific body. `None` for `instruction`; for `fleet_session`
     /// always `Some`, and already checked to parse as a
-    /// [`FleetSessionJobPayload`].
+    /// [`FleetSessionJobPayload`]; for `mesh_verb` always `Some`, already
+    /// checked to parse as a [`MeshVerbPayload`].
     pub payload_json: Option<String>,
 }
 
@@ -219,6 +233,27 @@ impl RemoteJobHandle {
                 summary.into(),
                 Some(receipt_json),
             )
+            .await
+    }
+
+    /// Finish a `mesh_verb` job with its receipt: `completed` when the verb
+    /// ran (`ok`), `failed` when it did not, the receipt carried either way so
+    /// the asking device reads the reason from it. Never a silent success: a
+    /// refusal is `ok: false` plus its reason. Idempotent like
+    /// [`Self::complete`].
+    pub async fn finish_mesh_verb(&self, receipt: &MeshVerbReceipt) -> Result<(), AppError> {
+        let receipt_json = serde_json::to_string(receipt)?;
+        let (status, fallback) = if receipt.ok {
+            (RemoteJobStatus::Completed, "done")
+        } else {
+            (RemoteJobStatus::Failed, "refused")
+        };
+        let summary = receipt
+            .detail
+            .clone()
+            .unwrap_or_else(|| format!("{} {fallback}", receipt.verb));
+        self.jobs
+            .report_result(&self.job_id, status, summary, Some(receipt_json))
             .await
     }
 
@@ -356,6 +391,9 @@ pub struct RemoteJobs {
     app_handle: Arc<RwLock<Option<tauri::AppHandle>>>,
     /// Running side: live mirror + output state per job.
     lanes: SessionLanes,
+    /// The device mesh's snapshot cache and sender. Lives here because
+    /// `handle_message` is the pairing gate every inbound snapshot passes.
+    pub mesh: Arc<Mesh>,
     /// Originating side: the jobs whose output this device wants to watch. Kept
     /// so the subscription survives a dropped link: it is re-sent on link-up.
     wanted_tails: std::sync::Mutex<HashSet<String>>,
@@ -371,12 +409,18 @@ impl RemoteJobs {
         connections: Arc<ConnectionManager>,
         app_handle: Arc<RwLock<Option<tauri::AppHandle>>>,
     ) -> Self {
+        let mesh = Arc::new(Mesh::new(
+            pool.clone(),
+            connections.clone(),
+            app_handle.clone(),
+        ));
         Self {
             pool,
             connections,
             executor: RwLock::new(Arc::new(UnhandledRemoteJobs)),
             app_handle,
             lanes: SessionLanes::default(),
+            mesh,
             wanted_tails: std::sync::Mutex::new(HashSet::new()),
             #[cfg(test)]
             emitted: std::sync::Mutex::new(Vec::new()),
@@ -425,6 +469,89 @@ impl RemoteJobs {
             )));
         }
         self.send_job(peer_id, &kind, instruction, None).await
+    }
+
+    /// Ask a paired device to run one closed mesh verb. Same outbox and
+    /// typed errors as [`Self::send_job`]; the outcome arrives as the job's
+    /// `mesh_receipt`.
+    pub async fn send_mesh_verb(
+        self: &Arc<Self>,
+        peer_id: &str,
+        payload: &MeshVerbPayload,
+    ) -> Result<RemoteJob, AppError> {
+        let payload_json = serde_json::to_string(payload)?;
+        self.send_job(
+            peer_id,
+            REMOTE_JOB_KIND_MESH_VERB,
+            &format!("Mesh verb: {}", payload.verb()),
+            Some(payload_json),
+        )
+        .await
+    }
+
+    /// Send one CLI mail to a paired device. The body is capped at
+    /// [`CLI_MAIL_MAX_BYTES`] ([`AppError::Validation`] above it, nothing
+    /// written); an offline peer gets it from the outbox when it wakes.
+    pub async fn send_cli_mail(
+        self: &Arc<Self>,
+        peer_id: &str,
+        topic: &str,
+        body: &str,
+    ) -> Result<RemoteJob, AppError> {
+        let payload = CliMailPayload {
+            topic: topic.trim().to_string(),
+            body: body.to_string(),
+        };
+        if let Some(problem) = cli_mail_problem(&payload) {
+            return Err(AppError::Validation(problem));
+        }
+        let instruction: String = format!("CLI mail: {}", payload.topic)
+            .chars()
+            .take(300)
+            .collect();
+        let payload_json = serde_json::to_string(&payload)?;
+        self.send_job(
+            peer_id,
+            REMOTE_JOB_KIND_CLI_MAIL,
+            &instruction,
+            Some(payload_json),
+        )
+        .await
+    }
+
+    /// The CLI mail paired devices delivered here, OLDEST first: everything
+    /// received at or after `since_ms` whose topic starts with
+    /// `topic_prefix` (every topic when `None` or empty). Reading does not
+    /// delete. A row whose payload no longer parses is skipped.
+    pub fn list_cli_mail(
+        &self,
+        since_ms: f64,
+        topic_prefix: Option<&str>,
+    ) -> Result<Vec<CliMail>, AppError> {
+        let prefix = topic_prefix.unwrap_or("");
+        let rows = repo::list_by_kind(
+            &self.pool,
+            RemoteJobDirection::Inbound,
+            REMOTE_JOB_KIND_CLI_MAIL,
+            CLI_MAIL_READ_WINDOW,
+        )?;
+        Ok(rows
+            .into_iter()
+            .filter_map(|job| {
+                let payload: CliMailPayload =
+                    serde_json::from_str(job.payload_json.as_deref()?).ok()?;
+                let received_at_ms = chrono::DateTime::parse_from_rfc3339(&job.created_at)
+                    .ok()?
+                    .timestamp_millis() as f64;
+                (received_at_ms >= since_ms && payload.topic.starts_with(prefix)).then(|| CliMail {
+                    job_id: job.id,
+                    peer_id: job.peer_id,
+                    topic: payload.topic,
+                    body: payload.body,
+                    received_at_ms,
+                })
+            })
+            .collect())
     }
 
     /// Send a job to a paired device.
@@ -603,6 +730,9 @@ impl RemoteJobs {
             self.deliver(peer_id, Message::RemoteSessionMirror { job_id, view_json })
                 .await;
         }
+        // A fresh link should not wait a whole health tick to show this
+        // device on the other one's strip.
+        self.mesh.send_to(peer_id).await;
     }
 
     /// Replay anything this device missed for one peer, in both directions.
@@ -1039,6 +1169,17 @@ impl RemoteJobs {
                 Ok(Vec::new())
             }
 
+            // Device mesh snapshot: behind the same pairing gate as every job
+            // frame above. A live frame, so a refusal (unreadable, oversized,
+            // or claiming to be another device) is logged and dropped rather
+            // than failing the stream; nothing is stored for it.
+            Message::DeviceSnapshot { json } => {
+                if let Err(e) = self.mesh.apply_snapshot(peer_id, &json).await {
+                    tracing::warn!(peer_id = %peer_id, "Device snapshot refused: {e}");
+                }
+                Ok(Vec::new())
+            }
+
             other => Err(AppError::Internal(format!(
                 "handle_message called with a non-remote-job frame: {other:?}"
             ))),
@@ -1075,6 +1216,12 @@ impl RemoteJobs {
                     return Ok(refuse(
                         "The request carried no readable session description.",
                     ));
+                }
+            }
+            REMOTE_JOB_KIND_MESH_VERB | REMOTE_JOB_KIND_CLI_MAIL => {
+                if let Some(problem) = mesh_payload_problem(&job.kind, job.payload_json.as_deref())
+                {
+                    return Ok(refuse(&problem));
                 }
             }
             _ => {
@@ -1124,7 +1271,21 @@ impl RemoteJobs {
             job.payload_json.as_deref(),
         )?;
 
-        if is_new {
+        if is_new && job.kind == REMOTE_JOB_KIND_CLI_MAIL {
+            // Mail is delivered by being stored: the row IS the mailbox
+            // entry, so it completes on arrival and no executor is involved.
+            // The result goes out before the ack; the originator applies it
+            // and then ignores the late ack (a terminal job is left alone).
+            self.emit(&row).await;
+            self.report_result(
+                &job_id,
+                RemoteJobStatus::Completed,
+                "Delivered.".into(),
+                None,
+            )
+            .await?;
+            tracing::info!(peer_id = %peer_id, job_id = %job_id, "CLI mail delivered");
+        } else if is_new {
             self.emit(&row).await;
             let handle = RemoteJobHandle {
                 jobs: self.clone(),
@@ -1217,13 +1378,22 @@ impl RemoteJobs {
         // `verified` into it.
         if !job.status.is_terminal() {
             if let Some(receipt) = receipt_json.as_deref() {
-                match serde_json::from_str::<FleetSessionJobReceipt>(receipt) {
-                    Ok(_) if receipt.len() <= MAX_PAYLOAD_BYTES => {
-                        repo::set_receipt(&self.pool, job_id, receipt)?;
-                    }
-                    _ => {
-                        tracing::warn!(peer_id = %peer_id, job_id = %job_id, "Unreadable receipt on a remote result; ignored")
-                    }
+                // Which receipt shape is legal is decided by the job's kind,
+                // never by whichever parser happens to accept the text.
+                let readable = receipt.len() <= MAX_PAYLOAD_BYTES
+                    && match job.kind.as_str() {
+                        REMOTE_JOB_KIND_FLEET_SESSION => {
+                            serde_json::from_str::<FleetSessionJobReceipt>(receipt).is_ok()
+                        }
+                        REMOTE_JOB_KIND_MESH_VERB => {
+                            serde_json::from_str::<MeshVerbReceipt>(receipt).is_ok()
+                        }
+                        _ => false,
+                    };
+                if readable {
+                    repo::set_receipt(&self.pool, job_id, receipt)?;
+                } else {
+                    tracing::warn!(peer_id = %peer_id, job_id = %job_id, "Unreadable receipt on a remote result; ignored")
                 }
             }
         }
@@ -1537,6 +1707,11 @@ fn validate_job(
                 AppError::Validation(format!("The session description is not readable: {e}"))
             })?;
         }
+        REMOTE_JOB_KIND_MESH_VERB | REMOTE_JOB_KIND_CLI_MAIL => {
+            if let Some(problem) = mesh_payload_problem(kind, payload_json) {
+                return Err(AppError::Validation(problem));
+            }
+        }
         other => {
             return Err(AppError::Validation(format!(
                 "Unknown remote job kind '{other}'"
@@ -1566,11 +1741,66 @@ fn offline(display_name: &str) -> AppError {
     ))
 }
 
-/// A stored receipt, re-serialized for the wire.
+/// What is wrong with a device-mesh job's payload, or `None`. ONE check for
+/// both sides: the sender maps it to [`AppError::Validation`] before anything
+/// is written, the receiver to a refusal before anything is persisted, so the
+/// two can never disagree about what is acceptable.
+fn mesh_payload_problem(kind: &str, payload_json: Option<&str>) -> Option<String> {
+    let Some(payload) = payload_json else {
+        return Some(format!("A {kind} request needs its payload."));
+    };
+    if payload.len() > MAX_PAYLOAD_BYTES {
+        return Some(format!(
+            "That {kind} payload is too large ({} bytes, limit {MAX_PAYLOAD_BYTES}).",
+            payload.len()
+        ));
+    }
+    match kind {
+        REMOTE_JOB_KIND_MESH_VERB => serde_json::from_str::<MeshVerbPayload>(payload)
+            .err()
+            .map(|e| format!("The request carried no readable mesh verb: {e}")),
+        REMOTE_JOB_KIND_CLI_MAIL => match serde_json::from_str::<CliMailPayload>(payload) {
+            Ok(mail) => cli_mail_problem(&mail),
+            Err(e) => Some(format!("The request carried no readable mail: {e}")),
+        },
+        _ => Some(format!("Unknown remote job kind '{kind}'")),
+    }
+}
+
+/// The CLI mailbox's limits: a non-empty topic of at most
+/// [`MAX_MAIL_TOPIC_BYTES`], and a body of at most [`CLI_MAIL_MAX_BYTES`].
+fn cli_mail_problem(mail: &CliMailPayload) -> Option<String> {
+    if mail.topic.trim().is_empty() {
+        return Some("A mail needs a topic.".into());
+    }
+    if mail.topic.len() > MAX_MAIL_TOPIC_BYTES {
+        return Some(format!(
+            "That mail topic is too long ({} bytes, limit {MAX_MAIL_TOPIC_BYTES}).",
+            mail.topic.len()
+        ));
+    }
+    if mail.body.len() > CLI_MAIL_MAX_BYTES {
+        return Some(format!(
+            "That mail is too large ({} bytes, limit {CLI_MAIL_MAX_BYTES}).",
+            mail.body.len()
+        ));
+    }
+    None
+}
+
+/// A stored receipt, re-serialized for the wire: the one that belongs to the
+/// job's kind.
 fn receipt_of(job: &RemoteJob) -> Option<String> {
-    job.receipt
-        .as_ref()
-        .and_then(|r| serde_json::to_string(r).ok())
+    match job.kind.as_str() {
+        REMOTE_JOB_KIND_MESH_VERB => job
+            .mesh_receipt
+            .as_ref()
+            .and_then(|r| serde_json::to_string(r).ok()),
+        _ => job
+            .receipt
+            .as_ref()
+            .and_then(|r| serde_json::to_string(r).ok()),
+    }
 }
 
 /// The snake_case wire token of a steering command.
@@ -1600,6 +1830,7 @@ fn frame_name(msg: &Message) -> &'static str {
         Message::RemoteSessionOutput { .. } => "RemoteSessionOutput",
         Message::RemoteJobCommand { .. } => "RemoteJobCommand",
         Message::RemoteJobCommandAck { .. } => "RemoteJobCommandAck",
+        Message::DeviceSnapshot { .. } => "DeviceSnapshot",
         _ => "other",
     }
 }

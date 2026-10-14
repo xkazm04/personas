@@ -1,0 +1,192 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d3d0a16e-bce3-48e0-9173-c712ef62c12e",
+  "subject": "hitl-approval",
+  "evaluatedAt": "2026-10-10T14:36:11.298Z",
+  "pairs": [
+    {
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:590 the deck classifies a review whose severity is missing as medium (an unrecognised token falls to weight 50 at :667) with no marker, so on the surface where the verdict is given an unreadable payload is spelled as a readable medium and sorted under real highs - while the manual-review list resolves the same row to Unclassified with a defaulted marker (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:37)",
+      "techniques": [
+        {
+          "technique": "fail-loud-classification-default",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:590 `review.severity || 'medium'` - quiet mild default with no defaulted marker; the loud resolveReviewSeverity exists but this adapter does not use it"
+        },
+        {
+          "technique": "review-queues",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/quick-answer/triage/useUnifiedTriage.ts:1075 optimistic removal is restored when the write throws (realized), and idea/policy/evolution verdicts carry a seen-status CAS (src/features/agents/quick-answer/triage/triageDispatch.ts:52); but goals have no compare-and-swap (triageDispatch.ts:81), so two reviewers can both decide the same goal, and the deck kinds (src/features/agents/quick-answer/triage/triageTypes.ts:28) omit companion approvals and held trigger fires, so the unified queue is not complete by construction"
+        },
+        {
+          "technique": "gate-state-machines",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:12 every verdict defers, writes or throws - no branch resolves a card without a write; reviews land through a pending-only CAS in the backend"
+        }
+      ],
+      "registryProposal": "one review-severity vocabulary now has three classifiers in this repo (a loud one in reviewHelpers.ts, an Info fall-through in reviewFocusHelpers.tsx, a medium fall-through here); fail-loud-classification-default could name 'a loud resolver exists but a second consumer re-implements the fall-through' as its commonest field failure and point at one-validation-door for the fix"
+    },
+    {
+      "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/dispatch.rs:1235 any persona run can resolve any OPEN incident by id prefix - including a persona_blocker escalation another persona raised for a human - and that resolve (:1256) is what makes incident_continuation re-run the blocked work (src-tauri/src/engine/incident_continuation.rs:7); the resolved row records no decider (src-tauri/db/src/repos/execution/audit_incidents.rs:484), so a machine answer to a human-addressed handoff is indistinguishable from a human one except in free-text notes",
+      "techniques": [
+        {
+          "technique": "handoff-is-a-declared-door",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/dispatch.rs:1235 the answerer of a persona_blocker escalation is not resolved at raise time; any execution emitting resolve_incident with a matching prefix answers it"
+        },
+        {
+          "technique": "decision-records",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/audit_incidents.rs:484 resolve writes status, resolved_at and a free-text note only; there is no resolved_by, and acknowledged_by is hardcoded to user (:464)"
+        },
+        {
+          "technique": "gate-state-machines",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/audit_incidents.rs:439 apply_transition reads the status, validates the move, then UPDATEs WHERE id = ? only (:485) - a read-then-write two deciders can both win"
+        },
+        {
+          "technique": "resume-after-decision",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/execution/audit_incidents.rs:579 the continuation is claimed with continued_at IS NULL before any work, so a resolved blocker re-runs at most once"
+        },
+        {
+          "technique": "fail-loud-classification-default",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_incidents/libs/incidentTaxonomy.ts:86 an unreadable severity ranks above critical, and isUnclassifiedSeverity (:69) is the machine-readable marker"
+        }
+      ],
+      "registryProposal": "the map paired this UI context on severity/escalate tokens, but the governing flow (persona raise_incident -> resolve -> auto-continuation) lives in engine files outside the context; the subject applies, through a door the matcher could not see"
+    },
+    {
+      "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/onboarding/components/useOnboardingState.ts:164 one Approve click grants the connector manifest capabilities fetched AFTER the click, so the user never saw what they consented to (the card shows only a SAFE/REVIEW badge from a hand-kept list, src/features/onboarding/components/DesktopDiscoveryStep.tsx:47); and when no manifest comes back, :166 still marks the app Approved with nothing written",
+      "techniques": [
+        {
+          "technique": "consent-gates",
+          "verdict": "deviation",
+          "evidence": "src/features/onboarding/components/useOnboardingState.ts:164 the disclosure does not derive from the bound action: capabilities (desktop_terminal = ProcessSpawn+FileWrite) are granted unseen, and the risk badge is an enumerated set (DesktopDiscoveryStep.tsx:47), not the capability set"
+        },
+        {
+          "technique": "decision-records",
+          "verdict": "deviation",
+          "evidence": "src/features/onboarding/components/useOnboardingState.ts:166 a null manifest skips the grant write yet the surface shows Approved - a decision that did not land, spelled as one"
+        }
+      ]
+    },
+    {
+      "context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/harness/executor.ts:49 the area write scope is a prompt line the executor may waive ('unless absolutely necessary'), the session runs at the project root (:167) with Edit/Write/Bash and skipPermissions true (src/lib/harness/run-harness.ts:165), and nothing compares the diff to area.scope or records a widening - the trust boundary lives inside the context the executor can override",
+      "techniques": [
+        {
+          "technique": "fixed-policy-amendable-plan",
+          "verdict": "deviation",
+          "evidence": "src/lib/harness/executor.ts:49 the fixed tier (allowed paths) is carried as waivable prose, with no enforcement and no amendment record of an out-of-scope write"
+        },
+        {
+          "technique": "gate-state-machines",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/harness/run-harness.ts:156 an operator-launched autonomous loop with no human gate in it; the subject reaches it only through its scope-of-work flow"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "hitl-approval",
+      "context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f",
+      "reason": "run-desk auto-run executes a snapshot of queued dev_tasks (src-tauri/src/commands/infrastructure/task_executor.rs:1942), some minted by the App Master from ideas (src-tauri/src/engine/subscription/attention.rs:5729); whether that is an unattended grant over a machine-decided gate needs the idea-acceptance authority traced, which this run did not do"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "942d2449-34ab-4f02-af7e-b130269d10ef",
+      "reason": "the map row carries no paths; not reached within budget"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "ad601e35-b998-4029-97a5-77487f00d561",
+      "reason": "types-only context; not reached within budget"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91",
+      "reason": "not reached within budget"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "fd961ee9-bf7c-4ec7-90c3-a728045d3d44",
+      "reason": "not reached within budget (goal sign-off via the triage deck is judged in agents-quick-answer; the goals board itself is unread)"
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7",
+      "reason": "not reached within budget"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T14:36:11.298Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "fail-loud-classification-default",
+        "review-queues",
+        "gate-state-machines"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T14:36:11.298Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "handoff-is-a-declared-door",
+        "decision-records",
+        "gate-state-machines",
+        "resume-after-decision",
+        "fail-loud-classification-default"
+      ],
+      "deviations": 3
+    },
+    {
+      "ts": "2026-10-10T14:36:11.298Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "consent-gates",
+        "decision-records"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-10T14:36:11.298Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "fixed-policy-amendable-plan",
+        "gate-state-machines"
+      ],
+      "deviations": 1
+    }
+  ]
+}

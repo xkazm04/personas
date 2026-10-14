@@ -1,0 +1,151 @@
+{
+  "schema": "conform-run/1",
+  "worker": "6d62b03e-b2e4-44e9-9aa5-ea19fc6abef1",
+  "subject": "multi-provider-gateway-plane",
+  "evaluatedAt": "2026-10-09T17:30:09Z",
+  "pairs": [
+    {
+      "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b",
+      "subject": "multi-provider-gateway-plane",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/runner/mod.rs:2089 dispatches qwen-profiled runs to DashScope without applying policy_decision.blocked_providers and returns above the provider_audit insert at :3762, while src/features/settings/sub_byom/components/ByomProviderList.tsx:37 presents Qwen as policy-governed; and a policy that blocks every EngineKind empties the chain so :2393 reports the refusal as \"All providers failed or have open circuit breakers\" - a compliance-tagged persona can run on an unaudited upstream, and a denial reads as an outage",
+      "techniques": [
+        {
+          "technique": "exclusive-authorship-of-a-measured-decision",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2089 the HTTP-provider branch answers in the policy selector place and never reaches the audit write at :3762; decided-vs-served storage IS now realized (src-tauri/db/src/repos/execution/executions.rs:1018 model_requested written once via COALESCE beside the served model_used)"
+        },
+        {
+          "technique": "policy-verdict-in-the-status-space",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2393 a policy-emptied chain falls through to the generic all-providers-failed message, so the refusal is spelled as a provider outage"
+        },
+        {
+          "technique": "router-versus-candidate-failure",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2393 the exhausted-chain arm cannot tell a plane-side decision (policy blocked every candidate) from candidates that failed - one error string for both"
+        }
+      ],
+      "registryProposal": "Re-judged 2026-10-09: verdict unchanged, anchor :3744 moved to :3762; the exclusive-authorship application (rust--exclusive-authorship-of-a-measured-decision) records the decided/served single-column overwrite as the open half - personas has since closed it with model_requested (executions.rs:1018), so that application section is now stale."
+    },
+    {
+      "context": "03960450-6979-4412-9de3-35c897fe56d2",
+      "subject": "multi-provider-gateway-plane",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_executions/components/CircuitBreakerIndicator.tsx:56 only reads the runner breaker status for display and src/features/agents/sub_executions/libs/comparisonHelpers.ts:125 diffs model_used across two runs - no candidate selection, policy or translation happens in this context; the plane lives in src-tauri/src/engine/runner + failover.rs",
+      "techniques": [],
+      "registryProposal": "Lexical resonance (comparison/list/breaker): an operator view of a breaker is not the plane. If the registry wants operator-surface obligations (served leaf, three failure counters) judged on UI, that belongs to operator-surfaces-for-llm-spend, not this subject."
+    },
+    {
+      "context": "6229df3d-d54e-47bb-8091-abb479003c18",
+      "subject": "multi-provider-gateway-plane",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/TauriPlaywrightAdapter.ts:18 the only adapter here wraps one Tauri command for credential capture; the rest renders one connector schema (src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:30) - no interchangeable upstreams fronted for callers",
+      "techniques": [],
+      "registryProposal": "Matched on catalog/field/adapter; precondition (several interchangeable upstreams behind one published contract) fails. connector-catalog is the governing subject for this vocabulary."
+    },
+    {
+      "context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5",
+      "subject": "multi-provider-gateway-plane",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/shared/playground/useApiTestRunner.ts:113 fires a connector endpoints against the ONE credential the caller names - an N=1 request path with no candidate set, so the plane techniques have nothing to select among",
+      "techniques": []
+    },
+    {
+      "context": "e13cfc6c-f666-4959-81c0-2cfbc4815f04",
+      "subject": "multi-provider-gateway-plane",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_recipes/libs/substituteBindings.ts:3 substitution here is {{variable}} template filling at adoption time, not upstream substitution; no request is routed to any upstream in this context",
+      "techniques": [],
+      "registryProposal": "Matched on adapter/substitution/substituted - a vocabulary collision; the subject use_when could disambiguate substitution as served-candidate substitution."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "multi-provider-gateway-plane",
+      "context": "11fe7642-7a1a-47c5-8910-499850aa04fe",
+      "reason": "plugins-companion-inbox has zero file paths in context-map.json - nothing to read; a dead context, not a judgment"
+    },
+    {
+      "subject": "multi-provider-gateway-plane",
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "reason": "over budget this run (5 judged); probable-confidence lexical match on shared feedback UI, likely not-applicable but unread"
+    },
+    {
+      "subject": "multi-provider-gateway-plane",
+      "context": "ba0d4722-bfde-40aa-8e1d-52591719f834",
+      "reason": "over budget this run; probable-confidence lexical match (stream/result) on Lab UI primitives, unread"
+    },
+    {
+      "subject": "multi-provider-gateway-plane",
+      "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc",
+      "reason": "over budget this run; triggers-studio routes events between personas, not upstreams - probable resonance, unread"
+    },
+    {
+      "subject": "multi-provider-gateway-plane",
+      "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0",
+      "reason": "weak context - coverage question, not judged by rule"
+    },
+    {
+      "subject": "multi-provider-gateway-plane",
+      "context": "89d44c76-ec4c-4388-843e-503cf6ca2507",
+      "reason": "weak context - coverage question, not judged by rule"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T17:30:09Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "multi-provider-gateway-plane"
+      ],
+      "techniques": [
+        "exclusive-authorship-of-a-measured-decision",
+        "policy-verdict-in-the-status-space",
+        "router-versus-candidate-failure"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T17:30:09Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "multi-provider-gateway-plane"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T17:30:09Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "multi-provider-gateway-plane"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T17:30:09Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "multi-provider-gateway-plane"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T17:30:09Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "multi-provider-gateway-plane"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

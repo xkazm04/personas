@@ -1,0 +1,35 @@
+{"schema": "conform-run/1", "worker": "e0b91f06-d27f-43da-8a2c-7304b55f8552", "subject": "draft-editing",
+ "evaluatedAt": "2026-10-09T17:18:37Z",
+ "pairs": [
+  {"context": "1ff7809a-171b-4baa-9c9b-12d888b017f0", "subject": "draft-editing", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:210 clearAll() empties the stored dirty map without reverting the draft to baseline; the tab's useEditorDirty effect (:299) only re-fires when its isDirty changes, so after a guard Discard (src/features/agents/sub_editor/components/EditorBody.tsx:94) the aggregate reads clean while the buffer still holds the edits - re-confirmed 2026-10-09",
+   "techniques": [
+    {"technique": "draft-model", "verdict": "deviation", "evidence": "src/features/agents/sub_editor/components/EditorBody.tsx:94 onDiscard calls clearAllDirty() and never resets draft to baseline; discard must reconstruct the draft from the baseline"},
+    {"technique": "dirty-tracking", "verdict": "deviation", "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:210 the aggregate is a stored map cleared independently of the per-tab derivations (prohibition 5: no aggregate maintained separately)"},
+    {"technique": "field-defaults-and-bounds", "verdict": "realized", "evidence": "src/features/agents/sub_editor/hooks/useEditorDraft.ts:30 clamps are applied at the patch door via clampDraftPatch"},
+    {"technique": "navigation-guards", "verdict": "deviation", "evidence": "src/features/agents/sub_editor/components/EditorBody.tsx:87 useUnsavedGuard is fed only isDirty, so pending debounced saves are invisible to the guard condition and no flush precedes the dialog"}
+   ],
+   "registryProposal": "upward lesson for react--draft-model: src/features/agents/sub_editor/hooks/useEditorDraft.ts:46 realizes the 'draft built from unreadable source must not save over it' rule (suppressModelSave on a corrupt model_profile, with a user-facing warning) - a real citation for that clause"},
+  {"context": "cc76d419-f457-4fe4-833c-6869efbc9287", "subject": "draft-editing", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:90 opens the modal on any dirty sidebar exit without attempting a flush, and the contract (:51) takes only an isDirty boolean, so flush-first-ask-second and pending/in-flight awareness are unrealizable for every caller - re-confirmed 2026-10-09",
+   "techniques": [
+    {"technique": "navigation-guards", "verdict": "deviation", "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:90 dirty exit reverts nav and opens the dialog with no flush; :51 the guard condition is a single boolean, blind to pending/in-flight/failed saves"},
+    {"technique": "debounced-save-groups", "verdict": "deviation", "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:73 the beforeunload hook only warns; a warning on close is not a synchronous last-gasp drain"}
+   ]},
+  {"context": "2a54cdc2-87af-4298-b490-9eb87f230df7", "subject": "draft-editing", "bundle": "software-engineering", "state": "not-applicable",
+   "evidence": "src/features/templates/sub_presets/usePresetAdoption.ts:30 the surface is a one-shot preset adoption staged preview->adopting->done with no persisted entity under sustained revision; git ls-files lists no draft-editor files under src/features/templates - re-confirmed 2026-10-09",
+   "techniques": []},
+  {"context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc", "subject": "draft-editing", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:174 commitAll iterates committableLinks (:168) without excluding links in committing, and the Commit-all button (src/features/triggers/sub_studio/StudioPatchbay.tsx:149) is never disabled, so a second click during a gated create->dry-run->enable round trip creates a duplicate live trigger; :124 drops the link by id on success, losing a condition cycled mid-flight (StudioPatchbay.tsx:196 stays enabled while busy) - re-confirmed 2026-10-09",
+   "techniques": [
+    {"technique": "debounced-save-groups", "verdict": "deviation", "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:174 no one-in-flight-per-group rule for commitAll (race 1/3); :124 clears the draft link without comparing against the payload actually sent (race 2)"},
+    {"technique": "draft-model", "verdict": "deviation", "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:124 apply marks the link committed by id, not by the payload it sent, so an edit made while the save is in flight is discarded"}
+   ]}
+ ],
+ "declined": [],
+ "consults": [
+  {"ts": "2026-10-09T17:18:37Z", "bundle": "software-engineering", "subjects": ["draft-editing"], "techniques": ["draft-model", "dirty-tracking", "field-defaults-and-bounds", "navigation-guards"], "deviations": 3, "context": "agents-editor"},
+  {"ts": "2026-10-09T17:18:37Z", "bundle": "software-engineering", "subjects": ["draft-editing"], "techniques": ["navigation-guards", "debounced-save-groups"], "deviations": 2, "context": "hooks-utility-interaction"},
+  {"ts": "2026-10-09T17:18:37Z", "bundle": "software-engineering", "subjects": ["draft-editing"], "techniques": [], "deviations": 0, "context": "templates-draft-editor"},
+  {"ts": "2026-10-09T17:18:37Z", "bundle": "software-engineering", "subjects": ["draft-editing"], "techniques": ["debounced-save-groups", "draft-model"], "deviations": 2, "context": "triggers-studio"}
+ ]}

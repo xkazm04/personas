@@ -1,0 +1,29 @@
+{"schema":"conform-run/1","worker":"99684acc-e89b-4049-8c9c-b52f3551dd4f","subject":"templates-scaffolding","evaluatedAt":"2026-10-12T12:12:29Z",
+"pairs":[
+{"context":"b88ef121-d028-4999-bf34-6e44aed99959","subject":"templates-scaffolding","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:58 GetPut guard catches only an unchanged Apply; an hour-only edit on an hourly capability falls to :83 selectionForTimePreset('daily', prev) (useCasePickerShared.ts:149 preset: 'daily') and silently rewrites the template's declared hourly trigger - file unchanged since 2026-09-17, re-confirmed",
+ "techniques":[{"technique":"adoption-lifecycle","verdict":"deviation","evidence":"src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:83 a real edit re-derives the field the composer cannot represent; neither remedy the technique names (widen the vocabulary, or refuse to represent hourly) exists"}]},
+{"context":"b38217f2-397e-49a7-ac32-4cce440c7e74","subject":"templates-scaffolding","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/lib/templates/templateVerification.ts:208 resolveIntegrityValid returns true when no expected digest is registered, so an un-fingerprinted built-in paints the 'verified' shield (src/features/templates/sub_generated/shared/TrustBadge.tsx:21 three-state map, no unverifiable/pending state) - could-not-verify folded into verified; unchanged since 2026-09-17, re-confirmed",
+ "techniques":[{"technique":"integrity-and-provenance","verdict":"deviation","evidence":"src/features/templates/sub_generated/shared/TrustBadge.tsx:21 TRUST_ICONS has verified/sandboxed/untrusted only; the technique's neutral pending/unverifiable display state is absent, so absent evidence renders as the success mark"}]},
+{"context":"4be04ef0-88db-4f48-859c-92e6ba4d203f","subject":"templates-scaffolding","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/templates/sub_generated/gallery/search/filters/searchConstants.ts:135 'Ready to Deploy' sorts by computeAdoptionReadiness (src/features/templates/sub_generated/shared/adoptionReadiness.ts:48), a category-level heuristic used only by browse cards (useGalleryActions.ts:68, useTemplateCardData.ts:96) and sharing no evaluator with the adoption-time gate - two computations where the technique requires one evaluator at two render points; re-confirmed",
+ "techniques":[{"technique":"readiness-prerequisites","verdict":"deviation","evidence":"src/features/templates/sub_generated/shared/adoptionReadiness.ts:48 browse-time readiness is a separate evaluator from the commit-time gate, so a 'Ready' badge does not mean the gate passes"}]},
+{"context":"e13cfc6c-f666-4959-81c0-2cfbc4815f04","subject":"templates-scaffolding","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/templates/sub_recipes/libs/useAdoption.ts:250 recipeToUseCase stamps only source_recipe_id (:250) and source_recipe_version (:251), no binding values or adoption time (header admits it at :39) - instance-upgrade's 'stamp without answers': staleness can be detected but no merge base can be regenerated; 2026-10-11 edit (9e77df1892) only shifted lines, re-confirmed",
+ "techniques":[{"technique":"instance-upgrade","verdict":"deviation","evidence":"src/features/templates/sub_recipes/libs/useAdoption.ts:251 version pinned, answer set never kept, so accepting an update cannot separate adopter edits from recipe changes"}]}
+],
+"declined":[
+{"subject":"templates-scaffolding","context":"7dddb34a-3a9b-4ce0-832f-55ea352c12b5","reason":"judged 2026-10-03 against current digest; budget spent on the other four oldest verdicts - though the defaults-within-options door it names is still absent (ChronologyAdoptionView.tsx:884 seeds q.default unchecked; no membership check found anywhere under src/, scripts/, src-tauri/src)"},
+{"subject":"templates-scaffolding","context":"b26fe932-b123-4b9e-8d1c-bbbf4e508265","reason":"verdict 2026-10-10 against current digest, not stale; outside budget"},
+{"subject":"templates-scaffolding","context":"835ed922-2ebd-425b-a542-dbe5996e1e78","reason":"verdict 2026-10-10 against current digest, not stale; outside budget"},
+{"subject":"templates-scaffolding","context":"d3346f2c-d747-4d85-b6e6-c1450da57ec9","reason":"verdict 2026-10-10 against current digest, not stale; outside budget"},
+{"subject":"templates-scaffolding","context":"9fca099d-94e4-4fd0-8460-3cf5d8c85acf","reason":"verdict 2026-10-09 against current digest, not stale; outside budget"},
+{"subject":"templates-scaffolding","context":"2a54cdc2-87af-4298-b490-9eb87f230df7","reason":"verdict 2026-10-09 against current digest, not stale; outside budget"}
+],
+"consults":[
+{"ts":"2026-10-12T12:12:29Z","bundle":"software-engineering","subjects":["templates-scaffolding"],"techniques":["adoption-lifecycle"],"deviations":1},
+{"ts":"2026-10-12T12:12:29Z","bundle":"software-engineering","subjects":["templates-scaffolding"],"techniques":["integrity-and-provenance"],"deviations":1},
+{"ts":"2026-10-12T12:12:29Z","bundle":"software-engineering","subjects":["templates-scaffolding"],"techniques":["readiness-prerequisites"],"deviations":1},
+{"ts":"2026-10-12T12:12:29Z","bundle":"software-engineering","subjects":["templates-scaffolding"],"techniques":["instance-upgrade"],"deviations":1}
+]}

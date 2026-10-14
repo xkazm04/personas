@@ -1,0 +1,23 @@
+{"schema": "conform-run/1", "worker": "15ffc944-535b-4234-be02-5e07dd694beb", "subject": "entity-lifecycle",
+ "evaluatedAt": "2026-10-12T12:33:05Z",
+ "pairs": [
+  {"context": "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0", "subject": "entity-lifecycle", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/core/personas.rs:2470 blast_radius counts only running/queued executions while persona_executions is ON DELETE CASCADE (src-tauri/db/src/migrations/schema.rs:111), so a persona delete destroys every completed/failed run the preview never names; re-confirmed 2026-10-12 at registry bb180d5d",
+   "evaluatedAgainst": "sha256-b2:cef5e3463825ff22", "evaluatedRevision": 6,
+   "techniques": [
+    {"technique": "blast-radius-computation", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/core/personas.rs:2470 preview predicate filters status IN ('running','queued') while the declared cascade at src-tauri/db/src/migrations/schema.rs:111 removes all rows - the technique's 'one predicate, clause for clause' rule; preview is not produced through the enforcement path"},
+    {"technique": "cascade-design", "verdict": "deviation", "evidence": "src-tauri/db/src/migrations/schema.rs:111 execution history is declared CASCADE rather than a named survivor (detach), so run history does not outlive the persona"}
+   ]},
+  {"context": "a35d1f4a-5de8-4be1-af8b-1a3784296400", "subject": "entity-lifecycle", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 the Artist plugin was removed 2026-09-14 and artist_assets is dropped (:18); no gallery code or delete path remains to judge (context paths: [])",
+   "evaluatedAgainst": "sha256-b2:cef5e3463825ff22", "evaluatedRevision": 6,
+   "techniques": [],
+   "registryProposal": "Context plugins-artist-gallery is dead (no paths, plugin retired); the context map should drop it on the next rescan rather than keep re-pairing it."}
+ ],
+ "declined": [],
+ "consults": [
+  {"ts": "2026-10-12T12:33:05Z", "bundle": "software-engineering", "subjects": ["entity-lifecycle"], "techniques": ["blast-radius-computation", "cascade-design"], "deviations": 1},
+  {"ts": "2026-10-12T12:33:05Z", "bundle": "software-engineering", "subjects": ["entity-lifecycle"], "techniques": [], "deviations": 0}
+ ]}

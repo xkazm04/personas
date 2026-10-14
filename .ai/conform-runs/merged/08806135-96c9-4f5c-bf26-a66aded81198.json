@@ -1,0 +1,64 @@
+{
+  "schema": "conform-run/1",
+  "worker": "08806135-96c9-4f5c-bf26-a66aded81198",
+  "subject": "authorization",
+  "evaluatedAt": "2026-10-10T01:38:27Z",
+  "pairs": [
+    {
+      "context": "621caefc-8ae0-42e7-89b6-8e879ad62814",
+      "subject": "authorization",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:57d60a438fa36d05",
+      "evaluatedRevision": 6,
+      "evidence": "src-tauri/src/engine/management_api.rs:777 an unknown API-key token is refused 401 with no audit row (also missing-key at :712, and the MCP twin at src-tauri/src/mcp_server/auth.rs:76), so a credential-probing sequence against /api/* or personas-mcp leaves no queryable trail - re-confirmed at HEAD 2026-10-10",
+      "techniques": [
+        {"technique": "authorization-audit", "verdict": "deviation", "evidence": "src-tauri/src/engine/management_api.rs:777 invalid-key denial writes nothing; record_audit at :791 swallows insert failure at debug level with no visible counter, and src-tauri/src/mcp_server/auth.rs:89 discards the audit Result with `let _ =`"},
+        {"technique": "scope-design", "verdict": "realized", "evidence": "src-tauri/src/engine/management_api.rs:731 per-route scope check before next.run, denial audited as 403 at :739"},
+        {"technique": "dispatch-chokepoint-gating", "verdict": "realized", "evidence": "src-tauri/src/engine/management_api.rs:731 the auth middleware decides before the handler runs (next.run only after authorize + rate limit)"}
+      ],
+      "registryProposal": "authorization-audit assumes every denial has a caller channel identity to record; it is silent on the unattributable denial (unknown/revoked token, no key row), which this repo uses as the stated reason to record nothing (src-tauri/src/mcp_server/auth.rs:75). The technique should say what an unattributed denial carries (origin, token-prefix fingerprint, correlation handle) so 'no identity' cannot read as 'nothing to audit'."
+    },
+    {
+      "context": "0ecc70bc-a005-4ff8-9a98-f362d2a75f53",
+      "subject": "authorization",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:57d60a438fa36d05",
+      "evaluatedRevision": 6,
+      "evidence": "src-tauri/src/commands/network/identity.rs:60 import_trusted_peer adds a P2P trust anchor yet carries no #[requires] and is absent from PRIVILEGED_COMMANDS (src-tauri/src/ipc_auth.rs:117); its only guard require_auth_sync is a no-op Ok(()) at src-tauri/src/ipc_auth.rs:471, so any webview content can mint a trusted peer - re-confirmed at HEAD 2026-10-10",
+      "techniques": [
+        {"technique": "privilege-tiers", "verdict": "deviation", "evidence": "src-tauri/src/commands/network/identity.rs:60 a trust-anchor mutation dispatches at the public tier; worst-reachable-effect puts it at privileged/elevated"},
+        {"technique": "declarative-requirements", "verdict": "deviation", "evidence": "src-tauri/src/commands/network/identity.rs:65 the requirement is an imperative require_auth_sync call (a no-op), not a #[requires] annotation the gate reads - registered-but-unclassified is still representable"},
+        {"technique": "dispatch-chokepoint-gating", "verdict": "realized", "evidence": "src-tauri/src/ipc_auth.rs:610 wrap_invoke_handler gates listed commands before dispatch with constant_time_eq at :663 - the chokepoint exists; this command is simply not on its list"}
+      ]
+    },
+    {
+      "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7",
+      "subject": "authorization",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:57d60a438fa36d05",
+      "evaluatedRevision": 6,
+      "evidence": "src-tauri/src/engine/api_proxy.rs:799 a Block (and at :781 a WarnOnly) out-of-scope credential use is recorded only via tracing::warn!, never through audit_log, so the per-credential audit trail cannot show scope denials or would-be denials - re-confirmed at HEAD 2026-10-10",
+      "techniques": [
+        {"technique": "authorization-audit", "verdict": "deviation", "evidence": "src-tauri/src/engine/api_proxy.rs:799 scope Block is logged to tracing only; the refusal path at :827-834 returns Forbidden without an audit_log write"},
+        {"technique": "failure-direction", "verdict": "deviation", "evidence": "src-tauri/engine/src/scope_enforcement.rs:52 absent metadata resolves to Warn - warn-only is the global undated default rather than a per-restriction migration with an exit, so a user's scope picks are advisory unless they opt into block; corrupt metadata does fail closed at :61"},
+        {"technique": "scope-design", "verdict": "realized", "evidence": "src-tauri/src/engine/api_proxy.rs:768 scope_enforcement::evaluate intersects the request path with the credential's picked resources before any secret is applied"}
+      ],
+      "registryProposal": "failure-direction's 'graduated enforcement is a migration state' rule could name the shape seen here explicitly: a per-grant opt-in to enforcement (default warn) is the global warn-only mode in disguise, because no restriction ever exits warn unless a user flips it."
+    }
+  ],
+  "declined": [
+    {"subject": "authorization", "context": "a38e2b93-2322-4187-befa-c0443c4ca85f", "reason": "glyph-definitions is a weak context (governance: weak); judging it would manufacture a verdict on a doubtful lexical match. Reported as a coverage question, not judged."},
+    {"subject": "authorization", "context": "e61f931c-25d7-4532-9ec7-ab6f3fc377e2", "reason": "not-applicable verdict from 2026-10-03 is current against digest 57d60a438fa36d05 rev 6 and not stale; not re-read this run (budget spent re-confirming the deviations that ranked this subject)."},
+    {"subject": "authorization", "context": "c413de7d-1182-4abc-8a08-9c8832254c62", "reason": "not-applicable verdict from 2026-10-03 is current against the subject digest and not stale; not re-read this run."},
+    {"subject": "authorization", "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65", "reason": "not-applicable verdict from 2026-10-03 is current against the subject digest and not stale; not re-read this run."},
+    {"subject": "authorization", "context": "b62fa237-32b4-41c3-bf56-3e498b643da9", "reason": "not-applicable verdict from 2026-10-03 is current against the subject digest and not stale; not re-read this run."}
+  ],
+  "consults": [
+    {"ts": "2026-10-10T01:38:27Z", "bundle": "software-engineering", "subjects": ["authorization"], "techniques": ["authorization-audit", "scope-design", "dispatch-chokepoint-gating"], "deviations": 1},
+    {"ts": "2026-10-10T01:38:27Z", "bundle": "software-engineering", "subjects": ["authorization"], "techniques": ["privilege-tiers", "declarative-requirements", "dispatch-chokepoint-gating"], "deviations": 1},
+    {"ts": "2026-10-10T01:38:27Z", "bundle": "software-engineering", "subjects": ["authorization"], "techniques": ["authorization-audit", "failure-direction", "scope-design"], "deviations": 1}
+  ]
+}

@@ -1,0 +1,211 @@
+{
+  "schema": "conform-run/1",
+  "worker": "35781600-7762-4d9b-9e1e-53c91734847c",
+  "subject": "motion",
+  "evaluatedAt": "2026-10-12T12:24:21.510Z",
+  "pairs": [
+    {
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "subject": "motion",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/components/display/MotionizedGlyph.tsx:113 the IntersectionObserver bumps runKey on every re-entry into view, replaying the staggered-draw entrance on scroll-back and tab return - the scroll-reveal replay the technique names as a glitch; re-verified unchanged 2026-10-12",
+      "techniques": [
+        {
+          "technique": "one-shot-guarding",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/display/MotionizedGlyph.tsx:113 setRunKey on re-entry replays the entrance"
+        }
+      ]
+    },
+    {
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "subject": "motion",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/components/feedback/DropZoneGlow.tsx:39 the framer scale spring has no call-site gate and relies on src/App.tsx:387 MotionConfig reducedMotion=\"user\" (OS query only), so a user with the in-app Reduce Motion toggle still gets the full spring on every drag-over; re-verified 2026-10-12, MotionConfig anchor moved 386->387",
+      "techniques": [
+        {
+          "technique": "reduced-motion-mechanics",
+          "verdict": "deviation",
+          "evidence": "src/App.tsx:387 MotionConfig reads only the OS signal; the in-app toggle merged at src/hooks/utility/interaction/useMotion.ts:49 never reaches DropZoneGlow"
+        }
+      ]
+    },
+    {
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+      "subject": "motion",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/utility/interaction/useMotion.ts:153 the reduced clone collapses every transition to exact duration 0 and :133 strips delay, deleting timing-load-bearing invisibility windows and risking completion events that never fire - re-verified unchanged 2026-10-12",
+      "techniques": [
+        {
+          "technique": "reduced-motion-mechanics",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:153 out.duration = 0 for every reduced transition"
+        }
+      ]
+    },
+    {
+      "context": "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6",
+      "subject": "motion",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/utils/rafAnimationEngine.ts:71 the shared spring engine reads only the OS media query, ignoring the in-app Reduce Motion toggle that src/hooks/utility/interaction/useMotion.ts:49 merges in, so in-app-toggle users get full spring travel on every scripted counter - re-verified unchanged 2026-10-12",
+      "techniques": [
+        {
+          "technique": "reduced-motion-mechanics",
+          "verdict": "deviation",
+          "evidence": "src/lib/utils/rafAnimationEngine.ts:71 matchMedia(prefers-reduced-motion) only"
+        }
+      ]
+    },
+    {
+      "context": "36783fec-01fa-40d5-8620-cf65ae691d27",
+      "subject": "motion",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:32 inlines an off-ladder 1.1s pathLength draw and :40 an unnamed 320/22 spring with no preset and no fallback; pathLength is outside framer reduce property set, so the draw runs full-length even under OS reduced motion - re-verified unchanged 2026-10-12",
+      "techniques": [
+        {
+          "technique": "preset-vocabulary",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:40 unnamed inline spring, no preset"
+        }
+      ]
+    },
+    {
+      "context": "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20",
+      "subject": "motion",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/radio/components/TitleCrossfade.tsx:59 overlaps a fading-out old track title with the fading-in new one (cross-fade of two strangers), and src/features/plugins/radio/components/EqualizerBars.tsx:51 runs 16 infinite eq-bounce loops at 0.45-1.1s periods far outside the ambient bound - re-verified unchanged 2026-10-12",
+      "techniques": [
+        {
+          "technique": "continuity-across-change",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/radio/components/TitleCrossfade.tsx:59 old title fade-out overlaps the new title"
+        }
+      ]
+    },
+    {
+      "context": "b4439e30-fcff-4095-97dd-d9d7da2247dd",
+      "subject": "motion",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/settings/sub_portability/components/ExportSelectionModal.tsx:331 keeps ghost rows invisible through a 120ms+ animationDelay window on animate-fade-in, but src/styles/globals.css:4893 (selector at :4884) sets animation: none under prefers-reduced-motion, deleting the window so ghosts flash on every fast load - re-verified unchanged 2026-10-12",
+      "techniques": [
+        {
+          "technique": "reduced-motion-mechanics",
+          "verdict": "deviation",
+          "evidence": "src/styles/globals.css:4893 animation: none !important deletes the invisibility window"
+        }
+      ]
+    },
+    {
+      "context": "a576c14f-1edd-4da4-8d11-527161a3b5b3",
+      "subject": "motion",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_teamWorkspace/TeamList.tsx:528 and src/features/teams/sub_teamWorkspace/presetStudio/PresetStudio.tsx:141 hide ghost rows/cards behind a 120ms+ animationDelay, but src/styles/globals.css:4893 sets animation: none on .animate-fade-in under prefers-reduced-motion, so those users see ghosts flash on every warm load - re-verified unchanged 2026-10-12",
+      "techniques": [
+        {
+          "technique": "reduced-motion-mechanics",
+          "verdict": "deviation",
+          "evidence": "src/styles/globals.css:4893 animation: none !important deletes the delay window"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-12T12:24:21.510Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "motion"
+      ],
+      "techniques": [
+        "one-shot-guarding"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T12:24:21.510Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "motion"
+      ],
+      "techniques": [
+        "reduced-motion-mechanics"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T12:24:21.510Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "motion"
+      ],
+      "techniques": [
+        "reduced-motion-mechanics"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T12:24:21.510Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "motion"
+      ],
+      "techniques": [
+        "reduced-motion-mechanics"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T12:24:21.510Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "motion"
+      ],
+      "techniques": [
+        "preset-vocabulary"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T12:24:21.510Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "motion"
+      ],
+      "techniques": [
+        "continuity-across-change"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T12:24:21.510Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "motion"
+      ],
+      "techniques": [
+        "reduced-motion-mechanics"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T12:24:21.510Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "motion"
+      ],
+      "techniques": [
+        "reduced-motion-mechanics"
+      ],
+      "deviations": 1
+    }
+  ]
+}

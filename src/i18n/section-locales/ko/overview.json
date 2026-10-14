@@ -2105,5 +2105,6 @@
   "dc_open_in_deck_hint": "결정 센터에서 열기 (Enter)",
   "dc_pending_lead": "대기 중인 검토는 전체 내용과 다른 모든 결정과 같은 키와 함께 결정 센터에서 열립니다.",
   "dc_pending_list_aria": "대기 중인 검토",
-  "dc_select_review": "검토 선택"
+  "dc_select_review": "검토 선택",
+  "dc_col_decision": "결정"
 }

@@ -1,0 +1,13 @@
+{"schema":"conform-run/1","worker":"d11750fc-4ece-474d-ad5b-ba29efcd39ac","subject":"model-routing","evaluatedAt":"2026-10-12T12:28:00Z",
+"pairs":[{"context":"94b0b4ea-9adb-44d7-8222-4e2345de455b","subject":"model-routing","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/settings/sub_byom/libs/useByomSettings.ts:161 applies an edited BYOM policy in place as bare unversioned JSON (src-tauri/db/src/byom.rs:305) that no audit row cites (src/lib/bindings/ProviderAuditEntry.ts:6), and src-tauri/engine/src/failover.rs:770 silently drops blocked providers so an emptied chain surfaces as the generic src-tauri/src/engine/runner/mod.rs:2398 message - re-anchored 2026-10-12 (failover.rs moved to engine crate in 9708af6d23)",
+"evaluatedAgainst":"sha256-b2:5484901d8df95b15","evaluatedRevision":21,
+"techniques":[
+{"technique":"policy-governance","verdict":"deviation","evidence":"src/features/settings/sub_byom/libs/useByomSettings.ts:161 saves the policy directly with no diff/approval step; src-tauri/db/src/byom.rs:305 overwrites one settings key with no version, so src/lib/bindings/ProviderAuditEntry.ts:6 can name a rule but never the policy version that served a call"},
+{"technique":"routing-policy","verdict":"deviation","evidence":"src-tauri/engine/src/failover.rs:770 filters blocked providers with no empty-chain check (src-tauri/src/engine/runner/mod.rs:2067 consumes it unchecked), so 'no candidate survives the cascade' reaches the user as src-tauri/src/engine/runner/mod.rs:2398 'All providers failed or have open circuit breakers' - a policy outcome disguised as a transport failure"}]}],
+"declined":[
+{"subject":"model-routing","context":"ba0d4722-bfde-40aa-8e1d-52591719f834","reason":"not-applicable verdict of 2026-10-05 is against the current digest (rev 21) and not stale; probable-confidence pair, no reason to re-read"},
+{"subject":"model-routing","context":"9fff7e41-4fc5-4c31-846b-c04ca1c79757","reason":"not-applicable verdict of 2026-10-05 is current against digest rev 21; not stale"},
+{"subject":"model-routing","context":"54236947-3775-4d0a-8e14-1a709dd4d8bc","reason":"not-applicable verdict of 2026-10-05 is current against digest rev 21; not stale"},
+{"subject":"model-routing","context":"ff513ec2-b52d-403b-b3e3-b94e45a8c2dc","reason":"not-applicable verdict of 2026-10-05 is current against digest rev 21; not stale"}],
+"consults":[{"ts":"2026-10-12T12:28:00Z","bundle":"software-engineering","subjects":["model-routing"],"techniques":["policy-governance","routing-policy"],"deviations":1}]}

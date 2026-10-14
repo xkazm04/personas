@@ -2,4 +2,4 @@
 import type { AccessLevel } from "./AccessLevel";
 import type { ResourceType } from "./ResourceType";
 
-export type CreateExposedResourceInput = { resource_type: ResourceType, resource_id: string, display_name: string, description?: string | null, fields_exposed: string[], access_level: AccessLevel, requires_auth: boolean, tags: string[], expires_at?: string | null, };
+export type CreateExposedResourceInput = { resource_type: ResourceType, resource_id: string, display_name: string, description: string | null, fields_exposed: Array<string>, access_level: AccessLevel, requires_auth: boolean, tags: Array<string>, expires_at: string | null, };

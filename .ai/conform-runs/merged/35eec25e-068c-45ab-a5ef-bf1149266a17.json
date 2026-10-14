@@ -1,0 +1,12 @@
+{"schema":"conform-run/1","worker":"35eec25e-068c-45ab-a5ef-bf1149266a17","subject":"entity-lifecycle","evaluatedAt":"2026-10-10T02:07:53Z",
+ "pairs":[{"context":"e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0","subject":"entity-lifecycle","bundle":"software-engineering","state":"deviation",
+  "evaluatedAgainst":"sha256-b2:cef5e3463825ff22","evaluatedRevision":6,
+  "evidence":"src-tauri/db/src/repos/core/personas.rs:2470 blast_radius counts only running/queued executions while persona_executions is ON DELETE CASCADE (src-tauri/db/src/migrations/schema.rs:111), so a persona delete destroys every completed/failed run the preview never names; re-confirmed 2026-10-10 at registry 32d7899f",
+  "techniques":[
+   {"technique":"blast-radius-computation","verdict":"deviation","evidence":"src-tauri/db/src/repos/core/personas.rs:2470 the probe filters status IN ('running','queued') while the delete takes every execution row - preview and act do not share a predicate"},
+   {"technique":"cascade-design","verdict":"deviation","evidence":"src-tauri/db/src/migrations/schema.rs:111 run history (persona_executions) is declared CASCADE, not detach; the survivor list omits the one table the golden path names as a survivor by design"},
+   {"technique":"orphan-reconciliation","verdict":"realized","evidence":"src-tauri/db/src/repos/core/personas.rs:2236 doomed memory ids are captured inside the delete transaction and handed to the reaper registry/ledger at :2260 (src-tauri/db/src/repos/core/memory_reaper.rs:1)"},
+   {"technique":"archive-restore-semantics","verdict":"unknown","evidence":"src-tauri/db/src/repos/core/personas.rs:982 archive is a distinct non-cascading promise; whether triggers/schedules honor 'archived' was not read this run"},
+   {"technique":"change-logging","verdict":"unknown","evidence":"src-tauri/db/src/repos/core/personas.rs:2256 a sync tombstone is written in the delete transaction; whether it carries actor and contemporaneous name was not read"}]}],
+ "declined":[{"subject":"entity-lifecycle","context":"a35d1f4a-5de8-4be1-af8b-1a3784296400","reason":"plugins-artist-gallery is governance:weak (matched only on bulk/delete/deleted tokens); the skill forbids judging weak pairs by default - a coverage question for the registry, left unknown"}],
+ "consults":[{"ts":"2026-10-10T02:07:53Z","bundle":"software-engineering","subjects":["entity-lifecycle"],"techniques":["blast-radius-computation","cascade-design","orphan-reconciliation","archive-restore-semantics","change-logging"],"deviations":1}]}

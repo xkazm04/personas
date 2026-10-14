@@ -992,6 +992,10 @@ fn reaper_loop(
 /// reaper): log why the session ended, honor the hibernation flag, mark
 /// exited + emit, and reconcile operative memory. Exactly once per session.
 pub(super) fn finalize_child_exit(app: &AppHandle, session_id: &str, exit_code: Option<i32>) {
+    // The child is gone on EVERY branch below (exit, doze, reap, hibernate):
+    // the resource sampler summarises this process life now (a wake mints a
+    // new session id, so it is a new run).
+    crate::engine::resources::end_run(crate::db::models::RunKind::Fleet, session_id);
     // Always log WHY a session ended. Previously the reaper logged nothing on a
     // normal-looking exit, so an abnormal death (crash / spawn-time
     // STATUS_DLL_INIT_FAILED) left no breadcrumb at all.

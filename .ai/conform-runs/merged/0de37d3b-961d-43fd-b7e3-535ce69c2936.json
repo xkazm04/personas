@@ -1,0 +1,97 @@
+{
+  "schema": "conform-run/1",
+  "worker": "0de37d3b-961d-43fd-b7e3-535ce69c2936",
+  "subject": "diff-comparison",
+  "evaluatedAt": "2026-10-09T16:06:26Z",
+  "pairs": [
+    {
+      "context": "83a8a744-2036-4e3e-9654-6fcec82334ff",
+      "subject": "diff-comparison",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:8d6a27cb32976f49",
+      "evaluatedRevision": 6,
+      "evidence": "src/features/plugins/obsidian-brain/sub_sync/ConflictDiffView.tsx:32 caps each side at 6000 chars BEFORE diffing, cutting mid-line: the severed line renders as a phantom app/vault edit, and a conflict whose divergence sits past the cap renders as an all-shared diff above the keep-app/keep-vault buttons, disclosed only by an unquantified footnote under the scroll box (:80)",
+      "techniques": [
+        {
+          "technique": "diff-honesty",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/obsidian-brain/sub_sync/ConflictDiffView.tsx:32 input capped by characters, not lines, and the truncation note (:80) sits below the box, not at the cut, with no remainder count; a real conflict past char 6000 reads as no difference"
+        },
+        {
+          "technique": "invisible-differences",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/obsidian-brain/sub_sync/conflictDiff.ts:20 splits on \n only and keeps \r; the conflict hash is byte-exact (src-tauri/src/commands/obsidian_brain/markdown.rs:226) over raw vault reads, so a CRLF-only divergence is raised as a conflict whose every line renders changed with identical visible text"
+        },
+        {
+          "technique": "pair-and-baseline-selection",
+          "verdict": "partial",
+          "evidence": "src/features/plugins/obsidian-brain/sub_sync/ConflictDiffView.tsx:58 sides are role-named (App/Vault legend :45,:49) but app-only lines wear the removal glyph and vault-only the addition glyph (:66), giving a direction to a concurrent pair; baseHash exists (src/lib/bindings/SyncConflict.ts:3) but no base content, so the two-way diff cannot say which side changed a line"
+        },
+        {
+          "technique": "semantic-level-selection",
+          "verdict": "realized",
+          "evidence": "src/features/plugins/obsidian-brain/sub_sync/conflictDiff.ts:14 notes are prose, diffed at line level by a real LCS that keeps order and repeated lines"
+        },
+        {
+          "technique": "presentation-modes",
+          "verdict": "realized",
+          "evidence": "src/features/plugins/obsidian-brain/sub_sync/ConflictDiffView.tsx:58 each change kind carries a glyph besides colour, the glyph is select-none so a copied side carries no diff punctuation, and the hues match the keep-app/keep-vault buttons"
+        },
+        {
+          "technique": "computation-offload",
+          "verdict": "partial",
+          "evidence": "src/features/plugins/obsidian-brain/sub_sync/ConflictDiffView.tsx:6 synchronous fast path under a declared cap, but the cap is in chars while the LCS cost is lines squared (conflictDiff.ts:28), so a short-line note within the cap can still build a multi-million-cell table on the UI thread"
+        },
+        {
+          "technique": "drift-against-declared",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/obsidian-brain/sub_sync/SyncPanel.tsx:309 the pair is two concurrent edits of one note; no declared promise is the left side"
+        },
+        {
+          "technique": "baseline-species-degradation",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/bindings/SyncConflict.ts:3 a conflict row always carries both appContent and vaultContent, so no baseline species is ever missing for a class of objects"
+        }
+      ],
+      "registryProposal": "The golden path routes conflict POLICY to sync-replication and says a three-way diff against the ancestor is how a conflict becomes legible; this repo keeps the ancestor only as a hash (baseHash), which is the common case for hash-based sync. diff-honesty/pair-and-baseline could name what a two-way conflict view owes when the ancestor content is unrecoverable (declare it two-way, drop the -/+ direction glyphs for symmetric role marks)."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "diff-comparison",
+      "context": "03960450-6979-4412-9de3-35c897fe56d2",
+      "reason": "deviation judged 2026-10-06 against the current digest (revision 6, 0 behind); git log shows no change to the anchored files since, so a re-read would restate a current verdict"
+    },
+    {
+      "subject": "diff-comparison",
+      "context": "ba0d4722-bfde-40aa-8e1d-52591719f834",
+      "reason": "deviation judged 2026-10-06 against the current digest (revision 6, 0 behind); anchored files unchanged since; also confidence probable, lexical-only grounding"
+    },
+    {
+      "subject": "diff-comparison",
+      "context": "fd092e44-fcec-4418-8337-ed2b7b2c8473",
+      "reason": "deviation judged 2026-10-06 against the current digest (revision 6, 0 behind); anchored files unchanged since"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T16:06:26Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "diff-comparison"
+      ],
+      "techniques": [
+        "diff-honesty",
+        "invisible-differences",
+        "pair-and-baseline-selection",
+        "semantic-level-selection",
+        "presentation-modes",
+        "computation-offload",
+        "drift-against-declared",
+        "baseline-species-degradation"
+      ],
+      "deviations": 2
+    }
+  ]
+}

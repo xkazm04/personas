@@ -7,6 +7,11 @@
 // title, then the estimated start and - for a deferred rung - the amber
 // not-before cue. The verbs float over the rung's right edge on hover or
 // focus instead of reserving their width, so the title keeps the lane.
+//
+// Device mesh: a LOCAL rung also offers "Move to…" (the paired devices), and
+// while a move is in flight or was refused the rung says so on a line of its
+// own. A PEER's rung (`peer`) is the same rung whose verbs run on that device;
+// it has no local session menu and nothing to move.
 
 import { memo, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp, Clock, X, Zap } from 'lucide-react';
@@ -18,9 +23,12 @@ import type { QueueItem } from '../../board/queue/useQueueModel';
 import { useSessionFacts } from '../shared';
 import { useSessionMenu } from './SessionMenu';
 import { pileSkin, sessionPileKey } from './pileSkin';
+import { moveOutcomeKey } from '@/stores/slices/network/meshSlice';
+import { MoveToMenu } from './devices/MoveToMenu';
+import { MeshOutcomeLine, useMeshOutcome } from './devices/MeshOutcomeLine';
 
 export const QueueRung = memo(function QueueRung({
-  item, index, total, maxWait, now, compact, flash, lifted = false, grip, onNudge, onStart, onCancel,
+  item, index, total, maxWait, now, compact, flash, lifted = false, grip, onNudge, onStart, onCancel, peer = false,
 }: {
   item: QueueItem;
   index: number;
@@ -34,11 +42,18 @@ export const QueueRung = memo(function QueueRung({
   onNudge: (id: string, delta: -1 | 1) => void;
   onStart: (item: QueueItem) => void;
   onCancel: (item: QueueItem) => void;
+  /** The rung is on a paired device's queue. */
+  peer?: boolean;
 }) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
   const f = useSessionFacts()(item.session, item);
-  const menu = useSessionMenu(item.session);
+  const sessionMenu = useSessionMenu(item.session);
+  const menu = peer ? { onContextMenu: undefined, onKeyDown: undefined } : sessionMenu;
+  const moving = useMeshOutcome(moveOutcomeKey(item.sessionId))?.state === 'pending';
+  const moveLine = peer ? null : (
+    <MeshOutcomeLine outcomeKey={moveOutcomeKey(item.sessionId)} pendingText={m.mesh_move_pending} />
+  );
   const est = useFormattedDate(item.estimatedStartMs, { timeStyle: 'short' });
   const gate = useFormattedDate(item.notBeforeMs, { timeStyle: 'short' });
   const gated = item.notBeforeMs !== null && item.notBeforeMs > now;
@@ -56,6 +71,7 @@ export const QueueRung = memo(function QueueRung({
       <Tooltip content={m.queue_move_down}>
         <Button variant="ghost" size="icon-sm" disabled={index === total - 1} onClick={() => onNudge(item.sessionId, 1)} aria-label={m.queue_move_down} data-testid="fleet-queue-down" icon={<ChevronDown className="h-4 w-4" />} />
       </Tooltip>
+      {!peer && <MoveToMenu sessionId={item.sessionId} label={f.label} />}
       <Tooltip content={m.queue_start_now}>
         <Button variant="accent" tone="info" size="icon-sm" onClick={() => onStart(item)} aria-label={m.queue_start_now} data-testid="fleet-queue-start-now" icon={<Zap className="h-3.5 w-3.5" />} />
       </Tooltip>
@@ -79,6 +95,7 @@ export const QueueRung = memo(function QueueRung({
         onContextMenu={menu.onContextMenu}
         onKeyDown={menu.onKeyDown}
         aria-label={`${tx(m.queue_rank_aria, { rank })}, ${f.label}, ${eta}`}
+        aria-busy={moving || undefined}
         data-pile={skin.pile}
         className={`${skin.className} ae-row is-inert flex min-w-0 items-center gap-2 py-1.5 pl-1 pr-1.5 ${flash ? 'is-flash' : ''} ${lifted ? 'ae-dragging' : ''}`}
         style={skin.style}
@@ -92,6 +109,7 @@ export const QueueRung = memo(function QueueRung({
             <span className="min-w-0 flex-1 truncate tabular-nums">{eta}</span>
             {gateTag}
           </span>
+          {moveLine}
         </span>
         {verbs}
       </div>
@@ -104,6 +122,7 @@ export const QueueRung = memo(function QueueRung({
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
       aria-label={tx(m.queue_rank_aria, { rank })}
+      aria-busy={moving || undefined}
       className={`ae-win ae-row ae-focus flex min-w-0 items-stretch gap-2 rounded-input py-2 pl-1 pr-2 ${flash ? 'is-flash' : ''} ${lifted ? 'ae-dragging' : ''}`}
     >
       {grip && <span className="flex items-center">{grip}</span>}
@@ -116,6 +135,7 @@ export const QueueRung = memo(function QueueRung({
           <span className="tabular-nums text-foreground">{eta}</span>
           {gateTag}
         </span>
+        {moveLine}
         {maxWait > 0 && (
           <span className="relative mt-0.5 block h-1.5 rounded-full bg-foreground/[0.07]" aria-hidden>
             {wait !== null && <span className="absolute inset-y-0 left-0 rounded-full bg-status-info/70" style={{ width: `${Math.max(3, (wait / maxWait) * 100)}%` }} />}

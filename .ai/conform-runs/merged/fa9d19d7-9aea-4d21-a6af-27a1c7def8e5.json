@@ -1,0 +1,52 @@
+{"schema": "conform-run/1", "worker": "fa9d19d7-9aea-4d21-a6af-27a1c7def8e5", "subject": "motion",
+ "evaluatedAt": "2026-10-10T11:54:52Z",
+ "pairs": [
+  {"context": "ab849301-d5ce-4d91-a12e-0e87a0417585", "subject": "motion", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/features/shared/components/feedback/DropZoneGlow.tsx:39 the framer scale spring carries no call-site gate and relies on src/App.tsx:386 MotionConfig reducedMotion=\"user\", which reads only the OS query - so OS users are covered but a user who enables the in-app Reduce Motion toggle still gets the full spring on every drag-over (corrects the 2026-10-03 evidence, which wrongly said OS users were uncovered)",
+   "techniques": [
+    {"technique": "reduced-motion-mechanics", "verdict": "deviation", "evidence": "src/App.tsx:386 framer's reduce path reads one of the app's two preference signals; src/hooks/utility/interaction/useMotion.ts:49 is the repo's resolver for both, and DropZoneGlow.tsx:39 does not route through it - the composite-signal exemption the technique names"},
+    {"technique": "preset-vocabulary", "verdict": "deviation", "evidence": "src/features/shared/components/feedback/DropZoneGlow.tsx:39 an unnamed inline 380/28/0.6 spring with 0.18/0.12s durations at the call site, no preset and no declared fallback"},
+    {"technique": "performance-discipline", "verdict": "realized", "evidence": "src/features/shared/components/feedback/DropZoneGlow.tsx:34 animates only opacity and scale (compositor-friendly)"}
+   ],
+   "registryProposal": "reduced-motion-mechanics could name this shape explicitly: a library-level reduce switch set to follow the OS ('user') looks like full coverage while silently exempting the product-level toggle; the engine-inventory audit should ask which SIGNALS each engine's switch reads, not only which properties it reaches."},
+  {"context": "cc76d419-f457-4fe4-833c-6869efbc9287", "subject": "motion", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/hooks/utility/interaction/useMotion.ts:153 the reduced clone collapses every transition to exact duration 0 and :133 strips delay, deleting timing-load-bearing invisibility windows and risking completion events that never fire - re-verified unchanged 2026-10-10",
+   "techniques": [
+    {"technique": "reduced-motion-mechanics", "verdict": "deviation", "evidence": "src/hooks/utility/interaction/useMotion.ts:153 exact zero where the technique requires a near-zero epsilon; :133 deletes delay along with the motion"},
+    {"technique": "performance-discipline", "verdict": "realized", "evidence": "src/hooks/utility/interaction/useMotion.ts:49 one composite resolver (in-app toggle OR OS query) read through useSyncExternalStore rather than per-component listeners"}
+   ]},
+  {"context": "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6", "subject": "motion", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/lib/utils/rafAnimationEngine.ts:71 the shared spring engine reads only the OS media query, ignoring the in-app Reduce Motion toggle that src/hooks/utility/interaction/useMotion.ts:49 merges in, so in-app-toggle users get full spring travel on every scripted counter - re-verified unchanged 2026-10-10",
+   "techniques": [
+    {"technique": "reduced-motion-mechanics", "verdict": "deviation", "evidence": "src/lib/utils/rafAnimationEngine.ts:71 a second resolver reading one of two signals instead of the single resolver"},
+    {"technique": "performance-discipline", "verdict": "realized", "evidence": "src/lib/utils/rafAnimationEngine.ts:71 one shared rAF engine whose reduce check runs once per frame, not per entry"}
+   ]},
+  {"context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd", "subject": "motion", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/features/shared/components/display/MotionizedGlyph.tsx:113 the IntersectionObserver bumps runKey on every re-entry into view, replaying the staggered-draw entrance on scroll-back and tab return - the scroll-reveal replay the technique names as a glitch; re-verified unchanged 2026-10-10",
+   "techniques": [
+    {"technique": "unprompted-motion-lifecycle", "verdict": "deviation", "evidence": "src/features/shared/components/display/MotionizedGlyph.tsx:113 replay on re-entry where a scroll reveal must play once per surface per visit"},
+    {"technique": "one-shot-guarding", "verdict": "deviation", "evidence": "src/features/shared/components/display/MotionizedGlyph.tsx:113 the seen-ref records visibility rather than first arrival, so the guard re-arms itself"},
+    {"technique": "preset-vocabulary", "verdict": "realized", "evidence": "src/features/shared/components/display/motionPresets.ts:46 each preset declares its reduced fallback"},
+    {"technique": "reduced-motion-mechanics", "verdict": "realized", "evidence": "src/features/shared/components/display/MotionizedGlyph.tsx:162 per-preset reduced fade emitted under the media query"},
+    {"technique": "engine-selection", "verdict": "realized", "evidence": "src/features/shared/components/display/MotionizedGlyph.tsx:8 CSS keyframes chosen deliberately to escape the global MotionConfig switch, with the ownership reason stated"}
+   ]},
+  {"context": "36783fec-01fa-40d5-8620-cf65ae691d27", "subject": "motion", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:32 inlines an off-ladder 1.1s pathLength draw and :40 an unnamed 320/22 spring with no preset and no fallback; pathLength (:30) is outside framer's reduce property set, so the draw runs full-length even under OS reduced motion - re-verified 2026-10-10",
+   "techniques": [
+    {"technique": "preset-vocabulary", "verdict": "deviation", "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:40 call-site spring, no preset, no declared bespoke exception"},
+    {"technique": "taste-budgets", "verdict": "deviation", "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:32 1.1s duration off the 50/150/250/400ms ladder"},
+    {"technique": "reduced-motion-mechanics", "verdict": "deviation", "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:30 pathLength animated outside the property set the library's reduce switch reaches, with no own fallback"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "motion", "context": "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20", "reason": "judged 2026-10-09 against the current digest (rev 10); anchor files unchanged since; re-reading would duplicate a day-old verdict"},
+  {"subject": "motion", "context": "b4439e30-fcff-4095-97dd-d9d7da2247dd", "reason": "judged 2026-10-09 against the current digest (rev 10); anchor re-checked at HEAD (src/styles/globals.css:4884 .animate-fade-in, :4893 animation none) unchanged"},
+  {"subject": "motion", "context": "a576c14f-1edd-4da4-8d11-527161a3b5b3", "reason": "judged 2026-10-09 against the current digest (rev 10); shares the src/styles/globals.css:4893 anchor, re-checked unchanged at HEAD"}
+ ],
+ "consults": [
+  {"ts": "2026-10-10T11:54:52Z", "bundle": "software-engineering", "subjects": ["motion"], "techniques": ["reduced-motion-mechanics", "preset-vocabulary", "performance-discipline"], "deviations": 2},
+  {"ts": "2026-10-10T11:54:52Z", "bundle": "software-engineering", "subjects": ["motion"], "techniques": ["reduced-motion-mechanics", "performance-discipline"], "deviations": 1},
+  {"ts": "2026-10-10T11:54:52Z", "bundle": "software-engineering", "subjects": ["motion"], "techniques": ["reduced-motion-mechanics", "performance-discipline"], "deviations": 1},
+  {"ts": "2026-10-10T11:54:52Z", "bundle": "software-engineering", "subjects": ["motion"], "techniques": ["unprompted-motion-lifecycle", "one-shot-guarding", "preset-vocabulary", "reduced-motion-mechanics", "engine-selection"], "deviations": 2},
+  {"ts": "2026-10-10T11:54:52Z", "bundle": "software-engineering", "subjects": ["motion"], "techniques": ["preset-vocabulary", "taste-budgets", "reduced-motion-mechanics"], "deviations": 3}
+ ]}

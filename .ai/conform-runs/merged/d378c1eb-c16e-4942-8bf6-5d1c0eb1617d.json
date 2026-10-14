@@ -1,0 +1,20 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d378c1eb-c16e-4942-8bf6-5d1c0eb1617d",
+  "subject": "i18n",
+  "evaluatedAt": "2026-10-10T01:49:14Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "i18n",
+      "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+      "reason": "no work: deviation judged 2026-10-09T17:10Z (run 122c8099) against the current digest sha256-b2:13f1a2698a82c874 rev 7; registry index at 32d7899f carries the same digest/revision, no commit since touches any anchored file, and every anchor re-printed still says what the verdict claims (src/lib/errors/errorRegistry.ts:75, src/i18n/tokenMaps.ts:40, lefthook.yml:98, src/i18n/locales.manifest.ts:32, src/styles/typography.css:30, src-tauri/tauri.android.conf.json:7). Re-stamping it would be a copy, not a judgment."
+    },
+    {
+      "subject": "i18n",
+      "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+      "reason": "no work: conformant judged 2026-10-09T17:10Z (run 122c8099) against the current digest sha256-b2:13f1a2698a82c874 rev 7; no commit since touches its anchors and src/i18n/__tests__/chainStopReasons.parity.test.ts:33, src/i18n/generated/types.ts:2, scripts/run-codegen.mjs:36 still read as cited."
+    }
+  ],
+  "consults": []
+}

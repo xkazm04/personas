@@ -245,7 +245,7 @@ export function simSaveProfile(
 
 // ── The other CLIs ───────────────────────────────────────────────────────────
 //
-// The strip gives Codex and Grok a row each, and on a development machine
+// The strip gives Codex, Grok and agy a row each, and on a development machine
 // neither is likely to be installed. So the fixture carries one of each honest
 // state:
 //
@@ -278,6 +278,24 @@ export function buildSimCliUsage(now = Date.now()): CliUsageSnapshot {
         asOfMs: null,
         projected: false,
         reason: 'not_installed',
+      },
+      // agy — two model groups, each with its own 5-hour and weekly bucket:
+      // the strip paints one plan per group. The Gemini group is running warm,
+      // the Claude/GPT group is untouched.
+      {
+        provider: 'agy',
+        installed: true,
+        version: null,
+        planType: null,
+        windows: [
+          { key: 'gemini-5h', windowMinutes: 300, usedPercent: 71, resetsAtMs: now + 1.4 * HOUR_MS, group: 'Gemini Models' },
+          { key: 'gemini-weekly', windowMinutes: 10_080, usedPercent: 33, resetsAtMs: now + 4.2 * 24 * HOUR_MS, group: 'Gemini Models' },
+          { key: '3p-5h', windowMinutes: 300, usedPercent: 0, resetsAtMs: now + 4.8 * HOUR_MS, group: 'Claude and GPT models' },
+          { key: '3p-weekly', windowMinutes: 10_080, usedPercent: 8, resetsAtMs: now + 5.5 * 24 * HOUR_MS, group: 'Claude and GPT models' },
+        ],
+        asOfMs: now - 60_000,
+        projected: false,
+        reason: null,
       },
     ],
   };

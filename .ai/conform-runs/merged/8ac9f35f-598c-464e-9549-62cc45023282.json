@@ -1,0 +1,221 @@
+{
+ "schema": "conform-run/1",
+ "worker": "8ac9f35f-598c-464e-9549-62cc45023282",
+ "subject": "chat-transcript",
+ "evaluatedAt": "2026-10-12T18:03:13.000436+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "companion-narration-ops",
+   "subject": "chat-transcript",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/companions/athena/NarrationThread.tsx:104 The settled trail excludes progress beats, so expanding it cannot recover the complete narration record required by the standard.",
+   "techniques": [
+    {
+     "technique": "progress-narration",
+     "verdict": "deviation",
+     "evidence": "src/features/companions/athena/NarrationThread.tsx:104 The expanded settled trail renders only tool entries; progress beats remain separate conversational asides instead of joining the collapsed record."
+    },
+    {
+     "technique": "turn-metadata",
+     "verdict": "deviation",
+     "evidence": "src/features/companions/athena/chat/AthenaChatStreamingTurn.tsx:84 The Current host mounts the recall metadata strip while streaming, contrary to the standard's settlement-only strip predicate."
+    }
+   ]
+  },
+  {
+   "context": "agents-quick-answer",
+   "subject": "chat-transcript",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/quick-answer/QuickAnswerBody.tsx:13 The available implementation presents pending decisions and build questions rather than an alternating human-and-machine transcript, so the subject's precondition does not hold.",
+   "techniques": [
+    {
+     "technique": "composer-turn-queue",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/quick-answer/QuickAnswerQuestionGroup.tsx:13 This submits answers to a pending build session, not follow-up prompts during a conversational turn."
+    },
+    {
+     "technique": "inline-structured-rows",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/quick-answer/QuickAnswerReviewStepper.tsx:16 This is a standalone decision surface, not structured events interleaved within a conversation."
+    },
+    {
+     "technique": "progress-narration",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/quick-answer/usePendingInteractions.ts:3 The queue represents items awaiting a human decision, not narration of a working conversational turn."
+    },
+    {
+     "technique": "transcript-scroll",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/quick-answer/triage/triageQueue.ts:76 Navigation selects a decision card rather than positioning a growing transcript."
+    },
+    {
+     "technique": "turn-metadata",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/quick-answer/triage/triageTypes.ts:53 Facts describe the decision item, not a completed machine turn."
+    },
+    {
+     "technique": "turn-model",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/quick-answer/triage/triageTypes.ts:46 The lifecycle being presented is human triage, not pending, streaming and settled conversational turns."
+    }
+   ]
+  },
+  {
+   "context": "fleet-monitor-channels",
+   "subject": "chat-transcript",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/fleet/monitor/channels/useConversation.ts:180 Changing teams clears accepted queued submissions instead of retaining them or returning them to their team's draft, making submitted text perishable.",
+   "techniques": [
+    {
+     "technique": "composer-turn-queue",
+     "verdict": "deviation",
+     "evidence": "src/features/fleet/monitor/channels/useConversation.ts:180 The team-change effect abandons the outbox; drafts persist per team, but queued text is neither retained nor restored as draft text."
+    },
+    {
+     "technique": "inline-structured-rows",
+     "verdict": "deviation",
+     "evidence": "src/features/fleet/monitor/channels/useConversation.ts:266 Confirming a proposal removes its interactive row instead of preserving that same row as the resolved decision record."
+    },
+    {
+     "technique": "transcript-scroll",
+     "verdict": "deviation",
+     "evidence": "src/features/fleet/monitor/channels/VirtualConversation.tsx:142 prevCount starts at the existing row count, so a populated initial mount skips tail positioning; there is no initial layout-stability gate in this component."
+    },
+    {
+     "technique": "turn-metadata",
+     "verdict": "deviation",
+     "evidence": "src/features/fleet/monitor/channels/ConversationCards.tsx:252 An unavailable deliberation cost becomes a displayed zero rather than an explicit absence."
+    },
+    {
+     "technique": "turn-model",
+     "verdict": "deviation",
+     "evidence": "src/features/fleet/monitor/channels/conversationModel.ts:78 Queued prompt IDs are not submitted to the authority; successful delivery removes queued rows and refetch supplies differently keyed server rows."
+    }
+   ]
+  },
+  {
+   "context": "companion-chat-bubbles",
+   "subject": "chat-transcript",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/companions/athena/chat/AthenaChatProposals.tsx:38 Resolving an approval removes its card instead of preserving the same transcript row as a durable decision record.",
+   "techniques": [
+    {
+     "technique": "composer-turn-queue",
+     "verdict": "deviation",
+     "evidence": "src/features/companions/athena/chat/athenaChatQueue.ts:61 Each settlement drains one message into its own send, so consecutive plain follow-ups are not combined into one machine turn."
+    },
+    {
+     "technique": "inline-structured-rows",
+     "verdict": "deviation",
+     "evidence": "src/features/companions/athena/chat/AthenaChatProposals.tsx:38 The resolution callback deletes the approval card; a subsequent system episode does not preserve the same row and position."
+    },
+    {
+     "technique": "markdown-and-code-rendering",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/editors/MarkdownRenderer.tsx:347 Bubble's AssistantProse reaches this renderer, which loads model-referenced images directly without a block, proxy or click-to-load policy."
+    },
+    {
+     "technique": "progress-narration",
+     "verdict": "deviation",
+     "evidence": "src/features/companions/athena/Bubble.tsx:111 Persisted progress beats render as individual aside rows instead of folding into a settled turn's expandable trail."
+    },
+    {
+     "technique": "transcript-scroll",
+     "verdict": "deviation",
+     "evidence": "src/features/companions/athena/chat/athenaChatSession.ts:70 Initial positioning waits two animation frames rather than observing actual rendered layout stability."
+    },
+    {
+     "technique": "turn-model",
+     "verdict": "deviation",
+     "evidence": "src/features/companions/athena/chat/AthenaChatStreamingTurn.tsx:76 The Current host renders a separately keyed temporary working bubble that unmounts at settlement, while the persisted response mounts in the message list."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "chat-transcript",
+   "context": "shared-components-layout",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-12T18:03:13.000436+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "chat-transcript"
+   ],
+   "techniques": [
+    "progress-narration",
+    "turn-metadata"
+   ],
+   "deviations": 1,
+   "context": "companion-narration-ops",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-12T18:03:13.000436+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "chat-transcript"
+   ],
+   "techniques": [
+    "composer-turn-queue",
+    "inline-structured-rows",
+    "progress-narration",
+    "transcript-scroll",
+    "turn-metadata",
+    "turn-model"
+   ],
+   "deviations": 0,
+   "context": "agents-quick-answer",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-12T18:03:13.000436+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "chat-transcript"
+   ],
+   "techniques": [
+    "composer-turn-queue",
+    "inline-structured-rows",
+    "transcript-scroll",
+    "turn-metadata",
+    "turn-model"
+   ],
+   "deviations": 1,
+   "context": "fleet-monitor-channels",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-12T18:03:13.000436+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "chat-transcript"
+   ],
+   "techniques": [
+    "composer-turn-queue",
+    "inline-structured-rows",
+    "markdown-and-code-rendering",
+    "progress-narration",
+    "transcript-scroll",
+    "turn-model"
+   ],
+   "deviations": 1,
+   "context": "companion-chat-bubbles",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

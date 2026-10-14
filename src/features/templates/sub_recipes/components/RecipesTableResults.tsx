@@ -285,7 +285,7 @@ interface ThProps {
  */
 function Th({ children, className = '', align = 'left', srLabel, sortKey, sort, onSort }: ThProps) {
   const { t, tx } = useTranslation();
-  const base = `group h-9 px-2 typo-label text-foreground select-none ${align === 'right' ? 'text-right' : 'text-left'}`;
+  const base = `group h-9 px-2 typo-caption font-mono uppercase tracking-widest text-foreground select-none ${align === 'right' ? 'text-right' : 'text-left'}`;
 
   if (!sortKey || !sort || !onSort) {
     return (

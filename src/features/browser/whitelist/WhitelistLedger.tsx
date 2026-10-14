@@ -14,6 +14,7 @@ import { ExternalLink, ScanSearch, Check } from 'lucide-react';
 
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import Button from '@/features/shared/components/buttons/Button';
+import { TableActions } from '@/features/shared/components/display/TableCells';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -109,7 +110,7 @@ export default function WhitelistLedger({
       width: 'minmax(230px, 1fr)',
       align: 'right',
       render: (site) => (
-        <div className="flex items-center justify-end gap-1.5">
+        <TableActions>
           <AsyncButton
             size="xs"
             variant="ghost"
@@ -147,7 +148,7 @@ export default function WhitelistLedger({
           <AsyncButton size="xs" variant="ghost" onClick={() => onRemove(site)}>
             {w.action_remove}
           </AsyncButton>
-        </div>
+        </TableActions>
       ),
     },
   ];

@@ -1,0 +1,223 @@
+{
+  "schema": "conform-run/1",
+  "worker": "6721731f-e575-42fa-9ae0-6500f8fd22f7",
+  "subject": "templates-scaffolding",
+  "evaluatedAt": "2026-10-09T17:04:03.517Z",
+  "pairs": [
+    {
+      "context": "9fca099d-94e4-4fd0-8460-3cf5d8c85acf",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:145 resume-adoption still finds the template by display name (test_case_name === parsed.templateName), the stamp-keying failure adoption-lifecycle rev 3 names: a rename misses and two same-named templates resume the wrong one; the card also renders a second, heuristic readiness verdict beside the authoritative one",
+      "techniques": [
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:145 origin re-found by display name; handleResumeDraft beside it keys on review id, so the two resume paths disagree on identity"
+        },
+        {
+          "technique": "readiness-prerequisites",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCardData.ts:96 computeAdoptionReadiness (category heuristic) feeds the Ready/Partial badge at renderers/TemplateCardHeader.tsx:53 and the Ready filter at useGalleryActions.ts:137, while the authoritative Rust readiness sits at useTemplateCardData.ts:78 - two evaluators; shared/adoptionReadiness.ts:32 + :66 turn an unparseable design_result with no connectors_used into 100 = Ready"
+        },
+        {
+          "technique": "integrity-and-provenance",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/renderers/TemplateCardHeader.tsx:52 renders TrustBadge from verification.trustLevel, inheriting the recorded template-shared-primitives fold of could-not-verify into verified"
+        },
+        {
+          "technique": "catalog-curation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:137 this context renders and filters the catalog; admission, dedupe and retirement live outside it"
+        }
+      ]
+    },
+    {
+      "context": "e76afaf6-ba3b-4341-b1ad-f444f08da8b8",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:67 stays the single option-normalization door keeping value identity (:73) apart from label (:78), selection binds on value (QuestionnaireStackedOptions.tsx:51), and a blocked credential names its category plus a remedy (QuestionnaireBlockedCredentialCta.tsx:27, :33) - re-judged against rev 3",
+      "techniques": [
+        {
+          "technique": "template-anatomy",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStackedOptions.tsx:51 selection compares opt.value, never label or position; questionnaireHelpers.ts:73 / :78 keep id and label distinct (the defaults-within-options door is absent repo-wide, recorded on the ucpicker pair, not here)"
+        },
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:136 a select that declares allow_custom leaves the closed stacked renderer; undeclared means closed"
+        },
+        {
+          "technique": "readiness-prerequisites",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireBlockedCredentialCta.tsx:27 the block names the missing category and :33 links the add-credential remedy pre-filled with it; QuestionnaireHeroQuestion.tsx:83 resolves the category for dynamic-source questions too"
+        },
+        {
+          "technique": "template-portability",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/types.ts:2 the context holds only interview widgets; it carries no payload that could leak an author binding"
+        }
+      ]
+    },
+    {
+      "context": "80e0534a-d0ea-469a-9c3a-cf12910ecde9",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/adoption/useDynamicQuestionOptions.ts:196 the vault-source option matcher skips only healthcheck_last_success === false, ignoring the three-state healthcheck_last_state (src/lib/types/types.ts:84) and the repo usability predicate readCredentialHealthState (src/lib/credentials/healthState.ts:65): an unverifiable or never-tested credential is offered and bound as an ordinary match, flattening the vault verdict that rev 3 says readiness must inherit",
+      "techniques": [
+        {
+          "technique": "readiness-prerequisites",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/useDynamicQuestionOptions.ts:196 (and :95 for discovery credentials) reads the raw boolean instead of the existing usability predicate; no provisional marking reaches the option at :205-211. Realized parts: :27 separates no_credential from fetch_failed, QuickAddCredentialModal.tsx:115 healthchecks before saving"
+        },
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/SelectPills.tsx:33 the escape hatch defaults closed and QuestionnaireFormGridParts.tsx:447 passes only the declared flag; useCasePickerShared.ts:147 keeps hourly as hourly (the GetPut loss lives in the persona-layout composer, recorded there)"
+        },
+        {
+          "technique": "template-anatomy",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/SelectPills.tsx:33 an undeclared allowCustom cannot widen a dimension domain beyond its options"
+        }
+      ]
+    },
+    {
+      "context": "2a54cdc2-87af-4298-b490-9eb87f230df7",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_presets/PresetQuestionnaireForm.tsx:248 the team-preset interview seeds effectiveValue from question.default with no membership check and :290 hands it to a native select over options typed as bare label strings (:28): a default outside its options displays as something it is not while adoption applies the default, and answers bind to labels, so a rewording orphans them; the preset path also adopts member templates from disk with no integrity check while comments claim one runs (team_preset_adopter.rs:415)",
+      "techniques": [
+        {
+          "technique": "template-anatomy",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_presets/PresetQuestionnaireForm.tsx:28 options?: string[] - no option id distinct from label; :248 default used unchecked against options"
+        },
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/team_preset_adopter.rs:99 the only stamp written for a preset is the member preset_role; no preset id, version or answer set reaches the team (no preset_id anywhere in src-tauri/db/src). Realized part: the non-transactional team step surfaces partial success explicitly (src/features/templates/sub_presets/usePresetAdoption.ts:175 toast_partial, team_preset_adopter.rs:44 shell kept for retry)"
+        },
+        {
+          "technique": "integrity-and-provenance",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/team_preset_adopter.rs:415 preset members are read straight from scripts/templates/ on disk and adopted with no hash check - the catalog-load gate (src-tauri/src/commands/design/template_adopt.rs:44-49) only guards the catalog door, not this one - while :19, :46 and src-tauri/engine/src/team_preset_loader.rs:370 still claim check_template_integrity runs, a check template_adopt.rs:22 records as deleted"
+        }
+      ],
+      "registryProposal": "adoption-lifecycle says a non-transactional step must surface as an explicit incomplete-adoption state, but unlike readiness-prerequisites (degraded adoption must be durable on the instance) it does not say whether that state must outlive the flow. Here the partial team is explicit inside the modal (retry holds the result in hook state) and nothing marks the team incomplete once the modal closes. Composite templates (a team of N adopted members) would benefit from the same durability rule stated for incomplete adoption."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "templates-scaffolding",
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+      "reason": "judged 2026-10-03 at revision 3, not stale; budget spent on the stale pairs first"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "4be04ef0-88db-4f48-859c-92e6ba4d203f",
+      "reason": "judged 2026-10-03 at revision 3, not stale"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "b38217f2-397e-49a7-ac32-4cce440c7e74",
+      "reason": "judged 2026-10-03 at revision 3, not stale"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "7dddb34a-3a9b-4ce0-832f-55ea352c12b5",
+      "reason": "judged 2026-10-03 at revision 3, not stale"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "e13cfc6c-f666-4959-81c0-2cfbc4815f04",
+      "reason": "judged 2026-10-03 at revision 3, not stale"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "9b6cc17c-3add-4152-a349-c189b15a109f",
+      "reason": "context is governance: weak; the skill never judges weak pairs by default - reported as a coverage question"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "b26fe932-b123-4b9e-8d1c-bbbf4e508265",
+      "reason": "unknown/probable, unread this run (budget 4); template/adopt tokens on an api-system context look lexical"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+      "reason": "unknown/probable, unread this run (budget 4)"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "b4439e30-fcff-4095-97dd-d9d7da2247dd",
+      "reason": "unknown/probable, unread this run (budget 4); settings portability may be import/export rather than template adoption - route by precondition next run"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "d3346f2c-d747-4d85-b6e6-c1450da57ec9",
+      "reason": "unknown/probable, unread this run (budget 4); strongest remaining candidate (preview, compare, credential quick-setup)"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-09T17:04:03.517Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "templates-scaffolding"
+      ],
+      "techniques": [
+        "adoption-lifecycle",
+        "readiness-prerequisites",
+        "integrity-and-provenance",
+        "catalog-curation"
+      ],
+      "deviations": 3
+    },
+    {
+      "ts": "2026-10-09T17:04:03.517Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "templates-scaffolding"
+      ],
+      "techniques": [
+        "template-anatomy",
+        "adoption-lifecycle",
+        "readiness-prerequisites",
+        "template-portability"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-09T17:04:03.517Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "templates-scaffolding"
+      ],
+      "techniques": [
+        "readiness-prerequisites",
+        "adoption-lifecycle",
+        "template-anatomy"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-09T17:04:03.517Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "templates-scaffolding"
+      ],
+      "techniques": [
+        "template-anatomy",
+        "adoption-lifecycle",
+        "integrity-and-provenance"
+      ],
+      "deviations": 3
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{"schema": "conform-run/1", "worker": "f8308a05-c78f-4c65-aab9-064f3e6ab7b6", "subject": "client-state",
+ "evaluatedAt": "2026-10-12T11:46:44Z",
+ "pairs": [
+  {"context": "11fe7642-7a1a-47c5-8910-499850aa04fe", "subject": "client-state", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/companions/athena/guidance/useGuidanceRunner.ts:282 keeps `playing` in the step-session deps, so pause tears down click-to-advance (:279) and resume never rewires it (isFreshStep false, :204): resuming a holdForClick step (no timer, :266) stalls the tour; src/features/companions/athena/mcp/useMcpRequestBridge.ts:44 snapshot continuation has no cancelled flag, so a session torn down by disabling Athena (:67) still writes stub requests. Re-judged 2026-10-12 after the inbox retirement (f5a1c27d2b): the useCockpitSummary defect and the useUnifiedInbox/snooze anchors are deleted, the two live defects remain",
+   "techniques": [
+    {"technique": "effect-identity-and-latched-callbacks", "verdict": "deviation", "evidence": "src/features/companions/athena/guidance/useGuidanceRunner.ts:282 `playing` is not session identity yet restarts the session; teardown at :279 removes the click listener and :204 skips rewiring on resume"},
+    {"technique": "async-race-guards", "verdict": "deviation", "evidence": "src/features/companions/athena/mcp/useMcpRequestBridge.ts:44 snapshot .then writes to the store with no captured cancelled/generation check, so a torn-down session's late reply still commits; contrast useGuidanceRunner.ts:206 which realizes the cancelled flag"},
+    {"technique": "store-slicing", "verdict": "conformant", "evidence": "src/features/companions/athena/mcp/mcpRequestStore.ts:59 the store owns its writes and addRequest is idempotent by request id, so snapshot and live events can coexist"}
+   ],
+   "registryProposal": "Coverage, not corpus: this context's name and its own code no longer agree. The inbox it was named for was retired on 2026-10-06 (only src/features/companions/athena/inbox/types.ts is left, and nothing imports it), and context-map.json carries file_paths: [] with entry_points still under the pre-move src/features/plugins/companion/ tree. The client-state code it governs is now Athena guidance + MCP request bridging. It needs a context rescan (rename or split) before the next map build, or this verdict will be attached to a phantom."}
+ ],
+ "declined": [
+  {"subject": "client-state", "context": "ab849301-d5ce-4d91-a12e-0e87a0417585", "reason": "judged 2026-10-06 against the current digest b667f5c1f4abdd9d rev 15; not stale, and nothing marks a re-read as needed"},
+  {"subject": "client-state", "context": "03e7f46a-3f19-47b8-98a5-398efed815b4", "reason": "judged 2026-10-10 against the current digest rev 15; anchor files unchanged since 2026-04-10 / 2026-03-23"},
+  {"subject": "client-state", "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573", "reason": "judged 2026-10-09 against the current digest rev 15; sceneStore.ts last changed 2026-09-24"},
+  {"subject": "client-state", "context": "ade5a251-866a-4352-9a03-012d78fe9b74", "reason": "judged 2026-10-09 against the current digest rev 15; sceneStore.test.ts last changed 2026-09-24"},
+  {"subject": "client-state", "context": "c413de7d-1182-4abc-8a08-9c8832254c62", "reason": "judged 2026-10-10 against the current digest rev 15; useDirector.ts last changed 2026-09-22"},
+  {"subject": "client-state", "context": "d9cffe6c-a868-4ed4-b5e8-6c8add36918a", "reason": "judged 2026-10-10 against the current digest rev 15; anchors last changed 2026-10-09 (67f78ca56a), which the verdict already re-confirmed"},
+  {"subject": "client-state", "context": "532bbf10-3fd3-4b57-a8ea-95a957645697", "reason": "judged 2026-10-09 against the current digest rev 15; overviewSlice.ts/alertSlice.ts last changed 2026-10-07/2026-08-10"},
+  {"subject": "client-state", "context": "0aded02d-f5c5-4e24-8366-90783fb343b1", "reason": "judged 2026-10-09 against the current digest rev 15; storeTypes.ts/personaSlice.ts last changed 2026-09-23/2026-09-15"},
+  {"subject": "client-state", "context": "417112d1-004b-41d5-a656-57997a47d818", "reason": "weak context, already judged 2026-10-10 against the current digest rev 15; timing hooks last changed 2026-07-16 / 2026-05-21"}
+ ],
+ "consults": [
+  {"ts": "2026-10-12T11:46:44Z", "bundle": "software-engineering", "subjects": ["client-state"], "techniques": ["effect-identity-and-latched-callbacks", "async-race-guards", "store-slicing"], "deviations": 2}
+ ]}

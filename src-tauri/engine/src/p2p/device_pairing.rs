@@ -82,10 +82,72 @@ use super::connection::ConnectionManager;
 use super::protocol::{self, Message};
 use crate::event_registry::{emit_event, event_name};
 
-/// How long an unconfirmed pairing stays live before it is pruned.
-const PAIRING_TTL: Duration = Duration::from_secs(300);
+/// How long an unconfirmed pairing stays live before it is pruned. Public so
+/// the `/mesh` door can state `expiresAtMs` without keeping a second copy.
+pub const PAIRING_TTL: Duration = Duration::from_secs(300);
 /// Cap on simultaneous pending pairings (anti-spam for the responder side).
 const MAX_PENDING: usize = 16;
+/// Fixed penalty before a failed [`DevicePairing::confirm_with_code`] answers,
+/// the same 350 ms the phone companion's auth applies: it makes a serial guess
+/// loop glacial without a lockout table.
+const CODE_FAIL_DELAY: Duration = Duration::from_millis(350);
+/// Wrong codes one pending pairing tolerates. The delay alone does not stop a
+/// caller that guesses in PARALLEL, so the entry is withdrawn (and the
+/// initiator told) on the last allowed miss; a human who mistyped five times
+/// starts the ceremony again with a fresh code.
+pub const MAX_CODE_ATTEMPTS: u32 = 5;
+
+/// Why [`DevicePairing::confirm_with_code`] did not pair.
+#[derive(Debug)]
+pub enum PairCodeError {
+    /// No pairing request from that peer is waiting for THIS device to confirm.
+    NoPending,
+    /// The typed code is not the one this device derived. The entry stays,
+    /// so the human can retype within the TTL, unless `withdrawn` (the last
+    /// allowed attempt was spent and the ceremony was cancelled).
+    Mismatch { attempts_left: u32, withdrawn: bool },
+    /// The code matched and the existing confirm path failed.
+    Confirm(AppError),
+}
+
+impl std::fmt::Display for PairCodeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NoPending => write!(f, "No pairing request from that device is waiting here"),
+            Self::Mismatch {
+                withdrawn: true, ..
+            } => write!(
+                f,
+                "That code does not match, and that was the last attempt: the pairing was \
+                 cancelled. Start it again on the other device for a new code"
+            ),
+            Self::Mismatch { attempts_left, .. } => write!(
+                f,
+                "That code does not match the one this device shows ({attempts_left} attempts left)"
+            ),
+            Self::Confirm(e) => write!(f, "{e}"),
+        }
+    }
+}
+
+/// The digits of a typed code, any human spelling: `042-917`, `042 917` and
+/// `042917` are one code. Everything that is not an ASCII digit is dropped.
+pub fn code_digits(raw: &str) -> String {
+    raw.chars().filter(char::is_ascii_digit).collect()
+}
+
+/// Compare two codes without an early return on the first differing byte.
+/// The length is folded in as a full `usize`, so it cannot wrap to equal.
+fn codes_match(a: &str, b: &str) -> bool {
+    let (a, b) = (a.as_bytes(), b.as_bytes());
+    let mut diff = a.len() ^ b.len();
+    for i in 0..a.len().max(b.len()) {
+        let x = a.get(i).copied().unwrap_or(0);
+        let y = b.get(i).copied().unwrap_or(0);
+        diff |= usize::from(x ^ y);
+    }
+    diff == 0
+}
 
 /// Which side of the ceremony this device is on.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -125,6 +187,8 @@ struct Pending {
     role: PairingRole,
     created: Instant,
     requested_at: String,
+    /// Wrong codes typed against this entry through [`DevicePairing::confirm_with_code`].
+    code_failures: u32,
 }
 
 impl Pending {
@@ -239,6 +303,7 @@ impl DevicePairing {
             role: PairingRole::Initiator,
             created: Instant::now(),
             requested_at: chrono::Utc::now().to_rfc3339(),
+            code_failures: 0,
         };
         let view = pending.view(peer_id);
         {
@@ -385,11 +450,70 @@ impl DevicePairing {
                     role: PairingRole::Responder,
                     created: Instant::now(),
                     requested_at: chrono::Utc::now().to_rfc3339(),
+                    code_failures: 0,
                 },
             );
         }
         self.emit_pending_changed().await;
         Ok(Message::PairPending)
+    }
+
+    /// The `/mesh` door's confirm (decision D5): the human typed the code they
+    /// read off the OTHER device, and this device checks it against the
+    /// fingerprint it derived itself before pairing. The UI's
+    /// [`Self::confirm`] (a click beside both codes) is unchanged.
+    ///
+    /// The typed code is normalised to its digits; the comparison is constant
+    /// time. A match runs the existing [`Self::confirm`] path. Every failure
+    /// waits [`CODE_FAIL_DELAY`] before it answers. A mismatch keeps the entry
+    /// for a retype, until the [`MAX_CODE_ATTEMPTS`]th miss withdraws it.
+    ///
+    /// SECURITY-SENSITIVE: this is the check that turns "the human compared
+    /// the codes" from a comment into a gate. It never returns the expected
+    /// code, and a responder entry is the only one it will confirm.
+    pub async fn confirm_with_code(
+        &self,
+        peer_id: &str,
+        typed_code: &str,
+    ) -> Result<OwnedDevice, PairCodeError> {
+        let typed = code_digits(typed_code);
+        // Compare and count under ONE write lock, so parallel guesses cannot
+        // all read the same failure count.
+        let verdict = {
+            let mut map = self.pending.write().await;
+            Self::prune(&mut map);
+            match map.get_mut(peer_id) {
+                Some(p) if p.role == PairingRole::Responder => {
+                    if codes_match(&typed, &code_digits(&p.fingerprint)) {
+                        None
+                    } else {
+                        p.code_failures += 1;
+                        let attempts_left = MAX_CODE_ATTEMPTS.saturating_sub(p.code_failures);
+                        Some(PairCodeError::Mismatch {
+                            attempts_left,
+                            withdrawn: attempts_left == 0,
+                        })
+                    }
+                }
+                _ => Some(PairCodeError::NoPending),
+            }
+        };
+        match verdict {
+            None => self.confirm(peer_id).await.map_err(PairCodeError::Confirm),
+            Some(err) => {
+                if let PairCodeError::Mismatch {
+                    withdrawn: true, ..
+                } = err
+                {
+                    tracing::warn!(peer_id = %peer_id, "Pairing withdrawn after too many wrong codes");
+                    if let Err(e) = self.cancel(peer_id).await {
+                        tracing::warn!(peer_id = %peer_id, "Withdrawing the pairing failed: {e}");
+                    }
+                }
+                tokio::time::sleep(CODE_FAIL_DELAY).await;
+                Err(err)
+            }
+        }
     }
 
     /// The human said yes on this device. Writes our own `owned_devices` row and
@@ -544,5 +668,177 @@ mod tests {
         // handle_request(): pairing_fingerprint(local=responder, remote=initiator, n, cb)
         let shown_by_responder = protocol::pairing_fingerprint(responder, initiator, &session, &cb);
         assert_eq!(shown_by_initiator, shown_by_responder);
+    }
+
+    // -- confirm_with_code (D5) ------------------------------------------
+
+    const PEER: &str = "InitiatorPeer0001";
+
+    /// A pairing service with no live connection: enough for every branch
+    /// that is decided before a stream is opened.
+    fn pairing() -> (DevicePairing, DbPool) {
+        let pool = personas_db::init_test_db().expect("test db");
+        // The row the process identity would have written, so `confirm` and
+        // `cancel` read it from the DB and never reach for the OS keyring.
+        seed_identity(&pool).expect("seed local_identity");
+        let transport = Arc::new(
+            super::super::transport::QuicTransport::new("ResponderPeer0001".into())
+                .expect("transport"),
+        );
+        let connections = Arc::new(ConnectionManager::new(
+            transport,
+            pool.clone(),
+            "ResponderPeer0001".into(),
+            "Responder".into(),
+            8,
+        ));
+        (
+            DevicePairing::new(pool.clone(), connections, Arc::new(RwLock::new(None))),
+            pool,
+        )
+    }
+
+    fn seed_identity(pool: &DbPool) -> Result<(), AppError> {
+        let key = ed25519_dalek::SigningKey::generate(&mut rand::rngs::OsRng);
+        pool.get()?.execute(
+            "INSERT INTO local_identity (id, peer_id, public_key, display_name) VALUES (1, ?1, ?2, 'Responder')",
+            rusqlite::params![
+                crate::identity::public_key_to_peer_id(&key.verifying_key()),
+                key.verifying_key().as_bytes().to_vec()
+            ],
+        )?;
+        Ok(())
+    }
+
+    async fn hold(p: &DevicePairing, role: PairingRole, fingerprint: &str) {
+        p.pending.write().await.insert(
+            PEER.to_string(),
+            Pending {
+                display_name: "Initiator".into(),
+                fingerprint: fingerprint.into(),
+                device_group_id: "group-initiator".into(),
+                peer_devices_at_stake: 0,
+                public_key_b64: "pk".into(),
+                role,
+                created: Instant::now(),
+                requested_at: chrono::Utc::now().to_rfc3339(),
+                code_failures: 0,
+            },
+        );
+    }
+
+    async fn still_pending(p: &DevicePairing) -> bool {
+        p.list_pending().await.iter().any(|v| v.peer_id == PEER)
+    }
+
+    #[test]
+    fn a_typed_code_is_its_digits_in_any_spelling() {
+        assert_eq!(code_digits("042-917"), "042917");
+        assert_eq!(code_digits(" 042 917 "), "042917");
+        assert_eq!(code_digits("042917"), "042917");
+        assert_eq!(code_digits("O42-917"), "42917", "a letter O is not a zero");
+        assert!(codes_match("042917", "042917"));
+        assert!(!codes_match("042917", "042918"));
+        assert!(!codes_match("04291", "042917"), "a prefix is not a match");
+        assert!(!codes_match("", "042917"));
+    }
+
+    #[tokio::test]
+    async fn no_pending_entry_is_no_pending_and_waits_first() {
+        let (p, _) = pairing();
+        let started = Instant::now();
+        let err = p.confirm_with_code(PEER, "042-917").await.unwrap_err();
+        assert!(matches!(err, PairCodeError::NoPending), "{err}");
+        assert!(
+            started.elapsed() >= CODE_FAIL_DELAY,
+            "a failure answers only after the fixed delay"
+        );
+    }
+
+    #[tokio::test]
+    async fn an_initiator_entry_cannot_be_confirmed_by_code() {
+        let (p, _) = pairing();
+        hold(&p, PairingRole::Initiator, "042-917").await;
+        let err = p.confirm_with_code(PEER, "042-917").await.unwrap_err();
+        assert!(matches!(err, PairCodeError::NoPending), "{err}");
+        assert!(
+            still_pending(&p).await,
+            "the initiator's own entry is untouched"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_wrong_code_keeps_the_entry_for_a_retype() {
+        let (p, pool) = pairing();
+        hold(&p, PairingRole::Responder, "042-917").await;
+        let err = p.confirm_with_code(PEER, "042 918").await.unwrap_err();
+        assert!(
+            matches!(
+                err,
+                PairCodeError::Mismatch {
+                    attempts_left: 4,
+                    withdrawn: false
+                }
+            ),
+            "{err}"
+        );
+        assert!(still_pending(&p).await, "the human can retype");
+        assert!(
+            owned_devices_repo::get_owned_device(&pool, PEER)
+                .unwrap()
+                .is_none(),
+            "nothing was paired"
+        );
+        assert!(
+            !err.to_string().contains("042"),
+            "an error never carries the expected code: {err}"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_last_allowed_miss_withdraws_the_pairing() {
+        let (p, _) = pairing();
+        hold(&p, PairingRole::Responder, "042-917").await;
+        for left in (1..MAX_CODE_ATTEMPTS).rev() {
+            let err = p.confirm_with_code(PEER, "000000").await.unwrap_err();
+            assert!(
+                matches!(err, PairCodeError::Mismatch { attempts_left, withdrawn: false } if attempts_left == left),
+                "{err}"
+            );
+        }
+        let err = p.confirm_with_code(PEER, "000000").await.unwrap_err();
+        assert!(
+            matches!(
+                err,
+                PairCodeError::Mismatch {
+                    attempts_left: 0,
+                    withdrawn: true
+                }
+            ),
+            "{err}"
+        );
+        assert!(!still_pending(&p).await, "withdrawn after the last miss");
+        // Even the RIGHT code is too late now.
+        let err = p.confirm_with_code(PEER, "042-917").await.unwrap_err();
+        assert!(matches!(err, PairCodeError::NoPending), "{err}");
+    }
+
+    /// A match goes down the existing `confirm` path: it writes our
+    /// `owned_devices` row, then fails only at telling the (absent) initiator.
+    #[tokio::test]
+    async fn the_right_code_in_any_spelling_reaches_confirm() {
+        let (p, pool) = pairing();
+        hold(&p, PairingRole::Responder, "042-917").await;
+        let err = p.confirm_with_code(PEER, " 042917 ").await.unwrap_err();
+        assert!(
+            matches!(err, PairCodeError::Confirm(_)),
+            "past the code check, into confirm: {err}"
+        );
+        assert!(
+            owned_devices_repo::get_owned_device(&pool, PEER)
+                .unwrap()
+                .is_some(),
+            "confirm registered the device before the stream failed"
+        );
     }
 }

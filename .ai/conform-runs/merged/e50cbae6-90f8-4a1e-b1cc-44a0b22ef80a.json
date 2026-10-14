@@ -1,0 +1,25 @@
+{"schema": "conform-run/1", "worker": "e50cbae6-90f8-4a1e-b1cc-44a0b22ef80a", "subject": "subprocess-lifecycle",
+ "evaluatedAt": "2026-10-10T02:15:00Z",
+ "pairs": [
+  {"context": "2de6333f-8375-404b-8fdc-fe0fb15d4f95", "subject": "subprocess-lifecycle", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/fleet/headless.rs:72 fleet close/hibernate is a single-pid forcible kill (PTY lane the same via pty.rs:649 clone_killer; commands.rs:251 goes straight to killer.kill(), no polite rung) and never the tree, though src-tauri/src/webbuild/devserver.rs:595 kill_tree exists - a closed claude session leaves its MCP servers and tool shells as unowned orphans",
+   "techniques": [
+    {"technique": "termination-and-reaping", "verdict": "deviation", "evidence": "src-tauri/src/commands/fleet/headless.rs:72 PidKiller kills one pid with no polite rung and no descendant/tree kill; src-tauri/src/commands/fleet/commands.rs:251 documents hard-kill-first as the only path"},
+    {"technique": "concurrency-and-slots", "verdict": "realized", "evidence": "src-tauri/src/commands/fleet/registry.rs:667 is_live_state defines what occupies a live slot against the configured cap (stale.rs:167 live_slot_cap); queue.rs:1619 promote_head admits queued sessions as slots free"},
+    {"technique": "liveness-and-heartbeats", "verdict": "realized", "evidence": "src-tauri/src/commands/fleet/stale.rs:424 track_silence keys silence per session id, and the stale/stalled cutoffs degrade the claim (stale.rs:187) rather than kill"}
+   ]},
+  {"context": "6a81750d-fdbf-4518-bae6-689303e1a884", "subject": "subprocess-lifecycle", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/engine/src/session_pool.rs:145 the warm-session fingerprint hashes tool_count, not tool identity, and omits credentials and CLI version although session_pool.rs:9 promises credential invalidation, and assign_tool/unassign_tool (src-tauri/src/commands/tools/tools.rs:73) never invalidate - swapping one tool or credential for another resumes a session built in a different world",
+   "techniques": [
+    {"technique": "session-reuse", "verdict": "deviation", "evidence": "src-tauri/engine/src/session_pool.rs:145 tool_count stands in for tool identity; no credential or executable-version component; no fingerprint-scheme version; tools.rs:73 assign_tool has no pool invalidation"},
+    {"technique": "session-reuse (invalidate-on-failure, idle expiry, one hash helper)", "verdict": "realized", "evidence": "src-tauri/src/engine/execution.rs:2487 offers only when result.success; session_pool.rs:74 TTL expiry; session_pool.rs:81 exact-match retire; both sides call compute_config_hash (executions.rs:585)"}
+   ],
+   "registryProposal": "session-reuse could name the explicit-invalidation-door gap: this repo invalidates via edit-command call sites (personas.rs, use_cases.rs, persona_brain.rs) as well as the fingerprint, and the sites that forgot (tool assign/unassign, credential edit) are exactly where the fingerprint is also blind - two mechanisms that each cover part of the inputs, with no check that their union is complete."}
+ ],
+ "declined": [],
+ "consults": [
+  {"ts": "2026-10-10T02:15:00Z", "bundle": "software-engineering", "subjects": ["subprocess-lifecycle"], "techniques": ["termination-and-reaping", "concurrency-and-slots", "liveness-and-heartbeats"], "deviations": 1},
+  {"ts": "2026-10-10T02:15:00Z", "bundle": "software-engineering", "subjects": ["subprocess-lifecycle"], "techniques": ["session-reuse"], "deviations": 1}
+ ]}

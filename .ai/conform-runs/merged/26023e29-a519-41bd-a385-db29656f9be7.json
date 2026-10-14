@@ -1,0 +1,64 @@
+{
+  "schema": "conform-run/1",
+  "worker": "26023e29-a519-41bd-a385-db29656f9be7",
+  "subject": "model-routing",
+  "evaluatedAt": "2026-10-10T02:01:16Z",
+  "pairs": [
+    {
+      "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b",
+      "subject": "model-routing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:161 applies an edited BYOM policy in place as bare unversioned JSON (src-tauri/db/src/byom.rs:305) no audit row cites (src/lib/bindings/ProviderAuditEntry.ts:6), and src-tauri/src/engine/failover.rs:770 silently drops blocked providers so an emptied chain surfaces as the generic src-tauri/src/engine/runner/mod.rs:2393 message - reconfirmed 2026-10-10, anchors unchanged since c917b2d3f8",
+      "techniques": [
+        {
+          "technique": "policy-governance",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/byom.rs:305 writes the policy as one unversioned settings value and src/lib/bindings/ProviderAuditEntry.ts:6 records routing_rule_name but no policy version, so an audit cannot tell a violated rule from a rule edited since"
+        },
+        {
+          "technique": "routing-policy",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/failover.rs:770 filters blocked providers out with no record of the eliminating rule; an exhausted chain reaches src-tauri/src/engine/runner/mod.rs:2393 as \"All providers failed or have open circuit breakers\", not a named policy-exhausted failure"
+        }
+      ],
+      "registryProposal": "Matcher missed model-routing in three contexts that hold the repo's actual routing code (vocabulary: TurnTier/ModelRoutingRule/cascade): companion (src-tauri/src/companion/model_routing.rs:12 per-turn-class model+effort tiers - turn-classification, effort-calibration), db (src-tauri/db/src/model_routing.rs:143 specificity cascade resolve + :170 validate - routing-policy, consumer-overrides) and settings-network (src/features/settings/sub_engine/components/ModelRoutingSection.tsx:22 the rule editor - policy-governance). Meanwhile four of five existing pairs are not-applicable display/trigger contexts; the subject is paired to the wrong surfaces. Add these three pairs (source: conform) and judge them next run."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "model-routing",
+      "context": "ba0d4722-bfde-40aa-8e1d-52591719f834",
+      "reason": "lab-shared-primitives: not-applicable verdict of 2026-10-05 is current (digest sha256-b2:5484901d8df95b15, rev 21, 0 behind); no change since - re-reading adds nothing"
+    },
+    {
+      "subject": "model-routing",
+      "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757",
+      "reason": "overview-incidents: not-applicable verdict of 2026-10-05 is current at rev 21; no commits to the context since"
+    },
+    {
+      "subject": "model-routing",
+      "context": "54236947-3775-4d0a-8e14-1a709dd4d8bc",
+      "reason": "teams-factory: not-applicable verdict of 2026-10-05 is current at rev 21; Atlas-matrix commits since add no model/effort/provider selection (grep of sub_factory)"
+    },
+    {
+      "subject": "model-routing",
+      "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc",
+      "reason": "triggers-studio: not-applicable verdict of 2026-10-05 is current at rev 21; no commits to the context since"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T02:01:16Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "model-routing"
+      ],
+      "techniques": [
+        "policy-governance",
+        "routing-policy"
+      ],
+      "deviations": 1
+    }
+  ]
+}

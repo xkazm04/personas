@@ -1,0 +1,15 @@
+{
+  "schema": "conform-run/1",
+  "worker": "1d97ae08-bf26-496a-89b2-03d3dbbc7c59",
+  "subject": "hash-pinned-translation-pipeline",
+  "evaluatedAt": "2026-10-10T12:15:00Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "hash-pinned-translation-pipeline",
+      "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+      "reason": "no pair exists: .ai/registry-map.json (generatedAt 2026-10-01T08:52:29Z) lists this subject in zero contexts and subjectIndex has no entry, so --subject has no work. The worker contract forbids adding a pair, so it is left unjudged. registryProposal: pair hash-pinned-translation-pipeline (software-engineering, digest sha256-b2:5fb570c0ab07039a, revision 2) with the i18n context 2e1e105a (src/i18n/** + scripts/i18n/**, 14 locales). The subject existed since 2026-08-22, before the map was built, so this is a matcher miss rather than lag. The likely cause is the per-context cap: the row already holds 10 subjects, including mcp-tools and error-handling, which govern it less directly. A first read suggests a probable deviation for source-hash-provenance and shape-sync-is-not-content-sync: grep -i hash over scripts/i18n/*.mjs returns nothing, and the gates (check:i18n:strict) are key-parity shape checks. That is unverified and is NOT a verdict."
+    }
+  ],
+  "consults": []
+}

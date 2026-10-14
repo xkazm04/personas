@@ -1,0 +1,20 @@
+{
+  "schema": "conform-run/1",
+  "worker": "1eb11620-0df3-45ff-84b1-baf2d01b4177",
+  "subject": "judge-calibration-and-drift",
+  "evaluatedAt": "2026-10-10T12:17:07Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "judge-calibration-and-drift",
+      "context": "3c107fe6-ec95-4f45-bf31-665e9ccfe223",
+      "reason": "already judged not-applicable against sha256-b2:d0f0d4aa66f81402 rev 5, which is the registry index digest/revision at HEAD e6f59b26; not stale, so re-judging adds nothing. (verdict 2026-10-09, plugins-drive). Registry/map finding, repeated from merged runs 2c3a8a66 and 8f9b4e8c and still unactioned: the matcher pairs this subject only with two lexical-noise contexts, while the repo has real LLM judges with no pairing - src-tauri/src/commands/eval_runs.rs:198 (JudgeDims, scorecard.judge.*, context commands-execution 6da794b4) and src-tauri/src/bench/db.rs:80 (judge_model per dimension score, a path that is in no context). A git grep of src-tauri/src for kappa / golden set / inter-annotator finds nothing, so once paired the subject would most likely judge as a deviation. The contest-judge context e4b48fb7 named in run 2c3a8a66 is no longer in the map."
+    },
+    {
+      "subject": "judge-calibration-and-drift",
+      "context": "417112d1-004b-41d5-a656-57997a47d818",
+      "reason": "already judged not-applicable against sha256-b2:d0f0d4aa66f81402 rev 5, which is the registry index digest/revision at HEAD e6f59b26; not stale, so re-judging adds nothing. (verdict 2026-10-10, timing-utility-hooks, a weak context)."
+    }
+  ],
+  "consults": []
+}

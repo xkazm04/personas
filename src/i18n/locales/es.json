@@ -2628,7 +2628,13 @@
       "profile_tokens_over": "más de {from} tokens",
       "profile_tokens_under": "menos de {to} tokens",
       "profile_units": "{count} unidades",
-      "profile_untagged_note": "Aún no hay nada declarado, así que las ejecuciones se cobran con el valor predeterminado mostrado aquí. El agente declarará su propio perfil en su próximo despertar de decisión."
+      "profile_untagged_note": "Aún no hay nada declarado, así que las ejecuciones se cobran con el valor predeterminado mostrado aquí. El agente declarará su propio perfil en su próximo despertar de decisión.",
+      "profile_axes_dominant": "Sobre todo {axis}",
+      "profile_axes_label": "Carga medida",
+      "profile_axes_learning": "Aprendiendo ({count}/{total})",
+      "profile_axes_mismatch": "Medido {measured}, declarado {declared}",
+      "profile_axes_runs": "Medido en {count} ejecuciones",
+      "profile_source_measured": "definido a partir de ejecuciones medidas"
     },
     "role_card": {
       "assign": "Asignar",
@@ -3376,17 +3382,6 @@
     "palette_agent_enabled": "Agente activado",
     "palette_health_complete": "Comprobación de estado completada",
     "palette_toggle_failed": "No se pudo cambiar el agente"
-  },
-  "cockpit": {
-    "inbox": {
-      "relative_days_one": "hace {d} d",
-      "relative_days_other": "hace {d} d",
-      "relative_hours_one": "hace {h} h",
-      "relative_hours_other": "hace {h} h",
-      "relative_just_now": "ahora mismo",
-      "relative_minutes_one": "hace {m} min",
-      "relative_minutes_other": "hace {m} min"
-    }
   },
   "common": {
     "_comment_refine": "Generic refine action used in adoption + scratch build phases",
@@ -7240,6 +7235,7 @@
     "usage_provider_claude": "Claude",
     "usage_provider_codex": "OpenAI Codex",
     "usage_provider_grok": "xAI Grok",
+    "usage_provider_agy": "Google Antigravity",
     "queue_origin_remote": "Un dispositivo emparejado",
     "remote_drawer_aria": "Sesión remota en {device}",
     "remote_from_device": "Desde {device}",
@@ -7595,7 +7591,56 @@
     "dc_hub_triage_all_none": "Nada en espera",
     "dc_hub_triage_all_short": "Todo",
     "dc_hub_triage_all_walk_tip": "Recorrer los {count} en orden, lo más urgente primero",
-    "grid_rail_triage_modal_aria": "Detalles de la revisión"
+    "grid_rail_triage_modal_aria": "Detalles de la revisión",
+    "schedule_last_failed": "terminó con código {code}",
+    "schedule_last_ok": "terminó correctamente",
+    "schedule_last_run": "Última ejecución {when}",
+    "schedule_never_ran": "Aún no se ha ejecutado",
+    "schedule_next": "próxima {when}",
+    "schedule_off": "desactivada",
+    "schedule_running": "en ejecución",
+    "schedule_time_zone": "Horas en hora de Praga",
+    "schedule_toggle_aria": "Ejecutar {title} según lo programado",
+    "schedule_toggle_failed": "No se pudo cambiar la tarea programada",
+    "schedule_window": "Trabaja {window}",
+    "schedules": "Programaciones",
+    "schedules_aria": "Tareas programadas en este equipo",
+    "mesh_agent_project_off": "Su proyecto está desactivado en {device}. Activa primero el proyecto allí.",
+    "mesh_agent_stale": "{device} no está informando, así que sus agentes no se pueden cambiar desde aquí",
+    "mesh_agent_turn_off": "Desactivar {name}, en {device}",
+    "mesh_agent_turn_on": "Activar {name}, en {device}",
+    "mesh_all": "Todos los dispositivos",
+    "mesh_axis_cpu": "CPU",
+    "mesh_axis_gpu": "GPU",
+    "mesh_axis_ram": "RAM",
+    "mesh_devices_live": "{live} de {total} informando",
+    "mesh_glyph_axis": "Sobre todo {axis}",
+    "mesh_glyph_share": "Sobre todo {axis}: {share} de este dispositivo",
+    "mesh_home": "Dispositivo principal",
+    "mesh_move_aria": "Mover {name} a otro dispositivo",
+    "mesh_move_pending": "Moviendo a {device}",
+    "mesh_move_to": "Mover a…",
+    "mesh_move_waits": "No informa: el traslado espera hasta que despierte",
+    "mesh_not_reporting": "No informa",
+    "mesh_outcome_pending": "Enviando a {device}",
+    "mesh_outcome_queued": "En cola hasta que despierte",
+    "mesh_outcome_refused": "{device} lo rechazó: {reason}",
+    "mesh_plate_clear": "Mostrar todos los dispositivos de nuevo",
+    "mesh_plate_scope": "Mostrar solo {device}",
+    "mesh_probe_failed": "{test} falló",
+    "mesh_probe_none": "Aún no se ha ejecutado ninguna prueba mutua con este dispositivo",
+    "mesh_probe_passed": "{test} superada",
+    "mesh_queue_title": "Cola en {device}",
+    "mesh_queued": "{count} en cola",
+    "mesh_rail_aria": "Otros dispositivos",
+    "mesh_reach_connected": "Conectado",
+    "mesh_reach_offline": "Sin conexión",
+    "mesh_reach_stale": "La conexión está obsoleta",
+    "mesh_refusal_project_off": "su proyecto está desactivado allí",
+    "mesh_refusal_unknown": "sin motivo indicado",
+    "mesh_running": "{count} en ejecución",
+    "mesh_strip_aria": "Dispositivos de la malla",
+    "mesh_this_device": "Este dispositivo"
   },
   "onboarding": {
     "adopt_button": "Configurar agente",
@@ -10315,7 +10360,8 @@
     "dc_open_in_deck_hint": "Abrir esta en el Centro de decisiones (Enter)",
     "dc_pending_lead": "Cada revisión pendiente se abre en el Centro de decisiones, con su caso completo y las mismas teclas que cualquier otra decisión.",
     "dc_pending_list_aria": "Revisiones pendientes",
-    "dc_select_review": "Seleccionar revisión"
+    "dc_select_review": "Seleccionar revisión",
+    "dc_col_decision": "Decisión"
   },
   "pipeline": {
     "accept_suggestion": "Aceptar sugerencia",
@@ -14672,7 +14718,13 @@
         "where_contest": "Concurso",
         "where_count": "{count} concursos",
         "where_ledger": "Registro",
-        "where_variant": "Variante"
+        "where_variant": "Variante",
+        "by_area": "Por tipo de tarea",
+        "by_model": "Por modelo",
+        "tile_contests": "Concursos",
+        "tile_decided": "Decididos",
+        "tile_models": "Modelos en juego",
+        "tile_top": "Mejor modelo"
       }
     }
   },

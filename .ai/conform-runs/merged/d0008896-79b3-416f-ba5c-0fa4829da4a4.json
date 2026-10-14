@@ -1,0 +1,36 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d0008896-79b3-416f-ba5c-0fa4829da4a4",
+  "subject": "adoption-measurement",
+  "evaluatedAt": "2026-10-12T12:10:14Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "adoption-measurement",
+      "context": "9b013060-5483-4162-9f8a-6b69109d623d",
+      "reason": "already judged against the current subject digest sha256-b2:502064804797857b (revision 3, registry e94a2fc5); not stale, so re-judging would duplicate a current verdict (existing: not-applicable 2026-10-03)"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+      "reason": "already judged against the current subject digest sha256-b2:502064804797857b (revision 3, registry e94a2fc5); not stale, so re-judging would duplicate a current verdict (existing: not-applicable 2026-10-09)"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "e76afaf6-ba3b-4341-b1ad-f444f08da8b8",
+      "reason": "already judged against the current subject digest sha256-b2:502064804797857b (revision 3, registry e94a2fc5); not stale, so re-judging would duplicate a current verdict (existing: not-applicable 2026-10-09)"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "80e0534a-d0ea-469a-9c3a-cf12910ecde9",
+      "reason": "already judged against the current subject digest sha256-b2:502064804797857b (revision 3, registry e94a2fc5); not stale, so re-judging would duplicate a current verdict (existing: not-applicable 2026-10-09)"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "7dddb34a-3a9b-4ce0-832f-55ea352c12b5",
+      "reason": "already judged against the current subject digest sha256-b2:502064804797857b (revision 3, registry e94a2fc5); not stale, so re-judging would duplicate a current verdict (existing: not-applicable 2026-10-09)"
+    }
+  ],
+  "consults": [],
+  "note": "No work: all 5 map pairs for adoption-measurement carry current verdicts (all not-applicable). Searched for a missing pairing (a surface measuring practice uptake across a population of projects): the only candidate, the workspace practice tallies, was retired - src/features/plugins/dev-tools/sub_workspaces/WorkspacesAtlas.tsx:9 - so no pairing is proposed."
+}

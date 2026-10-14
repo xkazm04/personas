@@ -72,8 +72,21 @@
 //!
 //! One `app_settings` prefix query. A project with no mandate is never touched,
 //! and no git process is spawned.
+//!
+//! # What it costs when nothing moved
+//!
+//! A mandated project whose branches and main tip are where the last pass left
+//! them costs a handful of git calls, however many proposals it has: the
+//! work-tree probe, the main-branch resolution, one `for-each-ref` for every
+//! proposal tip, and one `rev-parse` of main. Commits are captured only for a
+//! new or moved tip; merge and revert verdicts are recomputed only after main
+//! moves, with one `for-each-ref --merged` and one `git log` for the whole
+//! project. Every git child goes through `git_checkpoint::run_git`, so none of
+//! them opens a console window on the operator's desktop.
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 use std::time::Duration;
 
 use personas_engine::app_master_gates as gates;
@@ -259,24 +272,28 @@ async fn reconcile_project(
     };
 
     // -- 1. Discover ---------------------------------------------------------
-    let branches = gates::list_proposal_branches(&root)
+    //
+    // One `for-each-ref` names every branch with its tip. A branch the ledger
+    // already holds at this tip, with a real commit snapshot, cannot change
+    // under `upsert_proposal`'s rules, so it costs no git call at all; only a
+    // new branch, a moved tip or a still-empty snapshot is captured again.
+    let tips = gates::list_proposal_tips(&root)
         .await
         .map_err(|e| format!("branch discovery failed: {e}"))?;
+    let branches: Vec<String> = tips.iter().map(|(b, _)| b.clone()).collect();
     counts.branches_seen = branches.len();
     let mut newly_seen: Vec<String> = Vec::new();
-    for branch in &branches {
-        let known = gates::get_proposal(pool, project_id, branch)
-            .ok()
-            .flatten()
-            .is_some();
-        let head = match gates::git(&root, &["rev-parse", branch]).await {
-            Ok(h) => h,
-            Err(e) => {
-                tracing::warn!(project_id, branch, error = %e,
-                    "app_master_reconcile: could not resolve a proposal branch tip");
-                continue;
-            }
-        };
+    let mut ledger_changed = false;
+    for (branch, head) in &tips {
+        let stored = gates::get_proposal(pool, project_id, branch).ok().flatten();
+        let known = stored.is_some();
+        if stored
+            .as_ref()
+            .is_some_and(|p| &p.head_sha == head && p.carries_work())
+        {
+            continue;
+        }
+        ledger_changed = true;
         let (base, commits) = gates::branch_commits(&root, &main_branch, branch)
             .await
             .unwrap_or((None, Vec::new()));
@@ -285,7 +302,7 @@ async fn reconcile_project(
             project_id,
             &record.persona_id,
             branch,
-            &head,
+            head,
             base.as_deref(),
             &commits,
         ) {
@@ -399,8 +416,25 @@ async fn reconcile_project(
     }
 
     // -- 3. Merge / revert ---------------------------------------------------
-    for proposal in gates::list_proposals(pool, project_id).unwrap_or_default() {
-        reconcile_one(pool, &root, &main_branch, &proposal).await;
+    //
+    // Both verdicts are functions of the main branch and the ledger: a merge
+    // asks whether a recorded tip is an ancestor of main, a revert asks main's
+    // log. With neither moved since the last complete pass, every answer is the
+    // one already recorded, so the pass is skipped. Most ticks land here.
+    let main_tip = gates::git(&root, &["rev-parse", &main_branch]).await.ok();
+    let settled = !ledger_changed
+        && main_tip
+            .as_deref()
+            .is_some_and(|tip| reconciled_main_tip(project_id).as_deref() == Some(tip));
+    if !settled {
+        let proposals = gates::list_proposals(pool, project_id).unwrap_or_default();
+        let complete =
+            reconcile_fates(pool, project_id, &root, &main_branch, &tips, &proposals).await;
+        // A pass whose revert scan could not read main is asked again next
+        // tick; only a complete pass lets an unchanged main skip the next one.
+        if let (true, Some(tip)) = (complete, main_tip) {
+            remember_reconciled_main_tip(project_id, tip);
+        }
     }
 
     if !newly_seen.is_empty() {
@@ -414,88 +448,168 @@ async fn reconcile_project(
     Ok(counts)
 }
 
-/// Observe one proposal's fate on the main branch.
-async fn reconcile_one(pool: &DbPool, root: &Path, main_branch: &str, proposal: &gates::Proposal) {
+/// The main tip each project's merge/revert pass last completed against, so an
+/// unchanged main skips the pass. In memory on purpose: a restart re-runs one
+/// full pass, which is the correct cost for not trusting a stale cache.
+fn reconciled_tips() -> &'static std::sync::Mutex<HashMap<String, String>> {
+    static TIPS: OnceLock<std::sync::Mutex<HashMap<String, String>>> = OnceLock::new();
+    TIPS.get_or_init(Default::default)
+}
+
+fn reconciled_main_tip(project_id: &str) -> Option<String> {
+    reconciled_tips()
+        .lock()
+        .ok()
+        .and_then(|m| m.get(project_id).cloned())
+}
+
+fn remember_reconciled_main_tip(project_id: &str, tip: String) {
+    if let Ok(mut m) = reconciled_tips().lock() {
+        m.insert(project_id.to_string(), tip);
+    }
+}
+
+/// How many main-branch commits one revert scan reads. The scan runs once per
+/// project from the oldest merge still watched; each proposal used to get its
+/// own 500-commit window, and every one of those windows is the newest end of
+/// this one.
+const REVERT_SCAN_LIMIT: usize = 2000;
+
+/// Observe every proposal's fate on the main branch with as few git calls as
+/// the answers allow: one `for-each-ref --merged` for the merge verdicts, one
+/// `git log` for the revert verdicts, and a per-proposal call only for a tip no
+/// branch points at any more. Returns whether every verdict was asked: `false`
+/// when main's log could not be read for the revert scan.
+async fn reconcile_fates(
+    pool: &DbPool,
+    project_id: &str,
+    root: &Path,
+    main_branch: &str,
+    tips: &[(String, String)],
+    proposals: &[gates::Proposal],
+) -> bool {
     // A branch with nothing ahead of main IS main: `merge-base --is-ancestor`
     // says "merged" about it every single time, and about a branch that has
     // delivered nothing (bench sweep #24). No merge verdict, and no revert
     // verdict either — a revert is a claim about commits this row does not
     // have. Both stay NULL, which reads as *not observed*, which is the truth.
-    if !proposal.carries_work() {
-        return;
-    }
-    if proposal.merged_at.is_none() {
-        if !gates::is_merged(root, main_branch, &proposal.head_sha).await {
-            return;
+    let unmerged: Vec<&gates::Proposal> = proposals
+        .iter()
+        .filter(|p| p.carries_work() && p.merged_at.is_none())
+        .collect();
+    let merged_tips = if unmerged.is_empty() {
+        None
+    } else {
+        gates::merged_proposal_tips(root, main_branch).await.ok()
+    };
+    for proposal in unmerged {
+        // The set only speaks for a tip a listed branch still points at. A
+        // deleted branch, a moved one, or a failed listing asks git directly.
+        let listed = tips
+            .iter()
+            .any(|(b, sha)| b == &proposal.branch && sha == &proposal.head_sha);
+        let merged = match (&merged_tips, listed) {
+            (Some(set), true) => set.contains(&proposal.head_sha),
+            _ => gates::is_merged(root, main_branch, &proposal.head_sha).await,
+        };
+        if merged {
+            observe_merge(pool, root, main_branch, proposal).await;
         }
-        let (at, sha) = gates::merge_point(root, main_branch, &proposal.head_sha)
-            .await
-            // A tip that IS on main but whose landing point cannot be dated is
-            // still merged. Dating it "now" over-states recency, so the merge
-            // is recorded at the observation time and the sha left null —
-            // "we saw it land, we cannot say exactly when".
-            .unwrap_or_else(|| (chrono::Utc::now().to_rfc3339(), None));
-        match gates::mark_merged(pool, &proposal.id, &at, sha.as_deref()) {
-            Err(e) => {
-                tracing::warn!(branch = %proposal.branch, error = %e,
-                    "app_master_reconcile: could not record a merge");
-                return;
-            }
-            // The ledger's own fail-closed guard: it refuses a merge on a
-            // commit-less row. Reaching it means the snapshot went empty
-            // between the read above and the write — leave it unobserved.
-            Ok(false) => {
-                tracing::warn!(branch = %proposal.branch,
-                    "app_master_reconcile: the ledger refused a merge on a commit-less proposal");
-                return;
-            }
-            Ok(true) => {}
-        }
-        tracing::info!(
-            branch = %proposal.branch,
-            merged_at = %at,
-            "app_master_reconcile: proposal observed on the main branch"
-        );
-        remember_proposal(
-            pool,
-            &proposal.project_id,
-            &proposal.branch,
-            ProposalEvent::Merged { merge_sha: sha },
-        );
     }
 
     // Reverts are only meaningful for merged work, and only until one is found.
-    let merged_at = match gates::get_proposal(pool, &proposal.project_id, &proposal.branch) {
-        Ok(Some(p)) if p.reverted_at.is_none() => match p.merged_at {
-            Some(at) => at,
-            None => return,
-        },
-        _ => return,
+    // Re-read: the merges above are now in the ledger.
+    let watched: Vec<(gates::Proposal, String)> = gates::list_proposals(pool, project_id)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|p| p.carries_work() && p.reverted_at.is_none())
+        .filter_map(|p| {
+            let since = revert_window_start(p.merged_at.as_deref()?);
+            Some((p, since))
+        })
+        .collect();
+    let Some(oldest) = watched
+        .iter()
+        .filter_map(|(_, since)| chrono::DateTime::parse_from_rfc3339(since).ok())
+        .min()
+    else {
+        return true;
     };
-    let since = revert_window_start(&merged_at);
-    if let Some((at, sha)) = gates::find_revert(root, main_branch, &since, &proposal.commits).await
-    {
-        if let Err(e) = gates::mark_reverted(pool, &proposal.id, &at, &sha) {
+    let Some(log) =
+        gates::main_log_since(root, main_branch, &oldest.to_rfc3339(), REVERT_SCAN_LIMIT).await
+    else {
+        return false;
+    };
+    for (proposal, since) in &watched {
+        if let Some((at, sha)) = gates::find_revert_in(&log, since, &proposal.commits) {
+            observe_revert(pool, proposal, &at, &sha);
+        }
+    }
+    true
+}
+
+/// Record a merge the pass observed for one proposal.
+async fn observe_merge(pool: &DbPool, root: &Path, main_branch: &str, proposal: &gates::Proposal) {
+    let (at, sha) = gates::merge_point(root, main_branch, &proposal.head_sha)
+        .await
+        // A tip that IS on main but whose landing point cannot be dated is
+        // still merged. Dating it "now" over-states recency, so the merge
+        // is recorded at the observation time and the sha left null —
+        // "we saw it land, we cannot say exactly when".
+        .unwrap_or_else(|| (chrono::Utc::now().to_rfc3339(), None));
+    match gates::mark_merged(pool, &proposal.id, &at, sha.as_deref()) {
+        Err(e) => {
             tracing::warn!(branch = %proposal.branch, error = %e,
-                "app_master_reconcile: could not record a revert");
+                "app_master_reconcile: could not record a merge");
             return;
         }
-        tracing::info!(
-            branch = %proposal.branch,
-            reverted_at = %at,
-            revert_sha = %sha,
-            "app_master_reconcile: a merged proposal was reverted on the main branch"
-        );
-        // The most valuable row this module writes: merging is not acceptance,
-        // and a revert is the one signal that says an approach the repository
-        // took was later paid back out. Importance 8 in the project lane.
-        remember_proposal(
-            pool,
-            &proposal.project_id,
-            &proposal.branch,
-            ProposalEvent::Reverted { revert_sha: sha },
-        );
+        // The ledger's own fail-closed guard: it refuses a merge on a
+        // commit-less row. Reaching it means the snapshot went empty
+        // between the read above and the write — leave it unobserved.
+        Ok(false) => {
+            tracing::warn!(branch = %proposal.branch,
+                "app_master_reconcile: the ledger refused a merge on a commit-less proposal");
+            return;
+        }
+        Ok(true) => {}
     }
+    tracing::info!(
+        branch = %proposal.branch,
+        merged_at = %at,
+        "app_master_reconcile: proposal observed on the main branch"
+    );
+    remember_proposal(
+        pool,
+        &proposal.project_id,
+        &proposal.branch,
+        ProposalEvent::Merged { merge_sha: sha },
+    );
+}
+
+/// Record a revert the pass observed for one merged proposal.
+fn observe_revert(pool: &DbPool, proposal: &gates::Proposal, at: &str, sha: &str) {
+    if let Err(e) = gates::mark_reverted(pool, &proposal.id, at, sha) {
+        tracing::warn!(branch = %proposal.branch, error = %e,
+            "app_master_reconcile: could not record a revert");
+        return;
+    }
+    tracing::info!(
+        branch = %proposal.branch,
+        reverted_at = %at,
+        revert_sha = %sha,
+        "app_master_reconcile: a merged proposal was reverted on the main branch"
+    );
+    // The most valuable row this module writes: merging is not acceptance,
+    // and a revert is the one signal that says an approach the repository
+    // took was later paid back out. Importance 8 in the project lane.
+    remember_proposal(
+        pool,
+        &proposal.project_id,
+        &proposal.branch,
+        ProposalEvent::Reverted {
+            revert_sha: sha.to_string(),
+        },
+    );
 }
 
 /// The `--since` bound for revert scanning: the merge date, or (when it does

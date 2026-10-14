@@ -1,0 +1,110 @@
+{
+  "schema": "conform-run/1",
+  "worker": "69acff7d-261a-4687-8d98-337e739e2000",
+  "subject": "structured-output",
+  "evaluatedAt": "2026-10-12T11:54:50Z",
+  "pairs": [
+    {
+      "context": "876c0b4e-6472-4544-a21b-56e7529fb6b3",
+      "subject": "structured-output",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/kb_extract.rs:161 a per-document extraction failure is only warn-logged and :169 finalizes the run completed with error None, so a run where every document failed reads as a clean run with 0 entities (extraction-failed spelled as empty); :314 entity_type is stored unchecked against the approved schema and :307 an absent confidence becomes 1.0",
+      "techniques": [
+        {
+          "technique": "schema-validation-and-repair",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/kb_extract.rs:314 entity_type is written with no domain check against the approved schema, and :307 an absent confidence becomes 1.0, so a value the model never said reaches the store as a legal one"
+        },
+        {
+          "technique": "extraction-observability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/kb_extract.rs:169 finalize_run(..., None) after per-doc failures only warn-logged at :161, so the run record cannot tell extraction-failed apart from validated-empty"
+        }
+      ],
+      "registryProposal": "Re-verified 2026-10-12: kb_extract.rs is unchanged since the 2026-10-09 verdict, so this deviation is still live. Nothing in the repo tracks it as a backlog item yet."
+    },
+    {
+      "context": "0f1b56ac-cd96-4355-993e-dc445a20e63e",
+      "subject": "structured-output",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/fleet/monitor/channels/useConversation.ts:209 trusts the already-typed steps[] that decomposeTeamAssignmentGoal returns; that LLM call is extracted and validated in src-tauri/src/commands/teams/assignments.rs:486, outside this frontend-only context, so the extraction machinery the subject governs is not here",
+      "techniques": [
+        {
+          "technique": "display-vs-machine-channels",
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/channels/conversationModel.ts:27 the proposal row renders the typed AssignProposal artifact as its own row kind, separate from talk rows, and never re-parses it from display text"
+        }
+      ],
+      "registryProposal": "Re-checked after the 2026-10-06 monitor refactors (bf0cf55d36, af6406deb7). The verdict holds and the anchors moved from 197-210 to :209. The decompose_team_assignment_goal backend command (src-tauri/src/commands/teams/assignments.rs:486) is a real LLM extraction site that no context pairs with structured-output; a teams/assignments backend context should carry this subject."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "structured-output",
+      "context": "89eddf81-0c57-441d-a07d-de36bf022cb5",
+      "reason": "already judged against the current digest sha256-b2:d51aec71411ccb2b (rev 15, registry e94a2fc5) and no commit touched its anchors since the verdict; re-reading would duplicate a current verdict"
+    },
+    {
+      "subject": "structured-output",
+      "context": "7826a48f-5883-4f26-8476-c3c515bda745",
+      "reason": "already judged against the current digest sha256-b2:d51aec71411ccb2b (rev 15, registry e94a2fc5) and no commit touched its anchors since the verdict; re-reading would duplicate a current verdict"
+    },
+    {
+      "subject": "structured-output",
+      "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91",
+      "reason": "already judged against the current digest sha256-b2:d51aec71411ccb2b (rev 15, registry e94a2fc5) and no commit touched its anchors since the verdict; re-reading would duplicate a current verdict"
+    },
+    {
+      "subject": "structured-output",
+      "context": "d9cffe6c-a868-4ed4-b5e8-6c8add36918a",
+      "reason": "already judged against the current digest sha256-b2:d51aec71411ccb2b (rev 15, registry e94a2fc5) and no commit touched its anchors since the verdict; re-reading would duplicate a current verdict"
+    },
+    {
+      "subject": "structured-output",
+      "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b",
+      "reason": "already judged against the current digest sha256-b2:d51aec71411ccb2b (rev 15, registry e94a2fc5) and no commit touched its anchors since the verdict; re-reading would duplicate a current verdict"
+    },
+    {
+      "subject": "structured-output",
+      "context": "ebca0ef1-e509-4721-8472-1588ac2f93cc",
+      "reason": "already judged against the current digest sha256-b2:d51aec71411ccb2b (rev 15, registry e94a2fc5) and no commit touched its anchors since the verdict; re-reading would duplicate a current verdict"
+    },
+    {
+      "subject": "structured-output",
+      "context": "2a54cdc2-87af-4298-b490-9eb87f230df7",
+      "reason": "already judged against the current digest sha256-b2:d51aec71411ccb2b (rev 15, registry e94a2fc5) and no commit touched its anchors since the verdict; re-reading would duplicate a current verdict"
+    },
+    {
+      "subject": "structured-output",
+      "context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5",
+      "reason": "already judged against the current digest sha256-b2:d51aec71411ccb2b (rev 15, registry e94a2fc5) and no commit touched its anchors since the verdict; re-reading would duplicate a current verdict"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T11:54:50Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "structured-output"
+      ],
+      "techniques": [
+        "schema-validation-and-repair",
+        "extraction-observability"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-12T11:54:50Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "structured-output"
+      ],
+      "techniques": [
+        "display-vs-machine-channels"
+      ],
+      "deviations": 0
+    }
+  ]
+}

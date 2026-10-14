@@ -1,0 +1,168 @@
+{
+  "schema": "conform-run/1",
+  "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
+  "subject": "cross-provider-benchmark-operations",
+  "evaluatedAt": "2026-10-10T02:06:36.108Z",
+  "pairs": [
+    {
+      "context": "0b0ee725-52a2-4656-9e13-07c5204de60e",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src-tauri/db/src/model_routing.rs:1 the context is the db substrate whose only model-selection code is the runtime routing cascade the golden path assigns to model-routing; its learned rules cite Self-Tuning production-health snapshots (:74), not a benchmark run, and the lab benchmark tables live in db-repos-lab",
+      "techniques": [
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/model_routing.rs:13 resolves one (model, effort) per persona by selector precedence; no targets x cases run or scorecard is produced here"
+        }
+      ],
+      "registryProposal": "matcher precision: of 17 probable pairs for this subject in personas, 12 are now judged not-applicable and every one matched on generic tokens (matrix, case/cases, routing, model, settings, run); the use_when grounding needs the conjunction of a target axis (provider/model/variant) AND a shared case set before a pair is proposed, or a boundary token against builder-side routing"
+    },
+    {
+      "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:2 the only execution here is a dry-run preview of one draft capability on one input; \"matrix\" is the persona build-dimension grid, not a provider x model target matrix, so no benchmark evidence is produced",
+      "techniques": [
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:4 one capability, one optional input override, one preview - no declared targets and no shared case set"
+        }
+      ]
+    },
+    {
+      "context": "5d538a29-a2bb-4d61-8ec2-c51bcde105fe",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:15 the context configures per-run output assertions on one persona (production quality gates), not a case set run across model targets; lexical match on case/cases/settings",
+      "techniques": [
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:16 assertions are evaluated on every production run of a single persona; nothing compares targets"
+        }
+      ]
+    },
+    {
+      "context": "54236947-3775-4d0a-8e14-1a709dd4d8bc",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/teams/sub_factory/factoryModel.ts:2 the matrix is dev-project context x KPI with readings from dev_tools rows; no model targets, no cases, no scorecard - lexical match on matrix/model/console",
+      "techniques": [
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/factoryModel.ts:2 columns are KPIs, not commensurable provider/model targets"
+        }
+      ]
+    },
+    {
+      "context": "b0cf3902-0739-40a8-8c76-ae594f41421b",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/plugins/dev-tools/sub_context/contextKpiStatus.ts:1 the context is the Context Map runtime (scan state, per-context KPI health, use-case rows); \"use case\" is a codebase feature unit, not a benchmark case, and nothing runs against models",
+      "techniques": [
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/contextKpiStatus.ts:3 worst-wins KPI rollup per code context - no target declaration exists"
+        }
+      ]
+    },
+    {
+      "context": "456eb952-9b93-4de4-bad5-79e6f101aeb1",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:11 the context is the Overview routing shell, dashboard widgets and the system-health/API-key popup; \"routing\" is subtab routing and \"health\" is install/crash-log health, so the subject precondition (benchmark evidence for a model choice) does not hold",
+      "techniques": [
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:14 lazy-loaded subtabs; no benchmark run, target or scorecard is rendered here"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "cross-provider-benchmark-operations",
+      "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "reason": "budget: 6 pairs judged this run; companion-ui-controls (29 Playwright specs, lexical match on spec/controls/stop) left unknown for the next run"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T02:06:36.108Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "cross-provider-benchmark-operations"
+      ],
+      "techniques": [
+        "target-matrix-runs"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T02:06:36.108Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "cross-provider-benchmark-operations"
+      ],
+      "techniques": [
+        "target-matrix-runs"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T02:06:36.108Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "cross-provider-benchmark-operations"
+      ],
+      "techniques": [
+        "target-matrix-runs"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T02:06:36.108Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "cross-provider-benchmark-operations"
+      ],
+      "techniques": [
+        "target-matrix-runs"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T02:06:36.108Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "cross-provider-benchmark-operations"
+      ],
+      "techniques": [
+        "target-matrix-runs"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-10T02:06:36.108Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "cross-provider-benchmark-operations"
+      ],
+      "techniques": [
+        "target-matrix-runs"
+      ],
+      "deviations": 0
+    }
+  ]
+}

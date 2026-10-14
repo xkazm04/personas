@@ -1,0 +1,15 @@
+{
+ "schema": "conform-run/1",
+ "worker": "f50e38d5-46cb-478c-9be2-5ddfe2152292",
+ "subject": "prompt-safety",
+ "evaluatedAt": "2026-10-10T12:11:29Z",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "prompt-safety",
+   "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+   "reason": "no work: the map's only prompt-safety pair already carries a deviation evaluatedAgainst sha256-b2:51087132dbd1c9fb / revision 7, which equals the registry index at e6f59b26 (not stale); its four anchors were re-printed and still say what the evidence claims (src-tauri/src/engine/runner/mod.rs:1371 raw memory interpolation, :1480 post-assembly append, src-tauri/engine/src/prompt/assemble.rs:891 canary, :60 unused fence door), and no commit since the verdict landed (142fdff211) touches those files - re-stamping it would be a shallow re-judge, not a new verdict"
+  }
+ ],
+ "consults": []
+}

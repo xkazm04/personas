@@ -7,7 +7,9 @@ pub mod connection;
 pub mod device_pairing;
 pub mod manifest_sync;
 pub mod mdns;
+pub mod mesh;
 pub mod messaging;
+pub mod one_box;
 pub mod periodic;
 pub mod protocol;
 pub mod remote_jobs;
@@ -27,7 +29,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::event_registry::{emit_event, event_name};
 use personas_core::error::AppError;
-use personas_db::models::{DeviceReachability, DispatchDevice};
+use personas_db::models::{DeviceReachability, DispatchDevice, MeshDeviceView, MeshLiveness};
 use personas_db::repos::resources::owned_devices as owned_devices_repo;
 use personas_db::repos::resources::remote_jobs as remote_jobs_repo;
 use personas_db::DbPool;
@@ -36,6 +38,7 @@ use self::connection::ConnectionManager;
 use self::device_pairing::DevicePairing;
 use self::manifest_sync::ManifestSync;
 use self::mdns::MdnsService;
+use self::mesh::Mesh;
 use self::messaging::MessageRouter;
 use self::periodic::PeriodicTask;
 use self::remote_jobs::RemoteJobs;
@@ -54,6 +57,11 @@ pub struct NetworkService {
     /// executor here at startup via `remote_jobs.set_executor(...)`; until it
     /// does, accepted jobs fail immediately with a stated reason.
     pub remote_jobs: Arc<RemoteJobs>,
+    /// The device mesh (snapshots + liveness). The app layer installs its
+    /// snapshot provider here at startup via `mesh.set_provider(...)`, before
+    /// `start()`; until then this device sends no snapshot. Shared with
+    /// `remote_jobs`, whose pairing gate every inbound snapshot passes.
+    pub mesh: Arc<Mesh>,
     config: Arc<RwLock<NetworkConfig>>,
     running: Arc<RwLock<bool>>,
     cancel: Arc<RwLock<CancellationToken>>,
@@ -64,7 +72,16 @@ pub struct NetworkService {
 impl NetworkService {
     /// Create a new NetworkService (does not start background tasks yet).
     pub fn new(pool: DbPool, peer_id: String, display_name: String) -> Result<Self, AppError> {
-        let default_config = NetworkConfig::default();
+        let mut default_config = NetworkConfig::default();
+        // DEV-ONLY one-box (SECURITY-SENSITIVE): honoured ONLY when
+        // PERSONAS_DATA_DIR marks an isolated instance; see `one_box`.
+        if let Some(port) = one_box::p2p_port_override() {
+            tracing::warn!(
+                port,
+                "PERSONAS_P2P_PORT honoured: isolated instance (PERSONAS_DATA_DIR is set)"
+            );
+            default_config.port = port;
+        }
         let transport = Arc::new(QuicTransport::new(peer_id.clone())?);
         let connections = Arc::new(ConnectionManager::new(
             transport.clone(),
@@ -141,6 +158,7 @@ impl NetworkService {
             tracing::info!(requeued, "Returned stranded remote-job sends to the outbox");
         }
 
+        let mesh = remote_jobs.mesh.clone();
         Ok(Self {
             mdns,
             transport,
@@ -149,6 +167,7 @@ impl NetworkService {
             messages,
             pairing,
             remote_jobs,
+            mesh,
             config,
             running: Arc::new(RwLock::new(false)),
             cancel: Arc::new(RwLock::new(CancellationToken::new())),
@@ -216,8 +235,13 @@ impl NetworkService {
             mdns.browse_loop(pool_browse, cancel_browse).await;
         });
 
-        // Start health check loop via PeriodicTask with live config
+        // Start health check loop via PeriodicTask with live config. The
+        // device mesh rides the same tick (decision D2): after the pings have
+        // dropped dead links, re-evaluate snapshot liveness, then send this
+        // device's snapshot to every connected paired device.
         let connections_health = self.connections.clone();
+        let mesh_health = self.mesh.clone();
+        let mdns_health = self.mdns.clone();
         let config_health = self.config.clone();
         let cancel = token.clone();
         tokio::spawn(async move {
@@ -234,10 +258,20 @@ impl NetworkService {
             )
             .run(|| {
                 let conns = connections_health.clone();
-                async move { conns.run_health_checks().await.map_err(|e| e.to_string()) }
+                let mesh = mesh_health.clone();
+                let mdns = mdns_health.clone();
+                async move {
+                    let health = conns.run_health_checks().await.map_err(|e| e.to_string());
+                    announce_stale(&mesh, &conns, &mdns, mesh::now_ms()).await;
+                    mesh.broadcast().await;
+                    health
+                }
             })
             .await;
         });
+
+        // The device mesh's on-change sends, debounced (see `mesh`).
+        tokio::spawn(self.mesh.clone().run_change_loop(token.clone()));
 
         // Start periodic manifest sync via PeriodicTask with live config
         let manifest_sync = self.manifest_sync.clone();
@@ -508,6 +542,107 @@ impl NetworkService {
         Ok(out)
     }
 
+    /// Every device in the mesh as the Monitor's device strip reads it: THIS
+    /// device first (`is_self`, always `live`, its snapshot built now), then
+    /// every paired device - home first, then by name - with its reachability,
+    /// its last snapshot (if any), liveness, when that landed and its newest
+    /// probe verdict.
+    ///
+    /// A failure to build this device's own snapshot is logged and leaves its
+    /// `snapshot` empty rather than failing the whole roster.
+    pub async fn mesh_device_snapshots(&self) -> Result<Vec<MeshDeviceView>, AppError> {
+        let now = mesh::now_ms();
+        let local = self.connections.local_peer_id().to_string();
+        let mut devices = owned_devices_repo::list_owned_devices(&self.pool)?;
+        let self_is_home = devices.iter().any(|d| d.peer_id == local && d.is_home);
+        let own = match self.mesh.local_snapshot().await {
+            Ok(s) => s,
+            Err(e) => {
+                tracing::warn!(error = %e, "device mesh: this device's snapshot did not build");
+                None
+            }
+        };
+        let mut out = vec![MeshDeviceView {
+            peer_id: local.clone(),
+            display_name: self.connections.local_display_name().to_string(),
+            is_self: true,
+            is_home: self_is_home,
+            reachability: DeviceReachability::Connected,
+            liveness: MeshLiveness::Live,
+            received_at_ms: own.as_ref().map(|s| s.sent_at_ms),
+            snapshot: own,
+            last_probe: None,
+        }];
+        devices.retain(|d| d.peer_id != local);
+        devices.sort_by(|a, b| {
+            b.is_home.cmp(&a.is_home).then_with(|| {
+                a.display_name
+                    .to_lowercase()
+                    .cmp(&b.display_name.to_lowercase())
+            })
+        });
+        for device in devices {
+            let reach = self.device_reachability(&device.peer_id).await;
+            out.push(self.mesh.view_of(&device.peer_id, reach, now));
+        }
+        Ok(out)
+    }
+
+    /// The health tick's mesh half at an explicit instant: announce every
+    /// view that has just gone stale. Returns the peers that turned
+    /// `unknown`. The periodic task calls the same function with the clock.
+    pub async fn mesh_expire_at(&self, now_ms: f64) -> Vec<String> {
+        announce_stale(&self.mesh, &self.connections, &self.mdns, now_ms).await
+    }
+
+    /// **DEV-ONLY (one-box two-node mesh; SECURITY-SENSITIVE).** Dial a raw
+    /// `ip:port` and run the normal signed handshake; returns the peer id the
+    /// other side proved. Refused with [`AppError::Forbidden`] unless this is
+    /// an isolated instance (`PERSONAS_DATA_DIR` set; `one_box`). The address
+    /// is then recorded as mDNS would have, so the auto-connect sweep re-dials
+    /// it. Pairing is unchanged: a peer connected this way is authenticated,
+    /// not trusted.
+    pub async fn connect_to_address(&self, address: &str) -> Result<String, AppError> {
+        if !one_box::is_isolated() {
+            return Err(AppError::Forbidden(
+                "Connecting by address is a dev-only one-box feature: it needs PERSONAS_DATA_DIR."
+                    .into(),
+            ));
+        }
+        self.connect_to_address_unchecked(address).await
+    }
+
+    /// [`Self::connect_to_address`] past the one-box gate. Kept private to the
+    /// crate: the loopback tests (one process, no env) are the only other
+    /// caller.
+    pub(crate) async fn connect_to_address_unchecked(
+        &self,
+        address: &str,
+    ) -> Result<String, AppError> {
+        let addr: std::net::SocketAddr = address.trim().parse().map_err(|e| {
+            AppError::Validation(format!("'{address}' is not an ip:port address: {e}"))
+        })?;
+        let peer_id = self
+            .connections
+            .connect_to_address(
+                addr,
+                self.manifest_sync.clone(),
+                self.messages.clone(),
+                self.pairing.clone(),
+                self.remote_jobs.clone(),
+            )
+            .await?;
+        let name = self
+            .connections
+            .get_remote_display_name(&peer_id)
+            .await
+            .unwrap_or_else(|| peer_id.clone());
+        if let Err(e) = self.mdns.record_dialled_address(&peer_id, &name, addr) {
+            tracing::warn!(peer_id = %peer_id, error = %e, "dialled address not recorded");
+        }
+        Ok(peer_id)
+    }
+
     fn auto_connector(&self) -> AutoConnector {
         AutoConnector {
             pool: self.pool.clone(),
@@ -625,6 +760,22 @@ async fn reachability(
             DeviceReachability::Offline
         }
     }
+}
+
+/// Re-evaluate snapshot liveness at `now_ms` and emit one
+/// `network:device-snapshot` for each view that just turned `unknown`.
+async fn announce_stale(
+    mesh: &Mesh,
+    connections: &ConnectionManager,
+    mdns: &MdnsService,
+    now_ms: f64,
+) -> Vec<String> {
+    let turned = mesh.expire_stale(now_ms);
+    for peer_id in &turned {
+        let reach = reachability(connections, mdns, peer_id).await;
+        mesh.emit_view(peer_id, reach, now_ms).await;
+    }
+    turned
 }
 
 /// Everything one auto-connect pass needs, cloned out of the service so the

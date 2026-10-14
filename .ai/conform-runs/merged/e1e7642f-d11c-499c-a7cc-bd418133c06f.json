@@ -1,0 +1,181 @@
+{
+ "schema": "conform-run/1",
+ "worker": "e1e7642f-d11c-499c-a7cc-bd418133c06f",
+ "subject": "media-playback",
+ "evaluatedAt": "2026-10-13T10:48:10.851311+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "plugins-artist-media-studio-hooks",
+   "subject": "media-playback",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "context-map.json:7596 Source searches found no useTimelinePlayback or useMediaExport implementation, the recorded hooks directory does not exist, and this context has no current playback pipeline to judge.",
+   "techniques": [],
+   "absenceTerms": [
+    "useTimelinePlayback",
+    "useMediaExport"
+   ]
+  },
+  {
+   "context": "plugins-artist-media-studio",
+   "subject": "media-playback",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "context-map.json:7555 Source searches found no CompositionPreview or useTimelinePlayback implementation, the recorded Media Studio directory does not exist, and this context has no current media transport to judge.",
+   "techniques": [],
+   "absenceTerms": [
+    "CompositionPreview",
+    "useTimelinePlayback"
+   ]
+  },
+  {
+   "context": "output-stream-parser",
+   "subject": "media-playback",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/engine/src/parser.rs:121 Inspection found CLI-record parsing, execution notifications, credential operations and desktop command dispatch, while searches found no AudioContext, HTMLAudioElement, rodio or cpal in this context's engine directories.",
+   "techniques": [],
+   "absenceTerms": [
+    "AudioContext",
+    "HTMLAudioElement",
+    "rodio",
+    "cpal"
+   ]
+  },
+  {
+   "context": "plugins-radio",
+   "subject": "media-playback",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:548 After successful playback cancels the startup watchdog, stream waiting only reports buffering without arming a progress deadline, so a subsequent stall can remain buffering indefinitely.",
+   "techniques": [
+    {
+     "technique": "committed-buffer-steering",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/radio/hooks/useYouTubePlayer.ts:143 Catalog videos are loaded by identity; this is not steering an application producer's committed output."
+    },
+    {
+     "technique": "engine-adapters",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/radio/hooks/useYouTubePlayer.ts:17 The wrapper exposes raw engine state codes for the footer to translate, and controls branch on engine identity rather than adapter-declared capabilities."
+    },
+    {
+     "technique": "generated-supply-margin",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:261 The application consumes an existing stream URL rather than producing media units ahead of playback."
+    },
+    {
+     "technique": "media-resource-lifecycle",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/radio/hooks/useRadioState.ts:78 If the awaited radio-state subscription resolves after cleanup, its disposer is assigned without being called, leaving the subscription allocated."
+    },
+    {
+     "technique": "self-conditioned-supply",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/radio/hooks/useYouTubePlayer.ts:141 Cueing an existing video does not condition a producer's continuation on its previously committed output."
+    },
+    {
+     "technique": "sender-declared-playout-bound",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:256 Radio consumes third-party streams and owns no media sender on which to declare a packet-level playout bound."
+    },
+    {
+     "technique": "source-resilience",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:315 Malformed video IDs advance immediately before the blacklist skip-budget check, allowing a catalog of multiple malformed IDs to cycle without consuming that budget."
+    },
+    {
+     "technique": "transport-contract",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:605 An explicit stalled event is mapped to ordinary buffering, whose handler supplies no renewed progress watchdog."
+    }
+   ]
+  },
+  {
+   "context": "hooks-execution",
+   "subject": "media-playback",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/hooks/execution/useReplayTimeline.ts:4 Inspection found timestamped text-log replay rather than audio or video playback, and searches found no HTMLAudioElement or AudioContext anywhere in the execution-hook directory.",
+   "techniques": [],
+   "absenceTerms": [
+    "HTMLAudioElement",
+    "AudioContext"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-13T10:48:10.851311+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "media-playback"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "plugins-artist-media-studio-hooks",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-13T10:48:10.851311+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "media-playback"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "plugins-artist-media-studio",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-13T10:48:10.851311+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "media-playback"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "output-stream-parser",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-13T10:48:10.851311+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "media-playback"
+   ],
+   "techniques": [
+    "committed-buffer-steering",
+    "engine-adapters",
+    "generated-supply-margin",
+    "media-resource-lifecycle",
+    "self-conditioned-supply",
+    "sender-declared-playout-bound",
+    "source-resilience",
+    "transport-contract"
+   ],
+   "deviations": 1,
+   "context": "plugins-radio",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-13T10:48:10.851311+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "media-playback"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "hooks-execution",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

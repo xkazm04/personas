@@ -3826,7 +3826,13 @@
       "where_contest": "প্রতিযোগিতা",
       "where_count": "{count}টি প্রতিযোগিতা",
       "where_ledger": "লেজার",
-      "where_variant": "ভ্যারিয়েন্ট"
+      "where_variant": "ভ্যারিয়েন্ট",
+      "by_area": "কাজের ক্ষেত্র অনুযায়ী",
+      "by_model": "মডেল অনুযায়ী",
+      "tile_contests": "প্রতিযোগিতা",
+      "tile_decided": "নিষ্পন্ন",
+      "tile_models": "ব্যবহৃত মডেল",
+      "tile_top": "সেরা মডেল"
     }
   }
 }

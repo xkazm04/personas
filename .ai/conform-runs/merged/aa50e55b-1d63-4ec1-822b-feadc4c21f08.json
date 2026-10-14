@@ -1,0 +1,62 @@
+{"schema": "conform-run/1", "worker": "aa50e55b-1d63-4ec1-822b-feadc4c21f08", "subject": "fleet-orchestration",
+ "evaluatedAt": "2026-10-10T01:20:06Z",
+ "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
+ "evaluatedRevision": 25,
+ "_note": "Digest/revision taken from the registry index (rev 25, 4fc5c1fb); the map's pair copy still reads rev 24 (e63d5473). Rev 25 only amended completion-claim-verification, which none of the deviations below rest on.",
+ "pairs": [
+  {"context": "2de6333f-8375-404b-8fdc-fe0fb15d4f95", "subject": "fleet-orchestration", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2", "evaluatedRevision": 25,
+   "evidence": "src-tauri/src/commands/fleet/queue.rs:982 door_verdict_for, the one admission door, decides on cap, time gate and budget only; DispatchRequest (:176) carries a cwd but no write set and pty.rs:420 allows several sessions per cwd by design, so concurrent sessions in one repo are admitted with no disjointness check and collide unseen",
+   "techniques": [
+    {"technique": "parallel-dispatch", "verdict": "deviation", "evidence": "src-tauri/src/commands/fleet/queue.rs:982 admission never reads req.cwd or any declared write set; the slot cap and budget numbers are realized at the same door, the collision-domain check is absent"},
+    {"technique": "session-registry", "verdict": "realized", "evidence": "src-tauri/src/commands/fleet/registry.rs:684 apply_transition is the single transition door"},
+    {"technique": "lifecycle-signals", "verdict": "realized", "evidence": "src-tauri/src/commands/fleet/stale.rs:670 the staleness sweep writes through registry::apply_transition, not inline"}
+   ]},
+  {"context": "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394", "subject": "fleet-orchestration", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2", "evaluatedRevision": 25,
+   "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:95 still picks remove-vs-kill from a hand-written {exited, hibernated} pair of the 10-state FleetSessionState, so the X on an expired row calls killSession, gets KillOutcome::NoChild (src-tauri/src/commands/fleet/registry.rs:551) and the terminal row never leaves; a queued row cannot be cancelled though queue.rs:1717 cancel_dispatch exists",
+   "techniques": [
+    {"technique": "session-registry", "verdict": "deviation", "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:95 a consumer-local copy of the terminal-state set instead of deriving from the closed vocabulary the console axis already maps (src/features/plugins/fleet/FleetStatusDots.tsx:48 expired -> exited)"}
+   ]},
+  {"context": "d7525012-ab19-4b29-99bb-0d4b6b9e084b", "subject": "fleet-orchestration", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2", "evaluatedRevision": 25,
+   "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:68 'handles the full lifecycle' iterates a hand-typed 7 of the now 10 FleetSessionState values, omitting queued, finished and expired that production maps (FleetStatusDots.tsx:36,42,48), so the test certifies a coverage it does not check and a new state slips past it",
+   "techniques": [
+    {"technique": "session-registry", "verdict": "deviation", "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:68 a second, hand-maintained copy of the status vocabulary rather than one derived from the generated binding"}
+   ]},
+  {"context": "4560e824-e952-45a9-8aef-fe88d721952e", "subject": "fleet-orchestration", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2", "evaluatedRevision": 25,
+   "evidence": "src/features/home/sub_welcome/lib/useNavCardStatus.ts:80 'fleet' here means the count of enabled personas, and fleetHealth.ts:2 is a success-rate pill over finished executions; useResumeContext.ts:22 reads store state only - nothing in the context registers, dispatches, tracks or harvests agent sessions, so the subject's precondition fails",
+   "techniques": [],
+   "registryProposal": "Vocabulary resonance, not a governing match: the matcher scored this context 1131.5/strong on the token 'fleet', which in this repo also names the persona roster and its execution health. A use_when that requires sessions/dispatch rather than the bare word would stop this class of false-strong pairing."},
+  {"context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60", "subject": "fleet-orchestration", "bundle": "software-engineering",
+   "state": "unknown",
+   "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2", "evaluatedRevision": 25,
+   "evidence": "src/features/agents/quick-answer/triage/deck/useAcceptedDispatch.ts:342 the deck now dispatches a selected batch of accepted ideas down N lanes into fleet sessions (each admitted via queue::admit, :29), so the prior not-applicable ('nothing creates sessions') is withdrawn; the batch's run identity and harvest live in task_executor.rs outside this context and are unread, so no verdict yet",
+   "techniques": [
+    {"technique": "parallel-dispatch", "verdict": "unknown", "evidence": "src/features/agents/quick-answer/triage/deck/useAcceptedDispatch.ts:342 lane width clamped 1..8 and sent to the executor; wave identity and dedupe-by-derived-key not verified backend-side"}
+   ],
+   "registryProposal": "Not a registry defect: useAcceptedDispatch.ts and the DeckDispatch*/DeckLaneBoard/DeckQueueRail files are absent from this context's 31 declared paths in context-map.json, so the map row under-describes what the context now does; a context rescan should pick them up."}
+ ],
+ "declined": [
+  {"subject": "fleet-orchestration", "context": "743a0ae5-b7d0-46a6-a915-cb82c7834bf8", "reason": "fleet-monitor-shell: a conformant verdict needs anchors for at least 9 of 18 techniques on a large surface; beyond this run's budget, left unknown"},
+  {"subject": "fleet-orchestration", "context": "03960450-6979-4412-9de3-35c897fe56d2", "reason": "deviation judged 2026-10-06 at rev 24; rev 25 changed only completion-claim-verification, not result-harvest which it rests on; not re-read this run"},
+  {"subject": "fleet-orchestration", "context": "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e", "reason": "deviation judged 2026-10-06 at rev 24 on session-registry/parallel-dispatch, unchanged in rev 25; not re-read this run"},
+  {"subject": "fleet-orchestration", "context": "0f1b56ac-cd96-4355-993e-dc445a20e63e", "reason": "deviation judged 2026-10-03 at rev 24; budget"},
+  {"subject": "fleet-orchestration", "context": "959baa73-f18f-42c8-8569-466939b9050d", "reason": "deviation judged at rev 24 on brief-carries-the-session and the dispatch address; budget"},
+  {"subject": "fleet-orchestration", "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df", "reason": "deviation judged at rev 24; budget"},
+  {"subject": "fleet-orchestration", "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba", "reason": "deviation judged at rev 24; budget"},
+  {"subject": "fleet-orchestration", "context": "50f50f97-be0e-4a93-8f1c-c0b967cd45d0", "reason": "deviation judged at rev 24; budget"},
+  {"subject": "fleet-orchestration", "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1", "reason": "deviation judged at rev 24; budget"}
+ ],
+ "consults": [
+  {"ts": "2026-10-10T01:20:06Z", "bundle": "software-engineering", "subjects": ["fleet-orchestration"], "techniques": ["parallel-dispatch", "session-registry", "lifecycle-signals"], "deviations": 1},
+  {"ts": "2026-10-10T01:20:06Z", "bundle": "software-engineering", "subjects": ["fleet-orchestration"], "techniques": ["session-registry"], "deviations": 1},
+  {"ts": "2026-10-10T01:20:06Z", "bundle": "software-engineering", "subjects": ["fleet-orchestration"], "techniques": ["session-registry"], "deviations": 1},
+  {"ts": "2026-10-10T01:20:06Z", "bundle": "software-engineering", "subjects": ["fleet-orchestration"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-10T01:20:06Z", "bundle": "software-engineering", "subjects": ["fleet-orchestration"], "techniques": ["parallel-dispatch"], "deviations": 0}
+ ]}

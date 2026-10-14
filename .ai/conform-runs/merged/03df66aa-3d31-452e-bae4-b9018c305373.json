@@ -1,0 +1,41 @@
+{"schema": "conform-run/1", "worker": "03df66aa-3d31-452e-bae4-b9018c305373", "subject": "import-normalization",
+ "evaluatedAt": "2026-10-12T11:51:00Z",
+ "pairs": [
+  {"context": "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0", "subject": "import-normalization", "bundle": "software-engineering", "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/core/import_export.rs:59 the only import here is the app's OWN versioned single-persona envelope (src-tauri/src/commands/core/gallery.rs:161 reuses it); the golden path excludes same-system export/restore",
+   "techniques": []},
+  {"context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e", "subject": "import-normalization", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src-tauri/src/commands/design/n8n_transform/confirmation.rs:154 the foreign-import commit writes the persona by raw INSERT, bypassing persona_repo::create (src-tauri/db/src/repos/core/personas.rs:1006), and :415 rolls back only when ZERO entities were created, so any partial import commits",
+   "techniques": [
+     {"technique": "import-validation", "verdict": "deviation", "evidence": "src-tauri/src/commands/design/n8n_transform/confirmation.rs:154 raw INSERT INTO personas instead of the one creation door src-tauri/db/src/repos/core/personas.rs:1006"},
+     {"technique": "review-before-commit", "verdict": "deviation", "evidence": "src-tauri/src/commands/design/n8n_transform/confirmation.rs:415 rollback gated on total_created == 0; partial entity failures are committed and only warned about"}]},
+  {"context": "7826a48f-5883-4f26-8476-c3c515bda745", "subject": "import-normalization", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/lib/personas/parsers/workflowPipeline.ts:37 unmapped node types reach only the logger and AgentIR (src/lib/types/designTypes.ts:70) carries no provenance or conversion grade, so the loss ledger never travels with the proposal",
+   "techniques": [
+     {"technique": "intermediate-representation", "verdict": "deviation", "evidence": "src/lib/types/designTypes.ts:70 AgentIR has no provenance or loss-ledger field"},
+     {"technique": "lossy-conversion-disclosure", "verdict": "deviation", "evidence": "src/lib/personas/parsers/workflowPipeline.ts:37 unmapped types go to logger.info, not the proposal"},
+     {"technique": "adapter-capability-tables", "verdict": "deviation", "evidence": "src/lib/personas/platformDefinitions.ts:28 the table admits a hand-maintained Rust twin that 'nothing compares'"}]},
+  {"context": "2418ddaf-0e6e-446f-968f-28a4bf6e7120", "subject": "import-normalization", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts:38 serializes the whole parsedResult into the transform, ignoring the per-entity selection, and :17 does not gate on platformNeedsConfirmation, so a low-confidence format guess proceeds unconfirmed",
+   "techniques": [
+     {"technique": "review-before-commit", "verdict": "deviation", "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts:38 JSON.stringify(state.parsedResult) disregards per-entity opt-in"},
+     {"technique": "format-detection", "verdict": "deviation", "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts:17 transform guard has no platformNeedsConfirmation check"}]},
+  {"context": "5dc3cb6a-6612-4909-995d-86e92394ec94", "subject": "import-normalization", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/features/templates/sub_n8n/steps/N8nParserResults.tsx:73 the review gate renders an aggregate ledger that by design (src/features/templates/sub_n8n/importLedger.ts:26) never itemizes which nodes were dropped, so consent to a lossy import is given over counts only",
+   "techniques": [
+     {"technique": "lossy-conversion-disclosure", "verdict": "deviation", "evidence": "src/features/templates/sub_n8n/importLedger.ts:26 'Deliberately NOT reported: which specific nodes were dropped'"}]},
+  {"context": "b62fa237-32b4-41c3-bf56-3e498b643da9", "subject": "import-normalization", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/features/vault/sub_credentials/components/import/importHelpers.ts:358 import forwards only key/label/type, never the secret value, while :369 says the fields were auto-populated; src/features/vault/sub_catalog/components/design/useCredentialDesignModal.ts:121 keeps only results[0], silently discarding other service groups",
+   "techniques": [
+     {"technique": "lossy-conversion-disclosure", "verdict": "deviation", "evidence": "src/features/vault/sub_credentials/components/import/importHelpers.ts:369 'N field(s) auto-populated' while values are dropped"},
+     {"technique": "review-before-commit", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/design/useCredentialDesignModal.ts:121 only the first result is loaded; remaining groups dropped without disclosure"}]}
+ ],
+ "declined": [],
+ "consults": [
+  {"ts":"2026-10-12T11:51:00Z","bundle":"software-engineering","subjects":["import-normalization"],"techniques":[],"deviations":0},
+  {"ts":"2026-10-12T11:51:00Z","bundle":"software-engineering","subjects":["import-normalization"],"techniques":["import-validation","review-before-commit"],"deviations":1},
+  {"ts":"2026-10-12T11:51:00Z","bundle":"software-engineering","subjects":["import-normalization"],"techniques":["intermediate-representation","lossy-conversion-disclosure","adapter-capability-tables"],"deviations":1},
+  {"ts":"2026-10-12T11:51:00Z","bundle":"software-engineering","subjects":["import-normalization"],"techniques":["review-before-commit","format-detection"],"deviations":1},
+  {"ts":"2026-10-12T11:51:00Z","bundle":"software-engineering","subjects":["import-normalization"],"techniques":["lossy-conversion-disclosure"],"deviations":1},
+  {"ts":"2026-10-12T11:51:00Z","bundle":"software-engineering","subjects":["import-normalization"],"techniques":["lossy-conversion-disclosure","review-before-commit"],"deviations":1}
+ ]}

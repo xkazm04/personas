@@ -1,0 +1,199 @@
+{
+  "schema": "conform-run/1",
+  "worker": "b2435f14-a79c-4550-8ac6-81f0387e4917",
+  "subject": "test-harness",
+  "evaluatedAt": "2026-10-10T02:23:06Z",
+  "pairs": [
+    {
+      "context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:5521806124d93882",
+      "evaluatedRevision": 26,
+      "evidence": "src/features/vault/sub_databases/__tests__/safeModeUtils.test.ts:37 is named 'carries the same CTE verb list as the backend guard' but asserts two literal verbs and never reads CTE_MUTATION_VERBS (src-tauri/src/engine/db_query.rs:293), so a verb added to the backend list leaves it green while the client regex (src/features/vault/sub_databases/safeModeUtils.ts:41) classifies that verb as a read - the exact DROP/ALTER drift the file was written after (safeModeUtils.ts:34). The anchor file sits in this context's __tests__ dir but context-map.json lists it under no context.",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/__tests__/safeModeUtils.test.ts:37 the test name claims backend parity; mutating the decision it names (adding a verb at src-tauri/src/engine/db_query.rs:293) cannot turn it red"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/__tests__/safeModeUtils.test.ts:37 a correspondence probe between two drifting artifacts with no recorded control - the class the technique names as most likely tautological by construction"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "realized",
+          "evidence": "src/features/vault/sub_databases/__tests__/ChatTab.test.tsx:55 resets the module-scoped transcript cache per test, with the reason it would otherwise leak stated beside it"
+        }
+      ],
+      "registryProposal": "Upward lesson for unreached-decisions-pin-nothing / pin-the-call-not-the-name: in this repo the same 'parity' failure appears in two contexts as a test that holds a hand-copied literal of the far side's list (vault safeModeUtils.test.ts:37, src/api/__tests__/enums.test.ts:29), while src/features/notepad/__tests__/notepadCapParity.test.ts:22 is the conformant form - it parses the Rust const at run time, throws when the needle is missing (:23) and asserts a non-empty parse (:30). A decision rule worth stating outright: a cross-language parity test that carries a copy of the far side is a third copy, not a pin; it must read the far side's source, or be mirrored by a reciprocal pin on the far side whose failure names the near file (src-tauri/src/engine/db_query.rs:3344 does the latter for READ_SHAPED_WRITES). notepadCapParity.test.ts is a candidate node--pin-the-call-not-the-name application."
+    },
+    {
+      "context": "cd7e7cc7-cc5b-44a1-9bff-76b34af21966",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:5521806124d93882",
+      "evaluatedRevision": 26,
+      "evidence": "src/api/__tests__/enums.test.ts:14 claims 'a change on EITHER side fails this test' but the Rust sets are literal copies (:29) and nothing reads src-tauri/src/commands/infrastructure/twin.rs:524, whose own comment (twin.rs:512) names this file as its sync guard - narrowing VALID_CHANNELS (the historical defect the header records) stays green while TS-valid channels are rejected at runtime; each side believes the other pins it.",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/api/__tests__/enums.test.ts:14 the file's stated claim (either-side change fails) is false under the mutation it names; the decision on the Rust side is never read"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "deviation",
+          "evidence": "src/api/__tests__/enums.test.ts:29 correspondence probe against a hand-held copy of the far side, no recorded control; a Rust-side mutation is invisible to it"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "realized",
+          "evidence": "src/test/tauriMock.ts:79 resetInvokeMocks (called per test, src/api/__tests__/personas.test.ts:50) also clears the auto-dedup response cache that would otherwise carry one test's result into the next"
+        }
+      ]
+    },
+    {
+      "context": "cd17ecec-1587-4c38-8ec1-934632aa09fa",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAgainst": "sha256-b2:5521806124d93882",
+      "evaluatedRevision": 26,
+      "evidence": "src/features/notepad/__tests__/notepadCapParity.test.ts:22 parses the Rust ACTIVE_STATUSES const at run time instead of copying it, fails loudly on a missing needle (:23) and records its negative controls (:15); store tests reset per test (src/features/notepad/__tests__/notepadStore.test.ts:105) - every technique applicable to a unit-lane test context is realized; lane-level techniques are not properties of this context.",
+      "techniques": [
+        {
+          "technique": "negative-control-tests",
+          "verdict": "realized",
+          "evidence": "src/features/notepad/__tests__/notepadCapParity.test.ts:15 records the two mutations (both directions) run on 2026-10-01 that turned the parity test red, in the test's own comment"
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "realized",
+          "evidence": "src/features/notepad/__tests__/notepadCapParity.test.ts:22 needle is the declaration 'const ACTIVE_STATUSES: &str =', which prose does not spell; :23 throws when it is absent and :30 asserts the parse found something"
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "realized",
+          "evidence": "src/features/notepad/__tests__/notePrompts.test.ts:20 names the green-by-construction trap (a body the builder can never receive) and replaces it with an id-invariance check whose ability to fail is itself tested at :32"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "realized",
+          "evidence": "src/features/notepad/__tests__/notepadStore.test.ts:105 resets the module store before each test (and again after, :111)"
+        },
+        {
+          "technique": "suite-partitioning",
+          "verdict": "realized",
+          "evidence": "vitest.config.ts:23 the default lane's boundary is explicit and excludes the e2e files so this context runs in exactly one lane"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/__tests__/notepadStore.test.ts:93 fixtures are in-memory literals built per test; no expensive build-once asset exists here"
+        },
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/__tests__/notePrompts.test.ts:41 the prompt's op names are read by the product's own dispatcher (src-tauri/src/companion/dispatcher/catalog.rs:704), the technique's 'reader is the product itself' exclusion; note no test cross-checks named ops against that catalog"
+        },
+        {
+          "technique": "live-app-harness",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:11 these files run only in the jsdom unit lane (no product process, no attached instrument, no lane of their own)"
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:11 these files run only in the jsdom unit lane (no product process, no attached instrument, no lane of their own)"
+        },
+        {
+          "technique": "long-lane-certification",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:11 these files run only in the jsdom unit lane (no product process, no attached instrument, no lane of their own)"
+        },
+        {
+          "technique": "context-starved-executor",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:11 these files run only in the jsdom unit lane (no product process, no attached instrument, no lane of their own)"
+        },
+        {
+          "technique": "dynamic-verifier-classes",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:11 these files run only in the jsdom unit lane (no product process, no attached instrument, no lane of their own)"
+        },
+        {
+          "technique": "verification-inherits-driver-reach",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:11 these files run only in the jsdom unit lane (no product process, no attached instrument, no lane of their own)"
+        },
+        {
+          "technique": "mutation-lane-with-a-triaged-baseline",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:11 these files run only in the jsdom unit lane (no product process, no attached instrument, no lane of their own)"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "test-harness",
+      "context": "12d5948a-76a4-4db1-ac6a-ac554eb12020",
+      "reason": "cockpit-widget-tests: read 4 of ~22 files (BrowserTestReportWidget, decisionWidgetFailure, figureWidgets, widgetRowColumns) - isolation and failure-vs-empty assertions are realized and no deviation was found, but negative controls and parity claims across the rest were not read, so the evidence floor for conformant is unmet; left unknown."
+    },
+    {
+      "subject": "test-harness",
+      "context": "6a81750d-fdbf-4518-bae6-689303e1a884",
+      "reason": "test-runner-lab: an LLM scenario-generation/eval engine context (src-tauri/engine/src/eval.rs); the golden path hands non-deterministic model judging to eval-harness, so this match is likely lexical ('test' runner) - a coverage question, not judged here."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-10T02:23:06Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "unreached-decisions-pin-nothing",
+        "negative-control-tests",
+        "isolation-lanes"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T02:23:06Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "unreached-decisions-pin-nothing",
+        "negative-control-tests",
+        "isolation-lanes"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T02:23:06Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "negative-control-tests",
+        "pin-the-call-not-the-name",
+        "unreached-decisions-pin-nothing",
+        "isolation-lanes",
+        "suite-partitioning",
+        "fixture-economics",
+        "assert-through-the-reader"
+      ],
+      "deviations": 0
+    }
+  ]
+}

@@ -1,0 +1,213 @@
+{
+ "schema": "conform-run/1",
+ "worker": "2a054a26-c0fc-413a-bc83-eaa655400626",
+ "subject": "sidecar-provisioning",
+ "evaluatedAt": "2026-10-12T22:49:55.456764+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [
+  {
+   "context": "plugins-drive",
+   "subject": "sidecar-provisioning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/drive/signing/useSigning.ts:127 A search across the Drive plugin files for sidecar provisioning terms found that 'sidecar' refers strictly to Ed25519 digital signature metadata files (.sig.json) written next to user files on disk rather than provisioned executables or model weights, while OCR delegates to cloud APIs or the host CLI.",
+   "techniques": [
+    {
+     "technique": "process-isolation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/drive/signing/useSigning.ts:47 Drive does not run native capability sidecars in separate processes; sidecars here are document metadata files."
+    },
+    {
+     "technique": "source-pinning",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/drive/ocr/useOcr.ts:13 OCR text extraction resolves through a server-side cloud API rather than downloading binaries or model weights from a catalog."
+    },
+    {
+     "technique": "capability-detection",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/drive/knowledge/useDriveKnowledge.ts:30 Vector KB readiness is detected via in-process Tauri command availability flags rather than probing external sidecar binaries."
+    }
+   ]
+  },
+  {
+   "context": "plugins-fleet-tests",
+   "subject": "sidecar-provisioning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/fleet/sub_settings/__tests__/FleetSettingsPage.test.tsx:10 A grep across the test suite for sidecar provisioning terms found no sidecar binaries, external tool downloads, or model stores; the only installation flows tested are Claude Code webhook configuration checks and workspace markdown skill copying.",
+   "techniques": [
+    {
+     "technique": "capability-detection",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/__tests__/fleetAttention.test.ts:23 Tests verify session attention states based on PTY lifecycle events rather than external sidecar capability probes."
+    },
+    {
+     "technique": "split-trust-by-registration-path",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/sub_settings/__tests__/FleetSettingsPage.test.tsx:21 Hook tests cover webhook registration in Claude Code settings rather than out-of-process plugin trust paths."
+    },
+    {
+     "technique": "source-pinning",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/sub_skills/__tests__/useSkillData.test.ts:8 Skills tested here are local markdown prompt files in .claude/skills rather than pinned binary or model artifacts."
+    }
+   ]
+  },
+  {
+   "context": "plugins-obsidian-brain",
+   "subject": "sidecar-provisioning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/obsidian-brain/openInObsidian.ts:9 A search across the context files for sidecar provisioning terms found that Obsidian integration operates via custom URL schemes (obsidian://open) and local markdown note syncing, with no sidecar binaries or model files provisioned.",
+   "techniques": [
+    {
+     "technique": "process-isolation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/obsidian-brain/openInObsidian.ts:19 Obsidian is invoked via the desktop OS protocol handler rather than an isolated sidecar process managed by the application."
+    },
+    {
+     "technique": "capability-detection",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/twin/useTwinReadiness.ts:14 Readiness in this context evaluates user twin profile configuration milestones rather than sidecar or model availability."
+    },
+    {
+     "technique": "plugin-lazy-load-and-reload",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/obsidian-brain/sub_setup/SetupPanel.tsx:19 The plugin is an in-tree React component interacting with vault filesystem APIs, not an out-of-process plugin with lifecycle reloads."
+    }
+   ]
+  },
+  {
+   "context": "fleet-session-grid",
+   "subject": "sidecar-provisioning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:6 A grep across all files of fleet-session-grid for sidecar provisioning terms found zero hits; the grid operates exclusively as a frontend UI layer managing session states and dispatching process commands (spawn, kill, wake) via backend IPC, which falls under subprocess-lifecycle rather than sidecar or model provisioning.",
+   "techniques": [
+    {
+     "technique": "process-isolation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:5 Fleet sessions are supervised as interactive PTY terminals under subprocess-lifecycle, not sidecars provisioned by the frontend."
+    },
+    {
+     "technique": "capability-detection",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/FleetHooksPill.tsx:21 Detection here checks Claude Code webhook port configuration status, not an external binary's presence or version."
+    },
+    {
+     "technique": "source-pinning",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/fleet/SkillLibraryDrawer.tsx:50 Skill loading reads markdown prompts from local repository or user paths rather than downloading pinned artifacts from a catalog."
+    }
+   ]
+  },
+  {
+   "context": "plugins-radio",
+   "subject": "sidecar-provisioning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:28 A grep across all files in plugins-radio for sidecar provisioning terms found zero hits; the 'engines' referenced are an HTML5 audio element for internet radio streams and a YouTube IFrame player, neither of which involves provisioned executables or model weights.",
+   "techniques": [
+    {
+     "technique": "process-isolation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:11 Audio playback is managed in-browser via an iframe player and HTML5 audio element rather than an external sidecar executable."
+    },
+    {
+     "technique": "source-pinning",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:10 Audio streams are fetched from web radio endpoints and YouTube rather than downloaded from a catalog of provisioned binary artifacts."
+    },
+    {
+     "technique": "grade-selection",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/radio/hooks/useRadioState.ts:8 Radio station listings and streaming metadata are received over IPC without any model grade or variant selection."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-12T22:49:55.456764+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "sidecar-provisioning"
+   ],
+   "techniques": [
+    "capability-detection",
+    "process-isolation",
+    "source-pinning"
+   ],
+   "deviations": 0,
+   "context": "plugins-drive",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T22:49:55.456764+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "sidecar-provisioning"
+   ],
+   "techniques": [
+    "capability-detection",
+    "source-pinning",
+    "split-trust-by-registration-path"
+   ],
+   "deviations": 0,
+   "context": "plugins-fleet-tests",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T22:49:55.456764+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "sidecar-provisioning"
+   ],
+   "techniques": [
+    "capability-detection",
+    "plugin-lazy-load-and-reload",
+    "process-isolation"
+   ],
+   "deviations": 0,
+   "context": "plugins-obsidian-brain",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T22:49:55.456764+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "sidecar-provisioning"
+   ],
+   "techniques": [
+    "capability-detection",
+    "process-isolation",
+    "source-pinning"
+   ],
+   "deviations": 0,
+   "context": "fleet-session-grid",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T22:49:55.456764+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "sidecar-provisioning"
+   ],
+   "techniques": [
+    "grade-selection",
+    "process-isolation",
+    "source-pinning"
+   ],
+   "deviations": 0,
+   "context": "plugins-radio",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  }
+ ]
+}

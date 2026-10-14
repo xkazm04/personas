@@ -2622,7 +2622,13 @@
     "profile_tokens_over": "más de {from} tokens",
     "profile_tokens_under": "menos de {to} tokens",
     "profile_units": "{count} unidades",
-    "profile_untagged_note": "Aún no hay nada declarado, así que las ejecuciones se cobran con el valor predeterminado mostrado aquí. El agente declarará su propio perfil en su próximo despertar de decisión."
+    "profile_untagged_note": "Aún no hay nada declarado, así que las ejecuciones se cobran con el valor predeterminado mostrado aquí. El agente declarará su propio perfil en su próximo despertar de decisión.",
+    "profile_axes_dominant": "Sobre todo {axis}",
+    "profile_axes_label": "Carga medida",
+    "profile_axes_learning": "Aprendiendo ({count}/{total})",
+    "profile_axes_mismatch": "Medido {measured}, declarado {declared}",
+    "profile_axes_runs": "Medido en {count} ejecuciones",
+    "profile_source_measured": "definido a partir de ejecuciones medidas"
   },
   "role_card": {
     "assign": "Asignar",

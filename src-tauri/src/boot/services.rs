@@ -141,6 +141,12 @@ pub fn start_local_http(app: &tauri::App, st: &mut StartupTimer) {
         "dev-tools",
         commands::infrastructure::dev_tools_http::router(app.handle().clone()),
     );
+    // Device mesh CLI door (spark device-mesh, WP2b) — a terminal's Claude
+    // Code session drives THIS app's mesh: discover, pair with the typed
+    // code, verbs, mail, queue moves, probe verdicts. Behind the shared
+    // token layer like every non-exempt prefix.
+    #[cfg(feature = "p2p")]
+    local_http::register_router("mesh", local_http::mesh::router(app.handle().clone()));
     // Contest preview — read-only GET of a contest arena's files for the
     // sandboxed variant iframe. SECURITY-SENSITIVE: authenticates itself with
     // a per-boot path token (see `commands::contest::preview`), which is why
@@ -153,6 +159,8 @@ pub fn start_local_http(app: &tauri::App, st: &mut StartupTimer) {
     // Both fire-and-forget; the staleness ticker is safe everywhere,
     // the JSONL watcher is desktop-only because `notify` is feature-gated.
     commands::fleet::stale::spawn_ticker(app.handle().clone());
+    // Measured resources: parks until a fleet session or execution is live.
+    engine::resources::spawn_sampler(app.handle().clone());
     // Fleet mobile companion — LAN server restarts only when a live
     // device pairing already exists (fleet_pair_device starts it fresh).
     commands::fleet::companion_api::start_if_paired(app.handle().clone());

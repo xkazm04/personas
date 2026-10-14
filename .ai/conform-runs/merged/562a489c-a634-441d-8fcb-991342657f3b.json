@@ -1,0 +1,103 @@
+{
+  "schema": "conform-run/1",
+  "worker": "562a489c-a634-441d-8fcb-991342657f3b",
+  "subject": "multi-project",
+  "evaluatedAt": "2026-10-10T01:42:34Z",
+  "pairs": [
+    {
+      "context": "7741725e-8124-4899-b17e-8e39e7fcf1ed",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/studio/studioBuildModel.ts:86 re-judged after fba57baccb touched the file: a tab halted on a question still carries animate-pulse for as long as the question stands, so the always-visible strip animates a steady state (per-project-tabs-and-state: a steady state never animates); the rest of the technique holds",
+      "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
+      "evaluatedRevision": 3,
+      "techniques": [
+        {
+          "technique": "per-project-tabs-and-state",
+          "verdict": "deviation",
+          "evidence": "src/features/studio/studioBuildModel.ts:86 'bg-status-warning animate-pulse' for the whole awaiting-question state, which can last indefinitely. Realized parts: src/features/studio/studioStore.ts:274 persistTabs mirrors tabOrder+activeId on every add/remove/activate; src/features/studio/studioStore.ts:207 rehydrate re-attaches to still-running dev servers (workbench-tab restore); src/features/studio/studioStore.ts:782 closeTab stops the session (workbench lease reaped by close); src/features/studio/StudioTabBar.tsx:43 the strip subscribes to a narrow useShallow projection (id -> dot class), not the full runtime"
+        },
+        {
+          "technique": "project-identity-and-joins",
+          "verdict": "conformant",
+          "evidence": "src/features/studio/StudioTabBar.tsx:46 tab state, runtimes and dots are all keyed by project id (tabOrder/runtimes[id]); the name is a display field passed alongside (studioStore.ts:212 startExisting(id, name))"
+        }
+      ],
+      "registryProposal": "The code comment at src/features/studio/studioBuildModel.ts:79-83 argues on purpose that the ONE state worth animating is the actionable 'waiting on you' state. per-project-tabs-and-state lists 'awaiting input' as a glyph state but never says whether it counts as steady. It should say so outright and name the conformant alternative (announce the transition briefly, then hold a distinct steady hue) so a deliberate team is not left arguing with the prose."
+    },
+    {
+      "context": "54236947-3775-4d0a-8e14-1a709dd4d8bc",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:58 re-judged after the 10-05/10-06 Atlas commits: the wall still pulls the full per-project KPI tree via useFactoryData (factoryData.tsx:268 bounded fan-out of groups+contexts+useCases+kpis+measurements per project) solely to fold the attention badge at :136-140, while the same page batches its other wall stats through projectWallSummary (:82) - wall cost still grows with N x depth",
+      "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
+      "evaluatedRevision": 3,
+      "techniques": [
+        {
+          "technique": "portfolio-drill-hierarchy",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/factoryData.tsx:268 mapWithConcurrency over every project fetching the detail-grade tree; ProjectsLayer.tsx:58 subscribes to it unconditionally, even on the default Atlas view that never passes attentionByProject. The 30-min/60-s client TTL caches (factoryData.tsx:240-241) soften revisits but are not a stored summary row with a named recompute. Realized: one level, two lenses - Atlas|Wall over the same passports (ProjectsLayer.tsx:54); a breadcrumb sibling switcher (src/features/teams/sub_factory/FactoryBreadcrumb.tsx:20)"
+        },
+        {
+          "technique": "project-identity-and-joins",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:140 attention keyed m.set(p.id, ...); factoryData.tsx:260 skeletons carry p.id with name as a display field"
+        },
+        {
+          "technique": "per-project-tabs-and-state",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/FactoryShell.tsx:42 a single projectId: string | null drill selection, not a persisted multi-project working set"
+        }
+      ],
+      "registryProposal": "portfolio-drill-hierarchy could name the 'client stale-while-revalidate cache over the fan-out' shape explicitly: it hides the N x depth cost on a warm revisit and looks like a fix, but it is not a stored rollup with a named recompute. A cold load still pays the full fan-out."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "multi-project",
+      "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b",
+      "reason": "weak governance row with an empty paths sample (plugins-research-lab-reports); the skill never judges weak pairs by default - coverage question: the match is lexical-only on 'project/projects', and a research-lab report surface is not a portfolio registry, so this pairing is likely a resonance and not governance"
+    },
+    {
+      "subject": "multi-project",
+      "context": "d5c5e7fe-6353-41eb-800b-dc11adee0775",
+      "reason": "verdict (deviation, 2026-09-23) is current against digest 07b32de44fd25fc6 rev 3 and git shows no commits to its anchored files (project_tracking/scheduler.rs, subscription.rs) since; re-reading would re-describe the same code"
+    },
+    {
+      "subject": "multi-project",
+      "context": "ca705961-f138-494a-b0fe-f882c674d25a",
+      "reason": "verdict (deviation, 2026-10-09) is current against rev 3 and IdeaScanPopover.tsx is unchanged since"
+    },
+    {
+      "subject": "multi-project",
+      "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573",
+      "reason": "verdict (deviation, 2026-10-03) is current against rev 3 and liveState.ts/sceneStore.ts are unchanged since"
+    },
+    {
+      "subject": "multi-project",
+      "context": "a4174786-a5fb-4145-a1b3-f02826fac64a",
+      "reason": "verdict (deviation, 2026-10-03) is current against rev 3 and passportModel.ts is unchanged since"
+    },
+    {
+      "subject": "multi-project",
+      "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049",
+      "reason": "verdict (deviation, 2026-09-23) is current against rev 3 and useProjectPulse.ts is unchanged since"
+    },
+    {
+      "subject": "multi-project",
+      "context": "9967adb9-e895-4dcd-b296-ab49a19ab122",
+      "reason": "verdict (not-applicable, 2026-10-03) is current against rev 3 and useOverviewData.ts/ProjectOverviewPage.tsx are unchanged since"
+    },
+    {
+      "subject": "multi-project",
+      "context": "d7b7eb04-730f-4450-9a68-affc95f93267",
+      "reason": "verdict (not-applicable, 2026-10-03) is current against rev 3 and FactoryProjectTabs.tsx is unchanged since"
+    }
+  ],
+  "consults": [
+    {"ts": "2026-10-10T01:42:34Z", "bundle": "software-engineering", "subjects": ["multi-project"], "techniques": ["per-project-tabs-and-state", "project-identity-and-joins"], "deviations": 1},
+    {"ts": "2026-10-10T01:42:34Z", "bundle": "software-engineering", "subjects": ["multi-project"], "techniques": ["portfolio-drill-hierarchy", "project-identity-and-joins", "per-project-tabs-and-state"], "deviations": 1}
+  ]
+}

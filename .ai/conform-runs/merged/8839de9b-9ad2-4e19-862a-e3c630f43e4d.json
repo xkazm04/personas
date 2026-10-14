@@ -1,0 +1,123 @@
+{
+  "schema": "conform-run/1",
+  "worker": "8839de9b-9ad2-4e19-862a-e3c630f43e4d",
+  "subject": "data-access",
+  "evaluatedAt": "2026-10-10T11:38:19Z",
+  "evaluatedAgainst": "sha256-b2:b67182492821d592",
+  "evaluatedRevision": 18,
+  "_note": "Judged against the registry index's current digest sha256-b2:b67182492821d592 (revision 18, registry HEAD e6f59b26). The map's pairs still carry sha256-b2:7bc5f1ebaf276655 (revision 17): the map lags by one revision. Rev 17->18 touched only applications/python--layering-rules.md; golden path and all 13 techniques are unchanged.",
+  "pairs": [
+    {
+      "context": "0b0ee725-52a2-4656-9e13-07c5204de60e",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:b67182492821d592",
+      "evaluatedRevision": 18,
+      "evidence": "src-tauri/db/src/cdc.rs:24 the data crate still imports tauri's AppHandle/Emitter (dependency declared at src-tauri/db/Cargo.toml:69) and emits straight to the UI at :459, so the layer everything trusts cannot build or test without the shell above it; also src-tauri/db/src/macros.rs:145 row_mapper!'s [opt] arm (24 uses) turns a value that fails to decode into None, so present-but-unreadable reads as absent",
+      "techniques": [
+        {"technique": "layering-rules", "verdict": "deviation", "evidence": "src-tauri/db/src/cdc.rs:24 upward import of tauri::{AppHandle, Emitter}, emitted at src-tauri/db/src/cdc.rs:459 - the technique's named failure; the fix is an injected callback hook from the composition root"},
+        {"technique": "row-mapping", "verdict": "deviation", "evidence": "src-tauri/db/src/macros.rs:145 `[opt]` decodes with .ok().flatten(), collapsing a type/decode error into None at the seam; the opt_str/opt_i32 arms below it default a missing column to \"working\"/0, the programmer-error-as-damage resilience the technique forbids"},
+        {"technique": "query-construction", "verdict": "realized", "evidence": "src-tauri/db/src/query_builder.rs:255 try_order_by_allowed resolves sort identifiers through an allowlist and errors on unknown tokens; predicates and their values are appended in one call (where_eq etc.); the unchecked order_by at :233 is a documented hatch"},
+        {"technique": "repo-testing", "verdict": "realized", "evidence": "src-tauri/db/src/lib.rs:2451 init_test_db copies a template built by the real migration chain into a fresh file per test"},
+        {"technique": "cross-driver-invariant-parity", "verdict": "not-applicable", "evidence": "src-tauri/db/Cargo.toml:69 sits beside a single rusqlite engine; no second backend behind the surface"}
+      ]
+    },
+    {
+      "context": "320d2cea-9761-4233-97c1-ee2eaf4d6c17",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:b67182492821d592",
+      "evaluatedRevision": 18,
+      "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 get_by_execution_id (a single-record read by identity) decodes the spans JSON with unwrap_or_default(), so a corrupt trace reaches the UI as a trace with zero spans rather than an error - and annotations.rs:13 does the same to tags; the rev-17 conformant verdict read only executions.rs",
+      "techniques": [
+        {"technique": "row-mapping", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 corrupt spans JSON -> empty Vec on a by-id read (same at :137 for the chain read); src-tauri/db/src/repos/execution/annotations.rs:13 corrupt tags JSON -> empty list, and the upsert below overwrites tags, so an edit round-trip launders the corruption"},
+        {"technique": "query-construction", "verdict": "realized", "evidence": "src-tauri/db/src/repos/execution/executions.rs:374 build_fts5_query centralizes FTS5 token quoting; filters are bound params via QueryBuilder"},
+        {"technique": "batching-and-n-plus-one", "verdict": "realized", "evidence": "src-tauri/db/src/repos/execution/executions.rs:455 get_all_global replaces the per-persona get_by_persona_id N+1 with one query"},
+        {"technique": "transactions-and-units-of-work", "verdict": "realized", "evidence": "src-tauri/db/src/repos/execution/test_runs.rs:231 opens one transaction and passes it into the cross-repo child-row write at :270"},
+        {"technique": "repo-testing", "verdict": "realized", "evidence": "src-tauri/db/src/repos/execution/executions.rs:2742 tests run on init_test_db() real-engine fixtures"},
+        {"technique": "read-models-and-projections", "verdict": "realized", "evidence": "src-tauri/db/src/repos/execution/executions.rs:93 one COLUMNS declaration for the aggregate read, with lean list projections declared beside it"},
+        {"technique": "cross-driver-invariant-parity", "verdict": "not-applicable", "evidence": "src-tauri/db/Cargo.toml:69 single rusqlite engine; no second backend behind this surface"}
+      ]
+    },
+    {
+      "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:b67182492821d592",
+      "evaluatedRevision": 18,
+      "evidence": "src-tauri/src/cloud/sync/mod.rs:827 delete_persona_cascade still deletes every child table before the synced_personas authority row (:838), the reverse of authority-removed-first, so an abandoned cascade shows a ghost persona with vanished children; and rows.rs:561 filters strictly datetime(col) > datetime(cursor) (second resolution) while mod.rs:475 advances to the observed max, so a same-second late write on the four resync=false tables (synced_personas at mod.rs:63) is excluded forever",
+      "techniques": [
+        {"technique": "existence-authority-written-last", "verdict": "deviation", "evidence": "src-tauri/src/cloud/sync/mod.rs:838 the parent synced_personas row is deleted LAST, after the dependent tables at :830; the tombstone retry is idempotent by persona_id, so authority-first would cost nothing"},
+        {"technique": "sequence-token-write-ordering", "verdict": "deviation", "evidence": "src-tauri/src/cloud/sync/rows.rs:561 a tied timestamp reads as already-synced (strict >, truncated by datetime()); the same strict filter on tombstones (rows.rs:1085) with the cursor set to tick_start at src-tauri/src/cloud/sync/mod.rs:875 (error discarded by `let _`) drops a deletion that lands in the same second after the fetch, and nothing reconciles either case"},
+        {"technique": "query-construction", "verdict": "deviation", "evidence": "src-tauri/src/cloud/sync/mod.rs:830 persona_id is spliced unencoded into the PostgREST filter text (persona_id=eq.{persona_id}), a value interpolated into query text rather than carried out-of-band"}
+      ]
+    },
+    {
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:b67182492821d592",
+      "evaluatedRevision": 18,
+      "evidence": "src/stores/slices/system/devToolsTaskSlice.ts:5 precondition unmet: these Zustand slices own no store, query language or row decoding and reach persistence only through typed IPC wrappers; where a slice holds many ids it already calls a set-shaped endpoint (src/stores/slices/system/devToolsProjectSlice.ts:404 listKpiMeasurementsBulk); the cloudSlice bulk loops target a remote deployment-control API, not a store",
+      "techniques": [
+        {"technique": "batching-and-n-plus-one", "verdict": "not-applicable", "evidence": "src/stores/slices/system/devToolsProjectSlice.ts:404 the one many-id local read is already set-shaped; the rest of the subject governs the Rust data layer"}
+      ]
+    },
+    {
+      "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:b67182492821d592",
+      "evaluatedRevision": 18,
+      "evidence": "src/api/cloudSync.ts:11 precondition unmet: the context is Zustand store composition plus thin IPC wrappers that each name one backend operation (invokeWithTimeout('cloud_sync_status')); it owns no store, statement or row decoder, and its only direct persistence (src/stores/notificationCenterStore.ts:64) is a localStorage UI cache governed by client-state",
+      "techniques": [
+        {"technique": "layering-rules", "verdict": "not-applicable", "evidence": "src/api/cloudSync.ts:11 the wrappers are intent-named operations with no query text; the query language lives in src-tauri/db"},
+        {"technique": "batching-and-n-plus-one", "verdict": "not-applicable", "evidence": "src/stores/notificationCenterStore.ts:64 no per-id store reads in the context; persistence is one localStorage blob"}
+      ],
+      "registryProposal": "The matcher paired data-access with this context because of the word 'stores' (Zustand), the same lexical resonance already judged not-applicable on stores-util and stores-slices-system. The localStorage load at src/stores/notificationCenterStore.ts:64 silently returns [] on a corrupt blob; that question belongs to client-state, which may be the missing pairing here."
+    },
+    {
+      "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAgainst": "sha256-b2:b67182492821d592",
+      "evaluatedRevision": 18,
+      "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:1 live introspection runs only through the backend's parameterized commands; the one remaining frontend statement builder (getSelectAllQuery, :152) feeds only the clipboard (its sole caller is src/features/vault/sub_databases/tabs/TablesTab.tsx:97); the user's typed SQL goes to the backend unassembled (hooks/useDbQueryRunner.ts:45); the golden path's ad-hoc analytics exception covers the rest",
+      "techniques": [
+        {"technique": "query-construction", "verdict": "realized", "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:128 identifier quoting has one implementation per dialect and is used only for clipboard text; src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 passes user SQL to one backend command with no frontend splicing"},
+        {"technique": "layering-rules", "verdict": "not-applicable", "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:1 a SQL console over the user's own external databases, the golden path's named exception, not the app's operational store"},
+        {"technique": "row-mapping", "verdict": "not-applicable", "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 results are untyped grids of the user's ad-hoc query; there is no domain type to decode into"},
+        {"technique": "repo-testing", "verdict": "not-applicable", "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:152 no repository in this context to test"},
+        {"technique": "transactions-and-units-of-work", "verdict": "not-applicable", "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 single user-issued statements; no multi-write invariant owned here"},
+        {"technique": "batching-and-n-plus-one", "verdict": "not-applicable", "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 one query per user action"},
+        {"technique": "read-models-and-projections", "verdict": "not-applicable", "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 ad-hoc result sets, never written back"}
+      ]
+    }
+  ],
+  "declined": [
+    {"subject": "data-access", "context": "a8857307-216c-46e0-9571-e05e8cf06112", "reason": "already judged against the current digest b67182492821d592 (rev 18); budget spent on the five pairs stale against rev 18 plus the one unknown"},
+    {"subject": "data-access", "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573", "reason": "already judged against current digest b67182492821d592; not re-read this run"},
+    {"subject": "data-access", "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df", "reason": "already judged against current digest b67182492821d592; not re-read this run"},
+    {"subject": "data-access", "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7", "reason": "already judged against current digest b67182492821d592; not re-read this run"},
+    {"subject": "data-access", "context": "cd7e7cc7-cc5b-44a1-9bff-76b34af21966", "reason": "already judged against current digest b67182492821d592; not re-read this run"},
+    {"subject": "data-access", "context": "1ffb5765-de47-4f01-87ec-06732a63522c", "reason": "already judged against current digest b67182492821d592; not re-read this run"},
+    {"subject": "data-access", "context": "532bbf10-3fd3-4b57-a8ea-95a957645697", "reason": "already judged against current digest b67182492821d592; not re-read this run. Note: its conformant verdict cites under half of the 13 techniques, below the evidence floor; it should be re-judged as unknown or not-applicable"},
+    {"subject": "data-access", "context": "0aded02d-f5c5-4e24-8366-90783fb343b1", "reason": "already judged against current digest b67182492821d592; not re-read this run"},
+    {"subject": "data-access", "context": "336089a8-bb18-449c-a62e-ca76b02097fb", "reason": "already judged against current digest b67182492821d592; not re-read this run"},
+    {"subject": "data-access", "context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857", "reason": "already judged against current digest b67182492821d592; not re-read this run"}
+  ],
+  "consults": [
+    {"ts": "2026-10-10T11:38:19Z", "bundle": "software-engineering", "subjects": ["data-access"], "techniques": ["layering-rules", "row-mapping", "query-construction", "repo-testing", "cross-driver-invariant-parity"], "deviations": 1},
+    {"ts": "2026-10-10T11:38:19Z", "bundle": "software-engineering", "subjects": ["data-access"], "techniques": ["row-mapping", "query-construction", "batching-and-n-plus-one", "transactions-and-units-of-work", "repo-testing", "read-models-and-projections", "cross-driver-invariant-parity"], "deviations": 1},
+    {"ts": "2026-10-10T11:38:19Z", "bundle": "software-engineering", "subjects": ["data-access"], "techniques": ["existence-authority-written-last", "sequence-token-write-ordering", "query-construction"], "deviations": 1},
+    {"ts": "2026-10-10T11:38:19Z", "bundle": "software-engineering", "subjects": ["data-access"], "techniques": ["batching-and-n-plus-one"], "deviations": 0},
+    {"ts": "2026-10-10T11:38:19Z", "bundle": "software-engineering", "subjects": ["data-access"], "techniques": ["layering-rules", "batching-and-n-plus-one"], "deviations": 0},
+    {"ts": "2026-10-10T11:38:19Z", "bundle": "software-engineering", "subjects": ["data-access"], "techniques": ["query-construction", "layering-rules", "row-mapping", "repo-testing", "transactions-and-units-of-work", "batching-and-n-plus-one", "read-models-and-projections"], "deviations": 0}
+  ]
+}

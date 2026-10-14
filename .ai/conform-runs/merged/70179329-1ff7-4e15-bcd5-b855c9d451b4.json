@@ -1,0 +1,484 @@
+{
+ "schema": "conform-run/1",
+ "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+ "subject": "translation-pipeline-topology",
+ "evaluatedAt": "2026-10-12T18:34:37.368725+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [
+  {
+   "context": "i18n",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "deviation",
+   "evidence": "src/i18n/locales.manifest.ts:16 The central locale descriptor omits machine-translation engine tags and single CI opt-in flags, violating the single-source registry contract and exposing all locales directly to the UI switcher.",
+   "techniques": [
+    {
+     "technique": "language-registry-single-source",
+     "verdict": "deviation",
+     "evidence": "src/i18n/locales.manifest.ts:16 LocaleDescriptor specifies only code, nativeName, englishName, and dir, omitting engine tags and a single CI opt-in flag."
+    },
+    {
+     "technique": "pseudo-localization-readiness",
+     "verdict": "deviation",
+     "evidence": "src/i18n/pseudoLocale.ts:34 Pseudo-locale implements boundary brackets and accent replacements but completely lacks banded length correction and independent toggle knobs."
+    },
+    {
+     "technique": "canonical-fallback-serving",
+     "verdict": "deviation",
+     "evidence": "src/i18n/useTranslation.ts:310 deepMergeSection splices English fallback strings at the individual missing leaf key level rather than falling back per whole unit."
+    },
+    {
+     "technique": "canonical-and-derived-split",
+     "verdict": "deviation",
+     "evidence": "src/i18n/locales.manifest.ts:9 Translated locale catalogs are committed directly to main gated only by key parity without isolating unreviewed machine output in a derived store."
+    },
+    {
+     "technique": "source-identical-value-audit",
+     "verdict": "deviation",
+     "evidence": "src/i18n/DebtText.tsx:16 Key parity without value-level auditing allowed unreviewed source strings in the debt channel to sit 0% translated across locales behind a green gate."
+    },
+    {
+     "technique": "non-translatable-value-classification",
+     "verdict": "deviation",
+     "evidence": "src/i18n/pseudoLocale.ts:39 Pseudo-locale protects inline placeholder brackets but the runtime catalog architecture lacks the four-class exclusion vocabulary."
+    },
+    {
+     "technique": "fuzzy-reuse-under-a-threshold",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/englishSections.ts:56 Frontend client bundle does not operate a translation memory or fuzzy matching reuse system."
+    },
+    {
+     "technique": "hand-authored-exception-contract",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/locales.manifest.ts:32 The app UI catalog treats all locales uniformly with no separate hand-authored exception pages or baseline revision tracking."
+    },
+    {
+     "technique": "prompt-context-contract",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/routeSections.ts:25 Runtime route section loader manages client chunk prefetching, not machine-translation engine prompt contracts."
+    },
+    {
+     "technique": "serialization-transport-safety",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/tokenMaps.ts:35 Token resolution hook maps IPC status strings to catalog keys and does not handle batch MT transport serialization."
+    },
+    {
+     "technique": "sharded-translation-ci",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/useTranslation.ts:42 Runtime lazy section loader is client-side code-splitting, not a sharded CI translation execution pipeline."
+    },
+    {
+     "technique": "source-hash-translation-cache",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/en.ts:75 The en Proxy is a backward-compatibility synchronous shim rather than a source-hash translation cache."
+    }
+   ],
+   "registryProposal": "The standard expects either a derived-and-served pipeline for document corpora or a reviewed-and-committed string catalog. Clarify the standard's fallback rules for desktop/client-side applications: in client runtimes with async section chunks, key-level fallback via deep-merge is used to prevent blank UI controls, which directly conflicts with the strict whole-unit fallback prohibition ('never splice')."
+  },
+  {
+   "context": "i18n-generated",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/i18n/generated/types.ts:2 This context contains generated TypeScript type definitions from en.json and UI unit tests rather than a machine translation pipeline, derived store, or locale registry.",
+   "techniques": [
+    {
+     "technique": "canonical-and-derived-split",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/generated/types.ts:7 Defines compile-time TypeScript type definitions for the catalog without managing translation storage or machine-generated artifacts."
+    },
+    {
+     "technique": "canonical-fallback-serving",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:2 Tests frontend UI error resolution fallback rather than translation pipeline serving-time fallback."
+    },
+    {
+     "technique": "source-identical-value-audit",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:33 Asserts parity between Rust enum constants and English catalog keys rather than auditing source-identical values across locales."
+    },
+    {
+     "technique": "fuzzy-reuse-under-a-threshold",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:15 No translation memory or fuzzy matching reuse logic exists in this test suite."
+    },
+    {
+     "technique": "language-registry-single-source",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/generated/types.ts:3 Type generator generates interface definitions for en.json, not the language registry."
+    },
+    {
+     "technique": "non-translatable-value-classification",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:56 Tests validation error resolution in the UI, not catalog pre-prompt classification."
+    },
+    {
+     "technique": "prompt-context-contract",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:6 Tests Rust-TypeScript parity without constructing LLM translation prompts."
+    },
+    {
+     "technique": "pseudo-localization-readiness",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/generated/types.ts:9 Static type signatures do not generate or evaluate pseudo-localization transforms."
+    },
+    {
+     "technique": "serialization-transport-safety",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:16 Parses Rust AST locally for test assertions; does not handle batch translation transport."
+    },
+    {
+     "technique": "sharded-translation-ci",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/generated/types.ts:4 Prebuild codegen runs locally in milliseconds; no sharded translation CI jobs exist."
+    },
+    {
+     "technique": "source-hash-translation-cache",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:42 Vitest assertion tests synchronous mock translation returns without caching."
+    },
+    {
+     "technique": "hand-authored-exception-contract",
+     "verdict": "not-applicable",
+     "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:34 Tests English key completeness with no hand-authored language exceptions."
+    }
+   ]
+  },
+  {
+   "context": "engine-core-infrastructure",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/mod.rs:28 The engine module root re-exports backend agent execution and workflow infrastructure and contains no localization or translation pipeline functionality.",
+   "techniques": [
+    {
+     "technique": "canonical-and-derived-split",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/mod.rs:1 Engine root re-exports agent modules and contains no translation artifact split."
+    },
+    {
+     "technique": "canonical-fallback-serving",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/mod.rs:4 Background task scheduling has no translation fallback serving logic."
+    },
+    {
+     "technique": "fuzzy-reuse-under-a-threshold",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/ai_helpers.rs:3 AI helper primitives extract code blocks and build database schema context, not translation memory matching."
+    },
+    {
+     "technique": "hand-authored-exception-contract",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/recipe_seed.rs:1 Seeds recipe definition rows into SQLite at startup from bundled recipe seed JSON."
+    },
+    {
+     "technique": "language-registry-single-source",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/discovery.rs:1 Dynamic resource discovery populates questionnaire options from real external services, not translation catalogs."
+    },
+    {
+     "technique": "non-translatable-value-classification",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/mod.rs:22 Re-exports core primitives from personas-core crate with no localization concerns."
+    },
+    {
+     "technique": "prompt-context-contract",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/llm_topology.rs:8 LLM topology builds multi-persona workflow blueprint graphs, not translation pipeline topologies."
+    },
+    {
+     "technique": "pseudo-localization-readiness",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/leadership.rs:1 Coordinates singleton process leadership across daemon and desktop instances."
+    },
+    {
+     "technique": "serialization-transport-safety",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/management_api.rs:1 Provides HTTP API endpoints for external tools, having no relation to translation pipelines."
+    },
+    {
+     "technique": "sharded-translation-ci",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/curation_scheduler.rs:1 Scheduled curation worker scans memory curation schedules, not translation CI jobs."
+    },
+    {
+     "technique": "source-hash-translation-cache",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/persona_jobs.rs:1 Executes asynchronous background curation jobs for user personas with no translation duties."
+    },
+    {
+     "technique": "source-identical-value-audit",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/system_ops.rs:1 Executes backend system operations like context_scan, completely unrelated to translation pipelines."
+    }
+   ]
+  },
+  {
+   "context": "commands-design",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/design/mod.rs:10 The design commands module implements n8n workflow transformation and template design commands rather than a localization or translation pipeline.",
+   "techniques": [
+    {
+     "technique": "canonical-and-derived-split",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/mod.rs:3 Build sessions module manages agent design sessions rather than translation storage."
+    },
+    {
+     "technique": "canonical-fallback-serving",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/mod.rs:4 Build simulation dry-runs agent pipelines rather than serving translations with fallback."
+    },
+    {
+     "technique": "fuzzy-reuse-under-a-threshold",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/mod.rs:13 Smart search indexes automation templates rather than translation memory matches."
+    },
+    {
+     "technique": "hand-authored-exception-contract",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/mod.rs:16 Template adoption creates user personas rather than managing hand-authored translations."
+    },
+    {
+     "technique": "language-registry-single-source",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/mod.rs:11 Platform definitions declare external integrations rather than language registry metadata."
+    },
+    {
+     "technique": "non-translatable-value-classification",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/n8n_transform/prompt_sanitizer.rs:1 Sanitizes untrusted workflow data against prompt injection rather than classifying non-translatable catalog values."
+    },
+    {
+     "technique": "prompt-context-contract",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/n8n_transform/prompts.rs:8 Formats persona generation prompts for n8n workflow synthesis, not MT translation context."
+    },
+    {
+     "technique": "pseudo-localization-readiness",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/mod.rs:2 Archetypes module manages persona templates without pseudo-localization transforms."
+    },
+    {
+     "technique": "serialization-transport-safety",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/n8n_transform/streaming.rs:3 Parses streaming sections from Claude CLI n8n transformation, not batch translation wire payloads."
+    },
+    {
+     "technique": "sharded-translation-ci",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/mod.rs:8 Enforces rate limits on n8n transformation requests rather than sharding CI translation jobs."
+    },
+    {
+     "technique": "source-hash-translation-cache",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/mod.rs:9 Tracks n8n workflow transformation session states rather than hashing source strings for translation caches."
+    },
+    {
+     "technique": "source-identical-value-audit",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/mod.rs:12 Persona design review reviews generated persona blueprints rather than auditing translation catalogs."
+    }
+   ]
+  },
+  {
+   "context": "template-adoption-persona-layout",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/adoption/persona-layout/index.ts:1 The persona layout adoption module renders interactive template configuration petal views and contains no translation pipeline or localization topology code.",
+   "techniques": [
+    {
+     "technique": "canonical-and-derived-split",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:14 Adoption layout props manage UI state for persona adoption, not translation storage."
+    },
+    {
+     "technique": "canonical-fallback-serving",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:12 Template design result model handles automation structure, not localized content fallback."
+    },
+    {
+     "technique": "fuzzy-reuse-under-a-threshold",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/questionDimMap.ts:6 Maps questionnaire items to persona dimension petals, not translation memory matching."
+    },
+    {
+     "technique": "hand-authored-exception-contract",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/ErrorPolicyCard.tsx:2 Consumes useTranslation hook for UI labels in error policy card; manages no hand-authored translation exceptions."
+    },
+    {
+     "technique": "language-registry-single-source",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/CapabilityTagSwitcher.tsx:2 Renders a capability tag switcher in adoption UI, having no relation to a language registry or language switcher."
+    },
+    {
+     "technique": "non-translatable-value-classification",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/adoptionImpact.ts:1 Translates persona configuration state into plain-English UI summary strings, not catalog value classification."
+    },
+    {
+     "technique": "prompt-context-contract",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:4 Displays questionnaire answers in the adoption wizard, not MT engine prompt context."
+    },
+    {
+     "technique": "pseudo-localization-readiness",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionLeftPanel.tsx:2 Renders adoption sidebar panel using standard translation hook with no pseudo-locale transforms."
+    },
+    {
+     "technique": "serialization-transport-safety",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:2 Bridges builder schedule picker to adoption trigger model; does not handle batch MT transport."
+    },
+    {
+     "technique": "sharded-translation-ci",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/adoptionDimHelpers.ts:1 Helper functions format persona dimension notification channels, not CI translation jobs."
+    },
+    {
+     "technique": "source-hash-translation-cache",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:1 Maintains petal state and question navigation in adoption UI, having no translation hashing cache."
+    },
+    {
+     "technique": "source-identical-value-audit",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutBuild.tsx:3 Renders build execution panel in template adoption, not catalog source-identical auditing."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-12T18:34:37.368725+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "translation-pipeline-topology"
+   ],
+   "techniques": [
+    "canonical-and-derived-split",
+    "canonical-fallback-serving",
+    "fuzzy-reuse-under-a-threshold",
+    "hand-authored-exception-contract",
+    "language-registry-single-source",
+    "non-translatable-value-classification",
+    "prompt-context-contract",
+    "pseudo-localization-readiness",
+    "serialization-transport-safety",
+    "sharded-translation-ci",
+    "source-hash-translation-cache",
+    "source-identical-value-audit"
+   ],
+   "deviations": 1,
+   "context": "i18n",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T18:34:37.368725+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "translation-pipeline-topology"
+   ],
+   "techniques": [
+    "canonical-and-derived-split",
+    "canonical-fallback-serving",
+    "fuzzy-reuse-under-a-threshold",
+    "hand-authored-exception-contract",
+    "language-registry-single-source",
+    "non-translatable-value-classification",
+    "prompt-context-contract",
+    "pseudo-localization-readiness",
+    "serialization-transport-safety",
+    "sharded-translation-ci",
+    "source-hash-translation-cache",
+    "source-identical-value-audit"
+   ],
+   "deviations": 0,
+   "context": "i18n-generated",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T18:34:37.368725+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "translation-pipeline-topology"
+   ],
+   "techniques": [
+    "canonical-and-derived-split",
+    "canonical-fallback-serving",
+    "fuzzy-reuse-under-a-threshold",
+    "hand-authored-exception-contract",
+    "language-registry-single-source",
+    "non-translatable-value-classification",
+    "prompt-context-contract",
+    "pseudo-localization-readiness",
+    "serialization-transport-safety",
+    "sharded-translation-ci",
+    "source-hash-translation-cache",
+    "source-identical-value-audit"
+   ],
+   "deviations": 0,
+   "context": "engine-core-infrastructure",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T18:34:37.368725+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "translation-pipeline-topology"
+   ],
+   "techniques": [
+    "canonical-and-derived-split",
+    "canonical-fallback-serving",
+    "fuzzy-reuse-under-a-threshold",
+    "hand-authored-exception-contract",
+    "language-registry-single-source",
+    "non-translatable-value-classification",
+    "prompt-context-contract",
+    "pseudo-localization-readiness",
+    "serialization-transport-safety",
+    "sharded-translation-ci",
+    "source-hash-translation-cache",
+    "source-identical-value-audit"
+   ],
+   "deviations": 0,
+   "context": "commands-design",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-12T18:34:37.368725+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "translation-pipeline-topology"
+   ],
+   "techniques": [
+    "canonical-and-derived-split",
+    "canonical-fallback-serving",
+    "fuzzy-reuse-under-a-threshold",
+    "hand-authored-exception-contract",
+    "language-registry-single-source",
+    "non-translatable-value-classification",
+    "prompt-context-contract",
+    "pseudo-localization-readiness",
+    "serialization-transport-safety",
+    "sharded-translation-ci",
+    "source-hash-translation-cache",
+    "source-identical-value-audit"
+   ],
+   "deviations": 0,
+   "context": "template-adoption-persona-layout",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  }
+ ]
+}

@@ -61,13 +61,13 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/20">
               {columns.map((col) => (
-                <th key={col.key} className={`text-left px-3 py-2 typo-label text-foreground ${col.className ?? ''}`}>
+                <th key={col.key} className={`text-left px-3 py-2 typo-caption font-mono uppercase tracking-widest text-foreground ${col.className ?? ''}`}>
                   {col.label}
                 </th>
               ))}
-              <th className="text-left px-3 py-2 typo-label text-foreground w-[140px]">{t.common.status}</th>
-              <th className="text-left px-3 py-2 typo-label text-foreground w-[150px]">{t.agents.lab.col_time}</th>
-              <th className="w-10" />
+              <th className="text-left px-3 py-2 w-[140px] typo-caption font-mono uppercase tracking-widest text-foreground">{t.common.status}</th>
+              <th className="text-left px-3 py-2 w-[150px] typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.col_time}</th>
+              <th className="w-10 typo-caption font-mono uppercase tracking-widest text-foreground" />
             </tr>
           </thead>
           <tbody>

@@ -1,0 +1,41 @@
+{
+  "schema": "conform-run/1",
+  "worker": "a71a60bd-086f-4368-afcb-da9944b82b5b",
+  "subject": "adoption-measurement",
+  "evaluatedAt": "2026-10-10T11:44:43Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "adoption-measurement",
+      "context": "9b013060-5483-4162-9f8a-6b69109d623d",
+      "reason": "already judged not-applicable at the registry current digest sha256-b2:502064804797857b revision 3 (registry HEAD e6f59b26); not stale, nothing to re-judge; also a governance:weak row, which the skill never judges by default"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+      "reason": "already judged not-applicable at the registry current digest sha256-b2:502064804797857b revision 3 (registry HEAD e6f59b26); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "e76afaf6-ba3b-4341-b1ad-f444f08da8b8",
+      "reason": "already judged not-applicable at the registry current digest sha256-b2:502064804797857b revision 3 (registry HEAD e6f59b26); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "80e0534a-d0ea-469a-9c3a-cf12910ecde9",
+      "reason": "already judged not-applicable at the registry current digest sha256-b2:502064804797857b revision 3 (registry HEAD e6f59b26); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "7dddb34a-3a9b-4ce0-832f-55ea352c12b5",
+      "reason": "already judged not-applicable at the registry current digest sha256-b2:502064804797857b revision 3 (registry HEAD e6f59b26); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "10c96ae7-a356-4555-996b-df92fc5dc8e7",
+      "reason": "no such pair in the map (plugins-dev-tools-skills); a worker may not add one, so the missing pairing is proposed instead of judged",
+      "registryProposal": "MATCHER MISS: plugins-dev-tools-skills is the one context in this repo that measures uptake across a population (workspace skill library vs per-project installs vs transcript-mined usage, 30d coverage over a dev_contexts denominator - src/features/plugins/dev-tools/sub_skills/skillsManagerData.ts:3 and :55, src/features/plugins/dev-tools/sub_skills/skillsManagerRows.ts:32) yet the map pairs it with usage-analytics, the subject this golden path explicitly says it is NOT; add adoption-measurement (source: conform) and judge dormancy-verdicts / attribution-provenance-tiers there. Secondary candidate: overview-patterns (fc62a53a-85f9-4491-8b54-9b5f1795ef91) absorbed practice-rollout-modal and workspace-pulse-dashboard. Lexical matching ranked five wizard contexts above them on the word adoption, all judged not-applicable - the term collision (template adoption = one user instantiating one template) is the vocabulary resonance the precondition test exists for."
+    }
+  ],
+  "consults": []
+}

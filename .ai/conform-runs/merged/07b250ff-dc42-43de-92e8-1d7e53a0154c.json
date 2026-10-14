@@ -1,0 +1,323 @@
+{
+ "schema": "conform-run/1",
+ "worker": "07b250ff-dc42-43de-92e8-1d7e53a0154c",
+ "subject": "standards-layered-runtime",
+ "evaluatedAt": "2026-10-13T13:51:08.372247+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "api-agents",
+   "subject": "standards-layered-runtime",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/api/agents/personas.ts:54 These modules forward persona operations through Tauri IPC, and context and repository searches found no guest_context or register_global constructs establishing an embeddable guest-language runtime.",
+   "techniques": [
+    {
+     "technique": "backend-parameterised-web-api",
+     "verdict": "not-applicable",
+     "evidence": "src/api/agents/personaIcons.ts:22 Icon import is an application IPC operation; this module implements no standard guest-language API."
+    },
+    {
+     "technique": "baseline-plus-extension-tuple",
+     "verdict": "not-applicable",
+     "evidence": "src/api/agents/buildSession.ts:46 Starts an application build session; it is not an embedder entry point installing APIs into a guest context."
+    },
+    {
+     "technique": "cli-as-thin-assembler",
+     "verdict": "not-applicable",
+     "evidence": "src/api/auth/cliCapture.ts:16 Requests credential capture through IPC; this context contains no command-line front end for an embeddable language runtime."
+    },
+    {
+     "technique": "crate-per-standards-body",
+     "verdict": "not-applicable",
+     "evidence": "src/api/auth/connectors.ts:12 Lists application connectors; no guest-runtime standard package or package-level portability claim was found."
+    },
+    {
+     "technique": "re-export-preserves-import-path",
+     "verdict": "not-applicable",
+     "evidence": "src/api/agents/mcpTools.ts:9 Re-exports a generated IPC binding; the required extras-to-standard runtime API migration is absent."
+    },
+    {
+     "technique": "status-header-per-api",
+     "verdict": "not-applicable",
+     "evidence": "src/api/agents/outputAssertions.ts:12 Queries persona assertions; this is not an API module in an incomplete runtime standards package."
+    }
+   ],
+   "absenceTerms": [
+    "guest_context",
+    "register_global"
+   ]
+  },
+  {
+   "context": "workspace-governance",
+   "subject": "standards-layered-runtime",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:253 Governance scanning invokes an external Claude process to assess repositories, and context and repository searches found no guest_context or register_global constructs establishing a guest-language runtime implementation.",
+   "techniques": [
+    {
+     "technique": "backend-parameterised-web-api",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:59 Creates an application GitLab client; it does not implement a standard guest API over a host backend."
+    },
+    {
+     "technique": "baseline-plus-extension-tuple",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/infrastructure/bridge_manifest.rs:119 Dispatches a declarative bridge action; no guest-context baseline registration entry point was found."
+    },
+    {
+     "technique": "cli-as-thin-assembler",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:170 The doc-rot scanner consumes Git subprocess output; it is not a language-runtime CLI front end."
+    },
+    {
+     "technique": "crate-per-standards-body",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/infrastructure/context_map_export.rs:94 Exports application context-map artifacts; this context makes no guest-runtime conformance claim through a standards package."
+    },
+    {
+     "technique": "re-export-preserves-import-path",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/infrastructure/use_case_scan.rs:194 Re-exports a shared application predicate; the documented move is unrelated to runtime extras and standards layers."
+    },
+    {
+     "technique": "status-header-per-api",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:93 Embeds the ruleset used to audit other repositories; it does not implement the APIs of a runtime standard."
+    }
+   ],
+   "absenceTerms": [
+    "guest_context",
+    "register_global"
+   ]
+  },
+  {
+   "context": "plugins-dev-tools-context",
+   "subject": "standards-layered-runtime",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:175 The context runtime projects application telemetry onto codebase contexts, and context and repository searches found no guest_context or register_global constructs establishing a guest-language engine or API registrar.",
+   "techniques": [
+    {
+     "technique": "backend-parameterised-web-api",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:131 Fetches telemetry through an application adapter; no standard guest-language API is implemented here."
+    },
+    {
+     "technique": "baseline-plus-extension-tuple",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:542 Composes a React telemetry hook; it does not install APIs into an embedded language context."
+    },
+    {
+     "technique": "cli-as-thin-assembler",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx:40 Renders scan progress in React; this context has no runtime CLI assembly layer."
+    },
+    {
+     "technique": "crate-per-standards-body",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_context/contextKpiStatus.ts:66 Computes application KPI health; no runtime standards package or dependency-level conformance claim was found."
+    },
+    {
+     "technique": "re-export-preserves-import-path",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_context/contextLedgerShared.tsx:315 Provides a shared import site for UI metadata; no API movement between runtime standards layers was found."
+    },
+    {
+     "technique": "status-header-per-api",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_context/useCaseKind.ts:15 Defines visual metadata for use-case kinds; it is not an incomplete standard API implementation."
+    }
+   ],
+   "absenceTerms": [
+    "guest_context",
+    "register_global"
+   ]
+  },
+  {
+   "context": "teams-factory-passport-improve",
+   "subject": "standards-layered-runtime",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_factory/passport/improve/useImproveEngine.ts:23 The improvement engine coordinates project scans and remediation actions, and context and repository searches found no guest_context or register_global constructs establishing an embeddable guest-language runtime.",
+   "techniques": [
+    {
+     "technique": "backend-parameterised-web-api",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_factory/passport/improve/connectors.ts:118 Selects application credentials by connector service type; no standard guest API backend is implemented."
+    },
+    {
+     "technique": "baseline-plus-extension-tuple",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_factory/passport/improve/ImproveContext.tsx:59 This context is React dependency distribution for project actions, not a guest-language realm or API registrar."
+    },
+    {
+     "technique": "cli-as-thin-assembler",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_factory/passport/improve/skillsWorkbenchData.ts:295 Dispatches a skill to an external Fleet session; this module is not an embeddable-runtime executable."
+    },
+    {
+     "technique": "crate-per-standards-body",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_factory/passport/improve/improvePlan.ts:70 Scores application readiness to derive remediation; no guest-runtime package conformance claim was found."
+    },
+    {
+     "technique": "re-export-preserves-import-path",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_factory/passport/improve/standards.ts:14 Re-exports application configuration helpers; no extras-to-standard runtime API migration was found."
+    },
+    {
+     "technique": "status-header-per-api",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_factory/passport/improve/goldenStandard.ts:124 Computes readiness rubric results; these dimensions are not an inventory of implemented language-runtime standard APIs."
+    }
+   ],
+   "absenceTerms": [
+    "guest_context",
+    "register_global"
+   ]
+  },
+  {
+   "context": "api-system",
+   "subject": "standards-layered-runtime",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/api/design/design.ts:9 These modules expose application design and system commands through Tauri IPC, and context and repository searches found no guest_context or register_global constructs establishing a guest-language runtime implementation.",
+   "techniques": [
+    {
+     "technique": "backend-parameterised-web-api",
+     "verdict": "not-applicable",
+     "evidence": "src/api/system/apiProxy.ts:19 Forwards an application proxy request; it does not implement the guest-facing fetch API of a runtime standard."
+    },
+    {
+     "technique": "baseline-plus-extension-tuple",
+     "verdict": "not-applicable",
+     "evidence": "src/api/system/system.ts:59 Requests Claude Desktop MCP configuration; this registration does not install a guest-runtime baseline."
+    },
+    {
+     "technique": "cli-as-thin-assembler",
+     "verdict": "not-applicable",
+     "evidence": "src/api/system/qwen.ts:16 Queries an external AI-provider configuration; this context contains no language-runtime command-line front end."
+    },
+    {
+     "technique": "crate-per-standards-body",
+     "verdict": "not-applicable",
+     "evidence": "src/api/recipes/recipes.ts:38 Exposes application recipe CRUD; no package asserting guest-runtime standard conformance was found."
+    },
+    {
+     "technique": "re-export-preserves-import-path",
+     "verdict": "not-applicable",
+     "evidence": "src/api/system/gitlab.ts:16 Re-exports a generated application binding; no migration between runtime extras and standards packages was found."
+    },
+    {
+     "technique": "status-header-per-api",
+     "verdict": "not-applicable",
+     "evidence": "src/api/design/design.ts:15 Requests persona-design feasibility testing; this is not an API module claiming partial implementation of a runtime standard."
+    }
+   ],
+   "absenceTerms": [
+    "guest_context",
+    "register_global"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-13T13:51:08.372247+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "standards-layered-runtime"
+   ],
+   "techniques": [
+    "backend-parameterised-web-api",
+    "baseline-plus-extension-tuple",
+    "cli-as-thin-assembler",
+    "crate-per-standards-body",
+    "re-export-preserves-import-path",
+    "status-header-per-api"
+   ],
+   "deviations": 0,
+   "context": "api-agents",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-13T13:51:08.372247+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "standards-layered-runtime"
+   ],
+   "techniques": [
+    "backend-parameterised-web-api",
+    "baseline-plus-extension-tuple",
+    "cli-as-thin-assembler",
+    "crate-per-standards-body",
+    "re-export-preserves-import-path",
+    "status-header-per-api"
+   ],
+   "deviations": 0,
+   "context": "workspace-governance",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-13T13:51:08.372247+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "standards-layered-runtime"
+   ],
+   "techniques": [
+    "backend-parameterised-web-api",
+    "baseline-plus-extension-tuple",
+    "cli-as-thin-assembler",
+    "crate-per-standards-body",
+    "re-export-preserves-import-path",
+    "status-header-per-api"
+   ],
+   "deviations": 0,
+   "context": "plugins-dev-tools-context",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-13T13:51:08.372247+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "standards-layered-runtime"
+   ],
+   "techniques": [
+    "backend-parameterised-web-api",
+    "baseline-plus-extension-tuple",
+    "cli-as-thin-assembler",
+    "crate-per-standards-body",
+    "re-export-preserves-import-path",
+    "status-header-per-api"
+   ],
+   "deviations": 0,
+   "context": "teams-factory-passport-improve",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-13T13:51:08.372247+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "standards-layered-runtime"
+   ],
+   "techniques": [
+    "backend-parameterised-web-api",
+    "baseline-plus-extension-tuple",
+    "cli-as-thin-assembler",
+    "crate-per-standards-body",
+    "re-export-preserves-import-path",
+    "status-header-per-api"
+   ],
+   "deviations": 0,
+   "context": "api-system",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

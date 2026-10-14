@@ -1,0 +1,15 @@
+{
+  "schema": "conform-run/1",
+  "worker": "e598d202-e494-43f5-8b0f-5f130a172263",
+  "subject": "scoring-rubrics",
+  "evaluatedAt": "2026-10-10T12:12:59Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "scoring-rubrics",
+      "context": "92f6c0fc-8d5c-43a7-bab8-1851973d5198",
+      "reason": "no work: the only scoring-rubrics pair (overview-leaderboard) is already a per-technique deviation evaluatedAt 2026-10-10 against the current subject digest sha256-b2:476078a37f34137d rev 3 (registry index agrees; not stale); its code is unchanged (newest commit on src/features/overview/sub_leaderboard 937854f7d1 2026-09-24, no working-tree edits) and the headline anchors still read as cited (src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:124, src/stores/slices/overview/personaHealthSlice.ts:415), so a fourth identical re-judgment would add nothing. Registry proposal (missed pairing, not added per dispatch rules): context overview-health (90f639de-ffc7-4225-b67f-1566e5d66b8b) carries a weighted composite with grades at src/features/overview/sub_health/libs/compositeHealthScore.ts:66 (WEIGHTS, sum assertion :111, unknown-grade short-circuit :242), which the scoring-rubrics golden path claims via health-checks/health-rollup deferring composite math to it; the matcher paired neither scoring-rubrics nor health-checks there, so that composite has never been judged against either."
+    }
+  ],
+  "consults": []
+}

@@ -3826,7 +3826,13 @@
       "where_contest": "Wettbewerb",
       "where_count": "{count} Wettbewerbe",
       "where_ledger": "Journal",
-      "where_variant": "Variante"
+      "where_variant": "Variante",
+      "by_area": "Nach Aufgabenbereich",
+      "by_model": "Nach Modell",
+      "tile_contests": "Wettbewerbe",
+      "tile_decided": "Entschieden",
+      "tile_models": "Eingesetzte Modelle",
+      "tile_top": "Bestes Modell"
     }
   }
 }

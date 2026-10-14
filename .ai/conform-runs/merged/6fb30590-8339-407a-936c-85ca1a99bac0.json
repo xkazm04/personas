@@ -1,0 +1,90 @@
+{
+ "schema": "conform-run/1",
+ "worker": "6fb30590-8339-407a-936c-85ca1a99bac0",
+ "subject": "i18n",
+ "evaluatedAt": "2026-10-12T12:21:34Z",
+ "pairs": [
+  {
+   "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+   "subject": "i18n",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:13f1a2698a82c874",
+   "evaluatedRevision": 7,
+   "evidence": "src/i18n/routeSections.ts:85 home still omits the overview section that src/features/home/sub_cockpit/CockpitPanel.tsx:34 reads, so the landing route renders English in 13 locales; scripts/i18n/check-route-sections.mjs:29 passes any section covered by SOME route, so it cannot see a per-route miss",
+   "techniques": [
+    {
+     "technique": "catalog-architecture",
+     "verdict": "deviation",
+     "evidence": "src/i18n/routeSections.ts:85 pure-read resolver makes the route map a correctness dependency, and home lacks overview (read at src/features/home/sub_cockpit/CockpitPanel.tsx:34); the static gate at scripts/i18n/check-route-sections.mjs:29 proves section-level coverage only, not route-level"
+    },
+    {
+     "technique": "completeness-gates",
+     "verdict": "realized",
+     "evidence": "lefthook.yml:73 i18n-no-gaps (strict) plus i18n-no-untranslated (lefthook.yml:85) bind key AND value parity to catalog-touching commits"
+    },
+    {
+     "technique": "string-extraction-enforcement",
+     "verdict": "deviation",
+     "evidence": "eslint.config.js:104 custom/no-hardcoded-jsx-text is warn, and the pre-commit run uses --quiet (lefthook.yml:32), so the detector is advisory at every gate"
+    },
+    {
+     "technique": "token-label-separation",
+     "verdict": "deviation",
+     "evidence": "src/lib/errors/errorRegistry.ts:75 registry entries store English sentences, not catalog keys; src/features/companions/athena/BrainHealthPanel.tsx:145 renders resolveError().message raw, bypassing the error_registry section"
+    }
+   ]
+  },
+  {
+   "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+   "subject": "i18n",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:13f1a2698a82c874",
+   "evaluatedRevision": 7,
+   "evidence": "lefthook.yml:74 every commit-time i18n gate globs only src/i18n/locales/*.json, so an edit to the stop_reason vocabulary (src-tauri/db/src/chain.rs:45) runs no domain-coverage check; src/i18n/__tests__/chainStopReasons.parity.test.ts:33 fires only in CI after landing",
+   "techniques": [
+    {
+     "technique": "completeness-gates",
+     "verdict": "deviation",
+     "evidence": "lefthook.yml:74 domain-coverage gate attached to the catalog door, not the vocabulary edit that creates the gap (src-tauri/db/src/chain.rs:45)"
+    },
+    {
+     "technique": "token-label-separation",
+     "verdict": "realized",
+     "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:33 binds status_tokens.chain_stop to the Rust vocabulary authority, with a non-empty-parse floor at :30"
+    }
+   ],
+   "registryProposal": "completeness-gates could name the cheap realization for cross-language vocabularies: a pre-commit job globbed on the vocabulary source file that runs the artifact-parsing parity test"
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-12T12:21:34Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "i18n"
+   ],
+   "techniques": [
+    "catalog-architecture",
+    "completeness-gates",
+    "string-extraction-enforcement",
+    "token-label-separation"
+   ],
+   "deviations": 3
+  },
+  {
+   "ts": "2026-10-12T12:21:34Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "i18n"
+   ],
+   "techniques": [
+    "completeness-gates",
+    "token-label-separation"
+   ],
+   "deviations": 1
+  }
+ ]
+}

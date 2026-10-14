@@ -1,0 +1,127 @@
+{
+ "schema": "conform-run/1",
+ "worker": "1224de40-e588-4bbd-8c25-4fddf5bc8704",
+ "subject": "agent-instruction-files",
+ "evaluatedAt": "2026-10-12T17:45:18.867854+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "plugins-dev-tools-skills",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/dev-tools/sub_skills/skillsManagerRows.ts:139 Custom-skill adoption invokes an LLM task whose instructions delegate mechanically decidable installation steps to the model.",
+   "techniques": [
+    {
+     "technique": "enforcement-demotion",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_factory/passport/improve/skillTasks.ts:70 File copying, verbatim metadata preservation and default-version stamping remain prose procedures; the technique requires scripting mechanical steps while leaving customization to judgment."
+    },
+    {
+     "technique": "host-contract-compilation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_factory/passport/improve/skillTasks.ts:64 This adoption contract targets Claude Code; it does not render one skill for multiple coding harnesses."
+    }
+   ]
+  },
+  {
+   "context": "templates-n8n-steps",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_n8n/steps/N8nImportTab.tsx:63 The wizard passes serialized workflow analysis into the persona-building flow rather than managing repository instruction files or installed skill listings.",
+   "techniques": []
+  },
+  {
+   "context": "lib-personas",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/personas/parsers/workflowPipeline.ts:228 The extraction pipeline generates task-specific persona instructions from workflow steps, which are application prompt data rather than a repository-owned standing brief.",
+   "techniques": []
+  },
+  {
+   "context": "home-cockpit-widgets",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_cockpit/widgets/PersonaWalkthroughWidget.tsx:9 These widgets present Athena's application output to people rather than authoring or delivering coding-harness instruction files.",
+   "techniques": []
+  },
+  {
+   "context": "agents-editor",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:27 The editor persists persona settings through application operations rather than maintaining the repository instruction layer governed by this subject.",
+   "techniques": []
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-12T17:45:18.867854+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-instruction-files"
+   ],
+   "techniques": [
+    "enforcement-demotion",
+    "host-contract-compilation"
+   ],
+   "deviations": 1,
+   "context": "plugins-dev-tools-skills",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-12T17:45:18.867854+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-instruction-files"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "templates-n8n-steps",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-12T17:45:18.867854+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-instruction-files"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "lib-personas",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-12T17:45:18.867854+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-instruction-files"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "home-cockpit-widgets",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-12T17:45:18.867854+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-instruction-files"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "agents-editor",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

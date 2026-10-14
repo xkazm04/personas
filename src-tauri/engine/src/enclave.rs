@@ -96,6 +96,7 @@ pub struct EnclaveSealResult {
     pub enclave_id: String,
     pub enclave_hash: String,
     pub persona_name: String,
+    #[ts(type = "number")]
     pub byte_size: u64,
 }
 

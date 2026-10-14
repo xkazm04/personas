@@ -1,0 +1,80 @@
+{
+  "schema": "conform-run/1",
+  "worker": "0fe9bb6c-8fe7-47d0-b7ff-5ab9be007219",
+  "subject": "client-state",
+  "evaluatedAt": "2026-10-10T11:13:48Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "client-state",
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "reason": "feedback-primitives: existing not-applicable of 2026-10-06 is against the current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry e6f59b26), not stale, and no anchored file has a commit or working-tree change after it; a re-read would only copy the verdict"
+    },
+    {
+      "subject": "client-state",
+      "context": "03e7f46a-3f19-47b8-98a5-398efed815b4",
+      "reason": "hooks-realtime: existing deviation of 2026-10-10 is against the current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry e6f59b26), not stale, and no anchored file has a commit or working-tree change after it; a re-read would only copy the verdict"
+    },
+    {
+      "subject": "client-state",
+      "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573",
+      "reason": "mastermind-scene-store: existing deviation of 2026-10-09 is against the current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry e6f59b26), not stale, and no anchored file has a commit or working-tree change after it; a re-read would only copy the verdict"
+    },
+    {
+      "subject": "client-state",
+      "context": "ade5a251-866a-4352-9a03-012d78fe9b74",
+      "reason": "mastermind-tests: existing deviation of 2026-10-09 is against the current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry e6f59b26), not stale, and no anchored file has a commit or working-tree change after it; a re-read would only copy the verdict"
+    },
+    {
+      "subject": "client-state",
+      "context": "c413de7d-1182-4abc-8a08-9c8832254c62",
+      "reason": "overview-director: existing deviation of 2026-10-10 is against the current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry e6f59b26), not stale, and no anchored file has a commit or working-tree change after it; a re-read would only copy the verdict"
+    },
+    {
+      "subject": "client-state",
+      "context": "11fe7642-7a1a-47c5-8910-499850aa04fe",
+      "reason": "plugins-companion-inbox: existing deviation of 2026-10-06 is against the current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry e6f59b26), not stale, and no anchored file has a commit or working-tree change after it; a re-read would only copy the verdict"
+    },
+    {
+      "subject": "client-state",
+      "context": "d9cffe6c-a868-4ed4-b5e8-6c8add36918a",
+      "reason": "plugins-dev-tools-lifecycle: existing deviation of 2026-10-10 is against the current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry e6f59b26), not stale, and no anchored file has a commit or working-tree change after it; a re-read would only copy the verdict"
+    },
+    {
+      "subject": "client-state",
+      "context": "532bbf10-3fd3-4b57-a8ea-95a957645697",
+      "reason": "stores-slices-overview: existing deviation of 2026-10-09 is against the current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry e6f59b26), not stale, and no anchored file has a commit or working-tree change after it; a re-read would only copy the verdict"
+    },
+    {
+      "subject": "client-state",
+      "context": "0aded02d-f5c5-4e24-8366-90783fb343b1",
+      "reason": "stores-util: existing deviation of 2026-10-09 is against the current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry e6f59b26), not stale, and no anchored file has a commit or working-tree change after it; a re-read would only copy the verdict"
+    },
+    {
+      "subject": "client-state",
+      "context": "417112d1-004b-41d5-a656-57997a47d818",
+      "reason": "timing-utility-hooks: weak context (coverage question, not judged by default); existing deviation of 2026-10-10 is against the current digest sha256-b2:b667f5c1f4abdd9d rev 15 and its anchor files have not changed since"
+    },
+    {
+      "subject": "client-state",
+      "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3",
+      "reason": "MISSING PAIRING (registryProposal for the matcher): stores has no client-state pair although it is Zustand store slices - src/stores/ root (14 store files) incl. storeTypes.ts, the CoreState that the stores-util deviation anchors; the golden path names no exclusion that fits (its only boundary is presentation, owned by async-ui-states), so this is a matcher miss, not a precondition failure. Not added: worker contract forbids adding pairs; judge once paired"
+    },
+    {
+      "subject": "client-state",
+      "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+      "reason": "MISSING PAIRING (registryProposal for the matcher): stores-slices-agents has no client-state pair although it is Zustand store slices - 15 slices incl. src/stores/slices/agents/personaSlice.ts, already cited as evidence in the stores-util client-state deviation (:208/:302) yet unpaired in its own context; the golden path names no exclusion that fits (its only boundary is presentation, owned by async-ui-states), so this is a matcher miss, not a precondition failure. Not added: worker contract forbids adding pairs; judge once paired"
+    },
+    {
+      "subject": "client-state",
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "reason": "MISSING PAIRING (registryProposal for the matcher): stores-slices-system has no client-state pair although it is Zustand store slices - 30 Zustand slices; the golden path names no exclusion that fits (its only boundary is presentation, owned by async-ui-states), so this is a matcher miss, not a precondition failure. Not added: worker contract forbids adding pairs; judge once paired"
+    },
+    {
+      "subject": "client-state",
+      "context": "8b5d1d60-a129-4cd1-9567-d795589bde29",
+      "reason": "MISSING PAIRING (registryProposal for the matcher): stores-slices-vault has no client-state pair although it is Zustand store slices - 8 Zustand slices; pairs only credential-vault; the golden path names no exclusion that fits (its only boundary is presentation, owned by async-ui-states), so this is a matcher miss, not a precondition failure. Not added: worker contract forbids adding pairs; judge once paired"
+    }
+  ],
+  "consults": []
+}

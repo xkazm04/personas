@@ -1,0 +1,9 @@
+{"schema": "conform-run/1", "worker": "a20a1277-a80f-4120-8617-e9febd5aae86", "subject": "cost-metering",
+ "evaluatedAt": "2026-10-10T01:57:58Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "cost-metering", "context": "2fb16136-586e-478d-823f-38434d2d5b9a",
+   "reason": "weak-governed context (commands-communication); the skill forbids judging weak rows by default. Coverage note: src-tauri/src/commands/communication/observability/metrics.rs (get_execution_dashboard) aggregates provider usage for the overview, so spend-observability may genuinely govern it - a matcher/coverage question for the registry, not a verdict. The other 10 cost-metering pairs were not re-judged: all carry evaluatedAgainst sha256-b2:b3129728f9d9c336 = the registry's current digest (revision 14, registry 32d7899f), and their anchor files are unchanged since judging except line drift (src-tauri/src/engine/execution.rs get_monthly_spend unwrap_or(0.0) now :3021, was :3001; idea_scanner.rs observe_line now ~:909, was :904) - the deviations still hold."}
+ ],
+ "consults": []
+}

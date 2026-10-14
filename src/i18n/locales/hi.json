@@ -2628,7 +2628,13 @@
       "profile_tokens_over": "{from} टोकन से अधिक",
       "profile_tokens_under": "{to} टोकन से कम",
       "profile_units": "{count} इकाइयाँ",
-      "profile_untagged_note": "अभी तक कुछ भी घोषित नहीं किया गया है, इसलिए रन यहाँ दिखाए गए डिफ़ॉल्ट मूल्य के रूप में चार्ज किए जाते हैं। एजेंट अपने अगले निर्णय-जागरण पर अपनी स्वयं की प्रोफ़ाइल घोषित करेगा।"
+      "profile_untagged_note": "अभी तक कुछ भी घोषित नहीं किया गया है, इसलिए रन यहाँ दिखाए गए डिफ़ॉल्ट मूल्य के रूप में चार्ज किए जाते हैं। एजेंट अपने अगले निर्णय-जागरण पर अपनी स्वयं की प्रोफ़ाइल घोषित करेगा।",
+      "profile_axes_dominant": "ज़्यादातर {axis}",
+      "profile_axes_label": "मापा गया लोड",
+      "profile_axes_learning": "सीख रहा है ({count}/{total})",
+      "profile_axes_mismatch": "मापा गया {measured}, घोषित {declared}",
+      "profile_axes_runs": "{count} रन के आधार पर मापा गया",
+      "profile_source_measured": "मापे गए रन से तय किया गया"
     },
     "role_card": {
       "assign": "असाइन करें",
@@ -3376,17 +3382,6 @@
     "palette_agent_enabled": "एजेंट चालू किया गया",
     "palette_health_complete": "स्वास्थ्य जाँच पूर्ण",
     "palette_toggle_failed": "एजेंट टॉगल नहीं हो सका"
-  },
-  "cockpit": {
-    "inbox": {
-      "relative_days_one": "{d}दि पहले",
-      "relative_days_other": "{d}दि पहले",
-      "relative_hours_one": "{h}घं पहले",
-      "relative_hours_other": "{h}घं पहले",
-      "relative_just_now": "अभी",
-      "relative_minutes_one": "{m}मि पहले",
-      "relative_minutes_other": "{m}मि पहले"
-    }
   },
   "common": {
     "_comment_refine": "Generic refine action used in adoption + scratch build phases",
@@ -6882,7 +6877,7 @@
     "strip_open_hint": "मॉनिटर खोलें",
     "strip_queued": "{count} कतार में",
     "strip_running": "{count} चल रहे",
-    "subtitle": "{पर्सोनाs} पर्सोनाs · {attention} need attention · {running} running",
+    "subtitle": "{personas} पर्सोना · {attention} को ध्यान चाहिए · {running} चल रहे हैं",
     "system": "सिस्टम",
     "title": "पर्सोना मॉनिटर",
     "titlebar": "पर्सोना मॉनिटर",
@@ -7240,6 +7235,7 @@
     "usage_provider_claude": "Claude",
     "usage_provider_codex": "OpenAI Codex",
     "usage_provider_grok": "xAI Grok",
+    "usage_provider_agy": "Google Antigravity",
     "queue_origin_remote": "एक पेयर किया गया डिवाइस",
     "remote_drawer_aria": "{device} पर रिमोट सेशन",
     "remote_from_device": "{device} से",
@@ -7595,7 +7591,56 @@
     "dc_hub_triage_all_none": "कुछ भी प्रतीक्षा में नहीं",
     "dc_hub_triage_all_short": "सभी",
     "dc_hub_triage_all_walk_tip": "सभी {count} क्रम से देखें, सबसे ज़रूरी पहले",
-    "grid_rail_triage_modal_aria": "समीक्षा विवरण"
+    "grid_rail_triage_modal_aria": "समीक्षा विवरण",
+    "schedule_last_failed": "कोड {code} के साथ समाप्त",
+    "schedule_last_ok": "सफलतापूर्वक पूरा हुआ",
+    "schedule_last_run": "पिछला रन {when}",
+    "schedule_never_ran": "अभी तक नहीं चला",
+    "schedule_next": "अगला {when}",
+    "schedule_off": "बंद",
+    "schedule_running": "अभी चल रहा है",
+    "schedule_time_zone": "समय प्राग समय में",
+    "schedule_toggle_aria": "{title} को शेड्यूल के अनुसार चलाएँ",
+    "schedule_toggle_failed": "शेड्यूल किया गया कार्य बदला नहीं जा सका",
+    "schedule_window": "कार्य समय {window}",
+    "schedules": "शेड्यूल",
+    "schedules_aria": "इस कंप्यूटर पर शेड्यूल किए गए कार्य",
+    "mesh_agent_project_off": "इसका प्रोजेक्ट {device} पर बंद है। पहले वहाँ प्रोजेक्ट चालू करें।",
+    "mesh_agent_stale": "{device} रिपोर्ट नहीं कर रहा है, इसलिए इसके एजेंट यहाँ से बदले नहीं जा सकते",
+    "mesh_agent_turn_off": "{name} को {device} पर बंद करें",
+    "mesh_agent_turn_on": "{name} को {device} पर चालू करें",
+    "mesh_all": "सभी डिवाइस",
+    "mesh_axis_cpu": "CPU",
+    "mesh_axis_gpu": "GPU",
+    "mesh_axis_ram": "RAM",
+    "mesh_devices_live": "{total} में से {live} रिपोर्ट कर रहे हैं",
+    "mesh_glyph_axis": "ज़्यादातर {axis}",
+    "mesh_glyph_share": "ज़्यादातर {axis}: इस डिवाइस का {share}",
+    "mesh_home": "होम डिवाइस",
+    "mesh_move_aria": "{name} को दूसरे डिवाइस पर ले जाएँ",
+    "mesh_move_pending": "{device} पर ले जाया जा रहा है",
+    "mesh_move_to": "यहाँ ले जाएँ…",
+    "mesh_move_waits": "रिपोर्ट नहीं कर रहा: डिवाइस जागने तक मूव रुका रहेगा",
+    "mesh_not_reporting": "रिपोर्ट नहीं कर रहा",
+    "mesh_outcome_pending": "{device} को भेजा जा रहा है",
+    "mesh_outcome_queued": "डिवाइस जागने तक कतार में",
+    "mesh_outcome_refused": "{device} ने मना किया: {reason}",
+    "mesh_plate_clear": "सभी डिवाइस फिर से दिखाएँ",
+    "mesh_plate_scope": "केवल {device} दिखाएँ",
+    "mesh_probe_failed": "{test} विफल",
+    "mesh_probe_none": "इस डिवाइस के साथ अभी तक कोई आपसी परीक्षण नहीं चला है",
+    "mesh_probe_passed": "{test} सफल",
+    "mesh_queue_title": "{device} पर कतार",
+    "mesh_queued": "{count} कतार में",
+    "mesh_rail_aria": "अन्य डिवाइस",
+    "mesh_reach_connected": "जुड़ा हुआ",
+    "mesh_reach_offline": "ऑफ़लाइन",
+    "mesh_reach_stale": "कनेक्शन पुराना है",
+    "mesh_refusal_project_off": "वहाँ इसका प्रोजेक्ट बंद है",
+    "mesh_refusal_unknown": "कोई कारण नहीं बताया गया",
+    "mesh_running": "{count} चल रहे",
+    "mesh_strip_aria": "मेश के डिवाइस",
+    "mesh_this_device": "यह डिवाइस"
   },
   "onboarding": {
     "adopt_button": "एजेंट सेट करें",
@@ -10315,7 +10360,8 @@
     "dc_open_in_deck_hint": "इसे डिसीज़न सेंटर में खोलें (Enter)",
     "dc_pending_lead": "हर लंबित समीक्षा डिसीज़न सेंटर में अपने पूरे ब्योरे और अन्य निर्णयों जैसी ही कुंजियों के साथ खुलती है।",
     "dc_pending_list_aria": "लंबित समीक्षाएँ",
-    "dc_select_review": "समीक्षा चुनें"
+    "dc_select_review": "समीक्षा चुनें",
+    "dc_col_decision": "निर्णय"
   },
   "pipeline": {
     "accept_suggestion": "सुझाव स्वीकार करें",
@@ -14672,7 +14718,13 @@
         "where_contest": "प्रतियोगिता",
         "where_count": "{count} प्रतियोगिताएं",
         "where_ledger": "लेजर",
-        "where_variant": "वेरिएंट"
+        "where_variant": "वेरिएंट",
+        "by_area": "कार्य क्षेत्र के अनुसार",
+        "by_model": "मॉडल के अनुसार",
+        "tile_contests": "प्रतियोगिताएँ",
+        "tile_decided": "तय हुईं",
+        "tile_models": "शामिल मॉडल",
+        "tile_top": "शीर्ष मॉडल"
       }
     }
   },

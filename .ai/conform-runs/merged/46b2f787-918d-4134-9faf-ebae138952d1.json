@@ -1,0 +1,39 @@
+{"schema": "conform-run/1", "worker": "46b2f787-918d-4134-9faf-ebae138952d1", "subject": "companion-identity",
+ "evaluatedAt": "2026-10-10T14:27:05Z",
+ "pairs": [
+  {"context": "895b4bb2-16fd-4e8e-aae8-11315fe6436b", "subject": "companion-identity", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:ff529a6dc44bf233", "evaluatedRevision": 7,
+   "evidence": "src/api/companion.ts:1491 the person's 'that's wrong' correction is only filed as a pending update_identity approval (:1489, backend profile_synthesis.rs:124), so the refuted claim stays in the always-loaded identity.md until a second click; anchored-identity-diffs says an operator correction supersedes immediately and changes timing, not grammar.",
+   "techniques": [
+    {"technique": "anchored-identity-diffs", "verdict": "deviation", "evidence": "src/api/companion.ts:1491 companionCorrectIdentityClaim queues an approval (src-tauri/src/companion/brain/profile_synthesis.rs:124 insert_identity_approval) instead of the correction fast path; in manual mode the companion keeps reading a claim the person already refuted. The direct-edit door src/api/companion.ts:1472 is the person's own edit, a legitimate enumerated writer, and backs up first."},
+    {"technique": "constitution-self-model-split", "verdict": "realized", "evidence": "src/api/companion.ts:1387 constitution is a read-only BrainKind: the IPC surface has no save wrapper for it, and the delete wrapper's command refuses it (src-tauri/src/commands/companion/brain.rs:461)."},
+    {"technique": "one-mind-many-mouths", "verdict": "realized", "evidence": "src/api/companion.ts:1086 conversations are addresses with their own transcript and --resume continuity while the brain and identity stay global."}
+   ]},
+  {"context": "d77a22ee-23cb-42f3-a910-590f8622977f", "subject": "companion-identity", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:ff529a6dc44bf233", "evaluatedRevision": 7,
+   "evidence": "src/features/companions/athena/athenaStore.ts:293 the store is UI state only - transcript slices per conversation with brain/identity global, brainPath a bare pointer (:169), approvals a mirrored list (:315) - so no constitution, self-model, brain document or capability inventory is read, written or resolved here.",
+   "techniques": [
+    {"technique": "one-mind-many-mouths", "verdict": "realized", "evidence": "src/features/companions/athena/athenaStore.ts:293 switching activeConversationId reloads only the transcript slice; brain/identity stay global."},
+    {"technique": "anchored-identity-diffs", "verdict": "not-applicable", "evidence": "src/features/companions/athena/athenaStore.ts:315 approvals are held as a list for rendering; resolution happens in the approval commands and ApprovalCard contexts already judged."},
+    {"technique": "disk-truth-db-index", "verdict": "not-applicable", "evidence": "src/features/companions/athena/athenaStore.ts:169 brainPath is a display pointer; the store persists no part of the self."}
+   ],
+   "registryProposal": "Coverage, not a corpus finding: this context's context-map.json file_paths list is empty and its entry points name src/features/plugins/companion/companionStore.ts, which no longer exists (the store is src/features/companions/athena/athenaStore.ts, owned by no context). The match rode on description tokens; a rescan should reassign athenaStore.ts before this pair is trusted either way."},
+  {"context": "b30528dc-8655-4b38-800e-8cb73e96d618", "subject": "companion-identity", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:ff529a6dc44bf233", "evaluatedRevision": 7,
+   "evidence": "tests/playwright/companion-autonomous-mode.spec.ts:8 these Playwright specs drive UI toggles and stream rendering, and the only brain contact (tests/playwright/companion-fleet-integration.spec.ts:75) lists episodes; no spec reads, writes or approves the constitution, self-model or a capability inventory.",
+   "techniques": [
+    {"technique": "anchored-identity-diffs", "verdict": "not-applicable", "evidence": "tests/playwright/companion-autonomous-mode.spec.ts:8 the autonomous-mode spec only flips athenaAutonomousMode and checks the header; it does not exercise approval resolution."},
+    {"technique": "capability-exercise-ledger", "verdict": "not-applicable", "evidence": "tests/playwright/companion-fleet-integration.spec.ts:75 a test suite reading episodes is not the person-and-companion exercise ritual the technique describes, and it says so itself."}
+   ]}
+ ],
+ "declined": [
+  {"subject": "companion-identity", "context": "5ab49df3-3442-4ea6-a405-077dec64850d", "reason": "persona-core-codex is governance: weak and the pair is lexical-only (companion/identity/edits); a weak row is a coverage question, not a pair to judge by default."}
+ ],
+ "consults": [
+  {"ts": "2026-10-10T14:27:05Z", "bundle": "software-engineering", "subjects": ["companion-identity"], "techniques": ["anchored-identity-diffs", "constitution-self-model-split", "one-mind-many-mouths"], "deviations": 1},
+  {"ts": "2026-10-10T14:27:05Z", "bundle": "software-engineering", "subjects": ["companion-identity"], "techniques": ["one-mind-many-mouths", "anchored-identity-diffs", "disk-truth-db-index"], "deviations": 0},
+  {"ts": "2026-10-10T14:27:05Z", "bundle": "software-engineering", "subjects": ["companion-identity"], "techniques": ["anchored-identity-diffs", "capability-exercise-ledger"], "deviations": 0}
+ ]}

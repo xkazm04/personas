@@ -1,0 +1,51 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d8b33c4d-c0f0-494e-81f1-bc61c506d736",
+  "subject": "templates-scaffolding",
+  "evaluatedAt": "2026-10-10T11:48:29Z",
+  "pairs": [
+    {
+      "context": "9b6cc17c-3add-4152-a349-c189b15a109f",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_generated/index.ts:4 the context entry point DesignResultPreview is exported and imported by nothing (unmounted since 71366fbb55); its one live section renders a saved agent instance (src/features/agents/sub_design/components/DesignSubtabPanels.tsx:113 result={saved}) - no preview, interview or admission stage of a template lifecycle exists here to conform or deviate",
+      "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
+      "evaluatedRevision": 3,
+      "techniques": [
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/index.ts:4 the would-be honest-preview surface (DesignResultPreview) has no importer anywhere in src, so there is no preview-under-current-answers to test; the live consumer is an instance view (src/features/agents/sub_design/components/DesignSubtabPanels.tsx:20 \"views onto a saved BUILD RESULT rather than onto the agent\")"
+        },
+        {
+          "technique": "readiness-prerequisites",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_design/components/DesignSubtabPanels.tsx:51 ConnectorsSection is fed useSavedDesignResult(selectedPersona) and resolves credential state from per-persona links (src/features/templates/sub_generated/design-preview/ConnectorsSection.tsx:60) - post-adoption instance health, not a pre-commit adoption gate"
+        },
+        {
+          "technique": "catalog-curation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/RebuildDimensionTargets.tsx:19 the only other live export (DesignCheckbox) is a generic checkbox consumed by the gallery rebuild modal, whose regeneration logic belongs to template-gallery-modals (already judged); nothing in this context admits, dedupes or retires a catalog entry"
+        }
+      ],
+      "registryProposal": "Coverage: the weak flag was right and the match is vocabulary-shaped - templates-scaffolding topped this row on path tokens (templates/template/preview) while the live code is a saved-instance view; routed by the subject precondition (a template lifecycle stage) it does not govern. On the dispatch finding 'single stack (react)': in this repo the deterministic answer-to-config mapping lives in Rust (src-tauri/engine/src/adoption_answers.rs:60 substitute_variables, src-tauri/engine/src/template_v3.rs:218 normalize_v3_to_flat), a candidate source for a rust--adoption-lifecycle application that would break the single-stack set; the template-gallery-modals verdict still cites these at build_sessions.rs, where they no longer live."
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-10T11:48:29Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "templates-scaffolding"
+      ],
+      "techniques": [
+        "adoption-lifecycle",
+        "readiness-prerequisites",
+        "catalog-curation"
+      ],
+      "deviations": 0
+    }
+  ]
+}

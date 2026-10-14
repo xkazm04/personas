@@ -1,0 +1,77 @@
+{
+  "schema": "conform-run/1",
+  "worker": "97834f4d-3d30-48cb-8390-c35a56a728e1",
+  "subject": "search",
+  "evaluatedAt": "2026-10-10T01:41:49Z",
+  "pairs": [
+    {
+      "context": "4be04ef0-88db-4f48-859c-92e6ba4d203f",
+      "subject": "search",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:b76b1bab72ccfec5",
+      "evaluatedRevision": 5,
+      "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:69 matches with raw toLowerCase().includes (also filters/ConnectorFilterDropdown.tsx:64, suggestions/SearchAutocomplete.tsx:33) instead of the one-door matcher src/lib/text/search.ts:33 matchesQuery; accented/Turkish-I input fails and multi-word queries need adjacency in a 14-locale app. Re-confirmed 2026-10-10 against search r5, no commits on these paths since 2026-10-03.",
+      "techniques": [
+        {
+          "technique": "query-parsing",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:69 matching policy re-derived inline; the two-grammars half is realized: closed prefix set at src/features/templates/sub_generated/gallery/search/suggestions/useStructuredQuery.ts:26 lifted into chips"
+        },
+        {
+          "technique": "faceting-and-filters",
+          "verdict": "partial-read",
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/FilterChips.tsx:65 active filters rendered as a removable chip row; counts and vocabulary ownership were not re-read this run"
+        }
+      ]
+    },
+    {
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "subject": "search",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:b76b1bab72ccfec5",
+      "evaluatedRevision": 5,
+      "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:118 re-derives matching inline instead of src/lib/text/search.ts:33 matchesQuery, and filters only the loaded window of a paginated list (src/hooks/database/useTableIntrospection.ts:202 fetchMoreTables) while totalCount at :134 labels tables.length as the total with no more-exists disclosure; a table on an unfetched page is invisible to the filter and undercounted. Re-confirmed 2026-10-10 against search r5.",
+      "techniques": [
+        {
+          "technique": "query-parsing",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:118 lowercase+substring of the raw query, no diacritic folding or multi-term AND"
+        },
+        {
+          "technique": "faceting-and-filters",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:134 completeness precondition unmet: client filter over a window that only grows on scroll (:109 useEndReached), corpus total never disclosed"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-10T01:41:49Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "search"
+      ],
+      "techniques": [
+        "query-parsing",
+        "faceting-and-filters"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-10T01:41:49Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "search"
+      ],
+      "techniques": [
+        "query-parsing",
+        "faceting-and-filters"
+      ],
+      "deviations": 2
+    }
+  ]
+}

@@ -318,6 +318,7 @@ fn parse_window(key: &str, w: &Value, as_of_ms: i64) -> Option<CliUsageWindow> {
             .unwrap_or(0),
         used_percent: used.clamp(0.0, 100.0),
         resets_at_ms,
+        group: None,
     })
 }
 
@@ -442,6 +443,7 @@ mod tests {
                 window_minutes: 300,
                 used_percent: 37.5,
                 resets_at_ms: Some(reset_s * 1000),
+                group: None,
             }]
         );
         let expected = chrono::DateTime::parse_from_rfc3339("2027-01-15T08:00:00Z")

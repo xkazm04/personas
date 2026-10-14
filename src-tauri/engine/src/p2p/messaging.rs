@@ -57,11 +57,17 @@ impl MessagingCounters {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct MessagingMetrics {
+    #[ts(type = "number")]
     pub messages_sent: u64,
+    #[ts(type = "number")]
     pub messages_received: u64,
+    #[ts(type = "number")]
     pub messages_dropped_buffer_full: u64,
+    #[ts(type = "number")]
     pub messages_rate_limited: u64,
+    #[ts(type = "number")]
     pub bytes_sent: u64,
+    #[ts(type = "number")]
     pub bytes_received: u64,
 }
 

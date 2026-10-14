@@ -324,10 +324,6 @@ const CLI_PROBE_TIMEOUT: Duration = Duration::from_secs(4);
 /// `vercel login` the user just ran is picked up without restarting the app.
 const CLI_PROBE_TTL: Duration = Duration::from_secs(300);
 
-/// Windows `CREATE_NO_WINDOW` — keeps the probe from flashing a console.
-#[cfg(windows)]
-const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-
 /// The three distinguishable outcomes of an auth probe.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CliProbeResult {
@@ -385,10 +381,10 @@ fn stderr_means_absent(stderr: &str) -> bool {
 fn build_probe_command(spec: &CliProbeSpec) -> Command {
     #[cfg(windows)]
     let mut cmd = {
-        use std::os::windows::process::CommandExt;
+        use personas_core::utils::process::NoWindow;
         let mut c = Command::new("cmd");
         c.arg("/C").arg(spec.probe_program).args(spec.probe_args);
-        c.creation_flags(CREATE_NO_WINDOW);
+        c.no_window();
         c
     };
     #[cfg(not(windows))]
