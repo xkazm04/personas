@@ -93,7 +93,7 @@ export function ConnectorVerificationPanel({ verification, onMissingCountChange 
     return groups;
   }, [statuses, t, healthFilter]);
 
-  const { unlinked, healthy, unhealthy, unverifiable } = readinessCounts;
+  const { unlinked, healthy, unhealthy, unverifiable, unreachable } = readinessCounts;
   const testableCount = statuses.filter((s) => s.credentialId).length;
 
   useEffect(() => { onMissingCountChange?.(unlinked); }, [unlinked, onMissingCountChange]);
@@ -110,6 +110,7 @@ export function ConnectorVerificationPanel({ verification, onMissingCountChange 
         unhealthy={unhealthy}
         unlinked={unlinked}
         unverifiable={unverifiable}
+        unreachable={unreachable}
         staleCount={staleCount}
         testableCount={testableCount}
         testingAll={testingAll}

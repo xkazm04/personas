@@ -1,4 +1,4 @@
-import { Link, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle, Clock, ShieldQuestion, Filter } from 'lucide-react';
+import { Link, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle, Clock, ShieldQuestion, Filter, WifiOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
@@ -92,6 +92,8 @@ interface ConnectorsSectionProps {
   unlinked: number;
   /** Linked, but the connector exposes no live probe — never counted healthy. */
   unverifiable: number;
+  /** Linked, but the last probe never reached the service — never counted failed. */
+  unreachable: number;
   /** Rows whose only evidence is a restored healthcheck past the staleness cutoff. */
   staleCount: number;
   testableCount: number;
@@ -111,7 +113,7 @@ interface ConnectorsSectionProps {
 }
 
 export function ConnectorsSection({
-  roleGroups, requiredCredTypes, healthy, unhealthy, unlinked, unverifiable, staleCount,
+  roleGroups, requiredCredTypes, healthy, unhealthy, unlinked, unverifiable, unreachable, staleCount,
   testableCount, testingAll, credentials, linkingConnector,
   onTestAll, onTestConnector, onToggleLinking, onLink,
   onAddCredential, onClearLinkError, onSwap,
@@ -137,6 +139,8 @@ export function ConnectorsSection({
               icon={<AlertCircle className="w-2.5 h-2.5" />} label={tx(t.agents.connectors.st_missing, { count: unlinked })} />
             <FilterPill count={unverifiable} variant="neutral" value="unverifiable" active={healthFilter} onToggle={onHealthFilterChange}
               icon={<ShieldQuestion className="w-2.5 h-2.5" />} label={tx(t.agents.connectors.st_unverifiable, { count: unverifiable })} />
+            <FilterPill count={unreachable} variant="warning" value="unreachable" active={healthFilter} onToggle={onHealthFilterChange}
+              icon={<WifiOff className="w-2.5 h-2.5" />} label={tx(t.agents.connectors.st_unreachable, { count: unreachable })} />
             <FilterPill count={staleCount} variant="warning" value="stale" active={healthFilter} onToggle={onHealthFilterChange}
               icon={<Clock className="w-2.5 h-2.5" />} label={tx(t.agents.connectors.st_stale, { count: staleCount })} />
           </>

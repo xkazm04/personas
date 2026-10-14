@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, ChevronDown, Plus, ArrowLeftRight, ShieldQuestion } from 'lucide-react';
+import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, ChevronDown, Plus, ArrowLeftRight, ShieldQuestion, WifiOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import type { ConnectorStatus } from '../../libs/connectorTypes';
@@ -28,6 +28,8 @@ const STATUS_ICON = {
   ready: CheckCircle2,
   // Deliberately NOT a check: nothing verified this credential.
   unverifiable: ShieldQuestion,
+  // Not a failure icon: the probe never reached the service.
+  unreachable: WifiOff,
   failed: XCircle,
   missing: AlertCircle,
   untested: AlertCircle,

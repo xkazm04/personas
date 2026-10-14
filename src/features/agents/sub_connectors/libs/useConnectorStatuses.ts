@@ -9,7 +9,7 @@ import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutato
 import { useTranslation } from '@/i18n/useTranslation';
 import { connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { ConnectorStatus, ConnectorReadiness, ConnectorTestResult } from './connectorTypes';
-import { deriveReadiness, restoreHealthcheck, isStaleResult } from './connectorTypes';
+import { deriveReadiness, restoreHealthcheck, isStaleResult, isUnreachable } from './connectorTypes';
 
 export function useConnectorStatuses() {
   const { t, tx } = useTranslation();
@@ -176,7 +176,11 @@ export function useConnectorStatuses() {
     // CHANGED. Restored healthchecks make this baseline free — before they were
     // persisted there was nothing to diff against, so the notification could
     // only ever say "tested N connectors", which tells the user nothing.
-    const baseline = new Map(testable.map((s) => [s.name, s.result?.success ?? null]));
+    // An unreachable baseline judged nothing, so it is no verdict to diff against.
+    const baseline = new Map(testable.map((s) => [
+      s.name,
+      s.result && !isUnreachable(s.result) ? s.result.success : null,
+    ]));
     try {
       const outcomes = await Promise.all(
         testable.map(async (status) => ({
@@ -188,10 +192,14 @@ export function useConnectorStatuses() {
       let recovered = 0;
       let regressed = 0;
       let failing = 0;
+      let unreachable = 0;
       for (const { name, result } of outcomes) {
         if (!result) continue;
         const before = baseline.get(name) ?? null;
-        if (result.success) {
+        // Could not reach the service: neither a regression nor a failure.
+        if (isUnreachable(result)) {
+          unreachable++;
+        } else if (result.success) {
           if (before === false) recovered++;
         } else if (before === true) {
           regressed++;
@@ -205,6 +213,7 @@ export function useConnectorStatuses() {
       if (recovered > 0) parts.push(tx(t.agents.connectors.test_diff_recovered, { count: recovered }));
       if (regressed > 0) parts.push(tx(t.agents.connectors.test_diff_regressed, { count: regressed }));
       if (failing > 0) parts.push(tx(t.agents.connectors.test_diff_failing, { count: failing }));
+      if (unreachable > 0) parts.push(tx(t.agents.connectors.test_diff_unreachable, { count: unreachable }));
 
       sendAppNotification(
         t.agents.connectors.test_complete_notification_title,
@@ -256,7 +265,7 @@ export function useConnectorStatuses() {
 
   const readinessCounts = useMemo(() => {
     const counts: Record<ConnectorReadiness, number> = {
-      unlinked: 0, linked_untested: 0, healthy: 0, unverifiable: 0, unhealthy: 0,
+      unlinked: 0, linked_untested: 0, healthy: 0, unverifiable: 0, unreachable: 0, unhealthy: 0,
     };
     for (const s of statuses) counts[deriveReadiness(s)]++;
     return counts;
