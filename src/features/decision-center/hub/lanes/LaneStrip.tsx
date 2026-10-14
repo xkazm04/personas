@@ -5,8 +5,11 @@
  * Queue view's header (PLAN section 2).
  *
  * A SLOT like the chip `Strip`: it takes counts and reports presses; the lane
- * hub owns the data. The same width honesty: it measures itself and drops the
- * lane names to the tooltips when they would not fit.
+ * hub owns the data. The same width honesty: it measures itself and steps
+ * down one level at a time while the row would not fit: first Ready's label
+ * goes to its tooltip and the gaps tighten, then the keycaps go to the
+ * tooltips. The lane names stay: a lane is read by its name, not its glyph.
+ * It steps back up when the row has the width it needed at the level above.
  */
 import '../../deck/aurora.css';
 import { useLayoutEffect, useRef, useState, type MutableRefObject } from 'react';
@@ -17,7 +20,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { ChipCount } from '../../model/decisionModel';
 import { OPERATOR_LANES, type LaneCounts, type LaneKey } from '../../lanes/laneModel';
 import { StripChip } from '../visual/StripChip';
-import { LaneButton } from './LaneButton';
+import { LaneButton, type LaneFit } from './LaneButton';
 
 export type LanePeekKey = LaneKey | 'ready';
 export type LaneRefs = MutableRefObject<Partial<Record<LanePeekKey, HTMLButtonElement | null>>>;
@@ -35,26 +38,28 @@ export function LaneStrip({ counts, settled, ready, open, refs, onLane, onReady 
   const m = t.monitor;
   const still = useReducedMotion();
   const rowRef = useRef<HTMLDivElement>(null);
-  const [compact, setCompact] = useState(false);
-  const labelWidth = useRef(0);
+  const [fit, setFit] = useState<LaneFit>(0);
+  /** The row width each level needed when it overflowed (index = level). */
+  const needed = useRef<number[]>([]);
 
   useLayoutEffect(() => {
     const row = rowRef.current;
     if (!row) return;
-    const fit = () => {
-      if (!compact && row.scrollWidth > row.clientWidth + 1) {
-        labelWidth.current = row.scrollWidth;
-        setCompact(true);
-      } else if (compact && labelWidth.current > 0 && row.clientWidth >= labelWidth.current) {
-        setCompact(false);
+    const measure = () => {
+      if (fit < 2 && row.scrollWidth > row.clientWidth + 1) {
+        needed.current[fit] = row.scrollWidth;
+        setFit((fit + 1) as LaneFit);
+      } else if (fit > 0 && (needed.current[fit - 1] ?? Infinity) <= row.clientWidth) {
+        setFit((fit - 1) as LaneFit);
       }
     };
-    fit();
+    measure();
     if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(fit);
+    const ro = new ResizeObserver(measure);
     ro.observe(row);
     return () => ro.disconnect();
-  }, [compact]);
+  }, [fit]);
+  const compact = fit > 0;
 
   const lane = (l: LaneKey) => (
     <LaneButton
@@ -63,7 +68,7 @@ export function LaneStrip({ counts, settled, ready, open, refs, onLane, onReady 
       lane={l}
       count={counts[l]}
       settled={settled}
-      compact={compact}
+      fit={fit}
       open={open === l}
       onPress={onLane}
     />

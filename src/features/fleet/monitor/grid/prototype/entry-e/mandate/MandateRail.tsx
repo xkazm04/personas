@@ -3,6 +3,10 @@
 // selected act's scope back (N). Signing and widening are the Sign card's
 // (WP5), so they are not offered here at all rather than shown disabled.
 //
+// Suspend is calm at rest (annunciator grammar): a neutral door whose pause
+// glyph carries the red, never a solid red slab on a quiet page. Each key sits
+// clear of its label, so a label that wraps never runs into its keycap.
+//
 // Every door awaits its write (AsyncButton) and reports a refusal in place:
 // an irreversible act says why before anything is pressed, and if the backend
 // refuses anyway (`forbidden`) the same reason stays on screen.
@@ -22,6 +26,11 @@ export function narrowableScope(mandate: MandateSummary, act: CharterAct | null)
   const scope = act ? asScope(act.scope) : null;
   if (!scope || mandate.envelope.envelopeVersion === 0) return null;
   return mandate.envelope.decideScopes.includes(scope) ? scope : null;
+}
+
+/** A door's key, kept clear of its label: the button's gap plus its own margin. */
+function RailKey({ k }: { k: string }) {
+  return <span className="ml-1.5 inline-flex"><Kbd>{k}</Kbd></span>;
 }
 
 export function canRevert(act: CharterAct | null): boolean {
@@ -51,19 +60,20 @@ export function MandateRail({ mandate, held, act, notice, onSuspend, onRevert, o
     <aside className="flex w-[300px] flex-shrink-0 flex-col gap-3 overflow-y-auto border-l border-foreground/10 pl-4" data-testid="mandate-rail">
       <div className="flex flex-col gap-2 border-b border-foreground/10 pb-3">
         <AsyncButton
-          variant={suspended ? 'secondary' : 'danger'}
+          variant="secondary"
           size="sm"
           block
           onClick={onSuspend}
-          icon={suspended ? <Play className="h-4 w-4" aria-hidden /> : <Pause className="h-4 w-4" aria-hidden />}
+          icon={suspended ? <Play className="h-4 w-4" aria-hidden /> : <Pause className="h-4 w-4 text-status-error" aria-hidden />}
+          iconRight={<RailKey k="S" />}
           aria-keyshortcuts="S"
           data-testid="mandate-suspend"
         >
-          <span className="flex-1 text-left">{suspended ? m.ml_resume : m.ml_suspend}</span><Kbd>S</Kbd>
+          {suspended ? m.ml_resume : m.ml_suspend}
         </AsyncButton>
         {act && (canRevert(act) ? (
-          <AsyncButton variant="secondary" size="sm" block onClick={onRevert} icon={<Undo2 className="h-4 w-4" aria-hidden />} aria-keyshortcuts="V" data-testid="mandate-revert">
-            <span className="flex-1 text-left">{m.ml_revert}</span><Kbd>V</Kbd>
+          <AsyncButton variant="secondary" size="sm" block onClick={onRevert} icon={<Undo2 className="h-4 w-4" aria-hidden />} iconRight={<RailKey k="V" />} aria-keyshortcuts="V" data-testid="mandate-revert">
+            {m.ml_revert}
           </AsyncButton>
         ) : (
           <p className="typo-caption" data-testid="mandate-revert-reason">
@@ -71,8 +81,8 @@ export function MandateRail({ mandate, held, act, notice, onSuspend, onRevert, o
           </p>
         ))}
         {narrow && (
-          <AsyncButton variant="secondary" size="sm" block onClick={onNarrow} icon={<Shrink className="h-4 w-4" aria-hidden />} aria-keyshortcuts="N" data-testid="mandate-narrow">
-            <span className="flex-1 text-left">{tx(m.ml_narrow, { scope: scopeLabel(m, narrow) })}</span><Kbd>N</Kbd>
+          <AsyncButton variant="secondary" size="sm" block onClick={onNarrow} icon={<Shrink className="h-4 w-4" aria-hidden />} iconRight={<RailKey k="N" />} aria-keyshortcuts="N" data-testid="mandate-narrow">
+            {tx(m.ml_narrow, { scope: scopeLabel(m, narrow) })}
           </AsyncButton>
         )}
         <p className="typo-caption text-status-warning" role="status" data-testid="mandate-notice">{notice}</p>
