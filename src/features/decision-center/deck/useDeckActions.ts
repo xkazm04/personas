@@ -21,6 +21,15 @@ export interface DeckExtras {
   onOpenLink: (item: DecisionItem, linkId: string) => void;
 }
 
+/**
+ * Whether saying yes ARMS first: a council verdict (the human gate on a
+ * round), and any item whose `irreversible` is set (a valve: the first press
+ * shows what leaves, the second press or Enter confirms, Esc disarms).
+ */
+export function armsAccept(item: DecisionItem): boolean {
+  return item.kind === 'council' || !!item.irreversible;
+}
+
 export function useDeckActions(deck: DeckController, extras: DeckExtras) {
   const item = deck.item;
   const type = item ? modalTypeOf(item.kind) : 'approval';
@@ -33,11 +42,8 @@ export function useDeckActions(deck: DeckController, extras: DeckExtras) {
 
   const accept = () => {
     if (!item || !live) return;
-    if (item.kind === 'council') {
-      if (deck.armed === 'accept') deck.decide({ verdict: 'accept' }, 'accept');
-      else deck.setArmed('accept');
-      return;
-    }
+    if (armsAccept(item) && deck.armed !== 'accept') { deck.setArmed('accept'); return; }
+    if (item.kind === 'council') { deck.decide({ verdict: 'accept' }, 'accept'); return; }
     if (type === 'report') { done(); return; }
     if (type === 'chat') return;
     if (item.input) {

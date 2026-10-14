@@ -101,6 +101,7 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
       session={spec}
       items={roster.items}
       loading={roster.loading}
+      counts={roster.counts}
       onDecide={onDecide}
       onBack={closeDecisionDeck}
       onOpenLink={onOpenLink}

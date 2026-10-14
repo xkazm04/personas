@@ -1,10 +1,12 @@
 /**
  * The deck's keyboard grammar (decided; implemented exactly):
- *   ←/→ (also K/J) walk · ↑/↓ scroll the body · A accept · R reject (arm;
- *   Enter or R confirms; a reason may follow) · S skip · D done (reports,
- *   chat) · Space focus the composer · 1-9 branches (or reason options while
- *   a prompt is open) · Shift+1-5 rate a report · ? toggles the key map ·
- *   Esc steps back (closing the key map first).
+ *   ←/→ (also K/J) walk · ↑/↓ scroll the body · A accept (a council verdict
+ *   or an irreversible item ARMS first; A again or Enter confirms) · R reject
+ *   (arm; Enter or R confirms; a reason may follow) · S skip · D done
+ *   (reports, chat) · Space focus the composer · 1-9 branches (or reason
+ *   options while a prompt is open) · Shift+1-5 rate a report · I opens or
+ *   closes every folded body section · ? toggles the key map · Esc steps
+ *   back (closing the key map first).
  *
  * Escape is DeckModal's (one owner): it consumes the press, first asks the
  * deck to disarm an armed verdict or close a reason prompt, and only a press
@@ -18,7 +20,7 @@ import { DECK_PRIORITY, digitOf, focusComposer, isTypingTarget, plain } from './
 
 const SCROLL_STEP = 120;
 
-export function useDeckKeys(deck: DeckController, act: DeckActions, opts: { enabled: boolean; onRate: (n: number) => void; onKeys: () => void }) {
+export function useDeckKeys(deck: DeckController, act: DeckActions, opts: { enabled: boolean; onRate: (n: number) => void; onKeys: () => void; onFold: () => void }) {
   useAppKeyboard((e) => {
     // Escape belongs to DeckModal, which asks the deck to disarm first (escapeGuard).
     if (e.key === 'Escape') return false;
@@ -55,6 +57,7 @@ export function useDeckKeys(deck: DeckController, act: DeckActions, opts: { enab
       case 'a': case 'A': act.accept(); break;
       case 'r': case 'R': act.reject(); break;
       case 's': case 'S': act.skip(); break;
+      case 'i': case 'I': opts.onFold(); break;
       case 'd': case 'D':
         if (act.type !== 'report' && act.type !== 'chat') return false;
         if (deck.item.kind === 'council') return false;

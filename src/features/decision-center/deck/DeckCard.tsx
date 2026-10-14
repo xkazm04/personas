@@ -24,6 +24,7 @@ import type { MonitorCopy } from './deckMeta';
 import { CardHeader } from './CardHeader';
 import { ChatThread } from './ChatThread';
 import { DeckDock } from './DeckDock';
+import { FoldContext, type FoldSignal } from './DeckFold';
 import { LedgerRail } from './LedgerRail';
 import { ProseBody } from './ProseBody';
 import { QuestionFields } from './QuestionFields';
@@ -73,6 +74,8 @@ export interface CardState {
   answers: Record<string, string>;
   setAnswer: (key: string, value: string) => void;
   missing: boolean;
+  /** The card-wide fold key (I): every folded section follows it. */
+  folds: FoldSignal;
 }
 
 function ReadOnlyFoot({ onClose }: { onClose: () => void }) {
@@ -139,7 +142,7 @@ export function DeckCard({ item, deck, act, state, titleId, onClose }: {
       <div className="flex min-h-0 flex-1 gap-2 p-3 pl-0">
         <div className="flex min-w-0 flex-1 flex-col">
           <CardHeader item={item} titleId={titleId} />
-          {body}
+          <FoldContext.Provider value={state.folds}>{body}</FoldContext.Provider>
         </div>
         <LedgerRail item={item} extra={extra} dock={dock} />
       </div>

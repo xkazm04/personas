@@ -83,3 +83,13 @@ export function deckOriginOf(el: Element | null | undefined): DeckOrigin | null 
   const r = el.getBoundingClientRect();
   return { x: r.x, y: r.y, width: r.width, height: r.height };
 }
+
+/**
+ * From an empty deck to another chip that still holds cards: a fresh opening
+ * on that chip. The hub's return (`returnTo`) follows the move only when the
+ * deck was opened from the hub in the first place.
+ */
+export function switchDeckChip(chip: DecisionChip): void {
+  const from = useDecisionDeckStore.getState().request;
+  openDecisionDeck({ scope: { kind: 'chip', chip }, returnTo: from?.returnTo ? chip : null });
+}

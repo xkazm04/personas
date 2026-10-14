@@ -102,12 +102,25 @@ export interface DecisionThread {
   canReply: boolean;
 }
 
+/**
+ * What saying yes cannot take back. A valve: the deck arms the accept first
+ * (the first press shows exactly what leaves, the second confirms, Esc
+ * disarms) and never batches it.
+ */
+export type DecisionIrreversible = 'merge' | 'spend' | 'outbound-message' | 'deletion';
+
 export interface DecisionItem extends Omit<TriageItem, 'kind'> {
   kind: DecisionKind;
   document?: DecisionDocument;
   thread?: DecisionThread;
   /** Severity as the source states it, lowercased; drives tier 1 for incidents. */
   severity?: string | null;
+  /**
+   * Set ONLY by an adapter whose source genuinely carries it; `undefined`
+   * everywhere else. A client guess here would arm (or fail to arm) a real
+   * valve on the strength of a string match.
+   */
+  irreversible?: DecisionIrreversible;
 }
 
 /** One chip's count. `failed` = the source did not answer; never shown as 0. */

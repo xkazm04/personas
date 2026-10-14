@@ -22,8 +22,7 @@ import { motion } from 'framer-motion';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
-import type { DecisionItem } from '../model/decisionModel';
-import { modalTypeOf } from '../model/decisionModel';
+import { DECISION_CHIPS, modalTypeOf, type ChipCount, type DecisionItem, type HubChip } from '../model/decisionModel';
 import type { DeckRequestScope } from './deckStore';
 import { DECK_TITLE_ID, type DeckVerdict } from './deckTypes';
 import { CONTENT_FADE, originMotion, type OriginBox } from './deckMotion';
@@ -31,6 +30,7 @@ import { kindTone, tierOf } from './deckMeta';
 import { DECK_PRIORITY } from './keys';
 import { DeckSession } from './DeckSession';
 import { DeckTray } from './DeckTray';
+import type { ChipOffer } from './EmptyOffers';
 import { GhostCard } from './DeckStates';
 import { queueOf } from './useDeck';
 import { useDeckStart } from './useDeckStart';
@@ -51,6 +51,8 @@ export interface DeckModalProps {
   /** The roster's loaded items (`compareDecision` order). */
   items: DecisionItem[];
   loading: boolean;
+  /** The roster's chip counts; an empty chip deck offers the others that still hold cards. */
+  counts?: Record<HubChip, ChipCount>;
   /** The write. Rejects when it did not land (the caller has toasted). */
   onDecide: (v: DeckVerdict) => Promise<void>;
   onBack: () => void;
@@ -97,13 +99,26 @@ export function DeckModal({ session, ...rest }: DeckModalProps) {
   );
 }
 
-function DeckStage({ session, items, loading, onDecide, onBack, onOpenLink, escapeGuard }: Omit<DeckModalProps, 'session'> & {
+/**
+ * The chips an empty chip deck offers: every other decision chip whose count
+ * read landed and is above zero. A deck over everything, or one card, offers
+ * nothing (it closes when it runs out, as it always did).
+ */
+export function offersOf(scope: DeckSessionSpec['scope'], counts: Record<HubChip, ChipCount> | undefined): ChipOffer[] {
+  if (scope.kind !== 'chip' || !counts) return [];
+  return DECISION_CHIPS
+    .filter((c) => c !== scope.chip && !counts[c]?.failed && (counts[c]?.n ?? 0) > 0)
+    .map((c) => ({ chip: c, n: counts[c]!.n }));
+}
+
+function DeckStage({ session, items, loading, counts, onDecide, onBack, onOpenLink, escapeGuard }: Omit<DeckModalProps, 'session'> & {
   session: DeckSessionSpec;
   escapeGuard: MutableRefObject<(() => boolean) | null>;
 }) {
   const still = useReducedMotion();
   const queue = useMemo(() => queueOf(session.scope, items), [session.scope, items]);
   const startId = useDeckStart(queue, session.focusId, loading);
+  const offers = useMemo(() => offersOf(session.scope, counts), [session.scope, counts]);
   const [head, setHead] = useState<DecisionItem | undefined>(undefined);
   const wide = head ? modalTypeOf(head.kind) === 'report' : false;
   const morph = originMotion(session.origin, still);
@@ -129,6 +144,7 @@ function DeckStage({ session, items, loading, onDecide, onBack, onOpenLink, esca
           readOnly={session.readOnly}
           queue={queue}
           startId={startId}
+          offers={offers}
           onDecide={onDecide}
           onBack={onBack}
           onOpenLink={onOpenLink}

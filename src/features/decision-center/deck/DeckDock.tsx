@@ -5,8 +5,11 @@
  *   then   the item's branches, full width: their own words, a hint, a digit
  *   then   places to go and look (`links`) — quiet, no key, never a verdict
  *   last   later, quiet
- * An armed verdict says so in place ("↵ to confirm") and glows; a reject that
- * wants a reason swaps the dock for the reason prompt.
+ * An armed verdict says so in place ("↵ to confirm") and glows; an armed valve
+ * (an `irreversible` item) also says, above the pair, exactly what leaves
+ * (`ArmedBox`). A reject that wants a reason swaps the dock for the reason
+ * prompt. The dock is the rail's fixed foot: the body scrolls, the dock never
+ * moves.
  */
 import type { ReactNode } from 'react';
 import { Check, CornerDownRight, ExternalLink, MessageCircle, Reply, SkipForward, Star, X } from 'lucide-react';
@@ -14,7 +17,8 @@ import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DecisionItem } from '../model/decisionModel';
 import { COUNCIL_MIN_REASON } from '../roster/decisionCopy';
-import type { DeckActions } from './useDeckActions';
+import { ArmedBox } from './ArmedBox';
+import { armsAccept, type DeckActions } from './useDeckActions';
 import type { DeckController } from './useDeck';
 import { ReasonPrompt } from './ReasonPrompt';
 import { focusComposer } from './keys';
@@ -144,13 +148,14 @@ export function DeckDock({ item, deck, act, rating, onRate }: {
       </>
     );
   }
-  const council = item.kind === 'council';
+  const arms = armsAccept(item);
   // The verbs keep their full words: a long pair (Send back + A ↵) stacks rather than wraps.
-  const wide = council || v.accept.length + v.reject.length > 16;
+  const wide = arms || v.accept.length + v.reject.length > 16;
   return (
     <>
+      {item.irreversible && deck.armed === 'accept' && <ArmedBox kind={item.irreversible} title={item.title} />}
       <div className={`grid gap-2 ${wide ? 'grid-cols-1' : 'grid-cols-2'}`}>
-        <Verdict k={council ? 'A ↵' : 'A'} label={v.accept} yes tone="success" icon={check} armed={deck.armed === 'accept'} onClick={act.accept} />
+        <Verdict k={arms ? 'A ↵' : 'A'} label={v.accept} yes tone="success" icon={check} armed={deck.armed === 'accept'} onClick={act.accept} />
         <Verdict k="R" label={v.reject} yes={false} tone="danger" icon={<X className="h-4 w-4" strokeWidth={2.5} aria-hidden />} armed={deck.armed === 'reject'} onClick={act.reject} />
       </div>
       {item.branches.map((b, i) => (

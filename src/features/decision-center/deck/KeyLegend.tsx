@@ -16,7 +16,7 @@ import { Keycap } from './parts';
 type Entry = [keys: string[], label: string];
 interface Verbs { accept: string; reject: string }
 
-function entriesFor(m: MonitorCopy, tx: Interpolate, type: DecisionModalType, council: boolean, v: Verbs): Entry[] {
+function entriesFor(m: MonitorCopy, tx: Interpolate, type: DecisionModalType, council: boolean, arms: boolean, v: Verbs): Entry[] {
   const tail: Entry[] = [
     [['←', '→'], m.dc_deck_key_walk],
     [['↑', '↓'], m.dc_deck_key_scroll],
@@ -26,6 +26,9 @@ function entriesFor(m: MonitorCopy, tx: Interpolate, type: DecisionModalType, co
   const later: Entry = [['S'], m.dc_deck_key_later];
   const accept = v.accept.toLowerCase();
   const reject = v.reject.toLowerCase();
+  // An irreversible item arms its yes exactly as a council verdict does.
+  const yes: Entry = arms ? [['A', '↵'], tx(m.dc_deck_key_council_approve, { verb: accept })] : [['A'], accept];
+  const fold: Entry = [['I'], m.dc_deck_key_fold];
   if (council) {
     return [
       [['A', '↵'], tx(m.dc_deck_key_council_approve, { verb: accept })],
@@ -35,9 +38,9 @@ function entriesFor(m: MonitorCopy, tx: Interpolate, type: DecisionModalType, co
   }
   switch (type) {
     case 'approval':
-      return [[['A'], accept], [['R'], tx(m.dc_deck_key_reject_confirm, { verb: reject })], [['1-9'], m.dc_deck_key_branch], later, ...tail];
+      return [yes, [['R'], tx(m.dc_deck_key_reject_confirm, { verb: reject })], [['1-9'], m.dc_deck_key_branch], fold, later, ...tail];
     case 'backlog':
-      return [[['A'], accept], [['R'], tx(m.dc_deck_key_reject_confirm, { verb: reject })], [['1'], m.dc_deck_key_build_now], later, ...tail];
+      return [yes, [['R'], tx(m.dc_deck_key_reject_confirm, { verb: reject })], [['1'], m.dc_deck_key_build_now], fold, later, ...tail];
     case 'report':
       return [[['D'], m.dc_deck_key_done], [['1'], m.dc_deck_key_follow_up], [['⇧1-5'], m.dc_deck_key_rate], later, ...tail];
     case 'chat':
@@ -45,11 +48,11 @@ function entriesFor(m: MonitorCopy, tx: Interpolate, type: DecisionModalType, co
   }
 }
 
-export function KeyMap({ type, isCouncil, labels }: { type: DecisionModalType; isCouncil: boolean; labels?: Verbs }) {
+export function KeyMap({ type, isCouncil, armsAccept = false, labels }: { type: DecisionModalType; isCouncil: boolean; armsAccept?: boolean; labels?: Verbs }) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
   const still = useReducedMotion();
-  const entries = entriesFor(m, tx, type, isCouncil, labels ?? { accept: m.dc_hub_key_accept, reject: m.dc_hub_key_reject });
+  const entries = entriesFor(m, tx, type, isCouncil, armsAccept, labels ?? { accept: m.dc_hub_key_accept, reject: m.dc_hub_key_reject });
   return (
     <motion.div
       initial={still ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.97 }}
