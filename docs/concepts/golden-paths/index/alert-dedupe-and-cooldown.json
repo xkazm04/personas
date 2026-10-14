@@ -75,9 +75,9 @@
       ],
       "resolved": false
     },
-    "rules.json": {"count":1,"sections":[9],"contexts":["against the shared `rules.json`, and **the full registry was not run** (doctrine §4). The runner"],"resolved":false},
     "runner/mod.rs": {"count":3,"sections":[7,8],"lines":["1306","1302"],"contexts":["163 of 164. The three exceptions are §6's two exemplars plus one; **`runner/mod.rs:1306` is the only"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["**The mechanism: a census rule.** The runner already exists (`scripts/census/`) and implements the"],"resolved":false,"isDir":true},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["against the shared `rules.json`, and **the full registry was not run** (doctrine §4). The runner"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/check-csp-hosts.mjs": {
       "count": 1,
       "sections": [9],

@@ -2,6 +2,10 @@
 
 ## Active
 
+- **[2026-10-11 18:57]**
+- **Paths:** `.claude/worktrees/bl-*`
+- **Status:** started
+
 - **[2026-10-05 11:05]**
 - **Paths:** `src/features/fleet/monitor/fleetboard/**`
 - **Status:** started
@@ -1300,6 +1304,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### backlog-waves-1011 — Athena: triage+build 464 dev_ideas across 6 repos in waves (builders in .claude/worktrees/bl-*, ff-merge to master)
 
 ### spark-board-monitor — spark: port the web playground's Board (full-frame fleet overview) into PersonaMonitor on real data - visual reality check
 

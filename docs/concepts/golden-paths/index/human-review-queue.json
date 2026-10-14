@@ -48,15 +48,6 @@
       ],
       "resolved": false
     },
-    "ManualReviewList.tsx": {
-      "count": 1,
-      "sections": [5],
-      "lines": ["250-263"],
-      "contexts": [
-        "- **`Promise.allSettled` on a batch of verdicts with the rejections discarded.** Fixed once at `ManualReviewList.tsx:250-263` (it now counts and reports failures) and still live at `KnowledgeLibrary.…"
-      ],
-      "resolved": false
-    },
     "RejectionPatternsPanel.tsx": {
       "count": 1,
       "sections": [5],
@@ -540,12 +531,14 @@
       "verbatim": "BulkActionBar.tsx"
     },
     "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["186-203"],
+      "count": 2,
+      "sections": [5,7],
+      "lines": ["250-263","186-203"],
       "contexts": [
-        "| `src/features/overview/sub_manual-review/components/ManualReviewList.tsx:186-203` | The verdict handler is an overloaded `(idOrStatus, statusOrNotes, maybeNotes)` with a runtime `['approved','rejec…"
-      ]
+        "- **`Promise.allSettled` on a batch of verdicts with the rejections discarded.** Fixed once at `ManualReviewList.tsx:250-263` (it now counts and reports failures) and still live at `KnowledgeLibrary.…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "ManualReviewList.tsx"
     },
     "src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx": {
       "count": 1,

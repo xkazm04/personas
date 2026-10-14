@@ -105,15 +105,6 @@
       "resolved": false
     },
     "KnowledgeTree.tsx": {"count":1,"sections":[7],"contexts":["| ↳ `BacklogTable.tsx` · `DispatchTable.tsx` · `KnowledgeTree.tsx` | | inherited from the above |"],"resolved":false},
-    "ManualReviewList.tsx": {
-      "count": 3,
-      "sections": [3,6,7],
-      "lines": ["396","141-154","158"],
-      "contexts": [
-        "- **`src/features/shared/components/overlays/FilterBar.tsx`** — the segmented status-pill row with badge counts, a `summary` slot and a `trailing` slot. **2 adopters** (`GlobalExecutionList.tsx:387`,…"
-      ],
-      "resolved": false
-    },
     "MessageList.tsx": {
       "count": 1,
       "sections": [5],
@@ -227,9 +218,9 @@
       "resolved": false
     },
     "routes.ts": {"count":1,"sections":[10],"lines":["236"],"contexts":["`routes.ts:236` declares `docs: [\"q\",\"topic\",\"status\",\"page\"]` while"],"resolved":false},
-    "rules.json": {"count":1,"sections":[11],"contexts":["not hand-merge this into `rules.json`** — three wave-2 composers concurrently"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[11],"contexts":["[`scripts/census/`](../../../scripts/census/) rather than re-deriving it. **Do"],"resolved":false,"isDir":true},
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[11],"lines":["347-348"],"contexts":["`validateRule` (`engine.mjs:347-348`) currently **requires** integer"],"resolvedFrom":"basename","verbatim":"engine.mjs"},
+    "scripts/census/rules.json": {"count":1,"sections":[11],"contexts":["not hand-merge this into `rules.json`** — three wave-2 composers concurrently"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json` (**4,829** `src/**/*.{ts,tsx}`),"],"resolved":false},
     "src-tauri/db/src/query_builder.rs": {"count":1,"sections":[],"contexts":["`DataGrid` / `FacetedDecisionTable` in full, `db/src/query_builder.rs`, and"],"resolvedFrom":"suffix","verbatim":"db/src/query_builder.rs"},
     "src-tauri/src/commands/drive/mod.rs": {"count":1,"sections":[7],"lines":["685-711"],"contexts":["`plugins/drive/hooks/useDrive.ts:553-605` (one directory, `drive/mod.rs:685-711`"],"resolvedFrom":"suffix","verbatim":"drive/mod.rs"},
@@ -369,6 +360,16 @@
       "contexts": [
         "- **`src/features/overview/sub_incidents/libs/useIncidentsData.ts:42-63`** — the adapter shape: `filterKey = JSON.stringify(filters)`, one typed `IncidentFilters` binding sent whole, and a `truncated…"
       ]
+    },
+    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
+      "count": 3,
+      "sections": [3,6,7],
+      "lines": ["396","141-154","158"],
+      "contexts": [
+        "- **`src/features/shared/components/overlays/FilterBar.tsx`** — the segmented status-pill row with badge counts, a `summary` slot and a `trailing` slot. **2 adopters** (`GlobalExecutionList.tsx:387`,…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "ManualReviewList.tsx"
     },
     "src/features/overview/sub_manual-review/components/backlog/BacklogPanel.tsx": {
       "count": 1,

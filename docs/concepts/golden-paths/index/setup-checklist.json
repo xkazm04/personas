@@ -50,7 +50,6 @@
       ],
       "resolved": false
     },
-    "feature-doc-map.json": {"count":1,"sections":[12],"contexts":["source→docs table; the authoritative `feature-doc-map.json` does not carry it,"],"resolved":false},
     "index.ts": {"count":1,"sections":[7],"lines":["9-18"],"contexts":["806 LOC, exported from `index.ts:9-18` and imported by nothing, sitting beside"],"resolved":false},
     "onboardingStore.ts": {"count":1,"sections":[7],"contexts":["`/api/goals`; `onboardingStore.ts` stores the result), with `resetOnboarding`"],"resolved":false},
     "overview/components/health/StatusIndicators.tsx": {"count":1,"sections":[7],"lines":["18"],"contexts":["| `overview/components/health/StatusIndicators.tsx:18` | a section with no checks renders the \"inactive/info\" dot |"],"resolved":false},
@@ -72,6 +71,7 @@
       "resolved": false
     },
     "registry.ts": {"count":1,"sections":[7],"lines":["133-136"],"contexts":["(`registry.ts:133-136`), which is skipped once `done` (`usePowerMoveDetection`"],"resolved":false},
+    "scripts/docs/feature-doc-map.json": {"count":1,"sections":[12],"contexts":["source→docs table; the authoritative `feature-doc-map.json` does not carry it,"],"resolvedFrom":"basename","verbatim":"feature-doc-map.json"},
     "src/components/onboarding/{ModuleProgressBar,NextActionBanner,ProgressCelebration}.tsx": {"count":1,"sections":[7],"contexts":["`src/components/onboarding/{ModuleProgressBar,NextActionBanner,ProgressCelebration}.tsx`,"],"resolved":false},
     "src/features/agents/components/matrix/UnifiedBuildEntry.tsx": {
       "count": 5,

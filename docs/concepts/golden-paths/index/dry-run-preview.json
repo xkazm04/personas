@@ -69,7 +69,6 @@
       ],
       "resolved": false
     },
-    "ManualReviewList.tsx": {"count":1,"sections":[7],"lines":["509"],"contexts":["`ManualReviewList.tsx:509` reads `reviewQueue.counts?.total ?? 0` — a server `GROUP BY` — and"],"resolved":false},
     "MessageList.tsx": {"count":1,"sections":[7],"lines":["404"],"contexts":["matches `DELETE FROM persona_manual_reviews` exactly (194 : 194). `MessageList.tsx:404` reads"],"resolved":false},
     "RepoSegmentsPanel.tsx": {
       "count": 1,
@@ -368,6 +367,14 @@
       "contexts": ["makes the point better: `PersonaSettingsTab.tsx:220-234` renders a per-persona *\"Execution"],
       "resolvedFrom": "basename",
       "verbatim": "PersonaSettingsTab.tsx"
+    },
+    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["509"],
+      "contexts": ["`ManualReviewList.tsx:509` reads `reviewQueue.counts?.total ?? 0` — a server `GROUP BY` — and"],
+      "resolvedFrom": "basename",
+      "verbatim": "ManualReviewList.tsx"
     },
     "src/features/overview/sub_memories/components/MemoriesPageDense.tsx": {"count":2,"sections":[5],"lines":["392"],"contexts":["`executions.rs:520-900`, `MemoriesPageDense.tsx`, `StorageUsageSection.tsx`,"],"resolvedFrom":"basename","verbatim":"MemoriesPageDense.tsx"},
     "src/features/plugins/dev-tools/sub_context/ContextMapHealth.tsx": {
