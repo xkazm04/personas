@@ -1,0 +1,609 @@
+/* ==============================================================================
+   Typography System
+   Single source of truth for fonts, text styles, and script-aware rendering.
+
+   How it works:
+   1. [data-lang] on <html> selects the correct font stack
+   2. Semantic .typo-* classes define text roles (hero, heading, body, etc.),
+      in `@layer components`, so a Tailwind utility beside one wins
+   3. Font-feature presets (.font-data, .font-code) add OpenType polish
+   4. Script-specific tuning adjusts line-height, spacing, and direction
+
+   Usage:
+     <h1 className="typo-hero">Welcome</h1>
+     <p className="typo-body">Description text</p>
+     <span className="typo-data">$1,234.56</span>
+   ============================================================================== */
+
+/* -- Font Loading ------------------------------------------------------------ */
+/* Fonts are loaded on-demand via i18nStore when a language is selected.
+   No static @import -- this avoids loading ~200KB+ of unused fonts on startup. */
+
+/* -- Language Font Stacks ----------------------------------------------------
+   Driven by [data-lang] on <html>, set by applyLangAttributes().
+   Each language gets its preferred font first, falling back to the app default. */
+
+:root {
+  --font-lang: var(--font-sans);
+}
+
+[data-lang="en"]  { --font-lang: var(--font-sans); }
+[data-lang="es"]  { --font-lang: var(--font-sans); }
+[data-lang="fr"]  { --font-lang: var(--font-sans); }
+[data-lang="de"]  { --font-lang: var(--font-sans); }
+[data-lang="cs"]  { --font-lang: var(--font-sans); }
+[data-lang="ru"]  { --font-lang: var(--font-sans); }
+[data-lang="id"]  { --font-lang: var(--font-sans); }
+[data-lang="vi"]  { --font-lang: var(--font-sans); }
+[data-lang="zh"]  { --font-lang: 'Noto Sans SC', var(--font-sans); }
+[data-lang="ar"]  { --font-lang: 'Noto Sans Arabic', var(--font-sans); }
+[data-lang="hi"]  { --font-lang: 'Noto Sans Devanagari', var(--font-sans); }
+[data-lang="bn"]  { --font-lang: 'Noto Sans Bengali', var(--font-sans); }
+[data-lang="ja"]  { --font-lang: 'Noto Sans JP', var(--font-sans); }
+[data-lang="ko"]  { --font-lang: 'Noto Sans KR', var(--font-sans); }
+
+/* Apply language font to body -- everything inherits */
+body {
+  font-family: var(--font-lang);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* -- RTL & Script-Specific Tuning --------------------------------------------
+   Arabic needs RTL direction + looser line heights.
+   CJK/Devanagari need taller line heights for readability. */
+
+/* Arabic text direction -- scoped to text content only, not app layout.
+   Apply .typo-rtl on text containers that need right-to-left flow. */
+.typo-rtl {
+  direction: rtl;
+  text-align: right;
+}
+/* -- The token layer ----------------------------------------------------------
+   Every typo-* role lives in `@layer components` (moved 2026-09-24, style
+   unification D6 step 2). Tailwind 4 orders its layers theme, base,
+   components, utilities, so a utility written beside a token now WINS:
+   `typo-body font-semibold` renders 600, `typo-title text-foreground` drops the
+   tint. While this file was unlayered it beat every utility and such a
+   utility was silently dead; scripts/style/codemod-dead-overrides.mjs deleted
+   the dead ones first, so the move itself changed no rendering.
+   Still unlayered on purpose: the language stacks and body rule above,
+   .typo-rtl, .typo-weight-light, the font presets, the hero shine and the
+   JSON line numbers. The unlayered text-scale rules for `.text-xs`, `.text-sm`
+   and `.text-[Npx]` in globals.css still beat both layers. */
+@layer components {
+  /* Script-aware line height adjustments -- complex scripts need more breathing room */
+  [data-lang="zh"] .typo-body,
+  [data-lang="ja"] .typo-body,
+  [data-lang="ko"] .typo-body,
+  [data-lang="hi"] .typo-body,
+  [data-lang="bn"] .typo-body,
+  [data-lang="ar"] .typo-body {
+    line-height: 1.85;
+  }
+
+  [data-lang="zh"] .typo-hero,
+  [data-lang="ja"] .typo-hero,
+  [data-lang="ko"] .typo-hero,
+  [data-lang="hi"] .typo-hero,
+  [data-lang="bn"] .typo-hero,
+  [data-lang="ar"] .typo-hero {
+    line-height: 1.3;
+  }
+
+  [data-lang="zh"] .typo-heading,
+  [data-lang="ja"] .typo-heading,
+  [data-lang="ko"] .typo-heading,
+  [data-lang="hi"] .typo-heading,
+  [data-lang="bn"] .typo-heading,
+  [data-lang="ar"] .typo-heading {
+    line-height: 1.45;
+  }
+
+  /* Arabic and CJK take no letter-spacing on labels -- Arabic is cursive (tracking
+     breaks the joins) and CJK glyphs are already on a fixed em grid. Since .typo-label
+     stopped being uppercase + wide-tracked in 2026-08, these are the only remaining
+     script adjustments it needs. */
+  [data-lang="ar"] .typo-label,
+  [data-lang="zh"] .typo-label,
+  [data-lang="ja"] .typo-label,
+  [data-lang="ko"] .typo-label {
+    letter-spacing: 0;
+  }
+
+  /* -- Semantic Typography Classes ---------------------------------------------
+     Use these instead of raw Tailwind combos. Each class defines a complete
+     text role: size, weight, line-height, tracking, and features. */
+
+  /* Hero -- main page greeting (e.g. "Good Morning, Alex") */
+  .typo-hero {
+    font-size: calc(var(--type-6) * var(--type-f));
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  /* Heading -- section titles, card headers */
+  .typo-heading {
+    font-size: calc(var(--type-1) * var(--type-f));
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: 0.025em;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  /* Heading large -- page-level headings */
+  .typo-heading-lg {
+    font-size: calc(var(--type-4) * var(--type-f));
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  /* -- Body -- paragraphs, descriptions ----------------------------------------
+     WEIGHT STAYS 400, AND THE REASON IS A MEASUREMENT, NOT A PREFERENCE.
+
+     Asked on 2026-10-03 to "step .typo-body up for reading prose — decide 450
+     vs 500 by looking". Measured first, in the same headless Chromium that
+     shoots the review screenshots, on this app's real `--font-sans`
+     (`system-ui, 'Segoe UI Variable Text', 'Segoe UI', …`):
+
+       requested   rendered advance of a 13.2px sample   ink
+         300         335.203px                            (distinct)
+         400         353.938px                            222
+         420         353.938px   <- identical to 400
+         450         353.938px   <- identical to 400
+         475         353.938px   <- identical to 400
+         500         360.938px                            273
+         600         360.938px   <- identical to 500
+         700         375.484px                            (distinct)
+
+     Two findings, both load-bearing:
+     1. `system-ui` resolves to **Segoe UI**, a STATIC family (its metrics
+        match `'Segoe UI'` exactly, 305.703px on a probe string, and NOT
+        `'Segoe UI Variable Text'`'s 305.703/351.813). Segoe UI ships Light
+        300, Regular 400, Semibold 600, Bold 700 — no Medium. CSS font
+        matching for a target in (400,500] searches up to 500 first, finds
+        nothing, then falls back below: so **420, 450 and 475 all render as
+        400**. A half-step is a no-op, not a subtle improvement.
+     2. `font-variation-settings: 'wght' N` does nothing either — probed at
+        400/430/450/470/500/600 against 'Segoe UI Variable Text', 'Segoe UI
+        Variable Display' and 'Segoe UI Variable': identical advance AND
+        identical ink coverage at every value. There is no continuous weight
+        axis available in this renderer.
+
+     So the rendered weight ladder in this app is exactly **300 / 400 / 600 /
+     700**, and "one step up from body" means SEMIBOLD, +23% ink. That would
+     put reading prose at the same rendered weight as .typo-title (600),
+     .typo-label (600) and the kit's .k-strong — collapsing three tiers into
+     one — and it contradicts the owner's own line from the same day: "White
+     text should have norm weight."
+
+     Corollary worth knowing before writing `font-weight: 500` anywhere: 500
+     and 600 are the SAME rendered weight here, so the kit's `.k-medium` (500)
+     and `.k-strong` (600) are indistinguishable. The grow-4 emphasis recipe
+     "600 belongs to the TINTED title; a white name reads 500" therefore
+     separated its two cases by tint alone and changed no pixels at all; it was
+     corrected at home-3 to "a white name reads 400", which is the one step
+     this font can draw between the two. `.k-medium` is kept (a step DOWN from
+     700 is real) but is never a step UP from 400 — the full decision table is
+     at `.k-strong`/`.k-medium`/`.k-regular` in
+     src/features/shared/components/kit/kit.css.
+
+     Still unreconciled, recorded rather than silently carried: `.typo-data`
+     below asks for 500 and therefore renders SEMIBOLD, so every figure in the
+     app sits at the tinted title's weight. Changing it re-weights every stat,
+     count and metric in the product, which is a decision of its own and not
+     one the emphasis recipe gets to make.
+
+     The lever for reading prose is therefore SIZE, not weight: .typo-body is
+     step 1 (13.2px at the default appearance setting) because doctrine
+     section 1 puts a whole row on one step, and prose that wants to read
+     bigger moves to .typo-body-lg (step 2, 14.9px) at the call site. */
+  .typo-body {
+    font-size: calc(var(--type-1) * var(--type-f));
+    font-weight: 400;
+    line-height: 1.65;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  /* Body large -- prominent descriptions, summaries */
+  .typo-body-lg {
+    font-size: calc(var(--type-2) * var(--type-f));
+    font-weight: 400;
+    line-height: 1.7;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  /* Caption -- secondary text, descriptions, timestamps, hints.
+     Body-sized (was text-xs; bumped +2px 2026-06-10 for readability) but
+     muted to 80% foreground (was 70% until 2026-10-03) so the title/description
+     pair reads as two distinct tiers. The color lives in @layer base (below) so
+     any explicit text-* utility — status colors, accent chips, badges — still
+     wins, and that is where the figure and its reasoning live.
+
+     WEIGHT IS 400 ON PURPOSE (was 500 until 2026-08-06). Caption and
+     .typo-title share the same 0.875rem size, so at 500-vs-600 the pair
+     differed by one step at identical size and read as two bold lines —
+     the separation was being carried entirely by color, not weight.
+     Secondary prose is the app's default voice: it stays normal so that
+     weight itself means "this matters". Anything that needs emphasis
+     should move up a token (.typo-title / .typo-heading). A font-* utility
+     beside this token now applies (the tokens sit in @layer components,
+     below utilities), so `typo-caption font-semibold` renders 600: it is
+     allowed, but it is a second voice where a token already exists. */
+  .typo-caption {
+    font-size: calc(var(--type-1) * var(--type-f));
+    font-weight: 400;
+    line-height: 1.5;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  /* -- Label -------------------------------------------------------------------
+     The small strong tier: category markers, dividers, badges, chip text,
+     column headers — anything that names a thing in less than a line.
+
+     READS AS NORMAL TEXT (changed 2026-08-07). It was 700-weight, 0.15em-tracked
+     UPPERCASE with line-height 1, which is display styling, not reading styling:
+     it forced squinting on anything longer than two words, collapsed acronyms and
+     proper nouns into the surrounding shout, and could not wrap (line-height 1
+     overlaps descenders on a second line). It now sits directly below .typo-title
+     on the same recipe — one size smaller, same weight, same near-normal tracking
+     — so a label/title/caption stack reads as three tiers of the SAME voice.
+
+     Size is the only thing separating it from .typo-title; weight is what
+     separates it from .typo-caption. A font-* utility beside it now applies
+     (tokens are layered below utilities), so `typo-label font-bold` renders
+     700; prefer the token that already carries the weight.
+
+     NOT FOR SENTENCES. If the text is a phrase a user reads rather than scans
+     (roughly 6+ words, or anything that wraps), it is secondary prose — use
+     .typo-caption, which is body-sized, normal weight, and muted for exactly
+     that job. `uppercase` is available as an opt-in utility again now that this
+     token no longer sets text-transform, but the house style is sentence case. */
+  .typo-label {
+    font-size: calc(var(--type-0) * var(--type-f));
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  /* Data -- numbers, stats, metrics. Tabular nums for alignment. */
+  .typo-data {
+    font-size: calc(var(--type-1) * var(--type-f));
+    font-weight: 500;
+    line-height: 1.4;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "kern" 1, "tnum" 1, "lnum" 1;
+  }
+
+  /* Data large -- hero metrics, big counters */
+  .typo-data-lg {
+    font-size: calc(var(--type-5) * var(--type-f));
+    font-weight: 700;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "kern" 1, "tnum" 1, "lnum" 1;
+  }
+
+  /* Code -- monospace text, IDs, technical values */
+  .typo-code {
+    font-family: var(--font-mono);
+    font-size: calc(var(--type-0) * var(--type-f));
+    font-weight: 400;
+    line-height: 1.5;
+    font-feature-settings: "kern" 1, "zero" 1, "liga" 0;
+  }
+
+  /* Eyebrow -- the tracked uppercase head of a section inside a surface.
+     Defined 2026-09-24 (Gate 0) so a module can adopt ONE class where it now
+     composes `typo-* uppercase tracking-*` by hand (361 such strings; each
+     module gate migrates its own). The phantom typo-overline maps here.
+     Colourless: the surface decides its ink. */
+  .typo-eyebrow {
+    font-size: calc(var(--type-0) * var(--type-f));
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  [data-lang="ar"] .typo-eyebrow,
+  [data-lang="zh"] .typo-eyebrow,
+  [data-lang="ja"] .typo-eyebrow,
+  [data-lang="ko"] .typo-eyebrow {
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  /* -- Theme-Adaptive Card Label -----------------------------------------------
+     Bright and shiny in dark themes, darker/shadowy in light themes.
+     Tokenized for reuse across card grids, nav cards, language cards, etc. */
+
+  .typo-card-label {
+    font-size: calc(var(--type-0) * var(--type-f));
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.02em;
+    font-feature-settings: "kern" 1, "liga" 1;
+    color: var(--foreground);
+    text-shadow: 0 0 20px color-mix(in srgb, var(--primary) 30%, transparent),
+                 0 0 4px color-mix(in srgb, var(--primary) 15%, transparent);
+  }
+
+  :root[class*="light"] .typo-card-label,
+  [data-theme*="light"] .typo-card-label {
+    text-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 15%, transparent);
+    color: color-mix(in srgb, var(--foreground) 85%, transparent);
+  }
+
+  /* -- Title -------------------------------------------------------------------
+     Universal title for form-element labels, toggle rows, and list-item
+     headlines. The counterpart of a .typo-caption description: where the
+     caption is muted secondary prose, the title is semibold, slightly
+     tracked, and tinted with the theme primary (same adaptive recipe as
+     .typo-section-title) — so a title + description pair never renders as
+     two near-identical lines.
+
+     THE TINT READS `--primary-ink`, NOT `--primary` (2026-10-03). All four
+     tinted tokens here (title, title-lg, section-title, submodule-header) do.
+     `--primary-ink` is `var(--primary)` in every theme but dark-red, so this
+     changed nothing that renders in ten of eleven themes; dark-red's blood red
+     (#cc0000) is 3.40:1 on its own #080808 canvas, which dragged all four
+     tiers below AA (4.28 / 4.28 / 3.80 / 3.62:1) and was carried as four
+     entries in check-themes' TYPE_TOKEN_EXEMPT. A brand colour chosen for a
+     4% gradient wash is not automatically legible as 13px type; splitting the
+     text ink from the tint fixes the text without touching one glow, which is
+     what Gate 0 and Gate 1 protect. The glow on .typo-card-label and the hero
+     shine gradient still read `--primary`: those ARE tint. */
+
+  .typo-title {
+    font-size: calc(var(--type-1) * var(--type-f));
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.015em;
+    font-feature-settings: "kern" 1, "liga" 1;
+    color: color-mix(in srgb, var(--primary-ink) 75%, var(--foreground));
+  }
+
+  :root[class*="light"] .typo-title,
+  [data-theme*="light"] .typo-title {
+    color: color-mix(in srgb, var(--primary-ink) 60%, var(--foreground));
+  }
+
+  /* Title large -- content headlines (e.g. a logged decision's choice). */
+  .typo-title-lg {
+    font-size: calc(var(--type-2) * var(--type-f));
+    font-weight: 600;
+    line-height: 1.45;
+    letter-spacing: 0.005em;
+    font-feature-settings: "kern" 1, "liga" 1;
+    color: color-mix(in srgb, var(--primary-ink) 75%, var(--foreground));
+  }
+
+  :root[class*="light"] .typo-title-lg,
+  [data-theme*="light"] .typo-title-lg {
+    color: color-mix(in srgb, var(--primary-ink) 60%, var(--foreground));
+  }
+
+  /* -- Section Title -----------------------------------------------------------
+     Section divider labels tinted with the theme's primary color.
+     Dark themes: colored with primary. Light themes: neutral foreground. */
+
+  .typo-section-title {
+    font-size: calc(var(--type-3) * var(--type-f));
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.01em;
+    font-feature-settings: "kern" 1, "liga" 1;
+    color: color-mix(in srgb, var(--primary-ink) 85%, var(--foreground));
+  }
+
+  :root[class*="light"] .typo-section-title,
+  [data-theme*="light"] .typo-section-title {
+    color: color-mix(in srgb, var(--foreground) 80%, transparent);
+  }
+
+  /* -- Submodule Header --------------------------------------------------------
+     Prominent section headers used inside agent submodules (Connectors,
+     Use Cases, Settings). Larger than .typo-section-title and tinted more
+     strongly with the theme primary so it reads as a top-level divider.
+     Theme-adaptive: red on red-theme, cyan on default, etc. */
+
+  .typo-submodule-header {
+    font-size: calc(var(--type-3) * var(--type-f));
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.005em;
+    font-feature-settings: "kern" 1, "liga" 1;
+    color: color-mix(in srgb, var(--primary-ink) 90%, var(--foreground));
+  }
+
+  :root[class*="light"] .typo-submodule-header,
+  [data-theme*="light"] .typo-submodule-header {
+    color: color-mix(in srgb, var(--primary-ink) 75%, var(--foreground));
+  }
+
+  /* -- Text scale: one factor --------------------------------------------------
+     Every token size is calc(step * --type-f). A text scale retunes ONE factor
+     (on <html>, next to the root font-size globals.css sets), so the ramp keeps
+     its proportions at every setting and a caption is never smaller than body.
+     Until 2026-09-24 each scale overrode each token by hand (60 rules), and at
+     xl a caption rendered SMALLER than body (16.9px against 19.1px). The steps
+     are rem at the default "Standard" scale (larger, 16.5px root); the factors
+     reproduce the old per-token values for body-sized text exactly. */
+  :root {
+    --type-0: 0.875rem;  /* label, code, card label: the floor */
+    --type-1: 1rem;      /* body, caption, title, heading, data: the row */
+    --type-2: 1.125rem;  /* body-lg, title-lg */
+    --type-3: 1.25rem;   /* section title, submodule header */
+    --type-4: 1.5rem;    /* heading-lg */
+    --type-5: 1.75rem;   /* data-lg */
+    --type-6: 2.75rem;   /* hero */
+    --type-f: 0.875;     /* no data-text-scale: the retired 14px default */
+  }
+  [data-text-scale="compact"] { --type-f: 0.8125; }
+  [data-text-scale="default"] { --type-f: 0.875; }
+  [data-text-scale="large"]   { --type-f: 0.9375; }
+  [data-text-scale="larger"]  { --type-f: 1; }
+  [data-text-scale="xl"]      { --type-f: 1.0625; }
+
+  /* -- Compact type density: an opt-in surface tier (Gate 3, 2026-09-24) -----
+     Dense tool surfaces (Fleet's session list, activity feed, settings) read
+     better one step smaller. A surface opts in with the attribute
+     data-type-density="compact" on its root; everything inside it takes the
+     ramp one step down. Only SIZES move: the steps are rebound here, so every
+     token keeps its weight, tracking, colour and tint, and the text-scale
+     factor (--type-f) still multiplies the result.
+
+       step   normal     compact    at Standard (larger, 16.5px root, f=1)
+       0      0.875rem   0.8125rem  14.4px -> 13.4px  label, code (card label moves to step 1)
+       1      1rem       0.875rem   16.5px -> 14.4px  body, caption, title, data, heading
+       2      1.125rem   1rem       18.6px -> 16.5px  body-lg, title-lg
+       3      1.25rem    1.125rem   20.6px -> 18.6px  section title
+
+     Steps 4-6 (page heading, lead figure, hero) are not row text and stay.
+     This overrides the Gate 0 0.875rem floor for opted-in surfaces only.
+     The row step lands where Fleet's old text-[13px]/[14px] rendered at the
+     Standard scale (15px/16px there, 14.4px/13.4px here) without the private
+     sizes. Rule for a compact row: one size, ONE element emphasised by weight,
+     figures and meta at regular weight.
+
+     An attribute, not a class, because it is a mode like data-text-scale.
+     Not data-density: that is the user's spacing setting on <html>, and its
+     [data-density="compact"] rules would fire inside any subtree that reused
+     the name. */
+  [data-type-density="compact"] {
+    --type-0: 0.8125rem;
+    --type-1: 0.875rem;
+    --type-2: 1rem;
+    --type-3: 1.125rem;
+    /* Control labels (the shared Button) take the row step here; outside a
+       tier --type-control is unset and a Button inherits, as it always has. */
+    --type-control: calc(var(--type-1) * var(--type-f));
+  }
+  /* Body line-height tightens with the size so a compact row keeps its rhythm. */
+  [data-type-density="compact"] .typo-body { line-height: 1.5; }
+  /* A card label in a compact row names the row's thing: it sits on the row
+     step (one size in a row) and keeps its glow, which with its weight is
+     what sets it apart (Gate 3b: the operator kept the glow on Fleet Activity). */
+  [data-type-density="compact"] .typo-card-label { font-size: calc(var(--type-1) * var(--type-f)); }
+}
+
+/* The app's ONE muting level for secondary prose: 80% foreground, i.e. 20%
+   muting. It sits in @layer base so any explicit text-* utility still wins.
+
+   RAISED FROM 70% TO 80% ON 2026-10-03, by the owner, app-wide. The Home
+   review said of Roadmap: "it seems the fonts are muted a bit worsening the
+   readability. If muting or opacity can be found and reduced to 20%, it would
+   improve the feel" — and, asked how wide to take it: "Both tokens to 80%,
+   app-wide". The second token is the kit's `--quiet`
+   (src/features/shared/components/kit/kit.css), moved to 80% in 299713fff, so
+   the kit and the type scale now mute by the same amount. Gate 0 (2026-09-24)
+   had deferred the muting item to "module gates"; this is that gate, and the
+   answer was app-wide rather than per-module.
+
+   The tier separation does NOT rest on this number. .typo-caption is 400 at
+   --type-1 and untinted; .typo-title is 600 at the same size and tinted with
+   the primary; .typo-label is 600 one size step down (--type-0). Measured
+   2026-10-03 against those rules — see the comment on the token above, which
+   says in full why weight and size, not colour, must carry the pair. If the
+   next person is tempted to widen the colour gap again to make a pair read,
+   the defect is the weight on that pair, not this figure. */
+@layer base {
+  .typo-caption {
+    color: color-mix(in srgb, var(--foreground) 80%, transparent);
+  }
+}
+
+/* Weight modifier -- one step (100) lighter than the body ramp, for row hints
+   that must recede under a .typo-title label. Kept UNLAYERED on purpose when
+   the tokens moved into @layer components: it beat the token weight and any
+   font-* utility before the move and still does, so no call site changed. */
+.typo-weight-light {
+  font-weight: 300;
+}
+
+/* -- Font Feature Presets ----------------------------------------------------
+   Composable modifiers -- add to any element for OpenType polish.
+   Leverages Tailwind 4.2 font-feature-settings utilities where possible,
+   and provides classes for combinations not available as single utilities. */
+
+/* Tabular + lining nums -- for aligned numeric columns */
+.font-data {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* Slashed zero -- distinguish 0 from O in technical contexts */
+.font-code {
+  font-feature-settings: "zero" 1, "liga" 0;
+}
+
+/* Display -- ligatures + kerning for large decorative text */
+.font-display {
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+}
+
+/* -- Hero Greeting Shine -----------------------------------------------------
+   Subtle animated shine effect for the dominant greeting typography. */
+
+@keyframes greeting-shine {
+  0%, 100% { background-position: -200% center; }
+  50% { background-position: 200% center; }
+}
+
+.typo-hero-shine {
+  background: linear-gradient(
+    90deg,
+    var(--foreground) 0%,
+    var(--foreground) 35%,
+    var(--primary) 50%,
+    var(--foreground) 65%,
+    var(--foreground) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: greeting-shine 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typo-hero-shine {
+    animation: none;
+    background: none;
+    color: var(--foreground);
+  }
+}
+
+/* Small caps -- elegant label variant */
+.font-smallcaps {
+  font-feature-settings: "smcp" 1, "kern" 1;
+  text-transform: lowercase; /* smcp works on lowercase letters */
+}
+
+/* -- JSON Viewer Line Numbers -----------------------------------------------
+   CSS-counter-based line numbers for HighlightedJson. */
+
+.json-lines {
+  counter-reset: json-line;
+}
+
+.json-line {
+  counter-increment: json-line;
+}
+
+.json-line::before {
+  content: counter(json-line);
+  display: inline-block;
+  width: 2rem;
+  text-align: right;
+  padding-right: 0.75rem;
+  color: hsl(var(--foreground) / 0.3);
+  user-select: none;
+  pointer-events: none;
+}

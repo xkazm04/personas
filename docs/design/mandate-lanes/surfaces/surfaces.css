@@ -1,0 +1,119 @@
+/* WP0 surface candidates. Every colour is derived from the theme variables in tokens.css, so a
+   candidate follows any theme; nothing here is a raster. The layer #surface sits behind .mon
+   (the snapshot), and the glass plates (.ae-plate, backdrop-filter: blur(6px)) sit on top of it. */
+
+#surface { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: var(--background); }
+:where(#surface) > * { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
+.mon { z-index: 1; background: transparent; }
+
+/* 1. control: the flat token surface, nothing on it */
+[data-surface="1"] #surface { background: var(--background); }
+
+/* 2. grain: SVG feTurbulence, alpha from the noise, ink from --foreground (see #sf-grain in index.html) */
+[data-surface="2"] #sf-grain { display: block; opacity: .07; }
+[data-theme="light"][data-surface="2"] #sf-grain { opacity: .09; }
+
+/* 3. fine dot grid: 1px dots at a 28px pitch, fading out toward the bottom of the board */
+[data-surface="3"] .sf-dots { display: block;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--foreground) 22%, transparent) 0 1px, transparent 1.4px);
+  background-size: 28px 28px; background-position: 14px 14px;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, rgba(0,0,0,.35) 100%);
+          mask-image: linear-gradient(180deg, #000 0%, #000 55%, rgba(0,0,0,.35) 100%); }
+[data-theme="light"][data-surface="3"] .sf-dots {
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--foreground) 18%, transparent) 0 1px, transparent 1.4px); }
+
+/* 4. soft tonal field: three very large, very soft gradients in the theme's own hues */
+[data-surface="4"] .sf-field { display: block;
+  background:
+    radial-gradient(55% 60% at 8% 0%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 70%),
+    radial-gradient(45% 55% at 92% 18%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
+    radial-gradient(70% 55% at 55% 105%, color-mix(in srgb, var(--status-info) 11%, transparent), transparent 70%); }
+[data-theme="light"][data-surface="4"] .sf-field {
+  background:
+    radial-gradient(55% 60% at 8% 0%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 70%),
+    radial-gradient(45% 55% at 92% 18%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 70%),
+    radial-gradient(70% 55% at 55% 105%, color-mix(in srgb, var(--status-success) 6%, transparent), transparent 70%); }
+
+/* 5. quiet contour lines: an SVG isoline field (generated once, see gallery.js) */
+[data-surface="5"] #sf-contour { display: block; }
+#sf-contour path { fill: none; stroke: var(--foreground); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-opacity: .06; }
+#sf-contour path.major { stroke-opacity: .11; }
+[data-theme="light"] #sf-contour path { stroke-opacity: .08; }
+[data-theme="light"] #sf-contour path.major { stroke-opacity: .13; }
+
+/* 6. woven hairline: two diagonal hairline sets, 1px at ~3% ink, 18px pitch */
+[data-surface="6"] .sf-weave { display: block;
+  background-image:
+    repeating-linear-gradient(45deg, color-mix(in srgb, var(--foreground) 3.5%, transparent) 0 1px, transparent 1px 18px),
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--foreground) 2.5%, transparent) 0 1px, transparent 1px 18px); }
+[data-theme="light"][data-surface="6"] .sf-weave {
+  background-image:
+    repeating-linear-gradient(45deg, color-mix(in srgb, var(--foreground) 4.5%, transparent) 0 1px, transparent 1px 18px),
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--foreground) 3%, transparent) 0 1px, transparent 1px 18px); }
+
+/* 7. calm network: today's network motif redrawn as sparse vector lines (see gallery.js) */
+[data-surface="7"] #sf-net { display: block; }
+#sf-net line { stroke: var(--primary); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-opacity: .16; }
+#sf-net circle { fill: var(--primary); fill-opacity: .28; }
+#sf-net circle.ring { fill: none; stroke: var(--primary); stroke-opacity: .2; stroke-width: 1; vector-effect: non-scaling-stroke; }
+[data-theme="light"] #sf-net line { stroke-opacity: .14; }
+[data-theme="light"] #sf-net circle { fill-opacity: .22; }
+
+/* 8. lit edge: a frame of light around the board, nothing behind the plates */
+[data-surface="8"] .sf-edge { display: block;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--primary) 9%, transparent), transparent 22%),
+    radial-gradient(120% 95% at 50% 45%, transparent 58%, color-mix(in srgb, var(--primary) 11%, transparent) 100%); }
+[data-theme="light"][data-surface="8"] .sf-edge {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--primary) 6%, transparent), transparent 22%),
+    radial-gradient(120% 95% at 50% 45%, transparent 55%, color-mix(in srgb, var(--foreground) 7%, transparent) 100%); }
+
+/* G: glass blur off, to compare what the blur does to each pattern */
+.noblur .ae-plate, .noblur .scrim { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+
+/* Snapshot fixes: the raster agent icons become token glyph tiles */
+.pline .ico { color: color-mix(in srgb, var(--primary) 70%, var(--foreground)); background: color-mix(in srgb, var(--primary) 10%, transparent); }
+.pline.needs .ico, .pline.critical .ico { color: #111; background: rgba(0,0,0,.08); }
+
+/* The deck card on top: anchored right so the board and its surface stay in view.
+   S restores the prototype's full scrim (the modal as it really opens). */
+.deck.open { left: auto; top: 176px; right: 18px; bottom: 56px; transform: none; width: min(900px, 58vw); height: auto; }
+.deck .card { min-height: 0; }
+html:not(.deck-on) .deck.open { display: none; }
+html:not(.scrim-on) .scrim.open { display: none; }
+.scrim.open { display: block; }
+.scrim-on .deck.open { left: 50%; top: 50%; right: auto; bottom: auto; transform: translate(-50%, -50%); width: min(1140px, 94vw); height: min(744px, calc(100vh - 40px)); }
+
+/* Gallery chrome: one HUD pill and the help sheet. 14px and up. */
+.hud { position: fixed; z-index: 90; left: 50%; bottom: 48px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px;
+  padding: 7px 14px; border-radius: 999px; font-size: 14px; white-space: nowrap; color: var(--foreground);
+  background: color-mix(in srgb, var(--background) 90%, var(--foreground) 4%); border: 1px solid var(--ae-edge-hi); box-shadow: var(--shadow-elevation-3); }
+.hud b { font-weight: 700; }
+.hud .sep { width: 1px; height: 18px; background: var(--ae-edge-hi); }
+.hud .k { display: inline-flex; gap: 5px; align-items: center; color: var(--muted-foreground); }
+.hud kbd, .help kbd, .cmp kbd { font-family: var(--font-mono); font-size: 12px; padding: 1px 6px; border-radius: 5px; color: var(--foreground);
+  border: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent); border-bottom-width: 2px; background: color-mix(in srgb, var(--foreground) 5%, transparent); }
+.thumb .hud, .thumb .help, .shot .hud { display: none !important; }
+
+.help { position: fixed; z-index: 95; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, 92vw); display: none; padding: 18px 22px; border-radius: 14px;
+  font-size: 15px; color: var(--foreground); background: color-mix(in srgb, var(--background) 96%, var(--foreground) 4%); border: 1px solid var(--ae-edge-hi); box-shadow: var(--shadow-elevation-4); }
+.help.open { display: block; }
+.help h2 { margin: 0 0 10px; font-size: 17px; }
+.help dl { display: grid; grid-template-columns: 90px 1fr; gap: 8px 12px; margin: 0; }
+.help dd { margin: 0; color: var(--muted-foreground); }
+.help ol { margin: 12px 0 0; padding-left: 22px; columns: 2; font-size: 14px; color: var(--muted-foreground); }
+
+/* C: compare mode, every candidate as a live thumbnail for the current theme */
+.cmp { position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column; gap: 12px; padding: 16px 20px; background: var(--background); color: var(--foreground); overflow: auto; }
+.cmp.open { display: flex; }
+.cmp header { display: flex; align-items: baseline; gap: 14px; font-size: 15px; }
+.cmp header h2 { margin: 0; font-size: 18px; }
+.cmp header span { color: var(--muted-foreground); }
+.cmp .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.cmp figure { margin: 0; cursor: pointer; }
+.cmp .frame { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 10px; border: 1px solid var(--ae-edge-hi); }
+.cmp figure:hover .frame { border-color: var(--primary); }
+.cmp iframe { position: absolute; left: 0; top: 0; width: 1600px; height: 900px; border: 0; transform-origin: 0 0; pointer-events: none; }
+.cmp figcaption { display: flex; gap: 8px; align-items: center; margin-top: 6px; font-size: 14px; }
+.cmp figcaption span { color: var(--muted-foreground); }

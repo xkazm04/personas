@@ -1,0 +1,51 @@
+/* Copied from docs/design/mandate-lanes/prototype/index.html <style> (the lane strip, peek, Stewards plate, ribbon, drawer). */
+/* ── Lane strip: replaces DecisionHub's seven chips + ready (CommandBar.tsx:115) ── */
+.lanes { display: flex; gap: 6px; align-items: center; }
+.lane { display: inline-flex; align-items: center; gap: 8px; padding: 5px 11px; border-radius: var(--radius-input); cursor: pointer; }
+.lane .w { font-size: .9375rem; }
+.lane .typo-data { min-width: 1.2em; text-align: right; }
+.lane.is-open { box-shadow: 0 0 0 2px var(--primary); }
+.lane.bump { animation: ae-flash 900ms ease-out 2; }
+.yield { display: flex; gap: 14px; align-items: center; font-size: .9375rem; padding-left: 10px; border-left: 1px solid var(--ae-edge); }
+.yield b { font-variant-numeric: tabular-nums; }
+.dayclock { display: inline-flex; gap: 8px; align-items: center; font-variant-numeric: tabular-nums; }
+.dayclock .play { width: 30px; height: 30px; border-radius: 999px; display: grid; place-items: center; cursor: pointer; }
+
+/* ── Peek: the lane's list, the same place today's chip peeks open ── */
+.peek { position: absolute; z-index: 40; top: 118px; max-height: calc(100vh - 190px); display: none; flex-direction: column; border-radius: var(--radius-modal); }
+.peek.open { display: flex; }
+.peek .ph { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--ae-edge); }
+.peek .rows { overflow: auto; padding: 0 0 4px; }
+.peek .row { display: grid; gap: 2px 10px; cursor: pointer; align-items: start; }
+.peek .row .t { font-weight: 600; }
+.peek .row .s { grid-column: 2 / 4; font-size: .875rem; }
+.peek .pf { border-top: 1px solid var(--ae-edge); padding: 9px 14px; display: flex; gap: 14px; flex-wrap: wrap; font-size: .875rem; color: var(--muted-foreground); }
+.peek .more { padding: 10px 14px; font-size: .875rem; }
+
+/* ── Stewards plate: replaces the Autopilot plate (SupplyDeck.tsx) ── */
+.stw .row { display: grid; grid-template-columns: 52px 1fr 12px; gap: 2px 8px; align-items: center; padding: 6px 2px; cursor: pointer; border-radius: 6px; }
+.stw .row:hover { background: var(--ae-glass-hi); }
+.stw .id { font-family: var(--font-mono); font-size: .875rem; color: color-mix(in srgb, var(--primary) 70%, var(--foreground)); }
+.stw .bar2 { grid-column: 2 / 4; }
+
+/* ── Ribbon above the bays: the fleet's yield in one sentence ── */
+.ribbon { display: flex; align-items: center; gap: 18px; padding: 10px 14px; border-radius: var(--radius-card); margin-bottom: 10px; }
+.ribbon .big { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ribbon .lab { font-size: .9375rem; color: var(--muted-foreground); }
+.ribbon .vs { display: flex; flex-direction: column; }
+.ribbon .note { margin-left: auto; font-size: .875rem; color: var(--muted-foreground); text-align: right; }
+
+/* ── Drawer: levels two and three (register, mandate page, ledger, orphanage) ── */
+.drawer { position: fixed; z-index: 55; top: 116px; right: 0; bottom: 40px; width: min(1100px, 82vw); display: none; flex-direction: column; border-radius: var(--radius-modal) 0 0 var(--radius-modal); }
+.drawer.open { display: flex; }
+.drawer .dh { padding: 12px 18px; border-bottom: 1px solid var(--ae-edge); display: flex; gap: 12px; align-items: center; }
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th { text-align: left; font-size: .875rem; color: var(--muted-foreground); font-weight: 600; padding: 8px; border-bottom: 1px solid var(--ae-edge); position: sticky; top: 0; z-index: 1; background: color-mix(in srgb, var(--background) 96%, var(--foreground)); }
+.tbl td { padding: 9px 8px; border-top: 1px solid var(--ae-edge); vertical-align: top; }
+.tbl tr { cursor: pointer; }
+.tbl tr:hover td { background: color-mix(in srgb, var(--foreground) 3%, transparent); }
+.facts.wide { grid-template-columns: 150px minmax(0, 1fr); } .facts.wide dd { text-align: left; }
+.ticker { display: flex; gap: 10px; align-items: center; min-width: 0; flex: 1; overflow: hidden; }
+.ticker span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ticker .fresh { color: var(--foreground); }
+.before .pline.needs, .before .pline.critical { outline: 2px dashed color-mix(in srgb, var(--foreground) 40%, transparent); }
