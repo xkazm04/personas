@@ -2505,12 +2505,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewFilters.tsx:95 comparator has no identity tiebreaker, so under the default lastRun-desc sort (viewConfig.ts:20) never-run personas fall in storage order, and :105 coerces an absent trust_score to 0 so missing data ranks as a real minimum (sorting: total order, absent values have one declared home); PersonaOverviewPage.tsx:213 prunes selectedIds through an effect on filter change, losing ticks on widen-back (filtering: intersect at read time, never prune into state).",
-          "evaluatedAt": "2026-10-06",
-          "evaluatedAgainst": "sha256-b2:f5aa23bf6f14872f",
-          "evaluatedRevision": 12,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewFilters.tsx:105 A missing trust score sorts as a real zero, and the comparator returns at line 140 with no identity term, so ties stay in storage order and reshuffle when the roster is reloaded.",
+          "evaluatedAt": "2026-10-14",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14,
+          "revisionsBehind": 2
         },
         {
           "subject": "agent-memory",
@@ -11219,13 +11218,12 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:557 still sorts by String(row[key]).localeCompare with no identity tiebreaker, and :560 inverts desc with reverse() - ties reshuffle between refreshes, numbers and dates collate as strings unless a caller passes sortFn, and a caller's absent-last comparator flips to absent-first on desc. Re-confirmed 2026-10-09: no commit since the 2026-10-01 verdict.",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:f5aa23bf6f14872f",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:586 The default comparator stringifies every cell, collates with no reader locale and no identity tiebreaker, and line 589 reverses that array for descending so a caller's absent-last order and the tie order both flip.",
+          "evaluatedAt": "2026-10-14",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14,
           "source": "conform",
-          "revisionsBehind": 2,
-          "stale": true
+          "revisionsBehind": 2
         },
         {
           "subject": "narrative-scroll-surface",
@@ -21530,12 +21528,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/overview/sub_incidents/libs/useIncidentLedger.ts:99 sorts severity/title/persona on the client over a 100-row server window (useIncidentsData.ts:70), with no identity tiebreaker and :100 reverse() for asc (client-server-split + sorting); useIncidentsData.ts:68 keeps the superseded filter rows on screen undimmed during a filter refetch (filtering: rows clear on a predicate change); IncidentsInbox.tsx:228 renders the inbox-zero empty state beneath the load-failed banner when the first fetch fails (loading-and-empty-states: error is not empty). Latest-wins, loser-failure-drops and the disclosed cap are realized.",
-          "evaluatedAt": "2026-10-06",
-          "evaluatedAgainst": "sha256-b2:f5aa23bf6f14872f",
-          "evaluatedRevision": 12,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentLedger.ts:99 This sorts the array useIncidentsData fetched with limit 100 and offset 0, so a severity or title sort orders that window, not the incidents that match the column across the catalog.",
+          "evaluatedAt": "2026-10-14",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14,
+          "revisionsBehind": 2
         },
         {
           "subject": "error-handling",
@@ -30008,12 +30005,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/settings/sub_portability/components/ExportSelectionModal.tsx:3 the surface is an export picker for hand-picking identity-dominant records (icon + name pick rows, no column model, no sort/window axes) - the golden path's precondition, comparison across uniform attributes, does not hold; its own 'when not to use' routes this to a list.",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:f5aa23bf6f14872f",
-          "evaluatedRevision": 12,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/settings/sub_portability/components/ExportSelectionModal.tsx:5 The module is a search-first list for hand-picking identity rows (icon and name, optional chips), and the portability directory has no column model, sort key, or page window; the fixed enabled-then-name order at useExportPicker.ts:278 is list presentation.",
+          "evaluatedAt": "2026-10-14",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14,
+          "revisionsBehind": 2
         },
         {
           "subject": "settings",
@@ -35124,12 +35120,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/search/TemplateSearchFilterRow.tsx:59 prints loadedCount/total from allItems.length (GeneratedReviewsTab.tsx:234) and the server total, while useGalleryActions.ts:137 narrows the rendered rows by coverage/component/difficulty/setup on the client over the server-paged window and :166 sorts 'Ready to Deploy' inside it - the count and the order answer about the loaded pages, not the catalog (client-server-split: never split an axis across tiers; count-carries-predicate); src-tauri/db/src/repos/communication/reviews.rs:591 orders LIMIT/OFFSET pages with no id tiebreaker, so 'Most Adopted' (adoption_count, mostly tied) skips and repeats templates across load-more pages.",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:f5aa23bf6f14872f",
-          "evaluatedRevision": 12,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/templates/sub_generated/gallery/search/TemplateSearchFilterRow.tsx:59 That ratio is gallery.allItems.length over the server total (GeneratedReviewsTab.tsx:238-239) while the rows are actions.displayItems (line 300) after client coverage, component, difficulty, and setup filters.",
+          "evaluatedAt": "2026-10-14",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14,
+          "revisionsBehind": 2
         },
         {
           "subject": "templates-scaffolding",

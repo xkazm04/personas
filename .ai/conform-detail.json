@@ -5841,14 +5841,49 @@
       "subject": "table",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:00:17.000Z",
-      "worker": "216ef4e6-cae0-493d-a37b-1c96ac7659c3",
+      "evaluatedAt": "2026-10-14",
+      "evaluatedTs": "2026-10-14T23:31:56.351Z",
+      "worker": "99c45fe2-5155-4eef-81fd-47feac14bbeb",
       "techniques": [
         {
           "technique": "sorting",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:557 string comparison, no tiebreaker; :560 reverse() for desc moves absent values to the top"
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:586 Absent values become '' via ?? on the lines above; a caller sortFn is then reversed at line 589; a new column always opens desc at line 570; a persisted key whose column is gone returns the array unsorted at line 578."
+        },
+        {
+          "technique": "filtering",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/display/DataGrid.tsx:243 The page is clamped when data.length changes, so a filter that still fills the old page leaves the user there."
+        },
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:346 The delay sits on animate-fade-in; the reduced-motion rule sets that class to animation none, so the delay does not survive. Ghosts, a distinct error, and a header that stays are otherwise in place."
+        },
+        {
+          "technique": "client-server-split",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:576 With controlledSort the caller owns the order of a page; otherwise the whole array handed in is sorted on the client."
+        },
+        {
+          "technique": "pagination",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/display/DataGrid.tsx:267 Offset paging over the complete in-memory array the caller passed."
+        },
+        {
+          "technique": "performance",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:731 Only the virtual window is mounted, and the display folder has no aria-rowcount or aria-rowindex."
+        },
+        {
+          "technique": "grid-keyboard-model",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:620 Arrow focus is a row index, so a resort leaves the ring on whoever now occupies the slot, and there is no Home, End, or cell traversal."
+        },
+        {
+          "technique": "compressed-scroll-space",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:730 The spacer is the virtualizer's full logical height with no runtime ceiling probe."
         }
       ],
       "superseded": [
@@ -5858,6 +5893,13 @@
           "evaluatedAt": "2026-10-01",
           "worker": null,
           "reason": "replaced by 216ef4e6-cae0-493d-a37b-1c96ac7659c3"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:557 still sorts by String(row[key]).localeCompare with no identity tiebreaker, and :560 inverts desc with reverse() - ties reshuffle between refreshes, numbers and dates collate as strings unless a caller passes sortFn, and a caller's absent-last comparator flips to absent-first on desc. Re-confirmed 2026-10-09: no commit since the 2026-10-01 verdict.",
+          "evaluatedAt": "2026-10-09T16:00:17.000Z",
+          "worker": "216ef4e6-cae0-493d-a37b-1c96ac7659c3",
+          "reason": "replaced by 99c45fe2-5155-4eef-81fd-47feac14bbeb"
         }
       ]
     },
@@ -6292,34 +6334,48 @@
       "subject": "table",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:00:17.000Z",
-      "worker": "216ef4e6-cae0-493d-a37b-1c96ac7659c3",
+      "evaluatedAt": "2026-10-14",
+      "evaluatedTs": "2026-10-14T23:31:56.351Z",
+      "worker": "99c45fe2-5155-4eef-81fd-47feac14bbeb",
       "techniques": [
-        {
-          "technique": "client-server-split",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:137 coverage filter (default 'full') and :166 readiness sort run client-side over pages the server windowed under 'trending' (src/hooks/design/template/useGalleryQuery.ts:165) - a template beyond the loaded pages can never surface as ready"
-        },
         {
           "technique": "filtering",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/search/TemplateSearchFilterRow.tsx:59 count carries neither the client predicates nor says 'shown'; src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:86 coverage chip counts tally only the loaded window; src/hooks/design/template/useGalleryQuery.ts:143 text filter commits by keystroke debounce against a server round trip. Latest-wins is realized at useGalleryQuery.ts:179"
+          "evidence": "src/features/templates/sub_generated/gallery/search/TemplateSearchFilterRow.tsx:59 The count does not carry the client predicate. useStructuredQuery.ts:106 forwards every keystroke via onSearchChange."
+        },
+        {
+          "technique": "client-server-split",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:137 Full coverage is applied to the loaded pages, and a missing readiness score counts as 0. Component, difficulty, and setup filters below are client-only too."
         },
         {
           "technique": "sorting",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/communication/reviews.rs:591 ORDER BY {order_col} with no identity tiebreaker; :515 maps 'Most Adopted' (searchConstants.ts:141) to adoption_count, where most templates tie at 0"
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:170 Ready to Deploy re-sorts the loaded window by readiness then adoption_count, with a missing score as 0 at line 167 and no identity term."
         },
         {
           "technique": "pagination",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/communication/reviews.rs:591 OFFSET over a non-total order - load-more page boundaries fall inside tie runs, so rows are skipped or duplicated"
+          "evidence": "src-tauri/db/src/repos/communication/reviews.rs:591 order_col is adoption_count for Most Adopted and created_at otherwise, with no id, so OFFSET pages skip and repeat on ties."
         },
         {
           "technique": "loading-and-empty-states",
           "verdict": "deviation",
-          "evidence": "src/hooks/design/template/useGalleryQuery.ts:188 a failed page fetch only logs; the hook exposes no error state, so a failure renders as zero results (error is not empty)"
+          "evidence": "src/features/templates/sub_generated/gallery/cards/TemplateVirtualList.tsx:137 A client filter that misses the loaded pages paints the settled empty state and returns before the load-more effect, so paging stops."
+        },
+        {
+          "technique": "performance",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/TemplateVirtualList.tsx:178 Windowed rows carry the virtualizer index only; the file has no aria-rowcount or aria-rowindex. Item keys use id at line 106."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/search/TemplateSearchFilterRow.tsx:59 prints loadedCount/total from allItems.length (GeneratedReviewsTab.tsx:234) and the server total, while useGalleryActions.ts:137 narrows the rendered rows by coverage/component/difficulty/setup on the client over the server-paged window and :166 sorts 'Ready to Deploy' inside it - the count and the order answer about the loaded pages, not the catalog (client-server-split: never split an axis across tiers; count-carries-predicate); src-tauri/db/src/repos/communication/reviews.rs:591 orders LIMIT/OFFSET pages with no id tiebreaker, so 'Most Adopted' (adoption_count, mostly tied) skips and repeats templates across load-more pages.",
+          "evaluatedAt": "2026-10-09T16:00:17.000Z",
+          "worker": "216ef4e6-cae0-493d-a37b-1c96ac7659c3",
+          "reason": "replaced by 99c45fe2-5155-4eef-81fd-47feac14bbeb"
         }
       ]
     },
@@ -6328,11 +6384,30 @@
       "subject": "table",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:00:17.000Z",
-      "worker": "216ef4e6-cae0-493d-a37b-1c96ac7659c3",
-      "techniques": [],
-      "registryProposal": "Technique-shaped resonance: filtering's record-keyed-selection rule bites this pick-list though the table subject does not govern it. ExportSelectionModal.tsx:104 'select shown' plus per-scope search keep ticks across filter and scope changes, and ManifestCart.tsx:48 prints selected/total per kind (useExportPicker.ts:394) with no 'hidden by the current filter' figure - the undisclosed gathering form. The selection-across-filter invariant lives only inside table/filtering, whose precondition a pick-list fails; lift it to a shared law or carry it in a list/selection subject so pick-lists are governed."
+      "evaluatedAt": "2026-10-14",
+      "evaluatedTs": "2026-10-14T23:31:56.351Z",
+      "worker": "99c45fe2-5155-4eef-81fd-47feac14bbeb",
+      "techniques": [
+        {
+          "technique": "sorting",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts:278 A fixed presentation order with no sort key and no column header."
+        },
+        {
+          "technique": "grid-keyboard-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_portability/components/export-prototype/rows.tsx:45 A selectable label with an icon and a name, not column cells."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_portability/components/ExportSelectionModal.tsx:3 the surface is an export picker for hand-picking identity-dominant records (icon + name pick rows, no column model, no sort/window axes) - the golden path's precondition, comparison across uniform attributes, does not hold; its own 'when not to use' routes this to a list.",
+          "evaluatedAt": "2026-10-09T16:00:17.000Z",
+          "worker": "216ef4e6-cae0-493d-a37b-1c96ac7659c3",
+          "reason": "replaced by 99c45fe2-5155-4eef-81fd-47feac14bbeb"
+        }
+      ]
     },
     "0ecc70bc-a005-4ff8-9a98-f362d2a75f53/operator-surfaces-for-llm-spend": {
       "context": "api-overview",
@@ -21366,6 +21441,126 @@
           "evaluatedAt": "2026-10-05",
           "worker": null,
           "reason": "replaced by d61cfc0d-c1fb-4ceb-b01d-0a7143b73719"
+        }
+      ]
+    },
+    "a8857307-216c-46e0-9571-e05e8cf06112/table": {
+      "context": "agents-components-allpersonas",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-14",
+      "evaluatedTs": "2026-10-14T23:31:56.351Z",
+      "worker": "99c45fe2-5155-4eef-81fd-47feac14bbeb",
+      "techniques": [
+        {
+          "technique": "sorting",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewFilters.tsx:105 Spend at lines 125-130 already keeps unknown last in both directions, so absent-home is per column; lastRun uses '' at line 111; the default is lastRun desc in viewConfig.ts lines 20-21; line 140 negates cmp and adds no id."
+        },
+        {
+          "technique": "filtering",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewPage.tsx:216 The effect writes the intersection back into selectedIds, so a tick dropped by a narrower filter is gone when the filter widens. Select-all at line 232 uses the full filtered set."
+        },
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewPage.tsx:355 The page never reads the store isLoading or error, so a failed fetch that leaves personas empty paints the create-empty state."
+        },
+        {
+          "technique": "client-server-split",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewFilters.tsx:91 Sort and filter run over the full store roster, and list_personas returns repo::get_all_lean at src-tauri/src/commands/core/personas.rs:43. No written growth bound was found beside that."
+        },
+        {
+          "technique": "pagination",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewPage.tsx:382 DataGrid pages the already-filtered complete set at 25."
+        },
+        {
+          "technique": "performance",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewFilters.tsx:144 The sort memo names its inputs, and the grid then pages 25 rows."
+        },
+        {
+          "technique": "grid-keyboard-model",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewCells.tsx:29 Every row has a real checkbox button inside DataGrid, so each control stays in the tab order."
+        },
+        {
+          "technique": "export-escapes-for-its-consumer",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewShareActions.ts:84 Export writes one persona file, not a table CSV."
+        },
+        {
+          "technique": "clipboard-range-round-trip",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewCardList.tsx:22 This copies one description string."
+        },
+        {
+          "technique": "one-door-for-range-writes",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewCells.tsx:119 A single name commit, with no paste or fill."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewFilters.tsx:95 comparator has no identity tiebreaker, so under the default lastRun-desc sort (viewConfig.ts:20) never-run personas fall in storage order, and :105 coerces an absent trust_score to 0 so missing data ranks as a real minimum (sorting: total order, absent values have one declared home); PersonaOverviewPage.tsx:213 prunes selectedIds through an effect on filter change, losing ticks on widen-back (filtering: intersect at read time, never prune into state).",
+          "evaluatedAt": "2026-10-06",
+          "worker": null,
+          "reason": "replaced by 99c45fe2-5155-4eef-81fd-47feac14bbeb"
+        }
+      ]
+    },
+    "9fff7e41-4fc5-4c31-846b-c04ca1c79757/table": {
+      "context": "overview-incidents",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-14",
+      "evaluatedTs": "2026-10-14T23:31:56.351Z",
+      "worker": "99c45fe2-5155-4eef-81fd-47feac14bbeb",
+      "techniques": [
+        {
+          "technique": "client-server-split",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentLedger.ts:99 The fetch is listAuditIncidents(filters, DEFAULT_LIMIT, 0) at useIncidentsData.ts:70 with DEFAULT_LIMIT 100. The truncated footer at IncidentsInbox.tsx:153 discloses the cap. Latest-wins drops a superseded success at useIncidentsData.ts:71."
+        },
+        {
+          "technique": "sorting",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentLedger.ts:100 reverse() flips absent-home and tie order; compare has no identity term; a null persona becomes '' at line 76. DEFAULT_DIR at lines 43-50 does pick first-click direction by column type."
+        },
+        {
+          "technique": "filtering",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_incidents/components/IncidentsInbox.tsx:128 A filter refetch sets loading and leaves the previous rows mounted undimmed. The page index only clamps when pageCount shrinks (useIncidentLedger.ts:109). A loser's error is dropped at useIncidentsData.ts:76."
+        },
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_incidents/components/IncidentsInbox.tsx:241 A failed first fetch sets error and leaves incidents empty, so inbox-zero or the filtered empty renders under the load-failed banner. A later failure that still has rows keeps the ledger."
+        },
+        {
+          "technique": "pagination",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/audit_incidents.rs:332 The 100-row window is limit/offset on created_at alone, so equal timestamps at the cutoff skip and repeat, and the client pages that set."
+        },
+        {
+          "technique": "performance",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentLedger.ts:18 The ledger renders one of those page sizes of the held window."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentLedger.ts:99 sorts severity/title/persona on the client over a 100-row server window (useIncidentsData.ts:70), with no identity tiebreaker and :100 reverse() for asc (client-server-split + sorting); useIncidentsData.ts:68 keeps the superseded filter rows on screen undimmed during a filter refetch (filtering: rows clear on a predicate change); IncidentsInbox.tsx:228 renders the inbox-zero empty state beneath the load-failed banner when the first fetch fails (loading-and-empty-states: error is not empty). Latest-wins, loser-failure-drops and the disclosed cap are realized.",
+          "evaluatedAt": "2026-10-06",
+          "worker": null,
+          "reason": "replaced by 99c45fe2-5155-4eef-81fd-47feac14bbeb"
         }
       ]
     }
