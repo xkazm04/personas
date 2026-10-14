@@ -54,7 +54,6 @@ export function InstrumentFigure({ projects, rows, names, at, onMove, onOpenCell
             <Hint content={r.info} placement="bottom">
               <span className="cursor-help">{SHORT_LABEL[r.key] ?? r.label}</span>
             </Hint>
-            <span className="atlas-matrix__dim-count typo-caption k-quiet">{W.below(projects.filter((p) => inkOf(p, r) === 'bad').length)}</span>
           </span>
         ))}
       </div>

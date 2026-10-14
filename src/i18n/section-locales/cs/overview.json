@@ -2105,5 +2105,6 @@
   "dc_open_in_deck_hint": "Otevřít tuto položku v Centru rozhodnutí (Enter)",
   "dc_pending_lead": "Každá čekající revize se otevře v Centru rozhodnutí s celým podkladem a stejnými klávesami jako každé jiné rozhodnutí.",
   "dc_pending_list_aria": "Čekající revize",
-  "dc_select_review": "Vybrat revizi"
+  "dc_select_review": "Vybrat revizi",
+  "dc_col_decision": "Rozhodnutí"
 }

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Filter, X } from 'lucide-react';
+import { TABLE_HEAD_LABEL } from '@/features/shared/components/display/tableTokens';
 
 interface Option {
   value: string;
@@ -54,7 +55,7 @@ export function ColumnDropdownFilter({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-1.5 typo-label transition-colors ${isFiltered ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
+        className={`flex items-center gap-1.5 ${TABLE_HEAD_LABEL} transition-colors ${isFiltered ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
       >
         <span>{isFiltered ? selected?.label ?? label : label}</span>
         {!isFiltered && <Filter className="w-3 h-3 text-foreground" />}

@@ -10371,7 +10371,8 @@
     "dc_open_in_deck_hint": "Diese im Entscheidungszentrum öffnen (Enter)",
     "dc_pending_lead": "Jede offene Prüfung öffnet sich im Entscheidungszentrum, mit vollständigem Fall und denselben Tasten wie jede andere Entscheidung.",
     "dc_pending_list_aria": "Offene Prüfungen",
-    "dc_select_review": "Prüfung auswählen"
+    "dc_select_review": "Prüfung auswählen",
+    "dc_col_decision": "Entscheidung"
   },
   "pipeline": {
     "accept_suggestion": "Vorschlag akzeptieren",
@@ -14728,7 +14729,13 @@
         "where_contest": "Wettbewerb",
         "where_count": "{count} Wettbewerbe",
         "where_ledger": "Journal",
-        "where_variant": "Variante"
+        "where_variant": "Variante",
+        "by_area": "Nach Aufgabenbereich",
+        "by_model": "Nach Modell",
+        "tile_contests": "Wettbewerbe",
+        "tile_decided": "Entschieden",
+        "tile_models": "Eingesetzte Modelle",
+        "tile_top": "Bestes Modell"
       }
     }
   },

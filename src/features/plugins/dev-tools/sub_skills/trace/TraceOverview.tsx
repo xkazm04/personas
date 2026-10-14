@@ -65,12 +65,12 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
           <table className="w-full border-collapse">
             <thead className="sticky top-0 z-10">
               <tr className="bg-secondary/90 backdrop-blur-sm">
-                <th className="text-left typo-caption text-foreground px-3 py-2 border-b-2 border-border">
+                <th className="text-left typo-caption font-mono uppercase tracking-widest text-foreground px-3 py-2 border-b-2 border-border">
                   {tx(t.plugins.dev_tools.trace_skills_count, { count: model.skills.length })}
                 </th>
-                <th className="typo-caption text-foreground pr-2 py-2 border-b-2 border-border text-right w-12">v</th>
+                <th className="typo-caption font-mono uppercase tracking-widest text-foreground pr-2 py-2 border-b-2 border-border text-right w-12">v</th>
                 {model.projects.map((p) => (
-                  <th key={p.id} className="typo-caption text-foreground px-1 py-2 border-b-2 border-border border-l border-border/20 max-w-[76px]">
+                  <th key={p.id} className="typo-caption font-mono uppercase tracking-widest text-foreground px-1 py-2 border-b-2 border-border border-l border-border/20 max-w-[76px]">
                     <span className="block truncate" title={p.name}>{p.name}</span>
                   </th>
                 ))}

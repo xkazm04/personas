@@ -2105,5 +2105,6 @@
   "dc_open_in_deck_hint": "Ouvrir celle-ci dans le Centre de décision (Entrée)",
   "dc_pending_lead": "Chaque revue en attente s'ouvre dans le Centre de décision, avec son dossier complet et les mêmes touches que toute autre décision.",
   "dc_pending_list_aria": "Revues en attente",
-  "dc_select_review": "Sélectionner la revue"
+  "dc_select_review": "Sélectionner la revue",
+  "dc_col_decision": "Décision"
 }

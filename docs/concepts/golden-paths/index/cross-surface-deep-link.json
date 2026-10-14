@@ -41,7 +41,6 @@
     "IngestMonitor.tsx": {"count":1,"sections":[0],"lines":["41,46-55"],"contexts":["and `IngestMonitor.tsx:41,46-55` both `useState(\"starchart\")` and then `setActive` from `?view=`"],"resolved":false},
     "LazyMount.tsx": {"count":1,"sections":[0],"lines":["15"],"contexts":["and `LazyMount.tsx:15`'s own comment claims the reserved height *\"keeps scroll-map anchors"],"resolved":false},
     "LegalContent.tsx": {"count":1,"sections":[0],"lines":["49,58-74"],"contexts":["applications across the two siblings** — `personas-web`'s `LegalContent.tsx:49,58-74` initialises"],"resolved":false},
-    "ManualReviewList.tsx": {"count":2,"sections":[7],"lines":["74-79","74"],"contexts":["| `ManualReviewList.tsx:74-79` (`pendingApprovalsMode`) | n/a (a mode, not an entity) | — |"],"resolved":false},
     "MobilePageTOC.tsx": {
       "count": 1,
       "sections": [0],
@@ -291,6 +290,14 @@
       "contexts": ["`incidentDeepLink.ts` modules, imported unmodified**; a **`tsc --noEmit --strict` run over a"],
       "resolvedFrom": "basename",
       "verbatim": "incidentDeepLink.ts"
+    },
+    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["74-79","74"],
+      "contexts": ["| `ManualReviewList.tsx:74-79` (`pendingApprovalsMode`) | n/a (a mode, not an entity) | — |"],
+      "resolvedFrom": "basename",
+      "verbatim": "ManualReviewList.tsx"
     },
     "src/features/overview/sub_manual-review/components/backlog/BacklogPanel.tsx": {
       "count": 2,

@@ -290,9 +290,9 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
           <table className="w-full typo-body">
             <thead>
               <tr className="border-b border-primary/10 bg-secondary/20">
-                <th className="text-left px-3 py-2.5 text-foreground typo-label">Scenario</th>
+                <th className="text-left px-3 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">Scenario</th>
                 {models.map((mid) => (
-                  <th key={mid} className={`text-center px-3 py-2.5 typo-label ${mid === bestModelId ? 'text-primary/80' : 'text-foreground'}`}>
+                  <th key={mid} className={`text-center px-3 py-2.5 typo-caption font-mono uppercase tracking-widest ${mid === bestModelId ? 'text-primary/80' : 'text-foreground'}`}>
                     <span className="inline-flex items-center justify-center gap-1">
                       {mid === bestModelId && <Trophy className="w-3 h-3" aria-label={t.agents.lab.best_badge} />}
                       {mid}

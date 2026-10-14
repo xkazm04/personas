@@ -3826,7 +3826,13 @@
       "where_contest": "Kontes",
       "where_count": "{count} kontes",
       "where_ledger": "Daftar",
-      "where_variant": "Varian"
+      "where_variant": "Varian",
+      "by_area": "Per bidang tugas",
+      "by_model": "Per model",
+      "tile_contests": "Kontes",
+      "tile_decided": "Diputuskan",
+      "tile_models": "Model yang dipakai",
+      "tile_top": "Model teratas"
     }
   }
 }

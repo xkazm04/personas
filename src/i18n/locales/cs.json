@@ -10371,7 +10371,8 @@
     "dc_open_in_deck_hint": "Otevřít tuto položku v Centru rozhodnutí (Enter)",
     "dc_pending_lead": "Každá čekající revize se otevře v Centru rozhodnutí s celým podkladem a stejnými klávesami jako každé jiné rozhodnutí.",
     "dc_pending_list_aria": "Čekající revize",
-    "dc_select_review": "Vybrat revizi"
+    "dc_select_review": "Vybrat revizi",
+    "dc_col_decision": "Rozhodnutí"
   },
   "pipeline": {
     "accept_suggestion": "Přijmout návrh",
@@ -14728,7 +14729,13 @@
         "where_contest": "Soutěž",
         "where_count": "{count} soutěží",
         "where_ledger": "Přehled",
-        "where_variant": "Varianta"
+        "where_variant": "Varianta",
+        "by_area": "Podle typu úkolu",
+        "by_model": "Podle modelu",
+        "tile_contests": "Soutěže",
+        "tile_decided": "Rozhodnuto",
+        "tile_models": "Použité modely",
+        "tile_top": "Nejlepší model"
       }
     }
   },

@@ -98,7 +98,7 @@ export function DeploymentTable({
     <table className="w-full typo-body">
       <thead className="sticky top-0 z-10 bg-secondary/60 backdrop-blur-sm border-b border-primary/10">
         <tr>
-          <th className="px-4 py-2.5 w-10">
+          <th className="px-4 py-2.5 w-10 typo-caption font-mono uppercase tracking-widest text-foreground">
             <input
               type="checkbox"
               aria-label={dt.select_all}
@@ -112,10 +112,10 @@ export function DeploymentTable({
           <SortHeader label={dt.col_target} sortKey="target" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_status} sortKey="status" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_invocations} sortKey="invocations" current={sortKey} dir={sortDir} onToggle={toggleSort} align="right" />
-          <th className="px-4 py-2.5 text-left typo-label text-foreground">{dt.col_health}</th>
+          <th className="px-4 py-2.5 text-left typo-caption font-mono uppercase tracking-widest text-foreground">{dt.col_health}</th>
           <SortHeader label={dt.col_last_activity} sortKey="lastActivity" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_created} sortKey="createdAt" current={sortKey} dir={sortDir} onToggle={toggleSort} />
-          <th className="px-4 py-2.5 text-left typo-label text-foreground">{dt.col_actions}</th>
+          <th className="px-4 py-2.5 text-left typo-caption font-mono uppercase tracking-widest text-foreground">{dt.col_actions}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-primary/5">

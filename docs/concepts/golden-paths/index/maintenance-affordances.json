@@ -24,7 +24,6 @@
   "citations": {
     "CronAgentsPage.tsx": {"count":1,"sections":[7],"lines":["42"],"contexts":["`CronAgentsPage.tsx:42`) **and** refuse server-side under"],"resolved":false},
     "KnowledgeGraphDashboard.tsx": {"count":1,"sections":[7],"lines":["193"],"contexts":["`EventLogList.tsx:303`, `KnowledgeGraphDashboard.tsx:193`,"],"resolved":false},
-    "ManualReviewList.tsx": {"count":4,"sections":[2,7],"lines":["315-318","509","277-299","367"],"contexts":["`ManualReviewList.tsx:315-318` records the earned version of this: the GC /"],"resolved":false},
     "MessageList.tsx": {
       "count": 2,
       "sections": [7],
@@ -32,7 +31,6 @@
       "contexts": ["| `delete_all_messages` | `messagesTotal` (`MessageList.tsx:405`) — a server total | `DELETE FROM persona_messages` — unscoped |"],
       "resolved": false
     },
-    "commandNames.generated.ts": {"count":2,"sections":[0,7],"contexts":["| C — `commandNames.generated.ts` union | **22** |"],"resolved":false},
     "commands/communication/messages.rs": {"count":1,"sections":[7],"lines":["144-149"],"contexts":["(`commands/communication/messages.rs:144-149`,"],"resolved":false},
     "commands/core/data_portability.rs": {"count":1,"sections":[],"lines":["12467"],"contexts":["`commands/core/data_portability.rs:12467` — fixture resets), which the census"],"resolved":false},
     "engine/db_query.rs": {"count":1,"sections":[],"lines":["3082,3256"],"contexts":["`#[cfg(test)]` modules (`engine/db_query.rs:3082,3256` — string literals inside"],"resolved":false},
@@ -84,6 +82,14 @@
     "src/features/**": {"count":2,"sections":[0,7],"contexts":["Of the 21 with a client wrapper, **3 have no call site in `src/features/**` at"],"resolved":false,"isDir":true},
     "src/features/overview/components/health/CrashLogsSection.tsx": {"count":1,"sections":[7],"lines":["80-92"],"contexts":["- `CrashLogsSection.tsx:80-92` — one click clears **three** stores in one"],"resolvedFrom":"basename","verbatim":"CrashLogsSection.tsx"},
     "src/features/overview/sub_events/components/EventLogList.tsx": {"count":1,"sections":[7],"lines":["303"],"contexts":["`EventLogList.tsx:303`, `KnowledgeGraphDashboard.tsx:193`,"],"resolvedFrom":"basename","verbatim":"EventLogList.tsx"},
+    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
+      "count": 4,
+      "sections": [2,7],
+      "lines": ["315-318","509","277-299","367"],
+      "contexts": ["`ManualReviewList.tsx:315-318` records the earned version of this: the GC /"],
+      "resolvedFrom": "basename",
+      "verbatim": "ManualReviewList.tsx"
+    },
     "src/features/overview/sub_memories/components/MemoriesPageDense.tsx": {
       "count": 2,
       "sections": [0,7],
@@ -101,7 +107,7 @@
       "resolvedFrom": "basename",
       "verbatim": "WebhookRequestInspector.tsx"
     },
-    "src/lib/commandNames.generated.ts": {"count":1,"sections":[],"contexts":["`src/lib/commandNames.generated.ts`), their 18 feature-layer call sites, the"]},
+    "src/lib/commandNames.generated.ts": {"count":3,"sections":[0,7],"contexts":["`src/lib/commandNames.generated.ts`), their 18 feature-layer call sites, the"]},
     "src/stores/authStore.ts": {"count":2,"sections":[0,12],"lines":["65,74"],"contexts":["directly from `src/stores/authStore.ts:65,74` with a raw `invoke` that never"]}
   }
 }

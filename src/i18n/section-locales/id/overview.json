@@ -2105,5 +2105,6 @@
   "dc_open_in_deck_hint": "Buka yang ini di Pusat Keputusan (Enter)",
   "dc_pending_lead": "Setiap tinjauan tertunda dibuka di Pusat Keputusan, lengkap dengan kasusnya dan tombol yang sama seperti keputusan lainnya.",
   "dc_pending_list_aria": "Tinjauan tertunda",
-  "dc_select_review": "Pilih tinjauan"
+  "dc_select_review": "Pilih tinjauan",
+  "dc_col_decision": "Keputusan"
 }

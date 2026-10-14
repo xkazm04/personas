@@ -10371,7 +10371,8 @@
     "dc_open_in_deck_hint": "Abrir esta en el Centro de decisiones (Enter)",
     "dc_pending_lead": "Cada revisión pendiente se abre en el Centro de decisiones, con su caso completo y las mismas teclas que cualquier otra decisión.",
     "dc_pending_list_aria": "Revisiones pendientes",
-    "dc_select_review": "Seleccionar revisión"
+    "dc_select_review": "Seleccionar revisión",
+    "dc_col_decision": "Decisión"
   },
   "pipeline": {
     "accept_suggestion": "Aceptar sugerencia",
@@ -14728,7 +14729,13 @@
         "where_contest": "Concurso",
         "where_count": "{count} concursos",
         "where_ledger": "Registro",
-        "where_variant": "Variante"
+        "where_variant": "Variante",
+        "by_area": "Por tipo de tarea",
+        "by_model": "Por modelo",
+        "tile_contests": "Concursos",
+        "tile_decided": "Decididos",
+        "tile_models": "Modelos en juego",
+        "tile_top": "Mejor modelo"
       }
     }
   },

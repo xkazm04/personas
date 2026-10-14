@@ -8460,6 +8460,7 @@ export type Translations = {
     dc_decide_tip: string;
     dc_pending_list_aria: string;
     dc_select_review: string;
+    dc_col_decision: string;
     dc_open_in_deck: string;
     dc_open_in_deck_hint: string;
     dc_decided_elsewhere: string;
@@ -19512,6 +19513,12 @@ export type Translations = {
         score_variant: string;
         sort_label: string;
         standings: string;
+        tile_contests: string;
+        tile_decided: string;
+        tile_models: string;
+        tile_top: string;
+        by_model: string;
+        by_area: string;
         podium_history: string;
         variant_key: string;
         station_status: {

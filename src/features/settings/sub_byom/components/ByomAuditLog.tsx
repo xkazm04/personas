@@ -140,14 +140,14 @@ export function ByomAuditLog({ auditLog }: ByomAuditLogProps) {
               className="grid border-b border-primary/10 bg-secondary/30"
               style={{ gridTemplateColumns: GRID_COLS }}
             >
-              <div role="columnheader" className="text-left p-2.5 text-foreground font-medium">{s.audit_provider}</div>
-              <div role="columnheader" className="text-left p-2.5 text-foreground font-medium">{s.audit_model}</div>
-              <div role="columnheader" className="text-left p-2.5 text-foreground font-medium">{s.audit_routing_rule}</div>
-              <div role="columnheader" className="text-left p-2.5 text-foreground font-medium">{s.audit_compliance_rule}</div>
-              <div role="columnheader" className="text-left p-2.5 text-foreground font-medium">{s.audit_persona}</div>
-              <div role="columnheader" className="text-left p-2.5 text-foreground font-medium">{s.audit_status}</div>
-              <div role="columnheader" className="text-right p-2.5 text-foreground font-medium">{s.audit_cost}</div>
-              <div role="columnheader" className="text-right p-2.5 text-foreground font-medium">{s.audit_time}</div>
+              <div role="columnheader" className="text-left p-2.5 text-foreground">{s.audit_provider}</div>
+              <div role="columnheader" className="text-left p-2.5 text-foreground">{s.audit_model}</div>
+              <div role="columnheader" className="text-left p-2.5 text-foreground">{s.audit_routing_rule}</div>
+              <div role="columnheader" className="text-left p-2.5 text-foreground">{s.audit_compliance_rule}</div>
+              <div role="columnheader" className="text-left p-2.5 text-foreground">{s.audit_persona}</div>
+              <div role="columnheader" className="text-left p-2.5 text-foreground">{s.audit_status}</div>
+              <div role="columnheader" className="text-right p-2.5 text-foreground">{s.audit_cost}</div>
+              <div role="columnheader" className="text-right p-2.5 text-foreground">{s.audit_time}</div>
             </div>
             <div
               ref={scrollRef}

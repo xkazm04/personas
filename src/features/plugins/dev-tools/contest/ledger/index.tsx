@@ -570,10 +570,6 @@ export default function LedgerShell() {
           contests={contests}
           wide={wide}
           onClose={() => setDrawer(null)}
-          onPick={(k) => {
-            setDrawer(null);
-            openContest(k, level === 1 ? rowRefs.current.get(k) ?? null : null);
-          }}
         />
       )}
     </div>

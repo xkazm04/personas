@@ -32,7 +32,6 @@
     "data_portability.rs": {"count":1,"sections":[7],"lines":["11852"],"contexts":["`data_portability.rs:11852`, and the 1,700-odd `pumper-*` directories belong to a different repo"],"resolved":false},
     "desktop_bridges.rs": {"count":1,"sections":[7],"lines":["902"],"contexts":["`starts_with` is not containment (`:486-491`) — has **one consumer**, `desktop_bridges.rs:902`,"],"resolved":false},
     "eval.rs": {"count":2,"sections":[0,9],"lines":["620"],"contexts":["| `personas-llm-eval-*` | `eval.rs:620` — cleans on success | 0 |"],"resolved":false},
-    "genome_critique.rs": {"count":2,"sections":[0,9],"lines":["171"],"contexts":["| `personas-genome-critique-*`, `personas-assignment-*` | `genome_critique.rs`, `team_assignment_matching.rs` | 0 |"],"resolved":false},
     "headless.rs": {"count":1,"sections":[2],"lines":["132"],"contexts":["`pty.rs:324`, `:364`, `headless.rs:132`, `external.rs:169`, and nine more), so the working"],"resolved":false},
     "mkB-private-rules.json": {"count":1,"sections":[9],"contexts":["Validated standalone in a private registry (`mkB-private-rules.json`, filename unique to this"],"resolved":false},
     "package.json": {"count":4,"sections":[0,7],"lines":["81"],"contexts":["the flags `package.json` actually ships and once with `--include-orphans` — and the two runs"]},
@@ -60,6 +59,14 @@
       "verbatim": "cli_mcp_config.rs"
     },
     "src-tauri/engine/src/cli_process.rs": {"count":3,"sections":[0,7,9],"lines":["529-547","502-547","502"],"contexts":["(`src-tauri/engine/src/cli_process.rs:529-547`) creates `%TEMP%/<prefix>-<uuid>` and sets"]},
+    "src-tauri/engine/src/genome_critique.rs": {
+      "count": 2,
+      "sections": [0,9],
+      "lines": ["171"],
+      "contexts": ["| `personas-genome-critique-*`, `personas-assignment-*` | `genome_critique.rs`, `team_assignment_matching.rs` | 0 |"],
+      "resolvedFrom": "basename",
+      "verbatim": "genome_critique.rs"
+    },
     "src-tauri/engine/src/path_safety.rs": {"count":1,"sections":[7],"contexts":["is `auto_cred_browser.rs:807`, `:820`, and Personas never emits `--add-dir`. `path_safety.rs` — this"],"resolvedFrom":"basename","verbatim":"path_safety.rs"},
     "src-tauri/engine/src/team_assignment_matching.rs": {
       "count": 2,

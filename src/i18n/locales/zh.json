@@ -10371,7 +10371,8 @@
     "dc_open_in_deck_hint": "在决策中心打开此项 (Enter)",
     "dc_pending_lead": "每个待审阅项都会在决策中心打开，附带完整背景，按键与其他所有决定一致。",
     "dc_pending_list_aria": "待审阅项",
-    "dc_select_review": "选择审阅项"
+    "dc_select_review": "选择审阅项",
+    "dc_col_decision": "决策"
   },
   "pipeline": {
     "accept_suggestion": "接受建议",
@@ -14728,7 +14729,13 @@
         "where_contest": "竞赛",
         "where_count": "{count} 场竞赛",
         "where_ledger": "台账",
-        "where_variant": "变体"
+        "where_variant": "变体",
+        "by_area": "按任务领域",
+        "by_model": "按模型",
+        "tile_contests": "竞赛",
+        "tile_decided": "已决出",
+        "tile_models": "参与的模型",
+        "tile_top": "最佳模型"
       }
     }
   },

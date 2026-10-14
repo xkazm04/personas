@@ -10371,7 +10371,8 @@
     "dc_open_in_deck_hint": "Открыть в Центре решений (Enter)",
     "dc_pending_lead": "Каждое ожидающее ревью открывается в Центре решений с полным описанием и теми же клавишами, что и любое другое решение.",
     "dc_pending_list_aria": "Ожидающие ревью",
-    "dc_select_review": "Выбрать ревью"
+    "dc_select_review": "Выбрать ревью",
+    "dc_col_decision": "Решение"
   },
   "pipeline": {
     "accept_suggestion": "Принять предложение",
@@ -14728,7 +14729,13 @@
         "where_contest": "Конкурс",
         "where_count": "{count} конкурсов",
         "where_ledger": "Реестр",
-        "where_variant": "Вариант"
+        "where_variant": "Вариант",
+        "by_area": "По областям задач",
+        "by_model": "По моделям",
+        "tile_contests": "Конкурсы",
+        "tile_decided": "Решено",
+        "tile_models": "Задействованные модели",
+        "tile_top": "Лучшая модель"
       }
     }
   },

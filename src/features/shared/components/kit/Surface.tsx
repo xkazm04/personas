@@ -18,8 +18,8 @@ export function KitHost({ compact, children, testId }: { compact?: boolean; chil
 /** A surface: everything on it hangs from one vertical spine at --spine-x.
  * @catalog Surface - a page region whose parts hang from one vertical spine. Kit.
  */
-export function Surface({ dense, children }: { dense?: boolean; children: ReactNode }) {
-  return <div className={cx('k-surface', dense && 'k-surface--dense')}>{children}</div>;
+export function Surface({ dense, fluid, children }: { dense?: boolean; fluid?: boolean; children: ReactNode }) {
+  return <div className={cx('k-surface', dense && 'k-surface--dense', fluid && 'k-surface--fluid')}>{children}</div>;
 }
 
 /**

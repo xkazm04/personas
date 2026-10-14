@@ -48,6 +48,9 @@ export interface UnifiedTableRowProps<T> {
   clickable: boolean;
   accent: string | undefined;
   focused: boolean;
+  /** DOM id / test id for callers that scroll to or tour a row. */
+  domId?: string;
+  testId?: string;
   /** Entrance stagger in ms, or null when the row renders plainly. */
   revealDelayMs: number | null;
   /** Stable; records that this row's entrance finished. */
@@ -86,6 +89,8 @@ export function rowPropsEqual<T>(a: UnifiedTableRowProps<T>, b: UnifiedTableRowP
     a.clickable !== b.clickable ||
     a.accent !== b.accent ||
     a.focused !== b.focused ||
+    a.domId !== b.domId ||
+    a.testId !== b.testId ||
     a.revealDelayMs !== b.revealDelayMs ||
     a.padY !== b.padY ||
     a.virtualStart !== b.virtualStart ||
@@ -97,7 +102,7 @@ export function rowPropsEqual<T>(a: UnifiedTableRowProps<T>, b: UnifiedTableRowP
 }
 
 function UnifiedTableRowImpl<T>({
-  row, rowKey, index, columns, gridTemplate, onRowClick, clickable, accent, focused,
+  row, rowKey, index, columns, gridTemplate, onRowClick, clickable, accent, focused, domId, testId,
   revealDelayMs, onRevealEnd, padY, virtualStart, virtualSize,
 }: UnifiedTableRowProps<T>) {
   const virtual = virtualStart !== undefined;
@@ -118,6 +123,8 @@ function UnifiedTableRowImpl<T>({
       // stop. -1 keeps it out of the tab order while making a clickable row a
       // real focus target inside the composite, so a pointer click lands focus
       // where the keyboard's arrow keys keep working (keydown bubbles up).
+      id={domId}
+      data-testid={testId}
       tabIndex={clickable ? -1 : undefined}
       onClick={() => onRowClick(row)}
       onAnimationEnd={entering ? (e) => {

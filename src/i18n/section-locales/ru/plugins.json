@@ -3826,7 +3826,13 @@
       "where_contest": "Конкурс",
       "where_count": "{count} конкурсов",
       "where_ledger": "Реестр",
-      "where_variant": "Вариант"
+      "where_variant": "Вариант",
+      "by_area": "По областям задач",
+      "by_model": "По моделям",
+      "tile_contests": "Конкурсы",
+      "tile_decided": "Решено",
+      "tile_models": "Задействованные модели",
+      "tile_top": "Лучшая модель"
     }
   }
 }

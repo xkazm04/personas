@@ -61,7 +61,7 @@ export function MonitorLedger({
             {COL_KEYS.map((key, i) => (
               <th
                 key={i}
-                className={`typo-label text-foreground opacity-50 px-2 py-1.5 border-b border-primary/15 ${
+                className={`typo-caption font-mono uppercase tracking-widest text-foreground px-2 py-1.5 border-b border-primary/15 ${
                   i >= FIRST_NUMERIC_COL ? 'text-right' : 'text-left'
                 }`}
               >

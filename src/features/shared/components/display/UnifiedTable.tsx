@@ -39,8 +39,10 @@ import { buildGroupRows, type GroupSpec } from './grouping';
 import { useGroupedVirtualizer, GroupHeaderRow, GROUP_HEADER_SIZE } from './GroupedVirtualList';
 import { UnifiedTableRow, useStableRowClick, useIndexSensitive } from './UnifiedTableRow';
 import { createLogger } from '@/lib/log';
+import { TABLE_HEAD_LABEL } from './tableTokens';
 
 const logger = createLogger('unified-table');
+
 const SORT_STORAGE_PREFIX = 'table-sort:';
 
 /** Read a persisted {key,dir} sort for a table, or null if absent/unparseable. */
@@ -211,6 +213,24 @@ export interface UnifiedTableProps<T> {
    *   handles genuinely-new rows).
    */
   rowReveal?: boolean | { resetKey?: string | number };
+  /**
+   * Controlled sort, for a table whose rows are one page of a larger sorted set
+   * (the order is decided upstream, so sorting the page here would be wrong).
+   * When set, the table renders `data` in the order given, draws the arrow from
+   * `key`/`dir`, forwards header clicks to `onSort`, and neither sorts nor
+   * persists a sort of its own.
+   */
+  sort?: { key: string | null; dir: 'asc' | 'desc'; onSort: (key: string) => void };
+  /** DOM id and test id for a row, for callers that scroll to or tour a row. */
+  rowAttrs?: (row: T) => { id?: string; testId?: string };
+  /** Key of the row to draw as the active one (a cursor the caller owns). */
+  activeKey?: string | null;
+  /**
+   * Arrow-key row cursor plus Enter/Space activation on the table body.
+   * Default true when `onRowClick` is set; pass false when the caller already
+   * owns keyboard triage and a second cursor would fight it.
+   */
+  keyboardNav?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -383,10 +403,10 @@ function ColumnHeader<T>({
 
   return (
     <div className={`relative flex items-center gap-1 ${headPad} ${col.align === 'right' ? 'justify-end' : ''}`}>
-      {/* Same typo-label the filter-bearing headers get from their filter
-          component's trigger — one header type scale across every column,
-          whether or not it filters. */}
-      <span className="typo-label text-foreground">{col.label}</span>
+      {/* Same label type the filter-bearing headers get from their filter
+          component's trigger (TABLE_HEAD_LABEL): one header scale across every
+          column, whether or not it filters. */}
+      <span className={`${TABLE_HEAD_LABEL} text-foreground`}>{col.label}</span>
 
       {/* Sort icon */}
       {col.sortable && (
@@ -503,6 +523,10 @@ export function UnifiedTable<T>({
   onEndReached,
   endReachedThreshold = 240,
   rowReveal,
+  sort: controlledSort,
+  rowAttrs,
+  activeKey,
+  keyboardNav = true,
 }: UnifiedTableProps<T>) {
   // Couple the row cascade to the load ghost: passing `isLoading` gives the
   // whole cold-load choreography from one prop (opt out with rowReveal={false}).
@@ -517,34 +541,39 @@ export function UnifiedTable<T>({
   const rowPadY = compact ? 'py-1' : 'py-2';
   // A persisted sort (keyed by tableId) wins over defaultSortKey on first
   // render, so a user's chosen column/direction survives reload.
-  const persistedSort = useMemo(() => readPersistedSort(tableId), [tableId]);
-  const [sortKey, setSortKey] = useState<string | null>(persistedSort?.key ?? defaultSortKey ?? null);
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>(persistedSort?.dir ?? defaultSortDir);
+  const persistedSort = useMemo(() => (controlledSort ? null : readPersistedSort(tableId)), [tableId, controlledSort]);
+  const [ownSortKey, setSortKey] = useState<string | null>(persistedSort?.key ?? defaultSortKey ?? null);
+  const [ownSortDir, setSortDir] = useState<'asc' | 'desc'>(persistedSort?.dir ?? defaultSortDir);
+  const sortKey = controlledSort ? controlledSort.key : ownSortKey;
+  const sortDir = controlledSort ? controlledSort.dir : ownSortDir;
 
   // Persist the active sort whenever it changes (no-op without a tableId).
   useEffect(() => {
-    if (!tableId || sortKey === null) return;
+    if (controlledSort || !tableId || sortKey === null) return;
     try {
       localStorage.setItem(SORT_STORAGE_PREFIX + tableId, JSON.stringify({ key: sortKey, dir: sortDir }));
     } catch (err) {
       logger.warn('Failed to persist table sort', { error: err });
     }
-  }, [tableId, sortKey, sortDir]);
+  }, [controlledSort, tableId, sortKey, sortDir]);
   const resize = useColumnWidths(tableId ?? '');
   const resizable = !!tableId;
 
+  const onControlledSort = controlledSort?.onSort;
   const handleSort = useCallback((key: string) => {
-    if (sortKey === key) {
+    if (onControlledSort) {
+      onControlledSort(key);
+    } else if (sortKey === key) {
       setSortDir((d) => d === 'asc' ? 'desc' : 'asc');
     } else {
       setSortKey(key);
       setSortDir('desc');
     }
-  }, [sortKey]);
+  }, [sortKey, onControlledSort]);
 
-  // Apply client-side sorting
+  // Apply client-side sorting (skipped when the caller owns the order)
   const sortedData = useMemo(() => {
-    if (!sortKey) return data;
+    if (controlledSort || !sortKey) return data;
     const col = columns.find((c) => c.key === sortKey);
     if (!col) return data;
     const sorted = [...data];
@@ -558,7 +587,7 @@ export function UnifiedTable<T>({
       });
     }
     return sortDir === 'desc' ? sorted.reverse() : sorted;
-  }, [data, sortKey, sortDir, columns]);
+  }, [data, controlledSort, sortKey, sortDir, columns]);
 
   const gridTemplate = resizable
     ? resize.template(columns)
@@ -586,7 +615,8 @@ export function UnifiedTable<T>({
   // Arrow keys move a focus ring; Enter/Space activates the focused row. The
   // hand-rolled Activity/Memories lists already do this; this brings the shared
   // primitive to parity.
-  const navigable = !!onRowClick;
+  const clickable = !!onRowClick;
+  const navigable = clickable && keyboardNav;
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const handleKeyNav = useCallback((e: React.KeyboardEvent) => {
     if (!navigable || sortedData.length === 0) return;
@@ -711,9 +741,11 @@ export function UnifiedTable<T>({
                   gridTemplate={gridTemplate}
                   indexSensitive={indexSensitive}
                   onRowClick={handleRowClick}
-                  clickable={navigable}
+                  clickable={clickable}
                   accent={rowAccent?.(row, vRow.index)}
-                  focused={vRow.index === focusedIndex}
+                  focused={vRow.index === focusedIndex || rowKey === activeKey}
+                  domId={rowAttrs?.(row).id}
+                  testId={rowAttrs?.(row).testId}
                   revealDelayMs={delayFor(rowKey, vRow.index)}
                   onRevealEnd={markEntered}
                   padY={rowPadY}
@@ -742,9 +774,11 @@ export function UnifiedTable<T>({
                 gridTemplate={gridTemplate}
                 indexSensitive={indexSensitive}
                 onRowClick={handleRowClick}
-                clickable={navigable}
+                clickable={clickable}
                 accent={rowAccent?.(row, idx)}
-                focused={idx === focusedIndex}
+                focused={idx === focusedIndex || rowKey === activeKey}
+                domId={rowAttrs?.(row).id}
+                testId={rowAttrs?.(row).testId}
                 revealDelayMs={delayFor(rowKey, idx)}
                 onRevealEnd={markEntered}
                 padY={rowPadY}

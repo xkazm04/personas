@@ -10371,7 +10371,8 @@
     "dc_open_in_deck_hint": "これをディシジョンセンターで開く (Enter)",
     "dc_pending_lead": "保留中のレビューはそれぞれ、詳細な内容とほかの判断と同じキー操作で、ディシジョンセンターに開きます。",
     "dc_pending_list_aria": "保留中のレビュー",
-    "dc_select_review": "レビューを選択"
+    "dc_select_review": "レビューを選択",
+    "dc_col_decision": "判断"
   },
   "pipeline": {
     "accept_suggestion": "提案を承認",
@@ -14728,7 +14729,13 @@
         "where_contest": "コンテスト",
         "where_count": "{count} 件のコンテスト",
         "where_ledger": "台帳",
-        "where_variant": "バリアント"
+        "where_variant": "バリアント",
+        "by_area": "タスク領域別",
+        "by_model": "モデル別",
+        "tile_contests": "コンテスト",
+        "tile_decided": "決定済み",
+        "tile_models": "使用モデル",
+        "tile_top": "トップモデル"
       }
     }
   },

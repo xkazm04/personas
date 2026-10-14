@@ -410,28 +410,21 @@
 .contest-ledger .rc-empty { font-size: var(--cl-t0); color: var(--mu); padding: 14px 0; line-height: 1.5; }
 .contest-ledger .rc-foot { font-size: var(--cl-t0); color: var(--mu); margin-top: 10px; line-height: 1.45; }
 
-/* standings: podiums, and each seat's record with its Wilson bar */
+/* standings: a quick overview - four totals, a record per model, a tally per task area */
 .contest-ledger .stand { overflow-y: auto; padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 18px; scrollbar-width: thin; }
-.contest-ledger .pod { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px; border-radius: 10px; cursor: pointer; outline: none; }
-.contest-ledger .pod:hover, .contest-ledger .pod:focus-visible { background: var(--lift); }
-.contest-ledger .pod .thumb { width: 96px; height: 60px; border-radius: 6px; overflow: hidden; background: var(--panel-2); box-shadow: 0 0 0 1.5px var(--status-success); }
-.contest-ledger .pod .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block; }
-.contest-ledger .pod .p1 { font-size: var(--cl-t1); font-weight: 500; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.contest-ledger .pod .p2 { font-size: var(--cl-t0); color: var(--mf); display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
-.contest-ledger .pod .p2 b { color: var(--foreground); font-weight: 600; }
-.contest-ledger .pod .p3 { font-size: var(--cl-t0); color: var(--mu); text-align: right; white-space: nowrap; }
-.contest-ledger .matrix { width: 100%; border-collapse: collapse; font-size: var(--cl-t0); }
-.contest-ledger .matrix th { font-size: var(--cl-t0); font-weight: 600; color: var(--mu); padding: 0 4px 6px; text-align: center; white-space: nowrap; }
-.contest-ledger .matrix th.l, .contest-ledger .matrix td.l { text-align: left; }
-.contest-ledger .matrix td { padding: 6px 4px; border-top: 1px solid var(--hair-soft); text-align: center; font-variant-numeric: tabular-nums; color: var(--foreground); }
-.contest-ledger .matrix .won { color: var(--status-success); }
-.contest-ledger .matrix .ent { color: var(--mu); }
-.contest-ledger .wbar { position: relative; display: inline-block; width: 120px; height: 14px; }
-.contest-ledger .wbar .ax { position: absolute; left: 0; right: 0; top: 6px; height: 2px; border-radius: 1px; background: color-mix(in srgb, var(--foreground) 10%, transparent); }
-.contest-ledger .wbar .iv { position: absolute; top: 4px; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--primary) 40%, transparent); }
-.contest-ledger .wbar .pt { position: absolute; top: 3px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--primary); }
-.contest-ledger .mlegend { display: flex; flex-direction: column; gap: 3px; font-size: var(--cl-t0); color: var(--mf); margin-top: 8px; }
-.contest-ledger .mlegend b { color: var(--foreground); font-weight: 600; margin-right: 6px; font-variant-numeric: tabular-nums; }
+.contest-ledger .ov-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+.contest-ledger .ov-tile { padding: 10px 12px; border-radius: 10px; background: var(--panel-2); min-width: 0; }
+.contest-ledger .ov-tile-v { font-size: var(--cl-t2); font-weight: 600; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contest-ledger .ov-tile-l { font-size: var(--cl-t0); color: var(--mf); }
+.contest-ledger .ov-tile-s { font-size: var(--cl-t0); color: var(--mu); }
+.contest-ledger .ov-rows { display: flex; flex-direction: column; }
+.contest-ledger .ov-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(60px, 1fr) 44px 44px; gap: 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--hair-soft); font-size: var(--cl-t0); color: var(--foreground); }
+.contest-ledger .ov-row.ov-area { grid-template-columns: minmax(0, 1.4fr) 56px minmax(0, 1fr); }
+.contest-ledger .ov-name, .contest-ledger .ov-top { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contest-ledger .ov-top { color: var(--mf); }
+.contest-ledger .ov-n { text-align: right; }
+.contest-ledger .ov-bar { position: relative; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--foreground) 10%, transparent); overflow: hidden; }
+.contest-ledger .ov-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--status-success); }
 
 /* ── Wide windows: more columns, bigger stills ───────────────── */
 @container ledger (min-width: 1500px) {

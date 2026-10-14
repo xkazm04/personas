@@ -130,6 +130,8 @@
 /* ============ surface: every part hangs from one vertical spine ============ */
 .k-surface { position: relative; max-width: 1560px; }
 .k-surface--dense { max-width: 1320px; }
+/* Fills its column: for a wide matrix that would otherwise sit in a capped strip. */
+.k-surface--fluid { max-width: none; }
 .k-surface::before {
   content: ""; position: absolute; left: var(--spine-x); top: 10px; bottom: 0; width: 1px; background: var(--spine-c);
 }

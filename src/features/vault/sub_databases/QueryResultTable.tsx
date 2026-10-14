@@ -93,7 +93,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                       tabIndex={0}
                       role="button"
                       aria-label={tx(db.click_copy_column, { name: col })}
-                      className="px-3 py-2 text-left font-semibold text-foreground whitespace-nowrap cursor-pointer select-none hover:bg-primary/8 focus:bg-primary/8 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 transition-colors group relative"
+                      className="px-3 py-2 text-left typo-caption font-mono uppercase tracking-widest text-foreground whitespace-nowrap cursor-pointer select-none hover:bg-primary/8 focus:bg-primary/8 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 transition-colors group relative"
                       title={tx(db.click_copy_column, { name: col })}
                     >
                       <span className="flex items-center gap-1.5">

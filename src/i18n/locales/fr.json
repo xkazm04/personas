@@ -10371,7 +10371,8 @@
     "dc_open_in_deck_hint": "Ouvrir celle-ci dans le Centre de décision (Entrée)",
     "dc_pending_lead": "Chaque revue en attente s'ouvre dans le Centre de décision, avec son dossier complet et les mêmes touches que toute autre décision.",
     "dc_pending_list_aria": "Revues en attente",
-    "dc_select_review": "Sélectionner la revue"
+    "dc_select_review": "Sélectionner la revue",
+    "dc_col_decision": "Décision"
   },
   "pipeline": {
     "accept_suggestion": "Accepter la suggestion",
@@ -14728,7 +14729,13 @@
         "where_contest": "Concours",
         "where_count": "{count} concours",
         "where_ledger": "Registre",
-        "where_variant": "Variante"
+        "where_variant": "Variante",
+        "by_area": "Par type de tâche",
+        "by_model": "Par modèle",
+        "tile_contests": "Concours",
+        "tile_decided": "Tranchés",
+        "tile_models": "Modèles en lice",
+        "tile_top": "Meilleur modèle"
       }
     }
   },

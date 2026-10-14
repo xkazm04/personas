@@ -10371,7 +10371,8 @@
     "dc_open_in_deck_hint": "इसे डिसीज़न सेंटर में खोलें (Enter)",
     "dc_pending_lead": "हर लंबित समीक्षा डिसीज़न सेंटर में अपने पूरे ब्योरे और अन्य निर्णयों जैसी ही कुंजियों के साथ खुलती है।",
     "dc_pending_list_aria": "लंबित समीक्षाएँ",
-    "dc_select_review": "समीक्षा चुनें"
+    "dc_select_review": "समीक्षा चुनें",
+    "dc_col_decision": "निर्णय"
   },
   "pipeline": {
     "accept_suggestion": "सुझाव स्वीकार करें",
@@ -14728,7 +14729,13 @@
         "where_contest": "प्रतियोगिता",
         "where_count": "{count} प्रतियोगिताएं",
         "where_ledger": "लेजर",
-        "where_variant": "वेरिएंट"
+        "where_variant": "वेरिएंट",
+        "by_area": "कार्य क्षेत्र के अनुसार",
+        "by_model": "मॉडल के अनुसार",
+        "tile_contests": "प्रतियोगिताएँ",
+        "tile_decided": "तय हुईं",
+        "tile_models": "शामिल मॉडल",
+        "tile_top": "शीर्ष मॉडल"
       }
     }
   },

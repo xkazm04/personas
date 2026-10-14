@@ -107,9 +107,9 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
         <table className="w-full typo-body">
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/10">
-              <th className="text-left px-3 py-1.5 typo-label text-foreground">{t.vault.features.intelligence.operation}</th>
-              <th className="text-left px-3 py-1.5 typo-label text-foreground">{t.vault.features.intelligence.detail}</th>
-              <th className="text-right px-3 py-1.5 typo-label text-foreground">{t.vault.features.intelligence.time}</th>
+              <th className="text-left px-3 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">{t.vault.features.intelligence.operation}</th>
+              <th className="text-left px-3 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">{t.vault.features.intelligence.detail}</th>
+              <th className="text-right px-3 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">{t.vault.features.intelligence.time}</th>
             </tr>
           </thead>
           <tbody>

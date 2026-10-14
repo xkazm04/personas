@@ -35,10 +35,10 @@ export function EntityTable({ entities, isLoading = false }: { entities: KbEntit
       <table className="w-full text-left" aria-hidden="true">
         <thead>
           <tr className="typo-caption text-foreground border-b border-border/30">
-            <th className="py-1.5 pr-3 font-normal">{sh.extract_col_type}</th>
-            <th className="py-1.5 px-3 font-normal">{sh.extract_col_key}</th>
-            <th className="py-1.5 px-3 font-normal">{sh.extract_col_attrs}</th>
-            <th className="py-1.5 pl-3 font-normal">{sh.extract_col_source}</th>
+            <th className="py-1.5 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground">{sh.extract_col_type}</th>
+            <th className="py-1.5 px-3 typo-caption font-mono uppercase tracking-widest text-foreground">{sh.extract_col_key}</th>
+            <th className="py-1.5 px-3 typo-caption font-mono uppercase tracking-widest text-foreground">{sh.extract_col_attrs}</th>
+            <th className="py-1.5 pl-3 typo-caption font-mono uppercase tracking-widest text-foreground">{sh.extract_col_source}</th>
           </tr>
         </thead>
         <tbody>
@@ -83,10 +83,10 @@ export function EntityTable({ entities, isLoading = false }: { entities: KbEntit
     <table className="w-full text-left">
       <thead>
         <tr className="typo-caption text-foreground border-b border-border/30">
-          <th className="py-1.5 pr-3 font-normal">{sh.extract_col_type}</th>
-          <th className="py-1.5 px-3 font-normal">{sh.extract_col_key}</th>
-          <th className="py-1.5 px-3 font-normal">{sh.extract_col_attrs}</th>
-          <th className="py-1.5 pl-3 font-normal">{sh.extract_col_source}</th>
+          <th className="py-1.5 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground">{sh.extract_col_type}</th>
+          <th className="py-1.5 px-3 typo-caption font-mono uppercase tracking-widest text-foreground">{sh.extract_col_key}</th>
+          <th className="py-1.5 px-3 typo-caption font-mono uppercase tracking-widest text-foreground">{sh.extract_col_attrs}</th>
+          <th className="py-1.5 pl-3 typo-caption font-mono uppercase tracking-widest text-foreground">{sh.extract_col_source}</th>
         </tr>
       </thead>
       <tbody>

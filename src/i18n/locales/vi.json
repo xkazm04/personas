@@ -10371,7 +10371,8 @@
     "dc_open_in_deck_hint": "Mở mục này trong Trung tâm quyết định (Enter)",
     "dc_pending_lead": "Mỗi đánh giá đang chờ sẽ mở trong Trung tâm quyết định, với đầy đủ nội dung và cùng phím như mọi quyết định khác.",
     "dc_pending_list_aria": "Đánh giá đang chờ",
-    "dc_select_review": "Chọn đánh giá"
+    "dc_select_review": "Chọn đánh giá",
+    "dc_col_decision": "Quyết định"
   },
   "pipeline": {
     "accept_suggestion": "Chấp nhận gợi ý",
@@ -14728,7 +14729,13 @@
         "where_contest": "Cuộc thi",
         "where_count": "{count} cuộc thi",
         "where_ledger": "Sổ cái",
-        "where_variant": "Biến thể"
+        "where_variant": "Biến thể",
+        "by_area": "Theo lĩnh vực tác vụ",
+        "by_model": "Theo mô hình",
+        "tile_contests": "Cuộc thi",
+        "tile_decided": "Đã quyết định",
+        "tile_models": "Mô hình tham gia",
+        "tile_top": "Mô hình dẫn đầu"
       }
     }
   },

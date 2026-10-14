@@ -3818,6 +3818,12 @@
       "score_variant": "Variant",
       "sort_label": "Sort this variant",
       "standings": "Standings",
+      "tile_contests": "Contests",
+      "tile_decided": "Decided",
+      "tile_models": "Models in play",
+      "tile_top": "Top model",
+      "by_model": "By model",
+      "by_area": "By task area",
       "podium_history": "Podium history",
       "variant_key": "Variant {key}",
       "station_status": {

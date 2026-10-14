@@ -10371,7 +10371,8 @@
     "dc_open_in_deck_hint": "결정 센터에서 열기 (Enter)",
     "dc_pending_lead": "대기 중인 검토는 전체 내용과 다른 모든 결정과 같은 키와 함께 결정 센터에서 열립니다.",
     "dc_pending_list_aria": "대기 중인 검토",
-    "dc_select_review": "검토 선택"
+    "dc_select_review": "검토 선택",
+    "dc_col_decision": "결정"
   },
   "pipeline": {
     "accept_suggestion": "제안 수락",
@@ -14728,7 +14729,13 @@
         "where_contest": "콘테스트",
         "where_count": "콘테스트 {count}개",
         "where_ledger": "원장",
-        "where_variant": "변형"
+        "where_variant": "변형",
+        "by_area": "작업 영역별",
+        "by_model": "모델별",
+        "tile_contests": "콘테스트",
+        "tile_decided": "결정됨",
+        "tile_models": "사용된 모델",
+        "tile_top": "최고 모델"
       }
     }
   },

@@ -129,15 +129,6 @@
       ],
       "resolved": false
     },
-    "ManualReviewList.tsx": {
-      "count": 1,
-      "sections": [6],
-      "lines": ["367-369"],
-      "contexts": [
-        "- `EventLogList.tsx:303-306`, `CronAgentsPage.tsx:42-44`, `MessageList.tsx:279-281`, `KnowledgeGraphDashboard.tsx:193-195`, `ManualReviewList.tsx:367-369` — all five seed buttons gated on `import.met…"
-      ],
-      "resolved": false
-    },
     "MessageList.tsx": {
       "count": 1,
       "sections": [6],
@@ -533,6 +524,16 @@
       "contexts": ["- `overview/sub_incidents/components/IncidentsInbox.tsx:521` — the sole `InboxZero` call site."],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_incidents/components/IncidentsInbox.tsx"
+    },
+    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["367-369"],
+      "contexts": [
+        "- `EventLogList.tsx:303-306`, `CronAgentsPage.tsx:42-44`, `MessageList.tsx:279-281`, `KnowledgeGraphDashboard.tsx:193-195`, `ManualReviewList.tsx:367-369` — all five seed buttons gated on `import.met…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "ManualReviewList.tsx"
     },
     "src/features/overview/sub_manual-review/components/backlog/BacklogTable.tsx": {
       "count": 1,

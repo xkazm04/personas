@@ -2,11 +2,168 @@
 
 ## Active
 
+### curator-night-1014 — Curator overnight: 10 parallel subagent workers, registry worktrees
+- **[2026-10-14 01:09]**
+- **Paths:** `.ai/conform-runs/**` · `.ai/registry-map.json`
+- **Status:** started
+
+- **[2026-10-13 17:11]**
+- **Paths:** `src/features/fleet/monitor/*.tsx` · `src-tauri/engine/src/p2p/**` · `src-tauri/src/commands/network/**` · `src/features/settings/sub_devices/**` · `src/stores/slices/network/**`
+- **Status:** started
+
+- **[2026-10-13 16:57]**
+- **Paths:** `src-tauri/src/commands/fleet/schedules.rs` · `src-tauri/src/ipc_shards/**` · `src/features/fleet/monitor/grid/prototype/entry-e/**` · `src/api/fleet/schedules.ts` · `src/i18n/**` · `.claude/skills/curator/**`
+- **Status:** started
+
+- **[2026-10-12 18:28]**
+- **Paths:** `.claude/skills/curator/**` · `.ai/conform-runs/**` · `.ai/registry-map.json`
+- **Status:** started
+
+- **[2026-10-09 17:10]**
+- **Paths:** `.claude/skills/curator/**` · `.ai/registry-map.json` · `.ai/conform-detail.json` · `.ai/conform-runs/**`
+- **Status:** started
+
+- **[2026-10-09 09:33]**
+- **Paths:** `src/features/companions/curator/council/**` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-10-08 23:21]**
+- **Paths:** `src/features/plugins/dev-tools/sub_lifecycle/**` · `src-tauri/src/lifecycle/**` · `src-tauri/db/src/repos/dev/lifecycle_runs.rs` · `src-tauri/core/src/models/lifecycle.rs` · `src/features/companions/overseer/components/Watched*` · `scripts/style/page-harness/lifecycle*` · `docs/design/lifecycle-*`
+- **Status:** started
+
+- **[2026-10-08 17:14]**
+- **Paths:** `src/features/teams/sub_goals/progress/**`
+- **Status:** started
+
+- **[2026-10-08 16:34]**
+- **Paths:** `src/features/plugins/dev-tools/sub_lifecycle/**` · `src/features/companions/overseer/**`
+- **Status:** started
+
+- **[2026-10-07 23:58]**
+- **Paths:** `src-tauri/src/companion/model_routing.rs` · `src-tauri/core/src/model_ids.rs` · `scripts/bench/**` · `docs/plans/**`
+- **Status:** started
+
+- **[2026-10-07 18:51]**
+- **Paths:** `.claude/mods/**`
+- **Status:** started
+
+- **[2026-10-07 08:39]**
+- **Paths:** `src/stores/slices/agents/backgroundChatSlice.ts` · `src-tauri/src/commands/core/chat_turn.rs` · `src-tauri/src/commands/core/chat.rs` · `src/api/agents/chat.ts` · `src-tauri/db/src/repos/communication/chat.rs` · `src-tauri/src/boot/**` · `fixtures/chat-turn-*`
+- **Status:** started
+
+- **[2026-10-07 08:35]**
+- **Paths:** `src-tauri/src/cloud/**` · `src-tauri/src/commands/design/reviews.rs` · `docs/**`
+- **Status:** started
+
+- **[2026-10-07 08:12]**
+- **Paths:** `src/features/companions/athena/chat/next/frame/variants/fusion/**` · `src/features/companions/athena/chat/next/ChatVariant*`
+- **Status:** started
+
+- **[2026-10-07 00:14]**
+- **Paths:** `src/features/companions/athena/chat/**` · `scripts/style/page-harness/athenaChat*`
+- **Status:** started
+
+- **[2026-10-07 00:09]**
+- **Paths:** `src-tauri/src/commands/infrastructure/dev_tools_http.rs` · `src-tauri/src/commands/infrastructure/dev_tools/**` · `src-tauri/db/**` · `src/features/overview/**` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-10-06 23:14]**
+- **Paths:** `src/features/fleet/monitor/drawer/**` · `src/features/fleet/monitor/grid/dock/**` · `src/features/fleet/monitor/grid/QuickDispatchDock.tsx` · `src/features/fleet/monitor/grid/dockVariant.ts` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-10-06 22:59]**
+- **Paths:** `src/features/companions/athena/chat/**`
+- **Status:** started
+
+- **[2026-10-06 22:46]**
+- **Paths:** `src/features/teams/sub_goals/**` · `src/i18n/locales/**`
+- **Status:** started
+
+### spark-app-master-fleet-ten — Plan + set up 10 App Masters (5 core, 5 hackathon): council, queue cap 8, Core workspace
+- **[2026-10-06 22:35]**
+- **Paths:** `.claude/master/**` · `.claude/skills/appmaster/**`
+- **Status:** started
+
+- **[2026-10-06 19:49]**
+- **Paths:** `src/features/companions/athena/chat/next/**` · `scripts/style/page-harness/**`
+- **Status:** started
+
+- **[2026-10-06 19:34]**
+- **Paths:** `src-tauri/src/cloud/**` · `src-tauri/src/commands/core/chat*` · `src-tauri/db/src/repos/communication/chat.rs` · `src-tauri/db/src/cdc.rs` · `src-tauri/db/src/migrations/**` · `src/stores/slices/agents/chatSlice.ts` · `src/i18n/locales/**`
+- **Status:** started
+
+- **[2026-10-06 19:05]**
+- **Paths:** `src-tauri/db/src/settings_keys.rs` · `src-tauri/core/src/cycle.rs` · `src-tauri/src/engine/subscription/attention.rs` · `src-tauri/src/commands/infrastructure/app_master_adopt.rs` · `src-tauri/src/commands/infrastructure/dev_tools_http.rs` · `src-tauri/src/commands/infrastructure/headless_master.rs` · `src/features/fleet/monitor/grid/orchestration/**` · `src/i18n/**` · `.claude/skills/appmaster/**` · `docs/features/monitor.md` · `docs/architecture/headless-app-master.md`
+- **Status:** started
+
+- **[2026-10-06 19:01]**
+- **Paths:** `src/features/shared/chrome/footer/**`
+- **Status:** started
+
+- **[2026-10-06 18:58]**
+- **Paths:** `src/features/teams/sub_factory/**`
+- **Status:** started
+
+- **[2026-10-06 18:57]**
+- **Paths:** `src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/**`
+- **Status:** started
+
+- **[2026-10-06 18:42]**
+- **Paths:** `src/features/fleet/monitor/**` · `src/features/overview/**` · `src/features/shared/chrome/**`
+- **Status:** started
+
+- **[2026-10-06 18:14]**
+- **Paths:** `src-tauri/src/cloud/**` · `src-tauri/db/src/cdc.rs` · `src-tauri/db/src/settings_keys.rs` · `src-tauri/src/commands/infrastructure/cloud*` · `src/features/settings/sub_account/**` · `src/i18n/locales/**`
+- **Status:** started
+
+- **[2026-10-06 15:57]**
+- **Paths:** `src-tauri/src/cloud/**` · `src-tauri/Cargo.toml` · `src/features/settings/sub_account/**` · `fixtures/**`
+- **Status:** started
+
+- **[2026-10-06 14:04]**
+- **Paths:** `src/features/fleet/monitor/**`
+- **Status:** started
+
+- **[2026-10-06 12:44]**
+- **Paths:** `src/features/overview/sub_manual-review/**` · `src/features/shared/components/decisions/**` · `src/features/shared/triage/**` · `src/features/fleet/monitor/grid/rail/**` · `src/features/fleet/monitor/grid/prototype/**`
+- **Status:** started
+
+- **[2026-10-06 12:37]**
+- **Paths:** `src/features/browser/servers/**` · `src/features/fleet/monitor/grid/FleetTerminalFallback.tsx`
+- **Status:** started
+
+- **[2026-10-06 10:36]**
+- **Paths:** `src/features/browser/servers/**`
+- **Status:** started
+
+- **[2026-10-06 09:38]**
+- **Paths:** `src/features/browser/servers/**`
+- **Status:** started
+
+- **[2026-10-06 09:35]**
+- **Paths:** `src/features/plugins/dev-tools/sub_projects/**` · `src/features/teams/sub_goals/**` · `src/features/teams/sub_kpis/**` · `src/features/plugins/dev-tools/sub_lifecycle/**` · `src/features/teams/sub_factory/**`
+- **Status:** started
+
+- **[2026-10-06 09:09]**
+- **Paths:** `src-tauri/src/commands/fleet/queue.rs` · `src-tauri/db/src/settings_keys.rs` · `src/features/settings/sub_limits/**` · `src/features/fleet/monitor/grid/dockLanding.ts`
+- **Status:** started
+
+- **[2026-10-05 16:38]**
+- **Paths:** `src/features/plugins/dev-tools/sub_workspaces/**` · `src/features/plugins/dev-tools/sub_projects/**` · `src/features/teams/sub_goals/**` · `src/features/teams/sub_factory/**` · `src/features/personas/PersonasPage.tsx`
+- **Status:** started
+
+- **[2026-10-05 16:30]**
+- **Paths:** `src/features/browser/__tests__` · `src/features/browser/browserStore.ts` · `src/features/browser/twinDraftLane.ts` · `src/features/browser/twinLearnLane.ts` · `src/features/browser/types.ts` · `src/features/browser/webview` · `src/features/browser/whitelist` · `src/features/fleet/monitor/grid/prototype/entry-e/ActivityEntryE.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/AutopilotTip.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/Bay.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/ClassicPanel.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/CommandBar.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/CompanionMark.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/DecisionDock.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/Ghosts.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/InboxRow.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/LanesPanel.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/NOTES.md` · `src/features/fleet/monitor/grid/prototype/entry-e/PersonaLine.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/PersonaMenu.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/PlanPlates.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/QueueLadder.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/QueueRung.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/QuickChatComposer.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/ReviewRow.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/RunwayPanel.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/SessionLine.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/SessionMenu.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/SessionWindow.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/SupplyDeck.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/WorkspaceTabs.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/boardFilter.ts` · `src/features/fleet/monitor/grid/prototype/entry-e/entryE.css` · `src/features/fleet/monitor/grid/prototype/entry-e/parts.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/sessionBits.ts` · `src/features/fleet/monitor/grid/prototype/entry-e/tone.ts` · `src/features/fleet/monitor/grid/prototype/entry-e/workspaceScope.ts` · `src-tauri/src/webbuild/athena_preview_agent.tsx` · `src-tauri/src/webbuild/bun.rs` · `src-tauri/src/webbuild/devserver.rs` · `src-tauri/src/webbuild/mcp.rs` · `src-tauri/src/webbuild/mod.rs` · `src-tauri/src/webbuild/plan.rs` · `src-tauri/src/webbuild/preview_agent.rs` · `src-tauri/src/webbuild/project.rs` · `src-tauri/src/webbuild/routes.rs` · `src-tauri/src/webbuild/sketch.rs` · `src-tauri/src/webbuild/versions.rs` · `src-tauri/src/commands/infrastructure/webbuild.rs` · `src-tauri/db/src/migrations/incremental/c01_plugin_tables.rs` · `src-tauri/db/src/migrations/incremental/c02_dev_goals_and_kpis.rs` · `src-tauri/db/src/migrations/incremental/c03_fleet_and_workspaces.rs` · `src-tauri/db/src/migrations/incremental/c04_milestones_and_autopilot.rs` · `src-tauri/db/src/migrations/incremental/c05_claude_accounts.rs` · `src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs` · `src-tauri/db/src/migrations/incremental/e01_execution_and_use_cases.rs` · `src-tauri/db/src/migrations/incremental/e02_credentials_and_audit_trails.rs` · `src-tauri/db/src/migrations/incremental/e03_p2p_and_telemetry.rs` · `src-tauri/db/src/migrations/incremental/e04_trigger_vocabulary_and_hot_paths.rs` · `src-tauri/db/src/migrations/incremental/e05_twin_and_memory_review.rs` · `src-tauri/db/src/migrations/incremental/e06_teams_and_sync.rs` · `src-tauri/db/src/migrations/incremental/e07_deliberation_and_scoring.rs` · `src-tauri/db/src/migrations/incremental/e08_sla_and_dev_tools.rs` · `src-tauri/db/src/migrations/incremental/e09_devices_and_provenance.rs` · `src-tauri/db/src/migrations/incremental/e10_reports_rename.rs` · `src-tauri/db/src/migrations/incremental/e11_persona_channel.rs` · `src-tauri/db/src/migrations/incremental/e12_shared_event_routes.rs` · `src-tauri/db/src/migrations/incremental/e13_execution_numeric_repair.rs` · `src-tauri/db/src/migrations/incremental/e14_project_team_invariant.rs` · `src-tauri/db/src/migrations/incremental/e15_memory_reaper_ledger.rs` · `src-tauri/db/src/migrations/incremental/e16_living_agent.rs` · `src-tauri/db/src/migrations/incremental/e17_restart_recovery.rs` · `src-tauri/db/src/migrations/incremental/e18_failure_classification.rs` · `src-tauri/db/src/migrations/incremental/e19_agent_manifest.rs` · `src-tauri/db/src/migrations/incremental/e20_persona_run_paging_index.rs` · `src-tauri/db/src/migrations/incremental/e21_chain_trace_ordering_index.rs` · `src-tauri/db/src/migrations/incremental/e22_dev_notes.rs` · `src-tauri/db/src/migrations/incremental/e23_model_requested.rs` · `src-tauri/db/src/migrations/incremental/e24_channel_authority.rs` · `src-tauri/db/src/migrations/incremental/e24_workspace_protection.rs` · `src-tauri/db/src/migrations/incremental/e25_workspace_charters.rs` · `src-tauri/db/src/migrations/incremental/e26_runner_task_worktree.rs` · `src-tauri/db/src/migrations/incremental/e27_idea_goal.rs` · `src-tauri/db/src/migrations/incremental/e28_retire_workspace_knowledge.rs` · `src-tauri/db/src/migrations/incremental/e29_execution_trace_cascade.rs` · `src-tauri/db/src/migrations/incremental/e30_dev_notes_milestone.rs` · `src-tauri/db/src/migrations/incremental/e31_notes_adopt_milestones.rs` · `src-tauri/db/src/migrations/incremental/e32_browser_sites.rs` · `src-tauri/db/src/migrations/incremental/e33_browser_sites_seed.rs` · `src-tauri/db/src/migrations/incremental/e34_lab_rating_scale.rs` · `src-tauri/db/src/migrations/incremental/e35_use_cases_auto_approve.rs` · `src-tauri/db/src/migrations/incremental/e36_fleet_queue.rs` · `src-tauri/db/src/migrations/incremental/e37_dispatch_order_retired.rs` · `src-tauri/db/src/migrations/incremental/e38_project_enabled.rs` · `src-tauri/db/src/migrations/incremental/e39_fleet_budgets.rs` · `src-tauri/db/src/migrations/incremental/e40_lab_eval_method.rs` · `src-tauri/db/src/migrations/incremental/e41_note_comments.rs` · `src-tauri/db/src/migrations/incremental/e42_workspace_team_binding.rs` · `src-tauri/db/src/migrations/incremental/e43_council.rs` · `src-tauri/db/src/migrations/incremental/e44_backlog_contract.rs` · `src-tauri/db/src/migrations/incremental/e45_one_idea_scale.rs` · `src-tauri/db/src/migrations/incremental/e46_feature_scenarios.rs` · `src-tauri/db/src/migrations/incremental/e46_webbuild_plans.rs` · `src-tauri/db/src/migrations/incremental/e47_remote_sessions.rs` · `src-tauri/db/src/migrations/incremental/e47_twin_setup_plan.rs` · `src-tauri/db/src/migrations/incremental/e48_registry_link.rs` · `src-tauri/db/src/migrations/incremental/e48_retire_competitions.rs` · `src-tauri/db/src/migrations/incremental/e49_curator_plan.rs` · `src-tauri/db/src/migrations/incremental/e50_curator_quiet.rs` · `src-tauri/db/src/migrations/incremental/e51_curator_request.rs` · `src-tauri/db/src/migrations/incremental/e52_curator_dispatch.rs` · `src-tauri/db/src/migrations/incremental/e53_curator_method.rs` · `src-tauri/db/src/migrations/incremental/e53_drop_auto_pr_columns.rs` · `src-tauri/db/src/migrations/incremental/e54_dev_lifecycle.rs` · `src-tauri/db/src/migrations/incremental/e55_twin_samples.rs` · `src-tauri/db/src/migrations/incremental/e56_claude_login_profiles.rs` · `src-tauri/db/src/migrations/incremental/e57_athena_session_flag.rs` · `src-tauri/db/src/migrations/incremental/e58_queue_lanes_and_bounds.rs` · `src-tauri/db/src/migrations/incremental/mod.rs` · `src-tauri/db/src/migrations/incremental/support.rs` · `src-tauri/db/src/migrations/incremental/tests.rs` · `docs/features/browser.md`
+- **Status:** started
+
+- **[2026-10-05 16:02]**
+- **Paths:** `src/features/fleet/monitor/grid/rail/**,src/features/fleet/monitor/grid/prototype/entry-e/**`
+- **Status:** started
+
 - **[2026-10-05 11:05]**
 - **Paths:** `src/features/fleet/monitor/fleetboard/**`
 - **Status:** started
 
-### spark2-lanes — spark 2: queue lanes as an ordering device, the dispatch modal, the dock's tail+Athena
 - **[2026-10-05 10:56]**
 - **Paths:** `src-tauri/src/commands/fleet/**` · `src-tauri/src/commands/infrastructure/task_executor.rs` · `src/features/agents/quick-answer/triage/deck/**` · `src/features/fleet/monitor/grid/QuickDispatchDock.tsx` · `scripts/docs/feature-doc-map.json`
 - **Status:** started
@@ -1300,6 +1457,82 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-device-mesh — spark: PersonaMonitor resource dominance per agent + multi-device mesh (enable/disable agents, shared queue, CLI-driven onboarding)
+
+### schedule-plate — Fleet Supply deck: scheduled-task plate (\Personas\ tasks, Prague time, toggle) + shared hidden-spawn helper
+
+### curator-multi — /curator --multi: codex+grok+agy conform rounds, 5 rounds with review
+
+### curator-multi-worker — curator loop.py run-pool: per-worker conform run files, merger, RAM-scaled workers
+
+### spark-council-readout — Council readout: DecisionsPanel absorbs the bench queue; full-page council view; HTML report hybrid (prototypes)
+
+### lifecycle-excellence — Lifecycle: 10 waves of UI/UX/product upgrades (operator-trusted loop)
+
+### spark-lifecycle-health — spark: Lifecycle module redesign - Overseer-driven pipeline health, expandable rail, gate/test timing
+
+### spark-goals-layers — spark: 3-layer goals (Filmstrip L0 / project milestones L1 / note detail L2) prototypes
+
+### spark-haiku-router — Haiku 5.5 vs Sonnet 5.5: audit, bench, smart model router
+
+### spark-claude-mods — Repo-tracked Claude Code mods: dev-law, result-economy, athena-skin
+
+### chat-turn-followups-w4 — wave4 D-B: background chat onto start_chat_turn; chat reply survives restart (worktree chat/turn-followups)
+
+### wave4-da-remote-control-v2 — /m phase 2 wave 4 D-A: M21 paused persona takes chat_send; M20 review_decide verb (worktree remote-control-v2)
+
+### perfect-fusion-2026-10-07 — /perfect targeted arc: Athena Fusion chat UI/UX polish - owner asks (V1 only, rail split, decision card) + backlog (Director: personas-web session)
+
+### spark-app-master-fleet-ten-build — fleet-ten build: dev-tools doors (goals, milestones, workspace, reports+approval, council ingest/tier) + Reports attachment UI
+
+### athena-chat-r6 — Athena chat r6: three decision-surface variants in the Personas design language, rail+toolbar hover expansion, delete Filament, sync master (Director: personas-web session)
+
+### athena-chat-fusion — Athena chat fusion: Oracle quick decisions + Filament rail + Current's managed overview + R5A capsule + R5C stats; then delete Halo Spread and R5 A/B/C (Director: personas-web session)
+
+### pick-console — Delete monitor drawer + dock variant switchers, keep console in both
+
+### busbar-progress-port — Port contest winner Busbar (goals-filmstrip-r2 B/3) as a Goals>Progress variant
+
+### athena-chat-r5 — Athena chat chrome round 5: three fresh variants (Director: personas-web session)
+
+### desktop2-persona-chat — DESKTOP-2 (worktree remote-control-v1): persona chat turn hoisted into Rust + persona chat sync + persona chat_send
+
+### headless-state-door — Headless App Master state door: heartbeat route + tick skip + Orchestration chip + skill heartbeat (operator-approved build in main around claims)
+
+### prototype-desktop-footer — /prototype: 3 DesktopFooter variants with custom SVG glyphs
+
+### monitor-qol — PersonaMonitor quality of life: drawer variants, timeline move, Board removal, sidebar + dock rework
+
+### mobile-w2-data — mobile phase 2 wave 2 DATA: notes + Athena chat sync, chat_send for Athena (worktree remote-control-v1, branch cloud/remote-control-v1)
+
+### prototype-railbelow — 3 RailBelow variants
+
+### prototype-projectslayer — 3 ProjectsLayer variants
+
+### remote-control-v1 — mobile phase 2 E2E-1 desktop half: trust.rs + rc.rs v1 verbs + pairing UI (worktree .claude/worktrees/remote-control-v1, branch cloud/remote-control-v1)
+
+### spark-monitor-perf — PersonaMonitor performance: render only what is seen, stagger the load, speed up manipulation
+
+### triage-restore — restore ReviewFocusFlow as the triage baseline; the rail opens it as a modal
+
+### server-modals-fleet-wake — ModalShell for Add/Edit server; FleetTerminalFallback redesign + wake button fix
+
+### server-control-tiles — server-control: Live tiles wins, delete Rack/Port map/Switchboard + switcher
+
+### projects-batch-2 — Projects batch 2: Manage columns, Goals Progress+drawer variants, KPI, Lifecycle, Atlas
+
+### strict-queue-order — fleet.strict_queue_order: a dispatch waits its turn instead of backfilling
+
+### spark-server-control-2 — server-control follow-up: Add app picks workspace projects in a shared modal; seed example apps
+
+### projects-module-pass — Projects module: Manage/Goals/Factory review pass
+
+### spark-server-control — spark: Server control page (dev-server start/kill from UI) + Monitor bay run/kill
+
+### monitor-ui-fuse — fuse Board styling into Activity: DecisionDock rail rows, Classic persona rows, session/queue cards
+
+### spark2-lanes — spark 2: queue lanes as an ordering device, the dispatch modal, the dock's tail+Athena
 
 ### spark-board-monitor — spark: port the web playground's Board (full-frame fleet overview) into PersonaMonitor on real data - visual reality check
 

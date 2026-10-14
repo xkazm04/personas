@@ -30,6 +30,7 @@ import { useRowRevealEntrance } from './UnifiedTable';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DEFAULT_DENSITY, DENSITY_TOKENS, type Density } from '@/lib/density';
+import { TABLE_HEAD_LABEL } from './tableTokens';
 
 /* -- Types ----------------------------------------------------------- */
 
@@ -340,7 +341,7 @@ export function DataGrid<T>({
                   // for the chevron, and ellipsizes its label; the open list carries
                   // every option in full.
                   wrapperClassName="flex-1 min-w-0"
-                  className="!pl-2 !pr-7 !py-0 -mx-2 !rounded-interactive !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label whitespace-nowrap [&>span]:block [&>span]:truncate"
+                  className="!pl-2 !pr-7 !py-0 -mx-2 !rounded-interactive !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground ${TABLE_HEAD_LABEL} whitespace-nowrap [&>span]:block [&>span]:truncate"
                 />
               </div>
             );
@@ -371,7 +372,7 @@ export function DataGrid<T>({
           return (
             <div
               key={col.key}
-              className={`${headerPadCls} flex items-center min-w-0 typo-label text-foreground ${
+              className={`${headerPadCls} flex items-center min-w-0 ${TABLE_HEAD_LABEL} text-foreground ${
                 col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : ''
               }`}
             >

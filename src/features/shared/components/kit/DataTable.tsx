@@ -5,6 +5,7 @@ import { Mark } from './Mark';
 import { nextSort, sortRows, type SortDir, type SortValue, type TableSort } from './sortRows';
 import { emptyBand, Ghost, type EmptySpec } from './states';
 import { cx, kitAttrs, stateClass, type Glyph, type KitStates, type Tone } from './types';
+import { TABLE_HEAD_LABEL } from '../display/tableTokens';
 
 export interface TableCol<K extends string> {
   key: K;
@@ -94,9 +95,9 @@ export function DataTable<K extends string>({ cols, rows: given, label, loading,
                 align={c.num ? 'right' : 'left'}
                 padding=""
                 className={cx('k-th-sort', c.num && 'k-num')}
-                buttonClassName="k-th-sort__btn typo-label k-regular"
+                buttonClassName={`k-th-sort__btn ${TABLE_HEAD_LABEL}`}
               />
-            ) : <th key={c.key} scope="col" className={cx('typo-label k-regular', c.num && 'k-num')} style={track(c)}>{c.label}</th>)}
+            ) : <th key={c.key} scope="col" className={cx(TABLE_HEAD_LABEL, c.num && 'k-num')} style={track(c)}>{c.label}</th>)}
           </tr>
         </thead>
         <tbody>

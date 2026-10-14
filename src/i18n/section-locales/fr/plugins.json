@@ -3826,7 +3826,13 @@
       "where_contest": "Concours",
       "where_count": "{count} concours",
       "where_ledger": "Registre",
-      "where_variant": "Variante"
+      "where_variant": "Variante",
+      "by_area": "Par type de tâche",
+      "by_model": "Par modèle",
+      "tile_contests": "Concours",
+      "tile_decided": "Tranchés",
+      "tile_models": "Modèles en lice",
+      "tile_top": "Meilleur modèle"
     }
   }
 }

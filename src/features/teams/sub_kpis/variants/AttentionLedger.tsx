@@ -130,7 +130,7 @@ export default function AttentionLedger({ overview, loading, onFocus, onOpen }: 
 function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   // The same header token UnifiedTable uses, so this table and the app's
   // other tables have one header style.
-  return <th className={`pb-2 pr-3 typo-label ${className}`}>{children}</th>;
+  return <th className={`pb-2 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground ${className}`}>{children}</th>;
 }
 
 function Td({ children }: { children: React.ReactNode }) {

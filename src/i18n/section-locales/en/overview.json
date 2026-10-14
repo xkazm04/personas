@@ -4,6 +4,7 @@
   "dc_decide_tip": "Open the gates queue in the Decision Center, most urgent first",
   "dc_pending_list_aria": "Pending reviews",
   "dc_select_review": "Select review",
+  "dc_col_decision": "Decision",
   "dc_open_in_deck": "Open in Decision Center",
   "dc_open_in_deck_hint": "Open this one in the Decision Center (Enter)",
   "dc_decided_elsewhere": "Someone else already decided this one.",

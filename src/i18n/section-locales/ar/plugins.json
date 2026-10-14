@@ -3826,7 +3826,13 @@
       "where_contest": "المسابقة",
       "where_count": "{count} مسابقة",
       "where_ledger": "السجل",
-      "where_variant": "المتغير"
+      "where_variant": "المتغير",
+      "by_area": "حسب مجال المهمة",
+      "by_model": "حسب النموذج",
+      "tile_contests": "المسابقات",
+      "tile_decided": "تم الحسم",
+      "tile_models": "النماذج المشاركة",
+      "tile_top": "أفضل نموذج"
     }
   }
 }
