@@ -1,0 +1,129 @@
+/* ============================================================================
+   THE WATERSHED - Curator > Process, ported from the process-landing contest
+   (claude-claude-opus-5-5_xhigh / variant-3).
+
+   Ported as a stylesheet, not utilities: the map's look IS layered gradients,
+   hatches, dashed banks and color-mix(). Every colour is one of the app's own
+   tokens (or a mix of them), so every theme repaints it. Type sizes are the
+   app's type steps times --u, the stage scale (1 to 1.45), so the map grows
+   with a big screen and never drops under the reading size.
+   Motion is transform and opacity only; the moving water is a canvas.
+   ========================================================================== */
+
+.ws-root {
+  --u: 1;
+  --ws-fs: calc(var(--type-1) * var(--type-f));
+  --ws-reveal: 0ms;
+  position: relative;
+  height: 100%;
+  width: 100%;
+  min-height: 480px;
+  /* clip, not hidden: a focused control inside must never scroll the stage itself */
+  overflow: clip;
+  color: var(--foreground);
+  background: radial-gradient(120% 90% at 18% 8%, color-mix(in srgb, var(--secondary) 70%, var(--background)) 0%, var(--background) 62%);
+}
+.ws-root:focus { outline: none; }
+.ws-probe { position: absolute; visibility: hidden; pointer-events: none; font-size: var(--ws-fs); font-family: var(--font-sans); }
+.ws-world { position: absolute; inset: 0; transform-origin: 0 0; transition: transform 700ms cubic-bezier(0.65, 0, 0.35, 1); }
+.ws-map, .ws-flow { position: absolute; left: 0; top: 0; display: block; }
+.ws-map { overflow: visible; }
+.ws-flow { pointer-events: none; }
+.ws-overlay { position: absolute; inset: 0; pointer-events: none; }
+.ws-overlay > * { pointer-events: auto; }
+.ws-l1 { transition: opacity 360ms ease, transform 360ms ease; }
+.ws-root.is-deep .ws-l1 { opacity: 0; pointer-events: none; transform: translateY(8px); }
+.ws-root.is-deep .ws-region { opacity: 0 !important; }
+.ws-labels { transition: opacity 360ms ease; }
+.ws-root.is-l3 .ws-labels, .ws-root.is-l3 .ws-leader { opacity: 0; }
+
+/* -- land ------------------------------------------------------------------ */
+.ws-contour { fill: none; stroke: color-mix(in srgb, var(--muted) 16%, transparent); stroke-width: 1; }
+.ws-contour.is-index { stroke: color-mix(in srgb, var(--muted) 28%, transparent); }
+.ws-graticule { fill: none; stroke: color-mix(in srgb, var(--foreground) 5%, transparent); stroke-width: 1; }
+.ws-region { font-family: var(--font-sans); font-weight: 700; fill: var(--foreground); opacity: 0.07; letter-spacing: 0.32em; text-transform: uppercase; transition: opacity 300ms ease; pointer-events: none; }
+.ws-region.is-named { opacity: 0.16; }
+
+/* -- water ----------------------------------------------------------------- */
+.ws-river-edge { fill: none; stroke: color-mix(in srgb, var(--accent) 55%, transparent); stroke-width: 1.2; }
+.ws-ghost { fill: none; stroke: color-mix(in srgb, var(--foreground) 30%, transparent); stroke-width: 1.2; stroke-dasharray: 5 6; }
+.ws-dist-clean { fill: none; stroke: color-mix(in srgb, var(--muted) 55%, transparent); stroke-linecap: round; }
+.ws-dist-fail { fill: none; stroke: color-mix(in srgb, var(--status-error) 60%, transparent); stroke-linecap: round; }
+.ws-lake { fill: color-mix(in srgb, var(--muted) 22%, var(--background)); stroke: color-mix(in srgb, var(--muted) 60%, transparent); stroke-width: 1.2; }
+.ws-lake-ring { fill: none; stroke: color-mix(in srgb, var(--muted) 28%, transparent); stroke-width: 1; }
+.ws-marsh-under { fill: color-mix(in srgb, var(--status-error) 14%, var(--background)); }
+.ws-marsh { stroke: color-mix(in srgb, var(--status-error) 70%, transparent); stroke-width: 1.3; stroke-dasharray: 3 3; }
+.ws-marsh.is-worst { stroke-width: 2; stroke-dasharray: none; }
+.ws-marsh-glow { fill: color-mix(in srgb, var(--status-error) 40%, transparent); }
+.ws-reed { fill: none; stroke: color-mix(in srgb, var(--status-error) 55%, transparent); stroke-width: 1.1; stroke-linecap: round; }
+.ws-rapid { fill: none; stroke: var(--status-warning); stroke-linecap: round; }
+.ws-coast { fill: none; stroke: color-mix(in srgb, var(--accent) 30%, transparent); stroke-width: 1.2; stroke-dasharray: 1 5; stroke-linecap: round; }
+.ws-wave { fill: none; stroke: color-mix(in srgb, var(--accent) 14%, transparent); stroke-width: 1; }
+.ws-rib { stroke: none; fill-opacity: 0.5; }
+.ws-rib.o-landed { fill: var(--accent); }
+.ws-rib.o-quiet { fill: var(--muted); fill-opacity: 0.38; }
+.ws-rib.o-interrupted, .ws-rib.o-errored { fill: var(--status-error); }
+.ws-rib.is-fan { fill-opacity: 0.16; }
+.ws-rib-dash { fill: none; stroke: var(--background); stroke-width: 1.5; stroke-dasharray: 2 3; }
+.ws-mouth-stub { stroke: var(--muted); stroke-dasharray: 2 3; stroke-width: 1.5; }
+.ws-spring-core { fill: var(--accent); fill-opacity: 0.85; }
+
+/* -- map labels (one size: the app's body step, scaled with the stage) -- */
+.ws-lbl { font-family: var(--font-sans); font-size: calc(var(--ws-fs) * var(--u)); fill: var(--foreground); }
+.ws-lbl.is-wait { font-style: italic; fill: color-mix(in srgb, var(--foreground) 92%, transparent); paint-order: stroke; stroke: color-mix(in srgb, var(--primary) 30%, var(--background)); stroke-width: 4px; stroke-linejoin: round; }
+.ws-lbl.is-marsh { fill: var(--status-error); font-weight: 600; paint-order: stroke; stroke: var(--background); stroke-width: 4px; stroke-linejoin: round; }
+.ws-lbl.is-lake { fill: var(--muted-foreground); font-style: italic; paint-order: stroke; stroke: var(--background); stroke-width: 4px; stroke-linejoin: round; }
+.ws-lbl.is-place { fill: var(--muted-foreground); letter-spacing: 0.22em; font-weight: 600; text-transform: uppercase; paint-order: stroke; stroke: var(--background); stroke-width: 4px; stroke-linejoin: round; }
+.ws-lbl.is-sub, .ws-lbl .is-sub { fill: var(--muted-foreground); }
+.ws-lbl.is-ghost { fill: var(--muted-foreground); font-style: italic; }
+.ws-lbl.is-head { fill: var(--muted-foreground); letter-spacing: 0.24em; font-weight: 600; text-transform: uppercase; }
+.ws-lbl.is-head.is-split { letter-spacing: 0.14em; }
+.ws-lbl.is-mouth { font-weight: 600; }
+.ws-lbl.o-landed { fill: var(--accent); }
+.ws-lbl.o-quiet { fill: var(--muted-foreground); }
+.ws-lbl.o-interrupted, .ws-lbl.o-errored { fill: var(--status-error); }
+.ws-lbl.o-none { fill: var(--muted); }
+.ws-lbl .is-n { font-weight: 700; fill: var(--foreground); font-size: calc(var(--ws-fs) * var(--u) * 1.3); }
+
+/* -- settlements and leaders: focus is a data attribute set without React --- */
+.ws-settle-ring { fill: var(--background); stroke: var(--foreground); stroke-width: 2; }
+.ws-settle-ring.is-hot { stroke: var(--status-error); }
+.ws-settle-dot { fill: var(--foreground); }
+.ws-settle-halo { fill: color-mix(in srgb, var(--accent) 30%, transparent); opacity: 0; transition: opacity 250ms ease; }
+.ws-root[data-hit] .ws-map { cursor: pointer; }
+.ws-leader { stroke: color-mix(in srgb, var(--foreground) 26%, transparent); stroke-width: 1; stroke-dasharray: 1 4; stroke-linecap: round; transition: stroke 200ms ease; }
+.ws-st { transition: opacity 250ms ease; }
+.ws-map[data-dim] .ws-st:not([data-on]) { opacity: 0.45; }
+.ws-st[data-on] .ws-settle-halo { opacity: 1; }
+.ws-leader[data-on] { stroke: color-mix(in srgb, var(--accent) 80%, transparent); stroke-dasharray: none; }
+
+/* -- voyage --------------------------------------------------------------- */
+.ws-voyage-line { fill: none; stroke: var(--foreground); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 70%, transparent)); }
+.ws-root.is-l3 .ws-voyage-line { stroke-width: 4.5; }
+.ws-voyage-dot { fill: var(--foreground); }
+.ws-voyage-skip { fill: var(--background); stroke: var(--foreground); stroke-width: 1.5; }
+.ws-voyage-fric { fill: none; stroke: var(--status-warning); stroke-width: 2; }
+.ws-voyage-end.o-landed { fill: var(--accent); }
+.ws-voyage-end.o-quiet { fill: var(--muted); }
+.ws-voyage-end.o-interrupted, .ws-voyage-end.o-errored { fill: var(--status-error); }
+.ws-voyage-wipe { transform-box: view-box; animation: ws-fill 1100ms ease backwards; }
+
+/* -- arrival: the river fills from the spring (transform), then the rest fades in.
+   Fill mode is `backwards` on purpose: once an animation ends it lets go, so hover lifts and the
+   deep level's fades keep working on the same elements. -- */
+.ws-reveal-rect { transform-box: view-box; animation: ws-fill var(--ws-reveal) cubic-bezier(0.3, 0.7, 0.45, 1) backwards; }
+.ws-root .ws-labels.is-arriving { animation: ws-fade calc(var(--ws-reveal) * 0.3) ease backwards; animation-delay: calc(var(--ws-reveal) * 0.55); }
+.ws-plate.is-arriving { animation: ws-rise 360ms ease backwards; animation-delay: calc(var(--ws-reveal) * var(--at, 0)); }
+.ws-skip { animation: ws-hint var(--ws-reveal) linear both; }
+.ws-root.is-skipped .ws-reveal-rect, .ws-root.is-skipped .is-arriving, .ws-root.is-skipped .ws-skip { animation: none; }
+.ws-root.is-skipped .ws-skip { opacity: 0; }
+@keyframes ws-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes ws-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ws-rise { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: 0 0; } }
+@keyframes ws-hint { 0%, 92% { opacity: 1; } 100% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ws-world { transition: none; }
+  .ws-reveal-rect, .is-arriving, .ws-voyage-wipe { animation: none; }
+  .ws-skip { display: none; }
+}
