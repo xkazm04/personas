@@ -374,10 +374,10 @@ mod tests {
     }
 
     #[test]
-    fn ignore_heavy_kind_is_throttled_but_undelivered_expiry_is_not() {
+    fn ignore_heavy_kind_is_throttled_but_undelivered_expiry_is_not() -> Result<(), r2d2::Error> {
         let pool = test_pool();
         {
-            let c = pool.get().unwrap();
+            let c = pool.get()?;
             for i in 0..10 {
                 c.execute(
                     "INSERT INTO companion_proactive_message (id, trigger_kind, status, delivered_at) VALUES (?1, 'message_digest', 'expired', datetime('now'))",
@@ -392,7 +392,7 @@ mod tests {
                 ).unwrap();
             }
         }
-        let c = pool.get().unwrap();
+        let c = pool.get()?;
         assert_eq!(
             effective_kind_cap(&c, "message_digest"),
             kind_cap("message_digest") - 1
@@ -401,6 +401,7 @@ mod tests {
             effective_kind_cap(&c, "incident_blocker"),
             kind_cap("incident_blocker")
         );
+        Ok(())
     }
 
     #[test]
