@@ -1,9 +1,11 @@
 pub mod attention_ledger;
 pub mod build_sessions;
+pub mod charter_acts;
 pub mod curation_schedule;
 pub mod design_conversations;
 pub mod episodes;
 pub mod frontend_crashes;
+pub mod mandates;
 pub mod memories;
 pub mod memory_claims;
 pub mod memory_reaper;

@@ -80,6 +80,15 @@ pub(super) fn shard(
         commands::core::responsibilities::set_persona_responsibility_status,
         commands::core::responsibilities::list_attention_ledger,
         commands::core::responsibilities::responsibility_measured,
+        // Core -- Mandate envelope + act log (spark mandate-lanes, WP2)
+        commands::core::mandates::mandate_list,
+        commands::core::mandates::mandate_get,
+        commands::core::mandates::mandate_sign,
+        commands::core::mandates::mandate_amend,
+        commands::core::mandates::mandate_suspend,
+        commands::core::mandates::mandate_resume,
+        commands::core::mandates::charter_acts_list,
+        commands::core::mandates::charter_act_revert,
         commands::core::memory_compile::compile_persona_memories,
         // Core -- Memory curation runs (persona_background_job framework)
         commands::core::persona_jobs::enqueue_persona_memory_reflection,

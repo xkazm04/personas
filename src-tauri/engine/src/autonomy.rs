@@ -93,6 +93,7 @@ use std::collections::HashMap;
 
 use crate::app_master::{MandateRecord, MandateRefusal, RUNG_BRANCH, RUNG_READ, RUNG_RETRY};
 use crate::autopilot::{self, AutopilotMode, Capability};
+use personas_db::models::DecideScope;
 use personas_db::settings_keys;
 use personas_db::DbPool;
 
@@ -284,6 +285,15 @@ pub fn mandate_permits(
 
 /// One-shot variant for call sites that hold a pool and a single project (the
 /// overnight tick, the diff chokepoint) rather than a pre-loaded map.
+///
+/// Since spark mandate-lanes it also asks the **envelope**, as an ADDITIONAL
+/// check after the rung: an action that is a delegated decision
+/// ([`Action::decide_scope`]) is refused when the project's mandate carries a
+/// SIGNED envelope that does not hold that scope. An unsigned envelope
+/// (`envelope_version = 0`, every charter the migration left at its defaults)
+/// is not consulted, so such a charter behaves exactly as before the envelope
+/// existed. The map form [`mandate_permits`] stays rung-only: a
+/// [`MandateRecord`] carries no envelope.
 pub fn mandate_permits_for(
     pool: &DbPool,
     project_id: &str,
@@ -294,10 +304,80 @@ pub fn mandate_permits_for(
     };
     record
         .mandate
-        .permits_rung(action.required_rung(), action.label())
+        .permits_rung(action.required_rung(), action.label())?;
+    let Some(scope) = action.decide_scope() else {
+        return Ok(());
+    };
+    let Some((_, envelope)) = crate::responsibility::envelope_for_project_or_none(pool, project_id)
+    else {
+        return Ok(());
+    };
+    if !envelope.is_signed() || envelope.permits(scope) {
+        return Ok(());
+    }
+    Err(MandateRefusal::OutsideEnvelope {
+        action: action.label().to_string(),
+        scope: scope.as_str().to_string(),
+        envelope_version: envelope.envelope_version,
+        owner: record.mandate.owner,
+    })
+}
+
+/// What a granted delegated decision is recorded under: the mandate's charter
+/// and the envelope version that granted it (both go on the `charter_acts` row).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MandateGrant {
+    pub charter_id: String,
+    pub envelope_version: i64,
+}
+
+/// May the steward of `project_id` take a decision of kind `scope` alone?
+///
+/// The gate the router and the App Master's tick answer AT (never a bypass
+/// around it). Unlike the action gates this one is NOT additive: delegation is
+/// opt-in, so an unmandated project ([`MandateRefusal::NoMandate`]), an
+/// unsigned envelope or a signed one without the scope
+/// ([`MandateRefusal::OutsideEnvelope`]) all mean "this reaches the operator".
+pub fn mandate_permits_scope_for(
+    pool: &DbPool,
+    project_id: &str,
+    scope: DecideScope,
+) -> Result<MandateGrant, MandateRefusal> {
+    let no_mandate = || MandateRefusal::NoMandate {
+        scope: scope.as_str().to_string(),
+    };
+    let record = crate::responsibility::mandate_for_project_or_none(pool, project_id)
+        .ok_or_else(no_mandate)?;
+    let (charter_id, envelope) =
+        crate::responsibility::envelope_for_project_or_none(pool, project_id)
+            .ok_or_else(no_mandate)?;
+    if envelope.is_signed() && envelope.permits(scope) {
+        return Ok(MandateGrant {
+            charter_id,
+            envelope_version: envelope.envelope_version,
+        });
+    }
+    Err(MandateRefusal::OutsideEnvelope {
+        action: format!("decide `{}` alone", scope.as_str()),
+        scope: scope.as_str().to_string(),
+        envelope_version: envelope.envelope_version,
+        owner: record.mandate.owner,
+    })
 }
 
 impl Action {
+    /// The mandate-envelope scope this action IS, when it is a decision a
+    /// steward can be delegated (spark mandate-lanes). Only actions whose
+    /// meaning matches a scope exactly are mapped: promoting accepted backlog
+    /// work into a dispatched goal is `dispatch`. Everything else is `None`
+    /// and is governed by the rung alone, as before.
+    pub fn decide_scope(self) -> Option<DecideScope> {
+        match self {
+            Self::BacklogToGoal => Some(DecideScope::Dispatch),
+            _ => None,
+        }
+    }
+
     /// Human label used in refusal messages and review packets.
     pub fn label(self) -> &'static str {
         match self {
@@ -497,6 +577,114 @@ mod tests {
         assert!(is_allowed(&m, "p", true, Action::AttentionLoop));
         // Its advance lane authors work, so it needs the authoring rung.
         assert_eq!(Action::AttentionLoop.required_rung(), RUNG_BRANCH);
+    }
+
+    // -- Mandate envelope (spark mandate-lanes, WP2) ---------------------------
+
+    fn mandated_pool(rung: i64) -> DbPool {
+        let pool = personas_db::init_test_db().expect("test db");
+        personas_db::PoolExt::conn(&pool, "autonomy test")
+            .unwrap()
+            .execute_batch(&format!(
+                "INSERT INTO personas (id, name, system_prompt, enabled, created_at, updated_at)
+                    VALUES ('am','am','sp',1,datetime('now'),datetime('now'));
+                 INSERT INTO persona_responsibilities
+                    (id, persona_id, title, domain, scope_rung, status, project_id, owner, source,
+                     created_at, updated_at)
+                 VALUES ('c1','am','App master','software_engineering',{rung},'active','proj',
+                         'ana@example.com','kp-hire',datetime('now'),datetime('now'));"
+            ))
+            .unwrap();
+        pool
+    }
+
+    /// The regression the envelope must not break: a charter whose e67 columns
+    /// hold their defaults answers every action exactly as the rung alone does.
+    #[test]
+    fn a_charter_with_default_envelope_columns_behaves_exactly_as_before() {
+        for rung in [RUNG_READ, RUNG_RETRY, RUNG_BRANCH] {
+            let pool = mandated_pool(i64::from(rung));
+            let mut map = HashMap::new();
+            map.insert("proj".to_string(), record("proj", rung));
+            for a in all_actions() {
+                assert_eq!(
+                    mandate_permits_for(&pool, "proj", a),
+                    mandate_permits(&map, "proj", a),
+                    "rung {rung}, {a:?}: the one-shot gate must equal the rung-only gate"
+                );
+            }
+            assert!(mandate_permits_for(&pool, "unmandated", Action::BacklogToGoal).is_ok());
+        }
+    }
+
+    #[test]
+    fn a_signed_envelope_without_the_scope_refuses_the_mapped_action() {
+        let pool = mandated_pool(i64::from(RUNG_BRANCH));
+        let sign = |scopes: Vec<DecideScope>| {
+            personas_db::repos::core::mandates::sign(
+                &pool,
+                "c1",
+                &personas_db::models::MandateSignInput {
+                    decide_scopes: scopes,
+                    ..Default::default()
+                },
+                None,
+            )
+            .unwrap();
+        };
+        sign(vec![DecideScope::ReportRead]);
+        let refused = mandate_permits_for(&pool, "proj", Action::BacklogToGoal).unwrap_err();
+        assert!(
+            matches!(refused, MandateRefusal::OutsideEnvelope { ref scope, envelope_version: 1, .. } if scope == "dispatch"),
+            "{refused:?}"
+        );
+        assert!(refused.to_string().contains("ana@example.com"), "{refused}");
+        // Actions with no scope are untouched by the envelope.
+        assert!(mandate_permits_for(&pool, "proj", Action::GoalAdvancement).is_ok());
+        sign(vec![DecideScope::Dispatch]);
+        assert!(mandate_permits_for(&pool, "proj", Action::BacklogToGoal).is_ok());
+    }
+
+    #[test]
+    fn the_scope_gate_delegates_only_what_a_signed_envelope_holds() {
+        let pool = mandated_pool(i64::from(RUNG_BRANCH));
+        // Unmandated project: nothing is delegated.
+        assert!(matches!(
+            mandate_permits_scope_for(&pool, "other", DecideScope::ReportRead),
+            Err(MandateRefusal::NoMandate { .. })
+        ));
+        // Unsigned envelope: nothing is delegated either.
+        assert!(matches!(
+            mandate_permits_scope_for(&pool, "proj", DecideScope::ReportRead),
+            Err(MandateRefusal::OutsideEnvelope {
+                envelope_version: 0,
+                ..
+            })
+        ));
+        personas_db::repos::core::mandates::sign(
+            &pool,
+            "c1",
+            &personas_db::models::MandateSignInput {
+                decide_scopes: vec![DecideScope::ReportRead],
+                ..Default::default()
+            },
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            mandate_permits_scope_for(&pool, "proj", DecideScope::ReportRead).unwrap(),
+            MandateGrant {
+                charter_id: "c1".into(),
+                envelope_version: 1
+            }
+        );
+        assert!(mandate_permits_scope_for(&pool, "proj", DecideScope::IdeaAccept).is_err());
+        // A suspended mandate delegates nothing.
+        personas_db::repos::core::mandates::suspend(&pool, "c1", None).unwrap();
+        assert!(matches!(
+            mandate_permits_scope_for(&pool, "proj", DecideScope::ReportRead),
+            Err(MandateRefusal::NoMandate { .. })
+        ));
     }
 
     #[test]

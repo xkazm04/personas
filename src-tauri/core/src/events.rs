@@ -220,6 +220,11 @@ event_names! {
     // (rows carry a start stamp, not an uptime, so an idle fleet is silent).
     // Same target rule as `BROWSER_TABS`: `emit_to(AnyLabel{"main"})`.
     DEV_SERVERS_CHANGED        => "dev-servers-changed",
+    // Mandate lanes: one `charter_acts` row was recorded (a decision inside a
+    // mandate's envelope, an envelope change, or a revert). Payload is the
+    // full `CharterAct`. Emitted by the app layer after the writing
+    // transaction commits; same target rule as `BROWSER_TABS`.
+    CHARTER_ACT_RECORDED       => "charter-act-recorded",
     // The findings loop's SIGNAL events (docs/plans/dev-findings-loop.md). A sensor
     // raised a finding, or a verdict landed on one that shipped. Published on every
     // create_finding / set_finding_verify_state — i.e. from the repo, so no caller

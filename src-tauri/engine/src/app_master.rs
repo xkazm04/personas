@@ -276,6 +276,18 @@ pub enum MandateRefusal {
     },
     /// The proposal touches one or more forbidden change classes.
     ForbiddenClasses(Vec<Violation>),
+    /// The signed mandate envelope does not delegate this kind of decision
+    /// (`decide_scopes`, spark mandate-lanes). Only ever raised for a SIGNED
+    /// envelope by the action gate; the scope gate also raises it for an
+    /// unsigned one (`envelope_version = 0`), which delegates nothing.
+    OutsideEnvelope {
+        action: String,
+        scope: String,
+        envelope_version: i64,
+        owner: String,
+    },
+    /// The project has no active mandate, so no decision is delegated.
+    NoMandate { scope: String },
 }
 
 impl std::fmt::Display for MandateRefusal {
@@ -310,6 +322,34 @@ impl std::fmt::Display for MandateRefusal {
                         .join("; ")
                 )
             }
+            Self::OutsideEnvelope {
+                action,
+                scope,
+                envelope_version,
+                owner,
+            } => {
+                if *envelope_version > 0 {
+                    write!(
+                        f,
+                        "App master mandate refuses `{action}`: the signed envelope \
+                         (v{envelope_version}) does not delegate `{scope}`"
+                    )?;
+                } else {
+                    write!(
+                        f,
+                        "App master mandate refuses `{action}`: the envelope is unsigned, \
+                         so `{scope}` is not delegated"
+                    )?;
+                }
+                if !owner.is_empty() {
+                    write!(f, ". Escalate to {owner}")?;
+                }
+                Ok(())
+            }
+            Self::NoMandate { scope } => write!(
+                f,
+                "No active App master mandate on this project, so `{scope}` is not delegated"
+            ),
         }
     }
 }
