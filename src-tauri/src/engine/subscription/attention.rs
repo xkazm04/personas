@@ -24,6 +24,8 @@
 //! 5. **monthly budget** — the SAME `get_monthly_spend` vs `max_budget_usd`
 //!    check `execute_persona_inner` enforces, pre-flighted so the ledger
 //!    refuses loudly instead of the spawn dying in a Validation error.
+//!    The persona's mandate cap (`budget_monthly_usd` on its active software
+//!    charter) is folded in: the tighter ceiling wins (mandate lanes WP2b).
 //!
 //! Every decision is ledgered in `persona_attention_ledger` (kind
 //! `attention`): a dispatch opens a `started` row BEFORE the spawn and closes
@@ -1594,7 +1596,28 @@ fn admit_persona(
     // `weekly_budget_usd` reader shape — instead of re-asking positivity at
     // the compare (spend-ceilings golden path, §4 step 3).
     let persona = persona_repo::get_by_id(pool, persona_id)?;
-    let configured_ceiling = persona.max_budget_usd.filter(|b| b.is_finite() && *b > 0.0);
+    // Mandate lanes WP2b: a mandate's own cap (`budget_monthly_usd` on the
+    // persona's active, project-bound software charter) is checked here too,
+    // not only by the overnight governor, against the SAME denominator the
+    // governor uses (the holder's settled month spend). The tighter of the two
+    // ceilings wins.
+    let mandate_ceiling = charters
+        .iter()
+        .filter(|c| {
+            c.domain == personas_engine::responsibility::DOMAIN_SOFTWARE_ENGINEERING
+                && c.status == "active"
+                && c.project_id.is_some()
+        })
+        .filter_map(|c| c.budget_monthly_usd)
+        .filter(|b| b.is_finite() && *b > 0.0)
+        .reduce(f64::min);
+    let configured_ceiling = match (
+        persona.max_budget_usd.filter(|b| b.is_finite() && *b > 0.0),
+        mandate_ceiling,
+    ) {
+        (Some(a), Some(b)) => Some(a.min(b)),
+        (a, b) => a.or(b),
+    };
     if let Some(limit) = configured_ceiling {
         let spent = executions_repo::get_monthly_spend(pool, persona_id)?;
         if spent >= limit {
@@ -6507,11 +6530,19 @@ async fn dispatch_into_worktree(
     // rung-2 dispatch onto a machine with no authenticated `gh` would otherwise
     // spend a turn on a push that cannot work.
     let gh_authenticated = gh_is_authenticated().await;
+    // The signed merge policy can only LOWER what a rung-3 worker ships
+    // (mandate lanes): `never` opens the branch and asks. An unreadable
+    // envelope reads as `never`, the safe direction.
+    let merge_policy = crate::db::repos::core::mandates::get_envelope(&state.db, &charter.id)
+        .ok()
+        .flatten()
+        .map(|e| e.merge_policy)
+        .unwrap_or_default();
     let text = personas_engine::unattended::unattended_worktree_task_text_at_rung(
         task,
         &worktree.branch,
         &worktree_path,
-        charter.scope_rung,
+        personas_engine::unattended::ship_rung_under_merge_policy(charter.scope_rung, merge_policy),
         gh_authenticated,
     );
     // Lifecycle contract, unattended door: the practice minus Isolate/Land,
@@ -10311,6 +10342,47 @@ mod attention_tests {
                 assert_eq!((runs_today, cap), (1, 1));
             }
             _ => panic!("expected the daily cap to refuse a plain persona's second pass"),
+        }
+        Ok(())
+    }
+
+    /// Mandate lanes WP2b: the mandate's own monthly cap refuses the attention
+    /// dispatch too, against the holder's settled month spend - not only the
+    /// overnight governor.
+    #[test]
+    fn a_mandate_over_its_monthly_cap_is_refused_on_the_attention_path() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "am")?;
+        let charter_id = seed_project_charter(&pool, "am", "Deliver ideas", "proj_1");
+        pool.get()?.execute(
+            "INSERT INTO persona_executions (id, persona_id, status, cost_usd, created_at)
+             VALUES ('ex1', 'am', 'completed', 2.0, datetime('now'))",
+            [],
+        )?;
+        let admit = |pool: &DbPool| -> Result<Admission, AppError> {
+            let charter = responsibilities::get_by_id(pool, &charter_id)?.expect("charter");
+            let mut counts = TickCounts::default();
+            admit_persona(pool, "am", &[&charter], &mut counts, false)
+        };
+        // No cap: the spend alone refuses nothing.
+        assert!(!matches!(
+            admit(&pool)?,
+            Admission::Refused(AttentionRefusal::BudgetExhausted { .. })
+        ));
+        responsibilities::update(
+            &pool,
+            &charter_id,
+            crate::db::repos::core::responsibilities::UpdateResponsibilityInput {
+                budget_monthly_usd: Some(Some(1.0)),
+                ..Default::default()
+            },
+        )?;
+        match admit(&pool)? {
+            Admission::Refused(AttentionRefusal::BudgetExhausted {
+                spent_usd,
+                limit_usd,
+            }) => assert_eq!((spent_usd, limit_usd), (2.0, 1.0)),
+            _ => panic!("the mandate cap must refuse a steward over it"),
         }
         Ok(())
     }

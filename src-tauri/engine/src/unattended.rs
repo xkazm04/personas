@@ -215,6 +215,22 @@ protection, CI or a gate you run, and you may NOT deploy.\n"
     )
 }
 
+/// The rung a worker's rule 2 is written for, given the charter's scope rung
+/// AND its signed merge policy (spark mandate-lanes): a rung-3 charter whose
+/// mandate says `merge_policy = 'never'` ships like rung 2 - it opens the
+/// branch (and the pull request, where it can) and asks, instead of merging.
+/// Any other policy keeps the rung. The policy only ever LOWERS the rung.
+pub fn ship_rung_under_merge_policy(
+    scope_rung: u8,
+    merge_policy: personas_db::models::MergePolicy,
+) -> u8 {
+    if scope_rung >= RUNG_MAY_MERGE && merge_policy == personas_db::models::MergePolicy::Never {
+        RUNG_MAY_OPEN_PR
+    } else {
+        scope_rung
+    }
+}
+
 /// [`unattended_worktree_guardrails`] with rule 2 decided by the dispatching
 /// charter's scope rung. Below [`RUNG_MAY_OPEN_PR`] the text is byte-identical
 /// to the rung-less variant; at [`RUNG_MAY_OPEN_PR`] the worker may open the
@@ -681,6 +697,37 @@ mod tests {
     fn the_merge_rung_matches_the_mandate() {
         assert_eq!(RUNG_MAY_MERGE, crate::app_master::RUNG_MERGE);
         assert_eq!(RUNG_MAY_MERGE, crate::app_master::MAX_GRANTABLE_RUNG);
+    }
+
+    /// Mandate lanes WP2b: `merge_policy = never` turns a rung-3 worker into
+    /// one that opens the branch and asks; every other policy, and every rung
+    /// below 3, is untouched.
+    #[test]
+    fn a_never_merge_policy_makes_a_rung_three_worker_ask_instead_of_merge() {
+        use personas_db::models::MergePolicy;
+        let ask = unattended_worktree_guardrails_at_rung(
+            "b",
+            "p",
+            ship_rung_under_merge_policy(RUNG_MAY_MERGE, MergePolicy::Never),
+            true,
+        );
+        assert!(!ask.contains("git merge --no-ff"), "{ask}");
+        assert_eq!(
+            ask,
+            unattended_worktree_guardrails_at_rung("b", "p", RUNG_MAY_OPEN_PR, true)
+        );
+        for policy in [MergePolicy::GateGreen, MergePolicy::GateGreenCouncilReady] {
+            let merge = unattended_worktree_guardrails_at_rung(
+                "b",
+                "p",
+                ship_rung_under_merge_policy(RUNG_MAY_MERGE, policy),
+                true,
+            );
+            assert!(merge.contains("git merge --no-ff b"), "{merge}");
+        }
+        for rung in 0..RUNG_MAY_MERGE {
+            assert_eq!(ship_rung_under_merge_policy(rung, MergePolicy::Never), rung);
+        }
     }
 
     /// The owner's decision of 2026-09-09: a rung-3 worker merges its own
