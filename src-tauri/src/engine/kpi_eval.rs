@@ -235,6 +235,16 @@ async fn run_shell_bounded(cwd: &str, cmd: &str) -> Result<String, AppError> {
     // `cmd /C` writes its own lines in the console's OEM code page, not UTF-8.
     let mut text = personas_core::utils::process::decode_output(&out.stdout);
     let stderr = personas_core::utils::process::decode_output(&out.stderr);
+    // A program that never started is not a measurement: its shell's message parses
+    // as a number (`tool | wc -l` prints 0) or as a line count, and would be recorded
+    // as a value. Refuse it here, before `parse_value` can read it.
+    if personas_core::utils::process::shell_reported_not_run(out.status.code(), &stderr) {
+        return Err(AppError::Validation(format!(
+            "Measurement command did not run (exit {:?}): {}",
+            out.status.code(),
+            tail(&stderr, 300)
+        )));
+    }
     if !stderr.is_empty() {
         text.push('\n');
         text.push_str(&stderr);

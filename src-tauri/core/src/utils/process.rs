@@ -123,6 +123,33 @@ fn decode_code_page(bytes: &[u8], code_page: u32) -> Option<String> {
     String::from_utf16(&wide).ok()
 }
 
+/// Whether the shell that ran a command string reported that the program never started.
+///
+/// A caller that parses a value out of a shell command's output cannot tell "the tool ran and
+/// found nothing" from "the tool was never there" by parsing: the shell's own message is output
+/// too. Measured 2026-10-14 with the program missing: `sh -c "tool . | wc -l"` exits 0 with `0`
+/// on stdout, so a first-number parse records zero findings; `sh -c "tool ."` exits 127 and the
+/// first number in its message is the `1` of `line 1`; `cmd /C` exits 1 - the same code a lint
+/// tool uses for "errors found" - so on Windows the exit code says nothing either way.
+///
+/// So the evidence is the shell's line on stderr, plus POSIX's reserved 126/127 off Windows.
+/// cmd's message follows the Windows display language and only the English one is recognised
+/// here; a tool that starts and then fails (a package registry's 404, a crash) is not "did not
+/// run" and is not caught by this check.
+pub fn shell_reported_not_run(exit_code: Option<i32>, stderr: &str) -> bool {
+    if !cfg!(windows) && matches!(exit_code, Some(126 | 127)) {
+        return true;
+    }
+    stderr.lines().any(|line| {
+        let line = line.trim();
+        line.contains("is not recognized as an internal or external command")
+            || (["sh:", "bash:", "dash:", "zsh:"]
+                .iter()
+                .any(|shell| line.starts_with(shell))
+                && line.contains("not found"))
+    })
+}
+
 // No unit test spawns a process here: the census counts every `Command::new` outside the
 // subprocess chokepoint, tests included, and this helper is exercised by its five call sites
 // (connector_readiness, drive reveal, devserver kill_tree/pid_is_node, bun). The flag value is
@@ -184,5 +211,43 @@ mod tests {
         mixed.extend_from_slice(CMD_ECHO);
         let decoded = super::decode_output_with(&mixed, |b| super::decode_code_page(b, 852));
         assert_eq!(decoded, "node: Žluťoučký\nŽluťoučký\r\n");
+    }
+
+    // stderr exactly as captured 2026-10-14 with the program missing.
+    const CMD_NOT_RECOGNIZED: &str = "'eslintx_not_installed' is not recognized as an internal \
+        or external command,\r\noperable program or batch file.\r\n";
+    const SH_NOT_FOUND: &str = "sh: line 1: eslintx_not_installed: command not found\n";
+
+    #[test]
+    fn a_missing_program_is_reported_whatever_the_exit_code() {
+        use super::shell_reported_not_run as not_run;
+        assert!(not_run(Some(1), CMD_NOT_RECOGNIZED), "cmd /C tool .");
+        assert!(
+            not_run(Some(255), CMD_NOT_RECOGNIZED),
+            "cmd /C tool . | find /c /v \"\""
+        );
+        assert!(
+            not_run(Some(0), SH_NOT_FOUND),
+            "sh -c 'tool . | wc -l' exits 0, stdout 0"
+        );
+        assert!(not_run(Some(127), SH_NOT_FOUND), "sh -c 'tool .'");
+        assert!(
+            not_run(Some(0), "sh: 1: eslint: not found\n"),
+            "dash's spelling"
+        );
+    }
+
+    #[test]
+    fn a_program_that_ran_is_not_reported() {
+        use super::shell_reported_not_run as not_run;
+        assert!(!not_run(Some(1), ""), "a linter that found errors");
+        assert!(
+            !not_run(Some(2), "error: config file not found\n"),
+            "the tool's own not-found"
+        );
+        assert!(
+            !not_run(Some(1), "npm error code E404\nnpm error 404 Not Found\n"),
+            "ran, failed"
+        );
     }
 }
