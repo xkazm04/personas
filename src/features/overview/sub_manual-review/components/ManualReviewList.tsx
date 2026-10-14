@@ -36,6 +36,7 @@ import { useBacklogQueue } from './backlog/useBacklogQueue';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
 import { PendingDecisionList } from './PendingDecisionList';
 import { useReloadOnDeckClose } from '../libs/decisionDeckDoors';
+import { resolveInPool } from '../libs/bulkResolve';
 
 /**
  * Shape a raw `PersonaManualReview` row (as returned by the layered
@@ -244,17 +245,17 @@ export default function ManualReviewList() {
     setIsBulkProcessing(true);
     try {
       const ids = Array.from(selectedIds);
-      const results = await Promise.allSettled(ids.map((id) => {
-        const review = reviewMap.get(id);
-        if (!review) return Promise.resolve();
-        return resolveReviewRow(review, status);
-      }));
+      // Frozen at the click: the pool writes this snapshot, never the live map.
+      // A row that left the queue meanwhile is not attempted (not "approved").
+      const reviews = ids.flatMap((id) => reviewMap.get(id) ?? []);
+      // Bounded pool, not one invoke per row at once (bounded-fanout-commit).
+      const results = await resolveInPool(reviews, (review) => resolveReviewRow(review, status));
       // `allSettled` used to be the END of it: every rejection was discarded, so
       // "50 approved" could mean 47 approved and 3 still pending — and with
       // Athena resolving approvals unattended overnight, losing a
       // compare-and-swap on part of a batch is routine, not exotic. Count them
       // and say so.
-      const failed = results.filter((r) => r.status === 'rejected').length;
+      const failed = results.filter((r) => r.status === 'failed').length;
       if (failed > 0) {
         useToastStore.getState().addToast(tx(t.overview.review.bulk_partial_failure, { count: failed }), 'warning', 4000);
       }
