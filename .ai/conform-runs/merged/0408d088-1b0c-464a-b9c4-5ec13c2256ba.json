@@ -1,0 +1,74 @@
+{
+ "schema": "conform-run/1",
+ "worker": "0408d088-1b0c-464a-b9c4-5ec13c2256ba",
+ "subject": "quality-gates",
+ "evaluatedAt": "2026-10-14T07:49:49.292Z",
+ "pairs": [
+  {
+   "context": "d9cffe6c-a868-4ed4-b5e8-6c8add36918a",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_lifecycle/journey/journeyModel.ts:25 the context only renders per-step enforcement strength (STATE_STRENGTH) from a backend snapshot; it refuses nothing and no check here can block a change. It reads gate data (enforcement-binding / advancement-evidence-fields shape, :53 unknown never skipped) but owns no gate. The gates live elsewhere.",
+   "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+   "evaluatedRevision": 53,
+   "techniques": [
+    {
+     "technique": "advancement-evidence-fields",
+     "verdict": "display honours unknown-is-not-a-value but is not a gate",
+     "evidence": "src/features/plugins/dev-tools/sub_lifecycle/journey/journeyModel.ts:53"
+    }
+   ]
+  },
+  {
+   "context": "7159d27d-86c2-43be-a83f-8b50c4c816be",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/settings/sub_network/components/BundleImportDialog.tsx:228 the context is a UI over a backend integrity verdict with an acknowledged_risk override; it is bundle trust (signed-artifacts territory), not an engineering check over a tree, commit or release. Backend half not read here.",
+   "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+   "evaluatedRevision": 53,
+   "techniques": []
+  },
+  {
+   "context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/webbuild/versions.rs:100 restore is refused unless the live tree was captured first - a data-safety precondition, not a quality standard gating advancement; no check over a commit or release exists in the context.",
+   "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+   "evaluatedRevision": 53,
+   "techniques": []
+  },
+  {
+   "context": "7f6d3238-7136-4361-af8f-bca556ae2042",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/mcp_server/auth.rs:61 authorize_tool_call is token authorization (authorization subject); the only gate text in the context (backlog.rs:326 `gate red`) is a test fixture string, not a gate.",
+   "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
+   "evaluatedRevision": 53,
+   "techniques": []
+  }
+ ],
+ "declined": [
+  {
+   "subject": "quality-gates",
+   "context": "19f3a6a0-f733-47d1-94b4-a1256c8a92fc",
+   "reason": "glyph-command-panel: no gate/verdict/refuse tokens found by grep, but code not read; left unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-14T07:49:49.292Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "advancement-evidence-fields"
+   ],
+   "deviations": 0
+  }
+ ]
+}

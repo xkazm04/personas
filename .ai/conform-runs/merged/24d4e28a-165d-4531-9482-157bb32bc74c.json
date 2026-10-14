@@ -1,0 +1,66 @@
+{
+ "schema": "conform-run/1",
+ "worker": "24d4e28a-165d-4531-9482-157bb32bc74c",
+ "subject": "voice-io",
+ "evaluatedAt": "2026-10-14T12:00:00Z",
+ "pairs": [
+  {
+   "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:245 voice is the persona written style/output_format in a prompt sample; the context synthesizes gate questions, and its only transcript is Claude Code JSONL (src-tauri/engine/src/cli_session_awareness/transcript.rs:1), so no capture/synthesis precondition holds. Re-checked against rev 20; no audio/speech hits in the context.",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+   "evaluatedRevision": 20
+  },
+  {
+   "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/cloud/sync/mod.rs:1 is a desktop-to-cloud sync writer; its files (athena_chat.rs, rows.rs, notes.rs, ...) carry no audio capture, transcription, synthesis or engine adapter (grep for whisper/tts/speech/microphone empty). Re-checked against rev 20.",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+   "evaluatedRevision": 20
+  },
+  {
+   "context": "767b2bb5-4662-4be1-ad24-c881ac334016",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/engine/src/template_v3.rs:844 reads the persona voice block (style + output_format) as prompt text; the only audio hit is a template filename (src-tauri/engine/src/template_checksums.rs:16). No webhook/relay file carries an audio path. Re-checked against rev 20.",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+   "evaluatedRevision": 20
+  },
+  {
+   "context": "03e7f46a-3f19-47b8-98a5-398efed815b4",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/hooks/realtime/useCloudWebhookRelay.ts:3 realtime here is the app event bus and webhook relay singleton listeners; grep of src/hooks for whisper/getUserMedia/speech/tts/microphone is empty, so neither voice pipeline exists.",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+   "evaluatedRevision": 20
+  }
+ ],
+ "declined": [
+  {
+   "subject": "voice-io",
+   "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+   "reason": "stores-slices-system holds athenaSlice (src/stores/slices/system/athenaSlice.ts:353 athenaSttEngine 'browser' default) so voice-io may govern; judging it needs the full technique read, left unknown for a dedicated run"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-14T12:00:00Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

@@ -1,0 +1,361 @@
+{
+ "schema": "conform-run/1",
+ "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+ "subject": "fleet-orchestration",
+ "evaluatedAt": "2026-10-14T09:13:35Z",
+ "pairs": [
+  {
+   "context": "03960450-6979-4412-9de3-35c897fe56d2",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:260 a member past the poll deadline or cancelled returns early with its status left 'running' (set at :235; BulkRunStatus at :39 has no timed-out/cut-off class) and src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:220 renders it as running after the cohort is done, so the roster never accounts a cut-off member; the idempotency key at :244 embeds Date.now() (the attempt, not the work) so a repeated batch is not deduped. Re-judged against rev 26: anchors all hold.",
+   "techniques": [
+    {
+     "technique": "result-harvest",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:260 no terminal 'timed out / cut off' account; roster does not sum to terminal states"
+    },
+    {
+     "technique": "parallel-dispatch",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:244 key derived from the attempt (Date.now), not the work"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "evaluatedAt": "2026-10-14"
+  },
+  {
+   "context": "2de6333f-8375-404b-8fdc-fe0fb15d4f95",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/fleet/queue.rs:982 door_verdict_for, the one admission door, decides on cap, time gate and budget only; DispatchRequest (queue.rs:176) carries a cwd but no write set and src-tauri/src/commands/fleet/pty.rs:420 allows several sessions per cwd by design, so concurrent sessions in one repo are admitted with no disjointness check and collide unseen. Re-judged against rev 26: still true.",
+   "techniques": [
+    {
+     "technique": "parallel-dispatch",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/fleet/queue.rs:982 admission has no write-scope overlap test (collision domains)"
+    },
+    {
+     "technique": "session-registry",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/fleet/registry.rs:696 transitions pass one door (transition_inner with transition_is_legal); closed 10-state vocabulary at src/lib/bindings/FleetSessionState.ts:16"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "evaluatedAt": "2026-10-14"
+  },
+  {
+   "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:327 list_by_run, the harvest roster read by fleet_run_report (src-tauri/src/commands/fleet/commands.rs:587), drops any row failing map_row via filter_map(Result::ok), and list_rehydratable does the same on the restart path (:255), so a corrupt member silently leaves the run denominator and the fleet on boot, while the sibling queue read at :457-461 deliberately surfaces the same failure. Re-judged against rev 26: still true.",
+   "techniques": [
+    {
+     "technique": "result-harvest",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:327 roster member vanishes from the denominator instead of failing loudly"
+    },
+    {
+     "technique": "durable-fleet-state",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:255 restart recovery skips unreadable rows rather than surfacing them"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "evaluatedAt": "2026-10-14"
+  },
+  {
+   "context": "743a0ae5-b7d0-46a6-a915-cb82c7834bf8",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/fleet/monitor/monitorModel.ts:25 ExecState is a card-colour fold of the persona-execution ActiveProcessStatus (closed union at src/stores/slices/processActivitySlice.ts:10-19, switched at monitorModel.ts:336, exhaustive PROCESS_STATUS_META at :125); the monitor shows personas, never FleetSessionState rows, so there is no session registry whose vocabulary it could fail to derive from. Prior deviation (parallel union vs fleet registry) withdrawn on re-read.",
+   "techniques": [
+    {
+     "technique": "session-registry",
+     "verdict": "not-applicable",
+     "evidence": "src/features/fleet/monitor/monitorModel.ts:125 states are keyed by the closed ActiveProcessStatus, a different registry (persona executions) than the fleet session registry"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "evaluatedAt": "2026-10-14",
+   "registryProposal": "Matcher paired the Fleet Monitor (persona-execution cards) with fleet-orchestration on the word 'fleet'; route by precondition (a registry of autonomous CLI sessions) instead."
+  },
+  {
+   "context": "0f1b56ac-cd96-4355-993e-dc445a20e63e",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "unknown",
+   "evidence": "src/features/teams/sub_collab/useTeamChannel.ts:67 derives persona presence from team-channel step rows with a 10-minute window and an expired window leaves the persona with no presence entry (src/features/fleet/monitor/channels/types.ts:21 PresenceMap); that resembles evidence-outranks-a-liveness-claim but these are team-step rows, not session registry entries, so whether the subject governs is undecided. Prior deviation not reaffirmed.",
+   "techniques": [
+    {
+     "technique": "evidence-outranks-a-liveness-claim",
+     "verdict": "unknown",
+     "evidence": "src/features/teams/sub_collab/useTeamChannel.ts:67 stale window drops to absent, not to an explicit unknown; precondition (a registry entry with its own report) unclear"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "evaluatedAt": "2026-10-14"
+  },
+  {
+   "context": "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:95 still picks remove-vs-kill from a hand-written {exited, hibernated} pair of the 10-state FleetSessionState (src/lib/bindings/FleetSessionState.ts:16), so the X on an expired row calls killSession, gets KillOutcome::NoChild (src-tauri/src/commands/fleet/registry.rs:551) and the terminal row never leaves; a queued row cannot be cancelled although src-tauri/src/commands/fleet/queue.rs:1717 cancel_dispatch exists. Re-judged against rev 26: still true.",
+   "techniques": [
+    {
+     "technique": "session-registry",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:95 consumer keeps its own subset of the closed vocabulary; queued/expired/finished unhandled"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "evaluatedAt": "2026-10-14"
+  },
+  {
+   "context": "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 excludes only exited|hibernated from broadcast targets, so writer-less queued (src-tauri/src/commands/fleet/types.rs:34) and expired rows stay targetable; each write fails at src-tauri/src/commands/fleet/registry.rs:1491 'session writer dropped', and the failure retarget re-selects exactly those rows, which can never succeed. Bounded terminal pool (src/features/plugins/fleet/fleetTerminalManager.ts:323 MAX_PARKED) remains realized. Re-judged against rev 26; the registry.rs anchor moved from :1473 to :1491.",
+   "techniques": [
+    {
+     "technique": "session-registry",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 target filter is a hand-written subset of the state vocabulary"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "evaluatedAt": "2026-10-14"
+  },
+  {
+   "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/stores/slices/system/fleetSlice.ts:357 (and :385 on EXITED) stamps lastActivityMs = Date.now() on every FLEET_SESSION_STATE event, a value the payload never carries, while the registry deliberately withholds that stamp for parked completions (src-tauri/src/commands/fleet/registry.rs:696 apply_transition_parked, used by mark_finished); a finished session reads as just-active and sorts to the top until the next full refresh. Re-judged against rev 26: still true.",
+   "techniques": [
+    {
+     "technique": "absent-status-passthrough",
+     "verdict": "deviation",
+     "evidence": "src/stores/slices/system/fleetSlice.ts:357 the projector supplies a value the record did not carry"
+    },
+    {
+     "technique": "session-registry",
+     "verdict": "deviation",
+     "evidence": "src/stores/slices/system/fleetSlice.ts:357 consumer re-derives liveness bookkeeping the registry owns"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "evaluatedAt": "2026-10-14"
+  },
+  {
+   "context": "d7525012-ab19-4b29-99bb-0d4b6b9e084b",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:68 'handles the full lifecycle' iterates a hand-typed 7 of the 10 FleetSessionState values, omitting queued, finished and expired that production maps (src/features/plugins/fleet/FleetStatusDots.tsx:36,42,48), so the test certifies coverage it does not check and a new state slips past it. Re-judged against rev 26: still true.",
+   "techniques": [
+    {
+     "technique": "session-registry",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:68 test keeps its own copy of the closed vocabulary"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "evaluatedAt": "2026-10-14"
+  },
+  {
+   "context": "50f50f97-be0e-4a93-8f1c-c0b967cd45d0",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 spawns a Fleet session for a finding with no dispatch-key check (is one already running for this idea?) and discards the returned session id, so the task row created at :80 is never bound to the session; a re-fired signal opens a duplicate and nothing can find the session again. Re-judged against rev 26: still true.",
+   "techniques": [
+    {
+     "technique": "parallel-dispatch",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 no key derived from the work, no duplicate check"
+    },
+    {
+     "technique": "session-registry",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 task binding to the session is dropped"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "evaluatedAt": "2026-10-14"
+  },
+  {
+   "context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/harness/orchestrator.ts:112 the area loop exits on config.maxIterations (default 100, src/lib/harness/types.ts:180) with no event: only pass-rate (:118) and no-areas (:143) emit harness:completed and the event union (src/lib/harness/types.ts:191) has no cap-fired member, so a loop cut by the cap returns the same guide as a finished one and the cap-fired fraction cannot be measured. Revised on re-read: the dispatcher here is code spawning one claude -p worker per area (src/lib/harness/executor.ts:146), so the earlier 'no soft budget in the prompt' framing was too strong; the defect is the unmarked cap exit.",
+   "techniques": [
+    {
+     "technique": "soft-budget-under-the-hard-cap",
+     "verdict": "deviation",
+     "evidence": "src/lib/harness/orchestrator.ts:112 cap exit is not distinguishable from completion (failure-not-empty-success)"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "evaluatedAt": "2026-10-14"
+  },
+  {
+   "context": "959baa73-f18f-42c8-8569-466939b9050d",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/notepad/plan/ShipDispatch.tsx:129 dispatches a write-capable Fleet worker into the shared repo root with a goal brief (text at :37-50, step 2 'implement it') that restates no invariant (commit/push/branch discipline, write scope) and never says what the worker cannot see; dispatchRowToFleet spawns then names in two steps (src/features/teams/sub_factory/passport/passportFleet.tsx:66-67), so a failed rename leaves an anonymous worker the derived-key check at :64 cannot find and a retry spawns a duplicate. Re-judged against rev 26: still true.",
+   "techniques": [
+    {
+     "technique": "brief-carries-the-session",
+     "verdict": "deviation",
+     "evidence": "src/features/notepad/plan/ShipDispatch.tsx:37 brief omits invariants and blind spots"
+    },
+    {
+     "technique": "parallel-dispatch",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_factory/passport/passportFleet.tsx:66 key stamped after spawn, not at admission"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "evaluatedAt": "2026-10-14"
+  },
+  {
+   "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/core/src/models/team_assignment.rs:150 types the assignment status as a free String beside the closed TeamAssignmentStatus enum (:31, six members, no Paused), so src-tauri/src/engine/team_assignment_orchestrator.rs:624 writes 'paused', a value neither the enum nor the CHECK at src-tauri/db/src/migrations/incremental/c02_dev_goals_and_kpis.rs:90 admits (the comment at orchestrator :525 already knows); it compiles and fails at the DB, so pause_team_assignment always errors. Re-judged against rev 26: still true.",
+   "techniques": [
+    {
+     "technique": "session-registry",
+     "verdict": "deviation",
+     "evidence": "src-tauri/core/src/models/team_assignment.rs:150 open String beside a closed enum: two vocabularies, no single door"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "evaluatedAt": "2026-10-14"
+  },
+  {
+   "context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:60 normalizeStatus maps any status outside TASK_STATUSES to 'queued', substituting an active waiting state for a value the transport did not state; unknown should pass through as unknown. Re-judged against rev 26: still true; the governing precondition (task rows driven through Fleet) is looser than for the session contexts.",
+   "techniques": [
+    {
+     "technique": "absent-status-passthrough",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:60 absence laundered into 'queued'"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "evaluatedAt": "2026-10-14"
+  },
+  {
+   "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/build_session/fanout.rs:1353 a capability lane that fails while siblings succeed is only a tracing::warn, assemble_agent_ir (:958) ignores res.error, and only all-lanes-failed is refused (:1365), so a persona with silently unresolved capabilities reaches DraftReady with no partial account; the lane brief at :118 still orders 'do NOT ask clarifying questions - pick sensible defaults'. Re-judged against rev 26: still true.",
+   "techniques": [
+    {
+     "technique": "result-harvest",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/build_session/fanout.rs:1353 partial failure is not a first-class outcome; roster accounting absent"
+    },
+    {
+     "technique": "brief-carries-the-session",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/build_session/fanout.rs:118 lane brief forces silent defaulting"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "evaluatedAt": "2026-10-14"
+  }
+ ],
+ "declined": [
+  {
+   "subject": "fleet-orchestration",
+   "context": "8650ca36-36fe-4862-98f5-745e866a2687",
+   "reason": "stale not-applicable verdict not re-read this run (budget spent on stale deviations first); left for the next run"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+   "reason": "stale not-applicable verdict not re-read this run (budget spent on stale deviations first); left for the next run"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+   "reason": "stale not-applicable verdict not re-read this run (budget spent on stale deviations first); left for the next run"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+   "reason": "stale not-applicable verdict not re-read this run (budget spent on stale deviations first); left for the next run"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+   "reason": "stale not-applicable verdict not re-read this run (budget spent on stale deviations first); left for the next run"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+   "reason": "stale not-applicable verdict not re-read this run (budget spent on stale deviations first); left for the next run"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "4560e824-e952-45a9-8aef-fe88d721952e",
+   "reason": "stale not-applicable verdict not re-read this run (budget spent on stale deviations first); left for the next run"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "c5228746-931d-4733-9cf7-84519a2c9605",
+   "reason": "stale not-applicable verdict not re-read this run (budget spent on stale deviations first); left for the next run"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-14T09:13:35Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [
+    "absent-status-passthrough",
+    "brief-carries-the-session",
+    "durable-fleet-state",
+    "evidence-outranks-a-liveness-claim",
+    "parallel-dispatch",
+    "result-harvest",
+    "session-registry",
+    "soft-budget-under-the-hard-cap"
+   ],
+   "deviations": 13
+  }
+ ]
+}

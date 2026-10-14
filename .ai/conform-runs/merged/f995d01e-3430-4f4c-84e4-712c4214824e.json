@@ -1,0 +1,64 @@
+{
+ "schema": "conform-run/1",
+ "worker": "f995d01e-3430-4f4c-84e4-712c4214824e",
+ "subject": "canvas-graph",
+ "evaluatedAt": "2026-10-14T00:00:00Z",
+ "pairs": [
+  {
+   "context": "ca705961-f138-494a-b0fe-f882c674d25a",
+   "subject": "canvas-graph",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:28 re-checked at revision 5: floating list popovers are HTML overlays with no node/edge topology, no transform and no drawn graph, so none of the six techniques' precondition (a pan/zoom relationship surface) holds"
+  },
+  {
+   "context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0",
+   "subject": "canvas-graph",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/components/layout/ContentLayout.tsx:51 re-checked at revision 5: page-shell and layout primitives; no graph, no coordinate space, no drawn set, so the canvas-graph precondition is unmet (the new read-only-renderer section does not apply either)"
+  },
+  {
+   "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc",
+   "subject": "canvas-graph",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/triggers/sub_studio/TriggerStudioCanvas.tsx:17 re-checked at revision 5: the only child is StudioPatchbay, which renders routes as a linear ledger of cable rows (StudioPatchbay.tsx:243 maps connected routes to LiveCableRow); no geometry, so the golden path's own list-instead-of-canvas exit applies and no coordinate mapping exists to retain"
+  },
+  {
+   "context": "77b8c703-0803-42bc-808a-f255725cc293",
+   "subject": "canvas-graph",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:183 GraphNodeCircle is a plain function (no memo) fed by hover state held at :42 and an onHover prop wired at :144, so each pointer-enter re-renders every node (:133) and every edge motion.line (:107); render-budget rung 3 (nodes re-render on their own changes only) is not realized, and the deviation persists at revision 5 (a fixed-fit renderer still owes memoization under hover)",
+   "techniques": [
+    {
+     "technique": "render-budget",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:183 unmemoized node component, hovered state at :42 re-renders all nodes and edges"
+    }
+   ]
+  },
+  {
+   "context": "6e3e06ef-e5d0-4b4d-807f-688123370b14",
+   "subject": "canvas-graph",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:9 the context's files are assignment event listeners plus a data-owning page; the page header says SoundingsView owns the chart, and the DAG canvas the description cites was deleted (git 78e9bff68e, sub_canvas absent), so no canvas-graph surface lives in this context"
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-14T00:00:00Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "canvas-graph"
+   ],
+   "techniques": [
+    "render-budget"
+   ],
+   "deviations": 1
+  }
+ ]
+}

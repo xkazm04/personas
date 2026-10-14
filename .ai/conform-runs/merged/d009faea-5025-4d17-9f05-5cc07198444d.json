@@ -1,0 +1,60 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d009faea-5025-4d17-9f05-5cc07198444d",
+ "subject": "client-state",
+ "evaluatedAt": "2026-10-14T07:51:07.348Z",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "client-state",
+   "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+   "reason": "already judged not-applicable on 2026-10-06 against current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry index unchanged); not stale, re-judging would only repeat the verdict"
+  },
+  {
+   "subject": "client-state",
+   "context": "03e7f46a-3f19-47b8-98a5-398efed815b4",
+   "reason": "already judged deviation on 2026-10-10 against current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry index unchanged); not stale, re-judging would only repeat the verdict"
+  },
+  {
+   "subject": "client-state",
+   "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573",
+   "reason": "already judged deviation on 2026-10-09 against current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry index unchanged); not stale, re-judging would only repeat the verdict"
+  },
+  {
+   "subject": "client-state",
+   "context": "ade5a251-866a-4352-9a03-012d78fe9b74",
+   "reason": "already judged deviation on 2026-10-09 against current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry index unchanged); not stale, re-judging would only repeat the verdict"
+  },
+  {
+   "subject": "client-state",
+   "context": "c413de7d-1182-4abc-8a08-9c8832254c62",
+   "reason": "already judged deviation on 2026-10-10 against current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry index unchanged); not stale, re-judging would only repeat the verdict"
+  },
+  {
+   "subject": "client-state",
+   "context": "11fe7642-7a1a-47c5-8910-499850aa04fe",
+   "reason": "already judged deviation on 2026-10-12 against current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry index unchanged); not stale, re-judging would only repeat the verdict"
+  },
+  {
+   "subject": "client-state",
+   "context": "d9cffe6c-a868-4ed4-b5e8-6c8add36918a",
+   "reason": "already judged deviation on 2026-10-10 against current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry index unchanged); not stale, re-judging would only repeat the verdict"
+  },
+  {
+   "subject": "client-state",
+   "context": "532bbf10-3fd3-4b57-a8ea-95a957645697",
+   "reason": "already judged deviation on 2026-10-09 against current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry index unchanged); not stale, re-judging would only repeat the verdict"
+  },
+  {
+   "subject": "client-state",
+   "context": "0aded02d-f5c5-4e24-8366-90783fb343b1",
+   "reason": "already judged deviation on 2026-10-09 against current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry index unchanged); not stale, re-judging would only repeat the verdict"
+  },
+  {
+   "subject": "client-state",
+   "context": "417112d1-004b-41d5-a656-57997a47d818",
+   "reason": "already judged deviation on 2026-10-10 against current digest sha256-b2:b667f5c1f4abdd9d rev 15 (registry index unchanged); not stale, re-judging would only repeat the verdict"
+  }
+ ],
+ "consults": []
+}
