@@ -1,0 +1,132 @@
+{
+ "schema": "conform-run/1",
+ "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+ "subject": "agent-memory",
+ "evaluatedAt": "2026-10-14T12:00:00Z",
+ "pairs": [
+  {
+   "context": "d77a22ee-23cb-42f3-a910-590f8622977f",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/companions/athena/types.ts:5 re-read: the context's own types are UI-shape concerns that do not cross the IPC boundary; the memory pipeline lives in the Rust brain, so the subject's precondition (a store an agent writes/recalls) is unmet here",
+   "techniques": []
+  },
+  {
+   "context": "89eddf81-0c57-441d-a07d-de36bf022cb5",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/components/display/RelativeTime.tsx:2 re-read: presentational formatters over caller-passed timestamps; no agent store, capture or recall, precondition unmet; match rode on shared/item/counter",
+   "techniques": []
+  },
+  {
+   "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_learning/powerMoves/powerMovesStore.ts:9 re-read: tried/done flags of operator onboarding progress in a UI store; no agent carries state here, match lexical",
+   "techniques": []
+  },
+  {
+   "context": "7826a48f-5883-4f26-8476-c3c515bda745",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/personas/parsers/workflowDetector.ts:2 re-read: workflow-import format detection; holds no agent-written store, match rode on the token consolidation",
+   "techniques": []
+  },
+  {
+   "context": "ef73ca1c-fc54-4b9c-83ec-390c54929192",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:50 re-read: inbox of execution-run approvals keyed by execution_id, not memory beliefs or memory-governance proposals; precondition unmet",
+   "techniques": []
+  },
+  {
+   "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/infrastructure/dev_tools/portfolio.rs:330 re-read: deterministic aggregation of project context maps, not anything an agent observed or believes; no capture, consolidation, decay or recall stage",
+   "techniques": []
+  },
+  {
+   "context": "10c96ae7-a356-4555-996b-df92fc5dc8e7",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_skills/SkillsManagerPage.tsx:1 re-read: workspace skill library manager; operator-managed skill files, not an agent memory pipeline (no procedure-promotion from observed runs here)",
+   "techniques": []
+  },
+  {
+   "context": "56a0fd55-279d-428b-b2f6-7c89154abd6f",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/schedules/libs/calendarHelpers.ts:300 re-read: cron projection plus a 90s slot-to-run tolerance, an operator calendar with no agent store or distillation; match rode on past/month/week vocabulary",
+   "techniques": []
+  },
+  {
+   "context": "7159d27d-86c2-43be-a83f-8b50c4c816be",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:34 re-read: lists resource types exposed to peers (persona/template/execution_result/knowledge/connector) as sharing permissions, not an agent's memory store or its governance",
+   "techniques": []
+  },
+  {
+   "context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/components/forms/SettingRow.tsx:34 re-read: presentational settings row; no agent captures, consolidates or recalls anything, precondition unmet",
+   "techniques": []
+  },
+  {
+   "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/stores/systemStore.ts:2 re-read: system store for UI chrome, cloud, GitLab, onboarding, dev-tools; client state, not an agent memory pipeline",
+   "techniques": []
+  },
+  {
+   "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/stores/slices/agents/chatSlice.ts:180 re-read: slice drives only the display, turn assembly is in Rust; the 500-message cap at :97 is a render buffer evicting FIFO, not a recall budget; no agent-recalled store",
+   "techniques": []
+  },
+  {
+   "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_editor/components/EditorTabContent.tsx:3 persona editor shell: tabbed form surface with draft/save lifecycle; no file in the context's sampled paths mentions memory, and the memory store/recall lives in other contexts (db-repos-core, overview-memories); match was lexical (agents/agent/draft)",
+   "techniques": []
+  },
+  {
+   "context": "b62fa237-32b4-41c3-bf56-3e498b643da9",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/vault/sub_credentials/components/forms/FieldCaptureRow.tsx:1 credential form field capture (operator input rows), not episodic capture by an agent; no file in the forms directory mentions memory; match lexical (import/capture/scope)",
+   "techniques": []
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-14T12:00:00Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

@@ -1,0 +1,256 @@
+{
+ "schema": "conform-run/1",
+ "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-10-14T09:14:39Z",
+ "pairs": [
+  {
+   "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:16 parses the Rust stop_reason block at run time (:20-24) instead of holding a copy, and a floor of 13 consts (:30) makes a parse that matched nothing fail loudly; the header (:6-15) records the shipped defect it closes",
+   "techniques": [
+    {
+     "technique": "gate-sees-target",
+     "verdict": "realized",
+     "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:16 reads src-tauri/db/src/chain.rs itself, the artifact the labels must cover"
+    },
+    {
+     "technique": "failure-not-empty-success",
+     "verdict": "realized",
+     "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:30 asserts >=13 consts found; :21 throws on a missing block"
+    },
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "realized",
+     "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:22 needle is a `pub const X: &str = \"..\"` declaration, which prose in the block cannot spell"
+    },
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "realized",
+     "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:70 forces the untranslated-key link and :77 the unmatched link, each asserting a message only that link produces"
+    }
+   ]
+  },
+  {
+   "context": "fb6e9de5-a01b-4434-8ed7-313c142947a1",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:109 sanitizeErrorMessage (also :40 maskSensitiveJson, sanitizeCloudReview.ts:77, sanitizeErrorForDisplay.ts:61) is imported by no test under src/, although the header at maskSensitive.ts:94-95 records the secret-class regex leaking 13 of 20 real token shapes unnoticed; a redactor regression stays green",
+   "techniques": [
+    {
+     "technique": "gate-scope-is-not-report-scope",
+     "verdict": "not realized: 3 of 8 sanitizer modules (335 lines of PII/secret redaction) sit in no test and no coverage report exists to expose the gap (vitest.config.ts has no coverage block)",
+     "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:109"
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "realized where tests exist",
+     "evidence": "src/lib/utils/sanitizers/__tests__/promptInjection.test.ts:71 pins the intentional non-neutralization of {{}} for workflow text"
+    }
+   ]
+  },
+  {
+   "context": "3c107fe6-ec95-4f45-bf31-665e9ccfe223",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts:241 'Recent rail refresh' and header :7 claim refreshRecent is wired into rename + remove + createFile + paste, but only rename is driven (:263); src/features/plugins/drive/hooks/useDrive.ts:663,697,717,738,755,781 wire it into six mutators, so dropping refreshRecent from remove/createFile/pasteHere/move/moveMany stays green",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "not realized: a describe/header name claims a stronger guard than its single rename assertion makes",
+     "evidence": "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts:241"
+    },
+    {
+     "technique": "fixture-economics",
+     "verdict": "realized: in-memory builders and per-test localStorage reset",
+     "evidence": "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts:59"
+    }
+   ]
+  },
+  {
+   "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src-tauri/db/src/lib.rs:2451 init_test_db copies a once-per-process migrated template (:2309) per test, drops the builder handle before the first copy (:2331), removes a crashed run's template (:2319), probes each copy (:2475) and sweeps stale files (:2394); src-tauri/db/src/repos/test_fixtures.rs:10 seeds personas through personas::create, the product door",
+   "techniques": [
+    {
+     "technique": "fixture-economics",
+     "verdict": "realized: build once, copy per test, probe at handoff, reaper, seeds through the product write path",
+     "evidence": "src-tauri/db/src/lib.rs:2459"
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "realized: unique file per test instead of :memory: with the r2d2 reason stated",
+     "evidence": "src-tauri/db/src/lib.rs:2460"
+    },
+    {
+     "technique": "platform-quirk-absorption",
+     "verdict": "realized: pid-keyed template and TEST_DB_PREFIXES sweep absorb concurrent cargo test binaries, incident reasoning kept in comments",
+     "evidence": "src-tauri/db/src/lib.rs:2352"
+    }
+   ]
+  },
+  {
+   "context": "7f6d3238-7136-4361-af8f-bca556ae2042",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/mcp_server/auth_tests.rs:24 hand-writes CREATE TABLE external_api_keys / api_key_audit instead of deriving from the migrated template (src-tauri/db/src/lib.rs:2451); the schema now has several copies (src-tauri/db/src/migrations/initial.rs:350, src-tauri/db/src/repos/resources/external_api_keys.rs:375, this file), so a column or constraint added to the migration leaves the auth gate tests passing against yesterday's schema",
+   "techniques": [
+    {
+     "technique": "fixture-economics",
+     "verdict": "not realized: table vocabulary hand-copied per test file; it matches initial.rs today but nothing ties it to the migration",
+     "evidence": "src-tauri/src/mcp_server/auth_tests.rs:24"
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "realized: rejection paths assert code, message and zero audit rows",
+     "evidence": "src-tauri/src/mcp_server/auth_tests.rs:72"
+    }
+   ]
+  },
+  {
+   "context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:119 flips the seeded persona_executions row to 'completed' with a raw UPDATE, bypassing executions::update_status (src-tauri/db/src/repos/execution/executions.rs:1264) which redacts fields and owns the transition, so the fixture can hold a state the product door would shape differently",
+   "techniques": [
+    {
+     "technique": "live-app-harness",
+     "verdict": "realized in part: test-only command compiled behind the test-automation feature, rows marked is_simulation",
+     "evidence": "src-tauri/src/commands/mod.rs:25"
+    },
+    {
+     "technique": "fixture-economics",
+     "verdict": "not realized: seeded status written around the product write path (one-validation-door)",
+     "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:119"
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "959baa73-f18f-42c8-8569-466939b9050d",
+   "reason": "notepad-plan is product UI with tests under __tests__ outside the map sample; lexical match only, not read deeply enough to judge"
+  },
+  {
+   "subject": "test-harness",
+   "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+   "reason": "recipe-build-models is domain types; test_suite.rs and test_run.rs are product test-scenario models, not harness; no anchored absence established"
+  },
+  {
+   "subject": "test-harness",
+   "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7",
+   "reason": "triggers-test is a product event-test UI whose name resembles the subject; sub_test/__tests__ not read"
+  },
+  {
+   "subject": "test-harness",
+   "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049",
+   "reason": "project manager UI, tests in __tests__ not read"
+  },
+  {
+   "subject": "test-harness",
+   "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+   "reason": "cockpit widgets; their tests are judged under cockpit-widget-tests"
+  },
+  {
+   "subject": "test-harness",
+   "context": "7826a48f-5883-4f26-8476-c3c515bda745",
+   "reason": "parsers; lexical match, tests not read"
+  },
+  {
+   "subject": "test-harness",
+   "context": "0f1b56ac-cd96-4355-993e-dc445a20e63e",
+   "reason": "fleet-monitor-channels has 70+ test files under monitor/ outside the map; a verdict from a sample would be a guess"
+  },
+  {
+   "subject": "test-harness",
+   "context": "532bbf10-3fd3-4b57-a8ea-95a957645697",
+   "reason": "stores-slices-overview: read one of seven test files (eventSlice.test.ts isolated harness); not enough for a verdict"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-14T09:14:39Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "gate-sees-target",
+    "failure-not-empty-success",
+    "pin-the-call-not-the-name",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-14T09:14:39Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "gate-scope-is-not-report-scope",
+    "negative-control-tests"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-14T09:14:39Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "unreached-decisions-pin-nothing",
+    "fixture-economics"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-14T09:14:39Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "fixture-economics",
+    "isolation-lanes",
+    "platform-quirk-absorption"
+   ],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-14T09:14:39Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "fixture-economics",
+    "negative-control-tests"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-14T09:14:39Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "live-app-harness",
+    "fixture-economics"
+   ],
+   "deviations": 1
+  }
+ ]
+}

@@ -1,0 +1,15 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d0fc3b97-02f6-4521-9834-b18dea28ef5c",
+ "subject": "supply-chain",
+ "evaluatedAt": "2026-10-14T09:28:22Z",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "supply-chain",
+   "context": "*",
+   "reason": "No work: all 4 judged supply-chain pairs carry evaluatedAgainst sha256-b2:f5666db1094acd9f and evaluatedRevision 6, equal to the registry index digest/revision 6 (registry 8102e73a), so none is stale; the only strong-confidence pair (vault-dependency-graph) is already judged; the remaining 30 pairs are probable-confidence unknown, left unjudged per the strong-only rule."
+  }
+ ],
+ "consults": []
+}

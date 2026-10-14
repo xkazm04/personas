@@ -1,0 +1,332 @@
+{
+ "schema": "conform-run/1",
+ "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+ "subject": "agent-memory",
+ "evaluatedAt": "2026-10-14T12:00:00Z",
+ "pairs": [
+  {
+   "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:805 the idea-verdict memory is built from title+description only (content :819) though the idea carries rejection_reason (src-tauri/core/src/models/dev_tools.rs:1145) and the deck asks for it (src/features/agents/quick-answer/triage/triageAdapters.ts:790): a human rejection recalls as one permanent never-re-surface rule whatever the reason. Improved since last judged: automated rejections are now advisory importance-5 decisions (src-tauri/src/commands/infrastructure/dev_tools.rs:595, :815)",
+   "techniques": [
+    {
+     "technique": "memory-governance",
+     "verdict": "realized in part: human vs automated actor split decides constraint vs advisory",
+     "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:595"
+    },
+    {
+     "technique": "memory-value-model",
+     "verdict": "not realized: the reason separating 'already done' from 'not worth it' is dropped",
+     "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:819"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
+   "evaluatedRevision": 48
+  },
+  {
+   "context": "0ecc70bc-a005-4ff8-9a98-f362d2a75f53",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/api/overview/memories.ts:141 deleteAllMemories exposes delete_all (src-tauri/db/src/repos/core/memories.rs:1486), a workspace-wide hard DELETE of every non-core memory (:1506) that writes no fact_key tombstone (single delete does, :1436), so the next consolidation can re-derive every fact. Improved: victims go to the reaper ledger and core tier is spared, but the purge is still not a durable forget",
+   "techniques": [
+    {
+     "technique": "decay-and-forgetting",
+     "verdict": "not realized: purge skips the tombstone that makes forgetting durable",
+     "evidence": "src-tauri/db/src/repos/core/memories.rs:1506"
+    },
+    {
+     "technique": "memory-governance",
+     "verdict": "partly: core tier guarded, reaper ledger run",
+     "evidence": "src-tauri/db/src/repos/core/memories.rs:1486"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
+   "evaluatedRevision": 48
+  },
+  {
+   "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/companion/brain/consolidation.rs:1166 build_consolidation_prompt stamps episodes with their instant (:1253) but never states today nor tells the model to ground relative dates (:1191 only says 'today' is an episode), so a deferred or replayed pass mis-dates relative facts; the sibling prompt grounds it outright (src-tauri/src/companion/brain/sleep_cycle/prompts.rs:61). Realized: retired items filtered at the vector id door (src-tauri/src/companion/brain/retrieval.rs:734)",
+   "techniques": [
+    {
+     "technique": "observation-clock",
+     "verdict": "not realized: no pinned prompt clock in the live consolidation prompt",
+     "evidence": "src-tauri/src/companion/brain/consolidation.rs:1166"
+    },
+    {
+     "technique": "filter-at-the-id-door",
+     "verdict": "realized: importance>0 filter at the id lookup",
+     "evidence": "src-tauri/src/companion/brain/retrieval.rs:734"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
+   "evaluatedRevision": 48
+  },
+  {
+   "context": "50bf2ad0-3da7-4405-991a-6e22695903a2",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/companions/athena/RecallStrip.tsx:68 returns null when nothing was consulted, and CompanionRecallPreview (src/api/companion.ts:2279) has no failure field because both recall_for arms swallow a retrieval error into an empty Recall (src-tauri/src/companion/prompt/recall.rs:27, :50): a down store is shown, and treated, as novelty",
+   "techniques": [
+    {
+     "technique": "recall-injection",
+     "verdict": "not realized: failed and empty recall read the same",
+     "evidence": "src-tauri/src/companion/prompt/recall.rs:50"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
+   "evaluatedRevision": 48
+  },
+  {
+   "context": "dc7c4f48-e819-47d0-80be-6afb942d28fd",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/core/src/models/memory.rs:225 the memory contract keeps ACTIVE_CAP overflow-archival on importance/access_count/created_at order (src-tauri/db/src/repos/core/memories.rs:2024) while recall ranks by decay_score (src-tauri/db/src/memory_recall.rs:157), so the cap archives items the read path ranks above survivors: the second-door janitor memory-value-model forbids",
+   "techniques": [
+    {
+     "technique": "memory-value-model",
+     "verdict": "not realized: two orderings, retirement not gated by the shared value model",
+     "evidence": "src-tauri/db/src/repos/core/memories.rs:2024"
+    },
+    {
+     "technique": "decay-and-forgetting",
+     "verdict": "mitigated: archive tier keeps rows out of default reads, not out of reach",
+     "evidence": "src-tauri/db/src/repos/core/memories.rs:2020"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
+   "evaluatedRevision": 48
+  },
+  {
+   "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/dev_memories.rs:163 render_for_prompt breaks at the first line that overflows the budget, so one fat project memory silently drops every lower-ranked item behind it; the store is append-only by design (:11) with no cap, decay or supersedence, so a reversed constraint keeps reciting itself",
+   "techniques": [
+    {
+     "technique": "recall-injection",
+     "verdict": "not realized: stop-on-overflow instead of skip",
+     "evidence": "src-tauri/db/src/repos/dev_memories.rs:163"
+    },
+    {
+     "technique": "decay-and-forgetting",
+     "verdict": "not realized: nothing retires a stale constraint",
+     "evidence": "src-tauri/db/src/repos/dev_memories.rs:11"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
+   "evaluatedRevision": 48
+  },
+  {
+   "context": "71d36b74-2b52-4759-a000-b505ddf27915",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/core/memories.rs:1661 merge() hard-DELETEs both originals in the merge tx; persona_memory_sources is ON DELETE CASCADE (src-tauri/db/src/migrations/incremental/e16_living_agent.rs:107) and the merged INSERT (:1642) carries source_execution_id/home_team_id forward (:1625) but no source rows or fact_key, so both items' episode provenance and fact identity are destroyed with no supersedence link. Sharper under revision 48: the raw record must stay reachable behind the claim layer",
+   "techniques": [
+    {
+     "technique": "consolidation",
+     "verdict": "not realized: merge replaces rather than supersedes",
+     "evidence": "src-tauri/db/src/repos/core/memories.rs:1661"
+    },
+    {
+     "technique": "rollup-compaction",
+     "verdict": "not realized: compiled item replaces the record it summarizes",
+     "evidence": "src-tauri/db/src/repos/core/memories.rs:1642"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
+   "evaluatedRevision": 48
+  },
+  {
+   "context": "0f1b56ac-cd96-4355-993e-dc445a20e63e",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/fleet/monitor/channels/ConversationBriefing.tsx:178 pins a channel row verbatim into team memory with persona_id = the speaker (:182) and provenance only {source:'conversation-pin'} (:187), no pointer to the channel item, run or approving operator; the row reaches scanner prompts (src-tauri/src/commands/infrastructure/idea_scanner.rs:623). Revision 48 wants the author of evidence harness-stamped from the channel: a speaker relaying third-party text is recorded as the memory's own author",
+   "techniques": [
+    {
+     "technique": "memory-governance",
+     "verdict": "not realized: author not stamped from channel, no taint inheritance",
+     "evidence": "src/features/fleet/monitor/channels/ConversationBriefing.tsx:182"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
+   "evaluatedRevision": 48
+  },
+  {
+   "context": "c413de7d-1182-4abc-8a08-9c8832254c62",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/core/memories.rs:1404 the Director cleanup (src/features/companions/overseer/components/PersonaDetailModal.tsx:109, per cycle via src-tauri/src/engine/director.rs:1617) offers archive candidates ordered by raw importance/access_count/created_at, not decay_score (src-tauri/db/src/memory_recall.rs:157), with no grace period, and drops the archive reason (src-tauri/src/engine/director_memory.rs:65, dead_code): the archive carries no audit line",
+   "techniques": [
+    {
+     "technique": "memory-value-model",
+     "verdict": "not realized: janitor ordering differs from recall ranking",
+     "evidence": "src-tauri/db/src/repos/core/memories.rs:1404"
+    },
+    {
+     "technique": "memory-governance",
+     "verdict": "not realized: archive reason not persisted",
+     "evidence": "src-tauri/src/engine/director_memory.rs:65"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
+   "evaluatedRevision": 48
+  },
+  {
+   "context": "e62d5595-2bbd-480a-a757-2d3a126545a0",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:152 resolves a duplicate via mergeMemoriesAction, the hard-DELETE merge at src-tauri/db/src/repos/core/memories.rs:1661 whose cascade drops both originals' provenance rows: the review surface's one consolidating action replaces a family with an unauditable item",
+   "techniques": [
+    {
+     "technique": "consolidation",
+     "verdict": "not realized: merge destroys originals instead of superseding",
+     "evidence": "src-tauri/db/src/repos/core/memories.rs:1661"
+    },
+    {
+     "technique": "memory-governance",
+     "verdict": "not realized: audit answer lost for the merged belief",
+     "evidence": "src-tauri/db/src/repos/core/memories.rs:1642"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
+   "evaluatedRevision": 48
+  },
+  {
+   "context": "3f38546e-e970-4837-97f7-f0504aa32daf",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:86 approvalDecision builds the orb decision for a write_fact approval (Approval tier, src-tauri/src/companion/dispatcher/catalog.rs:638) from label plus rationale; params ride in payload (:112), documented Not rendered (src/features/companions/athena/decision/types.ts:59), and write_fact is classed low (src/features/companions/athena/decision/actionRisk.ts:50) so option 0 recommends approving: a durable belief can be adopted by one digit without seeing the asserted value or sources (the chat card variant does show params; the gap is the hands-free path). Anchor moved from useDecisionQueue.ts:90, which no longer holds it",
+   "techniques": [
+    {
+     "technique": "pending-beliefs-live-apart",
+     "verdict": "not realized: review surface lacks the claim beside its sources",
+     "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:86"
+    },
+    {
+     "technique": "memory-governance",
+     "verdict": "partly: approval gate exists, informed approval does not",
+     "evidence": "src/features/companions/athena/decision/actionRisk.ts:50"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
+   "evaluatedRevision": 48
+  },
+  {
+   "context": "fd092e44-fcec-4418-8337-ed2b7b2c8473",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:477 evict_excess, run after every pipeline run that created memories (src-tauri/src/engine/pipeline_executor.rs:1107), hard-DELETEs the lowest-importance auto memories, and UI delete (src/features/teams/sub_teamMemory/useTeamMemories.ts:146) is a hard DELETE (src-tauri/db/src/repos/resources/team_memories.rs:289): cap and retire skip demotion tiers, so a scoring bug becomes permanent amnesia. Edits are audited by a 20-deep revision log (src-tauri/db/src/repos/resources/team_memories.rs:226)",
+   "techniques": [
+    {
+     "technique": "decay-and-forgetting",
+     "verdict": "not realized: no demote-before-delete tier for team memories",
+     "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:477"
+    },
+    {
+     "technique": "memory-governance",
+     "verdict": "partly: update appends a revision log",
+     "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:226"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
+   "evaluatedRevision": 48
+  },
+  {
+   "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:213 a team-bound project with zero memories records no snapshot (counted in the run summary only) and memory_health_overview reads only the latest snapshot (:266), so a never-covered project is absent from the list and a project whose memories all retired keeps serving its last healthy snapshot",
+   "techniques": [
+    {
+     "technique": "coverage-instrumentation",
+     "verdict": "not realized: 'never covered' and 'all retired' rows both fail",
+     "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:266"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
+   "evaluatedRevision": 48
+  },
+  {
+   "context": "532bbf10-3fd3-4b57-a8ea-95a957645697",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/stores/slices/overview/memorySlice.ts:186 mergeMemories drives merge_memories with deleteIdA/deleteIdB, which hard-DELETEs both originals (src-tauri/db/src/repos/core/memories.rs:1661); the slice sends source_execution_id null (:196) but the repo now falls back to the originals' (src-tauri/db/src/repos/core/memories.rs:1625), so execution provenance survives while persona_memory_sources episode rows do not and the originals are unrecoverable",
+   "techniques": [
+    {
+     "technique": "consolidation",
+     "verdict": "not realized: originals deleted not superseded",
+     "evidence": "src-tauri/db/src/repos/core/memories.rs:1661"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
+   "evaluatedRevision": 48
+  },
+  {
+   "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/stores/slices/system/twinSlice.ts:68 the twin's live beliefs are TwinPendingMemory rows with status='approved' (:522) because approval flips a status (src-tauri/db/src/repos/twin.rs:602) instead of moving to a belief store: every live read (src-tauri/src/engine/twin_prompt/input.rs:211) must remember the filter, and one that forgets injects pending/rejected claims as settled",
+   "techniques": [
+    {
+     "technique": "pending-beliefs-live-apart",
+     "verdict": "not realized: pending and approved share one table and one filter",
+     "evidence": "src-tauri/db/src/repos/twin.rs:602"
+    },
+    {
+     "technique": "filter-at-the-id-door",
+     "verdict": "partly: reader filters at query but only by convention",
+     "evidence": "src-tauri/src/engine/twin_prompt/input.rs:211"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
+   "evaluatedRevision": 48
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-memory",
+   "context": "all remaining unknown pairs and the 13 stale not-applicable pairs",
+   "reason": "over budget; stale deviations were re-judged first, stale not-applicable and unknown pairs remain for a later run"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-14T12:00:00Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [
+    "consolidation",
+    "coverage-instrumentation",
+    "decay-and-forgetting",
+    "filter-at-the-id-door",
+    "memory-governance",
+    "memory-value-model",
+    "observation-clock",
+    "pending-beliefs-live-apart",
+    "recall-injection",
+    "rollup-compaction"
+   ],
+   "deviations": 15
+  }
+ ]
+}

@@ -1,0 +1,137 @@
+{
+ "schema": "conform-run/1",
+ "worker": "b01227a1-a448-4749-b376-0cdb9c0a2d15",
+ "subject": "translation-quality-measurement",
+ "evaluatedAt": "2026-10-14T08:30:00Z",
+ "pairs": [
+  {
+   "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+   "subject": "translation-quality-measurement",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:440 draft_test_subjects yields tools and connectors to test; the build gate measures no translated store, so the precondition (a machine-translated derived store) is unmet",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:3c01b1e10a982d9c",
+   "evaluatedRevision": 5
+  },
+  {
+   "context": "d5c5e7fe-6353-41eb-800b-dc11adee0775",
+   "subject": "translation-quality-measurement",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:390 prompt asks for project directions and tensions; no translated store or engine is measured here",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:3c01b1e10a982d9c",
+   "evaluatedRevision": 5
+  },
+  {
+   "context": "ef73ca1c-fc54-4b9c-83ec-390c54929192",
+   "subject": "translation-quality-measurement",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:44 lists persona reviews and idea reviews; it is not a translation-review corpus",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:3c01b1e10a982d9c",
+   "evaluatedRevision": 5
+  },
+  {
+   "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+   "subject": "translation-quality-measurement",
+   "bundle": "localization",
+   "state": "deviation",
+   "evidence": "docs/i18n/glossary.md:1 declares a termbase but no script, hook or CI job checks the store against it (no 'termbase' reference in scripts/, lefthook.yml, package.json); the one-concept-one-rendering law is held only by translator discipline, so a drifted term ships silently",
+   "techniques": [
+    {
+     "technique": "deterministic-checks-before-estimates",
+     "verdict": "partial: placeholder parity, empty and verbatim-English are rule-checked, termbase adherence is not",
+     "evidence": "scripts/i18n/merge-chunks.mjs:91 placeholder-break check; docs/i18n/glossary.md:1 termbase with no enforcer"
+    },
+    {
+     "technique": "language-scoped-check-exemptions",
+     "verdict": "realized: exemptions are recorded per language and key",
+     "evidence": "scripts/i18n/lib/untranslated.mjs:120 loads <lang>:<key> and *:<key> allowlist entries"
+    },
+    {
+     "technique": "context-sufficiency-signals",
+     "verdict": "realized: source defects are reported rather than worked around",
+     "evidence": "docs/i18n/source-defects.md:3 records source-catalog defects capping every locale"
+    }
+   ],
+   "registryProposal": "Not decisive: Personas translations are committed, agent-translated catalogs rather than a regenerated derived-and-served store, so the topology precondition is only partly met; the registry could say whether termbase adherence applies to committed machine-drafted catalogs. Index showed digest 3c01b1e10a982d9c rev 5 while the map carried 126898c163a402a3 rev 6.",
+   "evaluatedAgainst": "sha256-b2:3c01b1e10a982d9c",
+   "evaluatedRevision": 5
+  },
+  {
+   "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3",
+   "subject": "translation-quality-measurement",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/stores/i18nStore.ts:13 holds only the selected language, font readiness and setLanguage; it stores and measures no translations",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:3c01b1e10a982d9c",
+   "evaluatedRevision": 5
+  },
+  {
+   "context": "14c7d145-2166-454b-aee5-d69d9d527d79",
+   "subject": "translation-quality-measurement",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/features/settings/sub_appearance/components/AppearanceLanguageSettings.tsx:15 renders a language picker hint; selecting a language is not measuring translation quality",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:3c01b1e10a982d9c",
+   "evaluatedRevision": 5
+  }
+ ],
+ "declined": [
+  {
+   "subject": "translation-quality-measurement",
+   "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+   "reason": "i18n-generated: generated types and parity tests; not read deeply enough to anchor an absence, left unknown"
+  },
+  {
+   "subject": "translation-quality-measurement",
+   "context": "33a96a83-6adc-42f7-b57c-839382bcef54",
+   "reason": "weak context (commands-curator); coverage question, not judged"
+  },
+  {
+   "subject": "translation-quality-measurement",
+   "context": "9b013060-5483-4162-9f8a-6b69109d623d",
+   "reason": "weak context (teams-kpis); coverage question, not judged"
+  },
+  {
+   "subject": "translation-quality-measurement",
+   "context": "e4b48fb7-3763-4955-8ea9-01fd48aa0cf7",
+   "reason": "commands-contest: probable match on vocabulary only, not read"
+  },
+  {
+   "subject": "translation-quality-measurement",
+   "context": "1db5c86e-3237-4d2a-8e2f-1426d680757c",
+   "reason": "lib-execution: probable match on vocabulary only, not read"
+  },
+  {
+   "subject": "translation-quality-measurement",
+   "context": "97025c06-0d64-4025-8a1f-98b90ba1c233",
+   "reason": "model-config: probable match on vocabulary only, not read"
+  },
+  {
+   "subject": "translation-quality-measurement",
+   "context": "d9cffe6c-a868-4ed4-b5e8-6c8add36918a",
+   "reason": "plugins-dev-tools-lifecycle: probable match on vocabulary only, not read"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-14T08:30:00Z",
+   "bundle": "localization",
+   "subjects": [
+    "translation-quality-measurement"
+   ],
+   "techniques": [
+    "deterministic-checks-before-estimates",
+    "language-scoped-check-exemptions",
+    "context-sufficiency-signals"
+   ],
+   "deviations": 1
+  }
+ ]
+}

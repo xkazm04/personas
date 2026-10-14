@@ -1,0 +1,118 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d6999eee-2a8f-4d51-95be-400f7116a285",
+ "subject": "fleet-orchestration",
+ "evaluatedAt": "2026-10-14T09:34:58Z",
+ "pairs": [
+  {
+   "context": "8650ca36-36fe-4862-98f5-745e866a2687",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_design/DesignHub.tsx:52 SUB_TABS is authoring panels over one persona draft and src/features/agents/sub_tool_runner/libs/useToolRunner.ts:25 runs one tool call for one persona; no registry, dispatch or harvest of concurrent sessions, so the fleet precondition fails. Re-read against rev 26 (only result-harvest changed); unchanged."
+  },
+  {
+   "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 'one verdict in, one backend write out'; src/features/agents/quick-answer/usePendingInteractions.ts:3 fuses pending questions and reviews into one queue (it only reads fleet monitor data, :25) and creates/dispatches/harvests no session; review-surface concerns belong to hitl-approval. Re-judged rev 26, unchanged."
+  },
+  {
+   "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "unknown",
+   "evidence": "src-tauri/src/companion/brain/fleet.rs:3 is a consumer of the registry, not an orchestrator, yet it does touch the fleet vocabulary: state_token (:162) and state_label (:177) match FleetSessionState exhaustively (one authority, no private enum copy) and Expired (:190) is narrated as a wait rather than an ending. Only session-registry and lifecycle-signals apply (2 of 18 techniques, under the half floor), so neither conformant nor the prior not-applicable is argued honestly.",
+   "techniques": [
+    {
+     "technique": "session-registry",
+     "verdict": "realized as consumer: typed exhaustive match on the registry enum",
+     "evidence": "src-tauri/src/companion/brain/fleet.rs:162 state_token matches every FleetSessionState variant"
+    },
+    {
+     "technique": "lifecycle-signals",
+     "verdict": "expired-in-queue not narrated as completed work",
+     "evidence": "src-tauri/src/companion/brain/fleet.rs:189 Expired says it never ran"
+    }
+   ],
+   "registryProposal": "A pure downstream consumer of the registry (episode writer, digest) falls between not-applicable and conformant: the subject could name the consumer-side obligations (match the enum, never copy it) so such contexts can be judged on 2 techniques."
+  },
+  {
+   "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/components/display/UnifiedTable.tsx:2 the context is generic display primitives (table, sorting, filters, virtual list); no session, dispatch or harvest concept or fleet status vocabulary in the display directory (only IllustratedEmptyState mentions fleet, as copy). Re-judged rev 26, unchanged."
+  },
+  {
+   "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:14 inline chat cards Athena emits; fleet references are DecisionDrawer.tsx:97 (a nav switch to the monitor) and PersonaOverviewWidget.tsx:70 (a persona-empty guard); nothing creates, tracks, dispatches or harvests a session. Re-judged rev 26, unchanged."
+  },
+  {
+   "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_releases/HomeReleases.tsx:2 a What's New roadmap view; the only fleet link in the neighbouring tour catalogue is a nav deep link at src/features/home/sub_learning/powerMoves/registry.ts:140. No session, roster, dispatch or harvest. Re-judged rev 26, unchanged."
+  },
+  {
+   "context": "4560e824-e952-45a9-8aef-fe88d721952e",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_welcome/lib/useNavCardStatus.ts:80 'Active agents' = enabled personas, the configured fleet, not sessions; src/features/home/sub_welcome/lib/fleetHealth.ts:2 is a success-rate pill over finished executions. No session registration, dispatch or harvest. Re-judged rev 26, unchanged."
+  },
+  {
+   "context": "c5228746-931d-4733-9cf7-84519a2c9605",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/hooks/design/core/usePersonaCompiler.ts:2 a compiler wrapper around useDesignAnalysis for one persona; grep of src/hooks/design/core/*.ts for fleet finds nothing, so no multi-session registry, dispatch or harvest exists. Re-judged rev 26, unchanged (prior anchor was prose-only)."
+  },
+  {
+   "context": "0f1b56ac-cd96-4355-993e-dc445a20e63e",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_collab/useTeamChannel.ts:67 derivePresence marks 'working' only while step_running is under PRESENCE_WORK_WINDOW_MS old and otherwise sets nothing, so an expired window silently drops the persona to no-presence instead of an unknown/lost state; src/features/fleet/monitor/channels/types.ts:21 re-declares the ad-hoc 'working'|'waiting' union as PresenceMap, a second status vocabulary beside the registry's. Re-verified at both lines against rev 26.",
+   "techniques": [
+    {
+     "technique": "session-registry",
+     "verdict": "not realized: consumer-owned status vocabulary",
+     "evidence": "src/features/fleet/monitor/channels/types.ts:21"
+    },
+    {
+     "technique": "absent-status-passthrough",
+     "verdict": "not realized: expiry yields absence not unknown",
+     "evidence": "src/features/teams/sub_collab/useTeamChannel.ts:67"
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "fleet-orchestration",
+   "context": "*",
+   "reason": "No strong-confidence unknown pairs remain for this subject (all 17 unknowns are probable), so none read; the 9 stale pairs were the whole budget."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-14T09:34:58Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [
+    "session-registry",
+    "lifecycle-signals",
+    "absent-status-passthrough"
+   ],
+   "deviations": 1
+  }
+ ]
+}
