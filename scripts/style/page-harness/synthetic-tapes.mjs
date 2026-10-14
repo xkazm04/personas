@@ -31,6 +31,7 @@ import { missionControlTapes } from './missionControlTapes.mjs';
 import { monitorBoardTapes } from './monitorBoardTapes.mjs';
 import { monitorRailTapes } from './monitorRailTapes.mjs';
 import { monitorActivityTapes } from './monitorActivityTapes.mjs';
+import { mandateLanesTapes } from './mandateLanesTapes.mjs';
 import { decisionDeckTapes } from './decisionDeckTapes.mjs';
 import { athenaChatTapes } from './athenaChatTapes.mjs';
 
@@ -342,6 +343,8 @@ const BUILDERS = {
   ...monitorRailTapes({ RECORDED_AT }).builders,
   // The Activity board's Classic and Lanes (monitorActivitySurfaces.tsx, monitorActivityTapes.mjs).
   ...monitorActivityTapes({ RECORDED_AT }).builders,
+  // The Activity board under the `lanes` decision surface (mandateLanesSurfaces.tsx, mandateLanesTapes.mjs).
+  ...mandateLanesTapes({ RECORDED_AT }).builders,
   // The live Decision Deck (decisionDeckSurfaces.tsx, decisionDeckTapes.mjs).
   ...decisionDeckTapes({ RECORDED_AT, PERSONAS }).builders,
   // Module 3, the Fleet cluster (fleetSurfaces.tsx, fleetTapes.mjs).
