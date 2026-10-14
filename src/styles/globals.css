@@ -2192,26 +2192,54 @@ html[data-motion="reduce"] .animate-channel-row-in {
   box-shadow: none;
 }
 
-/* Atmosphere: radial primary vignette + an 88px hairline grid. Sits behind
-   content (z-0); hosts must layer children at z-10+. Dark themes only. */
-.hud-atmosphere {
-  position: relative;
+/* The Monitor's surface: ONE layer under every Monitor tab (Activity, Queue,
+   Conversations, Map), replacing the raster network art and the 88px hairline
+   grid of the retired `.hud-atmosphere`. It is the WP0 gallery's pick
+   (docs/design/mandate-lanes/surfaces/, candidates 3 + 4): a fine dot grid
+   (high frequency) over a soft tonal field (low frequency) in the theme's own
+   hues. The two do not compete under glass: the 6px plate blur erases the dots
+   (frosted glass, no swim, no banding) while the field passes through as a
+   tint. Theme tokens only, so all eleven themes paint their own, and light
+   finally has a surface. Everything is declared here, position included: this
+   file is unlayered, so a utility on the same element would lose to it.
+   Host: `<div aria-hidden className="monitor-surface" />` as the first child
+   of a positioned container; content above it layers at z-10+. */
+.monitor-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 60% at 8% 0%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 70%),
+    radial-gradient(45% 55% at 92% 18%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
+    radial-gradient(70% 55% at 55% 105%, color-mix(in srgb, var(--status-info) 11%, transparent), transparent 70%);
 }
 
-.hud-atmosphere::before {
+/* The dots get their own layer so the downward fade (opaque to 55%, 35% at the
+   floor) thins the grid without thinning the field. */
+.monitor-surface::before {
   content: '';
   position: absolute;
   inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    radial-gradient(ellipse 70% 55% at 50% 38%, color-mix(in srgb, var(--primary) 6%, transparent), transparent 75%),
-    repeating-linear-gradient(0deg, color-mix(in srgb, var(--primary) 4%, transparent) 0 1px, transparent 1px 88px),
-    repeating-linear-gradient(90deg, color-mix(in srgb, var(--primary) 4%, transparent) 0 1px, transparent 1px 88px);
+  background: radial-gradient(circle, color-mix(in srgb, var(--foreground) 22%, transparent) 0 1px, transparent 1.4px) 14px 14px / 28px 28px;
+  -webkit-mask-image: linear-gradient(180deg, black 55%, transparent 124%);
+  mask-image: linear-gradient(180deg, black 55%, transparent 124%);
 }
 
-[data-theme^="light"] .hud-atmosphere::before {
-  display: none;
+/* Light: a lighter hand on the field, and its floor turns to success-green
+   (the gallery's light reading); dots at 18%. A custom theme on a light base
+   carries no `.dark` class and takes the same reading. */
+[data-theme^="light"] .monitor-surface,
+[data-theme="custom"]:not(.dark) .monitor-surface {
+  background:
+    radial-gradient(55% 60% at 8% 0%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 70%),
+    radial-gradient(45% 55% at 92% 18%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 70%),
+    radial-gradient(70% 55% at 55% 105%, color-mix(in srgb, var(--status-success) 6%, transparent), transparent 70%);
+}
+
+[data-theme^="light"] .monitor-surface::before,
+[data-theme="custom"]:not(.dark) .monitor-surface::before {
+  background: radial-gradient(circle, color-mix(in srgb, var(--foreground) 18%, transparent) 0 1px, transparent 1.4px) 14px 14px / 28px 28px;
 }
 
 /* `// SECTION` titles — the ticks are drawn, not typed, so i18n strings stay
