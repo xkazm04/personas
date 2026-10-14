@@ -26210,7 +26210,6 @@
       "coverage": "커버리지",
       "empty": "이 보기에 세션이 없습니다",
       "error_title": "세션을 읽을 수 없습니다",
-      "failures": "실패",
       "left_here": "{count}개가 여기서 오류 또는 중단으로 종료됨",
       "mode_aria": "세션 모드",
       "mode_headless": "자동 실행",
@@ -26234,7 +26233,6 @@
       "repo_aria": "저장소로 필터링",
       "repo_search": "저장소 찾기",
       "skipped": "{count}개가 건너뜀",
-      "source": "{scanned}개의 트랜스크립트 읽음, {cached}개의 세션 기억됨",
       "stat_landed": "커밋함",
       "stat_whole": "전체 경로를 거침",
       "stat_worst": "실패가 가장 많음",
@@ -26246,7 +26244,6 @@
       "wait": "중앙값 대기 시간 {value}",
       "wait_p75": "p75 {value}",
       "view_aria": "보기",
-      "view_spine": "스파인",
       "view_dial": "다이얼",
       "view_watershed": "유역",
       "dial": {

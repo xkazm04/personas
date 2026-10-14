@@ -532,7 +532,6 @@
     "coverage": "カバレッジ",
     "empty": "この表示にはセッションがありません",
     "error_title": "セッションを読み込めませんでした",
-    "failures": "失敗",
     "left_here": "{count}件がここでエラーまたは中断により終了",
     "mode_aria": "セッションモード",
     "mode_headless": "自動実行",
@@ -556,7 +555,6 @@
     "repo_aria": "リポジトリで絞り込む",
     "repo_search": "リポジトリを検索",
     "skipped": "{count}件がスキップ",
-    "source": "{scanned}件のトランスクリプトを読み込み、{cached}件のセッションを記憶",
     "stat_landed": "コミットした",
     "stat_whole": "全経路を歩んだ",
     "stat_worst": "失敗が最も多い",
@@ -568,7 +566,6 @@
     "wait": "待機時間の中央値 {value}",
     "wait_p75": "p75 {value}",
     "view_aria": "表示",
-    "view_spine": "スパイン",
     "view_dial": "ダイヤル",
     "view_watershed": "流域",
     "dial": {

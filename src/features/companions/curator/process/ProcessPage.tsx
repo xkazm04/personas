@@ -9,17 +9,15 @@ import { devFailure, devInstances, type DevMode } from './engine/devAdapter';
 import { useProcessData } from './useProcessData';
 import { RepoFilter } from './RepoFilter';
 import { ProcessGhost } from './ProcessGhost';
-import SpineView from './views/SpineView';
 import type { ProcessViewId, ProcessViewProps } from './views/types';
 
 const MODES: DevMode[] = ['interactive', 'headless'];
 const MODE_TABS = 'process-mode';
 const VIEW_TABS = 'process-view';
-const VIEWS: ProcessViewId[] = ['spine', 'dial', 'watershed'];
+const VIEWS: ProcessViewId[] = ['dial', 'watershed'];
 
-// The two alternatives are figures heavy enough to split: neither costs the Spine a byte until picked.
+// Both views are figures heavy enough to split: the one not picked costs the page nothing.
 const VIEW_COMPONENTS: Record<ProcessViewId, ComponentType<ProcessViewProps>> = {
-  spine: SpineView,
   dial: lazyRetry(() => import('./views/dial/DialView')),
   watershed: lazyRetry(() => import('./views/watershed/WatershedView')),
 };
@@ -37,7 +35,7 @@ export default function ProcessPage() {
   const { reading, loading, error } = useProcessData();
   const [mode, setMode] = useState<DevMode>('interactive');
   const [repoPick, setRepoPick] = useState<string | null>(null);
-  const [viewId, setViewId] = useState<ProcessViewId>('spine');
+  const [viewId, setViewId] = useState<ProcessViewId>('dial');
   const View = VIEW_COMPONENTS[viewId];
   // A transition keeps the current view painted while a lazy view's chunk arrives, instead of a blank Suspense beat.
   const pickView = useCallback((v: ProcessViewId) => startTransition(() => setViewId(v)), []);

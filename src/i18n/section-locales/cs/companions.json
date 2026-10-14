@@ -532,7 +532,6 @@
     "coverage": "Pokrytí",
     "empty": "V tomto zobrazení nejsou žádné relace",
     "error_title": "Relace se nepodařilo načíst",
-    "failures": "Selhání",
     "left_here": "{count} skončilo zde s chybami nebo přerušením",
     "mode_aria": "Režim relace",
     "mode_headless": "Bez obsluhy",
@@ -556,7 +555,6 @@
     "repo_aria": "Filtrovat podle úložiště",
     "repo_search": "Najít úložiště",
     "skipped": "{count} to přeskočilo",
-    "source": "{scanned} přepisů přečteno, {cached} relací zapamatováno",
     "stat_landed": "dokončilo commit",
     "stat_whole": "prošlo celou cestou",
     "stat_worst": "nejvíce selhání",
@@ -568,7 +566,6 @@
     "wait": "Medián čekání {value}",
     "wait_p75": "p75 {value}",
     "view_aria": "Pohled",
-    "view_spine": "Páteř",
     "view_dial": "Ciferník",
     "view_watershed": "Povodí",
     "dial": {

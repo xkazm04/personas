@@ -26230,7 +26230,6 @@ export type Translations = {
       phase_verify: string;
       phase_ship: string;
       coverage: string;
-      failures: string;
       reached: string;
       skipped: string;
       cohort_share: string;
@@ -26248,11 +26247,9 @@ export type Translations = {
       path_note: string;
       time_note: string;
       mode_note: string;
-      source: string;
       empty: string;
       error_title: string;
       view_aria: string;
-      view_spine: string;
       view_dial: string;
       view_watershed: string;
       dial: {

@@ -532,7 +532,6 @@
     "coverage": "Cakupan",
     "empty": "Tidak ada sesi dalam tampilan ini",
     "error_title": "Sesi tidak dapat dibaca",
-    "failures": "Kegagalan",
     "left_here": "{count} berakhir di sini dengan error atau terinterupsi",
     "mode_aria": "Mode sesi",
     "mode_headless": "Otomatis",
@@ -556,7 +555,6 @@
     "repo_aria": "Filter berdasarkan repositori",
     "repo_search": "Cari repositori",
     "skipped": "{count} melewatkannya",
-    "source": "{scanned} transkrip dibaca, {cached} sesi diingat",
     "stat_landed": "berhasil commit",
     "stat_whole": "menjalani seluruh jalur",
     "stat_worst": "kegagalan terbanyak",
@@ -568,7 +566,6 @@
     "wait": "Median waktu tunggu {value}",
     "wait_p75": "p75 {value}",
     "view_aria": "Tampilan",
-    "view_spine": "Tulang punggung",
     "view_dial": "Cakram",
     "view_watershed": "Daerah aliran sungai",
     "dial": {

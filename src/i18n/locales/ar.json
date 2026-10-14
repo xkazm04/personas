@@ -26210,7 +26210,6 @@
       "coverage": "التغطية",
       "empty": "لا توجد جلسات في هذا العرض",
       "error_title": "تعذرت قراءة الجلسات",
-      "failures": "الإخفاقات",
       "left_here": "انتهت {count} هنا بأخطاء أو انقطاع",
       "mode_aria": "وضع الجلسة",
       "mode_headless": "تلقائي",
@@ -26234,7 +26233,6 @@
       "repo_aria": "تصفية حسب المستودع",
       "repo_search": "البحث عن مستودع",
       "skipped": "تخطتها {count}",
-      "source": "تمت قراءة {scanned} نسخة، وتذكّر {cached} جلسة",
       "stat_landed": "أتم commit",
       "stat_whole": "سار على المسار كاملاً",
       "stat_worst": "أكثر الإخفاقات",
@@ -26246,7 +26244,6 @@
       "wait": "متوسط الانتظار {value}",
       "wait_p75": "p75 {value}",
       "view_aria": "العرض",
-      "view_spine": "العمود الفقري",
       "view_dial": "القرص",
       "view_watershed": "مستجمع المياه",
       "dial": {

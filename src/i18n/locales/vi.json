@@ -26210,7 +26210,6 @@
       "coverage": "Độ bao phủ",
       "empty": "Không có phiên nào trong chế độ xem này",
       "error_title": "Không thể đọc các phiên",
-      "failures": "Thất bại",
       "left_here": "{count} kết thúc tại đây do lỗi hoặc bị gián đoạn",
       "mode_aria": "Chế độ phiên",
       "mode_headless": "Tự động",
@@ -26234,7 +26233,6 @@
       "repo_aria": "Lọc theo kho lưu trữ",
       "repo_search": "Tìm kho lưu trữ",
       "skipped": "{count} đã bỏ qua",
-      "source": "Đã đọc {scanned} bản ghi, đã nhớ {cached} phiên",
       "stat_landed": "đã commit",
       "stat_whole": "đã đi hết toàn bộ đường dẫn",
       "stat_worst": "nhiều thất bại nhất",
@@ -26246,7 +26244,6 @@
       "wait": "Thời gian chờ trung vị {value}",
       "wait_p75": "p75 {value}",
       "view_aria": "Chế độ xem",
-      "view_spine": "Trục chính",
       "view_dial": "Mặt số",
       "view_watershed": "Lưu vực",
       "dial": {

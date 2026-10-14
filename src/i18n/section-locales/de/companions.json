@@ -532,7 +532,6 @@
     "coverage": "Abdeckung",
     "empty": "Keine Sitzungen in dieser Ansicht",
     "error_title": "Sitzungen konnten nicht gelesen werden",
-    "failures": "Fehlschläge",
     "left_here": "{count} endeten hier mit Fehlern oder wurden unterbrochen",
     "mode_aria": "Sitzungsmodus",
     "mode_headless": "Automatisiert",
@@ -556,7 +555,6 @@
     "repo_aria": "Nach Repository filtern",
     "repo_search": "Repository suchen",
     "skipped": "{count} haben es übersprungen",
-    "source": "{scanned} Transkripte gelesen, {cached} Sitzungen gespeichert",
     "stat_landed": "hat einen Commit erstellt",
     "stat_whole": "hat den gesamten Pfad durchlaufen",
     "stat_worst": "meiste Fehlschläge",
@@ -568,7 +566,6 @@
     "wait": "Median Wartezeit {value}",
     "wait_p75": "p75 {value}",
     "view_aria": "Ansicht",
-    "view_spine": "Rückgrat",
     "view_dial": "Zifferblatt",
     "view_watershed": "Einzugsgebiet",
     "dial": {

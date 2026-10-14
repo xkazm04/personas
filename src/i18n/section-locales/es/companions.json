@@ -532,7 +532,6 @@
     "coverage": "Cobertura",
     "empty": "No hay sesiones en esta vista",
     "error_title": "No se pudieron leer las sesiones",
-    "failures": "Fallos",
     "left_here": "{count} terminaron aquí con errores o interrupciones",
     "mode_aria": "Modo de sesión",
     "mode_headless": "Automatizada",
@@ -556,7 +555,6 @@
     "repo_aria": "Filtrar por repositorio",
     "repo_search": "Buscar un repositorio",
     "skipped": "{count} lo omitieron",
-    "source": "{scanned} transcripciones leídas, {cached} sesiones recordadas",
     "stat_landed": "hizo un commit",
     "stat_whole": "recorrió toda la ruta",
     "stat_worst": "más fallos",
@@ -568,7 +566,6 @@
     "wait": "Espera mediana {value}",
     "wait_p75": "p75 {value}",
     "view_aria": "Vista",
-    "view_spine": "Columna",
     "view_dial": "Esfera",
     "view_watershed": "Cuenca",
     "dial": {

@@ -3,7 +3,7 @@ import type { DevInstance, DevMode } from '../engine/devAdapter';
 import type { SpineModel } from '../engine/spine';
 
 /** The ways the Process page can draw one reading. Every view answers the same two questions. */
-export type ProcessViewId = 'spine' | 'dial' | 'watershed';
+export type ProcessViewId = 'dial' | 'watershed';
 
 /**
  * What every view receives. The page owns the read, the mode and the repository filter; a view

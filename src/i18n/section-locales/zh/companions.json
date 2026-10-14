@@ -532,7 +532,6 @@
     "coverage": "覆盖率",
     "empty": "此视图中没有会话",
     "error_title": "无法读取会话",
-    "failures": "失败",
     "left_here": "{count} 个在此因错误或中断而结束",
     "mode_aria": "会话模式",
     "mode_headless": "无人值守",
@@ -556,7 +555,6 @@
     "repo_aria": "按仓库筛选",
     "repo_search": "查找仓库",
     "skipped": "{count} 个跳过了它",
-    "source": "已读取 {scanned} 份记录，已记住 {cached} 个会话",
     "stat_landed": "完成了提交",
     "stat_whole": "走完了整条路径",
     "stat_worst": "失败最多",
@@ -568,7 +566,6 @@
     "wait": "中位等待时间 {value}",
     "wait_p75": "p75 {value}",
     "view_aria": "视图",
-    "view_spine": "主干",
     "view_dial": "表盘",
     "view_watershed": "流域",
     "dial": {

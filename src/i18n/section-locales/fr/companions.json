@@ -532,7 +532,6 @@
     "coverage": "Couverture",
     "empty": "Aucune session dans cette vue",
     "error_title": "Impossible de lire les sessions",
-    "failures": "Échecs",
     "left_here": "{count} se sont terminées ici avec des erreurs ou une interruption",
     "mode_aria": "Mode de session",
     "mode_headless": "Automatisée",
@@ -556,7 +555,6 @@
     "repo_aria": "Filtrer par dépôt",
     "repo_search": "Rechercher un dépôt",
     "skipped": "{count} l'ont ignoré",
-    "source": "{scanned} transcriptions lues, {cached} sessions mémorisées",
     "stat_landed": "a effectué un commit",
     "stat_whole": "a parcouru tout le chemin",
     "stat_worst": "le plus d'échecs",
@@ -568,7 +566,6 @@
     "wait": "Attente médiane {value}",
     "wait_p75": "p75 {value}",
     "view_aria": "Vue",
-    "view_spine": "Colonne",
     "view_dial": "Cadran",
     "view_watershed": "Bassin versant",
     "dial": {
