@@ -215,6 +215,14 @@ export interface UiSlice {
   monitorGroupBy: 'none' | 'group';
 
   /**
+   * How the Decision Center reaches the operator (spark mandate-lanes, WP4):
+   * `'chips'` = the seven-chip strip (default); `'lanes'` = the four mandate
+   * lanes (Breach, Sign, Accept, Talk) plus Orphans. A dev switch until the
+   * owner approves lanes; every count reader follows it without a reload.
+   */
+  decisionSurface: 'chips' | 'lanes';
+
+  /**
    * Set of group ids the user has collapsed in the Monitor's group view.
    * Stored as a string[] (not Set<string>) because the persist middleware
    * uses JSON serialization and a Set would be stringified to "{}".
@@ -273,6 +281,7 @@ export interface UiSlice {
   /** Back-compat shim — maps to `setHeaderOverlay('monitor' | 'none')`. */
   setMonitorOpen: (open: boolean) => void;
   setMonitorGroupBy: (mode: 'none' | 'group') => void;
+  setDecisionSurface: (surface: 'chips' | 'lanes') => void;
   toggleMonitorGroupCollapsed: (groupId: string) => void;
   setMonitorLiveMode: (on: boolean) => void;
   toggleMonitorLiveMode: () => void;
@@ -425,6 +434,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   keyboardNavActive: false,
   setKeyboardNavActive: (active) => set({ keyboardNavActive: active }),
   monitorGroupBy: 'none' as const,
+  decisionSurface: 'chips' as const,
   monitorCollapsedGroups: [],
   monitorLiveMode: true,
   monitorInitialView: null,
@@ -498,6 +508,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
       : state.sidebarSection,
   })),
   setMonitorGroupBy: (mode) => set({ monitorGroupBy: mode }),
+  setDecisionSurface: (decisionSurface) => set({ decisionSurface }),
   setMonitorLiveMode: (on) => set({ monitorLiveMode: on }),
   toggleMonitorLiveMode: () => set((state) => ({ monitorLiveMode: !state.monitorLiveMode })),
   setMonitorInitialView: (view) => set({ monitorInitialView: view }),

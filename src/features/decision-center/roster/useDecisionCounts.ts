@@ -27,6 +27,9 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 
 import type { ChipCount, HubChip } from '../model/decisionModel';
+import { buildLaneCounts, laneTotal, type LaneCounts } from '../lanes/laneModel';
+import { refreshLanesSnapshot } from '../lanes/lanesSnapshotSource';
+import { useDecisionSurface, useLanesSnapshot } from '../lanes/useLanesSnapshot';
 import { buildChipCounts, decisionTotal } from './chipCounts';
 import {
   getPendingCountsStatus,
@@ -41,6 +44,13 @@ export interface DecisionCountsState {
   counts: Record<HubChip, ChipCount>;
   /** Sum of the seven decision chips (excludes `ready`). */
   total: number;
+  /**
+   * The mandate lanes' counts while the setting is `lanes`; null under `chips`
+   * (nothing reads the snapshot then).
+   */
+  lanes: LaneCounts | null;
+  /** Breach + Sign + Accept + Talk under `lanes`; null under `chips`. */
+  laneTotal: number | null;
   /** No counts read has settled yet and the store holds none. */
   loading: boolean;
   /** Re-read the counts and the ready list now. Never rejects. */
@@ -89,6 +99,10 @@ export function useDecisionCountsCore(chat: ChatCountInput, enabled: boolean): D
     return n;
   });
 
+  const surface = useDecisionSurface();
+  const lanesOn = surface === 'lanes';
+  const lanesState = useLanesSnapshot(enabled && lanesOn);
+
   const counts = useMemo(
     () =>
       buildChipCounts({
@@ -103,16 +117,37 @@ export function useDecisionCountsCore(chat: ChatCountInput, enabled: boolean): D
     [pending, countsStatus.failed, questionCount, chat.n, chat.failed, undispatched, readySettled],
   );
 
+  const lanes = useMemo(
+    () =>
+      lanesOn
+        ? buildLaneCounts({
+            snapshot: lanesState.snapshot,
+            snapshotFailed: lanesState.failed,
+            questions: questionCount,
+            chat: { n: chat.n, failed: chat.failed },
+          })
+        : null,
+    [lanesOn, lanesState.snapshot, lanesState.failed, questionCount, chat.n, chat.failed],
+  );
+
   const refreshCounts = useCallback(() => {
     void refreshDecisionCounts();
+    if (lanesOn) void refreshLanesSnapshot();
     void refreshReady(refreshUndispatched).finally(() => setReadySettled(true));
-  }, [refreshUndispatched]);
+  }, [refreshUndispatched, lanesOn]);
 
   const loading = enabled && !countsStatus.settled && pending === null;
 
   return useMemo(
-    () => ({ counts, total: decisionTotal(counts), loading, refreshCounts }),
-    [counts, loading, refreshCounts],
+    () => ({
+      counts,
+      total: decisionTotal(counts),
+      lanes,
+      laneTotal: lanes ? laneTotal(lanes) : null,
+      loading,
+      refreshCounts,
+    }),
+    [counts, lanes, loading, refreshCounts],
   );
 }
 
