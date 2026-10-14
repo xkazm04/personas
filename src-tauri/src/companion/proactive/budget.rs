@@ -59,16 +59,23 @@ pub fn kind_cap(kind: &str) -> u32 {
 /// Minimum 30-day engage+dismiss samples before modulation kicks in.
 const MODULATION_MIN_N: i64 = 5;
 
-/// The ±1 adjustment from engagement: dismissed ≥80% → −1; engaged ≥60% → +1;
-/// else 0. `None`-equivalent (0) below the sample floor.
-fn adjustment(engaged: i64, dismissed: i64) -> i64 {
-    let total = engaged + dismissed;
+/// The ±1 adjustment from engagement: non-action (dismissed + ignored) ≥80% → −1;
+/// engaged ≥60% → +1; else 0. Below the sample floor the result is 0.
+///
+/// `ignored` is a delivered card that aged out untouched (see the lifecycle
+/// sweep in `mod.rs`). It is the quiet majority outcome and, sustained, the
+/// strongest negative vote — a kind nobody engages with and nobody even
+/// dismisses must still decay. It also sits in the denominator of the engaged
+/// rate, so recovery is earned against everything delivered, not only against
+/// the cards somebody bothered to resolve.
+fn adjustment(engaged: i64, dismissed: i64, ignored: i64) -> i64 {
+    let total = engaged + dismissed + ignored;
     if total < MODULATION_MIN_N {
         return 0;
     }
-    let dismiss_rate = dismissed as f64 / total as f64;
+    let reject_rate = (dismissed + ignored) as f64 / total as f64;
     let engage_rate = engaged as f64 / total as f64;
-    if dismiss_rate >= 0.80 {
+    if reject_rate >= 0.80 {
         -1
     } else if engage_rate >= 0.60 {
         1
@@ -77,18 +84,24 @@ fn adjustment(engaged: i64, dismissed: i64) -> i64 {
     }
 }
 
-/// 30-day engaged vs dismissed for one kind.
-fn engagement_30d(conn: &rusqlite::Connection, kind: &str) -> (i64, i64) {
-    conn.query_row(
-        "SELECT COALESCE(SUM(CASE WHEN status = 'engaged'   THEN 1 ELSE 0 END), 0),
-                COALESCE(SUM(CASE WHEN status = 'dismissed' THEN 1 ELSE 0 END), 0)
+/// SQL fragment: the three resolved outcomes. `ignored` is `expired` WITH a
+/// delivery stamp; an `expired` row that was never delivered says nothing
+/// about the user and is excluded.
+const OUTCOME_COLUMNS: &str = "COALESCE(SUM(CASE WHEN status = 'engaged'   THEN 1 ELSE 0 END), 0),
+                COALESCE(SUM(CASE WHEN status = 'dismissed' THEN 1 ELSE 0 END), 0),
+                COALESCE(SUM(CASE WHEN status = 'expired' AND delivered_at IS NOT NULL THEN 1 ELSE 0 END), 0)";
+const OUTCOME_FILTER: &str = "(status IN ('engaged', 'dismissed') OR (status = 'expired' AND delivered_at IS NOT NULL))";
+
+/// 30-day engaged / dismissed / ignored for one kind.
+fn engagement_30d(conn: &rusqlite::Connection, kind: &str) -> (i64, i64, i64) {
+    let sql = format!(
+        "SELECT {OUTCOME_COLUMNS}
          FROM companion_proactive_message
          WHERE trigger_kind = ?1 AND created_at >= datetime('now', '-30 days')
-           AND status IN ('engaged', 'dismissed')",
-        params![kind],
-        |r| Ok((r.get(0)?, r.get(1)?)),
-    )
-    .unwrap_or((0, 0))
+           AND {OUTCOME_FILTER}"
+    );
+    conn.query_row(&sql, params![kind], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+        .unwrap_or((0, 0, 0))
 }
 
 /// The effective per-kind cap after engagement modulation. Scheduled check-ins
@@ -98,8 +111,8 @@ fn effective_kind_cap(conn: &rusqlite::Connection, kind: &str) -> u32 {
     if base == u32::MAX {
         return base;
     }
-    let (engaged, dismissed) = engagement_30d(conn, kind);
-    let adj = adjustment(engaged, dismissed);
+    let (engaged, dismissed, ignored) = engagement_30d(conn, kind);
+    let adj = adjustment(engaged, dismissed, ignored);
     if adj != 0 {
         tracing::debug!(
             kind,
@@ -107,6 +120,7 @@ fn effective_kind_cap(conn: &rusqlite::Connection, kind: &str) -> u32 {
             adj,
             engaged,
             dismissed,
+            ignored,
             "budget: engagement-modulated cap"
         );
     }
@@ -121,6 +135,9 @@ pub struct KindModulation {
     pub base_cap: u32,
     pub effective_cap: u32,
     pub engaged: i64,
+    /// Non-action that justified the cap: dismissed PLUS delivered-and-ignored.
+    /// (The IPC row has one rejection column; splitting it needs a binding
+    /// change, owed as a follow-up.)
     pub dismissed: i64,
 }
 
@@ -131,12 +148,12 @@ pub fn modulations_summary(pool: &UserDbPool) -> Vec<KindModulation> {
         return Vec::new();
     };
     let Ok(mut stmt) = conn.prepare(
-        "SELECT trigger_kind,
-                COALESCE(SUM(CASE WHEN status = 'engaged'   THEN 1 ELSE 0 END), 0),
-                COALESCE(SUM(CASE WHEN status = 'dismissed' THEN 1 ELSE 0 END), 0)
+        &format!(
+        "SELECT trigger_kind, {OUTCOME_COLUMNS}
          FROM companion_proactive_message
-         WHERE created_at >= datetime('now', '-30 days') AND status IN ('engaged', 'dismissed')
-         GROUP BY trigger_kind",
+         WHERE created_at >= datetime('now', '-30 days') AND {OUTCOME_FILTER}
+         GROUP BY trigger_kind"
+    ),
     ) else {
         return Vec::new();
     };
@@ -146,18 +163,19 @@ pub fn modulations_summary(pool: &UserDbPool) -> Vec<KindModulation> {
                 r.get::<_, String>(0)?,
                 r.get::<_, i64>(1)?,
                 r.get::<_, i64>(2)?,
+                r.get::<_, i64>(3)?,
             ))
         })
         .map(|it| it.filter_map(Result::ok).collect::<Vec<_>>())
         .unwrap_or_default();
 
     let mut out = Vec::new();
-    for (kind, engaged, dismissed) in rows {
+    for (kind, engaged, dismissed, ignored) in rows {
         let base = kind_cap(&kind);
         if base == u32::MAX {
             continue;
         }
-        let adj = adjustment(engaged, dismissed);
+        let adj = adjustment(engaged, dismissed, ignored);
         if adj == 0 {
             continue; // only surface kinds we actually adapted
         }
@@ -167,7 +185,7 @@ pub fn modulations_summary(pool: &UserDbPool) -> Vec<KindModulation> {
             base_cap: base,
             effective_cap: effective,
             engaged,
-            dismissed,
+            dismissed: dismissed + ignored,
         });
     }
     out.sort_by(|a, b| a.kind.cmp(&b.kind));
@@ -282,7 +300,7 @@ mod tests {
                     date TEXT NOT NULL, trigger_kind TEXT NOT NULL, count INTEGER NOT NULL DEFAULT 0,
                     PRIMARY KEY (date, trigger_kind));
                  CREATE TABLE IF NOT EXISTS companion_proactive_message (
-                    id TEXT, trigger_kind TEXT, status TEXT,
+                    id TEXT, trigger_kind TEXT, status TEXT, delivered_at TEXT,
                     created_at TEXT NOT NULL DEFAULT (datetime('now')));",
             )
             .unwrap();
@@ -313,11 +331,14 @@ mod tests {
 
     #[test]
     fn adjustment_rules() {
-        assert_eq!(adjustment(0, 0), 0); // no signal
-        assert_eq!(adjustment(1, 3), 0); // total < MIN_N
-        assert_eq!(adjustment(1, 9), -1); // 90% dismissed
-        assert_eq!(adjustment(7, 3), 1); // 70% engaged
-        assert_eq!(adjustment(4, 4), 0); // mixed
+        assert_eq!(adjustment(0, 0, 0), 0); // no signal
+        assert_eq!(adjustment(1, 3, 0), 0); // total < MIN_N
+        assert_eq!(adjustment(1, 9, 0), -1); // 90% dismissed
+        assert_eq!(adjustment(7, 3, 0), 1); // 70% engaged
+        assert_eq!(adjustment(4, 4, 0), 0); // mixed
+        assert_eq!(adjustment(0, 0, 10), -1); // nobody acts, nobody even dismisses
+        assert_eq!(adjustment(2, 0, 8), -1); // ignored dominates the denominator
+        assert_eq!(adjustment(6, 0, 4), 1); // 60% of everything delivered
     }
 
     #[test]
@@ -349,6 +370,30 @@ mod tests {
         assert_eq!(mods[0].kind, "message_digest");
         assert_eq!(mods[0].base_cap, 4);
         assert_eq!(mods[0].effective_cap, 3);
+    }
+
+    #[test]
+    fn ignore_heavy_kind_is_throttled_but_undelivered_expiry_is_not() {
+        let pool = test_pool();
+        {
+            let c = pool.get().unwrap();
+            for i in 0..10 {
+                c.execute(
+                    "INSERT INTO companion_proactive_message (id, trigger_kind, status, delivered_at) VALUES (?1, 'message_digest', 'expired', datetime('now'))",
+                    params![format!("i{i}")],
+                ).unwrap();
+            }
+            // Never delivered: must not count as a vote.
+            for i in 0..10 {
+                c.execute(
+                    "INSERT INTO companion_proactive_message (id, trigger_kind, status) VALUES (?1, 'incident_blocker', 'expired')",
+                    params![format!("u{i}")],
+                ).unwrap();
+            }
+        }
+        let c = pool.get().unwrap();
+        assert_eq!(effective_kind_cap(&c, "message_digest"), kind_cap("message_digest") - 1);
+        assert_eq!(effective_kind_cap(&c, "incident_blocker"), kind_cap("incident_blocker"));
     }
 
     #[test]
