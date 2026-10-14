@@ -566,6 +566,10 @@
     "subtitle_repo": "{count} phiên trong {repo}",
     "time_note": "Thời gian là thời gian hoạt động: bất kỳ khoảng trống nào dài hơn 10 phút được tính là 10 phút.",
     "wait": "Thời gian chờ trung vị {value}",
-    "wait_p75": "p75 {value}"
+    "wait_p75": "p75 {value}",
+    "view_aria": "Chế độ xem",
+    "view_spine": "Trục chính",
+    "view_dial": "Mặt số",
+    "view_watershed": "Lưu vực"
   }
 }

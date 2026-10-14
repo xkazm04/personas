@@ -26244,7 +26244,11 @@
       "mode_note": "Interactive and headless sessions are different processes, so they are never pooled.",
       "source": "{scanned} transcripts read, {cached} sessions remembered",
       "empty": "No sessions in this view",
-      "error_title": "Could not read the sessions"
+      "error_title": "Could not read the sessions",
+      "view_aria": "View",
+      "view_spine": "Spine",
+      "view_dial": "Dial",
+      "view_watershed": "Watershed"
     }
   }
 }

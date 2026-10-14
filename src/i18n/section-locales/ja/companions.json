@@ -566,6 +566,10 @@
     "subtitle_repo": "{repo}で{count}セッション",
     "time_note": "時間はアクティブ時間です。10分を超える間隔はすべて10分としてカウントされます。",
     "wait": "待機時間の中央値 {value}",
-    "wait_p75": "p75 {value}"
+    "wait_p75": "p75 {value}",
+    "view_aria": "表示",
+    "view_spine": "スパイン",
+    "view_dial": "ダイヤル",
+    "view_watershed": "流域"
   }
 }

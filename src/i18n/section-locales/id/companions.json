@@ -566,6 +566,10 @@
     "subtitle_repo": "{count} sesi di {repo}",
     "time_note": "Waktu adalah waktu aktif: jeda lebih dari 10 menit dihitung sebagai 10 menit.",
     "wait": "Median waktu tunggu {value}",
-    "wait_p75": "p75 {value}"
+    "wait_p75": "p75 {value}",
+    "view_aria": "Tampilan",
+    "view_spine": "Tulang punggung",
+    "view_dial": "Cakram",
+    "view_watershed": "Daerah aliran sungai"
   }
 }

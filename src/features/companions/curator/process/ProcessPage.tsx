@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState, type ComponentType } from 'react';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { GitCommitVertical } from 'lucide-react';
 import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
@@ -7,13 +8,21 @@ import { buildSpine } from './engine/spine';
 import { devFailure, devInstances, type DevMode } from './engine/devAdapter';
 import { useProcessData } from './useProcessData';
 import { RepoFilter } from './RepoFilter';
-import { SpineSummary } from './SpineSummary';
-import { SpineStation } from './SpineStation';
-import { SpineOutcomes } from './SpineOutcomes';
 import { ProcessGhost } from './ProcessGhost';
+import SpineView from './views/SpineView';
+import type { ProcessViewId, ProcessViewProps } from './views/types';
 
 const MODES: DevMode[] = ['interactive', 'headless'];
 const MODE_TABS = 'process-mode';
+const VIEW_TABS = 'process-view';
+const VIEWS: ProcessViewId[] = ['spine', 'dial', 'watershed'];
+
+// The two alternatives are figures heavy enough to split: neither costs the Spine a byte until picked.
+const VIEW_COMPONENTS: Record<ProcessViewId, ComponentType<ProcessViewProps>> = {
+  spine: SpineView,
+  dial: lazyRetry(() => import('./views/dial/DialView')),
+  watershed: lazyRetry(() => import('./views/watershed/WatershedView')),
+};
 
 /**
  * Curator > Process: the strategic layer over the fleet's development sessions.
@@ -28,6 +37,8 @@ export default function ProcessPage() {
   const { reading, loading, error } = useProcessData();
   const [mode, setMode] = useState<DevMode>('interactive');
   const [repoPick, setRepoPick] = useState<string | null>(null);
+  const [viewId, setViewId] = useState<ProcessViewId>('spine');
+  const View = VIEW_COMPONENTS[viewId];
 
   const all = useMemo(() => (reading ? devInstances(reading) : []), [reading]);
   const byMode = useMemo(() => MODES.map((m) => all.filter((x) => x.mode === m)), [all]);
@@ -59,6 +70,15 @@ export default function ProcessPage() {
         fitWidth
         actions={
           <div className="flex items-center gap-3">
+            <SegmentedTabs<ProcessViewId>
+              tabs={VIEWS.map((v) => ({ id: v, label: p[`view_${v}`], testId: `process-view-${v}` }))}
+              activeTab={viewId}
+              onTabChange={setViewId}
+              ariaLabel={p.view_aria}
+              idPrefix={VIEW_TABS}
+              size="sm"
+              fullWidth={false}
+            />
             <SegmentedTabs<DevMode>
               tabs={MODES.map((m, i) => ({
                 id: m,
@@ -82,37 +102,21 @@ export default function ProcessPage() {
           role="tabpanel"
           id={`${MODE_TABS}-panel-${mode}`}
           aria-labelledby={`${MODE_TABS}-tab-${mode}`}
-          className="mx-auto w-full max-w-6xl px-2 py-6"
+          className="h-full w-full"
         >
-          {!reading ? (
-            error ? <LoadError title={p.error_title} message={error} /> : loading ? <ProcessGhost /> : null
-          ) : view.length === 0 ? (
-            <p className="py-16 text-center typo-body">{p.empty}</p>
-          ) : (
-            <>
-              <SpineSummary model={model} />
-              <p className="mt-6 mb-10 max-w-3xl typo-body text-foreground">
-                {p.path_note} {p.mode_note} {p.time_note}
-              </p>
-              <ol aria-label={t.companions.nav.page_process}>
-                {model.stations.map((s, i) => (
-                  <SpineStation
-                    key={s.keys.join('|')}
-                    station={s}
-                    total={model.n}
-                    cohort={repo ? base.stations[i] : undefined}
-                    cohortTotal={repo ? base.n : undefined}
-                    rank={model.worst.slice(0, 3).includes(s.index) ? model.worst.indexOf(s.index) + 1 : undefined}
-                    last={i === model.stations.length - 1}
-                  />
-                ))}
-              </ol>
-              <SpineOutcomes outcomes={model.outcomes} total={model.n} />
-              <p className="mt-8 typo-caption tabular-nums">
-                {tx(p.source, { scanned: reading.source.scanned, cached: reading.source.cached })}
-              </p>
-            </>
-          )}
+          <div role="tabpanel" id={`${VIEW_TABS}-panel-${viewId}`} aria-labelledby={`${VIEW_TABS}-tab-${viewId}`} className="h-full w-full">
+            {!reading ? (
+              <div className="mx-auto w-full max-w-6xl px-2 py-6">
+                {error ? <LoadError title={p.error_title} message={error} /> : loading ? <ProcessGhost /> : null}
+              </div>
+            ) : view.length === 0 ? (
+              <p className="py-16 text-center typo-body">{p.empty}</p>
+            ) : (
+              <Suspense fallback={null}>
+                <View reading={reading} mode={mode} repo={repo} cohort={cohort} view={view} model={model} base={base} />
+              </Suspense>
+            )}
+          </div>
         </div>
       </ContentBody>
     </ContentBox>

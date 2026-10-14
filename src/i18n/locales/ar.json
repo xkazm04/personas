@@ -26244,7 +26244,11 @@
       "subtitle_repo": "{count} جلسة في {repo}",
       "time_note": "الوقت هو الوقت النشط: أي فجوة أطول من 10 دقائق تُحتسب كـ 10 دقائق.",
       "wait": "متوسط الانتظار {value}",
-      "wait_p75": "p75 {value}"
+      "wait_p75": "p75 {value}",
+      "view_aria": "العرض",
+      "view_spine": "العمود الفقري",
+      "view_dial": "القرص",
+      "view_watershed": "مستجمع المياه"
     }
   }
 }

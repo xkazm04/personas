@@ -26251,6 +26251,10 @@ export type Translations = {
       source: string;
       empty: string;
       error_title: string;
+      view_aria: string;
+      view_spine: string;
+      view_dial: string;
+      view_watershed: string;
     };
   };
 };

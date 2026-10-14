@@ -26244,7 +26244,11 @@
       "subtitle_repo": "{count} sesiones en {repo}",
       "time_note": "El tiempo es tiempo activo: cualquier pausa mayor de 10 minutos cuenta como 10 minutos.",
       "wait": "Espera mediana {value}",
-      "wait_p75": "p75 {value}"
+      "wait_p75": "p75 {value}",
+      "view_aria": "Vista",
+      "view_spine": "Columna",
+      "view_dial": "Esfera",
+      "view_watershed": "Cuenca"
     }
   }
 }

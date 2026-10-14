@@ -26244,7 +26244,11 @@
       "subtitle_repo": "{count} sessions dans {repo}",
       "time_note": "Le temps est le temps actif : tout écart de plus de 10 minutes compte pour 10 minutes.",
       "wait": "Attente médiane {value}",
-      "wait_p75": "p75 {value}"
+      "wait_p75": "p75 {value}",
+      "view_aria": "Vue",
+      "view_spine": "Colonne",
+      "view_dial": "Cadran",
+      "view_watershed": "Bassin versant"
     }
   }
 }

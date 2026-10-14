@@ -26244,7 +26244,11 @@
       "subtitle_repo": "{count} Sitzungen in {repo}",
       "time_note": "Zeit ist aktive Zeit: Jede Lücke länger als 10 Minuten zählt als 10 Minuten.",
       "wait": "Median Wartezeit {value}",
-      "wait_p75": "p75 {value}"
+      "wait_p75": "p75 {value}",
+      "view_aria": "Ansicht",
+      "view_spine": "Rückgrat",
+      "view_dial": "Zifferblatt",
+      "view_watershed": "Einzugsgebiet"
     }
   }
 }

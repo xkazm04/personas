@@ -566,6 +566,10 @@
     "subtitle_repo": "{repo} में {count} सेशन",
     "time_note": "समय सक्रिय समय है: 10 मिनट से अधिक का कोई भी अंतराल 10 मिनट के रूप में गिना जाता है।",
     "wait": "औसत प्रतीक्षा {value}",
-    "wait_p75": "p75 {value}"
+    "wait_p75": "p75 {value}",
+    "view_aria": "दृश्य",
+    "view_spine": "स्पाइन",
+    "view_dial": "डायल",
+    "view_watershed": "जलग्रहण"
   }
 }

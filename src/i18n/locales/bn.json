@@ -26244,7 +26244,11 @@
       "subtitle_repo": "{repo}-এ {count}টি সেশন",
       "time_note": "সময় মানে সক্রিয় সময়: 10 মিনিটের বেশি যেকোনো ফাঁক 10 মিনিট হিসেবে গণনা করা হয়।",
       "wait": "গড় অপেক্ষা {value}",
-      "wait_p75": "p75 {value}"
+      "wait_p75": "p75 {value}",
+      "view_aria": "ভিউ",
+      "view_spine": "স্পাইন",
+      "view_dial": "ডায়াল",
+      "view_watershed": "জলাধার অঞ্চল"
     }
   }
 }

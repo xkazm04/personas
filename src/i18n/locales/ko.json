@@ -26244,7 +26244,11 @@
       "subtitle_repo": "{repo}의 {count}개 세션",
       "time_note": "시간은 활성 시간입니다. 10분을 초과하는 간격은 모두 10분으로 계산됩니다.",
       "wait": "중앙값 대기 시간 {value}",
-      "wait_p75": "p75 {value}"
+      "wait_p75": "p75 {value}",
+      "view_aria": "보기",
+      "view_spine": "스파인",
+      "view_dial": "다이얼",
+      "view_watershed": "유역"
     }
   }
 }

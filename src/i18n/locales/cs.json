@@ -26244,7 +26244,11 @@
       "subtitle_repo": "{count} relací v {repo}",
       "time_note": "Čas je aktivní čas: jakákoli mezera delší než 10 minut se počítá jako 10 minut.",
       "wait": "Medián čekání {value}",
-      "wait_p75": "p75 {value}"
+      "wait_p75": "p75 {value}",
+      "view_aria": "Pohled",
+      "view_spine": "Páteř",
+      "view_dial": "Ciferník",
+      "view_watershed": "Povodí"
     }
   }
 }
