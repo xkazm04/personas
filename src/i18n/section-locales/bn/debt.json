@@ -136,7 +136,7 @@
   "auto_diff_view_needs_two_versions_only_one_was__405308f8": "ডিফ ভিউয়ের জন্য দুটি ভার্সন প্রয়োজন, এই রানে শুধু একটি পাওয়া গেছে।",
   "auto_dismiss_resume_banner_ccff3f60": "রিজিউম ব্যানার খারিজ করুন",
   "auto_dismiss_warning_a3da6a26": "সতর্কতা খারিজ করুন",
-  "auto_docker_compose_isn_t_available_please_upda_b5d10f6a": "Docker Compose উপলব্ধ নেই। দয়া করে Docker Desktop আপডেট করুন।",
+  "auto_docker_compose_isn_t_available_please_upda_b5d10f6a": "Docker Compose উপলব্ধ নেই। Docker Desktop আপডেট করুন।",
   "auto_draft_017464f7": "খসড়া:",
   "auto_draft_da70e724": "খসড়া: $",
   "auto_draft_ready_96b5a4f6": "খসড়া প্রস্তুত",
