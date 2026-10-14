@@ -952,7 +952,7 @@
     "cloud_banner_signin": "ক্লাউড ফিচার আনলক করতে সাইন ইন করুন",
     "design_wizard_banner": "AI ডিজাইন উইজার্ড দিয়ে এই টেমপ্লেট কাস্টমাইজ করুন",
     "discard": "বাতিল",
-    "no_persona": "কোনো persona নির্বাচিত নয়",
+    "no_persona": "কোনো পার্সোনা নির্বাচিত নয়",
     "save_and_switch": "সংরক্ষণ ও পরিবর্তন",
     "save_failed": "{tabs} সংরক্ষণ ব্যর্থ",
     "save_failed_generic": "পরিবর্তন সংরক্ষণ ব্যর্থ",
@@ -2679,7 +2679,7 @@
   },
   "sidebar": {
     "clear_filters": "সব ফিল্টার মুছুন",
-    "empty": "কোনো persona নেই",
+    "empty": "কোনো পার্সোনা নেই",
     "no_match": "কোনো এজেন্ট ফিল্টারে মেলেনি"
   },
   "sigil_edit_active": "এই সক্ষমতার জন্য সক্রিয়",
