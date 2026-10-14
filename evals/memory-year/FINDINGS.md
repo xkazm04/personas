@@ -242,6 +242,17 @@ side, and it is a property of her instructions and effort rather than of her mem
   date-free text and the purity check passes on each.
 - A run of this size must be resumable and detached. Three multi-hour runs were killed by
   session events; only the per-probe checkpoint saved them.
+- **The year is one conversation, so a session-scoped reconciliation is unpriced.** Every
+  arm ingests under `conversation: "sim-year"`. A store whose write-time dedup recalls
+  candidates only from the current session (one released engine does exactly this, while
+  its search reads across sessions) loses nothing here by construction. Priced on the
+  scenario's own ground truth (`py -m memory_year.checks.partition_reach`, no model): a
+  pool partitioned by scope + day reaches **0 of 73** state changes, by scope + week 3 of
+  73, by the read scope all 73; 51 of the 73 old values were last stated more than 30 days
+  before they changed, and all 92 reversal and expired probes rest on an unreached change.
+  That is a served-stale cost, not yet an answered-stale one: a reader given dated items
+  can still pick the newer. Before quoting a session-scoped design against this ladder,
+  give the scenario a session boundary.
 
 ## What the peer cohort was worth
 
