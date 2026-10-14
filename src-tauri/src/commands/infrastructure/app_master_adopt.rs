@@ -1853,6 +1853,25 @@ mod tests {
             personas_engine::app_master::RUNG_MERGE,
             "the mandate carries rung 3"
         );
+        // Mandate lanes regression: a rung-3 adoption's charters carry an
+        // UNSIGNED envelope (merge_policy defaults to `never`), and an unsigned
+        // envelope binds nothing, so the worker the attention path dispatches
+        // still ships at rung 3 and merges.
+        assert!(!done.charters.is_empty());
+        for c in &done.charters {
+            let env = crate::db::repos::core::mandates::get_envelope(&pool, &c.id)
+                .expect("envelope read")
+                .expect("the adopted charter exists");
+            assert!(!env.is_signed(), "adoption does not sign the envelope");
+            assert_eq!(
+                personas_engine::unattended::ship_rung_for_envelope(
+                    stored.mandate.scope_rung,
+                    Some(&env)
+                ),
+                personas_engine::app_master::RUNG_MERGE,
+                "a rung-3 adoption ships at rung 3 (the App Master merges)"
+            );
+        }
         let law = render_mandate_law("demo-app", &stored.mandate);
         assert!(law.contains("Rung 3 (merge)"), "{law}");
         assert!(law.contains("do not ask who merges"), "{law}");

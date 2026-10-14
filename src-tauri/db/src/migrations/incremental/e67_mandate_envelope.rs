@@ -7,10 +7,14 @@
 //! * `persona_responsibilities` gains `decide_scopes` (JSON array, `'[]'`),
 //!   `merge_policy` (`'never'` | `'gate-green'` | `'gate-green+council-ready'`),
 //!   `envelope_version` (0 = never signed) and `kept_at_acts` (NULL = never
-//!   re-read). The defaults reproduce today's behaviour exactly: no scope is
-//!   delegated and nothing merges. The one backfill: a charter already at
-//!   rung 3 or above gets `merge_policy = 'gate-green'`, which is what a rung-3
-//!   worker did before the policy existed (the count is logged; 0 live today).
+//!   re-read). There is no backfill: the envelope binds only once SIGNED
+//!   (`envelope_version > 0`), so an unsigned charter, which every existing row
+//!   and every new adoption is, ships exactly as its rung says and its
+//!   `merge_policy = 'never'` default is inert (`ship_rung_for_envelope` in the
+//!   engine's `unattended`). A rung-3 backfill to `'gate-green'` once lived
+//!   here; it only repaired rows already on disk while the DEFAULT kept minting
+//!   rung-3 adoptions at `never` (census `default-contradicted-by-backfill`),
+//!   so a charter adopted at rung 3 afterwards silently stopped merging.
 //! * `persona_responsibilities.source` admits `'athena'` (orphan drafts). A
 //!   CHECK cannot be altered in SQLite, so the table is rebuilt from its own
 //!   live DDL ([`rebuild_table_from_live_ddl`]): copy by name, indexes replayed.
@@ -153,9 +157,10 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     Ok(())
 }
 
-/// The four columns plus the rung-3 backfill, in one transaction so the
-/// backfill cannot be lost to a crash between the ALTER and the UPDATE (the
-/// step's postcondition is the column, so it would never run again).
+/// The four columns, in one transaction so a crash cannot leave a partial set
+/// (the step's postcondition is `merge_policy`, so it would never run again).
+/// No backfill: the defaults describe an UNSIGNED envelope, which binds
+/// nothing, so no existing row needs a different value (see the module doc).
 fn add_envelope_columns(conn: &Connection) -> Result<(), AppError> {
     let tx = conn.unchecked_transaction()?;
     tx.execute_batch(
@@ -169,15 +174,7 @@ fn add_envelope_columns(conn: &Connection) -> Result<(), AppError> {
          ALTER TABLE persona_responsibilities
             ADD COLUMN kept_at_acts INTEGER;",
     )?;
-    let backfilled = tx.execute(
-        "UPDATE persona_responsibilities SET merge_policy = 'gate-green' WHERE scope_rung >= 3",
-        [],
-    )?;
     tx.commit()?;
-    tracing::info!(
-        backfilled,
-        "e67: charters at rung 3+ keep merging on green gates (merge_policy = 'gate-green')"
-    );
     Ok(())
 }
 
@@ -296,7 +293,7 @@ mod tests {
     }
 
     #[test]
-    fn a_populated_table_is_widened_backfilled_and_kept_whole() {
+    fn a_populated_table_is_widened_and_kept_whole_with_no_backfill() {
         let pool = crate::init_test_db().unwrap();
         let conn = pool.conn("e67 test").unwrap();
         conn.execute(
@@ -357,8 +354,8 @@ mod tests {
         assert_eq!(rows[0].5, "{\"priority\":2}");
         assert_eq!(rows[1].0, "c3");
         assert_eq!(
-            rows[1].1, "gate-green",
-            "a rung-3 charter keeps merging on green"
+            rows[1].1, "never",
+            "a rung-3 charter is not backfilled: its envelope is unsigned, so the default is inert"
         );
         assert!(rows.iter().all(|r| r.2 == 0 && r.3 == "[]"));
         assert!(
@@ -381,30 +378,46 @@ mod tests {
             .unwrap();
         assert_eq!(left, 0);
 
-        // A replay is a no-op, not a second rebuild or a second backfill.
+        // A replay is a no-op, not a second rebuild.
         run(&conn).unwrap();
     }
 
+    /// The regression the dropped backfill caused: a charter adopted at rung 3
+    /// AFTER e67 ran got the column default `never` and shipped like rung 2.
+    /// Now the row still holds `never`, but its envelope is unsigned, so no
+    /// merge policy binds it and the engine's `ship_rung_for_envelope` keeps
+    /// its rung at 3 (pinned engine-side by
+    /// `only_a_signed_envelope_lowers_a_rung_three_worker`).
     #[test]
-    fn a_replay_does_not_backfill_again() {
+    fn a_rung_three_charter_written_after_e67_stays_unsigned_and_unbound() {
         let pool = crate::init_test_db().unwrap();
-        let conn = pool.conn("e67 test").unwrap();
-        conn.execute(
-            "INSERT INTO personas (id, name, system_prompt, enabled, created_at, updated_at)
-             VALUES ('p1','p1','sp',1,datetime('now'),datetime('now'))",
-            [],
-        )
-        .unwrap();
-        insert_charter(&conn, "c3", 3, "operator");
-        // A rung-3 charter the operator set to `never` after e67 ran must stay `never`.
-        run(&conn).unwrap();
-        let policy: String = conn
-            .query_row(
-                "SELECT merge_policy FROM persona_responsibilities WHERE id = 'c3'",
+        {
+            let conn = pool.conn("e67 test").unwrap();
+            conn.execute(
+                "INSERT INTO personas (id, name, system_prompt, enabled, created_at, updated_at)
+                 VALUES ('p1','p1','sp',1,datetime('now'),datetime('now'))",
                 [],
-                |r| r.get("merge_policy"),
             )
             .unwrap();
-        assert_eq!(policy, "never");
+            insert_charter(&conn, "c3", 3, "operator");
+            run(&conn).unwrap();
+            let policy: String = conn
+                .query_row(
+                    "SELECT merge_policy FROM persona_responsibilities WHERE id = 'c3'",
+                    [],
+                    |r| r.get("merge_policy"),
+                )
+                .unwrap();
+            assert_eq!(policy, "never", "the DEFAULT stands; nothing backfills it");
+        }
+        let env = crate::repos::core::mandates::get_envelope(&pool, "c3")
+            .unwrap()
+            .expect("the charter exists");
+        assert!(!env.is_signed());
+        assert_eq!(
+            env.binding_merge_policy(),
+            None,
+            "an unsigned envelope binds no merge policy, so the rung-3 charter merges"
+        );
     }
 }

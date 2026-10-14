@@ -6530,19 +6530,19 @@ async fn dispatch_into_worktree(
     // rung-2 dispatch onto a machine with no authenticated `gh` would otherwise
     // spend a turn on a push that cannot work.
     let gh_authenticated = gh_is_authenticated().await;
-    // The signed merge policy can only LOWER what a rung-3 worker ships
-    // (mandate lanes): `never` opens the branch and asks. An unreadable
-    // envelope reads as `never`, the safe direction.
-    let merge_policy = crate::db::repos::core::mandates::get_envelope(&state.db, &charter.id)
+    // A SIGNED envelope's merge policy can only LOWER what a rung-3 worker
+    // ships (mandate lanes): `never` opens the branch and asks. An unsigned
+    // envelope binds nothing, so the charter ships exactly as its rung says
+    // (a rung-3 adoption merges). An unreadable envelope reads as `never`,
+    // the safe direction. The rule lives in `ship_rung_for_envelope`.
+    let envelope = crate::db::repos::core::mandates::get_envelope(&state.db, &charter.id)
         .ok()
-        .flatten()
-        .map(|e| e.merge_policy)
-        .unwrap_or_default();
+        .flatten();
     let text = personas_engine::unattended::unattended_worktree_task_text_at_rung(
         task,
         &worktree.branch,
         &worktree_path,
-        personas_engine::unattended::ship_rung_under_merge_policy(charter.scope_rung, merge_policy),
+        personas_engine::unattended::ship_rung_for_envelope(charter.scope_rung, envelope.as_ref()),
         gh_authenticated,
     );
     // Lifecycle contract, unattended door: the practice minus Isolate/Land,

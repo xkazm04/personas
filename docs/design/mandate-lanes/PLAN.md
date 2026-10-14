@@ -265,10 +265,13 @@ the same commit, through the translation ritual in `.claude/spark/config.md`.
 
 ## 9. Risks
 
-- **Behaviour change on merges.** Live today, every active software charter sits at rung 2 (46 of them), so no
-  in-app worker merges and `merge_policy='never'` changes nothing. A charter later raised to rung 3 must get an
-  explicit merge policy at that moment; the migration backfills any rung-3 charter it finds with `gate-green`
-  (today's behaviour) and logs how many it touched.
+- **Behaviour change on merges.** None for an unsigned charter. The merge policy, like the decide scopes, binds
+  only a SIGNED envelope (`envelope_version > 0`): unsigned charters, which is every live one and every new
+  adoption, merge exactly as their rung says, and their `merge_policy='never'` column default is inert
+  (`ship_rung_for_envelope`, the one rule every dispatcher uses; an unreadable envelope reads as `never`). There
+  is no backfill: the first cut backfilled rung-3 rows to `gate-green` while the DEFAULT kept minting `never`, so
+  a charter adopted at rung 3 afterwards silently stopped merging, against the owner's decision of 2026-09-09.
+  Signing an envelope is the moment the operator chooses a merge policy, so the Sign card (WP5) must show it.
 - **The attention loop is off on the main machine.** Judgment items wait until it runs; the router still files the
   deterministic share. The Stewards plate makes "loop off" visible.
 - **Mesh is unverified on two machines**: zero `owned_devices` rows live. WP9 is a one-box smoke only.

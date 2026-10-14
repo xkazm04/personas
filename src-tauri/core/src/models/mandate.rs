@@ -185,6 +185,15 @@ impl MandateEnvelope {
     pub fn permits(&self, scope: DecideScope) -> bool {
         self.decide_scopes.contains(&scope)
     }
+
+    /// The merge policy that BINDS this charter: `Some` only once the envelope
+    /// is signed. An unsigned envelope's `merge_policy` is the column default
+    /// (`never`), not a choice anyone made, so it binds nothing and the charter
+    /// ships exactly as its rung says. Signing is the moment the operator picks
+    /// a merge policy.
+    pub fn binding_merge_policy(&self) -> Option<MergePolicy> {
+        self.is_signed().then_some(self.merge_policy)
+    }
 }
 
 /// What the operator signs: the whole envelope at once.
@@ -525,6 +534,25 @@ mod tests {
             assert_eq!(MergePolicy::parse(p.as_str()), Some(p));
         }
         assert_eq!(MergePolicy::default(), MergePolicy::Never);
+    }
+
+    #[test]
+    fn only_a_signed_envelope_binds_its_merge_policy() {
+        let unsigned = MandateEnvelope::default();
+        assert_eq!(unsigned.merge_policy, MergePolicy::Never);
+        assert_eq!(unsigned.binding_merge_policy(), None);
+        for p in [
+            MergePolicy::Never,
+            MergePolicy::GateGreen,
+            MergePolicy::GateGreenCouncilReady,
+        ] {
+            let signed = MandateEnvelope {
+                merge_policy: p,
+                envelope_version: 1,
+                ..Default::default()
+            };
+            assert_eq!(signed.binding_merge_policy(), Some(p));
+        }
     }
 
     #[test]
