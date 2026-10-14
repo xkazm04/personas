@@ -6888,7 +6888,7 @@
     "strip_open_hint": "모니터 열기",
     "strip_queued": "{count}개 대기 중",
     "strip_running": "{count}개 실행 중",
-    "subtitle": "{페르소나s} 페르소나s · {attention} need attention · {running} running",
+    "subtitle": "{personas} 페르소나 · {attention} 개 주의 필요 · {running} 개 실행 중",
     "system": "시스템",
     "title": "페르소나 모니터",
     "titlebar": "페르소나 모니터",

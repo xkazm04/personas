@@ -372,7 +372,7 @@
   "strip_open_hint": "فتح لوحة المراقبة",
   "strip_queued": "{count} في الانتظار",
   "strip_running": "{count} يعمل",
-  "subtitle": "{شخصيةs} شخصيةs · {attention} need attention · {running} running",
+  "subtitle": "{personas} شخصيات · {attention} تحتاج إلى انتباه · {running} قيد التشغيل",
   "system": "النظام",
   "title": "مراقب الشخصيات",
   "titlebar": "مراقب الشخصيات",

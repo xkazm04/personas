@@ -372,7 +372,7 @@
   "strip_open_hint": "打开监控",
   "strip_queued": "{count} 排队中",
   "strip_running": "{count} 运行中",
-  "subtitle": "{人格s} 人格s · {attention} need attention · {running} running",
+  "subtitle": "{personas} 个智能体 · {attention} 个需要关注 · {running} 个运行中",
   "system": "系统",
   "title": "人格监视器",
   "titlebar": "人格监视器",

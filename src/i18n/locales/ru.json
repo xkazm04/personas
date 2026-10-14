@@ -6888,7 +6888,7 @@
     "strip_open_hint": "Открыть монитор",
     "strip_queued": "{count} в очереди",
     "strip_running": "{count} выполняется",
-    "subtitle": "{персонаs} персонаs · {attention} need attention · {running} running",
+    "subtitle": "{personas} персон · {attention} требуют внимания · {running} выполняются",
     "system": "Система",
     "title": "Монитор персон",
     "titlebar": "Монитор персон",

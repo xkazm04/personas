@@ -372,7 +372,7 @@
   "strip_open_hint": "মনিটর খুলুন",
   "strip_queued": "{count}টি অপেক্ষায়",
   "strip_running": "{count}টি চলছে",
-  "subtitle": "{পারসোনাs} পারসোনাs · {attention} need attention · {running} running",
+  "subtitle": "{personas} পার্সোনা · {attention} মনোযোগ প্রয়োজন · {running} চলছে",
   "system": "সিস্টেম",
   "title": "পারসোনা মনিটর",
   "titlebar": "পারসোনা মনিটর",
