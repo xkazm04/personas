@@ -90,7 +90,8 @@ fn adjustment(engaged: i64, dismissed: i64, ignored: i64) -> i64 {
 const OUTCOME_COLUMNS: &str = "COALESCE(SUM(CASE WHEN status = 'engaged'   THEN 1 ELSE 0 END), 0),
                 COALESCE(SUM(CASE WHEN status = 'dismissed' THEN 1 ELSE 0 END), 0),
                 COALESCE(SUM(CASE WHEN status = 'expired' AND delivered_at IS NOT NULL THEN 1 ELSE 0 END), 0)";
-const OUTCOME_FILTER: &str = "(status IN ('engaged', 'dismissed') OR (status = 'expired' AND delivered_at IS NOT NULL))";
+const OUTCOME_FILTER: &str =
+    "(status IN ('engaged', 'dismissed') OR (status = 'expired' AND delivered_at IS NOT NULL))";
 
 /// 30-day engaged / dismissed / ignored for one kind.
 fn engagement_30d(conn: &rusqlite::Connection, kind: &str) -> (i64, i64, i64) {
@@ -100,8 +101,10 @@ fn engagement_30d(conn: &rusqlite::Connection, kind: &str) -> (i64, i64, i64) {
          WHERE trigger_kind = ?1 AND created_at >= datetime('now', '-30 days')
            AND {OUTCOME_FILTER}"
     );
-    conn.query_row(&sql, params![kind], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
-        .unwrap_or((0, 0, 0))
+    conn.query_row(&sql, params![kind], |r| {
+        Ok((r.get(0)?, r.get(1)?, r.get(2)?))
+    })
+    .unwrap_or((0, 0, 0))
 }
 
 /// The effective per-kind cap after engagement modulation. Scheduled check-ins
@@ -147,14 +150,12 @@ pub fn modulations_summary(pool: &UserDbPool) -> Vec<KindModulation> {
     let Ok(conn) = pool.get() else {
         return Vec::new();
     };
-    let Ok(mut stmt) = conn.prepare(
-        &format!(
+    let Ok(mut stmt) = conn.prepare(&format!(
         "SELECT trigger_kind, {OUTCOME_COLUMNS}
          FROM companion_proactive_message
          WHERE created_at >= datetime('now', '-30 days') AND {OUTCOME_FILTER}
          GROUP BY trigger_kind"
-    ),
-    ) else {
+    )) else {
         return Vec::new();
     };
     let rows = stmt
@@ -392,8 +393,14 @@ mod tests {
             }
         }
         let c = pool.get().unwrap();
-        assert_eq!(effective_kind_cap(&c, "message_digest"), kind_cap("message_digest") - 1);
-        assert_eq!(effective_kind_cap(&c, "incident_blocker"), kind_cap("incident_blocker"));
+        assert_eq!(
+            effective_kind_cap(&c, "message_digest"),
+            kind_cap("message_digest") - 1
+        );
+        assert_eq!(
+            effective_kind_cap(&c, "incident_blocker"),
+            kind_cap("incident_blocker")
+        );
     }
 
     #[test]
