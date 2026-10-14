@@ -1,5 +1,6 @@
 ---
 name: curator
+version: 1.1.0
 description: Drive Curator's work loop from a terminal instead of from the Personas app - read her real ladder out of the same SQLite database, claim the next piece of work, spawn a headless Claude worker at it in the knowledge registry, judge what came back, settle it honestly, and keep going until the subscription's usage limit or a brake stops her. The alternative driver for while the app is closed or its fleet is unavailable. Invoke with `/curator` (status) or `/curator loop`.
 ---
 
@@ -523,6 +524,53 @@ and resumes; this driver does not, and pretending otherwise would burn the reset
   match, and no live claude/node process whose command line names its dispatch, session,
   fleet session or argument. Never on the row's age - a row records the last transition,
   not a heartbeat, and three live workers were once killed on that reading.
+
+## --parallel night - N subagents over the queue lane (v1.1.0)
+
+The unattended night this skill was extended for (2026-10-14: ~240 claims, ten workers wide, one revival after a network outage) is a different shape from `--multi`: a terminal session is the ORCHESTRATOR, the workers are Claude
+subagents it launches in the background, and the queue lane (not the plan) feeds them. Scripts live in
+[`night/`](./night/): `env.sh`, `width.mjs`, `claimq.sh`, `claimnext.sh`, `fin.sh`, `integrate.sh`,
+`ship-registry.sh`, and `worker-brief.md` (the hygiene block every worker brief carries).
+
+**The loop.** Keep the queue deep (a candidate scan: techniques with no application and not in `librarian/applied.md`,
+filed with `multi.file_request(c,'intake',"apply <technique>", note)`, the note ending `Subject address: <domain>/<subject>.`).
+Each free slot: `claimq.sh <k>` claims the next request and cuts `cur/n<k>` + a worktree; launch a background
+subagent with the claim file and `worker-brief.md`; on its report run `fin.sh <k> "<desc>" <state> "<evidence>" <next k>`,
+which merges, settles and claims the next. Settle every report before launching more - an unsettled claim is a leak.
+
+**Registry git hygiene (the part that failed first).**
+- A concurrent session may be editing the registry's main checkout. Never merge there. Merge every worker into an
+  **integration branch in its own worktree** (`$INTEG`), cut worker branches from it, and at the end
+  `ship-registry.sh` fast-forwards `origin/main` from that worktree. The main checkout catches up later with a pull.
+- Derived files (`catalog.json`, `*/index.json`, `rules/*`) are regenerated on merge conflict, never hand-merged;
+  anything else conflicting is a real conflict and stops the merge.
+- Queue-lane settle accepts only `landed|declined|failed|cancelled`; `idled` fails SILENTLY there and leaves the claim open.
+  `fin.sh` maps it. A technique already in `applied.md` is settled `declined` WITHOUT dispatching.
+- Worker state is files: `claims/c<k>.json` + the worktree. A network outage killed ten workers at once; the revival
+  re-launched them from the leftover worktrees. Keep claims on disk and do not remove a worktree until its branch is merged.
+
+**Project git hygiene.** Everything in `night/worker-brief.md`: plain clones (never worktrees - `worktree remove --force`
+follows a `node_modules` junction), LF checkouts, real installs so hooks run, explicit remote and branch on every push
+(stray branches were created on three origins by guessing), Personas to a named branch only.
+
+**Width follows the machine, not a constant.** Before every refill run `node night/width.mjs --running <n>`. It
+counts free RAM against a reserve (a running worker is charged twice, it has not finished growing), stops dispatching above
+60% memory in use, and holds the width under the core budget minus any compiler processes sibling sessions are running.
+Launch exactly `launch` workers. Re-run it when a worker reports, not on a timer: it is cheap and the answer moves. A
+week-long weekly-limit burn is ~2 points/hour at 4 builders - the usage limit is the other brake, and `rate_limit_event`
+in a worker's stream is how it shows.
+
+**Ending a night = shipping it** (this is part of the run, not a follow-up):
+1. `ListAgents` - "no other CLI is running" is true at the start only; peers appear. Do not touch their trees.
+2. Settle and merge every report; `ship-registry.sh`.
+3. Personas (and any repo whose local checkout is dirty/diverged): merge the named branches in a CLEAN CLONE
+   (`git clone --reference <local> -c core.autocrlf=false`; a plain clone of the large repo can die with
+   "remote did not send all necessary objects"). Locale JSON conflicts are resolved by key (3-way against the merge
+   base), then `gen-types` + `split-locales`. A merged test can trip a census ratchet the branch passed alone - fix
+   the code, never `census --update`. Copy the `.ai` conform map files in, commit, push, delete the merged branches.
+4. Sweep every origin for `cur/*` and `curator/*` branches (`git cherry` = patch-equivalent means merged); delete the
+   merged ones; ship the stragglers (a flaky-gate commit sitting on a branch is the usual one).
+5. Report in the Ending-a-session order, plus what is still local-only.
 
 ## Ending a session
 
