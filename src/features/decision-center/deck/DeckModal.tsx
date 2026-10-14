@@ -34,6 +34,7 @@ import type { ChipOffer } from './EmptyOffers';
 import { GhostCard } from './DeckStates';
 import { queueOf } from './useDeck';
 import { useDeckStart } from './useDeckStart';
+import { LANE_KEYS, type LaneCounts, type LaneIndex } from '../lanes/laneModel';
 
 /** One opening of the deck. `key` changes per opening so state starts fresh. */
 export interface DeckSessionSpec {
@@ -53,6 +54,10 @@ export interface DeckModalProps {
   loading: boolean;
   /** The roster's chip counts; an empty chip deck offers the others that still hold cards. */
   counts?: Record<HubChip, ChipCount>;
+  /** The lane snapshot join; a `lane` scope deals from it. */
+  lanes?: LaneIndex;
+  /** The lanes' counts; an empty lane deck offers the others that still hold cards. */
+  laneCounts?: LaneCounts | null;
   /** The write. Rejects when it did not land (the caller has toasted). */
   onDecide: (v: DeckVerdict) => Promise<void>;
   onBack: () => void;
@@ -104,21 +109,31 @@ export function DeckModal({ session, ...rest }: DeckModalProps) {
  * read landed and is above zero. A deck over everything, or one card, offers
  * nothing (it closes when it runs out, as it always did).
  */
-export function offersOf(scope: DeckSessionSpec['scope'], counts: Record<HubChip, ChipCount> | undefined): ChipOffer[] {
+export function offersOf(
+  scope: DeckSessionSpec['scope'],
+  counts: Record<HubChip, ChipCount> | undefined,
+  laneCounts?: LaneCounts | null,
+): ChipOffer[] {
+  if (scope.kind === 'lane') {
+    if (!laneCounts) return [];
+    return LANE_KEYS
+      .filter((l) => l !== scope.lane && !laneCounts[l].failed && laneCounts[l].n > 0)
+      .map((l) => ({ lane: l, n: laneCounts[l].n }));
+  }
   if (scope.kind !== 'chip' || !counts) return [];
   return DECISION_CHIPS
     .filter((c) => c !== scope.chip && !counts[c]?.failed && (counts[c]?.n ?? 0) > 0)
     .map((c) => ({ chip: c, n: counts[c]!.n }));
 }
 
-function DeckStage({ session, items, loading, counts, onDecide, onBack, onOpenLink, escapeGuard }: Omit<DeckModalProps, 'session'> & {
+function DeckStage({ session, items, loading, counts, lanes, laneCounts, onDecide, onBack, onOpenLink, escapeGuard }: Omit<DeckModalProps, 'session'> & {
   session: DeckSessionSpec;
   escapeGuard: MutableRefObject<(() => boolean) | null>;
 }) {
   const still = useReducedMotion();
-  const queue = useMemo(() => queueOf(session.scope, items), [session.scope, items]);
+  const queue = useMemo(() => queueOf(session.scope, items, lanes), [session.scope, items, lanes]);
   const startId = useDeckStart(queue, session.focusId, loading);
-  const offers = useMemo(() => offersOf(session.scope, counts), [session.scope, counts]);
+  const offers = useMemo(() => offersOf(session.scope, counts, laneCounts), [session.scope, counts, laneCounts]);
   const [head, setHead] = useState<DecisionItem | undefined>(undefined);
   const wide = head ? modalTypeOf(head.kind) === 'report' : false;
   const morph = originMotion(session.origin, still);

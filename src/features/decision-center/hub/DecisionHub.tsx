@@ -23,7 +23,7 @@ import { isDecisionConflict } from '@/lib/decisions/rowWrites';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 
-import type { DecisionChip, DecisionItem, HubChip } from '../model/decisionModel';
+import { DECISION_CHIPS, type DecisionChip, type DecisionItem, type HubChip } from '../model/decisionModel';
 import { deckOriginOf, openDecisionDeck, useDecisionDeckStore, type DeckRequest } from '../deck/deckStore';
 import { useDecisionRoster } from '../useDecisionRoster';
 import { leadChip, walkChip } from './chipMeta';
@@ -111,7 +111,10 @@ export function DecisionHub() {
     if (deck.request || ownSession.current !== deck.session) return;
     ownSession.current = null;
     deck.consumeReturn();
-    setPeek({ chip: closedReturnTo.chip, focusId: lastFocus.current });
+    // A lane return belongs to the lane hub (setting `lanes`), never a chip peek.
+    const back = closedReturnTo.chip;
+    if (!(DECISION_CHIPS as readonly string[]).includes(back)) return;
+    setPeek({ chip: back as DecisionChip, focusId: lastFocus.current });
   }, [closedReturnTo]);
 
   const items = (decisionChip ? roster.byChip[decisionChip] : undefined) ?? NO_ITEMS;

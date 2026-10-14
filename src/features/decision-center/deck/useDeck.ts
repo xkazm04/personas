@@ -19,13 +19,18 @@ import type { TriageReasonPrompt } from '@/features/agents/quick-answer/triage/t
 import type { DecisionItem } from '../model/decisionModel';
 import { chipOf } from '../model/decisionModel';
 import type { DeckRequestScope } from './deckStore';
+import { laneQueue, type LaneIndex } from '../lanes/laneModel';
 import type { DeckVerdict } from './deckTypes';
 import type { Leave } from './deckMotion';
 
-/** The cards a scope deals, in roster order. `items` is the roster's loaded list. */
-export function queueOf(scope: DeckRequestScope, items: DecisionItem[]): DecisionItem[] {
+/**
+ * The cards a scope deals, in roster order (a lane: in lane order). `items` is
+ * the roster's loaded list; `lanes` the snapshot join, needed by a lane scope only.
+ */
+export function queueOf(scope: DeckRequestScope, items: DecisionItem[], lanes?: LaneIndex): DecisionItem[] {
   if (scope.kind === 'single') return [scope.item];
   if (scope.kind === 'all') return items;
+  if (scope.kind === 'lane') return lanes ? laneQueue(scope.lane, items, lanes) : [];
   return items.filter((x) => chipOf(x.kind) === scope.chip);
 }
 

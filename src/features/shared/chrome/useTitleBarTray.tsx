@@ -99,7 +99,9 @@ export function useTitleBarTray() {
    * and chat are inside it (the roster adds them client-side); `ready` is not
    * a decision and is not.
    */
-  const quickCount = decisions.total;
+  // Under the `lanes` setting the badge counts the lanes (Breach + Sign +
+  // Accept + Talk, Orphans excluded) instead of the chips.
+  const quickCount = decisions.laneTotal ?? decisions.total;
   const monitorAttention = unreadReportCount + draftReadyCount;
 
   const notificationsOpen = headerOverlay === 'notifications';

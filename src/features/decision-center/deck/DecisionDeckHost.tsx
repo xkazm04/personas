@@ -7,8 +7,9 @@
  * roster switched off while the deck is shut.
  *
  * While open it reads the ONE roster (`useDecisionRoster`), loading only what
- * the request's scope deals: its chip, every chip (`all`), or nothing at all
- * for a `single` item the caller already holds. Verdicts go out through
+ * the request's scope deals: its chip, every chip (`all`), the chips a lane's
+ * kinds come from (`lane`, joined on the shared lanes snapshot), or nothing at
+ * all for a `single` item the caller already holds. Verdicts go out through
  * `writeDeckVerdict` -> `roster.decide`; a write that did not land toasts and
  * rejects (the roster restores the card, the deck walks back to it), and a
  * row someone else decided first toasts "decided elsewhere" and stays gone.
@@ -28,10 +29,18 @@ import type { DeckVerdict } from './deckTypes';
 import { ReplyRouteError, writeDeckVerdict, type DeckWriteDoors } from './deckWrites';
 import { DeckModal, type DeckSessionSpec } from './DeckModal';
 import { useDeckHosts } from './useDeckHosts';
+import { chipsForLane, indexLanes } from '../lanes/laneModel';
+import { laneLabel } from '../lanes/laneMeta';
+import type { DecisionLanesSnapshot } from '@/lib/bindings/DecisionLanesSnapshot';
+import { useLanesSnapshot } from '../lanes/useLanesSnapshot';
 
-function loadOf(request: DeckRequest | null): readonly DecisionChip[] | 'all' | undefined {
+function loadOf(
+  request: DeckRequest | null,
+  snapshot: DecisionLanesSnapshot | null,
+): readonly DecisionChip[] | 'all' | undefined {
   const scope = request?.scope;
   if (scope?.kind === 'chip') return [scope.chip];
+  if (scope?.kind === 'lane') return chipsForLane(scope.lane, snapshot);
   if (scope?.kind === 'all') return 'all';
   return undefined;
 }
@@ -40,7 +49,10 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
   const { t } = useTranslation();
   const m = t.monitor;
   const { hosts, followUp } = useDeckHosts();
-  const roster = useDecisionRoster({ load: loadOf(request), enabled: !!request, hosts });
+  const laneScope = request?.scope.kind === 'lane';
+  const lanesState = useLanesSnapshot(laneScope);
+  const roster = useDecisionRoster({ load: loadOf(request, lanesState.snapshot), enabled: !!request, hosts });
+  const lanes = useMemo(() => indexLanes(lanesState.snapshot), [lanesState.snapshot]);
   const { decide } = roster;
   const sendTeamReply = usePipelineStore((s) => s.sendChannelDirective);
   const sendPersonaReply = usePipelineStore((s) => s.sendPersonaChannelMessage);
@@ -85,7 +97,9 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
     const { scope } = request;
     const scopeLabel = scope.kind === 'all'
       ? m.dc_deck_scope_all
-      : chipLabel(m, scope.kind === 'chip' ? scope.chip : chipOf(scope.item.kind));
+      : scope.kind === 'lane'
+        ? laneLabel(m, scope.lane)
+        : chipLabel(m, scope.kind === 'chip' ? scope.chip : chipOf(scope.item.kind));
     return {
       key: session,
       scope,
@@ -102,6 +116,8 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
       items={roster.items}
       loading={roster.loading}
       counts={roster.counts}
+      lanes={lanes}
+      laneCounts={roster.lanes}
       onDecide={onDecide}
       onBack={closeDecisionDeck}
       onOpenLink={onOpenLink}

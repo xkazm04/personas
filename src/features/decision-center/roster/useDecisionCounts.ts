@@ -49,8 +49,13 @@ export interface DecisionCountsState {
    * (nothing reads the snapshot then).
    */
   lanes: LaneCounts | null;
-  /** Breach + Sign + Accept + Talk under `lanes`; null under `chips`. */
+  /**
+   * Breach + Sign + Accept + Talk under `lanes`, once the first snapshot read
+   * settled; null under `chips` and before that read (never a premature 0).
+   */
   laneTotal: number | null;
+  /** The first lanes snapshot read has settled (landed or failed). */
+  lanesSettled: boolean;
   /** No counts read has settled yet and the store holds none. */
   loading: boolean;
   /** Re-read the counts and the ready list now. Never rejects. */
@@ -143,11 +148,12 @@ export function useDecisionCountsCore(chat: ChatCountInput, enabled: boolean): D
       counts,
       total: decisionTotal(counts),
       lanes,
-      laneTotal: lanes ? laneTotal(lanes) : null,
+      laneTotal: lanes && lanesState.settled ? laneTotal(lanes) : null,
+      lanesSettled: lanesState.settled,
       loading,
       refreshCounts,
     }),
-    [counts, lanes, loading, refreshCounts],
+    [counts, lanes, lanesState.settled, loading, refreshCounts],
   );
 }
 

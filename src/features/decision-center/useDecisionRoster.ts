@@ -107,8 +107,10 @@ export interface DecisionRoster {
   total: number;
   /** The mandate lanes' counts under the `lanes` setting; null under `chips`. */
   lanes: LaneCounts | null;
-  /** Breach + Sign + Accept + Talk under `lanes`; null under `chips`. */
+  /** Breach + Sign + Accept + Talk under `lanes` once read; null under `chips` or before. */
   laneTotal: number | null;
+  /** The first lanes snapshot read has settled. */
+  lanesSettled: boolean;
   /** Loaded items, ordered by `compareDecision`. */
   items: DecisionItem[];
   byChip: Partial<Record<DecisionChip, DecisionItem[]>>;
@@ -184,6 +186,7 @@ export function useDecisionRoster(options: DecisionRosterOptions = {}): Decision
     counts,
     lanes,
     laneTotal,
+    lanesSettled,
     loading: countsLoading,
     refreshCounts,
   } = useDecisionCountsCore({ n: chat.count, failed: chat.failed }, enabled);
@@ -375,6 +378,7 @@ export function useDecisionRoster(options: DecisionRosterOptions = {}): Decision
       total: decisionTotal(counts),
       lanes,
       laneTotal,
+      lanesSettled,
       items,
       byChip,
       errors,
@@ -382,6 +386,6 @@ export function useDecisionRoster(options: DecisionRosterOptions = {}): Decision
       decide,
       refresh,
     }),
-    [counts, lanes, laneTotal, items, byChip, errors, loading, decide, refresh],
+    [counts, lanes, laneTotal, lanesSettled, items, byChip, errors, loading, decide, refresh],
   );
 }

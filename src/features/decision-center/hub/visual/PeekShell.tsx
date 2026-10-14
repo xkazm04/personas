@@ -21,6 +21,7 @@
  * owns Escape; the close only lands if the same chip's peek is still open.
  */
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
@@ -32,13 +33,25 @@ import { Keycap } from '../../deck/parts';
 import { CHIP_ICON, chipLabel } from '../chipMeta';
 import { PEEK_ENTER, PEEK_EXIT, peekTransition } from './peekMotion';
 
+/**
+ * What a peek that hangs from something other than a chip calls itself: a
+ * mandate lane (setting `lanes`). `id` lands on `data-chip` for tests.
+ */
+export interface PeekIdentity {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+}
+
 /** Gutter the peek keeps from the window's edges, in px. */
 const GUTTER = 16;
 
 export function PeekShell({
-  chip, lamp, count, anchor, actions, onClose, children,
+  chip, identity, lamp, count, anchor, actions, footer, onClose, children,
 }: {
-  chip: HubChip;
+  /** The chip it belongs to; null when `identity` names it instead. */
+  chip: HubChip | null;
+  identity?: PeekIdentity;
   /** The chip's lamp — the glass is lit from its corner in that tone. */
   lamp: ChipCount['lamp'];
   /** How many wait; null while the list has not been read. */
@@ -46,6 +59,8 @@ export function PeekShell({
   /** The chip it hangs from. */
   anchor: HTMLElement | null;
   actions?: ReactNode;
+  /** Extra key hints printed in the footer, before Esc. */
+  footer?: ReactNode;
   onClose: () => void;
   children: ReactNode;
 }) {
@@ -56,8 +71,8 @@ export function PeekShell({
   const anchorRef = useRef<HTMLElement | null>(anchor);
   anchorRef.current = anchor;
   const [left, setLeft] = useState(0);
-  const label = chipLabel(m, chip);
-  const Icon = CHIP_ICON[chip];
+  const label = identity?.label ?? (chip ? chipLabel(m, chip) : '');
+  const Icon = identity?.icon ?? (chip ? CHIP_ICON[chip] : CHIP_ICON.gates);
   const isReady = chip === 'ready';
   const tone = isReady ? 'success' : lamp;
 
@@ -98,7 +113,7 @@ export function PeekShell({
       style={{ left, transformOrigin: 'top left' }}
       className={`au-scope au-glass au-hair au-l-${tone} au-t-${tone === 'neutral' ? 'accent' : tone} absolute top-full z-30 mt-2 flex max-h-[70vh] w-[500px] max-w-[calc(100vw-32px)] flex-col rounded-modal`}
       data-testid="decision-peek"
-      data-chip={chip}
+      data-chip={identity?.id ?? chip ?? undefined}
       data-still={still ? '' : undefined}
     >
       <header className="flex flex-shrink-0 items-center gap-2.5 px-4 pb-2 pt-3">
@@ -116,6 +131,7 @@ export function PeekShell({
       <footer className="flex flex-shrink-0 items-center gap-1.5 border-t border-primary/10 px-4 py-2 typo-caption" aria-hidden>
         <Keycap>↑</Keycap><Keycap>↓</Keycap> {m.dc_hub_key_move}
         <Keycap className="ml-2">←</Keycap><Keycap>→</Keycap> {m.dc_hub_key_walk}
+        {footer}
         <span className="ml-auto flex items-center gap-1.5"><Keycap>Esc</Keycap> {t.common.close}</span>
       </footer>
     </motion.div>

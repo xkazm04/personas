@@ -5,6 +5,7 @@ import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { CONSENT_KEY, hasUserConsented, resetUserConsent } from '@/features/shared/components/overlays/FirstUseConsentModal';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useConfirmClick } from '@/features/settings/shared/useConfirmClick';
+import { DecisionSurfaceSetting } from './DecisionSurfaceSetting';
 
 export default function AdminSettings() {
   const [consentStatus, setConsentStatus] = useState(hasUserConsented);
@@ -29,7 +30,8 @@ export default function AdminSettings() {
         subtitle={s.subtitle}
       />
       <ContentBody>
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-3xl mx-auto flex flex-col gap-4">
+          <DecisionSurfaceSetting />
           <SectionCard
             title={s.user_consent}
             subtitle={s.consent_hint}
