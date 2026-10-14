@@ -101,6 +101,15 @@ export const TalkBubble = memo(function TalkBubble({ item, onOpen }: { item: Tea
 
 /* ── ASSIGNMENT ────────────────────────────────────────────────────────────── */
 
+/** A band is a WINDOW in the panel (entryE.css `ae-win`), lit by the
+ *  annunciator grammar: a step that needs the operator (failed, awaiting
+ *  review) or work in flight lights it; a settled band is calm glass. */
+function bandLamp(rollup: string, live: boolean): string {
+  if (rollup === 'failed') return 'ae-t-err is-lit';
+  if (rollup === 'awaiting_review') return 'ae-t-warn is-lit';
+  return live ? 'ae-t-info is-lit' : 'ae-t-info';
+}
+
 /** memo (C3): `rowKey` + a keyed `onToggle` keep every prop referentially
  *  stable, so expanding one card re-renders that card, not every band. */
 export const AssignmentCard = memo(function AssignmentCard({
@@ -128,13 +137,14 @@ export const AssignmentCard = memo(function AssignmentCard({
   //
   // The rollup: the channel's event label ('step_running') is not a step
   // status ('running'), so stepMeta can't take it — it has to be derived.
-  const { meta, personaIds, rework, done } = useMemo(() => {
+  const { rollup, meta, personaIds, rework, done } = useMemo(() => {
     const rollup =
       steps.find((s) => s.status === 'failed')?.status ??
       steps.find((s) => s.status === 'awaiting_review')?.status ??
       steps.find((s) => s.status === 'running')?.status ??
       (steps.length > 0 && steps.every((s) => s.status === 'done' || s.status === 'skipped') ? 'done' : 'pending');
     return {
+      rollup,
       meta: stepMeta(rollup),
       personaIds: steps.map((s) => s.assignedPersonaId),
       rework: steps.reduce((n, s) => n + (s.retryCount ?? 0), 0),
@@ -145,7 +155,7 @@ export const AssignmentCard = memo(function AssignmentCard({
   const title = items[0]?.body ?? t.monitor.conv_card_assignment;
 
   return (
-    <div className="my-2 rounded-card border border-status-info/25 bg-status-info/[0.06] overflow-hidden">
+    <div className={`ae-win my-2 rounded-card overflow-hidden ${bandLamp(rollup, live)}`}>
       <button type="button" onClick={() => onToggle(rowKey)} className="w-full px-3 py-2 flex items-center gap-2.5 text-left hover:bg-status-info/[0.1] transition-colors">
         <Wand2 className="w-4 h-4 flex-shrink-0 text-status-info" />
         <span className="min-w-0 flex-1">
@@ -230,6 +240,15 @@ const DELIB_STATUS: Record<string, string> = {
   awaiting_action: 'text-status-warning',
 };
 
+/** A deliberation band's window: lit while it talks, amber when it waits on
+ *  the operator, calm once it settles (see `bandLamp`). */
+const DELIB_LAMP: Record<string, string> = {
+  open: 'ae-t-agent is-lit',
+  converging: 'ae-t-agent is-lit',
+  escalated: 'ae-t-warn is-lit',
+  awaiting_action: 'ae-t-warn is-lit',
+};
+
 /** memo (C3): same contract as AssignmentCard — keyed callbacks, stable props. */
 export const DeliberationCard = memo(function DeliberationCard({
   deliberation, deliberationId, items, expanded, rowKey, onToggle, onFocus,
@@ -254,7 +273,7 @@ export const DeliberationCard = memo(function DeliberationCard({
   const pct = budget > 0 ? Math.min(100, (spent / budget) * 100) : 0;
 
   return (
-    <div className="my-2 rounded-card border border-violet-400/25 bg-violet-400/[0.05] overflow-hidden">
+    <div className={`ae-win my-2 rounded-card overflow-hidden ${DELIB_LAMP[status] ?? 'ae-t-agent'}`}>
       <button type="button" onClick={() => onToggle(rowKey)} className="w-full px-3 py-2 flex items-center gap-2.5 text-left hover:bg-violet-400/[0.09] transition-colors">
         <Scale className="w-4 h-4 flex-shrink-0 text-violet-300" />
         <span className="min-w-0 flex-1">

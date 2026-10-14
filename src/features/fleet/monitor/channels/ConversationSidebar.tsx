@@ -18,6 +18,7 @@ import { memberColor } from '@/lib/channel/eventModel';
 import { cleanName } from '../grid/fleetGridModel';
 import { useMonitorVisible } from '../monitorVisibility';
 import type { StreamTeam } from './types';
+import { Engraved, Lamp } from '../grid/prototype/entry-e/parts';
 
 /* ----------------------------------------------------------------------------
  * PROJECTS SIDEBAR — the messenger's conversation list.
@@ -145,7 +146,8 @@ const SidebarTeamRow = memo(function SidebarTeamRow({
           )}
           <span className="ml-auto flex-shrink-0 flex items-center gap-2">
             {working > 0 && (
-              <span className="inline-flex items-center gap-1 typo-caption text-status-info">
+              <span className="inline-flex items-center gap-1.5 typo-caption text-status-info">
+                <Lamp lamp={{ tone: 'run', lit: true }} />
                 {tx(t.monitor.conv_working, { count: working })}
               </span>
             )}
@@ -285,9 +287,9 @@ export const ConversationSidebar = memo(function ConversationSidebar({
   }, [monitorVisible]);
 
   return (
-    <div className="h-full flex flex-col min-h-0 border-r border-border bg-foreground/[0.012]">
-      <div className="flex-shrink-0 h-9 px-3 flex items-center border-b border-border">
-        <span className="hud-title typo-label text-foreground opacity-60">{t.monitor.conv_projects}</span>
+    <section className="ae-plate h-full flex flex-col min-h-0 overflow-hidden rounded-card">
+      <div className="flex-shrink-0 h-11 px-3 flex items-center border-b border-border">
+        <Engraved>{t.monitor.conv_projects}</Engraved>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto p-1.5 space-y-0.5">
         {teams.map((tm) => (
@@ -303,9 +305,7 @@ export const ConversationSidebar = memo(function ConversationSidebar({
         {onSelectPersona && withChannel.length > 0 && (
           <>
             <div className="px-2 pt-3 pb-1">
-              <span className="hud-title typo-label text-foreground opacity-60">
-                {t.monitor.conv_persona_group}
-              </span>
+              <Engraved>{t.monitor.conv_persona_group}</Engraved>
             </div>
             {withChannel.map((p) => (
               <SidebarPersonaRow
@@ -318,6 +318,6 @@ export const ConversationSidebar = memo(function ConversationSidebar({
           </>
         )}
       </div>
-    </div>
+    </section>
   );
 });
