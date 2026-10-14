@@ -39,7 +39,7 @@
     "gallery_bulk_tag_apply": "申请",
     "gallery_bulk_tag_button": "标签",
     "gallery_bulk_tag_placeholder": "要添加的标签",
-    "gallery_bulk_tag_subtitle": "将标签添加到 {count} 选定的资产，并保留其现有标签。",
+    "gallery_bulk_tag_subtitle": "将标签添加到 {count} 个选定的资产，并保留其现有标签。",
     "gallery_bulk_tag_title": "将标签添加到选择",
     "gallery_clear_selection": "清除选择",
     "gallery_confirm_delete_n": "确认删除 {count}",
