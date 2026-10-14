@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Scale, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { QuickAnswerBody } from '@/features/agents/quick-answer/QuickAnswerBody';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -65,14 +64,16 @@ export function ConversationRail({
           </>
         ),
       },
+      // Text-only from here: the lamp is the strip's one glyph, and three
+      // labels plus a count must fit the 320px default rail.
       {
         id: 'focus' as const,
-        label: <><Scale className="w-3 h-3" />{t.monitor.conv_tab_deliberation}</>,
+        label: t.monitor.conv_tab_deliberation,
         disabled: !focusDelib || personaScoped,
       },
       {
         id: 'quick' as const,
-        label: <><Sparkles className="w-3 h-3" />{t.monitor.conv_tab_quick}</>,
+        label: t.monitor.conv_tab_quick,
       },
     ],
     [t, focusDelib, personaScoped, waiting, reviewCount],
