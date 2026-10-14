@@ -1386,7 +1386,16 @@ server.tool(
         md += "**Attendees:** " + attendees.map((a) => `[[${a}]]`).join(", ") + "\n\n";
       }
       md += body.trimEnd() + "\n";
-      writeFileSync(filePath, md);
+      // Creation is exclusive: the filename is caller-chosen (title + date), so a
+      // second call with the same title must fail rather than replace the first note.
+      try {
+        writeFileSync(filePath, md, { flag: "wx" });
+      } catch (err) {
+        if (err && err.code === "EEXIST") {
+          throw new Error(`A meeting note already exists at ${filePath}; choose a different title or edit that note instead`);
+        }
+        throw err;
+      }
       return {
         content: [{ type: "text", text: JSON.stringify({ path: filePath, title: trimmedTitle }, null, 2) }],
       };
