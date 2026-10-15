@@ -1,0 +1,134 @@
+{
+  "schema": "conform-run/1",
+  "worker": "53d5d40f-ed3f-47d8-b2b5-14386b9119f0",
+  "subject": "fleet-orchestration",
+  "evaluatedAt": "2026-10-15T23:21:32.061269+00:00",
+  "provider": "grok",
+  "model": "grok-4.7",
+  "pairs": [
+    {
+      "context": "templates-n8n-steps",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_n8n/colorTokens.ts:86 The session status set here is the n8n import wizard (draft, analyzing, transforming, confirmed), and those directories have no fleet session registry, hibernation, write scope, or fleet spawn.",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/colorTokens.ts:88 Closed status list is wizard drafts, not fleet lifecycle states."
+        }
+      ],
+      "absenceTerms": [
+        "FleetSession",
+        "hibernated",
+        "write_scope",
+        "fleet_spawn"
+      ]
+    },
+    {
+      "context": "vault-catalog-picker",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_catalog/components/design/useCredentialDesignOrchestrator.ts:20 This orchestrator composes credential-design and OAuth hooks for the connector catalog, and the picker, design, and negotiator directories have no fleet session registry, hibernation, write scope, or fleet spawn.",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:17 The root surface picks a connector type; it does not register agent sessions."
+        }
+      ],
+      "absenceTerms": [
+        "FleetSession",
+        "hibernated",
+        "write_scope",
+        "fleet_spawn"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "fleet-orchestration",
+      "context": "overview-patterns",
+      "reason": "context-map file_paths is empty and the published entry points under src/features/overview/sub_patterns/ are not on disk, so there is no code in this context to judge."
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "companion-brain",
+      "reason": "withdrawn after review: reviewer (sonnet): mod.rs:10 does say the working set evaporates on restart, but it describes orchestration/, which the module comment says is distinct from brain/. None of the context's brain/*.rs files use it except a few references in episodic.rs and sleep_cycle. Also, the operative_memory.rs:40 anchor is the cap c"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "output-stream-parser",
+      "reason": "withdrawn after review: reviewer (sonnet): deliberation.rs is not among the context's files, which are the engine/src parser, protocol, chunker and similar. The engine/src files mention deliberation only in autonomy.rs and serving_overrides.rs. So the round_cap verdict is about a different context, and I did not confirm the 'moderator prompt"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-15T23:21:32.061269+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "absent-status-passthrough",
+        "completion-claim-verification",
+        "durable-fleet-state",
+        "evidence-outranks-a-liveness-claim",
+        "hibernation-and-resume",
+        "lifecycle-signals",
+        "result-harvest",
+        "session-registry"
+      ],
+      "deviations": 1,
+      "context": "companion-brain",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-15T23:21:32.061269+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "session-registry"
+      ],
+      "deviations": 0,
+      "context": "templates-n8n-steps",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-15T23:21:32.061269+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "session-registry"
+      ],
+      "deviations": 0,
+      "context": "vault-catalog-picker",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-15T23:21:32.061269+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "deliberation-as-an-elected-turn",
+        "heterogeneous-model-panels",
+        "soft-budget-under-the-hard-cap"
+      ],
+      "deviations": 1,
+      "context": "output-stream-parser",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    }
+  ]
+}

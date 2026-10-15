@@ -8271,11 +8271,7 @@
           "confidence": "probable",
           "state": "not-applicable",
           "evidence": "src-tauri/src/companion/brain/fleet.rs:3 Athena's companion intelligence layer acts as a downstream consumer of fleet events for episodic memory and digest formatting rather than an orchestrator of fleet state.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:4fc5c1fbe75c52d2",
-          "evaluatedRevision": 25,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-12"
         },
         {
           "subject": "voice-io",
@@ -36151,7 +36147,11 @@
           "revision": 26,
           "changedAt": "2026-10-13",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/colorTokens.ts:86 The session status set here is the n8n import wizard (draft, analyzing, transforming, confirmed), and those directories have no fleet session registry, hibernation, write scope, or fleet spawn.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "module-design",
@@ -38387,7 +38387,11 @@
           "revision": 26,
           "changedAt": "2026-10-13",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/design/useCredentialDesignOrchestrator.ts:20 This orchestrator composes credential-design and OAuth hooks for the connector catalog, and the picker, design, and negotiator directories have no fleet session registry, hibernation, write scope, or fleet spawn.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "authorization",

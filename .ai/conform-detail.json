@@ -16811,16 +16811,66 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T17:45:22.732Z",
-      "worker": "0b6f836d-b418-4311-9a91-fd30c9d76e08",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T23:21:32.061Z",
       "techniques": [
         {
+          "technique": "durable-fleet-state",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/orchestration/mod.rs:10 No durable mirror and no startup reconcile; the OnceLock working set comes back empty."
+        },
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:40 Hooks update last_state; nothing sweeps a silent Running session to lost."
+        },
+        {
+          "technique": "result-harvest",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:372 Exit alone completes the operation; there is no drop-point or roster account."
+        },
+        {
+          "technique": "absent-status-passthrough",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:158 A placeholder SessionRef is seeded Spawning before any lifecycle observation."
+        },
+        {
           "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:331 Status is assigned from the event with no legal-edge door."
+        },
+        {
+          "technique": "completion-claim-verification",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:496 Exit code 0 becomes the summary; no artifact or receipt is read."
+        },
+        {
+          "technique": "hibernation-and-resume",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:894 Redirect targets are every non-Exited state, so Hibernated stays in the live broadcast set."
+        },
+        {
+          "technique": "evidence-outranks-a-liveness-claim",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/companion/brain/fleet.rs:3 Precondition does not hold: the module explicitly documents that it consumes fleet events to build episodic recall and state digests rather than owning the fleet registry."
+          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:1063 Age only drops terminal operations; a budget expiry never declares a session dead."
         }
-      ]
+      ],
+      "registryProposal": "A volatile projection should count as conformant only when startup rebuilds it from the durable registry before any prompt read; an empty post-restart cache shown as the live fleet is still a second truth.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/companion/brain/fleet.rs:3 Athena's companion intelligence layer acts as a downstream consumer of fleet events for episodic memory and digest formatting rather than an orchestrator of fleet state.",
+          "evaluatedAt": "2026-10-12T17:45:22.732Z",
+          "worker": "0b6f836d-b418-4311-9a91-fd30c9d76e08",
+          "reason": "replaced by 53d5d40f-ed3f-47d8-b2b5-14386b9119f0"
+        }
+      ],
+      "withdrawn": {
+        "worker": "53d5d40f-ed3f-47d8-b2b5-14386b9119f0",
+        "state": "deviation",
+        "at": "2026-10-15T23:22:15.013964+00:00",
+        "reason": "reviewer (sonnet): mod.rs:10 does say the working set evaporates on restart, but it describes orchestration/, which the module comment says is distinct from brain/. None of the context's brain/*.rs files use it except a few references in episodic.rs and sleep_cycle. Also, the operative_memory.rs:40 anchor is the cap c"
+      }
     },
     "a3cb83b5-7325-4d1c-b10d-b249ab1a186f/fleet-orchestration": {
       "context": "run-desk",
@@ -21858,31 +21908,33 @@
       "context": "templates-n8n-steps",
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
-      "state": "unknown",
+      "state": "not-applicable",
       "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T00:22:33.800Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "ab025d0f-b001-4ebe-86ce-c6c67fc72d8e",
-        "state": "not-applicable",
-        "at": "2026-10-15T00:22:56.829839+00:00",
-        "reason": "reviewer (sonnet): The anchor at N8nImportTab.tsx:56 is a doc comment above handleProcessWithMatrix and does not itself show that fleet, hibernate or harvest facilities are absent, so the not-applicable rests on an incidental line."
-      }
+      "evaluatedTs": "2026-10-15T23:21:32.061Z",
+      "worker": "53d5d40f-ed3f-47d8-b2b5-14386b9119f0",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/colorTokens.ts:88 Closed status list is wizard drafts, not fleet lifecycle states."
+        }
+      ]
     },
     "3619ab0d-0367-43d0-b4eb-ec39c1302d65/fleet-orchestration": {
       "context": "vault-catalog-picker",
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
-      "state": "unknown",
+      "state": "not-applicable",
       "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T00:22:33.800Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "ab025d0f-b001-4ebe-86ce-c6c67fc72d8e",
-        "state": "not-applicable",
-        "at": "2026-10-15T00:22:56.907000+00:00",
-        "reason": "reviewer (sonnet): The anchor at useCredentialDesignOrchestrator.ts:19 is a JSDoc comment on the hook and does not show that the fleet precondition is absent, so the not-applicable rests on an incidental line."
-      }
+      "evaluatedTs": "2026-10-15T23:21:32.061Z",
+      "worker": "53d5d40f-ed3f-47d8-b2b5-14386b9119f0",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:17 The root surface picks a connector type; it does not register agent sessions."
+        }
+      ]
     },
     "e4b48fb7-3763-4955-8ea9-01fd48aa0cf7/terminal-multiplexing": {
       "context": "commands-contest",
@@ -22304,6 +22356,38 @@
         "state": "deviation",
         "at": "2026-10-15T22:46:23.368204+00:00",
         "reason": "reviewer (sonnet): The verdict and every technique anchor (lab.rs, output_assertion.rs, test_suite.rs) sit in files outside the recipe-build-models context file list, so it is about a different context. The lab.rs:481 composite-score code does exist, but it is not this context's code."
+      }
+    },
+    "a3b615d2-05d8-47bd-ad92-672c6b42b0f3/fleet-orchestration": {
+      "context": "output-stream-parser",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T23:21:32.061Z",
+      "techniques": [
+        {
+          "technique": "soft-budget-under-the-hard-cap",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/deliberation.rs:284 The cap fires as a forced successful resolution; the brief has no derived soft budget."
+        },
+        {
+          "technique": "deliberation-as-an-elected-turn",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/deliberation.rs:6 The moderator runs every tick as machinery, not as an elected no-op before the action."
+        },
+        {
+          "technique": "heterogeneous-model-panels",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/deliberation.rs:498 This is one moderator routing a team conversation that already sees prior turns, not an independent cross-family panel."
+        }
+      ],
+      "registryProposal": "A cap that writes status Resolved and only names round_cap in a side reason still reads as success to any consumer that branches on status alone.",
+      "withdrawn": {
+        "worker": "53d5d40f-ed3f-47d8-b2b5-14386b9119f0",
+        "state": "deviation",
+        "at": "2026-10-15T23:22:15.240711+00:00",
+        "reason": "reviewer (sonnet): deliberation.rs is not among the context's files, which are the engine/src parser, protocol, chunker and similar. The engine/src files mention deliberation only in autonomy.rs and serving_overrides.rs. So the round_cap verdict is about a different context, and I did not confirm the 'moderator prompt"
       }
     }
   }
