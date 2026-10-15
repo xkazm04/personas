@@ -1,13 +1,17 @@
 // The ONE keymap. A key sheet, the key hints and the sheet's handler all read this table; a key is bound once.
 // Plain keys only (no Ctrl/Meta/Alt). `a`, `x` and `b` are the Build queue's three verbs: approve (never builds),
-// decline (asks why), build (arms, then confirms). Triage keys for built items are WP4b's and are not bound here.
+// decline (asks why), build (arms, then confirms). `y`, `r`, `s` and `u` are the triage of a built item (WP4b): accept,
+// rework (asks a note), descope (asks a note) and reopen, the undo. bp's ledger accepts with A; here A is already
+// approve, and a key is bound once, so accept is Y (yes, ship it). Every triage key sends to the store and the dock
+// console prints its answer: a key is never withheld because the drawing guesses the store would refuse.
 
 export type KeyAct =
   | 'next' | 'prev' | 'find' | 'queue'
   | 'approve' | 'decline' | 'build'
+  | 'accept' | 'rework' | 'descope' | 'reopen'
   | 'enter' | 'back' | 'wingNext' | 'wingPrev' | 'site' | 'zoomOut' | 'zoomIn'
   | 'lens' | 'help';
-export type KeyGroup = 'walk' | 'decide' | 'move' | 'sheets';
+export type KeyGroup = 'walk' | 'decide' | 'triage' | 'move' | 'sheets';
 
 export interface Binding { act: KeyAct; group: KeyGroup; keys: readonly string[] }
 
@@ -19,6 +23,10 @@ export const KEYMAP: readonly Binding[] = [
   { act: 'approve', group: 'decide', keys: ['a'] },
   { act: 'decline', group: 'decide', keys: ['x'] },
   { act: 'build', group: 'decide', keys: ['b'] },
+  { act: 'accept', group: 'triage', keys: ['y'] },
+  { act: 'rework', group: 'triage', keys: ['r'] },
+  { act: 'descope', group: 'triage', keys: ['s'] },
+  { act: 'reopen', group: 'triage', keys: ['u'] },
   { act: 'enter', group: 'move', keys: ['Enter'] },
   { act: 'back', group: 'move', keys: ['Escape', 'Backspace'] },
   { act: 'wingNext', group: 'move', keys: ['l', 'ArrowRight'] },

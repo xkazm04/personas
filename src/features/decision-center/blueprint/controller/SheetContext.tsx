@@ -6,7 +6,7 @@ import type { EngineWords } from '../engine/types';
 import type { Plan } from '../model/plan';
 import type { Scope } from '../model/scope';
 import type { Work, WorkItem } from '../model/work';
-import type { BlueprintData } from '../source';
+import type { BlueprintActions, BlueprintData } from '../source';
 import type { UiAction, UiState } from '../state/uiState';
 import type { ViewStore } from '../state/viewStore';
 import type { BlueprintText } from './useBlueprintText';
@@ -15,6 +15,8 @@ import type { Writes } from './useWrites';
 
 export interface Sheet {
   data: BlueprintData;
+  /** The seam's side reads (a commit's diff, a shot's URL) for the compare panel; every WRITE goes through `writes`. */
+  actions: BlueprintActions;
   plan: Plan;
   work: Work;
   ui: UiState;

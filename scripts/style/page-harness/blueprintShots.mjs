@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Integrated-page shots of the blueprint drawing set on its Kettle fixture, one frame per level and state, in both
-// themes and two sizes, plus the type measurement (smallest type, share of text under 14 px; DOM and canvas).
+// themes and two sizes, plus the type measurement (smallest type, share of text under 14 px; DOM and canvas) and the
+// title-block check (WP4b): the identity line and the crumbs neither clipped nor under the lens sheets, and the
+// sheets inside the title block, in every frame. A failed check is a problem, like a console error.
 //
 //   node scripts/style/page-harness/blueprintShots.mjs --port 1477 --out src/features/decision-center/blueprint/shots
 //        [--sizes 1280x800,1920x1080] [--themes dark-midnight,light] [--only L0,L4] [--measure-only]
@@ -79,7 +81,37 @@ const STATES = {
   'state-keys': async (p) => { await k(p, '?'); },
   'state-lens-performance': async (p) => { await k(p, '0'); await k(p, '8'); },
   'state-lens-custom': async (p) => { await k(p, '0'); await k(p, '9'); },
-  'state-sheet-pack': async (p) => { await p.goto(p.url().split('&feature=')[0] + '&feature=book-a-class', { waitUntil: 'commit' }); },
+  // WP4b: the compare panel on a done item (opens with the feature), on a performance item, the rework note prompt,
+  // a reopen the store refuses (no prior status) and a descope it refuses (the release has left draft)
+  'state-compare': async () => {},
+  'state-compare-perf': async () => {},
+  'state-rework-prompt': async (p) => { await k(p, 'r'); await p.keyboard.type('Shoot the designed state, not the default'); },
+  'state-reopen-refused': async (p) => { await k(p, 'u'); },
+  'state-in-release': async (p) => { await k(p, 's'); await p.keyboard.type('Not worth the risk now'); await k(p, 'Enter'); },
+};
+
+/** The feature a state opens on (`?feature=`), its L4 sheet open at once. */
+const FEATURE = {
+  'state-compare': 'book-a-class', 'state-compare-perf': 'drag-and-drop-timetable-editor', 'state-rework-prompt': 'book-a-class',
+  'state-reopen-refused': 'studio-kpi-dashboard', 'state-in-release': 'revenue-reports',
+};
+/** Frames taken at every size: the levels and the compare panel. */
+const EVERY_SIZE = new Set([...LEVELS, 'state-compare']);
+
+/** The title block, measured: what is clipped, what the lens sheets cover, whether the sheets leave the block. */
+const TITLE_CHECK = () => {
+  const hd = document.querySelector('.bp-hd');
+  if (!hd) return ['no title block'];
+  const out = [], tabs = hd.querySelector('.bp-sheets-col')?.getBoundingClientRect(), box = hd.getBoundingClientRect();
+  for (const sel of ['.bp-l1', '.bp-l2']) {
+    const el = hd.querySelector(sel);
+    if (!el) { out.push(sel + ' missing'); continue; }
+    if (el.scrollWidth > el.clientWidth + 1) out.push(`${sel} clipped: ${el.scrollWidth} > ${el.clientWidth}`);
+    const r = el.getBoundingClientRect();
+    if (tabs && r.right > tabs.left && r.left < tabs.right && r.bottom > tabs.top && r.top < tabs.bottom) out.push(sel + ' under the lens sheets');
+  }
+  if (tabs && (tabs.bottom > box.bottom + 1 || tabs.right > box.right + 1)) out.push('the lens sheets leave the title block');
+  return out;
 };
 
 const server = await startHarnessServer({ port: PORT });
@@ -90,8 +122,8 @@ try {
   for (const theme of THEMES) for (const [w, h] of SIZES) {
     for (const [name, run] of Object.entries(STATES)) {
       if (ONLY && !ONLY.has(name)) continue;
-      // the five levels at every size; the states (dialogs, armed build, lens sheets) at the first size only
-      if (!LEVELS.has(name) && (w !== SIZES[0][0] || h !== SIZES[0][1])) continue;
+      // the five levels and the compare panel at every size; the other states at the first size only
+      if (!EVERY_SIZE.has(name) && (w !== SIZES[0][0] || h !== SIZES[0][1])) continue;
       for (let attempt = 0; attempt < 3; attempt++) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1, locale: 'en-US', timezoneId: 'UTC', reducedMotion: 'reduce' });
       const page = await ctx.newPage();
@@ -101,12 +133,13 @@ try {
       await page.clock.setFixedTime(new Date(NOW));
       await page.addInitScript((t) => { window.__PAGE_HARNESS_TAPE__ = t; }, tape);
       await page.addInitScript(CANVAS_PROBE);
-      const url = `${server.url}${HARNESS}?module=decision-center/blueprint&theme=${theme}${name === 'state-sheet-pack' ? '&feature=book-a-class' : ''}`;
+      const url = `${server.url}${HARNESS}?module=decision-center/blueprint&theme=${theme}${FEATURE[name] ? '&feature=' + FEATURE[name] : ''}`;
       await page.goto(url, { waitUntil: 'commit' });
       await page.waitForFunction(() => { const s = window.__PAGE_HARNESS__; return !!s && (s.mounted || !!s.error); }, null, { timeout: 180_000 });
       await page.waitForSelector('[data-testid="blueprint-sheet"]', { timeout: 60_000 });
       await page.waitForTimeout(900);
-      if (name !== 'state-sheet-pack') { await page.locator('[data-testid="blueprint-sheet"]').focus().catch(() => {}); await run(page); }
+      await page.locator('[data-testid="blueprint-sheet"]').focus().catch(() => {});
+      await run(page);
       await page.waitForTimeout(700);
       const file = `${name}-${w}x${h}-${theme === 'light' ? 'light' : 'dark'}.png`;
       if (!args['measure-only']) await page.screenshot({ path: join(OUT, file), animations: 'disabled', caret: 'hide' });
@@ -114,6 +147,8 @@ try {
       const canvas = await page.evaluate(() => window.__CANVAS_TEXT__.frame);
       const sum = (a, f) => a.filter(f).reduce((s, x) => s + x.n, 0);
       const key = `${name} ${w}x${h} ${theme}`;
+      const title = await page.evaluate(TITLE_CHECK);
+      if (title.length) errors.push('title block: ' + title.join('; '));
       report.sizes[key] = {
         domMin: Math.min(...dom.map((x) => x.px)), domChars: sum(dom, () => true), domUnder14: sum(dom, (x) => x.px < 14),
         canvasMin: canvas.length ? Math.min(...canvas.map((x) => x.px)) : null, canvasChars: sum(canvas, () => true), canvasUnder14: sum(canvas, (x) => x.px < 14),

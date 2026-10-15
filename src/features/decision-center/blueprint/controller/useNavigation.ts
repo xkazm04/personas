@@ -1,10 +1,13 @@
 // Moving about the drawing: levels, the current item, the L4 sheet. Every move goes through the camera (the engine
 // flies) and the sheet's reducer, so the plan, the queue and the depth rail can never disagree about where we are.
+// The compare panel (WP4b) is a place too: J/K walk the built items in pack order while it is open, as bp's ledger.
 import { useCallback, useMemo, type Dispatch } from 'react';
 import type { Engine } from '../engine/Engine';
 import type { Plan } from '../model/plan';
 import type { Work, WorkItem } from '../model/work';
 import { waitingIn } from '../model/scope';
+import { awaitsTriage } from '../model/states';
+import { isBuilt, packOrder } from '../model/triage';
 import type { UiAction, UiState } from '../state/uiState';
 
 export interface Nav {
@@ -12,6 +15,8 @@ export interface Nav {
   toLevel(n: number): void;
   openSheet(fid: string, lens?: string): void;
   closeSheet(): void;
+  /** Open the compare panel on a built item (its sheet opens with it), or close it (null). */
+  compare(p: WorkItem | null): void;
   /** Make an item current; `fly` sends the camera to it. */
   select(p: WorkItem | null, fly?: boolean): void;
   /** Walk the waiting work: +1 next, -1 previous. */
@@ -49,13 +54,24 @@ export function useNavigation({ engine, plan, work, ui, dispatch, queue }: Deps)
   const openSheet = useCallback((fid: string, lens?: string) => {
     if (!plan.L.TILE[fid]) return;
     const own = work.byFeature.get(fid) ?? [];
-    // the sheet opens on an item of the feature when the current one is elsewhere: a feature's own waiting work first
+    // the sheet opens on an item of the feature when the current one is elsewhere: a feature's own waiting work first,
+    // then a built item waiting for triage, then anything; a built one opens in the compare panel
+    let compare: string | null | undefined;
     if (!ui.itemId || work.byId.get(ui.itemId)?.fid !== fid) {
-      const first = own.find((p) => p.status === 'proposed') ?? own.find((p) => p.status === 'approved') ?? own[0] ?? null;
+      const first = own.find((p) => p.status === 'proposed') ?? own.find((p) => p.status === 'approved')
+        ?? own.find((p) => isBuilt(p) && awaitsTriage(p.status)) ?? own[0] ?? null;
       select(first);
+      compare = first && isBuilt(first) ? first.id : null;
     }
-    dispatch({ type: 'openSheet', fid, lens });
+    dispatch({ type: 'openSheet', fid, lens, compare });
   }, [plan, work, ui.itemId, select, dispatch]);
+
+  const compare = useCallback((p: WorkItem | null) => {
+    if (!p) { dispatch({ type: 'compare', id: null }); return; }
+    select(p);
+    if (ui.sheet !== p.fid) dispatch({ type: 'openSheet', fid: p.fid, lens: ui.sheetLens, compare: p.id });
+    else dispatch({ type: 'compare', id: p.id });
+  }, [ui.sheet, ui.sheetLens, select, dispatch]);
 
   const closeSheet = useCallback(() => dispatch({ type: 'closeSheet' }), [dispatch]);
 
@@ -80,6 +96,13 @@ export function useNavigation({ engine, plan, work, ui, dispatch, queue }: Deps)
   }, [engine, plan, work, ui.itemId, ui.sheet, openSheet, dispatch]);
 
   const step = useCallback((d: 1 | -1): WorkItem | null => {
+    if (ui.compare) {
+      const order = packOrder(work, ui.sheetLens);
+      const i = order.findIndex((p) => p.id === ui.compare);
+      const to = order[i < 0 ? 0 : (i + d + order.length) % order.length] ?? null;
+      if (to) compare(to);
+      return to;
+    }
     let list = queue.filter((p) => p.status === 'proposed');
     if (!list.length) list = waitingIn(work, plan.L, ui.lens);
     if (!list.length) return null;
@@ -90,7 +113,7 @@ export function useNavigation({ engine, plan, work, ui, dispatch, queue }: Deps)
       if (ui.sheet) dispatch({ type: 'openSheet', fid: next.fid, lens: ui.sheetLens });
     }
     return next;
-  }, [queue, work, plan, ui.lens, ui.itemId, ui.sheet, ui.sheetLens, select, dispatch]);
+  }, [queue, work, plan, ui.lens, ui.itemId, ui.sheet, ui.sheetLens, ui.compare, select, compare, dispatch]);
 
   const wing = useCallback((d: 1 | -1) => {
     if (!engine) return;
@@ -119,5 +142,5 @@ export function useNavigation({ engine, plan, work, ui, dispatch, queue }: Deps)
     engine.cam.flyTo(engine.cam.fitOf(o));
   }, [engine, plan, dispatch]);
 
-  return useMemo(() => ({ toLevel, openSheet, closeSheet, select, step, wing, zoom, flyToFeature, flyToPlace }), [toLevel, openSheet, closeSheet, select, step, wing, zoom, flyToFeature, flyToPlace]);
+  return useMemo(() => ({ toLevel, openSheet, closeSheet, compare, select, step, wing, zoom, flyToFeature, flyToPlace }), [toLevel, openSheet, closeSheet, compare, select, step, wing, zoom, flyToFeature, flyToPlace]);
 }

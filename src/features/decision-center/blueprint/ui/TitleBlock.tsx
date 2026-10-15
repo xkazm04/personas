@@ -13,7 +13,8 @@ export function sheetNumber(short: string | null, i: number): string {
 /**
  * The title block (bp Header): an opaque band with a double rule, so canvas headings never show through under it.
  * Identity line (drawing set, queue count, sheet), the last thing the sheet said, the crumbs, the last scan, the
- * lens sheets and the way out.
+ * lens sheets and the way out. The sheets sit beside the identity on a wide plan and under it on a narrow one
+ * (blueprint.css, the bp-plan container query), so neither covers the other at any width.
  */
 export function TitleBlock() {
   const s = useSheet();
@@ -33,7 +34,7 @@ export function TitleBlock() {
         <Crumbs />
       </div>
       <LensTabs />
-      <Button variant="ghost" size="icon-md" onClick={s.onClose} aria-label={B.close} data-testid="blueprint-close"><X className="w-4 h-4" /></Button>
+      <Button variant="ghost" size="icon-md" className="bp-close" onClick={s.onClose} aria-label={B.close} data-testid="blueprint-close"><X className="w-4 h-4" /></Button>
     </header>
   );
 }

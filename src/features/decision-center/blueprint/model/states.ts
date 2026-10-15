@@ -1,7 +1,8 @@
 // The decision machine, as ONE table. Every move the sheet can ask for, what it needs (`from`), where the store
 // takes the item (`to`) and through which door; and every status an item can show, with its tone and the moves
 // it offers. The drawing never decides whether a transition is allowed: `from` only says which keys and buttons to
-// OFFER. The store's answer (`decided[]` / `skipped[]` with reasons) is what the dock console prints.
+// OFFER. The store's answer (`decided[]` / `skipped[]` with reasons) is what the dock console prints. A triage key
+// (WP4b) is never withheld on `from`: it sends, and the store's `skipped[]` says why nothing moved.
 //
 // Statuses are `wire.ts ProposalStatus` verbatim (ten of them). `in-release` and `note-required` are store REASONS
 // on a skipped row, not statuses; a release's items show `release_id` instead. The old `cut_off` of the brief is
@@ -42,22 +43,36 @@ export interface StatusInfo {
   queue: boolean;
   /** Nothing moves it any more (the store or a release owns it). */
   terminal: boolean;
+  /** Built in a pack: the L4 sheet shows it in the compare panel (before and after, the commit), where it is triaged. */
+  built: boolean;
 }
 
 export const STATUS: Readonly<Record<ProposalStatus, StatusInfo>> = {
-  proposed: { tone: 'wait', queue: true, terminal: false },
-  approved: { tone: 'ok', queue: true, terminal: false },
-  declined: { tone: 'no', queue: false, terminal: true },
-  executing: { tone: 'run', queue: false, terminal: false },
-  done: { tone: 'pack', queue: false, terminal: false },
-  failed: { tone: 'fail', queue: false, terminal: false },
-  accepted: { tone: 'ok', queue: false, terminal: false },
-  rework: { tone: 'wait', queue: false, terminal: false },
-  descoped: { tone: 'no', queue: false, terminal: false },
-  released: { tone: 'ok', queue: false, terminal: true },
+  proposed: { tone: 'wait', queue: true, terminal: false, built: false },
+  approved: { tone: 'ok', queue: true, terminal: false, built: false },
+  declined: { tone: 'no', queue: false, terminal: true, built: false },
+  executing: { tone: 'run', queue: false, terminal: false, built: false },
+  done: { tone: 'pack', queue: false, terminal: false, built: true },
+  failed: { tone: 'fail', queue: false, terminal: false, built: true },
+  accepted: { tone: 'ok', queue: false, terminal: false, built: true },
+  rework: { tone: 'wait', queue: false, terminal: false, built: true },
+  descoped: { tone: 'no', queue: false, terminal: false, built: true },
+  released: { tone: 'ok', queue: false, terminal: true, built: true },
 };
 
 export const STATUSES = Object.keys(STATUS) as ProposalStatus[];
+
+/** A built item still waiting for a person's triage (store.mjs: `done` or `failed`; compare.ts awaitingTriage). */
+export const awaitsTriage = (s: ProposalStatus): boolean => s === 'done' || s === 'failed';
+
+/**
+ * Why the store left a triaged item as it was (store.mjs `triage`, the `reason` of a `skipped[]` row), where the
+ * status alone does not say. The dock console prints the reason verbatim and glosses it; a reason not listed here is
+ * still printed verbatim (the store may grow one before this table does).
+ */
+export const TRIAGE_REASONS = ['note-required', 'in-release', 'no-prior-status', 'rebuilt', 'pack-closed'] as const;
+export type TriageReason = (typeof TRIAGE_REASONS)[number];
+export const isTriageReason = (r: string | undefined): r is TriageReason => !!r && (TRIAGE_REASONS as readonly string[]).includes(r);
 
 /** The moves a status offers, in table order. */
 export function movesFrom(status: ProposalStatus): MoveName[] {

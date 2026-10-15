@@ -93,3 +93,66 @@ one custom lens, `com.kettle.cost`.
 |---|---|
 | Swarm line, room art | no data in the stores the sheet reads |
 | bp's Kettle-only named wings | the fixture takes the path a live product takes: one wing per domain |
+
+## WP4b: the compare panel and triage in the L4 sheet
+
+Spark one-control, Stage 2, WP4b. bp's release ledger (`bp/src/components/ledger/train/`, commits `4044c29`,
+`99693aa`, `48171a1`) holds the compare panel beside a packs table; here it docks in the L4 feature sheet in the side
+tables' place, beside the feature's pack rows. The pure logic is the committed port (`src/lib/lensScan/compare.ts`,
+`wire.ts`); bp's `src/lib/train/perf.ts` is ported verbatim as `model/perf.ts`. Shots: `shots/state-compare-*`,
+`state-compare-perf-*`, `state-rework-prompt-*`, `state-reopen-refused-*`, `state-in-release-*`.
+
+Module map (bp -> here): `ComparePanel.tsx` -> `ui/compare/ComparePanel.tsx` + `CompareBody.tsx`; `MetricStrip.tsx` ->
+`MetricLine.tsx`; `PerfTable.tsx` + `PerfRange.tsx` -> `PerfTable.tsx` + `PerfRange.tsx`; `Screens.tsx` + `ShotFigure.tsx`
+-> `Screens.tsx` + `ShotFrame.tsx` + `useShotUrl.ts`; `CommitDiff.tsx` -> `CommitDiff.tsx` + `patch.ts`; `Measurement.tsx`
+-> WP4a's `sheet/PackEvidence.tsx`; `ItemText.tsx` -> the shared `DeferredMarkdown`; `Decide.tsx` (compact) ->
+`TriageBar.tsx`; `NoteEditor.tsx` -> `ReasonDialog.tsx` (the WP4a decline prompt, now every note); `ItemRow.tsx` ->
+`sheet/PackRow.tsx`; `keymap.ts` + `KeysSheet.tsx` -> the ONE `model/keymap.ts` + `ui/KeySheet.tsx`; `useChangeMap.ts`,
+`ChangeMap.tsx`, `changeMap.worker.ts` -> dropped (below).
+
+### The compare panel
+
+| Element in bp | Verdict | Here |
+|---|---|---|
+| Head: lens, id, pack and "item n of m", feature, title | present | plus the store's status chip |
+| Head: previous / next (K / J) over every pack item, packs oldest first | present | J/K walk while the panel is open; the sheet follows the item's feature |
+| Head: Wide (W) | dropped | the panel already takes the sheet's wide column; W is free in the keymap for later |
+| Head: close (Esc) | present | Esc closes the panel before the sheet (one layer per press) |
+| Item not found callout | present | |
+| Metric strip: before -> after, unit, verdict chip, better direction, target, method | present | the verdict is compare.ts verdictOf: Better, Within noise, Worse, Not measured |
+| Performance table: runs, median, after, change and %, noise (spread or one frame), target | improved | the item's name and verdict head its rows, so the six figures fit the panel at 1280 without a scroll |
+| Outlier run outlined | present | with a screen-reader word, not a hover title |
+| Range strip: noise band, runs, after, target and warn lines | present | |
+| Context rows: the lens's other metrics at the base, against their targets | present | |
+| The whole pack table | present | the pack's other items measured in runs |
+| Why the verdict (one sentence) | present | |
+| Failed build callout | present | |
+| Screens: light / dark / both | present | starts at the app's own theme |
+| Screens: side by side, slider | present | the slider drives a CSS variable; dragging never re-renders |
+| Screens: blink | dropped | a timed swap needs a reduced-motion twin and adds no evidence the slider lacks |
+| Screens: change map (pixel diff in a worker) and its words | dropped | the pixel engine (bp pixels.ts, a worker, a module cache) is not ported; a live store's object URLs would need decoding off the main thread first. bp's pixel checks are not ported with it |
+| Prefetch of the next item's screens | dropped | each frame asks the seam for its URL when shown, and revokes it on unmount (source.ts contract) |
+| "Smallest text" from the harness report | present | |
+| What the measurement says (before/after evidence lines) | present | WP4a's evidence table: every phased reading, not only the latest |
+| Commit: files with add/delete bars, message with trailers, patch | present | fetched through `actions.commitDiff` when the item is shown, a ghost under the heading meanwhile |
+| Patch cut at 2000 lines, "truncated at n of m" | present | the panel also holds the cut itself if a source sends more |
+| Patch rendered in chunks with content-visibility | dropped | the patch mounts only while open; 2000 rows stay cheap |
+| No commit: why (failed build or none recorded) | present | |
+| The item's text under its standard | present | the shared markdown reader instead of bp's own renderer |
+| Footer: state mark over the triage note or what the state means | present | |
+| Footer: flagged mark (accepted from failed/flat/unmeasured) | dropped | Personas shows the verdict chip beside the state instead; the store has no flag column |
+
+### The decision bar and keys
+
+| Element in bp | Verdict | Here |
+|---|---|---|
+| Accept (A), Rework (R), Descope (S), Undo (U) | improved | Y, R, S, U in the ONE keymap: A is already approve and a key is bound once. Keys and buttons always send: the store answers, the dock console prints it |
+| Disabled buttons with a "why not" tooltip | dropped | the brief's rule: the drawing never decides whether a move is allowed; a refusal comes back as the store's `skipped[]` reason |
+| Note editor inline in the footer, Enter / Esc, three quick notes | improved | the WP4a note prompt (a dialog), with a live preview of the exact `triage(...)` call; quick notes dropped (canned reasons stand in for the note the next run reads) |
+| An empty note refused in place | dropped | an empty note is sent as no note; the store refuses a failed build's accept with `note-required`, shown in the console |
+| Pending state until the store's change arrives | improved | the pressed control shows the shared Button's spinner; the row's status is the store's after a re-read |
+| Toast with what was skipped and why | improved | the dock console prints the answer verbatim (decision, by, triaged, each skipped row with its reason and its gloss, packs triaged, packs reopened) |
+| Selection, multi-item decisions (X, Space) | dropped | the L4 sheet decides one item at a time; X is decline here |
+| Release package pill (Package v... · n accepted, Release ->) | dropped | release composition is bp's (out of scope); WP3 shows it read-only |
+| Next waiting item after a decision | dropped | the panel stays on the item so its new state and the console answer read together; J walks on |
+| Keys sheet (?) | present | one more group, Triage |

@@ -54,7 +54,7 @@
   },
   "L4 1280x800 dark-midnight": {
    "domMin": 14.4375,
-   "domChars": 2181,
+   "domChars": 2209,
    "domUnder14": 0,
    "canvasMin": 12,
    "canvasChars": 417,
@@ -67,7 +67,7 @@
   },
   "state-approved 1280x800 dark-midnight": {
    "domMin": 14.4375,
-   "domChars": 684,
+   "domChars": 714,
    "domUnder14": 0,
    "canvasMin": 12,
    "canvasChars": 671,
@@ -93,7 +93,7 @@
   },
   "state-build-armed 1280x800 dark-midnight": {
    "domMin": 14.4375,
-   "domChars": 1339,
+   "domChars": 1393,
    "domUnder14": 0,
    "canvasMin": 12,
    "canvasChars": 781,
@@ -106,7 +106,7 @@
   },
   "state-build-started 1280x800 dark-midnight": {
    "domMin": 14.4375,
-   "domChars": 1168,
+   "domChars": 1196,
    "domUnder14": 0,
    "canvasMin": 12,
    "canvasChars": 671,
@@ -132,7 +132,7 @@
   },
   "state-keys 1280x800 dark-midnight": {
    "domMin": 14.4375,
-   "domChars": 2876,
+   "domChars": 3047,
    "domUnder14": 0,
    "canvasMin": 12,
    "canvasChars": 286,
@@ -169,13 +169,65 @@
     "Features 30 · built 20"
    ]
   },
-  "state-sheet-pack 1280x800 dark-midnight": {
+  "state-compare 1280x800 dark-midnight": {
    "domMin": 14.4375,
-   "domChars": 2263,
+   "domChars": 3013,
    "domUnder14": 0,
    "canvasMin": 12,
-   "canvasChars": 775,
-   "canvasUnder14": 485,
+   "canvasChars": 798,
+   "canvasUnder14": 508,
+   "smallestDom": [
+    "Build queue",
+    "Decision Center",
+    "Features 30 · built 20"
+   ]
+  },
+  "state-compare-perf 1280x800 dark-midnight": {
+   "domMin": 14.4375,
+   "domChars": 4447,
+   "domUnder14": 0,
+   "canvasMin": 12,
+   "canvasChars": 420,
+   "canvasUnder14": 230,
+   "smallestDom": [
+    "Build queue",
+    "Decision Center",
+    "Features 30 · built 20"
+   ]
+  },
+  "state-rework-prompt 1280x800 dark-midnight": {
+   "domMin": 14.4375,
+   "domChars": 3268,
+   "domUnder14": 0,
+   "canvasMin": 12,
+   "canvasChars": 798,
+   "canvasUnder14": 508,
+   "smallestDom": [
+    "Build queue",
+    "Decision Center",
+    "Features 30 · built 20"
+   ]
+  },
+  "state-reopen-refused 1280x800 dark-midnight": {
+   "domMin": 14.4375,
+   "domChars": 2658,
+   "domUnder14": 0,
+   "canvasMin": 12,
+   "canvasChars": 384,
+   "canvasUnder14": 240,
+   "smallestDom": [
+    "Build queue",
+    "Decision Center",
+    "Features 30 · built 20"
+   ]
+  },
+  "state-in-release 1280x800 dark-midnight": {
+   "domMin": 14.4375,
+   "domChars": 2745,
+   "domUnder14": 0,
+   "canvasMin": 12,
+   "canvasChars": 384,
+   "canvasUnder14": 240,
    "smallestDom": [
     "Build queue",
     "Decision Center",
@@ -247,6 +299,19 @@
     "Features 30 · built 20"
    ]
   },
+  "state-compare 1920x1080 dark-midnight": {
+   "domMin": 14.4375,
+   "domChars": 3013,
+   "domUnder14": 0,
+   "canvasMin": 12,
+   "canvasChars": 1029,
+   "canvasUnder14": 642,
+   "smallestDom": [
+    "Build queue",
+    "Decision Center",
+    "Features 30 · built 20"
+   ]
+  },
   "L0 1280x800 light": {
    "domMin": 14.4375,
    "domChars": 2387,
@@ -301,7 +366,7 @@
   },
   "L4 1280x800 light": {
    "domMin": 14.4375,
-   "domChars": 2181,
+   "domChars": 2209,
    "domUnder14": 0,
    "canvasMin": 12,
    "canvasChars": 417,
@@ -314,7 +379,7 @@
   },
   "state-approved 1280x800 light": {
    "domMin": 14.4375,
-   "domChars": 684,
+   "domChars": 714,
    "domUnder14": 0,
    "canvasMin": 12,
    "canvasChars": 671,
@@ -340,7 +405,7 @@
   },
   "state-build-armed 1280x800 light": {
    "domMin": 14.4375,
-   "domChars": 1339,
+   "domChars": 1393,
    "domUnder14": 0,
    "canvasMin": 12,
    "canvasChars": 781,
@@ -353,7 +418,7 @@
   },
   "state-build-started 1280x800 light": {
    "domMin": 14.4375,
-   "domChars": 1168,
+   "domChars": 1196,
    "domUnder14": 0,
    "canvasMin": 12,
    "canvasChars": 671,
@@ -379,7 +444,7 @@
   },
   "state-keys 1280x800 light": {
    "domMin": 14.4375,
-   "domChars": 2876,
+   "domChars": 3047,
    "domUnder14": 0,
    "canvasMin": 12,
    "canvasChars": 286,
@@ -416,13 +481,65 @@
     "Features 30 · built 20"
    ]
   },
-  "state-sheet-pack 1280x800 light": {
+  "state-compare 1280x800 light": {
    "domMin": 14.4375,
-   "domChars": 2263,
+   "domChars": 3015,
    "domUnder14": 0,
    "canvasMin": 12,
-   "canvasChars": 775,
-   "canvasUnder14": 485,
+   "canvasChars": 548,
+   "canvasUnder14": 303,
+   "smallestDom": [
+    "Build queue",
+    "Decision Center",
+    "Features 30 · built 20"
+   ]
+  },
+  "state-compare-perf 1280x800 light": {
+   "domMin": 14.4375,
+   "domChars": 4447,
+   "domUnder14": 0,
+   "canvasMin": 12,
+   "canvasChars": 338,
+   "canvasUnder14": 148,
+   "smallestDom": [
+    "Build queue",
+    "Decision Center",
+    "Features 30 · built 20"
+   ]
+  },
+  "state-rework-prompt 1280x800 light": {
+   "domMin": 14.4375,
+   "domChars": 3270,
+   "domUnder14": 0,
+   "canvasMin": 12,
+   "canvasChars": 548,
+   "canvasUnder14": 303,
+   "smallestDom": [
+    "Build queue",
+    "Decision Center",
+    "Features 30 · built 20"
+   ]
+  },
+  "state-reopen-refused 1280x800 light": {
+   "domMin": 14.4375,
+   "domChars": 2658,
+   "domUnder14": 0,
+   "canvasMin": 12,
+   "canvasChars": 384,
+   "canvasUnder14": 240,
+   "smallestDom": [
+    "Build queue",
+    "Decision Center",
+    "Features 30 · built 20"
+   ]
+  },
+  "state-in-release 1280x800 light": {
+   "domMin": 14.4375,
+   "domChars": 2745,
+   "domUnder14": 0,
+   "canvasMin": 12,
+   "canvasChars": 384,
+   "canvasUnder14": 240,
    "smallestDom": [
     "Build queue",
     "Decision Center",
@@ -488,6 +605,19 @@
    "canvasMin": 12,
    "canvasChars": 528,
    "canvasUnder14": 281,
+   "smallestDom": [
+    "Build queue",
+    "Decision Center",
+    "Features 30 · built 20"
+   ]
+  },
+  "state-compare 1920x1080 light": {
+   "domMin": 14.4375,
+   "domChars": 3015,
+   "domUnder14": 0,
+   "canvasMin": 12,
+   "canvasChars": 1029,
+   "canvasUnder14": 642,
    "smallestDom": [
     "Build queue",
     "Decision Center",

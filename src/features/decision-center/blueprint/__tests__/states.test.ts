@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import type { ProposalStatus } from '@/lib/lensScan/wire';
 import en from '@/i18n/locales/en.json';
 import { KEYMAP, actOf, lensIndexOfKey } from '../model/keymap';
-import { MOVES, STATUS, STATUSES, actable, movesFrom, type MoveName } from '../model/states';
+import { MOVES, STATUS, STATUSES, TRIAGE_REASONS, actable, isTriageReason, movesFrom, type MoveName } from '../model/states';
 
 // A Record over the wire's union: a status added to ProposalStatus fails to compile here until it is listed.
 const WIRE: Record<ProposalStatus, true> = {
@@ -118,5 +118,38 @@ describe('keymap', () => {
   it('every status has a word and a hint in the English catalog', () => {
     const B = (en as { decisionCenter: { blueprint: Record<string, string> } }).decisionCenter.blueprint;
     for (const s of STATUSES) { expect(B['status_' + s], s).toBeTruthy(); expect(B['next_' + s] !== undefined, s).toBe(true); }
+  });
+});
+
+describe('triage rows (WP4b)', () => {
+  it('accepted, rework and descoped offer reopen, the undo back to triaged_from', () => {
+    expect(movesFrom('accepted')).toEqual(expect.arrayContaining(['rework', 'descope', 'reopen']));
+    expect(actable('reopen', 'accepted')).toBe(true);
+    expect(actable('reopen', 'rework')).toBe(true);
+    expect(actable('reopen', 'descoped')).toBe(true);
+    expect(actable('reopen', 'done')).toBe(false);
+    expect(MOVES.reopen).toMatchObject({ door: 'triage', arg: 'reopen', to: 'triaged_from', note: 'none' });
+  });
+
+  it('done and failed offer accept, rework and descope; rework and descope ask a note', () => {
+    for (const s of ['done', 'failed'] as const) expect(movesFrom(s)).toEqual(expect.arrayContaining(['accept', 'rework', 'descope']));
+    expect(MOVES.rework.note).toBe('asked');
+    expect(MOVES.descope.note).toBe('asked');
+  });
+
+  it('the compare panel shows exactly the built statuses', () => {
+    expect(STATUSES.filter((s) => STATUS[s].built).sort()).toEqual(['accepted', 'descoped', 'done', 'failed', 'released', 'rework']);
+  });
+
+  it('every store reason has its gloss in the English catalog', () => {
+    const B = (en as { decisionCenter: { blueprint: Record<string, string> } }).decisionCenter.blueprint;
+    for (const r of TRIAGE_REASONS) expect(B['reason_' + r.replace(/-/g, '_')], r).toBeTruthy();
+    expect(isTriageReason('in-release')).toBe(true);
+    expect(isTriageReason('not-found')).toBe(false);
+  });
+
+  it('the triage keys are Y, R, S and U, in their own group', () => {
+    expect([actOf('y'), actOf('r'), actOf('s'), actOf('u')]).toEqual(['accept', 'rework', 'descope', 'reopen']);
+    expect(KEYMAP.filter((b) => b.group === 'triage').map((b) => b.act)).toEqual(['accept', 'rework', 'descope', 'reopen']);
   });
 });

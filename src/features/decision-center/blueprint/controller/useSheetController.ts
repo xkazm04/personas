@@ -43,7 +43,7 @@ export function useSheetController({ data: initial, actions, onClose, initialFea
 
   const nav = useNavigation({ engine, plan, work, ui, dispatch, queue });
   const say = useMemo<Say>(() => {
-    const verb = { approve: B.verb_approve, decline: B.verb_decline, build: B.verb_build };
+    const verb = { approve: B.verb_approve, decline: B.verb_decline, build: B.verb_build, accept: B.verb_accept, rework: B.verb_rework, descope: B.verb_descope, reopen: B.verb_reopen };
     return {
       pickFirst: () => B.say_pick,
       nothingToMove: (m) => (m === 'approve' ? B.say_nothing_approve : m === 'decline' ? B.say_nothing_decline : B.say_nothing_build),
@@ -70,8 +70,8 @@ export function useSheetController({ data: initial, actions, onClose, initialFea
   }, [engine, initialFeature, plan, nav]);
 
   const sheet = useMemo<Sheet>(
-    () => ({ data, plan, work, ui, dispatch, engine, view, text, words, scope, queue, queueAll, current, nav, writes, onClose }),
-    [data, plan, work, ui, engine, view, text, words, scope, queue, queueAll, current, nav, writes, onClose],
+    () => ({ data, actions, plan, work, ui, dispatch, engine, view, text, words, scope, queue, queueAll, current, nav, writes, onClose }),
+    [data, actions, plan, work, ui, engine, view, text, words, scope, queue, queueAll, current, nav, writes, onClose],
   );
   return { sheet, words, hooks, tip, setEngine };
 }

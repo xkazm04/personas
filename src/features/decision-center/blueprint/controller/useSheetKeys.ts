@@ -1,7 +1,7 @@
 // The sheet's keyboard: ONE handler over the ONE keymap (model/keymap.ts). It registers above the Decision Deck
 // (priority 85) and is exclusive, so a key the sheet does not name never reaches the deck behind it, and Esc climbs
-// (overlay, armed build, L4 sheet, level by level) and only at the site closes the sheet: one press never closes
-// two layers. Typing in a field is left alone; the field's own React handler owns Enter, Esc and the arrows.
+// (overlay, armed build, compare panel, L4 sheet, level by level) and only at the site closes the sheet: one press
+// never closes two layers. Y, R, S and U triage the current item (WP4b) wherever it is: the store answers. Typing in a field is left alone; the field's own React handler owns Enter, Esc and the arrows.
 import { useRef } from 'react';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { actOf, lensIndexOfKey } from '../model/keymap';
@@ -59,6 +59,7 @@ function trapTab(e: KeyboardEvent): boolean {
 function back(d: Deps): void {
   if (d.ui.overlay) { d.dispatch({ type: 'overlay', overlay: null }); return; }
   if (d.ui.armed) { d.writes.disarm(); return; }
+  if (d.ui.compare) { d.nav.compare(null); return; }
   if (d.ui.sheet) { d.nav.closeSheet(); return; }
   const n = d.levelNow();
   if (n > 0) { d.nav.toLevel(n - 1); return; }
@@ -92,6 +93,7 @@ function handle(d: Deps, e: KeyboardEvent, tabbed: boolean): boolean {
     case 'approve': void writes.approve(d.current); break;
     case 'decline': writes.askDecline(d.current); break;
     case 'build': writes.arm(); break;
+    case 'accept': case 'rework': case 'descope': case 'reopen': writes.askTriage(d.current, act); break;
     case 'wingNext': nav.wing(1); break;
     case 'wingPrev': nav.wing(-1); break;
     case 'site': nav.toLevel(0); break;

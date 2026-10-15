@@ -1,14 +1,50 @@
 import { useSheet } from '../controller/SheetContext';
 import type { ConsoleLine } from '../state/uiState';
 import type { BpText } from '../controller/useBlueprintText';
+import { isTriageReason, type TriageReason } from '../model/states';
 
 type Tx = ReturnType<typeof useSheet>['text']['tx'];
+
+const REASON_KEY = {
+  'note-required': 'reason_note_required', 'in-release': 'reason_in_release', 'no-prior-status': 'reason_no_prior_status',
+  rebuilt: 'reason_rebuilt', 'pack-closed': 'reason_pack_closed',
+} as const satisfies Record<TriageReason, keyof BpText>;
+
+/** A skipped row as the store gave it (id, status, reason verbatim), then the reason in words when it is a known one. */
+function Skipped({ k, B, tx }: { k: { id: string; status: string; reason?: string }; B: BpText; tx: Tx }) {
+  return (
+    <div className="bp-skip" data-testid="blueprint-skipped" data-reason={k.reason}>
+      {tx(B.console_skipped, { id: k.id, status: k.status })}{k.reason ? ` · ${k.reason}` : ''}
+      {isTriageReason(k.reason) ? <span className="bp-why"> {'·'} {B[REASON_KEY[k.reason]]}</span> : null}
+    </div>
+  );
+}
+
+/** A triage answer (store.mjs `triage`), verbatim: the decision and who, the ids moved, each skipped row with its
+ *  reason, and the packs the move triaged or reopened. */
+function TriageEntry({ line, B, tx, old }: { line: Extract<ConsoleLine, { kind: 'triage' }>; B: BpText; tx: Tx; old?: boolean }) {
+  const r = line.result;
+  return (
+    <div className={`bp-entry${old ? ' bp-old' : ''}`} data-testid="blueprint-triage-result">
+      <div className={`bp-cmd typo-code${old ? ' bp-old' : ''}`}>
+        {tx(B.console_decide, { decision: r.decision, by: r.by })}
+        {r.triaged.length > 0 && <div>{tx(B.console_triaged, { ids: r.triaged.join(', ') })}</div>}
+        {r.skipped.map((k) => <Skipped key={k.id} k={k} B={B} tx={tx} />)}
+        {r.packs_triaged.length > 0 && <div>{tx(B.console_packs_triaged, { ids: r.packs_triaged.join(', ') })}</div>}
+        {r.packs_reopened && r.packs_reopened.length > 0 && <div>{tx(B.console_packs_reopened, { ids: r.packs_reopened.join(', ') })}</div>}
+      </div>
+      {!old && line.note && <div className="bp-why typo-body">{tx(B.console_note, { note: line.note })}</div>}
+    </div>
+  );
+}
 
 /** One console entry, exactly as the store answered: ids decided, each skipped row with its status and reason, the command started. */
 function Entry({ line, B, tx, old }: { line: ConsoleLine; B: BpText; tx: Tx; old?: boolean }) {
   if (line.kind === 'failed') {
-    return <div className={`bp-cmd bp-fail${old ? ' bp-old' : ''}`}>{tx(B.console_failed, { verb: line.verb === 'decide' ? B.verb_decide : B.verb_build, message: line.message })}</div>;
+    const verb = line.verb === 'decide' ? B.verb_decide : line.verb === 'triage' ? B.verb_triage : B.verb_build;
+    return <div className={`bp-cmd bp-fail${old ? ' bp-old' : ''}`}>{tx(B.console_failed, { verb, message: line.message })}</div>;
   }
+  if (line.kind === 'triage') return <TriageEntry line={line} B={B} tx={tx} old={old} />;
   if (line.kind === 'start') {
     return (
       <div className={`bp-entry${old ? ' bp-old' : ''}`}>
@@ -23,7 +59,7 @@ function Entry({ line, B, tx, old }: { line: ConsoleLine; B: BpText; tx: Tx; old
       <div className={`bp-cmd typo-code${old ? ' bp-old' : ''}`}>
         {tx(B.console_decide, { decision: r.decision, by: r.by })}
         {r.decided.length > 0 && <div>{tx(B.console_decided, { ids: r.decided.join(', ') })}</div>}
-        {r.skipped.map((k) => <div key={k.id} className="bp-skip">{tx(B.console_skipped, { id: k.id, status: k.status })}{k.reason ? ` · ${k.reason}` : ''}</div>)}
+        {r.skipped.map((k) => <Skipped key={k.id} k={k} B={B} tx={tx} />)}
       </div>
       {!old && line.note && <div className="bp-why typo-body">{tx(B.console_note, { note: line.note })}</div>}
     </div>

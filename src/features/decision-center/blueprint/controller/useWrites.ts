@@ -1,11 +1,13 @@
 // The sheet's write side. Every write goes through `actions` (the frozen BlueprintActions seam), is printed in the
 // dock console exactly as the store answered it (`decided[]`, `skipped[]` with each reason, the started command),
-// and is followed by a re-read: the statuses on the plan are always the store's, never the sheet's guess.
+// and is followed by a re-read: the statuses on the plan are always the store's, never the sheet's guess. A triage
+// (WP4b) is never withheld on the state table's `from`: it is sent, and a refusal comes back as the store's own
+// `skipped[]` row with its reason, which the console prints.
 import { useCallback, useMemo, useRef, type Dispatch } from 'react';
-import type { BlueprintActions } from '../source';
+import type { BlueprintActions, TriageDecisionInput } from '../source';
 import type { Work, WorkItem } from '../model/work';
-import { actable } from '../model/states';
-import type { UiAction, UiState } from '../state/uiState';
+import { actable, MOVES } from '../model/states';
+import type { NoteMove, UiAction, UiState } from '../state/uiState';
 
 export interface Writes {
   approve(p: WorkItem | null): Promise<void>;
@@ -16,7 +18,12 @@ export interface Writes {
   arm(): void;
   confirm(): Promise<void>;
   disarm(): void;
+  /** A triage key or control: asks the note first when the state table's NoteRule wants one, else sends at once. */
+  askTriage(p: WorkItem | null, move: TriageDecisionInput): void;
+  triage(p: WorkItem, move: TriageDecisionInput, note?: string): Promise<void>;
 }
+
+export type Verb = 'approve' | 'decline' | 'build' | TriageDecisionInput;
 
 interface Deps {
   actions: BlueprintActions;
@@ -33,7 +40,7 @@ export interface Say {
   pickFirst(): string;
   nothingToMove(move: 'approve' | 'decline' | 'build'): string;
   armed(n: number, jobs: number): string;
-  sent(verb: 'approve' | 'decline' | 'build', decided: number, skipped: number): string;
+  sent(verb: Verb, decided: number, skipped: number): string;
   failed(message: string): string;
   disarmed(): string;
 }
@@ -42,9 +49,9 @@ const errText = (e: unknown): string => (e instanceof Error ? e.message : String
 
 export function useWrites({ actions, work, ui, dispatch, reload, say }: Deps): Writes {
   const lock = useRef(false);
-  const run = useCallback(async (fn: () => Promise<void>) => {
+  const run = useCallback(async (fn: () => Promise<void>, move?: string) => {
     if (lock.current) return;
-    lock.current = true; dispatch({ type: 'busy', on: true });
+    lock.current = true; dispatch({ type: 'busy', on: true, move });
     try { await fn(); } finally { lock.current = false; dispatch({ type: 'busy', on: false }); }
   }, [dispatch]);
 
@@ -112,5 +119,30 @@ export function useWrites({ actions, work, ui, dispatch, reload, say }: Deps): W
     });
   }, [ui.armed, work, actions, dispatch, reload, run, say]);
 
-  return useMemo(() => ({ approve, askDecline, decline, arm, confirm, disarm }), [approve, askDecline, decline, arm, confirm, disarm]);
+  const triage = useCallback(async (p: WorkItem, move: TriageDecisionInput, note?: string) => {
+    if (ui.overlay?.kind === 'reason') dispatch({ type: 'overlay', overlay: null });
+    await run(async () => {
+      try {
+        const result = await actions.triage([p.id], move, note);
+        dispatch({ type: 'print', line: { kind: 'triage', decision: move, ids: [p.id], note, result } });
+        dispatch({ type: 'say', text: say.sent(move, result.triaged.length, result.skipped.length) });
+      } catch (e) {
+        dispatch({ type: 'print', line: { kind: 'failed', verb: 'triage', message: errText(e) } });
+        dispatch({ type: 'say', text: say.failed(errText(e)) });
+      }
+      await reload();
+    }, move);
+  }, [ui.overlay, actions, dispatch, reload, run, say]);
+
+  const askTriage = useCallback((p: WorkItem | null, move: TriageDecisionInput) => {
+    if (!p) { dispatch({ type: 'say', text: say.pickFirst() }); return; }
+    const rule = MOVES[move].note;
+    if (move !== 'reopen' && (rule === 'asked' || (rule === 'when-failed' && p.status === 'failed'))) {
+      dispatch({ type: 'overlay', overlay: { kind: 'reason', itemId: p.id, move: move as NoteMove } });
+      return;
+    }
+    void triage(p, move);
+  }, [dispatch, say, triage]);
+
+  return useMemo(() => ({ approve, askDecline, decline, arm, confirm, disarm, askTriage, triage }), [approve, askDecline, decline, arm, confirm, disarm, askTriage, triage]);
 }

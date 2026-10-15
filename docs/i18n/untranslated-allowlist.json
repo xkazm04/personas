@@ -4259,5 +4259,16 @@
   "fr:decisionCenter.blueprint.evidence_phase",
   "fr:decisionCenter.blueprint.date_col",
   "fr:decisionCenter.blueprint.desc_col",
-  "id:decisionCenter.blueprint.find_kind_item"
+  "id:decisionCenter.blueprint.find_kind_item",
+  "*:decisionCenter.blueprint.cmp_commit_head",
+  "de:decisionCenter.blueprint.verb_triage",
+  "de:decisionCenter.blueprint.cmp_triage",
+  "de:decisionCenter.blueprint.cmp_pt_median",
+  "de:decisionCenter.blueprint.cmp_theme_group",
+  "de:decisionCenter.blueprint.cmp_perf",
+  "fr:decisionCenter.blueprint.cmp_perf",
+  "fr:decisionCenter.blueprint.note_label",
+  "id:decisionCenter.blueprint.cmp_target",
+  "id:decisionCenter.blueprint.cmp_pt_median",
+  "id:decisionCenter.blueprint.cmp_pt_target"
 ]

@@ -3,6 +3,9 @@
 // public: every row here comes from bp's SYNTHETIC sample (bp src/data/kettle.*, src/lib/model/scan-sim.ts and
 // train-sim.ts run with a fake clock), never from a live product store. Provenance: bp @ fbef867, trimmed by
 // dropping features, contexts, KPI rows, lens-scan instructions and facet values no lens field reads.
+// WP4b added, in the same synthetic voice: pack k-dev-1 (two accepted items: one held by release rel-0.4.0, which has
+// left draft, and one triaged on a v2 store, so it has no triaged_from), their readings, the release and its run. The
+// fixture's commits and screens are synthetic too (commits.ts, shots.ts).
 import type { ScanSnapshot } from '@/lib/lensScan/wire';
 import type { BlueprintData } from '../source';
 import structure from './kettle.structure.json';

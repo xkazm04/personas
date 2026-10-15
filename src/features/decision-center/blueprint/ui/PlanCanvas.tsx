@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Figure } from '@/features/shared/components/kit';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { Engine } from '../engine/Engine';
+import type { Safe } from '../engine/camera';
 import type { EngineWords, Hooks } from '../engine/types';
 import type { Plan } from '../model/plan';
 import type { Work } from '../model/work';
@@ -9,6 +10,15 @@ import type { ViewStore } from '../state/viewStore';
 
 /** The part of the canvas the chrome leaves free: header, right rail, bottom bars (px from each edge). */
 export const SAFE = { l: 8, t: 80, r: 84, b: 84 } as const;
+
+/** The safe area with its top at the title block's real bottom: one band on a wide plan, two on a narrow one (WP4b). */
+export function safeOf(host: HTMLElement | null): Safe {
+  const plan = host?.closest('.bp-plan'), hd = plan?.querySelector<HTMLElement>('.bp-hd');
+  if (!plan || !hd) return SAFE;
+  const box = plan.getBoundingClientRect(), bottom = hd.getBoundingClientRect().bottom - box.top;
+  // a header taller than a third of the plan is not a laid-out title block (a test DOM measures every box alike)
+  return bottom > 0 && bottom < box.height / 3 ? { ...SAFE, t: Math.max(SAFE.t, Math.round(bottom + 10)) } : SAFE;
+}
 
 interface Props {
   plan: Plan;
@@ -51,7 +61,7 @@ export function PlanCanvas({ plan, work, words, lens, view, hooks, onEngine, des
     if (!canvas || !box) return;
     const l = live.current;
     const e = new Engine(canvas, box, l.plan, l.words, {
-      safe: () => SAFE,
+      safe: () => safeOf(box),
       moved: () => view.sync(e),
       hover: (f, t, x, y) => live.current.hooks.hover(f, t, x, y),
       flag: (f) => live.current.hooks.flag(f),

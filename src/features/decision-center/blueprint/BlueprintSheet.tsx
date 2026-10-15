@@ -66,7 +66,7 @@ export function BlueprintSheet({ data, actions, onClose, initialFeature }: Bluep
             <FeatureSheet />
           </div>
           {ov?.kind === 'find' && <FindDialog />}
-          {ov?.kind === 'reason' && <ReasonDialog itemId={ov.itemId} />}
+          {ov?.kind === 'reason' && <ReasonDialog itemId={ov.itemId} move={ov.move} />}
           {ov?.kind === 'help' && <KeySheet />}
         </div>
       </SheetContext.Provider>
