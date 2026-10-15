@@ -15,10 +15,43 @@ on:
   # alone can clear it. Dispatching by hand can: a run that is neither a push
   # nor a pull_request classifies everything as changed.
   workflow_dispatch:
+  # The FULL lane (see TWO LANES below). Every 3 hours, skipped by `changes`
+  # when a full lane already reached a verdict on master's HEAD; and once a
+  # night unconditionally, because advisories and runner images change
+  # without anyone pushing.
+  schedule:
+    - cron: "23 */3 * * *"
+    - cron: "47 1 * * *"
 
+# ─── TWO LANES (2026-10-15) ───────────────────────────────────────────────
+# WHY. Measured over 2026-10-08..15: 27 master runs, 17 cancelled, 8 failed,
+# 1 success, and no push reached a green verdict in over a week. A full run
+# took 67-73 min (macOS tests hit the 60-min cap, Windows 37 min of tests
+# plus 15 of clippy, the Vitest step alone past 30 min), while master moved
+# 30-99 times a day - so `cancel-in-progress` killed almost every run before
+# it could say anything.
+#
+#   fast lane - push and pull_request. Linux only: every gate of
+#               `npm run check` (each reported, none hiding another), the
+#               Vitest tests related to what changed since the class base,
+#               rust-fmt, the Linux leg of rust-tests (with one retry of a
+#               flake-shaped failure), rust-deny, the feature-shape matrix,
+#               binding-drift and the rest. About 25 minutes. NOT cancelled
+#               by the next push, so every run that starts reaches a verdict;
+#               GitHub keeps one pending run per group and replaces it with
+#               the newest, which batches pushes that land mid-run.
+#   full lane - schedule and workflow_dispatch. Everything, on all three OSes,
+#               plus the whole Vitest suite in shards and the CLI e2e lane.
+#
+# The fast lane is a LOAN against the full lane, and the loan is collected:
+# release.yml's ci-gate publishes only from a commit with a green FULL lane
+# (it checks for the Windows leg of rust-tests in a successful run), so a
+# fast-lane green never unlocks a release by itself.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.ref }}-${{ (github.event_name == 'push' || github.event_name == 'pull_request') && 'fast' || 'full' }}
+  # A PR's older runs are superseded by its newer commits. Master's are not:
+  # a cancelled run is a verdict nobody gets.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # ─── Job −1: what changed, and therefore what has to run ──────────────
@@ -105,6 +138,8 @@ jobs:
       # Needed to read earlier runs' job conclusions (choices 1 and 2 above).
       actions: read
     outputs:
+      lane: ${{ steps.lane.outputs.lane }}
+      rust_matrix: ${{ steps.lane.outputs.rust_matrix }}
       rust: ${{ steps.classify.outputs.rust }}
       frontend: ${{ steps.classify.outputs.frontend }}
       rust_carried: ${{ steps.classify.outputs.rust_carried }}
@@ -119,8 +154,57 @@ jobs:
           # Full history: the base commit is arbitrarily far behind HEAD.
           fetch-depth: 0
 
+      # fast | full | none. `none` is a scheduled run on a commit where a full
+      # lane has already reached a verdict: master has not moved, so the 3-hour
+      # slot has nothing new to say. Every job is skipped and ci-verdict says
+      # why. A `none` run can never unlock a release - release.yml looks for
+      # the Windows leg of rust-tests, which a `none` run does not have.
+      - name: Decide the lane
+        id: lane
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          REPO: ${{ github.repository }}
+          THIS_RUN: ${{ github.run_id }}
+          SHA: ${{ github.sha }}
+        run: |
+          set +e
+          case "$EVENT_NAME" in
+            push|pull_request) LANE=fast ;;
+            schedule)
+              LANE=full
+              # The nightly slot always runs (see `on: schedule`).
+              if [ "$SCHEDULE" != "47 1 * * *" ]; then
+                # Any doubt (an API error) leaves LANE=full: a wasted run, never a missed one.
+                PRIOR=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$SHA&per_page=50" 2>/dev/null \
+                  | jq -r --arg this "$THIS_RUN" '[.workflow_runs[]
+                      | select((.id|tostring) != $this)
+                      | select(.event == "schedule" or .event == "workflow_dispatch")
+                      | select(.status == "completed")
+                      | select(.conclusion == "success" or .conclusion == "failure")] | length' 2>/dev/null)
+                if [ "${PRIOR:-0}" -gt 0 ] 2>/dev/null; then LANE=none; fi
+              fi
+              ;;
+            *) LANE=full ;;
+          esac
+          LINUX='{"os":"ubuntu-24.04","label":"linux"}'
+          if [ "$LANE" = full ]; then
+            MATRIX="{\"include\":[{\"os\":\"windows-latest\",\"label\":\"windows\"},{\"os\":\"macos-latest\",\"label\":\"macos\"},$LINUX]}"
+          else
+            MATRIX="{\"include\":[$LINUX]}"
+          fi
+          echo "lane=$LANE" >> "$GITHUB_OUTPUT"
+          echo "rust_matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          echo "lane=$LANE (event=$EVENT_NAME schedule='$SCHEDULE')"
+          echo "### Lane: **$LANE**" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$LANE" = none ]; then
+            echo "A full lane already reached a verdict on \`$SHA\`; master has not moved since. Dispatch the workflow by hand to re-run it." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Classify changed paths
         id: classify
+        if: steps.lane.outputs.lane != 'none'
         env:
           GH_TOKEN: ${{ github.token }}
           EVENT_NAME: ${{ github.event_name }}
@@ -341,6 +425,10 @@ jobs:
 
   # ─── Job 0: Conventional commit lint ──────────────────────────
   commit-lint:
+    # Push and pull_request only: a scheduled or dispatched run has no range
+    # of new commits, and would otherwise re-lint whatever commit happens to
+    # sit at HEAD on every full-lane run.
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     # No job in this workflow had a timeout until 2026-08-16. A hung Clippy
     # step on the macOS runner ran for SIX HOURS — GitHub's default job cap —
@@ -427,13 +515,20 @@ jobs:
     # skipped while `frontend` is 'true'.
     if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
-    # See the note on commit-lint's timeout-minutes.
-    timeout-minutes: 30
+    # See the note on commit-lint's timeout-minutes. 40, not 30: the check
+    # step now runs all eighteen gates instead of stopping at the first red
+    # one (about 4 min measured locally 2026-10-15), and a fast-lane run with
+    # no class base falls back to the whole Vitest suite.
+    timeout-minutes: 40
     permissions:
       contents: read
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # `vitest --changed <base>` diffs `<base>...HEAD`, which needs the
+          # merge base, so a shallow clone cannot answer it.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -443,9 +538,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Typecheck + lint
+      - name: Typecheck + lint (every gate of npm run check)
         if: always()
-        run: npm run check
+        # NOT `npm run check`, which is an && chain: on 2026-10-15 it died in
+        # 4 s at its first gate, check:contracts, so tsc, eslint and the
+        # census had not run in CI at all - and locally the same tree had FIVE
+        # red gates, four of them invisible behind the first. This runs the
+        # same chain, parsed out of package.json, every gate to its verdict,
+        # with a table in the step summary. It fails if any gate failed.
+        run: node scripts/ci/run-check-chain.mjs check
 
       - name: Check i18n locale keyset parity
         if: always()
@@ -561,16 +662,75 @@ jobs:
         if: always()
         run: bash scripts/check-unused-bindings.sh
 
-      - name: Run frontend tests
-        if: always()
-        run: npm run test -- --run
+      # FAST LANE ONLY. The tests affected by what changed since the commit
+      # this class last reached a verdict on (the `changes` base, the same one
+      # that decided this job runs at all). Vitest follows the module graph
+      # from each changed file to the tests that import it, and runs the whole
+      # suite when a forceRerunTriggers file moved (package.json, the Vite and
+      # Vitest configs, src/test/** - see vitest.config.ts). With no base,
+      # every doubt resolves to "run everything", as in `changes`.
+      #
+      # The full suite (about 2,400 tests, past 30 minutes in one job) and the
+      # CLI e2e lane run in `frontend-tests`, in the full lane.
+      - name: Run frontend tests affected by this change
+        if: always() && needs.changes.outputs.lane == 'fast'
+        env:
+          BASE: ${{ needs.changes.outputs.frontend_base }}
+        run: |
+          if [ -n "$BASE" ]; then
+            echo "Vitest: tests related to files changed since $BASE"
+            npx vitest run --changed "$BASE"
+          else
+            echo "::warning title=vitest::no class base for this run - running the whole suite."
+            npm run test -- --run
+          fi
 
-      # The e2e lane is a separate configuration (own reporter, own budget) and
-      # is no longer swept up by the default lane's discovery, so it needs its
-      # own invocation or its 179 tests stop being gated by anything.
-      - name: Run CLI e2e lane
-        if: always()
-        run: npm run test:e2e:cli
+  # ─── Job A2: the whole Vitest suite, sharded (FULL LANE ONLY) ──────────
+  # Split out of frontend-checks on 2026-10-15: in one job the suite ran past
+  # that job's 30-minute cap and never reported. Four shards plus the CLI e2e
+  # lane run in parallel; each is its own verdict.
+  frontend-tests:
+    needs: changes
+    if: needs.changes.outputs.lane == 'full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: "unit 1/4"
+            run: npx vitest run --shard=1/4
+          - label: "unit 2/4"
+            run: npx vitest run --shard=2/4
+          - label: "unit 3/4"
+            run: npx vitest run --shard=3/4
+          - label: "unit 4/4"
+            run: npx vitest run --shard=4/4
+          # The e2e lane is a separate configuration (own reporter, own budget)
+          # and is no longer swept up by the default lane's discovery, so it
+          # needs its own invocation or its 179 tests stop being gated by
+          # anything.
+          - label: "cli e2e"
+            run: npm run test:e2e:cli
+    name: frontend-tests (${{ matrix.label }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate code the tests import
+        # frontend-checks' Build step runs this through `prebuild`; a shard has
+        # no build, so it runs the codegen itself.
+        run: node scripts/run-codegen.mjs prebuild
+
+      - name: ${{ matrix.label }}
+        run: ${{ matrix.run }}
 
   # ─── Job B: Rust tests on all 3 platforms ───────────────────
   # ─── Job B0: Rust formatting ────────────────────────────────────────
@@ -649,26 +809,28 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            label: windows
-          - os: macos-latest
-            label: macos
-          # 24.04, NOT 22.04. Building with `--features desktop` pulls xcap ->
-          # pipewire -> libspa, and libspa bindgens against the SYSTEM libspa
-          # headers. On 22.04 those are too old: `struct spa_video_info_raw` has
-          # no `flags` field, which libspa reads unconditionally
-          # (libspa-0.8.0/src/param/video/raw.rs:261), so the crate cannot
-          # compile:
-          #   error[E0560]: struct `spa_video_info_raw` has no field named `flags`
-          # xcap has no feature to skip pipewire on Linux, so a newer runner is
-          # the fix. Do not downgrade this without checking that first.
-          - os: ubuntu-24.04
-            label: linux
+      # The legs come from `changes` (its "Decide the lane" step): Linux alone
+      # in the fast lane; windows-latest, macos-latest and ubuntu-24.04 in the
+      # full lane. A matrix cannot be filtered by a job-level `if:` (matrix is
+      # not in scope there), and a leg that starts and skips its steps would
+      # report SUCCESS for a platform nothing tested.
+      #
+      # Linux is ubuntu-24.04, NOT 22.04. Building with `--features desktop` pulls xcap ->
+      # pipewire -> libspa, and libspa bindgens against the SYSTEM libspa
+      # headers. On 22.04 those are too old: `struct spa_video_info_raw` has
+      # no `flags` field, which libspa reads unconditionally
+      # (libspa-0.8.0/src/param/video/raw.rs:261), so the crate cannot
+      # compile:
+      #   error[E0560]: struct `spa_video_info_raw` has no field named `flags`
+      # xcap has no feature to skip pipewire on Linux, so a newer runner is
+      # the fix. Do not downgrade this without checking that first.
+      matrix: ${{ fromJSON(needs.changes.outputs.rust_matrix) }}
     runs-on: ${{ matrix.os }}
-    # See the note on commit-lint's timeout-minutes.
-    timeout-minutes: 60
+    # See the note on commit-lint's timeout-minutes. macOS gets 120: its test
+    # step alone ran past 59 minutes on 2026-10-15 and was cut off at 60, so
+    # the leg had never reported. It runs only in the full lane, where nothing
+    # waits on it.
+    timeout-minutes: ${{ matrix.label == 'macos' && 120 || 60 }}
     env:
       # sccache: shared compilation cache backed by GitHub Actions cache.
       # Skips recompiling unchanged crates — typical speedup: 50-70%.
@@ -807,10 +969,19 @@ jobs:
         # here depends on personas-core, and personas-desktop depends on all of
         # them, so four runners would each rebuild most of the same dependency
         # closure to report what one runner can report for free.
+        #
+        # cargo-test-retry.sh (2026-10-15) runs exactly this command, and when
+        # it fails with the shape of a flake - at most 5 named failures, every
+        # test binary reported a result, no doc-test among them - reruns those
+        # tests once by --exact name. A pass on retry is a `::warning` and a
+        # FLAKY list in the step summary, by name. Its header lists every case
+        # it refuses to retry. It replaces a 70-minute re-run cycle for a P2P
+        # loopback test that passes on its second go.
+        shell: bash
         env:
           # Where the contest instrument test finds contest.mjs (the clone above).
           AI_REGISTRY_DIR: ${{ github.workspace }}/../ai-registry
-        run: cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop --no-fail-fast
+        run: bash scripts/ci/cargo-test-retry.sh --workspace --manifest-path src-tauri/Cargo.toml --features desktop --no-fail-fast
 
       - name: Run Clippy
         # if: always() so a failing test step does not hide a lint regression.
@@ -1289,7 +1460,8 @@ jobs:
   # outputs of `changes`, so this job does.
   #
   # IF YOU ADD A JOB to this workflow, add it to `needs:` below AND to one of
-  # the three lists in the script. Both halves are checked twice over:
+  # the five lists in the script (ALWAYS, FAST_ONLY, FULL_ONLY, ON_RUST,
+  # ON_FRONTEND). Both halves are checked twice over:
   # scripts/ci/validate-workflows.mjs (run in frontend-checks, and locally with
   # `node scripts/ci/validate-workflows.mjs`) fails when a job is missing from
   # `needs:`, missing from the lists, or path-gated but in the wrong list; and
@@ -1308,6 +1480,7 @@ jobs:
       - changes
       - commit-lint
       - frontend-checks
+      - frontend-tests
       - rust-fmt
       - rust-tests
       - rust-deny
@@ -1323,6 +1496,7 @@ jobs:
       - name: Restate every job's result under one rule
         env:
           NEEDS: ${{ toJSON(needs) }}
+          LANE: ${{ needs.changes.outputs.lane }}
           RUST: ${{ needs.changes.outputs.rust }}
           FRONTEND: ${{ needs.changes.outputs.frontend }}
           RUST_CARRIED: ${{ needs.changes.outputs.rust_carried }}
@@ -1332,7 +1506,11 @@ jobs:
         run: |
           set -euo pipefail
 
-          ALWAYS="changes commit-lint command-name-drift evidence-check"
+          ALWAYS="changes command-name-drift evidence-check"
+          # Required in the fast lane (push, pull_request), skipped in the full.
+          FAST_ONLY="commit-lint"
+          # Required in the full lane (schedule, dispatch), skipped in the fast.
+          FULL_ONLY="frontend-tests"
           ON_RUST="rust-fmt rust-tests rust-deny rust-features rust-no-features binding-drift"
           ON_FRONTEND="frontend-checks"
 
@@ -1343,8 +1521,8 @@ jobs:
           # otherwise make every lookup below return "null" and be judged as
           # one more odd result rather than as this job being blind.
           COUNT=$(echo "$NEEDS" | jq 'length')
-          if [ "$COUNT" -lt 11 ]; then
-            fail "expected at least 11 needed jobs, saw $COUNT — the aggregator is not looking at the whole workflow."
+          if [ "$COUNT" -lt 12 ]; then
+            fail "expected at least 12 needed jobs, saw $COUNT — the aggregator is not looking at the whole workflow."
           fi
 
           result() { echo "$NEEDS" | jq -r --arg j "$1" '.[$j].result // "missing"'; }
@@ -1353,6 +1531,25 @@ jobs:
           if [ "$CHANGES_RESULT" != "success" ]; then
             fail "'changes' concluded '$CHANGES_RESULT'. Every path-gated job was skipped because of it, so this run verified nothing it was meant to."
           fi
+
+          # A scheduled slot on a commit the full lane has already judged.
+          # Nothing was meant to run; anything that did, or failed, is wrong.
+          if [ "$LANE" = "none" ] && [ "$FAILED" -eq 0 ]; then
+            for j in $(echo "$NEEDS" | jq -r 'keys[]'); do
+              [ "$j" = changes ] && continue
+              r=$(result "$j")
+              # The ALWAYS jobs carry no lane condition and do run; nothing
+              # else may, and nothing may fail.
+              case "$r" in skipped|success) ;; *) fail "lane 'none' but $j concluded '$r'." ;; esac
+            done
+            [ "$FAILED" -eq 0 ] || exit 1
+            echo "CI verdict: nothing to evaluate - a full lane already reached a verdict on this commit and master has not moved."
+            exit 0
+          fi
+          case "$LANE" in
+            fast|full) ;;
+            *) fail "'changes' reported lane '${LANE:-<empty>}' - expected fast, full or none." ;;
+          esac
 
           must_run() {
             local r; r=$(result "$1")
@@ -1386,6 +1583,12 @@ jobs:
           carried "the Rust job group" "$RUST" "$RUST_CARRIED" "$RUST_BASE"
           carried "frontend-checks" "$FRONTEND" "$FRONTEND_CARRIED" "$FRONTEND_BASE"
           for j in $ALWAYS; do must_run "$j"; done
+          for j in $FAST_ONLY; do
+            if [ "$LANE" = "fast" ]; then must_run "$j"; else may_skip "$j"; fi
+          done
+          for j in $FULL_ONLY; do
+            if [ "$LANE" = "full" ]; then must_run "$j"; else may_skip "$j"; fi
+          done
           for j in $ON_RUST; do
             if [ "$RUST" = "true" ]; then must_run "$j"; else may_skip "$j"; fi
           done
@@ -1395,9 +1598,9 @@ jobs:
 
           # Anything in `needs:` that no list above claims.
           for j in $(echo "$NEEDS" | jq -r 'keys[]'); do
-            case " $ALWAYS $ON_RUST $ON_FRONTEND " in
+            case " $ALWAYS $FAST_ONLY $FULL_ONLY $ON_RUST $ON_FRONTEND " in
               *" $j "*) ;;
-              *) fail "job '$j' is in needs: but in none of the three lists — classify it." ;;
+              *) fail "job '$j' is in needs: but in none of the five lists — classify it." ;;
             esac
           done
 

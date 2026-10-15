@@ -118,13 +118,15 @@ for (const file of files) {
     if (String(agg.if ?? "").replace(/\s/g, "") !== "always()") {
       fail(file, `aggregator '${aggId}' must run under 'if: always()' (found: ${JSON.stringify(agg.if ?? null)}).`);
     }
-    // The aggregator classifies each needed job in one of three shell lists.
+    // The aggregator classifies each needed job in one of five shell lists:
+    // ALWAYS, the two lane lists (FAST_ONLY, FULL_ONLY, since 2026-10-15) and
+    // the two path-class lists (ON_RUST, ON_FRONTEND).
     const script = asList(agg.steps).map((s) => s?.run ?? "").join("\n");
     const classified = new Set();
-    for (const m of script.matchAll(/^\s*(?:ALWAYS|ON_RUST|ON_FRONTEND)="([^"]*)"/gm)) {
+    for (const m of script.matchAll(/^\s*(?:ALWAYS|FAST_ONLY|FULL_ONLY|ON_RUST|ON_FRONTEND)="([^"]*)"/gm)) {
       for (const j of m[1].split(/\s+/).filter(Boolean)) classified.add(j);
     }
-    if (classified.size === 0) fail(file, `aggregator '${aggId}': could not find its ALWAYS / ON_RUST / ON_FRONTEND lists.`);
+    if (classified.size === 0) fail(file, `aggregator '${aggId}': could not find its ALWAYS / FAST_ONLY / FULL_ONLY / ON_RUST / ON_FRONTEND lists.`);
     for (const n of aggNeeds) {
       if (!classified.has(n)) fail(file, `aggregator '${aggId}' needs '${n}' but classifies it in none of its lists.`);
     }
@@ -140,6 +142,17 @@ for (const file of files) {
       const a = pick(classify, theirs);
       const b = pick(script, ours);
       if (!a || a !== b) fail(file, `changes.${theirs} ("${a}") and ${aggId}.${ours} ("${b}") must list the same jobs.`);
+    }
+
+    // A lane-gated job must sit in the list of the lane it runs in, or the
+    // aggregator demands it in a lane where it is skipped (or excuses it in
+    // the lane where it had to run).
+    for (const id of ids) {
+      const lane = String(jobs[id].if ?? "").match(/needs\.changes\.outputs\.lane\s*==\s*'(fast|full)'/);
+      if (!lane) continue;
+      const list = lane[1] === "full" ? "FULL_ONLY" : "FAST_ONLY";
+      const listed = new RegExp(`^\\s*${list}="([^"]*)"`, "m").exec(script)?.[1].split(/\s+/) ?? [];
+      if (!listed.includes(id)) fail(file, `job '${id}' runs only in the ${lane[1]} lane but is not in the aggregator's ${list} list.`);
     }
 
     // A path-gated job must be one the aggregator is allowed to see skipped.

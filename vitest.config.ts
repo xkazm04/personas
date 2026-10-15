@@ -21,5 +21,11 @@ export default defineConfig({
     // one file means it runs twice, under whichever budget and reporter the
     // lane it happened to be started from carries. They belong to the e2e lane.
     exclude: [...configDefaults.exclude, "src/test/e2e/**"],
+    // `vitest --changed` (CI's fast lane, `npm run verify:affected`) follows
+    // imports from a changed file to the tests that reach it. The setup file
+    // and the shared test helpers are reached by every test but imported by
+    // none of them through that graph, so an edit there would select ZERO
+    // tests. Any change under src/test/ runs the whole suite instead.
+    forceRerunTriggers: [...configDefaults.forceRerunTriggers, "**/src/test/**"],
   },
 });
