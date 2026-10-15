@@ -56,7 +56,7 @@ export function PeekShell({
   /** The chip it hangs from. */
   anchor: HTMLElement | null;
   actions?: ReactNode;
-  /** Extra key hints printed in the footer, before Esc. */
+  /** Extra walk keys printed after the arrows (the lane peek's 1-4 and O). */
   footer?: ReactNode;
   onClose: () => void;
   children: ReactNode;
@@ -125,8 +125,9 @@ export function PeekShell({
       {children}
       <footer className="flex flex-shrink-0 items-center gap-1.5 border-t border-primary/10 px-4 py-2 typo-caption" aria-hidden>
         <Keycap>↑</Keycap><Keycap>↓</Keycap> {m.dc_hub_key_move}
-        <Keycap className="ml-2">←</Keycap><Keycap>→</Keycap> {m.dc_hub_key_walk}
-        {footer}
+        {/* One walk hint: the arrows, then the lane keys the lane peek adds,
+            then the word they all share ("chips" until the WP10 cutover). */}
+        <Keycap className="ml-2">←</Keycap><Keycap>→</Keycap>{footer} {m.ml_lane_key_lanes}
         <span className="ml-auto flex items-center gap-1.5"><Keycap>Esc</Keycap> {t.common.close}</span>
       </footer>
     </motion.div>

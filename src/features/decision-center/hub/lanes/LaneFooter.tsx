@@ -1,14 +1,14 @@
-/** The lane peek's extra footer hint: the keys that jump between lanes. */
-import { useTranslation } from '@/i18n/useTranslation';
-
+/**
+ * The lane peek's extra walk keys: the ones that jump straight to a lane. The
+ * peek's footer prints them after its arrows and before the word "lanes".
+ */
 import { Keycap } from '../../deck/parts';
 
 export function LaneFooter() {
-  const { t } = useTranslation();
   return (
     <>
       <Keycap className="ml-2">1</Keycap>–<Keycap>4</Keycap>
-      <Keycap>O</Keycap> {t.monitor.ml_lane_key_lanes}
+      <Keycap>O</Keycap>
     </>
   );
 }

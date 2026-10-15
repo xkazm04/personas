@@ -64,7 +64,6 @@ export const MANDATE_CARDS_MODULES: Record<string, HarnessModule> = {
         return (
           <div className="flex flex-1 flex-col gap-3 p-8">
             <h1 className="typo-heading-lg text-foreground">{t.monitor.title}</h1>
-            <p className="typo-body text-foreground">{t.monitor.ml_setting_hint}</p>
             <DecisionDeckHost />
           </div>
         );
