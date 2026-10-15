@@ -6978,7 +6978,7 @@
     "triage_policy_no_ceiling": "Ninguno",
     "triage_policy_quality_drop": "Más barato, y peor de forma medible",
     "triage_policy_quality_drop_detail": "El modelo propuesto puntúa {delta} frente al que está en uso, en {basis}. Aplicar esto compra el ahorro a cambio de esa calidad.",
-    "triage_policy_routing_body": "Enviar las ejecuciones de {category} a {to} en lugar de {from} proyecta un ahorro de {saving} al mes — {pct} de lo que cuesta ese trabajo hoy.",
+    "triage_policy_routing_body": "Enviar las ejecuciones de {category} a {to} en lugar de {from} proyecta un ahorro de {saving} al mes: {pct} de lo que cuesta ese trabajo hoy.",
     "triage_policy_routing_title": "Enrutar el trabajo de {category} a {to}",
     "triage_policy_runs_value": "{incumbent} vs {challenger}",
     "triage_policy_saving_value": "{amount}/mes",
