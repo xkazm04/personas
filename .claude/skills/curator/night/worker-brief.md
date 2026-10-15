@@ -10,6 +10,12 @@ Paste this under the claim-specific lines. Every rule here cost the 2026-10-14 n
 - **Clone hygiene:** `core.autocrlf=false` then re-checkout to LF; a REAL install (`npm ci`; politicas needs it for
   `@sentry/node`; grant's lockfile is stale, so `npm install --no-package-lock --ignore-scripts`) so the repo's hooks run.
   Do not `cp` node_modules or junction it in.
+- **A clone's build is one-shot:** `export CARGO_INCREMENTAL=0` before any cargo command in it (an incremental cache
+  only pays for a tree you rebuild; one 2026-10-14 clone target carried 3.8 GB of it). If you need a separate
+  `CARGO_TARGET_DIR`, name it `$WT_ROOT/cn<k>-target` so it is reaped with the clone.
+- **Your clone is deleted when the claim settles** (`fin.sh` runs the registry's disk lane on `$WT_ROOT/cn<k>-*`). It goes
+  only if every commit is on its remote and nothing but install noise (`next-env.d.ts`, generated files, hook shims) is
+  dirty. So push before you report: unpushed or uncommitted work keeps the clone and puts it on the operator's list.
 - **Name the destination explicitly:** `git remote get-url origin` must be GitHub, not the local checkout (a clone's origin
   pointing at `~/kiro/<proj>` made one push create a stray `master` there), and push `git push origin HEAD:<default-branch>`
   where the default branch comes from `git ls-remote --symref origin HEAD`. Three workers created stray branches by guessing.

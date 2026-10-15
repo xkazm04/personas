@@ -1,6 +1,6 @@
 ---
 name: curator
-version: 1.1.0
+version: 1.2.0
 description: Drive Curator's work loop from a terminal instead of from the Personas app - read her real ladder out of the same SQLite database, claim the next piece of work, spawn a headless Claude worker at it in the knowledge registry, judge what came back, settle it honestly, and keep going until the subscription's usage limit or a brake stops her. The alternative driver for while the app is closed or its fleet is unavailable. Invoke with `/curator` (status) or `/curator loop`.
 ---
 
@@ -553,6 +553,16 @@ which merges, settles and claims the next. Settle every report before launching 
 follows a `node_modules` junction), LF checkouts, real installs so hooks run, explicit remote and branch on every push
 (stray branches were created on three origins by guessing), Personas to a named branch only.
 
+**Disk hygiene (v1.2.0, the part that cost 200 GB).** The 2026-10-14 night left 337 folders in `$WT_ROOT` in
+thirteen hours, about 200 GB: every claim's project clone with its own install, `.next` and cargo `target`, because
+`integrate.sh` removed the registry worktree on landing and nothing removed the clone. Now `fin.sh` reaps the
+claim's `cn<k>-*` entries right after settling, through the registry's disk lane
+(`scripts/hygiene-disk.mjs --reap`): a clone goes only when every commit is on its remotes and nothing but install
+noise is dirty, and whatever it keeps is printed with the reason. Workers build with `CARGO_INCREMENTAL=0` (a
+one-shot build gains nothing from an incremental cache) and put any separate target dir at `cn<k>-target`. Do not
+widen past what the disk can hold either: at ~1.2 GB a clone (153 GB over 127 of them, measured), 240 claims is
+most of the free drive if the reap stops working, so the end-of-night check below is not optional.
+
 **Width follows the machine, not a constant.** Before every refill run `node night/width.mjs --running <n>`. It
 counts free RAM against a reserve (a running worker is charged twice, it has not finished growing), stops dispatching above
 60% memory in use, and holds the width under the core budget minus any compiler processes sibling sessions are running.
@@ -570,7 +580,10 @@ in a worker's stream is how it shows.
    the code, never `census --update`. Copy the `.ai` conform map files in, commit, push, delete the merged branches.
 4. Sweep every origin for `cur/*` and `curator/*` branches (`git cherry` = patch-equivalent means merged); delete the
    merged ones; ship the stragglers (a flaky-gate commit sitting on a branch is the usual one).
-5. Report in the Ending-a-session order, plus what is still local-only.
+5. Leave the disk as you found it: `node $REGISTRY/scripts/hygiene-disk.mjs --scratch $WT_ROOT --idle-hours 0` and
+   read its `disk.md`. No `cn*` entry of tonight should remain except rows kept with a reason (unpushed work);
+   `--reap` the rest now that step 4 has pushed them, and list what stays in the report.
+6. Report in the Ending-a-session order, plus what is still local-only and how much disk the night still holds.
 
 ## Ending a session
 
