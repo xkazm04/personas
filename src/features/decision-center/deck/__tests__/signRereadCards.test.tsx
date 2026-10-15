@@ -89,6 +89,11 @@ describe('re-read Sign card', () => {
     expect(await screen.findByText(/Most of what Personas sends you is one kind of work: accept ideas \(4 of 5\)/)).toBeTruthy();
     expect(screen.getByTestId('sign-reread-suggest').textContent).toContain('let the steward accept ideas');
     expect(screen.getByTestId('sign-reread').textContent).toContain('You kept it at 6 acts');
+    // Decidable without scrolling: the why the suggestion makes concrete takes
+    // no line, and merges and the cap fold into one line until E.
+    expect(screen.getByTestId('sign-reread').textContent).not.toContain(m.ml_reread_why_dominant);
+    expect(screen.getByTestId('deck-fold-sign-merge-cap').textContent).toContain(m.ml_merge_never);
+    expect(screen.queryByTestId('sign-merge')).toBeNull();
     expect(screen.getByText(m.ml_reread_yes)).toBeTruthy();
     expect(screen.getByText(m.ml_reread_no)).toBeTruthy();
     expect(screen.queryByTestId('sign-forecast')).toBeNull();
@@ -109,6 +114,8 @@ describe('re-read Sign card', () => {
     await screen.findByTestId('sign-reread');
     key('e');
     expect(screen.getByTestId('sign-scope-idea.accept').getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByTestId('sign-merge')).toBeTruthy();
+    expect(screen.queryByTestId('deck-fold-sign-merge-cap')).toBeNull();
     expect(screen.getByTestId('sign-verb').textContent).toContain(m.ml_reread_sign_change);
     key('a');
     await waitFor(() => expect(onDecide).toHaveBeenCalledTimes(1));

@@ -8,7 +8,10 @@
  *                                     review cannot be undone)
  *   merges                           (the three policies, always a live choice)
  *   spend cap this month             (a figure; a field under E)
- * and, in the ledger rail (`SignRail`), what the charter always refuses and
+ * A re-read (a SIGNED mandate) asks about its use, not its merges or its cap:
+ * there the two fold into one counted line until E opens the envelope, so the
+ * warning under the scopes is never pushed below the fold.
+ * And, in the ledger rail (`SignRail`), what the charter always refuses and
  * what signing releases (the items held on this draft, from the lanes
  * snapshot; where each will go is the router's, so it says it is not
  * forecast rather than guessing).
@@ -20,7 +23,9 @@ import type { DecisionItem } from '../../model/decisionModel';
 import { grantsFinalReviews } from '../../mandate/envelope';
 import { useRefusalClasses } from '../../mandate/useRefusalClasses';
 import { useDeckLanes } from './DeckLaneContext';
-import { CapRow, GrantsBox, MergeRow, ScopesRow } from './SignParts';
+import { mergeLabel } from '@/features/fleet/monitor/grid/prototype/entry-e/mandate/mandateCopy';
+import { DeckFold } from '../DeckFold';
+import { CapRow, GrantsBox, MergeRow, ScopesRow, useUsd } from './SignParts';
 import { SignReread } from './SignReread';
 import type { SignShape } from './useSignShape';
 
@@ -38,14 +43,21 @@ function Refuses({ item }: { item: DecisionItem }) {
   const { t } = useTranslation();
   const m = t.monitor;
   const classes = useRefusalClasses(item.sourceId, item.payload?.stewardPersonaId ?? null);
+  // The classes are identifiers (a library name or `custom:<name>`), so they
+  // read as code, as the charter editor shows them, never as loose prose.
+  const listed = Array.isArray(classes) && classes.length > 0 ? classes : null;
   const text = classes === null
     ? m.ml_loading
-    : classes === 'failed'
-      ? m.ml_sign_refuses_failed
-      : classes.length === 0 ? m.ml_sign_refuses_none : classes.join(' · ');
+    : classes === 'failed' ? m.ml_sign_refuses_failed : m.ml_sign_refuses_none;
   return (
     <RailBlock label={m.ml_sign_refuses} testId="sign-refuses">
-      <span className={`typo-body [overflow-wrap:anywhere] ${classes === 'failed' ? 'text-status-warning' : 'text-foreground'}`}>{text}</span>
+      {listed ? (
+        <span className="flex flex-wrap gap-x-2 gap-y-1">
+          {listed.map((c) => <code key={c} className="typo-code text-foreground [overflow-wrap:anywhere]">{c}</code>)}
+        </span>
+      ) : (
+        <span className={`typo-body ${classes === 'failed' ? 'text-status-warning' : 'text-foreground'}`}>{text}</span>
+      )}
     </RailBlock>
   );
 }
@@ -66,6 +78,28 @@ function Forecast({ charterId }: { charterId: string }) {
   );
 }
 
+/** Merges and the cap: open rows on a draft or under E, one folded line on a re-read. */
+function MergeAndCap({ sign, folded }: { sign: SignShape; folded: boolean }) {
+  const { t } = useTranslation();
+  const m = t.monitor;
+  const usd = useUsd();
+  const draft = sign.draft;
+  if (!draft) return null;
+  const rows = (
+    <div className="flex flex-col gap-3">
+      <MergeRow draft={draft} onChange={sign.setDraft} />
+      <CapRow cap={sign.cap} editing={sign.editing} onChange={sign.setCap} />
+    </div>
+  );
+  if (!folded) return rows;
+  const cap = sign.cap !== null ? usd(sign.cap) : m.ml_sign_budget_none;
+  return (
+    <DeckFold id="sign-merge-cap" title={`${m.ml_sign_merge} · ${m.ml_sign_budget}`} summary={`${mergeLabel(m, draft.mergePolicy)} · ${cap}`}>
+      {rows}
+    </DeckFold>
+  );
+}
+
 export function SignBody({ item, sign }: { item: DecisionItem; sign: SignShape }) {
   const { t } = useTranslation();
   const m = t.monitor;
@@ -83,8 +117,7 @@ export function SignBody({ item, sign }: { item: DecisionItem; sign: SignShape }
               <span className="typo-body text-foreground">{m.ml_sign_review_final}</span>
             </p>
           )}
-          <MergeRow draft={draft} onChange={sign.setDraft} />
-          <CapRow cap={sign.cap} editing={sign.editing} onChange={sign.setCap} />
+          <MergeAndCap sign={sign} folded={!!sign.rereadInfo && !sign.editing} />
         </>
       ) : (
         <span className="typo-body text-status-warning">{m.ml_stewards_failed}</span>

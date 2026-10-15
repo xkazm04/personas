@@ -61,6 +61,7 @@ function orphans(ago) {
 export function mandateWp6Tapes({ RECORDED_AT, PERSONAS }) {
   const cards = mandateCardsTapes({ RECORDED_AT, PERSONAS }).builders['decision-center/mandate-cards']();
   const snap = cards.calls.find((c) => c.cmd === 'decision_lanes_snapshot').response;
+  const researchCharter = cards.calls.find((c) => c.cmd === 'list_persona_responsibilities').response[0];
   const mandates = cards.calls.find((c) => c.cmd === 'mandate_list').response.map((s) => ({
     ...s,
     reread: s.charterId === 'ch-personas' ? REREAD : null,
@@ -79,6 +80,11 @@ export function mandateWp6Tapes({ RECORDED_AT, PERSONAS }) {
       },
     },
     { cmd: 'mandate_list', response: mandates },
+    // The Sign rail reads each steward's charters for the refusal classes, by
+    // persona: the re-read's signed mandate needs its own row, or the rail
+    // says the classes could not be read (the WP5 tape answered the draft only).
+    ...[researchCharter, { ...researchCharter, id: 'ch-personas', personaId: 'st-ch-personas', title: 'Keep the desktop app shippable', status: 'active', refusalClasses: ['custom:production-deploys', 'custom:secrets'] }]
+      .map((c) => ({ cmd: 'list_persona_responsibilities', args: { personaId: c.personaId, includeRetired: false }, response: [c] })),
     {
       cmd: 'goal_met_when',
       response: { goalId: 'goal-1', charterId: null, unreadable: false, metWhen: { uat: 'A first run finishes on a fresh install', kpiId: 'kpi-act', council: 'lite' } },
