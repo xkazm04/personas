@@ -87,7 +87,9 @@ export function rereadToDecision(s: MandateSummary, r: MandateReread, m: Monitor
     weight: REREAD_WEIGHT,
     branches: [],
     reasonPrompts: [],
-    verdictLabels: { accept: m.ml_reread_keep, reject: m.ml_reread_keep, skip },
+    // `reject` names the card's OTHER verb in the head's outcome pair: there
+    // is no drop, the alternative to keeping is signing an edited envelope.
+    verdictLabels: { accept: m.ml_reread_keep, reject: m.ml_reread_sign_change, skip },
     payload: {
       charterId: s.charterId,
       projectId: s.projectId,

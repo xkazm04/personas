@@ -144,6 +144,8 @@ function yesOfKind(m: MonitorCopy, kind: DecisionKind): string {
 export function yesDoes(m: MonitorCopy, tx: Interpolate, item: DecisionItem): string {
   if (item.alert?.detail) return item.alert.detail;
   if (item.kind === 'message') return tx(m.dc_deck_yes_chat, { name: item.source.label });
+  // A re-read Sign card's yes keeps a SIGNED mandate as signed (mandate-lanes WP6).
+  if (item.kind === 'mandate' && item.payload?.reread) return m.ml_reread_yes;
   return yesOfKind(m, item.kind);
 }
 

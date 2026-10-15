@@ -89,6 +89,9 @@ describe('re-read Sign card', () => {
     expect(await screen.findByText(/Most of what Personas sends you is one kind of work: accept ideas \(4 of 5\)/)).toBeTruthy();
     expect(screen.getByTestId('sign-reread-suggest').textContent).toContain('let the steward accept ideas');
     expect(screen.getByTestId('sign-reread').textContent).toContain('You kept it at 6 acts');
+    expect(screen.getByText(m.ml_reread_yes)).toBeTruthy();
+    expect(screen.getByText(m.ml_reread_no)).toBeTruthy();
+    expect(screen.queryByTestId('sign-forecast')).toBeNull();
     expect(screen.queryByText(m.ml_sign_drop)).toBeNull();
     expect(screen.getByTestId('sign-verb').textContent).toContain(m.ml_reread_keep);
     key('x');

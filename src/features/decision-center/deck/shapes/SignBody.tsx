@@ -95,10 +95,11 @@ export function SignBody({ item, sign }: { item: DecisionItem; sign: SignShape }
 
 /** The Sign card's rail section: what the charter always refuses and what signing releases. */
 export function SignRail({ item }: { item: DecisionItem }) {
+  // A re-read is of a SIGNED mandate: nothing is held on it, so no forecast.
   return (
     <div className="flex flex-col gap-3">
       <Refuses item={item} />
-      <Forecast charterId={item.sourceId} />
+      {!item.payload?.reread && <Forecast charterId={item.sourceId} />}
     </div>
   );
 }

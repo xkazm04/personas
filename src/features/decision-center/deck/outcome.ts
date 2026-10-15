@@ -53,7 +53,8 @@ export function yesOutcome(m: MonitorCopy, tx: Interpolate, item: DecisionItem):
 }
 
 export function noOutcome(m: MonitorCopy, item: DecisionItem): Outcome {
-  const effect = noEffect(m, item.kind);
+  // A re-read has no drop: its other verb signs the edited envelope (WP6).
+  const effect = item.kind === 'mandate' && item.payload?.reread ? m.ml_reread_no : noEffect(m, item.kind);
   if (modalTypeOf(item.kind) === 'chat') return { verb: m.dc_deck_verb_done, effect };
   if (item.kind === 'report') return { verb: m.dc_deck_verb_later, effect };
   return { verb: item.verdictLabels.reject.toLowerCase(), effect };
