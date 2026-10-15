@@ -57,8 +57,9 @@ offers the chips (or lanes) that still hold cards.
 
 ### Mandate lanes (behind the `lanes` setting, 2026-10-15)
 
-> **Behind a dev switch.** Everything in this section appears only when
-> **Settings > Admin > Decision surface** (dev-only) reads **Lanes**. The default
+> **Behind a switch.** Everything in this section appears only when the
+> **Chips | Lanes** tabs in the Monitor header (left of Activity / Conversations /
+> Map) read **Lanes**. They replaced a Settings > Admin toggle on 2026-10-15. The default
 > is **Chips**: the Decision Center above, the Autopilot plate, no mandate
 > drawer, no ticker. The switch flips with no reload. When the owner approves
 > lanes in daily use the chips are deleted in one commit (PLAN WP10). The

@@ -37,6 +37,7 @@ import { MonitorDataProvider } from './monitorDataContext';
 import { useChannelWorkspace } from './channels';
 import { MonitorFeedStatus } from './MonitorFeedStatus';
 import { MonitorDrawerShell } from './MonitorDrawerShell';
+import { DecisionSurfaceTabs } from './DecisionSurfaceTabs';
 import { FleetGridView } from './grid/FleetGridView';
 import { useMandateDrawerRequest } from './grid/prototype/entry-e/mandate/mandateDrawerRequest';
 import {
@@ -608,6 +609,8 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Which decision surface the board shows: Chips or Lanes. */}
+          <DecisionSurfaceTabs />
           {/* The router: three peer destinations. */}
           <div className="flex items-center gap-1" role="group" data-testid="monitor-view-tabs">
             {VIEWS.map((v) => {
