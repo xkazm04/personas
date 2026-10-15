@@ -41,9 +41,15 @@ describe('actHeadline', () => {
     expect(actHeadline(m, revert)).toEqual({ verb: 'Reverted', what: 'Filed as evidence' });
   });
 
+  it('words a dropped draft with the reason the operator gave', () => {
+    const drop = { ...base, itemKind: 'mandate', verdict: 'dropped', shownJson: JSON.stringify({ reason: 'Not a goal I hold' }) };
+    expect(actHeadline(m, drop, 'Keep Personas shipping')).toEqual({ verb: 'Dropped', what: 'Keep Personas shipping (reason: Not a goal I hold)' });
+    expect(actHeadline(m, { ...drop, verdict: 'kept', shownJson: null }, 'Keep Personas shipping').verb).toBe('Re-read and kept');
+  });
+
   it('reads an unknown token as decided and a broken shown_json as no title', () => {
     expect(verbOf('frobbed')).toBe('decided');
-    expect(shownWords('{not json')).toEqual({ title: null, verdict: null });
+    expect(shownWords('{not json')).toEqual({ title: null, verdict: null, reason: null });
   });
 });
 

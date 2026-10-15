@@ -22,6 +22,7 @@ function mandate(over: Partial<MandateSummary> & { scopes?: MandateSummary['enve
     status: 'active', scopeRung: 2, source: 'app_master', updatedAt: '2026-10-14T00:00:00Z',
     envelope: { decideScopes: over.scopes ?? [], mergePolicy: 'never', budgetMonthlyUsd: null, envelopeVersion: over.version ?? 0, keptAtActs: null },
     load: { spendUsedUsd: null, budgetUsd: null, actsCount: 0, openAsks: 0 },
+    reread: null, origin: null,
     ...over,
   };
 }
