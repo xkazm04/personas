@@ -1554,5 +1554,7 @@
   "ml_verb_adopted": "Diadopsi",
   "ml_verb_drafted": "Disusun",
   "ml_verb_dropped": "Dibatalkan",
-  "ml_verb_kept": "Dibaca ulang dan dipertahankan"
+  "ml_verb_kept": "Dibaca ulang dan dipertahankan",
+  "ml_reread_yes": "Amplop tetap seperti yang ditandatangani. Kartu ini kembali hanya setelah tindakan mandat berlipat dua dan penggunaannya meminta lagi.",
+  "ml_reread_no": "Tekan E dulu: amplop yang diedit ditandatangani dan berlaku mulai item berikutnya; perubahan masuk ke log tindakan dan dapat dibatalkan di sana."
 }

@@ -8070,7 +8070,9 @@
     "ml_verb_adopted": "Adopté",
     "ml_verb_drafted": "Rédigé",
     "ml_verb_dropped": "Abandonné",
-    "ml_verb_kept": "Relu et conservé"
+    "ml_verb_kept": "Relu et conservé",
+    "ml_reread_yes": "L'enveloppe reste telle que signée. Cette carte ne revient que lorsque les actes du mandat ont doublé et que son usage le redemande.",
+    "ml_reread_no": "Appuyez d'abord sur E : l'enveloppe modifiée est signée et s'applique dès l'élément suivant ; le changement entre au journal des actes et peut y être annulé."
   },
   "onboarding": {
     "adopt_button": "Configurer l’agent",

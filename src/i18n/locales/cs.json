@@ -8070,7 +8070,9 @@
     "ml_verb_adopted": "Převzato",
     "ml_verb_drafted": "Navrženo",
     "ml_verb_dropped": "Zahozeno",
-    "ml_verb_kept": "Znovu přečteno a ponecháno"
+    "ml_verb_kept": "Znovu přečteno a ponecháno",
+    "ml_reread_yes": "Obálka zůstává, jak byla podepsána. Karta se vrátí, až se počet úkonů mandátu zdvojnásobí a jeho používání si o to znovu řekne.",
+    "ml_reread_no": "Nejdřív stiskněte E: upravená obálka se podepíše a platí od další položky; změna se zapíše do záznamu úkonů a lze ji tam vrátit."
   },
   "onboarding": {
     "adopt_button": "Nastavit agenta",

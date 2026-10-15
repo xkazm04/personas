@@ -8070,7 +8070,9 @@
     "ml_verb_adopted": "已并入",
     "ml_verb_drafted": "已起草",
     "ml_verb_dropped": "已放弃",
-    "ml_verb_kept": "已重新审阅并保留"
+    "ml_verb_kept": "已重新审阅并保留",
+    "ml_reread_yes": "信封保持签署时的样子。只有当授权的操作数翻倍、其使用情况再次提出要求时，这张卡片才会回来。",
+    "ml_reread_no": "请先按 E：编辑后的信封会被签署，并从下一个事项起生效；更改会记入操作日志，可在那里撤销。"
   },
   "onboarding": {
     "adopt_button": "设置智能体",

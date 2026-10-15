@@ -1554,5 +1554,7 @@
   "ml_verb_kept": "Re-read and kept",
   "ml_verb_drafted": "Drafted",
   "ml_verb_adopted": "Adopted",
-  "ml_act_what_reason": "{what} (reason: {reason})"
+  "ml_act_what_reason": "{what} (reason: {reason})",
+  "ml_reread_yes": "The envelope stays as signed. This card comes back only once the mandate's acts have doubled and its use asks again.",
+  "ml_reread_no": "Press E first: the edited envelope is signed and binds from the next item; the change lands in the act log and can be reverted there."
 }

@@ -8070,7 +8070,9 @@
     "ml_verb_adopted": "Adoptado",
     "ml_verb_drafted": "Redactado",
     "ml_verb_dropped": "Descartado",
-    "ml_verb_kept": "Releído y mantenido"
+    "ml_verb_kept": "Releído y mantenido",
+    "ml_reread_yes": "El sobre queda como se firmó. Esta tarjeta solo vuelve cuando los actos del mandato se hayan duplicado y su uso lo pida de nuevo.",
+    "ml_reread_no": "Pulsa E primero: el sobre editado se firma y rige desde el siguiente elemento; el cambio queda en el registro de actos y puede revertirse allí."
   },
   "onboarding": {
     "adopt_button": "Configurar agente",

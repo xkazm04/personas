@@ -1399,7 +1399,6 @@ export type Translations = {
     ml_claim_kpi_short: string;
     ml_claim_kpi_unread: string;
     ml_claim_kpi_none: string;
-    ml_claim_met_unread: string;
     ml_claim_audit: string;
     ml_claim_audit_summary: string;
     ml_claim_audit_none: string;
@@ -1563,6 +1562,8 @@ export type Translations = {
     ml_verb_drafted: string;
     ml_verb_adopted: string;
     ml_act_what_reason: string;
+    ml_reread_yes: string;
+    ml_reread_no: string;
   };
   common: {
     unknown_error: string;

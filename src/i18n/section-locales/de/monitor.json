@@ -1554,5 +1554,7 @@
   "ml_verb_adopted": "Übernommen",
   "ml_verb_drafted": "Entworfen",
   "ml_verb_dropped": "Verworfen",
-  "ml_verb_kept": "Erneut gelesen und beibehalten"
+  "ml_verb_kept": "Erneut gelesen und beibehalten",
+  "ml_reread_yes": "Der Umschlag bleibt wie unterschrieben. Diese Karte kommt erst wieder, wenn sich die Akte des Mandats verdoppelt haben und seine Nutzung erneut danach fragt.",
+  "ml_reread_no": "Zuerst E drücken: Der bearbeitete Umschlag wird unterschrieben und gilt ab dem nächsten Element; die Änderung landet im Aktenprotokoll und lässt sich dort zurücknehmen."
 }
