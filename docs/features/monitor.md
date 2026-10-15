@@ -21,28 +21,34 @@ See [companion](./companion/README.md).
 ### The Decision Center (2026-10-06)
 
 Everything that needs a human now lands in one place: the Activity view's
-command bar. It carries a strip of chips — **Gates** (persona reviews, build
-questions, Athena's approvals), **Proposals** (routing/budget policies,
-evolution promotions, finished goals awaiting sign-off), **Backlog**,
-**Incidents**, **Council**, **Reports**, **Chat** (threads where a persona or
-Athena spoke after your last reply) — then, after a divider, **Ready to
-dispatch** (accepted ideas not yet sent to the fleet). Each chip shows its
-count and a severity lamp; a chip at zero stays in place, dimmed; a chip whose
-source failed to load shows a warning glyph, never a 0.
+command bar. Since the mandate-lanes cutover (2026-10-15) it carries the
+**mandate lanes** (Breach, Sign, Accept, Talk, then Orphans; see [Mandate
+lanes](#mandate-lanes-2026-10-15) below), then **Ready to dispatch** (accepted
+ideas not yet sent to the fleet). Each button shows its count and a severity
+lamp; one at zero stays in place, dimmed; one whose source failed to load
+shows a warning glyph, never a 0.
 
-Pressing a chip opens a **peek** under it, in the order the queue should be
-worked (blocking items first, then decisions, then reads and replies). Keys:
-↑/↓ move, ←/→ switch chip, **A** accept, **R** reject (Enter confirms),
-**D** done (reports, chat), **S** skip, **Enter** opens the item, **Esc**
-steps back. **Triage all** opens the first item across every chip. The
-titlebar decisions badge counts the same roster and opens this view; Athena's
-orb and the Home decisions widget read it too, so every count agrees.
+Pressing a lane opens a **peek** under it, in lane order. Keys: ↑/↓ move,
+←/→ switch lane, **A** accept, **R** reject (Enter confirms), **D** done
+(reports, chat), **S** skip, **Enter** opens the item, **Esc** steps back. The
+titlebar decisions badge counts the same roster (the lanes' total) and opens
+this view (Shift+click opens the deck over every queue at once); Athena's orb
+and the Home decisions widget read it too, so every count agrees.
+
+> **The chip strip is gone (2026-10-15, mandate-lanes WP10).** From 2026-10-06
+> the command bar carried seven decision chips (Gates, Proposals, Backlog,
+> Incidents, Council, Reports, Chat), and from 2026-10-14 a **Chips | Lanes**
+> switch in the Monitor header chose between them and the lanes. After daily
+> use the owner approved the lanes; the chips, the switch and its persisted
+> setting were deleted. The roster still groups its sources by those seven
+> names (the deck's card eyebrows and the title-bar badge tooltip use them),
+> but they are no longer a surface. A stored `decisionSurface` value from an
+> older build is dropped on load.
 
 The old Activity rail ("Decision dock" with Reviews / Dispatch / Messages tabs)
 is retired; its dispatch bar lives in the Ready peek.
 
-**The decision deck's card anatomy** (2026-10-14, every card, under both
-settings below). Each card reads top-down: the kind as a lit eyebrow, the ask as
+**The decision deck's card anatomy** (2026-10-14, every card). Each card reads top-down: the kind as a lit eyebrow, the ask as
 the title, one context line (the tier in words and who raised it), then the
 **outcome lines**, "If you approve: ..." beside "If you reject: ...", so what each
 verdict does is read before either is pressed. The no side is the dock's own
@@ -53,18 +59,15 @@ key printed inside its button. An item whose yes cannot be taken back (a merge,
 a spend, an outbound message, a deletion) **arms first**: the first press shows
 exactly what leaves, `A` again or `Enter` confirms, `Esc` disarms. After a
 verdict the tray keeps a receipt ("Accepted: <title>"), and an emptied deck
-offers the chips (or lanes) that still hold cards.
+offers the lanes that still hold cards.
 
-### Mandate lanes (behind the `lanes` setting, 2026-10-15)
+### Mandate lanes (2026-10-15)
 
-> **Behind a switch.** Everything in this section appears only when the
-> **Chips | Lanes** tabs in the Monitor header (left of Activity / Conversations /
-> Map) read **Lanes**. They replaced a Settings > Admin toggle on 2026-10-15. The default
-> is **Chips**: the Decision Center above, the Autopilot plate, no mandate
-> drawer, no ticker. The switch flips with no reload. When the owner approves
-> lanes in daily use the chips are deleted in one commit (PLAN WP10). The
-> **surface, Queue and Conversations restyle** at the end of this section is
-> NOT behind the switch; it ships to everyone.
+> **The only decision surface.** This section shipped behind a **Chips | Lanes**
+> switch in the Monitor header; on 2026-10-15 (PLAN WP10) the owner approved
+> the lanes after daily use and the switch, the chip strip and the Autopilot
+> plate's chips-era form were deleted. Everything below is what every operator
+> sees.
 
 Each project's App Master charter is a **mandate**: an envelope saying which
 kinds of decision its steward may take alone (scopes such as *accept ideas* or
@@ -74,7 +77,7 @@ an **act log** you can audit and revert. Only crossings reach you. Every live
 charter starts **unsigned** (envelope version 0): nothing is delegated until it
 is signed, so an unsigned mandate behaves exactly as before.
 
-**Lane buttons.** The command bar's chip strip becomes five buttons: **Breach**
+**Lane buttons.** The command bar carries five buttons: **Breach**
 `1` (crossed a mandate's envelope), **Sign** `2` (a mandate waiting for its
 signature), **Accept** `3` (read and close, or accept a claim that a goal is
 met), **Talk** `4` (threads waiting for your reply) and **Orphans** `O` (items
@@ -87,7 +90,7 @@ walk the lanes, `Enter` opens the deck scoped to the lane. The Sign peek lists
 each draft mandate as "Sign the <project> mandate: <title>"; `A` and `R` on it
 open the card (signing needs the envelope, a drop needs its reason) and never
 decide from the row. The title-bar badge, the Home decisions widget and
-Athena's orb count Breach + Sign + Accept + Talk under this setting.
+Athena's orb count Breach + Sign + Accept + Talk.
 
 **Card shapes in the lane deck** (on the anatomy above):
 
@@ -135,7 +138,7 @@ Athena's orb count Breach + Sign + Accept + Talk under this setting.
 - **Talk** keeps the chat thread; council cards say the council never admits
   work on its own.
 
-**Stewards plate.** In the supply column the Autopilot plate becomes the
+**Stewards plate.** In the supply column the Autopilot plate became the
 Stewards plate: the attention-loop switch on top (unchanged, same tour anchors
 `fleet-autopilot` / `fleet-autopilot-toggle`), Athena's CLI answerer as its own
 row with its own toggle, then one row per charter (project, steward, rung, the
@@ -187,7 +190,7 @@ the same hand coalesce within two minutes; absent until the first act). A press
 opens the act log at that act, from any Monitor tab: from Conversations or the
 Map it switches to Activity first.
 
-**One roof (ships to everyone, not behind the switch).** The Monitor paints one
+**One roof.** The Monitor paints one
 ground under every tab, a fine dot grid over a soft tonal field
 (`.monitor-surface`), with a light-theme reading; the old dark-only network
 image and the per-tab hairline grid are gone. The Activity layout switch reads
@@ -658,9 +661,9 @@ because both copies are on screen at the same moment.
 
 #### Autopilot — the board's one switch, paced to the subscription
 
-> Under the `lanes` decision surface this plate is the top row of the
-> **Stewards** plate (see [Mandate lanes](#mandate-lanes-behind-the-lanes-setting-2026-10-15));
-> the switch, its pacing and its testids are unchanged.
+> This plate is the top row of the **Stewards** plate (see
+> [Mandate lanes](#mandate-lanes-2026-10-15)); the switch, its pacing and its
+> testids are unchanged.
 
 The header's **Autopilot** pill is the attention loop's on/off
 (`autonomous_attention_loop`, the same setting Mission Control's Attention
@@ -711,7 +714,7 @@ governor's stop is announced.
 
 #### Schedules plate: the operator's scheduled tasks, so a nightly job is never forgotten
 
-Below the Autopilot plate, the Supply deck (`SupplyDeck.tsx`) carries a **Schedules** plate
+Below the Stewards plate, the Supply deck (`SupplyDeck.tsx`) carries a **Schedules** plate
 (`SchedulePlate.tsx`) listing every Windows Task Scheduler task in the `\Personas\` folder. Today
 that is the `/curator --multi` night (`\Personas\CuratorNight`, 23:00-07:00); anything else
 scheduled into the folder appears with no code change. Each line is a lamp (green while enabled,
@@ -730,7 +733,7 @@ task off stops it starting tomorrow; a night already running ends on its own win
 
 #### Orchestration panel — the next tick, read-only
 
-Opened from the Activity board's Autopilot plate (`SupplyDeck.tsx`), the
+Opened from the Activity board's Stewards plate (`SupplyDeck.tsx`), the
 **Orchestration** panel is a `BaseModal`
 (`src/features/fleet/monitor/grid/orchestration/OrchestrationPanel.tsx`, exported
 from that folder's `index.ts`) around the autonomous-agent ledger that used to be the third tab of
@@ -1227,8 +1230,9 @@ visible (`useAmbientMotion.ts`, CSS-gated again). The Queued lane's rungs
 estimated start and the amber not-before cue for a deferred rung; drag and
 Alt+Up/Down reorder are unchanged, and the four verbs now float over the
 rung's right edge on hover or focus instead of reserving their width. The bay
-nameplates' lamps still speak the Annunciator's lamp vocabulary (`tone.ts`). Harness: `monitor/classic`, `monitor/lanes` (+
-`/sim`) in `scripts/style/page-harness/monitorActivitySurfaces.tsx`.
+nameplates' lamps still speak the Annunciator's lamp vocabulary (`tone.ts`). Harness: `monitor/classic`, `monitor/queue` (+
+`/sim`; `monitor/lanes` until the WP10 cutover freed the word for the decision
+lanes) in `scripts/style/page-harness/monitorActivitySurfaces.tsx`.
 
 ## Card context menus
 

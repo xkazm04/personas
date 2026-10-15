@@ -5,11 +5,11 @@
  *   monitor/classic       Classic bays: the Board's real-shaped 30-persona fleet
  *                         plus ten sessions in every painted state (three in the
  *                         biggest bay, one in the tray) and a queue of four
- *   monitor/lanes         the same fleet's sessions as Running / Queued / Parked
+ *   monitor/queue         the same fleet's sessions as Running / Queued / Parked
  *   monitor/classic/sim   the test build's 100-persona load fleet, Classic
- *   monitor/lanes/sim     the load fleet's sessions and its 30-row queue, Lanes
+ *   monitor/queue/sim     the load fleet's sessions and its 30-row queue, Queue
  *
- * Device mesh (spark device-mesh), on the Classic / Lanes tapes plus the mesh
+ * Device mesh (spark device-mesh), on the Classic / Queue tapes plus the mesh
  * fixture (`meshFixture.ts`: this device, Studio Desktop live, Travel Laptop
  * stale; live samples on three sessions and two personas):
  *
@@ -17,7 +17,7 @@
  *   monitor/classic/mesh/peer   the board scoped to Studio Desktop (its agents'
  *                               on/off switches, its queue)
  *   monitor/classic/mesh/stale  the board scoped to the stale Travel Laptop
- *   monitor/lanes/mesh/move     a local queued rung's "Move to..." menu, open
+ *   monitor/queue/mesh/move     a local queued rung's "Move to..." menu, open
  *   monitor/charter/measured    the charter card's measured load with a
  *                               mismatch badge on a pinned profile
  *
@@ -165,12 +165,12 @@ const charterMeasured: HarnessModule = {
 
 export const MONITOR_ACTIVITY_MODULES: Record<string, HarnessModule> = {
   'monitor/classic': monitor('classic', false),
-  'monitor/lanes': monitor('lanes', false),
+  'monitor/queue': monitor('lanes', false),
   'monitor/classic/sim': monitor('classic', true),
-  'monitor/lanes/sim': monitor('lanes', true),
+  'monitor/queue/sim': monitor('lanes', true),
   'monitor/classic/mesh': monitor('classic', false, [], true),
   'monitor/classic/mesh/peer': monitor('classic', false, [{ selector: `[data-testid="mesh-plate"][data-peer-id="${STUDIO}"]` }], true),
   'monitor/classic/mesh/stale': monitor('classic', false, [{ selector: `[data-testid="mesh-plate"][data-peer-id="${LAPTOP}"]` }], true),
-  'monitor/lanes/mesh/move': monitor('lanes', false, [{ selector: '[data-testid="mesh-move-to"]' }], true),
+  'monitor/queue/mesh/move': monitor('lanes', false, [{ selector: '[data-testid="mesh-move-to"]' }], true),
   'monitor/charter/measured': charterMeasured,
 };

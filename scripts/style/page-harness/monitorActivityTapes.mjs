@@ -1,4 +1,4 @@
-// Synthetic tapes for the Monitor's Activity board, Classic and Lanes
+// Synthetic tapes for the Monitor's Activity board, Classic and Queue
 // (monitorActivitySurfaces.tsx). Fixture CODE, no personal data.
 //
 // The persona fleet is the Board's real-shaped one (monitorBoardTapes.mjs): 30
@@ -6,7 +6,7 @@
 // Board does not draw and Activity does: Claude Code sessions in every state a
 // session card paints (running, awaiting input, idle, stale, finished,
 // hibernated, a failed and a clean exit inside the parked hour) and a short
-// queue, so Classic's bays carry session lines and all three Lanes fill.
+// queue, so Classic's bays carry session lines and all three Queue columns fill.
 // Three dev projects tie session directories to teams, so sessions land in
 // their bays; one directory no project owns lands in the ungrouped tray.
 // Server control (spark server-control): personas' dev server runs (its bay's
@@ -119,12 +119,12 @@ export function monitorActivityTapes({ RECORDED_AT }) {
   return {
     builders: {
       'monitor/classic': () => withSessions(board['monitor/board'](), 'monitor/classic', NOTE),
-      'monitor/lanes': () => withSessions(board['monitor/board'](), 'monitor/lanes', NOTE),
+      'monitor/queue': () => withSessions(board['monitor/board'](), 'monitor/queue', NOTE),
       'monitor/classic/sim': () => sim('monitor/classic/sim'),
-      'monitor/lanes/sim': () => sim('monitor/lanes/sim'),
-      // Device mesh: the same Classic / Lanes tapes; the mesh comes from the
+      'monitor/queue/sim': () => sim('monitor/queue/sim'),
+      // Device mesh: the same Classic / Queue tapes; the mesh comes from the
       // seeded fixture (meshFixture.ts), so the mesh reads are answered empty.
-      ...Object.fromEntries(['monitor/classic/mesh', 'monitor/classic/mesh/peer', 'monitor/classic/mesh/stale', 'monitor/lanes/mesh/move']
+      ...Object.fromEntries(['monitor/classic/mesh', 'monitor/classic/mesh/peer', 'monitor/classic/mesh/stale', 'monitor/queue/mesh/move']
         .map((id) => [id, () => {
           const tape = withSessions(board['monitor/board'](), id, `${NOTE} Plus the device-mesh fixture: this device, Studio Desktop (live), Travel Laptop (stale).`);
           return { ...tape, calls: [...tape.calls, { cmd: 'mesh_device_snapshots', response: [] }, { cmd: 'resource_live_samples', response: [] }] };

@@ -5,8 +5,9 @@
 // read: the one pending-counts round-trip and Athena's pending approvals
 // (the Gates chip's own rows). Everything else the roster reads answers empty.
 //
-//   monitor/rail        the Board's simulation shell, the strip's Gates chip
-//                       pressed so its peek is open with three rows.
+//   monitor/rail        the Board's simulation shell, the strip's Breach lane
+//                       pressed so its peek is open (the Gates chip, with
+//                       three rows, until the mandate-lanes cutover, WP10).
 //
 // `monitor/rail/kinds` (the retired DecisionDock's row, alone) went with the
 // dock on 2026-10-06 (decision-center spark A3).
