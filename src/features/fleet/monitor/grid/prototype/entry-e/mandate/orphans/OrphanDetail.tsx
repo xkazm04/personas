@@ -37,16 +37,7 @@ export function OrphanDetail({ cluster: c, perCard, state: o, mandates }: {
     <aside className="flex w-[320px] flex-shrink-0 flex-col gap-3 overflow-y-auto border-l border-foreground/10 pl-4" data-testid="orphan-detail" data-project={c.projectId}>
       <span className="typo-eyebrow">{c.projectName ?? m.ml_project_unknown}</span>
       <p className="typo-body text-foreground">{whyLine(c, perCard, m, tx)}</p>
-      <KeyValueGrid
-        min="100%"
-        items={[
-          { k: m.ml_orphans_fact_items, v: kindsLine(c, m, tx) },
-          { k: m.ml_orphans_fact_oldest, v: c.oldestAt ? <RelativeTime timestamp={c.oldestAt} /> : null, none: m.ml_unknown },
-          { k: m.ml_orphans_fact_steward, v: steward },
-          { k: m.ml_orphans_fact_archived, v: String(c.archived) },
-        ]}
-      />
-      <div className="flex flex-col gap-2 border-t border-foreground/10 pt-3">
+      <div className="flex flex-col gap-2">
         <AsyncButton variant="secondary" size="sm" block onClick={() => o.draft(c.projectId, c.steward?.personaId ?? null, needsPick)} icon={<FilePlus2 className="h-4 w-4" aria-hidden />} iconRight={keyRight('D')} aria-keyshortcuts="D" data-testid="orphan-draft">
           {o.mode === 'draft' ? m.ml_orphans_draft_confirm : m.ml_orphans_draft}
         </AsyncButton>
@@ -77,6 +68,17 @@ export function OrphanDetail({ cluster: c, perCard, state: o, mandates }: {
         </div>
       )}
       <p className="typo-caption text-status-warning" role="status" data-testid="orphan-notice">{o.notice}</p>
+      <div className="border-t border-foreground/10 pt-3">
+        <KeyValueGrid
+          min="100%"
+          items={[
+            { k: m.ml_orphans_fact_items, v: kindsLine(c, m, tx) },
+            { k: m.ml_orphans_fact_oldest, v: c.oldestAt ? <RelativeTime timestamp={c.oldestAt} /> : null, none: m.ml_unknown },
+            { k: m.ml_orphans_fact_steward, v: steward },
+            { k: m.ml_orphans_fact_archived, v: String(c.archived) },
+          ]}
+        />
+      </div>
     </aside>
   );
 }
