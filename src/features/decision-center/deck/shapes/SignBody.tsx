@@ -20,7 +20,8 @@ import type { DecisionItem } from '../../model/decisionModel';
 import { grantsFinalReviews } from '../../mandate/envelope';
 import { useRefusalClasses } from '../../mandate/useRefusalClasses';
 import { useDeckLanes } from './DeckLaneContext';
-import { CapRow, MergeRow, ScopesRow } from './SignParts';
+import { CapRow, GrantsBox, MergeRow, ScopesRow } from './SignParts';
+import { SignReread } from './SignReread';
 import type { SignShape } from './useSignShape';
 
 /** A block in the ledger rail: eyebrow over its lines. */
@@ -73,6 +74,8 @@ export function SignBody({ item, sign }: { item: DecisionItem; sign: SignShape }
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-4 pl-[5.75rem] pr-8" data-deck-scroll={item.id} data-testid="sign-body">
       {draft ? (
         <>
+          {sign.rereadInfo && <SignReread info={sign.rereadInfo} />}
+          {sign.armed && envelope && <GrantsBox grants={sign.grants} envelope={envelope} />}
           <ScopesRow draft={draft} editing={sign.editing} onChange={sign.setDraft} />
           {envelope && grantsFinalReviews(envelope) && (
             <p className="au-armed au-l-warning flex max-w-[68ch] items-start gap-2 rounded-input px-3 py-2" role="note" data-testid="sign-review-final">

@@ -26,6 +26,8 @@ export function mandate(over: Partial<Omit<MandateSummary, 'envelope'>> & { enve
     },
     load: { spendUsedUsd: 0, budgetUsd: null, actsCount: 0, openAsks: 0 },
     updatedAt: '2026-10-14T10:00:00Z',
+    reread: null,
+    origin: null,
     ...rest,
   };
 }

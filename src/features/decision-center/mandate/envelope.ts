@@ -20,6 +20,7 @@ import type { DecideScope } from '@/lib/bindings/DecideScope';
 import type { MandateEnvelope } from '@/lib/bindings/MandateEnvelope';
 import type { MandateSignInput } from '@/lib/bindings/MandateSignInput';
 import type { MergePolicy } from '@/lib/bindings/MergePolicy';
+import type { RereadSuggestion } from '@/lib/bindings/RereadSuggestion';
 
 /** Every scope, in the order the envelope document lists them. */
 const SCOPE_ORDER: Record<DecideScope, number> = {
@@ -62,7 +63,26 @@ export function grantsOf(draft: MandateSignInput): EnvelopeGrant[] {
   return out;
 }
 
+/** Two drafts sign the same envelope (scopes compared as sets). */
+export function sameEnvelope(a: MandateSignInput, b: MandateSignInput): boolean {
+  return a.mergePolicy === b.mergePolicy
+    && (a.budgetMonthlyUsd ?? null) === (b.budgetMonthlyUsd ?? null)
+    && a.decideScopes.length === b.decideScopes.length
+    && a.decideScopes.every((s) => b.decideScopes.includes(s));
+}
+
 /** Info reviews the router approves under this draft stay approved. */
 export function grantsFinalReviews(draft: MandateSignInput): boolean {
   return draft.decideScopes.includes('review.info');
+}
+
+/**
+ * A re-read's suggestion applied to a draft: widen adds the scope, narrow
+ * removes it; a suggestion on the merge policy (`scope: null`) narrows it
+ * back to `never`. A suggestion the draft already satisfies changes nothing.
+ */
+export function applySuggestion(draft: MandateSignInput, s: RereadSuggestion): MandateSignInput {
+  if (s.scope === null) return s.action === 'narrow' ? { ...draft, mergePolicy: 'never' } : draft;
+  const has = draft.decideScopes.includes(s.scope);
+  return (s.action === 'widen') !== has ? toggleScope(draft, s.scope) : draft;
 }

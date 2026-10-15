@@ -92,16 +92,18 @@ describe('claimModel', () => {
 });
 
 describe('mandateWrites', () => {
-  const doors = (): MandateDoors => ({ sign: vi.fn(async () => ({})), drop: vi.fn(async () => ({})), amend: vi.fn(async () => ({})), suspend: vi.fn(async () => ({})) });
+  const doors = (): MandateDoors => ({ sign: vi.fn(async () => ({})), drop: vi.fn(async () => ({})), keep: vi.fn(async () => ({})), amend: vi.fn(async () => ({})), suspend: vi.fn(async () => ({})) });
   const card = mandateToDecision(mandate({ status: 'draft', envelope: { envelopeVersion: 0 } }), m, tx, 'Later');
 
-  it('signs with the card envelope and drops by retiring the charter', async () => {
+  it('signs with the card envelope and drops with the reason the prompt captured', async () => {
     const d = doors();
     const envelope = { decideScopes: [], mergePolicy: 'gate-green' as const, budgetMonthlyUsd: null };
     expect(await writeMandateVerdict({ item: card, verdict: 'accept', envelope }, d)).toBe(true);
     expect(d.sign).toHaveBeenCalledWith('c1', envelope);
     expect(await writeMandateVerdict({ item: card, verdict: 'reject', reason: 'Not a goal I hold' }, d)).toBe(true);
-    expect(d.drop).toHaveBeenCalledWith('c1');
+    expect(d.drop).toHaveBeenCalledWith('c1', 'Not a goal I hold');
+    await writeMandateVerdict({ item: card, verdict: 'reject' }, d);
+    expect(d.drop).toHaveBeenLastCalledWith('c1', null);
     await expect(writeMandateVerdict({ item: card, verdict: 'accept' }, d)).rejects.toThrow(/envelope/);
   });
 

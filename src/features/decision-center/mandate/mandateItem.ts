@@ -23,7 +23,18 @@ export function mandateItemId(charterId: string): string {
   return MANDATE_PREFIX + charterId;
 }
 
-export function mandateToDecision(s: MandateSummary, m: MonitorCopy, tx: Interpolate, skip: string): DecisionItem {
+/**
+ * The ledger's cost tile for a Sign card: what signing releases (the items
+ * held on the draft, from the lanes snapshot), the fact the reader decides
+ * on, rather than the keys it takes. `undefined` until the snapshot counts it.
+ */
+export function signCostLine(held: number | undefined, m: MonitorCopy, tx: Interpolate): string | undefined {
+  if (held === undefined) return undefined;
+  if (held === 0) return m.ml_sign_cost_none;
+  return tx(held === 1 ? m.ml_sign_cost_one : m.ml_sign_cost_other, { count: held });
+}
+
+export function mandateToDecision(s: MandateSummary, m: MonitorCopy, tx: Interpolate, skip: string, held?: number): DecisionItem {
   const steward = s.stewardName ?? m.ml_steward_unknown;
   const project = s.projectName ?? m.ml_project_unknown;
   return {
@@ -55,6 +66,7 @@ export function mandateToDecision(s: MandateSummary, m: MonitorCopy, tx: Interpo
       charterId: s.charterId,
       projectId: s.projectId,
       stewardPersonaId: s.stewardPersonaId,
+      cost: signCostLine(held, m, tx),
     },
   };
 }

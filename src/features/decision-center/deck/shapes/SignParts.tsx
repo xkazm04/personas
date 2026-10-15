@@ -6,13 +6,15 @@
  * value inherited without being seen.
  */
 import { useMemo, type ReactNode } from 'react';
+import { Lock } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { mergeLabel, scopeLabel } from '@/features/fleet/monitor/grid/prototype/entry-e/mandate/mandateCopy';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { MandateSignInput } from '@/lib/bindings/MandateSignInput';
-import { ALL_SCOPES, MERGE_POLICIES, toggleScope } from '../../mandate/envelope';
+import { ALL_SCOPES, MERGE_POLICIES, toggleScope, type EnvelopeGrant } from '../../mandate/envelope';
+import { Keycap } from '../parts';
 
 /** Whole dollars, in the reader's own number format. */
 export function useUsd(): (usd: number) => string {
@@ -107,5 +109,34 @@ export function CapRow({ cap, editing, onChange }: { cap: number | null; editing
         <span className="typo-body text-foreground">{cap !== null ? usd(cap) : m.ml_sign_budget_none}</span>
       )}
     </EnvelopeRow>
+  );
+}
+
+/**
+ * What an armed signature grants, listed before the second press. It sits in
+ * the body (not the dock) so the rail keeps room for what the charter refuses.
+ */
+export function GrantsBox({ grants, envelope }: { grants: EnvelopeGrant[]; envelope: MandateSignInput }) {
+  const { t, tx } = useTranslation();
+  const m = t.monitor;
+  const usd = useUsd();
+  return (
+    <div className="au-armed au-l-danger flex max-w-[68ch] flex-col gap-1.5 rounded-input px-3 py-2.5" role="alert" data-testid="sign-grants-box">
+      <span className="au-ink-lamp flex items-center gap-1.5 typo-eyebrow">
+        <Lock className="h-3.5 w-3.5" aria-hidden />
+        {m.ml_sign_grants}
+      </span>
+      {grants.map((g) => (
+        <span key={g} className="typo-body text-foreground">
+          {g === 'merge'
+            ? tx(m.ml_sign_grant_merge, { policy: mergeLabel(m, envelope.mergePolicy) })
+            : tx(m.ml_sign_grant_spend, { cap: usd(envelope.budgetMonthlyUsd ?? 0) })}
+        </span>
+      ))}
+      <span className="flex items-center gap-1.5 typo-caption">
+        <Keycap>↵</Keycap> {m.ml_sign_grants_confirm}
+        <Keycap>Esc</Keycap> {m.dc_deck_armed_disarm}
+      </span>
+    </div>
   );
 }

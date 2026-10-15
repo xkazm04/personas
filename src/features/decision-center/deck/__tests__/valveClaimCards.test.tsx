@@ -2,7 +2,9 @@
  * The valve walk and the Accept (claim) shape (mandate-lanes WP5):
  *  - valve: one irreversible item per step ("Valve 1 of 2"), armed on the
  *    first A and written only on the second, never more than one per verdict;
- *  - claim: the met-when line reads the KPI and says the rest is not read;
+ *  - claim: the met-when checklist reads the goal's own conditions
+ *    (`goal_met_when`): the KPI checked against its target, the UAT and the
+ *    council listed without a tick; none set is said in one line;
  *    the audit sample lists the mandate's acts, 1-3 pick one, V reverts it
  *    through the act's own door; A still accepts the claim.
  *  - council: the card says the council never admits work.
@@ -22,6 +24,7 @@ const api = vi.hoisted(() => ({
   amendMandate: vi.fn(async () => ({})),
   resumeMandate: vi.fn(async () => ({})),
   suspendMandate: vi.fn(async () => ({})),
+  getGoalMetWhen: vi.fn(),
 }));
 vi.mock('@/api/mandates', () => api);
 vi.mock('../../lanes/useLanesSnapshot', () => ({ useCharterActRecorded: () => {} }));
@@ -56,15 +59,17 @@ describe('valve walk', () => {
 
 describe('Accept claim', () => {
   const goal = item({
-    id: 'goal:g1', kind: 'goal', title: 'Activation reaches 50%', verdictLabels: { accept: 'Accept', reject: 'Send back', skip: 'Later' },
+    id: 'goal:g1', sourceId: 'g1', payload: { kpiId: 'k1' }, kind: 'goal', title: 'Activation reaches 50%', verdictLabels: { accept: 'Accept', reject: 'Send back', skip: 'Later' },
     facts: [{ id: 'kpi', label: 'KPI', value: 'Activation' }, { id: 'progress', label: 'Progress', value: '52 → 50 %', tone: 'success' }],
   });
 
   it('shows met-when and an audit sample; 1 picks an act and V reverts it', async () => {
     api.listCharterActs.mockResolvedValue([act('a1', { actor: 'steward', itemKind: 'idea' }), act('a2'), act('env', { itemKind: 'mandate' })]);
+    api.getGoalMetWhen.mockResolvedValue({ goalId: 'g1', charterId: null, unreadable: false, metWhen: { uat: 'Sign in on a fresh install', kpiId: 'k1', council: 'full' } });
     const { onDecide } = mountLane('accept', [goal], [laneEntry('goal:g1', { lane: 'accept', clause: 'none' })], { mandates: [mandate()] });
-    expect((await screen.findByTestId('claim-met-when')).textContent).toContain('Activation reached its target (52 → 50 %)');
-    expect(screen.getByTestId('claim-met-when').textContent).toContain(m.ml_claim_met_unread);
+    expect((await screen.findByTestId('claim-met-kpi')).textContent).toContain('Activation reached its target (52 → 50 %)');
+    expect(screen.getByTestId('claim-met-uat').textContent).toContain('UAT: Sign in on a fresh install');
+    expect(screen.getByTestId('claim-met-council').textContent).toContain(m.ml_claim_met_council_full);
     expect((await screen.findByTestId('claim-audit')).textContent).toContain('2 of 2 acts on this mandate');
     digit(1);
     const picked = screen.getByTestId('claim-act-1');
@@ -75,6 +80,22 @@ describe('Accept claim', () => {
     expect(onDecide).not.toHaveBeenCalled();
     key('a');
     await waitFor(() => expect(onDecide).toHaveBeenCalledWith(expect.objectContaining({ verdict: 'accept' })));
+  });
+
+  it('says plainly when the goal sets no condition, and when its conditions cannot be read', async () => {
+    api.listCharterActs.mockResolvedValue([]);
+    api.getGoalMetWhen.mockResolvedValue({ goalId: 'g1', charterId: null, unreadable: false, metWhen: null });
+    mountLane('accept', [goal], [laneEntry('goal:g1', { lane: 'accept', clause: 'none' })], { mandates: [mandate()] });
+    await waitFor(() => expect(screen.getByTestId('claim-met-when').getAttribute('data-state')).toBe('note'));
+    expect(screen.getByTestId('claim-met-when').textContent).toBe(m.ml_claim_met_none);
+    expect(screen.queryByRole('list', { name: '' })).toBeNull();
+  });
+
+  it('a met-when read that fails is said, never shown as no conditions', async () => {
+    api.listCharterActs.mockResolvedValue([]);
+    api.getGoalMetWhen.mockRejectedValue(new Error('down'));
+    mountLane('accept', [goal], [laneEntry('goal:g1', { lane: 'accept', clause: 'none' })], { mandates: [mandate()] });
+    await waitFor(() => expect(screen.getByTestId('claim-met-when').textContent).toBe(m.ml_claim_met_failed));
   });
 
   it('says there is nothing to audit when no mandate holds the project', async () => {

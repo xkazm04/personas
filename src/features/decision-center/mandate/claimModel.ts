@@ -2,11 +2,14 @@
  * claimModel — the Accept card for a goal claim (`goal:<id>` awaiting
  * acceptance): its met-when checklist and the audit sample. React-free.
  *
- * Met-when: `dev_goals.met_when` exists (migration e67) but NOTHING reads it
- * yet: no repo function, no command, no binding field. So the checklist shows
- * only what is honestly known, the goal's KPI from the acceptance row the
- * goal card already carries (`kpi` and `progress` facts), and says that the
- * UAT and council checks are not shown. It never invents a tick.
+ * Met-when: the goal's own conditions (`dev_goals.met_when`, read through
+ * `goal_met_when`). Each named condition is one row, and each row says only
+ * what is known: the KPI is checked against its target from the acceptance
+ * row the card already carries (when the condition names that same KPI); the
+ * UAT and the council round are listed as conditions with no tick, because
+ * nothing here records a UAT pass or links a council verdict to a goal. A
+ * goal that names no condition says so in one line (never an empty list), and
+ * a read that failed or text that could not be parsed says that instead.
  *
  * Audit sample: a few of the mandate's acts picked at random, so the operator
  * judges the steward's work by spot check rather than by its own summary. The
@@ -16,6 +19,7 @@
  */
 import type { TriageTone } from '@/features/agents/quick-answer/triage/triageTypes';
 import type { CharterAct } from '@/lib/bindings/CharterAct';
+import type { GoalMetWhen } from '@/lib/bindings/GoalMetWhen';
 
 import type { Interpolate, MonitorCopy } from '../deck/deckMeta';
 import type { DecisionItem } from '../model/decisionModel';
@@ -33,6 +37,49 @@ export function kpiCheck(item: DecisionItem, m: MonitorCopy, tx: Interpolate): M
   return progress.tone === 'warning'
     ? { tone: 'warning', text: tx(m.ml_claim_kpi_short, { kpi, range: progress.value }) }
     : { tone: 'success', text: tx(m.ml_claim_kpi_met, { kpi, range: progress.value }) };
+}
+
+export interface MetRow extends MetCheck {
+  id: 'uat' | 'kpi' | 'council';
+  /** A second line under the condition: what this card can and cannot tell. */
+  hint?: string;
+}
+
+/** The met-when section: its rows, or one line when there are none to list. */
+export type MetWhenView =
+  | { kind: 'loading' }
+  | { kind: 'note'; tone: TriageTone; text: string }
+  | { kind: 'rows'; rows: MetRow[] };
+
+export function metWhenView(state: GoalMetWhen | 'failed' | null, item: DecisionItem, m: MonitorCopy, tx: Interpolate): MetWhenView {
+  if (state === null) return { kind: 'loading' };
+  if (state === 'failed') return { kind: 'note', tone: 'warning', text: m.ml_claim_met_failed };
+  if (state.unreadable) return { kind: 'note', tone: 'warning', text: m.ml_claim_met_unreadable };
+  const met = state.metWhen;
+  if (!met) return { kind: 'note', tone: 'neutral', text: m.ml_claim_met_none };
+  const rows: MetRow[] = [];
+  if (met.uat !== null) {
+    rows.push({
+      id: 'uat',
+      tone: 'neutral',
+      text: met.uat ? tx(m.ml_claim_met_uat, { name: met.uat }) : m.ml_claim_met_uat_unnamed,
+      hint: m.ml_claim_met_uat_hint,
+    });
+  }
+  if (met.kpiId !== null) {
+    rows.push(met.kpiId === item.payload?.kpiId
+      ? { id: 'kpi', ...kpiCheck(item, m, tx) }
+      : { id: 'kpi', tone: 'neutral', text: m.ml_claim_met_kpi_other, hint: m.ml_claim_met_kpi_other_hint });
+  }
+  if (met.council !== null) {
+    rows.push({
+      id: 'council',
+      tone: 'neutral',
+      text: met.council === 'full' ? m.ml_claim_met_council_full : m.ml_claim_met_council_lite,
+      hint: m.ml_claim_met_council_hint,
+    });
+  }
+  return { kind: 'rows', rows };
 }
 
 /** Acts on decided items: envelope changes and reverts are not what is audited. */

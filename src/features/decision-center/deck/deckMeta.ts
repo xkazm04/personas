@@ -157,6 +157,8 @@ export function readMinutes(item: DecisionItem): number {
 
 /** What clearing the item costs, in the unit that matters for its type. */
 export function costOf(m: MonitorCopy, tx: Interpolate, item: DecisionItem): string {
+  // A Sign card's cost is what signing releases (mandateItem `signCostLine`).
+  if (item.kind === 'mandate' && item.payload?.cost) return item.payload.cost;
   if (item.kind === 'question' && item.input) return tx(m.dc_deck_cost_answers, { count: item.input.fields.length });
   const type = modalTypeOf(item.kind);
   if (type === 'report') return tx(m.dc_deck_cost_read, { count: readMinutes(item) });
