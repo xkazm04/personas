@@ -1,14 +1,18 @@
 // The act log: counted filters (all / by steward / by you / revertible /
-// reverted) over one page of acts, newest first, one row each: what was
-// decided, by whom, under which scope and envelope version, and whether it
-// can still be taken back. The selected row is what V (revert) and N (narrow)
-// act on; ↑/↓ (or j/k) move it.
+// reverted) over one page of acts, newest first, one row each. The headline
+// says what was decided in words (the verb and the item's title, `actWords`);
+// the quiet line says who, under which envelope version, and whether it can
+// still be taken back. The raw item id is data for a tooltip, never the
+// headline. The selected row is what V (revert) and N (narrow) act on; ↑/↓
+// (or j/k) move it.
 
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { ChipRow, ListRow, Rows } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CharterAct } from '@/lib/bindings/CharterAct';
-import { actorLabel, asScope, scopeLabel } from './mandateCopy';
+import { actHeadline } from './actWords';
+import { actorLabel } from './mandateCopy';
 import { ACT_FILTERS, actMatches, type ActFilter, type ActLogState } from './useActLog';
 
 const SHOWN = 200;
@@ -27,7 +31,7 @@ export function visibleActs(log: ActLogState, filter: ActFilter): CharterAct[] {
   return (log.acts ?? []).filter((a) => actMatches(filter, a)).slice(0, SHOWN);
 }
 
-export function ActLog({ log, filter, onFilter, rows, selected, onSelect, mandateName }: {
+export function ActLog({ log, filter, onFilter, rows, selected, onSelect, mandateName, mandateTitle }: {
   log: ActLogState;
   filter: ActFilter;
   onFilter: (f: ActFilter) => void;
@@ -37,6 +41,8 @@ export function ActLog({ log, filter, onFilter, rows, selected, onSelect, mandat
   onSelect: (i: number) => void;
   /** Names the mandate on each row (the fleet-wide log); omitted on a mandate page. */
   mandateName?: (charterId: string) => string;
+  /** The mandate's own title, which names an envelope act's subject. */
+  mandateTitle?: (charterId: string) => string | null;
 }) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
@@ -60,10 +66,9 @@ export function ActLog({ log, filter, onFilter, rows, selected, onSelect, mandat
           empty={{ title: filter === 'all' ? m.ml_acts_empty : m.ml_acts_empty_filter, testId: 'mandate-act-log-empty' }}
         >
           {rows.map((a, i) => {
-            const scope = asScope(a.scope);
+            const head = actHeadline(m, a, mandateTitle?.(a.charterId));
             const meta = [
               actorLabel(m, a.actor),
-              scope ? scopeLabel(m, scope) : null,
               tx(m.ml_act_version, { version: a.envelopeVersion }),
               mandateName ? mandateName(a.charterId) : null,
               a.revertedAt ? m.ml_act_reverted : !a.reversible ? m.ml_act_final : null,
@@ -72,7 +77,11 @@ export function ActLog({ log, filter, onFilter, rows, selected, onSelect, mandat
               <ListRow
                 key={a.id}
                 testId="mandate-act-row"
-                name={<span className="typo-code">{a.verdict} · {a.itemKind} {a.itemId}</span>}
+                name={(
+                  <Tooltip content={`${a.itemKind} ${a.itemId}`} placement="top">
+                    <span data-testid="mandate-act-headline">{head.verb} · {head.what}</span>
+                  </Tooltip>
+                )}
                 meta={meta}
                 mark={{
                   tone: a.revertedAt ? 'neutral' : a.actor === 'operator' ? 'human' : 'agent',

@@ -10,7 +10,7 @@
 // acts on a key.
 
 import { BookOpen, ScrollText, X } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/features/shared/components/buttons';
 import { KitHost, Crumbs } from '@/features/shared/components/kit';
 import { useLanesSnapshot } from '@/features/decision-center/lanes/useLanesSnapshot';
@@ -22,16 +22,27 @@ import { LedgerView } from './LedgerView';
 import { MandatePage } from './MandatePage';
 import { RegisterView } from './RegisterView';
 import { MANDATE_DRAWER_PRIORITY } from './useDrawerKeys';
+import { useMandateDrawerRequest } from './mandateDrawerRequest';
 import { useMandates } from './useMandates';
 
 export type MandateView =
   | { kind: 'register' }
-  | { kind: 'log' }
+  /** `focusActId`: the act to select on arrival (the dock ticker's press). */
+  | { kind: 'log'; focusActId?: string }
   | { kind: 'mandate'; charterId: string; back: 'register' | 'log' | null };
 
-/** The drawer's open state, owned by the Activity surface. */
+/**
+ * The drawer's open state, owned by the Activity surface. A request from
+ * outside it (`requestActLogAt`, the dock ticker) opens the act log at that act.
+ */
 export function useMandateDrawer() {
   const [view, setView] = useState<MandateView | null>(null);
+  const pending = useMandateDrawerRequest((s) => s.pending);
+  useEffect(() => {
+    if (!pending) return;
+    setView({ kind: 'log', focusActId: pending.actId });
+    useMandateDrawerRequest.getState().consume();
+  }, [pending]);
   return {
     view,
     setView,
@@ -118,7 +129,9 @@ function DrawerBody({ view, onView, onClose }: { view: MandateView; onView: (v: 
         </header>
         <div className="flex min-h-0 flex-1 flex-col">
           {view.kind === 'register' && <RegisterView state={mandates} selected={regSel} onSelect={setRegSel} onOpen={open('register')} />}
-          {view.kind === 'log' && <LedgerView mandates={mandates.mandates} onOpen={open('log')} />}
+          {view.kind === 'log' && (
+            <LedgerView key={view.focusActId ?? ''} mandates={mandates.mandates} focusActId={view.focusActId ?? null} onOpen={open('log')} />
+          )}
           {view.kind === 'mandate' && (current ? (
             <MandatePage key={current.charterId} mandate={current} held={held} onChanged={mandates.refresh} />
           ) : (

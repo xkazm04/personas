@@ -54,7 +54,7 @@ export function MandatePage({ mandate, held, onChanged }: {
           </p>
         </header>
         <span className="typo-eyebrow">{m.ml_act_log}</span>
-        <ActLog log={log} filter={filter} onFilter={pick} rows={rows} selected={selected} onSelect={setSelected} />
+        <ActLog log={log} filter={filter} onFilter={pick} rows={rows} selected={selected} onSelect={setSelected} mandateTitle={() => mandate.title} />
       </div>
       <MandateRail
         mandate={mandate}

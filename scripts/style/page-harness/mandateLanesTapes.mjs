@@ -36,6 +36,37 @@ const ITEMS = [
   ['review:h2', 'review', 'held', 'none', 'ch-research', 'dp-research'],
 ];
 
+// The act log, in the shapes the writers really store: the router's verdict
+// tokens with the title it was shown (`mandate_sweep.rs` `shown`), envelope
+// acts with no shown_json, a revert carrying the reverted act's verdict, a
+// router review approval recorded final.
+const shown = (itemKind, title) => JSON.stringify({ itemKind, itemId: `${itemKind}:x`, title, lane: 'evidence', clause: 'none' });
+function actLog(ago) {
+  const act = (id, minutes, over) => ({
+    id, charterId: 'ch-personas', envelopeVersion: 2, itemKind: 'report', itemId: `report:${id}`, verdict: 'filed as evidence',
+    actor: 'router', scope: 'report.read', reversible: true, costUsd: null, shownJson: null, envChange: null,
+    revertedAt: null, revertActId: null, originDevice: null, createdAt: ago(minutes), ...over,
+  });
+  return [
+    act('o1', 2, { actor: 'operator', itemKind: 'mandate', itemId: 'ch-personas', verdict: 'merge-policy-set', scope: null }),
+    act('a1', 4, { shownJson: shown('report', 'Nightly gate report, desktop build') }),
+    act('a8', 5, { shownJson: shown('report', 'Bundle size audit') }),
+    act('a9', 6, { shownJson: shown('report', 'Dependency drift scan') }),
+    act('a2', 18, { itemKind: 'review', itemId: 'review:q7', verdict: 'approved', scope: 'review.info', reversible: false, shownJson: shown('review', 'Release notes wording') }),
+    act('a3', 33, { actor: 'steward', itemKind: 'idea', itemId: 'idea:k2', verdict: 'rejected', scope: 'idea.reject', shownJson: shown('idea', 'Rewrite the updater in Go') }),
+    act('a6', 70, { actor: 'operator', itemKind: 'act.revert', itemId: 'a5', verdict: 'reverted', scope: null, reversible: false, shownJson: JSON.stringify({ revertedAct: 'a5', verdict: 'filed as evidence' }) }),
+    act('a5', 75, { revertedAt: ago(70), revertActId: 'a6', shownJson: shown('report', 'Flaky test triage, week 41') }),
+    act('a7', 140, { actor: 'operator', itemKind: 'mandate', itemId: 'ch-personas', verdict: 'signed', scope: null, envelopeVersion: 1 }),
+  ];
+}
+
+/** The router filings the ticker variants push on `charter-act-recorded`, oldest first (createdAt is set at push time). */
+export const TICKER_ACTS = ['a9', 'a8', 'a1'].map((id, i) => ({
+  id, charterId: 'ch-personas', envelopeVersion: 2, itemKind: 'report', itemId: `report:${id}`, verdict: 'filed as evidence',
+  actor: 'router', scope: 'report.read', reversible: true, costUsd: null, shownJson: null, envChange: null,
+  revertedAt: null, revertActId: null, originDevice: null, createdAt: new Date(Date.UTC(2026, 9, 15, 10, 0, i * 20)).toISOString(),
+}));
+
 export function mandateLanesTapes({ RECORDED_AT }) {
   const T0 = Date.parse(RECORDED_AT);
   const ago = (minutes) => new Date(T0 - minutes * 60_000).toISOString();
@@ -59,20 +90,7 @@ export function mandateLanesTapes({ RECORDED_AT }) {
     failedSources: [],
     generatedAt: RECORDED_AT,
   };
-  const act = (id, minutes, over) => ({
-    id, charterId: 'ch-personas', envelopeVersion: 2, itemKind: 'report', itemId: `report:${id}`, verdict: 'read',
-    actor: 'router', scope: 'report.read', reversible: true, costUsd: null, shownJson: null, envChange: null,
-    revertedAt: null, revertActId: null, originDevice: null, createdAt: ago(minutes), ...over,
-  });
-  const acts = [
-    act('a1', 4, {}),
-    act('a2', 18, { itemKind: 'review', itemId: 'review:q7', verdict: 'approved', scope: 'review.info' }),
-    act('a3', 33, { actor: 'steward', itemKind: 'idea', itemId: 'idea:k2', verdict: 'rejected', scope: 'idea.reject' }),
-    act('a4', 52, { actor: 'operator', itemKind: 'mandate', itemId: 'mandate:ch-personas', verdict: 'amended', scope: null, reversible: false }),
-    act('a5', 75, { revertedAt: ago(70), revertActId: 'a6' }),
-    act('a6', 70, { actor: 'operator', itemKind: 'act.revert', itemId: 'a5', verdict: 'reverted', scope: null }),
-    act('a7', 140, { actor: 'operator', itemKind: 'mandate', itemId: 'mandate:ch-personas', verdict: 'signed', scope: null, envelopeVersion: 1, reversible: false }),
-  ];
+  const acts = actLog(ago);
   const pending = {
     goalAcceptance: 1, manualReviews: 2, ideas: 3, policyProposals: 1, promotionProposals: 0, openIncidents: 1,
     blockingIncidents: 1, unreadReports: 2, companionApprovals: 0, councilDecidable: 0, decisionTotal: 11, total: 11,
@@ -80,6 +98,7 @@ export function mandateLanesTapes({ RECORDED_AT }) {
   const calls = [
     { cmd: 'decision_lanes_snapshot', response: snapshot },
     { cmd: 'mandate_list', response: mandates },
+    { cmd: 'mandate_get', response: mandates[0] },
     { cmd: 'charter_acts_list', response: acts },
     { cmd: 'dev_tools_pending_counts', response: pending },
     { cmd: 'dev_tools_get_autopilot_mode', response: 'full' },
@@ -98,6 +117,8 @@ export function mandateLanesTapes({ RECORDED_AT }) {
       'monitor/mandate-lanes': tape('monitor/mandate-lanes'),
       'monitor/mandate-lanes/register': tape('monitor/mandate-lanes/register'),
       'monitor/mandate-lanes/page': tape('monitor/mandate-lanes/page'),
+      'monitor/mandate-lanes/ticker': tape('monitor/mandate-lanes/ticker'),
+      'monitor/mandate-lanes/ticker/log': tape('monitor/mandate-lanes/ticker/log'),
     },
   };
 }
