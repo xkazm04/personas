@@ -14,7 +14,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildMonitorRoofTape } from './monitorRoofTape.mjs';
-import { mandateLanesTapes } from './mandateLanesTapes.mjs';
+import { CARD_CMDS, mandateLanesTapes } from './mandateLanesTapes.mjs';
 import { RECORDED_AT } from './synthetic-tapes.mjs';
 
 const T0 = Date.parse(RECORDED_AT);
@@ -30,7 +30,8 @@ const EXTRA = [
 export function buildMandateRoofTape() {
   const roof = buildMonitorRoofTape();
   const lanes = mandateLanesTapes({ RECORDED_AT }).builders['monitor/mandate-lanes']();
-  const MANDATE_CMDS = ['decision_lanes_snapshot', 'mandate_list', 'mandate_get', 'charter_acts_list', 'dev_tools_pending_counts', 'dev_tools_get_autopilot_mode'];
+  // The card rows ride along (`CARD_CMDS`): the peek and the deck list the rows the snapshot counts.
+  const MANDATE_CMDS = ['decision_lanes_snapshot', 'mandate_list', 'mandate_get', 'charter_acts_list', 'dev_tools_pending_counts', 'dev_tools_get_autopilot_mode', ...CARD_CMDS];
   const mandateCalls = lanes.calls.filter((c) => MANDATE_CMDS.includes(c.cmd));
   const list = mandateCalls.find((c) => c.cmd === 'mandate_list');
   const snap = mandateCalls.find((c) => c.cmd === 'decision_lanes_snapshot');
@@ -52,7 +53,9 @@ export function buildMandateRoofTape() {
   return {
     ...roof,
     note: `${roof.note} Plus the mandate lanes (mandateLanesTapes.mjs) with seven charters (mandateRoofTape.mjs).`,
-    calls: [...roof.calls.filter((c) => !MANDATE_CMDS.includes(c.cmd)), ...mandateCalls],
+    // Only the roof's wildcards give way: its args-pinned rows (the held step's
+    // review list for one persona) still answer their exact call.
+    calls: [...roof.calls.filter((c) => !(MANDATE_CMDS.includes(c.cmd) && c.args === undefined)), ...mandateCalls],
   };
 }
 

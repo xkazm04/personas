@@ -25,6 +25,9 @@ import { Lamp } from '../../deck/parts';
 import { LANE_ICON, LANE_KEY, laneHint, laneLabel } from '../../lanes/laneMeta';
 import type { LaneCount, LaneKey } from '../../lanes/laneModel';
 
+/** A hover delay no pointer outlasts (the largest a timer takes): the tip is held while the peek is open. */
+const HELD = 2_147_483_647;
+
 /** 0 = roomy, 1 = tight gaps (LaneStrip measures). */
 export type LaneFit = 0 | 1;
 
@@ -56,7 +59,9 @@ export const LaneButton = forwardRef<HTMLButtonElement, LaneButtonProps>(functio
     : tx(m.ml_lane_tip, { label, count: count.n, hint: laneHint(m, lane), key });
 
   return (
-    <Tooltip content={tip} placement="bottom">
+    // While its own peek is open the tip never shows: the peek took the focus
+    // (which hid it) and a pointer re-entering the chip waits past any hover.
+    <Tooltip content={tip} placement="bottom" delay={open ? HELD : undefined}>
       <Button
         ref={ref}
         variant="ghost"

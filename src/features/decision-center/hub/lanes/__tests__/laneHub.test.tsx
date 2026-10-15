@@ -217,6 +217,22 @@ describe('LaneHub peek', () => {
     }
   });
 
+  it('the open peek holds the focus (so its chip’s tip stays hidden) and gives it back on close', () => {
+    mount();
+    const chip = screen.getByTestId('decision-lane-breach');
+    chip.focus();
+    openBreach();
+    const peek = screen.getByTestId('decision-peek');
+    // The chip lost the focus to its peek: its tooltip, which hides on blur,
+    // cannot sit over the peek's header (residue item 1).
+    expect(document.activeElement).toBe(peek);
+    act(() => {
+      fireEvent.keyDown(window, { key: 'Escape' });
+    });
+    expect(screen.queryByTestId('decision-peek')).toBeNull();
+    expect(document.activeElement).toBe(chip);
+  });
+
   it('the Ready chip opens its own peek, named Ready', () => {
     mount();
     fireEvent.click(screen.getByTestId('decision-chip-ready'));

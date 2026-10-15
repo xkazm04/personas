@@ -20,7 +20,7 @@
  * Escape would close the Monitor behind it. Deferred, the keyboard hook still
  * owns Escape; the close only lands if the same chip's peek is still open.
  */
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -71,6 +71,19 @@ export function PeekShell({
   const { label, icon: Icon } = identity;
   const tone = lamp;
 
+  // The peek takes the focus while it is open and gives it back to its chip
+  // when it closes. Taking it is what hides the chip's own tooltip (a tip
+  // hides on blur), so the tip never sits over the peek's header; the keys
+  // stay the app keyboard's, which listens on the window.
+  useEffect(() => {
+    const el = panel.current;
+    el?.focus({ preventScroll: true });
+    return () => {
+      const at = document.activeElement;
+      if (el && (at === null || at === document.body || el.contains(at))) anchorRef.current?.focus({ preventScroll: true });
+    };
+  }, []);
+
   const deferredClose = useCallback(() => { setTimeout(onClose, 0); }, [onClose]);
   const inside = useMemo(() => [panel, anchorRef] as const, []);
   useClickOutside(inside, true, deferredClose);
@@ -100,13 +113,14 @@ export function PeekShell({
       ref={panel}
       role="dialog"
       aria-modal={false}
+      tabIndex={-1}
       aria-label={tx(m.dc_hub_peek_aria, { label })}
       initial={PEEK_ENTER(still)}
       animate={{ opacity: 1, y: 0, scaleY: 1 }}
       exit={PEEK_EXIT(still)}
       transition={peekTransition}
       style={{ left, transformOrigin: 'top left' }}
-      className={`au-scope au-glass au-hair au-l-${tone} au-t-${tone === 'neutral' ? 'accent' : tone} absolute top-full z-30 mt-2 flex max-h-[70vh] w-[500px] max-w-[calc(100vw-32px)] flex-col rounded-modal`}
+      className={`au-scope au-glass au-hair au-l-${tone} au-t-${tone === 'neutral' ? 'accent' : tone} absolute top-full z-30 mt-2 flex outline-none max-h-[70vh] w-[500px] max-w-[calc(100vw-32px)] flex-col rounded-modal`}
       data-testid="decision-peek"
       data-chip={identity.id}
       data-still={still ? '' : undefined}
