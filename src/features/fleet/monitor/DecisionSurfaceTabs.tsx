@@ -40,7 +40,7 @@ export function DecisionSurfaceTabs() {
             aria-pressed={on}
             onClick={() => setSurface(o.id)}
             data-testid={`decision-surface-${o.id}`}
-            className={`!rounded-full !py-0.5 !font-normal typo-body-lg ${on ? 'bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary' : ''}`}
+            className={`!rounded-full !py-0.5 typo-body-lg ${on ? 'bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary' : ''}`}
           >
             {o.label}
           </Button>

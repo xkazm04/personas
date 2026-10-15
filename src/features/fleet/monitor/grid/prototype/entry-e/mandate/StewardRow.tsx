@@ -32,7 +32,7 @@ export function stewardLamp(m: MandateSummary): LampModel {
 const SPEND_WARN_SHARE = 0.85;
 const SPEND_FULL_SHARE = 1;
 
-function spendTone(share: number): Tone {
+export function spendTone(share: number): Tone {
   if (share >= SPEND_FULL_SHARE) return 'err';
   return share > SPEND_WARN_SHARE ? 'warn' : 'run';
 }

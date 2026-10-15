@@ -17,7 +17,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import { Lamp } from '../parts';
 import { toneClass, type Lamp as LampModel } from '../tone';
 import { statusLabel } from './mandateCopy';
-import { stewardLamp } from './StewardRow';
+// One spend band for the register and the Stewards plate: it is declared beside the plate's meter.
+import { spendTone, stewardLamp } from './StewardRow';
 import './mandateDrawer.css';
 
 /** The team colour of a project's bay, or null when the project has no team. */
@@ -78,10 +79,6 @@ export function MandateState({ mandate }: { mandate: MandateSummary }) {
 /** Spend against the cap: the share used, toned as the Usage plate tones a window. */
 export function spendShare(used: number | null, cap: number | null): number | null {
   return used !== null && cap !== null && cap > 0 ? Math.min(1, used / cap) : null;
-}
-
-export function spendTone(share: number) {
-  return share >= 1 ? 'err' : share > 0.85 ? 'warn' : 'run';
 }
 
 /** The Usage plate's bar: its lit length is what is USED here (a cap fills up).
