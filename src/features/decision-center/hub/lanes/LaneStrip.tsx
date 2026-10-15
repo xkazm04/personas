@@ -5,11 +5,11 @@
  * Queue view's header (PLAN section 2).
  *
  * A SLOT like the chip `Strip`: it takes counts and reports presses; the lane
- * hub owns the data. The same width honesty: it measures itself and steps
- * down one level at a time while the row would not fit: first Ready's label
- * goes to its tooltip and the gaps tighten, then the keycaps go to the
- * tooltips. The lane names stay: a lane is read by its name, not its glyph.
- * It steps back up when the row has the width it needed at the level above.
+ * hub owns the data. The same width honesty: it measures itself and, while the
+ * row would not fit, Ready's label goes to its tooltip and the gaps tighten.
+ * The lane names stay: a lane is read by its name, not its glyph. It steps
+ * back up when the row has the width it needed. The same lead as the strip:
+ * the most urgent lane holding something wears the lead chip's tint.
  */
 import '../../deck/aurora.css';
 import { useLayoutEffect, useRef, useState, type MutableRefObject } from 'react';
@@ -18,12 +18,26 @@ import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import type { ChipCount } from '../../model/decisionModel';
+import { URGENCY } from '../../deck/deckMeta';
 import { OPERATOR_LANES, type LaneCounts, type LaneKey } from '../../lanes/laneModel';
 import { StripChip } from '../visual/StripChip';
 import { LaneButton, type LaneFit } from './LaneButton';
 
 export type LanePeekKey = LaneKey | 'ready';
 export type LaneRefs = MutableRefObject<Partial<Record<LanePeekKey, HTMLButtonElement | null>>>;
+
+/** The lane the eye should land on first: the most urgent operator lane holding something. */
+export function leadLane(counts: LaneCounts): LaneKey | null {
+  let best: LaneKey | null = null;
+  let rank = 0;
+  for (const lane of OPERATOR_LANES) {
+    const c = counts[lane];
+    if (c.failed || c.n === 0) continue;
+    const r = URGENCY[c.lamp] + 1;
+    if (r > rank) { best = lane; rank = r; }
+  }
+  return best;
+}
 
 export function LaneStrip({ counts, settled, ready, open, refs, onLane, onReady }: {
   counts: LaneCounts;
@@ -46,7 +60,7 @@ export function LaneStrip({ counts, settled, ready, open, refs, onLane, onReady 
     const row = rowRef.current;
     if (!row) return;
     const measure = () => {
-      if (fit < 2 && row.scrollWidth > row.clientWidth + 1) {
+      if (fit < 1 && row.scrollWidth > row.clientWidth + 1) {
         needed.current[fit] = row.scrollWidth;
         setFit((fit + 1) as LaneFit);
       } else if (fit > 0 && (needed.current[fit - 1] ?? Infinity) <= row.clientWidth) {
@@ -60,6 +74,7 @@ export function LaneStrip({ counts, settled, ready, open, refs, onLane, onReady 
     return () => ro.disconnect();
   }, [fit]);
   const compact = fit > 0;
+  const lead = leadLane(counts);
 
   const lane = (l: LaneKey) => (
     <LaneButton
@@ -69,6 +84,7 @@ export function LaneStrip({ counts, settled, ready, open, refs, onLane, onReady 
       count={counts[l]}
       settled={settled}
       fit={fit}
+      isNext={l === lead}
       open={open === l}
       onPress={onLane}
     />
