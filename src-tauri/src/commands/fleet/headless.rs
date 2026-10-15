@@ -159,13 +159,22 @@ pub(super) fn spawn_headless_session_with_identity(
     run_label: Option<&str>,
     identity: Option<super::pty::SpawnIdentity>,
 ) -> Result<String, String> {
+    // A fleet-door run (`super::door`): its markers never reach the CLI, and a
+    // caller-pinned `--session-id` becomes THE claude id (the base argv pins
+    // it; a duplicate would be dropped by `headless_argv`). A queued dispatch
+    // already carries that id in its identity (`queue::claude_id_for`).
+    let door = super::door::spec_of(&extra_args);
+    let cli_extra = super::door::cli_args(&extra_args);
     let (id, claude_session_id) = match identity {
         Some(i) => (i.id, i.claude_session_id),
         None => (
             uuid::Uuid::new_v4().to_string(),
-            uuid::Uuid::new_v4().to_string(),
+            pinned_session_id(&cli_extra).unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
         ),
     };
+    if let Some(spec) = door.as_ref() {
+        super::door::open_capture(&app, &id, spec.output)?;
+    }
     // A contest seat competes on its brief alone: no fleet MCP wiring (with
     // `--strict-mcp-config` in its args that leaves it no MCP servers at all,
     // exactly as the /contest skill runs a claude participant).
@@ -180,43 +189,64 @@ pub(super) fn spawn_headless_session_with_identity(
     let program: PathBuf = match crate::engine::cli_process::resolve_claude_exe_windows() {
         Some(p) => PathBuf::from(p),
         None => {
-            return Err(
-                "fleet headless spawn: claude executable not found (checked the native \
+            let why = "fleet headless spawn: claude executable not found (checked the native \
                  installer %USERPROFILE%\\.local\\bin, the npm-global layout, and PATH)"
-                    .to_string(),
-            )
+                .to_string();
+            super::door::abandon_capture(&id, &why);
+            return Err(why);
         }
     };
     #[cfg(not(windows))]
     let program: PathBuf = PathBuf::from("claude");
 
-    let mut argv = headless_argv(&claude_session_id, &extra_args);
+    let mut argv = headless_argv(&claude_session_id, &cli_extra);
     if let Some(p) = mcp.config_path.as_deref() {
         argv.push("--mcp-config".to_string());
         argv.push(p.display().to_string().replace('\\', "/"));
     }
     let seed = headless_user_message(&task);
-    spawn_headless_launch(
+    let is_door = door.is_some();
+    let spawned = spawn_headless_launch(
         app,
         cwd,
         task,
         run_label,
         HeadlessLaunch {
-            id,
+            id: id.clone(),
             engine: "claude",
             program,
             argv,
             seed,
-            keep_stdin_open: true,
+            // A door run is ONE `claude -p` turn, as its caller's own was:
+            // stdin closes after the seed and the CLI exits with its own code.
+            keep_stdin_open: !is_door,
             mcp_config_path: mcp.config_path,
             claude_session_id,
             title: None,
             row_args: extra_args,
             state_reason: "Headless session spawned",
-            name_from_task: true,
+            // A door run arrives named and titled; no extra naming call
+            // outside the cap.
+            name_from_task: !is_door,
             grok_isolated: false,
+            door,
         },
-    )
+    );
+    if let Err(e) = &spawned {
+        super::door::abandon_capture(&id, e);
+    }
+    spawned
+}
+
+/// The `--session-id <uuid>` a caller pinned in its extra args, when it is a
+/// UUID (`claude` refuses anything else). Pure.
+fn pinned_session_id(extra_args: &[String]) -> Option<String> {
+    extra_args
+        .iter()
+        .position(|a| a == "--session-id")
+        .and_then(|i| extra_args.get(i + 1))
+        .filter(|v| uuid::Uuid::parse_str(v).is_ok())
+        .cloned()
 }
 
 // ---------------------------------------------------------------------------
@@ -473,6 +503,7 @@ pub(super) fn spawn_codex_worker_with_identity(
             state_reason: "Codex worker spawned",
             name_from_task: false,
             grok_isolated: false,
+            door: None,
         },
     )
 }
@@ -641,6 +672,7 @@ pub(super) fn spawn_grok_worker_with_identity(
             state_reason: "Grok worker spawned",
             name_from_task: false,
             grok_isolated: marker.isolated,
+            door: None,
         },
     )
 }
@@ -687,6 +719,9 @@ struct HeadlessLaunch {
     /// Set grok's isolation switches on the child ([`apply_grok_isolation`]);
     /// `false` for every other lane.
     grok_isolated: bool,
+    /// A fleet-door run (`super::door`): its environment, and the capture
+    /// its stdout is teed into. `None` for every other session.
+    door: Option<super::door::DoorSpec>,
 }
 
 /// The one headless spawn: process, pipes, registry row, pumps, reaper.
@@ -720,6 +755,7 @@ fn spawn_headless_launch(
         state_reason,
         name_from_task,
         grok_isolated,
+        door,
     } = launch;
 
     let mut cmd = Command::new(&program);
@@ -740,6 +776,19 @@ fn spawn_headless_launch(
     }
     if grok_isolated {
         apply_grok_isolation(&mut cmd);
+    }
+    // A door run's environment is BUILT, not edited: cleared, then the
+    // plumbing `door::base_env` names, then the caller's keys (allowlisted at
+    // the door and again by `door::spec_of`). The app's own environment - its
+    // bearer key `PERSONAS_API_KEY` included - never reaches a run any
+    // token holder can start.
+    if let Some(d) = door.as_ref() {
+        cmd.env_clear()
+            .envs(super::door::base_env())
+            .env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
+        for (k, v) in &d.env {
+            cmd.env(k, v);
+        }
     }
     #[cfg(windows)]
     {
@@ -855,8 +904,9 @@ fn spawn_headless_launch(
     let app_out = app.clone();
     let id_out = id.clone();
     let ring_out = output.clone();
+    let door_id = door.is_some().then(|| id.clone());
     tokio::task::spawn_blocking(move || {
-        stdout_loop(app_out, id_out, ring_out, stdout, engine, capture);
+        stdout_loop(app_out, id_out, ring_out, stdout, engine, capture, door_id);
         let _ = pump_done_tx.send(());
     });
 
@@ -1249,13 +1299,18 @@ fn stdout_loop(
     stdout: std::process::ChildStdout,
     engine: &'static str,
     capture: bool,
+    door_id: Option<String>,
 ) {
     // The turn's closing prose, kept so the `result` event can be read for the
     // fleet protocol's completion line even when it carries no `result` field.
     let mut last_assistant: Option<String> = None;
     // The model the `system/init` event announced — the spend row's model.
     let mut model: Option<String> = None;
-    for line in BufReader::new(stdout).lines().map_while(Result::ok) {
+    // A door session's bytes are teed BELOW the line reader, so its capture is
+    // the child's stdout byte for byte (`door::Tee`); every other session
+    // reads straight through.
+    let mut reader = BufReader::new(super::door::Tee::new(stdout, door_id.clone()));
+    for line in (&mut reader).lines().map_while(Result::ok) {
         let trimmed = line.trim();
         if trimmed.is_empty() {
             continue;
@@ -1310,6 +1365,9 @@ fn stdout_loop(
             }
             Some("result") => {
                 observe_dev_runner_spend(&app, &session_id, model.as_deref(), trimmed);
+                if door_id.is_some() {
+                    super::door::on_result(&session_id, &event);
+                }
                 transition(
                     &app,
                     &session_id,
@@ -1326,6 +1384,12 @@ fn stdout_loop(
             }
             _ => {}
         }
+    }
+    // Drain whatever the line reader stopped short of (a non-UTF-8 line ends
+    // `lines()`), so a door capture still holds every byte, then close it.
+    if let Some(id) = door_id.as_deref() {
+        let _ = std::io::copy(&mut reader, &mut std::io::sink());
+        super::door::close_capture(id);
     }
     tracing::debug!(session_id = %session_id, "fleet headless stdout: EOF");
 }

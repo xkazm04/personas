@@ -1022,6 +1022,8 @@ export type Translations = {
     queue_origin_dispatch_ideas: string;
     queue_origin_athena: string;
     queue_origin_curator: string;
+    queue_origin_lens_scan: string;
+    queue_origin_app_master: string;
     queue_origin_autopilot: string;
     queue_origin_night_shift: string;
     queue_origin_feed_impact: string;

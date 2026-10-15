@@ -28,6 +28,7 @@
   "*:mastermind.family_runners",
   "*:mastermind.soundings_who_athena",
   "*:monitor.autopilot",
+  "*:monitor.queue_origin_app_master",
   "*:monitor.queue_origin_athena",
   "*:monitor.queue_origin_autopilot",
   "*:monitor.queue_origin_curator",

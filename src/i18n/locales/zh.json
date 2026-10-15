@@ -7185,6 +7185,8 @@
     "queue_origin_dispatch_ideas": "想法",
     "queue_origin_athena": "Athena",
     "queue_origin_curator": "Curator",
+    "queue_origin_lens_scan": "透镜扫描",
+    "queue_origin_app_master": "App Master",
     "queue_origin_autopilot": "自动驾驶",
     "queue_origin_night_shift": "夜班",
     "queue_origin_feed_impact": "动态",

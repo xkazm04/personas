@@ -669,6 +669,8 @@
   "queue_origin_dispatch_ideas": "Ý tưởng",
   "queue_origin_athena": "Athena",
   "queue_origin_curator": "Curator",
+  "queue_origin_lens_scan": "Quét theo lăng kính",
+  "queue_origin_app_master": "App Master",
   "queue_origin_autopilot": "Autopilot",
   "queue_origin_night_shift": "Ca đêm",
   "queue_origin_feed_impact": "Bảng tin",

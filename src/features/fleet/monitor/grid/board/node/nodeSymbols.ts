@@ -25,7 +25,7 @@
 
 import type { LucideIcon } from 'lucide-react';
 import {
-  AlertTriangle, Bot, Check, CircleDashed, Clock, Hand, Hourglass, Laptop, Library, Lightbulb, MessageSquare, Moon,
+  AlertTriangle, Bot, Check, CircleDashed, Clock, Factory, Hand, Hourglass, Laptop, Library, Lightbulb, MessageSquare, Moon, ScanSearch,
   Play, RotateCcw, Rss, Sparkles, Square, TimerOff, Trophy,
 } from 'lucide-react';
 import type { DispatchOrigin } from '@/lib/bindings/DispatchOrigin';
@@ -154,6 +154,10 @@ export const ORIGIN_GLYPH: Record<DispatchOrigin, LucideIcon> = {
   remote: Laptop,
   // Curator, draining the operator's request lane or acting on her plan.
   curator: Library,
+  // A /lens-scan run handed over by bp or the drawing set (the personas-run shim).
+  lens_scan: ScanSearch,
+  // A headless App Master builder handed over through the same shim.
+  app_master: Factory,
 };
 
 // The colour half — hues, swatch, the one treatment — lives in `nodeHues`;

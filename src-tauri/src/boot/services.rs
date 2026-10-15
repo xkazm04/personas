@@ -117,10 +117,15 @@ pub fn ensure_operator_api_key(pool: &DbPool, app_data_dir: &std::path::Path) {
 // later registrations are dropped with a warn.
 pub fn start_local_http(app: &tauri::App, st: &mut StartupTimer) {
     local_http::register_router("project-tracking", engine::project_tracking::push::router());
-    // Fleet hook receiver — Claude Code lifecycle hooks POST here.
+    // Fleet hook receiver — Claude Code lifecycle hooks POST here — and the
+    // fleet DOOR (spark one-control): `/fleet/enqueue` + `/fleet/sessions/*`,
+    // where the `personas-run` shim hands lens-scan / App Master runs to the
+    // ONE admission queue. One prefix, so the two routers are merged (the
+    // server nests one router per prefix); both sit behind `auth::guard`.
     local_http::register_router(
         "fleet",
-        commands::fleet::hooks::router(app.handle().clone()),
+        commands::fleet::hooks::router(app.handle().clone())
+            .merge(local_http::fleet_door::router(app.handle().clone())),
     );
     // Athena MCP server (Direction 3) — Claude Code sessions
     // discover this via per-session `--mcp-config` and call

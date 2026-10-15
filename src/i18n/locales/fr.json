@@ -7185,6 +7185,8 @@
     "queue_origin_dispatch_ideas": "Idées",
     "queue_origin_athena": "Athena",
     "queue_origin_curator": "Curator",
+    "queue_origin_lens_scan": "Analyse par lentille",
+    "queue_origin_app_master": "App Master",
     "queue_origin_autopilot": "Autopilot",
     "queue_origin_night_shift": "Équipe de nuit",
     "queue_origin_feed_impact": "Flux",

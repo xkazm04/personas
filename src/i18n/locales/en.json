@@ -1016,6 +1016,8 @@
     "queue_origin_dispatch_ideas": "Ideas",
     "queue_origin_athena": "Athena",
     "queue_origin_curator": "Curator",
+    "queue_origin_lens_scan": "Lens scan",
+    "queue_origin_app_master": "App Master",
     "queue_origin_autopilot": "Autopilot",
     "queue_origin_night_shift": "Night shift",
     "queue_origin_feed_impact": "Feed",

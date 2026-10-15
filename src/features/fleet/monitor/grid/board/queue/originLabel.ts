@@ -27,6 +27,8 @@ export function originLabel(s: Monitor, origin: DispatchOrigin): string {
     case 'contest': return s.queue_origin_contest;
     case 'remote': return s.queue_origin_remote;
     case 'curator': return s.queue_origin_curator;
+    case 'lens_scan': return s.queue_origin_lens_scan;
+    case 'app_master': return s.queue_origin_app_master;
     default: return s.queue_origin_manual;
   }
 }

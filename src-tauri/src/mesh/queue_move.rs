@@ -3,6 +3,7 @@
 //!
 //! ```text
 //!  entry QUEUED here?            no  -> Validation  not_queued
+//!  a fleet-door origin?          yes -> Validation  pinned_local     (lens_scan / app_master)
 //!  project has a github_url?     no  -> Validation  no_github_url   (Stage 1 resolves by URL)
 //!  peer CONNECTED?               no  -> NetworkOffline peer_offline, and NO job is created:
 //!                                       an outbox job would wake later and leave two live copies
@@ -41,6 +42,8 @@ pub(crate) struct QueuedEntry {
     pub mode: FleetSessionMode,
     pub args: Vec<String>,
     pub persona_id: Option<String>,
+    /// The row's `DispatchOrigin` token, when it has one.
+    pub origin: Option<String>,
 }
 
 /// The project facts a move needs.
@@ -121,6 +124,20 @@ pub(crate) async fn move_queued(
             "not_queued: session {session_id} is not waiting in this device's queue"
         ))
     })?;
+    // A fleet-door run (lens-scan, an App Master builder) never travels: a
+    // lens-scan run's `.ai/lens-scan/scan.db` is gitignored and a builder's
+    // worktree is local, and the caller is relaying the run from THIS app.
+    if crate::commands::fleet::door::is_pinned_local(entry.origin.as_deref()) {
+        return Err(AppError::Validation(format!(
+            concat!(
+                "pinned_local: session {} is a {} run handed to this device's fleet through the ",
+                "fleet door; its caller relays it from here and its work (a gitignored scan store, ",
+                "a local worktree) cannot travel. It stays queued here."
+            ),
+            session_id,
+            entry.origin.as_deref().unwrap_or_default()
+        )));
+    }
     let projects = ports.projects()?;
     let project = project_for_cwd(&projects, &entry.cwd).ok_or_else(|| {
         AppError::Validation(format!(
@@ -206,6 +223,7 @@ impl MovePorts for AppPorts {
                 mode: s.mode,
                 args: s.args,
                 persona_id: s.persona_id,
+                origin: s.origin,
             })
     }
 
@@ -277,6 +295,7 @@ mod tests {
                     mode: FleetSessionMode::Headless,
                     args: vec![TASK_ARG.into(), "Reply with MESH-OK".into()],
                     persona_id: Some("persona-1".into()),
+                    origin: Some("manual".into()),
                 }),
                 github_url: Some("https://github.com/o/personas".into()),
                 connected: true,
@@ -442,6 +461,25 @@ mod tests {
             fake.cancelled.lock().unwrap().is_empty(),
             "never zero copies"
         );
+    }
+
+    #[tokio::test]
+    async fn a_fleet_door_run_is_pinned_to_this_device() {
+        for origin in ["lens_scan", "app_master"] {
+            let mut fake = Fake::new(RemoteJobStatus::Running);
+            if let Some(e) = fake.entry.as_mut() {
+                e.origin = Some(origin.into());
+            }
+            let err = move_queued(&fake, "s-1", PEER)
+                .await
+                .expect_err("pinned local");
+            assert!(
+                matches!(err, AppError::Validation(ref m) if m.starts_with("pinned_local")),
+                "{err:?}"
+            );
+            assert!(fake.dispatched.lock().unwrap().is_empty());
+            assert!(fake.cancelled.lock().unwrap().is_empty());
+        }
     }
 
     #[test]

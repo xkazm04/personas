@@ -669,6 +669,8 @@
   "queue_origin_dispatch_ideas": "Ideen",
   "queue_origin_athena": "Athena",
   "queue_origin_curator": "Curator",
+  "queue_origin_lens_scan": "Linsen-Scan",
+  "queue_origin_app_master": "App Master",
   "queue_origin_autopilot": "Autopilot",
   "queue_origin_night_shift": "Nachtschicht",
   "queue_origin_feed_impact": "Feed",

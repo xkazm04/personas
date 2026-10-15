@@ -767,7 +767,11 @@ pub const FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB_MAX: u32 = 8192;
 /// only ever hibernated idle sessions and was lost on restart. Read through
 /// `queue::cap`, clamped to the bounds below.
 pub const FLEET_MAX_PARALLEL_SESSIONS: &str = "fleet.max_parallel_sessions";
-pub const FLEET_MAX_PARALLEL_SESSIONS_DEFAULT: u32 = 10;
+/// 16 since 2026-10-15 (spark one-control): lens-scan and App Master runs
+/// now queue on this ONE cap instead of beside it (App Master alone kept 16),
+/// and the RAM / five-hour / pace budgets in `commands::fleet::budgets` still
+/// gate every admission.
+pub const FLEET_MAX_PARALLEL_SESSIONS_DEFAULT: u32 = 16;
 pub const FLEET_MAX_PARALLEL_SESSIONS_MIN: u32 = 1;
 pub const FLEET_MAX_PARALLEL_SESSIONS_MAX: u32 = 30;
 /// The fleet queue's DEPTH bound — how many rows may sit in `queued` at once.
@@ -2904,7 +2908,7 @@ mod tests {
                 FLEET_MAX_PARALLEL_SESSIONS_MAX,
                 FLEET_MAX_PARALLEL_SESSIONS_DEFAULT
             ),
-            (1, 30, 10),
+            (1, 30, 16),
             "the fleet max-parallel-sessions stepper bounds must be updated to match"
         );
         assert_eq!(

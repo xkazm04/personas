@@ -28,6 +28,7 @@ use axum::Router;
 use tokio::net::TcpListener;
 
 pub mod auth;
+pub mod fleet_door;
 #[cfg(feature = "p2p")]
 pub mod mesh;
 

@@ -2905,6 +2905,10 @@
           "reason": "2026-10-14 (spark device-mesh WP2b): covered by local_http's router-level admission layer (Host allowlist + X-Personas-Local-Token), like dev_tools_http.rs; route test without_the_token_nothing_reaches_a_handler drives the real build_app"
         },
         {
+          "path": "src-tauri/src/local_http/fleet_door.rs",
+          "reason": "2026-10-15 (spark one-control WP1): the /fleet door (enqueue, session status, output, cancel) is covered by local_http's router-level admission layer (Host allowlist + X-Personas-Local-Token), like mesh.rs; `fleet` is not on SELF_AUTHENTICATED_PREFIXES, and route test without_the_token_no_door_route_reaches_a_handler drives the real build_app over all four routes"
+        },
+        {
           "path": "src-tauri/src/commands/fleet/hooks.rs",
           "reason": "2026-08-22: same layer. The credential is baked into the installed curl command; a hook carrying no/stale token reads as drifted and startup re-installs it"
         },
@@ -4654,6 +4658,10 @@
         {
           "path": "src-tauri/src/commands/contest/driver.rs",
           "reason": "watched() is a keyed single-flight guard over in-process seat WATCHER TASKS (a session id is inserted when its watcher is spawned and removed when that task ends), so it is never a one-way latch and never a record of what was EMITTED; the durable record of which seat run was finalised is app.json recordedSessions. A restart kills the watchers, so resetting with the process is correct. Same leaf as team_assignment_orchestrator.rs's LIVE: idempotent-invocation - hand-verified 2026-09-24"
+        },
+        {
+          "path": "src-tauri/src/commands/fleet/door.rs",
+          "reason": "LEASES is a LIVENESS lease, not a suppression ledger: it records when a fleet-door caller (the personas-run shim) last polled its own session, and the staleness ticker cancels a live door session whose caller stopped polling for 120 s. It decides whether work keeps running, never whether something is emitted a second time; it is not a one-way latch (entries are refreshed on every poll and forgotten once the session is final), it is bounded by the live door sessions, and a restart resetting it is correct by construction - every surviving row starts a FULL lease so its caller can reconnect. Same leaf as driver.rs's watched() and sleep_cycle.rs's RUNNING: in-process coordination - hand-verified 2026-10-15"
         }
       ],
       "baseline": {

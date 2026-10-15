@@ -669,6 +669,8 @@
   "queue_origin_dispatch_ideas": "Идеи",
   "queue_origin_athena": "Афина",
   "queue_origin_curator": "Curator",
+  "queue_origin_lens_scan": "Сканирование по линзе",
+  "queue_origin_app_master": "App Master",
   "queue_origin_autopilot": "Автопилот",
   "queue_origin_night_shift": "Ночная смена",
   "queue_origin_feed_impact": "Лента",

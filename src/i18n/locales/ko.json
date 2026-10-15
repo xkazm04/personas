@@ -7185,6 +7185,8 @@
     "queue_origin_dispatch_ideas": "아이디어",
     "queue_origin_athena": "Athena",
     "queue_origin_curator": "Curator",
+    "queue_origin_lens_scan": "렌즈 스캔",
+    "queue_origin_app_master": "App Master",
     "queue_origin_autopilot": "오토파일럿",
     "queue_origin_night_shift": "야간 근무",
     "queue_origin_feed_impact": "피드",
