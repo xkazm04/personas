@@ -57,12 +57,21 @@ export interface StartRequest {
   standard?: string;
 }
 
-/** What starting a run answers: the fleet session that carries it. */
+/**
+ * What starting a run answers. `drive.mjs` is started as a light child of the
+ * app and may open several fleet sessions later, one per `claude -p` it runs,
+ * so no session id exists yet: every one of them carries `label` in its run
+ * label (`fleet-door:lens_scan:<label>`, via `PERSONAS_RUN_LABEL` on drive's
+ * environment, which the personas-run shim forwards), and the drawing finds
+ * them by it.
+ */
 export interface StartResult {
-  sessionId: string;
-  state: 'running' | 'queued';
+  /** `personas:<uuid>`, minted per start. */
+  label: string;
   /** The exact command line started, for the dock console. */
   command: string;
+  /** drive.mjs's pid. */
+  pid: number;
 }
 
 /** Every write and every side read the drawing may make. */
