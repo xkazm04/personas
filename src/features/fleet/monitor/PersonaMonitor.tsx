@@ -38,6 +38,7 @@ import { useChannelWorkspace } from './channels';
 import { MonitorFeedStatus } from './MonitorFeedStatus';
 import { MonitorDrawerShell } from './MonitorDrawerShell';
 import { FleetGridView } from './grid/FleetGridView';
+import { useMandateDrawerRequest } from './grid/prototype/entry-e/mandate/mandateDrawerRequest';
 import {
   buildMonitorModel,
   processStatusMeta, processStatusLabel, elapsedStr,
@@ -250,6 +251,13 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
     setView(viewForSignal(monitorInitialView));
     setMonitorInitialView(null);
   }, [monitorInitialView, setMonitorInitialView]);
+  // The dock's act ticker asks for the act log, which only Activity hosts (its
+  // mandate drawer consumes the request on mount). A press made from
+  // Conversations or the Map takes the operator to Activity, where it lands.
+  const actLogPending = useMandateDrawerRequest((s) => s.pending !== null);
+  useEffect(() => {
+    if (actLogPending && view !== 'activity') goToView('activity');
+  }, [actLogPending, view, goToView]);
 
   // WHICH FEEDS THIS VIEW ACTUALLY RENDERS.
   //
