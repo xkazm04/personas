@@ -22173,6 +22173,138 @@
           "evidence": "src/features/shared/components/forms/SortableColumnHeader.tsx:60 The component supplies no semantic direction or change announcement; the inspected IncidentTableHeader integration also supplies no aria-sort."
         }
       ]
+    },
+    "ae80cd74-5beb-4d76-ae0a-16a4b581a2df/eval-harness": {
+      "context": "recipe-build-models",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T22:46:09.721Z",
+      "techniques": [
+        {
+          "technique": "metric-role-contract",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/lab.rs:481 LabVersionRating synthesizes a single weighted composite score across tool accuracy, output quality, and protocol compliance rather than optimizing one metric under constraint thresholds."
+        },
+        {
+          "technique": "assertion-vs-judgment",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:42 Output assertions cleanly model the deterministic verification band (regex, JSONPath, contains, not_contains, JSON schema, length) without offloading mechanical checks to model judges."
+        },
+        {
+          "technique": "scenario-design",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/test_suite.rs:30 Scenarios are keyed solely by mutable string names rather than immutable IDs with content versions, allowing scenario drift across runs to confound longitudinal comparisons."
+        },
+        {
+          "technique": "judge-stability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/lab.rs:101 LabResultBase only captures an untyped eval_method string without stamping a frozen judge packet (model version, rubric, exemplars) or tracking drift against an anchor set."
+        },
+        {
+          "technique": "comparison-modes",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/lab.rs:192 LabArenaResult flattens arena outcomes into absolute per-model sub-scores via LabResultBase rather than conducting mirrored pairwise head-to-head comparisons with win/loss/tie outcomes."
+        },
+        {
+          "technique": "uncontrolled-games-beside-the-win-rate",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/lab.rs:167 Multi-model arena runs do not track scheduled vs completed mirrored position games or report excluded/uncontrolled game counts alongside win rates."
+        },
+        {
+          "technique": "pairing-schedule",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/lab.rs:169 LabArenaRun records candidate models and scenario count but maintains no comparison schedule graph, exposure balancing, or graph connectivity verification."
+        },
+        {
+          "technique": "failure-signatures-beside-the-pass-rate",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/lab.rs:100 Errors are logged as isolated error message strings per result rather than counting failing runs by check family beside the pass rate."
+        },
+        {
+          "technique": "resolution-precondition",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/lab.rs:512 LabVersionRating reports sample count and mean scores without recording within-condition standard deviation or checking between-condition spread before publishing rankings."
+        },
+        {
+          "technique": "reliability-aggregation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/lab.rs:310 LabConsensusRun summarizes multi-sample consistency into a single scalar agreement rate rather than reporting any-of-N and all-of-N metrics side by side."
+        },
+        {
+          "technique": "eval-economics",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/test_suite.rs:42 TestSuiteMockTool allows scenarios to configure mock tool definitions with canned responses, supporting mock execution modes that test the harness without model API costs."
+        },
+        {
+          "technique": "outcome-conditioned-cost",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/lab.rs:538 LabVersionEconomics computes cost_per_success by dividing total USD across all attempts by resolved count, rather than conditioning cost on the both-succeeded subset beside an unconditioned primary."
+        },
+        {
+          "technique": "certification-levels",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/build_session.rs:83 BuildPhase permits promoting a draft persona directly from DraftReady to Promoted, allowing unverified candidates to bypass empirical testing phases."
+        },
+        {
+          "technique": "selection-over-noise",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/build_session.rs:341 Autonomous build mode retries up to three times on test failure until passing and auto-promoting, selecting over test noise without validating the promoted candidate on an unreached holdout."
+        },
+        {
+          "technique": "candidate-write-access",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/test_suite.rs:21 Test suites record source_run_id indicating scenarios can be generated from candidate runs, allowing the candidate to author the scenarios used to evaluate it."
+        },
+        {
+          "technique": "treatment-election-rate",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/lab.rs:632 While lab tool calls differentiate expected from actual calls, rating rollups score tool accuracy without reporting the election rate of offered capabilities over trials."
+        },
+        {
+          "technique": "failure-attribution",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:61 Assertion failure actions route directly to log, review, or auto-healing without classifying failures through the upstream owner funnel."
+        },
+        {
+          "technique": "probe-the-decision-not-the-artifact",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/test_suite.rs:35 TestSuiteScenario defines expected_tool_sequence to mechanically probe upstream tool-calling decisions rather than only evaluating the final prose artifact."
+        },
+        {
+          "technique": "discriminating-task-selection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/lab.rs:403 Matrix and eval runs filter scenarios using static user-provided strings rather than sampling dynamically based on historical population outcome variance."
+        },
+        {
+          "technique": "unaided-baseline-screening",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/test_suite.rs:17 PersonaTestSuite stores scenario collections without tracking deprived-candidate screening or baseline yield to ensure scenarios discriminate beyond model priors."
+        },
+        {
+          "technique": "overshoot-and-restore",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/evolution.rs:76 EvolutionCycle records winner_fitness and incumbent_fitness without enforcing an intentional boundary overshoot failure and recording the failing/restored state pair."
+        },
+        {
+          "technique": "monitor-inside-the-loop",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/lab.rs:172 LabArenaRun records an llm_summary without a secondary monitoring pass to detect discrepancies between the candidate's account and raw execution events."
+        },
+        {
+          "technique": "measurement-revision",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/lab.rs:513 LabVersionRating updates an aggregated rating cell in place with last_measured_at, discarding historical trial outcome distributions during score revisions."
+        }
+      ],
+      "registryProposal": "Clarify in metric-role-contract whether concurrent multi-dimensional quality rubrics (e.g. tool accuracy, response quality) are permitted to compose into rubrics under scoring-rubrics or if they must always be separated into a single primary objective and hard satisficing constraints.",
+      "withdrawn": {
+        "worker": "a8e04a67-a4d1-4a63-9d48-f3a631f77e09",
+        "state": "deviation",
+        "at": "2026-10-15T22:46:23.368204+00:00",
+        "reason": "reviewer (sonnet): The verdict and every technique anchor (lab.rs, output_assertion.rs, test_suite.rs) sit in files outside the recipe-build-models context file list, so it is about a different context. The lab.rs:481 composite-score code does exist, but it is not this context's code."
+      }
     }
   }
 }

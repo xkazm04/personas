@@ -1,0 +1,74 @@
+{
+  "schema": "conform-run/1",
+  "worker": "a8e04a67-a4d1-4a63-9d48-f3a631f77e09",
+  "subject": "eval-harness",
+  "evaluatedAt": "2026-10-15T22:46:09.721189+00:00",
+  "provider": "agy",
+  "model": "gemini-3.8-flash-high",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "eval-harness",
+      "context": "fleet-monitor-channels",
+      "reason": "The context implements multi-team channel monitoring UI, live message stream grid, and a live overlay pop-up test fixture (liveDevHarness.ts), not an agent evaluation or benchmarking harness."
+    },
+    {
+      "subject": "eval-harness",
+      "context": "agents-deployment",
+      "reason": "The context implements cloud deployment status dashboards, execution run history list, polling, and duration/spend rollups, not an agent eval harness or benchmarking suite."
+    },
+    {
+      "subject": "eval-harness",
+      "context": "agents-quick-answer",
+      "reason": "The context implements an operator triage swipe deck (usePendingInteractions, triageQueue, triageDispatch) for human review actions, not an agent evaluation harness."
+    },
+    {
+      "subject": "eval-harness",
+      "context": "observability-audit-models",
+      "reason": "The context defines observability metric types, audit log/incident domain types, and headless LLM spend attribution records (LlmSpend), rather than an eval harness or benchmarking suite."
+    },
+    {
+      "subject": "eval-harness",
+      "context": "recipe-build-models",
+      "reason": "withdrawn after review: reviewer (sonnet): The verdict and every technique anchor (lab.rs, output_assertion.rs, test_suite.rs) sit in files outside the recipe-build-models context file list, so it is about a different context. The lab.rs:481 composite-score code does exist, but it is not this context's code."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-15T22:46:09.721189+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "eval-harness"
+      ],
+      "techniques": [
+        "assertion-vs-judgment",
+        "candidate-write-access",
+        "certification-levels",
+        "comparison-modes",
+        "discriminating-task-selection",
+        "eval-economics",
+        "failure-attribution",
+        "failure-signatures-beside-the-pass-rate",
+        "judge-stability",
+        "measurement-revision",
+        "metric-role-contract",
+        "monitor-inside-the-loop",
+        "outcome-conditioned-cost",
+        "overshoot-and-restore",
+        "pairing-schedule",
+        "probe-the-decision-not-the-artifact",
+        "reliability-aggregation",
+        "resolution-precondition",
+        "scenario-design",
+        "selection-over-noise",
+        "treatment-election-rate",
+        "unaided-baseline-screening",
+        "uncontrolled-games-beside-the-win-rate"
+      ],
+      "deviations": 1,
+      "context": "recipe-build-models",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    }
+  ]
+}

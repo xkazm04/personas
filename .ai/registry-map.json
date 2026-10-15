@@ -28889,8 +28889,8 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 8
+          "priorNotApplicable": 8,
+          "state": "unknown"
         },
         {
           "subject": "agent-memory",
