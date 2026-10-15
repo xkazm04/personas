@@ -1501,7 +1501,6 @@
   "ml_reread_fact_kept": "Beibehalten",
   "ml_reread_keep": "Wie unterzeichnet beibehalten",
   "ml_reread_kept_at": "bei {count} Aktionen",
-  "ml_reread_kept_line": "Sie haben es bei {count} Aktionen belassen; jetzt hält es {acts}.",
   "ml_reread_sign_change": "Änderung unterzeichnen",
   "ml_reread_suggest_merge": "Vorschlag: Merges wieder nie allein.",
   "ml_reread_suggest_narrow": "Vorschlag: \"{scope}\" dem Steward wieder entziehen.",

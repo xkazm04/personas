@@ -8017,7 +8017,6 @@
     "ml_reread_fact_kept": "रखा गया",
     "ml_reread_keep": "हस्ताक्षरित रूप में ही रखें",
     "ml_reread_kept_at": "{count} कार्य पर",
-    "ml_reread_kept_line": "आपने इसे {count} कार्य पर रखा था; अब इसके पास {acts} हैं।",
     "ml_reread_sign_change": "बदलाव पर हस्ताक्षर करें",
     "ml_reread_suggest_merge": "सुझाव: मर्ज फिर से कभी अकेले नहीं होंगे।",
     "ml_reread_suggest_narrow": "सुझाव: स्टीवर्ड से \"{scope}\" वापस लें।",

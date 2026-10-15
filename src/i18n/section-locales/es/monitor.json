@@ -1501,7 +1501,6 @@
   "ml_reread_fact_kept": "Mantenido",
   "ml_reread_keep": "Mantener como está firmado",
   "ml_reread_kept_at": "en {count} acciones",
-  "ml_reread_kept_line": "Lo mantuviste en {count} acciones; ahora tiene {acts}.",
   "ml_reread_sign_change": "Firmar el cambio",
   "ml_reread_suggest_merge": "Sugerido: las fusiones vuelven a no hacerse nunca solas.",
   "ml_reread_suggest_narrow": "Sugerido: quitar \"{scope}\" al steward.",

@@ -1501,7 +1501,6 @@
   "ml_reread_fact_kept": "Conservé",
   "ml_reread_keep": "Garder tel que signé",
   "ml_reread_kept_at": "à {count} actes",
-  "ml_reread_kept_line": "Vous l'avez gardé à {count} actes ; il en compte {acts} maintenant.",
   "ml_reread_sign_change": "Signer la modification",
   "ml_reread_suggest_merge": "Suggéré : les fusions repassent à jamais seules.",
   "ml_reread_suggest_narrow": "Suggéré : retirer « {scope} » au steward.",

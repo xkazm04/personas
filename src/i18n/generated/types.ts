@@ -1454,7 +1454,6 @@ export type Translations = {
     ml_reread_suggest_widen: string;
     ml_reread_suggest_narrow: string;
     ml_reread_suggest_merge: string;
-    ml_reread_kept_line: string;
     ml_reread_kept_at: string;
     ml_reread_fact_asks: string;
     ml_reread_fact_acts: string;

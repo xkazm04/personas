@@ -118,7 +118,12 @@ function DrawerBody({ view, onView, onClose }: { view: MandateView; onView: (v: 
     <div
       role="dialog"
       aria-label={m.ml_drawer_aria}
-      className="p-4"
+      // A flex chain down to the content, every link able to shrink: the shell
+      // caps the drawer at the Monitor's height (max-h-full), and on a short
+      // window the content must give way to it instead of running under the
+      // drawer's clipped bottom edge, where the last rows and a picked scope
+      // were cut off.
+      className="flex min-h-0 flex-col p-4 [&>.k-host]:flex [&>.k-host]:min-h-0 [&>.k-host]:flex-col"
       data-testid="mandate-drawer"
       data-view={view.kind}
     >

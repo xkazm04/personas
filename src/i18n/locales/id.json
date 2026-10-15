@@ -8017,7 +8017,6 @@
     "ml_reread_fact_kept": "Dipertahankan",
     "ml_reread_keep": "Pertahankan seperti ditandatangani",
     "ml_reread_kept_at": "pada {count} aksi",
-    "ml_reread_kept_line": "Anda mempertahankannya pada {count} aksi; kini {acts}.",
     "ml_reread_sign_change": "Tandatangani perubahan",
     "ml_reread_suggest_merge": "Disarankan: penggabungan kembali menjadi tidak pernah sendiri.",
     "ml_reread_suggest_narrow": "Disarankan: ambil kembali \"{scope}\" dari steward.",

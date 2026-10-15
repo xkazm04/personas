@@ -88,7 +88,9 @@ describe('re-read Sign card', () => {
     expect(card.id).toBe('mandate-reread:c1');
     expect(await screen.findByText(/Most of what Personas sends you is one kind of work: accept ideas \(4 of 5\)/)).toBeTruthy();
     expect(screen.getByTestId('sign-reread-suggest').textContent).toContain('let the steward accept ideas');
-    expect(screen.getByTestId('sign-reread').textContent).toContain('You kept it at 6 acts');
+    // The keep marker is the rail's Kept fact, not a body line.
+    expect(screen.getByTestId('deck-ledger-rail').textContent).toContain('at 6 acts');
+    expect(screen.getByTestId('sign-reread').textContent).not.toContain('6 acts');
     // Decidable without scrolling: the why the suggestion makes concrete takes
     // no line, and merges and the cap fold into one line until E.
     expect(screen.getByTestId('sign-reread').textContent).not.toContain(m.ml_reread_why_dominant);

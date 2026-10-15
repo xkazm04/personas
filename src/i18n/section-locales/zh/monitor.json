@@ -1501,7 +1501,6 @@
   "ml_reread_fact_kept": "已保留",
   "ml_reread_keep": "保持已签署状态",
   "ml_reread_kept_at": "在 {count} 次行动时",
-  "ml_reread_kept_line": "你在 {count} 次行动时选择保留；现在是 {acts}。",
   "ml_reread_sign_change": "签署更改",
   "ml_reread_suggest_merge": "建议：合并恢复为永不自行执行。",
   "ml_reread_suggest_narrow": "建议：从管家处收回“{scope}”。",

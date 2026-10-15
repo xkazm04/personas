@@ -8017,7 +8017,6 @@
     "ml_reread_fact_kept": "Ponecháno",
     "ml_reread_keep": "Ponechat jak podepsáno",
     "ml_reread_kept_at": "při {count} akcích",
-    "ml_reread_kept_line": "Ponechali jste ho při {count} akcích; nyní drží {acts}.",
     "ml_reread_sign_change": "Podepsat změnu",
     "ml_reread_suggest_merge": "Návrh: sloučení se vrací na nikdy samostatně.",
     "ml_reread_suggest_narrow": "Návrh: vzít správci zpět „{scope}“.",

@@ -1447,7 +1447,6 @@
   "ml_reread_suggest_widen": "Suggested: let the steward {scope}. {count} of the items waiting on you now would no longer reach you.",
   "ml_reread_suggest_narrow": "Suggested: take back \"{scope}\" from the steward.",
   "ml_reread_suggest_merge": "Suggested: merges go back to never alone.",
-  "ml_reread_kept_line": "You kept it at {count} acts; it holds {acts} now.",
   "ml_reread_kept_at": "at {count} acts",
   "ml_reread_fact_asks": "Asks now",
   "ml_reread_fact_acts": "Acts",

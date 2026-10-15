@@ -8017,7 +8017,6 @@
     "ml_reread_fact_kept": "المُبقى",
     "ml_reread_keep": "إبقاء كما وُقِّع",
     "ml_reread_kept_at": "عند {count} إجراء",
-    "ml_reread_kept_line": "أبقيته عند {count} إجراء؛ يحتفظ الآن بـ {acts}.",
     "ml_reread_sign_change": "توقيع التغيير",
     "ml_reread_suggest_merge": "مقترح: يعود الدمج إلى عدم السماح به بمفرده.",
     "ml_reread_suggest_narrow": "مقترح: استرداد \"{scope}\" من المشرف.",

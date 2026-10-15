@@ -8017,7 +8017,6 @@
     "ml_reread_fact_kept": "Đã giữ",
     "ml_reread_keep": "Giữ như đã ký",
     "ml_reread_kept_at": "ở mức {count} hành động",
-    "ml_reread_kept_line": "Bạn đã giữ ở mức {count} hành động; hiện là {acts}.",
     "ml_reread_sign_change": "Ký thay đổi",
     "ml_reread_suggest_merge": "Gợi ý: việc gộp trở lại là không bao giờ tự làm.",
     "ml_reread_suggest_narrow": "Gợi ý: thu lại \"{scope}\" khỏi người quản lý.",

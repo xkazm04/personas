@@ -1501,7 +1501,6 @@
   "ml_reread_fact_kept": "Сохранено",
   "ml_reread_keep": "Оставить как подписано",
   "ml_reread_kept_at": "при действиях: {count}",
-  "ml_reread_kept_line": "Вы оставили при действиях: {count}; сейчас их {acts}.",
   "ml_reread_sign_change": "Подписать изменение",
   "ml_reread_suggest_merge": "Предложение: слияния снова никогда не выполняются самостоятельно.",
   "ml_reread_suggest_narrow": "Предложение: забрать у управляющего «{scope}».",

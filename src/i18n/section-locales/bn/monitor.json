@@ -1501,7 +1501,6 @@
   "ml_reread_fact_kept": "রাখা হয়েছে",
   "ml_reread_keep": "স্বাক্ষরিত অবস্থায় রাখুন",
   "ml_reread_kept_at": "{count}টি কাজে",
-  "ml_reread_kept_line": "আপনি এটি {count}টি কাজে রেখেছিলেন; এখন এটি {acts}টি ধরে।",
   "ml_reread_sign_change": "পরিবর্তনে স্বাক্ষর করুন",
   "ml_reread_suggest_merge": "প্রস্তাব: মার্জ আবার কখনো নিজে নয়।",
   "ml_reread_suggest_narrow": "প্রস্তাব: স্টুয়ার্ডের কাছ থেকে \"{scope}\" ফিরিয়ে নিন।",
