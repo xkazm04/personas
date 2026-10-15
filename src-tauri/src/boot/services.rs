@@ -182,8 +182,14 @@ pub fn start_local_http(app: &tauri::App, st: &mut StartupTimer) {
             // hook-driven state (they fall back to transcript-growth only,
             // which reads "stale" where they should read idle/awaiting).
             // Re-point them to the live port so the fleet stays observable.
+            // Never from an ISOLATED instance (`PERSONAS_DATA_DIR` set): the
+            // hooks live in the operator's global `~/.claude/settings.json`,
+            // so re-pointing them would hand every Claude session on the
+            // machine to a throwaway instance and leave them aimed at a dead
+            // port once it stops.
+            let isolated = local_http::isolated_handshake_path().is_some();
             match commands::fleet::hook_install::check_hooks(port) {
-                Ok(s) if s.installed && !s.port_matches => {
+                Ok(s) if s.installed && !s.port_matches && !isolated => {
                     match commands::fleet::hook_install::install_hooks(port) {
                         Ok(_) => tracing::info!(
                             port,
