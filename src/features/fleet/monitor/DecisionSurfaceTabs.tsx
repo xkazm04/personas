@@ -4,8 +4,8 @@
  * it "does not switch anything"; it now sits beside the view tabs, where the
  * change is seen the moment it is made. Every reader follows the store
  * (`useDecisionSurface`), so the board re-renders with no reload. It is a mode
- * switch, not a tab strip (no panel is swapped), so it is a pressed-button pair
- * like the view buttons beside it. Default stays
+ * switch, not a tab strip (no panel is swapped), so it is a pressed-button pair in
+ * one rounded track, inked like the view pills beside it. Default stays
  * Chips until the owner approves Lanes for daily use (PLAN WP10).
  */
 import { Button } from '@/features/shared/components/buttons';
@@ -24,20 +24,28 @@ export function DecisionSurfaceTabs() {
     { id: 'lanes', label: m.ml_setting_lanes },
   ];
   return (
-    <div className="flex items-center gap-1" role="group" aria-label={m.ml_setting_title} data-testid="decision-surface-switch">
-      {options.map((o) => (
-        <Button
-          key={o.id}
-          variant={surface === o.id ? 'accent' : 'secondary'}
-          tone={surface === o.id ? 'info' : undefined}
-          size="sm"
-          aria-pressed={surface === o.id}
-          onClick={() => setSurface(o.id)}
-          data-testid={`decision-surface-${o.id}`}
-        >
-          {o.label}
-        </Button>
-      ))}
+    <div
+      className="inline-flex items-center gap-0.5 rounded-full border border-primary/15 bg-secondary/20 p-0.5"
+      role="group"
+      aria-label={m.ml_setting_title}
+      data-testid="decision-surface-switch"
+    >
+      {options.map((o) => {
+        const on = surface === o.id;
+        return (
+          <Button
+            key={o.id}
+            variant="ghost"
+            size="sm"
+            aria-pressed={on}
+            onClick={() => setSurface(o.id)}
+            data-testid={`decision-surface-${o.id}`}
+            className={`!rounded-full !py-0.5 !font-normal typo-body-lg ${on ? 'bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary' : ''}`}
+          >
+            {o.label}
+          </Button>
+        );
+      })}
     </div>
   );
 }
