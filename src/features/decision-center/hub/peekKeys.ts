@@ -7,8 +7,9 @@
  *   Esc disarms, then closes the peek.
  *
  * A one-key verdict only fires where the verdict is honest WITHOUT the card:
- * a question has fields to fill and a council rejection needs a written
- * reason, so A / R on those open the item instead of writing a deferral (or a
+ * a question has fields to fill, a council rejection needs a written reason,
+ * and a draft mandate is signed on its envelope (and dropped with a reason),
+ * so A / R on those open the item instead of writing a deferral (or a
  * refusal) that would read as a landed decision.
  *
  * React-free; the hook that binds it is `usePeekKeyboard`.
@@ -26,12 +27,12 @@ export type PeekAction =
 
 /** A can write `accept` from the row. */
 export function canAcceptFromRow(item: DecisionItem): boolean {
-  return item.kind !== 'question';
+  return item.kind !== 'question' && item.kind !== 'mandate';
 }
 
 /** R can write `reject` from the row. */
 export function canRejectFromRow(item: DecisionItem): boolean {
-  return item.kind !== 'question' && item.kind !== 'council';
+  return item.kind !== 'question' && item.kind !== 'council' && item.kind !== 'mandate';
 }
 
 /** D (done) applies: a report read, a thread answered. */

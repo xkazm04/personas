@@ -18,7 +18,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { DecisionItem } from '../../model/decisionModel';
 import { decisionTier } from '../../model/decisionOrder';
 import { Keycap, Lamp, Monogram } from '../../deck/parts';
-import { canFinishFromRow } from '../peekKeys';
+import { canAcceptFromRow, canFinishFromRow, canRejectFromRow } from '../peekKeys';
 import { useRowCopy } from './rowCopy';
 import { ROW_LEAVE, rowEnter } from './peekMotion';
 
@@ -45,6 +45,8 @@ export const PeekRow = forwardRef<HTMLDivElement, PeekRowProps>(function PeekRow
   const tier = decisionTier(item);
   const tierLabel = copy.tier(tier);
   const finishes = canFinishFromRow(item);
+  // A row whose A and R both open the card (a draft mandate) prints only Enter.
+  const opensOnly = !finishes && !canAcceptFromRow(item) && !canRejectFromRow(item);
 
   return (
     <motion.div
@@ -94,6 +96,10 @@ export const PeekRow = forwardRef<HTMLDivElement, PeekRowProps>(function PeekRow
           <span className="flex items-center gap-1.5 typo-caption text-status-error" data-testid="decision-peek-armed">
             <Keycap>↵</Keycap>
             {tx(m.dc_hub_reject_armed, { verdict: item.verdictLabels.reject })}
+          </span>
+        ) : focused && opensOnly ? (
+          <span className="flex items-center gap-1 text-foreground" aria-label={tx(m.dc_hub_row_open_aria, { title: item.title })}>
+            <Keycap>↵</Keycap>
           </span>
         ) : focused ? (
           <span className="flex items-center gap-1 text-foreground" aria-label={finishes ? m.dc_hub_row_keys_read : m.dc_hub_row_keys_decide}>

@@ -1,7 +1,7 @@
 /**
  * The peek row's words: the tier's name and what clearing the item costs, in
  * the unit that matters for its type (answers to give, minutes to read, a
- * reply, a backlog effort, or one key). Resolved at render through
+ * reply, a backlog effort, or one key; a draft mandate is a read). Resolved at render through
  * `t.monitor.dc_hub_*`, so no copy is frozen in a module constant.
  */
 import { useMemo } from 'react';
@@ -27,6 +27,8 @@ export function useRowCopy() {
       tier === 1 ? m.dc_hub_tier_blocking : tier === 2 ? m.dc_hub_tier_decide : m.dc_hub_tier_read,
     cost: (item: DecisionItem): string => {
       if (item.kind === 'question' && item.input) return tx(m.dc_hub_cost_answers, { count: item.input.fields.length });
+      // A draft mandate is signed on its envelope, a read, never one key from the row.
+      if (item.kind === 'mandate') return tx(m.dc_hub_cost_read, { count: readMinutes(item) });
       const type = modalTypeOf(item.kind);
       if (type === 'report') return tx(m.dc_hub_cost_read, { count: readMinutes(item) });
       if (type === 'chat') return m.dc_hub_cost_reply;

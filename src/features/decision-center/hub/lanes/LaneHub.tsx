@@ -12,6 +12,9 @@
  *    `scope: lane`, focused on the row, and the deck's close reopens the peek.
  *  - One-key verdicts from a row write through `roster.decide`, exactly as
  *    the chip hub does.
+ *  - The Sign peek also lists the draft mandates (`mandate:<charterId>`),
+ *    which the roster does not carry (`usePeekSignItems`); A / R on one opens
+ *    its Sign card, because signing needs the envelope and a drop its reason.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -33,6 +36,8 @@ import { useLoadSettled } from '../useLoadSettled';
 import { Peek } from '../visual/Peek';
 import { LaneFooter } from './LaneFooter';
 import { LaneStrip, type LanePeekKey, type LaneRefs } from './LaneStrip';
+import { usePeekSignItems } from './usePeekSignItems';
+import { requestOrphanage } from '@/features/fleet/monitor/grid/prototype/entry-e/mandate/mandateDrawerRequest';
 
 interface OpenPeek { key: LanePeekKey; focusId: string | null }
 
@@ -56,7 +61,11 @@ export function LaneHub({ keysEnabled = true }: { keysEnabled?: boolean }) {
   const roster = useDecisionRoster({ load });
   const { decide, refresh, counts } = roster;
   const index = useMemo(() => indexLanes(lanesState.snapshot), [lanesState.snapshot]);
-  const items = useMemo(() => (lane ? laneQueue(lane, roster.items, index) : []), [lane, roster.items, index]);
+  const sign = usePeekSignItems(lane === 'sign');
+  const items = useMemo(
+    () => (lane ? laneQueue(lane, sign.items.length > 0 ? [...roster.items, ...sign.items] : roster.items, index) : []),
+    [lane, roster.items, sign.items, index],
+  );
 
   const deckOpen = useDecisionDeckStore((s) => s.request !== null);
   const closedReturnTo = useDecisionDeckStore((s) => s.closedReturnTo);
@@ -66,6 +75,12 @@ export function LaneHub({ keysEnabled = true }: { keysEnabled?: boolean }) {
   const toggle = useCallback((key: LanePeekKey) => {
     setPeek((p) => (p?.key === key ? null : { key, focusId: null }));
   }, []);
+  // Orphans (O) opens the orphanage (the mandate drawer's page, WP6), where
+  // its work is drafted, adopted or archived, rather than a peek of cards.
+  const openLane = useCallback((key: LanePeekKey) => {
+    if (key === 'orphan') { setPeek(null); requestOrphanage(); return; }
+    toggle(key);
+  }, [toggle]);
   const onWalk = useCallback((step: 1 | -1) => {
     setPeek((p) => (p ? { key: walkLane(p.key, step, PEEK_ORDER), focusId: null } : p));
   }, []);
@@ -108,14 +123,14 @@ export function LaneHub({ keysEnabled = true }: { keysEnabled?: boolean }) {
     const target = laneForKey(e.key);
     if (!target) return false;
     e.preventDefault();
-    toggle(target);
+    openLane(target);
     return true;
   }, { enabled: keysEnabled && !deckOpen, priority: ROUTE_DECISION_PRIORITY });
 
   const laneCounts = roster.lanes;
-  const settled = useLoadSettled(lane, roster.loading);
+  const settled = useLoadSettled(lane, roster.loading) && sign.ready;
   if (!laneCounts) return null;
-  const failed = lane !== null && laneCounts[lane].failed && settled && items.length === 0;
+  const failed = lane !== null && (laneCounts[lane].failed || sign.failed) && settled && items.length === 0;
   const anchor = peek ? refs.current[peek.key] ?? null : null;
 
   return (
@@ -126,7 +141,7 @@ export function LaneHub({ keysEnabled = true }: { keysEnabled?: boolean }) {
         ready={counts.ready}
         open={peek?.key ?? null}
         refs={refs}
-        onLane={(l) => toggle(l)}
+        onLane={(l) => openLane(l)}
         onReady={() => toggle('ready')}
       />
       {peek?.key === 'ready' && (
