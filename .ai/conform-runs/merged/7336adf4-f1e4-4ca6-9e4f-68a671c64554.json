@@ -1,0 +1,45 @@
+{
+  "schema": "conform-run/1",
+  "worker": "7336adf4-f1e4-4ca6-9e4f-68a671c64554",
+  "subject": "terminal-multiplexing",
+  "evaluatedAt": "2026-10-15T00:49:04.653761+00:00",
+  "provider": "grok",
+  "model": "grok-4.7",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "terminal-multiplexing",
+      "context": "recipes-playground",
+      "reason": "context-map.json lists file_paths as empty and entry points under src/features/recipes/sub_playground/, but src/features/recipes is not on disk. A repo search for RecipePlaygroundModal, useRecipeTestRunner, and RecipeOutputSection found only the context map, docs, and i18n/tour leftovers, so there is no context code to judge."
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "commands-contest",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor driver.rs:5 only shows that seats are admitted through the fleet's spawn_contest_seat; that function (commands/fleet/contest_seat.rs) closes PTY handles and emits pty registry changes, so the seats are PTY-backed fleet sessions. 'Not hosting interactive terminals' is therefore unproven by"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-15T00:49:04.653761+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "terminal-multiplexing"
+      ],
+      "techniques": [
+        "attach-detach-lifecycle",
+        "bounded-replay-buffers",
+        "completion-authority-arbitration",
+        "injected-hook-reconvergence",
+        "multi-client-fan-out",
+        "multiplexer-state",
+        "occupant-state-detection",
+        "pty-management",
+        "renderer-economics"
+      ],
+      "deviations": 0,
+      "context": "commands-contest",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    }
+  ]
+}

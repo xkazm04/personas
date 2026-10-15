@@ -6762,8 +6762,8 @@
           "revision": 7,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 16
+          "priorNotApplicable": 16,
+          "state": "unknown"
         }
       ],
       "governance": "governed"
