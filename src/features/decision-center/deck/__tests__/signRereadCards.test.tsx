@@ -92,9 +92,13 @@ describe('re-read Sign card', () => {
     expect(screen.getByTestId('deck-ledger-rail').textContent).toContain('at 6 acts');
     expect(screen.getByTestId('sign-reread').textContent).not.toContain('6 acts');
     // Decidable without scrolling: the why the suggestion makes concrete takes
-    // no line, and merges and the cap fold into one line until E.
+    // no line, and merges and the cap are rail facts (always in view) until E.
     expect(screen.getByTestId('sign-reread').textContent).not.toContain(m.ml_reread_why_dominant);
-    expect(screen.getByTestId('deck-fold-sign-merge-cap').textContent).toContain(m.ml_merge_never);
+    const envelope = screen.getByTestId('sign-rail-envelope');
+    expect(screen.getByTestId('deck-ledger-rail').contains(envelope)).toBe(true);
+    expect(envelope.textContent).toContain(m.ml_sign_merge);
+    expect(envelope.textContent).toContain(m.ml_merge_never);
+    expect(envelope.textContent).toContain(m.ml_sign_budget);
     expect(screen.queryByTestId('sign-merge')).toBeNull();
     expect(screen.getByText(m.ml_reread_yes)).toBeTruthy();
     expect(screen.getByText(m.ml_reread_no)).toBeTruthy();
@@ -117,7 +121,7 @@ describe('re-read Sign card', () => {
     key('e');
     expect(screen.getByTestId('sign-scope-idea.accept').getAttribute('aria-checked')).toBe('true');
     expect(screen.getByTestId('sign-merge')).toBeTruthy();
-    expect(screen.queryByTestId('deck-fold-sign-merge-cap')).toBeNull();
+    expect(screen.getByTestId('sign-merge-note').textContent).toBe(m.ml_sign_merge_hint);
     expect(screen.getByTestId('sign-verb').textContent).toContain(m.ml_reread_sign_change);
     key('a');
     await waitFor(() => expect(onDecide).toHaveBeenCalledTimes(1));

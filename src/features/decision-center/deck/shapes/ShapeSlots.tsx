@@ -42,7 +42,7 @@ export function shapeDock(item: DecisionItem, ctl: ShapeController | undefined, 
 
 /** What a shape adds to the ledger rail, or null. */
 export function shapeRail(item: DecisionItem, ctl: ShapeController | undefined): ReactNode | null {
-  if (ctl?.shape === 'sign') return <SignRail item={item} />;
+  if (ctl?.shape === 'sign') return <SignRail item={item} sign={ctl.sign} />;
   if (ctl?.shape === 'claim') return <ClaimRail item={item} />;
   return null;
 }

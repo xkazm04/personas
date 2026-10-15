@@ -25,10 +25,20 @@ export function useUsd(): (usd: number) => string {
   }, [language]);
 }
 
-export function EnvelopeRow({ label, testId, stacked = false, children }: { label: string; testId: string; stacked?: boolean; children: ReactNode }) {
+/**
+ * One envelope row: the eyebrow label in a narrow column (it may take two
+ * lines), the value beside it. A `note` sits under the label, in the room the
+ * value's own height leaves there, so explaining a row never costs the card a
+ * line (the merge hint: residue item 5, the Sign card decidable at 1280x800
+ * without scrolling).
+ */
+export function EnvelopeRow({ label, note, testId, stacked = false, children }: { label: string; note?: string; testId: string; stacked?: boolean; children: ReactNode }) {
   return (
-    <section className={`grid items-start gap-x-4 gap-y-1 ${stacked ? 'grid-cols-1' : 'grid-cols-[15rem_1fr]'}`} data-testid={testId}>
-      <span className="pt-0.5 typo-eyebrow text-foreground">{label}</span>
+    <section className={`grid items-start gap-x-4 gap-y-1 ${stacked ? 'grid-cols-1' : 'grid-cols-[11rem_1fr]'}`} data-testid={testId}>
+      <span className="flex flex-col gap-1 pt-0.5">
+        <span className="typo-eyebrow text-foreground">{label}</span>
+        {note && <span className="typo-caption [text-wrap:pretty]" data-testid={`${testId}-note`}>{note}</span>}
+      </span>
       <div className="flex min-w-0 flex-col gap-1.5">{children}</div>
     </section>
   );
@@ -71,7 +81,7 @@ export function MergeRow({ draft, onChange }: { draft: MandateSignInput; onChang
   const { t } = useTranslation();
   const m = t.monitor;
   return (
-    <EnvelopeRow label={m.ml_sign_merge} testId="sign-merge">
+    <EnvelopeRow label={m.ml_sign_merge} note={m.ml_sign_merge_hint} testId="sign-merge">
       <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={m.ml_sign_merge}>
         {MERGE_POLICIES.map((p) => {
           const on = draft.mergePolicy === p;
@@ -92,7 +102,6 @@ export function MergeRow({ draft, onChange }: { draft: MandateSignInput; onChang
           );
         })}
       </div>
-      <span className="typo-caption">{m.ml_sign_merge_hint}</span>
     </EnvelopeRow>
   );
 }
