@@ -31,10 +31,12 @@ export function DockRestingRow({ console: d }: { console: DockConsole }) {
       <span className={`${DOCK_COLUMN} pointer-events-none relative flex h-9 items-center gap-2 px-3`}>
         <Terminal className="h-3.5 w-3.5 flex-shrink-0 text-primary" aria-hidden />
         <span className="dock-caret h-3.5 w-[7px] flex-shrink-0 rounded-[1px] bg-primary" aria-hidden />
-        <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted transition-colors group-hover:text-foreground">
+        {/* The composer's placeholder keeps its whole width; the ticker (or,
+            without it, a spacer) takes what is left and yields first. */}
+        <span className="flex-shrink-0 truncate font-mono text-xs text-muted transition-colors group-hover:text-foreground">
           {c.quickT.placeholder}
         </span>
-        {lanes && <DockActTicker />}
+        {lanes ? <DockActTicker /> : <span className="flex-1" aria-hidden />}
         {/* The rent this row pays: what the fleet is doing right now. */}
         <span className="flex flex-shrink-0 items-center gap-2.5" data-testid="quick-dispatch-dock-tally">
           {tally.needsYou > 0 && (
