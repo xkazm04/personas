@@ -464,6 +464,21 @@ pub fn set_receipt(pool: &DbPool, id: &str, receipt_json: &str) -> Result<(), Ap
     })
 }
 
+/// A job's stored receipt, verbatim, or `None`. For the kinds whose receipt
+/// shape [`map_job`] does not type (a `charter_verdict`'s
+/// `CharterVerdictReceipt`): the caller parses it by the job's kind.
+pub fn get_receipt_json(pool: &DbPool, id: &str) -> Result<Option<String>, AppError> {
+    timed_query!("remote_jobs", "remote_jobs::get_receipt_json", {
+        let conn = pool.get()?;
+        let raw: Option<Option<String>> = rusqlite::OptionalExtension::optional(conn.query_row(
+            "SELECT receipt_json FROM remote_jobs WHERE id = ?1",
+            [id],
+            |row| row.get("receipt_json"),
+        ))?;
+        Ok(raw.flatten())
+    })
+}
+
 /// The last-known view of a remote session, as the running device last mirrored
 /// it to this (originating) device. Latest-wins: each mirror replaces the last.
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1,6 +1,7 @@
 pub mod attention_ledger;
 pub mod build_sessions;
 pub mod charter_acts;
+pub mod charter_mirror;
 pub mod curation_schedule;
 pub mod design_conversations;
 pub mod episodes;

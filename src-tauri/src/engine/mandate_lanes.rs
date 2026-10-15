@@ -35,7 +35,7 @@ use personas_engine::mandate_router::{
     RouterAct,
 };
 
-use crate::db::models::{IncidentFilters, MandateReread};
+use crate::db::models::{IncidentFilters, MandateReread, MandateSummary};
 use crate::db::repos::communication::{manual_reviews, reports};
 use crate::db::repos::core::charter_acts::{self, ItemActState};
 use crate::db::repos::core::orphan_archive;
@@ -370,7 +370,61 @@ pub(crate) fn build_snapshot(
 ) -> Result<DecisionLanesSnapshot, AppError> {
     let r = routed(pool, user_db)?;
     let rereads = crate::engine::mandate_reread_view::rereads(pool, &r);
-    Ok(snapshot_of(r, &rereads))
+    let mut snapshot = snapshot_of(r, &rereads);
+    // Mandates mirrored from their home device (WP9) are never routed here:
+    // this device holds none of their items. Only their Sign entries join,
+    // so a draft or a re-read waiting on the home shows in this device's
+    // lanes too, and a verdict on it is sent home.
+    match crate::db::repos::core::charter_mirror::list(pool) {
+        Ok(mirrored) => add_mirrored(&mut snapshot, &mirrored),
+        Err(e) => {
+            tracing::warn!(error = %e, "lanes: mirrored mandates unreadable");
+            snapshot.failed_sources.push("mirrored_mandates".into());
+        }
+    }
+    Ok(snapshot)
+}
+
+/// The Sign entries of mirrored mandates: a draft, or a signed one whose home
+/// asked for a re-read. Their charters count nothing held (their items are on
+/// the home device). A charter id the snapshot already holds is left alone:
+/// a home never takes a mirror of its own charter.
+pub(crate) fn add_mirrored(snapshot: &mut DecisionLanesSnapshot, mirrored: &[MandateSummary]) {
+    for s in mirrored {
+        if snapshot
+            .charters
+            .iter()
+            .any(|c| c.charter_id == s.charter_id)
+        {
+            continue;
+        }
+        let sign = |item_id: String, why: &str| LaneEntry {
+            item_id,
+            item_kind: "mandate".to_string(),
+            lane: Lane::Sign,
+            clause: LaneClause::None,
+            charter_id: Some(s.charter_id.clone()),
+            coalesce_key: format!("{}:sign:{why}", s.charter_id),
+            irreversible: None,
+            project_id: Some(s.project_id.clone()),
+        };
+        if s.status == "draft" {
+            snapshot
+                .items
+                .push(sign(format!("mandate:{}", s.charter_id), "none"));
+        } else if s.reread.is_some() {
+            snapshot
+                .items
+                .push(sign(format!("{REREAD_PREFIX}{}", s.charter_id), "reread"));
+        }
+        snapshot.charters.push(LaneCharter {
+            charter_id: s.charter_id.clone(),
+            project_id: s.project_id.clone(),
+            status: s.status.clone(),
+            envelope_version: s.envelope.envelope_version,
+            held: 0,
+        });
+    }
 }
 
 fn snapshot_of(r: Routed, rereads: &HashMap<String, MandateReread>) -> DecisionLanesSnapshot {

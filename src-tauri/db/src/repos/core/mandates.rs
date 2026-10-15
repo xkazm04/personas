@@ -216,6 +216,7 @@ fn summary_of(pool: &DbPool, conn: &Connection, row: &CharterRow) -> MandateSumm
         updated_at: row.updated_at.clone(),
         reread: None,
         origin: origin_of(row),
+        mirror: None,
     }
 }
 

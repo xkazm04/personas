@@ -678,6 +678,12 @@ pub struct MandateSummary {
     pub reread: Option<MandateReread>,
     /// How the mandate was made, when it came from the orphanage.
     pub origin: Option<MandateOrigin>,
+    /// `Some` when this device only MIRRORS the mandate (WP9): its home is
+    /// another paired device, this device never writes it, and every verdict
+    /// taken here is sent home. `None` on the home device.
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub mirror: Option<super::charter_mirror::MandateMirror>,
 }
 
 /// What every envelope door returns: the refreshed mandate and the act it wrote.

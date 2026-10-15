@@ -14,11 +14,15 @@
 //!   switch cannot behave differently from a local one.
 //! - [`queue_move`]: moving a QUEUED local fleet entry to a paired device,
 //!   cancel-after-accept (decision D3), through the one remote dispatch path.
+//! - [`charter_mirror`]: the mandate mirror (spark mandate-lanes, WP9): a
+//!   charter's home device mirrors it to every paired peer, read-only there,
+//!   and a verdict decided on a peer is applied at home.
 //!
 //! [`install`] wires both seams at boot, BEFORE the network starts, next to
 //! `companion::remote_jobs::install` (which routes `mesh_verb` jobs to
 //! [`verbs::execute`]).
 
+pub mod charter_mirror;
 pub mod diagnostics;
 pub mod queue_move;
 pub mod snapshot;
@@ -64,6 +68,7 @@ pub async fn install(app: &AppHandle, network: &Arc<NetworkService>) {
         .set_provider(Arc::new(snapshot::AppSnapshotProvider::new(app.clone())))
         .await;
     let _ = INSTALLED.set(network.mesh.clone());
+    charter_mirror::install(app, network);
     for event in [
         event_name::FLEET_QUEUE_CHANGED,
         event_name::FLEET_SESSION_STATE,

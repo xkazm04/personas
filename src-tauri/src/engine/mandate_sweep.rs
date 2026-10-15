@@ -623,6 +623,16 @@ fn file_one(
 /// (envelope acts, steward and operator acts, an irreversible router act) goes
 /// straight to `mandates::revert`, which owns the typed refusals.
 pub(crate) fn revert_with_undo(pool: &DbPool, act_id: &str) -> Result<CharterAct, AppError> {
+    revert_with_undo_from(pool, act_id, None)
+}
+
+/// [`revert_with_undo`] for a revert decided on another device: the revert
+/// act records `origin_device` (a paired peer's verdict applied at home, WP9).
+pub(crate) fn revert_with_undo_from(
+    pool: &DbPool,
+    act_id: &str,
+    origin_device: Option<&str>,
+) -> Result<CharterAct, AppError> {
     let undone = match charter_acts::get(pool, act_id)? {
         Some(a) if a.actor == CharterActor::Router && a.reverted_at.is_none() && a.reversible => {
             match RouterAct::from_item_kind(&a.item_kind) {
@@ -635,7 +645,7 @@ pub(crate) fn revert_with_undo(pool: &DbPool, act_id: &str) -> Result<CharterAct
         }
         _ => None,
     };
-    match mandates::revert(pool, act_id, None) {
+    match mandates::revert(pool, act_id, origin_device) {
         Ok(created) => Ok(created),
         Err(e) => {
             if let Some((kind, item_id)) = undone {
