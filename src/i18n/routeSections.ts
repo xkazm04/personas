@@ -34,6 +34,9 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
   'radio',
   // Persona Monitor is reachable from the always-mounted titlebar button.
   'monitor',
+  // `decisionCenter` — the product blueprint drawing set opens over the Decision Deck, which is a global
+  // OverlayIsland (so is the `monitor` section it reads): there is no route that does not reach it.
+  'decisionCenter',
   // `deliberation` — the Monitor's Conversations view renders deliberation
   // status captions from it (DeliberationRail), so it rides with `monitor`.
   'deliberation',

@@ -39,6 +39,7 @@ import { MONITOR_RAIL_MODULES } from './monitorRailSurfaces';
 import { MONITOR_ACTIVITY_MODULES } from './monitorActivitySurfaces';
 import { MANDATE_LANES_MODULES } from './mandateLanesSurfaces';
 import { DECISION_DECK_MODULES } from './decisionDeckSurfaces';
+import { BLUEPRINT_MODULES } from './blueprintSurfaces';
 import { MANDATE_CARDS_MODULES } from './mandateCardsSurfaces';
 import { MANDATE_WP6_MODULES } from './mandateWp6Surfaces';
 import { BREACH_STATES_MODULES } from './breachStatesSurfaces';
@@ -96,6 +97,8 @@ export const MODULES: Record<string, HarnessModule> = {
   ...MANDATE_LANES_MODULES,
   // The live Decision Deck (decisionDeckSurfaces.tsx, decisionDeckTapes.mjs).
   ...DECISION_DECK_MODULES,
+  // The product blueprint drawing set on the Kettle fixture (blueprintSurfaces.tsx, blueprintTapes.mjs).
+  ...BLUEPRINT_MODULES,
   // The mandate-lane card shapes in the live deck (mandateCardsSurfaces.tsx, mandateCardsTapes.mjs).
   ...MANDATE_CARDS_MODULES,
   ...MANDATE_WP6_MODULES, // Re-read, met-when, Scopes and the Orphanage (mandateWp6Surfaces.tsx, WP6).

@@ -4248,5 +4248,16 @@
   "fr:companions.process.dial.kind_skill",
   "es:monitor.ml_orphans_kind_idea",
   "fr:monitor.ml_orphans_kind_incident",
-  "fr:monitor.ml_orphans_kind_evolution"
+  "fr:monitor.ml_orphans_kind_evolution",
+  "de:decisionCenter.blueprint.count_live",
+  "de:decisionCenter.blueprint.plan",
+  "de:decisionCenter.blueprint.evidence_phase",
+  "fr:decisionCenter.blueprint.stage_in_review",
+  "fr:decisionCenter.blueprint.level_site",
+  "fr:decisionCenter.blueprint.agents",
+  "fr:decisionCenter.blueprint.plan",
+  "fr:decisionCenter.blueprint.evidence_phase",
+  "fr:decisionCenter.blueprint.date_col",
+  "fr:decisionCenter.blueprint.desc_col",
+  "id:decisionCenter.blueprint.find_kind_item"
 ]
