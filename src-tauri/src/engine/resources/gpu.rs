@@ -17,6 +17,7 @@ use std::collections::HashMap;
 
 /// The owning pid named in a GPU-engine instance name, or `None` when the
 /// name is not of the `pid_<digits>[_...]` shape.
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn parse_instance_pid(instance: &str) -> Option<u32> {
     let rest = instance.strip_prefix("pid_")?;
     let digits = rest.split('_').next()?;
@@ -29,6 +30,7 @@ pub fn parse_instance_pid(instance: &str) -> Option<u32> {
 /// Fold `(instance name, utilisation percent)` pairs into a per-pid share
 /// (`percent / 100`, summed over the pid's engines). Instances that name no
 /// pid, and non-finite or negative values, are skipped.
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn fold_instances<'a>(items: impl IntoIterator<Item = (&'a str, f64)>) -> HashMap<u32, f64> {
     let mut out: HashMap<u32, f64> = HashMap::new();
     for (name, pct) in items {

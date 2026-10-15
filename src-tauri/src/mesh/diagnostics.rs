@@ -148,6 +148,7 @@ fn mdns_check(seen: usize) -> DiagnosticCheck {
 /// One inbound rule as `netsh advfirewall firewall show rule ... verbose`
 /// prints it. Only the fields the judgement reads.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[cfg_attr(not(windows), allow(dead_code))]
 pub struct FirewallRule {
     pub name: String,
     pub enabled: bool,
@@ -166,6 +167,7 @@ pub struct FirewallRule {
 /// `Err` when the text has content but no `Rule Name:` label: a localized
 /// Windows prints translated labels, and guessing at them would turn
 /// "unreadable" into a confident green.
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn parse_netsh_rules(text: &str) -> Result<Vec<FirewallRule>, String> {
     let mut rules = Vec::new();
     let mut current: Option<FirewallRule> = None;
@@ -224,6 +226,7 @@ pub fn parse_netsh_rules(text: &str) -> Result<Vec<FirewallRule>, String> {
 }
 
 /// Does a `LocalPort` value (`Any`, `4242`, `4000-4300`, `80,4242`) cover `port`?
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn port_covered(local_port: &str, port: u16) -> bool {
     local_port.split(',').map(str::trim).any(|part| {
         if part.eq_ignore_ascii_case("any") {
@@ -239,6 +242,7 @@ pub fn port_covered(local_port: &str, port: u16) -> bool {
     })
 }
 
+#[cfg_attr(not(windows), allow(dead_code))]
 fn same_program(rule_program: &str, exe: Option<&Path>) -> bool {
     let norm = |s: &str| s.trim().replace('/', "\\").to_ascii_lowercase();
     exe.is_some_and(|exe| norm(rule_program) == norm(&exe.to_string_lossy()))
@@ -247,6 +251,7 @@ fn same_program(rule_program: &str, exe: Option<&Path>) -> bool {
 /// Does the rule apply on a network whose active profiles are `active`
 /// (netsh names: `Domain`, `Private`, `Public`)? A rule with no `Profiles`
 /// label, or an unknown active set, is read as "applies".
+#[cfg_attr(not(windows), allow(dead_code))]
 fn profile_ok(rule: &FirewallRule, active: &[String]) -> bool {
     rule.profiles.is_empty()
         || active.is_empty()
@@ -256,6 +261,7 @@ fn profile_ok(rule: &FirewallRule, active: &[String]) -> bool {
 }
 
 /// Does this enabled inbound rule cover UDP `port` for this app, on `active`?
+#[cfg_attr(not(windows), allow(dead_code))]
 fn covers(rule: &FirewallRule, port: u16, exe: Option<&Path>, active: &[String]) -> bool {
     let proto_ok = rule.protocol.eq_ignore_ascii_case("udp")
         || rule.protocol.eq_ignore_ascii_case("any")
@@ -275,6 +281,7 @@ fn covers(rule: &FirewallRule, port: u16, exe: Option<&Path>, active: &[String])
 /// known, the profile(s) actually in use (a rule for the wrong profile is the
 /// failure this check used to miss: measured 2026-10-15, allow rules existed
 /// for Public only while the active network was Private).
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn firewall_fix(port: u16, active: &[String]) -> String {
     let profile = if active.is_empty() {
         String::new()
@@ -288,6 +295,7 @@ pub fn firewall_fix(port: u16, active: &[String]) -> String {
 
 /// Judge parsed rules. A covering BLOCK rule wins over any allow, exactly as
 /// Windows Firewall evaluates them.
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn judge_firewall(
     rules: &[FirewallRule],
     port: u16,
@@ -366,6 +374,7 @@ async fn firewall_check(_port: u16, _exe: Option<&Path>, _active: &[String]) -> 
 /// One `Get-NetConnectionProfile` row, as the probe prints it:
 /// `<InterfaceAlias>|<NetworkCategory>|<IPv4Connectivity>`.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(not(windows), allow(dead_code))]
 pub struct NetProfile {
     pub alias: String,
     pub category: String,
@@ -375,8 +384,10 @@ pub struct NetProfile {
 /// The PowerShell the probe runs. Enum values print as their invariant names
 /// (`Public`, `Private`, `DomainAuthenticated`; `Internet`, `LocalNetwork`),
 /// so this does not depend on the display language.
+#[cfg_attr(not(windows), allow(dead_code))]
 pub const PROFILE_PS: &str = "Get-NetConnectionProfile | ForEach-Object { '{0}|{1}|{2}' -f $_.InterfaceAlias, $_.NetworkCategory, $_.IPv4Connectivity }";
 
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn parse_profiles(text: &str) -> Vec<NetProfile> {
     text.lines()
         .filter_map(|line| {
@@ -396,15 +407,18 @@ pub fn parse_profiles(text: &str) -> Vec<NetProfile> {
 /// A network carries LAN traffic when its IPv4 side reaches the local network
 /// or beyond. An adapter with `NoTraffic` (a disconnected virtual switch) is
 /// listed but cannot block discovery.
+#[cfg_attr(not(windows), allow(dead_code))]
 fn carries_lan(p: &NetProfile) -> bool {
     p.ipv4.eq_ignore_ascii_case("localnetwork") || p.ipv4.eq_ignore_ascii_case("internet")
 }
 
+#[cfg_attr(not(windows), allow(dead_code))]
 fn is_private(p: &NetProfile) -> bool {
     p.category.eq_ignore_ascii_case("private")
         || p.category.eq_ignore_ascii_case("domainauthenticated")
 }
 
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn judge_profiles(profiles: &[NetProfile]) -> DiagnosticCheck {
     let listing = profiles
         .iter()
@@ -444,6 +458,7 @@ pub fn judge_profiles(profiles: &[NetProfile]) -> DiagnosticCheck {
 
 /// The netsh profile names (`Domain`, `Private`, `Public`) of the networks that
 /// carry LAN traffic; empty when none is known.
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn active_profile_names(profiles: &[NetProfile]) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for p in profiles.iter().filter(|p| carries_lan(p)) {
