@@ -37,7 +37,7 @@ queue before her plan. Two situations need it and both have happened: the app is
 owns the standing lane, or her plan is still the one projected from an older checkout and
 only the queue file is current.
 
-`next --engine conform,deepen,apply,reconcile` filters the PLAN lane the same way (skip, never reorder). `--engine conform` is the one that cannot publish registry content: `conform` workers run in this repo, write only their own run file under `.ai/conform-runs/` and are told never to commit or push, while `apply` and `deepen` workers commit in the registry and may push its default branch. Use it when the registry's `main` carries commits that are not Curator's.
+`next --engine conform,deepen,apply,reconcile` filters the PLAN lane the same way (skip, never reorder). `--engine conform` is the one that cannot publish registry content: `conform` workers run in this repo, write only their own run file under `.ai/conform-runs/` and are told never to commit or push (the DRIVER commits their merged result, below), while `apply` and `deepen` workers commit in the registry and may push its default branch. Use it when the registry's `main` carries commits that are not Curator's.
 
 `next --terminal-owns` waives ONLY the `curator_enabled` brake, for when the operator switched
 the app's tick off precisely so this terminal drives her (quiet hours and backpressure still
@@ -55,8 +55,10 @@ in THIS repo. **It never writes `.ai/registry-map.json`.** It writes ONE run fil
 lock, keeps the newer verdict when two disagree and records the older in
 `.ai/conform-detail.json`, refuses `unknown` and anchors on a blank line, appends the run's
 `consults` to `.ai/consults.jsonl`, and archives the file in `.ai/conform-runs/merged/`. A file
-merged twice changes nothing. The worker is told not to commit or push, so the operator reads
-and commits the map diff.
+merged twice changes nothing. The worker is told not to commit or push: the map only changes when the merger runs, and
+several workers share one checkout. Operator decision 2026-10-15: the DRIVER commits the result
+(`loop.py merge --only <dispatch-id>.json --commit`, and `run-pool` does it after every merge) on
+the current branch, never pushed, through `multi.commit_repo`'s isolated-index ritual.
 
 `conform` items are also filtered by scope: the scan ranks a subject without knowing which
 bundles this repo consumes, so `loop.py` skips any item whose domain is not in

@@ -703,7 +703,8 @@ def conform_run_protocol(claim: dict) -> str:
         "`.ai/consults.jsonl` (the merger appends your `consults`), do not write the step-5 "
         "run-result file (this file is the result), and do not add a pair (name a missing "
         "pairing in `registryProposal`). Change no other file. Do NOT commit, push, stash, or "
-        "touch any file you did not write."
+        "touch any file you did not write: the driver commits the map after the merger has folded your "
+        "run file in, because only then does the map change exist."
     )
 
 
@@ -1734,6 +1735,23 @@ def _is_merger(pid: int) -> bool:
         return True
 
 
+def commit_conform(run_names: list[str], subject: str = "") -> dict:
+    """Commit the merged conform state in THIS repo, on its current branch, never pushed.
+
+    Operator decision 2026-10-15: conform results are committed, not left for a human to read
+    first. It is the DRIVER that commits, not the worker: the map only exists after the merger
+    has folded the run file in (the worker never writes it), and several workers share one
+    checkout, so a worker-side commit would race the merger. Reuses multi.commit_repo's
+    isolated-index ritual: explicit paths, no deletions, a sibling's dirty file never staged.
+    """
+    import multi
+    names = [n for n in run_names if (PERSONAS_ROOT / CONFORM_RUNS_REL / "merged" / n).exists()]
+    msg = ("chore(registry-map): conform verdicts" + (f" for {subject}" if subject else "")
+           + "\n\nCommitted by the curator driver after the merger folded "
+           + (", ".join(names) or "its run files") + " in.")
+    return multi.commit_repo(PERSONAS_ROOT, names, msg)
+
+
 def merge_runs(registry: pathlib.Path, only: list[str] | None = None, reapply: bool = False,
                dry: bool = False, wait_ms: int = MERGE_WAIT_MS, _retry: bool = True,
                project: pathlib.Path | None = None) -> dict:
@@ -2183,6 +2201,7 @@ class Pool:
                                    wait_ms=MERGE_RETRY_WAIT_MS if w.get("merging") else MERGE_WAIT_MS)
                 if merge.get("ok"):
                     self.map_digest = map_digest()
+                    self.log("conform_commit", dispatch=w["dispatch_id"], **commit_conform([run_name]))
             action, evidence = judge_conform(
                 merge, run_name, limited=limited, timed_out=bool(w.get("timed_out")), exit_code=exit_code,
                 out_tail=tail, tmp_left=tmp.exists() and not run_path.exists(), timeout_min=w["timeout_min"])
@@ -2490,6 +2509,7 @@ def main() -> int:
     p.add_argument("--only", help="comma-separated run file names in .ai/conform-runs/")
     p.add_argument("--reapply", action="store_true", help="re-fold the merged/ archive (recovery after a revert)")
     p.add_argument("--dry", action="store_true")
+    p.add_argument("--commit", action="store_true", help="after a good merge, commit the map, detail, consults and the merged run files (never pushes)")
     p = sub.add_parser("run-pool", help="N workers, RAM-scaled: conform in parallel, registry lanes serial")
     p.add_argument("--max", type=int, default=MAX_WORKERS, help=f"worker ceiling (default {MAX_WORKERS}); memory may allow fewer")
     p.add_argument("--lane", help="ladder lanes this pool drives (default: plan)")
@@ -2563,6 +2583,8 @@ def main() -> int:
         root = registry_root(c)
         only = [x.strip() for x in a.only.split(",") if x.strip()] if a.only else None
         out = merge_runs(root, only=only, reapply=a.reapply, dry=a.dry)
+        if a.commit and out.get("ok") and not a.dry:
+            out["commit"] = commit_conform(only or [])
         print(json.dumps(out, indent=2, default=str))
         return 0 if out.get("ok") else 1
 
