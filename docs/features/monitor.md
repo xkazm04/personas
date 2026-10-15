@@ -41,6 +41,160 @@ orb and the Home decisions widget read it too, so every count agrees.
 The old Activity rail ("Decision dock" with Reviews / Dispatch / Messages tabs)
 is retired; its dispatch bar lives in the Ready peek.
 
+**The decision deck's card anatomy** (2026-10-14, every card, under both
+settings below). Each card reads top-down: the kind as a lit eyebrow, the ask as
+the title, one context line (the tier in words and who raised it), then the
+**outcome lines**, "If you approve: ..." beside "If you reject: ...", so what each
+verdict does is read before either is pressed. The no side is the dock's own
+negative (Later on a report, Done on a chat). Long body sections fold to one
+counted line that opens in place (click, or `I`), so a card is decidable at
+1280x800 without scrolling. The dock is fixed at the foot of the rail with each
+key printed inside its button. An item whose yes cannot be taken back (a merge,
+a spend, an outbound message, a deletion) **arms first**: the first press shows
+exactly what leaves, `A` again or `Enter` confirms, `Esc` disarms. After a
+verdict the tray keeps a receipt ("Accepted: <title>"), and an emptied deck
+offers the chips (or lanes) that still hold cards.
+
+### Mandate lanes (behind the `lanes` setting, 2026-10-15)
+
+> **Behind a dev switch.** Everything in this section appears only when
+> **Settings > Admin > Decision surface** (dev-only) reads **Lanes**. The default
+> is **Chips**: the Decision Center above, the Autopilot plate, no mandate
+> drawer, no ticker. The switch flips with no reload. When the owner approves
+> lanes in daily use the chips are deleted in one commit (PLAN WP10). The
+> **surface, Queue and Conversations restyle** at the end of this section is
+> NOT behind the switch; it ships to everyone.
+
+Each project's App Master charter is a **mandate**: an envelope saying which
+kinds of decision its steward may take alone (scopes such as *accept ideas* or
+*file reports as read*), a merge policy (default *never alone*) and the monthly
+spend cap. Inside the envelope the steward decides and every decision lands in
+an **act log** you can audit and revert. Only crossings reach you. Every live
+charter starts **unsigned** (envelope version 0): nothing is delegated until it
+is signed, so an unsigned mandate behaves exactly as before.
+
+**Lane buttons.** The command bar's chip strip becomes five buttons: **Breach**
+`1` (crossed a mandate's envelope), **Sign** `2` (a mandate waiting for its
+signature), **Accept** `3` (read and close, or accept a claim that a goal is
+met), **Talk** `4` (threads waiting for your reply) and **Orphans** `O` (items
+no mandate covers; the button opens the **Orphanage**, below, instead of a peek). Counts come from the backend's `decision_lanes_snapshot`
+(the router's one verdict per item, never re-derived on the client); a source
+that failed shows the failed mark with its name in the tooltip, never 0.
+**Ready to dispatch** stays beside them. A button opens the lane's peek, ordered
+by clause (stop, valve, risk, merge, spend, scope, unsigned), then age; `←/→`
+walk the lanes, `Enter` opens the deck scoped to the lane. The Sign peek lists
+each draft mandate as "Sign the <project> mandate: <title>"; `A` and `R` on it
+open the card (signing needs the envelope, a drop needs its reason) and never
+decide from the row. The title-bar badge, the Home decisions widget and
+Athena's orb count Breach + Sign + Accept + Talk under this setting.
+
+**Card shapes in the lane deck** (on the anatomy above):
+
+- **Breach**: why it reached you, in one sentence (on an unsigned mandate the
+  sentence names the project and says what signing would change); the clause
+  diff where an amend would change the envelope ("Steward decides: file reports
+  as read -> + accept ideas"); the items the router coalesced on the same clause,
+  folded; an **incident sheet** on a stop. The head's outcome lines follow the
+  dock, one per verb: **`1` amend** (widen a scope, let merges land, raise the
+  cap, or decide the item itself; armed for merge and spend), **`2` deny** with a
+  one-key reason, **`3` suspend** the mandate (printed only when there is a
+  mandate to suspend). An item with **no mandate** says that its project has
+  none and that it gathers in the Orphans lane; one whose mandate did not load
+  says so instead of guessing. The item's own branches move to `4`+.
+- **Valve walk**: one irreversible item per step ("Valve 3 of 48"), each armed
+  twice, never batched.
+- **Sign**: the envelope as a document (scopes in plain words, `E` to edit, the
+  merge policy as a live choice, the cap), the refusal classes and how many items
+  are held on the draft. The ledger's cost tile says what signing releases
+  ("Releases 4 items"). **`A` sign** arms when it grants merge or spend: the verb
+  keeps its name and prints the confirm key (`↵`), and what it grants is listed
+  at the top of the body before the second press. **`X` drop** with a reason:
+  the draft is retired and the act log records the drop with that reason
+  (`mandate_drop`).
+- **Re-read** (a Sign card, `mandate-reread:<charterId>`): a signed mandate whose
+  USE asks to be read again, never a calendar. Four triggers, each a named
+  constant in `engine/src/mandate_reread.rs`: near its cap (90%) while nothing
+  reaches you; asks often for its size (more than 0.25 asks per act past 6
+  acts, or 1.5 times the fleet's own ratio with 3+ asks); 5+ merges since you
+  last read it; one kind of work dominating what reaches you (the scope that
+  would absorb it takes 3+ of 4+ asks, at least twice an even share). The card
+  is titled with the reason and shows the suggestion (widen or narrow a scope,
+  or merges back to never). **`A` keep as signed** (`mandate_keep`): the card
+  does not return until the mandate's acts reach twice the count you kept it
+  at ("You kept it at 6 acts"). **`E`** opens the envelope with the suggestion
+  applied; `A` then signs the change. No drop.
+- **Accept (claim)**: the goal's own **met when** (`dev_goals.met_when`, read
+  through `goal_met_when`): one row per condition the goal names. The KPI row
+  is checked against its target; the UAT and the council round are listed with
+  no tick and say why (nothing here records a UAT pass or links a council
+  verdict to a goal). A goal that names no condition says so in one line, and
+  a read that failed says that instead. Then a random audit sample of the
+  mandate's acts (`1`-`3` pick one, `V` revert it, `N` narrow its scope), `A`
+  accept, `R` send back with a reason.
+- **Talk** keeps the chat thread; council cards say the council never admits
+  work on its own.
+
+**Stewards plate.** In the supply column the Autopilot plate becomes the
+Stewards plate: the attention-loop switch on top (unchanged, same tour anchors
+`fleet-autopilot` / `fleet-autopilot-toggle`), Athena's CLI answerer as its own
+row with its own toggle, then one row per charter (project, steward, rung, the
+project's autopilot mode, budget used / cap or "no cap", open asks, held items),
+the charters asking you first. A **Bay nameplate** gains a second lamp, present
+only when the project has a mandate and lit only while it holds a Breach, Sign
+or Accept card for you.
+
+**The mandate drawer** (in the Monitor's one drawer shell): **`M`** opens the
+register of mandates, a row opens a **mandate page**, **`L`** opens the act log
+across every mandate. The page puts its act log first with counted filters (all
+/ by the steward / by you / revertible / reverted), each act in words (the
+verb, then the item's title), and the envelope in the rail. **`S`** suspends or resumes,
+**`V`** reverts the selected act, **`N`** takes back its scope; a final act says
+why it cannot be reverted before anything is pressed.
+
+The mandate page has two views: **`1` act log** (the default) and **`2`
+Scopes**. Scopes lists every decide scope, then the merge policy and the spend
+cap. A held scope says how many acts were taken under it and its agreement,
+labelled **design** (nothing yet records whether the steward would have decided
+an item the way you did). A scope not held says how many of the items waiting
+on you now it would take, counted by routing each one again through the router
+with the scope added (on an unsigned mandate: "if you signed it with this
+scope"). **`W`** widens the picked line, **`N`** narrows it, both through
+`mandate_amend` (one act with its before / after). A widen that touches merge
+or spend (the merge policy, the cap, `dispatch`) arms first and lists the items
+that will no longer reach you; `W` again or `Enter` confirms, `Esc` disarms. An
+unsigned mandate writes nothing and says to sign it first.
+
+**`O`** (or the Orphans lane button) opens the **Orphanage**: one row per
+project whose pending work no mandate holds, with why it asks for a mandate,
+measured against what one card releases today (never a clock): *large* (3+
+items and at least one card's worth) or *growing* (more than half newer than
+the fleet's median item). The detail offers **`D` draft** a mandate (a draft
+with an empty envelope and merge never, `source = athena`; it arrives in Sign;
+when no persona works on the project you pick the steward first), **`A` adopt**
+the project into an existing mandate (a new charter carrying that mandate's
+steward and envelope), and **`X` archive** (armed twice: the items leave the
+Orphans lane, archived not deleted, still in their own lists). On its tick the
+steward sweep drafts a firing cluster on its own when the project has an App
+Master persona (or a persona raised most of its items): deterministic, no
+model call, never a second draft while one is open, and not again after you
+dropped one until new orphans arrive.
+
+**The dock's act ticker.** The dispatch dock's resting row gains one line of
+what the stewards just decided ("App Master · Personas filed 3 reports as
+evidence"), pushed by `charter-act-recorded` (no poll; acts of one mandate by
+the same hand coalesce within two minutes; absent until the first act). A press
+opens the act log at that act, from any Monitor tab: from Conversations or the
+Map it switches to Activity first.
+
+**One roof (ships to everyone, not behind the switch).** The Monitor paints one
+ground under every tab, a fine dot grid over a soft tonal field
+(`.monitor-surface`), with a light-theme reading; the old dark-only network
+image and the per-tab hairline grid are gone. The Activity layout switch reads
+**Bays | Queue**. The Queue view's three lanes (Running, Queued, Parked) are
+built as bays: engraved name, count, a lamp lit with the worst state inside, a
+share bar. Conversations uses the same panel, 52px command strip, plates and
+lamps as Activity.
+
 Press `Esc` (or click the titlebar button again) to close. The Monitor fades
 in on open and fades out on close (the mount is wrapped in `AnimatePresence`
 so the exit animation plays before it unmounts); reduced-motion users get an
@@ -502,6 +656,10 @@ exactly one mounted strip claims it; a visibility gate would not have helped,
 because both copies are on screen at the same moment.
 
 #### Autopilot — the board's one switch, paced to the subscription
+
+> Under the `lanes` decision surface this plate is the top row of the
+> **Stewards** plate (see [Mandate lanes](#mandate-lanes-behind-the-lanes-setting-2026-10-15));
+> the switch, its pacing and its testids are unchanged.
 
 The header's **Autopilot** pill is the attention loop's on/off
 (`autonomous_attention_loop`, the same setting Mission Control's Attention
