@@ -8918,12 +8918,10 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 still runs each evaluator as `.unwrap_or_default()` (:75-78, :82). An erroring evaluator contributes an empty list, identical to having nothing to say, so a proactive system that has gone dark reads as a quiet week (failure-not-empty-success).",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256-b2:5e13c88d70a4c50a",
-          "evaluatedRevision": 5,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 still runs every evaluator as `.unwrap_or_default()` (:75-78, :82). An erroring evaluator contributes an empty list, identical to having nothing to say, so a proactive system that has gone dark reads as a quiet week (trigger-evaluators, failure-not-empty-success). Re-judged at revision 6: the landing since (efficacy-feedback) does not govern this.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:b74b09e6bda5ece0",
+          "evaluatedRevision": 6
         },
         {
           "subject": "companion-runtime",
@@ -12414,12 +12412,10 @@
           "changedAt": "2026-09-26",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/hooks/execution/useReplayTimeline.ts:258 still spreads line indexes evenly across the run when a log carries no timestamps, and that scrubber plays over invented time with no disclosure; the recorded-tempo path is fixed (aa44e61c7), and the standard now names this third case - 'this record does not support a timeline', never a scrubber over apportioned time",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256-b2:138fd12f5cb3022b",
-          "evaluatedRevision": 4,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/hooks/execution/useReplayTimeline.ts:265 still apportions line timestamps evenly across the run when a log carries no recorded tempo; `hasRecordedTempo` only gates the silence shading (TimelineScrubber.tsx:138), so the scrubber plays over invented time with no per-element label (estimate-labeling: the label must survive playback; timeline-derivation: this record does not support a timeline).",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:798a88c318279127",
+          "evaluatedRevision": 5
         },
         {
           "subject": "mcp-tools",
@@ -16787,12 +16783,10 @@
           "changedAt": "2026-09-26",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/lib/analytics/index.ts:38 sends every section visit to the sink as its own event, and the Sentry sink ships each as a captureMessage (src/lib/sentry.ts:103), so every navigation becomes a timestamped network event beside the session summary - the per-interaction transmission the standard rules out for cost and for the behavioural trail it leaves",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256-b2:5233096144eea5b2",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/lib/analytics/index.ts:38 still sends every section visit to the sink as its own event (and :43 every tab switch), and the Sentry sink ships each as a captureMessage (src/lib/sentry.ts:103), so each navigation is a timestamped network event beside the session summary - the per-interaction transmission batching-and-quota rules out for cost and for the behavioural trail it leaves.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:83367bcb68dbb99a",
+          "evaluatedRevision": 4
         },
         {
           "subject": "prompt-assembly",
@@ -22028,12 +22022,10 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "state": "deviation",
-          "evidence": "src/features/overview/sub_memories/components/MemoriesPageDense.tsx:204 sorts persona/hits/tier only within the 40-row server window while :231 load-more appends the next offset in created_at order, and :201 applies a multi-chip category filter to the loaded page while :306/:218 read a server total taken without it (client-server-split: never split an axis across tiers); :588 confirms delete-all with that filtered count though delete_all_memories (src-tauri/src/commands/core/memories.rs:192) takes no predicate (filtering: the count read before firing names every record the action reaches).",
-          "evaluatedAt": "2026-10-06",
-          "evaluatedAgainst": "sha256-b2:f5aa23bf6f14872f",
-          "evaluatedRevision": 12,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/overview/sub_memories/components/MemoriesPageDense.tsx:201 still applies the multi-chip category filter to the loaded page only while :218/:306 read the server total, and :204 sorts persona/hits/tier page-locally (client-server-split: never split an axis across tiers); :588 confirms delete-all with memoriesTotal though delete_all_memories (src-tauri/src/commands/core/memories.rs:192) takes no predicate, so a filtered count names fewer records than the action reaches (filtering). The file's own comment at :579 names the gap and does not close it.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         }
       ],
       "governance": "governed"
@@ -32631,12 +32623,10 @@
           "changedAt": "2026-10-08",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1426 hard-deletes a synced memory and records nothing for the sync stream (tombstones exist only for personas, and the mirror is upsert-only), so a deleted memory stays in synced_memories forever. The old persona finding is fixed: the tombstone is now written inside the delete transaction (personas.rs:2072).",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256-b2:97c171272d09fb00",
-          "evaluatedRevision": 9,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1426 hard-deletes a synced memory and records nothing for the sync stream: process_tombstones (src-tauri/src/cloud/sync/mod.rs:846) reads persona tombstones only and deletes by persona cascade (:862), and synced_memories is upsert-only (:70), so a deleted memory stays in the mirror forever (tombstone-propagation). The persona_memory_tombstone written beside the delete is a re-derivation barrier, not a sync record.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:2d5b609198b79d34",
+          "evaluatedRevision": 10
         },
         {
           "subject": "voice-io",
@@ -39705,12 +39695,10 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:183 GraphNodeCircle is a plain function (no memo) fed by hover state held at :42 and an onHover prop wired at :144, so each pointer-enter re-renders every node (:133) and every edge motion.line (:107); render-budget rung 3 (nodes re-render on their own changes only) is not realized, and the deviation persists at revision 5 (a fixed-fit renderer still owes memoization under hover)",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:59c31182b8b6b4db",
-          "evaluatedRevision": 5,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:183 GraphNodeCircle is still a plain function (no memo anywhere in the file) fed by hover state held at :42 and an onHover prop wired at :144, so each pointer-enter re-renders every node and edge; render-budget rung 3 (nodes re-render on their own changes only) is not realized. Re-judged at revision 6: the landing since (direct-manipulation) does not govern this.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:98dcec8d04236b95",
+          "evaluatedRevision": 6
         },
         {
           "subject": "supply-chain",

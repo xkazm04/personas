@@ -1214,3 +1214,9 @@
 {"ts":"2026-10-15T16:09:25.243Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["gate-liveness"],"deviations":1,"context":"66bc7a14-bf15-41d7-8d9a-900aa670f47e"}
 {"ts":"2026-10-15T16:09:25.243Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["enforcement-binding"],"deviations":1,"context":"17f44718-7d6d-4579-91bf-86191e29595a"}
 {"ts":"2026-10-15T16:11:19.026Z","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":["foreign-harness-history-folding","layered-composition","variable-interpolation","fingerprinting-and-cache-keys"],"deviations":4}
+{"ts":"2026-10-15T17:08:04Z","bundle":"software-engineering","subjects":["proactive-nudges"],"techniques":["trigger-evaluators"],"deviations":1}
+{"ts":"2026-10-15T17:08:04Z","bundle":"software-engineering","subjects":["time-travel-replay"],"techniques":["estimate-labeling"],"deviations":1}
+{"ts":"2026-10-15T17:08:04Z","bundle":"software-engineering","subjects":["usage-analytics"],"techniques":["batching-and-quota"],"deviations":1}
+{"ts":"2026-10-15T17:08:04Z","bundle":"software-engineering","subjects":["sync-replication"],"techniques":["tombstone-propagation"],"deviations":1}
+{"ts":"2026-10-15T17:08:04Z","bundle":"software-engineering","subjects":["canvas-graph"],"techniques":["render-budget"],"deviations":1}
+{"ts":"2026-10-15T17:08:04Z","bundle":"software-engineering","subjects":["table"],"techniques":["filtering"],"deviations":1}
