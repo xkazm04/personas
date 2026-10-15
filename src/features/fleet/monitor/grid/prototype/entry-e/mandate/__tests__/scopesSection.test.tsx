@@ -12,7 +12,7 @@ import { en } from '@/i18n/en';
 import { AppKeyboardProvider } from '@/lib/keyboard/AppKeyboardProvider';
 import type { MandateScopes } from '@/lib/bindings/MandateScopes';
 import { ScopesView } from '../scopes/ScopesView';
-import { scopeLines } from '../scopes/scopesModel';
+import { scopeLines, scrollTopToShow } from '../scopes/scopesModel';
 import { useScopes } from '../scopes/useScopes';
 
 const api = vi.hoisted(() => ({ getMandateScopes: vi.fn(), amendMandate: vi.fn(async () => ({})) }));
@@ -66,7 +66,34 @@ describe('scope lines', () => {
   });
 });
 
+describe('keeping the picked row in sight', () => {
+  const view = { top: 100, height: 200 };
+  it('leaves a row already in sight alone', () => {
+    expect(scrollTopToShow(view, 40, { top: 150, height: 50 })).toBeNull();
+  });
+  it('scrolls down just enough for a row below the fold, up for one above it', () => {
+    expect(scrollTopToShow(view, 40, { top: 320, height: 50 })).toBe(110);
+    expect(scrollTopToShow(view, 40, { top: 80, height: 50 })).toBe(20);
+    expect(scrollTopToShow(view, 10, { top: 0, height: 50 })).toBe(0);
+  });
+});
+
 describe('ScopesView', () => {
+  it('brings the picked row back into the list when the armed box opens above it', async () => {
+    api.getMandateScopes.mockResolvedValue(payload());
+    mount();
+    await screen.findAllByTestId('mandate-scope-row');
+    key('ArrowDown'); key('ArrowDown'); key('ArrowDown');
+    const list = screen.getByTestId('mandate-scopes').lastElementChild as HTMLElement;
+    const merge = screen.getAllByTestId('mandate-scope-row')[3]!;
+    // jsdom has no layout: the armed box leaves the list 100px tall, the merge row 300px down.
+    list.getBoundingClientRect = () => ({ top: 0, height: 100 }) as DOMRect;
+    merge.getBoundingClientRect = () => ({ top: 300, height: 50 }) as DOMRect;
+    key('w');
+    expect(screen.getByTestId('scopes-armed')).toBeTruthy();
+    expect(list.scrollTop).toBe(250);
+  });
+
   it('widens a plain scope on one W and narrows a held one on N', async () => {
     api.getMandateScopes.mockResolvedValue(payload());
     mount();

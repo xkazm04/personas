@@ -99,3 +99,18 @@ export function namedItems(items: readonly ScopeItem[], m: M, tx: Tx): { named: 
   const rest = items.length - named.length;
   return { named, more: rest > 0 ? tx(m.ml_scopes_item_more, { count: rest }) : null };
 }
+
+/** A box on screen: its top edge and its height (`getBoundingClientRect`). */
+export interface Span { top: number; height: number }
+
+/**
+ * The scroll position that brings `row` fully into `view`, or null when it is
+ * already in sight. The armed box opens ABOVE the list and shrinks it, so the
+ * picked row has to be brought back after arming, not only when the keys walk.
+ */
+export function scrollTopToShow(view: Span, scrollTop: number, row: Span): number | null {
+  const above = row.top - view.top;
+  if (above < 0) return Math.max(0, scrollTop + above);
+  const below = row.top + row.height - (view.top + view.height);
+  return below > 0 ? scrollTop + below : null;
+}

@@ -7,7 +7,7 @@
 // touching merge or spend arms first and lists what will stop reaching you.
 
 import { Expand, Shrink } from 'lucide-react';
-import { useEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { ListRow, Rows } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -15,7 +15,7 @@ import { OVERLAY_DISMISS_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyb
 import { Kbd } from '../../parts';
 import { useDrawerListKeys } from '../useDrawerKeys';
 import { ScopesArmed } from './ScopesArmed';
-import { scopeLines } from './scopesModel';
+import { scopeLines, scrollTopToShow } from './scopesModel';
 import type { ScopesState } from './useScopes';
 
 export function ScopesView({ state, selected, onSelect, extraLetters }: {
@@ -31,11 +31,16 @@ export function ScopesView({ state, selected, onSelect, extraLetters }: {
   const line = lines[Math.min(selected, lines.length - 1)] ?? null;
   const armed = line && state.armed === line.id ? line : null;
   const listRef = useRef<HTMLDivElement>(null);
-  // Keep the picked line in sight as the keys walk the list.
-  useEffect(() => {
-    const el = line ? listRef.current?.querySelector(`[data-scope="${line.id}"]`) : null;
-    if (el && 'scrollIntoView' in el) el.scrollIntoView({ block: 'nearest' });
-  }, [line]);
+  // Keep the picked line in sight as the keys walk the list, and again when
+  // the armed box opens above the list and shrinks it. Only the list scrolls:
+  // `scrollIntoView` would also move the drawer around it.
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    const row = line ? list?.querySelector(`[data-scope="${line.id}"]`)?.closest('[data-testid="mandate-scope-row"]') : null;
+    if (!list || !row) return;
+    const to = scrollTopToShow(list.getBoundingClientRect(), list.scrollTop, row.getBoundingClientRect());
+    if (to !== null) list.scrollTop = to;
+  }, [line, armed]);
 
   useDrawerListKeys({
     count: lines.length,
