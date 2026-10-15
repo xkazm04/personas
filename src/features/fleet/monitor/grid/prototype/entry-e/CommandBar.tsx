@@ -1,10 +1,10 @@
 // The ONE band of chrome above the panel. Left, the census: every agent in the
 // fleet counted by lamp, and each lamp is the filter for its own number.
-// Middle, the Decision Center's strip (`DecisionHub`): one chip per kind of
-// thing waiting on a human, each opening its peek, and every peek row opening
-// the one global Decision Deck. Under the `lanes` setting (spark
-// mandate-lanes) the strip is the four mandate lanes plus Orphans instead
-// (`LaneHub`, keys 1-4 and O). Right, the layout switch: Bays | Queue.
+// Middle, the Decision Center's strip (`LaneHub`, spark mandate-lanes): the
+// four mandate lanes (Breach, Sign, Accept, Talk, keys 1-4) plus Orphans (O)
+// and Ready, each opening its peek, and every peek row opening the one global
+// Decision Deck. The seven-chip strip it replaced was deleted at the cutover
+// (WP10, 2026-10-15). Right, the layout switch: Bays | Queue.
 //
 // THE KEYCAP LEGEND IS GONE (2026-10-06, decision-center A3). The band printed
 // the board's `n`/`k` walk; the strip needed the width, and the decision keys
@@ -34,9 +34,7 @@ import { BOARD_VARIANTS, type BoardVariant } from '../../board/queue/boardVarian
 import { PERSONA_LAMP } from './tone';
 import { Lamp } from './parts';
 import type { PanelFilter } from './boardFilter';
-import { DecisionHub } from '@/features/decision-center/hub/DecisionHub';
 import { LaneHub } from '@/features/decision-center/hub/lanes/LaneHub';
-import { useDecisionSurface } from '@/features/decision-center/lanes/useLanesSnapshot';
 import { useMonitorVisible } from '../../../monitorVisibility';
 
 export function CommandBar({
@@ -53,7 +51,6 @@ export function CommandBar({
 }) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
-  const surface = useDecisionSurface();
   const visible = useMonitorVisible();
   const labels: Record<SquareState, string> = {
     running: m.grid_state_running,
@@ -119,7 +116,7 @@ export function CommandBar({
         </div>
       )}
 
-      {surface === 'lanes' ? <LaneHub keysEnabled={visible} /> : <DecisionHub />}
+      <LaneHub keysEnabled={visible} />
 
       <div className="ml-auto flex items-center gap-3">
         <SegmentedTabs

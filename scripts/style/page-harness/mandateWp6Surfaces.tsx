@@ -31,13 +31,11 @@ function kitOf(): Kit {
 }
 
 async function prepareDeck(): Promise<void> {
-  const [{ useAgentStore }, { usePipelineStore }, { useSystemStore }, { openDecisionDeck }] = await Promise.all([
+  const [{ useAgentStore }, { usePipelineStore }, { openDecisionDeck }] = await Promise.all([
     import('@/stores/agentStore'),
     import('@/stores/pipelineStore'),
-    import('@/stores/systemStore'),
     import('@/features/decision-center/deck/deckStore'),
   ]);
-  useSystemStore.setState({ decisionSurface: 'lanes' });
   try {
     await useAgentStore.getState().fetchPersonas();
     await usePipelineStore.getState().fetchTeams();
@@ -53,11 +51,6 @@ async function keyboardProvider() {
   return (children: ReactNode) => <AppKeyboardProvider>{children}</AppKeyboardProvider>;
 }
 
-async function prepareLanes(): Promise<void> {
-  await prepareFleet();
-  const { useSystemStore } = await import('@/stores/systemStore');
-  useSystemStore.setState({ decisionSurface: 'lanes' });
-}
 
 function monitor(extra: Step[]): HarnessModule {
   const plan = [...steps('classic'), ...extra];
@@ -66,7 +59,7 @@ function monitor(extra: Step[]): HarnessModule {
       const { PersonaMonitor } = await import('@/features/fleet/monitor/PersonaMonitor');
       return { default: () => <Drive steps={plan}><PersonaMonitor onClose={() => undefined} /></Drive> };
     },
-    prepare: prepareLanes,
+    prepare: prepareFleet,
   };
 }
 

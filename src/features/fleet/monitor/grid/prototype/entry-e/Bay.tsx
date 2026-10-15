@@ -8,7 +8,7 @@
 // switch, then Start / Stop / Restart / Open for its dev server) or the
 // workspace group's menu; a line with its own menu claims the click first. While
 // the project's dev server holds its port the plate lights its top edge and the
-// nameplate carries the server's lamp and port. Under the `lanes` setting a
+// nameplate carries the server's lamp and port. A
 // project with a mandate carries its shield before the roster count: amber
 // with the count while the mandate holds cards for the operator, dark when
 // calm (`mandate/MandateLamp`).

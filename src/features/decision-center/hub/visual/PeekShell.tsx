@@ -28,14 +28,13 @@ import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import type { ChipCount, HubChip } from '../../model/decisionModel';
+import type { ChipCount } from '../../model/decisionModel';
 import { Keycap } from '../../deck/parts';
-import { CHIP_ICON, chipLabel } from '../chipMeta';
 import { PEEK_ENTER, PEEK_EXIT, peekTransition } from './peekMotion';
 
 /**
- * What a peek that hangs from something other than a chip calls itself: a
- * mandate lane (setting `lanes`). `id` lands on `data-chip` for tests.
+ * What a peek calls itself: a mandate lane, or Ready. `id` lands on
+ * `data-chip` for tests.
  */
 export interface PeekIdentity {
   id: string;
@@ -47,11 +46,9 @@ export interface PeekIdentity {
 const GUTTER = 16;
 
 export function PeekShell({
-  chip, identity, lamp, count, anchor, actions, footer, onClose, children,
+  identity, lamp, count, anchor, actions, footer, onClose, children,
 }: {
-  /** The chip it belongs to; null when `identity` names it instead. */
-  chip: HubChip | null;
-  identity?: PeekIdentity;
+  identity: PeekIdentity;
   /** The chip's lamp — the glass is lit from its corner in that tone. */
   lamp: ChipCount['lamp'];
   /** How many wait; null while the list has not been read. */
@@ -71,10 +68,8 @@ export function PeekShell({
   const anchorRef = useRef<HTMLElement | null>(anchor);
   anchorRef.current = anchor;
   const [left, setLeft] = useState(0);
-  const label = identity?.label ?? (chip ? chipLabel(m, chip) : '');
-  const Icon = identity?.icon ?? (chip ? CHIP_ICON[chip] : CHIP_ICON.gates);
-  const isReady = chip === 'ready';
-  const tone = isReady ? 'success' : lamp;
+  const { label, icon: Icon } = identity;
+  const tone = lamp;
 
   const deferredClose = useCallback(() => { setTimeout(onClose, 0); }, [onClose]);
   const inside = useMemo(() => [panel, anchorRef] as const, []);
@@ -113,7 +108,7 @@ export function PeekShell({
       style={{ left, transformOrigin: 'top left' }}
       className={`au-scope au-glass au-hair au-l-${tone} au-t-${tone === 'neutral' ? 'accent' : tone} absolute top-full z-30 mt-2 flex max-h-[70vh] w-[500px] max-w-[calc(100vw-32px)] flex-col rounded-modal`}
       data-testid="decision-peek"
-      data-chip={identity?.id ?? chip ?? undefined}
+      data-chip={identity.id}
       data-still={still ? '' : undefined}
     >
       <header className="flex flex-shrink-0 items-center gap-2.5 px-4 pb-2 pt-3">

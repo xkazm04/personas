@@ -32,13 +32,11 @@ function kitOf(): Kit {
 }
 
 async function prepareCards(): Promise<void> {
-  const [{ useAgentStore }, { usePipelineStore }, { useSystemStore }, { openDecisionDeck }] = await Promise.all([
+  const [{ useAgentStore }, { usePipelineStore }, { openDecisionDeck }] = await Promise.all([
     import('@/stores/agentStore'),
     import('@/stores/pipelineStore'),
-    import('@/stores/systemStore'),
     import('@/features/decision-center/deck/deckStore'),
   ]);
-  useSystemStore.setState({ decisionSurface: 'lanes' });
   try {
     await useAgentStore.getState().fetchPersonas();
     await usePipelineStore.getState().fetchTeams();

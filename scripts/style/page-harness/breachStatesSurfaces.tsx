@@ -31,7 +31,6 @@ async function prepareBreach(): Promise<void> {
     import('@/stores/systemStore'),
     import('@/features/decision-center/deck/deckStore'),
   ]);
-  useSystemStore.setState({ decisionSurface: 'lanes' });
   try {
     await useAgentStore.getState().fetchPersonas();
     await usePipelineStore.getState().fetchTeams();

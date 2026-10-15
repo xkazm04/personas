@@ -1,6 +1,6 @@
 /**
- * One mandate-lane button on the command bar (setting `lanes`), built as the
- * chip beside it (`StripChip`) is built: the lane's glyph with its corner lamp,
+ * One mandate-lane button on the command bar, built as the Ready chip beside
+ * it (`ReadyChip`) is built: the lane's glyph with its corner lamp,
  * its name at caption size, the count in bold figures in the same cell, and,
  * on the most urgent lane holding something, the lead chip's tint and
  * breathing lamp. The name is never dropped (a lane is read by its name).

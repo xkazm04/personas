@@ -1,6 +1,6 @@
 /**
- * The Activity board under the `lanes` decision surface (spark mandate-lanes,
- * WP4), in the REAL Monitor shell, on the tapes in `mandateLanesTapes.mjs`:
+ * The Activity board's mandate lanes (spark mandate-lanes, WP4; the only
+ * decision surface since the WP10 cutover), in the REAL Monitor shell, on the tapes in `mandateLanesTapes.mjs`:
  *
  *   monitor/mandate-lanes            Bays, with the lane buttons in the
  *                                    command bar, the Stewards plate in the
@@ -20,12 +20,6 @@ import { useEffect, type ReactNode } from 'react';
 import type { HarnessModule } from './registry';
 import { Drive, prepareFleet, steps, type Step } from './monitorActivitySurfaces';
 import { TICKER_ACTS } from './mandateLanesTapes.mjs';
-
-async function prepareLanes(): Promise<void> {
-  await prepareFleet();
-  const { useSystemStore } = await import('@/stores/systemStore');
-  useSystemStore.setState({ decisionSurface: 'lanes' });
-}
 
 /**
  * Pushes the ticker's acts on `charter-act-recorded` once the board is up,
@@ -57,7 +51,7 @@ function lanes(extra: Step[] = [], stream = false): HarnessModule {
         },
       };
     },
-    prepare: prepareLanes,
+    prepare: prepareFleet,
   };
 }
 

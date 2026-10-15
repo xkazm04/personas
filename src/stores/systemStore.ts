@@ -36,6 +36,22 @@ import { createAthenaSlice, remapLegacyAthenaFields } from "./slices/system/athe
 import { createRadioSlice } from "./slices/system/radioSlice";
 import { silentCatch } from '@/lib/silentCatch';
 
+/**
+ * Persisted keys a newer build no longer owns. The default merge spreads the
+ * stored blob onto the state, so a retired key would ride along as a stray
+ * field (and be written back on the next save) unless it is dropped here.
+ *
+ * `decisionSurface`: the Chips | Lanes dev switch (spark mandate-lanes). Lanes
+ * became the only decision surface at WP10; a stored `'chips'` means nothing.
+ */
+export const RETIRED_PERSISTED_FIELDS = ['decisionSurface'] as const;
+
+export function dropRetiredFields(persisted: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...persisted };
+  for (const key of RETIRED_PERSISTED_FIELDS) delete out[key];
+  return out;
+}
+
 
 export const useSystemStore = create<SystemStore>()(
   persist(
@@ -147,7 +163,6 @@ export const useSystemStore = create<SystemStore>()(
         radioAutoResume: state.radioAutoResume,
         collapsedSourceKinds: state.collapsedSourceKinds,
         monitorGroupBy: state.monitorGroupBy,
-        decisionSurface: state.decisionSurface,
         monitorCollapsedGroups: state.monitorCollapsedGroups,
         monitorLiveMode: state.monitorLiveMode,
         homeHiddenSections: state.homeHiddenSections,
@@ -162,7 +177,7 @@ export const useSystemStore = create<SystemStore>()(
        */
       merge: (persisted, current) => ({
         ...current,
-        ...remapLegacyAthenaFields(persisted),
+        ...dropRetiredFields(remapLegacyAthenaFields(persisted)),
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;

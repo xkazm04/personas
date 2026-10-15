@@ -10,7 +10,6 @@ import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
 import { createSingletonListener } from '@/hooks/realtime/createSingletonListener';
 import { EventName, type EventPayloadMap } from '@/lib/eventRegistry';
-import { useSystemStore } from '@/stores/systemStore';
 
 import {
   getLanesSnapshotState,
@@ -23,11 +22,6 @@ import {
 export const useCharterActRecorded = createSingletonListener<
   EventPayloadMap[typeof EventName.CHARTER_ACT_RECORDED]
 >(EventName.CHARTER_ACT_RECORDED);
-
-/** The decision surface setting: `chips` (default) or `lanes`. */
-export function useDecisionSurface(): 'chips' | 'lanes' {
-  return useSystemStore((s) => s.decisionSurface);
-}
 
 export function useLanesSnapshot(enabled: boolean): LanesSnapshotState {
   const state = useSyncExternalStore(subscribeLanesSnapshot, getLanesSnapshotState);

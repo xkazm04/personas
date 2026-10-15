@@ -1,6 +1,6 @@
 // DockActTicker: one line in the dock's resting row saying what the stewards
-// just decided ("App Master · personas filed 3 reports as evidence"), shown
-// only under the `lanes` decision surface. A press opens the mandate drawer's
+// just decided ("App Master · personas filed 3 reports as evidence"). A press
+// opens the mandate drawer's
 // act log at the newest act of the line.
 //
 // Push only: it follows `charter-act-recorded` and reads nothing on a clock.

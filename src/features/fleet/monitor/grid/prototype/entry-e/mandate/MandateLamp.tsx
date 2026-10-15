@@ -1,4 +1,4 @@
-// The Bay nameplate's mandate mark (setting `lanes`). Present only when the
+// The Bay nameplate's mandate mark. Present only when the
 // project has a mandate: a shield, amber while the mandate holds cards for the
 // operator (Breach, Sign or Accept), dark when calm. A project with no mandate
 // shows nothing. How many cards is in the bay's tooltip and the lane chips:
@@ -13,16 +13,15 @@
 import { useMemo } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { cardsByProject } from '@/features/decision-center/lanes/laneModel';
-import { useDecisionSurface, useLanesSnapshot } from '@/features/decision-center/lanes/useLanesSnapshot';
+import { useLanesSnapshot } from '@/features/decision-center/lanes/useLanesSnapshot';
 import { useTranslation } from '@/i18n/useTranslation';
 
-/** The operator's cards held by the project's mandate; null when no mandate (or lanes off). */
+/** The operator's cards held by the project's mandate; null when no mandate. */
 function useMandateCards(projectId: string | null): number | null {
-  const lanesOn = useDecisionSurface() === 'lanes';
   // Read-only: the command bar's lane counts keep the shared snapshot fresh.
   const { snapshot } = useLanesSnapshot(false);
   const cards = useMemo(() => cardsByProject(snapshot), [snapshot]);
-  if (!lanesOn || !projectId || !snapshot) return null;
+  if (!projectId || !snapshot) return null;
   if (!snapshot.charters.some((c) => c.projectId === projectId)) return null;
   return cards.get(projectId) ?? 0;
 }

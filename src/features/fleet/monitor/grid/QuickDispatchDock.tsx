@@ -97,7 +97,7 @@
 //
 // ## The act ticker (mandate-lanes WP7, 2026-10-15)
 //
-// Under the `lanes` decision surface the resting row also carries ONE line of
+// The resting row also carries ONE line of
 // what the stewards just decided (`DockActTicker`), between the placeholder and
 // the tally (`DockRestingRow`). It lives inside the row's reserved height, so it appearing or
 // changing never moves the board; it is absent until the first act arrives.

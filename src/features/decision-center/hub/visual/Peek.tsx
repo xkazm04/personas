@@ -1,16 +1,16 @@
 /**
- * Level 2 — the peek: an anchored glass drop under its chip listing that
- * chip's items in roster order (R2-C "Aurora Deck").
+ * Level 2 — the peek: an anchored glass drop under its lane button listing
+ * that lane's items in lane order (R2-C "Aurora Deck").
  *
  * The keys are the settled grammar (`peekKeys` through `usePeekKeyboard`):
- * ↑/↓ move, ←/→ (J/K) walk to the next chip, A accepts, R arms a reject and
+ * ↑/↓ move, ←/→ (J/K) walk to the next lane, A accepts, R arms a reject and
  * Enter confirms it, D finishes a report or a thread, Enter opens the deck on
  * the focused row, Esc disarms then closes. A decided row slides out toward
  * its verdict.
  *
- * Three states, one place each: ghost rows while the chip's items load (never
+ * Three states, one place each: ghost rows while the lane's items load (never
  * a spinner, never an empty band before the read lands), the shared empty band
- * when the chip answered with nothing, and an error with retry when it failed.
+ * when the lane answered with nothing, and an error with retry when it failed.
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence } from 'framer-motion';
@@ -22,25 +22,23 @@ import { GhostRows, KitHost, Rows } from '@/features/shared/components/kit';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import type { ChipCount, DecisionChip, DecisionItem } from '../../model/decisionModel';
-import { chipLabel } from '../chipMeta';
+import type { ChipCount, DecisionItem } from '../../model/decisionModel';
 import { usePeekKeyboard } from '../usePeekKeyboard';
 import { PeekRow } from './PeekRow';
 import { PeekShell, type PeekIdentity } from './PeekShell';
 
 export interface PeekProps {
-  /** The chip it lists; null when `identity` names it (a mandate lane). */
-  chip: DecisionChip | null;
-  identity?: PeekIdentity;
+  /** The lane it lists: its id, name and glyph. */
+  identity: PeekIdentity;
   /** Extra footer key hints (the lane peek prints its 1-4 / O keys). */
   footer?: ReactNode;
   items: readonly DecisionItem[];
   lamp: ChipCount['lamp'];
-  /** The chip's items have been read at least once. */
+  /** The lane's items have been read at least once. */
   ready: boolean;
-  /** The chip's read (or count) failed; shown with a retry. */
+  /** The lane's read (or count) failed; shown with a retry. */
   failed: boolean;
-  /** This chip is the strip's lead: its first row wears NEXT. */
+  /** This lane is the strip's lead: its first row wears NEXT. */
   lead: boolean;
   anchor: HTMLElement | null;
   /** Off while the deck owns the keyboard. */
@@ -55,13 +53,13 @@ export interface PeekProps {
 }
 
 export function Peek({
-  chip, identity, footer, items, lamp, ready, failed, lead, anchor, keyboard, initialFocusId,
+  identity, footer, items, lamp, ready, failed, lead, anchor, keyboard, initialFocusId,
   onRetry, onDecide, onOpen, onWalk, onClose,
 }: PeekProps) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
   const still = useReducedMotion();
-  const label = identity?.label ?? (chip ? chipLabel(m, chip) : '');
+  const label = identity.label;
   const rowEls = useRef<Record<string, HTMLDivElement | null>>({});
   const [leaveDir, setLeaveDir] = useState(1);
 
@@ -105,7 +103,7 @@ export function Peek({
   );
 
   return (
-    <PeekShell chip={chip} identity={identity} footer={footer} lamp={lamp} count={ready ? items.length : null} anchor={anchor} actions={actions} onClose={onClose}>
+    <PeekShell identity={identity} footer={footer} lamp={lamp} count={ready ? items.length : null} anchor={anchor} actions={actions} onClose={onClose}>
       <div className="flex min-h-0 flex-col gap-1 overflow-y-auto px-2 pb-2" data-testid="decision-peek-list">
         {failed && (
           <div className="px-1 pb-1">

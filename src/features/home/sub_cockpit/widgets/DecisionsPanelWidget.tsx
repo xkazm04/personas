@@ -37,7 +37,8 @@ export function DecisionsPanelWidget({ config, title, span, actions, footer }: C
 
   const rows = useMemo(() => roster.items.slice(0, limit), [roster.items, limit]);
   const heading = title ?? t.overview.cockpit.decisions_title;
-  // Under the `lanes` setting the count is the lanes' (Breach + Sign + Accept + Talk).
+  // The count is the lanes' (Breach + Sign + Accept + Talk); the roster's
+  // total stands in only until the first lane read settles.
   const total = roster.laneTotal ?? roster.total;
   const count = rows.length < total
     ? tx(t.overview.cockpit.decisions_count, { shown: rows.length, total })

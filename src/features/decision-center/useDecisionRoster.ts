@@ -105,9 +105,9 @@ export interface DecisionRoster {
   counts: Record<HubChip, ChipCount>;
   /** Sum of the seven decision chips (excludes `ready`). */
   total: number;
-  /** The mandate lanes' counts under the `lanes` setting; null under `chips`. */
-  lanes: LaneCounts | null;
-  /** Breach + Sign + Accept + Talk under `lanes` once read; null under `chips` or before. */
+  /** The mandate lanes' counts: the operator's decision surface. */
+  lanes: LaneCounts;
+  /** Breach + Sign + Accept + Talk once read; null before the first read settles. */
   laneTotal: number | null;
   /** The first lanes snapshot read has settled. */
   lanesSettled: boolean;

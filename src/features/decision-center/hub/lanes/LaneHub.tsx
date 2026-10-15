@@ -1,8 +1,8 @@
 /**
- * LaneHub — the Decision Center's home under the `lanes` setting: lane
- * buttons (level 1) → lane peek (level 2) → the Decision Deck scoped to the
- * lane (level 3). The chip hub (`DecisionHub`) is the `chips` twin; the
- * command bar mounts one or the other.
+ * LaneHub — the Decision Center's home on the command bar: lane buttons
+ * (level 1) → lane peek (level 2) → the Decision Deck scoped to the lane
+ * (level 3). It replaced the seven-chip hub at the mandate-lanes cutover
+ * (WP10, 2026-10-15).
  *
  *  - Counts are the roster's lane counts (`decision_lanes_snapshot` + the
  *    frontend kinds). Items load only for the open lane: the chips its kinds
@@ -10,8 +10,7 @@
  *  - `1`-`4` and `O` open a lane's peek (a second press closes it); while a
  *    peek is open ←/→ walk the lanes. Enter on a row opens the deck with
  *    `scope: lane`, focused on the row, and the deck's close reopens the peek.
- *  - One-key verdicts from a row write through `roster.decide`, exactly as
- *    the chip hub does.
+ *  - One-key verdicts from a row write through `roster.decide`.
  *  - The Sign peek also lists the draft mandates (`mandate:<charterId>`),
  *    which the roster does not carry (`usePeekSignItems`); A / R on one opens
  *    its Sign card, because signing needs the envelope and a drop its reason.
@@ -156,7 +155,6 @@ export function LaneHub({ keysEnabled = true }: { keysEnabled?: boolean }) {
       {lane && (
         <Peek
           key={lane}
-          chip={null}
           identity={{ id: `lane-${lane}`, label: laneLabel(m, lane), icon: LANE_ICON[lane] }}
           footer={<LaneFooter />}
           items={items}

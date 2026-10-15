@@ -37,7 +37,6 @@ const snapshot: DecisionLanesSnapshot = {
 vi.mock('../../../lanes/useLanesSnapshot', () => ({
   useLanesSnapshot: () => ({ snapshot, failed: false, loading: false }),
   useCharterActRecorded: () => {},
-  useDecisionSurface: () => 'lanes',
 }));
 
 vi.mock('@/features/fleet/monitor/grid/prototype/entry-e/mandate/useMandates', () => ({

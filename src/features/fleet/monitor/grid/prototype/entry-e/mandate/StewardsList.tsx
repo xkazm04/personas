@@ -1,4 +1,4 @@
-// The Stewards plate's body (setting `lanes`), under the attention-loop
+// The Stewards plate's body, under the attention-loop
 // switch that stays on top: Athena's CLI answerer as one line with the rail's
 // switch (the Schedules plate's line: name, toggle - the switch IS its state,
 // so no lamp repeats it; the existing autonomous-mode grant, unchanged), then one single-line row per charter,
@@ -21,7 +21,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { StewardRow } from './StewardRow';
 import { useAutopilotModes, useMandates } from './useMandates';
 
-/** The Stewards plate's mandate doors (setting `lanes`). */
+/** The Stewards plate's mandate doors. */
 export interface StewardDoors {
   onOpenMandate: (charterId: string) => void;
   onOpenRegister: () => void;

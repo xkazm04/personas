@@ -466,10 +466,9 @@ function IdleQueue() {
 export function DecisionDriver() {
   const counts = useDecisionCounts();
   const pendingCounts = useSystemStore((s) => s.pendingCounts);
-  // Under the `lanes` setting a lane read that answered zero for the operator
-  // (Breach + Sign + Accept + Talk) loads nothing: there is nothing for the orb.
-  const lanesIdle = counts.lanes !== null
-    && counts.laneTotal === 0
+  // A lane read that answered zero for the operator (Breach + Sign + Accept +
+  // Talk) loads nothing: there is nothing for the orb.
+  const lanesIdle = counts.laneTotal === 0
     && !counts.lanes.breach.failed
     && !counts.lanes.talk.failed;
   const load = lanesIdle ? NO_LOAD : orbLoad(pendingCounts, counts.counts.gates.failed);
