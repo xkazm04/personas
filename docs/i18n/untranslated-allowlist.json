@@ -4245,5 +4245,8 @@
   "fr:companions.process.dial.kind_prompt",
   "fr:companions.process.dial.kind_push",
   "fr:companions.process.dial.kind_shell",
-  "fr:companions.process.dial.kind_skill"
+  "fr:companions.process.dial.kind_skill",
+  "es:monitor.ml_orphans_kind_idea",
+  "fr:monitor.ml_orphans_kind_incident",
+  "fr:monitor.ml_orphans_kind_evolution"
 ]
