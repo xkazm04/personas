@@ -1217,6 +1217,17 @@ export type Translations = {
     ml_status_draft: string;
     ml_status_active: string;
     ml_status_suspended: string;
+    ml_register_open_tip: string;
+    ml_col_project: string;
+    ml_col_steward: string;
+    ml_col_spend: string;
+    ml_col_asks: string;
+    ml_col_scope: string;
+    ml_col_act: string;
+    ml_col_by: string;
+    ml_col_undo: string;
+    ml_act_revertible: string;
+    ml_suspend_confirm: string;
     ml_bay_lamp_cards: string;
     ml_bay_lamp_calm: string;
     ml_drawer_aria: string;
