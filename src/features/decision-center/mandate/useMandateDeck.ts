@@ -9,6 +9,13 @@
  * draft leaves the deck at once (optimistic) and comes back if the write did
  * not land; every landed write re-reads the mandates and the lanes snapshot
  * at once rather than wait for the `charter-act-recorded` push.
+ *
+ * A verdict on a MIRRORED mandate (WP9: it lives on its home device) is sent
+ * home; when the home is offline the door answers `network_offline` and the
+ * verdict waits in the outbox. That is the drawer's "Queued until <device>
+ * wakes" (`useMandateDoors`), not a failure: the write resolves `queuedOn`
+ * the home's name, the card stays out of this deck, and the deck says it is
+ * queued instead of toasting an error (residue item 6).
  */
 import { useCallback, useMemo, useState } from 'react';
 
@@ -18,6 +25,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { DecisionLanesSnapshot } from '@/lib/bindings/DecisionLanesSnapshot';
 import type { LaneCharter } from '@/lib/bindings/LaneCharter';
 import type { MandateSummary } from '@/lib/bindings/MandateSummary';
+import { isTauriError } from '@/lib/types/tauriError';
 
 import type { DeckVerdict } from '../deck/deckTypes';
 import { refreshLanesSnapshot } from '../lanes/lanesSnapshotSource';
@@ -38,8 +46,20 @@ export interface MandateDeck {
   items: DecisionItem[];
   mandates: ReadonlyMap<string, MandateSummary>;
   charters: ReadonlyMap<string, LaneCharter>;
-  /** Resolves true when it wrote (the caller skips the roster); rejects when the write did not land. */
-  write: (v: DeckVerdict) => Promise<boolean>;
+  /** Resolves when it wrote, or queued it for the mandate's home device; rejects when the write did not land. */
+  write: (v: DeckVerdict) => Promise<MandateWritten>;
+}
+
+export interface MandateWritten {
+  /** It was a mandate write (the caller skips the roster). */
+  wrote: boolean;
+  /** Sent home and waiting there: the home device's name. */
+  queuedOn?: string;
+}
+
+/** The mandate a verdict writes to. */
+function charterOf(v: DeckVerdict): string {
+  return v.mandateAct?.charterId ?? v.item.payload?.charterId ?? v.item.sourceId;
 }
 
 export function useMandateDeck(enabled: boolean, snapshot: DecisionLanesSnapshot | null): MandateDeck {
@@ -59,7 +79,7 @@ export function useMandateDeck(enabled: boolean, snapshot: DecisionLanesSnapshot
     return out.filter((i) => !gone.has(i.id));
   }, [mandates, gone, charters, m, tx]);
 
-  const write = useCallback(async (v: DeckVerdict): Promise<boolean> => {
+  const write = useCallback(async (v: DeckVerdict): Promise<MandateWritten> => {
     const leaves = v.item.kind === 'mandate' && (v.verdict === 'accept' || v.verdict === 'reject');
     const id = v.item.id;
     if (leaves) setGone((g) => new Set(g).add(id));
@@ -69,12 +89,16 @@ export function useMandateDeck(enabled: boolean, snapshot: DecisionLanesSnapshot
         refresh();
         void refreshLanesSnapshot();
       }
-      return wrote;
+      return { wrote };
     } catch (err) {
+      // Same reading as the drawer's doors: on a mirrored mandate, offline
+      // means sent home and waiting there. The card stays out of this deck.
+      const home = byId.get(charterOf(v))?.mirror?.homeName;
+      if (home && isTauriError(err) && err.kind === 'network_offline') return { wrote: true, queuedOn: home };
       if (leaves) setGone((g) => { const n = new Set(g); n.delete(id); return n; });
       throw err;
     }
-  }, [refresh]);
+  }, [refresh, byId]);
 
   return { items, mandates: byId, charters, write };
 }

@@ -16,7 +16,7 @@ import type { ChipCount, DecisionItem, HubChip } from '../../model/decisionModel
 import { item } from '../../__tests__/rosterFixtures';
 import { DeckModal, offersOf, type DeckSessionSpec } from '../DeckModal';
 import { useDecisionDeckStore } from '../deckStore';
-import type { DeckVerdict } from '../deckTypes';
+import type { DeckLanded, DeckVerdict } from '../deckTypes';
 
 vi.mock('@/hooks/utility/interaction/useMotion', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/utility/interaction/useMotion')>()),
@@ -35,7 +35,7 @@ function counts(over: Partial<Record<HubChip, number>>): Record<HubChip, ChipCou
 }
 
 function mount(items: DecisionItem[], opts: { counts?: Record<HubChip, ChipCount>; onBack?: () => void } = {}) {
-  const onDecide = vi.fn((_v: DeckVerdict) => Promise.resolve());
+  const onDecide = vi.fn((_v: DeckVerdict): Promise<DeckLanded | void> => Promise.resolve());
   const onBack = opts.onBack ?? vi.fn();
   const view = (list: DecisionItem[]) => (
     <AppKeyboardProvider>
@@ -126,6 +126,14 @@ describe('deck session', () => {
     expect(screen.getByTestId('deck-receipt').textContent).toBe('');
     key('a');
     await waitFor(() => expect(screen.getByTestId('deck-receipt').textContent).toBe('Accepted: Review review:1'));
+  });
+
+  it('a verdict queued for another device leaves the host receipt, not "Accepted"', async () => {
+    const { onDecide } = mount([review('review:1'), review('review:2')]);
+    onDecide.mockImplementation(() => Promise.resolve({ receipt: 'Queued until Desk wakes: Review review:1' }));
+    await screen.findByTestId('deck-card');
+    key('a');
+    await waitFor(() => expect(screen.getByTestId('deck-receipt').textContent).toBe('Queued until Desk wakes: Review review:1'));
   });
 
   it('an emptied chip deck offers the other chips that hold cards, and a digit opens one', async () => {

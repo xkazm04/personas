@@ -16,7 +16,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DecisionItem } from '../model/decisionModel';
 import { modalTypeOf } from '../model/decisionModel';
-import { DECK_TITLE_ID, type DeckVerdict } from './deckTypes';
+import { DECK_TITLE_ID, type DeckLanded, type DeckVerdict } from './deckTypes';
 import { DeckCard } from './DeckCard';
 import { FOLDS_CLOSED, type FoldSignal } from './DeckFold';
 import { EmptyCard } from './DeckStates';
@@ -38,7 +38,8 @@ export function DeckSession({ scopeLabel, readOnly, queue, startId, offers = [],
   startId: string;
   /** Other chips that still hold cards, offered when this queue runs out. */
   offers?: ChipOffer[];
-  onDecide: (v: DeckVerdict) => Promise<void>;
+  /** Resolves when the verdict landed (optionally with its own receipt); rejects when it did not. */
+  onDecide: (v: DeckVerdict) => Promise<DeckLanded | void>;
   onBack: () => void;
   onOpenLink: (item: DecisionItem, linkId: string) => void;
   onHead: (item: DecisionItem | undefined) => void;
@@ -51,8 +52,8 @@ export function DeckSession({ scopeLabel, readOnly, queue, startId, offers = [],
   useEffect(() => { offersRef.current = offers; }, [offers]);
 
   const decideWithReceipt = useCallback(async (v: DeckVerdict) => {
-    await onDecide(v);
-    if (v.verdict !== 'skip') setReceipt(receiptLine(t.monitor, tx, v.item, LEAVE_OF[v.verdict]));
+    const landed = await onDecide(v);
+    if (v.verdict !== 'skip') setReceipt(landed?.receipt ?? receiptLine(t.monitor, tx, v.item, LEAVE_OF[v.verdict]));
   }, [onDecide, t, tx]);
   const onEmpty = useCallback(() => {
     if (offersRef.current.length === 0) onBack();

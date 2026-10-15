@@ -25,7 +25,7 @@ import { useDecisionRoster } from '../useDecisionRoster';
 import { chipLabel } from './deckMeta';
 import { originFromRect } from './deckMotion';
 import { closeDecisionDeck, useDecisionDeckStore, type DeckRequest } from './deckStore';
-import type { DeckVerdict } from './deckTypes';
+import type { DeckLanded, DeckVerdict } from './deckTypes';
 import { ReplyRouteError, writeDeckVerdict, type DeckWriteDoors } from './deckWrites';
 import { DeckModal, type DeckSessionSpec } from './DeckModal';
 import { useDeckHosts } from './useDeckHosts';
@@ -50,7 +50,7 @@ function loadOf(
 }
 
 function LiveDeck({ request, session }: { request: DeckRequest | null; session: number }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const m = t.monitor;
   const { hosts, followUp } = useDeckHosts();
   const laneScope = request?.scope.kind === 'lane';
@@ -78,14 +78,18 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
 
   const decidedElsewhere = m.dc_hub_decided_elsewhere;
   const replyFailed = m.dc_deck_reply_failed;
-  const onDecide = useCallback(async (v: DeckVerdict) => {
+  const onDecide = useCallback(async (v: DeckVerdict): Promise<DeckLanded | void> => {
     if (v.item.kind === 'report' && v.branchId === 'chat') {
       followUp.current = { item: v.item, linkedReviews: v.linkedReviews ?? [] };
     }
     // A Sign card, or a Breach card's amend / suspend, writes to the mandate.
     if (isMandateWrite(v)) {
       try {
-        await writeMandate(v);
+        const written = await writeMandate(v);
+        // Sent home to an offline device: the tray says it waits there, as the drawer does.
+        if (written.queuedOn) {
+          return { receipt: tx(m.dc_deck_receipt, { verdict: tx(m.remote_queued_until, { device: written.queuedOn }), title: v.item.title }) };
+        }
       } catch (err) {
         toastCatch('decision-deck:mandate', m.ml_write_failed)(err);
         throw err;
@@ -108,7 +112,7 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
       else toastCatch('decision-deck:decide')(err);
       throw err;
     }
-  }, [doors, decidedElsewhere, replyFailed, followUp, writeMandate, m]);
+  }, [doors, decidedElsewhere, replyFailed, followUp, writeMandate, m, tx]);
 
   const onOpenLink = useCallback((item: DecisionItem, linkId: string) => {
     if (!item.links?.some((l) => l.id === linkId)) return;
