@@ -15,7 +15,8 @@ import type { DecisionItem } from '../model/decisionModel';
 import { DeckFold, DeckSection } from './DeckFold';
 import { foldPlan } from './foldPlan';
 
-export function ProseBody({ item, children }: { item: DecisionItem; children?: ReactNode }) {
+/** `lead` sits above the case (a valve's step); `children` below it (answer fields, a claim's checklist). */
+export function ProseBody({ item, lead, children }: { item: DecisionItem; lead?: ReactNode; children?: ReactNode }) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
   const plan = foldPlan(item);
@@ -34,6 +35,7 @@ export function ProseBody({ item, children }: { item: DecisionItem; children?: R
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto py-5 pl-[5.75rem] pr-8" data-deck-scroll={item.id}>
+      {lead}
       {plan.body ? (
         <DeckFold id="case" title={m.dc_deck_fold_case} summary={summary(plan.body.count, plan.body.preview, 'paragraphs')}>
           {caseBody}

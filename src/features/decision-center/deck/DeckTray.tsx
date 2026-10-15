@@ -22,6 +22,7 @@ import { closeDecisionDeck } from './deckStore';
 import { tierOf } from './deckMeta';
 import { KeyMap } from './KeyLegend';
 import { Keycap } from './parts';
+import type { CardShape } from './shapes/cardShape';
 
 function Track({ queue, index }: { queue: DecisionItem[]; index: number }) {
   return (
@@ -38,7 +39,7 @@ function Track({ queue, index }: { queue: DecisionItem[]; index: number }) {
 
 export function DeckTray({
   scopeLabel, queue, index, type = 'approval', isCouncil = false, armsAccept = false, tall = false, pending = false,
-  readOnly = false, keysOpen = false, receipt = null, onKeys, onWalk, onClose = closeDecisionDeck, children,
+  readOnly = false, keysOpen = false, receipt = null, shape = 'default', onKeys, onWalk, onClose = closeDecisionDeck, children,
 }: {
   scopeLabel: string;
   queue: DecisionItem[];
@@ -53,6 +54,8 @@ export function DeckTray({
   keysOpen?: boolean;
   /** The last landed verdict, in words. */
   receipt?: string | null;
+  /** The card in hand's lane shape: its keys join the key map. */
+  shape?: CardShape;
   onKeys?: (open: boolean) => void;
   onWalk?: (d: 1 | -1) => void;
   onClose?: () => void;
@@ -119,7 +122,7 @@ export function DeckTray({
           </Tooltip>
         </span>
         <AnimatePresence>
-          {keysOpen && <KeyMap key="keys" type={type} isCouncil={isCouncil} armsAccept={armsAccept} labels={queue[index]?.verdictLabels} />}
+          {keysOpen && <KeyMap key="keys" type={type} isCouncil={isCouncil} armsAccept={armsAccept} shape={shape} labels={queue[index]?.verdictLabels} />}
         </AnimatePresence>
       </div>
 

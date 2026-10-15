@@ -36,7 +36,8 @@ export type DecisionKind =
   | 'report'
   | 'council'
   | 'message'
-  | 'approval';
+  | 'approval'
+  | 'mandate';
 
 /** The seven decision chips on the CommandBar strip, in strip order. */
 export type DecisionChip =
@@ -142,6 +143,8 @@ const CHIP_OF: Record<DecisionKind, DecisionChip> = {
   council: 'council',
   report: 'reports',
   message: 'chat',
+  // A draft mandate waiting for its signature: dealt only by the Sign lane.
+  mandate: 'proposals',
 };
 
 export function chipOf(kind: DecisionKind): DecisionChip {
@@ -160,6 +163,7 @@ const MODAL_OF: Record<DecisionKind, DecisionModalType> = {
   report: 'report',
   council: 'report',
   message: 'chat',
+  mandate: 'approval',
 };
 
 export function modalTypeOf(kind: DecisionKind): DecisionModalType {

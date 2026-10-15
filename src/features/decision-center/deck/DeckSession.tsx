@@ -27,6 +27,7 @@ import { useDeck } from './useDeck';
 import { armsAccept, useDeckActions } from './useDeckActions';
 import { useDeckKeys } from './useDeckKeys';
 import { useReportDoors } from './useReportDoors';
+import { useShapeController } from './shapes/useShapeController';
 
 const LEAVE_OF = { accept: 'accept', reply: 'accept', reject: 'reject', done: 'done' } as const;
 
@@ -64,6 +65,7 @@ export function DeckSession({ scopeLabel, readOnly, queue, startId, offers = [],
   const [folds, setFolds] = useState<FoldSignal>(FOLDS_CLOSED);
   const item = deck.item;
   const report = useReportDoors(item);
+  const shape = useShapeController(item, deck);
 
   useEffect(() => {
     setAnswers({});
@@ -78,10 +80,17 @@ export function DeckSession({ scopeLabel, readOnly, queue, startId, offers = [],
     linkedReviews: report.linkedReviews,
     readOnly,
     onOpenLink,
+    shape: { accept: shape.accept, offset: shape.offset },
   });
   const rate = (n: number) => { if (!readOnly) void report.rate(n); };
   const toggleFolds = () => setFolds((f) => ({ open: !f.open, gen: f.gen + 1 }));
-  useDeckKeys(deck, act, { enabled: !!item, onRate: rate, onKeys: () => setKeysOpen((o) => !o), onFold: toggleFolds });
+  useDeckKeys(deck, act, {
+    enabled: !!item,
+    onRate: rate,
+    onKeys: () => setKeysOpen((o) => !o),
+    onFold: toggleFolds,
+    onShapeKey: (e, digit) => !readOnly && shape.onKey(e, digit, act.defaultAccept),
+  });
   useEffect(() => {
     escapeGuard.current = () => {
       if (keysOpen) { setKeysOpen(false); return true; }
@@ -100,7 +109,8 @@ export function DeckSession({ scopeLabel, readOnly, queue, startId, offers = [],
       index={deck.index}
       type={type}
       isCouncil={item?.kind === 'council'}
-      armsAccept={item ? armsAccept(item) : false}
+      armsAccept={item ? armsAccept(item) || shape.arms : false}
+      shape={shape.shape}
       onWalk={deck.walk}
       onClose={onBack}
       tall={type === 'report'}
@@ -118,6 +128,7 @@ export function DeckSession({ scopeLabel, readOnly, queue, startId, offers = [],
             act={act}
             titleId={DECK_TITLE_ID}
             onClose={onBack}
+            shape={shape}
             state={{
               rating: report.rating,
               setRating: rate,

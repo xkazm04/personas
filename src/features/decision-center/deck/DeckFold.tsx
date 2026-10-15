@@ -61,7 +61,7 @@ export function DeckFold({ id, title, summary, children }: {
         className="min-w-0 justify-start! rounded-card px-3! py-2! hover:bg-transparent [&>span:last-child]:flex [&>span:last-child]:min-w-0 [&>span:last-child]:flex-1 [&>span:last-child]:items-center [&>span:last-child]:gap-3"
       >
         <span className="flex min-w-0 flex-1 items-baseline gap-2 text-left">
-          <span className="typo-eyebrow text-foreground">{title}</span>
+          <span className="flex-shrink-0 whitespace-nowrap typo-eyebrow text-foreground">{title}</span>
           {!open && <span className="min-w-0 truncate typo-body text-foreground">{summary}</span>}
         </span>
         <span className="flex flex-shrink-0 items-center gap-1.5 typo-caption">

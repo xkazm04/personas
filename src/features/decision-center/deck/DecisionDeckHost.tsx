@@ -33,6 +33,10 @@ import { chipsForLane, indexLanes } from '../lanes/laneModel';
 import { laneLabel } from '../lanes/laneMeta';
 import type { DecisionLanesSnapshot } from '@/lib/bindings/DecisionLanesSnapshot';
 import { useLanesSnapshot } from '../lanes/useLanesSnapshot';
+import { isMandateWrite } from '../mandate/mandateWrites';
+import { useMandateDeck } from '../mandate/useMandateDeck';
+import { DeckLaneContext, type DeckLaneData } from './shapes/DeckLaneContext';
+import { withLaneIrreversible } from './shapes/cardShape';
 
 function loadOf(
   request: DeckRequest | null,
@@ -53,7 +57,17 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
   const lanesState = useLanesSnapshot(laneScope);
   const roster = useDecisionRoster({ load: loadOf(request, lanesState.snapshot), enabled: !!request, hosts });
   const lanes = useMemo(() => indexLanes(lanesState.snapshot), [lanesState.snapshot]);
+  const mandateDeck = useMandateDeck(laneScope, lanesState.snapshot);
+  const items = useMemo(
+    () => (laneScope ? withLaneIrreversible([...roster.items, ...mandateDeck.items], lanes) : roster.items),
+    [laneScope, roster.items, mandateDeck.items, lanes],
+  );
+  const laneData = useMemo<DeckLaneData>(
+    () => ({ lanes, mandates: mandateDeck.mandates, charters: mandateDeck.charters }),
+    [lanes, mandateDeck.mandates, mandateDeck.charters],
+  );
   const { decide } = roster;
+  const { write: writeMandate } = mandateDeck;
   const sendTeamReply = usePipelineStore((s) => s.sendChannelDirective);
   const sendPersonaReply = usePipelineStore((s) => s.sendPersonaChannelMessage);
 
@@ -67,6 +81,16 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
   const onDecide = useCallback(async (v: DeckVerdict) => {
     if (v.item.kind === 'report' && v.branchId === 'chat') {
       followUp.current = { item: v.item, linkedReviews: v.linkedReviews ?? [] };
+    }
+    // A Sign card, or a Breach card's amend / suspend, writes to the mandate.
+    if (isMandateWrite(v)) {
+      try {
+        await writeMandate(v);
+      } catch (err) {
+        toastCatch('decision-deck:mandate', m.ml_write_failed)(err);
+        throw err;
+      }
+      return;
     }
     try {
       await writeDeckVerdict(v, doors);
@@ -84,7 +108,7 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
       else toastCatch('decision-deck:decide')(err);
       throw err;
     }
-  }, [doors, decidedElsewhere, replyFailed, followUp]);
+  }, [doors, decidedElsewhere, replyFailed, followUp, writeMandate, m]);
 
   const onOpenLink = useCallback((item: DecisionItem, linkId: string) => {
     if (!item.links?.some((l) => l.id === linkId)) return;
@@ -111,9 +135,10 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
   }, [request, session, m]);
 
   return (
+    <DeckLaneContext.Provider value={laneData}>
     <DeckModal
       session={spec}
-      items={roster.items}
+      items={items}
       loading={roster.loading}
       counts={roster.counts}
       lanes={lanes}
@@ -122,6 +147,7 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
       onBack={closeDecisionDeck}
       onOpenLink={onOpenLink}
     />
+    </DeckLaneContext.Provider>
   );
 }
 

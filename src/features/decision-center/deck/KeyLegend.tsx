@@ -12,8 +12,10 @@ import type { DecisionModalType } from '../model/decisionModel';
 import { COUNCIL_MIN_REASON } from '../roster/decisionCopy';
 import type { Interpolate, MonitorCopy } from './deckMeta';
 import { Keycap } from './parts';
+import type { CardShape } from './shapes/cardShape';
+import { shapeEntries } from './shapes/shapeKeys';
 
-type Entry = [keys: string[], label: string];
+export type Entry = [keys: string[], label: string];
 interface Verbs { accept: string; reject: string }
 
 function entriesFor(m: MonitorCopy, tx: Interpolate, type: DecisionModalType, council: boolean, arms: boolean, v: Verbs): Entry[] {
@@ -48,11 +50,12 @@ function entriesFor(m: MonitorCopy, tx: Interpolate, type: DecisionModalType, co
   }
 }
 
-export function KeyMap({ type, isCouncil, armsAccept = false, labels }: { type: DecisionModalType; isCouncil: boolean; armsAccept?: boolean; labels?: Verbs }) {
+export function KeyMap({ type, isCouncil, armsAccept = false, shape = 'default', labels }: { type: DecisionModalType; isCouncil: boolean; armsAccept?: boolean; shape?: CardShape; labels?: Verbs }) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
   const still = useReducedMotion();
-  const entries = entriesFor(m, tx, type, isCouncil, armsAccept, labels ?? { accept: m.dc_hub_key_accept, reject: m.dc_hub_key_reject });
+  const verbs = labels ?? { accept: m.dc_hub_key_accept, reject: m.dc_hub_key_reject };
+  const entries = shapeEntries(m, shape, verbs) ?? entriesFor(m, tx, type, isCouncil, armsAccept, verbs);
   return (
     <motion.div
       initial={still ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.97 }}

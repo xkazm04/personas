@@ -28,6 +28,7 @@ function noOfKind(m: MonitorCopy, kind: DecisionKind): string {
     case 'council': return m.dc_deck_no_council;
     case 'report': return m.dc_deck_no_report;
     case 'message': return m.dc_deck_no_chat;
+    case 'mandate': return m.ml_sign_no;
   }
 }
 

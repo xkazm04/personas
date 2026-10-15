@@ -34,6 +34,9 @@ import { ThreadPeople } from './ThreadPeople';
 import type { DeckActions } from './useDeckActions';
 import type { DeckController } from './useDeck';
 import { useReader } from './useReader';
+import { CouncilNote } from './shapes/ShapeNotes';
+import { shapeBody, shapeDock, shapeRail } from './shapes/ShapeSlots';
+import type { ShapeController } from './shapes/useShapeController';
 
 const STAMP: Record<Exclude<Leave, 'walk'>, { lamp: string; icon: LucideIcon }> = {
   accept: { lamp: 'au-l-success', icon: Check },
@@ -90,13 +93,15 @@ function ReadOnlyFoot({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function DeckCard({ item, deck, act, state, titleId, onClose }: {
+export function DeckCard({ item, deck, act, state, titleId, onClose, shape }: {
   item: DecisionItem;
   deck: DeckController;
   act: DeckActions;
   state: CardState;
   titleId: string;
   onClose: () => void;
+  /** The card's lane shape; absent (or `default`) keeps the modal type's body and dock. */
+  shape?: ShapeController;
 }) {
   const { t } = useTranslation();
   const still = useReducedMotion();
@@ -108,7 +113,7 @@ export function DeckCard({ item, deck, act, state, titleId, onClose }: {
   const stamp = deck.stamp && deck.stamp !== 'walk' ? deck.stamp : null;
   const stampText = stamp ? stampLabel(t.monitor, item, stamp) : '';
 
-  const body = type === 'report'
+  const body = shapeBody(item, shape, act, state) ?? (type === 'report'
     ? <ReportReader item={item} doc={doc} reader={reader} />
     : type === 'chat'
       ? <ChatThread item={item} onSend={act.reply} readOnly={act.readOnly} />
@@ -116,15 +121,15 @@ export function DeckCard({ item, deck, act, state, titleId, onClose }: {
         <ProseBody item={item}>
           {item.input && !act.readOnly && <QuestionFields input={item.input} answers={state.answers} onAnswer={state.setAnswer} missing={state.missing} />}
         </ProseBody>
-      );
+      ));
 
-  const extra = type === 'report'
+  const extra = shapeRail(item, shape) ?? (type === 'report'
     ? <ReaderContents doc={doc} reader={reader} isHtml={!isMd} />
-    : type === 'chat' ? <ThreadPeople item={item} /> : null;
+    : type === 'chat' ? <ThreadPeople item={item} /> : null);
 
   const dock = act.readOnly
     ? <ReadOnlyFoot onClose={onClose} />
-    : <DeckDock item={item} deck={deck} act={act} rating={state.rating} onRate={state.setRating} />;
+    : shapeDock(item, shape, deck, act) ?? <DeckDock item={item} deck={deck} act={act} rating={state.rating} onRate={state.setRating} />;
 
   return (
     <motion.article
@@ -142,6 +147,7 @@ export function DeckCard({ item, deck, act, state, titleId, onClose }: {
       <div className="flex min-h-0 flex-1 gap-2 p-3 pl-0">
         <div className="flex min-w-0 flex-1 flex-col">
           <CardHeader item={item} titleId={titleId} />
+          {item.kind === 'council' && <div className="pl-[5.75rem] pr-8 pt-3"><CouncilNote /></div>}
           <FoldContext.Provider value={state.folds}>{body}</FoldContext.Provider>
         </div>
         <LedgerRail item={item} extra={extra} dock={dock} />

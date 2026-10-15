@@ -19,6 +19,12 @@ export interface DeckExtras {
   readOnly: boolean;
   /** Follow one of the card's `links` — navigation, never a decision. */
   onOpenLink: (item: DecisionItem, linkId: string) => void;
+  /**
+   * The card's lane shape (`shapes/useShapeController`): its own yes (sign,
+   * amend), handed the default verb to fall back on, and how far its digits
+   * push the item's branches.
+   */
+  shape?: { accept: ((fallback: () => void) => void) | null; offset: number };
 }
 
 /**
@@ -40,7 +46,7 @@ export function useDeckActions(deck: DeckController, extras: DeckExtras) {
     deck.decide({ verdict: 'done', branchId, linkedReviews: branchId ? extras.linkedReviews : undefined }, 'done');
   };
 
-  const accept = () => {
+  const defaultAccept = () => {
     if (!item || !live) return;
     if (armsAccept(item) && deck.armed !== 'accept') { deck.setArmed('accept'); return; }
     if (item.kind === 'council') { deck.decide({ verdict: 'accept' }, 'accept'); return; }
@@ -55,6 +61,14 @@ export function useDeckActions(deck: DeckController, extras: DeckExtras) {
     deck.decide({ verdict: 'accept' }, 'accept');
   };
 
+  const shapeAccept = extras.shape?.accept;
+  const accept = () => {
+    if (!item || !live) return;
+    if (shapeAccept) shapeAccept(defaultAccept);
+    else defaultAccept();
+  };
+  const offset = extras.shape?.offset ?? 0;
+
   const reject = () => {
     if (live) deck.reject();
   };
@@ -67,8 +81,9 @@ export function useDeckActions(deck: DeckController, extras: DeckExtras) {
     return false;
   };
 
+  /** `n` is the PRINTED digit: under a shape that owns 1-3 the first branch is 4. */
   const branch = (n: number): boolean => {
-    const b = item?.branches[n - 1];
+    const b = n > offset ? item?.branches[n - 1 - offset] : undefined;
     if (!b || !live) return false;
     if (type === 'report') done(b.id);
     else deck.decide({ verdict: 'accept', branchId: b.id }, 'accept');
@@ -83,7 +98,10 @@ export function useDeckActions(deck: DeckController, extras: DeckExtras) {
   return {
     type,
     readOnly: !live,
+    offset,
     accept,
+    /** The verb a shape falls back on (a breach amend that decides the item itself). */
+    defaultAccept,
     reject,
     confirm,
     skip: () => { if (live) deck.decide({ verdict: 'skip' }, 'skip'); },

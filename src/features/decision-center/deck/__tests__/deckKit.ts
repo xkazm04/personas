@@ -22,11 +22,13 @@ export function fakeDeck(item: DecisionItem, over: { armed?: 'accept' | 'reject'
   };
 }
 
-export function fakeActions(item: DecisionItem): DeckActions {
+export function fakeActions(item: DecisionItem, offset = 0): DeckActions {
   return {
     type: modalTypeOf(item.kind),
     readOnly: false,
+    offset,
     accept: vi.fn(),
+    defaultAccept: vi.fn(),
     reject: vi.fn(),
     confirm: vi.fn(() => false),
     skip: vi.fn(),
