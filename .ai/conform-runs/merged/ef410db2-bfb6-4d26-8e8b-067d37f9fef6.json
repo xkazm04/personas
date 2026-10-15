@@ -1,0 +1,17 @@
+{
+ "schema": "conform-run/1",
+ "worker": "ef410db2-bfb6-4d26-8e8b-067d37f9fef6",
+ "subject": "data-access",
+ "evaluatedAt": "2026-10-15T01:17:23.607824+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "data-access",
+   "context": "recipes-playground",
+   "reason": "context-map.json lists file_paths as empty and entry points under src/features/recipes/sub_playground/, but the entire src/features/recipes tree was deleted in commit 450f1c9e5c (2026-09-25) as dead code. There are no context code files on disk to inspect or judge."
+  }
+ ],
+ "consults": []
+}
