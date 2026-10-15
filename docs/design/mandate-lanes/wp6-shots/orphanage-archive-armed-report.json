@@ -5,7 +5,7 @@
   "reducedMotion": false,
   "steps": "wait=4000;press=x",
   "label": "orphanage-archive-armed",
-  "createdAt": "2026-10-15T11:24:55.230Z",
+  "createdAt": "2026-10-15T12:44:44.977Z",
   "browser": "153.0.8010.12",
   "tape": {
     "path": "synthetic",

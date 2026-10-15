@@ -5,13 +5,13 @@
   "reducedMotion": false,
   "steps": "wait=2500",
   "label": "reread",
-  "createdAt": "2026-10-15T10:49:08.652Z",
+  "createdAt": "2026-10-15T12:35:14.467Z",
   "browser": "153.0.8010.12",
   "tape": {
     "path": "synthetic",
     "source": "synthetic",
     "recordedAt": "2026-09-22T15:40:00.000Z",
-    "calls": 24,
+    "calls": 25,
     "note": "Synthetic: every decision source the roster reads, one or two rows each; --kit <approval|backlog|incident|council|report|html|chat> picks the deck request. Plus the mandate lanes: a snapshot routing them into Breach (scope with one behind it, stop, two valves), Sign (a draft mandate), Accept (goal claim, report, council) and Talk; one signed and one draft mandate; an act log; refusal classes; one goal awaiting acceptance. Plus WP6: a re-read of the signed personas mandate in Sign, and the claim's met-when."
   },
   "ok": true,

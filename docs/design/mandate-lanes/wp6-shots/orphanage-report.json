@@ -5,7 +5,7 @@
   "reducedMotion": false,
   "steps": "wait=4000",
   "label": "orphanage",
-  "createdAt": "2026-10-15T11:22:10.243Z",
+  "createdAt": "2026-10-15T12:43:09.712Z",
   "browser": "153.0.8010.12",
   "tape": {
     "path": "synthetic",
@@ -614,260 +614,6 @@
           "answered": null
         },
         {
-          "cmd": "mesh_device_snapshots",
-          "args": {},
-          "answered": null
-        },
-        {
-          "cmd": "list_team_channel",
-          "args": {
-            "before": null,
-            "beforeId": null,
-            "kinds": null,
-            "limit": 60,
-            "teamId": "t-personas-desktop"
-          },
-          "answered": []
-        },
-        {
-          "cmd": "count_team_channel_kinds",
-          "args": {
-            "teamId": "t-personas-desktop"
-          },
-          "answered": 0
-        },
-        {
-          "cmd": "list_team_channel",
-          "args": {
-            "before": null,
-            "beforeId": null,
-            "kinds": null,
-            "limit": 60,
-            "teamId": "t-docs"
-          },
-          "answered": []
-        },
-        {
-          "cmd": "count_team_channel_kinds",
-          "args": {
-            "teamId": "t-docs"
-          },
-          "answered": 0
-        },
-        {
-          "cmd": "list_team_channel",
-          "args": {
-            "before": null,
-            "beforeId": null,
-            "kinds": null,
-            "limit": 60,
-            "teamId": "t-legal"
-          },
-          "answered": []
-        },
-        {
-          "cmd": "count_team_channel_kinds",
-          "args": {
-            "teamId": "t-legal"
-          },
-          "answered": 0
-        },
-        {
-          "cmd": "list_team_channel",
-          "args": {
-            "before": null,
-            "beforeId": null,
-            "kinds": null,
-            "limit": 60,
-            "teamId": "t-research"
-          },
-          "answered": []
-        },
-        {
-          "cmd": "count_team_channel_kinds",
-          "args": {
-            "teamId": "t-research"
-          },
-          "answered": 0
-        },
-        {
-          "cmd": "list_team_channel",
-          "args": {
-            "before": null,
-            "beforeId": null,
-            "kinds": null,
-            "limit": 60,
-            "teamId": "t-people"
-          },
-          "answered": []
-        },
-        {
-          "cmd": "count_team_channel_kinds",
-          "args": {
-            "teamId": "t-people"
-          },
-          "answered": 0
-        },
-        {
-          "cmd": "list_team_channel",
-          "args": {
-            "before": null,
-            "beforeId": null,
-            "kinds": null,
-            "limit": 60,
-            "teamId": "t-growth"
-          },
-          "answered": []
-        },
-        {
-          "cmd": "count_team_channel_kinds",
-          "args": {
-            "teamId": "t-growth"
-          },
-          "answered": 0
-        },
-        {
-          "cmd": "list_team_channel",
-          "args": {
-            "before": null,
-            "beforeId": null,
-            "kinds": null,
-            "limit": 60,
-            "teamId": "t-support"
-          },
-          "answered": []
-        },
-        {
-          "cmd": "count_team_channel_kinds",
-          "args": {
-            "teamId": "t-support"
-          },
-          "answered": 0
-        },
-        {
-          "cmd": "list_team_channel",
-          "args": {
-            "before": null,
-            "beforeId": null,
-            "kinds": null,
-            "limit": 60,
-            "teamId": "t-data"
-          },
-          "answered": []
-        },
-        {
-          "cmd": "count_team_channel_kinds",
-          "args": {
-            "teamId": "t-data"
-          },
-          "answered": 0
-        },
-        {
-          "cmd": "list_team_channel",
-          "args": {
-            "before": null,
-            "beforeId": null,
-            "kinds": null,
-            "limit": 60,
-            "teamId": "t-marketing"
-          },
-          "answered": []
-        },
-        {
-          "cmd": "count_team_channel_kinds",
-          "args": {
-            "teamId": "t-marketing"
-          },
-          "answered": 0
-        },
-        {
-          "cmd": "list_team_channel",
-          "args": {
-            "before": null,
-            "beforeId": null,
-            "kinds": null,
-            "limit": 60,
-            "teamId": "t-finance"
-          },
-          "answered": []
-        },
-        {
-          "cmd": "count_team_channel_kinds",
-          "args": {
-            "teamId": "t-finance"
-          },
-          "answered": 0
-        },
-        {
-          "cmd": "list_team_channel",
-          "args": {
-            "before": null,
-            "beforeId": null,
-            "kinds": null,
-            "limit": 60,
-            "teamId": "t-infra"
-          },
-          "answered": []
-        },
-        {
-          "cmd": "count_team_channel_kinds",
-          "args": {
-            "teamId": "t-infra"
-          },
-          "answered": 0
-        },
-        {
-          "cmd": "list_team_channel",
-          "args": {
-            "before": null,
-            "beforeId": null,
-            "kinds": null,
-            "limit": 60,
-            "teamId": "t-sales"
-          },
-          "answered": []
-        },
-        {
-          "cmd": "count_team_channel_kinds",
-          "args": {
-            "teamId": "t-sales"
-          },
-          "answered": 0
-        },
-        {
-          "cmd": "list_team_channel",
-          "args": {
-            "before": null,
-            "beforeId": null,
-            "kinds": null,
-            "limit": 60,
-            "teamId": "t-ops"
-          },
-          "answered": []
-        },
-        {
-          "cmd": "count_team_channel_kinds",
-          "args": {
-            "teamId": "t-ops"
-          },
-          "answered": 0
-        },
-        {
-          "cmd": "resource_live_samples",
-          "args": {},
-          "answered": null
-        },
-        {
-          "cmd": "list_remote_sessions",
-          "args": {},
-          "answered": []
-        },
-        {
-          "cmd": "list_dispatch_devices",
-          "args": {},
-          "answered": []
-        },
-        {
           "cmd": "fleet_set_auto_hibernate",
           "args": {
             "afterMinutes": 30,
@@ -882,6 +628,260 @@
             "stalledSecs": 120
           },
           "answered": null
+        },
+        {
+          "cmd": "mesh_device_snapshots",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "resource_live_samples",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-personas-desktop"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-personas-desktop"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-docs"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-docs"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-legal"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-legal"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-research"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-research"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-people"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-people"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-growth"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-growth"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-support"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-support"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-data"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-data"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-marketing"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-marketing"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-finance"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-finance"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-infra"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-infra"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-sales"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-sales"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_team_channel",
+          "args": {
+            "before": null,
+            "beforeId": null,
+            "kinds": null,
+            "limit": 60,
+            "teamId": "t-ops"
+          },
+          "answered": []
+        },
+        {
+          "cmd": "count_team_channel_kinds",
+          "args": {
+            "teamId": "t-ops"
+          },
+          "answered": 0
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
         },
         {
           "cmd": "fleet_autopilot_status",
@@ -1101,7 +1101,7 @@
         "list_personas": 1,
         "get_persona_summaries": 3,
         "dev_tools_workspace_list": 1,
-        "dev_tools_list_projects": 3,
+        "dev_tools_list_projects": 2,
         "dev_tools_workspace_set_active": 1,
         "decision_lanes_snapshot": 2,
         "dev_tools_pending_counts": 2,
@@ -1110,6 +1110,9 @@
         "fleet_autopilot_status": 2,
         "fleet_scheduled_tasks": 2,
         "get_network_status": 1,
+        "fleet_set_auto_hibernate": 1,
+        "fleet_set_state_cutoffs": 1,
+        "fleet_list_sessions": 2,
         "get_pending_review_counts_by_persona": 2,
         "list_manual_reviews_page": 2,
         "get_unread_report_counts_by_persona": 2,
@@ -1118,15 +1121,12 @@
         "get_app_settings_bulk": 2,
         "dev_tools_get_autopilot_mode": 8,
         "mesh_device_snapshots": 2,
+        "resource_live_samples": 2,
         "list_team_channel": 13,
         "count_team_channel_kinds": 39,
-        "resource_live_samples": 2,
         "list_remote_sessions": 2,
         "list_dispatch_devices": 2,
         "fleet_queue_snapshot": 2,
-        "fleet_set_auto_hibernate": 1,
-        "fleet_set_state_cutoffs": 1,
-        "fleet_list_sessions": 2,
         "orphan_clusters": 2
       },
       "stable": false,
