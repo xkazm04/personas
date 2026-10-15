@@ -5881,12 +5881,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "state": "deviation",
-          "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:129 renders audit_empty and unmounts the header row whenever auditLog is [], which useByomSettings.ts:82 seeds with no settled bit and :129 leaves [] when the fetch fails (silentCatch) - so the log asserts \"no audit entries\" during the first fetch and after a failure (loading-and-empty-states: settle-before-empty, error is not empty, chrome never unmounts); src-tauri/db/src/repos/execution/provider_audit.rs:74 orders by created_at DESC with no id tiebreaker (sorting) and the 50-row cap is never disclosed (pagination: count carries predicate).",
-          "evaluatedAt": "2026-10-06",
-          "evaluatedAgainst": "sha256-b2:f5aa23bf6f14872f",
-          "evaluatedRevision": 12,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:129 The initially empty audit array renders an empty message and removes column headers before fetching settles, and fetch failures leave that same misleading state.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14,
+          "revisionsBehind": 2
         }
       ],
       "governance": "governed"
@@ -20691,12 +20690,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "state": "deviation",
-          "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:182 filters by model and time window, and :294 sorts by cost, only over the pages loaded so far while :351 grows the window from the server; :332 sets that filtered length beside a server total taken under no predicate (client-server-split: never split one axis across tiers; count-carries-predicate). Re-judged after 8d04860cb3 moved the 2026-10-01 anchors; the defect is unchanged.",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:f5aa23bf6f14872f",
-          "evaluatedRevision": 12,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:182 The calls table filters and sorts server-paged rows locally while displaying an unfiltered server total, so its controls and counts do not describe the complete matching dataset.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14,
+          "revisionsBehind": 2
         }
       ],
       "governance": "governed"
@@ -30518,7 +30516,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/components/forms/SortableColumnHeader.tsx:60 The sort control conveys direction through visual arrows and styling while its accessible label remains unchanged, leaving the sort state unexposed.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "form",

@@ -1,0 +1,156 @@
+{
+ "schema": "conform-run/1",
+ "worker": "08e022e0-3ae5-40e4-b9f4-bae35f186b7e",
+ "subject": "table",
+ "evaluatedAt": "2026-10-15T22:14:40.834058+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "byom-provider-settings",
+   "subject": "table",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:129 The initially empty audit array renders an empty message and removes column headers before fetching settles, and fetch failures leave that same misleading state.",
+   "techniques": [
+    {
+     "technique": "client-server-split",
+     "verdict": "conformant",
+     "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:180 The audit renderer preserves the server-owned order and window without client filtering or sorting."
+    },
+    {
+     "technique": "grid-keyboard-model",
+     "verdict": "conformant",
+     "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:135 Read-only audit cells use table, row, columnheader and cell semantics without introducing a composite grid."
+    },
+    {
+     "technique": "loading-and-empty-states",
+     "verdict": "deviation",
+     "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:129 useByomSettings initializes auditLog to [] and silently catches its lazy fetch failure; the renderer receives no loading, settled or error state."
+    },
+    {
+     "technique": "performance",
+     "verdict": "deviation",
+     "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:160 Virtualization mounts a subset without declaring full row/column counts or mounted rows' positions through ARIA."
+    },
+    {
+     "technique": "sorting",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/execution/provider_audit.rs:74 The audit API reaches this query, whose timestamp-only ordering lacks an immutable unique tiebreaker."
+    }
+   ]
+  },
+  {
+   "context": "overview-activity-metrics",
+   "subject": "table",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:182 The calls table filters and sorts server-paged rows locally while displaying an unfiltered server total, so its controls and counts do not describe the complete matching dataset.",
+   "techniques": [
+    {
+     "technique": "client-server-split",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:182 Model/time filtering runs over loaded pages; fetchGlobalExecutions requests server windows and caps accumulated rows at 500, while UnifiedTable sorts those filtered rows locally."
+    },
+    {
+     "technique": "filtering",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:349 Filtered-empty results always say 'No executions yet' rather than identifying the applied model/time predicate and offering a clear action."
+    },
+    {
+     "technique": "loading-and-empty-states",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_activity/components/GlobalExecutionList.tsx:100 The settled-empty branch replaces UnifiedTable with onboarding content, removing the known column headers."
+    },
+    {
+     "technique": "pagination",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:332 The filtered loaded count appears beside a server total fetched without the model/time predicate."
+    },
+    {
+     "technique": "sorting",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:68 The cost comparator places nulls last ascending, but UnifiedTable reverses the entire sequence descending, putting nulls first despite the helper's stated policy."
+    }
+   ]
+  },
+  {
+   "context": "shared-components-forms",
+   "subject": "table",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/shared/components/forms/SortableColumnHeader.tsx:60 The sort control conveys direction through visual arrows and styling while its accessible label remains unchanged, leaving the sort state unexposed.",
+   "techniques": [
+    {
+     "technique": "sorting",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/forms/SortableColumnHeader.tsx:60 The component supplies no semantic direction or change announcement; the inspected IncidentTableHeader integration also supplies no aria-sort."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "table",
+   "context": "agents-editor",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "table",
+   "context": "shared-components-layout",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-15T22:14:40.834058+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "table"
+   ],
+   "techniques": [
+    "client-server-split",
+    "grid-keyboard-model",
+    "loading-and-empty-states",
+    "performance",
+    "sorting"
+   ],
+   "deviations": 1,
+   "context": "byom-provider-settings",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-15T22:14:40.834058+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "table"
+   ],
+   "techniques": [
+    "client-server-split",
+    "filtering",
+    "loading-and-empty-states",
+    "pagination",
+    "sorting"
+   ],
+   "deviations": 1,
+   "context": "overview-activity-metrics",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-15T22:14:40.834058+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "table"
+   ],
+   "techniques": [
+    "sorting"
+   ],
+   "deviations": 1,
+   "context": "shared-components-forms",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

@@ -5925,19 +5925,34 @@
       "subject": "table",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:00:17.000Z",
-      "worker": "216ef4e6-cae0-493d-a37b-1c96ac7659c3",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T22:14:40.834Z",
+      "worker": "08e022e0-3ae5-40e4-b9f4-bae35f186b7e",
       "techniques": [
         {
           "technique": "client-server-split",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:182 client filter and :294 client cost sort below the server window grown at :351"
+          "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:182 Model/time filtering runs over loaded pages; fetchGlobalExecutions requests server windows and caps accumulated rows at 500, while UnifiedTable sorts those filtered rows locally."
         },
         {
           "technique": "filtering",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:332 'showing count of total' pairs a client-filtered count with an unfiltered server total"
+          "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:349 Filtered-empty results always say 'No executions yet' rather than identifying the applied model/time predicate and offering a clear action."
+        },
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_activity/components/GlobalExecutionList.tsx:100 The settled-empty branch replaces UnifiedTable with onboarding content, removing the known column headers."
+        },
+        {
+          "technique": "pagination",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:332 The filtered loaded count appears beside a server total fetched without the model/time predicate."
+        },
+        {
+          "technique": "sorting",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:68 The cost comparator places nulls last ascending, but UnifiedTable reverses the entire sequence descending, putting nulls first despite the helper's stated policy."
         }
       ],
       "superseded": [
@@ -5947,6 +5962,13 @@
           "evaluatedAt": "2026-10-01",
           "worker": null,
           "reason": "replaced by 216ef4e6-cae0-493d-a37b-1c96ac7659c3"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:182 filters by model and time window, and :294 sorts by cost, only over the pages loaded so far while :351 grows the window from the server; :332 sets that filtered length beside a server total taken under no predicate (client-server-split: never split one axis across tiers; count-carries-predicate). Re-judged after 8d04860cb3 moved the 2026-10-01 anchors; the defect is unchanged.",
+          "evaluatedAt": "2026-10-09T16:00:17.000Z",
+          "worker": "216ef4e6-cae0-493d-a37b-1c96ac7659c3",
+          "reason": "replaced by 08e022e0-3ae5-40e4-b9f4-bae35f186b7e"
         }
       ]
     },
@@ -22088,6 +22110,67 @@
           "technique": "spend-observability",
           "verdict": "deviation",
           "evidence": "src/features/agents/sub_lab/components/versions_table/LabEconomicsPanel.tsx:58 Economics table renders model-level cost-per-success averages without providing row-level drill-down into composing executions."
+        }
+      ]
+    },
+    "94b0b4ea-9adb-44d7-8222-4e2345de455b/table": {
+      "context": "byom-provider-settings",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T22:14:40.834Z",
+      "worker": "08e022e0-3ae5-40e4-b9f4-bae35f186b7e",
+      "techniques": [
+        {
+          "technique": "client-server-split",
+          "verdict": "conformant",
+          "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:180 The audit renderer preserves the server-owned order and window without client filtering or sorting."
+        },
+        {
+          "technique": "grid-keyboard-model",
+          "verdict": "conformant",
+          "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:135 Read-only audit cells use table, row, columnheader and cell semantics without introducing a composite grid."
+        },
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:129 useByomSettings initializes auditLog to [] and silently catches its lazy fetch failure; the renderer receives no loading, settled or error state."
+        },
+        {
+          "technique": "performance",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:160 Virtualization mounts a subset without declaring full row/column counts or mounted rows' positions through ARIA."
+        },
+        {
+          "technique": "sorting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/provider_audit.rs:74 The audit API reaches this query, whose timestamp-only ordering lacks an immutable unique tiebreaker."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:129 renders audit_empty and unmounts the header row whenever auditLog is [], which useByomSettings.ts:82 seeds with no settled bit and :129 leaves [] when the fetch fails (silentCatch) - so the log asserts \"no audit entries\" during the first fetch and after a failure (loading-and-empty-states: settle-before-empty, error is not empty, chrome never unmounts); src-tauri/db/src/repos/execution/provider_audit.rs:74 orders by created_at DESC with no id tiebreaker (sorting) and the 50-row cap is never disclosed (pagination: count carries predicate).",
+          "evaluatedAt": "2026-10-06",
+          "worker": null,
+          "reason": "replaced by 08e022e0-3ae5-40e4-b9f4-bae35f186b7e"
+        }
+      ]
+    },
+    "3c749d5b-3169-4ea8-8faa-98558f9b5df5/table": {
+      "context": "shared-components-forms",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T22:14:40.834Z",
+      "worker": "08e022e0-3ae5-40e4-b9f4-bae35f186b7e",
+      "techniques": [
+        {
+          "technique": "sorting",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/forms/SortableColumnHeader.tsx:60 The component supplies no semantic direction or change announcement; the inspected IncidentTableHeader integration also supplies no aria-sort."
         }
       ]
     }
