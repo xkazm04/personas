@@ -40,6 +40,7 @@ import { MONITOR_ACTIVITY_MODULES } from './monitorActivitySurfaces';
 import { MANDATE_LANES_MODULES } from './mandateLanesSurfaces';
 import { DECISION_DECK_MODULES } from './decisionDeckSurfaces';
 import { MANDATE_CARDS_MODULES } from './mandateCardsSurfaces';
+import { MANDATE_WP6_MODULES } from './mandateWp6Surfaces';
 import { BREACH_STATES_MODULES } from './breachStatesSurfaces';
 import { ATHENA_CHAT_MODULES } from './athenaChatSurfaces';
 
@@ -97,6 +98,7 @@ export const MODULES: Record<string, HarnessModule> = {
   ...DECISION_DECK_MODULES,
   // The mandate-lane card shapes in the live deck (mandateCardsSurfaces.tsx, mandateCardsTapes.mjs).
   ...MANDATE_CARDS_MODULES,
+  ...MANDATE_WP6_MODULES, // Re-read, met-when, Scopes and the Orphanage (mandateWp6Surfaces.tsx, WP6).
   ...BREACH_STATES_MODULES, // Breach head lines and mandate states (breachStatesSurfaces.tsx, WP5P).
   ...TONE_MODULES,
   ...TRIAGE_MODULES,

@@ -34,6 +34,7 @@ import { monitorActivityTapes } from './monitorActivityTapes.mjs';
 import { mandateLanesTapes } from './mandateLanesTapes.mjs';
 import { decisionDeckTapes } from './decisionDeckTapes.mjs';
 import { mandateCardsTapes } from './mandateCardsTapes.mjs';
+import { mandateWp6Tapes } from './mandateWp6Tapes.mjs';
 import { breachStatesTapes } from './breachStatesTapes.mjs';
 import { athenaChatTapes } from './athenaChatTapes.mjs';
 
@@ -351,6 +352,7 @@ const BUILDERS = {
   ...decisionDeckTapes({ RECORDED_AT, PERSONAS }).builders,
   // The mandate-lane card shapes in the live deck (mandateCardsSurfaces.tsx, mandateCardsTapes.mjs).
   ...mandateCardsTapes({ RECORDED_AT, PERSONAS }).builders,
+  ...mandateWp6Tapes({ RECORDED_AT, PERSONAS }).builders, // WP6 surfaces (mandateWp6Tapes.mjs).
   ...breachStatesTapes({ RECORDED_AT, PERSONAS }).builders, // Breach states (breachStatesTapes.mjs, WP5P).
   // Module 3, the Fleet cluster (fleetSurfaces.tsx, fleetTapes.mjs).
   ...fleetTapes({ RECORDED_AT }).builders,

@@ -1,0 +1,125 @@
+{
+  "module": "decision-center/mandate-wp6",
+  "kit": "reread",
+  "query": null,
+  "reducedMotion": false,
+  "steps": "wait=2500",
+  "label": "reread",
+  "createdAt": "2026-10-15T10:49:08.652Z",
+  "browser": "153.0.8010.12",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 24,
+    "note": "Synthetic: every decision source the roster reads, one or two rows each; --kit <approval|backlog|incident|council|report|html|chat> picks the deck request. Plus the mandate lanes: a snapshot routing them into Breach (scope with one behind it, stop, two valves), Sign (a draft mandate), Accept (goal claim, report, council) and Talk; one signed and one draft mandate; an act log; refusal classes; one goal awaiting acceptance. Plus WP6: a re-read of the signed personas mandate in Sign, and the claim's met-when."
+  },
+  "ok": true,
+  "unknownIpcCommands": [],
+  "shots": [
+    {
+      "file": "reread-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_persona_summaries": 1,
+        "decision_lanes_snapshot": 1,
+        "list_manual_reviews_page": 1,
+        "dev_tools_triage_ideas": 2,
+        "policy_tuning_list": 2,
+        "evolution_list_promotion_proposals": 1,
+        "dev_tools_list_pending_acceptance": 1,
+        "list_audit_incidents": 1,
+        "list_unread_reports": 1,
+        "dev_tools_council_list_subjects": 1,
+        "companion_list_pending_approvals": 1,
+        "list_team_channel": 1,
+        "count_team_channel_kinds": 2,
+        "list_persona_channel": 6,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1,
+        "mandate_list": 2,
+        "list_persona_responsibilities": 1,
+        "dev_tools_council_get_run": 2
+      },
+      "stable": true,
+      "textLength": 163,
+      "textSample": "Persona Monitor Chips: the seven-kind strip. Lanes: Breach, Sign, Accept and Talk plus Orphans, with the Stewards plate and the mandate register. Switches at once.",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "reread-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_persona_summaries": 1,
+        "decision_lanes_snapshot": 1,
+        "list_manual_reviews_page": 1,
+        "dev_tools_triage_ideas": 2,
+        "policy_tuning_list": 2,
+        "evolution_list_promotion_proposals": 1,
+        "dev_tools_list_pending_acceptance": 1,
+        "list_audit_incidents": 1,
+        "list_unread_reports": 1,
+        "dev_tools_council_list_subjects": 1,
+        "companion_list_pending_approvals": 1,
+        "list_team_channel": 1,
+        "count_team_channel_kinds": 2,
+        "list_persona_channel": 6,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1,
+        "mandate_list": 2,
+        "list_persona_responsibilities": 1,
+        "dev_tools_council_get_run": 2
+      },
+      "stable": true,
+      "textLength": 163,
+      "textSample": "Persona Monitor Chips: the seven-kind strip. Lanes: Breach, Sign, Accept and Talk plus Orphans, with the Stewards plate and the mandate register. Switches at once.",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    }
+  ]
+}
