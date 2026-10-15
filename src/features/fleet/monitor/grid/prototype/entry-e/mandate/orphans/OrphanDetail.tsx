@@ -1,6 +1,7 @@
-// One orphan cluster's detail and its three ways out: draft a mandate (D),
+// One orphan cluster's detail: its three ways out - draft a mandate (D),
 // adopt it into an existing mandate (A), archive it (X, armed twice: what
-// leaves the lane is listed first; archived, not deleted). A pick (the
+// leaves the lane is listed first; archived, not deleted) - then the cluster
+// as a plate of the panel (why it asks for a mandate, and its facts). A pick (the
 // mandate to adopt into, or the steward a draft names when the orphanage found
 // none) is a row of chips, confirmed by the same key again or Enter.
 
@@ -11,7 +12,8 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { useTranslation } from '@/i18n/useTranslation';
 import type { MandateSummary } from '@/lib/bindings/MandateSummary';
 import type { OrphanCluster } from '@/lib/bindings/OrphanCluster';
-import { Kbd } from '../../parts';
+import { Engraved, Kbd, Lamp } from '../../parts';
+import { ProjectName } from '../rowParts';
 import { adoptTargets, kindsLine, stewardChoices, whyLine } from './orphanModel';
 import type { OrphanageState } from './useOrphanage';
 
@@ -34,9 +36,7 @@ export function OrphanDetail({ cluster: c, perCard, state: o, mandates }: {
     : m.ml_orphans_steward_none;
 
   return (
-    <aside className="flex w-[320px] flex-shrink-0 flex-col gap-3 overflow-y-auto border-l border-foreground/10 pl-4" data-testid="orphan-detail" data-project={c.projectId}>
-      <span className="typo-eyebrow">{c.projectName ?? m.ml_project_unknown}</span>
-      <p className="typo-body text-foreground">{whyLine(c, perCard, m, tx)}</p>
+    <aside className="flex w-[320px] flex-shrink-0 flex-col gap-3 overflow-y-auto" data-testid="orphan-detail" data-project={c.projectId}>
       <div className="flex flex-col gap-2">
         <AsyncButton variant="secondary" size="sm" block onClick={() => o.draft(c.projectId, c.steward?.personaId ?? null, needsPick)} icon={<FilePlus2 className="h-4 w-4" aria-hidden />} iconRight={keyRight('D')} aria-keyshortcuts="D" data-testid="orphan-draft">
           {o.mode === 'draft' ? m.ml_orphans_draft_confirm : m.ml_orphans_draft}
@@ -67,8 +67,13 @@ export function OrphanDetail({ cluster: c, perCard, state: o, mandates }: {
           <span className="flex flex-wrap items-center gap-1.5 typo-caption"><Kbd>X</Kbd> <Kbd>↵</Kbd> {m.ml_orphans_archive_keys} <Kbd>Esc</Kbd> {m.dc_deck_armed_disarm}</span>
         </div>
       )}
-      <p className="typo-caption text-status-warning" role="status" data-testid="orphan-notice">{o.notice}</p>
-      <div className="border-t border-foreground/10 pt-3">
+      <p className="typo-caption text-status-warning empty:hidden" role="status" data-testid="orphan-notice">{o.notice}</p>
+      <section className="ae-plate ml-plate flex flex-col gap-2 rounded-card p-3" aria-label={c.projectName ?? m.ml_project_unknown}>
+        <header className="flex min-w-0 items-center gap-2">
+          <Lamp lamp={{ tone: 'warn', lit: !!c.why }} />
+          <Engraved className="min-w-0 truncate"><ProjectName projectId={c.projectId}>{c.projectName ?? m.ml_project_unknown}</ProjectName></Engraved>
+        </header>
+        <p className="typo-body text-foreground">{whyLine(c, perCard, m, tx)}</p>
         <KeyValueGrid
           min="100%"
           items={[
@@ -78,7 +83,7 @@ export function OrphanDetail({ cluster: c, perCard, state: o, mandates }: {
             { k: m.ml_orphans_fact_archived, v: String(c.archived) },
           ]}
         />
-      </div>
+      </section>
     </aside>
   );
 }

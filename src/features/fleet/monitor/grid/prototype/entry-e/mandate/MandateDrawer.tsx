@@ -11,7 +11,7 @@
 // acts on a key.
 
 import { BookOpen, Inbox, ScrollText, X } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/features/shared/components/buttons';
 import { KitHost, Crumbs } from '@/features/shared/components/kit';
 import { useLanesSnapshot } from '@/features/decision-center/lanes/useLanesSnapshot';
@@ -68,7 +68,7 @@ export function MandateDrawer({ view, onView, onClose }: {
   onClose: () => void;
 }) {
   return (
-    <MonitorDrawerShell open={view !== null} onClose={onClose}>
+    <MonitorDrawerShell open={view !== null} onClose={onClose} fill>
       {view && <DrawerBody view={view} onView={onView} onClose={onClose} />}
     </MonitorDrawerShell>
   );
@@ -81,10 +81,11 @@ function DrawerBody({ view, onView, onClose }: { view: MandateView; onView: (v: 
   const { snapshot } = useLanesSnapshot(false);
   const [regSel, setRegSel] = useState(0);
   const current = view.kind === 'mandate' ? mandates.mandates?.find((x) => x.charterId === view.charterId) ?? null : null;
-  const held = useMemo(() => {
-    if (!snapshot || view.kind !== 'mandate') return null;
-    return snapshot.charters.find((c) => c.charterId === view.charterId)?.held ?? 0;
-  }, [snapshot, view]);
+  const heldOf = useCallback(
+    (charterId: string) => (snapshot ? snapshot.charters.find((c) => c.charterId === charterId)?.held ?? 0 : null),
+    [snapshot],
+  );
+  const held = view.kind === 'mandate' ? heldOf(view.charterId) : null;
 
   const back = useCallback(() => {
     if (view.kind === 'mandate' && view.back) onView({ kind: view.back });
@@ -119,16 +120,15 @@ function DrawerBody({ view, onView, onClose }: { view: MandateView; onView: (v: 
       role="dialog"
       aria-label={m.ml_drawer_aria}
       // A flex chain down to the content, every link able to shrink: the shell
-      // caps the drawer at the Monitor's height (max-h-full), and on a short
-      // window the content must give way to it instead of running under the
-      // drawer's clipped bottom edge, where the last rows and a picked scope
-      // were cut off.
-      className="flex min-h-0 flex-col p-4 [&>.k-host]:flex [&>.k-host]:min-h-0 [&>.k-host]:flex-col"
+      // spans the Monitor's height (`fill`), and on a short window the content
+      // must give way to it instead of running under the drawer's bottom edge,
+      // where the last rows and a picked scope were cut off.
+      className="ml-sheet flex min-h-0 flex-1 flex-col p-4 [&>.k-host]:flex [&>.k-host]:min-h-0 [&>.k-host]:flex-1 [&>.k-host]:flex-col"
       data-testid="mandate-drawer"
       data-view={view.kind}
     >
       <KitHost>
-        <div className="flex h-[min(44rem,82vh)] min-h-0 flex-col gap-3">
+        <div className="flex min-h-0 flex-1 flex-col gap-3">
         <header className="flex items-center gap-2">
           <Crumbs items={trail} label={m.ml_drawer_aria} testId="mandate-drawer-crumbs" />
           <span className="ml-auto flex items-center gap-1">
@@ -147,7 +147,7 @@ function DrawerBody({ view, onView, onClose }: { view: MandateView; onView: (v: 
           </span>
         </header>
         <div className="flex min-h-0 flex-1 flex-col">
-          {view.kind === 'register' && <RegisterView state={mandates} selected={regSel} onSelect={setRegSel} onOpen={open('register')} />}
+          {view.kind === 'register' && <RegisterView state={mandates} selected={regSel} onSelect={setRegSel} onOpen={open('register')} heldOf={heldOf} onOpenLog={(focusActId) => onView({ kind: 'log', focusActId })} />}
           {view.kind === 'log' && (
             <LedgerView key={view.focusActId ?? ''} mandates={mandates.mandates} focusActId={view.focusActId ?? null} onOpen={open('log')} />
           )}

@@ -1,9 +1,10 @@
-// The mandate page: one mandate drawn as a card. Two views under its head:
+// The mandate page: one mandate drawn as a card. Two views under its title
+// row (`MandateHead`, which also holds Suspend):
 // the act log (1, the default: what was decided inside the envelope, and by
 // whom) and the Scopes section (2: per scope its acts, or what widening it
 // would take off your desk; W widens, N narrows). The envelope sits in the
-// rail, and the rail's doors act on the selected act: S suspends or resumes,
-// V reverts, N takes the act's scope back.
+// rail, and the rail's doors act on the selected act: V reverts, N takes the
+// act's scope back. S arms Suspend (S again suspends) or resumes.
 
 import { useCallback, useMemo, useState } from 'react';
 import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
@@ -11,13 +12,13 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { MandateSummary } from '@/lib/bindings/MandateSummary';
 import { Kbd } from '../parts';
 import { ActLog, visibleActs } from './ActLog';
+import { MandateHead, useSuspendArm } from './MandateHead';
 import { MandateRail } from './MandateRail';
 import { ScopesView } from './scopes/ScopesView';
 import { useScopes } from './scopes/useScopes';
 import { useActLog, type ActFilter } from './useActLog';
 import { useDrawerListKeys } from './useDrawerKeys';
 import { useMandateDoors } from './useMandateDoors';
-import { statusLabel } from './mandateCopy';
 
 type PageView = 'log' | 'scopes';
 const TABS_ID = 'mandate-page-view';
@@ -28,7 +29,7 @@ export function MandatePage({ mandate, held, onChanged }: {
   /** Re-read the mandates after a door wrote (the act event also does). */
   onChanged: () => void;
 }) {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   const m = t.monitor;
   const log = useActLog(mandate.charterId);
   const [view, setView] = useState<PageView>('log');
@@ -40,6 +41,7 @@ export function MandatePage({ mandate, held, onChanged }: {
   const done = useCallback(() => { onChanged(); log.refresh(); }, [onChanged, log]);
   const doors = useMandateDoors(mandate, act, done);
   const scopes = useScopes(mandate.charterId, done);
+  const arm = useSuspendArm(mandate.status === 'suspended', doors.suspend);
   const pick = useCallback((f: ActFilter) => { setFilter(f); setSelected(0); }, []);
   const show = useCallback((v: PageView) => { scopes.disarm(); setView(v); }, [scopes]);
 
@@ -49,7 +51,7 @@ export function MandatePage({ mandate, held, onChanged }: {
     selected,
     onSelect: setSelected,
     letters: {
-      s: () => { void doors.suspend(); },
+      s: () => { void arm.press(); },
       v: () => { void doors.revert(); },
       n: () => { void doors.narrow(); },
       2: () => show('scopes'),
@@ -62,40 +64,26 @@ export function MandatePage({ mandate, held, onChanged }: {
   ];
 
   return (
-    <div className="flex min-h-0 flex-1 gap-4" data-testid="mandate-page" data-charter={mandate.charterId} data-view={view}>
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-        <header className="flex flex-col gap-1">
-          <span className="typo-eyebrow">
-            {[m.ml_mandate, mandate.projectName ?? m.ml_project_unknown, statusLabel(m, mandate.status)].join(' · ')}
-          </span>
-          <h3 className="typo-heading text-foreground">{mandate.title}</h3>
-          <p className="typo-body text-foreground">
-            {tx(m.ml_mandate_context, { steward: mandate.stewardName ?? m.ml_steward_unknown, rung: mandate.scopeRung })}
-          </p>
-        </header>
-        <SegmentedTabs tabs={tabs} activeTab={view} onTabChange={show} variant="segment" size="sm" ariaLabel={m.ml_mandate_views_aria} idPrefix={TABS_ID} />
-        <div {...segmentedTabPanelProps(TABS_ID, view)} role="tabpanel" className="flex min-h-0 flex-1 flex-col">
-        {view === 'log' ? (
-          <ActLog log={log} filter={filter} onFilter={pick} rows={rows} selected={selected} onSelect={setSelected} mandateTitle={() => mandate.title} />
-        ) : (
-          <ScopesView
-            state={scopes}
-            selected={scopeSel}
-            onSelect={setScopeSel}
-            extraLetters={{ s: () => { void doors.suspend(); }, 1: () => show('log') }}
-          />
-        )}
+    <div className="flex min-h-0 flex-1 flex-col gap-3" data-testid="mandate-page" data-charter={mandate.charterId} data-view={view}>
+      <MandateHead mandate={mandate} armed={arm.armed} onSuspend={arm.press} />
+      <div className="flex min-h-0 flex-1 gap-4">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+          <SegmentedTabs tabs={tabs} activeTab={view} onTabChange={show} variant="segment" size="sm" ariaLabel={m.ml_mandate_views_aria} idPrefix={TABS_ID} />
+          <div {...segmentedTabPanelProps(TABS_ID, view)} role="tabpanel" className="flex min-h-0 flex-1 flex-col">
+            {view === 'log' ? (
+              <ActLog log={log} filter={filter} onFilter={pick} rows={rows} selected={selected} onSelect={setSelected} mandateTitle={() => mandate.title} />
+            ) : (
+              <ScopesView
+                state={scopes}
+                selected={scopeSel}
+                onSelect={setScopeSel}
+                extraLetters={{ s: () => { void arm.press(); }, 1: () => show('log') }}
+              />
+            )}
+          </div>
         </div>
+        <MandateRail mandate={mandate} held={held} act={act} notice={doors.notice} onRevert={doors.revert} onNarrow={doors.narrow} />
       </div>
-      <MandateRail
-        mandate={mandate}
-        held={held}
-        act={act}
-        notice={doors.notice}
-        onSuspend={doors.suspend}
-        onRevert={doors.revert}
-        onNarrow={doors.narrow}
-      />
     </div>
   );
 }

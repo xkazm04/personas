@@ -9,10 +9,11 @@
 import { Expand, Shrink } from 'lucide-react';
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { AsyncButton } from '@/features/shared/components/buttons';
-import { ListRow, Rows } from '@/features/shared/components/kit';
+import { ListRow, Rows, type RowColumn } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import { OVERLAY_DISMISS_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { Kbd } from '../../parts';
+import { LampWord } from '../rowParts';
 import { useDrawerListKeys } from '../useDrawerKeys';
 import { ScopesArmed } from './ScopesArmed';
 import { scopeLines, scrollTopToShow } from './scopesModel';
@@ -31,6 +32,10 @@ export function ScopesView({ state, selected, onSelect, extraLetters }: {
   const line = lines[Math.min(selected, lines.length - 1)] ?? null;
   const armed = line && state.armed === line.id ? line : null;
   const listRef = useRef<HTMLDivElement>(null);
+  const columns: RowColumn[] = useMemo(() => [
+    { width: 'minmax(0, 1fr)' },
+    { head: m.ml_fact_status, width: '6.5rem' },
+  ], [m]);
   // Keep the picked line in sight as the keys walk the list, and again when
   // the armed box opens above the list and shrinks it. Only the list scrolls:
   // `scrollIntoView` would also move the drawer around it.
@@ -84,14 +89,26 @@ export function ScopesView({ state, selected, onSelect, extraLetters }: {
       {doors}
       {armed && <ScopesArmed line={armed} />}
       <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto">
-        <Rows loading={state.scopes === null && !state.failed} count={lines.length} label={m.ml_scopes} empty={{ title: m.ml_scopes_failed }}>
+        <Rows
+          loading={state.scopes === null && !state.failed}
+          count={lines.length}
+          label={m.ml_scopes}
+          columns={columns}
+          nameHead={m.ml_col_scope}
+          nameWidth="12rem"
+          empty={{ title: m.ml_scopes_failed }}
+        >
           {lines.map((l, i) => (
             <ListRow
               key={l.id}
               testId="mandate-scope-row"
+              size="line"
+              nameClass="typo-body text-foreground"
               name={<span data-scope={l.id}>{l.label}</span>}
-              meta={l.held && l.id !== 'merge' && l.id !== 'spend' ? `${l.detail} · ${m.ml_scopes_agreement_design}` : l.detail}
-              mark={{ tone: l.held ? 'agent' : 'neutral', label: l.held ? m.ml_scopes_held : m.ml_scopes_not_held }}
+              cells={[
+                <span key="d" className="typo-caption">{l.held && l.id !== 'merge' && l.id !== 'spend' ? `${l.detail} · ${m.ml_scopes_agreement_design}` : l.detail}</span>,
+                <LampWord key="h" lamp={{ tone: 'run', lit: l.held }} word={l.held ? m.ml_scopes_held : m.ml_scopes_not_held} />,
+              ]}
               state={i === selected ? 'selected' : undefined}
               onPress={() => { state.disarm(); onSelect(i); }}
             />

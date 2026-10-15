@@ -5,10 +5,12 @@
 // (D), adopt into an existing mandate (A) and archive (X, armed twice).
 
 import { useMemo, useState } from 'react';
-import { ListRow, Rows } from '@/features/shared/components/kit';
+import { ListRow, Rows, type RowColumn } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import { OVERLAY_DISMISS_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import type { MandateSummary } from '@/lib/bindings/MandateSummary';
+import { Engraved, Lamp } from '../../parts';
+import { Figure, LampWord, ProjectName } from '../rowParts';
 import { useDrawerListKeys } from '../useDrawerKeys';
 import { OrphanDetail } from './OrphanDetail';
 import { kindsLine, whyLine } from './orphanModel';
@@ -46,36 +48,60 @@ export function OrphanageView({ mandates }: { mandates: readonly MandateSummary[
     return true;
   }, { priority: OVERLAY_DISMISS_PRIORITY + 2, enabled: !!o.mode });
 
+  const columns: RowColumn[] = useMemo(() => [
+    { head: m.ml_orphans_fact_items, width: '13rem', collapse: true },
+    { width: '3.5rem', align: 'end' },
+    { head: m.ml_fact_status, width: '10rem' },
+  ], [m]);
+  const asking = clusters.some((x) => x.why);
+  const total = clusters.reduce((n, x) => n + x.items, 0);
   const head = o.data
-    ? tx(m.ml_orphans_head, { count: clusters.reduce((n, x) => n + x.items, 0), projects: clusters.length })
+    ? tx(m.ml_orphans_head, { count: total, projects: clusters.length })
     : null;
   return (
     <div className="flex min-h-0 flex-1 gap-4" data-testid="orphanage">
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-        <header className="flex flex-col gap-1">
-          <h3 className="typo-heading text-foreground">{m.ml_orphanage}</h3>
+      <section className="ae-plate flex min-h-0 min-w-0 flex-1 flex-col gap-2 self-start rounded-card px-1 pb-2 pt-3" aria-label={m.ml_orphanage}>
+        <header className="flex flex-col gap-1 px-3">
+          <span className="flex items-center gap-2">
+            <Lamp lamp={{ tone: 'warn', lit: asking }} />
+            <Engraved>{m.ml_orphanage}</Engraved>
+            <span className="typo-data tabular-nums text-foreground">{o.data ? total : null}</span>
+          </span>
           <p className="typo-body text-foreground">{head ?? m.ml_loading}</p>
           <p className="typo-caption">{o.data && o.data.unassigned > 0 ? tx(m.ml_orphans_unassigned, { count: o.data.unassigned }) : m.ml_orphans_lead}</p>
+          <p className="typo-caption text-status-error empty:hidden" role="status">
+            {o.failed ? m.ml_orphans_failed : o.data && o.data.failedSources.length > 0 ? tx(m.ml_orphans_partial, { sources: o.data.failedSources.join(', ') }) : null}
+          </p>
         </header>
-        <p className="typo-caption text-status-error" role="status">
-          {o.failed ? m.ml_orphans_failed : o.data && o.data.failedSources.length > 0 ? tx(m.ml_orphans_partial, { sources: o.data.failedSources.join(', ') }) : null}
-        </p>
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <Rows loading={o.data === null && !o.failed} count={clusters.length} label={m.ml_orphanage} empty={{ title: m.ml_orphans_empty, testId: 'orphanage-empty' }}>
+        <div className="min-h-0 overflow-y-auto">
+          <Rows
+            loading={o.data === null && !o.failed}
+            count={clusters.length}
+            label={m.ml_orphanage}
+            columns={columns}
+            nameHead={m.ml_col_project}
+            empty={{ title: m.ml_orphans_empty, testId: 'orphanage-empty' }}
+          >
             {clusters.map((x, i) => (
               <ListRow
                 key={x.projectId}
                 testId="orphan-row"
-                name={x.projectName ?? m.ml_project_unknown}
-                meta={`${kindsLine(x, m, tx)} · ${whyLine(x, o.data?.perCard ?? 1, m, tx)}`}
-                mark={{ tone: x.why ? 'warning' : 'neutral', label: x.why ? m.ml_orphans_asks : m.ml_orphans_quiet }}
+                size="l"
+                nameClass="typo-heading text-foreground"
+                name={<ProjectName projectId={x.projectId}>{x.projectName ?? m.ml_project_unknown}</ProjectName>}
+                meta={<span className="truncate pl-3.5">{whyLine(x, o.data?.perCard ?? 1, m, tx)}</span>}
+                cells={[
+                  <span key="k" className="typo-caption">{kindsLine(x, m, tx)}</span>,
+                  <Figure key="n" n={x.items} warn={!!x.why} none={m.ml_unknown} />,
+                  <LampWord key="w" lamp={{ tone: 'warn', lit: !!x.why }} word={x.why ? m.ml_orphans_asks : m.ml_orphans_quiet} />,
+                ]}
                 state={i === selected ? 'selected' : undefined}
                 onPress={() => { o.cancel(); setSelected(i); }}
               />
             ))}
           </Rows>
         </div>
-      </div>
+      </section>
       {c && <OrphanDetail cluster={c} perCard={o.data?.perCard ?? 1} state={o} mandates={mandates} />}
     </div>
   );
