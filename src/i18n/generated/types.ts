@@ -63,7 +63,6 @@ export type Translations = {
     dc_hub_chip_chat: string;
     dc_hub_chip_ready: string;
     dc_hub_chip_failed: string;
-    dc_hub_triage_all: string;
     dc_hub_peek_aria: string;
     dc_hub_peek_failed: string;
     dc_hub_peek_empty_title: string;
@@ -76,19 +75,8 @@ export type Translations = {
     dc_hub_key_accept: string;
     dc_hub_key_reject: string;
     dc_hub_key_move: string;
-    dc_hub_key_walk: string;
-    dc_hub_hint_gates: string;
-    dc_hub_hint_proposals: string;
-    dc_hub_hint_backlog: string;
-    dc_hub_hint_incidents: string;
-    dc_hub_hint_council: string;
-    dc_hub_hint_reports: string;
-    dc_hub_hint_chat: string;
     dc_hub_hint_ready: string;
     dc_hub_chip_tip_hint: string;
-    dc_hub_triage_all_short: string;
-    dc_hub_triage_all_walk_tip: string;
-    dc_hub_triage_all_none: string;
     dc_hub_peek_waiting: string;
     dc_hub_open_deck: string;
     dc_hub_row_open_aria: string;
@@ -1288,10 +1276,6 @@ export type Translations = {
     ml_revert_is_revert: string;
     ml_narrow: string;
     ml_write_failed: string;
-    ml_setting_title: string;
-    ml_setting_hint: string;
-    ml_setting_chips: string;
-    ml_setting_lanes: string;
     ml_verb_filed: string;
     ml_verb_approved: string;
     ml_verb_acknowledged: string;
