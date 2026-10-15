@@ -1,0 +1,109 @@
+{
+  "schema": "conform-run/1",
+  "worker": "ab025d0f-b001-4ebe-86ce-c6c67fc72d8e",
+  "subject": "fleet-orchestration",
+  "evaluatedAt": "2026-10-15T00:22:33.800974+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [
+    {
+      "context": "test-runner-lab",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/verification_command.rs:101 The parent-side verification command buffers stdout without a byte limit before extracting its bounded tail, violating the requirement to bound evidence reads.",
+      "techniques": [
+        {
+          "technique": "completion-claim-verification",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/verification_command.rs:106 Both output streams grow unbounded buffers; MAX_TAIL_BYTES limits the returned evidence only after collection."
+        }
+      ]
+    },
+    {
+      "context": "stores-slices-agents",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/agents/chatSlice.ts:276 The chat finalizer passes an optional status through a parser that substitutes queued for missing values, inventing a lifecycle state instead of preserving absence.",
+      "techniques": [
+        {
+          "technique": "absent-status-passthrough",
+          "verdict": "deviation",
+          "evidence": "src/lib/execution/executionState.ts:101 This directly imported dependency converts null, undefined, and empty status into an active state; finishChatStream accepts an optional status."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "fleet-orchestration",
+      "context": "companion-brain",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "templates-n8n-steps",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor at N8nImportTab.tsx:56 is a doc comment above handleProcessWithMatrix and does not itself show that fleet, hibernate or harvest facilities are absent, so the not-applicable rests on an incidental line."
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "vault-catalog-picker",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor at useCredentialDesignOrchestrator.ts:19 is a JSDoc comment on the hook and does not show that the fleet precondition is absent, so the not-applicable rests on an incidental line."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-15T00:22:33.800974+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "completion-claim-verification"
+      ],
+      "deviations": 1,
+      "context": "test-runner-lab",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-15T00:22:33.800974+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "absent-status-passthrough"
+      ],
+      "deviations": 1,
+      "context": "stores-slices-agents",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-15T00:22:33.800974+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "templates-n8n-steps",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-15T00:22:33.800974+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "vault-catalog-picker",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}

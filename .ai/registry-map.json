@@ -31708,7 +31708,11 @@
           "revision": 26,
           "changedAt": "2026-10-13",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/stores/slices/agents/chatSlice.ts:276 The chat finalizer passes an optional status through a parser that substitutes queued for missing values, inventing a lifecycle state instead of preserving absence.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         }
       ],
       "governance": "governed"
@@ -36768,7 +36772,11 @@
           "revision": 26,
           "changedAt": "2026-10-13",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/verification_command.rs:101 The parent-side verification command buffers stdout without a byte limit before extracting its bounded tail, violating the requirement to bound evidence reads.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "hitl-approval",

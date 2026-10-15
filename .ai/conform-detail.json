@@ -21701,6 +21701,68 @@
           "reason": "replaced by c1329887-55a4-4a78-a37e-3fff5f311705"
         }
       ]
+    },
+    "6a81750d-fdbf-4518-bae6-689303e1a884/fleet-orchestration": {
+      "context": "test-runner-lab",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T00:22:33.800Z",
+      "worker": "ab025d0f-b001-4ebe-86ce-c6c67fc72d8e",
+      "techniques": [
+        {
+          "technique": "completion-claim-verification",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/verification_command.rs:106 Both output streams grow unbounded buffers; MAX_TAIL_BYTES limits the returned evidence only after collection."
+        }
+      ]
+    },
+    "b6e66a59-78d3-465e-83b7-e77498b4c6ae/fleet-orchestration": {
+      "context": "stores-slices-agents",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T00:22:33.800Z",
+      "worker": "ab025d0f-b001-4ebe-86ce-c6c67fc72d8e",
+      "techniques": [
+        {
+          "technique": "absent-status-passthrough",
+          "verdict": "deviation",
+          "evidence": "src/lib/execution/executionState.ts:101 This directly imported dependency converts null, undefined, and empty status into an active state; finishChatStream accepts an optional status."
+        }
+      ]
+    },
+    "5dc3cb6a-6612-4909-995d-86e92394ec94/fleet-orchestration": {
+      "context": "templates-n8n-steps",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T00:22:33.800Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "ab025d0f-b001-4ebe-86ce-c6c67fc72d8e",
+        "state": "not-applicable",
+        "at": "2026-10-15T00:22:56.829839+00:00",
+        "reason": "reviewer (sonnet): The anchor at N8nImportTab.tsx:56 is a doc comment above handleProcessWithMatrix and does not itself show that fleet, hibernate or harvest facilities are absent, so the not-applicable rests on an incidental line."
+      }
+    },
+    "3619ab0d-0367-43d0-b4eb-ec39c1302d65/fleet-orchestration": {
+      "context": "vault-catalog-picker",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T00:22:33.800Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "ab025d0f-b001-4ebe-86ce-c6c67fc72d8e",
+        "state": "not-applicable",
+        "at": "2026-10-15T00:22:56.907000+00:00",
+        "reason": "reviewer (sonnet): The anchor at useCredentialDesignOrchestrator.ts:19 is a JSDoc comment on the hook and does not show that the fleet precondition is absent, so the not-applicable rests on an incidental line."
+      }
     }
   }
 }
