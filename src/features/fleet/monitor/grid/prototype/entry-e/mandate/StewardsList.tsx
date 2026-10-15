@@ -96,7 +96,7 @@ export function StewardsList({ doors }: { doors: StewardDoors }) {
         )}
         {sorted.length > SHOWN && (
           <Button variant="link" size="xs" onClick={onOpenRegister} className="mt-0.5 self-start px-1.5" data-testid="fleet-stewards-more">
-            <span className="typo-caption text-current">{tx(m.ml_stewards_more, { count: sorted.length - SHOWN })}</span>
+            <span className="typo-caption">{tx(m.ml_stewards_more, { count: sorted.length - SHOWN })}</span>
           </Button>
         )}
       </div>
