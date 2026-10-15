@@ -16,7 +16,9 @@
 // The same plate (testids `fleet-autopilot` / `fleet-autopilot-toggle` kept
 // for the tour anchors) is titled Stewards: the attention-loop switch stays
 // on top and does exactly what it did, and under it sit Athena's CLI answerer
-// and one row per charter (`mandate/StewardsList`). `M` opens the register.
+// and one row per charter (`mandate/StewardsList`), capped so the Schedules
+// and Usage plates keep their place on the rail. The register is the header's
+// book (key `M`, named in its tooltip, not boxed beside the title).
 
 import { BookOpen, Bot, ListOrdered, Minus, Plus } from 'lucide-react';
 import { useDecisionSurface } from '@/features/decision-center/lanes/useLanesSnapshot';
@@ -32,7 +34,7 @@ import type { ReactNode } from 'react';
 import type { useCapSetting } from '../shared';
 import { AutopilotTip } from './AutopilotTip';
 import { SchedulePlate } from './SchedulePlate';
-import { Engraved, Kbd, Lamp } from './parts';
+import { Engraved, Lamp } from './parts';
 import type { Tone } from './tone';
 import { StewardsList, type StewardDoors } from './mandate/StewardsList';
 
@@ -114,19 +116,17 @@ function AutopilotPlate({ onOpenOrchestration, stewards }: {
         <Lamp lamp={{ tone: AUTOPILOT_TONE[tone], lit: on }} />
         <Engraved>{stewards ? m.ml_stewards : m.autopilot}</Engraved>
         {stewards && (
-          <Tooltip content={m.ml_register_open}>
+          <Tooltip content={m.ml_register_open_tip}>
             <Button
               variant="ghost"
-              size="xs"
+              size="icon-sm"
               className="ml-auto"
               onClick={stewards.onOpenRegister}
               aria-label={m.ml_register_open}
               aria-keyshortcuts="M"
               data-testid="fleet-stewards-register"
               icon={<BookOpen className="h-3.5 w-3.5" aria-hidden />}
-            >
-              <Kbd>M</Kbd>
-            </Button>
+            />
           </Tooltip>
         )}
         <Tooltip content={m.queue_open_orchestration}>
