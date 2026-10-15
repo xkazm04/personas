@@ -5806,12 +5806,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/settings/sub_byom/components/ByomRoutingRules.tsx:3 the context edits runtime RoutingRule/TaskComplexity dispatch config - the builder-side routing the golden path explicitly assigns to model-routing (already judged deviation on this context); it produces no benchmark evidence",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:212 New BYOM rules are task-complexity to provider and model dispatch policy, and a search of sub_byom found no benchmark, scorecard, determinism, preflight, or handicap instrument.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 1
         },
         {
           "subject": "voice-io",
@@ -16329,12 +16328,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:283 pre-flight is consent-only with no ceiling and the arena run wires none (src-tauri/engine/src/test_runner/modes.rs:269 should_halt_budget always false); ArenaResultsView.tsx:190 crowns the highest composite mean Best - a multi-model arena spends uncapped and an untested mean reads as the winner (re-confirmed 2026-10-10, unchanged since 2026-10-05)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:214 The priced confirm dialog starts the match with models and an optional version and no spend ceiling, so consent is the only gate and a halted matrix cannot be marked partial from this call.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 1
         },
         {
           "subject": "test-harness",
@@ -16678,12 +16676,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:554 the exported report says every version was graded on the same generated scenario set so ratings are directly comparable, yet scenarios regenerate per run (src-tauri/engine/src/test_runner/scenarios.rs:66, 600s cache only) and :203 badges the highest mean Best (evalAggregation.ts:229 winnerId = aggs[0]) - the artifact asserts comparability and a winner the runs never earned (re-confirmed 2026-10-10)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:554 The version report states that ratings are directly comparable because they share one generated scenario set, but scenario reuse is only a 600-second process cache, so the artifact asserts a freeze the stored ratings do not have.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 1
         },
         {
           "subject": "table",
@@ -31657,12 +31654,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/stores/slices/agents/labSlice.ts:138 the run-state vocabulary is completed/failed/cancelled with no partial or cancelling state, so a budget-halted run (finalized Completed at src-tauri/engine/src/test_runner/lab.rs:551, halt never written to the summary) is cached as final at :204 and a cancel flips straight to cancelled at :187 even when the backend refused - partial never reaches the client",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/stores/slices/agents/labSlice.ts:187 A failed lab cancel is reported and then still marked cancelled in finally, and the run lifecycle clears progress, so the client shows a stopped run with no cancelling or partial state while the worker can keep spending.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 1
         },
         {
           "subject": "eval-harness",
@@ -37452,13 +37448,12 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/TriggerStudioCanvas.tsx:2 Chain Studio composes event-routing rules between personas; it runs no provider x model matrix and produces no scorecard, so the subject precondition (choosing which model serves a workload from benchmark evidence) does not hold - lexical match on routing/target",
-          "evaluatedAt": "2026-10-05",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
+          "evidence": "src/features/triggers/sub_studio/libs/studioDraftModel.ts:3 Chain Studio persists source-to-persona trigger drafts with run conditions, and a search of sub_studio and triggers/hooks found no benchmark, scorecard, determinism, preflight, or handicap instrument.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "codegen",

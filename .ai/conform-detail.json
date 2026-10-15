@@ -9329,19 +9329,33 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:25:35.000Z",
-      "worker": "6e7b7da6-2885-45da-86bc-2e45c441984d",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T00:01:42.608Z",
+      "worker": "c1329887-55a4-4a78-a37e-3fff5f311705",
       "techniques": [
         {
-          "technique": "async-run-queue-with-cancel",
+          "technique": "target-matrix-runs",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/agents/labSlice.ts:187 markCancelled runs in finally whether or not the cancel IPC succeeded, and there is no intermediate cancelling state (backend writes Cancelled directly, src-tauri/src/commands/execution/lab.rs:186); live progress IS realized as current/total at labSlice.ts:105; terminal-cancel conflict IS enforced at src-tauri/core/src/models/lab.rs:55"
+          "evidence": "src/stores/slices/agents/labSlice.ts:471 The model list is an invocation argument. The slice stores no benchmark id or target-set version, so two arena runs are not the same declared matrix."
         },
         {
           "technique": "budget-preflight-and-ceiling",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/agents/labSlice.ts:138 TERMINAL_STATUSES has no partial member and src-tauri/engine/src/test_runner/lab.rs:361 sets halted_by_budget without recording it, so the partial contract cannot survive into any consumer of this slice"
+          "evidence": "src/stores/slices/agents/labSlice.ts:138 Terminal cache states omit partial. LabRunStatus matches that closed set. A ceiling halt cannot be kept as an unverified partial run in this client."
+        },
+        {
+          "technique": "async-run-queue-with-cancel",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/agents/labSlice.ts:187 finally runs after reportError on cancel failure. runLifecycle.ts:147 then sets progress null. The FSM type has no cancelling state. testSlice.ts:95 does the same."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/stores/slices/agents/labSlice.ts:138 the run-state vocabulary is completed/failed/cancelled with no partial or cancelling state, so a budget-halted run (finalized Completed at src-tauri/engine/src/test_runner/lab.rs:551, halt never written to the summary) is cached as final at :204 and a cancel flips straight to cancelled at :187 even when the backend refused - partial never reaches the client",
+          "evaluatedAt": "2026-10-09T17:25:35.000Z",
+          "worker": "6e7b7da6-2885-45da-86bc-2e45c441984d",
+          "reason": "replaced by c1329887-55a4-4a78-a37e-3fff5f311705"
         }
       ]
     },
@@ -9405,14 +9419,29 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:25:35.000Z",
-      "worker": "6e7b7da6-2885-45da-86bc-2e45c441984d",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T00:01:42.608Z",
+      "worker": "c1329887-55a4-4a78-a37e-3fff5f311705",
       "techniques": [
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:212 This writes a runtime routing rule, which the golden path assigns to builder-side routing rather than benchmark evidence."
+        },
         {
           "technique": "cheapest-sufficient-configuration",
           "verdict": "not-applicable",
-          "evidence": "src/features/settings/sub_byom/components/ByomRoutingRules.tsx:3 a runtime router, which the technique names as when-not-to-use"
+          "evidence": "src/features/settings/sub_byom/components/ByomRoutingRules.tsx:3 a runtime router, which the technique names as when-not-to-use",
+          "carriedFrom": "2026-10-09"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_byom/components/ByomRoutingRules.tsx:3 the context edits runtime RoutingRule/TaskComplexity dispatch config - the builder-side routing the golden path explicitly assigns to model-routing (already judged deviation on this context); it produces no benchmark evidence",
+          "evaluatedAt": "2026-10-09T17:25:35.000Z",
+          "worker": "6e7b7da6-2885-45da-86bc-2e45c441984d",
+          "reason": "replaced by c1329887-55a4-4a78-a37e-3fff5f311705"
         }
       ]
     },
@@ -13765,22 +13794,62 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T12:07:04.000Z",
-      "worker": "f9423480-bb6c-424a-9616-ef7002896726",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T00:01:42.608Z",
+      "worker": "c1329887-55a4-4a78-a37e-3fff5f311705",
       "techniques": [
-        {
-          "technique": "budget-preflight-and-ceiling",
-          "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/test_runner/modes.rs:269 arena callbacks hard-wire should_halt_budget to false; the estimate at src/features/agents/sub_lab/components/arena/arenaSpendEstimate.ts:90 counts unpriced duels but nothing enforces a ceiling"
-        },
         {
           "technique": "target-matrix-runs",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:190 the render layer writes the Best badge from the highest mean, which the technique reserves for regression gating"
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:192 The card crowns bestModelId. That id is aggregates[0] after a composite sort, not a tested lead, and latency on the card is a mean."
+        },
+        {
+          "technique": "sampling-knobs-are-axes-not-strings",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:210 The panel ignores selectedEfforts from usePanelRunState and sends model id, provider, model, and base_url only."
+        },
+        {
+          "technique": "dataset-sampling-anonymize-freeze",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:170 Cases are persona charters and use cases, which this technique exempts as a curated offline harness."
+        },
+        {
+          "technique": "graded-case-difficulty",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:71 The headline is one blended composite across every scenario. No ordered difficulty grade is on the result or the summary."
+        },
+        {
+          "technique": "determinism-stamping",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:202 The score renders alone. LabArenaResult has scores, tokens, cost, duration, and evalMethod, and no generation or judging determinism field."
+        },
+        {
+          "technique": "budget-preflight-and-ceiling",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:214 estimateArenaSpend names unpriced models and does not coerce them to zero, then ConfirmDialog starts the run with no ceiling argument."
+        },
+        {
+          "technique": "failure-clustering-recommendations",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:117 Suggestions are deduped and capped at 3 with no total or truncated count, and they are not grouped by failing dimension."
+        },
+        {
+          "technique": "axes-and-caveats-live-at-the-surface",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:159 The summary branch states the highest composite and a point gap with no sample-size, pinning, or partial qualifier on that sentence."
+        },
+        {
+          "technique": "cheapest-sufficient-configuration",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:95 The standing champion tallies best_quality_model wins. Cost is shown on the result card and is not the selection rule, and no paired test is run."
+        },
+        {
+          "technique": "self-hosted-residency-is-part-of-the-target",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:79 Local models share the roster and are started as provider plus model plus base_url, with no context window or residency fraction on the result row."
         }
       ],
-      "registryProposal": "The attention-scan finding that dispatched this run cited 2 consumer deviations; the map carries 4 on this subject (db-repos-lab, lab-arena, lab-versions-eval, stores-slices-agents), all one root cause in the lab runner (no frozen dataset, no partial state, no arena ceiling). The scan may be counting from an older map snapshot.",
+      "registryProposal": "dataset-sampling-anonymize-freeze exempts a curated offline harness, while the golden path lists a synthetic dataset as a failure mode of this subject. An arena over authored use cases sits in that gap.",
       "superseded": [
         {
           "state": "deviation",
@@ -13788,6 +13857,13 @@
           "evaluatedAt": "2026-10-05",
           "worker": null,
           "reason": "replaced by f9423480-bb6c-424a-9616-ef7002896726"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:283 pre-flight is consent-only with no ceiling and the arena run wires none (src-tauri/engine/src/test_runner/modes.rs:269 should_halt_budget always false); ArenaResultsView.tsx:190 crowns the highest composite mean Best - a multi-model arena spends uncapped and an untested mean reads as the winner (re-confirmed 2026-10-10, unchanged since 2026-10-05)",
+          "evaluatedAt": "2026-10-10T12:07:04.000Z",
+          "worker": "f9423480-bb6c-424a-9616-ef7002896726",
+          "reason": "replaced by c1329887-55a4-4a78-a37e-3fff5f311705"
         }
       ]
     },
@@ -13796,24 +13872,54 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T12:07:04.000Z",
-      "worker": "f9423480-bb6c-424a-9616-ef7002896726",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T00:01:42.608Z",
+      "worker": "c1329887-55a4-4a78-a37e-3fff5f311705",
       "techniques": [
         {
-          "technique": "axes-and-caveats-live-at-the-surface",
+          "technique": "target-matrix-runs",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:554 the caveat surface states the opposite of the real comparability of the runs"
+          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:203 Eval HTML prints Best from winnerId. Duration in that card is avgDuration, not a median and a tail."
+        },
+        {
+          "technique": "sampling-knobs-are-axes-not-strings",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/versions_table/LabVersionsTable.tsx:223 The rating identity and the model column are modelId only. LabVersionRating has no effort field, so two efforts of one model collapse."
         },
         {
           "technique": "dataset-sampling-anonymize-freeze",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/test_runner/scenarios.rs:66 scenarios come from a TTL cache over fresh LLM generation, never a frozen versioned set"
+          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:554 scenarios.rs keeps SCENARIO_CACHE_TTL_SECS at 600 and the key deliberately drops the prompt. There is no frozen dataset version on the report."
         },
         {
-          "technique": "target-matrix-runs",
+          "technique": "graded-case-difficulty",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:229 winnerId is simply the top mean, rendered as Best at src/features/agents/sub_lab/libs/reportGenerator.ts:203"
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:193 Version aggregates are ordered only by blended composite. These libs have no difficulty grade or per-tier table."
+        },
+        {
+          "technique": "determinism-stamping",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:543 Confidence is n, partial coverage, and degraded count. No generation or judging determinism column exists."
+        },
+        {
+          "technique": "failure-clustering-recommendations",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/labFeedbackLoop.ts:98 modelRecommendation is that highest average. Weak cells are listed per metric, not clustered, and the recommendation is not cost-aware."
+        },
+        {
+          "technique": "axes-and-caveats-live-at-the-surface",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:585 The markdown surface repeats the strongest comparability sentence with no cache-TTL or unfrozen-set caveat. partialCoverage here means renormalized sub-scores, not a halted run."
+        },
+        {
+          "technique": "cheapest-sufficient-configuration",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:229 The winner is the top composite after the sort. The economics panel orders costPerSuccess and sinks null cost, and it does not test sufficiency or replace this winner."
+        },
+        {
+          "technique": "self-hosted-residency-is-part-of-the-target",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/versions_table/LabVersionsTable.tsx:234 A local model is a normal row. The local-specific handling is costUnknown shown as not tracked, with no context window or residency fraction."
         }
       ],
       "superseded": [
@@ -13823,6 +13929,13 @@
           "evaluatedAt": "2026-10-05",
           "worker": null,
           "reason": "replaced by f9423480-bb6c-424a-9616-ef7002896726"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:554 the exported report says every version was graded on the same generated scenario set so ratings are directly comparable, yet scenarios regenerate per run (src-tauri/engine/src/test_runner/scenarios.rs:66, 600s cache only) and :203 badges the highest mean Best (evalAggregation.ts:229 winnerId = aggs[0]) - the artifact asserts comparability and a winner the runs never earned (re-confirmed 2026-10-10)",
+          "evaluatedAt": "2026-10-10T12:07:04.000Z",
+          "worker": "f9423480-bb6c-424a-9616-ef7002896726",
+          "reason": "replaced by c1329887-55a4-4a78-a37e-3fff5f311705"
         }
       ]
     },
@@ -21561,6 +21674,31 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by 99c45fe2-5155-4eef-81fd-47feac14bbeb"
+        }
+      ]
+    },
+    "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc/cross-provider-benchmark-operations": {
+      "context": "triggers-studio",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T00:01:42.608Z",
+      "worker": "c1329887-55a4-4a78-a37e-3fff5f311705",
+      "techniques": [
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioDraftModel.ts:3 Draft links are trigger routes, not provider×model targets."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/TriggerStudioCanvas.tsx:2 Chain Studio composes event-routing rules between personas; it runs no provider x model matrix and produces no scorecard, so the subject precondition (choosing which model serves a workload from benchmark evidence) does not hold - lexical match on routing/target",
+          "evaluatedAt": "2026-10-05",
+          "worker": null,
+          "reason": "replaced by c1329887-55a4-4a78-a37e-3fff5f311705"
         }
       ]
     }
