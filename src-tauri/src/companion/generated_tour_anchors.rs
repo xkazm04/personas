@@ -5,7 +5,7 @@
 // twin (src/features/onboarding/anchors/tourAnchorManifest.json) is used by
 // the frontend; both are generated from the same scan so they never drift.
 
-/// Every statically-declared `data-testid` in src/ (2164).
+/// Every statically-declared `data-testid` in src/ (2161).
 pub const TOUR_TESTIDS: &[&str] = &[
     "SchematicDialLayout",
     "active-chain-row",
@@ -561,7 +561,6 @@ pub const TOUR_TESTIDS: &[&str] = &[
     "db-tables-unsupported",
     "decision-deck",
     "decision-deck-close",
-    "decision-hub",
     "decision-peek",
     "decision-peek-armed",
     "decision-peek-count",
@@ -569,8 +568,6 @@ pub const TOUR_TESTIDS: &[&str] = &[
     "decision-peek-list",
     "decision-peek-open-deck",
     "decision-peek-ready",
-    "decision-strip",
-    "decision-triage-all",
     "deck-card",
     "deck-composer",
     "deck-contents",
