@@ -244,11 +244,27 @@ function applyBrightness(level: BrightnessLevel, themeId: ThemeId, customConfig?
   el.setAttribute('data-brightness', `${light ? 'light' : 'dark'}-${level}`);
 }
 
+/** The level each mode starts at before the user picks one: Standard in both. The ids differ
+ *  because the two ladders run in opposite directions (dark brightens upward from 'low', light
+ *  dims downward from 'high'); a single shared default left every light theme at Dimmer (0.82). */
+export const DEFAULT_BRIGHTNESS = { dark: 'low', light: 'high' } as const satisfies Record<'dark' | 'light', BrightnessLevel>;
+
+/** A pick made in one mode means nothing in the other, so it is remembered per mode. */
+export type BrightnessByMode = Partial<Record<'dark' | 'light', BrightnessLevel>>;
+
+export function resolveBrightness(byMode: BrightnessByMode | undefined, light: boolean): BrightnessLevel {
+  const mode = light ? 'light' : 'dark';
+  return byMode?.[mode] ?? DEFAULT_BRIGHTNESS[mode];
+}
+
 interface ThemeState {
   themeId: ThemeId;
   textScale: TextScale;
   timezone: TimezoneMode;
+  /** The ACTIVE mode's level; pickers read this. */
   brightness: BrightnessLevel;
+  /** Explicit picks per mode; a missing mode resolves to DEFAULT_BRIGHTNESS. */
+  brightnessByMode: BrightnessByMode;
   customTheme: CustomThemeConfig | null;
   ambientTimeOfDay: boolean;
   dim: boolean;
@@ -286,7 +302,8 @@ export const useThemeStore = create<ThemeState>()(
       themeId: 'dark-midnight' as ThemeId,
       textScale: 'larger' as TextScale,
       timezone: 'local' as TimezoneMode,
-      brightness: 'low' as BrightnessLevel,
+      brightness: DEFAULT_BRIGHTNESS.dark as BrightnessLevel,
+      brightnessByMode: {} as BrightnessByMode,
       customTheme: null as CustomThemeConfig | null,
       ambientTimeOfDay: true,
       dim: false,
@@ -296,8 +313,9 @@ export const useThemeStore = create<ThemeState>()(
       density: DEFAULT_DENSITY,
       setTheme: (id: ThemeId) => {
         applyThemeToDOM(id, get().customTheme);
-        applyBrightness(get().brightness, id, get().customTheme);
-        set({ themeId: id });
+        const brightness = resolveBrightness(get().brightnessByMode, isLightTheme(id, get().customTheme));
+        applyBrightness(brightness, id, get().customTheme);
+        set({ themeId: id, brightness });
         storeBus.emit('appearance:changed', { field: 'themeId', value: id });
       },
       setTextScale: (scale: TextScale) => {
@@ -308,22 +326,25 @@ export const useThemeStore = create<ThemeState>()(
       setTimezone: (tz: TimezoneMode) => set({ timezone: tz }),
       setBrightness: (level: BrightnessLevel) => {
         applyBrightness(level, get().themeId, get().customTheme);
-        set({ brightness: level });
+        const mode = isLightTheme(get().themeId, get().customTheme) ? 'light' : 'dark';
+        set({ brightness: level, brightnessByMode: { ...get().brightnessByMode, [mode]: level } });
         storeBus.emit('appearance:changed', { field: 'brightness', value: level });
       },
       setCustomTheme: (config: CustomThemeConfig) => {
         // Inject styles and activate
         applyThemeToDOM('custom', config);
-        applyBrightness(get().brightness, 'custom', config);
+        const brightness = resolveBrightness(get().brightnessByMode, isLightTheme('custom', config));
+        applyBrightness(brightness, 'custom', config);
         // Single set() to avoid intermediate state where customTheme and themeId disagree
-        set({ customTheme: config, themeId: 'custom' });
+        set({ customTheme: config, themeId: 'custom', brightness });
       },
       clearCustomTheme: () => {
         removeCustomThemeStyle();
         const fallback: ThemeId = 'dark-midnight';
         applyThemeToDOM(fallback, null);
-        applyBrightness(get().brightness, fallback, null);
-        set({ customTheme: null, themeId: fallback });
+        const brightness = resolveBrightness(get().brightnessByMode, false);
+        applyBrightness(brightness, fallback, null);
+        set({ customTheme: null, themeId: fallback, brightness });
       },
       setAmbientTimeOfDay: (enabled: boolean) => {
         set({ ambientTimeOfDay: enabled });
@@ -358,6 +379,18 @@ export const useThemeStore = create<ThemeState>()(
     {
       name: 'persona-theme',
       storage: createDedupedJSONStorage(),
+      version: 1,
+      // v0 kept one level for both modes, and a light theme read the shared default 'low' as Dimmer.
+      // A saved dark level is kept as the dark pick; a saved light level cannot be told apart from
+      // that default, so light restarts at Standard.
+      migrate: (persisted, from) => {
+        const p = (persisted ?? {}) as Partial<ThemeState>;
+        if (from < 1) {
+          const wasLight = p.themeId ? isLightTheme(p.themeId, p.customTheme) : false;
+          p.brightnessByMode = !wasLight && p.brightness ? { dark: p.brightness } : {};
+        }
+        return p as ThemeState;
+      },
       onRehydrateStorage: () => (state) => {
         if (state) {
           // Migrate removed 'default' scale to 'large' (new "Small")
@@ -375,7 +408,9 @@ export const useThemeStore = create<ThemeState>()(
           }
           applyThemeToDOM(state.themeId, state.customTheme);
           applyTextScale(state.textScale ?? 'larger');
-          applyBrightness(state.brightness ?? 'low', state.themeId, state.customTheme);
+          // The active level always follows the mode's pick (see `migrate` for profiles saved before it).
+          state.brightness = resolveBrightness(state.brightnessByMode, isLightTheme(state.themeId, state.customTheme));
+          applyBrightness(state.brightness, state.themeId, state.customTheme);
           applyDim(state.dim ?? false);
           applyCvdSafe(state.cvdSafe ?? false);
           applyHighContrast(state.highContrast ?? false);
