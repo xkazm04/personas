@@ -146,7 +146,7 @@ export function DeckCard({ item, deck, act, state, titleId, onClose, shape }: {
       <span className="au-spine" aria-hidden />
       <div className="flex min-h-0 flex-1 gap-2 p-3 pl-0">
         <div className="flex min-w-0 flex-1 flex-col">
-          <CardHeader item={item} titleId={titleId} />
+          <CardHeader item={item} titleId={titleId} outcomes={shape?.shape === 'breach' ? shape.breach.outcomes ?? undefined : undefined} />
           {item.kind === 'council' && <div className="pl-[5.75rem] pr-8 pt-3"><CouncilNote /></div>}
           <FoldContext.Provider value={state.folds}>{body}</FoldContext.Provider>
         </div>

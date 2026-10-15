@@ -1,6 +1,8 @@
 /**
  * The Breach card's body, in the order the operator decides it: why it
- * reached you, what an amend would change (only where both sides are known),
+ * reached you (on an unsigned mandate, the mandate named: that IS why), the
+ * mandate's state when it cannot be amended, what an amend would change (only
+ * where both sides are known),
  * the incident sheet on a stop, the other items the router coalesced on the
  * same clause (folded, counted), and the case itself (folded when long).
  */
@@ -9,7 +11,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { DecisionItem } from '../../model/decisionModel';
 import { DeckFold } from '../DeckFold';
 import { previewOf, QUESTION_BODY_FOLD_CHARS } from '../foldPlan';
-import { ClauseBand, ClauseDiff, IncidentSheet } from './BreachParts';
+import { mandateStateLine } from '../../mandate/breachPlan';
+import { ClauseBand, ClauseDiff, IncidentSheet, MandateState } from './BreachParts';
 import type { ShapeController } from './useShapeController';
 
 function Behind({ items }: { items: DecisionItem[] }) {
@@ -27,13 +30,17 @@ function Behind({ items }: { items: DecisionItem[] }) {
 }
 
 export function BreachBody({ item, ctl }: { item: DecisionItem; ctl: ShapeController }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const m = t.monitor;
-  const { plan } = ctl.breach;
+  const { plan, state } = ctl.breach;
+  const stateLine = mandateStateLine(m, tx, state);
+  // An unsigned clause on an unsigned mandate: the named state replaces the generic reason.
+  const merged = plan?.clause === 'unsigned' && state.kind === 'unsigned';
   const caseBody = <MarkdownRenderer content={item.body} className="typo-body text-foreground" />;
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-4 pl-[5.75rem] pr-8" data-deck-scroll={item.id} data-testid="breach-body">
-      {plan && <ClauseBand clause={plan.clause} />}
+      {plan && <ClauseBand clause={plan.clause} line={merged ? stateLine ?? undefined : undefined} />}
+      {stateLine && !merged && <MandateState state={state} line={stateLine} />}
       {plan && <ClauseDiff plan={plan} mandate={ctl.mandate} cap={ctl.breach.cap} onCap={ctl.breach.setCap} />}
       {plan?.clause === 'stop' && item.kind === 'incident' && <IncidentSheet item={item} />}
       {ctl.behind.length > 0 && <Behind items={ctl.behind} />}
