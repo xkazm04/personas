@@ -4,12 +4,13 @@
  * shell draws the backdrop and the spring. `role="dialog"` is what the
  * Monitor's Escape and the lane keys yield to; Escape is owned below. */
 // The mandate drawer, in the Monitor's one drawer shell: the register (M), a
-// mandate page, and the act log across every mandate (L). Escape steps back
+// mandate page, the act log across every mandate (L), and the orphanage (O:
+// pending work no mandate holds, WP6; also opened by the Orphans lane button). Escape steps back
 // one level (a page opened from the register or the log returns there), then
 // closes. While it is up it owns the keyboard: nothing on the board behind it
 // acts on a key.
 
-import { BookOpen, ScrollText, X } from 'lucide-react';
+import { BookOpen, Inbox, ScrollText, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/features/shared/components/buttons';
 import { KitHost, Crumbs } from '@/features/shared/components/kit';
@@ -20,6 +21,7 @@ import { MonitorDrawerShell } from '../../../../MonitorDrawerShell';
 import { Kbd } from '../parts';
 import { LedgerView } from './LedgerView';
 import { MandatePage } from './MandatePage';
+import { OrphanageView } from './orphans/OrphanageView';
 import { RegisterView } from './RegisterView';
 import { MANDATE_DRAWER_PRIORITY } from './useDrawerKeys';
 import { useMandateDrawerRequest } from './mandateDrawerRequest';
@@ -29,6 +31,7 @@ export type MandateView =
   | { kind: 'register' }
   /** `focusActId`: the act to select on arrival (the dock ticker's press). */
   | { kind: 'log'; focusActId?: string }
+  | { kind: 'orphans' }
   | { kind: 'mandate'; charterId: string; back: 'register' | 'log' | null };
 
 /**
@@ -38,11 +41,17 @@ export type MandateView =
 export function useMandateDrawer() {
   const [view, setView] = useState<MandateView | null>(null);
   const pending = useMandateDrawerRequest((s) => s.pending);
+  const orphans = useMandateDrawerRequest((s) => s.orphans);
   useEffect(() => {
     if (!pending) return;
     setView({ kind: 'log', focusActId: pending.actId });
     useMandateDrawerRequest.getState().consume();
   }, [pending]);
+  useEffect(() => {
+    if (orphans === null) return;
+    setView({ kind: 'orphans' });
+    useMandateDrawerRequest.getState().consumeOrphans();
+  }, [orphans]);
   return {
     view,
     setView,
@@ -94,12 +103,14 @@ function DrawerBody({ view, onView, onClose }: { view: MandateView; onView: (v: 
     }
     if (k === 'm' || k === 'M') { onView({ kind: 'register' }); e.preventDefault(); return true; }
     if (k === 'l' || k === 'L') { onView({ kind: 'log' }); e.preventDefault(); return true; }
+    if (k === 'o' || k === 'O') { onView({ kind: 'orphans' }); e.preventDefault(); return true; }
     return false;
   }, { priority: MANDATE_DRAWER_PRIORITY, exclusive: true });
 
   const trail = [
     { label: m.ml_register, onPress: view.kind === 'register' ? undefined : () => onView({ kind: 'register' }) },
     ...(view.kind === 'log' ? [{ label: m.ml_act_log }] : []),
+    ...(view.kind === 'orphans' ? [{ label: m.ml_orphanage }] : []),
     ...(view.kind === 'mandate' ? [{ label: current?.projectName ?? m.ml_mandate }] : []),
   ];
 
@@ -122,6 +133,9 @@ function DrawerBody({ view, onView, onClose }: { view: MandateView; onView: (v: 
             <Button variant="ghost" size="xs" onClick={() => onView({ kind: 'log' })} icon={<ScrollText className="h-3.5 w-3.5" aria-hidden />} aria-keyshortcuts="L" data-testid="mandate-drawer-log">
               {m.ml_act_log} <Kbd>L</Kbd>
             </Button>
+            <Button variant="ghost" size="xs" onClick={() => onView({ kind: 'orphans' })} icon={<Inbox className="h-3.5 w-3.5" aria-hidden />} aria-keyshortcuts="O" data-testid="mandate-drawer-orphans">
+              {m.ml_orphanage} <Kbd>O</Kbd>
+            </Button>
             <Button variant="ghost" size="xs" onClick={back} icon={<X className="h-3.5 w-3.5" aria-hidden />} aria-keyshortcuts="Escape" data-testid="mandate-drawer-close">
               {view.kind === 'mandate' && view.back ? m.ml_back : t.common.close} <Kbd>Esc</Kbd>
             </Button>
@@ -132,6 +146,7 @@ function DrawerBody({ view, onView, onClose }: { view: MandateView; onView: (v: 
           {view.kind === 'log' && (
             <LedgerView key={view.focusActId ?? ''} mandates={mandates.mandates} focusActId={view.focusActId ?? null} onOpen={open('log')} />
           )}
+          {view.kind === 'orphans' && <OrphanageView mandates={mandates.mandates} />}
           {view.kind === 'mandate' && (current ? (
             <MandatePage key={current.charterId} mandate={current} held={held} onChanged={mandates.refresh} />
           ) : (
