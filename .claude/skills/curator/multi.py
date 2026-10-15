@@ -1019,7 +1019,7 @@ def acquire(c, registry, skills, repos: list[dict], held: set[str], used: dict, 
             address = f"{bundle}/{slug}"
             tried[f"{repo['slug']}:{address}"] = rnd
             rid = file_request(c, "conform", f"--subject {slug} --repo {repo['slug']}", REQUEST_NOTE)
-            claim = L.claim_one(c, registry, skills, {"queue"}, None)
+            claim = L.claim_one(c, registry, skills, {"queue"}, None, request_id=rid)
             if not claim or claim.get("declined") or claim.get("request_id") != rid:
                 if claim and not claim.get("declined"):
                     L.release(c, claim, "curator-multi: took a request it did not file")

@@ -1,0 +1,407 @@
+{
+  "schema": "conform-run/1",
+  "worker": "740edace-0bbb-4641-9802-4cd3c3f670f1",
+  "subject": "hitl-approval",
+  "evaluatedAt": "2026-10-14T09:34:20.324Z",
+  "pairs": [
+    {
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:590 the deck still classifies a review with a missing severity as medium and an unrecognised token falls to weight 50 at :667, with no marker, while the manual-review list resolves the same row to Unclassified with defaulted=true (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:37); the deciding surface spells an unreadable payload as a readable medium",
+      "techniques": [
+        {
+          "technique": "fail-loud-classification-default",
+          "verdict": "not realized: quiet mid-bucket default",
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:590 default medium"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+      "evaluatedRevision": 22
+    },
+    {
+      "context": "3effd422-2610-4c8a-bc02-53aceafd827c",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:36 the 24h approval expiry is a read-side filter only and no sweep writes an expired status, so stale approvals stay pending in the table yet are invisible on every surface; and boot recovery at :559 resets running->pending asserting the action never ran although execute_claimed runs the executor before finalize_approval (:197), so a crash between them re-offers an executed action for a second approval",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "gap: no expired terminal state; running->pending reset can re-offer executed action",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:559 UPDATE running to pending"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+      "evaluatedRevision": 22
+    },
+    {
+      "context": "b164f847-45d6-4c9e-85bc-a1308375085d",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:854 gc_stale_pending resolves every pending review older than one cutoff (no severity ladder) to status resolved; expired-unanswered is a substring sentinel in free-text reviewer_notes (:824, detected by is_gc_expired :836) that the human note writer append_reviewer_note (:783) also appends to; a review created without a severity silently defaults to info with no marker (:59). The reader-side guard improved but the verdict is still not a status",
+      "techniques": [
+        {
+          "technique": "severity-sla-ladder",
+          "verdict": "not realized: single cutoff, no hold rung",
+          "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:854"
+        },
+        {
+          "technique": "fail-loud-classification-default",
+          "verdict": "not realized: info default unmarked",
+          "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:59"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+      "evaluatedRevision": 22
+    },
+    {
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:35 the Decisions panel now reads the Decision Center roster (companion approvals, incidents, reports, council included) and a failed source no longer reads as empty (:87), which fixes the earlier divergence; remaining gap: the roster has no source for held trigger fires (src/features/triggers/hooks/usePendingTriggerFires.ts is read only on the Triggers page), so a held fire waits on a gate this queue cannot show and the Nothing waiting claim is false while one is held",
+      "techniques": [
+        {
+          "technique": "review-queues",
+          "verdict": "one roster now, but incomplete: held trigger fires absent",
+          "evidence": "src/features/decision-center/useDecisionRoster.ts:15"
+        },
+        {
+          "technique": "gate-state-machines",
+          "verdict": "empty state honest when a source fails",
+          "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:87"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+      "evaluatedRevision": 22
+    },
+    {
+      "context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/harness/executor.ts:49 the area write scope is a prompt rule the executor may waive ('unless absolutely necessary'), the session runs at the project root (:167) with Edit/Write/Bash and skipPermissions true (src/lib/harness/run-harness.ts:165), and nothing compares the resulting diff to area.scope or records a widening; the trust boundary lives inside the context the executor can override",
+      "techniques": [
+        {
+          "technique": "fixed-policy-amendable-plan",
+          "verdict": "not realized: boundary is prompt text",
+          "evidence": "src/lib/harness/executor.ts:49"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+      "evaluatedRevision": 22
+    },
+    {
+      "context": "959baa73-f18f-42c8-8569-466939b9050d",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/dev/milestones.rs:321 the ship verdict is a mutable shipped_at column re-stamped on every ship, carrying no decider, cut version or criteria verdict; :313 refuses only planned->shipped so shipped can be walked back and re-stamped with no superseding record; the only append-only trace (brief-thread row via mirror_to_brief :344, documented best-effort at :351) can fail while the transition lands",
+      "techniques": [
+        {
+          "technique": "decision-records",
+          "verdict": "not realized: no who/version/disclosure record",
+          "evidence": "src-tauri/db/src/repos/dev/milestones.rs:321"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+      "evaluatedRevision": 22
+    },
+    {
+      "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/onboarding/components/useOnboardingState.ts:164 one Approve click grants the connector manifest capabilities fetched AFTER the click (:162), so the user never saw what they consented to (the card shows only a SAFE/REVIEW badge from the hand-kept HIGH_RISK_APPS set, src/features/onboarding/components/DesktopDiscoveryStep.tsx:47); and with no manifest :166 still marks the app Approved with nothing written",
+      "techniques": [
+        {
+          "technique": "consent-gates",
+          "verdict": "not realized: no impact disclosure; approval recorded with no grant",
+          "evidence": "src/features/onboarding/components/useOnboardingState.ts:164"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+      "evaluatedRevision": 22
+    },
+    {
+      "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/dispatch.rs:1275 any persona run can resolve any OPEN incident by id prefix, including a persona_blocker escalation another persona raised for a human, and that resolve (:1317) is what makes incident_continuation re-run the blocked work (src-tauri/src/engine/incident_continuation.rs:7); the resolved row records no decider column (src-tauri/db/src/repos/execution/audit_incidents.rs:484), only a free-text resolution note, so a machine answer to a human-addressed handoff is indistinguishable from a human one",
+      "techniques": [
+        {
+          "technique": "handoff-is-a-declared-door",
+          "verdict": "not realized: no declared human addressee/decider",
+          "evidence": "src-tauri/src/engine/dispatch.rs:1275"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+      "evaluatedRevision": 22
+    },
+    {
+      "context": "ef73ca1c-fc54-4b9c-83ec-390c54929192",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:114 getSevCfg still falls an unrecognized severity through to the Info config with no marker, and it drives the focus view where reviews are decided (src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx:360); the loud resolveReviewSeverity default (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:37) reached the list and detail but not the deciding surface, so one vocabulary has two disagreeing classifiers",
+      "techniques": [
+        {
+          "technique": "fail-loud-classification-default",
+          "verdict": "not realized on deciding surface",
+          "evidence": "src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:114"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+      "evaluatedRevision": 22
+    },
+    {
+      "context": "3f38546e-e970-4837-97f7-f0504aa32daf",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:140 the message dismiss option swallows a failed companionDismissProactive with silentCatch and does not rethrow (same at :213 for the credential later option), so runDecisionOption (src/features/companions/athena/decision/resolveDecision.ts:46 keeps a decision pending only on a throw) clears the bubble as resolved while the row stays pending and resurfaces on the next pump with no error shown; a failed decision write is spelled as a decision",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "not realized: failed write indistinguishable from verdict",
+          "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:140"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+      "evaluatedRevision": 22
+    },
+    {
+      "context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:45 the auto-heal classifier matches the task title and description beside its error, so a permission or timeout failure on a task described as fixing a test or type error classifies autoFixable and the Auto-heal grant retries it unattended; and src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:83 records the grant-made retry only when the task has a goal, so most unattended retries leave no record naming the grant as decider",
+      "techniques": [
+        {
+          "technique": "unattended-mode",
+          "verdict": "not realized: classifier reads author text; no decider record",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:45"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+      "evaluatedRevision": 22
+    },
+    {
+      "context": "fd961ee9-bf7c-4ec7-90c3-a728045d3d44",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/management_api/ship.rs:603 an agent goal-assist PATCH passes its own status into update_goal, whose door (src-tauri/db/src/repos/dev/goals.rs:177) accepts done, so the gated party can move its goal past the awaiting_acceptance gate - only the App Master door refuses done (src-tauri/src/commands/infrastructure/app_master_writeback.rs:1175); and the human verdict is a check-then-set (src-tauri/db/src/repos/dev/portfolio.rs:361) whose record is a best-effort signal with no decider (:381, let _ =)",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "not realized: gated party can open the gate via second door",
+          "evidence": "src-tauri/src/engine/management_api/ship.rs:603"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+      "evaluatedRevision": 22
+    },
+    {
+      "context": "0dabb588-48ce-4c35-b425-c344fd723ce7",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/migrations/incremental/e04_trigger_vocabulary_and_hot_paths.rs:290 a held trigger fire can only be pending/approved/rejected and no sweep expires it, so a held fire never expires; the queue row shows only event_type and age, not the payload approval will republish (src/features/triggers/sub_triggers/PendingTriggerApprovals.tsx:101), and a lost CAS returns success even when the racing verdict was the opposite (src-tauri/src/commands/tools/triggers.rs:204)",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "not realized: immortal pending state",
+          "evidence": "src-tauri/db/src/migrations/incremental/e04_trigger_vocabulary_and_hot_paths.rs:290"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+      "evaluatedRevision": 22
+    },
+    {
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:565 the guided (human-performed) credential flow is still run live by a Claude CLI session that asks the user to copy each secret field value to it and returns them as JSON, so the runbook is model-run at execution time and the credential passes through inference (scrub_secrets at :363 redacts logs, not the inference path)",
+      "techniques": [
+        {
+          "technique": "human-performed-steps",
+          "verdict": "not realized: model runs the runbook; secret on inference path",
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:565"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+      "evaluatedRevision": 22
+    }
+  ],
+  "declined": [
+    {
+      "subject": "hitl-approval",
+      "context": "*",
+      "reason": "14 stale pairs re-judged; the 14 remaining unknown pairs are all confidence probable (none strong) and were left unread per the brief"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-14T09:34:20.324Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "fail-loud-classification-default"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-14T09:34:20.324Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "gate-state-machines"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-14T09:34:20.324Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "severity-sla-ladder",
+        "fail-loud-classification-default"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-14T09:34:20.324Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "review-queues",
+        "gate-state-machines"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-14T09:34:20.324Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "fixed-policy-amendable-plan"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-14T09:34:20.324Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "decision-records"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-14T09:34:20.324Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "consent-gates"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-14T09:34:20.324Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "handoff-is-a-declared-door"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-14T09:34:20.324Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "fail-loud-classification-default"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-14T09:34:20.324Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "gate-state-machines"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-14T09:34:20.324Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "unattended-mode"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-14T09:34:20.324Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "gate-state-machines"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-14T09:34:20.324Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "gate-state-machines"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-14T09:34:20.324Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "human-performed-steps"
+      ],
+      "deviations": 1
+    }
+  ]
+}

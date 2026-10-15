@@ -2,27 +2,42 @@
  * One live deck session: the walk, the card in hand, its verbs and keys.
  *
  * Owns the per-card state the verbs read — question answers, the report's
- * rating and same-run reviews (`useReportDoors`), the key map — and reports
- * the card in hand up to the stage (`onHead`) so the aurora follows it.
+ * rating and same-run reviews (`useReportDoors`), the card-wide fold signal
+ * (`I`), the key map — and reports the card in hand up to the stage
+ * (`onHead`) so the aurora follows it.
+ *
+ * After a verdict lands the tray keeps a receipt ("Accepted: <title>") until
+ * the next one. When the queue runs out the deck closes as before, unless
+ * other chips still hold cards: then it stays on the empty card and offers
+ * them (`offers`).
  */
-import { useEffect, useState, type MutableRefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { DecisionItem } from '../model/decisionModel';
 import { modalTypeOf } from '../model/decisionModel';
 import { DECK_TITLE_ID, type DeckVerdict } from './deckTypes';
 import { DeckCard } from './DeckCard';
+import { FOLDS_CLOSED, type FoldSignal } from './DeckFold';
 import { EmptyCard } from './DeckStates';
 import { DeckTray } from './DeckTray';
+import type { ChipOffer } from './EmptyOffers';
+import { receiptLine } from './outcome';
 import { useDeck } from './useDeck';
-import { useDeckActions } from './useDeckActions';
+import { armsAccept, useDeckActions } from './useDeckActions';
 import { useDeckKeys } from './useDeckKeys';
 import { useReportDoors } from './useReportDoors';
+import { useShapeController } from './shapes/useShapeController';
 
-export function DeckSession({ scopeLabel, readOnly, queue, startId, onDecide, onBack, onOpenLink, onHead, escapeGuard }: {
+const LEAVE_OF = { accept: 'accept', reply: 'accept', reject: 'reject', done: 'done' } as const;
+
+export function DeckSession({ scopeLabel, readOnly, queue, startId, offers = [], onDecide, onBack, onOpenLink, onHead, escapeGuard }: {
   scopeLabel: string;
   readOnly: boolean;
   queue: DecisionItem[];
   startId: string;
+  /** Other chips that still hold cards, offered when this queue runs out. */
+  offers?: ChipOffer[];
   onDecide: (v: DeckVerdict) => Promise<void>;
   onBack: () => void;
   onOpenLink: (item: DecisionItem, linkId: string) => void;
@@ -30,16 +45,32 @@ export function DeckSession({ scopeLabel, readOnly, queue, startId, onDecide, on
   /** Set here: undoes an armed verdict / open reason prompt / key map; true when it did. */
   escapeGuard: MutableRefObject<(() => boolean) | null>;
 }) {
-  const deck = useDeck({ queue, startId, onDecide, onEmpty: onBack });
+  const { t, tx } = useTranslation();
+  const [receipt, setReceipt] = useState<string | null>(null);
+  const offersRef = useRef(offers);
+  useEffect(() => { offersRef.current = offers; }, [offers]);
+
+  const decideWithReceipt = useCallback(async (v: DeckVerdict) => {
+    await onDecide(v);
+    if (v.verdict !== 'skip') setReceipt(receiptLine(t.monitor, tx, v.item, LEAVE_OF[v.verdict]));
+  }, [onDecide, t, tx]);
+  const onEmpty = useCallback(() => {
+    if (offersRef.current.length === 0) onBack();
+  }, [onBack]);
+
+  const deck = useDeck({ queue, startId, onDecide: decideWithReceipt, onEmpty });
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [missing, setMissing] = useState(false);
   const [keysOpen, setKeysOpen] = useState(false);
+  const [folds, setFolds] = useState<FoldSignal>(FOLDS_CLOSED);
   const item = deck.item;
   const report = useReportDoors(item);
+  const shape = useShapeController(item, deck);
 
   useEffect(() => {
     setAnswers({});
     setMissing(false);
+    setFolds(FOLDS_CLOSED);
   }, [item?.id]);
   useEffect(() => { onHead(item); }, [item, onHead]);
 
@@ -49,9 +80,17 @@ export function DeckSession({ scopeLabel, readOnly, queue, startId, onDecide, on
     linkedReviews: report.linkedReviews,
     readOnly,
     onOpenLink,
+    shape: { accept: shape.accept, offset: shape.offset },
   });
   const rate = (n: number) => { if (!readOnly) void report.rate(n); };
-  useDeckKeys(deck, act, { enabled: !!item, onRate: rate, onKeys: () => setKeysOpen((o) => !o) });
+  const toggleFolds = () => setFolds((f) => ({ open: !f.open, gen: f.gen + 1 }));
+  useDeckKeys(deck, act, {
+    enabled: !!item,
+    onRate: rate,
+    onKeys: () => setKeysOpen((o) => !o),
+    onFold: toggleFolds,
+    onShapeKey: (e, digit) => !readOnly && shape.onKey(e, digit, act.defaultAccept),
+  });
   useEffect(() => {
     escapeGuard.current = () => {
       if (keysOpen) { setKeysOpen(false); return true; }
@@ -70,12 +109,15 @@ export function DeckSession({ scopeLabel, readOnly, queue, startId, onDecide, on
       index={deck.index}
       type={type}
       isCouncil={item?.kind === 'council'}
+      armsAccept={item ? armsAccept(item) || shape.arms : false}
+      shape={shape.shape}
       onWalk={deck.walk}
       onClose={onBack}
       tall={type === 'report'}
       keysOpen={keysOpen}
       onKeys={setKeysOpen}
       readOnly={readOnly}
+      receipt={receipt}
     >
       <AnimatePresence initial={false} custom={deck.motion} mode="popLayout">
         {item ? (
@@ -86,16 +128,18 @@ export function DeckSession({ scopeLabel, readOnly, queue, startId, onDecide, on
             act={act}
             titleId={DECK_TITLE_ID}
             onClose={onBack}
+            shape={shape}
             state={{
               rating: report.rating,
               setRating: rate,
               answers,
               setAnswer: (k, v) => setAnswers((a) => ({ ...a, [k]: v })),
               missing,
+              folds,
             }}
           />
         ) : (
-          <EmptyCard key="empty" />
+          <EmptyCard key="empty" offers={offers} />
         )}
       </AnimatePresence>
     </DeckTray>

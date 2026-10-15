@@ -698,7 +698,8 @@ async fn run_command_node(
         }
     };
 
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    // `cmd /C` writes its own lines in the console's OEM code page, not UTF-8.
+    let stdout = personas_core::utils::process::decode_output(&output.stdout);
     if output.status.success() {
         update_node_status(
             statuses,
@@ -710,7 +711,7 @@ async fn run_command_node(
         );
         NodeOutcome::Completed(Some(stdout))
     } else {
-        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        let stderr = personas_core::utils::process::decode_output(&output.stderr);
         update_node_status(
             statuses,
             &member.id,

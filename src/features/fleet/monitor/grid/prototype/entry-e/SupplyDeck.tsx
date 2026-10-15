@@ -11,8 +11,15 @@
 // a reason (holding, stopped, N slots). Everything else — the three gauges,
 // the headroom, which personas are eligible — is in `AutopilotTip`, which is
 // a laid-out panel rather than a column of sentences.
+//
+// STEWARDS REPLACE AUTOPILOT under the `lanes` setting (spark mandate-lanes).
+// The same plate (testids `fleet-autopilot` / `fleet-autopilot-toggle` kept
+// for the tour anchors) is titled Stewards: the attention-loop switch stays
+// on top and does exactly what it did, and under it sit Athena's CLI answerer
+// and one row per charter (`mandate/StewardsList`). `M` opens the register.
 
-import { Bot, ListOrdered, Minus, Plus } from 'lucide-react';
+import { BookOpen, Bot, ListOrdered, Minus, Plus } from 'lucide-react';
+import { useDecisionSurface } from '@/features/decision-center/lanes/useLanesSnapshot';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { AsyncButton, Button } from '@/features/shared/components/buttons';
@@ -25,8 +32,9 @@ import type { ReactNode } from 'react';
 import type { useCapSetting } from '../shared';
 import { AutopilotTip } from './AutopilotTip';
 import { SchedulePlate } from './SchedulePlate';
-import { Engraved, Lamp } from './parts';
+import { Engraved, Kbd, Lamp } from './parts';
 import type { Tone } from './tone';
+import { StewardsList, type StewardDoors } from './mandate/StewardsList';
 
 const AUTOPILOT_TONE: Record<ReturnType<typeof autopilotTone>, Tone> = {
   off: 'off', stopped: 'err', holding: 'warn', running: 'ok',
@@ -81,7 +89,11 @@ function CapRack({
   );
 }
 
-function AutopilotPlate({ onOpenOrchestration }: { onOpenOrchestration: () => void }) {
+function AutopilotPlate({ onOpenOrchestration, stewards }: {
+  onOpenOrchestration: () => void;
+  /** Set under the `lanes` setting: the plate is titled Stewards and lists them. */
+  stewards: StewardDoors | null;
+}) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
   const { status, failed, saving, toggle } = useAutopilotStatus();
@@ -100,12 +112,28 @@ function AutopilotPlate({ onOpenOrchestration }: { onOpenOrchestration: () => vo
     >
       <header className="flex items-center gap-2">
         <Lamp lamp={{ tone: AUTOPILOT_TONE[tone], lit: on }} />
-        <Engraved>{m.autopilot}</Engraved>
+        <Engraved>{stewards ? m.ml_stewards : m.autopilot}</Engraved>
+        {stewards && (
+          <Tooltip content={m.ml_register_open}>
+            <Button
+              variant="ghost"
+              size="xs"
+              className="ml-auto"
+              onClick={stewards.onOpenRegister}
+              aria-label={m.ml_register_open}
+              aria-keyshortcuts="M"
+              data-testid="fleet-stewards-register"
+              icon={<BookOpen className="h-3.5 w-3.5" aria-hidden />}
+            >
+              <Kbd>M</Kbd>
+            </Button>
+          </Tooltip>
+        )}
         <Tooltip content={m.queue_open_orchestration}>
           <Button
             variant="ghost"
             size="icon-sm"
-            className="ml-auto"
+            className={stewards ? undefined : 'ml-auto'}
             onClick={onOpenOrchestration}
             aria-label={m.queue_open_orchestration}
             data-testid="fleet-grid-orchestration"
@@ -136,12 +164,13 @@ function AutopilotPlate({ onOpenOrchestration }: { onOpenOrchestration: () => vo
         </span>
       </Tooltip>
       {verdict && <p className="typo-caption tabular-nums" data-testid="entry-e-autopilot-phrase">{verdict}</p>}
+      {stewards && <StewardsList doors={stewards} />}
     </section>
   );
 }
 
 export function SupplyDeck({
-  cap, running, overAdmitted, usageSlot, onOpenOrchestration,
+  cap, running, overAdmitted, usageSlot, onOpenOrchestration, stewardDoors,
 }: {
   cap: ReturnType<typeof useCapSetting>;
   running: number;
@@ -150,11 +179,14 @@ export function SupplyDeck({
    *  beat of the entrance, and `useUsageFeed` lives behind that boundary. */
   usageSlot: ReactNode;
   onOpenOrchestration: () => void;
+  /** The mandate doors the Stewards plate opens (used under the `lanes` setting). */
+  stewardDoors: StewardDoors;
 }) {
+  const lanes = useDecisionSurface() === 'lanes';
   return (
     <aside className="flex w-[264px] flex-shrink-0 flex-col gap-2 overflow-y-auto border-r border-border p-2.5" data-testid="entry-e-supply">
       <CapRack cap={cap} running={running} overAdmitted={overAdmitted} />
-      <AutopilotPlate onOpenOrchestration={onOpenOrchestration} />
+      <AutopilotPlate onOpenOrchestration={onOpenOrchestration} stewards={lanes ? stewardDoors : null} />
       <SchedulePlate />
       {usageSlot}
     </aside>

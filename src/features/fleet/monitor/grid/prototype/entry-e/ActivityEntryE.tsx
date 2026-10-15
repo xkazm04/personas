@@ -43,7 +43,7 @@
 // paired; its filter is composed around the board by `devices/MeshBoard`. The
 // live resource samples are subscribed here, once, for every line's glyph.
 
-import { memo, Suspense, useCallback, useEffect, useState } from 'react';
+import { memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import type { PersonaCardModel } from '../../../monitorModel';
 import { BEAT, useActivityEntrance } from '../../useActivityEntrance';
 import { useActivitySurface, type ActivitySurfaceProps } from '../useActivitySurface';
@@ -69,6 +69,10 @@ import {
   LazyUsageSlot,
   preloadActivityPanels,
 } from './activityLazy';
+import { MandateDrawer, useMandateDrawer } from './mandate/MandateDrawer';
+import { useMandateKeys } from './mandate/useMandateKeys';
+import { useDecisionSurface } from '@/features/decision-center/lanes/useLanesSnapshot';
+import { useMonitorVisible } from '../../../monitorVisibility';
 import './entryE.css';
 
 function ActivityEntryEImpl(props: ActivitySurfaceProps) {
@@ -89,6 +93,15 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
   const filter = usePanelFilter(surface);
   const workspaces = useWorkspaceScope(surface);
   useResourceSamples();
+  // The mandate drawer (setting `lanes`): register (M), mandate page, act log (L).
+  const mandates = useMandateDrawer();
+  const lanesOn = useDecisionSurface() === 'lanes';
+  const visible = useMonitorVisible();
+  useMandateKeys(lanesOn && visible && mandates.view === null, mandates);
+  const stewardDoors = useMemo(
+    () => ({ onOpenMandate: mandates.openMandate, onOpenRegister: mandates.openRegister }),
+    [mandates.openMandate, mandates.openRegister],
+  );
 
   const board = layout === 'classic' ? (
     <LazyClassicPanel surface={surface} filter={filter} workspaces={workspaces} selectedPersonaId={props.selectedPersonaId} onOpenRemote={props.onOpenRemote} onClearFilter={surface.clearFilter} />
@@ -98,7 +111,7 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
 
   return (
     <div
-      className="ae-root flex h-full min-h-0 flex-col overflow-hidden rounded-card border border-border"
+      className="ae-root relative flex h-full min-h-0 flex-col overflow-hidden rounded-card border border-border"
       data-testid="activity-entry-e"
       data-beat={entrance.beat}
     >
@@ -120,6 +133,7 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
           running={surface.sessionsInFlight}
           overAdmitted={surface.overAdmitted}
           onOpenOrchestration={surface.openOrchestration}
+          stewardDoors={stewardDoors}
           usageSlot={entrance.beat >= BEAT.usage ? (
             <Suspense fallback={<UsageGhost />}>
               <LazyUsageSlot simulating={surface.simulating} warm={entrance.warm} />
@@ -164,6 +178,7 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
         </Suspense>
       )}
       {confirm.dialog}
+      {lanesOn && <MandateDrawer view={mandates.view} onView={mandates.setView} onClose={mandates.close} />}
     </div>
   );
 }

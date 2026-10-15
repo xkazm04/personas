@@ -147,6 +147,7 @@ export const useSystemStore = create<SystemStore>()(
         radioAutoResume: state.radioAutoResume,
         collapsedSourceKinds: state.collapsedSourceKinds,
         monitorGroupBy: state.monitorGroupBy,
+        decisionSurface: state.decisionSurface,
         monitorCollapsedGroups: state.monitorCollapsedGroups,
         monitorLiveMode: state.monitorLiveMode,
         homeHiddenSections: state.homeHiddenSections,

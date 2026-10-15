@@ -27,10 +27,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { HarnessModule } from './registry';
 
-type Step = { selector: string } | { act: 'remount' };
+export type Step = { selector: string } | { act: 'remount' };
 
 /** Clicks each selector once it exists (polled, 10 s per step); `remount` re-opens the page. StrictMode-safe. */
-function Drive({ steps, children }: { steps: Step[]; children: ReactNode }) {
+export function Drive({ steps, children }: { steps: Step[]; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const [generation, setGeneration] = useState(0);
   useEffect(() => {
@@ -63,7 +63,7 @@ function Drive({ steps, children }: { steps: Step[]; children: ReactNode }) {
   return <div ref={ref} className="contents"><div key={generation} className="contents">{children}</div></div>;
 }
 
-async function prepareFleet(): Promise<void> {
+export async function prepareFleet(): Promise<void> {
   const [{ useAgentStore }, { useOverviewStore }] = await Promise.all([
     import('@/stores/agentStore'), import('@/stores/overviewStore'),
   ]);
@@ -91,7 +91,7 @@ async function prepareSimulation(): Promise<void> {
 }
 
 /** The re-open is the Board surface's workaround: StrictMode strands the first open's badge reads. */
-const steps = (layout: 'classic' | 'lanes'): Step[] => [
+export const steps = (layout: 'classic' | 'lanes'): Step[] => [
   { selector: '[data-testid="monitor-view-activity"]' },
   { act: 'remount' },
   { selector: `[data-testid="fleet-board-variant-${layout}"]` },

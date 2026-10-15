@@ -28,7 +28,6 @@ import { lazyRetry } from '@/lib/lazyRetry';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
-import { useIsDarkTheme } from '@/stores/themeStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
@@ -76,8 +75,8 @@ function SurfaceFallback() {
 
 /**
  * The body region's footprint while a view's chunk loads — the same geometry
- * each branch gives its own content (`flex-1 min-h-0` outer, `h-full p-2
- * hud-atmosphere` inner), so the swap moves nothing.
+ * each branch gives its own content (`flex-1 min-h-0` outer, `h-full p-2`
+ * inner), so the swap moves nothing.
  *
  * It belongs to ONE boundary around the whole body rather than one per branch,
  * and that is what makes `startTransition` worth anything here. React only
@@ -94,7 +93,7 @@ function SurfaceFallback() {
 function BodyFallback() {
   return (
     <div className="relative z-10 flex-1 min-h-0">
-      <div className="h-full p-2 hud-atmosphere">
+      <div className="h-full p-2">
         <SurfaceFallback />
       </div>
     </div>
@@ -547,11 +546,6 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
   // left to clear and this is `goToView`.
   const selectView = goToView;
 
-  // Faint network-of-agents backdrop — dark mode only (the light-theme
-  // alternative is a follow-up). Rendered behind everything at low opacity so
-  // it reads as premium texture, not a competing foreground.
-  const isDark = useIsDarkTheme();
-
   const channelEmpty = (
     <div className="h-full flex flex-col items-center justify-center gap-2 text-center text-foreground">
       <MessagesSquare className="w-8 h-8 text-foreground" />
@@ -589,16 +583,11 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
       data-testid="persona-monitor"
       data-hidden={hidden || undefined}
     >
-      {/* Faint interconnected-agents backdrop (dark mode only). */}
-      {isDark && (
-        <img
-          aria-hidden
-          src="/illustrations/monitor-network-dark.webp"
-          alt=""
-          draggable={false}
-          className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-[0.07]"
-        />
-      )}
+      {/* The Monitor's surface: one dot grid over one tonal field, behind
+          every tab, in every theme (`.monitor-surface` in globals.css). It
+          replaced a dark-only raster backdrop and a per-tab hairline grid,
+          so the tabs no longer each paint their own ground. */}
+      <div aria-hidden className="monitor-surface" />
 
       {/* Header (z-20 so any floating child menu clears the body) */}
       <div className="relative z-20 flex-shrink-0 flex items-center justify-between gap-4 px-6 h-14 border-b border-primary/10 bg-secondary/15">
@@ -691,19 +680,22 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
       {isFleetView ? (
         /* Body — the Activity board with the drawer layered over it */
         <div className="relative z-10 flex-1 min-h-0 overflow-hidden">
-          {/* Same wrapper the three channel surfaces get — the Activity board is
-              a card on the HUD atmosphere now, not a bare grid on the page
-              background (see FleetGridView's consolidation header).
+          {/* Same wrapper the channel surfaces get — the Activity board is a
+              card on the Monitor surface (`.monitor-surface`, painted once at
+              the overlay root), not a bare grid on the page background (see
+              FleetGridView's consolidation header).
 
-              TWO elements, not one, and that is load-bearing: `.hud-atmosphere`
-              declares `position: relative` in globals.css, which is UNLAYERED
-              and therefore beats Tailwind's `@layer utilities` `absolute` no
-              matter the class order. Putting both on one div silently demoted
-              the wrapper to `relative`, nothing bounded the board's height, and
-              the columns grew to 10,505px inside a 975px overlay. Same trap as
-              `typo-* font-semibold` — an unlayered rule quietly winning. */}
+              TWO elements, not one, and that is load-bearing: the OUTER
+              `absolute inset-0` is the only thing bounding the board's height.
+              The inner padded div used to carry `.hud-atmosphere`, whose
+              `position: relative` lives in globals.css, UNLAYERED, and so beats
+              Tailwind's `@layer utilities` `absolute` whatever the class order.
+              Putting both on one div silently demoted the wrapper to
+              `relative`, nothing bounded the board, and the columns grew to
+              10,505px inside a 975px overlay. That class is gone, the rule
+              stays: never put a globals.css class on the bounding wrapper. */}
           <div className="absolute inset-0 overflow-hidden">
-            <div className="h-full p-2 hud-atmosphere">
+            <div className="h-full p-2">
               {/* First-ever cold open only (the warm cache in useMonitorData
                   makes every re-open paint the last-known fleet immediately):
                   the board renders its OWN chrome — header, usage strip, rail
@@ -756,7 +748,7 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
         </div>
       ) : (
         <div className="relative z-10 flex-1 min-h-0">
-          <div className="h-full p-2 hud-atmosphere">
+          <div className="h-full p-2">
             {!hasChannels ? (
               channelEmpty
             ) : view === 'map' ? (

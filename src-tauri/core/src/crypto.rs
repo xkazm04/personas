@@ -371,11 +371,18 @@ extern "system" {
 /// Lock a memory region so it cannot be paged to swap.
 #[cfg(windows)]
 fn memory_lock(ptr: *const u8, len: usize) -> bool {
+    // SAFETY: VirtualLock only pins the pages covering [ptr, ptr + len) and
+    // never reads or writes through the pointer. A range that is not committed
+    // makes the call fail (returns 0) rather than invoking undefined behaviour,
+    // and the result is reported to the caller as `false`.
     unsafe { VirtualLock(ptr as *mut std::ffi::c_void, len) != 0 }
 }
 
 #[cfg(windows)]
 fn memory_unlock(ptr: *const u8, len: usize) {
+    // SAFETY: VirtualUnlock only releases the page pin and never dereferences
+    // the pointer. Unlocking a range that was never locked fails with an error
+    // code that is deliberately ignored here.
     unsafe {
         VirtualUnlock(ptr as *mut std::ffi::c_void, len);
     }
@@ -389,11 +396,17 @@ extern "C" {
 
 #[cfg(unix)]
 fn memory_lock(ptr: *const u8, len: usize) -> bool {
+    // SAFETY: mlock only pins the pages covering [ptr, ptr + len) and never
+    // reads or writes through the pointer. An unmapped range or an exhausted
+    // RLIMIT_MEMLOCK makes the call return -1 (ENOMEM/EPERM), reported to the
+    // caller as `false`.
     unsafe { mlock(ptr as *const std::ffi::c_void, len) == 0 }
 }
 
 #[cfg(unix)]
 fn memory_unlock(ptr: *const u8, len: usize) {
+    // SAFETY: munlock only releases the page pin and never dereferences the
+    // pointer; the return value is deliberately ignored.
     unsafe {
         munlock(ptr as *const std::ffi::c_void, len);
     }
@@ -947,6 +960,7 @@ fn derive_unix_local_key() -> Result<[u8; 32], CryptoError> {
         .or_else(|_| fs::read_to_string("/var/lib/dbus/machine-id"))
         .unwrap_or_else(|_| whoami::fallible::hostname().unwrap_or_else(|_| "unknown-host".into()));
 
+    // SAFETY: getuid takes no arguments, has no preconditions and cannot fail.
     let uid = unsafe { libc::getuid() };
 
     // Combine random secret with machine-bound values
@@ -975,6 +989,7 @@ fn derive_unix_local_key_legacy() -> Result<[u8; 32], CryptoError> {
         .or_else(|_| fs::read_to_string("/var/lib/dbus/machine-id"))
         .unwrap_or_else(|_| whoami::fallible::hostname().unwrap_or_else(|_| "unknown-host".into()));
 
+    // SAFETY: getuid takes no arguments, has no preconditions and cannot fail.
     let uid = unsafe { libc::getuid() };
     let ikm = format!("personas-desktop:{}:{}", machine_id.trim(), uid);
 
@@ -1151,6 +1166,12 @@ fn dpapi_protect(plaintext: &[u8]) -> Result<Vec<u8>, CryptoError> {
     use windows::core::PCWSTR;
     use windows::Win32::Security::Cryptography::{CryptProtectData, CRYPT_INTEGER_BLOB};
 
+    // SAFETY: `data_in` points into `plaintext`, which outlives the call, and
+    // CryptProtectData only reads through it (the `*mut` cast satisfies the
+    // blob's field type, nothing is written). On success `data_out` holds a
+    // buffer of `cbData` bytes allocated by the OS; it is copied out with
+    // `to_vec` before being freed exactly once with LocalFree. On failure the
+    // function returns early and no buffer has been allocated.
     unsafe {
         let data_in = CRYPT_INTEGER_BLOB {
             cbData: plaintext.len() as u32,
@@ -1180,6 +1201,12 @@ fn dpapi_unprotect(ciphertext: &[u8]) -> Result<Vec<u8>, CryptoError> {
     use std::ptr;
     use windows::Win32::Security::Cryptography::{CryptUnprotectData, CRYPT_INTEGER_BLOB};
 
+    // SAFETY: `data_in` points into `ciphertext`, which outlives the call, and
+    // CryptUnprotectData only reads through it (the `*mut` cast satisfies the
+    // blob's field type, nothing is written). On success `data_out` holds a
+    // buffer of `cbData` bytes allocated by the OS; it is copied out with
+    // `to_vec` before being freed exactly once with LocalFree. On failure the
+    // function returns early and no buffer has been allocated.
     unsafe {
         let data_in = CRYPT_INTEGER_BLOB {
             cbData: ciphertext.len() as u32,

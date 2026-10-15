@@ -7,10 +7,13 @@
  *
  * `pending` is the tray before the first card is known: the header without a
  * position, the stack holding its ghost card.
+ *
+ * `receipt` is the last verdict that landed ("Accepted: <title>"), kept in the
+ * header until the next one, so the card that just left is still accounted for.
  */
 import type { ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Keyboard, Layers, X } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Keyboard, Layers, X } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -19,6 +22,7 @@ import { closeDecisionDeck } from './deckStore';
 import { tierOf } from './deckMeta';
 import { KeyMap } from './KeyLegend';
 import { Keycap } from './parts';
+import type { CardShape } from './shapes/cardShape';
 
 function Track({ queue, index }: { queue: DecisionItem[]; index: number }) {
   return (
@@ -34,18 +38,24 @@ function Track({ queue, index }: { queue: DecisionItem[]; index: number }) {
 }
 
 export function DeckTray({
-  scopeLabel, queue, index, type = 'approval', isCouncil = false, tall = false, pending = false, readOnly = false,
-  keysOpen = false, onKeys, onWalk, onClose = closeDecisionDeck, children,
+  scopeLabel, queue, index, type = 'approval', isCouncil = false, armsAccept = false, tall = false, pending = false,
+  readOnly = false, keysOpen = false, receipt = null, shape = 'default', onKeys, onWalk, onClose = closeDecisionDeck, children,
 }: {
   scopeLabel: string;
   queue: DecisionItem[];
   index: number;
   type?: DecisionModalType;
   isCouncil?: boolean;
+  /** The card in hand arms its yes first (council, irreversible). */
+  armsAccept?: boolean;
   tall?: boolean;
   pending?: boolean;
   readOnly?: boolean;
   keysOpen?: boolean;
+  /** The last landed verdict, in words. */
+  receipt?: string | null;
+  /** The card in hand's lane shape: its keys join the key map. */
+  shape?: CardShape;
   onKeys?: (open: boolean) => void;
   onWalk?: (d: 1 | -1) => void;
   onClose?: () => void;
@@ -71,7 +81,16 @@ export function DeckTray({
           )}
         </span>
         <Track queue={queue} index={index} />
-        <span className="ml-auto flex items-center gap-1">
+        {/* Born empty and kept mounted: only its text follows the verdicts. */}
+        <span className="flex min-w-0 flex-1 items-center gap-1.5 typo-caption" aria-live="polite" data-testid="deck-receipt">
+          {receipt && (
+            <>
+              <Check className="h-3.5 w-3.5 flex-shrink-0 text-status-success" aria-hidden />
+              <span className="min-w-0 truncate text-foreground">{receipt}</span>
+            </>
+          )}
+        </span>
+        <span className="ml-auto flex flex-shrink-0 items-center gap-1">
           {!readOnly && onKeys && (
             <Tooltip content={m.dc_deck_keys_tip}>
               <Button
@@ -103,7 +122,7 @@ export function DeckTray({
           </Tooltip>
         </span>
         <AnimatePresence>
-          {keysOpen && <KeyMap key="keys" type={type} isCouncil={isCouncil} labels={queue[index]?.verdictLabels} />}
+          {keysOpen && <KeyMap key="keys" type={type} isCouncil={isCouncil} armsAccept={armsAccept} shape={shape} labels={queue[index]?.verdictLabels} />}
         </AnimatePresence>
       </div>
 

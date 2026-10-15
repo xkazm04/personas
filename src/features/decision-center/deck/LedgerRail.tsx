@@ -78,7 +78,7 @@ export function LedgerRail({ item, extra, dock }: { item: DecisionItem; extra?: 
           </div>
         )}
       </div>
-      <div className="au-rail-foot flex flex-col gap-2 px-3 pb-3 pt-3" data-testid="deck-dock">
+      <div className="au-rail-foot flex flex-shrink-0 flex-col gap-2 px-3 pb-3 pt-3" data-testid="deck-dock">
         {dock}
       </div>
     </aside>

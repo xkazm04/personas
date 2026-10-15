@@ -215,6 +215,46 @@ protection, CI or a gate you run, and you may NOT deploy.\n"
     )
 }
 
+/// The rung a worker's rule 2 is written for, given the charter's scope rung
+/// AND its signed merge policy (spark mandate-lanes): a rung-3 charter whose
+/// mandate says `merge_policy = 'never'` ships like rung 2 - it opens the
+/// branch (and the pull request, where it can) and asks, instead of merging.
+/// Any other policy keeps the rung. The policy only ever LOWERS the rung.
+pub fn ship_rung_under_merge_policy(
+    scope_rung: u8,
+    merge_policy: personas_db::models::MergePolicy,
+) -> u8 {
+    if scope_rung >= RUNG_MAY_MERGE && merge_policy == personas_db::models::MergePolicy::Never {
+        RUNG_MAY_OPEN_PR
+    } else {
+        scope_rung
+    }
+}
+
+/// The rung a worker ships at, given the charter's scope rung and what reading
+/// its mandate envelope returned. The ONE rule every dispatcher uses:
+///
+/// * a readable, SIGNED envelope: its merge policy applies
+///   ([`ship_rung_under_merge_policy`]);
+/// * a readable, UNSIGNED envelope: the rung stands unchanged. Its
+///   `merge_policy` is the column default (`never`), not a choice anyone made,
+///   so it binds nothing: a charter adopted at rung 3 merges, exactly as it did
+///   before mandate lanes (the owner's decision of 2026-09-09);
+/// * no envelope (`None`: unreadable, or no such charter): treated as `never`,
+///   the safe direction, because nothing proves the charter is unsigned.
+pub fn ship_rung_for_envelope(
+    scope_rung: u8,
+    envelope: Option<&personas_db::models::MandateEnvelope>,
+) -> u8 {
+    match envelope {
+        Some(env) => match env.binding_merge_policy() {
+            Some(policy) => ship_rung_under_merge_policy(scope_rung, policy),
+            None => scope_rung,
+        },
+        None => ship_rung_under_merge_policy(scope_rung, personas_db::models::MergePolicy::Never),
+    }
+}
+
 /// [`unattended_worktree_guardrails`] with rule 2 decided by the dispatching
 /// charter's scope rung. Below [`RUNG_MAY_OPEN_PR`] the text is byte-identical
 /// to the rung-less variant; at [`RUNG_MAY_OPEN_PR`] the worker may open the
@@ -681,6 +721,82 @@ mod tests {
     fn the_merge_rung_matches_the_mandate() {
         assert_eq!(RUNG_MAY_MERGE, crate::app_master::RUNG_MERGE);
         assert_eq!(RUNG_MAY_MERGE, crate::app_master::MAX_GRANTABLE_RUNG);
+    }
+
+    /// Mandate lanes WP2b: `merge_policy = never` turns a rung-3 worker into
+    /// one that opens the branch and asks; every other policy, and every rung
+    /// below 3, is untouched.
+    #[test]
+    fn a_never_merge_policy_makes_a_rung_three_worker_ask_instead_of_merge() {
+        use personas_db::models::MergePolicy;
+        let ask = unattended_worktree_guardrails_at_rung(
+            "b",
+            "p",
+            ship_rung_under_merge_policy(RUNG_MAY_MERGE, MergePolicy::Never),
+            true,
+        );
+        assert!(!ask.contains("git merge --no-ff"), "{ask}");
+        assert_eq!(
+            ask,
+            unattended_worktree_guardrails_at_rung("b", "p", RUNG_MAY_OPEN_PR, true)
+        );
+        for policy in [MergePolicy::GateGreen, MergePolicy::GateGreenCouncilReady] {
+            let merge = unattended_worktree_guardrails_at_rung(
+                "b",
+                "p",
+                ship_rung_under_merge_policy(RUNG_MAY_MERGE, policy),
+                true,
+            );
+            assert!(merge.contains("git merge --no-ff b"), "{merge}");
+        }
+        for rung in 0..RUNG_MAY_MERGE {
+            assert_eq!(ship_rung_under_merge_policy(rung, MergePolicy::Never), rung);
+        }
+    }
+
+    /// The regression this pins: the envelope columns default to `never`, so
+    /// before the signed-only rule a charter adopted at rung 3 silently shipped
+    /// like rung 2. An unsigned envelope binds nothing; a signed one binds its
+    /// policy; an unreadable one reads as `never`. Rungs below 3 never move.
+    #[test]
+    fn only_a_signed_envelope_lowers_a_rung_three_worker() {
+        use personas_db::models::{MandateEnvelope, MergePolicy};
+        let unsigned = MandateEnvelope::default();
+        assert!(!unsigned.is_signed());
+        assert_eq!(unsigned.merge_policy, MergePolicy::Never);
+        assert_eq!(
+            ship_rung_for_envelope(RUNG_MAY_MERGE, Some(&unsigned)),
+            RUNG_MAY_MERGE,
+            "an unsigned rung-3 charter (every new adoption) still merges"
+        );
+        let signed = |merge_policy| MandateEnvelope {
+            merge_policy,
+            envelope_version: 1,
+            ..Default::default()
+        };
+        assert_eq!(
+            ship_rung_for_envelope(RUNG_MAY_MERGE, Some(&signed(MergePolicy::Never))),
+            RUNG_MAY_OPEN_PR
+        );
+        for policy in [MergePolicy::GateGreen, MergePolicy::GateGreenCouncilReady] {
+            assert_eq!(
+                ship_rung_for_envelope(RUNG_MAY_MERGE, Some(&signed(policy))),
+                RUNG_MAY_MERGE
+            );
+        }
+        assert_eq!(
+            ship_rung_for_envelope(RUNG_MAY_MERGE, None),
+            RUNG_MAY_OPEN_PR,
+            "an unreadable envelope takes the safe direction"
+        );
+        for rung in 0..RUNG_MAY_MERGE {
+            assert_eq!(ship_rung_for_envelope(rung, Some(&unsigned)), rung);
+            assert_eq!(
+                ship_rung_for_envelope(rung, Some(&signed(MergePolicy::Never))),
+                rung
+            );
+            assert_eq!(ship_rung_for_envelope(rung, None), rung);
+        }
     }
 
     /// The owner's decision of 2026-09-09: a rung-3 worker merges its own

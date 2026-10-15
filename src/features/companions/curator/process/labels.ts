@@ -29,12 +29,4 @@ export function outcomeName(p: ProcessStrings, o: string): string {
   }
 }
 
-/** Tone per outcome: the good one in primary, failures in status colours, a clean miss muted. */
-export const OUTCOME_TONE: Record<DevOutcome, string> = {
-  landed: 'bg-primary',
-  interrupted: 'bg-status-warning',
-  errored: 'bg-status-error',
-  quiet: 'bg-muted-foreground/40',
-};
-
 export const pct = (k: number, n: number) => (n ? Math.round((100 * k) / n) : 0);

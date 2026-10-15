@@ -5,6 +5,7 @@ pub mod export_types;
 pub mod frontend_bridge;
 pub mod gallery;
 pub mod import_export;
+pub mod mandates;
 pub mod memories;
 pub mod memory_compile;
 pub mod persona_brain;

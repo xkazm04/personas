@@ -76,6 +76,8 @@ pub mod leadership;
 pub mod llm_topology;
 pub mod login_lane;
 pub mod management_api;
+pub mod mandate_lanes;
+pub mod mandate_sweep;
 pub mod mcp_tools;
 pub mod memory_reflection;
 pub mod oauth_refresh;

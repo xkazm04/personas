@@ -1,0 +1,130 @@
+{
+ "schema": "conform-run/1",
+ "worker": "212150d0-ab3d-4a68-8347-4345f31077f7",
+ "subject": "fleet-orchestration",
+ "evaluatedAt": "2026-10-14T07:54:31Z",
+ "pairs": [
+  {
+   "context": "35c52f59-9612-47c4-8662-0ebb3c821771",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/notepad/notepadActions.ts:186 dispatchNoteToFleet launches a write-capable /note-task session with cwd = project.root_path (the shared repo root) and declares no write set or isolated worktree, and the admission door (src-tauri/src/commands/fleet/queue.rs:982 door_verdict_for) checks cap/time/budget only, so two notes (or a note plus a hand-run session) dispatched into one repo can collide on files",
+   "techniques": [
+    {
+     "technique": "parallel-dispatch",
+     "verdict": "deviation: no declared write set / disjointness proof at dispatch",
+     "evidence": "src/features/notepad/notepadActions.ts:186 cwd is the shared project root"
+    },
+    {
+     "technique": "inherited-state-provenance",
+     "verdict": "deviation: a rejected-run re-dispatch re-enters the same repo and the brief carries only the operator's reason, not an inventory of what the previous attempt left (where from, how much, may-continue)",
+     "evidence": "src/features/notepad/notepadActions.ts:129 feedback section holds Reason and Comments only"
+    },
+    {
+     "technique": "brief-carries-the-session",
+     "verdict": "realized: the full requirement is written to disk before spawn and the skill is verified installed, not assumed",
+     "evidence": "src/features/notepad/notepadActions.ts:161 writeDispatchBrief precedes dispatch; :172 install outcome read and refused if not installed"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "registryProposal": "parallel-dispatch could name the common single-writer-per-repo shape (one dispatch per note, key note:<id>) and say whether a per-dispatch dispatch_key alone satisfies the collision-domain rule when the cwd is shared."
+  },
+  {
+   "context": "bcb603ad-ce58-4b76-9623-aa99ace984af",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/companion/proactive/fleet_triggers.rs:64 the stale nudge tells the operator 'no activity for 5+ minutes' (doc :10 says 'currently 5 min') while the single authority is STALE_AFTER_SECS = 6*60 (src-tauri/src/commands/fleet/stale.rs:65), operator-tunable 60-3600 s via set_state_cutoffs (stale.rs:187), so the message states a number the registry does not use and drifts with every retune",
+   "techniques": [
+    {
+     "technique": "lifecycle-signals",
+     "verdict": "deviation: consumer restates the per-state staleness budget as a literal instead of reading the registry's cutoff",
+     "evidence": "src-tauri/src/companion/proactive/fleet_triggers.rs:64 vs src-tauri/src/commands/fleet/stale.rs:65"
+    },
+    {
+     "technique": "session-registry",
+     "verdict": "realized: the evaluator reads the in-process registry and matches FleetSessionState exhaustively, with the silent arms each justified",
+     "evidence": "src-tauri/src/companion/proactive/fleet_triggers.rs:49 registry().list_dto(); :98 exhaustive arm list"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26,
+   "registryProposal": "lifecycle-signals could add a decision rule that user-facing text quoting a staleness budget must derive it from the live cutoff."
+  },
+  {
+   "context": "5e531c95-b6d9-46f5-a33d-d07001fee61e",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/libs/fleetOptimizer.ts:2 'Fleet' here is the persona population: it recommends model downgrades and retry cuts from ExecutionDashboardData cost/success rollups (:4, :17-:18), with no sessions, registry, dispatch or lifecycle states for the subject to govern",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
+   "evaluatedRevision": 26
+  }
+ ],
+ "declined": [
+  {
+   "subject": "fleet-orchestration",
+   "context": "468953eb-0204-4013-b366-9357b2161138",
+   "reason": "core: ExecutionState (src-tauri/core/src/types.rs:24) is a single-execution FSM, not the session registry, but core also hosts the fleet event-name constants (src-tauri/core/src/events.rs:405), so the precondition is neither met nor absent; left unknown"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "942d2449-34ab-4f02-af7e-b130269d10ef",
+   "reason": "fleet-triage-columns: the context's entry points (src/features/fleet/monitor/triage/triageModel.ts, MonitorProjectColumns.tsx) are no longer tracked files and its file_paths are empty; the context map entry is stale, nothing to read"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "a3b615d2-05d8-47bd-ad92-672c6b42b0f3",
+   "reason": "output-stream-parser: a consolidated grab-bag of 34 files (parser, notifiers, healing, director, deliberation) where the subject governs no coherent part; coverage question for the context map, not judged"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "ca705961-f138-494a-b0fe-f882c674d25a",
+   "reason": "mastermind-popovers: its own code (src/features/teams/sub_mastermind/lib/DispatchFleetModal.tsx:21) only collects an instruction and calls an onDispatch prop; the spawn at MastermindPage.tsx:619 is outside the context's file list, so judging it here would be judging a neighbour"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "738f591b-60e9-4701-b786-cf868db66c51",
+   "reason": "notepad-editor: NoteDispatchBar.tsx only gates buttons on draft status (:92) and calls actions owned by notepad-core; no dispatch logic of its own"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-14T07:54:31Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [
+    "parallel-dispatch",
+    "inherited-state-provenance",
+    "brief-carries-the-session"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-14T07:54:31Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [
+    "lifecycle-signals",
+    "session-registry"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-14T07:54:31Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

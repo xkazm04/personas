@@ -888,8 +888,14 @@ fn anchorless_probation_sweep(
 
 /// Periodic probation-window check. Registered beside the other lifecycle
 /// subscriptions in `engine::background::lifecycle`.
+///
+/// It also hosts the mandate router's steward sweep
+/// (`engine::mandate_sweep`): a cheap tick that runs whether or not the
+/// attention loop is on, and that never waits behind a gate suite.
 pub struct AppMasterProbationSubscription {
     pub pool: DbPool,
+    /// For the sweep's review door and its `charter-act-recorded` emits.
+    pub app: tauri::AppHandle,
 }
 
 #[async_trait::async_trait]
@@ -916,6 +922,9 @@ impl ReactiveSubscription for AppMasterProbationSubscription {
         if let Err(e) = tokio::task::spawn_blocking(move || probation_tick(&pool)).await {
             tracing::warn!(error = %e, "app_master_probation: tick task failed");
         }
+        // The deterministic filing inside signed envelopes. Free when no
+        // mandate is signed (one mandates read and out).
+        crate::engine::mandate_sweep::sweep_and_emit(self.pool.clone(), self.app.clone()).await;
     }
 }
 

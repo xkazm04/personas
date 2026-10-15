@@ -2,7 +2,9 @@
 // fleet counted by lamp, and each lamp is the filter for its own number.
 // Middle, the Decision Center's strip (`DecisionHub`): one chip per kind of
 // thing waiting on a human, each opening its peek, and every peek row opening
-// the one global Decision Deck. Right, the layout switch.
+// the one global Decision Deck. Under the `lanes` setting (spark
+// mandate-lanes) the strip is the four mandate lanes plus Orphans instead
+// (`LaneHub`, keys 1-4 and O). Right, the layout switch: Bays | Queue.
 //
 // THE KEYCAP LEGEND IS GONE (2026-10-06, decision-center A3). The band printed
 // the board's `n`/`k` walk; the strip needed the width, and the decision keys
@@ -33,6 +35,9 @@ import { PERSONA_LAMP } from './tone';
 import { Lamp } from './parts';
 import type { PanelFilter } from './boardFilter';
 import { DecisionHub } from '@/features/decision-center/hub/DecisionHub';
+import { LaneHub } from '@/features/decision-center/hub/lanes/LaneHub';
+import { useDecisionSurface } from '@/features/decision-center/lanes/useLanesSnapshot';
+import { useMonitorVisible } from '../../../monitorVisibility';
 
 export function CommandBar({
   filter, showTally, active, onPick, onClear, layout, onLayout,
@@ -48,6 +53,8 @@ export function CommandBar({
 }) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
+  const surface = useDecisionSurface();
+  const visible = useMonitorVisible();
   const labels: Record<SquareState, string> = {
     running: m.grid_state_running,
     attention: m.grid_state_attention,
@@ -112,7 +119,7 @@ export function CommandBar({
         </div>
       )}
 
-      <DecisionHub />
+      {surface === 'lanes' ? <LaneHub keysEnabled={visible} /> : <DecisionHub />}
 
       <div className="ml-auto flex items-center gap-3">
         <SegmentedTabs

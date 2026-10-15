@@ -84,8 +84,10 @@ const PROBE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20);
 /// Run every check. The two Windows probes run concurrently.
 pub async fn run(facts: &LinkFacts) -> Vec<DiagnosticCheck> {
     let port = facts.quic_port.unwrap_or(facts.configured_port);
-    let (firewall, profile) =
-        tokio::join!(firewall_check(port, facts.exe.as_deref()), profile_check());
+    // The profile goes first: the firewall judgement needs the ACTIVE
+    // profiles, because a rule for another profile does not protect this one.
+    let (profile, active) = profile_check().await;
+    let firewall = firewall_check(port, facts.exe.as_deref(), &active).await;
     vec![
         DiagnosticCheck::pass("p2p_built", "this build carries the device mesh (p2p)"),
         network_running_check(facts.network_running),
@@ -146,6 +148,7 @@ fn mdns_check(seen: usize) -> DiagnosticCheck {
 /// One inbound rule as `netsh advfirewall firewall show rule ... verbose`
 /// prints it. Only the fields the judgement reads.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[cfg_attr(not(windows), allow(dead_code))]
 pub struct FirewallRule {
     pub name: String,
     pub enabled: bool,
@@ -154,6 +157,9 @@ pub struct FirewallRule {
     pub local_port: String,
     pub program: String,
     pub allow: bool,
+    /// The profiles the rule applies to (`Domain`, `Private`, `Public`), as
+    /// netsh prints them. Empty when the label was absent: read as "all".
+    pub profiles: Vec<String>,
 }
 
 /// Parse `netsh advfirewall firewall show rule name=all dir=in verbose`.
@@ -161,6 +167,7 @@ pub struct FirewallRule {
 /// `Err` when the text has content but no `Rule Name:` label: a localized
 /// Windows prints translated labels, and guessing at them would turn
 /// "unreadable" into a confident green.
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn parse_netsh_rules(text: &str) -> Result<Vec<FirewallRule>, String> {
     let mut rules = Vec::new();
     let mut current: Option<FirewallRule> = None;
@@ -191,6 +198,13 @@ pub fn parse_netsh_rules(text: &str) -> Result<Vec<FirewallRule>, String> {
             // colon; `split_once` kept everything after the FIRST one.
             "Program" => rule.program = value.to_string(),
             "Action" => rule.allow = value.eq_ignore_ascii_case("allow"),
+            "Profiles" => {
+                rule.profiles = value
+                    .split(',')
+                    .map(|p| p.trim().to_string())
+                    .filter(|p| !p.is_empty())
+                    .collect();
+            }
             _ => {}
         }
     }
@@ -212,6 +226,7 @@ pub fn parse_netsh_rules(text: &str) -> Result<Vec<FirewallRule>, String> {
 }
 
 /// Does a `LocalPort` value (`Any`, `4242`, `4000-4300`, `80,4242`) cover `port`?
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn port_covered(local_port: &str, port: u16) -> bool {
     local_port.split(',').map(str::trim).any(|part| {
         if part.eq_ignore_ascii_case("any") {
@@ -227,33 +242,70 @@ pub fn port_covered(local_port: &str, port: u16) -> bool {
     })
 }
 
+#[cfg_attr(not(windows), allow(dead_code))]
 fn same_program(rule_program: &str, exe: Option<&Path>) -> bool {
     let norm = |s: &str| s.trim().replace('/', "\\").to_ascii_lowercase();
     exe.is_some_and(|exe| norm(rule_program) == norm(&exe.to_string_lossy()))
 }
 
-/// Does this enabled inbound rule cover UDP `port` for this app?
-fn covers(rule: &FirewallRule, port: u16, exe: Option<&Path>) -> bool {
+/// Does the rule apply on a network whose active profiles are `active`
+/// (netsh names: `Domain`, `Private`, `Public`)? A rule with no `Profiles`
+/// label, or an unknown active set, is read as "applies".
+#[cfg_attr(not(windows), allow(dead_code))]
+fn profile_ok(rule: &FirewallRule, active: &[String]) -> bool {
+    rule.profiles.is_empty()
+        || active.is_empty()
+        || rule.profiles.iter().any(|rp| {
+            rp.eq_ignore_ascii_case("all") || active.iter().any(|a| a.eq_ignore_ascii_case(rp))
+        })
+}
+
+/// Does this enabled inbound rule cover UDP `port` for this app, on `active`?
+#[cfg_attr(not(windows), allow(dead_code))]
+fn covers(rule: &FirewallRule, port: u16, exe: Option<&Path>, active: &[String]) -> bool {
     let proto_ok = rule.protocol.eq_ignore_ascii_case("udp")
         || rule.protocol.eq_ignore_ascii_case("any")
         || rule.protocol.is_empty();
     let program_ok = rule.program.is_empty()
         || rule.program.eq_ignore_ascii_case("any")
         || same_program(&rule.program, exe);
-    rule.enabled && rule.inbound && proto_ok && program_ok && port_covered(&rule.local_port, port)
+    rule.enabled
+        && rule.inbound
+        && proto_ok
+        && program_ok
+        && profile_ok(rule, active)
+        && port_covered(&rule.local_port, port)
 }
 
-/// The command the contract names, with this device's real port.
-pub fn firewall_fix(port: u16) -> String {
+/// The command the contract names, with this device's real port and, when
+/// known, the profile(s) actually in use (a rule for the wrong profile is the
+/// failure this check used to miss: measured 2026-10-15, allow rules existed
+/// for Public only while the active network was Private).
+#[cfg_attr(not(windows), allow(dead_code))]
+pub fn firewall_fix(port: u16, active: &[String]) -> String {
+    let profile = if active.is_empty() {
+        String::new()
+    } else {
+        format!(" profile={}", active.join(",").to_ascii_lowercase())
+    };
     format!(
-        "netsh advfirewall firewall add rule name=\"Personas P2P\" dir=in action=allow protocol=UDP localport={port}"
+        "netsh advfirewall firewall add rule name=\"Personas P2P\" dir=in action=allow protocol=UDP localport={port}{profile}"
     )
 }
 
 /// Judge parsed rules. A covering BLOCK rule wins over any allow, exactly as
 /// Windows Firewall evaluates them.
-pub fn judge_firewall(rules: &[FirewallRule], port: u16, exe: Option<&Path>) -> DiagnosticCheck {
-    let covering: Vec<&FirewallRule> = rules.iter().filter(|r| covers(r, port, exe)).collect();
+#[cfg_attr(not(windows), allow(dead_code))]
+pub fn judge_firewall(
+    rules: &[FirewallRule],
+    port: u16,
+    exe: Option<&Path>,
+    active: &[String],
+) -> DiagnosticCheck {
+    let covering: Vec<&FirewallRule> = rules
+        .iter()
+        .filter(|r| covers(r, port, exe, active))
+        .collect();
     if let Some(block) = covering.iter().find(|r| !r.allow) {
         return DiagnosticCheck::fail(
             "firewall_rule",
@@ -274,14 +326,21 @@ pub fn judge_firewall(rules: &[FirewallRule], port: u16, exe: Option<&Path>) -> 
         ),
         None => DiagnosticCheck::fail(
             "firewall_rule",
-            format!("no enabled inbound rule allows UDP {port} for this app"),
-            Some(firewall_fix(port)),
+            if active.is_empty() {
+                format!("no enabled inbound rule allows UDP {port} for this app")
+            } else {
+                format!(
+                    "no enabled inbound rule allows UDP {port} for this app on the active network profile ({})",
+                    active.join(", ")
+                )
+            },
+            Some(firewall_fix(port, active)),
         ),
     }
 }
 
 #[cfg(windows)]
-async fn firewall_check(port: u16, exe: Option<&Path>) -> DiagnosticCheck {
+async fn firewall_check(port: u16, exe: Option<&Path>, active: &[String]) -> DiagnosticCheck {
     let cli = probe_args(
         "netsh",
         &[
@@ -296,15 +355,15 @@ async fn firewall_check(port: u16, exe: Option<&Path>) -> DiagnosticCheck {
     );
     match crate::engine::cli_process::capture_output(&cli, PROBE_TIMEOUT).await {
         Ok(out) => match parse_netsh_rules(&out.stdout) {
-            Ok(rules) => judge_firewall(&rules, port, exe),
-            Err(why) => could_not_read("firewall_rule", &why, Some(firewall_fix(port))),
+            Ok(rules) => judge_firewall(&rules, port, exe, active),
+            Err(why) => could_not_read("firewall_rule", &why, Some(firewall_fix(port, active))),
         },
-        Err(why) => could_not_read("firewall_rule", &why, Some(firewall_fix(port))),
+        Err(why) => could_not_read("firewall_rule", &why, Some(firewall_fix(port, active))),
     }
 }
 
 #[cfg(not(windows))]
-async fn firewall_check(_port: u16, _exe: Option<&Path>) -> DiagnosticCheck {
+async fn firewall_check(_port: u16, _exe: Option<&Path>, _active: &[String]) -> DiagnosticCheck {
     DiagnosticCheck::pass("firewall_rule", "not checked on this platform")
 }
 
@@ -315,6 +374,7 @@ async fn firewall_check(_port: u16, _exe: Option<&Path>) -> DiagnosticCheck {
 /// One `Get-NetConnectionProfile` row, as the probe prints it:
 /// `<InterfaceAlias>|<NetworkCategory>|<IPv4Connectivity>`.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(not(windows), allow(dead_code))]
 pub struct NetProfile {
     pub alias: String,
     pub category: String,
@@ -324,8 +384,10 @@ pub struct NetProfile {
 /// The PowerShell the probe runs. Enum values print as their invariant names
 /// (`Public`, `Private`, `DomainAuthenticated`; `Internet`, `LocalNetwork`),
 /// so this does not depend on the display language.
+#[cfg_attr(not(windows), allow(dead_code))]
 pub const PROFILE_PS: &str = "Get-NetConnectionProfile | ForEach-Object { '{0}|{1}|{2}' -f $_.InterfaceAlias, $_.NetworkCategory, $_.IPv4Connectivity }";
 
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn parse_profiles(text: &str) -> Vec<NetProfile> {
     text.lines()
         .filter_map(|line| {
@@ -345,15 +407,18 @@ pub fn parse_profiles(text: &str) -> Vec<NetProfile> {
 /// A network carries LAN traffic when its IPv4 side reaches the local network
 /// or beyond. An adapter with `NoTraffic` (a disconnected virtual switch) is
 /// listed but cannot block discovery.
+#[cfg_attr(not(windows), allow(dead_code))]
 fn carries_lan(p: &NetProfile) -> bool {
     p.ipv4.eq_ignore_ascii_case("localnetwork") || p.ipv4.eq_ignore_ascii_case("internet")
 }
 
+#[cfg_attr(not(windows), allow(dead_code))]
 fn is_private(p: &NetProfile) -> bool {
     p.category.eq_ignore_ascii_case("private")
         || p.category.eq_ignore_ascii_case("domainauthenticated")
 }
 
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn judge_profiles(profiles: &[NetProfile]) -> DiagnosticCheck {
     let listing = profiles
         .iter()
@@ -391,30 +456,61 @@ pub fn judge_profiles(profiles: &[NetProfile]) -> DiagnosticCheck {
     }
 }
 
+/// The netsh profile names (`Domain`, `Private`, `Public`) of the networks that
+/// carry LAN traffic; empty when none is known.
+#[cfg_attr(not(windows), allow(dead_code))]
+pub fn active_profile_names(profiles: &[NetProfile]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for p in profiles.iter().filter(|p| carries_lan(p)) {
+        let name = if p.category.eq_ignore_ascii_case("private") {
+            "Private"
+        } else if p.category.eq_ignore_ascii_case("public") {
+            "Public"
+        } else if p.category.eq_ignore_ascii_case("domainauthenticated") {
+            "Domain"
+        } else {
+            continue;
+        };
+        if !out.iter().any(|o| o == name) {
+            out.push(name.to_string());
+        }
+    }
+    out
+}
+
 #[cfg(windows)]
-async fn profile_check() -> DiagnosticCheck {
+async fn profile_check() -> (DiagnosticCheck, Vec<String>) {
     let cli = probe_args(
         "powershell.exe",
         &["-NoProfile", "-NonInteractive", "-Command", PROFILE_PS],
     );
     match crate::engine::cli_process::capture_output(&cli, PROBE_TIMEOUT).await {
-        Ok(out) if out.status.success() => judge_profiles(&parse_profiles(&out.stdout)),
-        Ok(out) => could_not_read(
-            "network_profile",
-            &format!(
-                "Get-NetConnectionProfile exited {}: {}",
-                out.status,
-                first_line(&out.stderr)
+        Ok(out) if out.status.success() => {
+            let profiles = parse_profiles(&out.stdout);
+            (judge_profiles(&profiles), active_profile_names(&profiles))
+        }
+        Ok(out) => (
+            could_not_read(
+                "network_profile",
+                &format!(
+                    "Get-NetConnectionProfile exited {}: {}",
+                    out.status,
+                    first_line(&out.stderr)
+                ),
+                None,
             ),
-            None,
+            Vec::new(),
         ),
-        Err(why) => could_not_read("network_profile", &why, None),
+        Err(why) => (could_not_read("network_profile", &why, None), Vec::new()),
     }
 }
 
 #[cfg(not(windows))]
-async fn profile_check() -> DiagnosticCheck {
-    DiagnosticCheck::pass("network_profile", "not checked on this platform")
+async fn profile_check() -> (DiagnosticCheck, Vec<String>) {
+    (
+        DiagnosticCheck::pass("network_profile", "not checked on this platform"),
+        Vec::new(),
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -509,7 +605,7 @@ Ok.
     fn a_port_rule_for_any_program_is_green() {
         let rules = parse_netsh_rules(NETSH).unwrap();
         let only_port: Vec<FirewallRule> = rules[..2].to_vec();
-        let c = judge_firewall(&only_port, 4242, Some(&exe()));
+        let c = judge_firewall(&only_port, 4242, Some(&exe()), &[]);
         assert!(c.ok, "{c:?}");
         assert!(c.detail.contains("Personas P2P"), "{c:?}");
         assert_eq!(c.fix, None);
@@ -517,7 +613,7 @@ Ok.
 
     #[test]
     fn a_block_rule_for_this_exe_wins_over_an_allow() {
-        let c = judge_firewall(&parse_netsh_rules(NETSH).unwrap(), 4242, Some(&exe()));
+        let c = judge_firewall(&parse_netsh_rules(NETSH).unwrap(), 4242, Some(&exe()), &[]);
         assert!(!c.ok, "{c:?}");
         assert!(c.detail.contains("BLOCK"), "{c:?}");
         assert_eq!(
@@ -530,9 +626,9 @@ Ok.
     fn another_programs_rule_and_another_port_do_not_count() {
         let rules = parse_netsh_rules(NETSH).unwrap();
         // sundial's rule is for sundial.exe only; Personas P2P names 4242.
-        let c = judge_firewall(&rules[..2], 4301, Some(&exe()));
+        let c = judge_firewall(&rules[..2], 4301, Some(&exe()), &[]);
         assert!(!c.ok, "{c:?}");
-        assert_eq!(c.fix, Some(firewall_fix(4301)));
+        assert_eq!(c.fix, Some(firewall_fix(4301, &[])));
         assert!(c
             .fix
             .as_deref()
@@ -544,7 +640,7 @@ Ok.
     fn a_disabled_rule_does_not_count() {
         let mut rules = parse_netsh_rules(NETSH).unwrap()[..2].to_vec();
         rules[1].enabled = false;
-        assert!(!judge_firewall(&rules, 4242, Some(&exe())).ok);
+        assert!(!judge_firewall(&rules, 4242, Some(&exe()), &[]).ok);
     }
 
     #[test]
@@ -557,8 +653,9 @@ Ok.
             local_port: "Any".into(),
             program: "c:/apps/personas/PERSONAS-DESKTOP.EXE".into(),
             allow: true,
+            profiles: Vec::new(),
         };
-        assert!(judge_firewall(&[rule], 4301, Some(&exe())).ok);
+        assert!(judge_firewall(&[rule], 4301, Some(&exe()), &[]).ok);
     }
 
     #[test]
@@ -610,6 +707,63 @@ Ok.
         assert!(c.ok, "{c:?}");
         assert!(c.detail.contains("Ethernet = Private"), "{c:?}");
         assert!(!judge_profiles(&[]).ok, "no network at all is not green");
+    }
+
+    fn allow_for(profiles: &[&str]) -> FirewallRule {
+        FirewallRule {
+            name: "Personas mesh".into(),
+            enabled: true,
+            inbound: true,
+            protocol: "UDP".into(),
+            local_port: "4242".into(),
+            program: "Any".into(),
+            allow: true,
+            profiles: profiles.iter().map(|p| p.to_string()).collect(),
+        }
+    }
+
+    #[test]
+    fn an_allow_for_another_profile_is_red_and_the_fix_names_the_active_one() {
+        let rules = [allow_for(&["Public"])];
+        let private = vec!["Private".to_string()];
+        let c = judge_firewall(&rules, 4242, Some(&exe()), &private);
+        assert!(!c.ok, "{c:?}");
+        assert!(
+            c.detail.contains("active network profile (Private)"),
+            "{c:?}"
+        );
+        assert!(c
+            .fix
+            .as_deref()
+            .unwrap()
+            .ends_with("localport=4242 profile=private"));
+        // The same rule is green while Public is the active profile.
+        let public = vec!["Public".to_string()];
+        assert!(judge_firewall(&rules, 4242, Some(&exe()), &public).ok);
+        // A multi-profile rule covers Private.
+        assert!(
+            judge_firewall(
+                &[allow_for(&["Domain", "Private"])],
+                4242,
+                Some(&exe()),
+                &private
+            )
+            .ok
+        );
+    }
+
+    #[test]
+    fn the_netsh_profiles_label_is_parsed_and_active_names_map_from_categories() {
+        let rules = parse_netsh_rules(NETSH).unwrap();
+        assert_eq!(rules[0].profiles, vec!["Private", "Public"]);
+        assert_eq!(rules[1].profiles, vec!["Domain", "Private", "Public"]);
+        let active = active_profile_names(&parse_profiles(
+            "Wi-Fi|Private|Internet
+Corp|DomainAuthenticated|LocalNetwork
+vEth|Public|NoTraffic
+",
+        ));
+        assert_eq!(active, vec!["Private", "Domain"]);
     }
 
     #[test]

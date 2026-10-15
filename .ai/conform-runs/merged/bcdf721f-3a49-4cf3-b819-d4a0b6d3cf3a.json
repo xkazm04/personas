@@ -1,0 +1,68 @@
+{
+  "schema": "conform-run/1",
+  "worker": "bcdf721f-3a49-4cf3-b819-d4a0b6d3cf3a",
+  "subject": "conversation-orchestration",
+  "evaluatedAt": "2026-10-14T09:31:35.357Z",
+  "pairs": [
+    {
+      "context": "d77a22ee-23cb-42f3-a910-590f8622977f",
+      "subject": "conversation-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/athenaStore.ts:1385 resetStreamingNarration clears the live trail with no promotion (its own doc at :612 says \"without promoting (error/interrupt)\"), and it is the only narration action on the error path (src/features/companions/athena/chat/athenaChatStream.ts:180) and the payload-less finished path (:144), so a failed or interrupted turn keeps no account of what it got through; the technique now names exactly this no-reply terminal path.",
+      "evaluatedAgainst": "sha256-b2:f3ecee1630629b34",
+      "evaluatedRevision": 6,
+      "techniques": [
+        {
+          "technique": "narration-promote-on-finish",
+          "verdict": "deviation: success path promotes via attachNarrationToEpisode (athenaChatStream.ts:140) but error/no-payload paths drop the trail; no failed-turn record carrying it",
+          "evidence": "src/features/companions/athena/chat/athenaChatStream.ts:180 error branch calls only resetStreamingNarration"
+        }
+      ]
+    },
+    {
+      "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "subject": "conversation-orchestration",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evidence": "tests/playwright/athena-guided-walkthrough.spec.ts:90 (glow tracks anchor) and :99 (stop clears) still hold for show-dont-tell-walkthrough, and tests/playwright/companion-stream-phase.spec.ts:53 pins the Thinking fallback, but that is 2 of 8 techniques; below the evidence floor and this is a test-only context, so the prior conformant is withdrawn to unknown.",
+      "evaluatedAgainst": "sha256-b2:f3ecee1630629b34",
+      "evaluatedRevision": 6,
+      "techniques": [
+        {
+          "technique": "show-dont-tell-walkthrough",
+          "verdict": "realized as exercised by e2e",
+          "evidence": "tests/playwright/athena-guided-walkthrough.spec.ts:90 glow rect tracks live anchor"
+        },
+        {
+          "technique": "progress-beat-grammar",
+          "verdict": "partial: honest placeholder pinned, beat grammar not asserted",
+          "evidence": "tests/playwright/companion-stream-phase.spec.ts:53 no Connecting leak"
+        }
+      ],
+      "registryProposal": "Test-only contexts (playwright specs) pair with conversation-orchestration at strong confidence but can only witness 2-3 of its 8 techniques; consider whether the matcher should treat test-category contexts as weak for implementation subjects."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "conversation-orchestration",
+      "context": "all 12 other pairs",
+      "reason": "all are probable-confidence unknowns (or already current verdicts); the brief asks for strong unknowns only and none exist"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-14T09:31:35.357Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "conversation-orchestration"
+      ],
+      "techniques": [
+        "narration-promote-on-finish",
+        "show-dont-tell-walkthrough",
+        "progress-beat-grammar"
+      ],
+      "deviations": 1
+    }
+  ]
+}

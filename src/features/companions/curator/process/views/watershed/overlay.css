@@ -1,0 +1,63 @@
+/* The Watershed's chrome over the map: cartouche, scale statement, compass and the station
+   plates. Sizes are the app's type steps times --u (the stage scale). */
+
+.ws-cartouche {
+  position: absolute; left: calc(20px * var(--u)); top: calc(10px * var(--u)); padding: 6px 14px 6px 12px; pointer-events: none;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--background) 70%, transparent), transparent);
+}
+.ws-cart-title { font-size: calc(var(--ws-fs) * var(--u) * 1.15); font-weight: 700; letter-spacing: 0.26em; text-transform: uppercase; color: var(--foreground); white-space: nowrap; }
+.ws-cart-sub, .ws-scale-txt { font-size: calc(var(--ws-fs) * var(--u)); color: var(--muted-foreground); white-space: nowrap; font-variant-numeric: tabular-nums; line-height: 1.35; }
+.ws-scale { position: absolute; top: calc(12px * var(--u)); display: flex; align-items: center; gap: 12px; pointer-events: none; }
+.ws-scale-glyph { width: 14px; border: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); border-left: 0; border-radius: 0 3px 3px 0; }
+.ws-scale-txt b { color: var(--foreground); font-weight: 600; }
+.ws-compass { position: absolute; top: calc(8px * var(--u)); right: calc(14px * var(--u)); width: calc(56px * var(--u)); height: calc(56px * var(--u)); pointer-events: none; color: var(--muted-foreground); }
+.ws-compass-n { fill: var(--accent); }
+.ws-compass-t { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
+.ws-note { position: absolute; font-size: var(--ws-fs); color: var(--muted-foreground); pointer-events: none; white-space: nowrap; }
+.ws-skip, .ws-keys {
+  position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); font-size: var(--ws-fs); color: var(--muted-foreground); padding: 4px 12px;
+  border-radius: var(--radius-pill); background: color-mix(in srgb, var(--background) 70%, transparent); border: 1px solid var(--card-border); pointer-events: none;
+}
+
+/* The keys are said where they are needed: while a plate holds keyboard focus. */
+.ws-keys { opacity: 0; transition: opacity 200ms ease; z-index: 5; }
+.ws-overlay:has(.ws-plate:focus-visible) .ws-keys { opacity: 1; }
+
+/* -- plates: the station figures, at reading size, one per settlement -------- */
+.ws-plate.ws-plate {
+  position: absolute; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 2px; text-align: left;
+  padding: calc(10px * var(--u)) calc(12px * var(--u)) calc(9px * var(--u)); color: var(--foreground); font-weight: 400;
+  border: 1px solid color-mix(in srgb, var(--foreground) 9%, transparent); border-top: 2px solid color-mix(in srgb, var(--foreground) 30%, transparent);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--secondary) 55%, transparent), color-mix(in srgb, var(--background) 55%, transparent));
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease, background 220ms ease, opacity 360ms ease;
+}
+.ws-plate.ws-plate.is-hot { border-top-color: color-mix(in srgb, var(--status-error) 80%, transparent); }
+.ws-plate.ws-plate:hover, .ws-plate.ws-plate[data-on] {
+  transform: translateY(-4px); border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: var(--shadow-elevation-3), 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 16%, var(--secondary)), color-mix(in srgb, var(--background) 75%, transparent));
+}
+.ws-root.is-deep .ws-plate.ws-plate { opacity: 0; pointer-events: none; transform: translateY(8px); }
+.ws-p-name { font-size: calc(var(--type-4) * var(--type-f) * var(--u)); line-height: 1.15; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ws-plate.is-hot .ws-p-name { color: color-mix(in srgb, var(--status-error) 85%, var(--foreground)); }
+.ws-p-pill {
+  position: absolute; top: calc(var(--ws-fs) * var(--u) * -0.8); right: 10px; padding: 0 9px; border-radius: var(--radius-pill); font-size: calc(var(--ws-fs) * var(--u)); line-height: 1.45; white-space: nowrap;
+  background: color-mix(in srgb, var(--status-error) 22%, var(--background)); color: var(--status-error); border: 1px solid color-mix(in srgb, var(--status-error) 45%, transparent);
+}
+.ws-p-reach { display: flex; align-items: baseline; gap: 10px; white-space: nowrap; }
+.ws-p-big { font-size: calc(var(--type-5) * var(--type-f) * var(--u)); font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.ws-p-k, .ws-p-cmp { font-size: calc(var(--ws-fs) * var(--u)); color: var(--muted-foreground); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ws-p-line { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: center; gap: 8px; font-size: calc(var(--ws-fs) * var(--u)); line-height: 1.45; font-variant-numeric: tabular-nums; }
+.ws-p-line .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ws-p-line b { font-weight: 600; }
+.ws-p-line.is-red b { color: var(--status-error); }
+.ws-p-line.is-amb b { color: var(--status-warning); }
+.ws-p-line.is-none { color: var(--muted-foreground); }
+.ws-g-marsh { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--status-error); background: repeating-linear-gradient(135deg, var(--status-error) 0 2px, transparent 2px 4px); }
+.ws-g-rapid { width: 12px; height: 12px; border-radius: 2px; background: repeating-linear-gradient(90deg, var(--status-warning) 0 2px, transparent 2px 4px); }
+.ws-g-none { width: 12px; height: 2px; background: var(--muted); }
+@media (prefers-reduced-motion: reduce) {
+  .ws-plate.ws-plate:hover, .ws-plate.ws-plate[data-on] { transform: none; }
+}

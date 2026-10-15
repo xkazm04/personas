@@ -12,7 +12,7 @@
  * a spinner, never an empty band before the read lands), the shared empty band
  * when the chip answered with nothing, and an error with retry when it failed.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 
@@ -26,10 +26,14 @@ import type { ChipCount, DecisionChip, DecisionItem } from '../../model/decision
 import { chipLabel } from '../chipMeta';
 import { usePeekKeyboard } from '../usePeekKeyboard';
 import { PeekRow } from './PeekRow';
-import { PeekShell } from './PeekShell';
+import { PeekShell, type PeekIdentity } from './PeekShell';
 
 export interface PeekProps {
-  chip: DecisionChip;
+  /** The chip it lists; null when `identity` names it (a mandate lane). */
+  chip: DecisionChip | null;
+  identity?: PeekIdentity;
+  /** Extra footer key hints (the lane peek prints its 1-4 / O keys). */
+  footer?: ReactNode;
   items: readonly DecisionItem[];
   lamp: ChipCount['lamp'];
   /** The chip's items have been read at least once. */
@@ -51,13 +55,13 @@ export interface PeekProps {
 }
 
 export function Peek({
-  chip, items, lamp, ready, failed, lead, anchor, keyboard, initialFocusId,
+  chip, identity, footer, items, lamp, ready, failed, lead, anchor, keyboard, initialFocusId,
   onRetry, onDecide, onOpen, onWalk, onClose,
 }: PeekProps) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
   const still = useReducedMotion();
-  const label = chipLabel(m, chip);
+  const label = identity?.label ?? (chip ? chipLabel(m, chip) : '');
   const rowEls = useRef<Record<string, HTMLDivElement | null>>({});
   const [leaveDir, setLeaveDir] = useState(1);
 
@@ -101,7 +105,7 @@ export function Peek({
   );
 
   return (
-    <PeekShell chip={chip} lamp={lamp} count={ready ? items.length : null} anchor={anchor} actions={actions} onClose={onClose}>
+    <PeekShell chip={chip} identity={identity} footer={footer} lamp={lamp} count={ready ? items.length : null} anchor={anchor} actions={actions} onClose={onClose}>
       <div className="flex min-h-0 flex-col gap-1 overflow-y-auto px-2 pb-2" data-testid="decision-peek-list">
         {failed && (
           <div className="px-1 pb-1">

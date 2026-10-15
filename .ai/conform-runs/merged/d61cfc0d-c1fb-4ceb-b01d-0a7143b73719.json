@@ -1,0 +1,154 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d61cfc0d-c1fb-4ceb-b01d-0a7143b73719",
+ "subject": "cost-metering",
+ "evaluatedAt": "2026-10-14T09:32:18Z",
+ "pairs": [
+  {
+   "context": "2fb16136-586e-478d-823f-38434d2d5b9a",
+   "subject": "cost-metering",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:190 the periodStartUtc returned beside the totals is computed by a second boundary function (chrono, :219), not by the SQLite datetime('now','start of month') the rows were actually filtered with (src-tauri/db/src/repos/execution/executions.rs:2346), and no period end is returned; :27 spend is a bare f64 from SUM over a nullable cost_usd (src-tauri/db/src/migrations/schema.rs:123) COALESCEd to 0.0 (:192), so an unpriced month renders as $0 beside max_budget_usd with no unpriced count (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+   "techniques": []
+  },
+  {
+   "context": "468953eb-0204-4013-b366-9357b2161138",
+   "subject": "cost-metering",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/core/src/types.rs:407 ExecutionResult.cost_usd (and ExecutionMetrics.cost_usd :526) is a non-optional f64 mid-pipeline, so a run killed before its result line persists as Some(0.0) (src-tauri/src/engine/execution.rs:2394) - unknown spelled as free, and the run-budget record API (src-tauri/core/src/run_budget.rs:188) likewise takes f64, so spawns of unknown cost can approach a ceiling but never cross it (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+   "techniques": []
+  },
+  {
+   "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+   "subject": "cost-metering",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/llm_spend.rs:85 the headless ledger's only row constructor is a parse of the stream's `result` event, so a killed or timed-out spawn writes no row (no failed-leg writer like turn_ledger's), and :30 swallows a failed insert with an uncounted warn; the curator daily cap sums this ledger (:135), so failed spend and dropped writes are invisible to it (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+   "techniques": []
+  },
+  {
+   "context": "320d2cea-9761-4233-97c1-ee2eaf4d6c17",
+   "subject": "cost-metering",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/execution/executions.rs:2359 SUMs cost_usd under COALESCE(..,0.0), so unpriced rows (kept None by coerce_f64 :210, mapper :294) vanish from the month figure the gate enforces, and get_monthly_spend (:2348) returns a bare f64 with no period window or floor flag; unattended consumers swallow a ledger error as $0 (src-tauri/src/engine/background/scheduler.rs:889, src-tauri/src/engine/execution.rs:3021 unwrap_or(0.0)) - undeclared, uncounted fail-open on unattended paths. Realized: one MONTHLY_SPEND_PREDICATE (:2346) counting failed/cancelled rows (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+   "techniques": []
+  },
+  {
+   "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+   "subject": "cost-metering",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/engine/src/http_engine/config.rs:44 cost_of prices every model outside two Qwen SKUs (:33) at $0.0, the test at :149 pins that zero, and src-tauri/engine/src/http_engine/openai.rs:232 repeats the zero branch inline - a newer remote model is free under every ceiling, and a second price authority beside src-tauri/engine/src/cost.rs:34 with the opposite unknown-model policy (re-anchored: 9708af6d23 moved http_engine out of src-tauri/src/engine; defect unchanged) (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+   "techniques": []
+  },
+  {
+   "context": "a7ece012-8300-4780-b286-b9cea81801fc",
+   "subject": "cost-metering",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/core/src/models/llm_spend.rs:49 LlmSpendTotals.cost_usd is a non-optional f64 and the struct (:46) carries no unpriced-row count, so rows whose cost_usd was NULL (LlmSpendInsert keeps it Option) sum as $0 instead of a floor; cache_creation_tokens is stored per row but absent from the rollup (:46), and the dashboard echoes only window_days (:89), not period start/end, so consumers re-derive the window (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+   "techniques": []
+  },
+  {
+   "context": "e8fa2ff7-145d-4c58-af83-1239b87d2c24",
+   "subject": "cost-metering",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:108 renders the total as a bare number with no window or unpriced/floor caveat, :110 sums only input+output tokens (cache classes dropped), the errors tile (:111) counts calls not failed-call spend, by_trigger is cut to 8 (:50) with no remainder so slices do not reach the total, by_model is returned but never rendered anywhere in sub_activity, and there is no outlier or row drill-down: spend-observability's reading order stops below the total (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+   "techniques": []
+  },
+  {
+   "context": "66bc7a14-bf15-41d7-8d9a-900aa670f47e",
+   "subject": "cost-metering",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:134 the context's only cost is a user-maintained flat monthly service list (no units, rates, ledger or metered call); its dispatches hand paid work to a Fleet session (src/features/teams/sub_factory/passport/actionConfirmCatalog.ts:94), whose context owns that spend (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+   "techniques": []
+  },
+  {
+   "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+   "subject": "cost-metering",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/infrastructure/idea_scanner.rs:909 books spend only by observe_line on the stream's `result` line inside the 1200s timeout (:895); the timeout branch (:1071) kills the child and writes no ledger row, so failed-call spend is invisible; the observe_line shape is hand-repeated at 20 call sites across 14 files (e.g. kpi_scan.rs:846, standards_scan.rs:334) with no chokepoint, a dropped write only warns uncounted (src-tauri/db/src/repos/llm_spend.rs:30), and the dashboard command returns no unpriced share or period window (src-tauri/src/commands/infrastructure/llm_spend.rs:20) (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+   "techniques": []
+  },
+  {
+   "context": "532bbf10-3fd3-4b57-a8ea-95a957645697",
+   "subject": "cost-metering",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/stores/slices/overview/personaHealthSlice.ts:273 keeps only MonthlySpendResult.items and discards its periodStartUtc, then :435 derives a burn rate over active days of a rolling 30-day chart and :440 projects exhaustion of the UTC-calendar-month ceiling with no reset - per-consumer period math whose projectedExhaustionDays drives a health charge (src/stores/slices/agents/healthCheckSlice.ts:111) (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+   "techniques": []
+  },
+  {
+   "context": "6a81750d-fdbf-4518-bae6-689303e1a884",
+   "subject": "cost-metering",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "added by /conform: the matcher scored this context at zero although it holds the price table. src-tauri/engine/src/cost.rs:34 prices an unknown model at Sonnet-class 3.0/15.0 (:58), below the table's own Opus (15/75) and gpt-4 rows, uncounted and unmarked on the estimate, and families resolve by substring contains (:17) with no verified-on date: price-tables requires an unknown model to default at or above the most expensive known family and to count the hit; the preflight constants (:11 3.8 chars/token, :116 0.4x output) carry no measurement behind them (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+   "techniques": []
+  }
+ ],
+ "declined": [
+  {
+   "subject": "cost-metering",
+   "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14",
+   "reason": "strong/probable unknown left unread; stale re-checks used the run's budget"
+  },
+  {
+   "subject": "cost-metering",
+   "context": "208f50de-5d3b-4345-9fed-1c106a7a36e9",
+   "reason": "strong/probable unknown left unread; stale re-checks used the run's budget"
+  },
+  {
+   "subject": "cost-metering",
+   "context": "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b",
+   "reason": "strong/probable unknown left unread; stale re-checks used the run's budget"
+  },
+  {
+   "subject": "cost-metering",
+   "context": "4810daf8-0549-4899-95d2-99c81cde6455",
+   "reason": "strong/probable unknown left unread; stale re-checks used the run's budget"
+  },
+  {
+   "subject": "cost-metering",
+   "context": "7901fd6c-0346-430b-aefe-fc4cd623b167",
+   "reason": "strong/probable unknown left unread; stale re-checks used the run's budget"
+  },
+  {
+   "subject": "cost-metering",
+   "context": "5ab49df3-3442-4ea6-a405-077dec64850d",
+   "reason": "strong/probable unknown left unread; stale re-checks used the run's budget"
+  },
+  {
+   "subject": "cost-metering",
+   "context": "2dcda6bf-9982-422b-b63f-1481c414cdab",
+   "reason": "strong/probable unknown left unread; stale re-checks used the run's budget"
+  },
+  {
+   "subject": "cost-metering",
+   "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+   "reason": "strong/probable unknown left unread; stale re-checks used the run's budget"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-14T09:32:18Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "cost-metering"
+   ],
+   "techniques": [
+    "price-tables",
+    "usage-ledgers",
+    "spend-observability",
+    "preflight-estimation"
+   ],
+   "deviations": 10
+  }
+ ]
+}

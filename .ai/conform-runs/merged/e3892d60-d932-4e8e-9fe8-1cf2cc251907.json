@@ -1,0 +1,67 @@
+{
+ "schema": "conform-run/1",
+ "worker": "e3892d60-d932-4e8e-9fe8-1cf2cc251907",
+ "subject": "browser-credential-boundary",
+ "evaluatedAt": "2026-10-14T07:51:38Z",
+ "pairs": [
+  {
+   "context": "1092db16-982f-4d99-b71b-14e6cf704a4f",
+   "subject": "browser-credential-boundary",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 token_endpoint_request POSTs client_secret via crate::SHARED_HTTP to a caller/discovery-supplied token URL (oauth.rs:1323 validates domain by string only); SSRF_SAFE_HTTP (src-tauri/core/src/http_clients.rs:27) exists and is unused here - re-verified 2026-10-14, oauth.rs unchanged since 2026-09-16",
+   "techniques": [
+    {
+     "technique": "outbound-fetch-destination-validation",
+     "verdict": "not realized: credential-bearing POST to data-borne address on the default client",
+     "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 SHARED_HTTP; src-tauri/core/src/http_clients.rs:27 safe client unused"
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "browser-credential-boundary",
+   "context": "cf38b51d-aebb-4b36-bb8e-68a494a3662f",
+   "reason": "api-vault: verdict already recorded against current digest sha256-b2:d3eef10e9ed8459f rev 3 (judged 2026-10-06/10), not stale; no new information to re-judge"
+  },
+  {
+   "subject": "browser-credential-boundary",
+   "context": "cbb061cf-5c61-49d4-80d8-98b8f9b40600",
+   "reason": "browser-webview-control: verdict already recorded against current digest sha256-b2:d3eef10e9ed8459f rev 3 (judged 2026-10-06/10), not stale; no new information to re-judge"
+  },
+  {
+   "subject": "browser-credential-boundary",
+   "context": "e61f931c-25d7-4532-9ec7-ab6f3fc377e2",
+   "reason": "lib-credentials: verdict already recorded against current digest sha256-b2:d3eef10e9ed8459f rev 3 (judged 2026-10-06/10), not stale; no new information to re-judge"
+  },
+  {
+   "subject": "browser-credential-boundary",
+   "context": "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b",
+   "reason": "site-whitelist-management: verdict already recorded against current digest sha256-b2:d3eef10e9ed8459f rev 3 (judged 2026-10-06/10), not stale; no new information to re-judge"
+  },
+  {
+   "subject": "browser-credential-boundary",
+   "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7",
+   "reason": "vault-credentials-components-features: verdict already recorded against current digest sha256-b2:d3eef10e9ed8459f rev 3 (judged 2026-10-06/10), not stale; no new information to re-judge"
+  },
+  {
+   "subject": "browser-credential-boundary",
+   "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+   "reason": "vault-databases-tabs: verdict already recorded against current digest sha256-b2:d3eef10e9ed8459f rev 3 (judged 2026-10-06/10), not stale; no new information to re-judge"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-14T07:51:38Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "browser-credential-boundary"
+   ],
+   "techniques": [
+    "outbound-fetch-destination-validation"
+   ],
+   "deviations": 1
+  }
+ ]
+}

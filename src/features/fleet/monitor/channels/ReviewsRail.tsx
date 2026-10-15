@@ -27,7 +27,12 @@ import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
 
 const POLL_MS = 30_000;
 
-export function ReviewsRail({ members }: { members: ChannelMember[] }) {
+export function ReviewsRail({ members, onCount }: {
+  members: ChannelMember[];
+  /** What the rail's tab lamp reads: how many held steps wait on the operator,
+   *  `null` while unread or unreadable (a failed read never lights, never says 0). */
+  onCount?: (count: number | null) => void;
+}) {
   const { t } = useTranslation();
   const personaIndex = usePersonaIndex();
   const [reviews, setReviews] = useState<ManualReviewItem[]>([]);
@@ -94,6 +99,10 @@ export function ReviewsRail({ members }: { members: ChannelMember[] }) {
     return () => clearInterval(t);
   }, [refresh]);
 
+  useEffect(() => {
+    onCount?.(loading || error ? null : reviews.length);
+  }, [onCount, loading, error, reviews.length]);
+
   const act = async (id: string, status: ManualReviewStatus, notes?: string) => {
     setBusy(true);
     try {
@@ -128,17 +137,12 @@ export function ReviewsRail({ members }: { members: ChannelMember[] }) {
       {reviews.length === 0 && loading && !error ? (
         <div className="space-y-2" aria-busy="true" aria-label={t.monitor.reviews_loading}>
           {Array.from({ length: 2 }).map((_, i) => (
-            <div
-              key={i}
-              aria-hidden
-              className="rounded-card bg-secondary/20 h-16 animate-fade-in"
-              style={{ animationDelay: '150ms' }}
-            />
+            <div key={i} aria-hidden className="ae-ghost rounded-card h-16" />
           ))}
         </div>
       ) : null}
       {reviews.length === 0 && !loading && !error ? (
-        <p className="typo-caption text-foreground opacity-45 p-2">{t.monitor.reviews_empty}</p>
+        <p className="ae-well rounded-card px-3 py-5 text-center typo-body">{t.monitor.reviews_empty}</p>
       ) : null}
       {reviews.map((r) => (
         <QuickAnswerReviewCard key={r.id} review={r} busy={busy} onAction={act} />

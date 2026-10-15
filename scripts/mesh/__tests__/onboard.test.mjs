@@ -138,6 +138,20 @@ test('a peer that never appears: discover times out with the diagnostics fix; a 
   assert.match(r.json.aborted.detail, /never joined/);
 });
 
+test('multicast blocked: discover --address dials the named LAN address and finds the hidden peer', async (t) => {
+  const [a, b] = await stubPair();
+  t.after(() => Promise.all([a.stop(), b.stop()]));
+  b.hidden = true;
+  b.address = '10.0.0.141:4242';
+  const none = await cli(a, ['discover', '--timeout', '1']);
+  assert.equal(none.code, 4, 'mDNS alone cannot see it');
+  assert.match(none.json.fix, /--address/);
+  const d = await cli(a, ['discover', '--timeout', '5', '--address', '10.0.0.141:4242']);
+  assert.equal(d.code, 0, JSON.stringify(d.json));
+  assert.equal(d.json.peerId, b.peerId);
+  assert.equal(d.json.connected, true);
+});
+
 test('preflight red: a blocking check stops with its exact fix', async (t) => {
   const a = await new StubDoor({ projects: [] }).start();
   t.after(() => a.stop());

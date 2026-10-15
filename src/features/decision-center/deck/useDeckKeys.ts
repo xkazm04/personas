@@ -1,10 +1,16 @@
 /**
  * The deck's keyboard grammar (decided; implemented exactly):
- *   ←/→ (also K/J) walk · ↑/↓ scroll the body · A accept · R reject (arm;
- *   Enter or R confirms; a reason may follow) · S skip · D done (reports,
- *   chat) · Space focus the composer · 1-9 branches (or reason options while
- *   a prompt is open) · Shift+1-5 rate a report · ? toggles the key map ·
- *   Esc steps back (closing the key map first).
+ *   ←/→ (also K/J) walk · ↑/↓ scroll the body · A accept (a council verdict
+ *   or an irreversible item ARMS first; A again or Enter confirms) · R reject
+ *   (arm; Enter or R confirms; a reason may follow) · S skip · D done
+ *   (reports, chat) · Space focus the composer · 1-9 branches (or reason
+ *   options while a prompt is open) · Shift+1-5 rate a report · I opens or
+ *   closes every folded body section · ? toggles the key map · Esc steps
+ *   back (closing the key map first).
+ *
+ * A lane-shaped card (`shapes/useShapeController`) takes its own keys
+ * first: E / X on a Sign card, 1-3 on a Breach card, 1-3 / V / N on a claim;
+ * its branches then start at 4. Shift+digit stays the report rating.
  *
  * Escape is DeckModal's (one owner): it consumes the press, first asks the
  * deck to disarm an armed verdict or close a reason prompt, and only a press
@@ -18,7 +24,14 @@ import { DECK_PRIORITY, digitOf, focusComposer, isTypingTarget, plain } from './
 
 const SCROLL_STEP = 120;
 
-export function useDeckKeys(deck: DeckController, act: DeckActions, opts: { enabled: boolean; onRate: (n: number) => void; onKeys: () => void }) {
+export function useDeckKeys(deck: DeckController, act: DeckActions, opts: {
+  enabled: boolean;
+  onRate: (n: number) => void;
+  onKeys: () => void;
+  onFold: () => void;
+  /** The shape's own keys; true when it took the press. */
+  onShapeKey?: (e: KeyboardEvent, digit: number | null) => boolean;
+}) {
   useAppKeyboard((e) => {
     // Escape belongs to DeckModal, which asks the deck to disarm first (escapeGuard).
     if (e.key === 'Escape') return false;
@@ -33,6 +46,11 @@ export function useDeckKeys(deck: DeckController, act: DeckActions, opts: { enab
       }
       if (e.key === 'Enter' && deck.item.kind !== 'council') { act.submitReason(undefined); e.preventDefault(); return true; }
       return false;
+    }
+
+    if (opts.onShapeKey && !(digit && e.shiftKey) && opts.onShapeKey(e, digit)) {
+      e.preventDefault();
+      return true;
     }
 
     if (digit) {
@@ -55,6 +73,7 @@ export function useDeckKeys(deck: DeckController, act: DeckActions, opts: { enab
       case 'a': case 'A': act.accept(); break;
       case 'r': case 'R': act.reject(); break;
       case 's': case 'S': act.skip(); break;
+      case 'i': case 'I': opts.onFold(); break;
       case 'd': case 'D':
         if (act.type !== 'report' && act.type !== 'chat') return false;
         if (deck.item.kind === 'council') return false;

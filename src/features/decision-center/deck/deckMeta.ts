@@ -17,6 +17,7 @@ import {
   Landmark,
   Lightbulb,
   MessagesSquare,
+  ScrollText,
   ShieldCheck,
   Siren,
   SlidersHorizontal,
@@ -46,6 +47,7 @@ export const KIND_ICON: Record<DecisionKind, LucideIcon> = {
   council: Landmark,
   report: FileText,
   message: MessagesSquare,
+  mandate: ScrollText,
 };
 
 /** Aurora tone suffix (`au-t-*` / `au-l-*` in aurora.css). */
@@ -106,6 +108,7 @@ export function kindLabel(m: MonitorCopy, kind: DecisionKind): string {
     case 'council': return m.dc_deck_kind_council;
     case 'report': return m.dc_deck_kind_report;
     case 'message': return m.dc_deck_kind_message;
+    case 'mandate': return m.ml_mandate;
   }
 }
 
@@ -133,6 +136,7 @@ function yesOfKind(m: MonitorCopy, kind: DecisionKind): string {
     case 'council': return m.dc_deck_yes_council;
     case 'report': return m.dc_deck_yes_report;
     case 'message': return m.dc_deck_yes_chat;
+    case 'mandate': return m.ml_sign_yes;
   }
 }
 

@@ -7,8 +7,9 @@
  * roster switched off while the deck is shut.
  *
  * While open it reads the ONE roster (`useDecisionRoster`), loading only what
- * the request's scope deals: its chip, every chip (`all`), or nothing at all
- * for a `single` item the caller already holds. Verdicts go out through
+ * the request's scope deals: its chip, every chip (`all`), the chips a lane's
+ * kinds come from (`lane`, joined on the shared lanes snapshot), or nothing at
+ * all for a `single` item the caller already holds. Verdicts go out through
  * `writeDeckVerdict` -> `roster.decide`; a write that did not land toasts and
  * rejects (the roster restores the card, the deck walks back to it), and a
  * row someone else decided first toasts "decided elsewhere" and stays gone.
@@ -28,10 +29,22 @@ import type { DeckVerdict } from './deckTypes';
 import { ReplyRouteError, writeDeckVerdict, type DeckWriteDoors } from './deckWrites';
 import { DeckModal, type DeckSessionSpec } from './DeckModal';
 import { useDeckHosts } from './useDeckHosts';
+import { chipsForLane, indexLanes } from '../lanes/laneModel';
+import { laneLabel } from '../lanes/laneMeta';
+import type { DecisionLanesSnapshot } from '@/lib/bindings/DecisionLanesSnapshot';
+import { useLanesSnapshot } from '../lanes/useLanesSnapshot';
+import { isMandateWrite } from '../mandate/mandateWrites';
+import { useMandateDeck } from '../mandate/useMandateDeck';
+import { DeckLaneContext, type DeckLaneData } from './shapes/DeckLaneContext';
+import { withLaneIrreversible } from './shapes/cardShape';
 
-function loadOf(request: DeckRequest | null): readonly DecisionChip[] | 'all' | undefined {
+function loadOf(
+  request: DeckRequest | null,
+  snapshot: DecisionLanesSnapshot | null,
+): readonly DecisionChip[] | 'all' | undefined {
   const scope = request?.scope;
   if (scope?.kind === 'chip') return [scope.chip];
+  if (scope?.kind === 'lane') return chipsForLane(scope.lane, snapshot);
   if (scope?.kind === 'all') return 'all';
   return undefined;
 }
@@ -40,8 +53,21 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
   const { t } = useTranslation();
   const m = t.monitor;
   const { hosts, followUp } = useDeckHosts();
-  const roster = useDecisionRoster({ load: loadOf(request), enabled: !!request, hosts });
+  const laneScope = request?.scope.kind === 'lane';
+  const lanesState = useLanesSnapshot(laneScope);
+  const roster = useDecisionRoster({ load: loadOf(request, lanesState.snapshot), enabled: !!request, hosts });
+  const lanes = useMemo(() => indexLanes(lanesState.snapshot), [lanesState.snapshot]);
+  const mandateDeck = useMandateDeck(laneScope, lanesState.snapshot);
+  const items = useMemo(
+    () => (laneScope ? withLaneIrreversible([...roster.items, ...mandateDeck.items], lanes) : roster.items),
+    [laneScope, roster.items, mandateDeck.items, lanes],
+  );
+  const laneData = useMemo<DeckLaneData>(
+    () => ({ lanes, mandates: mandateDeck.mandates, charters: mandateDeck.charters }),
+    [lanes, mandateDeck.mandates, mandateDeck.charters],
+  );
   const { decide } = roster;
+  const { write: writeMandate } = mandateDeck;
   const sendTeamReply = usePipelineStore((s) => s.sendChannelDirective);
   const sendPersonaReply = usePipelineStore((s) => s.sendPersonaChannelMessage);
 
@@ -55,6 +81,16 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
   const onDecide = useCallback(async (v: DeckVerdict) => {
     if (v.item.kind === 'report' && v.branchId === 'chat') {
       followUp.current = { item: v.item, linkedReviews: v.linkedReviews ?? [] };
+    }
+    // A Sign card, or a Breach card's amend / suspend, writes to the mandate.
+    if (isMandateWrite(v)) {
+      try {
+        await writeMandate(v);
+      } catch (err) {
+        toastCatch('decision-deck:mandate', m.ml_write_failed)(err);
+        throw err;
+      }
+      return;
     }
     try {
       await writeDeckVerdict(v, doors);
@@ -72,7 +108,7 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
       else toastCatch('decision-deck:decide')(err);
       throw err;
     }
-  }, [doors, decidedElsewhere, replyFailed, followUp]);
+  }, [doors, decidedElsewhere, replyFailed, followUp, writeMandate, m]);
 
   const onOpenLink = useCallback((item: DecisionItem, linkId: string) => {
     if (!item.links?.some((l) => l.id === linkId)) return;
@@ -85,7 +121,9 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
     const { scope } = request;
     const scopeLabel = scope.kind === 'all'
       ? m.dc_deck_scope_all
-      : chipLabel(m, scope.kind === 'chip' ? scope.chip : chipOf(scope.item.kind));
+      : scope.kind === 'lane'
+        ? laneLabel(m, scope.lane)
+        : chipLabel(m, scope.kind === 'chip' ? scope.chip : chipOf(scope.item.kind));
     return {
       key: session,
       scope,
@@ -97,14 +135,19 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
   }, [request, session, m]);
 
   return (
+    <DeckLaneContext.Provider value={laneData}>
     <DeckModal
       session={spec}
-      items={roster.items}
+      items={items}
       loading={roster.loading}
+      counts={roster.counts}
+      lanes={lanes}
+      laneCounts={roster.lanes}
       onDecide={onDecide}
       onBack={closeDecisionDeck}
       onOpenLink={onOpenLink}
     />
+    </DeckLaneContext.Provider>
   );
 }
 

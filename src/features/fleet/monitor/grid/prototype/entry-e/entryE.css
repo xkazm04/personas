@@ -23,6 +23,8 @@
 .ae-t-info { --ae-tone: var(--status-info); }
 .ae-t-ok { --ae-tone: var(--status-success); }
 .ae-t-off { --ae-tone: color-mix(in srgb, var(--foreground) 45%, transparent); }
+/* Improvement dialogue (a deliberation band in Conversations): the agent role hue. */
+.ae-t-agent { --ae-tone: var(--role-agent); }
 
 /* ── Plate ─────────────────────────────────────────────────────────────── */
 .ae-plate {

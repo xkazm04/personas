@@ -1,0 +1,31 @@
+{
+ "schema": "conform-run/1",
+ "worker": "060add9e-72cd-42fb-990f-f3b3f8d21f83",
+ "subject": "app-shell",
+ "evaluatedAt": "2026-10-14T07:51:20.657Z",
+ "pairs": [
+  {
+   "context": "5ab49df3-3442-4ea6-a405-077dec64850d",
+   "subject": "app-shell",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_glyph/personaCore/PersonaCoreEntry.tsx:35 mounts a dimension badge plus its configurator modal inside a host page; the context has no primary nav, section vocabulary, entitlement gate or lazy section, so app-shell (the persistent frame around pages) has no precondition here",
+   "techniques": [],
+   "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
+   "evaluatedRevision": 6,
+   "registryProposal": "matcher pairing app-shell here is a lexical resonance on badge (badge-and-attention concerns nav-slot attention, not a chip in a form row); route by the subject precondition."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-14T07:51:20.657Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "app-shell"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

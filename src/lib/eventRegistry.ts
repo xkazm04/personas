@@ -41,6 +41,7 @@ import type { TwinSampleUpdatedEvent } from '@/lib/bindings/TwinSampleUpdatedEve
 // once the Rust side carries `#[derive(TS)] #[ts(export)]`.
 import type { BrowserTab } from '@/features/browser/types';
 import type { DevServerView } from '@/lib/bindings/DevServerView';
+import type { CharterAct } from '@/lib/bindings/CharterAct';
 
 // ---------------------------------------------------------------------------
 // Event name constants (keep in sync with Rust event_registry::event_name)
@@ -398,6 +399,8 @@ export const EventName = {
   BROWSER_SCAN: 'browser-scan',
   /** Browser > Server control: the whole dev-server list, on every change. */
   DEV_SERVERS_CHANGED: 'dev-servers-changed',
+  /** Mandate lanes: one `charter_acts` row was recorded (decision, envelope change or revert). */
+  CHARTER_ACT_RECORDED: 'charter-act-recorded',
 } as const;
 
 export type EventNameValue = (typeof EventName)[keyof typeof EventName];
@@ -1347,6 +1350,7 @@ export interface EventPayloadMap {
   // scan settled on, `null` while it is running or when it failed.
   [EventName.BROWSER_SCAN]: { origin: string; status: string; tier: number | null };
   [EventName.DEV_SERVERS_CHANGED]: DevServerView[];
+  [EventName.CHARTER_ACT_RECORDED]: CharterAct;
 
   // Persona event-bus signals (P1b review decisions + P2.3 incident resolved).
   // These are backend bus events consumed by persona subscriptions for

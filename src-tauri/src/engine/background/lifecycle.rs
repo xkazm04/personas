@@ -27,6 +27,10 @@ use tauri::{Emitter, Manager};
 static ATTENTION_ORPHANS_SWEPT: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 
+/// One-shot latch for the mandate sweep's boot run.
+static MANDATE_BOOT_SWEPT: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
 /// Close every attention pass left open by a process that is no longer running.
 /// Logs the count — including zero, which is the healthy reading and is worth
 /// being able to see rather than infer from silence.
@@ -128,6 +132,25 @@ pub fn start_loops(
     // restart. Once per process (see the latch), because that is the only
     // moment at which "every open row is dead" is guaranteed true.
     close_orphaned_attention_passes(&pool);
+
+    // The mandate router's steward sweep, once at boot (spark mandate-lanes,
+    // WP3); afterwards it rides the App Master probation tick. Latched like the
+    // attention sweep above, so a stop/start does not re-run it.
+    if !MANDATE_BOOT_SWEPT.swap(true, Ordering::SeqCst) {
+        let (sweep_pool, sweep_app) = (pool.clone(), app.clone());
+        tauri::async_runtime::spawn(async move {
+            use futures_util::FutureExt;
+            // The acts the sweep records are its durable outcome; a panic here
+            // is reported (the tracing file sink) instead of vanishing.
+            let run = crate::engine::mandate_sweep::sweep_and_emit(sweep_pool, sweep_app);
+            if let Err(panic) = std::panic::AssertUnwindSafe(run).catch_unwind().await {
+                tracing::error!(
+                    panic = %personas_core::utils::extract_panic_message(panic),
+                    "mandate sweep: boot run panicked"
+                );
+            }
+        });
+    }
 
     // Build the HTTP client for the polling subscription.
     // Uses SsrfSafeDnsResolver to reject private IPs at connect time,
@@ -373,6 +396,7 @@ pub fn start_loops(
         Box::new(
             crate::engine::app_master_probation::AppMasterProbationSubscription {
                 pool: pool.clone(),
+                app: app.clone(),
             },
         ),
         // Living-agent attention loop (WP5) — default-OFF

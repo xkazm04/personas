@@ -5,8 +5,11 @@
  *   then   the item's branches, full width: their own words, a hint, a digit
  *   then   places to go and look (`links`) — quiet, no key, never a verdict
  *   last   later, quiet
- * An armed verdict says so in place ("↵ to confirm") and glows; a reject that
- * wants a reason swaps the dock for the reason prompt.
+ * An armed verdict says so in place ("↵ to confirm") and glows; an armed valve
+ * (an `irreversible` item) also says, above the pair, exactly what leaves
+ * (`ArmedBox`). A reject that wants a reason swaps the dock for the reason
+ * prompt. The dock is the rail's fixed foot: the body scrolls, the dock never
+ * moves.
  */
 import type { ReactNode } from 'react';
 import { Check, CornerDownRight, ExternalLink, MessageCircle, Reply, SkipForward, Star, X } from 'lucide-react';
@@ -14,14 +17,15 @@ import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DecisionItem } from '../model/decisionModel';
 import { COUNCIL_MIN_REASON } from '../roster/decisionCopy';
-import type { DeckActions } from './useDeckActions';
+import { ArmedBox } from './ArmedBox';
+import { armsAccept, type DeckActions } from './useDeckActions';
 import type { DeckController } from './useDeck';
 import { ReasonPrompt } from './ReasonPrompt';
 import { focusComposer } from './keys';
 import { Keycap } from './parts';
 
-function Verdict({ k, label, yes, tone, icon, armed, onClick }: {
-  k: string; label: string; yes: boolean; tone: 'success' | 'danger' | 'accent'; icon: ReactNode; armed?: boolean; onClick: () => void;
+export function Verdict({ k, label, yes, tone, icon, armed, disabled, onClick }: {
+  k: string; label: string; yes: boolean; tone: 'success' | 'danger' | 'accent'; icon: ReactNode; armed?: boolean; disabled?: boolean; onClick: () => void;
 }) {
   const { t, tx } = useTranslation();
   return (
@@ -30,6 +34,7 @@ function Verdict({ k, label, yes, tone, icon, armed, onClick }: {
       size="md"
       block
       onClick={onClick}
+      disabled={disabled}
       aria-label={armed ? tx(t.monitor.dc_deck_confirm_aria, { label }) : label}
       data-armed={armed ? '' : undefined}
       className={`au-verdict au-sheen au-lift au-l-${tone} ${yes ? 'au-verdict-yes' : 'au-verdict-no'} au-ink-lamp min-w-0 justify-start! rounded-input px-3! hover:bg-transparent [&>span:last-child]:flex [&>span:last-child]:min-w-0 [&>span:last-child]:flex-1 [&>span:last-child]:items-center [&>span:last-child]:gap-2`}
@@ -41,7 +46,7 @@ function Verdict({ k, label, yes, tone, icon, armed, onClick }: {
   );
 }
 
-function Branch({ k, label, hint, accent, icon, onClick }: { k?: string; label: string; hint?: string; accent?: boolean; icon?: ReactNode; onClick: () => void }) {
+export function Branch({ k, label, hint, accent, icon, onClick }: { k?: string; label: string; hint?: string; accent?: boolean; icon?: ReactNode; onClick: () => void }) {
   return (
     <Button
       variant="ghost"
@@ -62,6 +67,15 @@ function Branch({ k, label, hint, accent, icon, onClick }: { k?: string; label: 
   );
 }
 
+/** Leave it for later: quiet, at the dock's foot, on every shape. */
+export function Later({ label, onSkip }: { label: string; onSkip: () => void }) {
+  return (
+    <Button variant="ghost" size="sm" onClick={onSkip} icon={<SkipForward className="h-3.5 w-3.5" aria-hidden />} className="au-lift self-end [&>span:last-child]:inline-flex [&>span:last-child]:items-center [&>span:last-child]:gap-1.5">
+      {label} <Keycap>S</Keycap>
+    </Button>
+  );
+}
+
 function Rating({ value, onRate }: { value: number | null; onRate: (n: number) => void }) {
   const { t, tx } = useTranslation();
   return (
@@ -78,7 +92,7 @@ function Rating({ value, onRate }: { value: number | null; onRate: (n: number) =
   );
 }
 
-function Links({ item, act }: { item: DecisionItem; act: DeckActions }) {
+export function Links({ item, act }: { item: DecisionItem; act: DeckActions }) {
   if (!item.links?.length) return null;
   // Quieter than a branch: one line, no key, the hint only in its accessible name.
   return (
@@ -114,11 +128,7 @@ export function DeckDock({ item, deck, act, rating, onRate }: {
     return <ReasonPrompt prompt={deck.prompt} min={min} onSubmit={act.submitReason} onCancel={() => deck.setPrompt(null)} />;
   }
   const v = item.verdictLabels;
-  const later = (
-    <Button variant="ghost" size="sm" onClick={act.skip} icon={<SkipForward className="h-3.5 w-3.5" aria-hidden />} className="au-lift self-end [&>span:last-child]:inline-flex [&>span:last-child]:items-center [&>span:last-child]:gap-1.5">
-      {v.skip} <Keycap>S</Keycap>
-    </Button>
-  );
+  const later = <Later label={v.skip} onSkip={act.skip} />;
   const check = <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden />;
 
   if (act.type === 'chat') {
@@ -144,17 +154,18 @@ export function DeckDock({ item, deck, act, rating, onRate }: {
       </>
     );
   }
-  const council = item.kind === 'council';
+  const arms = armsAccept(item);
   // The verbs keep their full words: a long pair (Send back + A ↵) stacks rather than wraps.
-  const wide = council || v.accept.length + v.reject.length > 16;
+  const wide = arms || v.accept.length + v.reject.length > 16;
   return (
     <>
+      {item.irreversible && deck.armed === 'accept' && <ArmedBox kind={item.irreversible} title={item.title} />}
       <div className={`grid gap-2 ${wide ? 'grid-cols-1' : 'grid-cols-2'}`}>
-        <Verdict k={council ? 'A ↵' : 'A'} label={v.accept} yes tone="success" icon={check} armed={deck.armed === 'accept'} onClick={act.accept} />
+        <Verdict k={arms ? 'A ↵' : 'A'} label={v.accept} yes tone="success" icon={check} armed={deck.armed === 'accept'} onClick={act.accept} />
         <Verdict k="R" label={v.reject} yes={false} tone="danger" icon={<X className="h-4 w-4" strokeWidth={2.5} aria-hidden />} armed={deck.armed === 'reject'} onClick={act.reject} />
       </div>
       {item.branches.map((b, i) => (
-        <Branch key={b.id} k={String(i + 1)} label={b.label} hint={b.hint} accent={b.tone === 'accent'} onClick={() => act.branch(i + 1)} />
+        <Branch key={b.id} k={String(i + 1 + act.offset)} label={b.label} hint={b.hint} accent={b.tone === 'accent'} onClick={() => act.branch(i + 1 + act.offset)} />
       ))}
       <Links item={item} act={act} />
       {later}

@@ -106,6 +106,13 @@ appears.
   peerId). Then re-run `discover --timeout 540 --peer <chosen peerId>`.
 - Exit 4: show `detail`, every `failing[]` entry with its fix, and `fix`. Remind the operator
   that the other desktop must be running `/mesh-onboard` too. Stop.
+- **Multicast-blocked LANs (the operator's router drops mDNS).** When every preflight check is
+  green on both machines and discovery still times out, the fallback is an explicit LAN
+  address: each session runs `discover --timeout 540 --address <other-ip>:<its quicPort>` (the
+  other machine's preflight prints its `quicPort`; the operator reads its IP from Settings or
+  `ipconfig`, typed once per machine). Only local-network addresses are accepted (10.x, 172.16-31.x,
+  192.168.x, link-local, loopback); anything else is refused by the app. The link is authenticated
+  by its handshake, not trusted: pairing still needs the typed code.
 
 ## Phase 3 - Pair (one human code)
 

@@ -242,6 +242,17 @@ side, and it is a property of her instructions and effort rather than of her mem
   date-free text and the purity check passes on each.
 - A run of this size must be resumable and detached. Three multi-hour runs were killed by
   session events; only the per-probe checkpoint saved them.
+- **The year is one conversation, so a session-scoped reconciliation is unpriced.** Every
+  arm ingests under `conversation: "sim-year"`. A store whose write-time dedup recalls
+  candidates only from the current session (one released engine does exactly this, while
+  its search reads across sessions) loses nothing here by construction. Priced on the
+  scenario's own ground truth (`py -m memory_year.checks.partition_reach`, no model): a
+  pool partitioned by scope + day reaches **0 of 73** state changes, by scope + week 3 of
+  73, by the read scope all 73; 51 of the 73 old values were last stated more than 30 days
+  before they changed, and all 92 reversal and expired probes rest on an unreached change.
+  That is a served-stale cost, not yet an answered-stale one: a reader given dated items
+  can still pick the newer. Before quoting a session-scoped design against this ladder,
+  give the scenario a session boundary.
 
 ## What the peer cohort was worth
 
@@ -337,3 +348,12 @@ rebasing fix lands, and the expired class (6 probes, 0.50) is the one to distrus
       production", or compared across a settings change, does not. The calls are now isolated,
       and the cache key carries the invocation profile, so no older reply is replayed as an
       isolated one. Re-run a rung before quoting it against a post-fix number.
+- [ ] the harness cannot rank a feedback-driven memory. Task outcomes are drawn when the
+      scenario is generated (`world.py`: a fixed failure chance until a fix is taught),
+      whatever the backend recalled, and the contract forbids feedback on recall. So any arm
+      that learns helpful/harmful from outcomes would be learning planted noise. The first
+      price of such a design came from replaying recorded contexts instead
+      (`checks/exposure_credit.py`, 2026-10-15): crediting every delivered item with the
+      probe's grade tracks exposure (rank corr. 0.82) and not whether the item carried the
+      answer (0.06). A closed-loop world - outcome drawn from whether the taught fix or the
+      current value reached the context - is the instrument a feedback arm needs.

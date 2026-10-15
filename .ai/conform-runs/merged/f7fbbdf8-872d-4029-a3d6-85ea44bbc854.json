@@ -1,0 +1,135 @@
+{
+ "schema": "conform-run/1",
+ "worker": "f7fbbdf8-872d-4029-a3d6-85ea44bbc854",
+ "subject": "markdown-vault",
+ "evaluatedAt": "2026-10-14T07:49:46Z",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "markdown-vault",
+   "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+   "reason": "already judged (not-applicable, 2026-10-06) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "cf38b51d-aebb-4b36-bb8e-68a494a3662f",
+   "reason": "already judged (not-applicable, 2026-10-06) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "ca705961-f138-494a-b0fe-f882c674d25a",
+   "reason": "already judged (deviation, 2026-10-09) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "7f6d3238-7136-4361-af8f-bca556ae2042",
+   "reason": "already judged (deviation, 2026-10-09) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "35c52f59-9612-47c4-8662-0ebb3c821771",
+   "reason": "already judged (not-applicable, 2026-10-01) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "738f591b-60e9-4701-b786-cf868db66c51",
+   "reason": "already judged (not-applicable, 2026-10-01) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "4eb0030b-e8a2-4993-bfab-81aee6943054",
+   "reason": "already judged (not-applicable, 2026-10-01) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "959baa73-f18f-42c8-8569-466939b9050d",
+   "reason": "already judged (not-applicable, 2026-10-01) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "cd17ecec-1587-4c38-8ec1-934632aa09fa",
+   "reason": "already judged (not-applicable, 2026-10-01) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "0c029a55-8e0a-47aa-a636-6e941425a7dc",
+   "reason": "already judged (deviation, 2026-10-09) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "83a8a744-2036-4e3e-9654-6fcec82334ff",
+   "reason": "already judged (deviation, 2026-10-09) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+   "reason": "already judged (deviation, 2026-10-09) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433",
+   "reason": "already judged (not-applicable, 2026-09-23) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65",
+   "reason": "already judged (not-applicable, 2026-09-23) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "6229df3d-d54e-47bb-8091-abb479003c18",
+   "reason": "already judged (not-applicable, 2026-09-23) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7",
+   "reason": "already judged (not-applicable, 2026-09-23) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "b62fa237-32b4-41c3-bf56-3e498b643da9",
+   "reason": "already judged (not-applicable, 2026-09-23) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "6b3d5224-2f4b-4f60-a8a6-3ac963ba3051",
+   "reason": "already judged (not-applicable, 2026-10-06) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae",
+   "reason": "already judged (not-applicable, 2026-09-23) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857",
+   "reason": "already judged (not-applicable, 2026-09-23) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+   "reason": "already judged (not-applicable, 2026-09-23) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "77b8c703-0803-42bc-808a-f255725cc293",
+   "reason": "already judged (not-applicable, 2026-09-23) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "3d2f5f87-37f7-4a94-96d3-932ebc2bf2c7",
+   "reason": "already judged (not-applicable, 2026-10-06) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5",
+   "reason": "already judged (not-applicable, 2026-09-23) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  },
+  {
+   "subject": "markdown-vault",
+   "context": "876c0b4e-6472-4544-a21b-56e7529fb6b3",
+   "reason": "already judged (not-applicable, 2026-09-23) against current digest sha256-b2:7a10f98b2d9488ac rev 2 == index.json; not stale, no revisionsBehind; no re-judge needed"
+  }
+ ],
+ "consults": []
+}

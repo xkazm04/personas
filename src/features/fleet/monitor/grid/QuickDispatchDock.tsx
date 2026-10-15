@@ -95,12 +95,19 @@
 // long-objective; the heights must be identical in every state, which is the
 // property that matters.
 //
+// ## The act ticker (mandate-lanes WP7, 2026-10-15)
+//
+// Under the `lanes` decision surface the resting row also carries ONE line of
+// what the stewards just decided (`DockActTicker`), between the placeholder and
+// the tally (`DockRestingRow`). It lives inside the row's reserved height, so it appearing or
+// changing never moves the board; it is absent until the first act arrives.
+// The console (expanded) does not show it: the operator is composing.
+//
 // The dock is the console and the dispatch mechanism, nothing else. Its content
 // is capped at 800px and centred, so on a wide window the composer stays a
 // readable column instead of a full-width strip.
 
-import { Terminal } from 'lucide-react';
-
+import { DockRestingRow } from './DockRestingRow';
 import { DockConsoleShell } from './dock/DockConsoleShell';
 import { DockPanels } from './dock/DockPanels';
 import { DOCK_COLUMN } from './dock/DockParts';
@@ -108,47 +115,9 @@ import { useDockConsole } from './dock/useDockConsole';
 
 export function QuickDispatchDock() {
   const d = useDockConsole();
-  const { c, tally } = d;
+  const { c } = d;
 
-  if (!d.expanded) {
-    return (
-      <div className="relative flex-shrink-0 border-t border-border bg-foreground/[0.015]">
-        <span className="dock-rail pointer-events-none absolute inset-x-0 -top-px z-[4] h-px overflow-hidden" aria-hidden />
-        <button
-          type="button"
-          onClick={d.expand}
-          data-testid="quick-dispatch-dock-expand"
-          className="group block w-full text-left transition-colors hover:bg-secondary/30"
-        >
-          <span className={`${DOCK_COLUMN} flex h-9 items-center gap-2 px-3`}>
-            <Terminal className="h-3.5 w-3.5 flex-shrink-0 text-primary" aria-hidden />
-            <span className="dock-caret h-3.5 w-[7px] flex-shrink-0 rounded-[1px] bg-primary" aria-hidden />
-            <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted transition-colors group-hover:text-foreground">
-              {c.quickT.placeholder}
-            </span>
-            {/* The rent this row pays: what the fleet is doing right now. */}
-            <span className="flex flex-shrink-0 items-center gap-2.5" data-testid="quick-dispatch-dock-tally">
-              {tally.needsYou > 0 && (
-                <span className="typo-label flex items-center gap-1 text-role-highlight">
-                  <span className="h-1.5 w-1.5 rounded-full bg-role-highlight" aria-hidden />
-                  {c.tx(c.quickT.rest_tally_needs_you, { count: tally.needsYou })}
-                </span>
-              )}
-              {tally.working > 0 && (
-                <span className="typo-label flex items-center gap-1 text-status-info">
-                  <span className="h-1.5 w-1.5 rounded-full bg-status-info" aria-hidden />
-                  {c.tx(c.quickT.rest_tally_working, { count: tally.working })}
-                </span>
-              )}
-            </span>
-            <span className="typo-label flex-shrink-0 text-muted transition-colors group-hover:text-primary">
-              {c.quickT.title}
-            </span>
-          </span>
-        </button>
-      </div>
-    );
-  }
+  if (!d.expanded) return <DockRestingRow console={d} />;
 
   return (
     <div

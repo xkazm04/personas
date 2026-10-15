@@ -14,7 +14,4 @@
 #
 # One bare type name per line. `#` starts a comment.
 
-CompositionWorkflow             # src-tauri/core/src/models/composition_workflow.rs:11
-CreateCompositionWorkflowInput  # src-tauri/core/src/models/composition_workflow.rs:30
 KbIngestRequest                 # src-tauri/core/src/models/knowledge_base.rs:143
-UpdateCompositionWorkflowInput  # src-tauri/core/src/models/composition_workflow.rs:43

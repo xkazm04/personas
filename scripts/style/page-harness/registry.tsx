@@ -37,7 +37,9 @@ import { ACTIVITY_MODULES } from './activitySurfaces';
 import { INBOX_MODULES } from './inboxSurfaces';
 import { MONITOR_RAIL_MODULES } from './monitorRailSurfaces';
 import { MONITOR_ACTIVITY_MODULES } from './monitorActivitySurfaces';
+import { MANDATE_LANES_MODULES } from './mandateLanesSurfaces';
 import { DECISION_DECK_MODULES } from './decisionDeckSurfaces';
+import { MANDATE_CARDS_MODULES } from './mandateCardsSurfaces';
 import { ATHENA_CHAT_MODULES } from './athenaChatSurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
@@ -88,8 +90,12 @@ export const MODULES: Record<string, HarnessModule> = {
   // harnesses build their fleets from them.
   ...MONITOR_RAIL_MODULES,
   ...MONITOR_ACTIVITY_MODULES,
+  // The Activity board under the `lanes` decision surface (mandateLanesSurfaces.tsx).
+  ...MANDATE_LANES_MODULES,
   // The live Decision Deck (decisionDeckSurfaces.tsx, decisionDeckTapes.mjs).
   ...DECISION_DECK_MODULES,
+  // The mandate-lane card shapes in the live deck (mandateCardsSurfaces.tsx, mandateCardsTapes.mjs).
+  ...MANDATE_CARDS_MODULES,
   ...TONE_MODULES,
   ...TRIAGE_MODULES,
   ...DATAGRID_MODULES,

@@ -379,6 +379,24 @@
   background: linear-gradient(90deg, color-mix(in oklab, var(--au-lamp) 12%, transparent), transparent 85%);
   box-shadow: inset 2px 0 0 var(--au-lamp);
 }
+/* The outcome pair's quiet half: same shape as the yes, no light of its own. */
+.au-no {
+  background: linear-gradient(90deg, color-mix(in oklab, var(--foreground) 5%, transparent), transparent 85%);
+  box-shadow: inset 2px 0 0 var(--au-hair-strong);
+}
+
+/* A folded body section: one counted line that opens in place. */
+.au-fold {
+  box-shadow: inset 0 0 0 1px var(--au-hair);
+  background: color-mix(in oklab, var(--foreground) 3%, transparent);
+}
+.au-fold[data-open] { background: transparent; }
+
+/* An armed valve: what leaves, said before the second press. */
+.au-armed {
+  background: color-mix(in oklab, var(--au-lamp) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--au-lamp) 45%, transparent);
+}
 
 /* The recessed well (ledger rail, composer, evidence, reason field) — R2-A's
    material: the card's own light shows through a frosted, slightly darker

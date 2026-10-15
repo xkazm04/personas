@@ -193,6 +193,8 @@ export class MeshClient {
   diagnostics() { return this.request('GET', '/diagnostics'); }
   devices() { return this.request('GET', '/devices'); }
   connect(peerId) { return this.request('POST', '/connect', { body: { peerId }, timeoutMs: ACK_REQUEST_TIMEOUT_MS }); }
+  /** Dial an operator-named LAN `ip:port` (the fallback when mDNS cannot see the peer). */
+  connectAddress(address) { return this.request('POST', '/connect', { body: { address }, timeoutMs: ACK_REQUEST_TIMEOUT_MS }); }
   pairRequest(peerId) { return this.request('POST', '/pair/request', { body: { peerId }, timeoutMs: ACK_REQUEST_TIMEOUT_MS }); }
   pairPending() { return this.request('GET', '/pair/pending'); }
   pairConfirm(peerId, code) { return this.request('POST', '/pair/confirm', { body: { peerId, code }, timeoutMs: ACK_REQUEST_TIMEOUT_MS }); }

@@ -185,6 +185,7 @@ pub fn spawn_detached(
     }
     #[cfg(target_os = "windows")]
     {
+        release_own_std_handles();
         // A new process group keeps the app's console Ctrl+C away from it; the
         // breakaway takes it out of a job object whose closing would kill it.
         cmd.creation_flags(CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP | CREATE_BREAKAWAY_FROM_JOB);
@@ -199,6 +200,43 @@ pub fn spawn_detached(
         }
     }
     cmd.spawn()
+}
+
+/// Keep a detached server from holding whoever started this process.
+///
+/// On Windows a spawn that hands the child its three streams turns on
+/// inheritance for every inheritable handle of the parent, not only those
+/// three. This process's own standard handles are inheritable when it was
+/// started with pipes (a terminal pipe, `tauri dev`, an agent's tool call),
+/// so a dev server spawned with all streams null still held the caller's
+/// pipe open for its whole life, and the caller's read never ended. Measured
+/// 2026-10-14 on a replica of this spawn (same flags, same `cmd /S /C` form):
+/// the reader waited 4,145 ms for a 4,087 ms child, and 72-84 ms with these
+/// handles marked non-inheritable first. A later child that inherits stdout
+/// on purpose still gets it: std duplicates the handle for that child.
+#[cfg(target_os = "windows")]
+fn release_own_std_handles() {
+    use std::ffi::c_void;
+    const HANDLE_FLAG_INHERIT: u32 = 0x0000_0001;
+    // STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE
+    const STANDARD_HANDLES: [u32; 3] = [-10i32 as u32, -11i32 as u32, -12i32 as u32];
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetStdHandle(which: u32) -> *mut c_void;
+        fn SetHandleInformation(handle: *mut c_void, mask: u32, flags: u32) -> i32;
+    }
+    for which in STANDARD_HANDLES {
+        // SAFETY: GetStdHandle takes no pointer and returns a handle this
+        // process owns, null or INVALID_HANDLE_VALUE when there is none, both
+        // skipped. SetHandleInformation changes only the inherit flag of that
+        // handle; a failure leaves the handle as it was.
+        unsafe {
+            let handle = GetStdHandle(which);
+            if !handle.is_null() && handle as isize != -1 {
+                SetHandleInformation(handle, HANDLE_FLAG_INHERIT, 0);
+            }
+        }
+    }
 }
 
 fn shell_command(command: &str) -> Command {
@@ -278,6 +316,42 @@ mod tests {
         let r = run_verification(&dir, cmd, Duration::from_millis(300)).await;
         assert!(r.timed_out);
         assert!(!r.passed);
+    }
+
+    /// The handles a detached server must not inherit are the ones this process
+    /// was started with. After the release none of them may still carry the
+    /// inherit flag (a handle that does not exist is skipped).
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn detached_spawn_releases_own_std_handles() {
+        use std::ffi::c_void;
+        #[link(name = "kernel32")]
+        extern "system" {
+            fn GetStdHandle(which: u32) -> *mut c_void;
+            fn GetHandleInformation(handle: *mut c_void, flags: *mut u32) -> i32;
+        }
+        let inherit_flags = || {
+            [-10i32 as u32, -11i32 as u32, -12i32 as u32].map(|which| {
+                // SAFETY: GetStdHandle takes no pointer; GetHandleInformation
+                // writes one u32 through a pointer to a live local.
+                unsafe {
+                    let handle = GetStdHandle(which);
+                    let mut flags = 0u32;
+                    let known = !handle.is_null()
+                        && handle as isize != -1
+                        && GetHandleInformation(handle, &mut flags) != 0;
+                    known.then_some(flags & 1)
+                }
+            })
+        };
+        let before = inherit_flags();
+        release_own_std_handles();
+        let after = inherit_flags();
+        eprintln!("std handle inherit flags before {before:?}, after {after:?}");
+        assert!(
+            after.iter().all(|f| *f != Some(1)),
+            "still inheritable: {after:?}"
+        );
     }
 
     #[test]

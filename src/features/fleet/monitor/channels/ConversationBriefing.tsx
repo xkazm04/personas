@@ -1,34 +1,23 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { AlertCircle, MessagesSquare, Scale, Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { MessagesSquare } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { QuickAnswerBody } from '@/features/agents/quick-answer/QuickAnswerBody';
 import { ChannelDetailModal } from '@/features/teams/sub_collab/ChannelDetailModal';
-import { createTeamMemory } from '@/api/pipeline/teamMemories';
-import { useToastStore } from '@/stores/toastStore';
-import { silentCatch } from '@/lib/silentCatch';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
-import type { CreateTeamMemoryInput } from '@/lib/bindings/CreateTeamMemoryInput';
 import { ConversationSidebar } from './ConversationSidebar';
-import { ConversationComposer } from './ConversationComposer';
-import { VirtualConversation } from './VirtualConversation';
-import { QueuedPromptRow } from './QueuedPromptRow';
 import { RailSplitter } from './RailSplitter';
 import { useRailWidth } from '../grid/rail/useRailWidth';
-import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
-import {
-  AssignmentCard, ConversationGhostRows, DeliberationCard, ProposalCard, TalkBubble,
-} from './ConversationCards';
-import { DeliberationRail } from './DeliberationRail';
 import { LinkedChannelChip } from './LinkedChannelChip';
 import type { TeamSlackBridge } from '@/lib/channel/teamBridge';
 import type { ChannelPreset } from './useChannelWorkspace';
-import { ReviewsRail } from './ReviewsRail';
+import { ConversationPane } from './ConversationPane';
+import { ConversationRail, type RailTab } from './ConversationRail';
 import { PersonaConversation } from './PersonaConversation';
 import { useConversation } from './useConversation';
-import { dayLabel, type ConversationRow } from './conversationModel';
+import { useConversationRows } from './useConversationRows';
+import { useTeamPin } from './useTeamPin';
 import type { StreamTeam } from './types';
 import type { Persona } from '@/lib/bindings/Persona';
+import '../grid/prototype/entry-e/entryE.css';
 
 /* ----------------------------------------------------------------------------
  * CONVERSATIONS — the Monitor's messenger, and the only place you write (D5).
@@ -50,18 +39,15 @@ import type { Persona } from '@/lib/bindings/Persona';
  * lets the Teams Collab and Deliberations panes be deleted without loss.
  * -------------------------------------------------------------------------- */
 
-type RailTab = 'focus' | 'reviews' | 'quick';
-
-/** Shared by the strip and the pane it selects, so each tab's `aria-controls`
- *  actually resolves to a `role="tabpanel"` (census:
- *  `tabstrip-with-no-declared-panel` — the relationship was previously only in
- *  the visual layout). Written out rather than taken from
- *  `segmentedTabPanelProps`: the ids are the helper's own format, and a
- *  spread object is invisible both to a reader and to the ratchet. */
-const RAIL_TABS_ID = 'conversation-rail';
+/* ONE ROOF (mandate-lanes WP8). The view is built from Activity's panel
+ * language (entry-e/entryE.css): the `ae-root` panel on the Monitor surface, a
+ * command strip, and three plates - projects, the conversation, the rail - so
+ * Activity, Queue and Conversations read as one instrument. Lamps follow the
+ * annunciator grammar: lit only where something works (a team's members at
+ * work) or needs the operator (held steps on the rail). */
 
 export function ConversationBriefing({
-  teams, personas, bridges, layoutControl, preset,
+  teams, personas, bridges, preset,
 }: {
   teams: StreamTeam[];
   /** The workspace roster — feeds the sidebar's Personas group (W5). */
@@ -69,11 +55,6 @@ export function ConversationBriefing({
   /** Slack bridges keyed by team id — derived once by the workspace host (see
    *  `lib/channel/teamBridge`). Absent = nothing is bridged. */
   bridges?: Record<string, TeamSlackBridge>;
-  /** The layout switcher, rendered in THIS view's own header rather than above
-   *  all of them — one header strip instead of two. Built by the header
-   *  router in `PersonaMonitor` since `MonitorChannelGrid` was retired; each
-   *  view only places it. */
-  layoutControl?: ReactNode;
   /** A deep link from a live pop-up: the team, the speaker, and the line. */
   preset?: ChannelPreset | null;
 }) {
@@ -86,19 +67,12 @@ export function ConversationBriefing({
   // straight from the prop so that selecting another team clears it — a pin
   // belongs to the conversation it was minted for.
   const [focusItemId, setFocusItemId] = useState<string | null>(preset?.itemId ?? null);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [detail, setDetail] = useState<TeamChannelItem | null>(null);
   const [focusDelib, setFocusDelib] = useState<string | null>(null);
   const [tab, setTab] = useState<RailTab>('reviews');
-  const [pinned, setPinned] = useState<Set<string>>(new Set());
-  const addToast = useToastStore((s) => s.addToast);
   // Two rails, two remembered widths, two edges. The keys are their own — a
   // shared one would make dragging either move both.
-  const sidebarRail = useRailWidth({
-    storageKey: 'conversation-sidebar-width',
-    defaultWidth: 280,
-    side: 'left',
-  });
+  const sidebarRail = useRailWidth({ storageKey: 'conversation-sidebar-width', defaultWidth: 280, side: 'left' });
   const decisionRail = useRailWidth({ storageKey: 'conversation-rail-width', defaultWidth: 320 });
 
   useEffect(() => {
@@ -114,322 +88,89 @@ export function ConversationBriefing({
     setFocusItemId(null);
     setActiveId(teamId);
   }, []);
-  const selectPersona = useCallback((personaId: string) => {
-    setActivePersonaId(personaId);
-  }, []);
 
   const activePersona = useMemo(
     () => (activePersonaId ? personas?.find((p) => p.id === activePersonaId) ?? null : null),
     [personas, activePersonaId],
   );
-  // The persona rail's Reviews tab is scoped to THIS persona only.
-  const personaRailMembers = useMemo(
-    () =>
-      activePersona
-        ? [{
-            memberId: activePersona.id,
-            personaId: activePersona.id,
-            name: activePersona.name,
-            icon: activePersona.icon,
-            color: activePersona.color,
-          }]
-        : [],
-    [activePersona],
-  );
-
   const team = useMemo(() => teams.find((t) => t.teamId === activeId) ?? null, [teams, activeId]);
-
-  /**
-   * The rail's predicate, shared by every tab in it: one persona when the
-   * conversation is scoped to one, otherwise the open team's members. `null`
-   * only when there is no team and no persona, where scoping to the empty set
-   * would hide everything rather than show the fleet.
-   */
-  const railPersonaIds = useMemo<ReadonlySet<string> | null>(() => {
-    if (activePersona) return new Set([activePersona.id]);
-    if (team) return new Set(team.members.map((m) => m.personaId));
-    return null;
+  // The rail's Reviews are scoped to THIS persona only, or to the open team.
+  const railMembers = useMemo(() => {
+    if (activePersona) {
+      const { id, name, icon, color } = activePersona;
+      return [{ memberId: id, personaId: id, name, icon, color }];
+    }
+    return team ? team.members : null;
   }, [activePersona, team]);
+  /** The predicate every rail tab shares; `null` only with no team and no
+   *  persona, where scoping to the empty set would hide the fleet. */
+  const railPersonaIds = useMemo<ReadonlySet<string> | null>(
+    () => (railMembers ? new Set(railMembers.map((m) => m.personaId)) : null),
+    [railMembers],
+  );
 
   const conv = useConversation(activeId, focusItemId);
   const { loaded, markSeen } = conv;
-
   // Opening a conversation marks it read — the sidebar badge is the D6 watermark.
   useEffect(() => {
     if (loaded) markSeen();
   }, [loaded, markSeen, activeId]);
 
-  const toggle = useCallback(
-    (key: string) =>
-      setExpanded((prev) => {
-        const next = new Set(prev);
-        if (next.has(key)) next.delete(key);
-        else next.add(key);
-        return next;
-      }),
-    [],
-  );
-
-  /** Pin any row into the team's long-term memory (preserved from Collab). */
-  const pin = useCallback(
-    (item: TeamChannelItem) => {
-      if (!activeId) return;
-      const body = item.body ?? item.label;
-      createTeamMemory({
-        team_id: activeId,
-        run_id: null,
-        member_id: null,
-        persona_id: item.personaId,
-        title: body.slice(0, 80),
-        content: body,
-        category: 'context',
-        importance: 5,
-        tags: JSON.stringify({ source: 'conversation-pin' }),
-      } satisfies CreateTeamMemoryInput)
-        .then(() => {
-          setPinned((p) => new Set(p).add(item.id));
-          addToast(t.monitor.conv_pinned, 'success');
-        })
-        .catch(silentCatch('conversation:pin'));
-    },
-    [activeId, addToast, t.monitor.conv_pinned],
-  );
-
+  const { pin, pinned } = useTeamPin(activeId);
   const focusDeliberation = useCallback((id: string) => {
     setFocusDelib(id);
     setTab('focus');
   }, []);
-
-  const railTabs = useMemo(
-    () => [
-      {
-        id: 'reviews' as const,
-        label: <><AlertCircle className="w-3 h-3" />{t.monitor.conv_tab_reviews}</>,
-      },
-      {
-        id: 'focus' as const,
-        label: <><Scale className="w-3 h-3" />{t.monitor.conv_tab_deliberation}</>,
-        disabled: !focusDelib || !!activePersona,
-      },
-      {
-        id: 'quick' as const,
-        label: <><Sparkles className="w-3 h-3" />{t.monitor.conv_tab_quick}</>,
-      },
-    ],
-    [t, focusDelib, activePersona],
-  );
-
-  const dayWords = useMemo(
-    () => ({ today: t.monitor.conv_day_today, yesterday: t.monitor.conv_day_yesterday }),
-    [t],
-  );
-
-  // C2/C3: renderRow closes over STABLE references only (the memoized conv's
-  // fields, keyed callbacks, the state setter). It previously closed over a
-  // fresh `conv` literal and minted per-row closures, so every poll re-rendered
-  // every visible row; now the memo'd cards bail unless their own row changed.
-  // (`dayWords` was also referenced from here before it was declared — a
-  // missing dep that happened to work by closure timing.)
-  const { delibIndex, confirmProposal, dropProposal, retryPrompt, dropPrompt } = conv;
-  // Keyed, so `ProposalCard`'s memo has stable props to bail on. The two
-  // inline lambdas this replaces were minted on every render of this
-  // component, which is what made the card re-render on every poll.
-  const runProposal = useCallback(
-    (p: Parameters<typeof confirmProposal>[0]) => void confirmProposal(p),
-    [confirmProposal],
-  );
-  const renderRow = useCallback(
-    (row: ConversationRow) => {
-      switch (row.kind) {
-        case 'day':
-          return (
-            <div className="flex items-center gap-2 py-2">
-              <span className="flex-1 h-px bg-border" />
-              <span className="typo-caption">{dayLabel(row.at, dayWords)}</span>
-              <span className="flex-1 h-px bg-border" />
-            </div>
-          );
-        case 'talk':
-          return <TalkBubble item={row.item} onOpen={setDetail} />;
-        case 'assignment':
-          return (
-            <AssignmentCard
-              assignmentId={row.assignmentId}
-              items={row.items}
-              expanded={expanded.has(row.key)}
-              rowKey={row.key}
-              onToggle={toggle}
-            />
-          );
-        case 'deliberation':
-          return (
-            <DeliberationCard
-              deliberation={delibIndex.get(row.deliberationId)}
-              deliberationId={row.deliberationId}
-              items={row.items}
-              expanded={expanded.has(row.key)}
-              rowKey={row.key}
-              onToggle={toggle}
-              onFocus={focusDeliberation}
-            />
-          );
-        case 'proposal':
-          return (
-            <ProposalCard
-              proposal={row.proposal}
-              onConfirm={runProposal}
-              onDismiss={dropProposal}
-            />
-          );
-        case 'queued':
-          return <QueuedPromptRow prompt={row.prompt} onRetry={retryPrompt} onDrop={dropPrompt} />;
-      }
-    },
-    [
-      expanded, toggle, delibIndex, focusDeliberation, runProposal, dropProposal,
-      retryPrompt, dropPrompt, dayWords,
-    ],
-  );
+  const renderRow = useConversationRows(conv, setDetail, focusDeliberation);
 
   return (
-    <div className="h-full flex flex-col min-h-0 rounded-card border border-border bg-foreground/[0.01] overflow-hidden hud-corners hud-bloom">
-      <div className="flex-shrink-0 h-11 px-3 flex items-center gap-2.5 border-b border-border bg-foreground/[0.015]">
-        <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
-          <MessagesSquare className="w-3.5 h-3.5 text-foreground" />
-        </div>
-        <span className="typo-body text-foreground">{t.monitor.conv_title}</span>
+    <div className="ae-root h-full flex flex-col min-h-0 overflow-hidden rounded-card border border-border">
+      <div className="flex min-h-[52px] flex-shrink-0 items-center gap-3 border-b border-border px-3 py-2">
+        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-primary/40 bg-primary/10" aria-hidden>
+          <MessagesSquare className="h-4 w-4 text-primary" />
+        </span>
+        <span className="typo-heading text-foreground">{t.monitor.conv_title}</span>
         {/* Passive: the active project's Slack bridge, if it has one. */}
         <LinkedChannelChip bridge={activeId ? bridges?.[activeId] : undefined} />
-        {layoutControl && <span className="ml-auto flex items-center">{layoutControl}</span>}
       </div>
 
-      <div className="flex-1 min-h-0 flex">
-        {/* Both rails resize, and remember, exactly the way the Activity rail
-            does — same hook, same splitter, their own keys. A fixed 280 was
-            the right floor and the wrong ceiling here too: this sidebar is a
-            column of project names. */}
-        <div className="flex-shrink-0 min-h-0" style={{ width: sidebarRail.width }}>
+      {/* Both rails resize, and remember, exactly the way the Activity rail
+          does — same hook, same splitter, their own keys. The plates draw
+          their own edges, so the splitters paint none. */}
+      <div className="flex-1 min-h-0 flex p-2.5">
+        <div className="flex-shrink-0 min-h-0 pr-1" style={{ width: sidebarRail.width }}>
           <ConversationSidebar
             teams={teams}
             personas={personas}
             activeId={activePersonaId ? null : activeId}
             activePersonaId={activePersonaId}
             onSelect={selectTeam}
-            onSelectPersona={selectPersona}
+            onSelectPersona={setActivePersonaId}
           />
         </div>
-        <RailSplitter
-          rail={sidebarRail}
-          side="left"
-          // ConversationSidebar already draws its own right border.
-          bordered={false}
-          label={t.monitor.conv_sidebar_resize}
-          testId="conversation-sidebar-resize"
-        />
+        <RailSplitter rail={sidebarRail} side="left" bordered={false} label={t.monitor.conv_sidebar_resize} testId="conversation-sidebar-resize" />
 
-        {activePersona ? (
-          // Persona scope — its own composer (plain send) lives inside.
-          <PersonaConversation persona={activePersona} />
-        ) : (
-        <div className="flex-1 min-w-0 flex flex-col min-h-0">
-          {/* THE LOADING SWITCH (overview-loading §A, laws 1 and 4).
-              `loaded` used to be read for exactly one thing — firing markSeen —
-              so the whole of a cold channel's first fetch rendered the SETTLED
-              empty state and then snapped to a full conversation. "No messages
-              here" is an answer; showing it before anyone has asked the
-              question is a lie. Ghosts go into emptiness only, and the empty
-              state waits until the fetch has settled. */}
-          {!team ? (
-            <div className="flex-1 flex items-center justify-center typo-caption">{t.monitor.conv_pick_project}</div>
-          ) : !conv.loaded && conv.rows.length === 0 ? (
-            <ConversationGhostRows />
-          ) : conv.rows.length === 0 ? (
-            <ScenarioEmptyState
-              className="flex-1 justify-center"
-              icon={MessagesSquare}
-              title={t.monitor.conv_empty_title}
-              subtitle={t.monitor.conv_empty_body}
-            />
+        <section className="ae-plate mx-1 flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden rounded-card">
+          {activePersona ? (
+            // Persona scope — its own composer (plain send) lives inside.
+            <PersonaConversation persona={activePersona} />
           ) : (
-            <VirtualConversation
-              rows={conv.rows}
-              renderRow={renderRow}
-              hasMore={conv.hasMore}
-              onTopReached={conv.loadOlder}
-              pinKey={conv.pinKey}
-              revealKey={team.teamId}
-            />
+            <ConversationPane team={team} conv={conv} renderRow={renderRow} />
           )}
+        </section>
 
-          {team && (
-            <ConversationComposer
-              teamId={team.teamId}
-              teamName={team.teamName.replace(/^SDLC[ —-]*/i, '')}
-              members={team.members}
-              onSubmit={conv.enqueue}
-            />
-          )}
-        </div>
-        )}
-
-        {/* THE RAIL — decision surfaces. Not messages, so not in the timeline. */}
-        <RailSplitter
-          rail={decisionRail}
-          label={t.monitor.conv_rail_resize}
-          testId="conversation-rail-resize"
-        />
-        <div
-          className="flex-shrink-0 min-h-0 bg-foreground/[0.012] flex flex-col"
-          style={{ width: decisionRail.width }}
-        >
-          {/* The shared strip, not three hand-rolled buttons: it owns the
-              disabled appearance, the roving tabindex and the arrow-key
-              tablist nav the raw buttons never had — and its sliding indicator
-              is what makes the switch read as a MOVE rather than three
-              independent colour changes. */}
-          <div className="flex-shrink-0 h-9 px-2 flex items-center border-b border-border">
-            <SegmentedTabs
-              tabs={railTabs}
-              activeTab={tab}
-              onTabChange={setTab}
-              variant="pill"
-              size="sm"
-              fullWidth={false}
-              ariaLabel={t.monitor.conv_title}
-              idPrefix={RAIL_TABS_ID}
-              className="border-0 bg-transparent"
-            />
-          </div>
-
-          {/* Keyed on the tab so the incoming pane fades rather than
-              hard-cutting. Opacity-only and 150ms, so nothing is HELD (law 2):
-              the content is in the DOM on the first frame of the switch, and
-              under reduced motion `animate-fade-in` is `animation: none`. */}
-          <div
-            key={tab}
-            role="tabpanel"
-            id={`${RAIL_TABS_ID}-panel-${tab}`}
-            aria-labelledby={`${RAIL_TABS_ID}-tab-${tab}`}
-            className="flex-1 min-h-0 overflow-y-auto p-2 animate-fade-in"
-          >
-            {/* The Quick tab shares the Reviews tab's predicate. It used to
-                mount the fleet-wide deck, so opening one team's channel still
-                listed every other team's held questions - the operator hunting
-                the right card inside a global inbox while looking at one
-                thread. The titlebar popover stays fleet-wide; that is what it
-                is for. */}
-            {tab === 'quick' && <QuickAnswerBody personaIds={railPersonaIds} />}
-            {/* Persona scope: the rail's Reviews are that persona's pending
-                reviews only; deliberations are a team concept. */}
-            {tab === 'reviews' && activePersona && <ReviewsRail members={personaRailMembers} />}
-            {tab === 'reviews' && !activePersona && team && <ReviewsRail members={team.members} />}
-            {tab === 'focus' && !activePersona && team && focusDelib && (
-              <DeliberationRail teamId={team.teamId} deliberationId={focusDelib} />
-            )}
-            {tab === 'focus' && !activePersona && !focusDelib && (
-              <p className="typo-caption p-2">{t.monitor.conv_focus_hint}</p>
-            )}
-          </div>
+        <RailSplitter rail={decisionRail} bordered={false} label={t.monitor.conv_rail_resize} testId="conversation-rail-resize" />
+        <div className="flex-shrink-0 min-h-0 pl-1" style={{ width: decisionRail.width }}>
+          <ConversationRail
+            tab={tab}
+            onTab={setTab}
+            scopeKey={activePersonaId ?? activeId}
+            members={railMembers}
+            personaScoped={!!activePersona}
+            teamId={team?.teamId ?? null}
+            focusDelib={focusDelib}
+            railPersonaIds={railPersonaIds}
+          />
         </div>
       </div>
 

@@ -1,0 +1,951 @@
+<!doctype html>
+<html lang="en" data-lang="en" data-theme="dark-midnight">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Persona Monitor · Mandate lanes</title>
+<link rel="stylesheet" href="../data/ui/tokens.css">
+<link rel="stylesheet" href="../data/ui/typography.css">
+<link rel="stylesheet" href="./monitor.css">
+<link rel="stylesheet" href="./cards.css">
+<style>
+/* ── Lane strip: replaces DecisionHub's seven chips + ready (CommandBar.tsx:115) ── */
+.lanes { display: flex; gap: 6px; align-items: center; }
+.lane { display: inline-flex; align-items: center; gap: 8px; padding: 5px 11px; border-radius: var(--radius-input); cursor: pointer; }
+.lane .w { font-size: .9375rem; }
+.lane .typo-data { min-width: 1.2em; text-align: right; }
+.lane.is-open { box-shadow: 0 0 0 2px var(--primary); }
+.lane.bump { animation: ae-flash 900ms ease-out 2; }
+.yield { display: flex; gap: 14px; align-items: center; font-size: .9375rem; padding-left: 10px; border-left: 1px solid var(--ae-edge); }
+.yield b { font-variant-numeric: tabular-nums; }
+.dayclock { display: inline-flex; gap: 8px; align-items: center; font-variant-numeric: tabular-nums; }
+.dayclock .play { width: 30px; height: 30px; border-radius: 999px; display: grid; place-items: center; cursor: pointer; }
+
+/* ── Peek: the lane's list, the same place today's chip peeks open ── */
+.peek { position: absolute; z-index: 40; top: 118px; max-height: calc(100vh - 190px); display: none; flex-direction: column; border-radius: var(--radius-modal); }
+.peek.open { display: flex; }
+.peek .ph { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--ae-edge); }
+.peek .rows { overflow: auto; padding: 0 0 4px; }
+.peek .row { display: grid; gap: 2px 10px; cursor: pointer; align-items: start; }
+.peek .row .t { font-weight: 600; }
+.peek .row .s { grid-column: 2 / 4; font-size: .875rem; }
+.peek .pf { border-top: 1px solid var(--ae-edge); padding: 9px 14px; display: flex; gap: 14px; flex-wrap: wrap; font-size: .875rem; color: var(--muted-foreground); }
+.peek .more { padding: 10px 14px; font-size: .875rem; }
+
+/* ── Stewards plate: replaces the Autopilot plate (SupplyDeck.tsx) ── */
+.stw .row { display: grid; grid-template-columns: 52px 1fr 12px; gap: 2px 8px; align-items: center; padding: 6px 2px; cursor: pointer; border-radius: 6px; }
+.stw .row:hover { background: var(--ae-glass-hi); }
+.stw .id { font-family: var(--font-mono); font-size: .875rem; color: color-mix(in srgb, var(--primary) 70%, var(--foreground)); }
+.stw .bar2 { grid-column: 2 / 4; }
+
+/* ── Ribbon above the bays: the fleet's yield in one sentence ── */
+.ribbon { display: flex; align-items: center; gap: 18px; padding: 10px 14px; border-radius: var(--radius-card); margin-bottom: 10px; }
+.ribbon .big { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ribbon .lab { font-size: .9375rem; color: var(--muted-foreground); }
+.ribbon .vs { display: flex; flex-direction: column; }
+.ribbon .note { margin-left: auto; font-size: .875rem; color: var(--muted-foreground); text-align: right; }
+
+/* ── Drawer: levels two and three (register, mandate page, ledger, orphanage) ── */
+.drawer { position: fixed; z-index: 55; top: 116px; right: 0; bottom: 40px; width: min(1100px, 82vw); display: none; flex-direction: column; border-radius: var(--radius-modal) 0 0 var(--radius-modal); }
+.drawer.open { display: flex; }
+.drawer .dh { padding: 12px 18px; border-bottom: 1px solid var(--ae-edge); display: flex; gap: 12px; align-items: center; }
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th { text-align: left; font-size: .875rem; color: var(--muted-foreground); font-weight: 600; padding: 8px; border-bottom: 1px solid var(--ae-edge); position: sticky; top: 0; z-index: 1; background: color-mix(in srgb, var(--background) 96%, var(--foreground)); }
+.tbl td { padding: 9px 8px; border-top: 1px solid var(--ae-edge); vertical-align: top; }
+.tbl tr { cursor: pointer; }
+.tbl tr:hover td { background: color-mix(in srgb, var(--foreground) 3%, transparent); }
+.facts.wide { grid-template-columns: 150px minmax(0, 1fr); } .facts.wide dd { text-align: left; }
+.ticker { display: flex; gap: 10px; align-items: center; min-width: 0; flex: 1; overflow: hidden; }
+.ticker span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ticker .fresh { color: var(--foreground); }
+.before .pline.needs, .before .pline.critical { outline: 2px dashed color-mix(in srgb, var(--foreground) 40%, transparent); }
+</style>
+</head>
+<body>
+<div class="mon" id="mon"></div>
+<div class="peek ae-plate" id="peek" role="dialog" aria-label="Lane"></div>
+<div class="scrim" id="scrim"></div>
+<div class="deck" id="deck" role="dialog" aria-modal="true" aria-labelledby="deck-title"></div>
+<div class="drawer ae-plate" id="drawer" role="dialog" aria-label="Mandates"></div>
+
+<script src="../data/decisions.js"></script>
+<script src="../data/ui/fleet.js"></script>
+<script src="./model.js"></script>
+<script src="./chrome.js"></script>
+<script src="./parts.js"></script>
+<script>
+(function () {
+  'use strict';
+  var Mx = window.Mandates, C = window.Chrome, Pt = window.Parts, esc = Mx.esc, ago = Mx.ago, kbd = Pt.kbd, G = Pt.G;
+  var which = Mx.fleetChoice();
+  var M = Mx.create(window.DECISIONS, which);
+  var FLEET = window.FLEET[which];
+  var before = (function () { var n = 0; FLEET.personas.forEach(function (p) { if (p.pile === 'needs') n++; }); return n; })();
+  var $ = function (id) { return document.getElementById(id); };
+  var each = function (root, sel, fn) { Array.prototype.forEach.call(root.querySelectorAll(sel), fn); };
+  var plural = function (n, w, ws) { return n + ' ' + (n === 1 ? w : (ws || w + 's')); };
+
+  var LANES = [
+    { key: 'breach', n: '1', label: 'Breach', types: ['breach', 'valve'], hint: 'an envelope was hit, or a valve (outbound, deletion) needs you' },
+    { key: 'sign', n: '2', label: 'Sign', types: ['sign'], hint: 'a drafted mandate waits for your signature' },
+    { key: 'accept', n: '3', label: 'Accept', types: ['claim'], hint: 'a steward says a mandate is met' },
+    { key: 'talk', n: '4', label: 'Talk', types: ['talk'], hint: 'conversation, not a decision' }
+  ];
+  var MERGE_ORDER = ['never', 'gate-green+council-ready', 'gate-green'];
+  var MERGE_OPT = { never: ['Never', 'every merge asks you'], 'gate-green+council-ready': ['Gate + council', 'lands on green gates and a ready council'], 'gate-green': ['Gate green', 'lands when the project gates pass'] };
+  var QUICK = ['Looks good, go ahead', 'Not now, park it', 'Send me the diff first'];
+  var S = { lane: null, sel: 0, deck: null, drawer: null, before: false, prevCounts: {}, ticker: [],
+    armed: null, prompt: null, picks: null, foc: 0, reader: null, edit: false, form: null, receipt: null, busy: false, lastKey: null, landed: 0 };
+
+  function laneAsks(l) {
+    return M.openAsks().filter(function (a) { return l.types.indexOf(a.type) >= 0; }).sort(function (a, b) {
+      return (b.stopTheLine - a.stopTheLine) || ((b.type === 'valve') - (a.type === 'valve')) || M.askOrder(a, b);
+    });
+  }
+  function laneOf(key) { return LANES.filter(function (l) { return l.key === key; })[0]; }
+  function laneItems(l) { return laneAsks(l).reduce(function (s, a) { return s + Math.max(1, a.items.length); }, 0); }
+  function laneOfAsk(a) { return LANES.filter(function (x) { return x.types.indexOf(a.type) >= 0; })[0]; }
+  function waitOf(it) { return ago(Date.parse(it.createdAt), M.simMs) + ' waiting'; }
+  function actAgo(a) { return ago(a.at, M.simMs); }
+
+  // ── One line per card, for the peek: what kind, the ask, what it unblocks
+  function askHead(a) {
+    var m = a.mandate, n = a.items.length, more = n > 1 ? '  +' + (n - 1) + ' like it' : '';
+    if (a.type === 'breach') {
+      var req = M.clauseRequest(a);
+      if (a.sub === 'stop') return { kicker: 'Stop the line · ' + m.id, title: a.items[0].title + more, ask: req.amend + ', or keep the line stopped', tone: 'err' };
+      if (a.sub === 'risk') return { kicker: M.CLAUSE[a.sub].label + ' · ' + m.id, title: a.items[0].title + more, ask: req.amend + ': a person reads these, not the steward', tone: 'warn' };
+      return { kicker: M.CLAUSE[a.sub].label + ' · ' + m.id, title: req.amend, ask: a.items[0].title + more, tone: a.stopTheLine ? 'err' : 'warn' };
+    }
+    if (a.type === 'valve') return { kicker: 'Valve · ' + M.VALVE[a.sub] + ' · ' + m.id, title: (a.sub === 'deletion' ? 'Delete ' + plural(n, 'item') : 'Send ' + plural(n, 'outbound message')), ask: a.items[0].title + (n > 1 ? '  +' + (n - 1) + ' more' : ''), tone: 'err' };
+    if (a.type === 'claim') { var lock = M.claimLock(m); return { kicker: 'Claim · ' + m.id, title: m.intent, ask: lock ? lock : 'UAT passed and the council is ready: you can accept now', tone: 'ok' }; }
+    if (a.type === 'sign') return { kicker: 'Draft by Athena · ' + m.id, title: m.intent, ask: 'Signing releases ' + plural(m.held.length, 'held item'), tone: 'info' };
+    return { kicker: 'Message · ' + a.items[0].source.persona, title: a.items[0].title, ask: Pt.firstLine(a.items[0].body), tone: 'info' };
+  }
+  function askSub(a) {
+    var m = a.mandate, bits = [];
+    if (m) bits.push(m.steward);
+    bits.push(ago(a.updatedAt, M.simMs) + ' ago');
+    return bits.join(' · ');
+  }
+
+  // ── Frame (level one: unchanged from round 2)
+  function render() {
+    $('mon').innerHTML =
+      C.header(which) +
+      '<div class="cmd">' + '<span class="mode" title="Activity">' + C.SVG.pulse + '</span>' + C.census(FLEET, !S.before) + lanesHtml() + yieldHtml() +
+      '<span class="dayclock" style="margin-left:auto">' + dayHtml() + '</span>' +
+      '<span class="seg" style="margin-left:6px"><button class="on">Classic</button><button>Lanes</button></span></div>' +
+      '<div class="body"><aside class="supply">' + C.sessionsPlate(FLEET) + stewardsPlate() + C.usagePlate(FLEET) + '</aside>' +
+      '<main class="board' + (S.before ? ' before' : '') + '">' + ribbonHtml() + baysHtml() + '</main></div>' +
+      '<footer class="dock"><span class="prompt">&gt;_</span><span class="ticker" id="ticker">' + tickerHtml() + '</span>' +
+      '<span class="right"><span><i class="ae-lamp is-lit ae-t-warn" style="width:7px;height:7px"></i> ' + M.itemsToYou() + ' to you</span><span><i class="ae-lamp is-lit ae-t-run" style="width:7px;height:7px"></i> ' + M.stats.stewardActs + ' steward acts</span><span class="muted"><kbd>?</kbd> keys</span></span></footer>';
+    bindFrame();
+    if (S.lane) renderPeek();
+  }
+  function lanesHtml() {
+    return '<div class="lanes" role="group" aria-label="Mandate lanes">' + LANES.map(function (l) {
+      var asks = laneAsks(l), n = asks.length, stop = asks.some(function (a) { return a.stopTheLine; }), valves = asks.filter(function (a) { return a.type === 'valve'; }).length;
+      var tone = l.key === 'breach' ? (stop || valves ? 'err' : 'warn') : l.key === 'accept' ? 'ok' : 'info';
+      var lit = n > 0;
+      var bump = S.prevCounts[l.key] != null && S.prevCounts[l.key] !== n;
+      S.prevCounts[l.key] = n;
+      return '<button class="lane ae-win ' + (lit ? 'is-lit ' : '') + 'ae-t-' + tone + (S.lane === l.key ? ' is-open' : '') + (bump ? ' bump' : '') + '" data-lane="' + l.key + '" title="' + esc(l.hint) + '">' +
+        '<kbd>' + l.n + '</kbd><i class="ae-lamp ' + (lit ? 'is-lit' : '') + '"></i><span class="w">' + l.label + '</span><span class="typo-data">' + n + '</span>' +
+        (l.key === 'breach' && valves ? '<span class="dim" style="font-size:.875rem">' + valves + ' valve' + (valves === 1 ? '' : 's') + '</span>' : '') + '</button>';
+    }).join('') +
+      '<button class="lane ae-win ae-t-off" data-drawer="orphans" title="Work no mandate claims: read as one line, never a lane"><kbd>O</kbd><span class="w dim">Orphans</span><span class="typo-data dim">' + M.orphans.length + '</span></button></div>';
+  }
+  function yieldHtml() {
+    return '<div class="yield" title="Design figures, derived from the dataset"><span><b>' + M.stats.stewardActs.toLocaleString() + '</b> <span class="muted">handled in envelopes</span></span><span><b>' + M.itemsToYou().toLocaleString() + '</b> <span class="muted">to you</span></span></div>';
+  }
+  function dayHtml() {
+    var run = DAY && DAY.running();
+    var left = M.stream.length - M.streamIdx;
+    return '<button class="play ae-win ' + (run ? 'is-lit ae-t-run' : '') + '" id="play" title="Simulate the day (P)">' + (run ? '❚❚' : '▶') + '</button><span><kbd>P</kbd> day ' + Mx.clock(M.simMs) + ' <span class="muted">· ' + left + ' to arrive</span></span>';
+  }
+  function stewardsPlate() {
+    var ms = M.mandates.filter(function (m) { return m.state !== 'accepted'; });
+    var rank = function (m) { return Object.keys(m.asks).length * 10 + (m.state === 'suspended' ? 5 : 0); };
+    ms.sort(function (a, b) { return rank(b) - rank(a) || b.acts.length - a.acts.length; });
+    var active = ms.filter(function (m) { return m.state === 'active' || m.state === 'claimed'; }).length;
+    var show = ms.slice(0, which === 'scale' ? 9 : 10);
+    return '<section class="plate ae-plate stw"><div class="engrave" style="display:flex;justify-content:space-between;align-items:center">Stewards <span><kbd>M</kbd></span></div>' +
+      '<div style="font-size:.9375rem;margin:4px 0 6px">' + active + ' envelope' + (active === 1 ? '' : 's') + ' signed · <span class="muted">replaces Autopilot</span></div>' +
+      show.map(function (m) {
+        var L = M.mandateLoad(m), asks = L.asks, tone = m.state === 'suspended' ? 'off' : asks ? 'warn' : m.state === 'draft' ? 'info' : 'run';
+        return '<div class="row ae-t-' + tone + '" data-mandate="' + m.id + '" title="' + esc(m.intent) + '"><span class="id">' + m.id + '</span><span class="clamp1" style="font-size:.9375rem">' + esc(m.intent) + '</span><i class="ae-lamp ' + (asks || m.state === 'draft' ? 'is-lit' : '') + '"></i>' +
+          '<div class="bar2"><div class="ae-bar ' + (L.spendPct > 85 ? 'ae-t-warn' : 'ae-t-run') + '"><span style="width:' + L.spendPct + '%"></span></div></div></div>';
+      }).join('') + (ms.length > show.length ? '<div class="dim" style="font-size:.875rem;margin-top:4px">+' + (ms.length - show.length) + ' more in the register</div>' : '') + '</section>';
+  }
+  function ribbonHtml() {
+    var cards = M.openAsks().length;
+    return '<div class="ribbon ae-plate">' +
+      '<div class="vs"><span class="big">' + M.stats.arrived.toLocaleString() + '</span><span class="lab">items the fleet produced</span></div>' +
+      '<div class="vs"><span class="big" style="color:color-mix(in srgb,var(--primary) 70%,var(--foreground))">' + M.stats.stewardActs.toLocaleString() + '</span><span class="lab">decided by stewards inside envelopes you signed</span></div>' +
+      '<div class="vs"><span class="big" style="color:var(--status-warning-raw)">' + cards + '</span><span class="lab">cards for you (' + M.itemsToYou() + ' items)</span></div>' +
+      '<div class="vs"><span class="big dim">' + M.orphans.length + '</span><span class="lab">orphans, no mandate</span></div>' +
+      '<div class="note">Agent lines stay dark: stewards hold their items.<br>A nameplate lights when its mandate holds a card for you.<br><kbd>B</kbd> ' + (S.before ? '<b>showing today\'s lamps (' + before + ' agents lit)</b>' : 'compare with today\'s lamps') + '</div></div>';
+  }
+  // After mandates a persona line never carries a need: its items go to a steward, and
+  // what reaches you is a mandate card. The bay's NAMEPLATE lights when a mandate covering
+  // the project holds a card for you; a project no mandate covers says so.
+  function baysHtml() {
+    var handled = {};
+    M.acts.forEach(function (a) { var k = a.item.source.personaId; handled[k] = (handled[k] || 0) + 1; });
+    var orphanProjects = {}; M.orphans.forEach(function (it) { orphanProjects[it.source.project] = 1; });
+    return C.bays(FLEET, function (p) {
+      if (S.before) {
+        if (p.pile === 'needs') return { cls: p.needTone === 'critical' ? 'critical' : 'needs', count: p.needs.reduce(function (s, n) { return s + n.count; }, 0), title: 'Today: needs you' };
+        return { cls: p.pile === 'working' ? 'working' : p.pile === 'off' ? 'off' : 'quiet' };
+      }
+      var cls = p.enabled === false ? 'off' : p.running ? 'working' : 'quiet';
+      if (p.pile === 'needs' && p.needTone === 'critical') cls = 'critical';
+      return { cls: cls, count: handled[p.id] ? '<span class="dim" style="font-weight:400">' + handled[p.id] + '</span>' : '', title: (handled[p.id] || 0) + ' of its items were decided by a steward' };
+    }, { maxLines: which === 'scale' ? 6 : 99, nameplate: S.before ? null : function (t) {
+      var ms = (M.byProject[t.name] || []).filter(function (m) { return m.state !== 'accepted'; });
+      if (!ms.length) return '<span class="n dim" style="font-weight:400;font-size:.875rem">' + (orphanProjects[t.name] ? 'no mandate' : '') + '</span><i class="ae-lamp ae-t-off"></i>';
+      var asks = ms.reduce(function (s, m) { return s + Object.keys(m.asks).length; }, 0);
+      return '<span class="n" style="font-weight:400;font-size:.875rem"><span class="typo-code" style="color:color-mix(in srgb,var(--primary) 70%,var(--foreground))">' + ms[0].id + (ms.length > 1 ? ' +' + (ms.length - 1) : '') + '</span>' + (asks ? ' · ' + asks + ' card' + (asks === 1 ? '' : 's') : '') + '</span><i class="ae-lamp ' + (asks ? 'is-lit ae-t-warn' : 'ae-t-run') + '"></i>';
+    } });
+  }
+  function tickerHtml() {
+    if (!S.ticker.length) return '<span class="dim">Describe the task to dispatch…</span><span class="muted">· steward acts scroll here as they happen</span>';
+    return S.ticker.slice(0, 3).map(function (t, i) { return '<span class="' + (i === 0 ? 'fresh' : 'dim') + '">' + esc(t) + '</span>'; }).join('<span class="dim">·</span>');
+  }
+  function bindFrame() {
+    each(document, '[data-lane]', function (b) { b.onclick = function () { openLane(b.dataset.lane); }; });
+    each(document, '[data-mandate]', function (b) { b.onclick = function () { openDrawer({ view: 'mandate', m: M.byId[b.dataset.mandate], sel: 0 }); }; });
+    each(document, '[data-drawer]', function (b) { b.onclick = function () { openDrawer({ view: b.dataset.drawer, sel: 0 }); }; });
+    var p = $('play'); if (p) p.onclick = function () { DAY.toggle(); };
+  }
+
+  // ── Peek (level 1 → list): each row says the ask, so the operator decides what to open
+  function openLane(key) { if (S.lane === key) { closeLane(); return; } S.lane = key; S.sel = 0; render(); }
+  function closeLane() { S.lane = null; $('peek').classList.remove('open'); render(); }
+  function groupOf(a) { return a.stopTheLine ? 'Stop the line' : a.type === 'valve' ? 'Valves: you read each one' : a.type === 'breach' ? 'Envelope clauses' : null; }
+  function renderPeek() {
+    var l = laneOf(S.lane), asks = laneAsks(l), el = $('peek');
+    var btn = document.querySelector('[data-lane="' + l.key + '"]');
+    el.style.left = Math.max(12, Math.min(window.innerWidth - 700, (btn ? btn.getBoundingClientRect().left : 300) - 20)) + 'px';
+    var cap = 150, shown = asks.slice(0, cap), lastG = null;
+    var counts = {}; asks.forEach(function (a) { var g = groupOf(a); if (g) counts[g] = (counts[g] || 0) + 1; });
+    S.sel = Math.min(S.sel, Math.max(0, asks.length - 1));
+    el.innerHTML = '<div class="ph"><div class="crumbs"><span>Activity</span><span class="sep"></span><b>' + l.label + ' lane</b><span class="dim">· ' + plural(asks.length, 'card') + ', ' + laneItems(l) + ' items · ordered by what each unblocks</span></div></div>' +
+      '<div class="rows" role="listbox" aria-label="' + l.label + ' lane">' + (shown.length ? shown.map(function (a, i) {
+        var hd = askHead(a), g = groupOf(a), gh = '';
+        if (g && g !== lastG) { gh = '<div class="grp"><span class="typo-eyebrow">' + esc(g) + '</span><span class="typo-caption">' + counts[g] + '</span></div>'; lastG = g; }
+        return gh + '<div class="row ae-line ' + (i === S.sel ? 'is-selected ' : '') + 'is-lit ae-t-' + hd.tone + (a.fresh && M.simMs - a.fresh < 3 * 3600e3 ? ' is-flash' : '') + '" data-i="' + i + '" role="option" aria-selected="' + (i === S.sel) + '"><i class="ae-lamp is-lit" style="margin-top:5px"></i>' +
+          '<span style="min-width:0"><span class="k ae-tone-text">' + esc(hd.kicker) + '</span><br><span class="t clamp1" style="display:block">' + esc(hd.title) + '</span></span>' +
+          '<span class="ub"><b>' + M.unblocks(a) + '</b><span>unblocks</span></span>' +
+          '<span class="ak clamp1">' + esc(hd.ask) + '</span><span class="s dim">' + esc(askSub(a)) + '<span class="open">· ' + kbd('Enter') + ' opens the card</span></span></div>';
+      }).join('') : '<div class="more dim">Nothing in this lane. Stewards are handling everything inside their envelopes.</div>') +
+      (asks.length > cap ? '<div class="more dim">+' + (asks.length - cap) + ' more cards, same order. <kbd>/</kbd> finds one by mandate, title or clause.</div>' : '') + '</div>' +
+      '<div class="pf"><span><kbd>j</kbd><kbd>k</kbd> move</span><span><kbd>Enter</kbd> open card</span><span><kbd>1</kbd>–<kbd>4</kbd> lanes</span><span><kbd>←</kbd><kbd>→</kbd> next lane</span><span><kbd>Esc</kbd> close</span></div>';
+    el.classList.add('open');
+    each(el, '.row', function (r) { r.onclick = function () { S.sel = +r.dataset.i; openDeck(S.lane, asks[S.sel].key); }; });
+    var selEl = el.querySelector('.row.is-selected'); if (selEl) selEl.scrollIntoView({ block: 'nearest' });
+  }
+
+  // ── Deck (level 3). One fixed frame: head, body, rail; the dock never moves.
+  function resetCard() { S.armed = null; S.prompt = null; S.picks = null; S.foc = 0; S.reader = null; S.edit = false; S.form = null; }
+  function openDeck(lane, key) {
+    S.lane = null; $('peek').classList.remove('open');
+    S.deck = { lane: lane, key: key, dir: 1 }; resetCard(); S.receipt = null; S.landed = 0; S.lastKey = null;
+    $('scrim').classList.add('open'); render(); renderDeck();
+  }
+  function closeDeck(toLane) {
+    var lane = S.deck && S.deck.lane;
+    S.deck = null; S.busy = false; $('deck').classList.remove('open'); if (!S.drawer) $('scrim').classList.remove('open');
+    if (toLane) S.lane = lane;
+    render();
+  }
+  function deckAsks() { return laneAsks(laneOf(S.deck.lane)); }
+  function currentAsk() {
+    if (!S.deck || !S.deck.key) return null;
+    var a = M.asks[S.deck.key];
+    return a && a.open && deckAsks().indexOf(a) >= 0 ? a : null;
+  }
+  function toneOf(a) { return a.type === 'valve' || a.stopTheLine ? 'err' : a.type === 'breach' ? 'warn' : a.type === 'claim' ? 'ok' : 'info'; }
+  function whoOf(m) { return { initial: m.stewardKind === 'athena' ? 'A' : 'AM', name: m.steward, sub: 'steward of <span class="mid">' + m.id + '</span> v' + m.version }; }
+  function spendMeter(m, note) { var e = m.envelope; return { label: 'Spend today', used: e.spendUsed, cap: e.spendCap, usedText: M.fmtMoney(e.spendUsed), capText: M.fmtMoney(e.spendCap), note: note }; }
+  function agreeHtml(m) { return '<span class="design" title="Placeholder: agentWouldHave is invented in the dataset">' + M.agreementFor(m) + '% shadow</span>'; }
+  function envFacts(m) {
+    var e = m.envelope;
+    return [['Merge', esc(MERGE_OPT[e.merge][0])], ['Builders', e.builders], ['Steward decides', e.decides.length + ' of ' + M.ALL_SCOPES.length + ' scopes'], ['Acts so far', m.acts.length], ['Agreement', agreeHtml(m)]];
+  }
+  function why(act) {
+    var m = act.mandate, e = m.envelope, v = act.verdict;
+    if (act.actor === 'You') return 'it was your decision';
+    if (/merged/.test(v)) return 'envelope v' + act.version + ' lets merges land on ' + M.MERGE_LABEL[e.merge] + '; revertible';
+    if (/spent/.test(v)) return 'it fit under the ' + M.fmtMoney(e.spendCap) + ' a day cap';
+    if (/evidence|council/.test(v)) return 'reports and verdicts are evidence on the mandate';
+    var s = M.scopeOf(act); return s ? 'the scope "' + M.SCOPES[s] + '"' : 'it sat inside the envelope';
+  }
+
+  // What can take focus on a card (j/k), in reading order.
+  function focusList(a) {
+    if (a.type === 'breach' || a.type === 'valve') return a.items.map(function (it) { return { kind: 'item', item: it }; });
+    if (a.type === 'claim') return M.sample(a.mandate, 5).map(function (x) { return { kind: 'act', act: x, item: x.item }; })
+      .concat(a.mandate.evidence.slice().reverse().slice(0, 8).map(function (it) { return { kind: 'item', item: it }; }));
+    return [];
+  }
+
+  function renderDeck() {
+    var el = $('deck'); if (!S.deck) return;
+    var l = laneOf(S.deck.lane), asks = deckAsks(), a = currentAsk();
+    var oldBody = el.querySelector('.card-body'), sameView = a && S.lastKey === a.key + (S.reader ? ':r' + S.reader.idx : '');
+    var keep = oldBody && sameView ? oldBody.scrollTop : 0;
+    var idx = a ? asks.indexOf(a) : -1, html;
+    if (!a) html = emptyDeck(l);
+    else {
+      var c = S.reader ? readerCard(a) : CARD[a.type](a);
+      html = '<div class="card' + (sameView ? '' : ' enter' + (S.deck.dir < 0 ? ' from-left' : '')) + '"><span class="card-spine"></span><div class="card-main">' + c.head + '<div class="card-body">' + c.body + '</div></div>' + c.rail + '</div>';
+    }
+    el.className = 'deck open ae-t-' + (a ? (S.reader ? 'info' : toneOf(a)) : 'ok');
+    el.innerHTML = trayHtml(l, asks, idx) + receiptHtml() + html;
+    S.lastKey = a ? a.key + (S.reader ? ':r' + S.reader.idx : '') : null;
+    bindDeck(a);
+    var nb = el.querySelector('.card-body'); if (nb && keep) nb.scrollTop = keep;
+    var f = el.querySelector('.card-body .is-foc'); if (f && !S.reader && sameView) f.scrollIntoView({ block: 'nearest' });
+    if (S.prompt && !(S.prompt.options || []).length) { var t = $('prompt'); if (t) t.focus(); }
+  }
+  function trayHtml(l, asks, idx) {
+    var n = asks.length, pct = n ? Math.round((idx + 1) / n * 100) : 100;
+    return '<div class="tray"><div class="crumbs"><span>Activity</span><span class="sep"></span><span>' + l.label + ' lane</span>' + (S.reader ? '<span class="sep"></span><span>card</span><span class="sep"></span><b>reading</b>' : '') + '</div>' +
+      '<div class="pos">' + (n && idx >= 0 ? '<b class="num">' + (idx + 1) + '</b><span class="muted">of ' + n + '</span>' : '<span class="muted">no cards left</span>') + '<span class="track" aria-hidden="true"><span style="width:' + pct + '%"></span></span></div>' +
+      (S.landed ? '<span class="landed typo-caption">' + Pt.lamp('run') + ' ' + plural(S.landed, 'arrival') + ' joined this lane while you read</span>' : '') +
+      '<span class="walk">' + kbd('←') + kbd('→') + ' walk · ' + kbd('Esc') + ' ' + (S.reader ? 'back to the card' : S.armed ? 'disarm' : S.prompt ? 'cancel' : 'back to the lane') + ' · ' + kbd('?') + ' keys</span></div>';
+  }
+  function receiptHtml() {
+    if (!S.receipt) return '';
+    return '<div class="receipt ae-t-' + S.receipt.tone + '" role="status">' + Pt.lamp(S.receipt.tone) + '<span class="t">' + esc(S.receipt.text) + '</span><span class="k">' + kbd('L') + ' act log</span></div>';
+  }
+  function emptyDeck(l) {
+    var others = LANES.filter(function (x) { return x.key !== l.key; }).map(function (x) { return { l: x, n: laneAsks(x).length }; }).filter(function (x) { return x.n; });
+    var next = others.length ? '<div class="next">' + others.map(function (x) { return '<button class="chipf" data-golane="' + x.l.key + '">' + kbd(x.l.n) + ' ' + x.l.label + ' <b>' + x.n + '</b></button>'; }).join('') + '</div>' : '';
+    return '<div class="card">' + Pt.emptyCard(l.label + ' lane is clear', 'Stewards hold the rest: ' + M.stats.stewardActs + ' acts inside envelopes you signed. ' + (others.length ? 'These lanes still hold cards:' : 'Every lane is clear. A quiet day is dark.'), next + '<div class="typo-caption muted" style="margin-top:6px">' + kbd('Esc') + ' back to the monitor</div>') + '</div>';
+  }
+
+  // ── The card shapes. Each returns { head, body, rail } built from the same parts.
+  var CARD = {};
+  CARD.breach = function (a) {
+    var m = a.mandate, req = M.clauseRequest(a), n = a.items.length, stop = a.sub === 'stop', tone = stop || a.stopTheLine ? 'err' : 'warn';
+    var bumps = !!(req.patch.spendCap || req.patch.merge || req.patch.addScope);
+    var head = Pt.head({ tone: tone, glyph: stop ? 'stop' : 'breach', breathe: stop, eyebrow: ['Breach · ' + esc(M.CLAUSE[a.sub].label), esc(m.id) + ' v' + m.version], age: 'waiting ' + ago(a.createdAt, M.simMs),
+      title: stop || a.sub === 'risk' ? a.items[0].title + (n > 1 ? ' (+' + (n - 1) + ' like it)' : '') : req.amend,
+      context: 'on <span class="mid">' + m.id + '</span> · ' + esc(m.intent),
+      yes: { verb: bumps ? 'amend to v' + (m.version + 1) : stop ? 'resume' : 'approve', text: req.yes, tone: a.sub === 'spend' || a.sub === 'merge' ? 'warn' : null },
+      no: { verb: req.deny.charAt(0).toLowerCase() + req.deny.slice(1), text: req.no } });
+    var what;
+    if (stop) what = incidentSheet(a, req);
+    else {
+      var d = M.clauseDiff(a);
+      what = Pt.sec('The steward asks', '', '<div class="ask"><div class="q">' + esc(req.amend) + '</div><div class="w typo-body">' + esc(whyAsk(a)) + '</div></div>' +
+        (d.length ? '<div style="margin-top:8px">' + Pt.diff(d) + '</div>' : ''));
+    }
+    var body = what + Pt.sec('Behind it · ' + plural(n, 'item'), 'coalesced: the next crossing of this clause joins this card',
+      Pt.itemRows(a.items, { foc: S.foc, ago: waitOf, tone: tone, label: 'Items behind the breach' }));
+    var dock;
+    if (S.prompt) dock = Pt.prompt(S.prompt);
+    else {
+      var armed = S.armed === 'amend';
+      dock = (armed ? Pt.armedBox(a.sub === 'spend' ? 'This spends money' : 'This merges branches', armedLines(a, req)) : '') +
+        '<div class="dpair">' + Pt.verdict({ act: 'amend', k: '1', yes: true, tone: 'ok', glyph: bumps ? 'edit' : stop ? 'play' : 'check', label: bumps ? 'Amend to v' + (m.version + 1) : req.amend, hint: bumps ? req.amend : null, armed: armed, armedLabel: 'Press 1 again to ' + (a.sub === 'spend' ? 'raise the cap' : 'let them merge') }) +
+        Pt.verdict({ act: 'deny', k: '2', label: req.deny, hint: 'asks why: one key, or skip' }) + '</div>' +
+        Pt.branch({ act: 'suspend', k: '3', danger: true, glyph: 'pause', label: 'Suspend ' + m.id, hint: 'all its work pauses; valves stay with you' }) +
+        Pt.links([{ act: 'read', k: 'E', label: 'read the item' }, { act: 'page', k: 'G', label: m.id + ' page' }]);
+    }
+    var rail = Pt.rail({ who: whoOf(m), tiles: [{ glyph: 'clock', value: ago(a.createdAt, M.simMs), label: 'waiting' }, { glyph: 'unblocks', value: M.unblocks(a), label: 'unblocked by a yes' }],
+      meter: spendMeter(m, a.sub === 'spend' ? 'the ask: ' + M.fmtMoney(req.patch.spendCap) + ' a day' : null), facts: envFacts(m), dock: dock });
+    return { head: head, body: body, rail: rail };
+  };
+  function whyAsk(a) {
+    var m = a.mandate, e = m.envelope, n = a.items.length;
+    if (a.sub === 'spend') { var need = a.items.reduce(function (s, it) { return s + M.costOf(it); }, 0); return plural(n, 'paid step') + ' need ' + M.fmtMoney(need) + ' together; ' + M.fmtMoney(e.spendUsed) + ' of ' + M.fmtMoney(e.spendCap) + ' is used today.'; }
+    if (a.sub === 'merge') return plural(n, 'branch', 'branches') + ' wait to merge. This envelope says ' + M.MERGE_LABEL[e.merge] + '.';
+    if (a.sub === 'scope') { var k = {}; a.items.forEach(function (it) { k[it.kind] = (k[it.kind] || 0) + 1; }); return plural(n, 'item') + ' the steward may not decide alone: ' + Object.keys(k).map(function (x) { return k[x] + ' ' + x + (k[x] === 1 ? '' : 's'); }).join(', ') + '.'; }
+    var sev = {}; a.items.forEach(function (it) { sev[it.severity || 'medium'] = 1; });
+    return plural(n, 'review') + ' of ' + Object.keys(sev).join(' and ') + ' severity: a person reads these, not the steward.';
+  }
+  function armedLines(a, req) {
+    var m = a.mandate, n = a.items.length;
+    if (a.sub === 'spend') {
+      var need = a.items.reduce(function (s, it) { return s + M.costOf(it); }, 0);
+      return ['The cap rises to <b>' + M.fmtMoney(req.patch.spendCap) + ' a day</b> on ' + m.id + ' v' + (m.version + 1), '<b>' + plural(n, 'paid step') + '</b> run now: ' + M.fmtMoney(need) + ', not refundable', 'Each step lands in the act log under the new version'];
+    }
+    return ['From v' + (m.version + 1) + ', merges land on <b>gate green + council ready</b>', '<b>' + plural(n, 'branch', 'branches') + '</b> merge now', 'Each merge can be reverted from the act log'];
+  }
+  function incidentSheet(a, req) {
+    var m = a.mandate, n = a.items.length, it = a.items[0];
+    var first = a.items.reduce(function (t, x) { return Math.min(t, Date.parse(x.createdAt)); }, Infinity);
+    var kinds = {}; a.items.forEach(function (x) { if (x.incidentKind) kinds[x.incidentKind] = 1; });
+    var sev = (it.severity || 'high').toLowerCase();
+    var plan = kinds.external ? 'Retry the failing call behind a backoff and a circuit breaker. If the upstream still fails after three tries, the line stops again.' : 'Re-run the failing step with its dependency pinned and the gate checked again. A second failure stops the line again.';
+    return Pt.sec('The incident', '', '<div class="ask ae-t-err" style="box-shadow:inset 2px 0 0 var(--status-error), inset 0 0 0 1px var(--ae-edge)"><div class="q">Work on ' + m.id + ' is paused</div><div class="w typo-body">Builders stopped and queued runs are held. Nothing merges on ' + m.id + ' until you decide.</div></div>' +
+        '<dl class="facts wide" style="margin-top:12px"><dt class="typo-eyebrow">Severity</dt><dd class="typo-data ' + (sev === 'medium' ? 'ae-t-warn' : 'ae-t-err') + ' ae-tone-text">' + esc(sev) + '</dd>' +
+        '<dt class="typo-eyebrow">Kind</dt><dd class="typo-data">' + esc(Object.keys(kinds).join(', ') || 'run failure') + '</dd>' +
+        '<dt class="typo-eyebrow">First seen</dt><dd class="typo-data">' + ago(first, M.simMs) + ' ago</dd>' +
+        '<dt class="typo-eyebrow">Occurrences</dt><dd class="typo-data">' + n + '</dd>' +
+        '<dt class="typo-eyebrow">Raised by</dt><dd class="typo-data">' + esc(it.source.persona) + ' (' + esc(it.source.raisedBy) + ')</dd></dl>') +
+      Pt.sec('The steward\'s fix plan', '<span class="design">derived</span>', '<p class="typo-body" style="margin:0;max-width:72ch">' + esc(plan) + '</p>');
+  }
+
+  CARD.valve = function (a) {
+    var m = a.mandate, del = a.sub === 'deletion', n = a.items.length;
+    if (!S.picks || S.picks.length !== n) S.picks = a.items.map(function () { return true; });
+    var sel = S.picks.filter(Boolean).length;
+    var head = Pt.head({ tone: 'err', glyph: del ? 'trash' : 'send', eyebrow: ['Valve · ' + esc(M.VALVE[a.sub]), esc(m.id) + ' v' + m.version], age: 'waiting ' + ago(a.createdAt, M.simMs),
+      title: del ? 'Delete ' + plural(n, 'item') : 'Send ' + plural(n, 'outbound message'), context: 'on <span class="mid">' + m.id + '</span> · ' + esc(m.intent),
+      yes: { verb: (del ? 'delete ' : 'send ') + sel + ' selected', text: del ? plural(sel, 'item is', 'items are') + ' deleted for good, logged under your name.' : plural(sel, 'message leaves', 'messages leave') + ' the fleet under your name. They cannot be unsent.', tone: 'err' },
+      no: { verb: 'stop them', text: 'Nothing leaves. Stopped with your reason; the steward carries on.' } });
+    var body = Pt.sec((del ? 'What is deleted' : 'What leaves the fleet') + ' · ' + sel + ' of ' + n + ' selected', kbd('Space') + ' selects · ' + kbd('E') + ' reads the full text',
+      Pt.itemRows(a.items, { foc: S.foc, ago: waitOf, picks: S.picks, preview: true, label: del ? 'Deletions' : 'Outbound messages' }));
+    var dock;
+    if (S.prompt) dock = Pt.prompt(S.prompt);
+    else {
+      var armed = S.armed === 'approve';
+      var picked = a.items.filter(function (it, i) { return S.picks[i]; });
+      dock = (armed ? Pt.armedBox(del ? 'Deleted for good' : 'Cannot be unsent', picked.slice(0, 3).map(function (it) { return esc(it.title); }).concat(picked.length > 3 ? ['and ' + (picked.length - 3) + ' more'] : [])) : '') +
+        '<div class="dpair">' + Pt.verdict({ act: 'approve', k: 'A', yes: true, tone: 'warn', glyph: del ? 'trash' : 'send', label: (del ? 'Delete ' : 'Send ') + sel + ' selected', hint: sel ? 'asks you to press A twice' : 'select at least one', armed: armed, armedLabel: 'Press A again: ' + (del ? 'delete ' : 'send ') + sel + ' now' }) +
+        Pt.verdict({ act: 'stop', k: 'R', label: 'Stop ' + sel + ' selected', hint: 'asks why: one key, or skip' }) + '</div>' +
+        Pt.links([{ act: 'pick', k: 'Space', label: 'select' }, { act: 'read', k: 'E', label: 'read it' }, { act: 'page', k: 'G', label: m.id + ' page' }]);
+    }
+    var rail = Pt.rail({ who: whoOf(m), tiles: [{ glyph: 'clock', value: ago(a.createdAt, M.simMs), label: 'waiting' }, { glyph: del ? 'trash' : 'send', value: sel + '/' + n, label: 'selected' }],
+      facts: [['Pre-authorised', 'never'], ['Logged as', 'You'], ['Undo', del ? 'none' : 'none, cannot be unsent']],
+      extra: '<div class="r-note ae-t-err typo-body">Outbound messages and deletions are literal types, not settings: no envelope can pre-authorise them.</div>', dock: dock });
+    return { head: head, body: body, rail: rail };
+  };
+
+  CARD.claim = function (a) {
+    var m = a.mandate, acc = m.acceptance, lock = M.claimLock(m), sample = M.sample(m, 5), ev = m.evidence.slice().reverse().slice(0, 8);
+    var reverted = m.acts.filter(function (x) { return x.reverted; }).length;
+    var head = Pt.head({ tone: 'ok', glyph: 'claim', eyebrow: ['Accept · claim', esc(m.id) + ' v' + m.version], age: ago(a.createdAt, M.simMs) + ' ago',
+      title: m.intent, context: esc(m.steward) + ' says it is met · ' + plural(m.acts.length, 'steward act') + ' in the envelope',
+      yes: { verb: 'accept', text: m.id + ' closes. The steward\'s authority on it ends; ' + plural(m.acts.length, 'act') + ' stay in the log.' },
+      no: { verb: 'send it back', text: 'It stays active with your reason; the steward continues inside v' + m.version + '.' } });
+    var kpi = acc.kpi ? (acc.kpi.readInDays ? { tone: 'warn', label: 'KPI', detail: 'linked: the next measurement decides', word: 'read in ' + acc.kpi.readInDays + 'd' } : { tone: 'ok', label: 'KPI', detail: 'read after the claim: on target', word: 'met' }) : { tone: 'off', label: 'KPI', detail: 'none linked: UAT and the council stand in', word: 'n/a' };
+    var body = Pt.sec('Met when', lock ? 'accept unlocks when every row is green' : 'every row is green', Pt.checks([kpi,
+        { tone: acc.uatPassed ? 'ok' : 'warn', label: 'UAT', detail: esc(acc.uat), word: acc.uatPassed ? 'passed' : 'not run' },
+        { tone: acc.councilReady ? 'ok' : 'warn', label: 'Council ' + acc.council, detail: 'evidence only: the council never approves', word: acc.councilReady ? 'ready' : 'pending' }])) +
+      Pt.sec('Audit · ' + sample.length + ' acts drawn at random', kbd('V') + ' revert · ' + kbd('N') + ' narrow', Pt.actRows(sample, { foc: S.foc, ago: actAgo, why: why })) +
+      Pt.sec('Evidence · ' + m.evidence.length + ' attached', kbd('E') + ' opens it in the reader', ev.length ? Pt.itemRows(ev, { foc: S.foc, base: sample.length, ago: waitOf, tone: 'run', label: 'Evidence' }) + (m.evidence.length > ev.length ? '<div class="irows-more typo-caption">+' + (m.evidence.length - ev.length) + ' older on ' + m.id + ' page</div>' : '') : '<div class="empty-line typo-body">No reports or verdicts attached yet.</div>');
+    var fl = focusList(a), cur = fl[S.foc], dock;
+    if (S.prompt) dock = Pt.prompt(S.prompt);
+    else {
+      var sc = cur && cur.kind === 'act' ? M.scopeOf(cur.act) : null;
+      dock = '<div class="dpair">' + Pt.verdict({ act: 'accept', k: 'A', yes: true, tone: 'ok', label: 'Accept as met', hint: lock || 'ends the steward\'s authority on ' + m.id, locked: !!lock }) +
+        Pt.verdict({ act: 'sendback', k: 'R', label: 'Send back with a reason', hint: 'a reason is required' }) + '</div>' +
+        (cur && cur.kind === 'act' ? Pt.branch({ act: 'revert', k: 'V', glyph: 'undo', label: 'Revert the selected act', hint: cur.act.reverted ? 'already reverted' : cur.act.reversible ? cur.act.verdict : 'final: cannot be reverted' }) +
+          (sc && m.envelope.decides.indexOf(sc) >= 0 ? Pt.branch({ act: 'narrow', k: 'N', glyph: 'narrow', label: 'Take its scope back', hint: M.SCOPES[sc] }) : '') : '') +
+        Pt.links([{ act: 'read', k: 'E', label: 'read it' }, { act: 'page', k: 'G', label: m.id + ' page' }]);
+    }
+    var rail = Pt.rail({ who: whoOf(m), tiles: [{ glyph: 'layers', value: m.acts.length, label: 'steward acts' }, { glyph: 'undo', value: reverted, label: 'reverted by you' }],
+      meter: spendMeter(m), facts: envFacts(m).slice(0, 3).concat([['Agreement', agreeHtml(m)]]),
+      extra: lock ? '<div class="r-note ae-t-warn typo-body">' + esc(lock) + '</div>' : '', dock: dock });
+    return { head: head, body: body, rail: rail };
+  };
+
+  CARD.sign = function (a) {
+    var m = a.mandate, f = S.edit ? (S.form || formFrom(m)) : formFrom(m), env = envFromForm(m, f), fc = M.forecast(m, env), held = m.held.length;
+    var head = Pt.head({ tone: 'info', glyph: 'sign', eyebrow: ['Sign · drafted by Athena', esc(m.id) + ' draft'], age: ago(a.createdAt, M.simMs) + ' ago',
+      title: f.intent || m.intent, context: 'A draft mandate from your goal. ' + plural(held, 'item is', 'items are') + ' held until you sign.',
+      yes: { verb: 'sign', text: m.id + ' goes live as v1. ' + held + ' held released: ' + fc.steward + ' to the steward, ' + fc.you + ' to you, ' + fc.evidence + ' filed as evidence (forecast).' },
+      no: { verb: 'drop the draft', text: plural(held, 'held item moves', 'held items move') + ' to the orphanage. Nothing is deleted.' } });
+    var body = Pt.sec(S.edit ? 'The envelope · editing' : 'The envelope Athena drafted', S.edit ? kbd('Ctrl') + '+' + kbd('Enter') + ' signs with your edits · ' + kbd('Esc') + ' leaves a field' : kbd('E') + ' edits any field before you sign', envDoc(m, S.edit, f));
+    var dock;
+    if (S.prompt) dock = Pt.prompt(S.prompt);
+    else dock = '<div class="dpair">' + Pt.verdict({ act: 'sign', k: 'A', yes: true, tone: 'ok', glyph: 'sign', label: 'Sign ' + m.id + (S.edit ? ' with your edits' : ''), hint: 'releases ' + plural(held, 'held item') }) +
+      Pt.verdict({ act: 'drop', k: 'X', label: 'Drop the draft', hint: 'asks why: one key, or skip' }) + '</div>' +
+      Pt.branch({ act: 'edit', k: 'E', glyph: 'edit', label: S.edit ? 'Stop editing' : 'Edit before signing', hint: S.edit ? 'keeps what you typed' : 'intent, cap, merge, scope' });
+    var rail = Pt.rail({ who: { initial: 'A', name: 'Athena', sub: 'drafted ' + m.id + ' from your goal' }, tiles: [{ glyph: 'layers', value: held, label: 'held for you' }, { glyph: 'clock', value: ago(a.createdAt, M.simMs), label: 'drafted' }],
+      extra: '<div><div class="c-sec-h"><span class="typo-eyebrow">Signing releases</span><span class="c-sec-aside design">forecast</span></div><div id="forecast">' + forecastFacts(fc) + '</div></div>' +
+        (S.edit ? '<div><div class="c-sec-h"><span class="typo-eyebrow">Your edits</span></div><div id="envdiff">' + Pt.diff(M.envDiff(m, f)) + '</div></div>' : ''), dock: dock });
+    return { head: head, body: body, rail: rail };
+  };
+  function forecastFacts(fc) { return Pt.facts([['To the steward', fc.steward], ['To you', fc.you], ['Filed as evidence', fc.evidence]]); }
+  function formFrom(m) { var e = m.envelope; return { intent: m.intent, spendCap: e.spendCap, merge: e.merge, steward: m.steward, decides: e.decides.slice() }; }
+  function envFromForm(m, f) { var e = m.envelope; return { repos: e.repos, spendCap: +f.spendCap, spendUsed: e.spendUsed, merge: f.merge, builders: e.builders, decides: f.decides }; }
+  function envDoc(m, editable, f) {
+    var e = m.envelope; f = f || formFrom(m);
+    var row = function (label, inner, help) { return '<div class="row"><span class="typo-eyebrow">' + label + '</span><div>' + inner + (help ? '<div class="help typo-caption">' + help + '</div>' : '') + '</div></div>'; };
+    var stewards = ['App Master · ' + m.project, 'Athena'];
+    var merge = '<div class="opts" role="radiogroup" aria-label="Merge">' + MERGE_ORDER.map(function (k) {
+      var on = f.merge === k;
+      return '<label class="opt' + (on ? ' on' : '') + (editable ? '' : ' ro') + '">' + (editable ? '<input type="radio" name="f-merge" value="' + k + '"' + (on ? ' checked' : '') + '>' : '') + '<span class="typo-title">' + MERGE_OPT[k][0] + '</span><span class="typo-caption">' + MERGE_OPT[k][1] + '</span></label>';
+    }).join('') + '</div>';
+    var scopes = '<div class="scopes">' + M.ALL_SCOPES.map(function (s) {
+      var on = f.decides.indexOf(s) >= 0;
+      return editable ? '<label class="scope typo-body"><input type="checkbox" data-scope="' + s + '"' + (on ? ' checked' : '') + '> ' + esc(M.SCOPES[s]) + '</label>'
+        : '<span class="scope typo-body' + (on ? '' : ' no') + '">' + Pt.lamp(on ? 'run' : 'off', on) + esc(M.SCOPES[s]) + '</span>';
+    }).join('') + '</div>';
+    var acc = m.acceptance;
+    return '<div class="env">' +
+      row('Intent', editable ? '<input type="text" id="f-intent" value="' + esc(f.intent) + '" aria-label="Intent">' : '<div class="val typo-title">' + esc(f.intent) + '</div>') +
+      row('Met when', '<div class="typo-body">' + (acc.kpi ? 'The linked KPI, read 7 days after the claim · ' : '') + 'UAT: ' + esc(acc.uat) + ' · council ' + acc.council + '</div>', 'The council is evidence, never approval') +
+      row('Steward', editable ? '<select id="f-steward" aria-label="Steward">' + stewards.map(function (s) { return '<option' + (f.steward === s ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') + '</select>' : '<div class="val">' + esc(f.steward) + '</div>') +
+      row('Spend cap', editable ? '<div class="cap"><input type="number" id="f-cap" min="0" step="5" value="' + f.spendCap + '" aria-label="Spend cap a day"><span class="typo-body">dollars a day</span><span class="typo-caption muted">' + M.fmtMoney(e.spendUsed) + ' used today</span></div>'
+        : '<div class="val">' + M.fmtMoney(f.spendCap) + ' a day <span class="typo-caption muted">· ' + M.fmtMoney(e.spendUsed) + ' used today</span></div>', 'Crossing it pauses paid work and files a breach') +
+      row('Merge', merge) +
+      row('Steward decides', scopes, 'Everything else comes to you as a breach') +
+      row('Never', '<div class="never typo-body"><span>' + G.lock + 'Send an outbound message</span><span>' + G.lock + 'Delete anything</span></div>', 'Literal types, not settings: always a valve, always yours') +
+      row('Re-read', '<div class="typo-body">When its use says so: near its cap while quiet, or asking often for its size. Never on a calendar.</div>') +
+      '</div>';
+  }
+  function readForm() {
+    if (!$('f-intent')) return null;
+    var mr = document.querySelector('input[name="f-merge"]:checked');
+    return { intent: $('f-intent').value.trim(), spendCap: +$('f-cap').value, merge: mr ? mr.value : 'never', steward: $('f-steward').value,
+      decides: Array.prototype.filter.call(document.querySelectorAll('[data-scope]'), function (c) { return c.checked; }).map(function (c) { return c.dataset.scope; }) };
+  }
+
+  CARD.talk = function (a) {
+    var it = a.items[0], p = it.source.persona;
+    var head = Pt.head({ tone: 'info', glyph: 'talk', eyebrow: ['Talk · message', esc(p)], age: ago(Date.parse(it.createdAt), M.simMs) + ' ago',
+      title: it.title, context: 'from ' + esc(p) + ' · ' + esc(it.source.project) + (a.mandate ? ' · on <span class="mid">' + a.mandate.id + '</span>' : ''),
+      yes: { verb: 'reply', text: 'Your reply goes to ' + p + '. The thread stays in Conversations.' }, no: { verb: 'dismiss', text: 'Closed without a reply. Nothing else changes.' } });
+    var body = '<div class="thread"><span class="r-mono" aria-hidden="true">' + esc(p.charAt(0)) + '</span><div class="bubble"><div class="who"><b>' + esc(p) + '</b><span class="typo-caption">' + esc(it.source.project) + ' · ' + ago(Date.parse(it.createdAt), M.simMs) + ' ago</span></div><div class="prose typo-body">' + Mx.md(it.body) + '</div></div></div>' +
+      '<div class="quick">' + QUICK.map(function (q, i) { return '<button data-quick="' + i + '">' + kbd(String(i + 1)) + esc(q) + '</button>'; }).join('') + '</div>' +
+      '<div class="composer"><textarea id="reply" rows="3" class="typo-body" placeholder="Reply to ' + esc(p) + '…" aria-label="Reply"></textarea><div class="ck2"><span>' + kbd('Enter') + ' sends</span><span>' + kbd('Shift') + '+' + kbd('Enter') + ' new line</span><span>' + kbd('Esc') + ' leaves the field</span></div></div>';
+    var dock = '<div class="dpair">' + Pt.verdict({ act: 'reply', k: 'Enter', yes: true, tone: 'info', glyph: 'reply', label: 'Write a reply', hint: 'or 1-3 for a quick one' }) + Pt.verdict({ act: 'dismiss', k: 'X', label: 'Dismiss' }) + '</div>' +
+      (a.mandate ? Pt.links([{ act: 'page', k: 'G', label: a.mandate.id + ' page' }]) : '');
+    var rail = Pt.rail({ who: { initial: p.charAt(0), name: p, sub: esc(it.source.project) }, tiles: [{ glyph: 'clock', value: ago(Date.parse(it.createdAt), M.simMs), label: 'waiting' }, { glyph: 'mandate', value: a.mandate ? a.mandate.id : 'none', label: 'mandate' }],
+      facts: [['Raised by', esc(it.source.raisedBy)], ['Kind', 'conversation']], extra: '<div class="r-note ae-t-info typo-body">A message is a conversation, not a decision: nothing waits on your answer.</div>', dock: dock });
+    return { head: head, body: body, rail: rail };
+  };
+
+  // ── Reader: heavy content's own surface, in the same frame, with contents and progress
+  function readerCard(a) {
+    var R = S.reader, it = R.list[R.idx], k = it.kind, cv = k === 'council' ? M.councilVerdict(it) : null;
+    var glyph = k === 'council' ? 'council' : k === 'report' ? 'report' : k === 'incident' ? 'stop' : k === 'message' ? 'talk' : 'read';
+    var heads = [], n = 0;
+    var doc = esc(it.body).split('\n').map(function (l) {
+      if (/^## /.test(l)) { var id = 'rs-' + (n++); heads.push({ id: id, text: l.slice(3) }); return '<h4 id="' + id + '">' + l.slice(3) + '</h4>'; }
+      if (/^- /.test(l)) return '<li>' + l.slice(2) + '</li>';
+      return l ? '<p>' + l + '</p>' : '';
+    }).join('');
+    heads.push({ id: 'rs-why', text: 'Why it was raised' }); if (it.evidence) heads.push({ id: 'rs-ev', text: 'Evidence' });
+    var head = Pt.head({ tone: cv ? cv.tone : k === 'incident' ? 'err' : 'info', glyph: glyph, eyebrow: ['Reading · ' + esc(k), esc(it.id)], age: waitOf(it),
+      title: it.title, context: esc(it.source.persona) + ' · ' + esc(it.source.project) + ' · raised by ' + esc(it.source.raisedBy) + (a.mandate ? ' · evidence on <span class="mid">' + a.mandate.id + '</span>' : '') });
+    var council = cv ? '<div class="council ae-t-' + cv.tone + '"><div class="top"><span class="typo-eyebrow">Council verdict</span><span class="out">' + cv.outcome + '</span><span class="typo-body">score ' + cv.score.toFixed(1) + ' / 5 over what was measured · coverage ' + Math.round(cv.coverage * 100) + '%</span><span class="design" style="margin-left:auto">derived members</span></div>' +
+      '<div class="mem">' + cv.members.map(function (x) {
+        var t = x.score == null ? 'off' : x.score >= 4 ? 'ok' : x.score >= 3 ? 'run' : x.score === 2 ? 'warn' : 'err';
+        return '<span class="typo-title">' + esc(x.name) + '</span>' + (x.score == null ? '<span class="na typo-caption">not measured: lowers coverage, never a zero</span><span></span>' : '<div class="meter ae-t-' + t + '"><span class="fill" style="width:' + x.score * 20 + '%"></span></div><span class="sc typo-data">' + x.score + ' / 5</span>');
+      }).join('') + '</div><div class="typo-caption muted" style="margin-top:10px">The council is evidence: it never approves. Its verdict is attached to the mandate it judged.</div></div>' : '';
+    var body = '<div class="reader-bar"><span class="sect typo-caption" id="rsect">' + esc(heads[0] ? heads[0].text : 'Start') + '</span><span class="typo-data" id="rpct">0%</span><span class="pg"><span id="rpg" style="width:0%"></span></span></div>' + council +
+      '<article class="doc prose" id="rdoc">' + doc + '<h4 id="rs-why">Why it was raised</h4><p>' + esc(it.reasoning) + '</p>' + (it.evidence ? '<h4 id="rs-ev">Evidence</h4><pre class="typo-code">' + esc(it.evidence) + '</pre>' : '') + '</article>';
+    var ev = null; try { ev = it.evidence ? JSON.parse(it.evidence) : null; } catch (e) { ev = null; }
+    var facts = it.facts.filter(function (f) { return f.label !== 'Wait'; }).map(function (f) { return [f.label, esc(f.value)]; });
+    if (ev) facts.push(['Files', ev.files], ['Lines', ev.linesChanged], ['Gates', esc(ev.gates)]);
+    facts.push(['Irreversible', it.irreversible ? '<span class="ae-t-err ae-tone-text">' + esc(Pt.IRR[it.irreversible]) + '</span>' : 'no']);
+    var picked = a.type === 'valve' && S.picks ? S.picks[R.idx] : null;
+    var dock = Pt.branch({ act: 'back', k: 'Esc', glyph: 'reply', label: 'Back to the card', hint: 'the verdict lives there' }) +
+      (picked != null ? Pt.branch({ act: 'rpick', k: 'Space', glyph: 'check', label: picked ? 'Selected to ' + (a.sub === 'deletion' ? 'delete' : 'send') : 'Not selected', hint: picked ? 'Space unselects' : 'Space selects' }) : '') +
+      Pt.links([{ act: 'rprev', k: 'K', label: 'previous' }, { act: 'rnext', k: 'J', label: 'next item' }, { act: 'rscroll', k: '↓', label: 'scroll' }]);
+    var rail = Pt.rail({ who: { initial: it.source.persona.charAt(0), name: it.source.persona, sub: esc(it.source.project) }, tiles: [{ glyph: 'clock', value: ago(Date.parse(it.createdAt), M.simMs), label: 'waiting' }, { glyph: 'layers', value: (R.idx + 1) + '/' + R.list.length, label: 'in this card' }],
+      facts: facts, extra: '<div><div class="c-sec-h"><span class="typo-eyebrow">Contents</span></div><nav class="toc" id="rtoc">' + heads.map(function (h, i) { return '<button data-jump="' + h.id + '" class="' + (i === 0 ? 'on' : '') + '">' + h.text + '</button>'; }).join('') + '</nav></div>', dock: dock });
+    return { head: head, body: body, rail: rail };
+  }
+  function openReader() {
+    var a = currentAsk(); if (!a) return;
+    var fl = focusList(a); if (!fl.length) return;
+    S.reader = { list: fl.map(function (x) { return x.item; }), idx: Math.min(S.foc, fl.length - 1) }; S.armed = null; renderDeck();
+  }
+  function bindReader() {
+    var b = document.querySelector('#deck .card-body'), docEl = $('rdoc'); if (!b || !docEl) return;
+    var hs = Array.prototype.slice.call(docEl.querySelectorAll('h4'));
+    var upd = function () {
+      var max = b.scrollHeight - b.clientHeight, p = max > 0 ? b.scrollTop / max : 1, cur = hs[0];
+      hs.forEach(function (h) { if (h.offsetTop - b.offsetTop <= b.scrollTop + 60) cur = h; });
+      $('rpct').textContent = Math.round(p * 100) + '%'; $('rpg').style.width = Math.round(p * 100) + '%';
+      if (cur) { $('rsect').textContent = cur.textContent; each(document, '#rtoc button', function (t) { t.classList.toggle('on', t.dataset.jump === cur.id); }); }
+    };
+    b.addEventListener('scroll', upd); upd();
+    each(document, '#rtoc [data-jump]', function (t) { t.onclick = function () { var h = $(t.dataset.jump); if (h) b.scrollTo({ top: h.offsetTop - b.offsetTop - 48, behavior: 'smooth' }); }; });
+  }
+
+  function bindDeck(a) {
+    var el = $('deck');
+    each(el, '[data-act]', function (b) { b.onclick = function () { deckAct(b.dataset.act); }; });
+    each(el, '[data-item]', function (r) { r.onclick = function (e) {
+      S.foc = +r.dataset.item;
+      if (e.target.closest('[data-read]')) { openReader(); return; }
+      if (S.picks && e.target.closest('[data-pick]')) { S.picks[S.foc] = !S.picks[S.foc]; S.armed = null; }
+      renderDeck(); }; });
+    each(el, '[data-actrow]', function (r) { r.onclick = function () { S.foc = +r.dataset.actrow; renderDeck(); }; });
+    each(el, '[data-opt]', function (b) { b.onclick = function () { submitPrompt(S.prompt.options[+b.dataset.opt]); }; });
+    each(el, '[data-quick]', function (b) { b.onclick = function () { quickReply(+b.dataset.quick); }; });
+    each(el, '[data-golane]', function (b) { b.onclick = function () { goLane(b.dataset.golane); }; });
+    if (S.reader) bindReader();
+  }
+  function goLane(key) { var as = laneAsks(laneOf(key)); if (!as.length) return; S.deck = { lane: key, key: as[0].key, dir: 1 }; resetCard(); S.landed = 0; renderDeck(); }
+  function walk(d) {
+    var asks = deckAsks(), a = currentAsk(), i = asks.indexOf(a), j = Math.max(0, Math.min(asks.length - 1, i + d));
+    if (j === i || !asks[j]) return;
+    S.deck.key = asks[j].key; S.deck.dir = d; resetCard(); renderDeck();
+  }
+
+  // A verdict: the card wears its stamp for a beat, the model changes, the next card slides in.
+  function decide(fn, label, tone, glyph) {
+    if (S.busy) return;
+    var a = currentAsk(); if (!a) return;
+    var asks = deckAsks(), i = asks.indexOf(a), next = asks[i + 1] || null;
+    S.busy = true;
+    var card = document.querySelector('#deck .card'); if (card) card.insertAdjacentHTML('beforeend', Pt.stamp(label, tone, glyph));
+    setTimeout(function () {
+      var msg = fn();
+      S.busy = false; if (!S.deck) return;
+      S.receipt = { text: msg, tone: tone === 'off' ? 'info' : tone };
+      var list = deckAsks();
+      if (!(a.open && list.indexOf(a) >= 0)) { var n2 = next && list.indexOf(next) >= 0 ? next : list[Math.min(i, list.length - 1)]; S.deck.key = n2 ? n2.key : null; S.deck.dir = 1; }
+      resetCard(); render(); renderDeck();
+    }, 460);
+  }
+  function openPrompt(p) { S.armed = null; S.prompt = Object.assign({ text: '' }, p); renderDeck(); }
+  function submitPrompt(text) {
+    var p = S.prompt; if (!p) return;
+    text = (text || '').trim();
+    if (p.min && text.length < p.min) { var c = $('prompt-count'); if (c) { c.classList.remove('is-ok'); c.classList.add('is-short'); c.classList.add('is-flash'); } var t = $('prompt'); if (t) t.focus(); return; }
+    S.prompt = null; p.then(text);
+  }
+  function quickReply(i) { var a = currentAsk(); if (!a || a.type !== 'talk') return; decide(function () { return M.talk(a, 'reply', QUICK[i]); }, 'Sent', 'ok', 'reply'); }
+
+  function deckAct(act) {
+    var a = currentAsk(); if (!a || S.busy) return; var m = a.mandate;
+    if (act === 'read') return openReader();
+    if (act === 'page') { if (m) { closeDeck(); openDrawer({ view: 'mandate', m: m, sel: 0 }); } return; }
+    if (act === 'back') { S.reader = null; return renderDeck(); }
+    if (act === 'rnext' || act === 'rprev') { S.reader.idx = Math.max(0, Math.min(S.reader.list.length - 1, S.reader.idx + (act === 'rnext' ? 1 : -1))); S.foc = S.reader.idx; return renderDeck(); }
+    if (act === 'rpick') { if (S.picks) { S.picks[S.reader.idx] = !S.picks[S.reader.idx]; renderDeck(); } return; }
+    if (act === 'rscroll') { var bb = document.querySelector('#deck .card-body'); if (bb) bb.scrollBy({ top: 120, behavior: 'smooth' }); return; }
+    if (a.type === 'breach') {
+      var req = M.clauseRequest(a), bumps = !!(req.patch.spendCap || req.patch.merge || req.patch.addScope);
+      if (act === 'amend') {
+        if ((a.sub === 'spend' || a.sub === 'merge') && S.armed !== 'amend') { S.armed = 'amend'; return renderDeck(); }
+        return decide(function () { return M.decideBreach(a, 'amend'); }, bumps ? 'Amended v' + (m.version + 1) : a.sub === 'stop' ? 'Resumed' : 'Approved', 'ok', 'check');
+      }
+      if (act === 'deny') return openPrompt({ title: 'Why ' + req.deny.charAt(0).toLowerCase() + req.deny.slice(1) + '?', options: M.reasons('breach', a.sub), skip: 'deny without a reason', then: function (r) { decide(function () { return M.decideBreach(a, 'deny', r); }, 'Denied', 'off', 'x'); } });
+      if (act === 'suspend') return decide(function () { return M.suspend(m, 'from a breach card'); }, 'Suspended', 'err', 'pause');
+    }
+    if (a.type === 'valve') {
+      var ids = a.items.filter(function (it, i) { return S.picks && S.picks[i]; }).map(function (it) { return it.id; }), del = a.sub === 'deletion';
+      if (act === 'pick') { if (S.picks) { S.picks[S.foc] = !S.picks[S.foc]; S.armed = null; renderDeck(); } return; }
+      if (!ids.length && (act === 'approve' || act === 'stop')) { C.toast('Select at least one item first: Space selects the focused row.'); return; }
+      if (act === 'approve') {
+        if (S.armed !== 'approve') { S.armed = 'approve'; return renderDeck(); }
+        return decide(function () { return M.decideValve(a, 'approve', ids); }, del ? 'Deleted ' + ids.length : 'Sent ' + ids.length, 'err', del ? 'trash' : 'send');
+      }
+      if (act === 'stop') return openPrompt({ title: 'Why stop ' + plural(ids.length, del ? 'deletion' : 'message') + '?', options: M.reasons('valve', a.sub), skip: 'stop without a reason', then: function (r) { decide(function () { return M.decideValve(a, 'reject', ids, r); }, 'Stopped', 'off', 'x'); } });
+    }
+    if (a.type === 'claim') {
+      var fl = focusList(a), cur = fl[S.foc];
+      if (act === 'accept') { var lock = M.claimLock(m); if (lock) { C.toast('Locked. ' + lock); return; } return decide(function () { return M.decideClaim(a, 'accept'); }, 'Accepted', 'ok', 'check'); }
+      if (act === 'sendback') return openPrompt({ title: 'What is not met yet?', options: M.reasons('claim'), min: 8, ph: 'Or write it: at least 8 characters', then: function (r) { decide(function () { return M.decideClaim(a, 'sendback', r); }, 'Sent back', 'warn', 'reply'); } });
+      if (act === 'revert' && cur && cur.kind === 'act') { C.toast(M.revert(cur.act)); S.receipt = { text: M.you[0].text, tone: 'info' }; return renderDeck(); }
+      if (act === 'narrow' && cur && cur.kind === 'act') { var sc = M.scopeOf(cur.act); if (sc) { C.toast(M.narrow(m, sc)); S.receipt = { text: M.you[0].text, tone: 'warn' }; render(); renderDeck(); } return; }
+    }
+    if (a.type === 'sign') {
+      if (act === 'sign') { var f = S.edit ? readForm() : null; return decide(function () { return M.sign(m, f); }, 'Signed', 'ok', 'sign'); }
+      if (act === 'edit') { if (S.edit) { S.form = readForm() || S.form; S.edit = false; } else { S.edit = true; S.form = S.form || formFrom(m); } renderDeck(); var fi = $('f-intent'); if (fi) fi.focus(); return; }
+      if (act === 'drop') return openPrompt({ title: 'Why drop it?', options: M.reasons('sign'), skip: 'drop without a reason', then: function (r) { decide(function () { return M.dropDraft(m, r); }, 'Dropped', 'off', 'archive'); } });
+    }
+    if (a.type === 'talk') {
+      if (act === 'reply') { var t = $('reply'), v = t ? t.value.trim() : ''; if (!v) { if (t) t.focus(); return; } return decide(function () { return M.talk(a, 'reply', v); }, 'Sent', 'ok', 'reply'); }
+      if (act === 'dismiss') return decide(function () { return M.talk(a, 'dismiss'); }, 'Dismissed', 'off', 'x');
+    }
+  }
+
+  // ── Drawer: register (level 2), mandate page (level 3), ledger, orphanage
+  function openDrawer(d) { S.drawer = d; S.lane = null; $('peek').classList.remove('open'); $('scrim').classList.add('open'); renderDrawer(); }
+  function closeDrawer() {
+    if (S.drawer && S.drawer.back) { S.drawer = S.drawer.back; renderDrawer(); return; }
+    S.drawer = null; $('drawer').classList.remove('open'); $('scrim').classList.remove('open'); render();
+  }
+  var LEDGER_F = { all: 'All', steward: 'By stewards', you: 'By you', merge: 'Merges', spend: 'Spend', reverted: 'Reverted' };
+  function ledgerTest(f, a) {
+    if (f === 'steward') return a.actor !== 'You'; if (f === 'you') return a.actor === 'You';
+    if (f === 'merge') return /merged/.test(a.verdict); if (f === 'spend') return /spent/.test(a.verdict); if (f === 'reverted') return a.reverted;
+    if (f === 'revertible') return a.reversible && !a.reverted;
+    return true;
+  }
+  var PAGE_F = { all: 'All', steward: 'By the steward', you: 'By you', revertible: 'Revertible', reverted: 'Reverted' };
+  var REG_F = { all: 'All', asking: 'Asking you', claimed: 'Claims met', draft: 'Drafts', suspended: 'Suspended', accepted: 'Closed' };
+  function regTest(f, m) { if (f === 'asking') return Object.keys(m.asks).length > 0; if (f === 'all') return true; return m.state === f; }
+  function chips(map, cur, countFn, attr) {
+    return Object.keys(map).map(function (k) { return '<button class="chipf' + (cur === k ? ' on' : '') + '" data-' + attr + '="' + k + '">' + map[k] + ' <b>' + countFn(k) + '</b></button>'; }).join('');
+  }
+  var STATE = { active: ['run', 'active'], claimed: ['ok', 'claims met'], draft: ['info', 'draft'], suspended: ['err', 'suspended'], accepted: ['off', 'closed'] };
+  function stateText(m) { var t = STATE[m.state]; return Pt.lamp(t[0], m.state !== 'accepted') + '<span class="ae-t-' + t[0] + '">' + (m.dropped ? 'dropped' : t[1]) + '</span>'; }
+
+  function renderDrawer() {
+    var d = S.drawer, el = $('drawer'); if (!d) return;
+    var oldScroll = el.querySelector('.dlist, .dscroll'), keep = oldScroll && d === S.lastDrawer ? oldScroll.scrollTop : 0;
+    var crumbs = '', html = '';
+    if (d.view === 'register') {
+      var f = d.filter || 'all';
+      var ms = M.mandates.filter(function (m) { return regTest(f, m); }).sort(function (a, b) { return Object.keys(b.asks).length - Object.keys(a.asks).length || b.acts.length - a.acts.length; });
+      d.list = ms; d.sel = Math.max(0, Math.min(d.sel, ms.length - 1));
+      crumbs = '<span>Activity</span><span class="sep"></span><b>Mandate register</b><span class="dim">· no cap: a mandate costs you only what it asks</span>';
+      html = '<div class="dsum">' + chips(REG_F, f, function (k) { return M.mandates.filter(function (m) { return regTest(k, m); }).length; }, 'regf') + '</div>' +
+        '<div class="dlist"><table class="tbl"><tr><th>Mandate</th><th>Intent</th><th>Steward</th><th>State</th><th>Spend today</th><th class="num">Acts</th><th class="num">Asks</th><th style="white-space:nowrap">Re-read?</th></tr>' + (ms.length ? ms.map(function (m, i) {
+          var L = M.mandateLoad(m), rr = M.reread(m);
+          return '<tr data-row="' + i + '" class="' + (i === d.sel ? 'sel' : '') + '"><td class="typo-code">' + m.id + ' <span class="dim">v' + m.version + '</span></td><td>' + esc(m.intent) + '<div class="dim" style="font-size:.875rem">' + esc(m.project) + '</div></td><td>' + esc(m.steward) + '</td><td style="white-space:nowrap">' + stateText(m) + '</td>' +
+            '<td style="min-width:140px"><div class="meter ae-t-' + (L.spendPct > 85 ? 'warn' : 'run') + '" style="height:6px"><span class="fill" style="width:' + L.spendPct + '%"></span></div><div class="dim num" style="font-size:.875rem;margin-top:3px">' + M.fmtMoney(m.envelope.spendUsed) + ' / ' + M.fmtMoney(m.envelope.spendCap) + '</div></td>' +
+            '<td class="num">' + L.acts + '</td><td class="num">' + (L.asks ? '<span class="askn">' + L.asks + '</span>' : '<span class="dim">0</span>') + '</td><td class="dim" style="font-size:.875rem">' + esc(rr || '') + '</td></tr>';
+        }).join('') : '<tr><td colspan="8" class="dim">No mandate in this state.</td></tr>') + '</table></div>' +
+        '<div class="dfoot"><span>' + kbd('j') + kbd('k') + ' move</span><span>' + kbd('Enter') + ' open the mandate</span><span>' + kbd('F') + ' next filter</span><span>' + kbd('L') + ' ledger</span><span>' + kbd('O') + ' orphanage</span><span style="margin-left:auto">' + kbd('Esc') + ' back</span></div>';
+    } else if (d.view === 'mandate') {
+      var m = d.m, L = M.mandateLoad(m), rr = M.reread(m), pf = d.filter || 'all';
+      var acts = m.acts.filter(function (x) { return ledgerTest(pf, x); }).sort(function (x, y) { return y.at - x.at; });
+      d.list = acts; d.sel = Math.max(0, Math.min(d.sel, acts.length - 1));
+      if (d.edit && !d.form) d.form = formFrom(m);
+      var t = STATE[m.state];
+      crumbs = '<span>Activity</span><span class="sep"></span><span>Mandates</span><span class="sep"></span><b>' + m.id + ' v' + m.version + '</b>';
+      var head = Pt.head({ tone: t[0], glyph: 'mandate', eyebrow: ['Mandate', esc(m.id) + ' v' + m.version, m.dropped ? 'dropped' : t[1]], age: m.signedAt ? 'signed ' + ago(m.signedAt, M.simMs) + ' ago' : 'not signed',
+        title: m.intent, context: esc(m.steward) + (m.stewardKind === 'athena' ? ' · ' + esc(m.project) : '') + (rr ? ' · <span class="ae-t-warn ae-tone-text">' + esc(rr) + '</span>' : '') });
+      var main = d.edit ? Pt.sec('The envelope · editing', kbd('Ctrl') + '+' + kbd('Enter') + ' saves as v' + (m.version + 1) + ' · ' + kbd('Esc') + ' leaves a field', envDoc(m, true, d.form))
+        : Pt.sec('Act log · ' + plural(acts.length, 'act'), 'what was delegated, and why it was allowed', '<div class="dsum" style="padding:0 0 8px;border:0">' + chips(PAGE_F, pf, function (k) { return m.acts.filter(function (x) { return ledgerTest(k, x); }).length; }, 'pagef') + '</div>' +
+          Pt.actRows(acts.slice(0, 200), { foc: d.sel, ago: actAgo, why: why, empty: pf === 'all' ? 'No acts yet. Nothing has been decided inside this envelope.' : 'No act matches this filter.' }) + (acts.length > 200 ? '<div class="irows-more typo-caption">+' + (acts.length - 200) + ' older acts in the ledger</div>' : ''));
+      var cur = acts[d.sel], sc = cur ? M.scopeOf(cur) : null;
+      var dock = d.edit
+        ? '<div class="dpair">' + Pt.verdict({ act: 'save', k: 'Ctrl+Enter', yes: true, tone: 'ok', glyph: 'edit', label: 'Save as v' + (m.version + 1), hint: 'takes effect on the steward\'s next decision' }) + Pt.verdict({ act: 'discard', k: 'Esc', label: 'Discard the edits' }) + '</div>'
+        : (S.armed === 'drop-orphans' ? '' : '') +
+          Pt.branch({ act: 'edit', k: 'E', glyph: 'edit', label: 'Edit the envelope', hint: 'intent, cap, merge, scope' }) +
+          (cur ? Pt.branch({ act: 'revert', k: 'V', glyph: 'undo', label: 'Revert the selected act', hint: cur.reverted ? 'already reverted' : cur.reversible ? cur.verdict : 'final: cannot be reverted' }) : '') +
+          (sc && m.envelope.decides.indexOf(sc) >= 0 ? Pt.branch({ act: 'narrow', k: 'N', glyph: 'narrow', label: 'Take its scope back', hint: M.SCOPES[sc] }) : '') +
+          (m.state === 'accepted' ? '' : Pt.branch({ act: 'suspend', k: 'S', glyph: m.state === 'suspended' ? 'play' : 'pause', danger: m.state !== 'suspended', label: m.state === 'suspended' ? 'Resume ' + m.id : 'Suspend ' + m.id, hint: m.state === 'suspended' ? plural(m.held.length, 'held item') + ' re-route' : 'all its work pauses; valves stay with you' })) +
+          Pt.links([{ act: 'ledger', k: 'L', label: 'ledger' }, { act: 'register', k: 'M', label: 'register' }]);
+      var acc = m.acceptance;
+      var rail = Pt.rail({ meter: spendMeter(m), facts: [['State', stateText(m)], ['Merge', esc(MERGE_OPT[m.envelope.merge][0])], ['Builders', m.envelope.builders], ['Steward decides', m.envelope.decides.length + ' of ' + M.ALL_SCOPES.length], ['Open asks', L.asks], ['Held', L.held], ['Agreement', agreeHtml(m)]],
+        extra: (d.edit ? '<div><div class="c-sec-h"><span class="typo-eyebrow">Your edits</span></div><div id="envdiff">' + Pt.diff(M.envDiff(m, d.form)) + '</div></div>' : '') +
+          (d.edit ? '' : '<div><div class="c-sec-h"><span class="typo-eyebrow">Met when</span></div>' + Pt.checks([
+            { tone: acc.kpi ? (acc.kpi.readInDays ? 'warn' : 'ok') : 'off', label: 'KPI', detail: acc.kpi ? 'linked' : 'none linked', word: acc.kpi ? (acc.kpi.readInDays ? 'read in ' + acc.kpi.readInDays + 'd' : 'met') : 'n/a' },
+            { tone: acc.uatPassed ? 'ok' : 'warn', label: 'UAT', detail: 'a fresh run passes end to end', word: acc.uatPassed ? 'passed' : 'not run' },
+            { tone: acc.councilReady ? 'ok' : 'warn', label: 'Council ' + acc.council, detail: 'evidence, never approval', word: acc.councilReady ? 'ready' : 'pending' }]) + '</div>' +
+          '<div><div class="c-sec-h"><span class="typo-eyebrow">Versions</span></div>' + m.versions.slice().reverse().slice(0, 6).map(function (v) { return '<div class="vline"><b>v' + v.v + '</b><span class="typo-body">' + esc(v.note) + '</span><span class="typo-caption">' + esc(v.by) + ' · ' + ago(v.at, M.simMs) + ' ago</span></div>'; }).join('') + '</div>'), dock: dock });
+      html = '<div class="dpage"><div class="dmain">' + head + '<div class="dscroll">' + main + '</div></div>' + rail + '</div>';
+    } else if (d.view === 'ledger') {
+      var lf = d.filter || 'all', list = M.acts.filter(function (x) { return ledgerTest(lf, x); }).sort(function (x, y) { return y.at - x.at; });
+      d.list = list; d.sel = Math.max(0, Math.min(d.sel, list.length - 1));
+      crumbs = '<span>Activity</span><span class="sep"></span><b>Ledger</b><span class="dim">· every decision, by whom, under which envelope version</span>';
+      html = '<div class="dsum">' + chips(LEDGER_F, lf, function (k) { return M.acts.filter(function (x) { return ledgerTest(k, x); }).length; }, 'ledf') + '</div>' +
+        '<div class="dlist">' + Pt.actRows(list.slice(0, 250), { foc: d.sel, ago: actAgo, why: why, showMandate: true, empty: 'No act matches this filter.' }) + (list.length > 250 ? '<div class="irows-more typo-caption">+' + (list.length - 250) + ' older acts. ' + kbd('/') + ' finds any act by title or id.</div>' : '') + '</div>' +
+        '<div class="dfoot"><span>' + kbd('j') + kbd('k') + ' move</span><span>' + kbd('V') + ' revert</span><span>' + kbd('N') + ' take its scope back</span><span>' + kbd('Enter') + ' open its mandate</span><span>' + kbd('F') + ' next filter</span><span style="margin-left:auto">' + kbd('Esc') + ' back</span></div>';
+    } else if (d.view === 'orphans') {
+      var gs = M.orphanGroups(); d.list = gs; d.sel = Math.max(0, Math.min(d.sel, gs.length - 1));
+      var actives = M.mandates.filter(function (m) { return m.state === 'active' || m.state === 'claimed'; });
+      crumbs = '<span>Activity</span><span class="sep"></span><b>Orphanage</b><span class="dim">· no mandate, no channel: these never reach a lane</span>';
+      html = '<div class="dsum"><span class="typo-body">' + plural(M.orphans.length, 'item') + ' across ' + plural(gs.length, 'project') + '. Read as one line, not item by item: adopt a project into a mandate and its orphans route through the steward, or archive them.</span></div>' +
+        '<div class="dlist"><table class="tbl"><tr><th>Project</th><th class="num">Items</th><th>Top producers</th><th>Newest</th><th>Adopt into</th><th></th></tr>' + (gs.length ? gs.map(function (g, i) {
+          var prods = Object.keys(g.producers).sort(function (a, b) { return g.producers[b] - g.producers[a]; }).slice(0, 3).map(function (p) { return esc(p) + ' ' + g.producers[p]; }).join(' · ');
+          var newest = g.items.slice().sort(function (a, b) { return a.createdAt < b.createdAt ? 1 : -1; })[0];
+          var armed = S.armed === 'drop:' + g.project;
+          return '<tr data-row="' + i + '" class="' + (i === d.sel ? 'sel' : '') + '"><td>' + esc(g.project) + '</td><td class="num">' + g.items.length + '</td><td class="dim">' + prods + '</td><td class="sample">' + esc(newest.title) + '</td><td><select data-adopt="' + i + '" aria-label="Adopt ' + esc(g.project) + ' into a mandate"><option value="">choose a mandate…</option>' + actives.slice(0, 200).map(function (m) { return '<option value="' + m.id + '">' + m.id + ' · ' + esc(m.intent.slice(0, 48)) + '</option>'; }).join('') + '</select></td>' +
+            '<td><button class="bbtn' + (armed ? ' is-armed is-danger' : '') + '" data-drop="' + i + '" style="width:auto;white-space:nowrap">' + (i === d.sel ? kbd('X') + ' ' : '') + '<span class="typo-body">' + (armed ? 'Again: archive ' + g.items.length : 'Archive') + '</span></button></td></tr>';
+        }).join('') : '<tr><td colspan="6" class="dim">No orphans. Every item has a mandate.</td></tr>') + '</table></div>' +
+        '<div class="dfoot"><span>' + kbd('j') + kbd('k') + ' move</span><span>' + kbd('Enter') + ' choose a mandate to adopt into</span><span>' + kbd('X') + ' archive the project\'s orphans (press twice)</span><span style="margin-left:auto">' + kbd('Esc') + ' back</span></div>';
+    }
+    el.innerHTML = '<div class="dh"><div class="crumbs">' + crumbs + '</div><span style="margin-left:auto" class="muted">' + kbd('Esc') + ' back</span></div>' + html;
+    el.classList.add('open');
+    S.lastDrawer = d;
+    var sc2 = el.querySelector('.dlist, .dscroll'); if (sc2 && keep) sc2.scrollTop = keep;
+    each(el, '[data-row]', function (r) { r.onclick = function (ev) { if (ev.target.closest('select,button')) return; d.sel = +r.dataset.row; drawerEnter(); }; });
+    each(el, '[data-actrow]', function (r) { r.onclick = function () { d.sel = +r.dataset.actrow; renderDrawer(); }; });
+    each(el, '[data-regf],[data-pagef],[data-ledf]', function (f) { f.onclick = function () { d.filter = f.dataset.regf || f.dataset.pagef || f.dataset.ledf; d.sel = 0; renderDrawer(); }; });
+    each(el, '[data-adopt]', function (s) { s.onchange = function () { if (!s.value) return; var g = d.list[+s.dataset.adopt]; C.toast(M.adopt(g.project, M.byId[s.value])); renderDrawer(); render(); }; });
+    each(el, '[data-drop]', function (b) { b.onclick = function () { d.sel = +b.dataset.drop; dropOrphans(); }; });
+    each(el, '[data-act]', function (b) { b.onclick = function () { drawerAct(b.dataset.act); }; });
+    var s = el.querySelector('tr.sel, .arow.is-foc'); if (s) s.scrollIntoView({ block: 'nearest' });
+  }
+  function dropOrphans() {
+    var d = S.drawer, g = d.list[d.sel]; if (!g) return;
+    if (S.armed !== 'drop:' + g.project) { S.armed = 'drop:' + g.project; renderDrawer(); return; }
+    S.armed = null; C.toast(M.dropOrphans(function (it) { return it.source.project === g.project; }, g.project)); renderDrawer(); render();
+  }
+  function drawerAct(act) {
+    var d = S.drawer; if (!d) return;
+    var cur = d.view === 'mandate' || d.view === 'ledger' ? d.list[d.sel] : null;
+    if (act === 'edit') { d.edit = true; d.form = formFrom(d.m); renderDrawer(); var fi = $('f-intent'); if (fi) fi.focus(); return; }
+    if (act === 'save') return saveEnvelope();
+    if (act === 'discard') { d.edit = false; d.form = null; renderDrawer(); return; }
+    if (act === 'revert' && cur) { C.toast(M.revert(cur)); renderDrawer(); return; }
+    if (act === 'narrow' && cur) { var s = M.scopeOf(cur); if (s) C.toast(M.narrow(cur.mandate, s)); renderDrawer(); render(); return; }
+    if (act === 'suspend') { C.toast(d.m.state === 'suspended' ? M.resume(d.m) : M.suspend(d.m, 'from its page')); renderDrawer(); render(); return; }
+    if (act === 'ledger') return openDrawer({ view: 'ledger', sel: 0 });
+    if (act === 'register') return openDrawer({ view: 'register', sel: 0 });
+  }
+  function saveEnvelope() { var d = S.drawer, f = readForm(); if (!f) return; C.toast(M.applyEdits(d.m, f)); d.edit = false; d.form = null; renderDrawer(); render(); }
+  function drawerEnter() {
+    var d = S.drawer;
+    if (d.view === 'register' && d.list[d.sel]) { S.drawer = { view: 'mandate', m: d.list[d.sel], sel: 0, back: d }; renderDrawer(); }
+    else if (d.view === 'ledger' && d.list[d.sel]) { S.drawer = { view: 'mandate', m: d.list[d.sel].mandate, sel: 0, back: d }; renderDrawer(); }
+    else if (d.view === 'orphans') { var s = document.querySelector('[data-adopt="' + d.sel + '"]'); if (s) s.focus(); }
+    else renderDrawer();
+  }
+
+  // Live edits: the diff and the forecast follow every keystroke, without re-rendering the form.
+  function onFormEdit() {
+    var f = readForm(); if (!f) return;
+    each(document, '.env .opt', function (o) { var r = o.querySelector('input'); if (r) o.classList.toggle('on', r.checked); });
+    if (S.drawer && S.drawer.edit && S.drawer.m) { S.drawer.form = f; var dd = $('envdiff'); if (dd) dd.innerHTML = Pt.diff(M.envDiff(S.drawer.m, f)); return; }
+    var a = currentAsk(); if (!a || a.type !== 'sign') return;
+    S.form = f; var m = a.mandate;
+    var d2 = $('envdiff'); if (d2) d2.innerHTML = Pt.diff(M.envDiff(m, f));
+    var fc = $('forecast'); if (fc) fc.innerHTML = forecastFacts(M.forecast(m, envFromForm(m, f)));
+  }
+  document.addEventListener('input', function (e) {
+    if (e.target.id === 'prompt' && S.prompt) {
+      S.prompt.text = e.target.value; var n = e.target.value.trim().length, p = S.prompt, c = $('prompt-count');
+      if (c && p.min) { var short = n < p.min; c.className = 'typo-caption rcount ' + (short ? 'is-short' : 'is-ok'); c.textContent = short ? 'A reason is required: ' + (p.min - n) + ' more character' + (p.min - n === 1 ? '' : 's') : 'Ready: Enter sends'; }
+      return;
+    }
+    if (e.target.closest && e.target.closest('.env')) onFormEdit();
+  });
+  document.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('.env')) onFormEdit(); });
+
+  // ── The day
+  var DAY = C.day(M, function (ev) {
+    if (ev.ended) C.toast('The day has landed. ' + M.stats.stewardActs + ' steward acts; ' + M.itemsToYou() + ' items wait for you.');
+    ev.landed.forEach(function (r) {
+      var it = r.item, m = r.mandate;
+      var line = Mx.clock(M.simMs) + ' · ' + (r.to === 'steward' ? (m.steward + ' ' + r.act.verdict + ': ' + it.title) : r.to === 'orphan' ? 'orphan: ' + it.title : r.to === 'held' ? 'held for ' + m.id + ': ' + it.title : 'to you (' + r.to + '): ' + it.title);
+      S.ticker.unshift(line);
+    });
+    S.ticker = S.ticker.slice(0, 20);
+    if (S.deck) {
+      // The card in hand never moves under the operator: only the tray says what landed.
+      var l = laneOf(S.deck.lane), n = ev.landed.filter(function (r) { return r.ask && l.types.indexOf(r.ask.type) >= 0; }).length;
+      if (n) {
+        S.landed += n;
+        if (!currentAsk() && !S.deck.key) { var as = laneAsks(l); if (as.length) { S.deck.key = as[0].key; resetCard(); } renderDeck(); }
+        else { var tr = document.querySelector('#deck .tray'), asks = deckAsks(); if (tr) tr.outerHTML = trayHtml(l, asks, asks.indexOf(currentAsk())); }
+      }
+    } else if (S.drawer && !S.drawer.edit) renderDrawer();
+    render();
+  });
+
+  // ── Keys: printed where they act
+  var FIND = C.palette(M, function (r) {
+    if (r.kind === 'mandate' || r.kind === 'clause') openDrawer({ view: 'mandate', m: r.m, sel: 0 });
+    else if (r.kind === 'act') openDrawer({ view: 'mandate', m: r.act.mandate, sel: Math.max(0, r.act.mandate.acts.slice().sort(function (x, y) { return y.at - x.at; }).indexOf(r.act)) });
+    else if (r.kind === 'orphan') openDrawer({ view: 'orphans', sel: 0 });
+    else { if (S.drawer) { S.drawer = null; $('drawer').classList.remove('open'); } openDeck(laneOfAsk(r.a).key, r.a.key); }
+  });
+  var HELP = C.help('Mandate lanes · keys', [
+    ['#', 'Anywhere'], ['1 2 3 4', 'open Breach, Sign, Accept, Talk'], ['M L O', 'register, ledger, orphanage'], ['/', 'find a mandate, rule, item, act'], ['P B D', 'play the day, today\'s lamps, today / scale'],
+    ['#', 'On a card'], ['← →', 'previous / next card'], ['j k', 'move between items or acts'], ['E', 'read the item (sign: edit)'], ['G', 'the mandate\'s page'], ['Esc', 'disarm, cancel, back one level'],
+    ['#', 'Verdicts'], ['1 2 3', 'breach: amend, deny, suspend'], ['A A', 'valve: arm, then confirm'], ['A R', 'accept or sign / send back or stop'], ['V N', 'revert an act / take its scope back'], ['1–3', 'pick a reason, or a quick reply']
+  ]);
+
+  document.addEventListener('keydown', function (e) {
+    if (FIND.isOpen()) return;
+    var k = e.key, typing = C.typing(e);
+    if (S.deck && S.busy) { e.preventDefault(); return; }
+    if (typing) {
+      var id = e.target.id;
+      if (id === 'prompt' && S.prompt) {
+        if (k === 'Enter' && !e.shiftKey) { e.preventDefault(); submitPrompt(e.target.value); }
+        else if (k === 'Escape') { e.preventDefault(); S.prompt = null; renderDeck(); }
+        return;
+      }
+      if (id === 'reply') {
+        if (k === 'Enter' && !e.shiftKey) { e.preventDefault(); deckAct('reply'); }
+        else if (k === 'Escape') e.target.blur();
+        return;
+      }
+      if (k === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); if (S.drawer && S.drawer.edit) saveEnvelope(); else if (S.deck) deckAct('sign'); }
+      else if (k === 'Escape') e.target.blur();
+      return;
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (k === '?') { HELP.toggle(); return; }
+    if (k === '/') { e.preventDefault(); FIND.open(); return; }
+    if (k === 'd' || k === 'D') { C.fleetSwitch(); return; }
+    if (k === 'p' || k === 'P') { DAY.toggle(); return; }
+
+    if (S.deck) {
+      var a = currentAsk(), low = k.length === 1 ? k.toLowerCase() : k;
+      if (S.prompt) {
+        if (k === 'Escape') { S.prompt = null; renderDeck(); return; }
+        var n = parseInt(k, 10);
+        if (n >= 1 && n <= (S.prompt.options || []).length) { submitPrompt(S.prompt.options[n - 1]); return; }
+        if (k === 'Enter') { e.preventDefault(); submitPrompt(S.prompt.text || ''); return; }
+        if (k === 'Tab') { e.preventDefault(); var t = $('prompt'); if (t) t.focus(); return; }
+        return;
+      }
+      if (!a) {
+        if (k === 'Escape') { closeDeck(); return; }
+        var ln = LANES.filter(function (x) { return x.n === k; })[0]; if (ln) goLane(ln.key);
+        return;
+      }
+      if (k === 'Escape') {
+        if (S.armed) S.armed = null; else if (S.reader) S.reader = null; else if (S.edit) { S.edit = false; } else { closeDeck(true); return; }
+        renderDeck(); return;
+      }
+      if (S.reader) {
+        var b = document.querySelector('#deck .card-body');
+        if (low === 'j') deckAct('rnext'); else if (low === 'k') deckAct('rprev');
+        else if (k === 'ArrowDown' && b) { e.preventDefault(); b.scrollBy({ top: 80 }); } else if (k === 'ArrowUp' && b) { e.preventDefault(); b.scrollBy({ top: -80 }); }
+        else if (k === ' ') { e.preventDefault(); deckAct('rpick'); }
+        return;
+      }
+      if (k === 'ArrowRight') { walk(1); return; }
+      if (k === 'ArrowLeft') { walk(-1); return; }
+      var nf = focusList(a).length;
+      if ((low === 'j' || k === 'ArrowDown') && nf) { e.preventDefault(); S.foc = Math.min(nf - 1, S.foc + 1); S.armed = null; renderDeck(); return; }
+      if ((low === 'k' || k === 'ArrowUp') && nf) { e.preventDefault(); S.foc = Math.max(0, S.foc - 1); S.armed = null; renderDeck(); return; }
+      if (low === 'e') { e.preventDefault(); deckAct(a.type === 'sign' ? 'edit' : 'read'); return; }
+      if (low === 'g') { deckAct('page'); return; }
+      if (low === 'l') { closeDeck(); openDrawer({ view: 'ledger', sel: 0 }); return; }
+      if (a.type === 'breach') { if (k === '1') deckAct('amend'); else if (k === '2') deckAct('deny'); else if (k === '3') deckAct('suspend'); return; }
+      if (a.type === 'valve') { if (low === 'a') deckAct('approve'); else if (low === 'r') deckAct('stop'); else if (k === ' ') { e.preventDefault(); deckAct('pick'); } return; }
+      if (a.type === 'claim') { if (low === 'a') deckAct('accept'); else if (low === 'r') deckAct('sendback'); else if (low === 'v') deckAct('revert'); else if (low === 'n') deckAct('narrow'); return; }
+      if (a.type === 'sign') { if (low === 'a') deckAct('sign'); else if (low === 'x') deckAct('drop'); return; }
+      if (a.type === 'talk') {
+        if (k === 'Enter') { e.preventDefault(); var r = $('reply'); if (r) r.focus(); }
+        else if (low === 'x') deckAct('dismiss');
+        else if (k === '1' || k === '2' || k === '3') quickReply(+k - 1);
+        return;
+      }
+      return;
+    }
+    if (S.drawer) {
+      var d = S.drawer, cnt = (d.list || []).length, lw = k.length === 1 ? k.toLowerCase() : k;
+      if (k === 'Escape') { if (S.armed) { S.armed = null; renderDrawer(); } else if (d.edit) { d.edit = false; d.form = null; renderDrawer(); } else closeDrawer(); return; }
+      if (lw === 'j' || k === 'ArrowDown') { e.preventDefault(); d.sel = Math.min(cnt - 1, d.sel + 1); S.armed = null; renderDrawer(); return; }
+      if (lw === 'k' || k === 'ArrowUp') { e.preventDefault(); d.sel = Math.max(0, d.sel - 1); S.armed = null; renderDrawer(); return; }
+      if (k === 'Enter') { drawerEnter(); return; }
+      if (lw === 'v' && (d.view === 'mandate' || d.view === 'ledger')) { drawerAct('revert'); return; }
+      if (lw === 'n' && (d.view === 'mandate' || d.view === 'ledger')) { drawerAct('narrow'); return; }
+      if (lw === 'f') { var map = d.view === 'register' ? REG_F : d.view === 'ledger' ? LEDGER_F : d.view === 'mandate' ? PAGE_F : null; if (map) { var ks = Object.keys(map); d.filter = ks[(ks.indexOf(d.filter || 'all') + 1) % ks.length]; d.sel = 0; renderDrawer(); } return; }
+      if (lw === 'e' && d.view === 'mandate') { e.preventDefault(); drawerAct('edit'); return; }
+      if (lw === 's' && d.view === 'mandate' && d.m.state !== 'accepted') { drawerAct('suspend'); return; }
+      if (lw === 'x' && d.view === 'orphans') { dropOrphans(); return; }
+      if (lw === 'm') { openDrawer({ view: 'register', sel: 0 }); return; }
+      if (lw === 'l') { openDrawer({ view: 'ledger', sel: 0 }); return; }
+      if (lw === 'o') { openDrawer({ view: 'orphans', sel: 0 }); return; }
+      return;
+    }
+    if (S.lane) {
+      var asks = laneAsks(laneOf(S.lane));
+      if (k === 'Escape') { closeLane(); return; }
+      if (k === 'j' || k === 'ArrowDown') { e.preventDefault(); S.sel = Math.min(asks.length - 1, S.sel + 1); renderPeek(); return; }
+      if (k === 'k' || k === 'ArrowUp') { e.preventDefault(); S.sel = Math.max(0, S.sel - 1); renderPeek(); return; }
+      if (k === 'Enter' && asks.length) { openDeck(S.lane, asks[S.sel].key); return; }
+      if (k === 'ArrowRight' || k === 'ArrowLeft') { var i = LANES.indexOf(laneOf(S.lane)); S.lane = LANES[(i + (k === 'ArrowRight' ? 1 : 3)) % 4].key; S.sel = 0; render(); return; }
+    }
+    if (k === 'Escape') { HELP.close(); return; }
+    var lane = LANES.filter(function (l) { return l.n === k; })[0];
+    if (lane) { openLane(lane.key); return; }
+    if (k === 'm' || k === 'M') { openDrawer({ view: 'register', sel: 0 }); return; }
+    if (k === 'l' || k === 'L') { openDrawer({ view: 'ledger', sel: 0 }); return; }
+    if (k === 'o' || k === 'O') { openDrawer({ view: 'orphans', sel: 0 }); return; }
+    if (k === 'b' || k === 'B') { S.before = !S.before; render(); return; }
+  });
+  $('scrim').onclick = function () { if (S.busy) return; if (S.deck) closeDeck(); else if (S.drawer) { S.drawer.back = null; closeDrawer(); } };
+  window.addEventListener('resize', function () { if (S.lane) renderPeek(); });
+  render();
+})();
+</script>
+</body>
+</html>

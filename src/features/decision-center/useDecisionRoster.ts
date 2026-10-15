@@ -61,6 +61,7 @@ import {
 } from './model/decisionModel';
 import { compareDecision } from './model/decisionOrder';
 import { decisionTotal } from './roster/chipCounts';
+import type { LaneCounts } from './lanes/laneModel';
 import {
   approvalToDecision,
   councilToDecision,
@@ -104,6 +105,12 @@ export interface DecisionRoster {
   counts: Record<HubChip, ChipCount>;
   /** Sum of the seven decision chips (excludes `ready`). */
   total: number;
+  /** The mandate lanes' counts under the `lanes` setting; null under `chips`. */
+  lanes: LaneCounts | null;
+  /** Breach + Sign + Accept + Talk under `lanes` once read; null under `chips` or before. */
+  laneTotal: number | null;
+  /** The first lanes snapshot read has settled. */
+  lanesSettled: boolean;
   /** Loaded items, ordered by `compareDecision`. */
   items: DecisionItem[];
   byChip: Partial<Record<DecisionChip, DecisionItem[]>>;
@@ -177,6 +184,9 @@ export function useDecisionRoster(options: DecisionRosterOptions = {}): Decision
   // (`useDecisionCounts`) so a badge and the strip cannot disagree.
   const {
     counts,
+    lanes,
+    laneTotal,
+    lanesSettled,
     loading: countsLoading,
     refreshCounts,
   } = useDecisionCountsCore({ n: chat.count, failed: chat.failed }, enabled);
@@ -366,6 +376,9 @@ export function useDecisionRoster(options: DecisionRosterOptions = {}): Decision
     () => ({
       counts,
       total: decisionTotal(counts),
+      lanes,
+      laneTotal,
+      lanesSettled,
       items,
       byChip,
       errors,
@@ -373,6 +386,6 @@ export function useDecisionRoster(options: DecisionRosterOptions = {}): Decision
       decide,
       refresh,
     }),
-    [counts, items, byChip, errors, loading, decide, refresh],
+    [counts, lanes, laneTotal, lanesSettled, items, byChip, errors, loading, decide, refresh],
   );
 }

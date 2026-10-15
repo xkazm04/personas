@@ -707,6 +707,39 @@ pub fn mandate_for_project_or_none(pool: &DbPool, project_id: &str) -> Option<Ma
     }
 }
 
+/// The active mandate's charter id and its signed envelope (spark
+/// mandate-lanes): the same row [`mandate_for_project`] reads, so the two
+/// can never name different charters. `None` for an unmandated project and,
+/// with the same posture as [`mandate_for_project_or_none`], for a read that
+/// failed (logged).
+pub fn envelope_for_project_or_none(
+    pool: &DbPool,
+    project_id: &str,
+) -> Option<(String, personas_db::models::MandateEnvelope)> {
+    let read = || -> Result<Option<(String, personas_db::models::MandateEnvelope)>, AppError> {
+        let rows =
+            repo::list_by_project_domain(pool, project_id, DOMAIN_SOFTWARE_ENGINEERING, true)?;
+        let Some(row) = rows.first() else {
+            return Ok(None);
+        };
+        Ok(
+            personas_db::repos::core::mandates::get_envelope(pool, &row.id)?
+                .map(|env| (row.id.clone(), env)),
+        )
+    };
+    match read() {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(
+                project_id,
+                error = %e,
+                "responsibility: mandate envelope read failed; treating it as unsigned"
+            );
+            None
+        }
+    }
+}
+
 /// Every project-bound active software charter, as mandate records.
 pub fn load_all_mandates(pool: &DbPool) -> Result<Vec<MandateRecord>, AppError> {
     Ok(

@@ -433,6 +433,35 @@ pub fn mark_as_read(pool: &DbPool, id: &str) -> Result<(), AppError> {
     })
 }
 
+/// The inverse of [`mark_as_read`]: the door a reverted router filing
+/// (`charter_act_revert` on a `report.read` act) calls to put the report back
+/// in the operator's unread queue. `false` when it was already unread.
+pub fn mark_as_unread(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    use crate::PoolExt;
+    use rusqlite::OptionalExtension;
+    timed_query!("persona_reports", "persona_reports::mark_as_unread", {
+        let conn = pool.conn("persona_reports::mark_as_unread")?;
+        let exists: Option<bool> = conn
+            .query_row(
+                "SELECT is_read FROM persona_reports WHERE id = ?1",
+                params![id],
+                |r| r.get("is_read"),
+            )
+            .optional()?;
+        match exists {
+            None => Err(AppError::NotFound(format!("PersonaReport {id}"))),
+            Some(false) => Ok(false),
+            Some(true) => {
+                conn.execute(
+                    "UPDATE persona_reports SET is_read = 0, read_at = NULL WHERE id = ?1",
+                    params![id],
+                )?;
+                Ok(true)
+            }
+        }
+    })
+}
+
 /// One unread message in the shape the autonomous message-triage batch
 /// needs: persona name joined in, no delivery/thread baggage.
 pub struct UnreadMessageForTriage {

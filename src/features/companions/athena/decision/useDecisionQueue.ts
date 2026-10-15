@@ -22,6 +22,8 @@ import { useAthenaStore } from '../athenaStore';
 import { applyClientAction } from '../applyClientAction';
 import { isDecisionDeferred } from './decisionDeferral';
 import { orbLoad } from './orbLoad';
+
+const NO_LOAD: readonly DecisionChip[] = [];
 import { needsYouAccounts, reloginToDecision } from './reloginDecision';
 import {
   ROSTER_DECISION_SOURCES,
@@ -464,6 +466,12 @@ function IdleQueue() {
 export function DecisionDriver() {
   const counts = useDecisionCounts();
   const pendingCounts = useSystemStore((s) => s.pendingCounts);
-  const load = orbLoad(pendingCounts, counts.counts.gates.failed);
+  // Under the `lanes` setting a lane read that answered zero for the operator
+  // (Breach + Sign + Accept + Talk) loads nothing: there is nothing for the orb.
+  const lanesIdle = counts.lanes !== null
+    && counts.laneTotal === 0
+    && !counts.lanes.breach.failed
+    && !counts.lanes.talk.failed;
+  const load = lanesIdle ? NO_LOAD : orbLoad(pendingCounts, counts.counts.gates.failed);
   return load.length > 0 ? createElement(LoadedQueue, { load }) : createElement(IdleQueue);
 }

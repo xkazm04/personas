@@ -45,7 +45,7 @@
   "station_toggle_label": "在选择器中显示",
   "stations_label": "电台",
   "switch_station": "切换电台",
-  "tracklist_label": "{count} 曲目",
+  "tracklist_label": "{count} 首曲目",
   "unavailable_toast": "{station} 当前不可用。请检查您的网络连接，或尝试其他电台。",
   "unmute": "取消静音",
   "volume_button": "体积",

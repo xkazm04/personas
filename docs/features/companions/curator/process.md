@@ -4,10 +4,12 @@
 which phases of the work the sessions reach, and where they fail. It lives under Companions >
 Curator > Process.
 
-It is the promoted winner of the `process-strategic` design contest (2026-09-23, "The Spine"),
-simplified by the owner's review: the standard path runs down the page, each station shows its
-name alone on the left and its figures on the right, the group picker is a header dropdown, and
-findings and human decisions are a separate surface still to come.
+Its first form was the winner of the `process-strategic` design contest (2026-09-23, "The
+Spine"): the standard path read top to bottom, one station per phase. The `process-landing`
+contest (2026-10-14) replaced it with two figures the owner kept side by side, switched in the
+header: **Dial** and **Watershed**. The Spine view was removed; its engine (`engine/spine.ts`)
+still derives the path both figures draw. Findings and human decisions are a separate surface
+still to come.
 
 ## What it reads
 
@@ -29,9 +31,7 @@ the page derives everything else.
 - **Repository.** A searchable dropdown filters to one repository. The repository is measured on
   its mode's path, so stations stay comparable, and every coverage bar carries a tick at the
   all-repositories share.
-- **The summary.** Share that landed a commit, share that walked the whole path, and the station
-  with the most failed endings.
-- **The spine.** The standard path is derived, never declared: the most-travelled chain of phases
+- **The path.** The standard path is derived, never declared: the most-travelled chain of phases
   (Brief, Explore, Edit, Verify, Ship), braided only where the data genuinely forks. Each station
   shows coverage (`n of N`, how many skipped it) and failures: sessions that **ended there with
   errors or interrupted**, and sessions that **hit a tool error or interrupt there**. The three
@@ -40,19 +40,33 @@ the page derives everything else.
 - **How the sessions ended.** Committed, interrupted, no commit with errors, no commit and clean.
   A clean ending without a commit is not a failure: much headless work is read-only.
 
+## The two views
+
+- **Dial** (`views/dial/`, the default). One tick ring per phase, outermost first; every tick is
+  1/120 of the sessions. The lit arc is who reached the phase, cut into went on, ended clean and
+  ended failing; a bezel wraps every repository around it, and clicking one filters the page.
+  A ring opens into a ruler with its step kinds and failing repositories, and below it the
+  sessions, each with its step strip and a detail sheet. Drawn on two canvases.
+- **Watershed** (`views/watershed/`). The path as a river from spring to sea: its width is the
+  sessions still flowing; at each settlement the ones that stopped leave it, failing into a red
+  marsh or clean into a lake, and the ones that walked the whole path reach a delta with one
+  mouth per outcome. A settlement opens a survey sheet; a session opens its voyage log. The map
+  is one SVG built per mode and repository; the moving specks are a canvas loop that rests when
+  idle.
+
+Both views load lazily, render nothing per session as a React element, and honour reduced
+motion.
+
 ## Honesty rules
 
 - A share of nobody renders as a dash, never `0%`.
 - An error is filed on the phase it happened in, not on the last station the session reached.
-- The footer says how many transcripts were read and how many sessions the device remembers.
 
 ## Not yet
 
 - **Findings and human decisions.** The analytical skill designed beside this page (working name
   `pathfinder`) will emit findings with evidence and a question for a person; where they land is
   a separate surface, deliberately not a rail on this one.
-- **Descent to one session.** Stations know the ids behind their failures (`failureIds`); nothing
-  renders them yet.
 - **Headless paths are short.** Most headless sessions are read-only, so their derived path is
   often Brief then Explore only.
 
