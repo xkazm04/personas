@@ -71,9 +71,9 @@ export function useTitleBarTray() {
   const openPalette = useCommandPaletteStore((s) => s.openPalette);
   const setMonitorInitialView = useSystemStore((s) => s.setMonitorInitialView);
   /**
-   * The decision badge reads the Decision Center's roster counts — the seven
-   * decision chips, the same number the Activity strip shows — and nothing
-   * else. Counts only: no item source, no triage machinery, no review list.
+   * The decision badge reads the Decision Center's lane counts (the same
+   * numbers the Activity command bar's lane buttons show) and nothing else.
+   * Counts only: no item source, no triage machinery, no review list.
    *
    * It also owns their freshness: `useDecisionCounts` registers the roster's
    * 30 s counts ticker on the shared coordinator (one `dev_tools_pending_counts`
@@ -95,14 +95,13 @@ export function useTitleBarTray() {
   }, [cronAgents]);
 
   /**
-   * Every decision waiting on a person, across the seven chips. Build questions
-   * and chat are inside it (the roster adds them client-side); `ready` is not
-   * a decision and is not.
+   * Every card waiting on the operator: the lanes (Breach + Sign + Accept +
+   * Talk; Orphans excluded). Build questions and chat are inside it (the
+   * roster adds them client-side). `null` until the first lanes read settles:
+   * the badge then shows its loading ghost, never the roster's chip total,
+   * which counts things the lanes do not (orphans, held, evidence).
    */
-  // The badge counts the lanes (Breach + Sign + Accept + Talk, Orphans
-  // excluded); the roster's total stands in only until the first lane read
-  // settles.
-  const quickCount = decisions.laneTotal ?? decisions.total;
+  const quickCount = decisions.laneTotal;
   const monitorAttention = unreadReportCount + draftReadyCount;
 
   const notificationsOpen = headerOverlay === 'notifications';
@@ -145,7 +144,8 @@ export function useTitleBarTray() {
   return {
     todayScheduleCount,
     quickCount,
-    decisionCounts: decisions.counts,
+    decisionLanes: decisions.lanes,
+    lanesSettled: decisions.lanesSettled,
     monitorAttention,
     unreadCount,
     running,

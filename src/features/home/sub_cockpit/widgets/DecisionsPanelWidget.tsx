@@ -37,12 +37,16 @@ export function DecisionsPanelWidget({ config, title, span, actions, footer }: C
 
   const rows = useMemo(() => roster.items.slice(0, limit), [roster.items, limit]);
   const heading = title ?? t.overview.cockpit.decisions_title;
-  // The count is the lanes' (Breach + Sign + Accept + Talk); the roster's
-  // total stands in only until the first lane read settles.
-  const total = roster.laneTotal ?? roster.total;
-  const count = rows.length < total
-    ? tx(t.overview.cockpit.decisions_count, { shown: rows.length, total })
-    : rows.length;
+  // The count is the lanes' (Breach + Sign + Accept + Talk). Until the first
+  // lane read settles there is no total to name, so the head carries no count
+  // at all (the rows ghost under it): never the roster's chip total, which
+  // counts things the lanes do not, and never a figure it would retract.
+  const total = roster.laneTotal;
+  const count = total === null
+    ? undefined
+    : rows.length < total
+      ? tx(t.overview.cockpit.decisions_count, { shown: rows.length, total })
+      : rows.length;
   const failed = Object.keys(roster.errors).length > 0;
 
   const c = t.overview.cockpit;

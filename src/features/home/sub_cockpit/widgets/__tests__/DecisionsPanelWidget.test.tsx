@@ -1,7 +1,8 @@
 /**
  * The Home decisions panel reads the Decision Center roster: its count is the
- * roster's total, its rows are the roster's items in the roster's order, and a
- * verdict in its drawer writes through the roster's own `decide`.
+ * lanes' total (Breach + Sign + Accept + Talk), named only once the first
+ * lanes read settled; its rows are the roster's items in the roster's order,
+ * and a verdict in its drawer writes through the roster's own `decide`.
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -17,6 +18,7 @@ import { approvalRow, incidentRow, item } from '@/features/decision-center/__tes
 const roster = {
   items: [] as DecisionItem[],
   total: 0,
+  laneTotal: null as number | null,
   errors: {} as Record<string, string>,
   loading: false,
   decide: vi.fn(async () => undefined),
@@ -37,22 +39,33 @@ const question = item({ id: 'question:q-1', kind: 'question', title: 'Which regi
 beforeEach(() => {
   vi.clearAllMocks();
   roster.items = [incident, approval];
-  roster.total = 9;
+  roster.total = 12;
+  roster.laneTotal = 9;
   roster.errors = {};
   roster.loading = false;
 });
 
 describe('DecisionsPanelWidget', () => {
-  it('loads every chip and shows the roster rows against the roster total', () => {
+  it('loads every chip and shows the roster rows against the lanes total', () => {
     render(<DecisionsPanelWidget />);
 
     expect(useDecisionRoster).toHaveBeenCalledWith({ load: 'all' });
     const table = screen.getByTestId('cockpit-decisions-panel-table');
     expect(within(table).getByText(incident.title)).toBeTruthy();
     expect(within(table).getByText(approval.title)).toBeTruthy();
-    // Two rows of the roster's nine: the count says so rather than "2".
+    // Two rows of the lanes' nine: the count says so rather than "2".
     expect(screen.getByTestId('cockpit-widget-decisions_panel').textContent).toContain('2');
     expect(screen.getByTestId('cockpit-widget-decisions_panel').textContent).toContain('9');
+  });
+
+  it('names no count before the first lanes read settles, never the roster total', () => {
+    roster.laneTotal = null;
+
+    render(<DecisionsPanelWidget />);
+
+    const head = screen.getByTestId('cockpit-widget-decisions_panel').querySelector('.k-count');
+    // No count at all: neither the roster's 12 nor a guessed 0.
+    expect(head).toBeNull();
   });
 
   it('writes a drawer verdict through the roster\'s decide', async () => {

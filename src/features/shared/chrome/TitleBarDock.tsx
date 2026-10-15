@@ -100,23 +100,25 @@ export default function TitleBarDock() {
       <CalendarClock size={icon} strokeWidth={1.6} />
     </DockAction>
   );
-  // The Decision Center badge: the roster total, opening Monitor > Activity
+  // The Decision Center badge: the lanes' total, opening Monitor > Activity
   // (the hub); Shift+click opens the Decision Deck on everything instead. The
-  // tooltip reads the total back as its seven chips and names the shortcut —
-  // it stays inert (a tooltip is never something to click inside).
-  const decisionLabel = tray.quickCount > 0
+  // tooltip reads the total back as its lanes and names the shortcut; it stays
+  // inert (a tooltip is never something to click inside). Before the first
+  // lanes read settles the count is a ghost, never a number it would retract.
+  const decisionLabel = tray.quickCount !== null && tray.quickCount > 0
     ? tx(t.monitor.dc_consumers_badge_attention, { count: tray.quickCount })
     : t.monitor.dc_consumers_badge;
   const review = (
     <DockAction
       {...common}
       onClick={(e) => tray.openDecisions({ triageAll: e.shiftKey, origin: e.currentTarget })}
-      count={tray.quickCount}
+      count={tray.quickCount ?? 0}
+      countPending={tray.quickCount === null}
       countClass="text-status-warning"
       label={decisionLabel}
       title={
         <>
-          <TitleBarDecisionTooltip heading={decisionLabel} counts={tray.decisionCounts} />
+          <TitleBarDecisionTooltip heading={decisionLabel} lanes={tray.decisionLanes} settled={tray.lanesSettled} />
           <span className="mt-1 block typo-caption" data-testid="titlebar-triage-all-hint">
             {t.overview.dc_badge_triage_all_hint}
           </span>
@@ -195,6 +197,8 @@ interface DockActionProps {
   title: ReactNode;
   testId: string;
   count?: number;
+  /** The count has not been read yet: a ghost holds its place. */
+  countPending?: boolean;
   countClass?: string;
   active?: boolean;
   /** Key chip shown under the capsule while keyboard-nav mode is active. */
@@ -215,12 +219,22 @@ function DockAction({
   title,
   testId,
   count = 0,
+  countPending = false,
   countClass,
   active,
   hintKey,
   showHint,
 }: DockActionProps) {
-  const countEl = count > 0 && (
+  // Pending: a calm ghost where the figure will land (loading pattern v2:
+  // delayed, no pulse), so a first read never flashes a number it retracts.
+  const countEl = countPending ? (
+    <span
+      aria-hidden
+      data-testid={`${testId}-pending`}
+      className="inline-block h-3 w-2.5 animate-fade-in rounded-interactive bg-foreground/10"
+      style={{ animationDelay: '150ms', animationFillMode: 'both' }}
+    />
+  ) : count > 0 && (
     <span className={`typo-caption tabular-nums ${countClass ?? ''}`}>
       {count > 99 ? '99+' : count}
     </span>
