@@ -68,6 +68,10 @@ export function tickWhat(m: M, tx: Tx, verb: ActVerb, count: number): string {
     case 'budget_set': return m.ml_tick_budget_set;
     case 'suspended': return m.ml_tick_suspended;
     case 'resumed': return m.ml_tick_resumed;
+    case 'dropped': return m.ml_tick_dropped;
+    case 'kept': return m.ml_tick_kept;
+    case 'drafted': return m.ml_tick_drafted;
+    case 'adopted': return m.ml_tick_adopted;
   }
 }
 

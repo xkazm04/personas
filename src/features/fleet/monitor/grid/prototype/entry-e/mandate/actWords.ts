@@ -10,16 +10,24 @@
 // "suspended", "resumed", "reverted", and WP6's "dropped", "kept", "drafted",
 // "adopted"), and the steward's idea verdicts. A token
 // none of them writes reads as "decided", never as the raw token.
+//
+// Every verb has its own words in the act log AND the dock's ticker: the
+// switches over `ActVerb` here and in `dockActLine` have no default, so a
+// verb added to the union fails tsc until both say it (`ACT_VERBS` pins the
+// list a test walks).
 
 import type { Translations } from '@/i18n/generated/types';
 import type { CharterAct } from '@/lib/bindings/CharterAct';
 
 type M = Translations['monitor'];
 
-export type ActVerb =
-  | 'filed' | 'approved' | 'acknowledged' | 'accepted' | 'rejected'
-  | 'signed' | 'widened' | 'narrowed' | 'merge_set' | 'budget_set'
-  | 'suspended' | 'resumed' | 'reverted' | 'decided';
+export const ACT_VERBS = [
+  'filed', 'approved', 'acknowledged', 'accepted', 'rejected',
+  'signed', 'widened', 'narrowed', 'merge_set', 'budget_set',
+  'suspended', 'resumed', 'reverted', 'dropped', 'kept', 'drafted', 'adopted', 'decided',
+] as const;
+
+export type ActVerb = (typeof ACT_VERBS)[number];
 
 export function verbOf(verdict: string | null | undefined): ActVerb {
   switch (verdict) {
@@ -36,6 +44,10 @@ export function verbOf(verdict: string | null | undefined): ActVerb {
     case 'suspended': return 'suspended';
     case 'resumed': return 'resumed';
     case 'reverted': return 'reverted';
+    case 'dropped': return 'dropped';
+    case 'kept': return 'kept';
+    case 'drafted': return 'drafted';
+    case 'adopted': return 'adopted';
     default: return 'decided';
   }
 }
@@ -55,23 +67,11 @@ export function verbLabel(m: M, verb: ActVerb): string {
     case 'suspended': return m.ml_verb_suspended;
     case 'resumed': return m.ml_verb_resumed;
     case 'reverted': return m.ml_verb_reverted;
-    case 'decided': return m.ml_verb_decided;
-  }
-}
-
-/**
- * The verbs only an envelope act carries (WP6: a draft dropped with its
- * reason, a re-read kept, an orphan draft, an adoption). Kept out of `ActVerb`,
- * whose every member the dock's ticker counts; on the ticker they read as
- * "decided".
- */
-export function envelopeVerbLabel(m: M, verdict: string): string | null {
-  switch (verdict) {
     case 'dropped': return m.ml_verb_dropped;
     case 'kept': return m.ml_verb_kept;
     case 'drafted': return m.ml_verb_drafted;
     case 'adopted': return m.ml_verb_adopted;
-    default: return null;
+    case 'decided': return m.ml_verb_decided;
   }
 }
 
@@ -125,7 +125,7 @@ export function actHeadline(m: M, act: CharterAct, mandateTitle?: string | null)
   if (act.itemKind === 'mandate') {
     const what = mandateTitle ?? m.ml_kind_mandate;
     return {
-      verb: envelopeVerbLabel(m, act.verdict) ?? verb,
+      verb,
       what: shown.reason ? m.ml_act_what_reason.replace('{what}', what).replace('{reason}', shown.reason) : what,
     };
   }

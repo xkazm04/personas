@@ -8,7 +8,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CharterAct } from '@/lib/bindings/CharterAct';
 
 import { DockActTicker } from '../DockActTicker';
-import { TICK_WINDOW_MS, coalesceAct, stewardWord } from '../dockActLine';
+import { getActiveTranslations } from '@/i18n/useTranslation';
+
+import { TICK_WINDOW_MS, coalesceAct, stewardWord, tickWhat } from '../dockActLine';
+import { ACT_VERBS, verbLabel } from '../prototype/entry-e/mandate/actWords';
 import { useMandateDrawerRequest } from '../prototype/entry-e/mandate/mandateDrawerRequest';
 
 let push: ((a: CharterAct) => void) | null = null;
@@ -78,6 +81,28 @@ describe('coalesceAct', () => {
     expect(late.actIds).toEqual(['a2']);
     const near = coalesceAct(first, charterAct('a2', { createdAt: new Date(T0 + TICK_WINDOW_MS).toISOString() }));
     expect(near.actIds).toEqual(['a1', 'a2']);
+  });
+});
+
+describe('the ticker words', () => {
+  const m = getActiveTranslations().monitor;
+  const tx = (tpl: string, vars: Record<string, string | number>) => tpl.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k]));
+
+  it('give every verb its own words, in the ticker and in the act log', () => {
+    const ticks = ACT_VERBS.map((v) => tickWhat(m, tx, v, 1));
+    const labels = ACT_VERBS.map((v) => verbLabel(m, v));
+    expect(ticks.every((w) => w && !w.includes('{'))).toBe(true);
+    expect(new Set(ticks).size).toBe(ACT_VERBS.length);
+    expect(new Set(labels).size).toBe(ACT_VERBS.length);
+  });
+
+  it('never says decided for a drop, a keep, a draft or an adoption', () => {
+    for (const verdict of ['dropped', 'kept', 'drafted', 'adopted']) {
+      const line = coalesceAct(null, charterAct('a1', { itemKind: 'mandate', verdict, actor: 'operator' }));
+      expect(line.verb).toBe(verdict);
+      expect(tickWhat(m, tx, line.verb, 1)).not.toBe(tickWhat(m, tx, 'decided', 1));
+    }
+    expect(tickWhat(m, tx, 'kept', 1)).toBe(m.ml_tick_kept);
   });
 });
 

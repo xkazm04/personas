@@ -1325,6 +1325,10 @@ export type Translations = {
     ml_tick_budget_set: string;
     ml_tick_suspended: string;
     ml_tick_resumed: string;
+    ml_tick_dropped: string;
+    ml_tick_kept: string;
+    ml_tick_drafted: string;
+    ml_tick_adopted: string;
     ml_sign_verb: string;
     ml_sign_drop: string;
     ml_sign_yes: string;
@@ -1373,7 +1377,6 @@ export type Translations = {
     ml_breach_deny: string;
     ml_breach_deny_hint: string;
     ml_breach_suspend_hint: string;
-    ml_breach_no_mandate: string;
     ml_breach_diff: string;
     ml_breach_cap_aria: string;
     ml_breach_behind: string;
