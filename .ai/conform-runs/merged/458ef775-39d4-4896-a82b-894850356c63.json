@@ -1,0 +1,127 @@
+{
+ "schema": "conform-run/1",
+ "worker": "458ef775-39d4-4896-a82b-894850356c63",
+ "subject": "table",
+ "evaluatedAt": "2026-10-15T23:56:24.290113+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [
+  {
+   "context": "overview-manual-review",
+   "subject": "table",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_manual-review/components/backlog/useBacklogQueue.ts:88 The backlog queue fetches a server-truncated 100-row slice over which the client executes local sorting and filtering, violating the prohibition against sorting below a server-truncated window.",
+   "techniques": [
+    {
+     "technique": "client-server-split",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_manual-review/components/backlog/useBacklogQueue.ts:88 Fetches a server-truncated 100-row slice over which the client executes local sorting and filtering, violating the prohibition against sorting below a server-truncated window."
+    },
+    {
+     "technique": "sorting",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_manual-review/components/backlog/backlogModel.ts:118 Backlog comparator returns equal for distinct records sharing the same category or score and omits an immutable unique row identity tiebreaker."
+    },
+    {
+     "technique": "filtering",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:180 Prunes selection state into an empty set through an effect upon filter change rather than intersecting persistent selection keys with the applied predicate at read time."
+    },
+    {
+     "technique": "loading-and-empty-states",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_manual-review/components/backlog/BacklogTable.tsx:127 BacklogTable omits passing loading and error state props to FacetedDecisionTable, allowing settled-empty UI to paint on zero rows regardless of whether a fetch is in flight or failed."
+    },
+    {
+     "technique": "grid-keyboard-model",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_manual-review/components/backlog/backlogColumns.tsx:49 Interactive cell buttons and row click handlers exist without a two-dimensional grid keyboard navigation model or roving tab index."
+    }
+   ]
+  },
+  {
+   "context": "vault-databases-tabs",
+   "subject": "table",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_databases/tabs/ResultsTable.tsx:34 Query execution unmounts the result table and renders a centered pulsing dot instead of preserving permanent table chrome with an ambient in-flight progress indicator.",
+   "techniques": [
+    {
+     "technique": "loading-and-empty-states",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_databases/tabs/ResultsTable.tsx:34 Query execution replaces the result grid with a centered pulsing spinner and status text rather than preserving permanent table chrome and rendering an in-chrome indicator."
+    },
+    {
+     "technique": "grid-keyboard-model",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:158 Every cell in the virtualized grid is rendered with tabIndex={0} and role=\"button\", placing hundreds of cells into the page tab sequence without a 2D arrow-key grid navigation model."
+    },
+    {
+     "technique": "performance",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:131 Virtualized rows are keyed by array index rather than stable record identity, and the container lacks aria-rowcount and aria-rowindex accessibility declarations."
+    },
+    {
+     "technique": "sorting",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_databases/tabs/ColumnList.tsx:85 The column introspection table provides static table headers with no sort model or interactive sort affordances."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "table",
+   "context": "agents-editor",
+   "reason": "Persona editor shell manages agent configuration tabs, drafts, and settings forms, and contains no tabular data display surfaces or table implementations."
+  },
+  {
+   "subject": "table",
+   "context": "shared-components-layout",
+   "reason": "Core page and layout primitives (ContentLayout, ActionRow, SegmentedTabs, SectionCard, TableSkeleton) provide structural scaffolding and placeholder skeletons, but contain no table implementations."
+  },
+  {
+   "subject": "table",
+   "context": "hooks-utility-interaction",
+   "reason": "Interaction utility hooks (useMotion, useProgressiveReveal, useRovingTabIndex, useVirtualList, etc.) provide generic behavioral primitives rather than tabular data display surfaces."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-15T23:56:24.290113+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "table"
+   ],
+   "techniques": [
+    "client-server-split",
+    "filtering",
+    "grid-keyboard-model",
+    "loading-and-empty-states",
+    "sorting"
+   ],
+   "deviations": 1,
+   "context": "overview-manual-review",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-15T23:56:24.290113+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "table"
+   ],
+   "techniques": [
+    "grid-keyboard-model",
+    "loading-and-empty-states",
+    "performance",
+    "sorting"
+   ],
+   "deviations": 1,
+   "context": "vault-databases-tabs",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  }
+ ]
+}

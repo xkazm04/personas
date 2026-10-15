@@ -21919,7 +21919,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/backlog/useBacklogQueue.ts:88 The backlog queue fetches a server-truncated 100-row slice over which the client executes local sorting and filtering, violating the prohibition against sorting below a server-truncated window.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "production-trace-scoring",
@@ -39505,7 +39509,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/ResultsTable.tsx:34 Query execution unmounts the result table and renders a centered pulsing dot instead of preserving permanent table chrome with an ambient in-flight progress indicator.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "data-access",

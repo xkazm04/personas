@@ -22389,6 +22389,73 @@
         "at": "2026-10-15T23:22:15.240711+00:00",
         "reason": "reviewer (sonnet): deliberation.rs is not among the context's files, which are the engine/src parser, protocol, chunker and similar. The engine/src files mention deliberation only in autonomy.rs and serving_overrides.rs. So the round_cap verdict is about a different context, and I did not confirm the 'moderator prompt"
       }
+    },
+    "ef73ca1c-fc54-4b9c-83ec-390c54929192/table": {
+      "context": "overview-manual-review",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T23:56:24.290Z",
+      "worker": "458ef775-39d4-4896-a82b-894850356c63",
+      "techniques": [
+        {
+          "technique": "client-server-split",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/backlog/useBacklogQueue.ts:88 Fetches a server-truncated 100-row slice over which the client executes local sorting and filtering, violating the prohibition against sorting below a server-truncated window."
+        },
+        {
+          "technique": "sorting",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/backlog/backlogModel.ts:118 Backlog comparator returns equal for distinct records sharing the same category or score and omits an immutable unique row identity tiebreaker."
+        },
+        {
+          "technique": "filtering",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:180 Prunes selection state into an empty set through an effect upon filter change rather than intersecting persistent selection keys with the applied predicate at read time."
+        },
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/backlog/BacklogTable.tsx:127 BacklogTable omits passing loading and error state props to FacetedDecisionTable, allowing settled-empty UI to paint on zero rows regardless of whether a fetch is in flight or failed."
+        },
+        {
+          "technique": "grid-keyboard-model",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/backlog/backlogColumns.tsx:49 Interactive cell buttons and row click handlers exist without a two-dimensional grid keyboard navigation model or roving tab index."
+        }
+      ]
+    },
+    "647d6a54-3813-4149-bbf7-2d96a57a77c7/table": {
+      "context": "vault-databases-tabs",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T23:56:24.290Z",
+      "worker": "458ef775-39d4-4896-a82b-894850356c63",
+      "techniques": [
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/ResultsTable.tsx:34 Query execution replaces the result grid with a centered pulsing spinner and status text rather than preserving permanent table chrome and rendering an in-chrome indicator."
+        },
+        {
+          "technique": "grid-keyboard-model",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:158 Every cell in the virtualized grid is rendered with tabIndex={0} and role=\"button\", placing hundreds of cells into the page tab sequence without a 2D arrow-key grid navigation model."
+        },
+        {
+          "technique": "performance",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:131 Virtualized rows are keyed by array index rather than stable record identity, and the container lacks aria-rowcount and aria-rowindex accessibility declarations."
+        },
+        {
+          "technique": "sorting",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/ColumnList.tsx:85 The column introspection table provides static table headers with no sort model or interactive sort affordances."
+        }
+      ]
     }
   }
 }
