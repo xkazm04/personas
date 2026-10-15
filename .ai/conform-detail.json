@@ -556,37 +556,39 @@
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T16:11:19.025Z",
+      "worker": "4a53b76c-2473-47f7-8a91-70274594a907",
       "techniques": [
         {
           "technique": "layered-composition",
-          "verdict": "deviation: door does not seal; at least six post-return concatenations",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:1488 and src-tauri/engine/src/prepared_run_cache.rs:156"
+          "verdict": "deviation: door does not seal",
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:112 returns String; src-tauri/src/engine/runner/mod.rs:1488 appends after return"
+        },
+        {
+          "technique": "fingerprinting-and-cache-keys",
+          "verdict": "deviation: appends sit outside any fingerprint",
+          "evidence": "src-tauri/engine/src/prepared_run_cache.rs:156 appends mem_section to cached prompt_text"
         },
         {
           "technique": "variable-interpolation",
           "verdict": "deviation: an unresolved {{var}} ships literally to the model and is only warn-logged; no fail/default/omit choice per variable",
-          "evidence": "src-tauri/engine/src/prompt/variables.rs:122 returns the raw placeholder; the warn is at :128"
+          "evidence": "src-tauri/engine/src/prompt/variables.rs:122 returns the raw placeholder; the warn is at :128",
+          "carriedFrom": "2026-10-14"
         },
         {
           "technique": "pinned-prompt-clock",
           "verdict": "deviation: {{now}}/{{today}}/{{iso8601}} are read from the wall clock on every render, so any persona template that uses them is byte-unstable per call (and {{now}} per second)",
-          "evidence": "src-tauri/engine/src/prompt/variables.rs:18 chrono::Utc::now() and :24 'today'; run_budget_section also embeds clock times at assemble.rs:1201 (tail, so acceptable by the gradient)"
+          "evidence": "src-tauri/engine/src/prompt/variables.rs:18 chrono::Utc::now() and :24 'today'; run_budget_section also embeds clock times at assemble.rs:1201 (tail, so acceptable by the gradient)",
+          "carriedFrom": "2026-10-14"
         },
         {
           "technique": "context-budgeting",
           "verdict": "deviation: the budget is a tripwire that never truncates, so there is no degradation ladder and a huge prompt ships",
-          "evidence": "src-tauri/engine/src/prompt/budget.rs:85 'Never truncates, never errors'; warn_over_budget at :87"
-        },
-        {
-          "technique": "fingerprinting-and-cache-keys",
-          "verdict": "partial: capability-set and core fingerprints exist and are content-hashed, but there is no whole-prompt stamp and the capability digest is id@title only",
-          "evidence": "src-tauri/engine/src/prompt/capabilities.rs:364 active_capabilities_fingerprint (id@title) and :399 core_fingerprint; fnv1a_64 at budget.rs:76"
+          "evidence": "src-tauri/engine/src/prompt/budget.rs:85 'Never truncates, never errors'; warn_over_budget at :87",
+          "carriedFrom": "2026-10-14"
         }
       ],
-      "registryProposal": "evaluatedAgainst written from the registry index digest (sha256-b2:7436fd55a7cb2500, rev 43); carried verdict was against rev 37",
       "superseded": [
         {
           "state": "deviation",
@@ -594,6 +596,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:112 assemble_prompt still returns a bare String and the runner appends layers after it returns (src-tauri/src/engine/runner/mod.rs:1488 format!(\"{prompt_text}{mem_section}\"), :1550, :1582, :1617, :1666; src-tauri/engine/src/prepared_run_cache.rs:156 does the same for the memory layer), so memory and other late layers sit outside the budget tripwire, the untrusted fence and any fingerprint: the unsealed door. Partial progress since the 2026-09-23 verdict: spawn-time text now goes through append_spawn_time_section (assemble.rs:1236) but that is a named post-return append, not a section input.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+          "reason": "replaced by 4a53b76c-2473-47f7-8a91-70274594a907"
         }
       ]
     },
@@ -602,27 +611,28 @@
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T16:11:19.025Z",
+      "worker": "4a53b76c-2473-47f7-8a91-70274594a907",
       "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation: volatile layers lead the stable ones",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:229"
+        },
         {
           "technique": "task-envelope",
           "verdict": "deviation: expertise-claim opening, not a locate/done/check opening",
-          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:227 'You are a senior AI agent architect.'"
-        },
-        {
-          "technique": "layered-composition",
-          "verdict": "deviation: per-call values (intent, language, user context) sit upstream of the standing framework, inverting the stability gradient",
-          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:229 {intent}{lang_preamble}{context_section} precede '## The Capability Framework' at :231"
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:227 'You are a senior AI agent architect.'",
+          "carriedFrom": "2026-10-14"
         },
         {
           "technique": "context-budgeting",
           "verdict": "realized for the one elastic input: user context is capped and the cut is announced",
-          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:94 MAX_CONTEXT_CHARS cap, :100 '[reference context truncated]' notice, framed as reference not instructions at :107"
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:94 MAX_CONTEXT_CHARS cap, :100 '[reference context truncated]' notice, framed as reference not instructions at :107",
+          "carriedFrom": "2026-10-14"
         }
       ],
-      "registryProposal": "task-envelope: its identity-vs-competence test ('does removing the line change what the model is allowed to do') is hard to apply to a builder prompt whose role line also frames the output schema; an example of a mixed role+schema opening would help a judge.",
       "superseded": [
         {
           "state": "deviation",
@@ -630,6 +640,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 64a726d6-2363-4611-aa8c-9cf40ca0b71f"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:227 still opens the build prompt with a competence claim ('You are a senior AI agent architect. The user wants:') and :229 interpolates the volatile \"{intent}\"{lang_preamble}{context_section} ahead of the standing framework text, so no two builds share a byte-stable prefix and the primacy position buys nothing measured (re-judged against revision 43; verdict unchanged)",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+          "reason": "replaced by 4a53b76c-2473-47f7-8a91-70274594a907"
         }
       ]
     },
@@ -6009,24 +6026,35 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T15:40:00.000Z",
-      "worker": "910f5999-b183-4f5d-a67e-e49e43242f9b",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T16:09:25.243Z",
+      "worker": "15fb2a27-f979-4772-98da-54430e6be7a7",
       "techniques": [
         {
           "technique": "gate-liveness",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/output_assertions.rs:408 an instrument failure (assertions could not be loaded) has no exit path of its own and is indistinguishable from an empty assertion set; separately src-tauri/engine/src/verification_command.rs:65 run_verification has no production caller although :9 says its result feeds the F7 fix-loop - the trigger is dead while the checker stands ready"
+          "evidence": "src-tauri/engine/src/output_assertions.rs:409 instrument failure folded into an empty-success summary"
         },
         {
           "technique": "unmeasurable-criteria",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/output_assertions.rs:471 a CRITICAL assertion whose verdict could not be stored is counted neither passed nor failed and cannot downgrade the run (stated at :457) - a hole in the gate's own vision resolves to compliance rather than FAIL-CLOSED/REFUSE"
+          "evidence": "src-tauri/engine/src/output_assertions.rs:471 a CRITICAL assertion whose verdict could not be stored is counted neither passed nor failed and cannot downgrade the run (stated at :457) - a hole in the gate's own vision resolves to compliance rather than FAIL-CLOSED/REFUSE",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "blocking-by-input-determinism",
           "verdict": "realized",
-          "evidence": "src-tauri/engine/src/verification_command.rs:79 a verification command that cannot spawn fails closed (passed:false) rather than passing - but see gate-liveness: nothing calls it"
+          "evidence": "src-tauri/engine/src/verification_command.rs:79 a verification command that cannot spawn fails closed (passed:false) rather than passing - but see gate-liveness: nothing calls it",
+          "carriedFrom": "2026-10-09"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/output_assertions.rs:408 returns the same total:0/critical_failures:0 summary on a failed assertion load as for a persona with none (:421), so src-tauri/src/engine/execution.rs:2321 marks the run Completed - could-not-run reads as pass, baseline blocker assertion included",
+          "evaluatedAt": "2026-10-09T15:40:00.000Z",
+          "worker": "910f5999-b183-4f5d-a67e-e49e43242f9b",
+          "reason": "replaced by 15fb2a27-f979-4772-98da-54430e6be7a7"
         }
       ]
     },
@@ -10638,19 +10666,29 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:09:48.799Z",
-      "worker": "3ebd8e48-554f-40a8-bc1e-31658ecf232f",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T16:09:25.243Z",
+      "worker": "15fb2a27-f979-4772-98da-54430e6be7a7",
       "techniques": [
         {
           "technique": "oracle-frozen-during-repair",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/ai_healing.rs:169 healer authors should_retry (parsed at :211); src-tauri/src/engine/healing_retry.rs:947 gates the only verifying re-run on it while :292 already snapshotted the healed prompt as production - a repair ending with the check unrun is never marked unverified"
+          "evidence": "src-tauri/engine/src/ai_healing.rs:211 the fixer decides whether the oracle (re-run) is consulted"
         },
         {
           "technique": "self-reported-gate-inputs",
           "verdict": "conformant",
-          "evidence": "src-tauri/engine/src/fix_loop.rs:207 the _fix_* keys are inserted last (:238), so a prior model-written input cannot pin the attempt counter or plant a failure list into the quality-gate fix loop"
+          "evidence": "src-tauri/engine/src/fix_loop.rs:207 the _fix_* keys are inserted last (:238), so a prior model-written input cannot pin the attempt counter or plant a failure list into the quality-gate fix loop",
+          "carriedFrom": "2026-10-10"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/ai_healing.rs:169 makes the healer itself decide should_retry, and src-tauri/src/engine/healing_retry.rs:947 runs the verifying re-run only when it says true - yet src-tauri/engine/src/ai_healing.rs:292 has already committed the healed prompt as a new production version, so a heal ending should_retry:false ships an unverified prompt reported as phase 'completed' (oracle-frozen-during-repair: the verdict comes from the toolchain, not the fixer)",
+          "evaluatedAt": "2026-10-10T01:09:48.799Z",
+          "worker": "3ebd8e48-554f-40a8-bc1e-31658ecf232f",
+          "reason": "replaced by 15fb2a27-f979-4772-98da-54430e6be7a7"
         }
       ]
     },
@@ -14833,24 +14871,41 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:42:13.122Z",
-      "worker": "4a2b286f-12e8-42a5-b463-b7ae3887c447",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T16:09:25.243Z",
+      "worker": "15fb2a27-f979-4772-98da-54430e6be7a7",
       "techniques": [
+        {
+          "technique": "gate-liveness",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/usePassportData.ts:331 could-not-run folded into a value"
+        },
         {
           "technique": "unmeasurable-criteria",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:386 the measured-nothing state is read from one flag (ev.scanned) instead of derived over every observable; ev===null falls through to passportDerive.ts:239 `!ev?.has_tests ? 'none'`, so a probe that never ran reads as 'no tests' rather than unknown"
+          "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:386 the measured-nothing state is read from one flag (ev.scanned) instead of derived over every observable; ev===null falls through to passportDerive.ts:239 `!ev?.has_tests ? 'none'`, so a probe that never ran reads as 'no tests' rather than unknown",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "advancement-evidence-fields",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/passportHistory.ts:58 recordSnapshot appends every passport, repoUnreadable ones included, with no unknown state and no scan version, so an unreadable checkout lands in the readiness trend as a real score drop"
+          "evidence": "src/features/teams/sub_factory/passport/passportHistory.ts:58 recordSnapshot appends every passport, repoUnreadable ones included, with no unknown state and no scan version, so an unreadable checkout lands in the readiness trend as a real score drop",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "policy-projection",
           "verdict": "conformant",
-          "evidence": "src/features/teams/sub_factory/passport/atlas/atlasModel.ts:27 one inkOf maps repoUnreadable repo-dependent rows to 'unknown' and countInk/worstInk derive from it, so atlas surfaces skip identically"
+          "evidence": "src/features/teams/sub_factory/passport/atlas/atlasModel.ts:27 one inkOf maps repoUnreadable repo-dependent rows to 'unknown' and countInk/worstInk derive from it, so atlas surfaces skip identically",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:386 marks a passport unreadable only on `ev && !ev.scanned`; a null probe (usePassportData.ts:331 catch->null, or no root_path) derives tests/docs/evals/security as 'none' and is published as measured (usePassportData.ts:338) - an ingestion failure rendered as findings about the repo",
+          "evaluatedAt": "2026-10-12T11:42:13.122Z",
+          "worker": "4a2b286f-12e8-42a5-b463-b7ae3887c447",
+          "reason": "replaced by 15fb2a27-f979-4772-98da-54430e6be7a7"
         }
       ]
     },
@@ -14859,32 +14914,43 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:42:13.122Z",
-      "worker": "4a2b286f-12e8-42a5-b463-b7ae3887c447",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T16:09:25.243Z",
+      "worker": "15fb2a27-f979-4772-98da-54430e6be7a7",
       "techniques": [
+        {
+          "technique": "enforcement-binding",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:62 the real door bypasses the gate"
+        },
         {
           "technique": "unmeasurable-criteria",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:105 requirements the gate could not verify fail closed with a named reason instead of scoring Eligible"
+          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:105 requirements the gate could not verify fail closed with a named reason instead of scoring Eligible",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "gate-liveness",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:370 seeded known-bad input (corrupt tool requirements) asserted to refuse; siblings at :291, :319, :419 prove the other refusal branches red"
-        },
-        {
-          "technique": "enforcement-binding",
-          "verdict": "deviation",
-          "evidence": "src/lib/commandNames.generated.ts:25 adopt_recipe_for_persona exists only as a generated name; the action that adopts (useAdoption.ts:62 mutateUseCases) never reaches it, so the refusal is blocking by construction and advisory by wiring"
+          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:370 seeded known-bad input (corrupt tool requirements) asserted to refuse; siblings at :291, :319, :419 prove the other refusal branches red",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "chokepoint-tag-registry",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:62 the underlying capability (appending a recipe use case to design_context) is not confined to the gated wrapper; nothing proves adoption routes through recipe_adoption.rs"
+          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:62 the underlying capability (appending a recipe use case to design_context) is not confined to the gated wrapper; nothing proves adoption routes through recipe_adoption.rs",
+          "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "enforcement-binding is written for the CI-pipeline to merge-decision join; this case is the same failure inside an app: a correct, tested refusal command registered over IPC while the user-facing action writes through a different door. Worth an application or a use_when trigger (\"a gate command with no caller on the action path\")."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:84 the adoption gate is well built but bound to no door: it is registered (src-tauri/src/ipc_shards/shard_2.rs:206) and no frontend code invokes it, while UI adoption writes the use case directly via src/features/templates/sub_recipes/libs/useAdoption.ts:62 - the gate refuses nothing a user does",
+          "evaluatedAt": "2026-10-12T11:42:13.122Z",
+          "worker": "4a2b286f-12e8-42a5-b463-b7ae3887c447",
+          "reason": "replaced by 15fb2a27-f979-4772-98da-54430e6be7a7"
+        }
+      ]
     },
     "e13cfc6c-f666-4959-81c0-2cfbc4815f04/quality-gates": {
       "context": "templates-recipes",
@@ -16015,77 +16081,83 @@
       "context": "lib-personas",
       "subject": "test-harness",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T16:43:32.807Z",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T15:47:34.100Z",
+      "worker": "045c3e85-3466-4fe8-aeff-1579cc4bf12e",
       "techniques": [
         {
           "technique": "pin-the-call-not-the-name",
-          "verdict": "conformant",
-          "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:37 Structural pin uses an unwritable literal glob needle with prefix and quotes to prevent prose or comment false matches."
+          "verdict": "deviation: needle is a bare string a comment can spell; haystack is unstripped source prose",
+          "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:37"
         },
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "conformant",
-          "evidence": "src/lib/personas/parsers/__tests__/workflowParser.test.ts:124 Derives expected platforms from PLATFORM_LABELS union rather than hand-copied lists, ensuring all router variants are reached."
+          "evidence": "src/lib/personas/parsers/__tests__/workflowParser.test.ts:124 Derives expected platforms from PLATFORM_LABELS union rather than hand-copied lists, ensuring all router variants are reached.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "negative-control-tests",
           "verdict": "conformant",
-          "evidence": "src/lib/personas/parsers/__tests__/workflowParser.test.ts:157 Verifies explicit boundary rejections when byte, depth, and entity limits are exceeded."
+          "evidence": "src/lib/personas/parsers/__tests__/workflowParser.test.ts:157 Verifies explicit boundary rejections when byte, depth, and entity limits are exceeded.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "fixture-economics",
           "verdict": "conformant",
-          "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:54 In-memory JSON and plain object literals form the cheapest tier for testing template overlays."
+          "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:54 In-memory JSON and plain object literals form the cheapest tier for testing template overlays.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "isolation-lanes",
           "verdict": "conformant",
-          "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:55 Pure merge and transformation functions execute without persistent storage or shared mutable state."
+          "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:55 Pure merge and transformation functions execute without persistent storage or shared mutable state.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "approval-snapshots-with-guarded-update",
           "verdict": "not-applicable",
-          "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:63 Asserts object equality using toEqual rather than snapshot approval files."
+          "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:63 Asserts object equality using toEqual rather than snapshot approval files.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "assert-through-the-reader",
           "verdict": "not-applicable",
-          "evidence": "src/lib/personas/parsers/__tests__/workflowParser.test.ts:180 Parses workflow definitions into in-memory structures rather than generating scripts for external tool runtimes."
+          "evidence": "src/lib/personas/parsers/__tests__/workflowParser.test.ts:180 Parses workflow definitions into in-memory structures rather than generating scripts for external tool runtimes.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "suite-partitioning",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:23 Lane membership is configured in vitest.config.ts outside library files."
+          "evidence": "vitest.config.ts:23 Lane membership is configured in vitest.config.ts outside library files.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "live-app-harness",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:11 Runs in the unit test jsdom runner without spinning up a live app instance."
+          "evidence": "vitest.config.ts:11 Runs in the unit test jsdom runner without spinning up a live app instance.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "dynamic-verifier-classes",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 No runtime correctness checker classes are configured in this unit suite."
+          "evidence": "vitest.config.ts:17 No runtime correctness checker classes are configured in this unit suite.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "flake-lifecycle",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 Tests run deterministically in-process without flake quarantine mechanisms."
+          "evidence": "vitest.config.ts:17 Tests run deterministically in-process without flake quarantine mechanisms.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "far-side-oracle",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 Does not perform mutations on unowned third-party external services."
+          "evidence": "vitest.config.ts:17 Does not perform mutations on unowned third-party external services.",
+          "carriedFrom": "2026-10-12"
         }
-      ],
-      "withdrawn": {
-        "worker": "b9065c40-0f9e-46fc-a8a2-b36a03aad8fa",
-        "state": "conformant",
-        "at": "2026-10-12T16:47:28.291204+00:00",
-        "reason": "conformant padded to the evidence floor: one generic anchor (mod tests {, vitest.config.ts:17) reused for 5-6 not-applicable techniques; 9-10 distinct anchors of 12 needed"
-      }
+      ]
     },
     "a1223fbb-1e53-471b-9829-075cce8014f8/eval-harness": {
       "context": "lab-arena",
@@ -20853,32 +20925,42 @@
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T16:11:19.025Z",
+      "worker": "4a53b76c-2473-47f7-8a91-70274594a907",
       "techniques": [
         {
-          "technique": "variable-interpolation",
-          "verdict": "deviation: untrusted spans are placed in the prompt raw at call-site format strings",
-          "evidence": "src-tauri/src/companion/athena_reaction.rs:650 ({detail}, {history}, {ledger}) and :1039 (Error / Last output (tail))"
+          "technique": "layered-composition",
+          "verdict": "deviation: volatile blocks precede standing doctrine",
+          "evidence": "src-tauri/src/companion/athena_reaction.rs:665"
         },
         {
-          "technique": "layered-composition",
-          "verdict": "deviation: volatile per-call blocks lead and the stable doctrine trails; each family is a hand-concatenated string",
-          "evidence": "src-tauri/src/companion/athena_reaction.rs:665 {blocks}YOUR DECISIONS"
+          "technique": "variable-interpolation",
+          "verdict": "deviation: untrusted text unfenced",
+          "evidence": "src-tauri/src/companion/athena_reaction.rs:650"
         },
         {
           "technique": "fingerprinting-and-cache-keys",
           "verdict": "realized (ledger half): block sizes and hashes of what was sent are persisted per turn",
-          "evidence": "src-tauri/src/companion/turn_ledger.rs:146 prompt_block_hashes_json and :149 total_prompt_chars"
+          "evidence": "src-tauri/src/companion/turn_ledger.rs:146 prompt_block_hashes_json and :149 total_prompt_chars",
+          "carriedFrom": "2026-10-14"
         },
         {
           "technique": "context-budgeting",
           "verdict": "partial: batch history is capped per team (5 lines when batching) but there is no total budget or ladder",
-          "evidence": "src-tauri/src/companion/athena_reaction.rs:619 doc comment and the cut at athena_reaction.rs:628"
+          "evidence": "src-tauri/src/companion/athena_reaction.rs:619 doc comment and the cut at athena_reaction.rs:628",
+          "carriedFrom": "2026-10-14"
         }
       ],
-      "registryProposal": "coverage: src-tauri/src/companion/prompt/** (the companion's sealed assembler with per-block budgets) belongs to no context in context-map.json, so the best-conformant prompt code in the repo is not judged by any pair; a context for it would likely earn a conformant verdict."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/athena_reaction.rs:650 interpolates signal title/detail and channel history (model- and persona-authored text) into the batch decision prompt with no boundary or sanitizer (the file has no fence call), and :665 places those volatile {blocks} ahead of the standing 'YOUR DECISIONS' doctrine; :1039 does the same with a step's error and output tail in the review-resolution prompt. This context's own prompt families are hand-built format! strings; the sealed, budgeted assembler (companion/prompt/) lives outside this context's paths.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+          "reason": "replaced by 4a53b76c-2473-47f7-8a91-70274594a907"
+        }
+      ]
     },
     "3effd422-2610-4c8a-bc02-53aceafd827c/prompt-assembly": {
       "context": "commands-companion",
@@ -20927,24 +21009,40 @@
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T16:11:19.025Z",
+      "worker": "4a53b76c-2473-47f7-8a91-70274594a907",
       "techniques": [
         {
-          "technique": "variable-interpolation",
-          "verdict": "deviation: episode content is untrusted-class and is placed unwrapped",
-          "evidence": "src-tauri/src/companion/brain/reflection.rs:182 and src-tauri/src/companion/brain/recall_synthesis.rs:235"
+          "technique": "foreign-harness-history-folding",
+          "verdict": "deviation (rev 44 fourth case: a reviewing reader)",
+          "evidence": "src-tauri/src/companion/brain/reflection.rs:178 emits `## {role} — {created}` turn-shaped transcript as the final prompt section; no end-of-transcript marker or restated task after it (contrast recall_synthesis.rs:285 and profile_synthesis.rs:306, which close with Output/END sections)"
         },
         {
           "technique": "layered-composition",
-          "verdict": "partial: each builder orders standing instructions before the volatile material, but there are four independent assemblers with no shared door",
-          "evidence": "src-tauri/src/companion/brain/reflection.rs:146 and src-tauri/src/companion/brain/consolidation.rs:1166"
+          "verdict": "deviation (unchanged)",
+          "evidence": "src-tauri/src/companion/brain/reflection.rs:146 build_reflection_prompt, recall_synthesis.rs:217, consolidation.rs:1166, profile_synthesis.rs:289 are four independent String builders with no shared assembler"
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation (unchanged)",
+          "evidence": "src-tauri/src/companion/brain/recall_synthesis.rs:235 interpolates ep.content untrimmed and unfenced into the prompt"
         },
         {
           "technique": "task-envelope",
           "verdict": "partial: competence-claim openings, but consolidation states a machine-checkable done rule (every proposal cites a source episode id)",
-          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1173 role opening; rule 1 at consolidation.rs:1180"
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1173 role opening; rule 1 at consolidation.rs:1180",
+          "carriedFrom": "2026-10-14"
+        }
+      ],
+      "registryProposal": "foreign-harness-history-folding's fourth case is evidenced here on an in-product conversation (Athena's own episodes), not only a foreign harness: the rule 'a transcript read for review is never in the reader's own role markers' fires on reflection.rs and consolidation.rs. A decision-rule line separating 'foreign' from 'any conversation the reader did not have' is already in the text; consider an application from this repo.",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/brain/reflection.rs:182 and recall_synthesis.rs:235 render stored conversation episodes (user text and prior model output) verbatim into the one-shot prompts with no boundary and no total budget, and consolidation.rs:1173 / recall_synthesis.rs:220 open with a role claim; four separate hand-built builders (reflection.rs:146, consolidation.rs:1166, recall_synthesis.rs:217, profile_synthesis.rs:289) share no assembler.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+          "reason": "replaced by 4a53b76c-2473-47f7-8a91-70274594a907"
         }
       ]
     },
@@ -21824,6 +21922,34 @@
         "at": "2026-10-15T00:49:26.564223+00:00",
         "reason": "reviewer (sonnet): The anchor driver.rs:5 only shows that seats are admitted through the fleet's spawn_contest_seat; that function (commands/fleet/contest_seat.rs) closes PTY handles and emits pty registry changes, so the seats are PTY-backed fleet sessions. 'Not hosting interactive terminals' is therefore unproven by"
       }
+    },
+    "bcb603ad-ce58-4b76-9623-aa99ace984af/agent-memory": {
+      "context": "companion-proactive",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T12:00:00.000Z",
+      "worker": "9640126c-236c-4871-b8f2-5ff1c48cafca",
+      "techniques": [
+        {
+          "technique": "rollup-compaction",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/companion/proactive/rollup.rs:1 digest card over the ledger, no store family is merged or superseded"
+        }
+      ],
+      "registryProposal": "Matcher resonance on the token 'rollup' (why: rollup, budget, writes): daily-digest notification rollups are not rollup-compaction. Consider a not-when line in rollup-compaction naming report/digest cards."
+    },
+    "7f6d3238-7136-4361-af8f-bca556ae2042/agent-memory": {
+      "context": "mcp-server",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T12:00:00.000Z",
+      "worker": "9640126c-236c-4871-b8f2-5ff1c48cafca",
+      "techniques": [],
+      "registryProposal": "Matched on generic tokens (search, write, notes); a note-vault search tool is markdown-vault territory, not agent-memory."
     }
   }
 }

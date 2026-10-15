@@ -7825,12 +7825,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:84 the adoption gate is well built but bound to no door: it is registered (src-tauri/src/ipc_shards/shard_2.rs:206) and no frontend code invokes it, while UI adoption writes the use case directly via src/features/templates/sub_recipes/libs/useAdoption.ts:62 - the gate refuses nothing a user does",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:87 refuses on Incompatible, but the command (registered src-tauri/src/ipc_shards/shard_2.rs:206) has no frontend caller (only src/lib/commandNames.generated.ts:25) while UI adoption writes via src/features/templates/sub_recipes/libs/useAdoption.ts:62 - the gate refuses nothing a user does",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "codebase-scanning",
@@ -8040,10 +8039,10 @@
           "changedAt": "2026-10-02",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/athena_reaction.rs:650 interpolates signal title/detail and channel history (model- and persona-authored text) into the batch decision prompt with no boundary or sanitizer (the file has no fence call), and :665 places those volatile {blocks} ahead of the standing 'YOUR DECISIONS' doctrine; :1039 does the same with a step's error and output tail in the review-resolution prompt. This context's own prompt families are hand-built format! strings; the sealed, budgeted assembler (companion/prompt/) lives outside this context's paths.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
-          "evaluatedRevision": 43,
+          "evidence": "src-tauri/src/companion/athena_reaction.rs:650 interpolates signal title/detail and channel history (model- and persona-authored text) with no boundary, and :665 places those volatile {blocks} ahead of the standing 'YOUR DECISIONS' doctrine. Re-judged against revision 44 (anchors re-read); verdict unchanged",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44,
           "revisionsBehind": 0
         },
         {
@@ -8311,10 +8310,10 @@
           "changedAt": "2026-10-02",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/brain/reflection.rs:182 and recall_synthesis.rs:235 render stored conversation episodes (user text and prior model output) verbatim into the one-shot prompts with no boundary and no total budget, and consolidation.rs:1173 / recall_synthesis.rs:220 open with a role claim; four separate hand-built builders (reflection.rs:146, consolidation.rs:1166, recall_synthesis.rs:217, profile_synthesis.rs:289) share no assembler.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
-          "evaluatedRevision": 43,
+          "evidence": "src-tauri/src/companion/brain/reflection.rs:182 renders stored episodes under their own `## {role}` markers and the prompt ends on the last turn (no end marker, no task restatement), so a reviewing reader can continue the conversation instead of reflecting on it; also recall_synthesis.rs:235 / consolidation.rs:1254 render episode text raw and unfenced, and :149/:220 open with role claims across four hand-built builders with no shared assembler",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44,
           "revisionsBehind": 0
         },
         {
@@ -9020,7 +9019,11 @@
           "revision": 48,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/companion/proactive/rollup.rs:1 the 'rollup' is an end-of-day audit digest card composed deterministically from the turn ledger and delivered as a notification, not a pass that supersedes accreted memory items; the pipeline (triggers, quiet hours, budget.rs:1 attention cap) writes no memory store, so rollup-compaction and the other memory-pipeline techniques have no precondition here",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51
         },
         {
           "subject": "fleet-orchestration",
@@ -11457,10 +11460,10 @@
           "changedAt": "2026-10-02",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:227 still opens the build prompt with a competence claim ('You are a senior AI agent architect. The user wants:') and :229 interpolates the volatile \"{intent}\"{lang_preamble}{context_section} ahead of the standing framework text, so no two builds share a byte-stable prefix and the primacy position buys nothing measured (re-judged against revision 43; verdict unchanged)",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
-          "evaluatedRevision": 43,
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:227 still opens the build prompt with a competence claim ('You are a senior AI agent architect. The user wants:') and :229 interpolates volatile \"{intent}\"{lang_preamble}{context_section} ahead of the standing framework text, so no two builds share a byte-stable prefix. Re-judged against revision 44; verdict unchanged",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44,
           "source": "conform",
           "revisionsBehind": 0
         },
@@ -17616,7 +17619,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:37 pins the overlay glob with source.includes over raw file text (comments included) and no floor, so a comment spelling the needle keeps it green while the real glob loses a locale",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:5521806124d93882",
+          "evaluatedRevision": 26
         },
         {
           "subject": "agent-memory",
@@ -18744,7 +18751,11 @@
           "revision": 48,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/mcp_server/vault.rs:1 the sidecar only walks and TF-IDF-searches an Obsidian vault on the filesystem for external MCP clients; it captures, consolidates, decays and injects nothing for an agent, so the memory pipeline's preconditions do not hold in this context (the agent memory pipeline lives in src-tauri/src/companion/brain/)",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51
         },
         {
           "subject": "voice-io",
@@ -20412,12 +20423,11 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/engine/src/ai_healing.rs:169 makes the healer itself decide should_retry, and src-tauri/src/engine/healing_retry.rs:947 runs the verifying re-run only when it says true - yet src-tauri/engine/src/ai_healing.rs:292 has already committed the healed prompt as a new production version, so a heal ending should_retry:false ships an unverified prompt reported as phase 'completed' (oracle-frozen-during-repair: the verdict comes from the toolchain, not the fixer)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/engine/src/ai_healing.rs:211 takes should_retry from the healer own output (prompt contract at :169), src-tauri/src/engine/healing_retry.rs:947 runs the verifying retry only when it is true, while ai_healing.rs:296 has already snapshotted the healed prompt as a production version - a heal ending should_retry:false ships an unverified fix; the fixer holds the verdict",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "multi-provider-gateway-plane",
@@ -23118,12 +23128,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:386 marks a passport unreadable only on `ev && !ev.scanned`; a null probe (usePassportData.ts:331 catch->null, or no root_path) derives tests/docs/evals/security as 'none' and is published as measured (usePassportData.ts:338) - an ingestion failure rendered as findings about the repo",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/teams/sub_factory/passport/usePassportData.ts:331 a failed repo probe becomes null, passportDerive.ts:386 marks unreadable only when a probe returned unscanned, so usePassportData.ts:338 publishes none-ratings as measured - ingestion failure rendered as findings about the repo",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "test-harness",
@@ -28558,10 +28567,10 @@
           "changedAt": "2026-10-02",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/engine/src/prompt/assemble.rs:112 assemble_prompt still returns a bare String and the runner appends layers after it returns (src-tauri/src/engine/runner/mod.rs:1488 format!(\"{prompt_text}{mem_section}\"), :1550, :1582, :1617, :1666; src-tauri/engine/src/prepared_run_cache.rs:156 does the same for the memory layer), so memory and other late layers sit outside the budget tripwire, the untrusted fence and any fingerprint: the unsealed door. Partial progress since the 2026-09-23 verdict: spawn-time text now goes through append_spawn_time_section (assemble.rs:1236) but that is a named post-return append, not a section input.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
-          "evaluatedRevision": 43,
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:112 assemble_prompt still returns a bare String and the runner appends layers after it returns (src-tauri/src/engine/runner/mod.rs:1488 format!(\"{prompt_text}{mem_section}\"); src-tauri/engine/src/prepared_run_cache.rs:156 same), so late layers sit outside budget, fence and fingerprint; append_spawn_time_section (assemble.rs:1236) is a named post-return append, not a section input. Re-judged against revision 44; verdict unchanged (the rev 43->44 amendment touches only foreign-harness-history-folding, which does not govern this context)",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44,
           "source": "conform",
           "revisionsBehind": 0
         },
@@ -36826,13 +36835,12 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/engine/src/output_assertions.rs:408 returns the same total:0/critical_failures:0 summary on a failed assertion load as for a persona with none (:421), so src-tauri/src/engine/execution.rs:2321 marks the run Completed - could-not-run reads as pass, baseline blocker assertion included",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
+          "evidence": "src-tauri/engine/src/output_assertions.rs:409 returns total:0/critical_failures:0 when assertions fail to load, identical to the no-assertions summary at :422, so src-tauri/src/engine/execution.rs:2328 marks the run Completed - could-not-run reads as pass, blocker assertions included",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "engine-host-contract",

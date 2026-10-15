@@ -1,0 +1,6 @@
+{"schema":"conform-run/1","worker":"4b530e41-e341-448a-8aff-6d072c7d2a2a","subject":"accessibility",
+"evaluatedAt":"2026-10-15T00:00:00Z",
+"pairs":[],
+"declined":[],
+"consults":[],
+"note":"no work: all 7 accessibility pairs (display-table-primitives, feedback-primitives, home-cockpit-widgets, hooks-utility-interaction, shared-chrome, shared-components-forms, shared-components-layout) already carry a deviation verdict evaluatedAgainst sha256-b2:5e30485ee0c7c123 rev 7, equal to the registry index; none stale, none unknown, no orphans."}
