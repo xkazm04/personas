@@ -1,0 +1,201 @@
+{
+  "schema": "conform-run/1",
+  "worker": "925f883c-ea35-4b36-ba0f-e1617949b4e9",
+  "subject": "cost-metering",
+  "evaluatedAt": "2026-10-15T21:35:41.778828+00:00",
+  "provider": "agy",
+  "model": "gemini-3.8-flash-high",
+  "pairs": [
+    {
+      "context": "agents-deployment",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_deployment/components/cloud/DailyBreakdownChart.tsx:70 The daily breakdown chart maps only total aggregate cost to a trend line, folding failed-call spend invisibly into totals rather than rendering it as its own series with failure reasons as required by spend-observability.",
+      "techniques": [
+        {
+          "technique": "spend-observability",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/DailyBreakdownChart.tsx:70 Failed-call spend is folded into the daily total cost line without a dedicated series or failure-reason breakdown."
+        },
+        {
+          "technique": "unit-classes-are-open",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudExecutionRow.tsx:59 Summing input and output tokens into an un-split scalar collapses the direction split and ignores additional provider unit classes."
+        },
+        {
+          "technique": "budget-enforcement",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/cloudDeploymentHelpers.ts:19 Deployment budget utilization is computed purely for UI gauge presentation and lacks any gating to block executions when exceeded."
+        }
+      ]
+    },
+    {
+      "context": "execution-detail-inspector",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_executions/detail/inspector/CostBreakdownBar.tsx:28 CostBreakdownBar delegates pricing to estimateCost, which falls back to zero cost on unrecognised models rather than applying a loud conservative default.",
+      "techniques": [
+        {
+          "technique": "price-tables",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/CostBreakdownBar.tsx:28 Unknown models fall back to zero cost in estimateCost, causing unrecognised models to price at zero and disabling the split bar."
+        },
+        {
+          "technique": "unit-classes-are-open",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/TraceSummary.tsx:55 Token totals sum only input and output fields, omitting reasoning tokens or cache read/write units reported by providers."
+        },
+        {
+          "technique": "spend-attribution",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/SpanRow.tsx:95 Tracer attributes cost exclusively to the root execution span, leaving child steps and tool spans unpriced at write time."
+        },
+        {
+          "technique": "one-pot-across-delegation",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/SubagentTree.tsx:49 Subagent tree tracks independent token counts per task without referencing or drawing from a shared parent budget pot."
+        }
+      ]
+    },
+    {
+      "context": "overview-observability",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_observability/components/MetricsCharts.tsx:108 Cost over time is drawn as an undifferentiated area curve that lacks a failed-call spend series, outlier call inspection, and metering pipeline health indicators.",
+      "techniques": [
+        {
+          "technique": "spend-observability",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_observability/components/MetricsCharts.tsx:108 Aggregate cost is rendered as a single curve without separating failed-call spend or exposing default-priced share."
+        },
+        {
+          "technique": "budget-enforcement",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_observability/components/AlertRulesPanel.tsx:94 Alert rules act as retroactive notifications rather than proactive gates that prevent calls exceeding the budget."
+        },
+        {
+          "technique": "usage-ledgers",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_observability/components/AthenaSpendSection.tsx:71 Athena spend rollups lack direction-split units and do not distinguish failed-call spend from successful turns."
+        }
+      ]
+    },
+    {
+      "context": "lab-versions-eval",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_lab/libs/labAggregation.ts:108 Token counts in lab aggregations are computed by summing only two fields (inputTokens + outputTokens), disregarding open unit classes and failing to distinguish cached or reasoning units.",
+      "techniques": [
+        {
+          "technique": "unit-classes-are-open",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/labAggregation.ts:108 Token totals sum exactly inputTokens and outputTokens, omitting third-party unit classes like reasoning and cache tokens."
+        },
+        {
+          "technique": "usage-ledgers",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:122 Eval aggregations accumulate raw costs without recording pricing provenance or rate-schedule versions."
+        },
+        {
+          "technique": "spend-observability",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/versions_table/LabEconomicsPanel.tsx:58 Economics table renders model-level cost-per-success averages without providing row-level drill-down into composing executions."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "cost-metering",
+      "context": "stores-slices-agents",
+      "reason": "withdrawn after review: reviewer (sonnet): chatSlice.sendChatMessage calls startChatTurn, which runs chat_turn::start_with and then execute_persona_inner (src-tauri/src/commands/execution/executions.rs:472-481). That function rejects a run when monthly spend is at or over max_budget_usd, so chat turns do pass a budget gate; it sits in the Ru"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-15T21:35:41.778828+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "cost-metering"
+      ],
+      "techniques": [
+        "budget-enforcement",
+        "spend-observability",
+        "unit-classes-are-open"
+      ],
+      "deviations": 1,
+      "context": "agents-deployment",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-15T21:35:41.778828+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "cost-metering"
+      ],
+      "techniques": [
+        "budget-enforcement",
+        "preflight-estimation",
+        "time-ceilings-count-working-time"
+      ],
+      "deviations": 1,
+      "context": "stores-slices-agents",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-15T21:35:41.778828+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "cost-metering"
+      ],
+      "techniques": [
+        "one-pot-across-delegation",
+        "price-tables",
+        "spend-attribution",
+        "unit-classes-are-open"
+      ],
+      "deviations": 1,
+      "context": "execution-detail-inspector",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-15T21:35:41.778828+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "cost-metering"
+      ],
+      "techniques": [
+        "budget-enforcement",
+        "spend-observability",
+        "usage-ledgers"
+      ],
+      "deviations": 1,
+      "context": "overview-observability",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-15T21:35:41.778828+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "cost-metering"
+      ],
+      "techniques": [
+        "spend-observability",
+        "unit-classes-are-open",
+        "usage-ledgers"
+      ],
+      "deviations": 1,
+      "context": "lab-versions-eval",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    }
+  ]
+}

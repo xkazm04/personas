@@ -21950,6 +21950,146 @@
       "worker": "9640126c-236c-4871-b8f2-5ff1c48cafca",
       "techniques": [],
       "registryProposal": "Matched on generic tokens (search, write, notes); a note-vault search tool is markdown-vault territory, not agent-memory."
+    },
+    "e0a448bc-24d4-4663-ba31-27d4ce378a14/cost-metering": {
+      "context": "agents-deployment",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T21:35:41.778Z",
+      "worker": "925f883c-ea35-4b36-ba0f-e1617949b4e9",
+      "techniques": [
+        {
+          "technique": "spend-observability",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/DailyBreakdownChart.tsx:70 Failed-call spend is folded into the daily total cost line without a dedicated series or failure-reason breakdown."
+        },
+        {
+          "technique": "unit-classes-are-open",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudExecutionRow.tsx:59 Summing input and output tokens into an un-split scalar collapses the direction split and ignores additional provider unit classes."
+        },
+        {
+          "technique": "budget-enforcement",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/cloudDeploymentHelpers.ts:19 Deployment budget utilization is computed purely for UI gauge presentation and lacks any gating to block executions when exceeded."
+        }
+      ]
+    },
+    "b6e66a59-78d3-465e-83b7-e77498b4c6ae/cost-metering": {
+      "context": "stores-slices-agents",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T21:35:41.778Z",
+      "techniques": [
+        {
+          "technique": "budget-enforcement",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/agents/chatSlice.ts:201 Chat turns initiate metered spend without checking isBudgetBlocked or routing through a unified enforcement gate."
+        },
+        {
+          "technique": "preflight-estimation",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:72 Enforcement checks only retrospective monthly spend without estimating prospective token consumption before launching runs."
+        },
+        {
+          "technique": "time-ceilings-count-working-time",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/agents/chatSlice.ts:32 Streaming chat uses an elapsed wall-clock timeout watchdog rather than accumulating active working turn durations."
+        }
+      ],
+      "withdrawn": {
+        "worker": "925f883c-ea35-4b36-ba0f-e1617949b4e9",
+        "state": "deviation",
+        "at": "2026-10-15T21:36:34.185691+00:00",
+        "reason": "reviewer (sonnet): chatSlice.sendChatMessage calls startChatTurn, which runs chat_turn::start_with and then execute_persona_inner (src-tauri/src/commands/execution/executions.rs:472-481). That function rejects a run when monthly spend is at or over max_budget_usd, so chat turns do pass a budget gate; it sits in the Ru"
+      }
+    },
+    "208f50de-5d3b-4345-9fed-1c106a7a36e9/cost-metering": {
+      "context": "execution-detail-inspector",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T21:35:41.778Z",
+      "worker": "925f883c-ea35-4b36-ba0f-e1617949b4e9",
+      "techniques": [
+        {
+          "technique": "price-tables",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/CostBreakdownBar.tsx:28 Unknown models fall back to zero cost in estimateCost, causing unrecognised models to price at zero and disabling the split bar."
+        },
+        {
+          "technique": "unit-classes-are-open",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/TraceSummary.tsx:55 Token totals sum only input and output fields, omitting reasoning tokens or cache read/write units reported by providers."
+        },
+        {
+          "technique": "spend-attribution",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/SpanRow.tsx:95 Tracer attributes cost exclusively to the root execution span, leaving child steps and tool spans unpriced at write time."
+        },
+        {
+          "technique": "one-pot-across-delegation",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/SubagentTree.tsx:49 Subagent tree tracks independent token counts per task without referencing or drawing from a shared parent budget pot."
+        }
+      ]
+    },
+    "4810daf8-0549-4899-95d2-99c81cde6455/cost-metering": {
+      "context": "overview-observability",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T21:35:41.778Z",
+      "worker": "925f883c-ea35-4b36-ba0f-e1617949b4e9",
+      "techniques": [
+        {
+          "technique": "spend-observability",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_observability/components/MetricsCharts.tsx:108 Aggregate cost is rendered as a single curve without separating failed-call spend or exposing default-priced share."
+        },
+        {
+          "technique": "budget-enforcement",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_observability/components/AlertRulesPanel.tsx:94 Alert rules act as retroactive notifications rather than proactive gates that prevent calls exceeding the budget."
+        },
+        {
+          "technique": "usage-ledgers",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_observability/components/AthenaSpendSection.tsx:71 Athena spend rollups lack direction-split units and do not distinguish failed-call spend from successful turns."
+        }
+      ]
+    },
+    "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b/cost-metering": {
+      "context": "lab-versions-eval",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-15",
+      "evaluatedTs": "2026-10-15T21:35:41.778Z",
+      "worker": "925f883c-ea35-4b36-ba0f-e1617949b4e9",
+      "techniques": [
+        {
+          "technique": "unit-classes-are-open",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/labAggregation.ts:108 Token totals sum exactly inputTokens and outputTokens, omitting third-party unit classes like reasoning and cache tokens."
+        },
+        {
+          "technique": "usage-ledgers",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:122 Eval aggregations accumulate raw costs without recording pricing provenance or rate-schedule versions."
+        },
+        {
+          "technique": "spend-observability",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/versions_table/LabEconomicsPanel.tsx:58 Economics table renders model-level cost-per-success averages without providing row-level drill-down into composing executions."
+        }
+      ]
     }
   }
 }

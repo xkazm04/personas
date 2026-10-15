@@ -2851,7 +2851,11 @@
           "revision": 15,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/DailyBreakdownChart.tsx:70 The daily breakdown chart maps only total aggregate cost to a trend line, folding failed-call spend invisibly into totals rather than rendering it as its own series with failure reasons as required by spend-observability.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
+          "evaluatedRevision": 15
         },
         {
           "subject": "voice-io",
@@ -12375,7 +12379,11 @@
           "revision": 15,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/CostBreakdownBar.tsx:28 CostBreakdownBar delegates pricing to estimateCost, which falls back to zero cost on unrecognised models rather than applying a loud conservative default.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
+          "evaluatedRevision": 15
         }
       ],
       "governance": "governed"
@@ -16732,7 +16740,11 @@
           "revision": 15,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/labAggregation.ts:108 Token counts in lab aggregations are computed by summing only two fields (inputTokens + outputTokens), disregarding open unit classes and failing to distinguish cached or reasoning units.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
+          "evaluatedRevision": 15
         },
         {
           "subject": "migrations",
@@ -22223,7 +22235,11 @@
           "revision": 15,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_observability/components/MetricsCharts.tsx:108 Cost over time is drawn as an undifferentiated area curve that lacks a failed-call spend series, outlier call inspection, and metering pipeline health indicators.",
+          "evaluatedAt": "2026-10-15",
+          "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
+          "evaluatedRevision": 15
         },
         {
           "subject": "sync-replication",
