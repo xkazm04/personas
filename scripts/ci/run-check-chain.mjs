@@ -41,7 +41,7 @@ if (scriptName === "check" && gates.length < 10) {
 const onCI = Boolean(process.env.GITHUB_ACTIONS);
 // A bare `eslint ...` segment needs node_modules/.bin on PATH, which `npm run`
 // provides and a plain `node` invocation does not.
-const env = { ...process.env, PATH: `${join(root, "node_modules", ".bin")}${delimiter}${process.env.PATH ?? ""}` };
+const env = { ...process.env, PATH: `${join(root, "node_modules", ".bin")}${delimiter}${process.env.PATH || ""}` };
 
 const results = [];
 for (const gate of gates) {
