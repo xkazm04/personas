@@ -135,11 +135,11 @@ fn a_dropped_draft_is_not_redrafted_until_new_orphans_arrive() {
 fn without_a_steward_the_sweep_waits_and_the_operator_names_one() {
     let pool = seed(4, false);
     let user_db = init_test_user_db().unwrap();
-    assert!(draft_sweep(&pool, &user_db).is_empty());
     assert!(matches!(
         draft(&pool, &user_db, "orph", None),
         Err(AppError::Validation(_))
     ));
+    assert!(draft_sweep(&pool, &user_db).is_empty());
     let act = draft(&pool, &user_db, "orph", Some("steward")).unwrap();
     let m = mandates::get(&pool, &act.charter_id).unwrap().unwrap();
     assert!(m.origin.unwrap().borrowed_steward);
@@ -176,8 +176,9 @@ fn adopt_moves_the_project_under_a_mandate_and_archive_hides_orphans_without_del
         )
         .unwrap();
     assert_eq!(pending, 3, "archived, not deleted");
-    assert!(matches!(
-        archive(&pool, &user_db, "orph"),
-        Err(AppError::Validation(_))
-    ));
+    assert_eq!(
+        archive(&pool, &user_db, "orph").unwrap(),
+        0,
+        "nothing left to archive"
+    );
 }

@@ -112,7 +112,7 @@ fn project_names(pool: &DbPool) -> HashMap<String, String> {
         let rows = stmt.query_map([], |r| {
             Ok((r.get::<_, String>("id")?, r.get::<_, String>("name")?))
         })?;
-        Ok(rows.filter_map(Result::ok).collect())
+        Ok(rows.collect::<Result<HashMap<_, _>, _>>()?)
     };
     read().unwrap_or_else(|e| {
         tracing::warn!(error = %e, "orphanage: project names unreadable");
@@ -262,7 +262,7 @@ pub(crate) fn adopt(
 }
 
 /// Archive every item of one cluster from the Orphans lane. Returns how many
-/// were newly archived.
+/// were newly archived (0 when the project holds no orphans any more).
 pub(crate) fn archive(
     pool: &DbPool,
     user_db: &UserDbPool,
@@ -281,11 +281,6 @@ pub(crate) fn archive(
             item_kind: i.input.kind.wire().to_string(),
         })
         .collect();
-    if items.is_empty() {
-        return Err(AppError::Validation(format!(
-            "Project {project_id} holds no orphans"
-        )));
-    }
     orphan_archive::archive(pool, &items, None)
 }
 

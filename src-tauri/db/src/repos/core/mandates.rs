@@ -331,6 +331,16 @@ fn write_envelope_in(
     Ok(())
 }
 
+/// Move the re-read marker to the decision acts the mandate holds now.
+fn stamp_read_in(tx: &Transaction<'_>, charter_id: &str) -> Result<i64, AppError> {
+    let acts = charter_acts::decision_count_in(tx, charter_id)?;
+    tx.execute(
+        "UPDATE persona_responsibilities SET kept_at_acts = ?1 WHERE id = ?2",
+        params![acts, charter_id],
+    )?;
+    Ok(acts)
+}
+
 /// The act an envelope door writes. Reversible: an envelope act can be undone
 /// by restoring its `before` (see [`revert`]).
 fn envelope_act(row: &CharterRow, verdict: &str, origin_device: Option<&str>) -> NewCharterAct {
@@ -521,6 +531,14 @@ pub fn amend(
 /// The longest drop reason stored; longer text is cut, never refused.
 pub const MAX_DROP_REASON_CHARS: usize = 2000;
 
+/// A drop reason as stored: trimmed, blank as none, cut at the cap.
+fn stored_reason(reason: Option<&str>) -> Option<String> {
+    reason
+        .map(str::trim)
+        .filter(|r| !r.is_empty())
+        .map(|r| r.chars().take(MAX_DROP_REASON_CHARS).collect())
+}
+
 /// Drop a DRAFT mandate: the charter is retired and one act records the drop
 /// with the operator's reason (`shown_json = {"reason": ...}`; `null` when
 /// none was given). Refuses an active or suspended mandate (suspend it, or
@@ -531,10 +549,7 @@ pub fn drop_draft(
     reason: Option<&str>,
     origin_device: Option<&str>,
 ) -> Result<CharterAct, AppError> {
-    let reason: Option<String> = reason
-        .map(str::trim)
-        .filter(|r| !r.is_empty())
-        .map(|r| r.chars().take(MAX_DROP_REASON_CHARS).collect());
+    let reason = stored_reason(reason);
     apply(
         pool,
         charter_id,
@@ -560,16 +575,6 @@ pub fn drop_draft(
             })
         },
     )
-}
-
-/// Move the re-read marker to the decision acts the mandate holds now.
-fn stamp_read_in(tx: &Transaction<'_>, charter_id: &str) -> Result<i64, AppError> {
-    let acts = charter_acts::decision_count_in(tx, charter_id)?;
-    tx.execute(
-        "UPDATE persona_responsibilities SET kept_at_acts = ?1 WHERE id = ?2",
-        params![acts, charter_id],
-    )?;
-    Ok(acts)
 }
 
 /// Keep a signed, active mandate as signed after a re-read: sets the re-read

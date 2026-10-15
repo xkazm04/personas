@@ -111,7 +111,7 @@ mod tests {
     }
 
     fn set(pool: &DbPool, id: &str, raw: Option<&str>) {
-        pool.get()
+        pool.conn("goal_met_when test")
             .unwrap()
             .execute(
                 "UPDATE dev_goals SET met_when = ?1 WHERE id = ?2",

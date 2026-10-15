@@ -33,9 +33,10 @@ pub fn archive(
         let mut n = 0u32;
         {
             let mut stmt = tx.prepare_cached(
-                "INSERT OR IGNORE INTO orphan_archive
+                "INSERT INTO orphan_archive
                     (item_id, project_id, item_kind, archived_at, origin_device)
-                 VALUES (?1, ?2, ?3, ?4, ?5)",
+                 VALUES (?1, ?2, ?3, ?4, ?5)
+                 ON CONFLICT(item_id) DO NOTHING",
             )?;
             for i in items {
                 n += stmt.execute(params![
