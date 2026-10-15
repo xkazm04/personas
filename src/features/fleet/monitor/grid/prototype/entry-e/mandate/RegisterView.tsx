@@ -75,7 +75,7 @@ export function RegisterView({ state, selected, onSelect, onOpen, onOpenLog, hel
                 testId="mandate-register-row"
                 size="l"
                 nameClass="typo-heading text-foreground"
-                name={<ProjectName projectId={x.projectId}>{x.projectName ?? m.ml_project_unknown}</ProjectName>}
+                name={<ProjectName projectId={x.projectId} mirror={x.mirror}>{x.projectName ?? m.ml_project_unknown}</ProjectName>}
                 meta={<span className="truncate pl-3.5">{x.title}</span>}
                 cells={[
                   <StewardFace key="s" personaId={x.stewardPersonaId} name={x.stewardName ?? m.ml_steward_unknown} />,

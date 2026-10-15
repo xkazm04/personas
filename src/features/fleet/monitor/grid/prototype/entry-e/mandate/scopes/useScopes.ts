@@ -30,7 +30,8 @@ export interface ScopesState {
   disarm: () => void;
 }
 
-export function useScopes(charterId: string, onDone: () => void): ScopesState {
+/** `enabled: false` reads nothing (a mirrored mandate's scopes are counted on its home device). */
+export function useScopes(charterId: string, onDone: () => void, enabled = true): ScopesState {
   const { t } = useTranslation();
   const m = t.monitor;
   const [scopes, setScopes] = useState<MandateScopes | null>(null);
@@ -44,13 +45,14 @@ export function useScopes(charterId: string, onDone: () => void): ScopesState {
   }, []);
 
   const refresh = useCallback(() => {
+    if (!enabled) return;
     getMandateScopes(charterId)
       .then((s) => { if (alive.current) { setScopes(s); setFailed(false); } })
       .catch((err: unknown) => {
         silentCatch('fleet/mandates:scopes')(err);
         if (alive.current) setFailed(true);
       });
-  }, [charterId]);
+  }, [charterId, enabled]);
   useEffect(() => { setScopes(null); refresh(); }, [refresh]);
   useCharterActRecorded(refresh);
 

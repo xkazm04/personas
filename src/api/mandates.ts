@@ -17,8 +17,14 @@ import { invokeWithTimeout } from '@/lib/tauriInvoke';
 // `commands/core/mandates.rs`; storage and the one-transaction envelope doors
 // are `db/repos/core/mandates.rs`. Every door returns the refreshed mandate and
 // the act it wrote, and announces the act on `charter-act-recorded`.
+//
+// Device mesh (WP9): on a paired peer the reads also return the mandates it
+// MIRRORS from their home device (`mirror` set), and every write door on such a
+// mandate writes nothing locally: the verdict is sent home and the home's
+// answer comes back. A home that is not reachable answers `network_offline`
+// (the verdict waits in the outbox); a home that refuses answers `validation`.
 
-/** Every mandate that is not retired, with its envelope and load (spend, acts, open asks). */
+/** Every mandate that is not retired, with its envelope and load (spend, acts, open asks), mirrored ones last. */
 export const listMandates = () => invokeWithTimeout<MandateSummary[]>('mandate_list');
 
 /** One mandate by charter id (any status). */

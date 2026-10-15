@@ -9,7 +9,7 @@
 // The selected row is what V (revert) and N (narrow) act on; ↑/↓ (or j/k)
 // move it.
 
-import { Bot, Lock, Route, Undo2, User, type LucideIcon } from 'lucide-react';
+import { Bot, Laptop, Lock, Route, Undo2, User, type LucideIcon } from 'lucide-react';
 import { Fragment, useMemo } from 'react';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -17,6 +17,7 @@ import { ChipRow, ListRow, Rows, type RowColumn } from '@/features/shared/compon
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CharterAct } from '@/lib/bindings/CharterAct';
 import type { CharterActor } from '@/lib/bindings/CharterActor';
+import type { MandateMirror } from '@/lib/bindings/MandateMirror';
 import { Engraved } from '../parts';
 import { actHeadline } from './actWords';
 import { actorLabel } from './mandateCopy';
@@ -45,13 +46,22 @@ export function visibleActs(log: ActLogState, filter: ActFilter): CharterAct[] {
   return (log.acts ?? []).filter((a) => actMatches(filter, a)).slice(0, SHOWN);
 }
 
-export function Actor({ actor }: { actor: CharterActor }) {
-  const { t } = useTranslation();
+/** Who took the act; an act decided on another device (and applied at its
+ *  mandate's home, WP9) also wears that device's mark. */
+export function Actor({ actor, device = null }: { actor: CharterActor; device?: string | null }) {
+  const { t, tx } = useTranslation();
   const { icon: Icon, color } = ACTOR[actor];
   return (
-    <span className={`inline-flex items-center gap-1.5 typo-caption ${color}`} data-actor={actor}>
+    <span className={`inline-flex min-w-0 items-center gap-1.5 typo-caption ${color}`} data-actor={actor}>
       <Icon className="h-3.5 w-3.5 flex-shrink-0" aria-hidden />
-      {actorLabel(t.monitor, actor)}
+      <span className="truncate">{actorLabel(t.monitor, actor)}</span>
+      {device && (
+        <Tooltip content={tx(t.monitor.remote_from_device, { device })} placement="top">
+          <span role="img" aria-label={tx(t.monitor.remote_from_device, { device })} className="inline-flex flex-shrink-0 text-foreground" data-testid="mandate-act-device">
+            <Laptop className="h-3.5 w-3.5" aria-hidden />
+          </span>
+        </Tooltip>
+      )}
     </span>
   );
 }
@@ -70,7 +80,7 @@ export function Undo({ act }: { act: CharterAct }) {
   );
 }
 
-export function ActLog({ log, filter, onFilter, rows, selected, onSelect, mandateName, mandateTitle, projectOf }: {
+export function ActLog({ log, filter, onFilter, rows, selected, onSelect, mandateName, mandateTitle, projectOf, mirrorOf }: {
   log: ActLogState;
   filter: ActFilter;
   onFilter: (f: ActFilter) => void;
@@ -84,6 +94,8 @@ export function ActLog({ log, filter, onFilter, rows, selected, onSelect, mandat
   mandateTitle?: (charterId: string) => string | null;
   /** The project a charter belongs to, for its colour edge (the fleet-wide log). */
   projectOf?: (charterId: string) => string | null;
+  /** Where a mirrored charter lives (the fleet-wide log); null for one that lives here. */
+  mirrorOf?: (charterId: string) => MandateMirror | null;
 }) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
@@ -137,8 +149,8 @@ export function ActLog({ log, filter, onFilter, rows, selected, onSelect, mandat
                     </Tooltip>
                   )}
                   cells={[
-                    ...(fleet ? [<ProjectName key="p" projectId={projectOf?.(a.charterId) ?? null}>{mandateName!(a.charterId)}</ProjectName>] : []),
-                    <Actor key="b" actor={a.actor} />,
+                    ...(fleet ? [<ProjectName key="p" projectId={projectOf?.(a.charterId) ?? null} mirror={mirrorOf?.(a.charterId)}>{mandateName!(a.charterId)}</ProjectName>] : []),
+                    <Actor key="b" actor={a.actor} device={a.originDevice} />,
                     <Undo key="u" act={a} />,
                     <RelativeTime key="t" timestamp={a.createdAt} className="typo-data k-regular k-quiet tabular-nums" />,
                   ]}

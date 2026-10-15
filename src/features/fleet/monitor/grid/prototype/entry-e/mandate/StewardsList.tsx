@@ -62,7 +62,8 @@ export function StewardsList({ doors }: { doors: StewardDoors }) {
   const { mandates, failed } = useMandates();
   const lanes = useLanesSnapshot(true);
   const sorted = useMemo(() => [...(mandates ?? [])].sort((a, b) => rank(b) - rank(a)), [mandates]);
-  const modes = useAutopilotModes(useMemo(() => sorted.map((x) => x.projectId), [sorted]));
+  // A mirrored mandate's project lives on its home device: its mode is read there, never here.
+  const modes = useAutopilotModes(useMemo(() => sorted.filter((x) => !x.mirror).map((x) => x.projectId), [sorted]));
   const held = useMemo(() => {
     const out = new Map<string, number>();
     for (const c of lanes.snapshot?.charters ?? []) out.set(c.charterId, c.held);

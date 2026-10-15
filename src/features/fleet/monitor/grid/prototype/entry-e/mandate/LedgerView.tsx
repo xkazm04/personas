@@ -25,6 +25,7 @@ export function LedgerView({ mandates, focusActId = null, onOpen }: {
   const names = useMemo(() => new Map((mandates ?? []).map((x) => [x.charterId, x.projectName ?? x.title])), [mandates]);
   const titles = useMemo(() => new Map((mandates ?? []).map((x) => [x.charterId, x.title])), [mandates]);
   const projects = useMemo(() => new Map((mandates ?? []).map((x) => [x.charterId, x.projectId])), [mandates]);
+  const mirrors = useMemo(() => new Map((mandates ?? []).map((x) => [x.charterId, x.mirror ?? null])), [mandates]);
   const host = useRef<HTMLDivElement>(null);
   const focused = useRef(false);
   useEffect(() => {
@@ -53,6 +54,7 @@ export function LedgerView({ mandates, focusActId = null, onOpen }: {
         mandateName={(id) => names.get(id) ?? m.ml_project_unknown}
         mandateTitle={(id) => titles.get(id) ?? null}
         projectOf={(id) => projects.get(id) ?? null}
+        mirrorOf={(id) => mirrors.get(id) ?? null}
       />
     </div>
   );

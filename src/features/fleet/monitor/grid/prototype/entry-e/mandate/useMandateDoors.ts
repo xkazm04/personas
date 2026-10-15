@@ -2,6 +2,9 @@
 // Suspend / Resume, revert the selected act, narrow its scope. A refusal is
 // not a crash: `forbidden` (an irreversible act) and `validation` (already
 // reverted or superseded) become the page's notice; anything else toasts.
+// On a mandate mirrored from its home device (WP9) the same doors send the
+// verdict home; `network_offline` then means it waits for that device, which
+// is a notice too, never a failure.
 
 import { useCallback, useState } from 'react';
 import { amendMandate, resumeMandate, revertCharterAct, suspendMandate } from '@/api/mandates';
@@ -13,15 +16,17 @@ import { toastCatch } from '@/lib/silentCatch';
 import { canRevert, narrowableScope } from './MandateRail';
 
 export function useMandateDoors(mandate: MandateSummary | null, act: CharterAct | null, onDone: () => void) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const m = t.monitor;
   const [notice, setNotice] = useState<string | null>(null);
 
+  const home = mandate?.mirror?.homeName ?? null;
   const refused = useCallback((err: unknown) => {
+    if (home && isTauriError(err) && err.kind === 'network_offline') { setNotice(tx(m.remote_queued_until, { device: home })); return; }
     if (isTauriError(err) && err.kind === 'forbidden') { setNotice(m.ml_revert_final); return; }
     if (isTauriError(err) && err.kind === 'validation') { setNotice(err.error); return; }
     toastCatch('fleet/mandates:write', m.ml_write_failed)(err);
-  }, [m]);
+  }, [m, tx, home]);
 
   const suspend = useCallback(async () => {
     if (!mandate) return;

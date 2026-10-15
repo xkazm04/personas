@@ -4,7 +4,9 @@
 // whom) and the Scopes section (2: per scope its acts, or what widening it
 // would take off your desk; W widens, N narrows). The envelope sits in the
 // rail, and the rail's doors act on the selected act: V reverts, N takes the
-// act's scope back. S arms Suspend (S again suspends) or resumes.
+// act's scope back. S arms Suspend (S again suspends) or resumes. A mandate
+// mirrored from its home device (WP9) has no Scopes view here: its scopes are
+// counted over the home's items, which this device does not hold.
 
 import { useCallback, useMemo, useState } from 'react';
 import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
@@ -40,7 +42,8 @@ export function MandatePage({ mandate, held, onChanged }: {
   const act = view === 'log' ? rows[Math.min(selected, rows.length - 1)] ?? null : null;
   const done = useCallback(() => { onChanged(); log.refresh(); }, [onChanged, log]);
   const doors = useMandateDoors(mandate, act, done);
-  const scopes = useScopes(mandate.charterId, done);
+  const mirrored = !!mandate.mirror;
+  const scopes = useScopes(mandate.charterId, done, !mirrored);
   const arm = useSuspendArm(mandate.status === 'suspended', doors.suspend);
   const pick = useCallback((f: ActFilter) => { setFilter(f); setSelected(0); }, []);
   const show = useCallback((v: PageView) => { scopes.disarm(); setView(v); }, [scopes]);
@@ -54,7 +57,7 @@ export function MandatePage({ mandate, held, onChanged }: {
       s: () => { void arm.press(); },
       v: () => { void doors.revert(); },
       n: () => { void doors.narrow(); },
-      2: () => show('scopes'),
+      2: () => { if (!mirrored) show('scopes'); },
     },
   });
 
@@ -63,24 +66,31 @@ export function MandatePage({ mandate, held, onChanged }: {
     { id: 'scopes' as const, label: <span className="flex items-center gap-1.5">{m.ml_scopes} <Kbd>2</Kbd></span>, testId: 'mandate-view-scopes' },
   ];
 
+  const actLog = <ActLog log={log} filter={filter} onFilter={pick} rows={rows} selected={selected} onSelect={setSelected} mandateTitle={() => mandate.title} />;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3" data-testid="mandate-page" data-charter={mandate.charterId} data-view={view}>
       <MandateHead mandate={mandate} armed={arm.armed} onSuspend={arm.press} />
       <div className="flex min-h-0 flex-1 gap-4">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-          <SegmentedTabs tabs={tabs} activeTab={view} onTabChange={show} variant="segment" size="sm" ariaLabel={m.ml_mandate_views_aria} idPrefix={TABS_ID} />
-          <div {...segmentedTabPanelProps(TABS_ID, view)} role="tabpanel" className="flex min-h-0 flex-1 flex-col">
-            {view === 'log' ? (
-              <ActLog log={log} filter={filter} onFilter={pick} rows={rows} selected={selected} onSelect={setSelected} mandateTitle={() => mandate.title} />
-            ) : (
-              <ScopesView
-                state={scopes}
-                selected={scopeSel}
-                onSelect={setScopeSel}
-                extraLetters={{ s: () => { void arm.press(); }, 1: () => show('log') }}
-              />
-            )}
-          </div>
+          {mirrored ? (
+            // A mirrored mandate has one view, so it draws no switch for it.
+            <div className="flex min-h-0 flex-1 flex-col">{actLog}</div>
+          ) : (
+            <>
+              <SegmentedTabs tabs={tabs} activeTab={view} onTabChange={show} variant="segment" size="sm" ariaLabel={m.ml_mandate_views_aria} idPrefix={TABS_ID} />
+              <div {...segmentedTabPanelProps(TABS_ID, view)} role="tabpanel" className="flex min-h-0 flex-1 flex-col">
+                {view === 'log' ? actLog : (
+                  <ScopesView
+                    state={scopes}
+                    selected={scopeSel}
+                    onSelect={setScopeSel}
+                    extraLetters={{ s: () => { void arm.press(); }, 1: () => show('log') }}
+                  />
+                )}
+              </div>
+            </>
+          )}
         </div>
         <MandateRail mandate={mandate} held={held} act={act} notice={doors.notice} onRevert={doors.revert} onNarrow={doors.narrow} />
       </div>

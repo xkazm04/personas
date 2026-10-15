@@ -9,6 +9,7 @@ import type { ReactNode } from 'react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { MandateMirror } from '@/lib/bindings/MandateMirror';
 import type { MandateSummary } from '@/lib/bindings/MandateSummary';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { useAgentStore } from '@/stores/agentStore';
@@ -17,6 +18,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { Lamp } from '../parts';
 import { toneClass, type Lamp as LampModel } from '../tone';
 import { statusLabel } from './mandateCopy';
+import { MirrorMark } from './MirrorMark';
 // One spend band for the register and the Stewards plate: it is declared beside the plate's meter.
 import { spendTone, stewardLamp } from './StewardRow';
 import './mandateDrawer.css';
@@ -39,12 +41,18 @@ export function ProjectEdge({ projectId, tall = false }: { projectId: string | n
   );
 }
 
-/** A project name on its edge: the bay's nameplate, at row size. */
-export function ProjectName({ projectId, children }: { projectId: string | null | undefined; children: ReactNode }) {
+/** A project name on its edge: the bay's nameplate, at row size. A mandate
+ *  mirrored from its home device wears the device mark after the name. */
+export function ProjectName({ projectId, mirror, children }: {
+  projectId: string | null | undefined;
+  mirror?: MandateMirror | null;
+  children: ReactNode;
+}) {
   return (
     <span className="flex min-w-0 items-center gap-2.5">
       <ProjectEdge projectId={projectId} />
       <span className="min-w-0 truncate">{children}</span>
+      <MirrorMark mirror={mirror} />
     </span>
   );
 }

@@ -20,6 +20,7 @@ import type { MandateSummary } from '@/lib/bindings/MandateSummary';
 import { Lamp } from '../parts';
 import { toneClass, type Lamp as LampModel, type Tone } from '../tone';
 import { StewardTip } from '../stewards/StewardTip';
+import { MirrorMark } from './MirrorMark';
 
 export function stewardLamp(m: MandateSummary): LampModel {
   if (m.status === 'suspended') return { tone: 'off', lit: false };
@@ -83,6 +84,7 @@ export function StewardRow({ mandate, mode, modeKnown, held, onOpen }: {
           <span className={`min-w-0 flex-1 truncate typo-caption text-foreground ${suspended ? 'line-through decoration-foreground/40' : ''}`}>
             {project}
           </span>
+          <MirrorMark mirror={mandate.mirror} />
           <SpendMeter used={used} cap={cap} />
           <span className={`w-5 flex-shrink-0 text-right typo-data tabular-nums ${asking ? 'text-status-warning' : 'text-foreground'}`}>
             {openAsks === null ? '?' : asking ? <Numeric value={openAsks} /> : null}

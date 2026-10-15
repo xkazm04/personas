@@ -55,7 +55,7 @@ export function RegisterActs({ mandates, onOpenLog }: {
               size="line"
               name={`${head.verb} · ${head.what}`}
               cells={[
-                <ProjectName key="p" projectId={x?.projectId ?? null}>{x?.projectName ?? m.ml_project_unknown}</ProjectName>,
+                <ProjectName key="p" projectId={x?.projectId ?? null} mirror={x?.mirror}>{x?.projectName ?? m.ml_project_unknown}</ProjectName>,
                 <Actor key="b" actor={a.actor} />,
                 <Undo key="u" act={a} />,
                 <RelativeTime key="t" timestamp={a.createdAt} className="typo-data k-regular k-quiet tabular-nums" />,

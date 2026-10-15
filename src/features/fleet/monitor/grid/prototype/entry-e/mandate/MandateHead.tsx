@@ -1,7 +1,9 @@
 // The mandate page's title row, a bay nameplate at page size: the project's
 // colour edge, the steward's face, the mandate's title and its state as a
 // command-bar chip (lamp and word), one caption line under it, and the one
-// door that acts on the whole mandate at the right.
+// door that acts on the whole mandate at the right. A mandate mirrored from
+// its home device (WP9) adds a second window, "On <device>": its doors still
+// act, and what they decide is sent home.
 //
 // Suspend is calm at rest and ARMS on the first press (annunciator grammar:
 // red is a state the operator put it in, never paint on a quiet page). The
@@ -16,6 +18,7 @@ import { OVERLAY_DISMISS_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyb
 import type { MandateSummary } from '@/lib/bindings/MandateSummary';
 import { Kbd, Lamp } from '../parts';
 import { statusLabel } from './mandateCopy';
+import { MirrorChip } from './MirrorMark';
 import { ProjectEdge, StewardFace } from './rowParts';
 import { stewardLamp } from './StewardRow';
 
@@ -65,6 +68,7 @@ export function MandateHead({ mandate, armed, onSuspend }: {
             <Lamp lamp={lamp} />
             <span className="typo-caption text-foreground">{statusLabel(m, mandate.status)}</span>
           </span>
+          <MirrorChip mirror={mandate.mirror} />
         </div>
         <p className="truncate typo-caption">
           {[mandate.projectName ?? m.ml_project_unknown, tx(m.ml_mandate_context, { steward, rung: mandate.scopeRung })].join(' · ')}
