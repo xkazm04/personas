@@ -17,8 +17,8 @@ use rusqlite::{params, Connection, OptionalExtension, Transaction, TransactionBe
 use crate::models::{
     CharterAct, CharterActRevertError, CharterActRevertRefusal, CharterActor, DecideScope,
     EnvelopeChange, EnvelopeOp, EnvelopeSnapshot, MandateChange, MandateEnvelope, MandateLoad,
-    MandateSignInput, MandateSummary, MergePolicy, NewCharterAct, ResponsibilityStatus,
-    ACT_KIND_MANDATE, ACT_KIND_REVERT, ALL_DECIDE_SCOPES,
+    MandateOrigin, MandateSignInput, MandateSummary, MergePolicy, NewCharterAct,
+    ResponsibilityStatus, ACT_KIND_MANDATE, ACT_KIND_REVERT, ALL_DECIDE_SCOPES,
 };
 use crate::repos::core::charter_acts;
 use crate::repos::utils::collect_rows;
@@ -38,6 +38,7 @@ pub const APP_MASTER_ASK_SOURCE: &str = "app_master_ask";
 const SELECT: &str = "SELECT r.id, r.persona_id, r.title, r.project_id, r.domain, r.status, \
      r.scope_rung, r.source, r.budget_monthly_usd, r.decide_scopes, r.merge_policy, \
      r.envelope_version, r.kept_at_acts, r.updated_at, \
+     CASE WHEN json_valid(r.spec) THEN json_extract(r.spec, '$.mandateOrigin') END AS origin_json, \
      p.name AS project_name, pe.name AS steward_name \
      FROM persona_responsibilities r \
      LEFT JOIN dev_projects p ON p.id = r.project_id \
@@ -58,15 +59,27 @@ struct CharterRow {
     envelope_version: i64,
     kept_at_acts: Option<i64>,
     updated_at: String,
+    origin_json: Option<String>,
     project_name: Option<String>,
     steward_name: Option<String>,
 }
 
 row_mapper!(row_to_charter -> CharterRow {
     id, persona_id, title, project_id, domain, status, scope_rung, source, budget_monthly_usd,
-    decide_scopes, merge_policy, envelope_version, kept_at_acts, updated_at, project_name,
-    steward_name,
+    decide_scopes, merge_policy, envelope_version, kept_at_acts, updated_at, origin_json,
+    project_name, steward_name,
 });
+
+/// `spec.mandateOrigin`, leniently: unreadable reads as absent (logged).
+fn origin_of(row: &CharterRow) -> Option<MandateOrigin> {
+    let raw = row.origin_json.as_deref()?;
+    serde_json::from_str(raw)
+        .map_err(|e| {
+            tracing::warn!(charter_id = %row.id, error = %e,
+                "mandates: unreadable mandateOrigin, read as absent")
+        })
+        .ok()
+}
 
 /// Lenient read of `decide_scopes`: an unknown token or unparsable JSON is
 /// DROPPED with a warning. Dropping narrows the envelope, which is the safe
@@ -201,6 +214,8 @@ fn summary_of(pool: &DbPool, conn: &Connection, row: &CharterRow) -> MandateSumm
         envelope: envelope_of(row),
         load: load_of(pool, conn, row),
         updated_at: row.updated_at.clone(),
+        reread: None,
+        origin: origin_of(row),
     }
 }
 
@@ -359,6 +374,7 @@ where
         write_envelope_in(&tx, &row.id, &edit.after, version)?;
         let mut act = envelope_act(&row, edit.verdict, origin_device);
         act.shown_json = edit.shown_json;
+        act.reversible = edit.reversible;
         let change = EnvelopeChange {
             op: edit.op,
             change: edit.change,
@@ -378,6 +394,9 @@ struct EnvelopeEdit {
     bump: bool,
     verdict: &'static str,
     shown_json: Option<String>,
+    /// Every envelope act can be reverted by restoring its `before`, except a
+    /// drop (a retired charter takes no door; drafting again is the undo).
+    reversible: bool,
 }
 
 /// Sign the whole envelope. A draft mandate becomes active (refused while
@@ -402,6 +421,11 @@ pub fn sign(
             } else {
                 row.status.clone()
             };
+            // Re-signing a signed envelope IS re-reading it: the re-read
+            // marker moves to the acts it was read at, as Keep moves it.
+            if row.envelope_version > 0 {
+                stamp_read_in(tx, &row.id)?;
+            }
             Ok(EnvelopeEdit {
                 op: EnvelopeOp::Sign,
                 change: None,
@@ -414,6 +438,7 @@ pub fn sign(
                 bump: true,
                 verdict: "signed",
                 shown_json: Some(serde_json::to_string(input)?),
+                reversible: true,
             })
         },
     )
@@ -487,9 +512,112 @@ pub fn amend(
                 bump: true,
                 verdict,
                 shown_json: None,
+                reversible: true,
             })
         },
     )
+}
+
+/// The longest drop reason stored; longer text is cut, never refused.
+pub const MAX_DROP_REASON_CHARS: usize = 2000;
+
+/// Drop a DRAFT mandate: the charter is retired and one act records the drop
+/// with the operator's reason (`shown_json = {"reason": ...}`; `null` when
+/// none was given). Refuses an active or suspended mandate (suspend it, or
+/// retire it from its charter page) and a retired one. The act is final.
+pub fn drop_draft(
+    pool: &DbPool,
+    charter_id: &str,
+    reason: Option<&str>,
+    origin_device: Option<&str>,
+) -> Result<CharterAct, AppError> {
+    let reason: Option<String> = reason
+        .map(str::trim)
+        .filter(|r| !r.is_empty())
+        .map(|r| r.chars().take(MAX_DROP_REASON_CHARS).collect());
+    apply(
+        pool,
+        charter_id,
+        "mandates::drop_draft",
+        origin_device,
+        |_tx, row| {
+            if row.status != ResponsibilityStatus::Draft.as_str() {
+                return Err(AppError::Validation(format!(
+                    "Mandate {} is {}; only a draft can be dropped",
+                    row.id, row.status
+                )));
+            }
+            let mut after = snapshot_of(row);
+            after.status = ResponsibilityStatus::Retired.as_str().to_string();
+            Ok(EnvelopeEdit {
+                op: EnvelopeOp::Drop,
+                change: None,
+                after,
+                bump: false,
+                verdict: "dropped",
+                shown_json: Some(serde_json::json!({ "reason": reason }).to_string()),
+                reversible: false,
+            })
+        },
+    )
+}
+
+/// Move the re-read marker to the decision acts the mandate holds now.
+fn stamp_read_in(tx: &Transaction<'_>, charter_id: &str) -> Result<i64, AppError> {
+    let acts = charter_acts::decision_count_in(tx, charter_id)?;
+    tx.execute(
+        "UPDATE persona_responsibilities SET kept_at_acts = ?1 WHERE id = ?2",
+        params![acts, charter_id],
+    )?;
+    Ok(acts)
+}
+
+/// Keep a signed, active mandate as signed after a re-read: sets the re-read
+/// marker (`kept_at_acts`) to the decision acts it holds now, so the re-read
+/// does not come back until its use has grown past that, and records one act
+/// carrying the re-read `reason` code it answered. The envelope does not move.
+pub fn keep(
+    pool: &DbPool,
+    charter_id: &str,
+    reason: &str,
+    origin_device: Option<&str>,
+) -> Result<CharterAct, AppError> {
+    timed_query!("persona_responsibilities", "mandates::keep", {
+        let mut conn = pool.conn("mandates::keep")?;
+        let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let row = writable_in(&tx, charter_id)?;
+        if row.status != ResponsibilityStatus::Active.as_str() || row.envelope_version <= 0 {
+            return Err(AppError::Validation(format!(
+                "Mandate {} is {} and {}; only a signed, active mandate is re-read",
+                row.id,
+                row.status,
+                if row.envelope_version > 0 {
+                    "signed"
+                } else {
+                    "unsigned"
+                }
+            )));
+        }
+        let acts = stamp_read_in(&tx, &row.id)?;
+        let mut act = envelope_act(&row, "kept", origin_device);
+        act.reversible = false;
+        act.shown_json =
+            Some(serde_json::json!({ "reread": reason.trim(), "keptAtActs": acts }).to_string());
+        let snap = snapshot_of(&row);
+        let change = EnvelopeChange {
+            op: EnvelopeOp::Keep,
+            change: None,
+            before: snap.clone(),
+            after: snap,
+        };
+        let created = charter_acts::insert_in(&tx, &act, row.envelope_version, Some(&change))?;
+        tx.execute(
+            "UPDATE persona_responsibilities SET updated_at = ?1 WHERE id = ?2",
+            params![chrono::Utc::now().to_rfc3339(), row.id],
+        )?;
+        tx.commit()?;
+        Ok(created)
+    })
 }
 
 /// Suspend an active mandate: it grants nothing until resumed. The envelope
@@ -520,6 +648,7 @@ pub fn suspend(
                 bump: false,
                 verdict: "suspended",
                 shown_json: None,
+                reversible: true,
             })
         },
     )
@@ -554,6 +683,7 @@ pub fn resume(
                 bump: false,
                 verdict: "resumed",
                 shown_json: None,
+                reversible: true,
             })
         },
     )
@@ -678,6 +808,9 @@ pub fn revert(
     tx.commit()?;
     Ok(created)
 }
+
+mod orphans;
+pub use orphans::{adopt_project, draft_for_orphans, OrphanDraft};
 
 #[cfg(test)]
 mod tests;

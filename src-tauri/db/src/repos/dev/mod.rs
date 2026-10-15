@@ -37,6 +37,8 @@ pub mod doc_status;
 /// The Features page's ONE read: every context's role, every feature's council
 /// and scenarios, joined in memory from bulk reads rather than per feature.
 pub mod feature_board;
+/// `dev_goals.met_when` read side: a mandate intent's conditions for "met".
+pub mod goal_met_when;
 /// `dev_goals`, `dev_goal_signals`, `dev_goal_items`, `dev_goal_dependencies`.
 pub mod goals;
 /// `dev_ideas.plan` — the execution plan an analysing model left for an

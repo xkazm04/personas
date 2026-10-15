@@ -18,7 +18,7 @@ use tauri::{AppHandle, Emitter, EventTarget, State};
 
 use crate::commands::blocking::run_blocking;
 use crate::db::models::{
-    CharterAct, CharterActFilter, MandateActOutcome, MandateChange, MandateSignInput,
+    CharterAct, CharterActFilter, GoalMetWhen, MandateActOutcome, MandateChange, MandateSignInput,
     MandateSummary,
 };
 use crate::db::repos::core::{charter_acts, mandates};
@@ -69,24 +69,38 @@ where
     Ok(done)
 }
 
-/// Every mandate that is not retired, with its envelope and load.
+/// Every mandate that is not retired, with its envelope, its load and the
+/// re-read its use asks for (WP6), when it asks one.
 #[tauri::command]
 pub async fn mandate_list(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<MandateSummary>, AppError> {
     let pool = state.db.clone();
-    run_blocking("mandate_list", move || mandates::list(&pool)).await
+    let user_db = state.user_db.clone();
+    run_blocking("mandate_list", move || {
+        let mut list = mandates::list(&pool)?;
+        crate::engine::mandate_reread_view::annotate(&pool, &user_db, &mut list);
+        Ok(list)
+    })
+    .await
 }
 
-/// One mandate (any status). `NotFound` when no such charter exists.
+/// One mandate (any status), with its re-read. `NotFound` when no such
+/// charter exists.
 #[tauri::command]
 pub async fn mandate_get(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<MandateSummary, AppError> {
     let pool = state.db.clone();
+    let user_db = state.user_db.clone();
     run_blocking("mandate_get", move || {
-        mandates::get(&pool, &id)?.ok_or_else(|| AppError::NotFound(format!("Mandate {id}")))
+        let one = mandates::get(&pool, &id)?
+            .ok_or_else(|| AppError::NotFound(format!("Mandate {id}")))?;
+        let mut list = [one];
+        crate::engine::mandate_reread_view::annotate(&pool, &user_db, &mut list);
+        let [one] = list;
+        Ok(one)
     })
     .await
 }
@@ -139,6 +153,133 @@ pub async fn mandate_resume(
 ) -> Result<MandateActOutcome, AppError> {
     door(state.inner(), &app, "mandate_resume", move |pool| {
         mandates::resume(pool, &id, None)
+    })
+    .await
+}
+
+/// Drop a DRAFT mandate with the operator's reason: the charter is retired
+/// and one final act records the reason. Anything but a draft is refused as
+/// `Validation`.
+#[tauri::command]
+pub async fn mandate_drop(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+    id: String,
+    reason: Option<String>,
+) -> Result<MandateActOutcome, AppError> {
+    door(state.inner(), &app, "mandate_drop", move |pool| {
+        mandates::drop_draft(pool, &id, reason.as_deref(), None)
+    })
+    .await
+}
+
+/// Keep a signed, active mandate as signed after a re-read: the re-read
+/// marker moves to the decision acts it holds now, and one act records which
+/// re-read `reason` was answered.
+#[tauri::command]
+pub async fn mandate_keep(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+    id: String,
+    reason: String,
+) -> Result<MandateActOutcome, AppError> {
+    door(state.inner(), &app, "mandate_keep", move |pool| {
+        mandates::keep(pool, &id, &reason, None)
+    })
+    .await
+}
+
+/// The conditions a goal names for "met" (`dev_goals.met_when`), for the
+/// Accept card. `NotFound` when no such goal exists.
+#[tauri::command]
+pub async fn goal_met_when(
+    state: State<'_, Arc<AppState>>,
+    goal_id: String,
+) -> Result<GoalMetWhen, AppError> {
+    let pool = state.db.clone();
+    run_blocking("goal_met_when", move || {
+        crate::db::repos::dev::goal_met_when::get(&pool, &goal_id)?
+            .ok_or_else(|| AppError::NotFound(format!("Goal {goal_id}")))
+    })
+    .await
+}
+
+/// One mandate's Scopes section (WP6): per scope its acts, or the asks it
+/// would absorb (counted through the router), plus the merge and spend rows.
+/// Widen and narrow go through `mandate_amend`.
+#[tauri::command]
+pub async fn mandate_scopes(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<crate::engine::mandate_scopes::MandateScopes, AppError> {
+    let pool = state.db.clone();
+    let user_db = state.user_db.clone();
+    run_blocking("mandate_scopes", move || {
+        crate::engine::mandate_scopes::scopes_of(&pool, &user_db, &id)
+    })
+    .await
+}
+
+/// The orphanage (WP6): pending items no mandate holds, grouped by project
+/// and measured against the fleet's flow.
+#[tauri::command]
+pub async fn orphan_clusters(
+    state: State<'_, Arc<AppState>>,
+) -> Result<personas_engine::mandate_orphans::OrphanClusters, AppError> {
+    let pool = state.db.clone();
+    let user_db = state.user_db.clone();
+    run_blocking("orphan_clusters", move || {
+        crate::engine::mandate_orphanage::clusters(&pool, &user_db)
+    })
+    .await
+}
+
+/// Draft a mandate for an orphaned project (`source = 'athena'`, a draft with
+/// an empty envelope): it reaches the operator as a Sign card. `steward`
+/// names the persona when the orphanage found none. Refused when the project
+/// already has a live mandate.
+#[tauri::command]
+pub async fn orphan_draft(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+    project_id: String,
+    steward: Option<String>,
+) -> Result<MandateActOutcome, AppError> {
+    let user_db = state.user_db.clone();
+    door(state.inner(), &app, "orphan_draft", move |pool| {
+        crate::engine::mandate_orphanage::draft(pool, &user_db, &project_id, steward.as_deref())
+    })
+    .await
+}
+
+/// Adopt an orphaned project into an existing mandate: a new charter carrying
+/// that mandate's steward and envelope now holds the project.
+#[tauri::command]
+pub async fn orphan_adopt(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+    project_id: String,
+    charter_id: String,
+) -> Result<MandateActOutcome, AppError> {
+    let user_db = state.user_db.clone();
+    door(state.inner(), &app, "orphan_adopt", move |pool| {
+        crate::engine::mandate_orphanage::adopt(pool, &user_db, &project_id, &charter_id)
+    })
+    .await
+}
+
+/// Archive every orphan of one project from the Orphans lane (archived, not
+/// deleted: the items stay in their own lists). Returns how many were newly
+/// archived.
+#[tauri::command]
+pub async fn orphan_archive(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<u32, AppError> {
+    let pool = state.db.clone();
+    let user_db = state.user_db.clone();
+    run_blocking("orphan_archive", move || {
+        crate::engine::mandate_orphanage::archive(&pool, &user_db, &project_id)
     })
     .await
 }

@@ -158,6 +158,8 @@ pub mod kp_execute_grant;
 pub mod kp_requirements;
 pub mod kp_tool_surface;
 pub mod logger;
+pub mod mandate_orphans;
+pub mod mandate_reread;
 pub mod mandate_router;
 pub mod oauth_refresh_lock;
 #[cfg(feature = "ollama")]

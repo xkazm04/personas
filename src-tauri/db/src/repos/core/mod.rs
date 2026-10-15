@@ -10,6 +10,7 @@ pub mod memories;
 pub mod memory_claims;
 pub mod memory_reaper;
 pub mod memory_review_proposal;
+pub mod orphan_archive;
 pub mod persona_tombstones;
 pub mod personas;
 pub mod responsibilities;

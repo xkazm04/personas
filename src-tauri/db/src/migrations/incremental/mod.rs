@@ -94,6 +94,7 @@ mod e64_lifecycle_run_output;
 mod e65_milestone_kind;
 mod e66_device_mesh;
 mod e67_mandate_envelope;
+mod e68_orphan_archive;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -184,6 +185,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e65_milestone_kind::run(conn)?;
     e66_device_mesh::run(conn)?;
     e67_mandate_envelope::run(conn)?;
+    e68_orphan_archive::run(conn)?;
 
     Ok(())
 }

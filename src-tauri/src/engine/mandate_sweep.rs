@@ -99,6 +99,11 @@ impl LaneBook {
                     by_project.insert(s.project_id.clone(), view);
                 }
             }
+            // A steward borrowed by an adopted or drafted mandate keeps its
+            // home project: its own reports and incidents still route there.
+            if s.origin.as_ref().is_some_and(|o| o.borrowed_steward) {
+                continue;
+            }
             steward_project
                 .entry(s.steward_persona_id.clone())
                 .and_modify(|p| {
@@ -648,10 +653,24 @@ pub(crate) fn revert_with_undo(pool: &DbPool, act_id: &str) -> Result<CharterAct
 /// The hosting tick and the boot run both come through here.
 pub(crate) async fn sweep_and_emit(pool: DbPool, app: tauri::AppHandle) {
     let door_app = app.clone();
-    let joined = tokio::task::spawn_blocking(move || sweep(&pool, &AppReviewDoor(door_app))).await;
+    let user_db = {
+        use tauri::Manager;
+        app.state::<std::sync::Arc<crate::AppState>>()
+            .user_db
+            .clone()
+    };
+    let joined = tokio::task::spawn_blocking(move || {
+        let mut acts = sweep(&pool, &AppReviewDoor(door_app)).acts;
+        // WP6: a large or growing orphan cluster gets one deterministic draft.
+        acts.extend(crate::engine::mandate_orphanage::draft_sweep(
+            &pool, &user_db,
+        ));
+        acts
+    })
+    .await;
     match joined {
-        Ok(report) => {
-            for act in &report.acts {
+        Ok(acts) => {
+            for act in &acts {
                 crate::commands::core::mandates::emit_act_recorded(&app, act);
             }
         }

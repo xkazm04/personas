@@ -256,6 +256,17 @@ pub enum EnvelopeOp {
     Resume,
     /// An earlier envelope act undone by `charter_act_revert`.
     Revert,
+    /// A draft mandate dropped by the operator (retired, with the reason in
+    /// the act's `shown_json`). Final: a drop is undone by drafting again.
+    Drop,
+    /// A signed mandate re-read and kept as signed (the re-read marker
+    /// `kept_at_acts` set). Changes nothing in the envelope.
+    Keep,
+    /// A mandate drafted from a cluster of orphans.
+    Draft,
+    /// An orphaned project adopted into an existing mandate (a new charter
+    /// carrying that mandate's steward and envelope).
+    Adopt,
 }
 
 impl EnvelopeOp {
@@ -266,6 +277,10 @@ impl EnvelopeOp {
             Self::Suspend => "suspend",
             Self::Resume => "resume",
             Self::Revert => "revert",
+            Self::Drop => "drop",
+            Self::Keep => "keep",
+            Self::Draft => "draft",
+            Self::Adopt => "adopt",
         }
     }
 }
@@ -448,6 +463,168 @@ impl From<CharterActRevertError> for AppError {
 }
 
 // ---------------------------------------------------------------------------
+// A mandate intent's "met when" (dev_goals.met_when)
+// ---------------------------------------------------------------------------
+
+/// How deep a council round must go before a claim may be accepted.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "lowercase")]
+pub enum CouncilDepth {
+    Full,
+    Lite,
+}
+
+/// The conditions a goal names for "met" (`dev_goals.met_when`, JSON). Each
+/// field is `None` when the goal does not name that condition.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct MetWhen {
+    /// The acceptance test the operator runs by hand. `Some("")` when the
+    /// goal only says a UAT is required, without naming it.
+    pub uat: Option<String>,
+    /// The KPI whose target must be reached.
+    pub kpi_id: Option<String>,
+    /// The council round the claim needs.
+    pub council: Option<CouncilDepth>,
+}
+
+impl MetWhen {
+    pub fn is_empty(&self) -> bool {
+        self.uat.is_none() && self.kpi_id.is_none() && self.council.is_none()
+    }
+}
+
+/// What the Accept card reads for one goal claim.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct GoalMetWhen {
+    pub goal_id: String,
+    /// The mandate the goal is an intent of; `None` = the project's active one.
+    pub charter_id: Option<String>,
+    /// `None` = the goal names no condition (NULL, `{}`, or every field empty).
+    pub met_when: Option<MetWhen>,
+    /// The stored JSON could not be read; `met_when` is then `None` and the
+    /// card must say so rather than say "no conditions".
+    pub unreadable: bool,
+}
+
+// ---------------------------------------------------------------------------
+// The re-read (the law is `personas_engine::mandate_reread`)
+// ---------------------------------------------------------------------------
+
+/// Which trigger fired.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "lowercase")]
+pub enum RereadCode {
+    Cap,
+    Asks,
+    Merges,
+    Dominant,
+}
+
+impl RereadCode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Cap => "cap",
+            Self::Asks => "asks",
+            Self::Merges => "merges",
+            Self::Dominant => "dominant",
+        }
+    }
+}
+
+/// Widen or narrow.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "lowercase")]
+pub enum RereadMove {
+    Widen,
+    Narrow,
+}
+
+/// What the re-read suggests. `scope: None` is the merge policy.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct RereadSuggestion {
+    pub action: RereadMove,
+    pub scope: Option<DecideScope>,
+}
+
+/// Why a mandate asks to be re-read, with the figures that fired it. Codes
+/// and numbers only: the words are the frontend's. Computed by the app layer
+/// (it needs the routed items) and attached to [`MandateSummary::reread`].
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct MandateReread {
+    pub code: RereadCode,
+    /// Items on this mandate reaching the operator now (Breach, not valves).
+    pub asks: u32,
+    /// Standing decision acts (router and steward).
+    #[ts(type = "number")]
+    pub acts: i64,
+    /// Spend as a whole percent of the cap; `None` when either is unknown.
+    pub spend_pct: Option<u32>,
+    #[ts(type = "number")]
+    pub merges_since_read: i64,
+    /// The scope that would absorb the most asks, and how many.
+    pub lead_scope: Option<DecideScope>,
+    pub lead_absorbs: u32,
+    /// The marker a keep left, for "you kept it at N acts".
+    #[ts(type = "number | null")]
+    pub kept_at_acts: Option<i64>,
+    pub suggest: Option<RereadSuggestion>,
+}
+
+// ---------------------------------------------------------------------------
+// Where a mandate came from (orphans, WP6)
+// ---------------------------------------------------------------------------
+
+/// How a mandate that did not come from a hire or the operator's own charter
+/// form was made.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "kebab-case")]
+pub enum MandateOriginKind {
+    /// Drafted from a cluster of orphans (by the sweep or the operator).
+    OrphanDraft,
+    /// Made by adopting an orphaned project into an existing mandate: the
+    /// mandate's steward and envelope now cover that project too.
+    Adopted,
+}
+
+/// `persona_responsibilities.spec.mandateOrigin`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct MandateOrigin {
+    pub kind: MandateOriginKind,
+    /// Orphans the project held when the mandate was made.
+    #[serde(default)]
+    pub orphans: Option<u32>,
+    /// The orphan law's code that fired (`large` | `growing`); `None` when the
+    /// operator drafted or adopted without it firing.
+    #[serde(default)]
+    pub why: Option<String>,
+    /// The mandate an adoption copied its steward and envelope from.
+    #[serde(default)]
+    pub from_charter_id: Option<String>,
+    /// The steward also stewards another project's mandate. Routing then maps
+    /// that persona's own items (reports, incidents) by its HOME mandate, and
+    /// this one never makes them ambiguous.
+    #[serde(default)]
+    pub borrowed_steward: bool,
+    /// The sweep drafted it (`true`) or the operator did (`false`).
+    #[serde(default)]
+    pub automatic: bool,
+}
+
+// ---------------------------------------------------------------------------
 // The list view
 // ---------------------------------------------------------------------------
 
@@ -495,6 +672,12 @@ pub struct MandateSummary {
     pub envelope: MandateEnvelope,
     pub load: MandateLoad,
     pub updated_at: String,
+    /// Why this signed mandate asks to be read again, when it does. Filled by
+    /// the app layer's `mandate_list` / `mandate_get` (the law needs the
+    /// routed items); `None` from the store alone.
+    pub reread: Option<MandateReread>,
+    /// How the mandate was made, when it came from the orphanage.
+    pub origin: Option<MandateOrigin>,
 }
 
 /// What every envelope door returns: the refreshed mandate and the act it wrote.
