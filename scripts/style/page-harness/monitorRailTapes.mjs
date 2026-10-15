@@ -2,12 +2,12 @@
 // (monitorRailSurfaces.tsx). Fixture CODE, no personal data. It reuses the
 // Board's simulation tape (monitorBoardTapes.mjs) rather than inventing a
 // second fleet, and adds the decision sources the strip and the Gates peek
-// read: the one pending-counts round-trip and Athena's pending approvals
-// (the Gates chip's own rows). Everything else the roster reads answers empty.
+// read: the one pending-counts round-trip, Athena's pending approvals and the
+// lanes snapshot that routes them to Breach. Everything else answers empty.
 //
 //   monitor/rail        the Board's simulation shell, the strip's Breach lane
-//                       pressed so its peek is open (the Gates chip, with
-//                       three rows, until the mandate-lanes cutover, WP10).
+//                       pressed so its peek is open on three rows (the Gates
+//                       chip until the mandate-lanes cutover, WP10).
 //
 // `monitor/rail/kinds` (the retired DecisionDock's row, alone) went with the
 // dock on 2026-10-06 (decision-center spark A3).
@@ -32,9 +32,23 @@ export function monitorRailTapes({ RECORDED_AT }) {
     approval('ap-2', 'create_goal', 'The retry budget keeps coming up in three teams.', 47),
     approval('ap-3', 'dispatch_persona', 'The Docs team asked for a release note draft.', 180),
   ];
+  // The lanes snapshot the Breach button counts and its peek joins rows to:
+  // Athena's approvals are never delegated, so all three are Breach crossings
+  // (`UNSIGNED_LANE` in mandate_router.rs), with the same ids the roster gives
+  // their rows (`approval:<id>`). Without it the press opened an empty peek.
+  const snapshot = {
+    items: approvals.map((a) => ({
+      itemId: `approval:${a.id}`, itemKind: 'approval', lane: 'breach', clause: 'unsigned', charterId: null,
+      coalesceKey: `orphan:breach:unsigned`, irreversible: null, projectId: null,
+    })),
+    charters: [],
+    failedSources: [],
+    generatedAt: RECORDED_AT,
+  };
   const decisionCalls = [
     { cmd: 'dev_tools_pending_counts', response: counts },
     { cmd: 'companion_list_pending_approvals', response: approvals },
+    { cmd: 'decision_lanes_snapshot', response: snapshot },
   ];
 
   return {
@@ -44,7 +58,7 @@ export function monitorRailTapes({ RECORDED_AT }) {
         return {
           ...tape,
           module: 'monitor/rail',
-          note: 'Synthetic: the test build simulation fleet, plus decision counts and three companion approvals for the Gates peek.',
+          note: 'Synthetic: the test build simulation fleet, plus decision counts, three companion approvals and the lanes snapshot that puts them in the Breach peek.',
           calls: [...tape.calls, ...decisionCalls],
         };
       },
