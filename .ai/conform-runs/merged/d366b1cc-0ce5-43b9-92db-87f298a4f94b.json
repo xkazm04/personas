@@ -1,0 +1,29 @@
+{"schema": "conform-run/1", "worker": "d366b1cc-0ce5-43b9-92db-87f298a4f94b", "subject": "generator-uncertainty-scoring",
+ "evaluatedAt": "2026-10-16T17:41:35Z",
+ "pairs": [
+  {"context": "90f639de-ffc7-4225-b67f-1566e5d66b8b", "subject": "generator-uncertainty-scoring", "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_health/libs/compositeHealthScore.ts:66 the composite weights success rate, latency, cost anomaly, healing and failure streak: operational execution telemetry, never a generator's token distribution or N-sample agreement, so the subject's precondition does not hold",
+   "techniques": [
+    {"technique": "score-source-kinds", "verdict": "not-applicable", "evidence": "src/features/overview/sub_health/libs/compositeHealthScore.ts:66 every component is a deterministic aggregate of execution rows; no dimension asks how sure a model was"},
+    {"technique": "score-source-ensembling", "verdict": "not-applicable", "evidence": "src/features/overview/sub_health/libs/compositeHealthScore.ts:66 the weighted sum combines ops metrics, not judge and judge-free quality sources, so the per-generator label-fit obligation has no object"},
+    {"technique": "scorer-cost-class", "verdict": "not-applicable", "evidence": "src/features/overview/sub_health/libs/compositeHealthScore.ts:66 no scorer tier (token-probability, N-sample, judge) is involved; inputs are already-recorded execution stats"},
+    {"technique": "probability-calibration-is-not-agreement", "verdict": "not-applicable", "evidence": "src/features/overview/sub_health/libs/compositeHealthScore.ts:66 the grade bands threshold a health score, not a model confidence"}
+   ],
+   "registryProposal": "Matcher resonance, not a hole: the pair was earned by the tokens score/composite/source, which also name ops health composites. The subject's precondition is a score read from the generator's own output distribution; use_when triggers could anchor on token probabilities / sample agreement rather than the generic word 'score'."},
+  {"context": "835ed922-2ebd-425b-a542-dbe5996e1e78", "subject": "generator-uncertainty-scoring", "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/components/matrix/buildTemplateMatchConfidence.ts:4 the 'confidence' gate counts distinct keyword overlap with a SQL LIKE search result: lexical retrieval with no generator in the loop, so no generator distribution exists to score",
+   "techniques": [
+    {"technique": "stated-distribution-over-closed-labels", "verdict": "not-applicable", "evidence": "src/features/agents/components/matrix/buildTemplateMatchConfidence.ts:60 isStrongMatch is a deterministic overlap count against MIN_OVERLAP, not a model's closed-set decision, so no stated distribution is wanted"},
+    {"technique": "compare-gates-at-matched-coverage", "verdict": "not-applicable", "evidence": "src/features/agents/components/matrix/buildTemplateMatchConfidence.ts:53 MIN_OVERLAP=2 thresholds a keyword count, not a scorer's confidence, so the risk-coverage framing over model scores has no object"},
+    {"technique": "generator-vs-itself", "verdict": "not-applicable", "evidence": "src/features/agents/components/matrix/buildTemplateMatchConfidence.ts:41 matchOverlap is a pure function of the intent text; there is no sampled generation and so no spread"},
+    {"technique": "scorer-cost-class", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/companion/templates.rs:98 the matcher is a capped LIKE keyword search; no serving call returns probabilities or samples"}
+   ],
+   "registryProposal": "Matcher resonance on the word 'confidence': a lexical-retrieval gate named 'confidence' is a heuristic match-strength threshold, not generator uncertainty. Repo-wide, no logprob/top_logprobs/self-consistency/semantic-entropy code exists in src or src-tauri (git grep 2026-10-16), so this repo has no context the subject governs today."}
+ ],
+ "declined": [],
+ "consults": [
+  {"ts": "2026-10-16T17:41:35Z", "bundle": "llm-observability", "subjects": ["generator-uncertainty-scoring"], "techniques": ["score-source-kinds", "score-source-ensembling", "scorer-cost-class", "probability-calibration-is-not-agreement"], "deviations": 0},
+  {"ts": "2026-10-16T17:41:35Z", "bundle": "llm-observability", "subjects": ["generator-uncertainty-scoring"], "techniques": ["stated-distribution-over-closed-labels", "compare-gates-at-matched-coverage", "generator-vs-itself", "scorer-cost-class"], "deviations": 0}
+ ]}

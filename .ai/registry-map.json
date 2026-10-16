@@ -21478,7 +21478,11 @@
           "revision": 3,
           "changedAt": "2026-10-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_health/libs/compositeHealthScore.ts:66 the composite weights success rate, latency, cost anomaly, healing and failure streak: operational execution telemetry, never a generator's token distribution or N-sample agreement, so the subject's precondition does not hold",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:a449ca2b8da79c6e",
+          "evaluatedRevision": 3
         },
         {
           "subject": "stream-proxy-hop",
@@ -23542,7 +23546,11 @@
           "revision": 3,
           "changedAt": "2026-10-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/buildTemplateMatchConfidence.ts:4 the 'confidence' gate counts distinct keyword overlap with a SQL LIKE search result: lexical retrieval with no generator in the loop, so no generator distribution exists to score",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:a449ca2b8da79c6e",
+          "evaluatedRevision": 3
         },
         {
           "subject": "templates-scaffolding",
