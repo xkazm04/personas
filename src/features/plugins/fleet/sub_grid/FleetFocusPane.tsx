@@ -4,6 +4,7 @@ import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs
 import { Button } from '@/features/shared/components/buttons';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { DebtText } from '@/i18n/DebtText';
 import { FleetTerminalPane } from '../FleetTerminalPane';
 import { sessionAttention, attentionClass } from '../fleetAttention';
@@ -102,11 +103,13 @@ export function FleetFocusPane({ session, gridOpen, view, onView, onCompact, onO
         {view === 'insights' ? (
           <FleetSessionInsights claudeSessionId={session.claudeSessionId} />
         ) : session.state === 'exited' ? (
-          <div className="h-full flex flex-col items-center justify-center gap-1 p-6 text-foreground">
-            <p className="typo-heading"><DebtText k="auto_session_exited_a34ee64f" /></p>
-            <p className="typo-caption">
-              {session.exitCode !== null ? `Exit code ${session.exitCode}` : 'Process exited unexpectedly'}
-            </p>
+          <div className="h-full flex items-center justify-center">
+            <EmptyState art="runs" size="sm">
+              <p className="typo-heading text-foreground"><DebtText k="auto_session_exited_a34ee64f" /></p>
+              <p className="typo-caption mt-1.5">
+                {session.exitCode !== null ? `Exit code ${session.exitCode}` : 'Process exited unexpectedly'}
+              </p>
+            </EmptyState>
           </div>
         ) : session.mode === 'headless' ? (
           // Headless sessions have no TTY, so there is nothing an xterm could

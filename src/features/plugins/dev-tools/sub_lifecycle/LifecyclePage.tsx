@@ -61,7 +61,7 @@ export default function LifecyclePage() {
 
           <ContentBody centered>
             {!model.projectId ? (
-              <EmptyState icon={GitBranch} title={model.dl.lc_empty_title} subtitle={model.dl.lc_empty_subtitle} />
+              <EmptyState icon={GitBranch} size="lg" title={model.dl.lc_empty_title} subtitle={model.dl.lc_empty_subtitle} />
             ) : (
               <LifecycleBody />
             )}

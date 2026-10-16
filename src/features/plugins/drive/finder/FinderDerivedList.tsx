@@ -83,6 +83,8 @@ export function FinderDerivedList({
         <div className="flex-1 flex items-center justify-center p-8">
           <ScenarioEmptyState
             icon={kind === "tagged" ? Tag : SearchX}
+            art={kind === "tagged" ? "folder" : "search"}
+            size="sm"
             title={emptyTitle}
             subtitle={emptyBody}
             action={{ label: backLabel, onClick: onBack, icon: ArrowLeft }}

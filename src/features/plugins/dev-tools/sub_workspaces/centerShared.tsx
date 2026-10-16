@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, X } from 'lucide-react';
 
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { resolveTechIcon } from '@/features/shared/components/display/techIcons';
 import type { DevProject } from '@/lib/bindings/DevProject';
@@ -128,7 +129,7 @@ export function MembershipPanel({
         </div>
         <div className="flex flex-col gap-1">
           {members.length === 0 && (
-            <p className="typo-body text-muted-foreground">{tw.no_projects_yet}</p>
+            <EmptyState art="folder" size="sm" title={tw.no_projects_yet} />
           )}
           {members.map((p) => (
             <ProjectRow
@@ -147,7 +148,7 @@ export function MembershipPanel({
         </div>
         <div className="flex flex-col gap-1">
           {candidates.length === 0 && (
-            <p className="typo-body text-muted-foreground">{tw.every_project_member}</p>
+            <EmptyState art="folder" size="sm" title={tw.every_project_member} />
           )}
           {candidates.map((p) => (
             <ProjectRow

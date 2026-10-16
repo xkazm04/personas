@@ -13,6 +13,7 @@ import { FolderGit2, RefreshCw } from 'lucide-react';
 
 import { githubListRepos } from '@/api/agents/automations';
 import { probeRegistry } from '@/api/devTools/registryProbe';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { DirectoryPickerInput } from '@/features/shared/components/forms/DirectoryPickerInput';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -152,7 +153,7 @@ export function RegistryWiring({
     // linkable with zero ceremony.
     return (
       <div className="flex flex-col gap-3">
-        <p className="typo-body text-foreground">{tr.no_credential}</p>
+        <EmptyState art="vault" size="sm" title={tr.no_credential} />
         <div className="border-t border-border pt-3">
           <p className="typo-caption text-foreground mb-2">{tr.local_heading}</p>
           <LocalFolderLink workspaceId={workspaceId} onLinked={onLinked} />

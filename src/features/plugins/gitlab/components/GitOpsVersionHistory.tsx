@@ -18,6 +18,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import type { GitLabPersonaVersion } from '@/api/system/gitlab';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -129,19 +130,12 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
             {showBranches && (
               <div className="px-3 pb-3 space-y-2">
                 {branches.length === 0 ? (
-                  <div className="text-center py-4">
-                    <p className="typo-body text-foreground mb-2">
-                      {t.gitlab.no_environment_branches}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleSetupBranches}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/15 transition-colors"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      {t.gitlab.create_branches}
-                    </button>
-                  </div>
+                  <EmptyState
+                    icon={GitBranch}
+                    size="sm"
+                    title={t.gitlab.no_environment_branches}
+                    action={{ label: t.gitlab.create_branches, icon: Plus, onClick: () => { void handleSetupBranches(); } }}
+                  />
                 ) : (
                   branches.map((branch) => (
                     <div
@@ -196,15 +190,12 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
 
           {/* Empty state */}
           {!loading && versions.length === 0 && (
-            <div className="text-center py-8">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                <Tag className="w-6 h-6 text-amber-400/60" />
-              </div>
-              <p className="typo-body text-foreground">{t.gitlab.no_versions}</p>
-              <p className="typo-body text-foreground mt-1">
-                {t.gitlab.deploy_with_versioning}
-              </p>
-            </div>
+            <EmptyState
+              art="archive"
+              size="sm"
+              title={t.gitlab.no_versions}
+              description={t.gitlab.deploy_with_versioning}
+            />
           )}
 
           {/* Version list */}

@@ -15,6 +15,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import type { GitLabDeploymentRecord } from '@/api/system/gitlab';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -122,15 +123,12 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
 
       {/* Empty state */}
       {!loading && history.length === 0 && (
-        <div className="text-center py-8">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-            <Rocket className="w-6 h-6 text-amber-400/60" />
-          </div>
-          <p className="typo-body text-foreground">{t.gitlab.no_deployments}</p>
-          <p className="typo-body text-foreground mt-1">
-            {t.gitlab.deploy_to_build_history}
-          </p>
-        </div>
+        <EmptyState
+          icon={Rocket}
+          size="sm"
+          title={t.gitlab.no_deployments}
+          description={t.gitlab.deploy_to_build_history}
+        />
       )}
 
       {/* Timeline */}

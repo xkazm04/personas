@@ -60,9 +60,9 @@ export function HistoryLane({ feed }: HubDeskProps) {
         {feed.loading && shown.length === 0 ? (
           <HistoryGhost />
         ) : nothingFiled ? (
-          <EmptyState variant="no-results" title={t.history.emptyTitle} subtitle={t.history.emptySubtitle} />
+          <EmptyState art="archive" title={t.history.emptyTitle} subtitle={t.history.emptySubtitle} />
         ) : shown.length === 0 ? (
-          <p className="typo-caption text-foreground">{t.history.emptyFiltered}</p>
+          <EmptyState art="search" size="sm" title={t.history.emptyFiltered} />
         ) : (
           <ul className="space-y-1.5 max-w-4xl">
             {shown.map((entry, i) => (

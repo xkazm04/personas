@@ -4,6 +4,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import type { GitLabAgent } from '@/api/system/gitlab';
 import { useSystemStore } from "@/stores/systemStore";
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { pipelineForAgent } from './pipelineHelpers';
 
@@ -41,21 +42,13 @@ export function GitLabAgentList({
 
   if (agents.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
-          <Bot className="w-6 h-6 text-orange-400/60" />
-        </div>
-        <p className="typo-body text-foreground">{t.gitlab.no_duo_agents}</p>
-        <p className="typo-body text-foreground mt-1">{t.gitlab.deploy_persona_hint}</p>
-        <button
-          type="button"
-          onClick={() => onFetchAgents(projectId)}
-          className="mt-3 flex items-center gap-1.5 mx-auto px-3 py-1.5 typo-body rounded-modal border border-primary/15 text-foreground hover:text-foreground/80 transition-colors"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          {t.common.refresh}
-        </button>
-      </div>
+      <EmptyState
+        icon={Bot}
+        size="sm"
+        title={t.gitlab.no_duo_agents}
+        description={t.gitlab.deploy_persona_hint}
+        action={{ label: t.common.refresh, icon: RefreshCw, onClick: () => onFetchAgents(projectId) }}
+      />
     );
   }
 

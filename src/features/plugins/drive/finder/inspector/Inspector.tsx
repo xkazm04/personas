@@ -40,6 +40,8 @@ export function Inspector({
     body = (
       <ScenarioEmptyState
         icon={Info}
+        art="folder"
+        size="sm"
         title={f.insp_empty_title}
         subtitle={f.insp_empty_body}
         className="px-4"

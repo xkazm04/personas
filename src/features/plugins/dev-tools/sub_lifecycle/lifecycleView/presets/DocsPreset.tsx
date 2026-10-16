@@ -76,7 +76,7 @@ export function DocsPreset({ step, node, data }: { step: HealthStep; node: Journ
         desc={empty ? undefined : dl.lcx7_estate_desc}
       >
         {data.loading ? <EstateGhost /> : empty ? (
-          <Rows count={0} empty={{ title: data.unavailable ? dl.lc2_runs_unavailable : dl.lc2_docs_none, hint: data.unavailable ? undefined : dl.lc2_docs_none_hint }}>
+          <Rows count={0} empty={{ art: data.unavailable ? undefined : 'report', title: data.unavailable ? dl.lc2_runs_unavailable : dl.lc2_docs_none, hint: data.unavailable ? undefined : dl.lc2_docs_none_hint }}>
             {null}
           </Rows>
         ) : (

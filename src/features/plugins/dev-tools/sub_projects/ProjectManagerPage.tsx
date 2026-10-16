@@ -26,6 +26,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { UnifiedTable } from '@/features/shared/components/display/UnifiedTable';
 import { Button } from '@/features/shared/components/buttons';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 
 import { useContextScanBackground } from '../hooks/useContextScanBackground';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
@@ -142,21 +143,13 @@ export default function ProjectManagerPage() {
           </div>
 
           {showRichEmpty ? (
-            <div className="text-center py-16">
-              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
-                <FolderKanban className="w-7 h-7 text-amber-400/50" />
-              </div>
-              <p className="typo-body text-foreground mb-4">{dp.no_projects_yet}</p>
-              <Button
-                variant="accent"
-                tone="warning"
-                size="sm"
-                icon={<Plus className="w-3.5 h-3.5" />}
-                onClick={actions.openNewProject}
-              >
-                {dp.create_first_project}
-              </Button>
-            </div>
+            <EmptyState
+              icon={FolderKanban}
+              art="folder"
+              size="lg"
+              title={dp.no_projects_yet}
+              action={{ label: dp.create_first_project, icon: Plus, onClick: actions.openNewProject }}
+            />
           ) : (
             <UnifiedTable<Project>
               columns={columns}
@@ -166,6 +159,8 @@ export default function ProjectManagerPage() {
               isLoading={projectsLoading}
               stickyHeader={false}
               ariaLabel={dp.all_projects}
+              emptyArt="folder"
+              emptyTitle={dp.no_projects_yet}
               rowAccent={rowAccent}
               rowReveal={{ resetKey: activeWorkspaceId ?? 'all' }}
               defaultSortKey="name"

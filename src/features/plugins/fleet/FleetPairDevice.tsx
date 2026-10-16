@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Smartphone, QrCode, Copy, Check, Lock, ShieldOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import {
@@ -235,7 +236,7 @@ export function FleetPairDevice() {
           {t.plugins.fleet.pair_devices_title}
         </p>
         {devices.length === 0 ? (
-          <p className="text-[13px] text-foreground">{t.plugins.fleet.pair_no_devices}</p>
+          <EmptyState art="team" size="sm" title={t.plugins.fleet.pair_no_devices} />
         ) : (
           <ul className="space-y-1" data-testid="fleet-pair-devices">
             {devices.map((d) => (

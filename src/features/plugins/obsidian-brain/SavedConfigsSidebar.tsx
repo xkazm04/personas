@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { BookMarked, Check, Trash2 } from 'lucide-react';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -66,9 +67,7 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
       </div>
 
       {configs.length === 0 ? (
-        <p className="typo-caption text-foreground px-1 py-2">
-          {emptyHint ?? t.plugins.obsidian_brain.saved_vaults_empty_hint}
-        </p>
+        <EmptyState art="vault" size="sm" title={emptyHint ?? t.plugins.obsidian_brain.saved_vaults_empty_hint} />
       ) : (
         <div className="space-y-1.5 overflow-y-auto">
           {configs.map((cfg) => {

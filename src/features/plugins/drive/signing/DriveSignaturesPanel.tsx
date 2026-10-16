@@ -103,8 +103,6 @@ export function DriveSignaturesPanel({
           {!signing.loadingSignatures && signing.signatures.length === 0 && (
             <EmptyState
               icon={FileSignature}
-              iconColor="text-rose-300"
-              iconContainerClassName="bg-rose-500/10 border-rose-500/25"
               title={t.plugins.doc_signing.no_signatures}
               subtitle={t.plugins.doc_signing.no_signatures_hint}
             />

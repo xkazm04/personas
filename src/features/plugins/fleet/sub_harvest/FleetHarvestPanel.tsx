@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation, interpolate } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -105,7 +106,7 @@ export function FleetHarvestPanel({ open, onClose }: Props) {
               <LoadingSpinner />
             </div>
           ) : !report || report.sessions.length === 0 ? (
-            <p className="py-8 text-center typo-body opacity-70">{t.plugins.fleet.harvest_empty}</p>
+            <EmptyState art="report" title={t.plugins.fleet.harvest_empty} />
           ) : (
             <>
               <p className="mb-3 typo-caption tabular-nums opacity-80">

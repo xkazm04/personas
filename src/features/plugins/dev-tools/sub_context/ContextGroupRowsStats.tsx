@@ -15,6 +15,7 @@ import { Layers, Search } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 
 import { colorDot } from './GroupColorPicker';
 import { LedgerActions, type ContextLedgerProps } from './contextLedgerShared';
@@ -139,12 +140,7 @@ export default function ContextGroupRowsStats(props: ContextLedgerProps) {
         })}
 
         {deferredQuery.trim() && filteredGroups.length === 0 && (
-          <div className="flex flex-col items-center gap-1.5 py-8 text-center px-6">
-            <Search className="w-6 h-6 text-foreground/30" />
-            <p className="typo-caption text-foreground/60">
-              {t.context_search_no_results} “{deferredQuery.trim()}”
-            </p>
-          </div>
+          <EmptyState art="search" size="sm" title={`${t.context_search_no_results} “${deferredQuery.trim()}”`} />
         )}
       </div>
     </div>

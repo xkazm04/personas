@@ -44,7 +44,7 @@ function Body({ ghost }: { ghost: boolean }) {
   if (columns.length < 2) {
     return (
       <div className="h-full" data-testid="lc-history-empty">
-        <EmptyState icon={History} title={dl.lcx3_history_empty} iconColor="text-primary" className="h-full py-0" />
+        <EmptyState icon={History} size="sm" title={dl.lcx3_history_empty} className="h-full py-0" />
       </div>
     );
   }

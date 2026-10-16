@@ -73,7 +73,7 @@ export function AdherenceSection({ step, series, thresholds, stepKey, loading, l
       level={2}
       desc={tx(dl.lc2_done_threshold, { green, amber })}
       state={loading ? 'loading' : nothing ? 'empty' : undefined}
-      empty={{ title: dl.lcx8_no_rate }}
+      empty={{ art: 'chart', title: dl.lcx8_no_rate }}
       ghostRows={4}
     >
       <div className={RHYTHM.block}>

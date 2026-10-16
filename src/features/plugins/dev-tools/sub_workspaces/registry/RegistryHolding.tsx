@@ -16,6 +16,7 @@
 import { Boxes, GitBranch, Link2Off, Loader2, RefreshCw, TriangleAlert, Users } from 'lucide-react';
 
 import { syncRegistryClone } from '@/api/devTools/devTools';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -65,7 +66,7 @@ export function RegistryHolding({
   if (!registry) {
     return (
       <div className="flex flex-col gap-3">
-        <p className="typo-body text-foreground">{tr.empty_body}</p>
+        <EmptyState art="link" size="sm" title={tr.empty_body} />
         <RegistryWiring workspaceId={workspaceId} dispatchCwd={dispatchCwd} />
       </div>
     );

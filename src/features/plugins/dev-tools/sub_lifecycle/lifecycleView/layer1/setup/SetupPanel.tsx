@@ -102,6 +102,8 @@ export function SetupPanel() {
       {nothing ? (
         <EmptyState
           icon={Settings2}
+          art="templates"
+          size="sm"
           title={dl.lcx10_setup_none_title}
           subtitle={dl.lcx10_setup_none_body}
           action={{ label: dl.lcx10_setup_add_command, icon: Settings2, onClick: () => openStep('gate', 'commands') }}

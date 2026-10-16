@@ -63,7 +63,7 @@ export function DocsLog({ rows, onOpen }: { rows: EvidenceRow[]; onOpen: (row: E
   const days = useMemo(() => groupByDay(all ? rows : rows.slice(0, LOG_CAP), timeZone), [rows, all, timeZone]);
   return (
     <div className={RHYTHM.block} data-testid="lc2-docs-log">
-      {rows.length === 0 && <Rows count={0} empty={{ title: dl.lc2_docs_log_empty }}>{null}</Rows>}
+      {rows.length === 0 && <Rows count={0} empty={{ art: 'report', title: dl.lc2_docs_log_empty }}>{null}</Rows>}
       {days.map((d, i) => (
         <section key={`${d.key}-${i}`} aria-label={label(d)} className={RHYTHM.tight} data-testid={`lcx7-log-day-${d.key || 'unknown'}`}>
           {/* On the kit reading line, where the rows under it start their names. */}

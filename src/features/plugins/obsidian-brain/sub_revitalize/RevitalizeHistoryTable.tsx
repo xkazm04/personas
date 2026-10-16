@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { History } from 'lucide-react';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -54,10 +54,7 @@ export default function RevitalizeHistoryTable() {
       titleClassName="text-primary"
     >
       {runs.length === 0 ? (
-        <div className="flex items-center gap-2.5 py-3 px-1">
-          <History className="w-4 h-4 text-foreground/90 flex-shrink-0" />
-          <p className="typo-caption text-foreground">{ob.revitalize_history_empty}</p>
-        </div>
+        <EmptyState art="archive" size="sm" title={ob.revitalize_history_empty} />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left">

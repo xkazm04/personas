@@ -77,7 +77,6 @@ export function KnowledgeLane({ feed }: HubDeskProps) {
           <KnowledgeGhost />
         ) : rows.length === 0 ? (
           <EmptyState
-            variant="no-results"
             icon={BookHeart}
             title={t.knowledge.emptyTitle}
             subtitle={t.knowledge.emptySubtitle}

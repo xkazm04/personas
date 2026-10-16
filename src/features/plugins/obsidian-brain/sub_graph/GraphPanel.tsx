@@ -9,11 +9,11 @@ import {
   Users,
   Loader2,
   ExternalLink,
-  Settings,
 } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { NoVaultConnected } from '../NoVaultConnected';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -59,7 +59,6 @@ export default function GraphPanel() {
   const connected = useSystemStore((s) => s.obsidianConnected);
   const activeVaultPath = useSystemStore((s) => s.obsidianVaultPath);
   const vaultName = useSystemStore((s) => s.obsidianVaultName);
-  const setObsidianBrainTab = useSystemStore((s) => s.setObsidianBrainTab);
 
   const [stats, setStats] = useState<VaultStats | null>(null);
   const [orphansExpanding, setOrphansExpanding] = useState(false);
@@ -217,16 +216,7 @@ export default function GraphPanel() {
 
   if (!connected) {
     return (
-      <div className="flex-1 flex items-center justify-center py-20">
-        <EmptyState
-          icon={AlertTriangle}
-          title={t.plugins.obsidian_brain.no_vault_connected}
-          subtitle={t.plugins.obsidian_brain.no_vault_hint}
-          iconColor="text-amber-400/80"
-          iconContainerClassName="bg-amber-500/10 border-amber-500/20"
-          action={{ label: t.plugins.obsidian_brain.tab_setup, onClick: () => setObsidianBrainTab('setup'), icon: Settings }}
-        />
-      </div>
+      <NoVaultConnected />
     );
   }
 
@@ -287,7 +277,7 @@ export default function GraphPanel() {
               })}
             </div>
           ) : (
-            <p className="typo-caption text-foreground py-2">{t.plugins.obsidian_brain.no_stats_yet}</p>
+            <EmptyState art="chart" size="sm" title={t.plugins.obsidian_brain.no_stats_yet} />
           )}
         </SectionCard>
 
@@ -342,7 +332,7 @@ export default function GraphPanel() {
               </div>
             )}
             {!searching && query.trim() && searchHits.length === 0 && (
-              <p className="typo-caption text-foreground">{t.plugins.obsidian_brain.no_matches}</p>
+              <EmptyState art="search" size="sm" title={t.plugins.obsidian_brain.no_matches} />
             )}
           </div>
         </SectionCard>
@@ -365,7 +355,7 @@ export default function GraphPanel() {
               /* Settled-only empty state — orphans load in the same
                  Promise.all as stats, so don't claim "none" while that
                  fetch is still in flight. */
-              !statsLoading && <p className="typo-caption text-foreground py-2">{t.plugins.obsidian_brain.orphan_notes_empty}</p>
+              !statsLoading && <EmptyState art="link" size="sm" title={t.plugins.obsidian_brain.orphan_notes_empty} />
             ) : (
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {orphans.map((o) => (
@@ -386,7 +376,7 @@ export default function GraphPanel() {
 
           <SectionCard collapsible title={`${t.plugins.obsidian_brain.mocs_title} (${mocs.length})`} subtitle={t.plugins.obsidian_brain.mocs_subtitle} storageKey="obsidian-graph-mocs">
             {mocs.length === 0 ? (
-              !statsLoading && <p className="typo-caption text-foreground py-2">{t.plugins.obsidian_brain.mocs_empty}</p>
+              !statsLoading && <EmptyState art="link" size="sm" title={t.plugins.obsidian_brain.mocs_empty} />
             ) : (
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {mocs.map((m) => (

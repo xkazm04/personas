@@ -97,7 +97,7 @@ export function DocsResolution({ view }: { view: DocsView }) {
   };
 
   if (view.groups.length === 0) {
-    return <Rows count={0} empty={{ title: dl.lcx7_no_match, hint: dl.lcx7_no_match_hint }}>{null}</Rows>;
+    return <Rows count={0} empty={{ art: 'search', title: dl.lcx7_no_match, hint: dl.lcx7_no_match_hint }}>{null}</Rows>;
   }
   return (
     <div ref={listRef} className={RHYTHM.block} onKeyDown={onKeyDown} data-testid="lc2-docs-resolution">

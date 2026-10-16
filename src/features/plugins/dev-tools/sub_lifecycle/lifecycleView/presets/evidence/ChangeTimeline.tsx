@@ -48,7 +48,7 @@ export function ChangeTimeline({ rows, stepId, loading }: { rows: EvidenceRow[];
       count={total || undefined}
       desc={total > 0 ? dl.lcx8_timeline_desc : undefined}
       state={loading ? 'loading' : total === 0 ? 'empty' : undefined}
-      empty={{ title: dl.lc_detail_no_evidence }}
+      empty={{ art: 'archive', title: dl.lc_detail_no_evidence }}
     >
       <div className={RHYTHM.block} data-testid="lc8-timeline" data-filter={filter}>
         <ChipRow chips={chips} label={dl.lcx8_filter_label} emptyLabel={dl.lc_detail_no_evidence} />

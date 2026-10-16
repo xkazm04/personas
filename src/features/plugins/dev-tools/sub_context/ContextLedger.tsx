@@ -18,6 +18,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Button } from '@/features/shared/components/buttons';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
 import GroupColorPicker, { colorDot } from './GroupColorPicker';
@@ -161,21 +162,15 @@ export default function ContextLedger(props: ContextLedgerProps) {
       {groups.length === 0 && !showNewGroup && mapLoading ? (
         <ContextLedgerGhost />
       ) : groups.length === 0 && !showNewGroup ? (
-        <div className="flex flex-col items-center text-center py-16">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-3">
-            <FolderTree className="w-7 h-7 text-amber-400/50" />
-          </div>
-          <p className="typo-body text-foreground mb-1">{t.no_context_groups}</p>
-          <p className="typo-caption text-foreground/60 mb-4">{t.scan_or_create}</p>
-          <div className="flex justify-center gap-2">
-            <Button variant="secondary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => onShowNewGroup(true)}>
-              {t.add_group}
-            </Button>
-            <Button variant="accent" tone="warning" size="sm" icon={<Search className="w-3.5 h-3.5" />} onClick={onScan}>
-              {t.scan_codebase}
-            </Button>
-          </div>
-        </div>
+        <EmptyState
+          icon={FolderTree}
+          art="folder"
+          size="lg"
+          title={t.no_context_groups}
+          description={t.scan_or_create}
+          action={{ label: t.scan_codebase, icon: Search, onClick: onScan }}
+          secondaryAction={{ label: t.add_group, icon: Plus, onClick: () => onShowNewGroup(true) }}
+        />
       ) : (
       <div className="rounded-card border border-primary/10 overflow-auto min-h-0 flex-1">
         {/* column header — one clickable cell per use case */}
@@ -252,22 +247,16 @@ export default function ContextLedger(props: ContextLedgerProps) {
         })}
 
         {deferredQuery.trim() && filteredGroups.length === 0 && (
-          <div className="flex flex-col items-center gap-1.5 py-8 text-center px-6">
-            <Search className="w-6 h-6 text-foreground/30" />
-            <p className="typo-caption text-foreground/60">
-              {t.context_search_no_results} “{deferredQuery.trim()}”
-            </p>
-          </div>
+          <EmptyState art="search" size="sm" title={`${t.context_search_no_results} “${deferredQuery.trim()}”`} />
         )}
 
         {cols.length === 0 && (
-          <div className="flex flex-col items-center gap-1.5 py-8 text-center px-6">
-            <Layers className="w-7 h-7 text-primary/40" />
-            <p className="typo-body text-foreground">{t.uc_empty}</p>
-            <p className="typo-caption text-foreground/60 max-w-sm">
-              {hasMap ? t.uc_scan_tooltip : t.uc_empty_no_map}
-            </p>
-          </div>
+          <EmptyState
+            icon={Layers}
+            size="sm"
+            title={t.uc_empty}
+            description={hasMap ? t.uc_scan_tooltip : t.uc_empty_no_map}
+          />
         )}
       </div>
       )}

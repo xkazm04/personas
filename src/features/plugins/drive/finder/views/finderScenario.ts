@@ -76,8 +76,7 @@ export function finderScenario(variant: FinderEmptyVariant, args: FinderScenario
     case "search-empty":
       return {
         icon: Search,
-        iconColor: "text-foreground",
-        iconContainerClassName: "bg-secondary/40 border-primary/10",
+        art: "search",
         title: f.search_empty_title,
         subtitle: f.search_empty_body,
         action: {
@@ -91,16 +90,14 @@ export function finderScenario(variant: FinderEmptyVariant, args: FinderScenario
     case "recursive-empty":
       return {
         icon: Search,
-        iconColor: "text-foreground",
-        iconContainerClassName: "bg-secondary/40 border-primary/10",
+        art: "search",
         title: tx(f.recursive_empty, { query: drive.recursiveQuery ?? "" }),
         action: { label: f.recursive_clear, onClick: () => drive.clearRecursiveSearch() },
       };
     case "tagged-empty":
       return {
         icon: Tag,
-        iconColor: "text-primary",
-        iconContainerClassName: "bg-primary/10 border-primary/20",
+        art: "folder",
         title: tx(f.tagged_empty_title, { tag: args.tagName ?? "" }),
         subtitle: f.tagged_empty_body,
       };
@@ -108,8 +105,7 @@ export function finderScenario(variant: FinderEmptyVariant, args: FinderScenario
       const { onRequestCreate } = args;
       return {
         icon: FolderOpen,
-        iconColor: "text-primary",
-        iconContainerClassName: "bg-primary/10 border-primary/20",
+        art: "folder",
         title: f.empty_folder_title,
         subtitle: f.empty_folder_body,
         action: onRequestCreate

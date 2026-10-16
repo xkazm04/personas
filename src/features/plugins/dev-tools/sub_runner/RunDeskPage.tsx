@@ -3,6 +3,7 @@ import { Play, Plus, ListChecks } from 'lucide-react';
 import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DevToolsPageHeader } from '../DevToolsPageHeader';
 import { Button } from '@/features/shared/components/buttons';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -247,30 +248,24 @@ export default function RunDeskPage() {
                 <LoadingSpinner size="sm" />
               </div>
             ) : tasks.length === 0 ? (
-              <div className="text-center py-20 border border-dashed border-primary/10 rounded-modal">
-                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
-                  <Play className="w-7 h-7 text-amber-400/50" />
-                </div>
-                <p className="text-md text-foreground mb-1">{dr.no_tasks_queued}</p>
-                <p className="text-md text-foreground mb-4">{dr.no_tasks_queued_sub}</p>
-                <div className="flex justify-center gap-2">
-                  <Button variant="secondary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowModal(true)}>
-                    {dr.new_task}
-                  </Button>
-                  <Button
-                    variant="accent"
-                    tone="warning"
-                    size="sm"
-                    icon={<ListChecks className="w-3.5 h-3.5" />}
-                    onClick={() => {
+              <div className="border border-dashed border-primary/10 rounded-modal">
+                <EmptyState
+                  icon={Play}
+                  art="runs"
+                  size="lg"
+                  title={dr.no_tasks_queued}
+                  description={dr.no_tasks_queued_sub}
+                  action={{
+                    label: dr.batch_from_accepted,
+                    icon: ListChecks,
+                    onClick: () => {
                       Promise.resolve(batchFromAcceptedIdeas())
                         .then(() => reload())
                         .catch(toastCatch('RunDeskPage:batchFromAccepted', dr.batch_from_accepted_error));
-                    }}
-                  >
-                    {dr.batch_from_accepted}
-                  </Button>
-                </div>
+                    },
+                  }}
+                  secondaryAction={{ label: dr.new_task, icon: Plus, onClick: () => setShowModal(true) }}
+                />
               </div>
             ) : (
               <div className="space-y-4">

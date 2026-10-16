@@ -5,6 +5,7 @@
 import { useMemo, useState } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 
 import type { SkillEntry } from '@/api/devTools/devTools';
 
@@ -71,7 +72,7 @@ export default function SkillListSidebar({ skills, selected, onSelect }: {
           );
         })}
         {visible.length === 0 && (
-          <li className="px-3 py-4 typo-caption text-foreground/85">{t.common.no_results}</li>
+          <li><EmptyState art="search" size="sm" title={t.common.no_results} /></li>
         )}
       </ul>
     </aside>

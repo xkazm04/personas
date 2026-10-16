@@ -9,6 +9,8 @@
  * keys; the stat labels reuse the already-i18n'd `project_overview.*` keys.
  */
 import { useCallback, type ReactNode } from 'react';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import type { EmptyArtMotif } from '@/features/shared/components/display/emptyArt/EmptyArt';
 import { Shield, RefreshCw, Plug, AlertCircle, Bug, Activity, BarChart3 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { updateProject } from '@/api/devTools/devTools';
@@ -69,7 +71,16 @@ function MonMatrix({ monCreds }: { monCreds: ReturnType<typeof useMonitoringPinp
   return <AssignmentMatrix {...props} />;
 }
 
-function StateMessage({ icon, title, subtitle }: { icon: ReactNode; title: string; subtitle: string }) {
+function StateMessage({ icon, title, subtitle, art }: { icon: ReactNode; title: string; subtitle: string; art?: EmptyArtMotif }) {
+  // A genuine empty (`art` given) draws the shared illustration; failures and
+  // blockers keep the plain icon block.
+  if (art) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <EmptyState art={art} title={title} description={subtitle} />
+      </div>
+    );
+  }
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-2 py-16 text-center px-6">
       <div className="text-primary/40">{icon}</div>
@@ -125,7 +136,7 @@ export default function MonitoringSection() {
         {!activeProject ? (
           <StateMessage icon={<AlertCircle className="w-8 h-8" />} title={dt.mon_no_project_title} subtitle={dt.mon_no_project_sub} />
         ) : state === 'empty' ? (
-          <StateMessage icon={<Plug className="w-8 h-8" />} title={dt.mon_empty_title} subtitle={dt.mon_empty_sub} />
+          <StateMessage art="link" icon={<Plug className="w-8 h-8" />} title={dt.mon_empty_title} subtitle={dt.mon_empty_sub} />
         ) : state === 'unmapped' ? (
           cred && cred.serviceType.toLowerCase() === 'sentry' ? (
             <div className="p-4">
@@ -136,7 +147,7 @@ export default function MonitoringSection() {
               />
             </div>
           ) : (
-            <StateMessage icon={<Plug className="w-8 h-8" />} title={dt.mon_unmapped_title} subtitle={dt.mon_unmapped_sub} />
+            <StateMessage art="link" icon={<Plug className="w-8 h-8" />} title={dt.mon_unmapped_title} subtitle={dt.mon_unmapped_sub} />
           )
         ) : state === 'unsupported' ? (
           <StateMessage
