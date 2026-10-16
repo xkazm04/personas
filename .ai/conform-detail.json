@@ -6,19 +6,24 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:09:14.000Z",
+      "worker": "d47da0b3-faba-4bac-805e-fd12544883b2",
       "techniques": [
         {
           "technique": "parallel-dispatch",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/queue.rs:982 admission has no write-scope overlap test (collision domains)"
+          "evidence": "src-tauri/src/commands/fleet/queue.rs:190 DispatchRequest has cwd and no declared write scope; the door at :996 never compares scopes"
         },
         {
           "technique": "session-registry",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/fleet/registry.rs:696 transitions pass one door (transition_inner with transition_is_legal); closed 10-state vocabulary at src/lib/bindings/FleetSessionState.ts:16"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:420 multiple sessions per cwd allowed, so one-writer-per-write-scope is not enforced at the registry"
+        },
+        {
+          "technique": "verifier-seat-capacity",
+          "verdict": "unknown",
+          "evidence": "src-tauri/src/commands/fleet/queue.rs:996 the door carries no verification-debt stock; whether a seat-keyed review queue exists elsewhere (App Master council review) was not read this run"
         }
       ],
       "superseded": [
@@ -35,6 +40,13 @@
           "evaluatedAt": "2026-10-10T01:20:06.000Z",
           "worker": "aa50e55b-1d63-4ec1-822b-feadc4c21f08",
           "reason": "replaced by 324fd756-14c3-41e3-98ac-77bdb11352dd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/queue.rs:982 door_verdict_for, the one admission door, decides on cap, time gate and budget only; DispatchRequest (queue.rs:176) carries a cwd but no write set and src-tauri/src/commands/fleet/pty.rs:420 allows several sessions per cwd by design, so concurrent sessions in one repo are admitted with no disjointness check and collide unseen. Re-judged against rev 26: still true.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+          "reason": "replaced by d47da0b3-faba-4bac-805e-fd12544883b2"
         }
       ]
     },
@@ -143,14 +155,19 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:09:14.000Z",
+      "worker": "d47da0b3-faba-4bac-805e-fd12544883b2",
       "techniques": [
         {
           "technique": "session-registry",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:95 consumer keeps its own subset of the closed vocabulary; queued/expired/finished unhandled"
+          "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:95 consumer re-derives terminal-ness from 2 of 10 states instead of the registry vocabulary"
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/queue.rs:1736 cancel_dispatch has no caller under src/, so a visible queued entry cannot be withdrawn from the grid"
         }
       ],
       "superseded": [
@@ -167,6 +184,13 @@
           "evaluatedAt": "2026-10-10T01:20:06.000Z",
           "worker": "aa50e55b-1d63-4ec1-822b-feadc4c21f08",
           "reason": "replaced by 324fd756-14c3-41e3-98ac-77bdb11352dd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:95 still picks remove-vs-kill from a hand-written {exited, hibernated} pair of the 10-state FleetSessionState (src/lib/bindings/FleetSessionState.ts:16), so the X on an expired row calls killSession, gets KillOutcome::NoChild (src-tauri/src/commands/fleet/registry.rs:551) and the terminal row never leaves; a queued row cannot be cancelled although src-tauri/src/commands/fleet/queue.rs:1717 cancel_dispatch exists. Re-judged against rev 26: still true.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+          "reason": "replaced by d47da0b3-faba-4bac-805e-fd12544883b2"
         }
       ]
     },
@@ -5415,14 +5439,14 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:09:14.000Z",
+      "worker": "d47da0b3-faba-4bac-805e-fd12544883b2",
       "techniques": [
         {
           "technique": "session-registry",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:68 test keeps its own copy of the closed vocabulary"
+          "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:68 closed vocabulary restated by hand in the test rather than derived from src/lib/bindings/FleetSessionState.ts:16"
         }
       ],
       "superseded": [
@@ -5439,6 +5463,13 @@
           "evaluatedAt": "2026-10-10T01:20:06.000Z",
           "worker": "aa50e55b-1d63-4ec1-822b-feadc4c21f08",
           "reason": "replaced by 324fd756-14c3-41e3-98ac-77bdb11352dd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:68 'handles the full lifecycle' iterates a hand-typed 7 of the 10 FleetSessionState values, omitting queued, finished and expired that production maps (src/features/plugins/fleet/FleetStatusDots.tsx:36,42,48), so the test certifies coverage it does not check and a new state slips past it. Re-judged against rev 26: still true.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+          "reason": "replaced by d47da0b3-faba-4bac-805e-fd12544883b2"
         }
       ]
     },
@@ -5676,14 +5707,25 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:09:14.000Z",
+      "worker": "d47da0b3-faba-4bac-805e-fd12544883b2",
       "techniques": [
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 broadcast membership is a hand-written state filter that admits writer-less members"
+        },
+        {
+          "technique": "hibernation-and-resume",
+          "verdict": "realized",
+          "evidence": "src/features/plugins/fleet/fleetTerminalManager.ts:323 MAX_PARKED bounds the parked terminal pool"
+        },
         {
           "technique": "session-registry",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 target filter is a hand-written subset of the state vocabulary"
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 target filter is a hand-written subset of the state vocabulary",
+          "carriedFrom": "2026-10-14"
         }
       ],
       "superseded": [
@@ -5700,6 +5742,13 @@
           "evaluatedAt": "2026-10-10T11:26:21.000Z",
           "worker": "bcd9e9fb-7483-4daf-916f-0868b1f7a42d",
           "reason": "replaced by 324fd756-14c3-41e3-98ac-77bdb11352dd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 excludes only exited|hibernated from broadcast targets, so writer-less queued (src-tauri/src/commands/fleet/types.rs:34) and expired rows stay targetable; each write fails at src-tauri/src/commands/fleet/registry.rs:1491 'session writer dropped', and the failure retarget re-selects exactly those rows, which can never succeed. Bounded terminal pool (src/features/plugins/fleet/fleetTerminalManager.ts:323 MAX_PARKED) remains realized. Re-judged against rev 26; the registry.rs anchor moved from :1473 to :1491.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+          "reason": "replaced by d47da0b3-faba-4bac-805e-fd12544883b2"
         }
       ]
     },
@@ -5963,19 +6012,25 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:09:14.000Z",
+      "worker": "d47da0b3-faba-4bac-805e-fd12544883b2",
       "techniques": [
         {
           "technique": "absent-status-passthrough",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/system/fleetSlice.ts:357 the projector supplies a value the record did not carry"
+          "evidence": "src/stores/slices/system/fleetSlice.ts:357 a non-observing projector supplies an activity value the producer did not state"
+        },
+        {
+          "technique": "evidence-outranks-a-liveness-claim",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/fleetSlice.ts:385 a terminal EXITED event is recorded as fresh activity"
         },
         {
           "technique": "session-registry",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/system/fleetSlice.ts:357 consumer re-derives liveness bookkeeping the registry owns"
+          "evidence": "src/stores/slices/system/fleetSlice.ts:357 consumer re-derives liveness bookkeeping the registry owns",
+          "carriedFrom": "2026-10-14"
         }
       ],
       "superseded": [
@@ -5992,6 +6047,13 @@
           "evaluatedAt": "2026-10-10T11:26:21.000Z",
           "worker": "bcd9e9fb-7483-4daf-916f-0868b1f7a42d",
           "reason": "replaced by 324fd756-14c3-41e3-98ac-77bdb11352dd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/stores/slices/system/fleetSlice.ts:357 (and :385 on EXITED) stamps lastActivityMs = Date.now() on every FLEET_SESSION_STATE event, a value the payload never carries, while the registry deliberately withholds that stamp for parked completions (src-tauri/src/commands/fleet/registry.rs:696 apply_transition_parked, used by mark_finished); a finished session reads as just-active and sorts to the top until the next full refresh. Re-judged against rev 26: still true.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+          "reason": "replaced by d47da0b3-faba-4bac-805e-fd12544883b2"
         }
       ]
     },

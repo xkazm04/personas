@@ -1458,3 +1458,8 @@
 {"ts":"2026-10-16T18:08:01Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["scenario-design","assertion-vs-judgment","judge-stability"],"deviations":2}
 {"ts":"2026-10-16T18:08:01Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["scenario-design","judge-stability","comparison-modes"],"deviations":3}
 {"ts":"2026-10-16T18:08:01Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T18:09:14Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["parallel-dispatch","session-registry","verifier-seat-capacity"],"deviations":2}
+{"ts":"2026-10-16T18:09:14Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["session-registry","parallel-dispatch"],"deviations":2}
+{"ts":"2026-10-16T18:09:14Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["session-registry"],"deviations":1}
+{"ts":"2026-10-16T18:09:14Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["parallel-dispatch","hibernation-and-resume"],"deviations":1}
+{"ts":"2026-10-16T18:09:14Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["absent-status-passthrough","evidence-outranks-a-liveness-claim"],"deviations":2}

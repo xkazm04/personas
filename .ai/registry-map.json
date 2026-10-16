@@ -7646,10 +7646,10 @@
           "changedAt": "2026-10-13",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/queue.rs:982 door_verdict_for, the one admission door, decides on cap, time gate and budget only; DispatchRequest (queue.rs:176) carries a cwd but no write set and src-tauri/src/commands/fleet/pty.rs:420 allows several sessions per cwd by design, so concurrent sessions in one repo are admitted with no disjointness check and collide unseen. Re-judged against rev 26: still true.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
+          "evidence": "src-tauri/src/commands/fleet/queue.rs:996 door_verdict_for, the one admission door, decides on cap, time gate, budget and queue order only; DispatchRequest (src-tauri/src/commands/fleet/queue.rs:190) carries a cwd but no write set and src-tauri/src/commands/fleet/pty.rs:420 allows several sessions per cwd by design, so concurrent sessions in one repo are admitted with no disjointness check and collide unseen. Re-judged against rev 28 (verifier-seat-capacity added; parallel-dispatch and completion-claim-verification amended additively): still true. Anchors moved from :982/:176 after the one-control door commits.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -13152,10 +13152,10 @@
           "changedAt": "2026-10-13",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:95 still picks remove-vs-kill from a hand-written {exited, hibernated} pair of the 10-state FleetSessionState (src/lib/bindings/FleetSessionState.ts:16), so the X on an expired row calls killSession, gets KillOutcome::NoChild (src-tauri/src/commands/fleet/registry.rs:551) and the terminal row never leaves; a queued row cannot be cancelled although src-tauri/src/commands/fleet/queue.rs:1717 cancel_dispatch exists. Re-judged against rev 26: still true.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
+          "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:95 picks remove-vs-kill from a hand-written {exited, hibernated} pair of the 10-state FleetSessionState (src/lib/bindings/FleetSessionState.ts:16), so the X on an expired row calls killSession, gets KillOutcome::NoChild (src-tauri/src/commands/fleet/registry.rs:551) and the terminal row never leaves; a queued row cannot be cancelled although src-tauri/src/commands/fleet/queue.rs:1736 cancel_dispatch exists and no caller under src/ reaches it. Re-judged against rev 28 (verifier-seat-capacity added; parallel-dispatch and completion-claim-verification amended additively): still true.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -13411,10 +13411,10 @@
           "changedAt": "2026-10-13",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 excludes only exited|hibernated from broadcast targets, so writer-less queued (src-tauri/src/commands/fleet/types.rs:34) and expired rows stay targetable; each write fails at src-tauri/src/commands/fleet/registry.rs:1491 'session writer dropped', and the failure retarget re-selects exactly those rows, which can never succeed. Bounded terminal pool (src/features/plugins/fleet/fleetTerminalManager.ts:323 MAX_PARKED) remains realized. Re-judged against rev 26; the registry.rs anchor moved from :1473 to :1491.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 excludes only exited|hibernated from broadcast targets, so writer-less queued (src-tauri/src/commands/fleet/types.rs:34) and expired rows stay targetable; each write fails at src-tauri/src/commands/fleet/registry.rs:1491 'session writer dropped', and the failure retarget re-selects exactly those rows, which can never succeed. Re-judged against rev 28 (verifier-seat-capacity added; parallel-dispatch and completion-claim-verification amended additively): still true.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -26935,10 +26935,10 @@
           "changedAt": "2026-10-13",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:68 'handles the full lifecycle' iterates a hand-typed 7 of the 10 FleetSessionState values, omitting queued, finished and expired that production maps (src/features/plugins/fleet/FleetStatusDots.tsx:36,42,48), so the test certifies coverage it does not check and a new state slips past it. Re-judged against rev 26: still true.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
+          "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:68 'handles the full lifecycle' iterates a hand-typed 7 of the 10 FleetSessionState values, omitting queued, finished and expired that production maps (src/features/plugins/fleet/FleetStatusDots.tsx:36,42,48), so the test certifies coverage it does not check and a new state slips past it. Re-judged against rev 28 (verifier-seat-capacity added; parallel-dispatch and completion-claim-verification amended additively): still true.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -32291,10 +32291,10 @@
           "changedAt": "2026-10-13",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/stores/slices/system/fleetSlice.ts:357 (and :385 on EXITED) stamps lastActivityMs = Date.now() on every FLEET_SESSION_STATE event, a value the payload never carries, while the registry deliberately withholds that stamp for parked completions (src-tauri/src/commands/fleet/registry.rs:696 apply_transition_parked, used by mark_finished); a finished session reads as just-active and sorts to the top until the next full refresh. Re-judged against rev 26: still true.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
+          "evidence": "src/stores/slices/system/fleetSlice.ts:357 (and :385 on EXITED) stamps lastActivityMs = Date.now() on every FLEET_SESSION_STATE event, a value the payload never carries, while the registry deliberately withholds that stamp for parked completions (src-tauri/src/commands/fleet/registry.rs:696 apply_transition_parked); a finished session reads as just-active and sorts to the top until the next full refresh. Re-judged against rev 28 (verifier-seat-capacity added; parallel-dispatch and completion-claim-verification amended additively): still true.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
