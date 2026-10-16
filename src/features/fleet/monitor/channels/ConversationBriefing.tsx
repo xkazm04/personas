@@ -10,41 +10,30 @@ import { LinkedChannelChip } from './LinkedChannelChip';
 import type { TeamSlackBridge } from '@/lib/channel/teamBridge';
 import type { ChannelPreset } from './useChannelWorkspace';
 import { ConversationPane } from './ConversationPane';
-import { ConversationRail, type RailTab } from './ConversationRail';
+import { ConversationRail } from './ConversationRail';
 import { PersonaConversation } from './PersonaConversation';
 import { useConversation } from './useConversation';
 import { useConversationRows } from './useConversationRows';
 import { useTeamPin } from './useTeamPin';
+import { scopeAsks } from './needsYouModel';
+import { usePendingAsks } from './usePendingAsks';
+import { useRailFocus } from './useRailFocus';
 import type { StreamTeam } from './types';
 import type { Persona } from '@/lib/bindings/Persona';
 import '../grid/prototype/entry-e/entryE.css';
 
 /* ----------------------------------------------------------------------------
- * CONVERSATIONS — the Monitor's messenger, and the only place you write (D5).
+ * CONVERSATIONS - the Monitor's messenger, and the only place you write (D5).
  *
- * THE LAYOUT ARGUMENT (the /prototype question, and its answer): a team channel
- * is not a chat that occasionally mentions work — the work IS most of what
- * happened. So the work lives IN the stream, as full-width BANDS, with talk as
- * narrow inset bubbles beside them. The separation is GEOMETRIC: you can tell
- * what kind of thing a row is without reading a word, which is what stops the
- * timeline degenerating into "chat with dashboards sprinkled in".
- *
- * Capability work (blue) and improvement dialogue (violet) read as siblings,
- * interleaved in real chronology with the conversation that produced them —
- * which is the whole of D1.
- *
- * What the bands DON'T carry is machinery. A card that also held advance /
- * run-to-budget / split / escalate would be the dashboard-in-a-chat this thesis
- * rejects. Focus a card and its controls appear in the RAIL. That split is what
- * lets the Teams Collab and Deliberations panes be deleted without loss.
+ * Three plates in Activity's panel language (WP8 one roof, WP12 the owner's
+ * V1): PROJECTS (one line per project in the Stewards row grammar, persona
+ * threads below), the THREAD (work as outcome-first bands interleaved with
+ * talk, the composer in the deck's well), and NEEDS YOU (reviews and held
+ * questions as ONE queue decided in the deck's anatomy, or, after Drive, the
+ * deliberation's controls). A band never carries machinery: its controls
+ * live in the rail. Lamps light only where something works or needs the
+ * operator.
  * -------------------------------------------------------------------------- */
-
-/* ONE ROOF (mandate-lanes WP8). The view is built from Activity's panel
- * language (entry-e/entryE.css): the `ae-root` panel on the Monitor surface, a
- * command strip, and three plates - projects, the conversation, the rail - so
- * Activity, Queue and Conversations read as one instrument. Lamps follow the
- * annunciator grammar: lit only where something works (a team's members at
- * work) or needs the operator (held steps on the rail). */
 
 export function ConversationBriefing({
   teams, personas, bridges, preset,
@@ -68,20 +57,17 @@ export function ConversationBriefing({
   // belongs to the conversation it was minted for.
   const [focusItemId, setFocusItemId] = useState<string | null>(preset?.itemId ?? null);
   const [detail, setDetail] = useState<TeamChannelItem | null>(null);
-  const [focusDelib, setFocusDelib] = useState<string | null>(null);
-  const [tab, setTab] = useState<RailTab>('reviews');
-  // Two rails, two remembered widths, two edges. The keys are their own — a
-  // shared one would make dragging either move both.
-  const sidebarRail = useRailWidth({ storageKey: 'conversation-sidebar-width', defaultWidth: 280, side: 'left' });
-  const decisionRail = useRailWidth({ storageKey: 'conversation-rail-width', defaultWidth: 320 });
+  // Two rails, two remembered widths, two edges, their own keys. The defaults
+  // leave the thread as wide as it can be at 1280 while the rail still holds
+  // the ask in hand and its dock (WP12).
+  const sidebarRail = useRailWidth({ storageKey: 'conversation-sidebar-width', defaultWidth: 248, side: 'left' });
+  const decisionRail = useRailWidth({ storageKey: 'conversation-rail-width', defaultWidth: 336 });
 
   useEffect(() => {
     if (!activeId && teams[0]) setActiveId(teams[0].teamId);
   }, [teams, activeId]);
-  useEffect(() => {
-    setFocusDelib(null);
-    setTab('reviews');
-  }, [activeId, activePersonaId]);
+  const rail = useRailFocus(activePersonaId ?? activeId);
+  const pending = usePendingAsks();
 
   const selectTeam = useCallback((teamId: string) => {
     setActivePersonaId(null);
@@ -94,20 +80,13 @@ export function ConversationBriefing({
     [personas, activePersonaId],
   );
   const team = useMemo(() => teams.find((t) => t.teamId === activeId) ?? null, [teams, activeId]);
-  // The rail's Reviews are scoped to THIS persona only, or to the open team.
-  const railMembers = useMemo(() => {
-    if (activePersona) {
-      const { id, name, icon, color } = activePersona;
-      return [{ memberId: id, personaId: id, name, icon, color }];
-    }
-    return team ? team.members : null;
+  // The rail is scoped to THIS persona only, or to the open team's members;
+  // `null` only with neither, where scoping to the empty set would hide the fleet.
+  const railPersonaIds = useMemo<ReadonlySet<string> | null>(() => {
+    if (activePersona) return new Set([activePersona.id]);
+    return team ? new Set(team.members.map((m) => m.personaId)) : null;
   }, [activePersona, team]);
-  /** The predicate every rail tab shares; `null` only with no team and no
-   *  persona, where scoping to the empty set would hide the fleet. */
-  const railPersonaIds = useMemo<ReadonlySet<string> | null>(
-    () => (railMembers ? new Set(railMembers.map((m) => m.personaId)) : null),
-    [railMembers],
-  );
+  const railAsks = useMemo(() => scopeAsks(pending.asks, railPersonaIds), [pending.asks, railPersonaIds]);
 
   const conv = useConversation(activeId, focusItemId);
   const { loaded, markSeen } = conv;
@@ -117,11 +96,7 @@ export function ConversationBriefing({
   }, [loaded, markSeen, activeId]);
 
   const { pin, pinned } = useTeamPin(activeId);
-  const focusDeliberation = useCallback((id: string) => {
-    setFocusDelib(id);
-    setTab('focus');
-  }, []);
-  const renderRow = useConversationRows(conv, setDetail, focusDeliberation);
+  const renderRow = useConversationRows(conv, setDetail, rail.drive, rail.tab === 'focus' ? rail.focusDelib : null);
 
   return (
     <div className="ae-root h-full flex flex-col min-h-0 overflow-hidden rounded-card border border-border">
@@ -146,6 +121,8 @@ export function ConversationBriefing({
             activePersonaId={activePersonaId}
             onSelect={selectTeam}
             onSelectPersona={setActivePersonaId}
+            asks={pending.asks}
+            asksReadable={pending.readable}
           />
         </div>
         <RailSplitter rail={sidebarRail} side="left" bordered={false} label={t.monitor.conv_sidebar_resize} testId="conversation-sidebar-resize" />
@@ -162,14 +139,14 @@ export function ConversationBriefing({
         <RailSplitter rail={decisionRail} bordered={false} label={t.monitor.conv_rail_resize} testId="conversation-rail-resize" />
         <div className="flex-shrink-0 min-h-0 pl-1" style={{ width: decisionRail.width }}>
           <ConversationRail
-            tab={tab}
-            onTab={setTab}
-            scopeKey={activePersonaId ?? activeId}
-            members={railMembers}
+            key={activePersonaId ?? activeId ?? 'none'}
+            tab={rail.tab}
+            onTab={rail.setTab}
+            asks={railAsks}
+            pending={pending}
             personaScoped={!!activePersona}
             teamId={team?.teamId ?? null}
-            focusDelib={focusDelib}
-            railPersonaIds={railPersonaIds}
+            focusDelib={rail.focusDelib}
           />
         </div>
       </div>

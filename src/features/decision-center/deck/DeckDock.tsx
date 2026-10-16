@@ -26,7 +26,8 @@ import { Keycap } from './parts';
 import { useVerdictPairFit } from './useVerdictPairFit';
 
 export function Verdict({ k, label, yes, tone, icon, armed, disabled, pair, onClick }: {
-  k: string; label: string; yes: boolean; tone: 'success' | 'danger' | 'accent'; icon: ReactNode; armed?: boolean; disabled?: boolean;
+  /** The key printed inside the button; omitted where no key reaches it (a card in a thread, WP12). */
+  k?: string; label: string; yes: boolean; tone: 'success' | 'danger' | 'accent'; icon: ReactNode; armed?: boolean; disabled?: boolean;
   /** One of the yes | no pair: the verb never wraps, and the pair measures whether it fits side by side. */
   pair?: boolean;
   onClick: () => void;
@@ -48,7 +49,7 @@ export function Verdict({ k, label, yes, tone, icon, armed, disabled, pair, onCl
       <span className={`min-w-0 flex-1 text-left typo-heading ${pair ? 'overflow-hidden whitespace-nowrap' : ''}`}>
         <span data-verdict-text={pair ? '' : undefined}>{armed ? t.monitor.dc_deck_confirm : label}</span>
       </span>
-      <Keycap>{k}</Keycap>
+      {k && <Keycap>{k}</Keycap>}
     </Button>
   );
 }
