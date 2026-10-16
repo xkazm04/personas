@@ -1,0 +1,80 @@
+{
+ "schema": "conform-run/1",
+ "worker": "ef8dba44-069f-4690-932f-71299b6d5ea1",
+ "subject": "native-shell-integration",
+ "evaluatedAt": "2026-10-16T23:08:35.179054+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "vault-shared-vector",
+   "subject": "native-shell-integration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/engine/src/chunker.rs:339 Vector ingestion reads caller-supplied files before checking its extension allow-list, allowing unsupported file classes to be accessed before the native positive rule can refuse them.",
+   "techniques": [
+    {
+     "technique": "layout-resolved-input-synthesis",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/shared/vector/VectorKbModal.tsx:83 Keyboard handling changes the product's own tab selection rather than synthesizing foreign-application input."
+    },
+    {
+     "technique": "native-side-owns-the-target-set",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/chunker.rs:339 IngestDropZone.tsx:73 passes presentation-layer paths through vectorKb.ts:46 to kb_ingest_files; vector_kb.rs:546\u2013556 canonicalizes and applies sensitive-path denylists, but chunker.rs checks supported extensions only at lines 341\u2013348, after this filesystem read."
+    },
+    {
+     "technique": "non-stealing-overlay",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/shared/vector/ingest/IngestDropZone.tsx:105 The drop indicator is a DOM element inside the application, rather than an always-on-top native window over another application."
+    },
+    {
+     "technique": "query-transparent-overlay",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/shared/vector/VectorKbModal.tsx:91 The inspected element query targets the modal's own DOM tab button rather than a foreign application's accessibility tree."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "native-shell-integration",
+   "context": "triggers-studio",
+   "reason": "evidence leans on engine/src/app_focus.rs, which is not a tracked file"
+  },
+  {
+   "subject": "native-shell-integration",
+   "context": "glyph-command-panel",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "native-shell-integration",
+   "context": "hooks-utility-data",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "native-shell-integration",
+   "context": "plugins-dev-tools-context",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-16T23:08:35.179054+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "native-shell-integration"
+   ],
+   "techniques": [
+    "layout-resolved-input-synthesis",
+    "native-side-owns-the-target-set",
+    "non-stealing-overlay",
+    "query-transparent-overlay"
+   ],
+   "deviations": 1,
+   "context": "vault-shared-vector",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

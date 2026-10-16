@@ -40766,8 +40766,12 @@
           "revision": 4,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "deviation",
+          "priorNotApplicable": 4,
+          "evidence": "src-tauri/engine/src/chunker.rs:339 Vector ingestion reads caller-supplied files before checking its extension allow-list, allowing unsupported file classes to be accessed before the native positive rule can refuse them.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+          "evaluatedRevision": 4
         },
         {
           "subject": "structured-output",

@@ -27547,6 +27547,37 @@
           "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:31 This configures the response to a built-in output assertion; it does not register foreign callbacks."
         }
       ]
+    },
+    "876c0b4e-6472-4544-a21b-56e7529fb6b3/native-shell-integration": {
+      "context": "vault-shared-vector",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T23:08:35.179Z",
+      "worker": "ef8dba44-069f-4690-932f-71299b6d5ea1",
+      "techniques": [
+        {
+          "technique": "layout-resolved-input-synthesis",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/shared/vector/VectorKbModal.tsx:83 Keyboard handling changes the product's own tab selection rather than synthesizing foreign-application input."
+        },
+        {
+          "technique": "native-side-owns-the-target-set",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/chunker.rs:339 IngestDropZone.tsx:73 passes presentation-layer paths through vectorKb.ts:46 to kb_ingest_files; vector_kb.rs:546–556 canonicalizes and applies sensitive-path denylists, but chunker.rs checks supported extensions only at lines 341–348, after this filesystem read."
+        },
+        {
+          "technique": "non-stealing-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/shared/vector/ingest/IngestDropZone.tsx:105 The drop indicator is a DOM element inside the application, rather than an always-on-top native window over another application."
+        },
+        {
+          "technique": "query-transparent-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/shared/vector/VectorKbModal.tsx:91 The inspected element query targets the modal's own DOM tab button rather than a foreign application's accessibility tree."
+        }
+      ]
     }
   }
 }
