@@ -23,6 +23,13 @@
  *                                    it as the app opens it, and the decision
  *                                    badge focused so its tooltip (the lanes
  *                                    it sums) shows over the board
+ *   monitor/mandate-lanes/rail       the board with the act stream, in the
+ *                                    language `--query "lang=de"` names
+ *                                    (polish P2: the rail's plates and the
+ *                                    resting dock; tape `railPolishTape.mjs`)
+ *   monitor/mandate-lanes/dock       the same, the dispatch dock expanded
+ *   monitor/mandate-lanes/usage-hover the same, the first plan row focused so
+ *                                    its numbers last measured show
  *
  * Each variant drives the real controls (the Activity tab, the layout switch,
  * the plate's register button, a register row).
@@ -157,7 +164,40 @@ const titlebar: HarnessModule = {
   },
 };
 
+/**
+ * The board with the act stream, and one control focused once it settled, so
+ * its hover view shows as a keyboard user opens it (polish P2: a usage row's
+ * numbers). Shot on `railPolishTape.mjs`.
+ */
+function focused(selector: string): HarnessModule {
+  const base = lanes([], true);
+  return {
+    ...base,
+    load: async () => {
+      const { default: Host } = await base.load();
+      return { default: function FocusedHost() { return <><Host /><FocusLater selector={selector} after={7000} /></>; } };
+    },
+  };
+}
+
+/** The module in the reader's language the query names (`--query "lang=de"`), as the deck's `prepareDeck` reads it. */
+function inLang(base: HarnessModule): HarnessModule {
+  return {
+    ...base,
+    prepare: async () => {
+      await base.prepare?.();
+      const lang = new URLSearchParams(window.location.search).get('lang');
+      if (!lang) return;
+      const { switchLanguage } = await import('@/i18n/useTranslation');
+      await switchLanguage(lang as Parameters<typeof switchLanguage>[0]);
+    },
+  };
+}
+
 export const MANDATE_LANES_MODULES: Record<string, HarnessModule> = {
+  'monitor/mandate-lanes/rail': inLang(lanes([], true)),
+  'monitor/mandate-lanes/dock': inLang(lanes([{ selector: '[data-testid="quick-dispatch-dock-expand"]' }], true)),
+  'monitor/mandate-lanes/usage-hover': inLang(focused('[data-testid="entry-e-plan"]')),
   'monitor/mandate-lanes': lanes(),
   'monitor/mandate-lanes/register': lanes([REGISTER]),
   'monitor/mandate-lanes/page': lanes([REGISTER, { selector: '[data-testid="mandate-register-row"] button' }]),

@@ -756,9 +756,13 @@ Below the Stewards plate, the Supply deck (`SupplyDeck.tsx`) carries a **Schedul
 (`SchedulePlate.tsx`) listing every Windows Task Scheduler task in the `\Personas\` folder. Today
 that is the `/curator --multi` night (`\Personas\CuratorNight`, 23:00-07:00); anything else
 scheduled into the folder appears with no code change. Each line is a lamp (green while enabled,
-amber while running, dark when off), the task's title, its next start in **Prague time**
-(`Europe/Prague`, whatever zone the machine runs in), and a switch that enables or disables it.
-The line's tooltip adds the declared window, the last run and its result. The plate renders
+amber while running, dark when off) and the task's title on its first row, and on the second,
+under the title, its next start as the Monitor's clock token (the persona line's calendar glyph
+and 24-hour time: `23:00` today, `Tue 23:00` within the week, `13 Oct 23:00` beyond it) in
+**Prague time** (`Europe/Prague`, whatever zone the machine runs in), and a switch that enables
+or disables it. The title's tooltip adds the declared window, the last run and its result.
+(Two rows since 2026-10-16: on one line at the rail's width the title truncated to three
+letters.) The plate renders
 nothing until something is scheduled, and nothing off Windows.
 
 The task's `Description` carries what the line shows, as `<title>|<window>`. The read
@@ -768,6 +772,28 @@ name the `\Personas\` listing holds and returns the refreshed list) run PowerShe
 never as `schtasks` locale text. The plate polls every 30 s while the window is visible. Turning a
 task off stops it starting tomorrow; a night already running ends on its own window
 (`loop.py multi stop` ends it after its running units).
+
+#### The rail's usage plate and the dispatch dock as plates (2026-10-16)
+
+The **Subscription usage** plate (`PlanPlates.tsx`) keeps its header to one row in every locale:
+the title (which truncates rather than wraps) and the refresh button, whose tooltip now carries
+the refresh time ("as of 3m ago"). Hovering or focusing a plan row opens its numbers last measured
+beside the rail (`PlanHover.tsx`, the house `AnchoredTooltip`): per window the span (5h, 7d, 7d ·
+Opus), used %, the countdown and the wall-clock reset, and when the plan was measured (with
+*Estimated* for a projected plan). There is no "used / limit" line: none of the reads behind a plan
+(`fleet_claude_accounts_list`, `fleet_claude_usage`, `fleet_cli_usage`) reports an absolute count,
+so it is omitted rather than invented. Pressing a row still opens the popup with switch, remove and
+auto-rotate, and the hover stands down while it is open.
+
+The **dispatch dock** sits on a plate of the panel's language (`.ae-dock` + `.ae-plate`), inset by
+the panel's gutter. At rest it is one 40px plate (52px with its gutter): a window holding the composer's prompt (the door
+that expands it), the stewards' act ticker, and the session tally as the command bar's lamp chips
+(*Needs you* amber, *Running* in the run tone). Expanded, the same plate holds the console: every
+control and reading is the command bar's chip (`dock/dockChrome.ts`), the chips ride at the head
+of the manifest row instead of a row of their own, and the console is 23px shorter (163px with its
+gutter, measured in the harness at 1280x800 and 1920x1080 in en, de and ru, with no horizontal
+overflow). The Athena and background toggles keep their
+glyph and label on one line (they had stacked).
 
 #### Orchestration panel — the next tick, read-only
 
