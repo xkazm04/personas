@@ -1939,22 +1939,22 @@
       "subject": "credential-vault",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:04:00.000Z",
-      "worker": "0c2e1b05-90f3-4de7-bc4b-8739e02d07f4",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:22:23.000Z",
+      "worker": "11f807cf-bc25-4768-b1de-19d081c8ed99",
       "techniques": [
         {
           "technique": "health-probing",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/vault/credentialSlice.ts:363 verdict is correctly left alone on unreachable (and :389 maps a throw to unreachable), but the attempt is dropped instead of stored as a second fact; the verdict path (:377, and src-tauri/src/engine/healthcheck.rs:692) also never clears a prior unreachable attempt, which rev 4 requires of every verdict writer"
+          "evidence": "src/stores/slices/vault/credentialSlice.ts:363 verdict kept correctly but the attempt is dropped; the two facts are not both rendered"
         },
         {
           "technique": "encryption-at-rest",
           "verdict": "realized",
-          "evidence": "src/stores/slices/vault/credentialSlice.ts:396 preview field values are session-encrypted before they cross IPC"
+          "evidence": "src/stores/slices/vault/credentialSlice.ts:396 preview field values are session-encrypted before they cross IPC",
+          "carriedFrom": "2026-10-09"
         }
       ],
-      "registryProposal": "Stale conformant (rev 2) flipped by rev 4's 'two facts stored as two + every verdict writer owes the clear' rule: the backend half here is realized (healthcheck.rs:680 writes the attempt) while the frontend half has zero readers, so the attempt exists on disk only. Worth naming in health-probing that a persisted attempt with no consuming surface is the same defect as dropping it.",
       "superseded": [
         {
           "state": "conformant",
@@ -1962,6 +1962,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 0c2e1b05-90f3-4de7-bc4b-8739e02d07f4"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/stores/slices/vault/credentialSlice.ts:363 an unreachable probe returns without recording the attempt in the store, and nothing in src/ reads the backend's persisted healthcheck_last_unreachable_at (src-tauri/src/engine/healthcheck.rs:680), so the last green ages behind a checkmark with no 'could not check since' beside it.",
+          "evaluatedAt": "2026-10-09T17:04:00.000Z",
+          "worker": "0c2e1b05-90f3-4de7-bc4b-8739e02d07f4",
+          "reason": "replaced by 11f807cf-bc25-4768-b1de-19d081c8ed99"
         }
       ]
     },
@@ -2039,18 +2046,29 @@
       "subject": "credential-vault",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-3",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:22:23.000Z",
+      "worker": "11f807cf-bc25-4768-b1de-19d081c8ed99",
       "techniques": [
         {
           "technique": "rotation-and-remediation",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/features/CredentialRotationSection.tsx:124 two renderings of RotationEntryStatus in one file disagree on 'skipped'; one vocabulary, one mapping."
+          "evidence": "src/features/vault/sub_credentials/components/features/CredentialRotationSection.tsx:124 two renderings of one rotation-status vocabulary disagree (red vs amber at :166 for skipped)"
         },
         {
           "technique": "health-probing",
           "verdict": "conformant",
-          "evidence": "src/features/vault/sub_credentials/components/gateway/GatewayMembersModal.tsx:55 verified/failed/else-unknown keeps the third state; AnomalyScorePanel.tsx:11 is compile-checked against the Remediation union."
+          "evidence": "src/features/vault/sub_credentials/components/gateway/GatewayMembersModal.tsx:55 verified/failed/else-unknown keeps the third state; AnomalyScorePanel.tsx:11 is compile-checked against the Remediation union.",
+          "carriedFrom": "2026-09-23"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/features/CredentialRotationSection.tsx:124 paints every non-success last_status red, so a 'skipped' rotation (which the backend declares not a failure, src-tauri/core/src/lifecycle.rs:489, and the timeline at :166 paints amber) reads as a failed rotation. The recorded AnomalyScorePanel snake_case miss is FIXED (AnomalyScorePanel.tsx:11 is now Record<Remediation,...>).",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by 11f807cf-bc25-4768-b1de-19d081c8ed99"
         }
       ]
     },
@@ -2059,13 +2077,23 @@
       "subject": "credential-vault",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-3",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:22:23.000Z",
+      "worker": "11f807cf-bc25-4768-b1de-19d081c8ed99",
       "techniques": [
         {
           "technique": "health-probing",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/list/credentialListTypes.ts:162 an intermediate accessor narrower than the store deletes the third state before scoring; the display path (ConnectionTestSection.tsx:78 passes state, HealthcheckResultDisplay.tsx:35 renders it neutral) is realized."
+          "evidence": "src/features/vault/sub_credentials/components/list/credentialListTypes.ts:160 the third state is narrowed away by an intermediate accessor before scoring"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/list/credentialListTypes.ts:162 the health sort rebuilds a probe result from success/message only, dropping healthcheck_last_state (src/lib/types/types.ts:84), so an unverifiable credential (success:true) sorts as fully healthy (100) while the composite dot scores it neutral 50. The recorded HealthcheckResultDisplay collapse is FIXED (HealthcheckResultDisplay.tsx:35).",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by 11f807cf-bc25-4768-b1de-19d081c8ed99"
         }
       ]
     },
@@ -5781,19 +5809,19 @@
       "subject": "credential-vault",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:04:00.000Z",
-      "worker": "0c2e1b05-90f3-4de7-bc4b-8739e02d07f4",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:22:23.000Z",
+      "worker": "11f807cf-bc25-4768-b1de-19d081c8ed99",
       "techniques": [
         {
           "technique": "health-probing",
           "verdict": "deviation",
-          "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:48 healthcheckScore handles verified/unverifiable/failed but not unreachable, collapsing could-not-verify into broken at the scorer (only :45 unverifiable is neutral)"
+          "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:48 could-not-reach collapsed into broken"
         },
         {
           "technique": "rotation-and-remediation",
           "verdict": "deviation",
-          "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:52 absent anomaly evidence (never-tested or corrupted ledger) scores as fully healthy instead of neutral, so the 'Healthcheck data corrupted' reason can never be the worst signal"
+          "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:52 absent anomaly evidence scored as fully healthy instead of neutral"
         }
       ],
       "superseded": [
@@ -5803,6 +5831,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 0c2e1b05-90f3-4de7-bc4b-8739e02d07f4"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:48 an 'unreachable' result (success:false, cached by useCredentialHealth.ts:165) falls through to 0 and reason 'Healthcheck failing', so one offline probe paints the composite dot (CompositeHealthDot.tsx:16) red; :52 still scores a missing anomaly score 100, including the corrupted-ledger case.",
+          "evaluatedAt": "2026-10-09T17:04:00.000Z",
+          "worker": "0c2e1b05-90f3-4de7-bc4b-8739e02d07f4",
+          "reason": "replaced by 11f807cf-bc25-4768-b1de-19d081c8ed99"
         }
       ]
     },

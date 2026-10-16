@@ -1306,3 +1306,7 @@
 {"ts":"2026-10-16T17:20:32Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running","dependency-policy-gates"],"deviations":1}
 {"ts":"2026-10-16T17:20:32Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["archive-extraction-safety","unsafe-deserialization-off-by-default"],"deviations":1}
 {"ts":"2026-10-16T17:20:32Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:22:23Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["rotation-and-remediation"],"deviations":1}
+{"ts":"2026-10-16T17:22:23Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["health-probing"],"deviations":1}
+{"ts":"2026-10-16T17:22:23Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["health-probing"],"deviations":1}
+{"ts":"2026-10-16T17:22:23Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["health-probing","rotation-and-remediation"],"deviations":1}

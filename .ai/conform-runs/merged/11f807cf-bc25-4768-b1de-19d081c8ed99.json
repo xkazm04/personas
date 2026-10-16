@@ -1,0 +1,123 @@
+{
+  "schema": "conform-run/1",
+  "worker": "11f807cf-bc25-4768-b1de-19d081c8ed99",
+  "subject": "credential-vault",
+  "evaluatedAt": "2026-10-16T17:22:23Z",
+  "pairs": [
+    {
+      "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_credentials/components/features/CredentialRotationSection.tsx:124 still paints every non-success last_status red, so a skipped rotation (not a failure per src-tauri/core/src/lifecycle.rs:489; the timeline at :166 paints it amber) reads as a failed rotation - re-confirmed 2026-10-16.",
+      "techniques": [
+        {
+          "technique": "rotation-and-remediation",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/features/CredentialRotationSection.tsx:124 two renderings of one rotation-status vocabulary disagree (red vs amber at :166 for skipped)"
+        }
+      ]
+    },
+    {
+      "context": "b62fa237-32b4-41c3-bf56-3e498b643da9",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_credentials/components/list/credentialListTypes.ts:160 the health sort still rebuilds the probe result from success/message only, dropping healthcheck_last_state (src/lib/types/types.ts:84), so an unverifiable credential sorts as 100 while the composite dot scores it 50 - re-confirmed 2026-10-16.",
+      "techniques": [
+        {
+          "technique": "health-probing",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/list/credentialListTypes.ts:160 the third state is narrowed away by an intermediate accessor before scoring"
+        }
+      ]
+    },
+    {
+      "context": "8b5d1d60-a129-4cd1-9567-d795589bde29",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/vault/credentialSlice.ts:363 an unreachable probe still returns without recording the attempt, and nothing in src/ reads the persisted healthcheck_last_unreachable_at (src-tauri/src/engine/healthcheck.rs:680), so the last green ages with no could-not-check-since beside it - re-confirmed 2026-10-16.",
+      "techniques": [
+        {
+          "technique": "health-probing",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/vault/credentialSlice.ts:363 verdict kept correctly but the attempt is dropped; the two facts are not both rendered"
+        }
+      ]
+    },
+    {
+      "context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:48 an unreachable result (success:false) still falls through to 0 and reason Healthcheck failing (:106), so one offline probe paints the composite dot red; :52 still scores a missing anomaly score 100 - re-confirmed 2026-10-16.",
+      "techniques": [
+        {
+          "technique": "health-probing",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:48 could-not-reach collapsed into broken"
+        },
+        {
+          "technique": "rotation-and-remediation",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:52 absent anomaly evidence scored as fully healthy instead of neutral"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "credential-vault",
+      "context": "(17 other contexts)",
+      "reason": "already judged 2026-10-09..10-12 against the current digest sha256-b2:1c57e44b947c96ef (revision 4, unchanged in the registry index at 328bf071); none stale or unknown, so re-reading them would not pay back within the budget"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T17:22:23Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "credential-vault"
+      ],
+      "techniques": [
+        "rotation-and-remediation"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T17:22:23Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "credential-vault"
+      ],
+      "techniques": [
+        "health-probing"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T17:22:23Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "credential-vault"
+      ],
+      "techniques": [
+        "health-probing"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T17:22:23Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "credential-vault"
+      ],
+      "techniques": [
+        "health-probing",
+        "rotation-and-remediation"
+      ],
+      "deviations": 1
+    }
+  ]
+}
