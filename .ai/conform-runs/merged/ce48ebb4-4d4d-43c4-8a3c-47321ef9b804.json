@@ -1,0 +1,35 @@
+{
+  "schema": "conform-run/1",
+  "worker": "ce48ebb4-4d4d-43c4-8a3c-47321ef9b804",
+  "subject": "adoption-measurement",
+  "evaluatedAt": "2026-10-16T18:25:44.412Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "adoption-measurement",
+      "context": "9b013060-5483-4162-9f8a-6b69109d623d",
+      "reason": "already judged not-applicable against the current subject digest sha256-b2:502064804797857b (revision 3, registry 11037a6c); anchor re-printed and still says what the evidence claims; nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+      "reason": "already judged not-applicable against the current subject digest sha256-b2:502064804797857b (revision 3, registry 11037a6c); anchor re-printed and still says what the evidence claims; nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "e76afaf6-ba3b-4341-b1ad-f444f08da8b8",
+      "reason": "already judged not-applicable against the current subject digest sha256-b2:502064804797857b (revision 3, registry 11037a6c); anchor re-printed and still says what the evidence claims; nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "80e0534a-d0ea-469a-9c3a-cf12910ecde9",
+      "reason": "already judged not-applicable against the current subject digest sha256-b2:502064804797857b (revision 3, registry 11037a6c); anchor re-printed and still says what the evidence claims; nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "7dddb34a-3a9b-4ce0-832f-55ea352c12b5",
+      "reason": "already judged not-applicable against the current subject digest sha256-b2:502064804797857b (revision 3, registry 11037a6c); anchor re-printed and still says what the evidence claims; nothing to re-judge"
+    }
+  ],
+  "consults": []
+}
