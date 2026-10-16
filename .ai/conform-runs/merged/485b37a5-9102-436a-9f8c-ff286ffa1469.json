@@ -1,0 +1,29 @@
+{"schema": "conform-run/1", "worker": "485b37a5-9102-436a-9f8c-ff286ffa1469", "subject": "templates-scaffolding",
+ "evaluatedAt": "2026-10-16T17:15:25Z",
+ "pairs": [
+  {"context": "9fca099d-94e4-4fd0-8460-3cf5d8c85acf", "subject": "templates-scaffolding", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:146 resume-adoption still matches the template by display name (test_case_name === parsed.templateName) after the 21bf567d84/369a767974 edits; a rename misses the resume and two same-named templates resume the wrong one",
+   "techniques": [
+    {"technique": "adoption-lifecycle", "verdict": "deviation", "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:146 resume keys on display name. The stored adopt context carries only adoptId+templateName (src/features/templates/sub_generated/gallery/cards/useAdoptionCompletionNotifier.ts:51) and no stable template id, while the sibling draft-resume path does key on the id (GeneratedReviewsTab.tsx:154 r.id === draft.reviewId)"}
+   ],
+   "registryProposal": "Re-judged only because the anchor file changed since the 2026-10-09 verdict (two commits, neither touching resume). The deviation's second clause, a heuristic readiness verdict beside the authoritative one, was not re-verified in this pass, so evidence now carries only the adoption-lifecycle clause"}
+ ],
+ "declined": [
+  {"subject": "templates-scaffolding", "context": "b26fe932-b123-4b9e-8d1c-bbbf4e508265", "reason": "already judged 2026-10-10 against the current digest sha256-b2:3dd9549b75f4f998 rev 3, not stale; anchor file unchanged in git since the verdict"},
+  {"subject": "templates-scaffolding", "context": "835ed922-2ebd-425b-a542-dbe5996e1e78", "reason": "already judged 2026-10-10 against the current digest rev 3, not stale; anchor file unchanged since the verdict"},
+  {"subject": "templates-scaffolding", "context": "b4439e30-fcff-4095-97dd-d9d7da2247dd", "reason": "already judged not-applicable 2026-10-10 against the current digest rev 3, not stale; anchor file unchanged since the verdict"},
+  {"subject": "templates-scaffolding", "context": "b88ef121-d028-4999-bf34-6e44aed99959", "reason": "already judged 2026-10-12 against the current digest rev 3, not stale; anchor file unchanged since the verdict"},
+  {"subject": "templates-scaffolding", "context": "e76afaf6-ba3b-4341-b1ad-f444f08da8b8", "reason": "already judged conformant 2026-10-09 against the current digest rev 3, not stale; anchor file unchanged since the verdict"},
+  {"subject": "templates-scaffolding", "context": "80e0534a-d0ea-469a-9c3a-cf12910ecde9", "reason": "already judged 2026-10-09 against the current digest rev 3, not stale; anchor file unchanged since the verdict"},
+  {"subject": "templates-scaffolding", "context": "9b6cc17c-3add-4152-a349-c189b15a109f", "reason": "weak context (governance: weak), never evaluated by default; existing not-applicable verdict is current and its anchor file is unchanged"},
+  {"subject": "templates-scaffolding", "context": "d3346f2c-d747-4d85-b6e6-c1450da57ec9", "reason": "already judged 2026-10-10 against the current digest rev 3, not stale; anchor file unchanged since the verdict"},
+  {"subject": "templates-scaffolding", "context": "4be04ef0-88db-4f48-859c-92e6ba4d203f", "reason": "already judged 2026-10-12 against the current digest rev 3, not stale; anchor file unchanged since the verdict"},
+  {"subject": "templates-scaffolding", "context": "b38217f2-397e-49a7-ac32-4cce440c7e74", "reason": "already judged 2026-10-12 against the current digest rev 3, not stale; anchor file unchanged since the verdict"},
+  {"subject": "templates-scaffolding", "context": "2a54cdc2-87af-4298-b490-9eb87f230df7", "reason": "already judged 2026-10-09 against the current digest rev 3, not stale; anchor file unchanged since the verdict"},
+  {"subject": "templates-scaffolding", "context": "7dddb34a-3a9b-4ce0-832f-55ea352c12b5", "reason": "already judged 2026-10-03 against the current digest rev 3, not stale; anchor file unchanged since the verdict"},
+  {"subject": "templates-scaffolding", "context": "e13cfc6c-f666-4959-81c0-2cfbc4815f04", "reason": "already judged 2026-10-12 against the current digest rev 3, not stale; anchor file unchanged since the verdict"}
+ ],
+ "consults": [
+  {"ts": "2026-10-16T17:15:25Z", "bundle": "software-engineering", "subjects": ["templates-scaffolding"], "techniques": ["adoption-lifecycle"], "deviations": 1}
+ ]}

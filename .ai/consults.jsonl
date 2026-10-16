@@ -1285,3 +1285,4 @@
 {"ts":"2026-10-16T17:14:03Z","bundle":"software-engineering","subjects":["canvas-graph"],"techniques":["viewport-transform"],"deviations":0}
 {"ts":"2026-10-16T17:14:03Z","bundle":"software-engineering","subjects":["canvas-graph"],"techniques":["viewport-transform"],"deviations":0}
 {"ts":"2026-10-16T17:14:03Z","bundle":"software-engineering","subjects":["canvas-graph"],"techniques":["viewport-transform"],"deviations":0}
+{"ts":"2026-10-16T17:15:25Z","bundle":"software-engineering","subjects":["templates-scaffolding"],"techniques":["adoption-lifecycle"],"deviations":1}

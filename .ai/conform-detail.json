@@ -2559,31 +2559,35 @@
       "subject": "templates-scaffolding",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:04:03.517Z",
-      "worker": "6721731f-e575-42fa-9ae0-6500f8fd22f7",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:15:25.000Z",
+      "worker": "485b37a5-9102-436a-9f8c-ff286ffa1469",
       "techniques": [
         {
           "technique": "adoption-lifecycle",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:145 origin re-found by display name; handleResumeDraft beside it keys on review id, so the two resume paths disagree on identity"
+          "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:146 resume keys on display name. The stored adopt context carries only adoptId+templateName (src/features/templates/sub_generated/gallery/cards/useAdoptionCompletionNotifier.ts:51) and no stable template id, while the sibling draft-resume path does key on the id (GeneratedReviewsTab.tsx:154 r.id === draft.reviewId)"
         },
         {
           "technique": "readiness-prerequisites",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCardData.ts:96 computeAdoptionReadiness (category heuristic) feeds the Ready/Partial badge at renderers/TemplateCardHeader.tsx:53 and the Ready filter at useGalleryActions.ts:137, while the authoritative Rust readiness sits at useTemplateCardData.ts:78 - two evaluators; shared/adoptionReadiness.ts:32 + :66 turn an unparseable design_result with no connectors_used into 100 = Ready"
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCardData.ts:96 computeAdoptionReadiness (category heuristic) feeds the Ready/Partial badge at renderers/TemplateCardHeader.tsx:53 and the Ready filter at useGalleryActions.ts:137, while the authoritative Rust readiness sits at useTemplateCardData.ts:78 - two evaluators; shared/adoptionReadiness.ts:32 + :66 turn an unparseable design_result with no connectors_used into 100 = Ready",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "integrity-and-provenance",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/renderers/TemplateCardHeader.tsx:52 renders TrustBadge from verification.trustLevel, inheriting the recorded template-shared-primitives fold of could-not-verify into verified"
+          "evidence": "src/features/templates/sub_generated/gallery/cards/renderers/TemplateCardHeader.tsx:52 renders TrustBadge from verification.trustLevel, inheriting the recorded template-shared-primitives fold of could-not-verify into verified",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "catalog-curation",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:137 this context renders and filters the catalog; admission, dedupe and retirement live outside it"
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:137 this context renders and filters the catalog; admission, dedupe and retirement live outside it",
+          "carriedFrom": "2026-10-09"
         }
       ],
+      "registryProposal": "Re-judged only because the anchor file changed since the 2026-10-09 verdict (two commits, neither touching resume). The deviation's second clause, a heuristic readiness verdict beside the authoritative one, was not re-verified in this pass, so evidence now carries only the adoption-lifecycle clause",
       "superseded": [
         {
           "state": "deviation",
@@ -2591,6 +2595,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 6721731f-e575-42fa-9ae0-6500f8fd22f7"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:145 resume-adoption still finds the template by display name (test_case_name === parsed.templateName), the stamp-keying failure adoption-lifecycle rev 3 names: a rename misses and two same-named templates resume the wrong one; the card also renders a second, heuristic readiness verdict beside the authoritative one",
+          "evaluatedAt": "2026-10-09T17:04:03.517Z",
+          "worker": "6721731f-e575-42fa-9ae0-6500f8fd22f7",
+          "reason": "replaced by 485b37a5-9102-436a-9f8c-ff286ffa1469"
         }
       ]
     },
