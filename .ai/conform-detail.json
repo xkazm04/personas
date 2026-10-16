@@ -10717,37 +10717,55 @@
       "subject": "judge-calibration-and-drift",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:35:40.000Z",
-      "worker": "2c3a8a66-c7e8-4d61-8ed7-3aa9172d9c2e",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:41:19.000Z",
+      "worker": "9436674d-5e7a-48bc-a898-69d3ddb787a2",
       "techniques": [
         {
           "technique": "golden-set-agreement-measurement",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 no judge exists to agree with humans; grep for judge|kappa|calibrat|rubric|score over the context's 17 file_paths returns nothing"
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 no judge to calibrate; git grep judge|rubric|kappa|golden set over all 17 paths finds only golden-paths doc citations"
+        },
+        {
+          "technique": "reference-ladder",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 nothing in the context scores a candidate against a reference (OCR extracts text, it does not score it)"
         },
         {
           "technique": "trust-bar-verdict",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:18 driveSearch is a filename/content search, not a judged score that could gate anything"
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:18 driveSearch is a filename/content search, not a judged score that could gate anything",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "scheduled-recalibration",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 no judge in service, nothing to recalibrate"
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 no judge in service, nothing to recalibrate",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "windowed-score-drop-alerting",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 no score series is produced by this context"
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 no score series is produced by this context",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "repeatability-floor",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 no judge verdict to re-score"
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 no judge verdict to re-score",
+          "carriedFrom": "2026-10-09"
         }
       ],
-      "registryProposal": "Spurious lexical pairing (why: drive/drop/selection, grounding use_when). Meanwhile the repo's REAL LLM judges are not paired with this subject anywhere: src-tauri/src/commands/eval_runs.rs:838 (context commands-execution 6da794b4-7a5f-4087-a4d4-fb8a416456e5, judge panel on eval runs), src-tauri/src/commands/contest/driver.rs:717 (context commands-contest e4b48fb7-3763-4955-8ea9-01fd48aa0cf7, contest judges), and src-tauri/src/bench/db.rs:80 (judge_model column per dimension score; file is in no context). Propose adding judge-calibration-and-drift pairs to those two contexts (source: conform) and judging them next; the matcher scores zero there because the repo says judge/panel/bench/contest, not calibration/kappa/golden set."
+      "registryProposal": "MISSING PAIRINGS (repeated from merged runs 1eb11620/2c3a8a66/7d8378ea/8f9b4e8c, still unactioned): the subject is paired only with two lexical-noise contexts while real LLM judges go unpaired - src-tauri/src/commands/eval_runs.rs:198 JudgeDims (execution scorecards), src-tauri/src/commands/contest/arena.rs:266 judge_seat_key (lab-arena judge seats), src/features/agents/sub_lab/components/versions_table/VersionRatingCell.tsx:18 (LLM judge with keyword-heuristic fallback). git grep for kappa / golden set / inter-annotator in src and src-tauri/src finds no calibration apparatus, so once paired these would most likely judge as deviations. The matcher misses them because the judge vocabulary scores below drive/drop/selection noise.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 the Drive plugin is file-system CRUD/search IPC (driveList, driveMove, driveSearch); none of its 17 files contain an LLM judge, score, rubric or golden set, so the subject's precondition (an LLM judge scoring outputs) does not hold - the match came from the lexical tokens drive/drop/selection",
+          "evaluatedAt": "2026-10-09T17:35:40.000Z",
+          "worker": "2c3a8a66-c7e8-4d61-8ed7-3aa9172d9c2e",
+          "reason": "replaced by 9436674d-5e7a-48bc-a898-69d3ddb787a2"
+        }
+      ]
     },
     "b30528dc-8655-4b38-800e-8cb73e96d618/test-harness": {
       "context": "companion-ui-controls",
@@ -13126,11 +13144,31 @@
       "subject": "judge-calibration-and-drift",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T02:18:34.000Z",
-      "worker": "8f9b4e8c-e254-419c-a60b-d6568030cf0d",
-      "techniques": [],
-      "registryProposal": "Coverage question (weak context, technique-free resonance): judge-calibration-and-drift matched timing-utility-hooks on number/labels/updates only; route by precondition. Separately, a MISSING pairing: src-tauri/src/bench/db.rs:80 stores per-dimension LLM judge scores with judge_model (persona benchmark across opus/sonnet/haiku/gemma, rubric at db.rs:120), but no context in context-map.json covers src-tauri/src/bench/ at all, so the one surface this subject actually governs is invisible to the map - a context-map coverage hole for the project, then a conform pairing."
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:41:19.000Z",
+      "worker": "9436674d-5e7a-48bc-a898-69d3ddb787a2",
+      "techniques": [
+        {
+          "technique": "golden-set-agreement-measurement",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/timing/usePolling.ts:6 polling cadence registry; no judge exists in the 8 context paths"
+        },
+        {
+          "technique": "reference-ladder",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/timing/usePolling.ts:6 nothing scores a candidate against a reference"
+        }
+      ],
+      "registryProposal": "Coverage question: weak context timing-utility-hooks matched this subject on generic tokens number/labels/updates; the use_when vocabulary is too generic for the lexical matcher.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/hooks/utility/timing/usePolling.ts:6 the context is debounce/polling/RAF/elapsed-timer primitives (POLLING_CONFIG cadence registry); none of its 8 files hold an LLM judge, golden set or score, so the subject precondition (an LLM judge scoring outputs) does not hold - match came from lexical tokens number/labels/updates on a weak context",
+          "evaluatedAt": "2026-10-10T02:18:34.000Z",
+          "worker": "8f9b4e8c-e254-419c-a60b-d6568030cf0d",
+          "reason": "replaced by 9436674d-5e7a-48bc-a898-69d3ddb787a2"
+        }
+      ]
     },
     "bcb603ad-ce58-4b76-9623-aa99ace984af/voice-io": {
       "context": "companion-proactive",

@@ -1374,3 +1374,5 @@
 {"ts":"2026-10-16T17:40:51Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":[],"deviations":0}
 {"ts":"2026-10-16T17:41:35Z","bundle":"llm-observability","subjects":["generator-uncertainty-scoring"],"techniques":["score-source-kinds","score-source-ensembling","scorer-cost-class","probability-calibration-is-not-agreement"],"deviations":0}
 {"ts":"2026-10-16T17:41:35Z","bundle":"llm-observability","subjects":["generator-uncertainty-scoring"],"techniques":["stated-distribution-over-closed-labels","compare-gates-at-matched-coverage","generator-vs-itself","scorer-cost-class"],"deviations":0}
+{"ts":"2026-10-16T17:41:19Z","bundle":"llm-observability","subjects":["judge-calibration-and-drift"],"techniques":["golden-set-agreement-measurement","reference-ladder"],"deviations":0}
+{"ts":"2026-10-16T17:41:19Z","bundle":"llm-observability","subjects":["judge-calibration-and-drift"],"techniques":["golden-set-agreement-measurement","reference-ladder"],"deviations":0}

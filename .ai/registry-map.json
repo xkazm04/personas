@@ -26765,13 +26765,12 @@
           "changedAt": "2026-10-13",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 the Drive plugin is file-system CRUD/search IPC (driveList, driveMove, driveSearch); none of its 17 files contain an LLM judge, score, rubric or golden set, so the subject's precondition (an LLM judge scoring outputs) does not hold - the match came from the lexical tokens drive/drop/selection",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:d0f0d4aa66f81402",
-          "evaluatedRevision": 5,
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:11 Drive is file-system CRUD/search IPC (driveList...); none of its 17 context files hold an LLM judge, rubric, golden set or reference-scored metric, so the subject precondition (an LLM judge or reference metric scoring outputs) does not hold - re-judged at rev 6, the added reference-ladder technique does not widen it here",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:80bd8653a6d797f2",
+          "evaluatedRevision": 6,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         }
       ],
       "governance": "governed"
@@ -37101,12 +37100,11 @@
           "changedAt": "2026-10-13",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/hooks/utility/timing/usePolling.ts:6 the context is debounce/polling/RAF/elapsed-timer primitives (POLLING_CONFIG cadence registry); none of its 8 files hold an LLM judge, golden set or score, so the subject precondition (an LLM judge scoring outputs) does not hold - match came from lexical tokens number/labels/updates on a weak context",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:d0f0d4aa66f81402",
-          "evaluatedRevision": 5,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/hooks/utility/timing/usePolling.ts:6 the context is debounce/polling/RAF/elapsed-timer primitives (POLLING_CONFIG); none of its 8 files hold an LLM judge, golden set or reference metric, so the subject precondition does not hold - re-judged at rev 6 on a weak context, match is lexical (number/labels/updates)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:80bd8653a6d797f2",
+          "evaluatedRevision": 6,
+          "revisionsBehind": 1
         },
         {
           "subject": "test-harness",
