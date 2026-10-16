@@ -1,0 +1,98 @@
+{
+  "schema": "conform-run/1",
+  "worker": "04346154-beca-4650-900a-4bb401d91e17",
+  "subject": "i18n",
+  "evaluatedAt": "2026-10-16T17:18:29Z",
+  "pairs": [
+    {
+      "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+      "subject": "i18n",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/i18n/routeSections.ts:88 home still omits the overview section that src/features/home/sub_cockpit/CockpitPanel.tsx:34 reads (pure-read resolver, src/i18n/useTranslation.ts:392), so a cold start on Home renders that copy in English in 13 locales; scripts/i18n/lib/section-refs.mjs:181 unions every route into one covered set, so the delivery gate cannot see a per-route miss",
+      "techniques": [
+        {
+          "technique": "catalog-architecture",
+          "verdict": "deviation",
+          "evidence": "scripts/i18n/lib/section-refs.mjs:181 pure-read resolution makes the route map a correctness dependency, but the gate checks coverage by ANY route, not by the route that mounts the reader; src/i18n/routeSections.ts:88 home lacks overview"
+        },
+        {
+          "technique": "completeness-gates",
+          "verdict": "realized",
+          "evidence": "lefthook.yml:74 key parity strict at the catalog commit door; lefthook.yml:86 value parity (byte-identical-to-English) strict at the same door"
+        },
+        {
+          "technique": "token-label-separation",
+          "verdict": "realized",
+          "evidence": "src/i18n/tokenMaps.ts:35 tokenLabel resolves backend machine tokens through per-category status_tokens maps"
+        },
+        {
+          "technique": "interpolation-and-plurals",
+          "verdict": "realized",
+          "evidence": "scripts/i18n/translate-merge.mjs:70 the merge door refuses any locale whose value broke a placeholder"
+        },
+        {
+          "technique": "string-extraction-enforcement",
+          "verdict": "deviation",
+          "evidence": "eslint.config.js:104 custom/no-hardcoded-jsx-text is warn, no --max-warnings at any gate and no census ratchet counts it, so new hardcoded JSX text fails nothing (advisory posture the technique names as no enforcement)"
+        }
+      ]
+    },
+    {
+      "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+      "subject": "i18n",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "lefthook.yml:74 every commit-time i18n gate globs only src/i18n/locales/*.json, so an edit to the stop_reason vocabulary (src-tauri/db/src/chain.rs:45) runs no domain-coverage check; src/i18n/__tests__/chainStopReasons.parity.test.ts:33 fires only under Vitest in CI, and vitest-related cannot link it to a .rs edit because it reads the Rust file from disk",
+      "techniques": [
+        {
+          "technique": "completeness-gates",
+          "verdict": "deviation",
+          "evidence": "lefthook.yml:74 the domain-coverage check is not attached to the edit that creates the defect (src-tauri/db/src/chain.rs:45); src/i18n/__tests__/chainStopReasons.parity.test.ts:33 is the right predicate at the wrong door"
+        },
+        {
+          "technique": "token-label-separation",
+          "verdict": "realized",
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:33 binds status_tokens.chain_stop to the Rust vocabulary authority with exact-set equality, extras and gaps both failing"
+        }
+      ],
+      "registryProposal": "completeness-gates could name the cheap fix for cross-language vocabularies explicitly: a commit hook globbed on the vocabulary file running the parity predicate, since import-graph test selection (vitest related) is structurally blind to tests that read a foreign-language source from disk"
+    }
+  ],
+  "declined": [
+    {
+      "subject": "i18n",
+      "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+      "reason": "techniques locale-runtime, encoding-corruption-ratchet, incomplete-bundle-kill-switch and script-aware-presentation left unjudged this run: the pair verdict is already decided by two anchored deviations; src/i18n/locales.manifest.ts:33 carries no per-locale shippable flag and src/stores/i18nStore.ts:20 keys fonts per locale, but whether either fails the technique needs a fuller read (CJK fonts legitimately differ per locale)"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T17:18:29Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "i18n"
+      ],
+      "techniques": [
+        "catalog-architecture",
+        "completeness-gates",
+        "token-label-separation",
+        "interpolation-and-plurals",
+        "string-extraction-enforcement"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-16T17:18:29Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "i18n"
+      ],
+      "techniques": [
+        "completeness-gates",
+        "token-label-separation"
+      ],
+      "deviations": 1
+    }
+  ]
+}

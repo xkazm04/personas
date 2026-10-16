@@ -1247,29 +1247,34 @@
       "subject": "i18n",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:21:34.000Z",
-      "worker": "6fb30590-8339-407a-936c-85ca1a99bac0",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:18:29.000Z",
+      "worker": "04346154-beca-4650-900a-4bb401d91e17",
       "techniques": [
         {
           "technique": "catalog-architecture",
           "verdict": "deviation",
-          "evidence": "src/i18n/routeSections.ts:85 pure-read resolver makes the route map a correctness dependency, and home lacks overview (read at src/features/home/sub_cockpit/CockpitPanel.tsx:34); the static gate at scripts/i18n/check-route-sections.mjs:29 proves section-level coverage only, not route-level"
+          "evidence": "scripts/i18n/lib/section-refs.mjs:181 pure-read resolution makes the route map a correctness dependency, but the gate checks coverage by ANY route, not by the route that mounts the reader; src/i18n/routeSections.ts:88 home lacks overview"
         },
         {
           "technique": "completeness-gates",
           "verdict": "realized",
-          "evidence": "lefthook.yml:73 i18n-no-gaps (strict) plus i18n-no-untranslated (lefthook.yml:85) bind key AND value parity to catalog-touching commits"
+          "evidence": "lefthook.yml:74 key parity strict at the catalog commit door; lefthook.yml:86 value parity (byte-identical-to-English) strict at the same door"
+        },
+        {
+          "technique": "token-label-separation",
+          "verdict": "realized",
+          "evidence": "src/i18n/tokenMaps.ts:35 tokenLabel resolves backend machine tokens through per-category status_tokens maps"
+        },
+        {
+          "technique": "interpolation-and-plurals",
+          "verdict": "realized",
+          "evidence": "scripts/i18n/translate-merge.mjs:70 the merge door refuses any locale whose value broke a placeholder"
         },
         {
           "technique": "string-extraction-enforcement",
           "verdict": "deviation",
-          "evidence": "eslint.config.js:104 custom/no-hardcoded-jsx-text is warn, and the pre-commit run uses --quiet (lefthook.yml:32), so the detector is advisory at every gate"
-        },
-        {
-          "technique": "token-label-separation",
-          "verdict": "deviation",
-          "evidence": "src/lib/errors/errorRegistry.ts:75 registry entries store English sentences, not catalog keys; src/features/companions/athena/BrainHealthPanel.tsx:145 renders resolveError().message raw, bypassing the error_registry section"
+          "evidence": "eslint.config.js:104 custom/no-hardcoded-jsx-text is warn, no --max-warnings at any gate and no census ratchet counts it, so new hardcoded JSX text fails nothing (advisory posture the technique names as no enforcement)"
         }
       ],
       "superseded": [
@@ -1293,6 +1298,13 @@
           "evaluatedAt": "2026-10-10T12:00:38.000Z",
           "worker": "9f6f1232-c6f7-494f-9686-eff9f74dfa45",
           "reason": "replaced by 6fb30590-8339-407a-936c-85ca1a99bac0"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/i18n/routeSections.ts:85 home still omits the overview section that src/features/home/sub_cockpit/CockpitPanel.tsx:34 reads, so the landing route renders English in 13 locales; scripts/i18n/check-route-sections.mjs:29 passes any section covered by SOME route, so it cannot see a per-route miss",
+          "evaluatedAt": "2026-10-12T12:21:34.000Z",
+          "worker": "6fb30590-8339-407a-936c-85ca1a99bac0",
+          "reason": "replaced by 04346154-beca-4650-900a-4bb401d91e17"
         }
       ]
     },
@@ -1301,22 +1313,22 @@
       "subject": "i18n",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:21:34.000Z",
-      "worker": "6fb30590-8339-407a-936c-85ca1a99bac0",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:18:29.000Z",
+      "worker": "04346154-beca-4650-900a-4bb401d91e17",
       "techniques": [
         {
           "technique": "completeness-gates",
           "verdict": "deviation",
-          "evidence": "lefthook.yml:74 domain-coverage gate attached to the catalog door, not the vocabulary edit that creates the gap (src-tauri/db/src/chain.rs:45)"
+          "evidence": "lefthook.yml:74 the domain-coverage check is not attached to the edit that creates the defect (src-tauri/db/src/chain.rs:45); src/i18n/__tests__/chainStopReasons.parity.test.ts:33 is the right predicate at the wrong door"
         },
         {
           "technique": "token-label-separation",
           "verdict": "realized",
-          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:33 binds status_tokens.chain_stop to the Rust vocabulary authority, with a non-empty-parse floor at :30"
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:33 binds status_tokens.chain_stop to the Rust vocabulary authority with exact-set equality, extras and gaps both failing"
         }
       ],
-      "registryProposal": "completeness-gates could name the cheap realization for cross-language vocabularies: a pre-commit job globbed on the vocabulary source file that runs the artifact-parsing parity test",
+      "registryProposal": "completeness-gates could name the cheap fix for cross-language vocabularies explicitly: a commit hook globbed on the vocabulary file running the parity predicate, since import-graph test selection (vitest related) is structurally blind to tests that read a foreign-language source from disk",
       "superseded": [
         {
           "state": "conformant",
@@ -1338,6 +1350,13 @@
           "evaluatedAt": "2026-10-10T12:00:38.000Z",
           "worker": "9f6f1232-c6f7-494f-9686-eff9f74dfa45",
           "reason": "replaced by 6fb30590-8339-407a-936c-85ca1a99bac0"
+        },
+        {
+          "state": "deviation",
+          "evidence": "lefthook.yml:74 every commit-time i18n gate globs only src/i18n/locales/*.json, so an edit to the stop_reason vocabulary (src-tauri/db/src/chain.rs:45) runs no domain-coverage check; src/i18n/__tests__/chainStopReasons.parity.test.ts:33 fires only in CI after landing",
+          "evaluatedAt": "2026-10-12T12:21:34.000Z",
+          "worker": "6fb30590-8339-407a-936c-85ca1a99bac0",
+          "reason": "replaced by 04346154-beca-4650-900a-4bb401d91e17"
         }
       ]
     },
