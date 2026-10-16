@@ -1,0 +1,7 @@
+{"schema":"conform-run/1","worker":"d4786621-d5b3-48b3-98a0-d1ed77076c1a","subject":"executive-reporting","evaluatedAt":"2026-10-16T17:51:03Z",
+"pairs":[{"context":"19e4120b-6020-4103-8a3d-a9fd0e13640b","subject":"executive-reporting","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:1 Research Lab (incl. research_reports) was removed 2026-09-14 (commit 0697f13438) - no report surface exists to judge; even when live it synthesised hypotheses/findings into a paper, not a periodic stakeholder briefing from system aggregates",
+"techniques":[],
+"registryProposal":"Coverage, not corpus: this context is dead (map row paths: [], every context-map entry_point absent from git ls-files) yet the builder counts deadContexts: 0 - it should be flagged dead/orphaned. The original match was a technique-shaped resonance (report/generation/headings tokens) - the subject's precondition 'periodic stakeholder briefing from system aggregates' never held for a research-paper synthesiser."}],
+"declined":[],
+"consults":[{"ts":"2026-10-16T17:51:03Z","bundle":"software-engineering","subjects":["executive-reporting"],"techniques":[],"deviations":0}]}

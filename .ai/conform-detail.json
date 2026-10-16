@@ -25041,6 +25041,17 @@
       "evaluatedTs": "2026-10-16T17:48:30.000Z",
       "worker": "2ba0470f-d435-4b3c-b925-3a25da2bf5b1",
       "techniques": []
+    },
+    "19e4120b-6020-4103-8a3d-a9fd0e13640b/executive-reporting": {
+      "context": "plugins-research-lab-reports",
+      "subject": "executive-reporting",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:51:03.000Z",
+      "worker": "d4786621-d5b3-48b3-98a0-d1ed77076c1a",
+      "techniques": [],
+      "registryProposal": "Coverage, not corpus: this context is dead (map row paths: [], every context-map entry_point absent from git ls-files) yet the builder counts deadContexts: 0 - it should be flagged dead/orphaned. The original match was a technique-shaped resonance (report/generation/headings tokens) - the subject's precondition 'periodic stakeholder briefing from system aggregates' never held for a research-paper synthesiser."
     }
   }
 }

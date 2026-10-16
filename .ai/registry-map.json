@@ -27807,7 +27807,11 @@
           "revision": 4,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:1 Research Lab (incl. research_reports) was removed 2026-09-14 (commit 0697f13438) - no report surface exists to judge; even when live it synthesised hypotheses/findings into a paper, not a periodic stakeholder briefing from system aggregates",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:a43eabdaa650ed07",
+          "evaluatedRevision": 4
         },
         {
           "subject": "remediation-handoff",
