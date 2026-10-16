@@ -372,7 +372,8 @@
     "view_title": "Ansichtsfenster: die letzten 7 Tage",
     "key_ledger": "Zwischen Zeichnungssatz und Befundbuch wechseln",
     "key_select": "Aktuelles Element zur Auswahl hinzufügen oder entfernen",
-    "key_timeline": "Zeitleistenbereich öffnen oder schließen"
+    "key_timeline": "Zeitleistenbereich öffnen oder schließen",
+    "reason_for_many": "{count} ausgewählte Elemente"
   },
   "build": {
     "body_approved_one": "1 freigegebenes Element ist noch nicht gebaut.",

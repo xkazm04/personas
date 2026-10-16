@@ -13,7 +13,7 @@ import { LensGlyphIcon } from './LensGlyphIcon';
  * triage sends exactly what was typed, and nothing when nothing was: the store has the last word, and a refusal (a
  * failed build accepted without a note: `note-required`) comes back in the dock console, never pre-empted here.
  */
-export function ReasonDialog({ itemId, move }: { itemId: string; move: NoteMove }) {
+export function ReasonDialog({ itemId, move, ids }: { itemId: string; move: NoteMove; ids?: string[] }) {
   const s = useSheet();
   const { B, tx, language } = s.text;
   const p = s.work.byId.get(itemId);
@@ -25,14 +25,19 @@ export function ReasonDialog({ itemId, move }: { itemId: string; move: NoteMove 
   const decline = move === 'decline';
   const text = note.trim();
   const close = () => { s.dispatch({ type: 'overlay', overlay: null }); s.dispatch({ type: 'say', text: B.say_cancelled }); };
-  const send = () => { if (decline) void s.writes.decline(p, text || B.no_reason); else void s.writes.triage(p, move, text || undefined); };
+  const many = ids && ids.length > 1 ? ids : null;
+  const send = () => {
+    if (many) { if (decline) void s.writes.decideMany(many, 'decline', text || B.no_reason); else void s.writes.triageMany(many, move, text || undefined); return; }
+    if (decline) void s.writes.decline(p, text || B.no_reason); else void s.writes.triage(p, move, text || undefined);
+  };
   const onKey = (e: KeyboardEvent) => {
     if (e.key === 'Escape') { e.stopPropagation(); close(); }
     else if (e.key === 'Enter') { e.preventDefault(); send(); }
   };
+  const idList = JSON.stringify(many ?? [p.id]);
   const preview = decline
-    ? `decide(["${p.id}"], "decline", ${JSON.stringify(text || B.no_reason)})`
-    : `triage(["${p.id}"], "${move}"${text ? `, ${JSON.stringify(text)}` : ''})`;
+    ? `decide(${idList}, "decline", ${JSON.stringify(text || B.no_reason)})`
+    : `triage(${idList}, "${move}"${text ? `, ${JSON.stringify(text)}` : ''})`;
   const title = { decline: B.reason_question, rework: B.note_q_rework, descope: B.note_q_descope, accept: B.note_q_accept }[move];
   return (
     <BpDialog
@@ -45,7 +50,7 @@ export function ReasonDialog({ itemId, move }: { itemId: string; move: NoteMove 
       <div className="bp-ctx">
         <span className="bp-g"><LensGlyphIcon glyph={L?.glyph ?? null} /></span>
         <span>
-          <b>{p.title}</b>
+          <b>{many ? tx(B.reason_for_many, { count: many.length }) : p.title}</b>
           <span className="bp-ctx-m">{p.f.name} {'·'} {tx(B.size_risk, { size: p.size, risk: p.risk ?? '-' })} {'·'} {deltaText(s.plan, p, language)}</span>
         </span>
       </div>

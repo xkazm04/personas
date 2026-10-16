@@ -27334,7 +27334,8 @@
       "view_title": "查看范围：最近 7 天",
       "key_ledger": "在图纸集与发现台账之间切换",
       "key_select": "将当前项加入选择，或从选择中移除",
-      "key_timeline": "打开或关闭时间线面板"
+      "key_timeline": "打开或关闭时间线面板",
+      "reason_for_many": "已选 {count} 项"
     },
     "build": {
       "body_approved_one": "1 个已批准的项目尚未构建。",

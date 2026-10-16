@@ -372,7 +372,8 @@
     "view_title": "보기 기간: 최근 7일",
     "key_ledger": "도면 세트와 발견 사항 장부 사이를 전환",
     "key_select": "현재 항목을 선택에 추가하거나 선택에서 제외",
-    "key_timeline": "타임라인 패널 열기 또는 닫기"
+    "key_timeline": "타임라인 패널 열기 또는 닫기",
+    "reason_for_many": "선택한 항목 {count}개"
   },
   "build": {
     "body_approved_one": "승인된 항목 1개가 아직 빌드되지 않았습니다.",

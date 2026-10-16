@@ -21,6 +21,14 @@ export interface Writes {
   /** A triage key or control: asks the note first when the state table's NoteRule wants one, else sends at once. */
   askTriage(p: WorkItem | null, move: TriageDecisionInput): void;
   triage(p: WorkItem, move: TriageDecisionInput, note?: string): Promise<void>;
+  /**
+   * Batch moves over several items (bp's multi-select and the ledger's checked rows): ONE store call with every id,
+   * printed and re-read like a single move; the selection is cleared after. `askMany` opens the note prompt first when
+   * the move wants one (decline always; rework / descope / a failed accept per the state table).
+   */
+  askMany(ids: string[], move: 'decline' | TriageDecisionInput): void;
+  decideMany(ids: string[], decision: 'approve' | 'decline', note?: string): Promise<void>;
+  triageMany(ids: string[], move: TriageDecisionInput, note?: string): Promise<void>;
 }
 
 export type Verb = 'approve' | 'decline' | 'build' | TriageDecisionInput;
@@ -144,5 +152,53 @@ export function useWrites({ actions, work, ui, dispatch, reload, say }: Deps): W
     void triage(p, move);
   }, [dispatch, say, triage]);
 
-  return useMemo(() => ({ approve, askDecline, decline, arm, confirm, disarm, askTriage, triage }), [approve, askDecline, decline, arm, confirm, disarm, askTriage, triage]);
+  const decideMany = useCallback(async (ids: string[], decision: 'approve' | 'decline', note?: string) => {
+    if (ui.overlay?.kind === 'reason') dispatch({ type: 'overlay', overlay: null });
+    if (!ids.length) { dispatch({ type: 'say', text: say.pickFirst() }); return; }
+    await run(async () => {
+      try {
+        const result = await actions.decide(ids, decision, note);
+        dispatch({ type: 'print', line: { kind: 'decide', decision, ids, note, result } });
+        dispatch({ type: 'say', text: say.sent(decision, result.decided.length, result.skipped.length) });
+      } catch (e) {
+        dispatch({ type: 'print', line: { kind: 'failed', verb: 'decide', message: errText(e) } });
+        dispatch({ type: 'say', text: say.failed(errText(e)) });
+      }
+      dispatch({ type: 'selectClear' });
+      await reload();
+    }, decision);
+  }, [ui.overlay, actions, dispatch, reload, run, say]);
+
+  const triageMany = useCallback(async (ids: string[], move: TriageDecisionInput, note?: string) => {
+    if (ui.overlay?.kind === 'reason') dispatch({ type: 'overlay', overlay: null });
+    if (!ids.length) { dispatch({ type: 'say', text: say.pickFirst() }); return; }
+    await run(async () => {
+      try {
+        const result = await actions.triage(ids, move, note);
+        dispatch({ type: 'print', line: { kind: 'triage', decision: move, ids, note, result } });
+        dispatch({ type: 'say', text: say.sent(move, result.triaged.length, result.skipped.length) });
+      } catch (e) {
+        dispatch({ type: 'print', line: { kind: 'failed', verb: 'triage', message: errText(e) } });
+        dispatch({ type: 'say', text: say.failed(errText(e)) });
+      }
+      dispatch({ type: 'selectClear' });
+      await reload();
+    }, move);
+  }, [ui.overlay, actions, dispatch, reload, run, say]);
+
+  const askMany = useCallback((ids: string[], move: 'decline' | TriageDecisionInput) => {
+    if (!ids.length) { dispatch({ type: 'say', text: say.pickFirst() }); return; }
+    const rule = move === 'decline' ? 'asked' : MOVES[move].note;
+    const anyFailed = ids.some((id) => work.byId.get(id)?.status === 'failed');
+    if (move !== 'reopen' && (rule === 'asked' || (rule === 'when-failed' && anyFailed))) {
+      dispatch({ type: 'overlay', overlay: { kind: 'reason', itemId: ids[0]!, ids, move: move as NoteMove } });
+      return;
+    }
+    void triageMany(ids, move as TriageDecisionInput);
+  }, [dispatch, say, work, triageMany]);
+
+  return useMemo(
+    () => ({ approve, askDecline, decline, arm, confirm, disarm, askTriage, triage, askMany, decideMany, triageMany }),
+    [approve, askDecline, decline, arm, confirm, disarm, askTriage, triage, askMany, decideMany, triageMany],
+  );
 }

@@ -372,7 +372,8 @@
     "view_title": "Fenêtre d'affichage : les 7 derniers jours",
     "key_ledger": "Basculer entre le jeu de plans et le registre des constats",
     "key_select": "Ajouter l'élément courant à la sélection ou l'en retirer",
-    "key_timeline": "Ouvrir ou fermer le panneau de la chronologie"
+    "key_timeline": "Ouvrir ou fermer le panneau de la chronologie",
+    "reason_for_many": "{count} éléments sélectionnés"
   },
   "build": {
     "body_approved_one": "1 élément approuvé n'est pas encore construit.",

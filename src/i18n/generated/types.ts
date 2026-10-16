@@ -27341,6 +27341,7 @@ export type Translations = {
       key_ledger: string;
       key_timeline: string;
       key_select: string;
+      reason_for_many: string;
     };
     lens: {
       approve: string;

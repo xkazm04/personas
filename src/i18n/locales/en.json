@@ -27334,7 +27334,8 @@
       "dlg_esc": "Esc",
       "key_ledger": "Switch between the drawing set and the findings ledger",
       "key_timeline": "Open or close the timeline panel",
-      "key_select": "Add the current item to the selection, or take it out"
+      "key_select": "Add the current item to the selection, or take it out",
+      "reason_for_many": "{count} selected items"
     },
     "lens": {
       "approve": "Approve",

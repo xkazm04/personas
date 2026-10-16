@@ -83,7 +83,7 @@ export function BlueprintSheet({ data, actions, onClose, initialFeature }: Bluep
             {sheet.ui.flyout && <Flyout />}
           </div>
           {ov?.kind === 'find' && <FindDialog />}
-          {ov?.kind === 'reason' && <ReasonDialog itemId={ov.itemId} move={ov.move} />}
+          {ov?.kind === 'reason' && <ReasonDialog itemId={ov.itemId} move={ov.move} ids={ov.ids} />}
           {ov?.kind === 'help' && <KeySheet />}
         </div>
       </SheetContext.Provider>

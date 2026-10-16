@@ -372,7 +372,8 @@
     "view_title": "表示期間: 直近 7 日間",
     "key_ledger": "図面セットと所見台帳を切り替える",
     "key_select": "現在の項目を選択に追加、または選択から外す",
-    "key_timeline": "タイムラインパネルを開閉する"
+    "key_timeline": "タイムラインパネルを開閉する",
+    "reason_for_many": "選択した項目 {count} 件"
   },
   "build": {
     "body_approved_one": "承認済みの1件がまだビルドされていません。",

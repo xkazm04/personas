@@ -27334,7 +27334,8 @@
       "view_title": "Khoảng xem: 7 ngày qua",
       "key_ledger": "Chuyển giữa bộ bản vẽ và sổ phát hiện",
       "key_select": "Thêm mục hiện tại vào lựa chọn hoặc bỏ ra",
-      "key_timeline": "Mở hoặc đóng bảng dòng thời gian"
+      "key_timeline": "Mở hoặc đóng bảng dòng thời gian",
+      "reason_for_many": "{count} mục đã chọn"
     },
     "build": {
       "body_approved_one": "1 mục đã duyệt chưa được xây dựng.",

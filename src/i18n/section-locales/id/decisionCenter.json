@@ -372,7 +372,8 @@
     "view_title": "Rentang tampilan: 7 hari terakhir",
     "key_ledger": "Beralih antara set gambar dan buku temuan",
     "key_select": "Tambahkan item saat ini ke pilihan, atau keluarkan",
-    "key_timeline": "Buka atau tutup panel linimasa"
+    "key_timeline": "Buka atau tutup panel linimasa",
+    "reason_for_many": "{count} item terpilih"
   },
   "build": {
     "body_approved_one": "1 item yang disetujui belum dibangun.",

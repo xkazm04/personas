@@ -10,7 +10,7 @@ export type Overlay =
   | { kind: 'help' }
   /** The note prompt: which item, and the move it belongs to (decline asks a reason; rework, descope and accepting a
    *  failed build ask a note, the state table's NoteRule). */
-  | { kind: 'reason'; itemId: string; move: NoteMove };
+  | { kind: 'reason'; itemId: string; move: NoteMove; /** A batch (multi-select, the ledger's checked rows): every id; itemId is the first. */ ids?: string[] };
 
 /** The moves that may open the note prompt. */
 export type NoteMove = 'decline' | 'accept' | 'rework' | 'descope';
