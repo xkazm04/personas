@@ -16800,8 +16800,8 @@
           "changedAt": "2026-09-26",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/lib/analytics/index.ts:38 still sends every section visit to the sink as its own event (and :43 every tab switch), and the Sentry sink ships each as a captureMessage (src/lib/sentry.ts:103), so each navigation is a timestamped network event beside the session summary - the per-interaction transmission batching-and-quota rules out for cost and for the behavioural trail it leaves.",
-          "evaluatedAt": "2026-10-15",
+          "evidence": "src/lib/analytics/sink.ts:93 the active sink starts as sentrySink and nothing swaps in noopSink when telemetry is off at boot (src/main.tsx:337 only skips Sentry init), so isSinkDelivering() is true, Sentry silently discards, and src/lib/analytics/activation.ts:141 burns the funnel latch undelivered; navigation also still ships per event (src/lib/analytics/index.ts:38, :43)",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:83367bcb68dbb99a",
           "evaluatedRevision": 4
         },
@@ -26327,7 +26327,11 @@
           "revision": 4,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/useSkillsAnalytics.ts:1 is an operator-side run log read back from Fleet sessions and dev_scans rows - no emit door, vocabulary, sink or egress of end-user surface visits, which is the precondition the subject governs",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:83367bcb68dbb99a",
+          "evaluatedRevision": 4
         }
       ],
       "governance": "governed"

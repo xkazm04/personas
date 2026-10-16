@@ -1354,3 +1354,5 @@
 {"ts":"2026-10-16T17:35:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set","non-stealing-overlay","query-transparent-overlay","observer-perturbation","layout-resolved-input-synthesis"],"deviations":1}
 {"ts":"2026-10-16T17:35:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set","non-stealing-overlay"],"deviations":0}
 {"ts":"2026-10-16T17:35:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set","non-stealing-overlay"],"deviations":0}
+{"ts":"2026-10-16T17:37:14Z","bundle":"software-engineering","subjects":["usage-analytics"],"techniques":["sink-abstraction","activation-and-funnel-honesty","batching-and-quota","coverage-from-registries","event-taxonomy","privacy-scrubbing"],"deviations":6}
+{"ts":"2026-10-16T17:37:14Z","bundle":"software-engineering","subjects":["usage-analytics"],"techniques":[],"deviations":0}

@@ -5193,28 +5193,49 @@
       "subject": "usage-analytics",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-8",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:37:14.000Z",
+      "worker": "648e2e87-0113-4aac-8acb-efd7455597ce",
       "techniques": [
-        {
-          "technique": "batching-and-quota",
-          "verdict": "deviation",
-          "evidence": "src/lib/analytics/index.ts:38 emits sink.feature() on every section change in addition to bumping the per-session counter; the summary at :58 is not the only thing that leaves the machine"
-        },
         {
           "technique": "sink-abstraction",
           "verdict": "deviation",
-          "evidence": "src/lib/analytics/sink.ts:71 the sink contract includes per-event feature(), the opening the technique names for the next integration to bypass aggregation; the null sink (:86) and withheld raw sentry re-export (index.ts:184) are realized"
+          "evidence": "src/lib/analytics/sink.ts:93 composition starts on the live sink and only AccountSettings ever installs noopSink, so a telemetry-off boot is silence by accident (uninitialised Sentry), not the chosen null sink; contract also accepts raw per-event ingestion at src/lib/analytics/sink.ts:71"
         },
         {
           "technique": "activation-and-funnel-honesty",
-          "verdict": "conformant",
-          "evidence": "src/lib/analytics/activation.ts:141 the funnel latch is set only after conversion() is accepted and only when isSinkDelivering() (:138) - the old write-latch-before-emit defect is fixed"
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/activation.ts:138 the delivery latch keys on isSinkDelivering(), which reads sink identity; with telemetry off at boot it returns true, the conversion is dropped by an uninitialised Sentry, and :141 records it reported - a permanently missing funnel row, the exact failure the comment at :132 claims to prevent"
+        },
+        {
+          "technique": "batching-and-quota",
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/index.ts:38 every section visit (and :43 every tab switch) is sent as its own Sentry captureMessage beside the session summary; SessionSummary (src/lib/analytics/sink.ts:57) carries no window or vocabulary version and there is no checkpoint/recovered-session path"
         },
         {
           "technique": "coverage-from-registries",
-          "verdict": "conformant",
-          "evidence": "src/lib/analytics/navCatalog.ts:60 SECTIONS derived from the navigation registry NAV_SECTIONS; summary.ts:33 reports visited/ignored against that full denominator"
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/navCatalog.ts:113 sections are a projection of the nav registry (:60, realized) but the tab-dimension axis is a hand list with no inventory gate, and it already omits kpisTab (src/stores/slices/system/uiSlice.ts:93), twinTab and obsidianBrainTab, which vanish from the ignored report"
+        },
+        {
+          "technique": "event-taxonomy",
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/index.ts:188 trackInteraction admits any category/action/label string with no registry or validation; callers already mix grammars (step_complete, create, filter_run, tab_open)"
+        },
+        {
+          "technique": "privacy-scrubbing",
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/index.ts:188 the free-form label field is admissible by type, and the only scrubber is the Sentry beforeSend denylist the sink names at src/lib/analytics/sink.ts:16 - scrubbing downstream by pattern, not allowlist at the source"
+        }
+      ],
+      "registryProposal": "Upward lesson for activation-and-funnel-honesty / sink-abstraction: a delivery latch that asks the composition `is the null sink installed?` is only honest if the null sink is ALSO what boot installs when consent is absent; here consent-off is enforced one layer down (destination never initialised) so the identity check reports delivering. The technique should state that the latch query and the opt-out mechanism must be the same switch. The react--activation-and-funnel-honesty application praises activation.ts and should be corrected with this case.",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/lib/analytics/index.ts:38 still sends every section visit to the sink as its own event (and :43 every tab switch), and the Sentry sink ships each as a captureMessage (src/lib/sentry.ts:103), so each navigation is a timestamped network event beside the session summary - the per-interaction transmission batching-and-quota rules out for cost and for the behavioural trail it leaves.",
+          "evaluatedAt": "2026-10-15",
+          "worker": null,
+          "reason": "replaced by 648e2e87-0113-4aac-8acb-efd7455597ce"
         }
       ]
     },
@@ -24289,6 +24310,17 @@
       "worker": "e4206a64-7d0f-4ef1-bca2-c7c1a66d95d2",
       "techniques": [],
       "registryProposal": "technique-shaped resonance: matched strong on graph/dependency/node vocabulary, but pipeline-dag is about executing a user-authored step graph; a derived, read-only relationship graph (blast-radius analysis) should route by precondition, not vocabulary. Separately, teams-canvas (6e3e06ef) names deleted sub_canvas entry points - a context-map rescan question, not a registry one."
+    },
+    "10c96ae7-a356-4555-996b-df92fc5dc8e7/usage-analytics": {
+      "context": "plugins-dev-tools-skills",
+      "subject": "usage-analytics",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:37:14.000Z",
+      "worker": "648e2e87-0113-4aac-8acb-efd7455597ce",
+      "techniques": [],
+      "registryProposal": "Coverage: lexical-only match on analytics/usage/coverage; this context is run-history/performance analytics for dispatched agent skills, closer to delivery-analytics or adoption-measurement than to product usage telemetry."
     }
   }
 }
