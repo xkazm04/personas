@@ -22,7 +22,8 @@ Director (this session)    the clock: status -> context -> decide -> dispatch ->
   master subagent (Opus)   one per due project, read-only, returns ONE decision JSON (+ a plan on a PLAN WAKE)
   builder (Sonnet|Opus)    up to PER_PROJECT_CAP per project, GLOBAL_CAP in all, on disjoint declared paths,
                            background `claude -p`, each in its own worktree of the project repo
-                           or of a second repo the brief names (repo lanes cap shared repos)
+                           or of a second repo the brief names (repo lanes cap shared repos);
+                           while the app is up it runs THROUGH the fleet shim (runner note below)
   reviewer                 a builder on a council charter: runs /council on one feature, writes no code
   admission queue          a dispatch refused for a slot waits in _queue.jsonl; promote starts it in order
   await                    one background exit watcher per run; settles it when its pid is gone, then promotes
@@ -31,6 +32,16 @@ Director (this session)    the clock: status -> context -> decide -> dispatch ->
   journal + outbox         files under .claude/master/<slug>/headless/, replayed later
   app DB                   read-only, mode=ro; never written by this skill
 ```
+
+**Runner note (spark one-control).** A builder's `claude` is `resolveClaudeBin`'s
+(`lib/contract.mjs`): `APPMASTER_CLAUDE_BIN` when set; else, when the app's local-http
+handshake is readable, the fleet shim `scripts/fleet/personas-run.mjs`, so the fleet's one
+queue and cap admit it and the Fleet Monitor shows it as origin `app_master` (the worker env
+gets `PERSONAS_RUN_ORIGIN=app_master`); else plain `claude` with one warning naming why. The
+door forwards the builder's `CARGO_BUILD_JOBS`, `CARGO_TARGET_DIR`,
+`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS` and `PERSONAS_RUN_LABEL`. `GLOBAL_CAP` stays as this
+loop's ceiling under the fleet cap. Detail: `docs/architecture/headless-app-master.md`
+§ *Which claude a builder runs*.
 
 ## State, numbers, projects
 

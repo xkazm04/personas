@@ -42,6 +42,7 @@
 //! caller owns its own wall clock.
 
 use std::collections::HashMap;
+use std::ffi::OsString;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
@@ -72,10 +73,29 @@ pub const DIR_NAME: &str = "fleet-door";
 pub const MAX_ENV_ENTRIES: usize = 32;
 /// At most this many bytes in one environment value.
 pub const MAX_ENV_VALUE_LEN: usize = 4096;
-/// The one exact key outside the two prefixes.
-const ENV_EXACT: &str = "BP_JOB_ID";
+/// The exact keys outside the two prefixes. `BP_JOB_ID` is bp's job id; the
+/// other four are what the headless App Master's `workerEnv` sets on a
+/// builder, and a builder that lost them would run an uncapped cargo on every
+/// core (`CARGO_BUILD_JOBS`), cold-build a per-worktree target
+/// (`CARGO_TARGET_DIR`), park on background waits
+/// (`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS`) and lose its run label
+/// (`PERSONAS_RUN_LABEL`, also the shim's label). EXACT keys, never a family:
+/// `CARGO_HOME` (a base key), `CARGO_REGISTRIES_*` (tokens) and every other
+/// `CLAUDE_CODE_*` stay out.
+const ENV_EXACT: [&str; 5] = [
+    "BP_JOB_ID",
+    "CARGO_BUILD_JOBS",
+    "CARGO_TARGET_DIR",
+    "CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS",
+    "PERSONAS_RUN_LABEL",
+];
 /// The two allowed key prefixes.
 const ENV_PREFIXES: [&str; 2] = ["LENS_SCAN_", "APPMASTER_"];
+/// The allowlist in words, for the door's refusal message.
+pub const ENV_ALLOWLIST_TEXT: &str = concat!(
+    "BP_JOB_ID, CARGO_BUILD_JOBS, CARGO_TARGET_DIR, CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS, ",
+    "PERSONAS_RUN_LABEL, LENS_SCAN_* and APPMASTER_*"
+);
 /// How long an output file (and its capture record) is kept after it was
 /// last written.
 const RETENTION: Duration = Duration::from_secs(7 * 24 * 60 * 60);
@@ -147,15 +167,16 @@ pub fn run_label_for(origin: DispatchOrigin, label: Option<&str>) -> String {
     }
 }
 
-/// May a door caller set this environment key on the child? `BP_JOB_ID`,
-/// `LENS_SCAN_*` and `APPMASTER_*`, spelled in `[A-Z0-9_]` - nothing else.
+/// May a door caller set this environment key on the child? The five
+/// [`ENV_EXACT`] keys, `LENS_SCAN_*` and `APPMASTER_*`, spelled in
+/// `[A-Z0-9_]` - nothing else.
 pub fn env_key_allowed(key: &str) -> bool {
     let shaped = !key.is_empty()
         && key.len() <= 128
         && key
             .bytes()
             .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'_');
-    shaped && (key == ENV_EXACT || ENV_PREFIXES.iter().any(|p| key.starts_with(p)))
+    shaped && (ENV_EXACT.contains(&key) || ENV_PREFIXES.iter().any(|p| key.starts_with(p)))
 }
 
 /// What a door session carries beyond an ordinary headless dispatch, read
@@ -375,11 +396,27 @@ const BASE_ENV_KEYS: &[&str] = &[
 
 /// The base environment of a door run: each [`BASE_ENV_KEYS`] entry the app's
 /// own environment has.
-pub(super) fn base_env() -> Vec<(&'static str, std::ffi::OsString)> {
+pub(super) fn base_env() -> Vec<(&'static str, OsString)> {
     BASE_ENV_KEYS
         .iter()
         .filter_map(|&k| std::env::var_os(k).map(|v| (k, v)))
         .collect()
+}
+
+/// The WHOLE environment of a door run, which the headless spawn sets on a
+/// cleared command (`env_clear` then `envs`): the plumbing [`base_env`]
+/// names, the traffic switch, then the caller's allowlisted [`DoorSpec::env`].
+/// Pure over the app's environment, so the tests read exactly what the child
+/// gets without spawning anything.
+pub(super) fn child_env(spec: &DoorSpec) -> Vec<(OsString, OsString)> {
+    let mut env: Vec<(OsString, OsString)> =
+        base_env().into_iter().map(|(k, v)| (k.into(), v)).collect();
+    env.push((
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC".into(),
+        "1".into(),
+    ));
+    env.extend(spec.env.iter().map(|(k, v)| (k.into(), v.into())));
+    env
 }
 
 /// The door spec in a dispatch's args, or `None` for any other session.
@@ -953,9 +990,29 @@ mod tests {
 
     #[test]
     fn env_keys_are_the_three_families_only() {
-        for ok in ["BP_JOB_ID", "LENS_SCAN_CLAUDE_BIN", "APPMASTER_RUN"] {
+        // The exact set: five named keys plus the two families.
+        for ok in [
+            "BP_JOB_ID",
+            "CARGO_BUILD_JOBS",
+            "CARGO_TARGET_DIR",
+            "CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS",
+            "PERSONAS_RUN_LABEL",
+            "LENS_SCAN_CLAUDE_BIN",
+            "APPMASTER_RUN",
+        ] {
             assert!(env_key_allowed(ok), "{ok}");
         }
+        assert_eq!(
+            ENV_EXACT,
+            [
+                "BP_JOB_ID",
+                "CARGO_BUILD_JOBS",
+                "CARGO_TARGET_DIR",
+                "CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS",
+                "PERSONAS_RUN_LABEL",
+            ]
+        );
+        assert_eq!(ENV_PREFIXES, ["LENS_SCAN_", "APPMASTER_"]);
         for bad in [
             "",
             "PATH",
@@ -965,9 +1022,101 @@ mod tests {
             "ANTHROPIC_API_KEY",
             "APPMASTER_RUN=1",
             "CLAUDE_CODE_ENTRYPOINT",
+            // Neighbours of the four exact keys: never a family.
+            "CARGO_HOME",
+            "CARGO_BUILD_JOBSX",
+            "CARGO_BUILD_TARGET",
+            "CARGO_TARGET_DIR_X",
+            "CARGO_REGISTRIES_CRATES_IO_TOKEN",
+            "CLAUDE_CODE_OAUTH_TOKEN",
+            "CLAUDE_CODE_PRINT_BG_WAIT_CEILING",
+            "PERSONAS_RUN_ORIGIN",
+            "PERSONAS_API_KEY",
+            "PERSONAS_RUN_LABEL_X",
+            "cargo_build_jobs",
         ] {
             assert!(!env_key_allowed(bad), "{bad}");
         }
+        // No allowed exact key is one the spawn strips or a nesting variable.
+        for &k in &ENV_EXACT {
+            assert!(!crate::engine::cli_process::CLI_SUBSCRIPTION_RESERVED_ENV.contains(&k));
+            assert!(!super::super::pty::CLAUDE_NESTING_ENV.contains(&k));
+        }
+    }
+
+    /// An App Master builder's row carries its four build keys through the
+    /// door into the spawned command's environment, beside the base plumbing,
+    /// and nothing the row was not allowed to carry.
+    #[test]
+    fn an_app_master_row_s_build_keys_reach_the_spawned_env() {
+        let mut r = run(DoorOutput::StreamJson);
+        r.origin = DispatchOrigin::AppMaster;
+        r.env = vec![
+            ("APPMASTER_RUN_ID".into(), "night-1".into()),
+            ("CARGO_BUILD_JOBS".into(), "6".into()),
+            (
+                "CARGO_TARGET_DIR".into(),
+                "C:/code/personas/src-tauri/target".into(),
+            ),
+            ("CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS".into(), "0".into()),
+            ("PERSONAS_RUN_LABEL".into(), "appmaster:pof:b1".into()),
+        ];
+        let mut args = dispatch_request(&r).args;
+        // A row edited behind the door's back cannot add a key either.
+        args.push(ENV_ARG.into());
+        args.push("CARGO_HOME=C:/evil".into());
+        args.push(ENV_ARG.into());
+        args.push("CLAUDE_CODE_OAUTH_TOKEN=stolen".into());
+        let spec = spec_of(&args).expect("a door spec");
+
+        let built = child_env(&spec);
+        let envs: HashMap<String, String> = built
+            .iter()
+            .map(|(k, v)| {
+                (
+                    k.to_string_lossy().into_owned(),
+                    v.to_string_lossy().into_owned(),
+                )
+            })
+            .collect();
+        assert_eq!(envs.len(), built.len(), "no key is set twice");
+        let val = |k: &str| envs.get(k).cloned();
+        assert_eq!(val("CARGO_BUILD_JOBS").as_deref(), Some("6"));
+        assert_eq!(
+            val("CARGO_TARGET_DIR").as_deref(),
+            Some("C:/code/personas/src-tauri/target")
+        );
+        assert_eq!(
+            val("CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS").as_deref(),
+            Some("0")
+        );
+        assert_eq!(
+            val("PERSONAS_RUN_LABEL").as_deref(),
+            Some("appmaster:pof:b1")
+        );
+        assert_eq!(val("APPMASTER_RUN_ID").as_deref(), Some("night-1"));
+        assert_eq!(
+            val("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC").as_deref(),
+            Some("1")
+        );
+        assert_eq!(val("CLAUDE_CODE_OAUTH_TOKEN"), None);
+        assert_eq!(val("PERSONAS_API_KEY"), None, "the app's bearer key never");
+        // Nothing else new: every entry is a base key, the traffic switch, or
+        // one of the row's allowed keys.
+        let row: Vec<&str> = spec.env.iter().map(|(k, _)| k.as_str()).collect();
+        for k in envs.keys() {
+            assert!(
+                BASE_ENV_KEYS.contains(&k.as_str())
+                    || k == "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
+                    || row.contains(&k.as_str()),
+                "{k} reached the child's env"
+            );
+        }
+        assert_eq!(
+            val("CARGO_HOME"),
+            std::env::var("CARGO_HOME").ok(),
+            "CARGO_HOME is the base env's, never the row's"
+        );
     }
 
     #[test]

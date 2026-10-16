@@ -11,7 +11,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 // ---------------------------------------------------------------- paths
 
@@ -110,6 +110,8 @@ export const DEFAULT_MANAGED = ['pof', 'ascent', 'kp'];
 // Builders running at once across all projects (ten masters share it; a refused dispatch queues).
 // 16 since 2026-10-07 midday: the operator gave the machine to this loop ("two threads per app
 // master, at most 16 LLM processes"); it was 8 while sibling sessions shared it. MEM still brakes.
+// Since spark one-control a builder normally runs THROUGH the Personas fleet (claudeBin -> the shim), so
+// the fleet's own cap admits it; GLOBAL_CAP stays as this loop's ceiling under that cap, never above it.
 export const GLOBAL_CAP = 16;
 /**
  * Builders running at once in one project. Two only when their declared `paths` are disjoint from
@@ -244,7 +246,57 @@ export const LIMIT_SIGNATURES = [
   'reached your', 'switch to another model',
 ];
 export const RUN_LABEL_PREFIX = 'cli-master:';
-export const claudeBin = () => process.env.APPMASTER_CLAUDE_BIN || 'claude';
+
+/**
+ * The Personas fleet shim (spark one-control): a `claude -p` stand-in that admits the run through the
+ * running app's `/fleet/enqueue` door, so the fleet's ONE queue and cap govern every builder and the
+ * Fleet Monitor shows it. Resolved from the repo this skill lives in.
+ */
+export const SHIM_PATH = path.join(REPO_ROOT, 'scripts', 'fleet', 'personas-run.mjs');
+// The shim's own handshake lookup (PERSONAS_DATA_DIR, then ~/.personas), imported rather than copied so
+// "the app is up" means exactly what the shim will find. Guarded: a checkout without the shim still runs.
+let shimMod = null;
+try {
+  shimMod = await import(pathToFileURL(SHIM_PATH).href);
+} catch {
+  shimMod = null;
+}
+let warnedNoShim = false;
+
+/**
+ * ({env?, home?, warn?}) => {bin, via: 'env'|'shim'|'claude', reason?}
+ * Which `claude` a builder runs: an explicit APPMASTER_CLAUDE_BIN always wins; else the shim when the
+ * app's local-http handshake is readable (the app is up, so the fleet admits the builder); else plain
+ * `claude`, with ONE warning per process naming why. `home` and `warn` are for the tests.
+ */
+export function resolveClaudeBin({ env = process.env, home, warn } = {}) {
+  const explicit = (env.APPMASTER_CLAUDE_BIN || '').trim();
+  if (explicit) return { bin: explicit, via: 'env' };
+  let reason;
+  if (!shimMod || !fs.existsSync(SHIM_PATH)) {
+    reason = `the fleet shim is missing (${SHIM_PATH})`;
+  } else {
+    try {
+      shimMod.readHandshake(env, home);
+      return { bin: SHIM_PATH, via: 'shim' };
+    } catch {
+      const where = shimMod.handshakeCandidates(env, home).join(' or ');
+      reason = `the Personas app is not running (no local-http handshake at ${where})`;
+    }
+  }
+  if (!warnedNoShim) {
+    warnedNoShim = true;
+    (warn ?? ((m) => process.stderr.write(`${m}\n`)))(
+      `appmaster: builders run plain \`claude\`, outside the fleet's queue and cap: ${reason}`,
+    );
+  }
+  return { bin: 'claude', via: 'claude', reason };
+}
+/** Re-arm the one-time fallback warning (tests). */
+export const resetClaudeBinWarning = () => { warnedNoShim = false; };
+/** True when `bin` is the fleet shim, however it was chosen (an explicit APPMASTER_CLAUDE_BIN included). */
+export const isFleetShim = (bin) => normRoot(bin) === normRoot(SHIM_PATH);
+export const claudeBin = (opts) => resolveClaudeBin(opts).bin;
 
 // ---------------------------------------------------------------- record shapes (JSDoc = the contract)
 

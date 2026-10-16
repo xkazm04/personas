@@ -783,12 +783,7 @@ fn spawn_headless_launch(
     // bearer key `PERSONAS_API_KEY` included - never reaches a run any
     // token holder can start.
     if let Some(d) = door.as_ref() {
-        cmd.env_clear()
-            .envs(super::door::base_env())
-            .env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
-        for (k, v) in &d.env {
-            cmd.env(k, v);
-        }
+        cmd.env_clear().envs(super::door::child_env(d));
     }
     #[cfg(windows)]
     {

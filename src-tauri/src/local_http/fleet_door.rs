@@ -32,8 +32,11 @@
 //! - `cwd` is an existing directory (400) that is a registered project root,
 //!   inside one, or a git worktree whose `git rev-parse --git-common-dir`
 //!   resolves inside one (403 otherwise). Compared on canonical paths.
-//! - `env` keys are `BP_JOB_ID`, `LENS_SCAN_*` or `APPMASTER_*` in
-//!   `[A-Z0-9_]` (400 otherwise); at most 32, values at most 4 KiB, no NUL.
+//! - `env` keys are `BP_JOB_ID`, App Master's four build keys
+//!   (`CARGO_BUILD_JOBS`, `CARGO_TARGET_DIR`,
+//!   `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS`, `PERSONAS_RUN_LABEL`),
+//!   `LENS_SCAN_*` or `APPMASTER_*` in `[A-Z0-9_]` (400 otherwise); at most
+//!   32, values at most 4 KiB, no NUL.
 //! - `model` is a model id (`[A-Za-z0-9._:-[]]`, not starting with `-`),
 //!   `sessionId` a UUID, `runLabel` printable and short, `outputFormat`
 //!   `text` or `stream-json`; unknown body fields are refused (400).
@@ -264,7 +267,8 @@ pub fn validate_body(body: EnqueueBody) -> Result<DoorRun, DoorError> {
     for (k, v) in env_map {
         if !door::env_key_allowed(&k) {
             return Err(DoorError::bad_request(format!(
-                "env key `{k}` is not allowed - only BP_JOB_ID, LENS_SCAN_* and APPMASTER_*"
+                "env key `{k}` is not allowed - only {}",
+                door::ENV_ALLOWLIST_TEXT
             )));
         }
         if v.len() > door::MAX_ENV_VALUE_LEN || v.contains('\0') {
@@ -545,6 +549,8 @@ mod tests {
             "ANTHROPIC_API_KEY",
             "CLAUDE_CONFIG_DIR",
             "bp_job_id",
+            "CARGO_HOME",
+            "CLAUDE_CODE_OAUTH_TOKEN",
         ] {
             let mut b = body();
             b.env = Some(BTreeMap::from([(bad.to_string(), "x".to_string())]));

@@ -153,7 +153,7 @@ test('enqueue body shape, a byte-exact relay across polls with a split UTF-8 cha
   assert.equal(body.model, 'opus');
   assert.equal(body.sessionId, SID);
   assert.equal(body.runLabel, 'kp builder');
-  assert.deepEqual(body.env, { APPMASTER_RUN: 'r1', BP_JOB_ID: 'job-7' });
+  assert.deepEqual(body.env, { APPMASTER_RUN: 'r1', BP_JOB_ID: 'job-7', PERSONAS_RUN_LABEL: 'kp builder' });
   assert.equal(path.resolve(body.cwd), path.resolve(process.cwd()));
   assert.deepEqual([...door.seen.tokens], [TOKEN]);
   assert.match(r.stderr, /queued in the fleet at rank 2/);
@@ -241,4 +241,39 @@ test('SIGTERM mid-run cancels the fleet session and exits 130', async (t) => {
 test('enqueueBody leaves out what the caller did not name', () => {
   const body = enqueueBody({ cwd: 'c', prompt: 'p', origin: 'lens_scan', args: parseArgs(['-p']), env: { BP_JOB_ID: 'j' } });
   assert.deepEqual(body, { cwd: 'c', prompt: 'p', origin: 'lens_scan', outputFormat: 'text', env: { BP_JOB_ID: 'j' } });
+});
+
+test("App Master's four build keys are forwarded, exactly, and their neighbours are not", () => {
+  const four = {
+    CARGO_BUILD_JOBS: '6',
+    CARGO_TARGET_DIR: 'C:/code/personas/src-tauri/target',
+    CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS: '0',
+    PERSONAS_RUN_LABEL: 'appmaster:pof:b1',
+  };
+  for (const [k, v] of Object.entries(four)) {
+    assert.deepEqual(forwardedEnv({ [k]: v }), { [k]: v }, `${k} is forwarded`);
+  }
+  const neighbours = {
+    CARGO_HOME: 'C:/cargo',
+    CARGO_BUILD_JOBSX: '99',
+    CARGO_BUILD_TARGET: 'x86_64-pc-windows-msvc',
+    CARGO_TARGET_DIR_X: 'C:/x',
+    CARGO_REGISTRIES_CRATES_IO_TOKEN: 'secret',
+    CLAUDE_CODE_OAUTH_TOKEN: 'secret',
+    CLAUDE_CODE_PRINT_BG_WAIT_CEILING: '0',
+    PERSONAS_RUN_ORIGIN: 'app_master',
+    PERSONAS_API_KEY: 'secret',
+    PERSONAS_RUN_LABEL_X: 'x',
+    cargo_build_jobs: '6',
+  };
+  for (const [k, v] of Object.entries(neighbours)) {
+    assert.deepEqual(forwardedEnv({ [k]: v }), {}, `${k} is not forwarded`);
+  }
+  assert.deepEqual(forwardedEnv({ ...four, ...neighbours, APPMASTER_RUN: 'r1' }), { ...four, APPMASTER_RUN: 'r1' });
+  // The value checks still hold for the new keys.
+  assert.deepEqual(forwardedEnv({ CARGO_TARGET_DIR: 'a\0b', CARGO_BUILD_JOBS: 'x'.repeat(4097) }), {});
+  // PERSONAS_RUN_LABEL is the run label AND reaches the env.
+  const body = enqueueBody({ cwd: 'c', prompt: 'p', origin: 'app_master', args: parseArgs(['-p']), env: { ...four, ...neighbours } });
+  assert.equal(body.runLabel, 'appmaster:pof:b1');
+  assert.deepEqual(body.env, four);
 });

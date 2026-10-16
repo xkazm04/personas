@@ -8,7 +8,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  SKILL_DIR, runDir, shortId, nowIso, mintId, claudeBin, Refusal,
+  SKILL_DIR, runDir, shortId, nowIso, mintId, resolveClaudeBin, isFleetShim, Refusal,
   ENV_STRIP, ENV_SET, RUN_LABEL_PREFIX, GLOBAL_CAP, PER_PROJECT_CAP,
   QUIET_MIN, TIMEOUT_MIN, LIVE_RUN_STATES, QUEUE_REASONS, SELF_REPO, COUNCIL, normRoot, repoOf, repoEnv, isReviewRun,
 } from './contract.mjs';
@@ -96,6 +96,18 @@ export function workerEnv(slug, run = null) {
   const strip = new Set(ENV_STRIP.map((k) => k.toUpperCase()));
   for (const k of Object.keys(env)) if (strip.has(k.toUpperCase())) delete env[k];
   return { ...env, ...ENV_SET, PERSONAS_RUN_LABEL: RUN_LABEL_PREFIX + slug, ...(run ? repoEnv(repoOf(run).root) : {}) };
+}
+
+/**
+ * The env a builder is spawned with for `bin`: workerEnv, plus PERSONAS_RUN_ORIGIN=app_master when the bin
+ * is the fleet shim (it refuses a run with no origin; the door then admits the builder as app_master).
+ * The shim forwards only the door's allowlist, so the four build keys workerEnv sets (CARGO_BUILD_JOBS,
+ * CARGO_TARGET_DIR, CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS, PERSONAS_RUN_LABEL) are what reaches the builder.
+ */
+export function builderEnv(bin, slug, run = null) {
+  const env = workerEnv(slug, run);
+  if (isFleetShim(bin)) env.PERSONAS_RUN_ORIGIN = 'app_master';
+  return env;
 }
 
 /**
@@ -247,14 +259,17 @@ export function renderReviewerPrompt(run, brief = {}, seed = {}, runs = null) {
 /**
  * (run: Run, promptText: string) => {pid, sessionId}
  * Detached, hidden, prompt on STDIN (the Windows argv limit), stdout -> stream.jsonl,
- * stderr -> stderr.log, pid -> pid. APPMASTER_CLAUDE_BIN ending in .js/.mjs/.cjs runs under node.
+ * stderr -> stderr.log, pid -> pid. The bin is resolveClaudeBin's: APPMASTER_CLAUDE_BIN when set, else the
+ * Personas fleet shim while the app is up (the run is admitted through the fleet's one queue and shows in
+ * the Fleet Monitor as origin app_master), else plain `claude`. A bin ending in .js/.mjs/.cjs runs under node.
  */
 export function spawnWorker(run, promptText) {
   if (!run.worktree || !fs.existsSync(run.worktree)) throw new Error(`run ${shortId(run.runId)} has no worktree to run in`);
   const dir = runDir(run.slug, run.runId);
   fs.mkdirSync(dir, { recursive: true });
   const sessionId = run.sessionId || mintId();
-  const bin = claudeBin();
+  const { bin } = resolveClaudeBin();
+  const env = builderEnv(bin, run.slug, run);
   const args = ['-p', '-', '--verbose', '--output-format', 'stream-json', '--dangerously-skip-permissions',
     '--model', run.model, '--session-id', sessionId];
   const [cmd, argv] = /\.(m?js|cjs)$/i.test(bin) ? [process.execPath, [bin, ...args]] : [bin, args];
@@ -263,7 +278,7 @@ export function spawnWorker(run, promptText) {
   let child;
   try {
     child = spawn(cmd, argv, {
-      cwd: run.worktree, env: workerEnv(run.slug, run), detached: true, windowsHide: true,
+      cwd: run.worktree, env, detached: true, windowsHide: true,
       stdio: ['pipe', out, err],
     });
   } finally {

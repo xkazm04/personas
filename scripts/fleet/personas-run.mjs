@@ -26,7 +26,11 @@ export const POLL_WAIT_MS = 20_000;
 /** How long the relay keeps retrying while the app is unreachable mid-run (a restart, a rebuild). */
 const DEFAULT_RECONNECT_MS = 10 * 60_000;
 const RETRY_DELAY_MS = 2_000;
-const ENV_KEY = /^(BP_JOB_ID|LENS_SCAN_[A-Z0-9_]*|APPMASTER_[A-Z0-9_]*)$/;
+// The door's allowlist, mirrored from door.rs `env_key_allowed`: bp's job id, the four EXACT keys the headless
+// App Master's workerEnv sets on a builder (a capped cargo, the shared target, no background-wait park, its
+// run label), and the two families. Exact keys, never a family: CARGO_HOME, CLAUDE_CODE_OAUTH_TOKEN stay out.
+const ENV_KEY =
+  /^(BP_JOB_ID|CARGO_BUILD_JOBS|CARGO_TARGET_DIR|CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS|PERSONAS_RUN_LABEL|LENS_SCAN_[A-Z0-9_]*|APPMASTER_[A-Z0-9_]*)$/;
 const MAX_ENV_VALUE = 4096;
 
 export const USAGE = `personas-run - hand a \`claude -p\` run to the Personas fleet
@@ -39,10 +43,11 @@ the app's /fleet/enqueue door (the fleet's one queue), then relayed to stdout un
 
 environment:
   PERSONAS_RUN_ORIGIN   lens_scan | app_master (default: lens_scan when BP_JOB_ID is set)
-  PERSONAS_RUN_LABEL    optional run label shown on the fleet board
+  PERSONAS_RUN_LABEL    optional run label shown on the fleet board (also forwarded)
   PERSONAS_DATA_DIR     read <dir>/local-http.json before ~/.personas/local-http.json
   PERSONAS_RUN_RECONNECT_MS  how long to retry an unreachable app mid-run (default 600000)
-  BP_JOB_ID, LENS_SCAN_*, APPMASTER_*  forwarded to the session's environment
+  BP_JOB_ID, CARGO_BUILD_JOBS, CARGO_TARGET_DIR, CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS,
+  PERSONAS_RUN_LABEL, LENS_SCAN_*, APPMASTER_*  forwarded to the session's environment
 
 exit: the session's code; 1 failed/lost; 2 usage; 3 app not running; 130 cancelled.
 `;
@@ -145,7 +150,7 @@ export function readHandshake(env, home) {
   throw new RunError('the Personas app is not running (no local-http.json handshake) - start it, then retry', EXIT.NO_APP);
 }
 
-/** BP_JOB_ID, LENS_SCAN_* and APPMASTER_* from this process's environment - the door's allowlist. */
+/** The allowlisted keys (ENV_KEY) of this process's environment - the door's allowlist. */
 export function forwardedEnv(env) {
   const out = {};
   for (const [k, v] of Object.entries(env)) {
