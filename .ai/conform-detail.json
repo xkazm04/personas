@@ -26427,6 +26427,96 @@
           "evidence": "src/features/agents/sub_lab/components/shared/LabHistoryTable.tsx:76 rows keyed by run id"
         }
       ]
+    },
+    "fb6e9de5-a01b-4434-8ed7-313c142947a1/module-design": {
+      "context": "lib-utils-sanitizers",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:16:30.000Z",
+      "worker": "7c9a08be-1f2d-413e-b6cb-23bfb01fe97a",
+      "techniques": [
+        {
+          "technique": "module-depth",
+          "verdict": "deviation",
+          "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:98 the comment itself records that the TS forms were copied from core/src/redact.rs after the TS copy had leaked 13 of 20 token shapes; one decision (what a secret looks like) lives in four hand-maintained encodings, the information-leakage failure"
+        },
+        {
+          "technique": "seams-and-adapters",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/main.rs:234 the app binary builds its own copy of the redaction regex instead of going through the core redaction module, so redaction has more than one door"
+        }
+      ],
+      "registryProposal": "module-depth's information-leakage rule is stated for modules in one language; the commonest real case here is the same vocabulary hand-mirrored across the IPC language boundary (Rust and TS). A technique note on cross-language vocabularies (generate one from the other, or a shared fixture corpus both sides test against) would make this finding actionable instead of only diagnosable."
+    },
+    "71d36b74-2b52-4759-a000-b505ddf27915/module-design": {
+      "context": "db-repos-core",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:16:30.000Z",
+      "worker": "7c9a08be-1f2d-413e-b6cb-23bfb01fe97a",
+      "techniques": [
+        {
+          "technique": "module-depth",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/design_conversations.rs:178 a three-member vocabulary this repo owns, enforced by a runtime contains() instead of an enum; the closed-set rule's detection signal is met word for word"
+        }
+      ]
+    },
+    "a6843b83-43a1-4eab-ae40-26f23b949a0d/module-design": {
+      "context": "hooks-execution",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:16:30.000Z",
+      "worker": "7c9a08be-1f2d-413e-b6cb-23bfb01fe97a",
+      "techniques": [
+        {
+          "technique": "marked-unverifiable-region",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:383 an assertion at a data boundary with no stated invariant and reachable without passing the checked surface (properties 2 and 4 unmet)"
+        },
+        {
+          "technique": "seams-and-adapters",
+          "verdict": "deviation",
+          "evidence": "src/lib/validation/eventPayloads.ts:110 the schema is the documented single door for status payloads, yet the field both listeners branch on is read around it"
+        },
+        {
+          "technique": "module-depth",
+          "verdict": "conformant",
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:36 run phase is a closed union, narrowed once from the raw string by toCliRunPhase/parseExecutionState"
+        },
+        {
+          "technique": "io-free-core",
+          "verdict": "conformant",
+          "evidence": "src/hooks/execution/useReplayTimeline.ts:219 timeline parsing, silence detection and step spans are exported pure functions tested without doubles; the hook is the driver"
+        }
+      ]
+    },
+    "6229df3d-d54e-47bb-8091-abb479003c18/module-design": {
+      "context": "vault-catalog-schemas",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:16:30.000Z",
+      "worker": "7c9a08be-1f2d-413e-b6cb-23bfb01fe97a",
+      "techniques": [
+        {
+          "technique": "module-depth",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/autoCredErrorConfig.ts:6 the error-kind vocabulary is encoded a second time under an open string key instead of Record<AutoCredErrorInfo['kind'], ...>, which is information leakage plus a closed set in an open type"
+        },
+        {
+          "technique": "marked-unverifiable-region",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/types.ts:149 a data-boundary assertion with no invariant comment, wider than the check before it (only kind's type is tested, not its membership or the other fields)"
+        }
+      ]
     }
   }
 }

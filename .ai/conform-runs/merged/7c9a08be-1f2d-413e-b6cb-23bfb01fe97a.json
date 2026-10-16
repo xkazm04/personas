@@ -1,0 +1,67 @@
+{
+  "schema": "conform-run/1",
+  "worker": "7c9a08be-1f2d-413e-b6cb-23bfb01fe97a",
+  "subject": "module-design",
+  "evaluatedAt": "2026-10-16T18:16:30Z",
+  "pairs": [
+    {
+      "context": "fb6e9de5-a01b-4434-8ed7-313c142947a1",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:102 the secret-prefix vocabulary is a hand-copied regex also held at src-tauri/core/src/utils/sanitization.rs:66, src-tauri/src/main.rs:234 and src-tauri/core/src/redact.rs:52 with no parity check, so a new token class added to one copy leaks through the others",
+      "techniques": [
+        {"technique": "module-depth", "verdict": "deviation", "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:98 the comment itself records that the TS forms were copied from core/src/redact.rs after the TS copy had leaked 13 of 20 token shapes; one decision (what a secret looks like) lives in four hand-maintained encodings, the information-leakage failure"},
+        {"technique": "seams-and-adapters", "verdict": "deviation", "evidence": "src-tauri/src/main.rs:234 the app binary builds its own copy of the redaction regex instead of going through the core redaction module, so redaction has more than one door"}
+      ],
+      "registryProposal": "module-depth's information-leakage rule is stated for modules in one language; the commonest real case here is the same vocabulary hand-mirrored across the IPC language boundary (Rust and TS). A technique note on cross-language vocabularies (generate one from the other, or a shared fixture corpus both sides test against) would make this finding actionable instead of only diagnosable."
+    },
+    {
+      "context": "71d36b74-2b52-4759-a000-b505ddf27915",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/core/design_conversations.rs:182 update_status takes status: &str and checks it at runtime against VALID_CONVERSATION_STATUSES (:178), while the model field is String (src-tauri/core/src/models/design_conversation.rs:44); a closed set the repo owns is held in an open type, so callers learn membership from prose and a bad value fails at runtime, not compile time",
+      "techniques": [
+        {"technique": "module-depth", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/core/design_conversations.rs:178 a three-member vocabulary this repo owns, enforced by a runtime contains() instead of an enum; the closed-set rule's detection signal is met word for word"}
+      ]
+    },
+    {
+      "context": "a6843b83-43a1-4eab-ae40-26f23b949a0d",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/execution/usePersonaExecution.ts:199 the execution_id that decides which run an event tears down is read off the raw payload with an unmarked 'as string | undefined' (also :383), bypassing ExecutionStatusSchema (src/lib/validation/eventPayloads.ts:110), which validates status but omits execution_id, so the correlation key travels unchecked past the one validation door",
+      "techniques": [
+        {"technique": "marked-unverifiable-region", "verdict": "deviation", "evidence": "src/hooks/execution/usePersonaExecution.ts:383 an assertion at a data boundary with no stated invariant and reachable without passing the checked surface (properties 2 and 4 unmet)"},
+        {"technique": "seams-and-adapters", "verdict": "deviation", "evidence": "src/lib/validation/eventPayloads.ts:110 the schema is the documented single door for status payloads, yet the field both listeners branch on is read around it"},
+        {"technique": "module-depth", "verdict": "conformant", "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:36 run phase is a closed union, narrowed once from the raw string by toCliRunPhase/parseExecutionState"},
+        {"technique": "io-free-core", "verdict": "conformant", "evidence": "src/hooks/execution/useReplayTimeline.ts:219 timeline parsing, silence detection and step spans are exported pure functions tested without doubles; the hook is the driver"}
+      ]
+    },
+    {
+      "context": "6229df3d-d54e-47bb-8091-abb479003c18",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/types.ts:149 any JSON with a string 'kind' is asserted into AutoCredErrorInfo's closed kind union (:96), and its display table is keyed Record<string, ...> (autoCredErrorConfig.ts:6), so an unknown backend kind passes as typed and adding a kind is not compiler-walked to its badge",
+      "techniques": [
+        {"technique": "module-depth", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/autoCredErrorConfig.ts:6 the error-kind vocabulary is encoded a second time under an open string key instead of Record<AutoCredErrorInfo['kind'], ...>, which is information leakage plus a closed set in an open type"},
+        {"technique": "marked-unverifiable-region", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/types.ts:149 a data-boundary assertion with no invariant comment, wider than the check before it (only kind's type is tested, not its membership or the other fields)"}
+      ]
+    }
+  ],
+  "declined": [
+    {"subject": "module-design", "context": "5ab49df3-3442-4ea6-a405-077dec64850d", "reason": "governance: weak; judging would manufacture a deviation against a doubtful match"},
+    {"subject": "module-design", "context": "11fe7642-7a1a-47c5-8910-499850aa04fe", "reason": "governance: weak"},
+    {"subject": "module-design", "context": "9b6cc17c-3add-4152-a349-c189b15a109f", "reason": "governance: weak"},
+    {"subject": "module-design", "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7", "reason": "governance: weak"},
+    {"subject": "module-design", "context": "*remaining 18 unknown/probable pairs*", "reason": "over the 3-6 pair budget; left for the next run"}
+  ],
+  "consults": [
+    {"ts": "2026-10-16T18:16:30Z", "bundle": "software-engineering", "subjects": ["module-design"], "techniques": ["module-depth", "seams-and-adapters"], "deviations": 1},
+    {"ts": "2026-10-16T18:16:30Z", "bundle": "software-engineering", "subjects": ["module-design"], "techniques": ["module-depth"], "deviations": 1},
+    {"ts": "2026-10-16T18:16:30Z", "bundle": "software-engineering", "subjects": ["module-design"], "techniques": ["marked-unverifiable-region", "seams-and-adapters", "module-depth", "io-free-core"], "deviations": 1},
+    {"ts": "2026-10-16T18:16:30Z", "bundle": "software-engineering", "subjects": ["module-design"], "techniques": ["module-depth", "marked-unverifiable-region"], "deviations": 1}
+  ]
+}

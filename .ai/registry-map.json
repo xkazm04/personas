@@ -10453,7 +10453,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/design_conversations.rs:182 update_status takes status: &str and checks it at runtime against VALID_CONVERSATION_STATUSES (:178), while the model field is String (src-tauri/core/src/models/design_conversation.rs:44); a closed set the repo owns is held in an open type, so callers learn membership from prose and a bad value fails at runtime, not compile time",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "agent-instruction-files",
@@ -15240,7 +15244,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:199 the execution_id that decides which run an event tears down is read off the raw payload with an unmarked 'as string | undefined' (also :383), bypassing ExecutionStatusSchema (src/lib/validation/eventPayloads.ts:110), which validates status but omits execution_id, so the correlation key travels unchecked past the one validation door",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "native-shell-integration",
@@ -18311,7 +18319,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/utils/sanitizers/maskSensitive.ts:102 the secret-prefix vocabulary is a hand-copied regex also held at src-tauri/core/src/utils/sanitization.rs:66, src-tauri/src/main.rs:234 and src-tauri/core/src/redact.rs:52 with no parity check, so a new token class added to one copy leaks through the others",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         }
       ],
       "governance": "governed"
@@ -38847,7 +38859,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/types.ts:149 any JSON with a string 'kind' is asserted into AutoCredErrorInfo's closed kind union (:96), and its display table is keyed Record<string, ...> (autoCredErrorConfig.ts:6), so an unknown backend kind passes as typed and adding a kind is not compiler-walked to its badge",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "declarative-object-graph-configs",

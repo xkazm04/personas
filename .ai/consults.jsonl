@@ -1484,3 +1484,7 @@
 {"ts":"2026-10-16T18:16:49Z","bundle":"llm-observability","subjects":["llm-call-telemetry-model"],"techniques":["nullable-cost-never-zero"],"deviations":1}
 {"ts":"2026-10-16T18:16:49Z","bundle":"llm-observability","subjects":["llm-call-telemetry-model"],"techniques":["nullable-cost-never-zero"],"deviations":1}
 {"ts":"2026-10-16T18:16:49Z","bundle":"llm-observability","subjects":["llm-call-telemetry-model"],"techniques":["nullable-cost-never-zero","token-usage-quadruple"],"deviations":1}
+{"ts":"2026-10-16T18:16:30Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","seams-and-adapters"],"deviations":1}
+{"ts":"2026-10-16T18:16:30Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth"],"deviations":1}
+{"ts":"2026-10-16T18:16:30Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["marked-unverifiable-region","seams-and-adapters","module-depth","io-free-core"],"deviations":1}
+{"ts":"2026-10-16T18:16:30Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","marked-unverifiable-region"],"deviations":1}
