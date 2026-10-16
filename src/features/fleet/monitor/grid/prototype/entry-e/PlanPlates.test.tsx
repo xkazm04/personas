@@ -3,7 +3,7 @@
 // that the popup is where they went.
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { act, render, screen, fireEvent, within } from '@testing-library/react';
 import { buildResourceModel } from '../../usage/useResourceModel';
 import { buildSimAccountsSnapshot, buildSimCliUsage } from '../../simulation/simPlans';
 import type { UsageFeed } from '../useUsageFeed';
@@ -46,6 +46,50 @@ describe('PlanPlates', () => {
 
     fireEvent.click(row);
     expect(screen.queryByTestId('entry-e-plan-popover')).toBeNull();
+  });
+
+  it('keeps the refresh time out of the header row: title and refresh only', () => {
+    render(<PlanPlates usage={feed()} />);
+    const header = screen.getByTestId('entry-e-usage').querySelector('header')!;
+    expect(header.querySelector('time')).toBeNull();
+    expect(header.textContent).toBe('Subscription usage');
+  });
+
+  it('opens the numbers last measured on hover and on keyboard focus, and closes them on leave', () => {
+    vi.useFakeTimers();
+    try {
+      render(<PlanPlates usage={feed()} />);
+      const row = screen.getAllByTestId('entry-e-plan')[0]!;
+      fireEvent.mouseEnter(row);
+      act(() => { vi.advanceTimersByTime(450); });
+      const hover = screen.getByTestId('entry-e-plan-hover');
+      expect(within(hover).getAllByTestId('entry-e-plan-hover-used').length).toBeGreaterThanOrEqual(2);
+      fireEvent.mouseLeave(row);
+      expect(screen.queryByTestId('entry-e-plan-hover')).toBeNull();
+
+      fireEvent.focus(row);
+      act(() => { vi.advanceTimersByTime(450); });
+      expect(screen.getByTestId('entry-e-plan-hover')).toBeTruthy();
+      fireEvent.keyDown(row, { key: 'Escape' });
+      expect(screen.queryByTestId('entry-e-plan-hover')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('stands the hover down while the popup is open', () => {
+    vi.useFakeTimers();
+    try {
+      render(<PlanPlates usage={feed()} />);
+      const row = screen.getAllByTestId('entry-e-plan')[0]!;
+      fireEvent.mouseEnter(row);
+      act(() => { vi.advanceTimersByTime(450); });
+      fireEvent.click(row);
+      expect(screen.getByTestId('entry-e-plan-popover')).toBeTruthy();
+      expect(screen.queryByTestId('entry-e-plan-hover')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('asks to switch from the popup of a standby plan and closes it', () => {
