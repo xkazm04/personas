@@ -2810,8 +2810,8 @@
           "changedAt": "2026-09-05",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:58 re-confirmed 2026-10-12: the deployment smoke test still runs local executePersona, not the endpoint the card advertises (src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:44), though src/api/system/cloud.ts:49 cloudExecutePersona exists - its pass/fail describes the local twin, not the deployment",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:58 re-confirmed 2026-10-16: the deployment smoke test runs local executePersona, not the endpoint the card advertises (src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:44) although src/api/system/cloud.ts:49 cloudExecutePersona exists - a pass describes the local twin, never the deployed build",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc",
           "evaluatedRevision": 4,
           "revisionsBehind": 0
@@ -27226,8 +27226,8 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1282 re-confirmed 2026-10-12: rollback (offered at src/features/plugins/gitlab/components/DeploymentHistoryTab.tsx:55 and GitOpsVersionHistory.tsx:63) rebuilds the agent from the snapshot prompt plus CURRENT local tools/model (same at gitlab.rs:989), so rollback ships an artifact never run instead of re-pointing to the last known-good one",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1277 re-confirmed 2026-10-16 (anchor moved from :1282): rollback offered at src/features/plugins/gitlab/components/DeploymentHistoryTab.tsx:55 rebuilds the agent from the snapshot prompt plus CURRENT tools/model, and with no snapshot falls back to current persona state (gitlab.rs:1288); same rebuild at gitlab.rs:989 - rollback ships a never-run artifact instead of re-pointing to the last known-good one",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc",
           "evaluatedRevision": 4,
           "revisionsBehind": 0

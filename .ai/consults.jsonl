@@ -1400,3 +1400,5 @@
 {"ts":"2026-10-16T17:48:29Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1}
 {"ts":"2026-10-16T17:48:29Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["autonomous-cycle-hosting","signal-economy-contract"],"deviations":2}
 {"ts":"2026-10-16T17:51:03Z","bundle":"software-engineering","subjects":["executive-reporting"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:51:28Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":["environment-promotion","deploy-gate-coupling"],"deviations":1}
+{"ts":"2026-10-16T17:51:28Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":["environment-promotion","deploy-gate-coupling"],"deviations":1}
