@@ -170,7 +170,10 @@ Activity: **Blueprint** lists every lens-scan product as a tile (proposed, appro
 counts from the same `lens_scan_products` read). **Open the blueprint** opens that product's drawing
 set, the same sheet a Build card opens, whether or not anything waits for a decision; a product with a
 release waiting also gets **Open the release**. A product whose map cannot be read opens the store's
-error frame instead of the drawing.
+error frame instead of the drawing. `Esc` climbs the drawing level by level and, at its site,
+closes only the drawing: you land back on the Blueprint tab, never outside the Monitor. The
+Monitor answers `Esc` from the app's keyboard ladder (full-screen-layer rung, 60), so any surface
+above it (a modal, the Decision Deck, the drawing) that takes the key keeps it.
 
 **Stewards plate.** In the supply column the Autopilot plate became the
 Stewards plate: the attention-loop switch on top (unchanged, same tour anchors

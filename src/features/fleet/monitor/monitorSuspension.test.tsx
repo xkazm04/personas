@@ -19,6 +19,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act, cleanup, fireEvent } from '@testing-library/react';
 import { useMonitorVisible } from './monitorVisibility';
+import { AppKeyboardProvider, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 
 (globalThis as Record<string, unknown>).__IPC_TOKEN = 'test-token';
 
@@ -275,6 +276,45 @@ describe('Escape belongs to whatever is on screen', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
 
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  // The blueprint sheet (2026-10-16): at its site level Escape closes the
+  // sheet, which unmounts before a bare `window` listener runs, so the Monitor
+  // used to find no dialog and close too. On the ladder, a surface above it
+  // that consumes the key is the only one that sees it.
+  it('leaves the Monitor open when a surface above it on the keyboard ladder consumes Escape', () => {
+    function SheetAbove({ onEscape }: { onEscape: () => void }) {
+      useAppKeyboard((e) => {
+        if (e.key !== 'Escape') return false;
+        onEscape();
+        return true;
+      }, { priority: 88, exclusive: true });
+      return null;
+    }
+    const closedSheet = vi.fn();
+    render(
+      <AppKeyboardProvider>
+        <PersonaMonitor visible onClose={onClose} />
+        <SheetAbove onEscape={closedSheet} />
+      </AppKeyboardProvider>,
+    );
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(closedSheet).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('closes the Monitor through the ladder when nothing above it answers', () => {
+    render(
+      <AppKeyboardProvider>
+        <PersonaMonitor visible onClose={onClose} />
+      </AppKeyboardProvider>,
+    );
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
 

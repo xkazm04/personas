@@ -96,6 +96,7 @@ vi.mock('@/i18n/useTranslation', () => ({
         channels_layout_map: 'Map', channels_layout_map_hint: 'Map',
         channels_no_teams: 'No teams', system: 'System',
       },
+      decisionCenter: { lens: { tab_blueprint: 'Blueprint', tab_blueprint_hint: 'Blueprint' } },
     },
     tx: (s: string) => s,
   }),
