@@ -1251,3 +1251,6 @@
 {"ts":"2026-10-16T17:02:38Z","bundle":"software-engineering","subjects":["sql-console"],"techniques":["result-fidelity","editor-ergonomics","introspection-architecture"],"deviations":3}
 {"ts":"2026-10-16T17:03:07Z","bundle":"software-engineering","subjects":["concurrency-guards"],"techniques":["single-flight-primitives","idempotency-by-design","shared-claims-by-announce-and-verify"],"deviations":0}
 {"ts":"2026-10-16T17:03:07Z","bundle":"software-engineering","subjects":["concurrency-guards"],"techniques":["single-flight-primitives","atomic-file-publish"],"deviations":0}
+{"ts":"2026-10-16T17:04:00Z","bundle":"software-engineering","subjects":["async-ui-states"],"techniques":["placeholder-design","failure-states","empty-state-design","state-model"],"deviations":1}
+{"ts":"2026-10-16T17:04:00Z","bundle":"software-engineering","subjects":["async-ui-states"],"techniques":["empty-state-design","failure-states","state-model"],"deviations":1}
+{"ts":"2026-10-16T17:04:00Z","bundle":"software-engineering","subjects":["async-ui-states"],"techniques":["action-busy-states","placeholder-design","state-model"],"deviations":1}

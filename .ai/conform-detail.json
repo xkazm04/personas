@@ -1153,24 +1153,24 @@
       "subject": "async-ui-states",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:26:00.000Z",
-      "worker": "02737822-d0ef-464b-b252-be278885351c",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:04:00.000Z",
+      "worker": "b43c6a8f-d4b2-46f9-aa07-f4a6a49f8bd4",
       "techniques": [
         {
           "technique": "empty-state-design",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:445 first-run create-persona action rendered for a filtered-to-zero queue; no-match cause is unrepresentable in src/features/overview/shared/emptyStatePrototype/types.ts:46"
+          "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:46 the shared primitive is typed by presentation (motif) only, never by cause; the raw-vs-filtered discriminator is absent at ManualReviewList.tsx:175"
         },
         {
           "technique": "failure-states",
-          "verdict": "conformant",
-          "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:130 empty is reached only after rows/loading/error are ruled out, so a failed fetch renders InlineErrorBanner with retry, not inbox-zero"
+          "verdict": "realized",
+          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:415 error view is a distinct InlineErrorBanner with onRetry, decided before empty by resolveReviewQueueView"
         },
         {
           "technique": "state-model",
-          "verdict": "conformant",
-          "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:127 visible rows win over loading, so a refetch never demotes a populated queue to the ghost"
+          "verdict": "realized",
+          "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:127 visibleCount>0 dominates loading and error, so held data is never demoted"
         }
       ],
       "superseded": [
@@ -1201,6 +1201,13 @@
           "evaluatedAt": "2026-10-10T12:00:30.000Z",
           "worker": "b0428848-5de0-43f0-9203-07d2ce5c4352",
           "reason": "replaced by 02737822-d0ef-464b-b252-be278885351c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:46 EmptyStateContent takes no cause input, so ManualReviewList keys empty on the FILTERED count (src/features/overview/sub_manual-review/components/ManualReviewList.tsx:174) and a filter excluding every review lands on the first-run hero offering create-persona (ManualReviewList.tsx:445) instead of a no-match state - re-verified 2026-10-12",
+          "evaluatedAt": "2026-10-12T12:26:00.000Z",
+          "worker": "02737822-d0ef-464b-b252-be278885351c",
+          "reason": "replaced by b43c6a8f-d4b2-46f9-aa07-f4a6a49f8bd4"
         }
       ]
     },
@@ -8936,14 +8943,29 @@
       "subject": "async-ui-states",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:26:00.000Z",
-      "worker": "02737822-d0ef-464b-b252-be278885351c",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:04:00.000Z",
+      "worker": "b43c6a8f-d4b2-46f9-aa07-f4a6a49f8bd4",
       "techniques": [
         {
           "technique": "placeholder-design",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/feedback/SuspenseFallback.tsx:14 code-arrival fallback is an invisible spinner in a centered py-12 box: blank hole, no geometry, no appearance delay"
+          "evidence": "src/features/shared/components/feedback/SuspenseFallback.tsx:14 lazy-boundary fallback has no delay and promises no geometry; RouteChunkSkeleton is the conformant sibling it should delegate to"
+        },
+        {
+          "technique": "failure-states",
+          "verdict": "realized",
+          "evidence": "src/features/shared/components/feedback/InlineErrorBanner.tsx:74 retry affordance on the failure banner, announced via role=alert/aria-live at :64"
+        },
+        {
+          "technique": "empty-state-design",
+          "verdict": "realized",
+          "evidence": "src/features/shared/components/feedback/ScenarioEmptyState.tsx:52 carries a distinct no-results variant beside the first-run scenarios, so the primitive can spell no-match apart from first-run"
+        },
+        {
+          "technique": "state-model",
+          "verdict": "realized",
+          "evidence": "src/features/shared/components/feedback/StalenessIndicator.tsx:22 admits a failed refresh over held data ambiently with its age instead of demoting the region"
         }
       ],
       "superseded": [
@@ -8974,6 +8996,13 @@
           "evaluatedAt": "2026-10-10T12:00:30.000Z",
           "worker": "b0428848-5de0-43f0-9203-07d2ce5c4352",
           "reason": "replaced by 02737822-d0ef-464b-b252-be278885351c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/shared/components/feedback/SuspenseFallback.tsx:14 renders LoadingSpinner, which paints nothing (src/features/shared/components/feedback/LoadingSpinner.tsx:9 spinners disabled app-wide), so code arrival at every SuspenseFallback site is a blank py-12 hole with an undelayed role=status, not a chrome-consistent placeholder - re-verified 2026-10-12, files untouched since the 2026-10-10 verdict",
+          "evaluatedAt": "2026-10-12T12:26:00.000Z",
+          "worker": "02737822-d0ef-464b-b252-be278885351c",
+          "reason": "replaced by b43c6a8f-d4b2-46f9-aa07-f4a6a49f8bd4"
         }
       ]
     },
@@ -8982,19 +9011,24 @@
       "subject": "async-ui-states",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:26:00.000Z",
-      "worker": "02737822-d0ef-464b-b252-be278885351c",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:04:00.000Z",
+      "worker": "b43c6a8f-d4b2-46f9-aa07-f4a6a49f8bd4",
       "techniques": [
         {
           "technique": "action-busy-states",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/buttons/AsyncButton.tsx:110 Button rendered without loading prop, so Button.tsx:165 min-width lock never fires and the busy swap shifts layout"
+          "evidence": "src/features/shared/components/buttons/AsyncButton.tsx:110 geometry does not hold while busy (width lock keyed on the omitted `loading` prop); synchronous disarm IS realized at AsyncButton.tsx:46"
         },
         {
           "technique": "placeholder-design",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/layout/RouteChunkSkeleton.tsx:40 appearance delay lives on animationDelay; src/styles/globals.css:4884 .animate-fade-in gets animation:none under reduced motion, the exact trap the technique names"
+          "evidence": "src/features/shared/components/layout/RouteChunkSkeleton.tsx:40 invisibility window lives on the entrance animation and dies under reduced motion (src/styles/globals.css:4912); header-only geometry and aria-hidden at :38 are realized"
+        },
+        {
+          "technique": "state-model",
+          "verdict": "unknown",
+          "evidence": "src/features/shared/components/layout/DeferUntilIdle.tsx:11 is a deferral primitive, not request machinery; this context holds no state-model derivation to judge"
         }
       ],
       "superseded": [
@@ -9025,6 +9059,13 @@
           "evaluatedAt": "2026-10-10T12:00:30.000Z",
           "worker": "b0428848-5de0-43f0-9203-07d2ce5c4352",
           "reason": "replaced by 02737822-d0ef-464b-b252-be278885351c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/shared/components/buttons/AsyncButton.tsx:110 renders Button without `loading` (omitted at AsyncButton.tsx:13), so the width lock (src/features/shared/components/buttons/Button.tsx:165) never engages and the busy label swap reflows the pressed button; AND src/features/shared/components/layout/RouteChunkSkeleton.tsx:40 rides its 150ms delay on animation-delay, which src/styles/globals.css:4884 erases under prefers-reduced-motion, so reduced-motion users get the ghost on frame one - re-verified 2026-10-12",
+          "evaluatedAt": "2026-10-12T12:26:00.000Z",
+          "worker": "02737822-d0ef-464b-b252-be278885351c",
+          "reason": "replaced by b43c6a8f-d4b2-46f9-aa07-f4a6a49f8bd4"
         }
       ]
     },
