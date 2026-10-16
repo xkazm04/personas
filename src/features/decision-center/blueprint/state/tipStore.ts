@@ -8,6 +8,8 @@ export interface TipSnap {
   fid: string | null;
   /** A hovered flag (a trouble mark), if the pointer is on one. */
   flag: FlagBox | null;
+  /** The room under the pointer when no fixture or flag is (bp's place card); null otherwise. */
+  room: string | null;
   px: number;
   py: number;
 }
@@ -19,7 +21,7 @@ export class TipStore {
   get = (): TipSnap | null => this.snap;
   set(next: TipSnap | null): void {
     const o = this.snap;
-    if (o === next || (o && next && o.fid === next.fid && o.flag === next.flag && o.px === next.px && o.py === next.py)) return;
+    if (o === next || (o && next && o.fid === next.fid && o.flag === next.flag && o.room === next.room && o.px === next.px && o.py === next.py)) return;
     this.snap = next;
     for (const fn of this.subs) fn();
   }

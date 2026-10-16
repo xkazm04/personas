@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { kettleData } from '../fixture/kettle';
 import { buildPlan } from '../model/plan';
 import { dnum } from '../model/layout';
-import { deltaWin } from '../engine/tiles';
+import { deltaWin } from '../engine/travel';
 import { composeGeneral, expandedRect, lensContent, type FeatureLive, type Rect, type TileGeom } from '../engine/lens';
 import type { EngineWords } from '../engine/types';
 import type { Feature } from '../standard/load';
@@ -28,12 +28,12 @@ describe('the delta window', () => {
   it('flies for a feature whose stage moved in the 7 days up to the as-of date, and for no other', () => {
     for (const f of plan.S.features) {
       const t = dnum(asOf), moved = f.revs.some((r) => dnum(r.date) > t - 7 && dnum(r.date) <= t);
-      expect(deltaWin(f, asOf)).toBe(moved);
+      expect(!!deltaWin(f, asOf, 7)).toBe(moved);
     }
   });
   it('never flies for a feature without revisions', () => {
     const f = { ...plan.S.features[0]!, revs: [] } as Feature;
-    expect(deltaWin(f, asOf)).toBe(false);
+    expect(deltaWin(f, asOf, 7)).toBeNull();
   });
 });
 

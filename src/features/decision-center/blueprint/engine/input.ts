@@ -1,5 +1,6 @@
 // Pointer input on the plan: drag pans, the wheel zooms about the cursor (a trackpad's small deltas pan), a click
-// selects, a double click descends. Returns the unsubscribe.
+// selects, Shift+click picks a fixture's items for one batch decision (bp's Shift-click target), a double click
+// descends. Hovering a room (no fixture under the pointer) reports the room, for bp's place card. Returns the unsubscribe.
 import type { Engine } from './Engine';
 
 export function wireInput(e: Engine): () => void {
@@ -17,10 +18,10 @@ export function wireInput(e: Engine): () => void {
     }
     const F = e.flagAt(px, py), T = F ? null : e.tileAt(px, py), hk = F ? F.fid + '|' + F.lens : null, ht = F ? F.fid : T ? T.id : null;
     if (hk !== e.hotFlag || ht !== e.hot) { e.hotFlag = hk; e.hot = ht; e.dirty = true; }
-    e.hooks.hover(F, T, px, py);
+    e.hooks.hover(F, T, px, py, F || T ? null : e.roomAt(px, py));
     cv.style.cursor = F || T ? 'pointer' : 'grab';
   };
-  const leave = () => { e.hot = null; e.hotFlag = null; e.dirty = true; e.hooks.hover(null, null, 0, 0); };
+  const leave = () => { e.hot = null; e.hotFlag = null; e.dirty = true; e.hooks.hover(null, null, 0, 0, null); };
   const up = (ev: PointerEvent) => {
     const d = drag; drag = null;
     if (!d || d.moved) return;
@@ -30,7 +31,7 @@ export function wireInput(e: Engine): () => void {
     if (F) { e.hooks.flag(F); return; }
     const T = e.tileAt(px, py);
     if (dbl) { e.hooks.descend(T, px, py); return; }
-    e.hooks.click(T, e.roomAt(px, py));
+    e.hooks.click(T, e.roomAt(px, py), ev.shiftKey);
   };
   const wheel = (ev: WheelEvent) => {
     ev.preventDefault();

@@ -6,7 +6,7 @@
 // EDIT (port): bp tweens between General and a lens with springs; this sheet switches at once, so the expansion is
 // 0 or 1 and the lerps below land on their ends. Words come from `e.words` (no English is composed here).
 import type { Feature, LensDef } from '../standard/load';
-import type { Health, Scalar } from '../standard/types';
+import type { Health, Scalar, Stage } from '../standard/types';
 import type { LensField } from '../standard/types';
 import { EVIDENCE_BY_DENSITY, reasonOf } from '../standard/present';
 import { clamp } from './camera';
@@ -21,7 +21,8 @@ export interface Rect { x: number; y: number; w: number; h: number }
 export interface TileGeom extends Rect { form: 'tile' | 'ribbon'; u: number; k: number; strip: Rect; body: Rect; text: boolean }
 /** A feature's live values (bp FeatureLive): the map's rollout and build progress, and any lens value. */
 export interface FeatureLive { rolloutPct: number; progressPct: number; value(lens: string, key: string): Scalar | undefined }
-export interface MarkArgs { ctx: CanvasRenderingContext2D; th: CanvasTheme; tile: TileGeom; f: Feature; d: LensDef; slot: Rect | null; r: Rect; w: number; x: number; live: FeatureLive }
+/** `st` is the stage on the drawn date and `now` whether that date is now (bp MarkArgs.stage / .now): off now, a lens shows its glyph faint and no measure. */
+export interface MarkArgs { ctx: CanvasRenderingContext2D; th: CanvasTheme; tile: TileGeom; f: Feature; d: LensDef; slot: Rect | null; r: Rect; w: number; x: number; live: FeatureLive; st: Stage | null; now: boolean }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const smooth = (t: number) => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
@@ -90,7 +91,7 @@ function drawTile(a: MarkArgs): void {
   const H = bandH(t), slot = a.slot, sx = slot ? slot.x : t.strip.x, sW = slot ? slot.w : t.strip.w;
   const rx = lerp(sx, t.strip.x, e), rw = lerp(sW, t.strip.w, e), lift = (1 - a.w) * 3 * u;
   const gs = Math.max(6, lerp(Math.min(H - u, sW * 0.5, 8 * u), Math.min(H, 9 * u), e) * lerp(0.55, 1, a.w));
-  const cy = bandY(t) + H / 2 - lift, gy = cy - gs / 2, ga = ctx.globalAlpha * a.w, m = measure(d, a.live);
+  const cy = bandY(t) + H / 2 - lift, gy = cy - gs / 2, ga = ctx.globalAlpha * a.w, m = a.now ? measure(d, a.live) : -1;
   if (m > 0 && e > 0.004) {
     const b = t.body, top = bandY(t) + H, fh = b.y + b.h - top, fw = b.w * Math.min(1, m);
     if (fh >= 2) {
@@ -99,7 +100,8 @@ function drawTile(a: MarkArgs): void {
     }
   }
   ctx.globalAlpha = ga;
-  glyph(ctx, d.glyph, rx, gy, gs, healthInk(th, h, true));
+  glyph(ctx, d.glyph, rx, gy, gs, healthInk(th, h, a.now));
+  if (!a.now) return;
   if (e > 0.01 && t.text && t.w >= 250 * u && t.h >= 120 * u) {
     const ws = Math.min(t.h * 0.24, 30 * u);
     ctx.globalAlpha = ga * e * (th.mode === 'dark' ? 0.3 : 0.24);
@@ -123,7 +125,7 @@ function drawTile(a: MarkArgs): void {
 
 function drawRibbon(a: MarkArgs): void {
   const { ctx, th, tile: t, f, d, r } = a, u = t.u;
-  if (r.w < 3 || a.w < 0.02) return;
+  if (r.w < 3 || a.w < 0.02 || !a.now) return;
   const e = smooth(a.x), h = f.lens[d.id]?.h ?? 'unmeasured', m = measure(d, a.live);
   ctx.globalAlpha *= a.w;
   if (m < 0) { if (h !== 'unmeasured' && h !== 'na') railNone(ctx, th, r.x, r.x + r.w * e, r.y, r.h, u); }
@@ -137,7 +139,7 @@ function drawRibbon(a: MarkArgs): void {
 
 /** A lens's marks on one tile or ribbon segment (bp manifestChannel.marks). */
 export function lensMarks(a: MarkArgs): void {
-  if (!a.f.stage || a.w < 0.03) return;
+  if (!a.st || a.w < 0.03) return;
   if (a.tile.form === 'tile') drawTile(a); else drawRibbon(a);
 }
 

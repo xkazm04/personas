@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { Figure } from '@/features/shared/components/kit';
 import { useIsDarkTheme } from '@/stores/themeStore';
+import { SheetContext } from '../controller/SheetContext';
 import { Engine } from '../engine/Engine';
 import type { Safe } from '../engine/camera';
 import type { EngineWords, Hooks } from '../engine/types';
@@ -44,8 +45,11 @@ export function PlanCanvas({ plan, work, words, lens, view, hooks, onEngine, des
   const host = useRef<HTMLDivElement>(null);
   const [h, setH] = useState(600);
   const engine = useRef<Engine | null>(null);
-  const live = useRef({ hooks, plan, work, words });
-  live.current = { hooks, plan, work, words };
+  // Stage D: the date the plan is drawn at, the recent window and the picked items (the sheet's state, when there is one)
+  const ui = useContext(SheetContext)?.ui;
+  const asOf = ui?.asOf ?? null, viewDays = ui?.viewDays ?? 7, selected = ui?.selected;
+  const live = useRef({ hooks, plan, work, words, asOf, viewDays, selected });
+  live.current = { hooks, plan, work, words, asOf, viewDays, selected };
   const dark = useIsDarkTheme();
 
   useEffect(() => {
@@ -63,12 +67,12 @@ export function PlanCanvas({ plan, work, words, lens, view, hooks, onEngine, des
     const e = new Engine(canvas, box, l.plan, l.words, {
       safe: () => safeOf(box),
       moved: () => view.sync(e),
-      hover: (f, t, x, y) => live.current.hooks.hover(f, t, x, y),
+      hover: (f, t, x, y, r) => live.current.hooks.hover(f, t, x, y, r),
       flag: (f) => live.current.hooks.flag(f),
-      click: (t, r) => live.current.hooks.click(t, r),
+      click: (t, r, sh) => live.current.hooks.click(t, r, sh),
       descend: (t, x, y) => live.current.hooks.descend(t, x, y),
     });
-    e.setWork(l.work);
+    e.setWork(l.work); e.setAt(l.asOf); e.setViewDays(l.viewDays); e.setPicked(l.selected ?? []);
     engine.current = e; onEngine(e);
     return () => { e.dispose(); engine.current = null; onEngine(null); };
   // built once per mount (onEngine and view are stable); plan, work, words and lens reach it through the effects below
@@ -80,6 +84,9 @@ export function PlanCanvas({ plan, work, words, lens, view, hooks, onEngine, des
   useEffect(() => { engine.current?.setLens(lens); }, [lens]);
   // the canvas colours come from tokens: read them again when the theme changes
   useEffect(() => { engine.current?.retheme(); }, [dark]);
+  useEffect(() => { engine.current?.setAt(asOf); }, [asOf]);
+  useEffect(() => { engine.current?.setViewDays(viewDays); }, [viewDays]);
+  useEffect(() => { engine.current?.setPicked(selected ?? []); }, [selected, work]);
 
   return (
     <div ref={frame} className="bp-frame">

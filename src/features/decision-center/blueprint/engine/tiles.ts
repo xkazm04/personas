@@ -2,21 +2,20 @@
 // paintTile / ribSeg, near verbatim at u = 1): a feature's stage fill and stroke (ink only), its trouble cloud or
 // watch tick, the delta triangle when its stage moved in the last week, the lens marks, the "?" over the unmeasured,
 // and at fixture scale its code, evidence line, name (doubling at L3) and trouble stamp.
-// EDIT (port): bp's blast-radius and GA filters and its swarm chips are not brought (no such modes here); the
-// sheet's drawing is always "now", so the time-travel branches fold away.
+// EDIT (port): bp's blast-radius and GA filters and its swarm chips are not brought (no such modes here). Time travel
+// (Stage D) is bp's: the stage is the one on the drawn date (e.stageOf), and the trouble marks, lens verdicts and live
+// values speak of now only; the delta window is the rail's View days (bp S.delta).
 import type { Feature } from '../standard/load';
 import type { TileNode } from '../model/layout';
-import { dnum } from '../model/layout';
 import { clamp, smooth } from './camera';
 import type { Engine } from './Engine';
 import { cloud, stageFill, stageStroke } from './glyphs';
 import { composeGeneral, expandedRect, lensContent, lensMarks, type MarkArgs, type Rect, type TileGeom } from './lens';
 import { unknownFill } from './patterns';
 import { drawText } from './text';
+import { deltaWin } from './travel';
 import { sxv, syv, type View } from './view';
 
-/** bp's default delta window (UI state `delta: 7`): a stage change this many days before the as-of date flies a triangle. */
-const DELTA_DAYS = 7;
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 const GEO: TileGeom = { x: 0, y: 0, w: 0, h: 0, form: 'tile', u: 1, k: 1, strip: { x: 0, y: 0, w: 0, h: 0 }, body: { x: 0, y: 0, w: 0, h: 0 }, text: false };
@@ -29,12 +28,8 @@ function makeGeom(x: number, y: number, w: number, h: number, form: 'ribbon' | '
   return g;
 }
 
-/** bp aggregates.ts deltaWin: did the feature's stage move within the window that ends on the as-of date? */
-export function deltaWin(f: Feature, asOf: string): boolean {
-  const t = dnum(asOf), from = t - DELTA_DAYS;
-  for (let i = f.revs.length - 1; i >= 0; i--) { const d = dnum(f.revs[i]!.date); if (d > from && d <= t) return true; }
-  return false;
-}
+/** bp: did the feature's stage move within the recent window (the View's days) that ends on the drawn date? */
+const moved = (e: Engine, f: Feature): boolean => !!deltaWin(f, e.day, e.viewDays);
 
 export function healthMarks(e: Engine, ctx: CanvasRenderingContext2D, h: string, x: number, y: number, w: number, hh: number, compact: boolean, a: number): void {
   const th = e.th, ga = ctx.globalAlpha;
@@ -68,7 +63,7 @@ export function lensVerdict(e: Engine, f: Feature): { fade: number; unk: number 
 const SLOT: Rect = { x: 0, y: 0, w: 0, h: 0 }, EXP: Rect = { x: 0, y: 0, w: 0, h: 0 }, BLEND: Rect = { x: 0, y: 0, w: 0, h: 0 };
 /** Every lens present in the mix, on one tile or ribbon segment (bp plan.ts lensMarks). */
 function marks(e: Engine, ctx: CanvasRenderingContext2D, g: TileGeom, f: Feature): void {
-  const ls = e.plan.lenses, ga = ctx.globalAlpha, live = e.live(f), m = e.mixS;
+  const ls = e.plan.lenses, ga = ctx.globalAlpha, live = e.live(f), m = e.mixS, st = e.stageOf(f), now = e.isNow;
   for (let i = 0; i < ls.length; i++) {
     const d = ls[i]!, p = m.p(d.id);
     if (p <= 0.004) continue;
@@ -77,7 +72,7 @@ function marks(e: Engine, ctx: CanvasRenderingContext2D, g: TileGeom, f: Feature
     if (slot) { r = BLEND; r.x = lerp(slot.x, exp.x, x); r.y = lerp(slot.y, exp.y, x); r.w = lerp(slot.w, exp.w, x); r.h = lerp(slot.h, exp.h, x); w = p; }
     else { if (x <= 0.004) continue; r = exp; w = p * x; }
     if (r.w < 1 || r.h < 1) continue;
-    const a: MarkArgs = { ctx, th: e.th, tile: g, f, d, slot, r, w, x, live };
+    const a: MarkArgs = { ctx, th: e.th, tile: g, f, d, slot, r, w, x, live, st, now };
     ctx.save(); lensMarks(a); ctx.restore();
     ctx.globalAlpha = ga;
   }
@@ -89,15 +84,15 @@ function deltaMark(e: Engine, ctx: CanvasRenderingContext2D, xw: number, y: numb
 }
 
 export function ribSeg(e: Engine, ctx: CanvasRenderingContext2D, f: Feature, x: number, y: number, w: number, h: number, a0: number, k: number): void {
-  const th = e.th, st = f.stage, vd = st ? lensVerdict(e, f) : { fade: 1, unk: 0 }, aa = a0 * vd.fade;
+  const th = e.th, st = e.stageOf(f), vd = st && e.isNow ? lensVerdict(e, f) : { fade: 1, unk: 0 }, aa = a0 * vd.fade;
   if (aa <= 0.01) return;
   ctx.globalAlpha = aa;
   ctx.fillStyle = th.tileBase; ctx.fillRect(x, y, w, h);
   const Lv = e.live(f);
   stageFill(ctx, th, st, x, y, w, h, Lv.rolloutPct, Lv.progressPct);
   if (!st || st === 'specified' || st === 'idea') { stageStroke(ctx, th, st, aa, 1); ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); ctx.setLineDash([]); ctx.globalAlpha = aa; }
-  if (st) healthMarks(e, ctx, e.mixS.top ? f.lens[e.mixS.top]?.h ?? 'unmeasured' : f.health, x, y, w, h, true, 1);
-  if (st && deltaWin(f, e.plan.S.asOf)) deltaMark(e, ctx, x + w * 0.9, y, clamp((w * 0.9) / 9, 4, 8));
+  if (st && e.isNow) healthMarks(e, ctx, e.mixS.top ? f.lens[e.mixS.top]?.h ?? 'unmeasured' : f.health, x, y, w, h, true, 1);
+  if (st && moved(e, f)) deltaMark(e, ctx, x + w * 0.9, y, clamp((w * 0.9) / 9, 4, 8));
   const g = makeGeom(x, y, w, h, 'ribbon', k);
   marks(e, ctx, g, f);
   ctx.globalAlpha = aa;
@@ -123,7 +118,7 @@ function fitStamp(e: Engine, cands: readonly string[], last: string | null, maxW
 export function paintTile(e: Engine, ctx: CanvasRenderingContext2D, v: View, T: TileNode, alphaMul: number): void {
   const f = T.f, th = e.th, k = v.k, x = sxv(v, T.x), y = syv(v, T.y), w = T.w * k, h = T.h * k;
   if (x > v.c1x + 10 || y > v.c1y + 10 || x + w < v.c0x - 10 || y + h < v.c0y - 10) return;
-  const st = f.stage, vd = st ? lensVerdict(e, f) : { fade: 1, unk: 0 }, a = alphaMul * vd.fade;
+  const st = e.stageOf(f), vd = st && e.isNow ? lensVerdict(e, f) : { fade: 1, unk: 0 }, a = alphaMul * vd.fade;
   if (a <= 0.01) return;
   ctx.globalAlpha = a;
   const g = makeGeom(x, y, w, h, 'tile', k), Lv = e.live(f);
@@ -132,8 +127,8 @@ export function paintTile(e: Engine, ctx: CanvasRenderingContext2D, v: View, T: 
   stageStroke(ctx, th, st, a, w < 30 ? 1 : 1.5); ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
   ctx.setLineDash([]); ctx.globalAlpha = a;
   const top = e.mixS.top;
-  if (st) healthMarks(e, ctx, top ? f.lens[top]?.h ?? 'unmeasured' : f.health, x, y, w, h, false, 1);
-  if (st && deltaWin(f, e.plan.S.asOf)) deltaMark(e, ctx, x + w, y, clamp(w / 9, 4, 8));
+  if (st && e.isNow) healthMarks(e, ctx, top ? f.lens[top]?.h ?? 'unmeasured' : f.health, x, y, w, h, false, 1);
+  if (st && moved(e, f)) deltaMark(e, ctx, x + w, y, clamp(w / 9, 4, 8));
   marks(e, ctx, g, f);
   ctx.globalAlpha = a;
   if (vd.unk > 0.004) unknownFill(ctx, th, g.body.x, g.body.y, g.body.w, g.body.h, 1, a * Math.min(1, vd.unk));
@@ -147,7 +142,7 @@ export function paintTile(e: Engine, ctx: CanvasRenderingContext2D, v: View, T: 
 
 /** A fixture's words: code and evidence line, the name (twice its plan size at L3) and the trouble stamp. */
 function paintWords(e: Engine, ctx: CanvasRenderingContext2D, T: TileNode, g: TileGeom, a: number): void {
-  const { x, y, w, h, k } = g, f = T.f, th = e.th, tx = e.tx, top = e.mixS.top, W = e.words, st = f.stage;
+  const { x, y, w, h, k } = g, f = T.f, th = e.th, tx = e.tx, top = e.isNow ? e.mixS.top : null, W = e.words, st = e.stageOf(f);
   const ta = a * clamp((w - 100) / 14, 0, 1) * clamp((h - 44) / 8, 0, 1);
   const bigA = clamp((w - 150) / 16, 0, 1) * clamp((h - 64) / 8, 0, 1) >= 0.5;
   if (ta <= 0.004) return;
@@ -159,7 +154,7 @@ function paintWords(e: Engine, ctx: CanvasRenderingContext2D, T: TileNode, g: Ti
     return;
   }
   const mono = tx.f(12, 500, true), code = f.code, idw = code ? tx.w(code, mono) : -10, Lv = e.live(f);
-  const ev = !st ? [W.notDrawn.toUpperCase()] : st === 'flagged' && Lv.rolloutPct < 100 ? [W.stage(st).toUpperCase(), W.pct(Lv.rolloutPct)] : st === 'in-dev' ? [W.stage(st).toUpperCase(), W.pct(Math.round(Lv.progressPct))] : [W.stage(st).toUpperCase()];
+  const now = e.isNow, ev = !st ? [W.notDrawn.toUpperCase()] : now && st === 'flagged' && Lv.rolloutPct < 100 ? [W.stage(st).toUpperCase(), W.pct(Lv.rolloutPct)] : now && st === 'in-dev' ? [W.stage(st).toUpperCase(), W.pct(Math.round(Lv.progressPct))] : [W.stage(st).toUpperCase()];
   const d = top ? e.plan.LENS[top] : undefined, lensC = d && st ? lensContent(W, d, f, Lv) : null;
   const room = w - 16 - idw - 10, gFit = tx.fit(ev, room, mono), lFit = lensC ? tx.fit(lensC.parts, room, mono) : null;
   const showId = !!code && !(lensC ? lFit == null : gFit == null), roomW = showId ? room : w - 14;
@@ -168,7 +163,7 @@ function paintWords(e: Engine, ctx: CanvasRenderingContext2D, T: TileNode, g: Ti
   const s = lensC ? (showId ? lFit : tx.fit(lensC.parts, roomW, mono)) : showId ? gFit : tx.fit(ev, roomW, mono);
   if (s) drawText(ctx, s, x + w - 7, hy, mono, lensC ? e.accentOf(top) : th.ink);
   ctx.textAlign = 'left';
-  const sf = tx.f(12.5, 600), stamp = lensC ? (lensC.stamp ? fitStamp(e, [lensC.stamp], null, w - 14, sf) : null) : st ? stampOf(e, f, w - 14, sf) : null;
+  const sf = tx.f(12.5, 600), stamp = lensC ? (lensC.stamp ? fitStamp(e, [lensC.stamp], null, w - 14, sf) : null) : st && e.isNow ? stampOf(e, f, w - 14, sf) : null;
   // at L3 (the camera at the bay's fit) the title is twice its plan size; it steps back down 2 px at a time to fit
   const l3 = smooth(0.78, 0.94, k / e.cam.fitKOf(T.bay)), roomH = h - (hy - y) - 8 - (stamp ? 20 : 6);
   let ns = Math.round(2 * clamp(13.5 + (w - 150) / 60, 14, 17) * (1 + l3)) / 2, lh = 0, nf = '', lines: string[] | null = null;

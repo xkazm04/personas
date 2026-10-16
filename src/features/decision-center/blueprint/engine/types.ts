@@ -53,8 +53,10 @@ export interface Hooks {
   safe(): Safe;
   /** The camera moved or a frame drew. */
   moved(): void;
-  hover(flag: FlagBox | null, tile: TileNode | null, px: number, py: number): void;
+  /** `room`: the room under the pointer when no flag or fixture is (bp's place card). */
+  hover(flag: FlagBox | null, tile: TileNode | null, px: number, py: number, room: RoomNode | null): void;
   flag(flag: FlagBox): void;
-  click(tile: TileNode | null, room: RoomNode | null): void;
+  /** `shift`: Shift was held (bp: Shift-click picks the fixture for a batch decision). */
+  click(tile: TileNode | null, room: RoomNode | null, shift: boolean): void;
   descend(tile: TileNode | null, px: number, py: number): void;
 }

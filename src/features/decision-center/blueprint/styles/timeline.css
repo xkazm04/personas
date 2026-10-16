@@ -1,7 +1,8 @@
 /* timeline.css - the bottom of the sheet, re-ported from bp: the level ladder and the scale bar (bp
    src/components/blueprint.css:171-179, Overlays.tsx Ladder/ScaleBar) and the collapsed timeline strip (bp
    src/components/timeline.css, timeline/Strip.tsx). The strip is 28 px at 8 px from the bottom; --bp-bb (the root) is
-   what sits above it: strip + margin + a 6 px gap. Expansion and scrubbing are Stage D. */
+   what sits above it: strip + margin + a 6 px gap. Stage D: the strip's TIMELINE press, its travelled state and the
+   hairline slider, and the expanded panel (bp timeline.css #tlpanel, blueprint.css #keyplan / #clock / #revs). */
 
 /* ---------- the ladder: - + LEVEL L0 SITE .. L4 FEATURE, the current level in the lens accent */
 .bp-lv { position: absolute; left: 14px; bottom: var(--bp-bb); display: flex; align-items: stretch; height: 30px; background: var(--bp-card); border: 1px solid var(--bp-ink-3); z-index: 3; }
@@ -22,7 +23,10 @@
 
 /* ---------- the strip (collapsed) */
 .bp-tl { position: absolute; left: 14px; right: 14px; bottom: 8px; height: 28px; display: flex; align-items: center; gap: 14px; padding-right: 8px; border: 1px solid var(--bp-ink-3); background: var(--bp-panel); font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); letter-spacing: var(--bp-ls-2); color: var(--bp-ink-2); z-index: 4; white-space: nowrap; text-transform: uppercase; }
-.bp-tl .tl-exp { align-self: stretch; display: flex; align-items: center; gap: 7px; padding: 0 10px; border-right: 1px solid var(--bp-ink-4); letter-spacing: var(--bp-ls-5); color: var(--bp-ink-2); }
+.bp-tl .tl-exp { align-self: stretch; display: flex; align-items: center; gap: 7px; padding: 0 10px; border-right: 1px solid var(--bp-ink-4); letter-spacing: var(--bp-ls-5); color: var(--bp-ink-2); font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); text-transform: uppercase; }
+.bp-tl .tl-exp:hover, .bp-tl.open .tl-exp { color: var(--bp-ink-hi); background: color-mix(in srgb, var(--bp-ink) 8%, transparent); }
+.bp-tl { transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease; }
+.bp-tl:hover { border-color: var(--bp-ink-2); }
 .bp-tl .tl-exp kbd { font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); padding: 1px 4px; border: 1px solid var(--bp-ink-3); color: var(--bp-ink-2); }
 .bp-tl .tl-chev { color: var(--bp-ink); }
 .bp-tl .tl-pos { display: flex; align-items: center; gap: 8px; }
@@ -43,3 +47,64 @@
 .tl-base, .tl-tick { stroke: var(--bp-ink-3); stroke-width: 1; }
 .tl-handle line { stroke: var(--bp-amber); stroke-width: 1.6; }
 .tl-handle path { fill: var(--bp-amber); }
+.tl-line svg { touch-action: none; cursor: ew-resize; }
+.tl-line svg[data-still] { cursor: default; }
+.tl-line svg:focus { outline: none; }
+.tl-line svg:focus-visible { outline: 2px solid var(--bp-accent); outline-offset: 1px; }
+.tl-hit { fill: transparent; }
+.tl-ms { stroke: var(--bp-ink); stroke-width: 1.2; }
+
+/* ---------- travelled: the strip turns accent so "this is not now" cannot be missed (bp timeline.css .travel) */
+.bp-tl.travel { border-color: var(--bp-accent); background: color-mix(in srgb, var(--bp-accent) 14%, var(--bp-panel)); box-shadow: 0 0 0 1px var(--bp-accent), 0 8px 26px var(--bp-shadow); }
+.bp-tl.travel .tl-pos b { color: var(--bp-accent); }
+.bp-tl.travel .tl-handle line { stroke: var(--bp-accent); stroke-width: 2; }
+.bp-tl.travel .tl-handle path { fill: var(--bp-accent); }
+.bp-tl .tl-back { position: relative; height: 20px; padding: 0 7px; border: 1px solid var(--bp-accent); color: var(--bp-accent); font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); letter-spacing: var(--bp-ls-3); text-transform: uppercase; }
+.bp-tl .tl-back:hover { background: var(--bp-accent); color: var(--bp-paper); }
+/* 20 px drawn, 24 px to the pointer (WCAG 2.5.8): the hit area grows past the border */
+.bp-tl .tl-back::after { content: ''; position: absolute; inset: -3px -1px; }
+.tl-flag { position: absolute; bottom: calc(100% + 7px); padding: 2px 6px; background: var(--bp-label-bg); border: 1px solid var(--bp-accent); color: var(--bp-accent); font: 500 var(--bp-fs-12)/1.2 var(--bp-font-mono); pointer-events: none; white-space: nowrap; }
+
+/* ---------- the panel (expanded): slides up over the plan; it never moves the plan */
+.bp-tlpanel { position: absolute; left: 14px; right: 92px; bottom: var(--bp-bb); height: 96px; display: flex; gap: 12px; align-items: stretch; z-index: 8; background: var(--bp-paper); filter: drop-shadow(0 14px 30px var(--bp-shadow)); animation: bp-tl-in 0.26s cubic-bezier(0.2, 0.7, 0.2, 1); }
+@keyframes bp-tl-in { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .bp-tlpanel { animation: none; } }
+.bp-tlpanel .tl-kp { flex: 0 0 164px; border: 1px solid var(--bp-ink-3); background: var(--bp-panel-solid); position: relative; display: block; }
+.bp-tlpanel .tl-kp:hover { border-color: var(--bp-ink-2); }
+.bp-tlpanel .tl-kp .lab { font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); letter-spacing: var(--bp-ls-4); color: var(--bp-ink-2); padding: 6px 7px 4px; display: flex; justify-content: space-between; text-transform: uppercase; }
+.bp-tlpanel .tl-kp canvas { display: block; width: 100%; height: calc(100% - 22px); }
+.tl-timebox { flex: 1 1 auto; min-width: 0; border: 1px solid var(--bp-ink-3); background: var(--bp-panel-solid); display: flex; align-items: stretch; position: relative; }
+.tl-clock { flex: 0 0 218px; border-right: 1px solid var(--bp-ink-4); padding: 7px 10px; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
+.tl-clock .t { font: 500 var(--bp-fs-12)/1.2 var(--bp-font-mono); letter-spacing: var(--bp-ls-4); color: var(--bp-ink-2); text-transform: uppercase; display: flex; justify-content: space-between; }
+.tl-clock .tl-st { color: var(--bp-ink); letter-spacing: var(--bp-ls-3); }
+.tl-clock .tl-st.warn { color: var(--bp-amber-2); }
+.tl-clock .hm { font: 500 var(--bp-fs-26)/1 var(--bp-font-mono); color: var(--bp-ink-hi); letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; }
+.tl-clock .hm small { font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); color: var(--bp-ink-2); margin-left: 6px; letter-spacing: var(--bp-ls-3); }
+.tl-clock .lv { font: 500 var(--bp-fs-12)/1.2 var(--bp-font-mono); color: var(--bp-ink-2); letter-spacing: var(--bp-ls-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; }
+.tl-revs { flex: 1 1 auto; min-width: 0; position: relative; }
+.tl-revs svg { width: 100%; height: 100%; display: block; overflow: visible; touch-action: none; cursor: ew-resize; }
+.tl-revs svg[data-still] { cursor: default; }
+.tl-revs svg:focus { outline: none; }
+.tl-revs svg:focus-visible .handle rect { stroke-width: 2.6; }
+.tl-revs .ax { stroke: var(--bp-ink-2); stroke-width: 1; }
+.tl-revs .ax.tick { opacity: 0.6; }
+.tl-revs text { fill: var(--bp-ink-2); font: 400 var(--bp-fs-12) var(--bp-font-mono); }
+.tl-revs .lbl { fill: var(--bp-ink); font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-5); }
+.tl-revs .band { fill: var(--bp-ink); }
+.tl-revs .band.dep { fill: var(--bp-red); }
+.tl-revs .plate-bg { fill: var(--bp-label-bg); fill-opacity: 0.85; }
+.tl-revs .ms line { stroke: var(--bp-ink); stroke-width: 1.2; }
+.tl-revs .ms path, .tl-revs .ms text { fill: var(--bp-ink); }
+.tl-revs .ms.next line { stroke: var(--bp-amber); stroke-dasharray: 4 3; }
+.tl-revs .ms.next path, .tl-revs .ms.next text { fill: var(--bp-amber); }
+.tl-revs .rel line { stroke: var(--bp-mint); stroke-width: 1.2; stroke-dasharray: 2 2; }
+.tl-revs .rel text { fill: var(--bp-mint-2); }
+.tl-revs .future { stroke: var(--bp-ink); stroke-opacity: 0.4; stroke-dasharray: 2 4; }
+.tl-revs .handle line { stroke: var(--bp-amber); stroke-width: 1.6; }
+.tl-revs .handle rect { fill: var(--bp-label-bg); stroke: var(--bp-amber); stroke-width: 1.4; }
+.tl-revs .handle text { fill: var(--bp-amber); font: 500 var(--bp-fs-12) var(--bp-font-mono); }
+.tl-revs .handle path { fill: var(--bp-amber); }
+.tl-revs .handle.travel line { stroke: var(--bp-accent); }
+.tl-revs .handle.travel rect { stroke: var(--bp-accent); }
+.tl-revs .handle.travel text, .tl-revs .handle.travel path { fill: var(--bp-accent); }
+@container bp-plan (max-width: 70rem) { .bp-tlpanel .tl-kp { flex-basis: 134px; } .tl-clock { flex-basis: 180px; } .tl-clock .hm { font-size: var(--bp-fs-22); } }

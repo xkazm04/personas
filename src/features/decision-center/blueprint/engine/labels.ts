@@ -9,7 +9,8 @@
 // clear whenever any work is waiting.
 import type { Feature } from '../standard/load';
 import { generalHealth } from '../standard/present';
-import { counts, healthOf } from '../model/aggregates';
+import { healthOf, type Counts } from '../model/aggregates';
+import { countsAt } from './travel';
 import { BH, RH } from '../model/layout';
 import type { BldNode } from '../model/layout';
 import { clamp } from './camera';
@@ -20,13 +21,14 @@ import { onView, rs, type SRect, type View } from './view';
 
 const scratch: SRect = { x: 0, y: 0, w: 0, h: 0 };
 
-interface Agg { c: ReturnType<typeof counts>; general: string[]; generalShort: string[]; lens: string[] | null; lensShort: string[] | null; trouble: number }
+interface Agg { c: Counts; general: string[]; generalShort: string[]; lens: string[] | null; lensShort: string[] | null; trouble: number }
 
 /** bp aggParts: stage parts (bp stageParts), and under a lens its rollup word, bad and watch counts. */
 function aggParts(e: Engine, fs: readonly Feature[]): Agg {
-  const c = counts(fs), top = e.mixS.top, W = e.words;
+  // at a past date the stages are replayed and the lens verdicts (which speak of now) step aside, as in bp
+  const c = countsAt(fs, (f) => e.stageOf(f)), now = e.isNow, top = now ? e.mixS.top : null, W = e.words;
   const stages = [W.live(c.live + c.flagged), W.building(c.build), W.onPaper(c.paper)];
-  let lens: string[] | null = null, lensShort: string[] | null = null, trouble = fs.filter((f) => f.health === 'bad').length;
+  let lens: string[] | null = null, lensShort: string[] | null = null, trouble = now ? fs.filter((f) => f.health === 'bad').length : 0;
   if (top) {
     const hc = healthOf(fs, top), parts = [W.verdict(generalHealth(fs.map((f) => f.lens[top]?.h ?? 'unmeasured'))).toLowerCase()];
     if (hc.bad) parts.push(W.bad(hc.bad));
@@ -39,6 +41,7 @@ function aggParts(e: Engine, fs: readonly Feature[]): Agg {
 /** Proposed (not yet decided) work under a feature set that the current sheet shows, and how many are high risk. */
 function asksOf(e: Engine, fs: readonly Feature[]): { n: number; high: boolean } {
   let n = 0, high = false;
+  if (!e.isNow) return { n, high };
   for (const f of fs) for (const p of e.waitingOf(f)) if (p.status === 'proposed' && e.mixS.p(p.lens)) { n++; if ((p.risk ?? 0) >= 4) high = true; }
   return { n, high };
 }
@@ -124,7 +127,7 @@ function drawWingLabels(e: Engine, ctx: CanvasRenderingContext2D, v: View, B: Bl
     if (base < v.c0y - 10 || base > v.c1y + 120) continue;
     ctx.globalAlpha = a;
     const ag = aggParts(e, W.feats);
-    if (top) drawHealthBar(ctx, th, x, base - 6, wdt, 7, healthOf(W.feats, top)); else drawStageBar(ctx, th, x, base - 6, wdt, 7, ag.c);
+    if (top && e.isNow) drawHealthBar(ctx, th, x, base - 6, wdt, 7, healthOf(W.feats, top)); else drawStageBar(ctx, th, x, base - 6, wdt, 7, ag.c);
     const af = tx.f(13, 500), tf = tx.f(13, 600), parts = ag.lens ?? ag.general, shortParts = ag.lensShort ?? ag.generalShort;
     const trS = ag.trouble ? e.words.inTrouble(ag.trouble) : '', tr = ag.trouble ? tx.w(trS, tf) + 10 : 0;
     let s = tx.fit(parts, wdt - tr, af);

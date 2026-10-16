@@ -1,49 +1,44 @@
-import { useEffect, useRef, useState } from 'react';
-import type { Snapshot } from '../../standard/load';
-
-const day = (d: string) => Date.parse(d.slice(0, 10) + 'T00:00:00Z') / 86_400_000;
-
-/** The strip's box, measured (bp timeline/shared useSize), so the sparkline is drawn in real pixels. */
-function useSize(el: React.RefObject<HTMLElement | null>, w0: number, h0: number): [number, number] {
-  const [s, setS] = useState<[number, number]>([w0, h0]);
-  useEffect(() => {
-    const n = el.current;
-    if (!n || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => { const r = n.getBoundingClientRect(); if (r.width && r.height) setS([Math.round(r.width), Math.round(r.height)]); });
-    ro.observe(n);
-    return () => ro.disconnect();
-  }, [el]);
-  return s;
-}
+import { useRef } from 'react';
+import { useSheet } from '../../controller/SheetContext';
+import { fmtDay } from './dates';
+import { histX, type ScrubGeom } from './scrub';
+import { useSize, useSlider, useTime } from './useSlider';
 
 /**
- * The hairline (bp timeline/Strip.tsx Hairline): the revision history as a sparkline of the weekly feature totals
- * over a faint area, a tick per week on the base line, and the amber handle at now. Drawn only: dragging it to travel
- * is Stage D, so it is not a slider yet.
+ * The hairline (bp timeline/Strip.tsx Hairline): the revision history as a sparkline of the weekly feature totals over a
+ * faint area, a tick per week on the base line, the last milestone done, and the amber handle at the time the plan is
+ * drawn at. It is a slider: click or drag along it to travel, the arrows step a week, End returns to now. Travelled,
+ * the handle turns accent and a date flag stands over it.
  */
-export function Hairline({ weeks, snapshots, asOf, label }: { weeks: string[]; snapshots: Snapshot[]; asOf: string; label: string }) {
-  const wrap = useRef<HTMLDivElement>(null);
+export function Hairline() {
+  const s = useSheet(), { B, tx, language } = s.text, S = s.plan.S;
+  const wrap = useRef<HTMLDivElement>(null), svg = useRef<SVGSVGElement>(null);
   const [W, H] = useSize(wrap, 600, 26);
+  const { t, now } = useTime();
   const L = 4, R = W - 4, top = 4, bot = H - 6;
-  const d0 = weeks.length ? day(weeks[0]!) : day(asOf), d1 = day(asOf), span = Math.max(1, d1 - d0);
-  const x = (d: string) => L + ((day(d) - d0) / span) * (R - L);
-  const max = Math.max(1, ...snapshots.map((s) => s.total));
-  const pts = snapshots.map((sn) => x(sn.week).toFixed(1) + ',' + (bot - (sn.total / max) * (bot - top)).toFixed(1));
+  const g: ScrubGeom = { h0: L, h1: R, weeks: S.weeks, asOf: S.asOf }, x = (d: string) => histX(g, d);
+  const snaps = S.snapshots, max = Math.max(1, ...snaps.map((sn) => sn.total));
+  const pts = snaps.map((sn) => x(sn.week).toFixed(1) + ',' + (bot - (sn.total / max) * (bot - top)).toFixed(1));
   const line = pts.length > 1 ? 'M' + pts.join(' L') : '';
-  const area = line ? `${line} L${x(snapshots[snapshots.length - 1]!.week).toFixed(1)},${bot} L${x(snapshots[0]!.week).toFixed(1)},${bot}Z` : '';
-  const xt = Math.min(x(asOf), R);
+  const area = line ? `${line} L${x(snaps[snaps.length - 1]!.week).toFixed(1)},${bot} L${x(snaps[0]!.week).toFixed(1)},${bot}Z` : '';
+  const m1 = S.milestones.filter((m) => m.state === 'done' && (!S.weeks[0] || m.date >= S.weeks[0])).pop();
+  const xt = Math.min(x(t), R);
+  const { props } = useSlider(svg, W, g);
   return (
     <div className="tl-line" ref={wrap}>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
+      <svg ref={svg} viewBox={`0 0 ${W} ${H}`} aria-label={tx(B.tl_slider, { count: S.weeks.length })} {...props}>
+        <rect className="tl-hit" x={0} y={0} width={W} height={H} />
         {area && <path className="tl-area" d={area} />}
         {line && <path className="tl-spark" d={line} />}
         <line className="tl-base" x1={L} y1={bot} x2={R} y2={bot} />
-        {weeks.map((w) => { const wx = x(w); return <line key={w} className="tl-tick" x1={wx} y1={bot} x2={wx} y2={bot + 3} />; })}
-        <g className="tl-handle">
+        {S.weeks.map((w) => { const wx = x(w); return <line key={w} className="tl-tick" x1={wx} y1={bot} x2={wx} y2={bot + 3} />; })}
+        {m1 && <line className="tl-ms" x1={x(m1.date)} y1={top - 2} x2={x(m1.date)} y2={bot} />}
+        <g className={'tl-handle' + (now ? ' now' : '')}>
           <line x1={xt} y1={1} x2={xt} y2={H - 1} />
           <path d={`M${xt - 4} ${H} l4 -5 l4 5z`} />
         </g>
       </svg>
+      {!now && <span className="tl-flag" aria-hidden="true" style={{ left: Math.max(0, Math.min(xt - 40, W - 84)) }}>{fmtDay(language, t)}</span>}
     </div>
   );
 }

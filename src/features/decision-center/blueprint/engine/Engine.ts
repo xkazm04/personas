@@ -5,8 +5,9 @@
 // flags draw over it at the live camera every frame. The canvas is TRANSPARENT: the paper is the CSS ground under it
 // (theme/ground.css), as in bp. Nothing in this module touches IPC or React.
 // EDIT (port): bp's simulation, scans, lasso, intro, phone layout, UI scale U and its spring-tweened lens mix are
-// not brought (no data for them here, or the page owns them); the lens switches at once.
-import type { Feature } from '../standard/load';
+// not brought (no data for them here, or the page owns them); the lens switches at once. Time travel (bp S.t), the
+// recent window (bp S.delta, here the rail's View days) and the picked items' rings (bp drawTargets) are (Stage D).
+import type { Feature, Stage } from '../standard/load';
 import type { Scalar } from '../standard/types';
 import type { Plan } from '../model/plan';
 import type { Work, WorkItem } from '../model/work';
@@ -16,7 +17,8 @@ import { readTheme, type CanvasTheme } from './theme';
 import { PlanText, watchFonts } from './text';
 import { buildWalls, drawBuildings, drawGrid, featRect, type Walls } from './plan';
 import { drawLabels } from './labels';
-import { drawFocus, drawOverlays, drawPins } from './pins';
+import { drawFocus, drawOverlays, drawPins, drawTargets } from './pins';
+import { stageOfAt } from './travel';
 import { drawFlags, flagAt, layoutFlags } from './flags';
 import { tileAt, roomAt } from './hit';
 import { wireInput } from './input';
@@ -47,6 +49,8 @@ export class Engine {
   walls: Walls;
   /** 'general' shows every lens; a lens id shows only its own. */
   lens = 'general';
+  /** Stage D: the date drawn at (null = now), the recent window in days (the View), the picked items and their features. */
+  at: string | null = null; viewDays = 7; picked: readonly string[] = []; pickedF: ReadonlySet<string> = new Set();
   hot: string | null = null;
   hotFlag: string | null = null;
   focus: Focus | null = null;
@@ -100,9 +104,17 @@ export class Engine {
   private bump(): void { this.ver++; this.dirty = true; }
   retheme(): void { this.th = readTheme(this.host, this.RES); this.tx.setFamilies(this.th.sans, this.th.mono); this.syncLens(); this.bump(); }
   setWords(w: EngineWords): void { this.words = w; this.bump(); }
-  setWork(w: Work): void { this.work = w; this.bump(); }
+  setWork(w: Work): void { this.work = w; this.setPicked(this.picked); this.bump(); }
   setLens(id: string): void { this.lens = id; this.syncLens(); this.bump(); }
   setFocus(f: Focus | null): void { this.focus = f; this.dirty = true; }
+  setAt(d: string | null): void { if (d !== this.at) { this.at = d; this.bump(); } }
+  setViewDays(n: number): void { if (n !== this.viewDays) { this.viewDays = n; this.bump(); } }
+  setPicked(ids: readonly string[]): void { this.picked = ids; this.pickedF = new Set(ids.map((id) => this.work.byId.get(id)?.fid ?? '')); this.dirty = true; }
+  /** Drawn as it stands now (bp isNow): trouble, verdicts, pins and live values speak of now only. `day`: the date drawn. */
+  get isNow(): boolean { return this.at === null || this.at >= this.plan.S.asOf; }
+  get day(): string { return this.at ?? this.plan.S.asOf; }
+  /** A feature's stage on the drawn date (replayed from the events log while travelled). */
+  stageOf(f: Feature): Stage | null { return stageOfAt(f, this.at, this.plan.S.asOf); }
   /** A new plan (another product, or its map changed): the camera re-fits. */
   setPlan(plan: Plan): void {
     this.plan = plan; this.placed = false; this.focus = null; this.walls = buildWalls(plan.L);
@@ -133,8 +145,8 @@ export class Engine {
   }
   /** A feature's live values; the returned record is reused: read it before the next call. */
   live(f: Feature): FeatureLive {
-    const r = this.liveRec, live = f.stage === 'live' || f.stage === 'flagged';
-    r.f = f; r.rolloutPct = num(f, ...ROLLOUT) ?? (live ? 100 : 0); r.progressPct = num(f, ...PROGRESS) ?? 0;
+    const r = this.liveRec, st = this.stageOf(f), live = st === 'live' || st === 'flagged', now = this.isNow;
+    r.f = f; r.rolloutPct = (now ? num(f, ...ROLLOUT) : null) ?? (live ? 100 : 0); r.progressPct = (now ? num(f, ...PROGRESS) : null) ?? 0;
     return this.liveView;
   }
   /** The work still the operator's: proposed (waiting) and approved (not built). */
@@ -142,7 +154,7 @@ export class Engine {
     return (this.work.byFeature.get(f.id) ?? []).filter((p) => p.status === 'proposed' || p.status === 'approved');
   }
   /** Room pins stand on the plan (bp: while its simulation runs; here: while any work waits): room labels keep clear of them. */
-  pinsDrawn(): boolean { return this.work.items.some((p) => p.status === 'proposed' || p.status === 'approved'); }
+  pinsDrawn(): boolean { return this.isNow && this.work.items.some((p) => p.status === 'proposed' || p.status === 'approved'); }
   /** The colour a lens's words take on the plan. bp's adopted expression (subtle) gives no lens its own: ink. */
   accentOf(_lens: string | null): string { return this.th.ink; }
   /** A lens's manifest accent (`presentation.accent`), else ink: the chrome's `--bp-lens`. */
@@ -163,7 +175,7 @@ export class Engine {
     const c = this.cam, s = this.sig;
     if (c.step(now) || c.moved) { this.dirty = true; c.moved = false; }
     if (c.x !== s.x || c.y !== s.y || c.k !== s.k) { s.x = c.x; s.y = c.y; s.k = c.k; this.lastCamMove = now; this.dirty = true; }
-    if (this.focus && !c.reduced()) this.dirty = true;
+    if ((this.focus || this.pickedF.size) && !c.reduced()) this.dirty = true;
     if (this.settlePending && now - this.lastCamMove > SETTLE_MS) this.dirty = true;
     if (!this.dirty) return;
     this.dirty = false;
@@ -183,11 +195,12 @@ export class Engine {
     } else if (st === 'transform') this.settlePending = true;
     this.cache.draw(ctx, cam, undefined, this.RES);
     const v = this.view;
+    drawTargets(this, ctx, v, lod);
     drawOverlays(this, ctx, v, lod, now);
-    drawPins(this, ctx, v, lod, now);
+    if (this.isNow) drawPins(this, ctx, v, lod, now);
     drawFocus(this, ctx, v, lod, now);
-    // trouble flags over everything: the first thing to find on the plan
-    this.flags = layoutFlags(this, v, lod);
+    // trouble flags over everything: the first thing to find on the plan (they speak of now: none on a past date)
+    this.flags = this.isNow ? layoutFlags(this, v, lod) : [];
     drawFlags(this, ctx, this.flags, this.hotFlag);
   }
   /** The whole static plan at raster view `v`. */

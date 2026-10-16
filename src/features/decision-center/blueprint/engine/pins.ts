@@ -2,7 +2,7 @@
 // and hover / drawFocus, at u = 1), drawn at the live camera every frame: one RFI pennant per room on the site and
 // wing plans and one per item on a fixture (bp's decisions are this sheet's waiting work: proposed flies amber, red
 // at high risk; approved-not-built flies mint), the hover outline, the selection's dashed box in the lens accent,
-// and the current item's amber pulse.
+// the current item's amber pulse, and the picked items' accent rings (bp drawTargets).
 // EDIT (port): bp's agents, pulses, heat, conduits, breaches, previews and releases are driven by its simulation
 // (scans.ts, simwatch.ts); the snapshot carries none of that, so they are not brought.
 import type { Engine } from './Engine';
@@ -12,7 +12,7 @@ import { onView, rs, type SRect, type View } from './view';
 
 /** Items at or above this risk (the store's 1-10) fly the high pennant. */
 const HIGH_RISK = 4;
-const sr: SRect = { x: 0, y: 0, w: 0, h: 0 };
+const sr: SRect = { x: 0, y: 0, w: 0, h: 0 }, sr2: SRect = { x: 0, y: 0, w: 0, h: 0 };
 const phase = (e: Engine, t: number) => (e.cam.reduced() ? 0 : t % 1);
 
 export function drawPins(e: Engine, ctx: CanvasRenderingContext2D, v: View, lod: number, now: number): void {
@@ -65,6 +65,31 @@ export function drawOverlays(e: Engine, ctx: CanvasRenderingContext2D, v: View, 
     const r = featRect(e, v, e.hot, lod, sr);
     if (r) { ctx.strokeStyle = th.inkHi; ctx.lineWidth = 2.5; ctx.strokeRect(r.x, r.y, r.w, r.h); }
   }
+}
+
+/**
+ * The picked items (bp drawTargets): every feature a picked work item stands on, filled faintly in the accent and
+ * ringed with a moving accent dash; a room whose every feature is picked is ringed whole instead.
+ */
+export function drawTargets(e: Engine, ctx: CanvasRenderingContext2D, v: View, lod: number): void {
+  const ids = e.pickedF;
+  if (!ids.size) return;
+  const th = e.th;
+  ctx.save(); ctx.strokeStyle = th.accent; ctx.lineWidth = 2; ctx.setLineDash([7, 4]);
+  ctx.lineDashOffset = e.cam.reduced() ? 0 : -((performance.now() / 40) % 1000);
+  for (const R of e.plan.L.rooms) {
+    let c = 0;
+    for (const f of R.feats) if (ids.has(f.id)) c++;
+    if (!c) continue;
+    const r = rs(v, R, sr); if (!onView(v, r, 10)) continue;
+    if (c === R.feats.length && R.feats.length > 1) { ctx.fillStyle = th.alpha(th.accent, 0.09); ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeRect(r.x + 4, r.y + 4, r.w - 8, r.h - 8); continue; }
+    for (const f of R.feats) {
+      if (!ids.has(f.id)) continue;
+      const fr = featRect(e, v, f.id, lod, sr2); if (!fr) continue;
+      ctx.fillStyle = th.alpha(th.accent, 0.14); ctx.fillRect(fr.x, fr.y, fr.w, fr.h); ctx.strokeRect(fr.x - 2, fr.y - 2, fr.w + 4, fr.h + 4);
+    }
+  }
+  ctx.restore();
 }
 
 /** The current item (bp drawFocus over an open decision): an amber ring pulsing out from the fixture's centre. */
