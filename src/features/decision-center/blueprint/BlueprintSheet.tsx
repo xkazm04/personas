@@ -33,6 +33,11 @@ import { RightRail } from './ui/RightRail';
 import { TimelineStrip } from './ui/TimelineStrip';
 import { TitleBlock } from './ui/TitleBlock';
 import { FeatureSheet } from './ui/sheet/FeatureSheet';
+import { LedgerPage } from './ledger/LedgerPage';
+import { Flyout } from './ui/rail/Flyout';
+import { TimelinePanel } from './ui/timeline/TimelinePanel';
+import { DecisionCard } from './ui/overlays/DecisionCard';
+import { SelBar } from './ui/overlays/SelBar';
 
 export interface BlueprintSheetProps {
   data: BlueprintData;
@@ -70,7 +75,12 @@ export function BlueprintSheet({ data, actions, onClose, initialFeature }: Bluep
             <ScaleReadout />
             <TimelineStrip />
             <HoverTip store={tip} />
+            {sheet.ui.page === 'plan' && <DecisionCard />}
+            <SelBar />
+            {sheet.ui.timelineOpen && <TimelinePanel />}
             <FeatureSheet />
+            {sheet.ui.page === 'ledger' && <LedgerPage />}
+            {sheet.ui.flyout && <Flyout />}
           </div>
           {ov?.kind === 'find' && <FindDialog />}
           {ov?.kind === 'reason' && <ReasonDialog itemId={ov.itemId} move={ov.move} />}

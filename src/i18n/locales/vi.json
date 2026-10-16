@@ -27331,7 +27331,10 @@
       "tl_scan": "Quét",
       "view": "Xem",
       "view_days": "{n} ngày",
-      "view_title": "Khoảng xem: 7 ngày qua"
+      "view_title": "Khoảng xem: 7 ngày qua",
+      "key_ledger": "Chuyển giữa bộ bản vẽ và sổ phát hiện",
+      "key_select": "Thêm mục hiện tại vào lựa chọn hoặc bỏ ra",
+      "key_timeline": "Mở hoặc đóng bảng dòng thời gian"
     },
     "build": {
       "body_approved_one": "1 mục đã duyệt chưa được xây dựng.",

@@ -27338,6 +27338,9 @@ export type Translations = {
       tl_history: string;
       dlg_close: string;
       dlg_esc: string;
+      key_ledger: string;
+      key_timeline: string;
+      key_select: string;
     };
     lens: {
       approve: string;

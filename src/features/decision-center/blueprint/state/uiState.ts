@@ -45,6 +45,19 @@ export interface UiState {
   /** The last thing said, for the status line and the live region. */
   say: { key: number; text: string } | null;
   nextKey: number;
+  // ---- Stages B-D (spark bp-fidelity): the contract the parallel packages share. ----
+  /** bp's page switch over one product: the drawing set or the findings ledger (L). */
+  page: 'plan' | 'ledger';
+  /** bp's rail flyout on top, one at a time; null = none. Review is the Build queue column, not a flyout. */
+  flyout: 'agents' | 'plan' | 'view' | null;
+  /** bp's expanded timeline panel (T). */
+  timelineOpen: boolean;
+  /** Time travel: the date (YYYY-MM-DD) the drawing is viewed at; null = now. */
+  asOf: string | null;
+  /** bp's multi-select (Space): the work items picked for one batch decision, in pick order. */
+  selected: string[];
+  /** bp's View window: how many days back counts as recent (the rail's View, default 7). */
+  viewDays: number;
 }
 
 export type UiAction =
@@ -59,10 +72,17 @@ export type UiAction =
   | { type: 'arm'; ids: string[] | null }
   | { type: 'busy'; on: boolean; move?: string }
   | { type: 'print'; line: ConsoleInput }
-  | { type: 'say'; text: string };
+  | { type: 'say'; text: string }
+  | { type: 'page'; page?: 'plan' | 'ledger' }
+  | { type: 'flyout'; id: UiState['flyout'] }
+  | { type: 'timeline'; open?: boolean }
+  | { type: 'asOf'; date: string | null }
+  | { type: 'select'; id: string }
+  | { type: 'selectClear' }
+  | { type: 'viewDays'; days: number };
 
 export function initialUi(initialFeature?: string): UiState {
-  return { lens: 'general', itemId: null, sheet: initialFeature ?? null, sheetLens: 'general', compare: null, queueOpen: true, overlay: null, armed: null, busy: false, pending: null, lines: [], say: null, nextKey: 1 };
+  return { lens: 'general', itemId: null, sheet: initialFeature ?? null, sheetLens: 'general', compare: null, queueOpen: true, overlay: null, armed: null, busy: false, pending: null, lines: [], say: null, nextKey: 1, page: 'plan', flyout: null, timelineOpen: false, asOf: null, selected: [], viewDays: 7 };
 }
 
 const MAX_LINES = 40;
@@ -81,5 +101,12 @@ export function uiReducer(s: UiState, a: UiAction): UiState {
     case 'busy': return s.busy === a.on && s.pending === (a.on ? a.move ?? null : null) ? s : { ...s, busy: a.on, pending: a.on ? a.move ?? null : null };
     case 'print': return { ...s, lines: [{ ...a.line, key: s.nextKey } as ConsoleLine, ...s.lines].slice(0, MAX_LINES), nextKey: s.nextKey + 1 };
     case 'say': return { ...s, say: { key: s.nextKey, text: a.text }, nextKey: s.nextKey + 1 };
+    case 'page': { const page = a.page ?? (s.page === 'plan' ? 'ledger' : 'plan'); return s.page === page ? s : { ...s, page, flyout: null }; }
+    case 'flyout': return s.flyout === a.id ? s : { ...s, flyout: a.id };
+    case 'timeline': { const open = a.open ?? !s.timelineOpen; return s.timelineOpen === open ? s : { ...s, timelineOpen: open }; }
+    case 'asOf': return s.asOf === a.date ? s : { ...s, asOf: a.date };
+    case 'select': return { ...s, selected: s.selected.includes(a.id) ? s.selected.filter((x) => x !== a.id) : [...s.selected, a.id] };
+    case 'selectClear': return s.selected.length ? { ...s, selected: [] } : s;
+    case 'viewDays': return s.viewDays === a.days ? s : { ...s, viewDays: a.days };
   }
 }

@@ -10,7 +10,8 @@ export type KeyAct =
   | 'approve' | 'decline' | 'build'
   | 'accept' | 'rework' | 'descope' | 'reopen'
   | 'enter' | 'back' | 'wingNext' | 'wingPrev' | 'site' | 'zoomOut' | 'zoomIn'
-  | 'lens' | 'help';
+  | 'lens' | 'help'
+  | 'ledger' | 'timeline' | 'select';
 export type KeyGroup = 'walk' | 'decide' | 'triage' | 'move' | 'sheets';
 
 export interface Binding { act: KeyAct; group: KeyGroup; keys: readonly string[] }
@@ -29,13 +30,17 @@ export const KEYMAP: readonly Binding[] = [
   { act: 'reopen', group: 'triage', keys: ['u'] },
   { act: 'enter', group: 'move', keys: ['Enter'] },
   { act: 'back', group: 'move', keys: ['Escape', 'Backspace'] },
-  { act: 'wingNext', group: 'move', keys: ['l', 'ArrowRight'] },
-  { act: 'wingPrev', group: 'move', keys: ['h', 'ArrowLeft'] },
+  // bp walks wings on the arrows only; L is bp's drawing set | ledger switch (round two: bp's keys win).
+  { act: 'wingNext', group: 'move', keys: ['ArrowRight'] },
+  { act: 'wingPrev', group: 'move', keys: ['ArrowLeft'] },
   { act: 'site', group: 'move', keys: ['0'] },
   { act: 'zoomOut', group: 'move', keys: ['-'] },
   { act: 'zoomIn', group: 'move', keys: ['=', '+'] },
   { act: 'lens', group: 'sheets', keys: ['1', '2', '3', '4', '5', '6', '7', '8', '9'] },
   { act: 'help', group: 'sheets', keys: ['?'] },
+  { act: 'ledger', group: 'sheets', keys: ['l'] },
+  { act: 'timeline', group: 'sheets', keys: ['t'] },
+  { act: 'select', group: 'decide', keys: [' '] },
 ];
 
 const BY_KEY: ReadonlyMap<string, KeyAct> = new Map(KEYMAP.flatMap((b) => b.keys.map((k): [string, KeyAct] => [k, b.act])));
@@ -54,5 +59,5 @@ export function lensIndexOfKey(key: string): number | null {
 }
 
 /** How a key prints on a keycap. */
-export const KEYCAP: Readonly<Record<string, string>> = { ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→', Escape: 'Esc', Backspace: 'Bksp', Enter: 'Enter' };
+export const KEYCAP: Readonly<Record<string, string>> = { ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→', Escape: 'Esc', Backspace: 'Bksp', Enter: 'Enter', ' ': 'Space' };
 export const capOf = (key: string): string => KEYCAP[key] ?? key.toUpperCase();

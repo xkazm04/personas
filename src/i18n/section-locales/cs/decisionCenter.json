@@ -369,7 +369,10 @@
     "tl_scan": "Sken",
     "view": "Zobrazení",
     "view_days": "{n} d",
-    "view_title": "Okno zobrazení: posledních 7 dní"
+    "view_title": "Okno zobrazení: posledních 7 dní",
+    "key_ledger": "Přepnout mezi sadou výkresů a knihou nálezů",
+    "key_select": "Přidat aktuální položku do výběru, nebo ji z něj odebrat",
+    "key_timeline": "Otevřít nebo zavřít panel časové osy"
   },
   "build": {
     "body_approved_one": "Jedna schválená položka zatím není sestavena.",

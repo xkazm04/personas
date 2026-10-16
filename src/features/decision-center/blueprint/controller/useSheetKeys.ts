@@ -1,6 +1,7 @@
 // The sheet's keyboard: ONE handler over the ONE keymap (model/keymap.ts). It registers above the Decision Deck
 // (priority 85) and is exclusive, so a key the sheet does not name never reaches the deck behind it, and Esc climbs
-// (overlay, armed build, compare panel, L4 sheet, level by level) and only at the site closes the sheet: one press
+// (overlay, armed build, rail flyout, selection, compare panel, L4 sheet, timeline panel, time travel, the ledger
+// page, then level by level) and only at the site closes the sheet: one press
 // never closes two layers. Y, R, S and U triage the current item (WP4b) wherever it is: the store answers. Typing in a field is left alone; the field's own React handler owns Enter, Esc and the arrows.
 import { useRef } from 'react';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
@@ -59,8 +60,13 @@ function trapTab(e: KeyboardEvent): boolean {
 function back(d: Deps): void {
   if (d.ui.overlay) { d.dispatch({ type: 'overlay', overlay: null }); return; }
   if (d.ui.armed) { d.writes.disarm(); return; }
+  if (d.ui.flyout) { d.dispatch({ type: 'flyout', id: null }); return; }
+  if (d.ui.selected.length) { d.dispatch({ type: 'selectClear' }); return; }
   if (d.ui.compare) { d.nav.compare(null); return; }
   if (d.ui.sheet) { d.nav.closeSheet(); return; }
+  if (d.ui.timelineOpen) { d.dispatch({ type: 'timeline', open: false }); return; }
+  if (d.ui.asOf) { d.dispatch({ type: 'asOf', date: null }); return; }
+  if (d.ui.page === 'ledger') { d.dispatch({ type: 'page', page: 'plan' }); return; }
   const n = d.levelNow();
   if (n > 0) { d.nav.toLevel(n - 1); return; }
   d.onClose();
@@ -74,7 +80,7 @@ function handle(d: Deps, e: KeyboardEvent, tabbed: boolean): boolean {
   if (isField(e.target)) return false;
   const act = actOf(e.key);
   if (!act) return false;
-  if (tabbed && e.target instanceof HTMLButtonElement && e.key === 'Enter') return false;
+  if (tabbed && e.target instanceof HTMLButtonElement && (e.key === 'Enter' || e.key === ' ')) return false;
   e.preventDefault();
   const { ui, nav, writes, plan, dispatch } = d;
   if (ui.overlay?.kind === 'help') { dispatch({ type: 'overlay', overlay: null }); return true; }
@@ -100,6 +106,9 @@ function handle(d: Deps, e: KeyboardEvent, tabbed: boolean): boolean {
     case 'zoomOut': nav.zoom(1 / 1.35); break;
     case 'zoomIn': nav.zoom(1.35); break;
     case 'back': back(d); break;
+    case 'ledger': dispatch({ type: 'page' }); break;
+    case 'timeline': dispatch({ type: 'timeline' }); break;
+    case 'select': if (d.current) dispatch({ type: 'select', id: d.current.id }); break;
     case 'enter': {
       if (ui.sheet) { d.sayEnterHint(); break; }
       const n = d.levelNow();

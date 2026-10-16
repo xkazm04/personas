@@ -369,7 +369,10 @@
     "tl_scan": "Análisis",
     "view": "Vista",
     "view_days": "{n} d",
-    "view_title": "Ventana de vista: los últimos 7 días"
+    "view_title": "Ventana de vista: los últimos 7 días",
+    "key_ledger": "Cambiar entre el juego de planos y el registro de hallazgos",
+    "key_select": "Añadir el elemento actual a la selección o quitarlo",
+    "key_timeline": "Abrir o cerrar el panel de la línea de tiempo"
   },
   "build": {
     "body_approved_one": "1 elemento aprobado aún no está construido.",

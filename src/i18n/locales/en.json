@@ -27331,7 +27331,10 @@
       "tl_none": "No run yet",
       "tl_history": "Revision history over {count} weeks",
       "dlg_close": "Close",
-      "dlg_esc": "Esc"
+      "dlg_esc": "Esc",
+      "key_ledger": "Switch between the drawing set and the findings ledger",
+      "key_timeline": "Open or close the timeline panel",
+      "key_select": "Add the current item to the selection, or take it out"
     },
     "lens": {
       "approve": "Approve",
