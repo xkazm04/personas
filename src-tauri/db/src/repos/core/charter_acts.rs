@@ -175,6 +175,65 @@ pub fn append(pool: &DbPool, act: &NewCharterAct) -> Result<CharterAct, AppError
     })
 }
 
+/// Whether `charter_id` already holds an act on this item (any actor, any
+/// verdict, reverted or not). The cheap pre-check before work that would
+/// only produce a duplicate.
+pub fn has_item_act(
+    pool: &DbPool,
+    charter_id: &str,
+    item_kind: &str,
+    item_id: &str,
+) -> Result<bool, AppError> {
+    timed_query!("charter_acts", "charter_acts::has_item_act", {
+        let conn = pool.conn("charter_acts::has_item_act")?;
+        Ok(item_act_exists_in(&conn, charter_id, item_kind, item_id)?)
+    })
+}
+
+fn item_act_exists_in(
+    conn: &Connection,
+    charter_id: &str,
+    item_kind: &str,
+    item_id: &str,
+) -> rusqlite::Result<bool> {
+    Ok(conn
+        .query_row(
+            "SELECT 1 AS one FROM charter_acts
+             WHERE charter_id = ?1 AND item_kind = ?2 AND item_id = ?3 LIMIT 1",
+            params![charter_id, item_kind, item_id],
+            |_| Ok(true),
+        )
+        .optional()?
+        .unwrap_or(false))
+}
+
+/// [`append`], at most once per `(charter_id, item_kind, item_id)`: `Ok(None)`
+/// when the charter already holds an act on that item, decided inside the same
+/// immediate transaction as the insert, so two detections racing write one row.
+/// `NotFound` when no such charter exists.
+pub fn append_once(pool: &DbPool, act: &NewCharterAct) -> Result<Option<CharterAct>, AppError> {
+    timed_query!("charter_acts", "charter_acts::append_once", {
+        let mut conn = pool.conn("charter_acts::append_once")?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let version: Option<i64> = tx
+            .query_row(
+                "SELECT envelope_version FROM persona_responsibilities WHERE id = ?1",
+                [&act.charter_id],
+                |r| r.get("envelope_version"),
+            )
+            .optional()?;
+        let Some(version) = version else {
+            return Err(AppError::NotFound(format!("Charter {}", act.charter_id)));
+        };
+        if item_act_exists_in(&tx, &act.charter_id, &act.item_kind, &act.item_id)? {
+            return Ok(None);
+        }
+        let created = insert_in(&tx, act, version, None)?;
+        tx.commit()?;
+        Ok(Some(created))
+    })
+}
+
 pub(crate) fn get_in(conn: &Connection, id: &str) -> Result<Option<CharterAct>, AppError> {
     let mut stmt =
         conn.prepare_cached(&format!("SELECT {COLUMNS} FROM charter_acts WHERE id = ?1"))?;

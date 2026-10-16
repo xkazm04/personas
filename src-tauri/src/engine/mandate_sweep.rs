@@ -675,6 +675,8 @@ pub(crate) async fn sweep_and_emit(pool: DbPool, app: tauri::AppHandle) {
         acts.extend(crate::engine::mandate_orphanage::draft_sweep(
             &pool, &user_db,
         ));
+        // A merge a steward's worker made writes its act here, once per branch.
+        acts.extend(crate::engine::mandate_merges::merge_sweep(&pool));
         acts
     })
     .await;

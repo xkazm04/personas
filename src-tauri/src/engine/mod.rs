@@ -77,6 +77,7 @@ pub mod llm_topology;
 pub mod login_lane;
 pub mod management_api;
 pub mod mandate_lanes;
+pub mod mandate_merges;
 pub mod mandate_orphanage;
 pub mod mandate_reread_view;
 pub mod mandate_scopes;
