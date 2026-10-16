@@ -1,0 +1,86 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d79ac0e1-bb87-4dee-9c08-023864eeca1f",
+  "subject": "i18n",
+  "evaluatedAt": "2026-10-16T18:30:02Z",
+  "pairs": [
+    {
+      "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+      "subject": "i18n",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/i18n/routeSections.ts:88 home still omits the overview section that src/features/home/sub_cockpit/CockpitPanel.tsx:34 reads through the pure-read resolver (src/i18n/useTranslation.ts:392), so a cold start on Home renders that prompt in English in 13 locales; scripts/i18n/lib/section-refs.mjs:181 unions every route into one covered set, so the delivery gate cannot see a per-route miss",
+      "techniques": [
+        {
+          "technique": "catalog-architecture",
+          "verdict": "deviation",
+          "evidence": "src/i18n/routeSections.ts:88 sectioned lazy loading exists but the home route never fetches overview, which CockpitPanel.tsx:34 reads - a delivery-layer gap"
+        },
+        {
+          "technique": "completeness-gates",
+          "verdict": "deviation",
+          "evidence": "lefthook.yml:73 key parity and lefthook.yml:85 value parity run at commit, but scripts/i18n/lib/section-refs.mjs:181 checks delivery coverage only as a union over all routes, never per route"
+        },
+        {
+          "technique": "locale-runtime",
+          "verdict": "deviation",
+          "evidence": "src/i18n/useTranslation.ts:392 a property getter never triggers a load, so an unfetched section falls back to English for the whole session on that route"
+        },
+        {
+          "technique": "encoding-corruption-ratchet",
+          "verdict": "realized",
+          "evidence": "lefthook.yml:97 i18n-escape-integrity holds escape-cascade corruption at zero at commit, and self-tests its matcher"
+        }
+      ]
+    },
+    {
+      "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+      "subject": "i18n",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "lefthook.yml:74 every commit-time i18n gate globs only src/i18n/locales/*.json, so an edit to the stop_reason vocabulary (src-tauri/db/src/chain.rs:45) runs no domain-coverage check; src/i18n/__tests__/chainStopReasons.parity.test.ts:33 fires only under Vitest, and vitest-related cannot tie it to a .rs edit because it reads the Rust file from disk",
+      "techniques": [
+        {
+          "technique": "token-label-separation",
+          "verdict": "realized",
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:33 asserts status_tokens.chain_stop covers exactly the Rust stop_reason consts, so no token reaches the UI unmapped"
+        },
+        {
+          "technique": "completeness-gates",
+          "verdict": "deviation",
+          "evidence": "lefthook.yml:74 the domain-coverage check is not attached to the edit that creates its defect (a chain.rs vocabulary change); it runs only in CI vitest"
+        }
+      ],
+      "registryProposal": "completeness-gates: add a note that a domain-coverage test reading a backend source file from disk is invisible to import-graph related-test selection (vitest related, affected-test runners), so attaching it to the vocabulary edit needs an explicit glob hook on the backend file and cannot rely on test selection"
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-16T18:30:02Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "i18n"
+      ],
+      "techniques": [
+        "catalog-architecture",
+        "completeness-gates",
+        "locale-runtime",
+        "encoding-corruption-ratchet"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T18:30:02Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "i18n"
+      ],
+      "techniques": [
+        "token-label-separation",
+        "completeness-gates"
+      ],
+      "deviations": 1
+    }
+  ]
+}
