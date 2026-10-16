@@ -4914,19 +4914,19 @@
       "subject": "agent-chaining",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:34:20.000Z",
-      "worker": "7b962a9f-4f3a-473e-8b7d-59cda4c77192",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:43:43.000Z",
+      "worker": "2caa7f2f-d938-4aff-8c7f-4f8b6379e0fa",
       "techniques": [
         {
           "technique": "stop-reason-ledgers",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/chain.rs:44 stop_reason module lacks completed/cancelled/condition_unevaluable and carries no per-token outcome class"
+          "evidence": "src-tauri/db/src/chain.rs:47 stop_reason constants list no completed/cancelled token"
         },
         {
           "technique": "run-conditions",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/chain.rs:1049 unknown condition type returns false (not fired) and the stop is written as PREDICATE_UNMET at :571 - unevaluable impersonates a verdict"
+          "evidence": "src-tauri/db/src/chain.rs:1049 unknown condition type returns false and is ledgered as predicate_unmet - unevaluable impersonates not-fired"
         }
       ],
       "superseded": [
@@ -4943,6 +4943,13 @@
           "evaluatedAt": "2026-10-09T17:23:17.000Z",
           "worker": "f71d1285-f751-40c7-85a7-051bc9079ad8",
           "reason": "replaced by 7b962a9f-4f3a-473e-8b7d-59cda4c77192"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/i18n/generated/types.ts:15289 the chain_stop vocabulary (15 tokens, mirroring src-tauri/db/src/chain.rs:44-91) still has no completed, cancelled or condition_unevaluable, and an unknown condition type (chain.rs:1049 return false) is recorded as predicate_unmet (chain.rs:571) like a chain that chose to stop; the fix belongs in the chain.rs authority - re-verified unchanged 2026-10-12",
+          "evaluatedAt": "2026-10-12T12:34:20.000Z",
+          "worker": "7b962a9f-4f3a-473e-8b7d-59cda4c77192",
+          "reason": "replaced by 2caa7f2f-d938-4aff-8c7f-4f8b6379e0fa"
         }
       ]
     },
@@ -10064,24 +10071,24 @@
       "subject": "agent-chaining",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:34:20.000Z",
-      "worker": "7b962a9f-4f3a-473e-8b7d-59cda4c77192",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:43:43.000Z",
+      "worker": "2caa7f2f-d938-4aff-8c7f-4f8b6379e0fa",
       "techniques": [
         {
           "technique": "handoff-figures-carry-their-population",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/execution/executions.rs:1752 acc.cost = acc.cost.max(cost) - a path-scoped figure labelled as the chain's; two surfaces disagree on one named figure"
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:1752 acc.cost = acc.cost.max(cost) - a one-branch population labelled as chain spend"
         },
         {
           "technique": "chain-identity-and-rollup",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/components/ActiveChainsBadge.tsx:103 renders the live max-of-path figure as chain cost without a partial/path label; the chain-grain aggregate names no recomputation from the link grain"
+          "evidence": "src/features/agents/sub_executions/components/ActiveChainsBadge.tsx:103 renders the max-folded figure as the chain's accumulated cost, disagreeing with useChainTrace's sum"
         },
         {
           "technique": "stop-reason-ledgers",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/libs/useChainTrace.ts:109 a failed stop-reason fetch returns an empty list, indistinguishable from a chain with no stop record (stuck)"
+          "evidence": "src/features/agents/sub_executions/libs/useChainTrace.ts:110 return [] on ledger load failure - unknown stop reasons render as no stop"
         }
       ],
       "superseded": [
@@ -10098,6 +10105,13 @@
           "evaluatedAt": "2026-10-09T17:23:17.000Z",
           "worker": "f71d1285-f751-40c7-85a7-051bc9079ad8",
           "reason": "replaced by 7b962a9f-4f3a-473e-8b7d-59cda4c77192"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:1752 still derives a chain's accumulated cost as the MAX of path-carried handoff totals (sibling branches dropped under fan-out), shown as chain spend at src/features/agents/sub_executions/components/ActiveChainsBadge.tsx:103 while useChainTrace.ts sums every trace - one name, two populations; and libs/useChainTrace.ts:109 turns a failed stop-ledger load into [] so stopped reads as stuck - re-verified unchanged 2026-10-12",
+          "evaluatedAt": "2026-10-12T12:34:20.000Z",
+          "worker": "7b962a9f-4f3a-473e-8b7d-59cda4c77192",
+          "reason": "replaced by 2caa7f2f-d938-4aff-8c7f-4f8b6379e0fa"
         }
       ]
     },
@@ -10106,14 +10120,14 @@
       "subject": "agent-chaining",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:34:20.000Z",
-      "worker": "7b962a9f-4f3a-473e-8b7d-59cda4c77192",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:43:43.000Z",
+      "worker": "2caa7f2f-d938-4aff-8c7f-4f8b6379e0fa",
       "techniques": [
         {
           "technique": "stop-reason-ledgers",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/detail/chain/ChainTraceView.tsx:128 tokenLabel per row with no outcome class and no per-leaf placement; the technique requires each reason outcome-classified and rendered at its leaf"
+          "evidence": "src/features/agents/sub_executions/detail/chain/ChainTraceView.tsx:128 token label only, no link coordinates or terminal-vs-informational class"
         }
       ],
       "superseded": [
@@ -10130,6 +10144,13 @@
           "evaluatedAt": "2026-10-09T17:23:17.000Z",
           "worker": "f71d1285-f751-40c7-85a7-051bc9079ad8",
           "reason": "replaced by 7b962a9f-4f3a-473e-8b7d-59cda4c77192"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/chain/ChainTraceView.tsx:128 still renders every ledger row flat under one chain-ended heading (:122) with no link/depth coordinates or outcome class, so an informational cas_lost/handoff_suppressed row or one sibling leaf reads as the whole chain stopping - re-verified unchanged 2026-10-12",
+          "evaluatedAt": "2026-10-12T12:34:20.000Z",
+          "worker": "7b962a9f-4f3a-473e-8b7d-59cda4c77192",
+          "reason": "replaced by 2caa7f2f-d938-4aff-8c7f-4f8b6379e0fa"
         }
       ]
     },
@@ -10138,24 +10159,24 @@
       "subject": "agent-chaining",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:34:20.000Z",
-      "worker": "7b962a9f-4f3a-473e-8b7d-59cda4c77192",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:43:43.000Z",
+      "worker": "2caa7f2f-d938-4aff-8c7f-4f8b6379e0fa",
       "techniques": [
         {
           "technique": "graph-to-wiring-translation",
           "verdict": "deviation",
-          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:55 appends a draft link per draw and :115 creates a trigger per commit - append, not reconcile; a duplicate of a live route double-starts the target"
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:115 non-idempotent commit - same arrow twice wires twice"
+        },
+        {
+          "technique": "cycle-and-depth-guards",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/resources/triggers/definitions.rs:252 detect_chain_cycle at wiring time"
         },
         {
           "technique": "run-conditions",
           "verdict": "deviation",
-          "evidence": "src/features/triggers/sub_studio/libs/routeCodec.ts:154 unknown condition shapes read as null, rendered 'Always' by libs/studioLabels.ts:17, while the evaluator treats them as never-firing - preview and execution disagree, violating one evaluator for execution and preview"
-        },
-        {
-          "technique": "cycle-and-depth-guards",
-          "verdict": "conformant",
-          "evidence": "src-tauri/db/src/repos/resources/triggers/definitions.rs:252 chain::detect_chain_cycle rejects a cyclic chain at create time"
+          "evidence": "src/features/triggers/sub_studio/libs/routeCodec.ts:154 unknown condition decoded as null and shown as Always, while runtime treats it as never"
         }
       ],
       "superseded": [
@@ -10172,6 +10193,13 @@
           "evaluatedAt": "2026-10-09T17:23:17.000Z",
           "worker": "f71d1285-f751-40c7-85a7-051bc9079ad8",
           "reason": "replaced by 7b962a9f-4f3a-473e-8b7d-59cda4c77192"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:115 commits a drawn persona link by creating a chain trigger with no check for an identical live route (backend create checks cycles only, src-tauri/db/src/repos/resources/triggers/definitions.rs:252), so re-drawing a live arrow double-fires the target; and libs/routeCodec.ts:154 maps an unknown condition type to null, labelled Always (libs/studioLabels.ts:17), while chain.rs:1049 never fires it - re-verified after the 10-09..10-12 studio fixes, still open",
+          "evaluatedAt": "2026-10-12T12:34:20.000Z",
+          "worker": "7b962a9f-4f3a-473e-8b7d-59cda4c77192",
+          "reason": "replaced by 2caa7f2f-d938-4aff-8c7f-4f8b6379e0fa"
         }
       ]
     },

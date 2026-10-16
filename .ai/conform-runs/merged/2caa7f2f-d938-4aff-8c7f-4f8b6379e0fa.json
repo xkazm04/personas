@@ -1,0 +1,26 @@
+{"schema":"conform-run/1","worker":"2caa7f2f-d938-4aff-8c7f-4f8b6379e0fa","subject":"agent-chaining","evaluatedAt":"2026-10-16T17:43:43Z",
+"pairs":[
+{"context":"03960450-6979-4412-9de3-35c897fe56d2","subject":"agent-chaining","bundle":"software-engineering","state":"deviation",
+ "evidence":"src-tauri/db/src/repos/execution/executions.rs:1752 still folds chain cost as max() of path-carried totals (sibling branches dropped under fan-out), shown as chain spend at src/features/agents/sub_executions/components/ActiveChainsBadge.tsx:103 while useChainTrace sums every trace; and src/features/agents/sub_executions/libs/useChainTrace.ts:110 turns a failed stop-ledger load into [] so stopped reads as stuck - re-verified unchanged 2026-10-16",
+ "techniques":[
+  {"technique":"handoff-figures-carry-their-population","verdict":"deviation","evidence":"src-tauri/db/src/repos/execution/executions.rs:1752 acc.cost = acc.cost.max(cost) - a one-branch population labelled as chain spend"},
+  {"technique":"chain-identity-and-rollup","verdict":"deviation","evidence":"src/features/agents/sub_executions/components/ActiveChainsBadge.tsx:103 renders the max-folded figure as the chain's accumulated cost, disagreeing with useChainTrace's sum"},
+  {"technique":"stop-reason-ledgers","verdict":"deviation","evidence":"src/features/agents/sub_executions/libs/useChainTrace.ts:110 return [] on ledger load failure - unknown stop reasons render as no stop"}]},
+{"context":"208f50de-5d3b-4345-9fed-1c106a7a36e9","subject":"agent-chaining","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/agents/sub_executions/detail/chain/ChainTraceView.tsx:128 still renders every ledger row flat under one chain-ended heading (:122) with no link/depth coordinates or outcome class, so an informational cas_lost/handoff_suppressed row or one sibling leaf reads as the whole chain stopping - re-verified unchanged 2026-10-16",
+ "techniques":[
+  {"technique":"stop-reason-ledgers","verdict":"deviation","evidence":"src/features/agents/sub_executions/detail/chain/ChainTraceView.tsx:128 token label only, no link coordinates or terminal-vs-informational class"}]},
+{"context":"1ffb5765-de47-4f01-87ec-06732a63522c","subject":"agent-chaining","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/i18n/generated/types.ts:15787 the chain_stop vocabulary (15 tokens, mirroring src-tauri/db/src/chain.rs:47-91) still has no completed, cancelled or condition_unevaluable, and an unknown condition type (chain.rs:1049 return false) is recorded as predicate_unmet (chain.rs:571); fix belongs in the chain.rs authority - re-verified 2026-10-16, anchor moved from :15289",
+ "techniques":[
+  {"technique":"stop-reason-ledgers","verdict":"deviation","evidence":"src-tauri/db/src/chain.rs:47 stop_reason constants list no completed/cancelled token"},
+  {"technique":"run-conditions","verdict":"deviation","evidence":"src-tauri/db/src/chain.rs:1049 unknown condition type returns false and is ledgered as predicate_unmet - unevaluable impersonates not-fired"}]},
+{"context":"ff513ec2-b52d-403b-b3e3-b94e45a8c2dc","subject":"agent-chaining","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/triggers/sub_studio/useStudioComposer.ts:115 commits a drawn persona link via createTrigger with no check for an identical live route (inFlight guards only concurrent clicks; backend create checks cycles only, src-tauri/db/src/repos/resources/triggers/definitions.rs:252), so re-drawing a live arrow double-fires the target; and src/features/triggers/sub_studio/libs/routeCodec.ts:154 maps an unknown condition to null, labelled Always (libs/studioLabels.ts:17), while chain.rs:1049 never fires it - re-verified 2026-10-16",
+ "techniques":[
+  {"technique":"graph-to-wiring-translation","verdict":"deviation","evidence":"src/features/triggers/sub_studio/useStudioComposer.ts:115 non-idempotent commit - same arrow twice wires twice"},
+  {"technique":"cycle-and-depth-guards","verdict":"realized","evidence":"src-tauri/db/src/repos/resources/triggers/definitions.rs:252 detect_chain_cycle at wiring time"},
+  {"technique":"run-conditions","verdict":"deviation","evidence":"src/features/triggers/sub_studio/libs/routeCodec.ts:154 unknown condition decoded as null and shown as Always, while runtime treats it as never"}]}
+],
+"declined":[],
+"consults":[{"ts":"2026-10-16T17:43:43Z","bundle":"software-engineering","subjects":["agent-chaining"],"techniques":["handoff-figures-carry-their-population","chain-identity-and-rollup","stop-reason-ledgers","run-conditions","graph-to-wiring-translation","cycle-and-depth-guards"],"deviations":4}]}

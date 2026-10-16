@@ -1376,3 +1376,4 @@
 {"ts":"2026-10-16T17:41:35Z","bundle":"llm-observability","subjects":["generator-uncertainty-scoring"],"techniques":["stated-distribution-over-closed-labels","compare-gates-at-matched-coverage","generator-vs-itself","scorer-cost-class"],"deviations":0}
 {"ts":"2026-10-16T17:41:19Z","bundle":"llm-observability","subjects":["judge-calibration-and-drift"],"techniques":["golden-set-agreement-measurement","reference-ladder"],"deviations":0}
 {"ts":"2026-10-16T17:41:19Z","bundle":"llm-observability","subjects":["judge-calibration-and-drift"],"techniques":["golden-set-agreement-measurement","reference-ladder"],"deviations":0}
+{"ts":"2026-10-16T17:43:43Z","bundle":"software-engineering","subjects":["agent-chaining"],"techniques":["handoff-figures-carry-their-population","chain-identity-and-rollup","stop-reason-ledgers","run-conditions","graph-to-wiring-translation","cycle-and-depth-guards"],"deviations":4}
