@@ -34,8 +34,27 @@ Reference shots: bp itself on :3010 (Kettle sample and live products), compared 
   Personas addition the operator kept) and the dialogs are drawn in bp's workbench language.
 - **The Monitor's Blueprint tab** is bp's project list (Manage projects as a page: readiness icon and checklist,
   counts, open buttons) on bp's ground. Registering, renaming and removing projects stay in Personas' Projects page.
-- **Still to come (later stages):** the Ledger page, the rail panels, the feature page's depth, the expanded
-  timeline, the hover card and legend, the on-plan decision card and multi-select.
+- **Findings ledger (stage B):** bp's second page over a product (L, or the DRAWING SET | LEDGER switch):
+  Triage table, Feature x lens matrix and Release tabs, In packs | Backlog, status and lens filter chips, pack rows
+  with decided marks, the compare panel in every mode (light / dark / both x side by side / slider / blink / change
+  map, wide W), the decision bar and batch moves over checked rows. bp's ledger palette sits in `bp-tokens.css`
+  (`.lg-page`). The Release tab is read-only: Cut, Finish and Undo open bp's Release tab; LENSES opens bp (lens
+  authoring stays in bp). Left out: scan writes from lens chips, the backlog's approve-and-execute Dispatch (Build
+  stays the queue's B), the release job log. The Build queue column steps aside while the ledger is up.
+- **Rail panels (stage C):** bp's flyouts: Agents (the store's runs and the starts this sheet sent), Plan (in
+  trouble / all features, the title block and the Legend, drawn with the engine's own glyphs) and View (the recent
+  window, 24 h / 7 d / 14 d, and what changed in it). Review stays the Build queue toggle. Orders and Steer are bp's
+  simulation and are left out.
+- **Feature page (stage D):** bp's L4 page: the morph out of the tile, the detail bubble, the stage ladder,
+  General's headline tile per lens, each lens tab's hero, evidence cards, metric rows with sparklines and targets,
+  KPIs, screens, Lives in code, the drawing, revisions, parts and the red-pencil notes (Caveat). The proposals with
+  their controls and the compare entry stay. Sparkline floors are pinned at 0 (the app's plot-scale rule).
+- **On the plan (stage D):** the expanded timeline (T: key plan, as-of clock, revisions chart, milestones, releases,
+  scrub) with time travel (the plan replays its stages at the date; BACK TO NOW), bp's hover card, the on-plan
+  decision card for the current waiting item, multi-select (Space, or Shift+click a tile) with the selection bar's
+  batch moves. bp's simulation (next hour, speed, Morning, the swarm) stays out.
+- **Keys:** bp's win where round one differed: L is the ledger, T the timeline, Space selects; wings walk on the
+  arrows only.
 
 ## Across levels (header, rails, bars)
 
@@ -50,7 +69,7 @@ Reference shots: bp itself on :3010 (Kettle sample and live products), compared 
 | Performance lens (bp's 7th built-in) | present | `PERF` tab; the stopwatch glyph on tiles, flags and cards (canvas and SVG) |
 | Theme toggle | dropped | the app's own theme owns it; the canvas re-reads its tokens when the theme changes |
 | Right rail: Find, review, agents, plan | present | Find, Build queue (shown or hidden), agents running, plan |
-| Right rail: View (7 d window) | present (round two) | drawn as bp's; its panel arrives with the rail panels |
+| Right rail: View (7 d window) | present (round two) | bp's View flyout: the recent window and what changed in it |
 | Level bar: zoom, LEVEL, L0 to L4 | present | the current level inked, the levels passed shaded |
 | Level bar: TARGET cell | dropped | no target mode here: the queue's current item is the target |
 | Level bar: names drawn | improved | NAMES `n/total` cell with a tooltip saying why a name is missing |

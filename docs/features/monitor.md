@@ -180,7 +180,10 @@ above it (a modal, the Decision Deck, the drawing) that takes the key keeps it.
 
 The drawing set itself is bp's look (2026-10-16, round two): bp's palette, ground, IBM Plex type and drawing
 detail, bp's header with a **project switcher** (switch product without leaving the sheet) and a last-scan
-pill, bp's rail, ladder and timeline strip; the Build queue column keeps its keys in bp's ink. See
+pill, bp's rail, ladder and timeline strip; the Build queue column keeps its keys in bp's ink. bp's features
+return with it: the findings ledger (L: triage table, matrix, read-only release), the rail's Agents / Plan / View
+panels, bp's full feature page, the expanded timeline with time travel (T), the hover card, the on-plan decision
+card and multi-select (Space, Shift+click) with batch moves. See
 `src/features/decision-center/blueprint/PARITY.md`.
 
 **Stewards plate.** In the supply column the Autopilot plate became the
