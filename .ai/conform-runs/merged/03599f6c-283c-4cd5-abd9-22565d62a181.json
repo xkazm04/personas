@@ -1,0 +1,240 @@
+{
+  "schema": "conform-run/1",
+  "worker": "03599f6c-283c-4cd5-abd9-22565d62a181",
+  "subject": "error-handling",
+  "evaluatedAt": "2026-10-16T02:44:36.379119+00:00",
+  "provider": "grok",
+  "model": "grok-4.7",
+  "pairs": [
+    {
+      "context": "overview-incidents",
+      "subject": "error-handling",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_incidents/libs/useIncidentsData.ts:76 The 30-second incident-list fetch catch stores String(e) and does not call a log or telemetry helper, so a failed load reaches the on-screen banner and not an operator door.",
+      "techniques": [
+        {
+          "technique": "taxonomy-design",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_incidents/libs/incidentTaxonomy.ts:86 Unclassified is an explicit rung (UNCLASSIFIED_RANK is 5, above critical's 4), not a quiet fall-through."
+        },
+        {
+          "technique": "reclassification-is-not-repair",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_incidents/libs/incidentTaxonomy.ts:56 The extra member is the catch-all the technique tells taxonomy-design to own; no never-fires internal class is reclassified here."
+        },
+        {
+          "technique": "error-doors",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentsData.ts:76 User-facing list failure sets local state only. The summary catch at line 96 does call silentCatch; this list catch does not. invokeWithTimeout records an in-memory ok:false ring and devlogs a failure only when the call is slow."
+        },
+        {
+          "technique": "user-facing-mapping",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_incidents/components/IncidentsInbox.tsx:226 The banner concatenates the raw stored error. incidentGuidance() does map source to catalog keys, but this load path and useIncidentActions.ts:38 interpolate the caught value at the call site."
+        },
+        {
+          "technique": "structured-propagation",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentActions.ts:38 The action catch interpolates the caught value into a toast string. addToast stores that string; it does not keep a category field."
+        },
+        {
+          "technique": "parse-failure-keeps-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_incidents/libs/incidentDetail.ts:107 One detail blob. A JSON miss returns null and the caller keeps the whole string as prose; there is no externally owned item collection."
+        },
+        {
+          "technique": "swallowed-error-prevention",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentsData.ts:96 The background summary failure uses the sanctioned one-call helper. The list catch is judged under error-doors because it still surfaces a user banner."
+        },
+        {
+          "technique": "cancellation-attribution",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_incidents/components/IncidentDetailModal.tsx:95 The flag only skips setState after unmount. The sibling fetch is not aborted and there is no cancellation cause to attribute. Searched abort and AbortController in the listed incident files; no hits."
+        },
+        {
+          "technique": "consumer-decides-error-shape",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_incidents/libs/groupIncidents.ts:51 The inbox branches on fields of one ts-rs AuditIncident aggregate (severity, sourceTable), which is the shape for a same-release door."
+        }
+      ]
+    },
+    {
+      "context": "overview-components",
+      "subject": "error-handling",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/components/health/ConfigurationPopup.tsx:96 A failed settings save is caught with logger.warn of the error class plus a toast, and warn stays on the console, so the operator does not get the persisted log door.",
+      "techniques": [
+        {
+          "technique": "error-doors",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/components/health/ConfigurationPopup.tsx:96 Save is the user's action. The catch toasts a catalog string and console-warns; it does not call silentCatch or toastCatch. The load catch at line 77 does call silentCatch and sets loadError."
+        },
+        {
+          "technique": "user-facing-mapping",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/components/health/ConfigurationPopup.tsx:100 The save toast is a catalog key. The catch comment refuses to put the IPC message, which can echo an API key, into the log or the toast."
+        },
+        {
+          "technique": "structured-propagation",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/components/health/ConfigurationPopup.tsx:98 The cause message is replaced by err.name or typeof. A Tauri rejection is often a plain object, so the recorded class becomes \"object\"."
+        },
+        {
+          "technique": "parse-failure-keeps-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/components/dashboard/widgets/MetricHelpPopover.tsx:56 One localStorage blob of dismissed metric tips, not an externally owned collection of independently meaningful items."
+        },
+        {
+          "technique": "swallowed-error-prevention",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/components/dashboard/widgets/MetricHelpPopover.tsx:58 Undeclared catch around JSON.parse. Fallback to an empty set with no helper and no comment; dismissed tips reappear as if nothing was stored."
+        }
+      ]
+    },
+    {
+      "context": "overview-health",
+      "subject": "error-handling",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx:76 A failed healing-effectiveness load leaves report null, and that null is rendered with the same no-data copy as zero attempts.",
+      "techniques": [
+        {
+          "technique": "taxonomy-design",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_events/libs/eventTypeLabel.ts:30 This humanizes an open event-type string for display. It does not decide retry, fault, or remediation categories. Healing rows use tokenLabel for healing_category, which is a label lookup, not the taxonomy authority."
+        },
+        {
+          "technique": "reclassification-is-not-repair",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_health/libs/compositeHealthScore.ts:110 DEV-only weight-sum invariant. It throws; it does not relabel a reachable internal failure as a friendlier class."
+        },
+        {
+          "technique": "error-doors",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx:76 The load catch is silentCatch only (line 53). After it, loading ends and a null report paints te.no_data, so the user cannot tell failure from an empty window. A breadcrumb is not the user door."
+        },
+        {
+          "technique": "user-facing-mapping",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:96 That message becomes combinedError. MissionStatusMonitor renders it as InlineErrorBanner message={error} with no registry lookup."
+        },
+        {
+          "technique": "structured-propagation",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:109 A rejected healing fetch is reduced to message text before it is stored. The category does not cross this hop."
+        },
+        {
+          "technique": "parse-failure-keeps-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_events/HighlightedJson.tsx:52 One JSON string. A parse miss keeps the original text for display; there is no item collection to isolate."
+        },
+        {
+          "technique": "swallowed-error-prevention",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:97 The 60s status poll does not call silentCatch or toastCatch. log.warn writes the console only; log.ts forwards the JSONL record for error level alone. setSlaError still feeds the banner, so this is a missed helper, not a blank catch."
+        },
+        {
+          "technique": "cancellation-attribution",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_events/libs/useEventLog.ts:214 abort() is called with no reason. The catch returns when signal.aborted and does not count the drop. The same abort covers a newer search and effect cleanup, and the IPC call itself is not cancelled."
+        },
+        {
+          "technique": "consumer-decides-error-shape",
+          "verdict": "deviation",
+          "evidence": "src/lib/bindings/HealthBundleErrors.ts:13 The bundle's per-source failure is a bare string. useStatusPageData assigns bundle.errors.healingIssues straight to the user error. Callers cannot branch on a kind."
+        }
+      ],
+      "registryProposal": "Say whether a same-release IPC envelope whose fields are bare reason strings is the sanctioned opaque aggregate or the stringification defect, and whether a Sentry breadcrumb plus a delayed swallow rollup counts as the telemetry door or only a standalone event does."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "error-handling",
+      "context": "i18n-generated",
+      "reason": "withdrawn after review: reviewer (sonnet): The only evidence is a test that pins the raw-string fallback; the code that renders that message is useTranslatedError.ts, which is outside this context, and no production catch in the context was shown to skip a door."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T02:44:36.379119+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "error-handling"
+      ],
+      "techniques": [
+        "cancellation-attribution",
+        "consumer-decides-error-shape",
+        "error-doors",
+        "parse-failure-keeps-identity",
+        "reclassification-is-not-repair",
+        "structured-propagation",
+        "swallowed-error-prevention",
+        "taxonomy-design",
+        "user-facing-mapping"
+      ],
+      "deviations": 1,
+      "context": "overview-incidents",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-16T02:44:36.379119+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "error-handling"
+      ],
+      "techniques": [
+        "error-doors",
+        "parse-failure-keeps-identity",
+        "structured-propagation",
+        "swallowed-error-prevention",
+        "user-facing-mapping"
+      ],
+      "deviations": 1,
+      "context": "overview-components",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-16T02:44:36.379119+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "error-handling"
+      ],
+      "techniques": [
+        "error-doors",
+        "taxonomy-design",
+        "user-facing-mapping"
+      ],
+      "deviations": 1,
+      "context": "i18n-generated",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-16T02:44:36.379119+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "error-handling"
+      ],
+      "techniques": [
+        "cancellation-attribution",
+        "consumer-decides-error-shape",
+        "error-doors",
+        "parse-failure-keeps-identity",
+        "reclassification-is-not-repair",
+        "structured-propagation",
+        "swallowed-error-prevention",
+        "taxonomy-design",
+        "user-facing-mapping"
+      ],
+      "deviations": 1,
+      "context": "overview-health",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    }
+  ]
+}

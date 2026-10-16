@@ -16263,11 +16263,7 @@
           "confidence": "probable",
           "state": "conformant",
           "evidence": "taxonomy-design's cross-boundary mirroring (chainStopReasons.parity.test.ts:16-37 parses src-tauri/db/src/chain.rs's stop_reason consts at test time rather than hand-copying, citing failure-not-empty-success), user-facing-mapping (useTranslatedError.test.ts:27-59 pins the four-link resolveErrorTranslated fallback chain against ERROR_KEY_MAP). Remaining techniques not-applicable to this test-only context -- no production catch/propagation/cancellation code.",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2",
-          "evaluatedRevision": 15,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-03"
         }
       ],
       "governance": "governed"
@@ -20837,13 +20833,12 @@
           "revision": 16,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "swallowed-error-prevention/error-doors: ConfigurationPopup.tsx:76-77 routes its catch through silentCatch('ConfigurationPopup:loadSettings') correctly; MetricHelpPopover.tsx:53-59's bindingless catch guards a local JSON.parse, the sanctioned legitimate shape. Other techniques not-applicable -- this context is dashboard/empty-state presentation with no raw-error classification or propagation.",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2",
-          "evaluatedRevision": 15,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/overview/components/health/ConfigurationPopup.tsx:96 A failed settings save is caught with logger.warn of the error class plus a toast, and warn stays on the console, so the operator does not get the persisted log door.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:d811928687fd4faf",
+          "evaluatedRevision": 17,
+          "revisionsBehind": 1
         },
         {
           "subject": "observability-telemetry",
@@ -21380,12 +21375,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:97 a failing 60s status-page poll is routed only to log.warn (console-only; src/lib/log.ts:3 forwards only error) and local state - re-confirmed live; the IPC wrapper does not cover it (src/lib/devlog/ipc.ts:113 forwards slow calls, not failures)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2",
-          "evaluatedRevision": 15,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx:76 A failed healing-effectiveness load leaves report null, and that null is rendered with the same no-data copy as zero attempts.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:d811928687fd4faf",
+          "evaluatedRevision": 17,
+          "revisionsBehind": 1
         },
         {
           "subject": "analytics-store-design",
@@ -21551,13 +21545,12 @@
           "revision": 16,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "taxonomy-design (incidentTaxonomy.ts:55-88 ranks Unclassified at the TOP rung, documented fix to a prior inversion -- exemplary unknown-is-not-a-value), user-facing-mapping (incidentTaxonomy.ts:130-143 incidentGuidance() maps classified source to translated next-action copy), structured-propagation (groupIncidents.ts:1 imports the ts-rs-bound AuditIncident type so category survives the FFI intact), consumer-decides-error-shape (AuditIncident is the one aggregate shape the inbox door consumes across 9 source tables). Remaining techniques not-applicable -- incidents here are already-persisted records; the routing/catch decision happened upstream.",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2",
-          "evaluatedRevision": 15,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentsData.ts:76 The 30-second incident-list fetch catch stores String(e) and does not call a log or telemetry helper, so a failed load reaches the on-screen banner and not an operator door.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:d811928687fd4faf",
+          "evaluatedRevision": 17,
+          "revisionsBehind": 1
         },
         {
           "subject": "hitl-approval",
