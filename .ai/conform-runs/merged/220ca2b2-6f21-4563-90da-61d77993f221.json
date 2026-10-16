@@ -1,0 +1,122 @@
+{
+  "schema": "conform-run/1",
+  "worker": "220ca2b2-6f21-4563-90da-61d77993f221",
+  "subject": "sync-replication",
+  "evaluatedAt": "2026-10-16T17:59:23Z",
+  "pairs": [
+    {
+      "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474",
+      "subject": "sync-replication",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/core/memories.rs:1426 hard-deletes a synced memory with no sync tombstone (process_tombstones at src-tauri/src/cloud/sync/mod.rs:846 reads persona tombstones only), so deleted memories stay in the mirror forever; and the tombstone stream advances its cursor to wall-clock tick_start (:848) with the write error discarded (:875)",
+      "techniques": [
+        {
+          "technique": "tombstone-propagation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1426 DELETE FROM persona_memories writes no sync record; only persona deletes propagate (src-tauri/src/cloud/sync/mod.rs:846), synced_memories is upsert-only (:70)"
+        },
+        {
+          "technique": "change-tracking-and-cursors",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:848 the tombstones cursor is captured from the clock, not from observed data - the sibling-stream race the technique names, fixed on the main loop (:475) but not here; :875 `let _ = cursor::set_cursor` swallows the progress-mark write failure"
+        }
+      ],
+      "registryProposal": "Upward lesson: this repo is the technique's own field case - the clock-capture fix landed on the busiest stream (src-tauri/src/cloud/sync/mod.rs:466-476, rationale written down) and was left in the tombstone stream ~400 lines away; worth citing in rust--change-tracking-and-cursors."
+    },
+    {
+      "context": "83a8a744-2036-4e3e-9654-6fcec82334ff",
+      "subject": "sync-replication",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:948 a vault-side delete is skipped and :974 an app-side delete is a silent continue; delete_sync_state (src-tauri/db/src/repos/resources/obsidian_brain.rs:122) has zero callers, so no delete propagates in either direction and deleted memories linger in the vault forever",
+      "techniques": [
+        {
+          "technique": "conflict-detection-and-policy",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/obsidian_brain/conflict.rs:59 three-way content-hash compare against the base, convergence kept as its own ConvergedConflict outcome, divergence carried with both contents; push refuses to clobber a divergent vault edit (src-tauri/src/commands/obsidian_brain/mod.rs:632)"
+        },
+        {
+          "technique": "tombstone-propagation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:948 deletion is modelled as absence; no tombstone and no producer - delete_sync_state at src-tauri/db/src/repos/resources/obsidian_brain.rs:122 is never called"
+        },
+        {
+          "technique": "change-tracking-and-cursors",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:974 `Err(_) => continue` spells memory-deleted and read-failed the same way and records nothing (failure-not-empty-success)"
+        },
+        {
+          "technique": "in-flight-is-per-connection",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:534 push is a synchronous local filesystem pass with no connection or outbox; the technique is stage multi-service"
+        }
+      ]
+    },
+    {
+      "context": "d5c5e7fe-6353-41eb-800b-dc11adee0775",
+      "subject": "sync-replication",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/engine/src/workspace_sync/mod.rs:19 the only sync code in this context ships with no production caller (merge_entity/WorkspaceEntity are referenced nowhere outside the module), so no replicated stream exists here yet; the rest is a one-way signal log, not a replica",
+      "techniques": [],
+      "registryProposal": "When Stage 3 wires workspace_sync, judge it: src-tauri/engine/src/workspace_sync/merge.rs:7 itself says personas hard-delete with no deleted_at, so its Tombstone variant has no producer - the producer-before-propagator trap. Today the pair is a resonance (matched on sync/tracking/merge), not a live stream."
+    },
+    {
+      "context": "4810daf8-0549-4899-95d2-99c81cde6455",
+      "subject": "sync-replication",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:3 alerts and anomalies read the single local source at evaluation time (getOverviewBundle); nothing in this context holds a replicated record, so the golden path's own do-not-build-sync rule applies",
+      "techniques": [],
+      "registryProposal": "Technique-shaped resonance: matched on observability/detection/health, the vocabulary of sync-observability, but the subject's precondition (a record living on both sides of a boundary) fails here. Route by precondition; alerting / observability-telemetry govern this context."
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-16T17:59:23Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "sync-replication"
+      ],
+      "techniques": [
+        "tombstone-propagation",
+        "change-tracking-and-cursors"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T17:59:23Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "sync-replication"
+      ],
+      "techniques": [
+        "conflict-detection-and-policy",
+        "tombstone-propagation",
+        "change-tracking-and-cursors",
+        "in-flight-is-per-connection"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T17:59:23Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "sync-replication"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-16T17:59:23Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "sync-replication"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

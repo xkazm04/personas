@@ -736,38 +736,53 @@
       "subject": "sync-replication",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-9",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:59:23.000Z",
+      "worker": "220ca2b2-6f21-4563-90da-61d77993f221",
       "techniques": [
         {
           "technique": "tombstone-propagation",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1426 a flagless hard delete on a synced table with no tombstone, so the stream's deletes are not uniform; src-tauri/db/src/repos/core/persona_tombstones.rs:51 now has a writer (fixed) but no reaper names the tombstones' retention."
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1426 DELETE FROM persona_memories writes no sync record; only persona deletes propagate (src-tauri/src/cloud/sync/mod.rs:846), synced_memories is upsert-only (:70)"
         },
         {
           "technique": "change-tracking-and-cursors",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/cloud/sync/mod.rs:436 advances the tombstone cursor only after every cascade succeeded; a failure returns early without advancing (:425)."
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:848 the tombstones cursor is captured from the clock, not from observed data - the sibling-stream race the technique names, fixed on the main loop (:475) but not here; :875 `let _ = cursor::set_cursor` swallows the progress-mark write failure"
         },
         {
           "technique": "conflict-detection-and-policy",
           "verdict": "unread",
-          "evidence": ""
+          "evidence": "",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "projection-security",
           "verdict": "unread",
-          "evidence": ""
+          "evidence": "",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "sync-observability",
           "verdict": "unread",
-          "evidence": ""
+          "evidence": "",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "topology-declaration",
           "verdict": "unread",
-          "evidence": ""
+          "evidence": "",
+          "carriedFrom": "2026-09-23"
+        }
+      ],
+      "registryProposal": "Upward lesson: this repo is the technique's own field case - the clock-capture fix landed on the busiest stream (src-tauri/src/cloud/sync/mod.rs:466-476, rationale written down) and was left in the tombstone stream ~400 lines away; worth citing in rust--change-tracking-and-cursors.",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1426 hard-deletes a synced memory and records nothing for the sync stream: process_tombstones (src-tauri/src/cloud/sync/mod.rs:846) reads persona tombstones only and deletes by persona cascade (:862), and synced_memories is upsert-only (:70), so a deleted memory stays in the mirror forever (tombstone-propagation). The persona_memory_tombstone written beside the delete is a re-derivation barrier, not a sync record.",
+          "evaluatedAt": "2026-10-15",
+          "worker": null,
+          "reason": "replaced by 220ca2b2-6f21-4563-90da-61d77993f221"
         }
       ]
     },
@@ -25435,6 +25450,59 @@
         }
       ],
       "registryProposal": "Lexical resonance, not a hole: the match was earned by 'goal'/'checkpoint'/'tools' (the context-map's api_surface names a dev_tools_git_checkpoint that does not appear in git_ops.rs). Goal/milestone CRUD should not route to session-continuation; consider down-weighting 'goal' and 'checkpoint' as use_when tokens when no turn/stop/loop vocabulary co-occurs."
+    },
+    "83a8a744-2036-4e3e-9654-6fcec82334ff/sync-replication": {
+      "context": "plugins-obsidian-brain",
+      "subject": "sync-replication",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:59:23.000Z",
+      "worker": "220ca2b2-6f21-4563-90da-61d77993f221",
+      "techniques": [
+        {
+          "technique": "conflict-detection-and-policy",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/obsidian_brain/conflict.rs:59 three-way content-hash compare against the base, convergence kept as its own ConvergedConflict outcome, divergence carried with both contents; push refuses to clobber a divergent vault edit (src-tauri/src/commands/obsidian_brain/mod.rs:632)"
+        },
+        {
+          "technique": "tombstone-propagation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:948 deletion is modelled as absence; no tombstone and no producer - delete_sync_state at src-tauri/db/src/repos/resources/obsidian_brain.rs:122 is never called"
+        },
+        {
+          "technique": "change-tracking-and-cursors",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:974 `Err(_) => continue` spells memory-deleted and read-failed the same way and records nothing (failure-not-empty-success)"
+        },
+        {
+          "technique": "in-flight-is-per-connection",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:534 push is a synchronous local filesystem pass with no connection or outbox; the technique is stage multi-service"
+        }
+      ]
+    },
+    "d5c5e7fe-6353-41eb-800b-dc11adee0775/sync-replication": {
+      "context": "engine-project-tracking",
+      "subject": "sync-replication",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:59:23.000Z",
+      "worker": "220ca2b2-6f21-4563-90da-61d77993f221",
+      "techniques": [],
+      "registryProposal": "When Stage 3 wires workspace_sync, judge it: src-tauri/engine/src/workspace_sync/merge.rs:7 itself says personas hard-delete with no deleted_at, so its Tombstone variant has no producer - the producer-before-propagator trap. Today the pair is a resonance (matched on sync/tracking/merge), not a live stream."
+    },
+    "4810daf8-0549-4899-95d2-99c81cde6455/sync-replication": {
+      "context": "overview-observability",
+      "subject": "sync-replication",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:59:23.000Z",
+      "worker": "220ca2b2-6f21-4563-90da-61d77993f221",
+      "techniques": [],
+      "registryProposal": "Technique-shaped resonance: matched on observability/detection/health, the vocabulary of sync-observability, but the subject's precondition (a record living on both sides of a boundary) fails here. Route by precondition; alerting / observability-telemetry govern this context."
     }
   }
 }

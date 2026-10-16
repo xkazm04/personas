@@ -1424,3 +1424,7 @@
 {"ts":"2026-10-16T17:57:41Z","bundle":"software-engineering","subjects":["status-vocabulary"],"techniques":["number-formatting","timestamp-display"],"deviations":2}
 {"ts":"2026-10-16T17:57:41Z","bundle":"software-engineering","subjects":["status-vocabulary"],"techniques":["status-color-mapping"],"deviations":1}
 {"ts":"2026-10-16T17:57:41Z","bundle":"software-engineering","subjects":["status-vocabulary"],"techniques":["status-color-mapping"],"deviations":1}
+{"ts":"2026-10-16T17:59:23Z","bundle":"software-engineering","subjects":["sync-replication"],"techniques":["tombstone-propagation","change-tracking-and-cursors"],"deviations":1}
+{"ts":"2026-10-16T17:59:23Z","bundle":"software-engineering","subjects":["sync-replication"],"techniques":["conflict-detection-and-policy","tombstone-propagation","change-tracking-and-cursors","in-flight-is-per-connection"],"deviations":1}
+{"ts":"2026-10-16T17:59:23Z","bundle":"software-engineering","subjects":["sync-replication"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:59:23Z","bundle":"software-engineering","subjects":["sync-replication"],"techniques":[],"deviations":0}

@@ -12191,7 +12191,11 @@
           "revision": 10,
           "changedAt": "2026-10-08",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/engine/src/workspace_sync/mod.rs:19 the only sync code in this context ships with no production caller (merge_entity/WorkspaceEntity are referenced nowhere outside the module), so no replicated stream exists here yet; the rest is a one-way signal log, not a replica",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:2d5b609198b79d34",
+          "evaluatedRevision": 10
         },
         {
           "subject": "agent-instruction-files",
@@ -22328,7 +22332,11 @@
           "revision": 10,
           "changedAt": "2026-10-08",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:3 alerts and anomalies read the single local source at evaluation time (getOverviewBundle); nothing in this context holds a replicated record, so the golden path's own do-not-build-sync rule applies",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:2d5b609198b79d34",
+          "evaluatedRevision": 10
         },
         {
           "subject": "terminal-multiplexing",
@@ -27432,7 +27440,11 @@
           "revision": 10,
           "changedAt": "2026-10-08",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:948 a vault-side delete is skipped and :974 an app-side delete is a silent continue; delete_sync_state (src-tauri/db/src/repos/resources/obsidian_brain.rs:122) has zero callers, so no delete propagates in either direction and deleted memories linger in the vault forever",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:2d5b609198b79d34",
+          "evaluatedRevision": 10
         },
         {
           "subject": "quality-gates",
@@ -32795,8 +32807,8 @@
           "changedAt": "2026-10-08",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1426 hard-deletes a synced memory and records nothing for the sync stream: process_tombstones (src-tauri/src/cloud/sync/mod.rs:846) reads persona tombstones only and deletes by persona cascade (:862), and synced_memories is upsert-only (:70), so a deleted memory stays in the mirror forever (tombstone-propagation). The persona_memory_tombstone written beside the delete is a re-derivation barrier, not a sync record.",
-          "evaluatedAt": "2026-10-15",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1426 hard-deletes a synced memory with no sync tombstone (process_tombstones at src-tauri/src/cloud/sync/mod.rs:846 reads persona tombstones only), so deleted memories stay in the mirror forever; and the tombstone stream advances its cursor to wall-clock tick_start (:848) with the write error discarded (:875)",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:2d5b609198b79d34",
           "evaluatedRevision": 10
         },
