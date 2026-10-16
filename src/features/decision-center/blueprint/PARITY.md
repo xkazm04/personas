@@ -11,20 +11,46 @@ Lenses: the registry comes from the map's `lenses[]`, so the sheet draws the sev
 Development, Operations, Security, Quality and Performance) and any custom project lens the same way. Kettle carries
 one custom lens, `com.kettle.cost`.
 
+## Round two (spark bp-fidelity, 2026-10-16): bp's look restored
+
+Round one re-inked bp in the app's tokens and lost bp's detail. Round two re-ports bp closely and adapts it
+(strings, file size, the app's style rules); where bp and the round-one rows below disagree, bp now wins.
+Reference shots: bp itself on :3010 (Kettle sample and live products), compared side by side.
+
+- **Palette and type:** bp's own palette, dark and light, verbatim in `theme/bp-tokens.css` as `--bp-*`
+  (operator decision: inside the blueprint bp's palette serves better). IBM Plex Sans Condensed and Plex Mono,
+  bundled with the blueprint chunk only. Square corners, no glow. Text never under bp's 12 px floor: the app's
+  text-scale factor can enlarge the sheet but is clamped at 1.
+- **Ground:** bp's radial paper, vignette and double frame (`theme/ground.css`), the canvas transparent over them;
+  the 40/200 world-unit grid in the accent.
+- **Drawing (engine/):** bp's render ported: walls with the poche hatch, wing floors by share live, ribbons
+  crossfading into tiles, wing / room / bay label anatomy, the chronology rule, ink-only stage glyphs, delta
+  triangles, trouble clouds, flags and clusters, the static raster cache. Left out: bp's simulated swarm (agent
+  dots, heat, scans), which the stores do not carry.
+- **Chrome (ui/, styles/):** bp's header (project line, crumbs, count summary with its drop tiers, two-row lens
+  tabs with the lens underline), the **project switcher** with bp's shape-only readiness icons (header product
+  switch: now present), the last-scan pill, bp's rail (count-up figures, tones, badge, pulse; View shown, its panel
+  arrives with the rail panels), the ladder and scale bar, the collapsed timeline strip. The Build queue column (a
+  Personas addition the operator kept) and the dialogs are drawn in bp's workbench language.
+- **The Monitor's Blueprint tab** is bp's project list (Manage projects as a page: readiness icon and checklist,
+  counts, open buttons) on bp's ground. Registering, renaming and removing projects stay in Personas' Projects page.
+- **Still to come (later stages):** the Ledger page, the rail panels, the feature page's depth, the expanded
+  timeline, the hover card and legend, the on-plan decision card and multi-select.
+
 ## Across levels (header, rails, bars)
 
 | Element in bp | Verdict | Here |
 |---|---|---|
 | Header: DRAWING SET chip, ledger count, sheet number and name | present | title block; the count is the Build queue |
 | Header: crumbs (product, wing, room, bay) with live, building and waiting counts | present | each crumb is a way back up |
-| Header: product switch | dropped | one product per sheet: the Build card that opens the sheet chooses it (WP3) |
+| Header: product switch | present (round two) | bp's switcher; picking a product reopens the sheet on it |
 | Header: last scan | improved | stated in the identity line, relative to now |
 | Lens tabs: short code, waiting count, digit key | present | General, then every enabled lens in map order |
 | Lens tabs: custom project lenses on a second row | present | second row, drawn with the manifest's own glyph path (Kettle's Cost lens) |
 | Performance lens (bp's 7th built-in) | present | `PERF` tab; the stopwatch glyph on tiles, flags and cards (canvas and SVG) |
 | Theme toggle | dropped | the app's own theme owns it; the canvas re-reads its tokens when the theme changes |
 | Right rail: Find, review, agents, plan | present | Find, Build queue (shown or hidden), agents running, plan |
-| Right rail: View (7 d window) | dropped | a no-op in the prototype; the timeline strip keeps the history |
+| Right rail: View (7 d window) | present (round two) | drawn as bp's; its panel arrives with the rail panels |
 | Level bar: zoom, LEVEL, L0 to L4 | present | the current level inked, the levels passed shaded |
 | Level bar: TARGET cell | dropped | no target mode here: the queue's current item is the target |
 | Level bar: names drawn | improved | NAMES `n/total` cell with a tooltip saying why a name is missing |

@@ -167,14 +167,21 @@ counts follow. No mandate ever acts on a lens-scan card, signed or not (the
 router's keep-out). A product whose store cannot be read shows no card.
 
 **The Blueprint tab** (2026-10-16). The Monitor header carries a fourth destination beside
-Activity: **Blueprint** lists every lens-scan product as a tile (proposed, approved and to-triage
-counts from the same `lens_scan_products` read). **Open the blueprint** opens that product's drawing
+Activity: **Blueprint** lists every lens-scan product as bp's project list, on bp's own ground and palette:
+per product its readiness (bp's shape-only icon: map only, measured, full, missing) with a checklist (map
+version, store, events log, features, lenses, measured facets, last scan), and the proposed, approved and
+to-triage counts, all from the same `lens_scan_products` read. **Open the blueprint** opens that product's drawing
 set, the same sheet a Build card opens, whether or not anything waits for a decision; a product with a
 release waiting also gets **Open the release**. A product whose map cannot be read opens the store's
 error frame instead of the drawing. `Esc` climbs the drawing level by level and, at its site,
 closes only the drawing: you land back on the Blueprint tab, never outside the Monitor. The
 Monitor answers `Esc` from the app's keyboard ladder (full-screen-layer rung, 60), so any surface
 above it (a modal, the Decision Deck, the drawing) that takes the key keeps it.
+
+The drawing set itself is bp's look (2026-10-16, round two): bp's palette, ground, IBM Plex type and drawing
+detail, bp's header with a **project switcher** (switch product without leaving the sheet) and a last-scan
+pill, bp's rail, ladder and timeline strip; the Build queue column keeps its keys in bp's ink. See
+`src/features/decision-center/blueprint/PARITY.md`.
 
 **Stewards plate.** In the supply column the Autopilot plate became the
 Stewards plate: the attention-loop switch on top (unchanged, same tour anchors

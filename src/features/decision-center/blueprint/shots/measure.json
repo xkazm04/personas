@@ -1,627 +1,653 @@
 {
  "sizes": {
   "L0 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 2387,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2356,
+   "domUnder14": 1514,
    "canvasMin": 12,
-   "canvasChars": 286,
-   "canvasUnder14": 165,
+   "canvasChars": 598,
+   "canvasUnder14": 356,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L1 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 572,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 598,
+   "domUnder14": 361,
    "canvasMin": 12,
-   "canvasChars": 681,
-   "canvasUnder14": 434,
+   "canvasChars": 1486,
+   "canvasUnder14": 906,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L2 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 588,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 597,
+   "domUnder14": 361,
    "canvasMin": 12,
-   "canvasChars": 680,
-   "canvasUnder14": 433,
+   "canvasChars": 2294,
+   "canvasUnder14": 1421,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L3 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 590,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 585,
+   "domUnder14": 359,
    "canvasMin": 12,
-   "canvasChars": 417,
-   "canvasUnder14": 213,
+   "canvasChars": 2865,
+   "canvasUnder14": 1745,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L4 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 2209,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2206,
+   "domUnder14": 394,
    "canvasMin": 12,
-   "canvasChars": 417,
-   "canvasUnder14": 213,
+   "canvasChars": 1975,
+   "canvasUnder14": 1193,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-approved 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 714,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 662,
+   "domUnder14": 480,
    "canvasMin": 12,
-   "canvasChars": 671,
-   "canvasUnder14": 424,
+   "canvasChars": 2474,
+   "canvasUnder14": 1560,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-decline-prompt 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 818,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 830,
+   "domUnder14": 538,
    "canvasMin": 12,
-   "canvasChars": 680,
-   "canvasUnder14": 433,
+   "canvasChars": 1392,
+   "canvasUnder14": 857,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-build-armed 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 1393,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 1402,
+   "domUnder14": 953,
    "canvasMin": 12,
-   "canvasChars": 781,
-   "canvasUnder14": 491,
+   "canvasChars": 4093,
+   "canvasUnder14": 2545,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-build-started 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 1196,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 1145,
+   "domUnder14": 952,
    "canvasMin": 12,
-   "canvasChars": 671,
-   "canvasUnder14": 424,
+   "canvasChars": 3002,
+   "canvasUnder14": 1881,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-find 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 2693,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2665,
+   "domUnder14": 1699,
    "canvasMin": 12,
-   "canvasChars": 286,
-   "canvasUnder14": 165,
+   "canvasChars": 586,
+   "canvasUnder14": 344,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-keys 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 3047,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 3019,
+   "domUnder14": 1629,
    "canvasMin": 12,
-   "canvasChars": 286,
-   "canvasUnder14": 165,
+   "canvasChars": 586,
+   "canvasUnder14": 344,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
+   ]
+  },
+  "state-switcher 1280x800 dark-midnight": {
+   "domMin": 12,
+   "domChars": 2478,
+   "domUnder14": 1597,
+   "canvasMin": 12,
+   "canvasChars": 586,
+   "canvasUnder14": 344,
+   "smallestDom": [
+    "Decision Center",
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-lens-performance 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 1297,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 1246,
+   "domUnder14": 867,
    "canvasMin": 12,
-   "canvasChars": 313,
-   "canvasUnder14": 192,
+   "canvasChars": 891,
+   "canvasUnder14": 528,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-lens-custom 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 1337,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 1292,
+   "domUnder14": 882,
    "canvasMin": 12,
-   "canvasChars": 307,
-   "canvasUnder14": 186,
+   "canvasChars": 889,
+   "canvasUnder14": 526,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-compare 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 3013,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2933,
+   "domUnder14": 444,
    "canvasMin": 12,
-   "canvasChars": 798,
-   "canvasUnder14": 508,
+   "canvasChars": 1898,
+   "canvasUnder14": 1178,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-compare-perf 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 4447,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 4369,
+   "domUnder14": 480,
    "canvasMin": 12,
-   "canvasChars": 420,
-   "canvasUnder14": 230,
+   "canvasChars": 788,
+   "canvasUnder14": 408,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-rework-prompt 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 3268,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 3191,
+   "domUnder14": 627,
    "canvasMin": 12,
-   "canvasChars": 798,
-   "canvasUnder14": 508,
+   "canvasChars": 1898,
+   "canvasUnder14": 1178,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-reopen-refused 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 2658,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2628,
+   "domUnder14": 492,
    "canvasMin": 12,
-   "canvasChars": 384,
-   "canvasUnder14": 240,
+   "canvasChars": 2148,
+   "canvasUnder14": 1340,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-in-release 1280x800 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 2745,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2713,
+   "domUnder14": 498,
    "canvasMin": 12,
-   "canvasChars": 384,
-   "canvasUnder14": 240,
+   "canvasChars": 1611,
+   "canvasUnder14": 1005,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L0 1920x1080 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 2387,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2458,
+   "domUnder14": 1572,
    "canvasMin": 12,
-   "canvasChars": 466,
-   "canvasUnder14": 254,
+   "canvasChars": 1397,
+   "canvasUnder14": 761,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L1 1920x1080 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 573,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 612,
+   "domUnder14": 407,
    "canvasMin": 12,
-   "canvasChars": 915,
-   "canvasUnder14": 577,
+   "canvasChars": 2337,
+   "canvasUnder14": 1415,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L2 1920x1080 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 589,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 611,
+   "domUnder14": 407,
    "canvasMin": 12,
-   "canvasChars": 798,
-   "canvasUnder14": 484,
+   "canvasChars": 3721,
+   "canvasUnder14": 2234,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L3 1920x1080 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 590,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 599,
+   "domUnder14": 405,
    "canvasMin": 12,
-   "canvasChars": 528,
-   "canvasUnder14": 281,
+   "canvasChars": 4290,
+   "canvasUnder14": 2556,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L4 1920x1080 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 2209,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2187,
+   "domUnder14": 440,
    "canvasMin": 12,
-   "canvasChars": 528,
-   "canvasUnder14": 281,
+   "canvasChars": 2886,
+   "canvasUnder14": 1650,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-compare 1920x1080 dark-midnight": {
-   "domMin": 14.4375,
-   "domChars": 3013,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 3006,
+   "domUnder14": 490,
    "canvasMin": 12,
-   "canvasChars": 1029,
-   "canvasUnder14": 642,
+   "canvasChars": 3309,
+   "canvasUnder14": 2010,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L0 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 2387,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2356,
+   "domUnder14": 1514,
    "canvasMin": 12,
-   "canvasChars": 286,
-   "canvasUnder14": 165,
+   "canvasChars": 582,
+   "canvasUnder14": 375,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L1 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 572,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 598,
+   "domUnder14": 361,
    "canvasMin": 12,
-   "canvasChars": 681,
-   "canvasUnder14": 434,
+   "canvasChars": 1486,
+   "canvasUnder14": 906,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L2 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 588,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 597,
+   "domUnder14": 361,
    "canvasMin": 12,
-   "canvasChars": 680,
-   "canvasUnder14": 433,
+   "canvasChars": 2278,
+   "canvasUnder14": 1440,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L3 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 590,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 585,
+   "domUnder14": 359,
    "canvasMin": 12,
-   "canvasChars": 417,
-   "canvasUnder14": 213,
+   "canvasChars": 3142,
+   "canvasUnder14": 1936,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L4 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 2209,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2206,
+   "domUnder14": 394,
    "canvasMin": 12,
-   "canvasChars": 417,
-   "canvasUnder14": 213,
+   "canvasChars": 1975,
+   "canvasUnder14": 1193,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-approved 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 714,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 662,
+   "domUnder14": 480,
    "canvasMin": 12,
-   "canvasChars": 671,
-   "canvasUnder14": 424,
+   "canvasChars": 2474,
+   "canvasUnder14": 1560,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-decline-prompt 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 818,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 830,
+   "domUnder14": 538,
    "canvasMin": 12,
-   "canvasChars": 680,
-   "canvasUnder14": 433,
+   "canvasChars": 1392,
+   "canvasUnder14": 857,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-build-armed 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 1393,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 1402,
+   "domUnder14": 953,
    "canvasMin": 12,
-   "canvasChars": 781,
-   "canvasUnder14": 491,
+   "canvasChars": 4093,
+   "canvasUnder14": 2545,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-build-started 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 1196,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 1145,
+   "domUnder14": 952,
    "canvasMin": 12,
-   "canvasChars": 671,
-   "canvasUnder14": 424,
+   "canvasChars": 3002,
+   "canvasUnder14": 1881,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-find 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 2693,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2665,
+   "domUnder14": 1699,
    "canvasMin": 12,
-   "canvasChars": 286,
-   "canvasUnder14": 165,
+   "canvasChars": 586,
+   "canvasUnder14": 344,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-keys 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 3047,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 3019,
+   "domUnder14": 1629,
    "canvasMin": 12,
-   "canvasChars": 286,
-   "canvasUnder14": 165,
+   "canvasChars": 863,
+   "canvasUnder14": 535,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
+   ]
+  },
+  "state-switcher 1280x800 light": {
+   "domMin": 12,
+   "domChars": 2478,
+   "domUnder14": 1597,
+   "canvasMin": 12,
+   "canvasChars": 586,
+   "canvasUnder14": 344,
+   "smallestDom": [
+    "Decision Center",
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-lens-performance 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 1297,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 1246,
+   "domUnder14": 867,
    "canvasMin": 12,
-   "canvasChars": 313,
-   "canvasUnder14": 192,
+   "canvasChars": 891,
+   "canvasUnder14": 528,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-lens-custom 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 1337,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 1292,
+   "domUnder14": 882,
    "canvasMin": 12,
-   "canvasChars": 307,
-   "canvasUnder14": 186,
+   "canvasChars": 889,
+   "canvasUnder14": 526,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-compare 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 3015,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2935,
+   "domUnder14": 444,
    "canvasMin": 12,
-   "canvasChars": 548,
-   "canvasUnder14": 303,
+   "canvasChars": 1898,
+   "canvasUnder14": 1178,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-compare-perf 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 4447,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 4369,
+   "domUnder14": 480,
    "canvasMin": 12,
-   "canvasChars": 338,
-   "canvasUnder14": 148,
+   "canvasChars": 856,
+   "canvasUnder14": 476,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-rework-prompt 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 3270,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 3193,
+   "domUnder14": 627,
    "canvasMin": 12,
-   "canvasChars": 548,
-   "canvasUnder14": 303,
+   "canvasChars": 1898,
+   "canvasUnder14": 1178,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-reopen-refused 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 2658,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2628,
+   "domUnder14": 492,
    "canvasMin": 12,
-   "canvasChars": 384,
-   "canvasUnder14": 240,
+   "canvasChars": 1611,
+   "canvasUnder14": 1005,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-in-release 1280x800 light": {
-   "domMin": 14.4375,
-   "domChars": 2745,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2713,
+   "domUnder14": 498,
    "canvasMin": 12,
-   "canvasChars": 384,
-   "canvasUnder14": 240,
+   "canvasChars": 1611,
+   "canvasUnder14": 1005,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L0 1920x1080 light": {
-   "domMin": 14.4375,
-   "domChars": 2387,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2458,
+   "domUnder14": 1572,
    "canvasMin": 12,
-   "canvasChars": 466,
-   "canvasUnder14": 254,
+   "canvasChars": 936,
+   "canvasUnder14": 512,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L1 1920x1080 light": {
-   "domMin": 14.4375,
-   "domChars": 573,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 612,
+   "domUnder14": 407,
    "canvasMin": 12,
-   "canvasChars": 915,
-   "canvasUnder14": 577,
+   "canvasChars": 2337,
+   "canvasUnder14": 1415,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L2 1920x1080 light": {
-   "domMin": 14.4375,
-   "domChars": 589,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 611,
+   "domUnder14": 407,
    "canvasMin": 12,
-   "canvasChars": 798,
-   "canvasUnder14": 484,
+   "canvasChars": 3260,
+   "canvasUnder14": 1985,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L3 1920x1080 light": {
-   "domMin": 14.4375,
-   "domChars": 590,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 599,
+   "domUnder14": 405,
    "canvasMin": 12,
-   "canvasChars": 528,
-   "canvasUnder14": 281,
+   "canvasChars": 3829,
+   "canvasUnder14": 2307,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "L4 1920x1080 light": {
-   "domMin": 14.4375,
-   "domChars": 2209,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 2187,
+   "domUnder14": 440,
    "canvasMin": 12,
-   "canvasChars": 528,
-   "canvasUnder14": 281,
+   "canvasChars": 2425,
+   "canvasUnder14": 1401,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   },
   "state-compare 1920x1080 light": {
-   "domMin": 14.4375,
-   "domChars": 3015,
-   "domUnder14": 0,
+   "domMin": 12,
+   "domChars": 3008,
+   "domUnder14": 490,
    "canvasMin": 12,
-   "canvasChars": 1029,
-   "canvasUnder14": 642,
+   "canvasChars": 3309,
+   "canvasUnder14": 2010,
    "smallestDom": [
-    "Build queue",
     "Decision Center",
-    "Features 30 · built 20"
+    "Features 30 · built 20",
+    "· pack flow"
    ]
   }
  },
