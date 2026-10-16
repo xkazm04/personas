@@ -4965,12 +4965,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/api/pipeline/workflows.ts:15 cancelWorkflowJob resolves void while the backend writes terminal Failed at once (src-tauri/src/background_job.rs:684) and WorkflowJob omits cancel_outcome (src-tauri/src/commands/infrastructure/workflows.rs:18), so no client can show cancelling or tell cancelled from failed",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:4a1ddf4af408b961",
-          "evaluatedRevision": 4,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:69 the WorkflowJob projection drops the cancel_outcome JobSnapshot carries (src-tauri/src/background_job.rs:1002) though :134 claims the snapshot reports it, and src/api/pipeline/workflows.ts:16 cancel resolves void onto a terminal Failed row, so no client can show cancelling or tell cancelled from failed",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:22ed2a99172ae050",
+          "evaluatedRevision": 5,
+          "revisionsBehind": 1
         },
         {
           "subject": "job-coordination",
