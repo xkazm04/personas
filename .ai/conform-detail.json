@@ -17296,77 +17296,82 @@
       "context": "notepad-plan",
       "subject": "test-harness",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T16:43:32.807Z",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:08:00.000Z",
+      "worker": "1a5f8c88-83b9-404e-92bd-a7a6d0c4e176",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
-          "verdict": "conformant",
-          "evidence": "src/features/notepad/plan/__tests__/shipAthena.test.ts:182 Explicitly differentiates null from 0 to ensure the decision logic between unwired and clean status is reached and held."
-        },
-        {
-          "technique": "negative-control-tests",
-          "verdict": "conformant",
-          "evidence": "src/features/notepad/plan/__tests__/shipAthena.test.ts:80 Negative assertion pins absence of premature verdict values or response scripts that would bias model analysis."
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/ship_ops.rs:795 the reader is driven by a literal, not by buildReadinessPayload output; the crossing is a string-marshalled setting, not a typed call, so the technique's typed-crossing exemption does not hold"
         },
         {
           "technique": "fixture-economics",
-          "verdict": "conformant",
-          "evidence": "src/features/notepad/plan/__tests__/shipAthena.test.ts:36 Pure in-memory view-model builders with override parameters provide fast and isolated test setup."
+          "verdict": "realized",
+          "evidence": "src/features/notepad/__tests__/ShipCertifyModal.test.tsx:8 builds view models from the shared @/lib/milestone/__tests__/shipFixtures builders rather than hand-rolling rows per file (also useProjectPlanLoad.test.tsx:6)"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "realized",
+          "evidence": "src/features/notepad/__tests__/useProjectPlanLoad.test.tsx:73 failure tests carry their success control in the same file (:94 clears the failure, NotePlanRuns.test.tsx:44 checks the previous note does not linger)"
         },
         {
           "technique": "isolation-lanes",
           "verdict": "conformant",
-          "evidence": "src/features/notepad/plan/__tests__/shipAthena.test.ts:61 Pure prompt generator functions execute without shared browser storage or mutable process state."
+          "evidence": "src/features/notepad/plan/__tests__/shipAthena.test.ts:61 Pure prompt generator functions execute without shared browser storage or mutable process state.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "approval-snapshots-with-guarded-update",
           "verdict": "not-applicable",
-          "evidence": "src/features/notepad/plan/__tests__/shipAthena.test.ts:169 Assertions evaluate explicit payload fields and structured objects rather than unverified file snapshots."
+          "evidence": "src/features/notepad/plan/__tests__/shipAthena.test.ts:169 Assertions evaluate explicit payload fields and structured objects rather than unverified file snapshots.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "assert-through-the-reader",
           "verdict": "not-applicable",
-          "evidence": "src/features/notepad/plan/__tests__/shipAthena.test.ts:61 Prompts and payloads are fed into internal application dialogs and state rather than a foreign tool CLI."
+          "evidence": "src/features/notepad/plan/__tests__/shipAthena.test.ts:61 Prompts and payloads are fed into internal application dialogs and state rather than a foreign tool CLI.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "pin-the-call-not-the-name",
           "verdict": "not-applicable",
-          "evidence": "src/features/notepad/plan/__tests__/shipAthena.test.ts:62 All tests execute the prompt builders directly and assert on generated outputs rather than analyzing source code."
+          "evidence": "src/features/notepad/plan/__tests__/shipAthena.test.ts:62 All tests execute the prompt builders directly and assert on generated outputs rather than analyzing source code.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "suite-partitioning",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:23 Lane membership and runner exclusions are governed at the harness level."
+          "evidence": "vitest.config.ts:23 Lane membership and runner exclusions are governed at the harness level.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "live-app-harness",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:11 Runs in the fast jsdom unit runner lane without driving a packaged desktop binary."
+          "evidence": "vitest.config.ts:11 Runs in the fast jsdom unit runner lane without driving a packaged desktop binary.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "dynamic-verifier-classes",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 No dynamic verifiers are attached to the pure unit test runner configuration."
+          "evidence": "vitest.config.ts:17 No dynamic verifiers are attached to the pure unit test runner configuration.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "flake-lifecycle",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 Tests are deterministic and synchronous without retry or quarantine machinery."
+          "evidence": "vitest.config.ts:17 Tests are deterministic and synchronous without retry or quarantine machinery.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "far-side-oracle",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 No unowned remote services are invoked by the ship plan prompt builders."
+          "evidence": "vitest.config.ts:17 No unowned remote services are invoked by the ship plan prompt builders.",
+          "carriedFrom": "2026-10-12"
         }
       ],
-      "withdrawn": {
-        "worker": "b9065c40-0f9e-46fc-a8a2-b36a03aad8fa",
-        "state": "conformant",
-        "at": "2026-10-12T16:47:28.291204+00:00",
-        "reason": "conformant padded to the evidence floor: one generic anchor (mod tests {, vitest.config.ts:17) reused for 5-6 not-applicable techniques; 9-10 distinct anchors of 12 needed"
-      }
+      "registryProposal": "assert-through-the-reader exempts 'the reader is the product itself', yet a same-repo reader in another language (TS writer, serde reader with default) fails exactly like a foreign one; unreached-decisions-pin-nothing covers it only via its typed-crossing clause. Name the cross-language in-repo case explicitly in one of them."
     },
     "6da794b4-7a5f-4087-a4d4-fb8a416456e5/test-harness": {
       "context": "commands-execution",
@@ -17444,77 +17449,82 @@
       "context": "plugins-dev-tools-projects",
       "subject": "test-harness",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T16:43:32.807Z",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:08:00.000Z",
+      "worker": "1a5f8c88-83b9-404e-92bd-a7a6d0c4e176",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
-          "verdict": "conformant",
-          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/projectPulse.test.tsx:15 Enforces null for unmeasured state rather than allowing default zero to masquerade as measured clean."
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/GitHubRepoSelector.tsx:100 the credential-state decision was not lifted into the reachable unit its header claims; only the RepoCredState type moved"
         },
         {
           "technique": "negative-control-tests",
-          "verdict": "conformant",
-          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/projectPulse.test.tsx:63 Asserts that never-scanned projects render an empty unwatched marker rather than clean or zero cells."
+          "verdict": "realized",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/projectPulse.test.tsx:15 the null-vs-zero gate carries all three fixtures (never-scanned, clean :34, busy :22) and the never-scanned render (:63) asserts both absence of a number and absence of the clean cell"
         },
         {
           "technique": "fixture-economics",
           "verdict": "conformant",
-          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/githubRepoPaging.test.ts:16 Typed in-memory page response factories with customizable Link headers provide cheap test setup."
+          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/githubRepoPaging.test.ts:16 Typed in-memory page response factories with customizable Link headers provide cheap test setup.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "isolation-lanes",
           "verdict": "conformant",
-          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/projectPulse.test.tsx:53 React Testing Library automatically cleans up unmounted trees between tests to maintain lane hygiene."
+          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/projectPulse.test.tsx:53 React Testing Library automatically cleans up unmounted trees between tests to maintain lane hygiene.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "approval-snapshots-with-guarded-update",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/projectPulse.test.tsx:54 Direct DOM element text assertions are used instead of serialized HTML snapshots."
+          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/projectPulse.test.tsx:54 Direct DOM element text assertions are used instead of serialized HTML snapshots.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "assert-through-the-reader",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/githubRepoPaging.test.ts:28 Parses HTTP header strings in-process for client paging rather than generating foreign interpreter scripts."
+          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/githubRepoPaging.test.ts:28 Parses HTTP header strings in-process for client paging rather than generating foreign interpreter scripts.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "pin-the-call-not-the-name",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/projectPulse.test.tsx:53 Executes component rendering directly rather than asserting on source text."
+          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/projectPulse.test.tsx:53 Executes component rendering directly rather than asserting on source text.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "suite-partitioning",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:23 Lane boundaries are declared in the root Vitest configuration."
+          "evidence": "vitest.config.ts:23 Lane boundaries are declared in the root Vitest configuration.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "live-app-harness",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:11 Executes in jsdom unit lane without running the live desktop application."
+          "evidence": "vitest.config.ts:11 Executes in jsdom unit lane without running the live desktop application.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "dynamic-verifier-classes",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 No dynamic verifier classes are attached to this unit test suite."
+          "evidence": "vitest.config.ts:17 No dynamic verifier classes are attached to this unit test suite.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "flake-lifecycle",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 Tests are purely synchronous and deterministic."
+          "evidence": "vitest.config.ts:17 Tests are purely synchronous and deterministic.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "far-side-oracle",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 Mocks GitHub API responses in-memory rather than driving real remote GitHub servers."
+          "evidence": "vitest.config.ts:17 Mocks GitHub API responses in-memory rather than driving real remote GitHub servers.",
+          "carriedFrom": "2026-10-12"
         }
-      ],
-      "withdrawn": {
-        "worker": "b9065c40-0f9e-46fc-a8a2-b36a03aad8fa",
-        "state": "conformant",
-        "at": "2026-10-12T16:47:28.291204+00:00",
-        "reason": "conformant padded to the evidence floor: one generic anchor (mod tests {, vitest.config.ts:17) reused for 5-6 not-applicable techniques; 9-10 distinct anchors of 12 needed"
-      }
+      ]
     },
     "7826a48f-5883-4f26-8476-c3c515bda745/test-harness": {
       "context": "lib-personas",
@@ -25843,6 +25853,27 @@
           "technique": "budget-enforcement",
           "verdict": "not-applicable",
           "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:20 LLM_COST_THRESHOLD_USD is a findings-severity threshold on an external project's spend, not a ceiling this product enforces"
+        }
+      ]
+    },
+    "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f/test-harness": {
+      "context": "home-cockpit-widgets",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:08:00.000Z",
+      "worker": "1a5f8c88-83b9-404e-92bd-a7a6d0c4e176",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:66 the empty-success decision is never reached: every assertion is satisfied by the loading frame, and the name overstates what is pinned"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "realized",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:101 the unmount check is not vacuous: RecentDecisionsWidget starts loading=true and renders, so the waitFor must observe a transition, and the error cases (:46, :80) carry their retry controls"
         }
       ]
     }

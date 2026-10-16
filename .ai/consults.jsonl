@@ -1451,3 +1451,6 @@
 {"ts":"2026-10-16T18:07:52Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["budget-enforcement","usage-ledgers","spend-observability"],"deviations":2}
 {"ts":"2026-10-16T18:07:52Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["spend-observability"],"deviations":0}
 {"ts":"2026-10-16T18:07:52Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["price-tables","unit-classes-are-open","spend-observability","budget-enforcement"],"deviations":3}
+{"ts":"2026-10-16T18:08:00Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["unreached-decisions-pin-nothing","negative-control-tests"],"deviations":1}
+{"ts":"2026-10-16T18:08:00Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["unreached-decisions-pin-nothing","fixture-economics","negative-control-tests"],"deviations":1}
+{"ts":"2026-10-16T18:08:00Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["unreached-decisions-pin-nothing","negative-control-tests"],"deviations":1}
