@@ -1,0 +1,8 @@
+{"schema": "conform-run/1", "worker": "cecba39d-7c68-4c41-a2d6-bec842f487ff", "subject": "search",
+ "evaluatedAt": "2026-10-16T18:24:28Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "search", "context": "4be04ef0-88db-4f48-859c-92e6ba4d203f", "reason": "no work: already judged deviation on 2026-10-16 against the current digest sha256-b2:395e660a5e607abe (revision 6, registry 11037a6c); anchor filters/ComponentFilterDropdown.tsx:69 still reads raw toLowerCase().includes, so the verdict stands unchanged"},
+  {"subject": "search", "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7", "reason": "no work: already judged deviation on 2026-10-16 against the current digest sha256-b2:395e660a5e607abe (revision 6, registry 11037a6c); anchor TableListSidebar.tsx:123 still reads raw toLowerCase().includes, so the verdict stands unchanged"}
+ ],
+ "consults": []}
