@@ -84,7 +84,7 @@ function WorkRow({ row, onDrive, driving }: { row: Work; onDrive: () => void; dr
       </span>
       <span className="line-clamp-2 pl-4 typo-body text-foreground">{outcome}</span>
       {row.kind === 'delib' && driving && (
-        <div className="au-scope au-keys absolute right-0 top-full z-30 mt-1 w-[400px] rounded-card p-3" data-testid="cv-v3-peek">
+        <div className="au-scope absolute right-0 top-full z-30 mt-1 max-h-[min(30rem,55vh)] w-[400px] overflow-y-auto rounded-card border border-border bg-background p-3 shadow-elevation-3" data-testid="cv-v3-peek">
           <DriveControls peek />
         </div>
       )}
