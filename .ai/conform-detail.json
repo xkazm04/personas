@@ -26548,6 +26548,37 @@
       "evaluatedTs": "2026-10-16T18:17:54.000Z",
       "worker": "9632192b-8d5d-4909-be82-71c0e5c7c3f7",
       "techniques": []
+    },
+    "9b6cc17c-3add-4152-a349-c189b15a109f/concurrency-guards": {
+      "context": "template-design-preview",
+      "subject": "concurrency-guards",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:19:06.000Z",
+      "worker": "52e4bc33-6779-4a22-a09b-c7acc0bc4611",
+      "techniques": [
+        {
+          "technique": "guard-key-design",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/design-preview/ConnectorsSection.tsx:214 per-connector-name key is read here but held and released by the caller; the UI-side race room is client-state async-race-guards"
+        },
+        {
+          "technique": "single-flight-primitives",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/design-preview/DesignCheckbox.tsx:21 controlled toggle with no async work; no effect, fetch or invoke exists in the context"
+        }
+      ],
+      "registryProposal": "Weak context (pure render preview); re-judged against rev 16 only to clear a 2-revision lag; revs 15-16 were concurrent-vcs/commit-guard intakes that do not touch this precondition. The lexical match (design/section/result) is noise: coverage question, not a hole.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "Every file in this context (DesignResultPreview.tsx, DesignTestResults.tsx, DesignCheckbox.tsx, ConnectorsSection.tsx, EventsSection.tsx, MessagesSection.tsx, helpers.ts) is a pure, stateless render of a result object passed in as a prop -- DesignCheckbox.tsx:9-40 is a controlled toggle with no async operation at all. No operation here is reachable from more than one place, so the subject precondition (concurrency-guards.md:25-31, two-places-at-once reachability) is unmet.",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by 52e4bc33-6779-4a22-a09b-c7acc0bc4611"
+        }
+      ]
     }
   }
 }

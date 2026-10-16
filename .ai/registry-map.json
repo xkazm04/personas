@@ -35178,10 +35178,10 @@
           "changedAt": "2026-09-17",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "Every file in this context (DesignResultPreview.tsx, DesignTestResults.tsx, DesignCheckbox.tsx, ConnectorsSection.tsx, EventsSection.tsx, MessagesSection.tsx, helpers.ts) is a pure, stateless render of a result object passed in as a prop -- DesignCheckbox.tsx:9-40 is a controlled toggle with no async operation at all. No operation here is reachable from more than one place, so the subject precondition (concurrency-guards.md:25-31, two-places-at-once reachability) is unmet.",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:41b09d489d8f7ef9",
-          "evaluatedRevision": 14,
+          "evidence": "src/features/templates/sub_generated/design-preview/ConnectorsSection.tsx:214 the only in-flight guard is disabled={testingConnectors?.has(name)}, a prop owned by the parent; every file here is a prop-driven render with no async operation of its own (DesignCheckbox.tsx:21 just forwards onChange), so no operation reachable twice lives in this context",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:ccc991958e998a93",
+          "evaluatedRevision": 16,
           "revisionsBehind": 0
         },
         {

@@ -1491,3 +1491,4 @@
 {"ts":"2026-10-16T18:17:54Z","bundle":"software-engineering","subjects":["docs-sync"],"techniques":[],"deviations":0,"context":"db-repos-execution"}
 {"ts":"2026-10-16T18:17:54Z","bundle":"software-engineering","subjects":["docs-sync"],"techniques":["translations-drift-against-the-product"],"deviations":0,"context":"i18n"}
 {"ts":"2026-10-16T18:17:54Z","bundle":"software-engineering","subjects":["docs-sync"],"techniques":[],"deviations":0,"context":"project-overview"}
+{"ts":"2026-10-16T18:19:06Z","bundle":"software-engineering","subjects":["concurrency-guards"],"techniques":["guard-key-design","single-flight-primitives"],"deviations":0}
