@@ -336,3 +336,23 @@ describe('systemStore merge — retired persisted fields', () => {
     expect(stored.state).not.toHaveProperty('decisionSurface');
   });
 });
+
+describe('systemStore onRehydrateStorage — goalsView', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    _resetDedupCacheForTests();
+    useSystemStore.setState({ goalsView: 'notes' });
+  });
+
+  it('keeps a persisted ledger view', async () => {
+    seedPersistedSystemStore({ goalsView: 'ledger' });
+    await useSystemStore.persist.rehydrate();
+    expect(useSystemStore.getState().goalsView).toBe('ledger');
+  });
+
+  it.each(['board', 'progress', 42])('maps the retired or unknown value %s to notes', async (legacy) => {
+    seedPersistedSystemStore({ goalsView: legacy });
+    await useSystemStore.persist.rehydrate();
+    expect(useSystemStore.getState().goalsView).toBe('notes');
+  });
+});

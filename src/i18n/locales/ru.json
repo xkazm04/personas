@@ -11649,6 +11649,8 @@
       "goal_view_map_sub": "Созвездие + зависимости",
       "goal_view_missions": "Миссии",
       "goal_view_progress": "Прогресс",
+      "goal_view_notes": "Заметки",
+      "goal_view_ledger": "Реестр",
       "goal_view_pulse_label": "Пульс проекта",
       "goal_view_pulse_sub": "Сортировка + фокус",
       "goal_view_timeline": "Хронология",

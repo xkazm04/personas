@@ -18450,6 +18450,8 @@ export type Translations = {
       goal_view_map: string;
       goal_view_timeline: string;
       goal_view_progress: string;
+      goal_view_notes: string;
+      goal_view_ledger: string;
       goal_view_accept: string;
       goal_view_missions: string;
       mission_unlinked: string;

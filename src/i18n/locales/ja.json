@@ -11649,6 +11649,8 @@
       "goal_view_map_sub": "コンステレーション＋依存関係",
       "goal_view_missions": "ミッション",
       "goal_view_progress": "進捗",
+      "goal_view_notes": "ノート",
+      "goal_view_ledger": "台帳",
       "goal_view_pulse_label": "プロジェクトパルス",
       "goal_view_pulse_sub": "トリアージ + スポットライト",
       "goal_view_timeline": "タイムライン",

@@ -2313,6 +2313,8 @@
     "goal_view_map": "Map",
     "goal_view_timeline": "Timeline",
     "goal_view_progress": "Progress",
+    "goal_view_notes": "Notes",
+    "goal_view_ledger": "Ledger",
     "goal_view_accept": "Accept",
     "goal_view_missions": "Missions",
     "mission_unlinked": "No goal",

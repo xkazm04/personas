@@ -11649,6 +11649,8 @@
       "goal_view_map_sub": "별자리 + 의존성",
       "goal_view_missions": "미션",
       "goal_view_progress": "진행 상황",
+      "goal_view_notes": "노트",
+      "goal_view_ledger": "원장",
       "goal_view_pulse_label": "프로젝트 펄스",
       "goal_view_pulse_sub": "분류 + 스포트라이트",
       "goal_view_timeline": "타임라인",

@@ -11649,6 +11649,8 @@
       "goal_view_map_sub": "Constelación + dependencias",
       "goal_view_missions": "Misiones",
       "goal_view_progress": "Progreso",
+      "goal_view_notes": "Notas",
+      "goal_view_ledger": "Registro",
       "goal_view_pulse_label": "Pulso del proyecto",
       "goal_view_pulse_sub": "Clasificación + foco",
       "goal_view_timeline": "Cronología",

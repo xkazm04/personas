@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Target, Plus, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Target, Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { IconGoals } from '@/features/shared/chrome/sidebar/SidebarIcons';
 import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -12,33 +11,19 @@ import { silentCatch } from '@/lib/silentCatch';
 import { obsidianBrainPushGoals } from '@/api/obsidianBrain';
 import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker';
 import { usePickerScope, inPickerScope } from '@/features/plugins/dev-tools/sub_workspaces/usePickerScope';
-import GoalConstellation from './GoalConstellation';
 import { GoalEditorModal } from './GoalEditorModal';
 import { GoalsProgress } from './GoalsProgress';
 import { GoalViewExplainer } from './GoalViewExplainer';
-import { isComplete } from './goalStatus';
-
-/** Board preference: whether the Done lane is visible. Hidden by default so
- *  "Your turn" / "Agent's turn" split the full content width. */
-const SHOW_DONE_KEY = 'personas.goals.board.showDone';
-
-function readShowDone(): boolean {
-  try {
-    return localStorage.getItem(SHOW_DONE_KEY) === '1';
-  } catch (err) {
-    silentCatch('GoalsPage.readShowDone')(err);
-    return false;
-  }
-}
 
 /**
  * Goals — high-level direction surface.
  *
- * Reachable both as a top-level sidebar section and as a Dev Tools L3 tab.
- * Layout follows the project-header philosophy: title + project root path +
- * shared LifecycleProjectPicker, whose workspace / project selection is the
- * default filter for all three views, plus an authoring entry point (the "+ New goal" button) that
- * opens GoalEditorModal.
+ * One surface (the Board was retired in the Goals consolidation): the header
+ * carries the title, the shared LifecycleProjectPicker (whose workspace /
+ * project selection is the scope), the Obsidian sync and the "+ New goal"
+ * button that opens GoalEditorModal; the body is GoalsProgress, whose
+ * Notes | Ledger switch picks the layout. With no goals at all it shows the
+ * settled-empty hero and starters instead.
  */
 export default function GoalsPage() {
   const { t, tx } = useTranslation();
@@ -46,44 +31,28 @@ export default function GoalsPage() {
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const storeGoals = useSystemStore((s) => s.goals);
   const goalsLoading = useSystemStore((s) => s.goalsLoading);
-  const goalsTab = useSystemStore((s) => s.goalsTab);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
   const fetchAllGoals = useSystemStore((s) => s.fetchAllGoals);
   const createGoal = useSystemStore((s) => s.createGoal);
   const addToast = useToastStore((s) => s.addToast);
 
   const [editorOpen, setEditorOpen] = useState(false);
-  // Board-only: the Done lane is hidden by default (persisted preference).
-  const [showDone, setShowDone] = useState(readShowDone);
   // The header picker IS the scope: a project, a workspace's projects, or all.
   const scope = usePickerScope();
-  const crossProject = scope.kind !== 'project';
-
-  const toggleShowDone = () => {
-    const next = !showDone;
-    setShowDone(next);
-    try {
-      localStorage.setItem(SHOW_DONE_KEY, next ? '1' : '0');
-    } catch (err) {
-      silentCatch('GoalsPage.persistShowDone')(err);
-    }
-  };
 
   const goals = useMemo(() => storeGoals.filter((g) => inPickerScope(scope, g.project_id)), [storeGoals, scope]);
-  const doneCount = goals.filter((g) => isComplete(g.status)).length;
 
-  // Load goals at the page level — NOT inside GoalConstellation, which only
-  // mounts once goals exist. Fetching here means an empty board still loads on
-  // refresh. In cross-project scope we pull every project's goals into the same
-  // store array (so drag-to-move / progress still work); otherwise the active
-  // project's.
+  // Load goals at the page level so the settled-empty hero below knows whether
+  // there is anything to show. In cross-project scope we pull every project's
+  // goals (done ones too, so a finished-only portfolio is not called empty)
+  // into the same store array; otherwise the scoped project's.
   useEffect(() => {
     if (scope.projectId) {
       void fetchGoals(scope.projectId);
     } else {
-      void fetchAllGoals({ includeCompleted: showDone });
+      void fetchAllGoals({ includeCompleted: true });
     }
-  }, [scope.projectId, showDone, fetchGoals, fetchAllGoals]);
+  }, [scope.projectId, fetchGoals, fetchAllGoals]);
 
   const handleSyncToObsidian = async () => {
     if (!activeProjectId) return;
@@ -134,6 +103,9 @@ export default function GoalsPage() {
         actions={
           <>
             <LifecycleProjectPicker allowNone />
+            <Button variant="secondary" size="sm" onClick={handleSyncToObsidian}>
+              {t.plugins.dev_tools.sync_to_obsidian}
+            </Button>
             <Button
               variant="accent"
               tone="agent"
@@ -149,26 +121,15 @@ export default function GoalsPage() {
       />
 
       <ContentBody>
-        {/* Two views, down from four (2026-10-05).
-            MISSIONS is gone: it showed the ad-hoc team assignments the Assign
-            flow creates with `goalId: null`, which is a TEAMS concern wearing a
-            Goals tab - it was the one branch here not keyed on a goal, and it
-            had to sit above the goals-empty hero for that reason alone.
-            TIMELINE is gone too, folded into the Board rather than deleted: its
-            deadline sense is now the Board's own ordering and the due date it
-            puts on every card (`goalChronology`, `GoalCard`). */}
-        {goalsTab === 'progress' ? (
+        {/* One surface (the Board and Timeline are gone). While the first fetch
+            is in flight GoalsProgress paints its own delayed ghost, so the
+            settled-empty hero below is never flashed on a cold visit. */}
+        {goals.length > 0 || goalsLoading ? (
           <div className="space-y-3">
-            <GoalViewExplainer key="progress" view="progress" text={dl.goal_explainer_progress} />
+            <GoalViewExplainer text={dl.goal_explainer_progress} />
             <GoalsProgress projectScope={scope} />
           </div>
-        ) : goalsLoading && goals.length === 0 ? (
-          /* Cold first visit: goals fetch in flight, store still empty. A
-             delayed ghost (docs/design/overview-loading.md, law 5) — not the
-             empty-state hero, which is reserved for the settled-empty case
-             below. Warm visits skip this entirely (goals.length > 0). */
-          <GoalsBoardGhost />
-        ) : goals.length === 0 ? (
+        ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             {/* Haloed animated-bullseye hero (mirrors the overview illustration look) */}
             <div className="relative flex items-center justify-center mb-5" style={{ width: 168, height: 168 }}>
@@ -226,43 +187,6 @@ export default function GoalsPage() {
               </div>
             )}
           </div>
-        ) : (
-          <div className="space-y-4 pb-6">
-            <div className="flex items-center justify-between">
-              <h3 className="typo-caption text-primary uppercase tracking-wider">
-                {t.plugins.dev_lifecycle.goal_constellation} ({goals.length})
-              </h3>
-              <div className="flex items-center gap-2">
-                {goalsTab === 'board' && (
-                  <Tooltip content={showDone ? dl.goal_board_hide_done : tx(dl.goal_board_show_done, { count: doneCount })}>
-                    <Button
-                      variant="secondary"
-                      size="icon-sm"
-                      aria-pressed={showDone}
-                      aria-label={showDone ? dl.goal_board_hide_done : tx(dl.goal_board_show_done, { count: doneCount })}
-                      onClick={toggleShowDone}
-                      className={showDone ? 'text-emerald-400' : ''}
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </Tooltip>
-                )}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleSyncToObsidian}
-                >
-                  {t.plugins.dev_tools.sync_to_obsidian}
-                </Button>
-              </div>
-            </div>
-            <GoalViewExplainer
-              key="board"
-              view="board"
-              text={dl.goal_explainer_board}
-            />
-            <GoalConstellation showDoneLane={showDone} showProject={crossProject} projectScope={scope} />
-          </div>
         )}
       </ContentBody>
 
@@ -274,42 +198,5 @@ export default function GoalsPage() {
         />
       )}
     </ContentBox>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// GoalsBoardGhost — calm ghost for the ONLY moment the board region has
-// nothing to show yet (cold first visit, goals fetch in flight). Mirrors the
-// board's own geometry: two lanes ("Your turn" / "Agent's turn"), each with a
-// handful of goal-card-shaped bars. Each element enters via `animate-fade-in`
-// behind a staggered animation-delay starting at 120ms (fill-mode: both holds
-// opacity 0 through the delay), so a fast fetch never paints a single ghost —
-// real content replaces it the frame data arrives (docs/design/overview-loading.md).
-// No `animate-pulse` — the entrance stagger is the only motion.
-// ---------------------------------------------------------------------------
-
-const GOAL_GHOST_BAR = 'rounded bg-primary/[0.06]';
-
-function GoalsBoardGhost() {
-  return (
-    <div className="grid grid-cols-2 gap-4" aria-hidden="true">
-      {[0, 1].map((lane) => (
-        <div key={lane} className="rounded-card border border-primary/15 bg-secondary/10 p-3">
-          <div className="flex items-center gap-2 mb-3 animate-fade-in" style={{ animationDelay: '120ms' }}>
-            <span className={`h-4 w-4 ${GOAL_GHOST_BAR}`} />
-            <span className={`h-3 w-20 ${GOAL_GHOST_BAR}`} />
-          </div>
-          <div className="space-y-2">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <span
-                key={i}
-                className={`block h-9 rounded-modal ${GOAL_GHOST_BAR} animate-fade-in`}
-                style={{ animationDelay: `${140 + (lane * 3 + i) * 35}ms` }}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
   );
 }

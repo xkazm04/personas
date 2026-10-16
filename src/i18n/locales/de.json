@@ -11649,6 +11649,8 @@
       "goal_view_map_sub": "Konstellation + Abhängigkeiten",
       "goal_view_missions": "Missionen",
       "goal_view_progress": "Fortschritt",
+      "goal_view_notes": "Notizen",
+      "goal_view_ledger": "Register",
       "goal_view_pulse_label": "Projektpuls",
       "goal_view_pulse_sub": "Triage + Spotlight",
       "goal_view_timeline": "Zeitachse",

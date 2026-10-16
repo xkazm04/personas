@@ -98,6 +98,8 @@ export const useSystemStore = create<SystemStore>()(
         fleetTerminalCopyOnSelect: state.fleetTerminalCopyOnSelect,
         fleetTerminalTheme: state.fleetTerminalTheme,
         homeTab: state.homeTab,
+        // Notes | Ledger on the one Goals surface.
+        goalsView: state.goalsView,
         // Acknowledged "What's New" version — persisted so the update dot
         // doesn't re-light on every relaunch after the user has seen it.
         whatsNewSeenVersion: state.whatsNewSeenVersion,
@@ -198,6 +200,14 @@ export const useSystemStore = create<SystemStore>()(
         // no line and no card. Discard it; the wizard restarts at the intro.
         if (state.athenaOnboardingStep != null && !isCreateAthenaStepId(state.athenaOnboardingStep)) {
           state.athenaOnboardingStep = null;
+        }
+
+        // Goals used to persist nothing, but the Board | Progress switch it had
+        // (`goalsTab`) was retired when Goals became one surface. Anything that is
+        // not a current view (an old 'board' / 'progress', or a bad writer) lands
+        // on Notes. INVARIANT for the cast: JSON.parse output, real type unknown.
+        if (state.goalsView !== 'notes' && state.goalsView !== 'ledger') {
+          state.goalsView = 'notes';
         }
 
         if ((state.sidebarSection as string) === 'goals') {

@@ -61,15 +61,14 @@ export function openOverviewIncidents() {
 }
 
 /**
- * Open the Goals board (Teams → Goals → board view) — the first half of the
- * `goal_kpi_setup` walkthrough. Goals/KPIs are L2 tabs under the Teams route,
- * so we set the section, the teams sub-tab, and the goals view.
+ * Open Goals (Teams → Goals) — the first half of the `goal_kpi_setup`
+ * walkthrough. Goals/KPIs are L2 tabs under the Teams route, so we set the
+ * section and the teams sub-tab; the Notes | Ledger view is left as it was.
  */
 export function openGoalsBoard() {
   const sys = useSystemStore.getState();
   sys.setSidebarSection('teams');
   sys.setTeamsTab('goals');
-  sys.setGoalsTab('board');
 }
 
 /** Open the project registry (Projects → Manage) — folded in from the old Dev

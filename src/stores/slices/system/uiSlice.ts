@@ -11,7 +11,7 @@ import {
   type GatePredicate,
 } from "@/lib/navigation/history";
 import type { SystemStore } from "../../storeTypes";
-import type { SidebarSection, HomeTab, GoalsTab, KpisTab, TeamsTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ApprovalsMode } from "@/lib/types/types";
+import type { SidebarSection, HomeTab, GoalsView, KpisTab, TeamsTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ApprovalsMode } from "@/lib/types/types";
 import type { CompanionCockpitSpecBody } from "@/api/companion";
 import type { CompanionsPage } from "@/features/companions/types";
 
@@ -87,8 +87,9 @@ export interface UiSlice {
   // State
   sidebarSection: SidebarSection;
   homeTab: HomeTab;
-  goalsTab: GoalsTab;
-  /** Sub-view within the KPIs hub (sidebar sub-items mirror GoalsTab). */
+  /** Layout of the Goals surface (Notes | Ledger). Persisted; legacy board/progress map to notes. */
+  goalsView: GoalsView;
+  /** Sub-view within the KPIs hub (sidebar sub-items). */
   kpisTab: KpisTab;
   /**
    * L2 inside the Projects section. Defaults to `'projects'` (Manage — the
@@ -284,7 +285,7 @@ export interface UiSlice {
   toggleHomeSection: (sectionId: string) => void;
   resetHomeSections: () => void;
   setHomeTab: (tab: HomeTab) => void;
-  setGoalsTab: (tab: GoalsTab) => void;
+  setGoalsView: (view: GoalsView) => void;
   setKpisTab: (tab: KpisTab) => void;
   setTeamsTab: (tab: TeamsTab) => void;
   /** Record `version` as the acknowledged "What's New" version (clears the dot). */
@@ -432,7 +433,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   monitorFocusNode: null,
   homeHiddenSections: [],
   homeTab: "welcome" as HomeTab,
-  goalsTab: "board" as GoalsTab,
+  goalsView: "notes" as GoalsView,
   kpisTab: "dashboard" as KpisTab,
   // The section lands on Manage (the project table). 'workspace' is now
   // exclusively the selected-team detail, so it is never a default.
@@ -541,7 +542,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
     };
   })),
   setHomeTab: (tab) => startTransition(() => set({ homeTab: tab })),
-  setGoalsTab: (tab) => startTransition(() => set({ goalsTab: tab })),
+  setGoalsView: (view) => startTransition(() => set({ goalsView: view })),
   setKpisTab: (tab) => startTransition(() => set({ kpisTab: tab })),
   setTeamsTab: (tab) => startTransition(() => set({ teamsTab: tab })),
   markWhatsNewSeen: (version) => set((state) =>

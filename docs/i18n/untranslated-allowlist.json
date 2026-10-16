@@ -2321,6 +2321,7 @@
   "fr:plugins.dev_lifecycle.goal_field_description",
   "fr:plugins.dev_lifecycle.goal_view_kanban_label",
   "fr:plugins.dev_lifecycle.goal_view_missions",
+  "fr:plugins.dev_lifecycle.goal_view_notes",
   "fr:plugins.dev_lifecycle.lc2_budget_own",
   "fr:plugins.dev_lifecycle.lc2_change_source",
   "fr:plugins.dev_lifecycle.lc2_kind_test",

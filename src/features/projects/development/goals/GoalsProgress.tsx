@@ -9,8 +9,10 @@
  * parallel idea of what a milestone is. The write path is `progress/milestoneOps`
  * and nothing else in the module calls the milestone API.
  *
- * Two layouts read the same model (`progress/useProgressModel`) and the same
- * canvas (`progress/canvasHost`), behind a dev-only switcher:
+ * Two layouts read the same model (`shared/useProgressModel`) and the same
+ * canvas (`shared/canvasHost`), behind a Notes | Ledger switch that is always
+ * visible. The choice lives in the system store (`goalsView`), so it survives
+ * leaving and re-entering Goals and is shared with deep links:
  *
  *   NOTES      the default, three layers deep (spark goals-layers): the
  *              filmstrip across every project as layer 0; the Notepad's own
@@ -22,19 +24,20 @@
  *              as a sortable column. Best for working the backlog; shows you
  *              rows rather than shape.
  *
- * Deleted, the owner's calls: Swimlane (2026-10-06); the Filmstrip tab, Track
- * and Bands (2026-10-08); Cards (2026-10-09), whose milestone cards and
- * re-drawn detail lost features the Notepad already had. The filmstrip
- * survives as Notes' layer 0.
+ * This is the only Goals surface: the Board (kanban) was retired in the Goals
+ * consolidation. Earlier layouts were deleted, the owner's calls: Swimlane
+ * (2026-10-06); the Filmstrip tab, Track and Bands (2026-10-08); Cards
+ * (2026-10-09). The filmstrip survives as Notes' layer 0.
  *
- * The switcher is declared as a named constant rather than an
- * `import.meta.env.DEV` test inside the JSX, and its state is session-scoped:
- * it exists to pick a winner, and a Web Storage call for a throwaway toggle
- * would add a storage site the golden path then has to route somewhere.
+ * The switch selects among mutually exclusive regions, so it declares the
+ * relationship: a fixed `idPrefix` plus `segmentedTabPanelProps` on the region
+ * below makes the strip's `aria-controls` resolve to a real `role="tabpanel"`.
  */
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
+import type { GoalsView } from '@/lib/types/types';
 import type { PickerScope } from '@/features/plugins/dev-tools/sub_workspaces/usePickerScope';
 import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
 
@@ -47,12 +50,6 @@ import { NotesLayers } from './notes/NotesLayers';
 
 const LEFT_W = 200;
 
-/** See the header: a build-flag decision taken at the point of rendering cannot
- *  be enumerated or reviewed; a named constant can be grepped. */
-const SHOW_VARIANT_SWITCHER = import.meta.env.DEV;
-
-type ProgressVariant = 'notes' | 'ledger';
-
 /**
  * The switcher really does select among mutually exclusive regions, so it
  * declares the relationship instead of only drawing it: a fixed `idPrefix` plus
@@ -64,18 +61,16 @@ type ProgressVariant = 'notes' | 'ledger';
  */
 const VARIANT_TABS_ID = 'goals-progress-variant';
 
-const VARIANTS: Array<{ id: ProgressVariant; label: string }> = [
-  // Notes and Ledger survive; every other layout was deleted rather than kept
-  // alive "to decide between" (owner's calls, 2026-10-06 to 2026-10-09).
-  { id: 'notes', label: 'Notes' },
-  { id: 'ledger', label: 'Ledger' },
-];
-
 export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } = {}) {
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const model = useProgressModel(projectScope);
-  const [variant, setVariant] = useState<ProgressVariant>('notes');
+  const variant = useSystemStore((st) => st.goalsView);
+  const setVariant = useSystemStore((st) => st.setGoalsView);
+  const variants: Array<{ id: GoalsView; label: string }> = [
+    { id: 'notes', label: dl.goal_view_notes },
+    { id: 'ledger', label: dl.goal_view_ledger },
+  ];
   const { openGoal, createGoalIn, drawer } = useGoalDrawer(model.allGoals ?? [], model.refresh);
 
   const projectIds = useMemo(() => model.rows.map((r) => r.projectId), [model.rows]);
@@ -102,17 +97,15 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <ProgressLegend dl={dl} />
         <div className="flex items-center gap-3">
-          {SHOW_VARIANT_SWITCHER && (
-            <SegmentedTabs<ProgressVariant>
-              variant="segment"
-              fullWidth={false}
-              idPrefix={VARIANT_TABS_ID}
-              ariaLabel={dl.goal_view_progress}
-              activeTab={variant}
-              onTabChange={setVariant}
-              tabs={VARIANTS}
-            />
-          )}
+          <SegmentedTabs<GoalsView>
+            variant="segment"
+            fullWidth={false}
+            idPrefix={VARIANT_TABS_ID}
+            ariaLabel={dl.goal_view_progress}
+            activeTab={variant}
+            onTabChange={setVariant}
+            tabs={variants}
+          />
           <div className="flex items-center gap-2">
             <span className="typo-caption text-foreground uppercase tracking-wider">
               {dl.goal_status_done}

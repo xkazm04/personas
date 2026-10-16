@@ -11649,6 +11649,8 @@
       "goal_view_map_sub": "星图 + 依赖关系",
       "goal_view_missions": "任务",
       "goal_view_progress": "进度",
+      "goal_view_notes": "笔记",
+      "goal_view_ledger": "台账",
       "goal_view_pulse_label": "项目脉搏",
       "goal_view_pulse_sub": "分类 + 聚焦",
       "goal_view_timeline": "时间线",

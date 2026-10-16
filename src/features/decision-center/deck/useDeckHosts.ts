@@ -64,7 +64,6 @@ export function useDeckHosts() {
       void sys.setActiveProject(projectId);
       sys.setSidebarSection('teams');
       sys.setTeamsTab('goals');
-      sys.setGoalsTab('board');
     },
     onOpenChat: (personaId) => {
       const primed = followUp.current;

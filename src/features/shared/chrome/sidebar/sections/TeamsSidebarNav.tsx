@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { LayoutDashboard, ChartNoAxesGantt, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Layers, Server, Globe, PenTool } from 'lucide-react';
+import { LayoutDashboard, Target, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Layers, Server, Globe, PenTool } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
@@ -8,37 +8,29 @@ import { useImproveActivityStore, selectAnyImproveRunning } from '@/stores/impro
 import { isOngoing } from '@/features/projects/development/goals/goalStatus';
 import { navSection, passesGates } from '@/lib/navigation/registry';
 import { useTier } from '@/hooks/utility/interaction/useTier';
-import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
+import type { TeamsTab, KpisTab } from '@/lib/types/types';
 
 /**
  * L2 nav for the Projects section (rebranded from Teams; the store id and the
- * PersonaTeam domain are still "teams"). Four groups:
+ * PersonaTeam domain are still "teams"). Three groups:
  *
  * - **Manage** — the project/workspace management table (`teamsTab: 'projects'`)
  *   and the section's landing page. The former "Teams" header button and its
  *   management table were retired (2026-08-26): a project now owns exactly one
  *   team, so the team list had nothing to list — team detail is entered from a
  *   project row instead (`selectTeam(id)` + `setTeamsTab('workspace')`).
- * - **Goals** — the Goals hub + its view submenu (Board / Timeline / Progress).
  * - **KPIs** — the outcome layer + its view submenu.
- * - **Development** — a label-only group holding the remaining project-engineering
- *   surfaces folded in from the retired Dev Tools tabs (Lifecycle / Factory /
- *   Contest / Mastermind), plus Studio, which is its own content section
+ * - **Development** — a label-only group opening with Goals (one item: the
+ *   Notes | Ledger switch lives inside the page) followed by the
+ *   project-engineering surfaces folded in from the retired Dev Tools tabs
+ *   (Lifecycle / Factory / Contest / Mastermind), plus Studio, which is its own content section
  *   (`sidebarSection: 'studio'`, nested under Projects in the nav registry)
  *   rather than a Teams tab. See DEV_ITEMS.
  * - **Browser** — a label-only group for agent web-app control: the Whitelist of
  *   origins agents may drive, and the embedded Webview they drive them in. See
  *   BROWSER_ITEMS and docs/features/browser.md.
  */
-const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_progress' }> = [
-  // Two views (2026-10-05). Timeline folded into the Board, which now orders
-  // every lane by deadline and prints the date on the card; Missions was a
-  // Teams concern (assignments with no goal) wearing a Goals tab.
-  { id: 'board', icon: LayoutDashboard, labelKey: 'goal_view_board' },
-  { id: 'progress', icon: ChartNoAxesGantt, labelKey: 'goal_view_progress' },
-];
-
-// KPI hub sub-views — sidebar sub-items mirroring GOAL_VIEWS. Labels reuse the
+// KPI hub sub-views — sidebar sub-items. Labels reuse the
 // existing kpis.view_* keys (no new i18n). "By context" (rollup) was folded into
 // the Dashboard's grouped Distance-to-target section and retired.
 const KPI_VIEWS: Array<{ id: KpisTab; icon: typeof LayoutDashboard; labelKey: 'view_dashboard' | 'view_proposals' }> = [
@@ -120,9 +112,7 @@ export function TeamsSidebarNav() {
   const { isVisible } = useTier();
   const showStudio = passesGates(navSection('studio').gates, { isDev: import.meta.env.DEV, isTierVisible: isVisible });
   const setTeamsTab = useSystemStore((s) => s.setTeamsTab);
-  const goalsTab = useSystemStore((s) => s.goalsTab);
   const kpiProposalCount = useSystemStore((s) => s.kpis.filter((k) => k.status === 'proposed').length);
-  const setGoalsTab = useSystemStore((s) => s.setGoalsTab);
   const kpisTab = useSystemStore((s) => s.kpisTab);
   const setKpisTab = useSystemStore((s) => s.setKpisTab);
   const selectTeam = usePipelineStore((s) => s.selectTeam);
@@ -176,12 +166,22 @@ export function TeamsSidebarNav() {
     useSystemStore.getState().setIsCreatingPersona(false);
   };
 
-  // The Development rows: the Teams tabs, then Studio. Studio is a content
+  // The Development rows: Goals, the other Teams tabs, then Studio. Studio is a content
   // section of its own rather than a Teams tab, so it switches `sidebarSection`
   // instead of `teamsTab` (the registry nests it under Projects, which keeps
   // Projects lit in the rail). It is experimental (registry `devOnly`), so it
   // shares the rows' golden rail.
   const devRows = [
+    {
+      key: 'goals',
+      icon: Target,
+      label: t.sidebar.goals,
+      testId: 'teams-goals-nav',
+      devOnly: false,
+      active: teamsTab === 'goals',
+      prefetch: undefined as (() => void) | undefined,
+      onSelect: () => go('goals'),
+    },
     ...DEV_ITEMS.filter((item) => !item.devOnly || import.meta.env.DEV).map((item) => ({
       key: item.id as string,
       icon: item.icon,
@@ -230,51 +230,6 @@ export function TeamsSidebarNav() {
           <span className="ml-auto typo-caption text-foreground font-mono">{devProjects.length}</span>
         )}
       </button>
-
-      {/* Goals hub — view submenu (board/timeline) underneath */}
-      <div className="mt-3 pt-3 border-t border-primary/10 space-y-0.5">
-        {/* Group caption, same shape as Development / Browser below. It stays
-            a button so the hub remains reachable by its test id and tour anchor. */}
-        <button
-          type="button"
-          data-testid="teams-goals-nav"
-          onClick={() => go('goals')}
-          aria-current={teamsTab === 'goals' ? 'page' : undefined}
-          className={`w-full flex items-center gap-2 px-3 pb-1 typo-caption uppercase tracking-wider transition-colors ${
-            teamsTab === 'goals' ? 'text-foreground' : 'text-foreground/50 hover:text-foreground'
-          }`}
-        >
-          <span className="truncate">{t.sidebar.goals}</span>
-          {activeGoalCount > 0 && (
-            <span className="ml-auto typo-caption font-mono">{activeGoalCount}</span>
-          )}
-        </button>
-        {/* View submenu — always expanded; clicking a view also navigates into
-            the Goals hub (so it works from anywhere in the Teams section). */}
-        <div className="ml-3 pl-2 border-l border-primary/10 space-y-0.5">
-          {GOAL_VIEWS.map((v) => {
-            const Icon = v.icon;
-            const active = teamsTab === 'goals' && goalsTab === v.id;
-            return (
-              <button
-                type="button"
-                key={v.id}
-                data-testid={`goals-view-${v.id}`}
-                onClick={() => { go('goals'); setGoalsTab(v.id); }}
-                aria-current={active ? 'page' : undefined}
-                className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md typo-body transition-colors ${
-                  active
-                    ? 'bg-primary/10 text-foreground/90'
-                    : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="truncate">{t.plugins.dev_lifecycle[v.labelKey]}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* KPIs — the outcome layer above goals; view submenu (Dashboard / By
           context / Proposals) nested underneath, mirroring Goals. */}
@@ -365,6 +320,9 @@ export function TeamsSidebarNav() {
                     standing between the row and an experimental surface that
                     announces itself as a shipped one. */}
                 {item.devOnly && <span className="sr-only">{t.sidebar.experimental}</span>}
+                {item.key === 'goals' && activeGoalCount > 0 && (
+                  <span className="ml-auto typo-caption text-foreground font-mono">{activeGoalCount}</span>
+                )}
                 {item.key === 'factory' && factoryRunning && (
                   // Decorative pulse — the running state is announced by the
                   // 1st-level badge tooltip, so aria-hidden avoids double-reading.

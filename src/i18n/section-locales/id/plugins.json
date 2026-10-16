@@ -304,6 +304,8 @@
     "goal_view_map_sub": "Konstelasi + dependensi",
     "goal_view_missions": "Misi",
     "goal_view_progress": "Kemajuan",
+    "goal_view_notes": "Catatan",
+    "goal_view_ledger": "Daftar",
     "goal_view_pulse_label": "Denyut proyek",
     "goal_view_pulse_sub": "Triase + sorotan",
     "goal_view_timeline": "Linimasa",
