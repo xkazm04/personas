@@ -10423,32 +10423,33 @@
       "subject": "prompt-safety",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:37:02.000Z",
-      "worker": "1f48c08a-2585-4aa1-afd0-47ee558e6723",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:34:14.000Z",
+      "worker": "4e7a7771-dd42-46b3-b00d-8235124e62fa",
       "techniques": [
         {
           "technique": "untrusted-span-fencing",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:1375 memory spans bypass wrap_untrusted_section; src-tauri/engine/src/prompt/runtime_safety.rs:19 nonce is SystemTime^counter^const (predictable, not crypto), :29 wraps without checking the nonce is absent from content or neutralizing untrusted_ lookalikes; fence built 3x (runtime_safety.rs:26, src-tauri/src/companion/brain/sleep_cycle/prompts.rs:32, src-tauri/src/commands/design/n8n_transform/prompt_sanitizer.rs:173)"
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1379 memory spans bypass wrap_runtime_xml_boundary (src-tauri/engine/src/prompt/runtime_safety.rs:26), which assemble_prompt applies to its own third-party spans"
         },
         {
           "technique": "canary-tripwires",
-          "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:39 canary string is emitted only; no Rust/TS code reads it or the nonce back out of output, so a tripped canary settles as an ordinary success"
+          "verdict": "partial",
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:926 canary pushed into the trusted frame, but it scopes only <untrusted_*> regions, so the unfenced memory appended after it is invisible to it"
         },
         {
           "technique": "input-caps-and-clamps",
-          "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:98 clamp runs before neutralization (:102-163), the reverse of the technique fixed door order; src-tauri/engine/src/prompt/assemble.rs:1047 declares no aggregate untrusted-content ceiling (placement-trust dual ceiling with pointer marker at runtime_safety.rs:180 IS realized)"
+          "verdict": "partial",
+          "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:90 announced truncation + neutralization at the substitution door; memory is bounded only by a whole-section budget pack (mod.rs:1430), with no per-entry ceiling or neutralization, and team memory (mod.rs:1604) only by a count of 15"
         },
         {
           "technique": "promoted-span-framing (golden path)",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:1603 team shared memory is framed as settled decisions and hard rules (licence, not calibration) with no neutralization pass"
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1603 team shared memory is framed as settled decisions and hard rules (licence, not calibration) with no neutralization pass",
+          "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "Fence implementations are copied in three modules with the same time-xor nonce; untrusted-span-fencing could name the per-subsystem re-implementation of the fence builder (distinct from shared machinery + per-site prose) as a smell with a census-style detection (grep format!(\"untrusted_{label}_), since one bad nonce generator then has to be fixed three times.",
+      "registryProposal": "The memory-recall injection site lives in src-tauri/src/engine/runner/mod.rs, which is outside this context's paths (engine/src/prompt/*); the runner context should also carry a prompt-safety pair so the anchor sits in a governed context.",
       "superseded": [
         {
           "state": "deviation",
@@ -10470,6 +10471,13 @@
           "evaluatedAt": "2026-10-10T02:12:30.257Z",
           "worker": "a60e8130-a8ab-4bd7-be48-65e5e8365445",
           "reason": "replaced by 1f48c08a-2585-4aa1-afd0-47ee558e6723"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1375 recalled agent-memory title/content (and team memory at :1605) is interpolated raw and appended after assembly (:1485, :1614), outside every <untrusted_*> fence and past the canary, although the door exists (src-tauri/engine/src/prompt/assemble.rs:92); an agent-written memory carrying an injection reaches every later run unfenced, and team memory is framed as hard rules",
+          "evaluatedAt": "2026-10-12T12:37:02.000Z",
+          "worker": "1f48c08a-2585-4aa1-afd0-47ee558e6723",
+          "reason": "replaced by 4e7a7771-dd42-46b3-b00d-8235124e62fa"
         }
       ]
     },

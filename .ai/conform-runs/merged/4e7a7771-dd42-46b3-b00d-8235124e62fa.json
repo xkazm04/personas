@@ -1,0 +1,13 @@
+{"schema": "conform-run/1", "worker": "4e7a7771-dd42-46b3-b00d-8235124e62fa", "subject": "prompt-safety",
+ "evaluatedAt": "2026-10-16T17:34:14Z",
+ "pairs": [{"context": "969f50a2-b70d-41e3-b573-284a75a67425", "subject": "prompt-safety", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/runner/mod.rs:1379 recalled agent-memory title/content (core :1379, active :1439, team :1610) is still interpolated raw after assembly, outside every <untrusted_*> nonce fence and past the canary, while the fence door exists unused here (src-tauri/engine/src/prompt/assemble.rs:92, used only by knowledge_consult.rs:450); an agent-written memory carrying an injection reaches every later run unfenced, and team memory is framed as hard rules",
+   "techniques": [
+     {"technique": "untrusted-span-fencing", "verdict": "deviation", "evidence": "src-tauri/src/engine/runner/mod.rs:1379 memory spans bypass wrap_runtime_xml_boundary (src-tauri/engine/src/prompt/runtime_safety.rs:26), which assemble_prompt applies to its own third-party spans"},
+     {"technique": "canary-tripwires", "verdict": "partial", "evidence": "src-tauri/engine/src/prompt/assemble.rs:926 canary pushed into the trusted frame, but it scopes only <untrusted_*> regions, so the unfenced memory appended after it is invisible to it"},
+     {"technique": "input-caps-and-clamps", "verdict": "partial", "evidence": "src-tauri/engine/src/prompt/runtime_safety.rs:90 announced truncation + neutralization at the substitution door; memory is bounded only by a whole-section budget pack (mod.rs:1430), with no per-entry ceiling or neutralization, and team memory (mod.rs:1604) only by a count of 15"}
+   ],
+   "registryProposal": "The memory-recall injection site lives in src-tauri/src/engine/runner/mod.rs, which is outside this context's paths (engine/src/prompt/*); the runner context should also carry a prompt-safety pair so the anchor sits in a governed context."}],
+ "declined": [],
+ "consults": [{"ts": "2026-10-16T17:34:14Z", "bundle": "software-engineering", "subjects": ["prompt-safety"], "techniques": ["untrusted-span-fencing", "canary-tripwires", "input-caps-and-clamps"], "deviations": 1}]}

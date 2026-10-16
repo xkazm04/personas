@@ -1345,3 +1345,4 @@
 {"ts":"2026-10-16T17:32:12Z","bundle":"software-engineering","subjects":["multi-provider-gateway-plane"],"techniques":["strategy-tree-with-inherited-policy","policy-verdict-in-the-status-space"],"deviations":1}
 {"ts":"2026-10-16T17:32:48Z","bundle":"software-engineering","subjects":["triage-queues"],"techniques":["queue-lifecycle","bulk-triage","verdict-writeback","focus-mode","queue-ordering-and-identity"],"deviations":2}
 {"ts":"2026-10-16T17:32:48Z","bundle":"software-engineering","subjects":["triage-queues"],"techniques":["source-normalization","queue-ordering-and-identity","verdict-writeback","focus-mode","bulk-triage"],"deviations":1}
+{"ts":"2026-10-16T17:34:14Z","bundle":"software-engineering","subjects":["prompt-safety"],"techniques":["untrusted-span-fencing","canary-tripwires","input-caps-and-clamps"],"deviations":1}

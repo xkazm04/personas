@@ -28787,8 +28787,8 @@
           "revision": 7,
           "changedAt": "2026-09-17",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:1375 recalled agent-memory title/content (and team memory at :1605) is interpolated raw and appended after assembly (:1485, :1614), outside every <untrusted_*> fence and past the canary, although the door exists (src-tauri/engine/src/prompt/assemble.rs:92); an agent-written memory carrying an injection reaches every later run unfenced, and team memory is framed as hard rules",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1379 recalled agent-memory title/content (core :1379, active :1439, team :1610) is still interpolated raw after assembly, outside every <untrusted_*> nonce fence and past the canary, while the fence door exists unused here (src-tauri/engine/src/prompt/assemble.rs:92, used only by knowledge_consult.rs:450); an agent-written memory carrying an injection reaches every later run unfenced, and team memory is framed as hard rules",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:51087132dbd1c9fb",
           "evaluatedRevision": 7,
           "revisionsBehind": 0
