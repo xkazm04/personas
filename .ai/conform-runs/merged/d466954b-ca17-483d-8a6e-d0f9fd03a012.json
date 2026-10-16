@@ -1,0 +1,30 @@
+{"schema": "conform-run/1", "worker": "d466954b-ca17-483d-8a6e-d0f9fd03a012", "subject": "breach-alerting-and-attribution",
+ "evaluatedAt": "2026-10-16T17:15:19Z",
+ "pairs": [
+  {"context": "4810daf8-0549-4899-95d2-99c81cde6455", "subject": "breach-alerting-and-attribution", "bundle": "llm-observability",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:53 evaluates every rule against an UNSCOPED 1-day bundle (and useObservabilityData.ts:70 against the tab's range/persona) under the one rule.id cooldown the scoped Rust evaluator also reads, so a client fire on the wrong window or scope mutes the correct server alert for an hour",
+   "techniques": [
+    {"technique": "scoped-dedup-keys", "verdict": "deviation", "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:53 getOverviewBundle(1) passes no persona, so a persona-scoped rule is judged on global metrics, and the client persists that fire to fired_alerts, where the Rust loop's rule.id cooldown reads it. The detection path is outside the key, which is right, but the three paths compute different conditions"},
+    {"technique": "top-contributor-attribution", "verdict": "deviation", "evidence": "src/stores/slices/overview/alertSlice.ts:153 the toast and history message is only '<metric> is <value> (threshold ...)'. A cost breach names no persona or model contributor, even though per-persona cost rollups already exist (homework alert)"},
+    {"technique": "off-request-path-delivery", "verdict": "not-applicable", "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:25 evaluation runs on a 60s timer, not in an admission decision; there is no ingest path for delivery to tax"},
+    {"technique": "identity-scope-attribution-refusal", "verdict": "not-applicable", "evidence": "src/stores/slices/overview/alertSlice.ts:153 rules scope only by persona (operator's own agents), never by API key or customer; no identity axis exists to refuse"}
+   ],
+   "registryProposal": "The scope-carrying evaluator src-tauri/src/commands/execution/alert_evaluator.rs (tick at :191, which publishes alert_fired at :300 to the Slack/Discord webhook notifier) belongs to NO context in context-map.json, so no pair can judge the server half of this subject. Also: the golden path's audience precondition should mention the hybrid case seen here (a local instrument whose payload is ALSO forwarded to an operator-configured broadcast webhook)."},
+  {"context": "532bbf10-3fd3-4b57-a8ea-95a957645697", "subject": "breach-alerting-and-attribution", "bundle": "llm-observability",
+   "state": "deviation",
+   "evidence": "src/stores/slices/overview/alertSlice.ts:450 evaluateRule runs a persona-scoped rule against whatever snapshot the caller passed and ignores rule.persona_id, then :431 shares one rule.id cooldown with the scoped server evaluator, so a wrong-scope client fire both misreports the value and suppresses the true alert",
+   "techniques": [
+    {"technique": "scoped-dedup-keys", "verdict": "deviation", "evidence": "src/stores/slices/overview/alertSlice.ts:431 the cooldown key is rule.id, while the condition behind it is computed over 1 day, over the tab range, or per persona, depending on the caller. The cost_spike baseline at :407 averages the caller's chart window, so on the 1-day global path it degenerates to roughly 1x"},
+    {"technique": "top-contributor-attribution", "verdict": "deviation", "evidence": "src/stores/slices/overview/alertSlice.ts:153 formatAlertMessage carries no contributor list, share or figure; FiredAlert has no attribution field"},
+    {"technique": "off-request-path-delivery", "verdict": "conformant", "evidence": "src/stores/slices/overview/alertSlice.ts:497 the evaluator writes the UI first and then persists best-effort through api.createFiredAlert, with pending-sync retry and no blocking on the sink"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "breach-alerting-and-attribution", "context": "2fb16136-586e-478d-823f-38434d2d5b9a", "reason": "governance: weak (commands-communication); the skill does not judge weak rows by default. The real breach evaluator (alert_evaluator.rs) is not in this context anyway; see the registryProposal on overview-observability"}
+ ],
+ "consults": [
+  {"ts": "2026-10-16T17:15:19Z", "bundle": "llm-observability", "subjects": ["breach-alerting-and-attribution"], "techniques": ["scoped-dedup-keys", "top-contributor-attribution", "off-request-path-delivery", "identity-scope-attribution-refusal"], "deviations": 2},
+  {"ts": "2026-10-16T17:15:19Z", "bundle": "llm-observability", "subjects": ["breach-alerting-and-attribution"], "techniques": ["scoped-dedup-keys", "top-contributor-attribution", "off-request-path-delivery"], "deviations": 2}
+ ]
+}

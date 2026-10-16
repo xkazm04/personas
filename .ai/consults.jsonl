@@ -1286,3 +1286,5 @@
 {"ts":"2026-10-16T17:14:03Z","bundle":"software-engineering","subjects":["canvas-graph"],"techniques":["viewport-transform"],"deviations":0}
 {"ts":"2026-10-16T17:14:03Z","bundle":"software-engineering","subjects":["canvas-graph"],"techniques":["viewport-transform"],"deviations":0}
 {"ts":"2026-10-16T17:15:25Z","bundle":"software-engineering","subjects":["templates-scaffolding"],"techniques":["adoption-lifecycle"],"deviations":1}
+{"ts":"2026-10-16T17:15:19Z","bundle":"llm-observability","subjects":["breach-alerting-and-attribution"],"techniques":["scoped-dedup-keys","top-contributor-attribution","off-request-path-delivery","identity-scope-attribution-refusal"],"deviations":2}
+{"ts":"2026-10-16T17:15:19Z","bundle":"llm-observability","subjects":["breach-alerting-and-attribution"],"techniques":["scoped-dedup-keys","top-contributor-attribution","off-request-path-delivery"],"deviations":2}
