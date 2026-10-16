@@ -16,9 +16,11 @@ const api = vi.hoisted(() => ({
   getLensScanCommitDiff: vi.fn(),
   getLensScanShot: vi.fn(),
   getLensScanSnapshot: vi.fn(),
+  listLensScanProducts: vi.fn(),
 }));
 vi.mock('@/api/lensScan', () => api);
 
+import { resetLensScanSource } from '../../../roster/lensScanSource';
 import { createLiveActions, shotMime } from '../liveActions';
 import { loadErrorKind } from '../loadError';
 import { evidenceFeature } from '../useLiveBlueprint';
@@ -27,6 +29,8 @@ const product = { projectId: 'proj-teapot', name: 'Teapot Works', root: 'C:/samp
 
 beforeEach(() => {
   for (const f of Object.values(api)) f.mockReset();
+  api.listLensScanProducts.mockResolvedValue([]);
+  resetLensScanSource();
 });
 
 describe('createLiveActions', () => {
@@ -66,7 +70,7 @@ describe('createLiveActions', () => {
     expect(out).toEqual({ label: 'personas:1', command: 'node drive.mjs', pid: 42 });
   });
 
-  it('commitDiff and refresh are reads: no products re-read', async () => {
+  it('commitDiff and refresh are reads: no write hook runs', async () => {
     api.getLensScanCommitDiff.mockResolvedValue({ sha: 'abc' });
     const scan = { runs: [] } as unknown as ScanSnapshot; // shape irrelevant: passed through untouched
     api.getLensScanSnapshot.mockResolvedValue({ structure: { v: 3 }, events: '', scan, storeVersion: 2 });
@@ -76,7 +80,7 @@ describe('createLiveActions', () => {
     expect(api.getLensScanCommitDiff).toHaveBeenCalledWith('proj-teapot', 'abc');
     const data = await live.refresh();
     expect(api.getLensScanSnapshot).toHaveBeenCalledWith('proj-teapot');
-    expect(data).toEqual({ product, structure: { v: 3 }, events: '', scan, storeVersion: 2 });
+    expect(data).toEqual({ product, products: [], structure: { v: 3 }, events: '', scan, storeVersion: 2 });
     expect(changed).not.toHaveBeenCalled();
   });
 

@@ -17,6 +17,12 @@ export function product(over: Partial<LensScanProduct> = {}): LensScanProduct {
     awaitingTriage: 0,
     unreleasedAccepted: 0,
     lastRunAt: '2026-10-15T10:00:00.000Z',
+    hasMap: true,
+    mapVersion: 3,
+    features: 4,
+    lenses: 2,
+    measuredFacets: 6,
+    hasEvents: false,
     ...over,
   };
 }

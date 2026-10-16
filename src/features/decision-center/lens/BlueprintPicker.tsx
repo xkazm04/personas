@@ -1,86 +1,57 @@
 /**
- * BlueprintPicker - the Monitor's Blueprint destination: every lens-scan
- * product as one tile, and pressing a tile opens that product's blueprint
- * (the same sheet a Build card opens, `openLensSheet`). It is the door that
- * does not wait for a card: a product shows here whether or not anything in it
- * waits for a decision.
+ * BlueprintPicker - the Monitor's Blueprint destination as bp's project list (spark bp-fidelity, Stage A):
+ * bp's manage-projects dialog (`components/ProjectsDialog.tsx`, `projects.css`) rendered as a page, on bp's
+ * ground and in bp's palette. Every lens-scan product is one row with its readiness (a shape-only LevelIcon,
+ * the level word, the checklist), and OPEN THE BLUEPRINT opens that product's sheet (`openLensSheet`), the
+ * same sheet a Build card opens. A product shows here whether or not anything in it waits for a decision.
  *
- * Reads the one app-wide `lens_scan_products` source (`lensScanSource`), so
- * the Decision Center's counts and these tiles never disagree. A product whose
- * store did not open still gets a tile, marked, and opening it shows why.
+ * Reads the one app-wide `lens_scan_products` source (`lensScanSource`), so the Decision Center's counts and
+ * these rows never disagree. A product whose store did not open still gets a row, marked, and opening it shows
+ * why. Loading is ghost rows under the permanent head; empty is the shared ScenarioEmptyState; a failed read is
+ * the shared Banner with a retry.
  */
-import { Button } from '@/features/shared/components/buttons';
 import { Banner } from '@/features/shared/components/feedback/Banner';
-import { KitHost, Section, Tile, Tiles } from '@/features/shared/components/kit';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { LensScanProduct } from '@/api/lensScan';
 
+import '../blueprint/theme/fonts';
+import './picker/picker.css';
 import { refreshLensScanProducts, useLensScanProducts } from '../roster/lensScanSource';
-import { openLensSheet } from './lensSheetStore';
-
-/** Tiles abreast: three for up to six products, four beyond. */
-const spanFor = (n: number): number => (n <= 2 ? 6 : n <= 6 ? 4 : 3);
-
-/** The product's blueprint, the sheet a Build card opens. */
-const openBlueprint = (p: LensScanProduct): void => openLensSheet({ kind: 'build', projectId: p.projectId });
-
-/** A release waits on the person, or accepted items wait for one. */
-const hasRelease = (p: LensScanProduct): boolean => !!p.openRelease || p.unreleasedAccepted > 0;
+import { GhostRows } from './picker/GhostRows';
+import { ProductRow } from './picker/ProductRow';
 
 export function BlueprintPicker() {
   const { t, tx } = useTranslation();
   const L = t.decisionCenter.lens;
   const source = useLensScanProducts(true);
   const products = source.products;
-  const empty = products !== null && products.length === 0;
   const retry = () => void refreshLensScanProducts();
 
   return (
-    <KitHost testId="monitor-blueprint">
-      <Section
-        title={L.picker_title}
-        count={products ? products.length : undefined}
-        state={empty ? 'empty' : undefined}
-        empty={{ title: L.picker_empty, hint: L.picker_empty_hint, testId: 'blueprint-picker-empty' }}
-      >
+    <section className="bp-scope bp-picker" data-testid="monitor-blueprint" aria-labelledby="bp-picker-title">
+      <div className="bp-paper" />
+      <div className="bp-vig" />
+      <div className="bp-dframe" />
+      <div className="pj-page">
+        <header className="pj-head">
+          <h2 id="bp-picker-title">{L.picker_projects}</h2>
+          {products && <span className="pj-n">{tx(L.picker_registered, { count: products.length })}</span>}
+        </header>
+        <p className="pj-note">{L.tab_blueprint_hint}</p>
         {source.failed && <Banner severity="error" compact message={L.picker_failed} onRetry={retry} />}
-        {products === null && !source.failed && (
-          <Tiles label={L.picker_title}>
-            {[0, 1, 2].map((i) => <Tile key={i} span={4} state="loading" ghostRows={2} />)}
-          </Tiles>
+        {products === null && !source.failed && <GhostRows label={L.loading} />}
+        {products !== null && products.length === 0 && (
+          <div className="pj-state" data-testid="blueprint-picker-empty">
+            <ScenarioEmptyState title={L.picker_empty} subtitle={L.picker_empty_hint} size="sm" />
+          </div>
         )}
         {products !== null && products.length > 0 && (
-          <Tiles label={L.picker_title}>
-            {products.map((p) => (
-              <Tile
-                key={p.projectId}
-                span={spanFor(products.length)}
-                title={p.name}
-                onPress={() => openBlueprint(p)}
-                mark={p.error ? { tone: 'error', label: L.error_store } : undefined}
-                meta={p.error ? L.error_store : tx(L.product_counts, {
-                  proposed: p.counts.proposed ?? 0,
-                  approved: p.counts.approved ?? 0,
-                  triage: p.awaitingTriage,
-                })}
-                footer={(
-                  <>
-                    <Button variant="primary" size="sm" onClick={() => openBlueprint(p)} data-testid={`blueprint-open-${p.projectId}`}>
-                      {L.open_blueprint}
-                    </Button>
-                    {!p.error && hasRelease(p) && (
-                      <Button variant="secondary" size="sm" onClick={() => openLensSheet({ kind: 'release', projectId: p.projectId })}>
-                        {L.open_release}
-                      </Button>
-                    )}
-                  </>
-                )}
-              />
-            ))}
-          </Tiles>
+          <ul className="pj-list" aria-label={L.picker_title}>
+            {products.map((p) => <ProductRow key={p.projectId} p={p} />)}
+          </ul>
         )}
-      </Section>
-    </KitHost>
+      </div>
+    </section>
   );
 }
 

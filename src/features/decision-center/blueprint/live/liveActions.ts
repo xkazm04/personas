@@ -9,6 +9,13 @@
  * still have moved part of the batch) `onChanged` runs, so the Decision
  * Center's counts and cards re-read the products.
  *
+ * Every read also carries the products for the header's project switcher and
+ * the open product's last scan (spark bp-fidelity): the same shared products
+ * read the Monitor's project list draws from, re-read with the snapshot so a
+ * switcher opened after a write shows the store's new counts. `openProduct`
+ * reopens the sheet on another product through `lensSheetStore`; the host
+ * keys the sheet by product, so the drawing remounts from scratch.
+ *
  * React-free.
  */
 import {
@@ -18,9 +25,13 @@ import {
   getLensScanSnapshot,
   startLensScan,
   triageLensScan,
+  type LensScanProduct,
 } from '@/api/lensScan';
 
-import type { BlueprintActions, BlueprintData, BlueprintProduct } from '../source';
+import { openLensSheet } from '../../lens/lensSheetStore';
+import { readinessLevel } from '../../lens/readiness';
+import { getLensScanState, refreshLensScanProducts } from '../../roster/lensScanSource';
+import type { BlueprintActions, BlueprintData, BlueprintProduct, BlueprintProductEntry } from '../source';
 
 /** The MIME of a `shots` file, from its extension (the door serves exactly these). */
 const SHOT_MIME: Record<string, string> = {
@@ -44,10 +55,40 @@ function asBytes(data: ArrayBuffer | ArrayLike<number>): BlobPart {
   return data instanceof ArrayBuffer ? data : new Uint8Array(Array.from(data));
 }
 
-/** Read one product into the drawing's data. */
+/** One products row as the switcher's entry: its readiness level and open proposals. */
+export function productEntry(p: LensScanProduct): BlueprintProductEntry {
+  const entry: BlueprintProductEntry = {
+    projectId: p.projectId,
+    name: p.name,
+    level: readinessLevel(p),
+    proposals: p.counts.proposed ?? 0,
+  };
+  if (p.lastRunAt) entry.lastRunAt = p.lastRunAt;
+  if (p.error) entry.error = p.error;
+  return entry;
+}
+
+/** Read one product into the drawing's data, with every product for the switcher. */
 export async function readBlueprint(product: BlueprintProduct): Promise<BlueprintData> {
-  const snap = await getLensScanSnapshot(product.projectId);
-  return { product, structure: snap.structure, events: snap.events, scan: snap.scan, storeVersion: snap.storeVersion };
+  // The products read never rejects (a failed read keeps the last good rows); it joins one in flight.
+  const [snap] = await Promise.all([getLensScanSnapshot(product.projectId), refreshLensScanProducts()]);
+  const rows = getLensScanState().products ?? [];
+  const data: BlueprintData = {
+    product,
+    products: rows.map(productEntry),
+    structure: snap.structure,
+    events: snap.events,
+    scan: snap.scan,
+    storeVersion: snap.storeVersion,
+  };
+  const lastRunAt = rows.find((p) => p.projectId === product.projectId)?.lastRunAt;
+  if (lastRunAt) data.lastRunAt = lastRunAt;
+  return data;
+}
+
+/** Reopen the sheet on another product (the header's project switcher). */
+export function openProduct(projectId: string): void {
+  openLensSheet({ kind: 'build', projectId });
 }
 
 export function createLiveActions(product: BlueprintProduct, onChanged: () => void): BlueprintActions {
@@ -63,5 +104,6 @@ export function createLiveActions(product: BlueprintProduct, onChanged: () => vo
       return URL.createObjectURL(new Blob([asBytes(bytes)], { type: shotMime(path) }));
     },
     refresh: () => readBlueprint(product),
+    openProduct,
   };
 }

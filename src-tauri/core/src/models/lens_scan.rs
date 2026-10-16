@@ -63,6 +63,30 @@ pub struct LensScanProduct {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub error: Option<String>,
+    // Readiness (spark bp-fidelity): bp's `lib/scan/readiness.server.ts`, read
+    // from the files beside the store. Read-only outputs; the map fields are
+    // read even when the store is not, and a broken map never sets `error`
+    // (that field stays the STORE's, which the lens cards read).
+    /// `app-structure.json` exists and parses as a JSON object.
+    #[serde(default)]
+    pub has_map: bool,
+    /// 3 = app-structure v3 (`$schema: app-structure/3` or `version: 3`),
+    /// 2 = a v2 context map; absent when there is no map or its version is unknown.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub map_version: Option<u32>,
+    /// Features in the map (0 without one).
+    #[serde(default)]
+    pub features: u32,
+    /// Enabled lenses in the map (0 without one).
+    #[serde(default)]
+    pub lenses: u32,
+    /// Distinct (feature, lens, metric) readings in the store.
+    #[serde(default)]
+    pub measured_facets: u32,
+    /// `events.jsonl` exists beside the map.
+    #[serde(default)]
+    pub has_events: bool,
 }
 
 /// The store's tables as wire rows (see the module note for the deviation).
@@ -169,7 +193,9 @@ pub struct LensScanTriageResult {
         rename = "packs_reopened",
         skip_serializing_if = "Option::is_none"
     )]
-    #[ts(optional)]
+    // ts-rs does not read the serde rename out of this multi-key attribute and
+    // would emit `packsReopened`; the wire name is the store's.
+    #[ts(optional, rename = "packs_reopened")]
     pub packs_reopened: Option<Vec<String>>,
 }
 

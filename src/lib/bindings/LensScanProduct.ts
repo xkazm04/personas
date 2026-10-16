@@ -27,4 +27,29 @@ unreleasedAccepted: number, openRelease?: LensScanOpenRelease, lastRunAt?: strin
 /**
  * Why the store could not be read, when it could not.
  */
-error?: string, };
+error?: string, 
+/**
+ * `app-structure.json` exists and parses as a JSON object.
+ */
+hasMap: boolean, 
+/**
+ * 3 = app-structure v3 (`$schema: app-structure/3` or `version: 3`),
+ * 2 = a v2 context map; absent when there is no map or its version is unknown.
+ */
+mapVersion?: number, 
+/**
+ * Features in the map (0 without one).
+ */
+features: number, 
+/**
+ * Enabled lenses in the map (0 without one).
+ */
+lenses: number, 
+/**
+ * Distinct (feature, lens, metric) readings in the store.
+ */
+measuredFacets: number, 
+/**
+ * `events.jsonl` exists beside the map.
+ */
+hasEvents: boolean, };

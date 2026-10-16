@@ -74,9 +74,14 @@ export const LENS_CARDS_MODULES: Record<string, HarnessModule> = {
       function LensCardsPage() {
         const { t } = useTranslation();
         if (kitOf() === 'picker') {
+          // The Monitor's geometry (fleet/monitor/shell/MonitorBody.tsx): a scroller, the list filling it.
           return (
-            <div className="flex flex-1 flex-col gap-3 p-8">
-              <BlueprintPicker />
+            <div className="relative flex flex-1 min-h-0 flex-col">
+              <div className="relative z-10 flex-1 min-h-0 overflow-y-auto">
+                <div className="h-full">
+                  <BlueprintPicker />
+                </div>
+              </div>
               <DecisionDeckHost />
             </div>
           );

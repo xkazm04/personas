@@ -44,9 +44,11 @@ export function MonitorBody({ view, activity, hasChannels, bridges, channelPrese
       ) : view === 'blueprint' ? (
         /* The lens-scan products; a tile opens its blueprint over the app
            (LensSheetHost). Escape at the drawing's site closes only the
-           drawing and lands back here (see useMonitorEscape). */
+           drawing and lands back here (see useMonitorEscape). No inset: the
+           list is a bp surface that paints its own ground and double frame
+           edge to edge. */
         <div className="relative z-10 flex-1 min-h-0 overflow-y-auto">
-          <div className="p-4">
+          <div className="h-full">
             <BlueprintPicker />
           </div>
         </div>

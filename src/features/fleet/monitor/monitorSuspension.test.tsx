@@ -20,6 +20,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act, cleanup, fireEvent } from '@testing-library/react';
 import { useMonitorVisible } from './monitorVisibility';
 import { AppKeyboardProvider, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
+import { BLUEPRINT_PRIORITY } from '@/features/decision-center/blueprint/controller/useSheetKeys';
 
 (globalThis as Record<string, unknown>).__IPC_TOKEN = 'test-token';
 
@@ -288,7 +289,7 @@ describe('Escape belongs to whatever is on screen', () => {
         if (e.key !== 'Escape') return false;
         onEscape();
         return true;
-      }, { priority: 88, exclusive: true });
+      }, { priority: BLUEPRINT_PRIORITY, exclusive: true });
       return null;
     }
     const closedSheet = vi.fn();

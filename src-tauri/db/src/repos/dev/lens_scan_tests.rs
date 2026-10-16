@@ -354,6 +354,92 @@ fn products_list_every_enabled_code_project_with_a_store() {
     assert_eq!(gamma.store_version, 0);
 }
 
+fn measure(conn: &Connection, id: i64, feature: &str, lens: &str, metric: &str) {
+    conn.execute(
+        "INSERT INTO measurements (id, run_id, feature, lens, metric, value, measured_at) \
+         VALUES (?1, 'r1', ?2, ?3, ?4, 1.0, '2026-10-15T10:01:00Z')",
+        params![id, feature, lens, metric],
+    )
+    .expect("measurement");
+}
+
+#[test]
+fn products_carry_bps_readiness_fields() {
+    let pool = crate::init_test_db().unwrap();
+    // full: a v3 map with three features and two of three lenses enabled, two distinct
+    // facets read three times, and an events log
+    let a = product_dir("ra");
+    let ca = make_store(a.path(), 3);
+    measure(&ca, 1, "f1", "dev", "loc");
+    measure(&ca, 2, "f1", "dev", "loc");
+    measure(&ca, 3, "f2", "sec", "cves");
+    let dir_a = store_dir(a.path());
+    std::fs::write(
+        dir_a.join("app-structure.json"),
+        r#"{"$schema":"app-structure/3","features":[{},{},{}],
+            "lenses":[{"id":"dev"},{"id":"sec","enabled":true},{"id":"des","enabled":false},null]}"#,
+    )
+    .unwrap();
+    std::fs::write(dir_a.join("events.jsonl"), "{}\n").unwrap();
+    // a v2 context map (string version), nothing measured, no events
+    let b = product_dir("rb");
+    make_store(b.path(), 1);
+    std::fs::write(
+        store_dir(b.path()).join("app-structure.json"),
+        r#"{"version":"2","features":[{}]}"#,
+    )
+    .unwrap();
+    // no map at all; then a map that is not an object; then one of unknown version
+    let c = product_dir("rc");
+    make_store(c.path(), 3);
+    let d = product_dir("rd");
+    make_store(d.path(), 3);
+    std::fs::write(store_dir(d.path()).join("app-structure.json"), "[1,2]").unwrap();
+    let e = product_dir("re");
+    make_store(e.path(), 3);
+    std::fs::write(
+        store_dir(e.path()).join("app-structure.json"),
+        r#"{"$schema":"something-else","version":2}"#,
+    )
+    .unwrap();
+    for (dir, name) in [(&a, "A"), (&b, "B"), (&c, "C"), (&d, "D"), (&e, "E")] {
+        project_at(&pool, dir.path(), name);
+    }
+
+    let products = list_products(&pool).unwrap();
+    let got: Vec<_> = products
+        .iter()
+        .map(|p| {
+            (
+                p.name.as_str(),
+                p.has_map,
+                p.map_version,
+                p.features,
+                p.lenses,
+                p.measured_facets,
+                p.has_events,
+            )
+        })
+        .collect();
+    assert_eq!(
+        got,
+        [
+            ("A", true, Some(3), 3, 2, 2, true),
+            ("B", true, Some(2), 1, 0, 0, false),
+            ("C", false, None, 0, 0, 0, false),
+            ("D", false, None, 0, 0, 0, false),
+            ("E", true, None, 0, 0, 0, false),
+        ]
+    );
+    // a broken map never reads as a store error
+    assert!(products.iter().all(|p| p.error.is_none()));
+    // unknown map version is omitted on the wire, never null
+    let wire = serde_json::to_value(&products[4]).unwrap();
+    assert!(wire.get("mapVersion").is_none());
+    assert_eq!(wire["measuredFacets"], 0);
+    assert_eq!(wire["hasMap"], true);
+}
+
 #[test]
 fn project_root_refuses_an_unknown_project_and_a_project_with_no_store() {
     let pool = crate::init_test_db().unwrap();

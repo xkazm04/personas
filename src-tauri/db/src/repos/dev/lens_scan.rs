@@ -245,6 +245,69 @@ struct StoreSummary {
     unreleased_accepted: u32,
     open_release: Option<LensScanOpenRelease>,
     last_run_at: Option<String>,
+    measured_facets: u32,
+}
+
+/// What a product's map says about its readiness (bp `readiness.server.ts`
+/// `summarizeMap`): whether it parses as an object, its version, and its
+/// feature and enabled-lens counts.
+#[derive(Debug, Default, PartialEq, Eq)]
+struct MapSummary {
+    ok: bool,
+    version: Option<u32>,
+    features: u32,
+    lenses: u32,
+}
+
+/// True when `v` is the number or the string `n` (bp compares `v === n || v === 'n'`).
+fn is_version(v: Option<&Value>, n: u64) -> bool {
+    match v {
+        Some(Value::Number(x)) => x.as_u64() == Some(n),
+        Some(Value::String(s)) => s == &n.to_string(),
+        _ => false,
+    }
+}
+
+fn summarize_map(dir: &Path) -> MapSummary {
+    let Ok(Value::Object(j)) = read_structure(dir) else {
+        return MapSummary::default();
+    };
+    let v = j.get("version");
+    let version = if j.get("$schema").and_then(Value::as_str) == Some("app-structure/3")
+        || is_version(v, 3)
+    {
+        Some(3)
+    } else if j.get("$schema").is_none() && is_version(v, 2) {
+        Some(2)
+    } else {
+        None
+    };
+    let len = |n: usize| u32::try_from(n).unwrap_or(u32::MAX);
+    let features = j
+        .get("features")
+        .and_then(Value::as_array)
+        .map_or(0, |a| len(a.len()));
+    // bp: `l && l.enabled !== false` - a falsy entry is no lens.
+    let enabled = |l: &&Value| {
+        let truthy = match l {
+            Value::Null => false,
+            Value::Bool(b) => *b,
+            Value::Number(n) => n.as_f64().is_some_and(|f| f != 0.0),
+            Value::String(s) => !s.is_empty(),
+            _ => true,
+        };
+        truthy && l.get("enabled") != Some(&Value::Bool(false))
+    };
+    let lenses = j
+        .get("lenses")
+        .and_then(Value::as_array)
+        .map_or(0, |a| len(a.iter().filter(enabled).count()));
+    MapSummary {
+        ok: true,
+        version,
+        features,
+        lenses,
+    }
 }
 
 fn count_u32(conn: &Connection, sql: &str) -> Result<u32, AppError> {
@@ -325,6 +388,15 @@ fn summarize(file: &Path) -> Result<StoreSummary, AppError> {
     } else {
         None
     };
+    // Distinct readings (bp `readiness.server.ts readStore`).
+    let measured_facets = if has.contains("measurements") {
+        count_u32(
+            &conn,
+            "SELECT COUNT(*) AS n FROM (SELECT DISTINCT feature, lens, metric FROM measurements)",
+        )?
+    } else {
+        0
+    };
     Ok(StoreSummary {
         version,
         counts,
@@ -332,14 +404,23 @@ fn summarize(file: &Path) -> Result<StoreSummary, AppError> {
         unreleased_accepted,
         open_release,
         last_run_at,
+        measured_facets,
     })
 }
 
 fn product_of(project: &DevProject, file: &Path) -> LensScanProduct {
+    // The map is read whether or not the store opens (bp reads them apart).
+    let dir = store_dir(Path::new(&project.root_path));
+    let map = summarize_map(&dir);
     let base = LensScanProduct {
         project_id: project.id.clone(),
         name: project.name.clone(),
         root: project.root_path.clone(),
+        has_map: map.ok,
+        map_version: map.version,
+        features: map.features,
+        lenses: map.lenses,
+        has_events: dir.join("events.jsonl").is_file(),
         ..LensScanProduct::default()
     };
     match summarize(file) {
@@ -350,6 +431,7 @@ fn product_of(project: &DevProject, file: &Path) -> LensScanProduct {
             unreleased_accepted: s.unreleased_accepted,
             open_release: s.open_release,
             last_run_at: s.last_run_at,
+            measured_facets: s.measured_facets,
             ..base
         },
         // A store that will not open is listed with the reason, never dropped.
