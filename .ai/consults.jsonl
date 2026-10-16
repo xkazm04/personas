@@ -1488,3 +1488,6 @@
 {"ts":"2026-10-16T18:16:30Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth"],"deviations":1}
 {"ts":"2026-10-16T18:16:30Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["marked-unverifiable-region","seams-and-adapters","module-depth","io-free-core"],"deviations":1}
 {"ts":"2026-10-16T18:16:30Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","marked-unverifiable-region"],"deviations":1}
+{"ts":"2026-10-16T18:17:54Z","bundle":"software-engineering","subjects":["docs-sync"],"techniques":[],"deviations":0,"context":"db-repos-execution"}
+{"ts":"2026-10-16T18:17:54Z","bundle":"software-engineering","subjects":["docs-sync"],"techniques":["translations-drift-against-the-product"],"deviations":0,"context":"i18n"}
+{"ts":"2026-10-16T18:17:54Z","bundle":"software-engineering","subjects":["docs-sync"],"techniques":[],"deviations":0,"context":"project-overview"}

@@ -10665,8 +10665,12 @@
           "revision": 14,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:748 the context is SQLite repos for execution rows (create/list/search); grep for feature-doc-map, doc_rot, sourceGlobs, guide-sync, onboardingFlows, marketingModule, watchSet, docs_required finds nothing - no source-to-prose coupling, gate, or rot scan lives here, and its 'stale' hits are claim/healing TTL sweeps",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:fd96220db75846a1",
+          "evaluatedRevision": 14
         },
         {
           "subject": "eval-harness",
@@ -16130,8 +16134,12 @@
           "revision": 14,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/i18n/englishSections.ts:7 the context is the runtime UI-string catalog loader (eager core + lazy sections), not hand-written prose about the system; the subject excludes translation completeness (i18n) and wall 15 governs translated documentation pages, which this context neither holds nor checks",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:fd96220db75846a1",
+          "evaluatedRevision": 14
         },
         {
           "subject": "russian",
@@ -28721,8 +28729,12 @@
           "revision": 14,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:2 the overview renders a golden-standard compliance scan, repo/Sentry stats and an editable pipeline; grep for feature-doc-map, doc_rot, guide-sync, onboardingFlows, marketingModule, watchSet, docs_required finds nothing - it neither declares coupling nor reads a diff or a doc-rot finding",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:fd96220db75846a1",
+          "evaluatedRevision": 14
         },
         {
           "subject": "standards-layered-runtime",

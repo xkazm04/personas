@@ -1,0 +1,25 @@
+{"schema":"conform-run/1","worker":"9632192b-8d5d-4909-be82-71c0e5c7c3f7","subject":"docs-sync","evaluatedAt":"2026-10-16T18:17:54Z",
+ "pairs":[
+  {"context":"320d2cea-9761-4233-97c1-ee2eaf4d6c17","subject":"docs-sync","bundle":"software-engineering","state":"not-applicable",
+   "evidence":"src-tauri/db/src/repos/execution/executions.rs:748 the context is SQLite repos for execution rows (create/list/search); grep for feature-doc-map, doc_rot, sourceGlobs, guide-sync, onboardingFlows, marketingModule, watchSet, docs_required finds nothing - no source-to-prose coupling, gate, or rot scan lives here, and its 'stale' hits are claim/healing TTL sweeps",
+   "evaluatedAgainst":"sha256-b2:fd96220db75846a1","evaluatedRevision":14},
+  {"context":"2e1e105a-866c-4039-9620-7ed5d0d30b17","subject":"docs-sync","bundle":"software-engineering","state":"not-applicable",
+   "evidence":"src/i18n/englishSections.ts:7 the context is the runtime UI-string catalog loader (eager core + lazy sections), not hand-written prose about the system; the subject excludes translation completeness (i18n) and wall 15 governs translated documentation pages, which this context neither holds nor checks",
+   "evaluatedAgainst":"sha256-b2:fd96220db75846a1","evaluatedRevision":14,
+   "registryProposal":"matcher paired docs-sync to a UI-string i18n runtime on tokens catch/locale/translated; translations-drift-against-the-product's use_when could state 'documentation page' explicitly so a string-catalog context stops resonating"},
+  {"context":"9967adb9-e895-4dcd-b296-ab49a19ab122","subject":"docs-sync","bundle":"software-engineering","state":"not-applicable",
+   "evidence":"src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:2 the overview renders a golden-standard compliance scan, repo/Sentry stats and an editable pipeline; grep for feature-doc-map, doc_rot, guide-sync, onboardingFlows, marketingModule, watchSet, docs_required finds nothing - it neither declares coupling nor reads a diff or a doc-rot finding",
+   "evaluatedAgainst":"sha256-b2:fd96220db75846a1","evaluatedRevision":14}
+ ],
+ "declined":[
+  {"subject":"docs-sync","context":"63edaec0-367e-4553-a6ee-bfd4144be305","reason":"already judged deviation at the current digest (revision 14, not stale); re-read doc_rot.rs:660-661 and the anchor still holds (doc map consumed as keys only, no unmapped-source count), so the verdict is left as-is rather than rewritten"},
+  {"subject":"docs-sync","context":"1db5c86e-3237-4d2a-8e2f-1426d680757c","reason":"already judged not-applicable at current digest; not stale"},
+  {"subject":"docs-sync","context":"c5f662f2-458b-4b5d-b03b-e4acf8f54049","reason":"already judged not-applicable at current digest; not stale"},
+  {"subject":"docs-sync","context":"83a8a744-2036-4e3e-9654-6fcec82334ff","reason":"already judged not-applicable at current digest; not stale"},
+  {"subject":"docs-sync","context":"876c0b4e-6472-4544-a21b-56e7529fb6b3","reason":"already judged not-applicable at current digest; not stale"}
+ ],
+ "consults":[
+  {"ts":"2026-10-16T18:17:54Z","bundle":"software-engineering","subjects":["docs-sync"],"techniques":[],"deviations":0,"context":"db-repos-execution"},
+  {"ts":"2026-10-16T18:17:54Z","bundle":"software-engineering","subjects":["docs-sync"],"techniques":["translations-drift-against-the-product"],"deviations":0,"context":"i18n"},
+  {"ts":"2026-10-16T18:17:54Z","bundle":"software-engineering","subjects":["docs-sync"],"techniques":[],"deviations":0,"context":"project-overview"}
+ ]}

@@ -26517,6 +26517,37 @@
           "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/types.ts:149 a data-boundary assertion with no invariant comment, wider than the check before it (only kind's type is tested, not its membership or the other fields)"
         }
       ]
+    },
+    "320d2cea-9761-4233-97c1-ee2eaf4d6c17/docs-sync": {
+      "context": "db-repos-execution",
+      "subject": "docs-sync",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:17:54.000Z",
+      "worker": "9632192b-8d5d-4909-be82-71c0e5c7c3f7",
+      "techniques": []
+    },
+    "2e1e105a-866c-4039-9620-7ed5d0d30b17/docs-sync": {
+      "context": "i18n",
+      "subject": "docs-sync",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:17:54.000Z",
+      "worker": "9632192b-8d5d-4909-be82-71c0e5c7c3f7",
+      "techniques": [],
+      "registryProposal": "matcher paired docs-sync to a UI-string i18n runtime on tokens catch/locale/translated; translations-drift-against-the-product's use_when could state 'documentation page' explicitly so a string-catalog context stops resonating"
+    },
+    "9967adb9-e895-4dcd-b296-ab49a19ab122/docs-sync": {
+      "context": "project-overview",
+      "subject": "docs-sync",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:17:54.000Z",
+      "worker": "9632192b-8d5d-4909-be82-71c0e5c7c3f7",
+      "techniques": []
     }
   }
 }
