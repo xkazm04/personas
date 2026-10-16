@@ -1,0 +1,6 @@
+{"schema": "conform-run/1", "worker": "3b2c9cb3-bbb3-47ab-8cd8-e97e49895502", "subject": "multi-project",
+ "evaluatedAt": "2026-10-16T18:25:15Z",
+ "pairs": [],
+ "declined": [{"subject": "multi-project", "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b",
+   "reason": "weak context (governance: weak, grounding lexical-only on 'project'/'projects') with an empty paths list; context-map.json:8383-8385 still names src/features/plugins/research-lab/sub_reports/ReportsPanel.tsx etc., but git ls-files returns nothing under src/features/plugins/research-lab - the code is gone, so there is nothing to judge. Coverage question for the context map (dead context the map's deadContexts:0 did not count), not a verdict. The other 9 multi-project pairs are already judged against the current digest sha256-b2:07b32de44fd25fc6 (rev 3), none stale - no work."}],
+ "consults": []}
