@@ -1024,29 +1024,25 @@
       "subject": "design-tokens",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:39:22.000Z",
-      "worker": "9500fb5e-980b-4af7-b4bb-40bde6776a5a",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:11:15.000Z",
+      "worker": "f5ac567a-c6fd-43f9-a39f-cf93f1aa9284",
       "techniques": [
         {
           "technique": "density-and-scale-axes",
           "verdict": "deviation",
-          "evidence": "src/styles/globals.css:907 brightness axis is a whole-surface pixel filter, the named trap, instead of a ramp rebind; :942 tier blocks counter-mix only status/brand/role roles, so foreground/surface pairs are filtered unmodelled"
+          "evidence": "src/styles/globals.css:907 filter: brightness(var(--app-brightness)) - the named whole-surface pixel-filter trap instead of rebinding the ramp"
         },
         {
           "technique": "token-enforcement",
           "verdict": "deviation",
-          "evidence": "scripts/check-themes.mjs:469 rendered-colour model under the brightness filter is printed, never graded; the hard-fail AA gate (:33, wired at .github/workflows/ci.yml:474) grades declared values only - gate does not see target"
+          "evidence": "scripts/check-themes.mjs:469 rendered (filtered) contrast is \"Printed, never graded\" - gate does not see the target"
         },
         {
           "technique": "theme-architecture",
           "verdict": "realized",
-          "evidence": "src/stores/themeStore.ts:143 custom theme stored as its config (seed) and re-derived via deriveCustomThemeVars on every apply, so new roles reach stored themes"
-        },
-        {
-          "technique": "token-enforcement",
-          "verdict": "deviation",
-          "evidence": "src/features/settings/sub_appearance/components/CustomThemeCreator.tsx:33 derived-theme contrast readout grades declared fg/bg, not the filtered pixels the user sees at the chosen brightness"
+          "evidence": "src/stores/themeStore.ts:143 custom theme stored as its config (seed) and re-derived via deriveCustomThemeVars on every apply, so new roles reach stored themes",
+          "carriedFrom": "2026-10-10"
         }
       ],
       "superseded": [
@@ -1063,6 +1059,13 @@
           "evaluatedAt": "2026-10-09T16:48:57.000Z",
           "worker": "6a6fbd8d-5410-4ac9-9ebe-6eb38b9fa4e5",
           "reason": "replaced by 9500fb5e-980b-4af7-b4bb-40bde6776a5a"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/styles/globals.css:907 brightness is still a whole-<html> pixel filter, so the graded contrast gate and the CustomThemeCreator readout grade declared colours the screen never shows (check-themes.mjs:469 models the rendered tier but prints it, never grades it); re-confirmed 2026-10-10",
+          "evaluatedAt": "2026-10-10T11:39:22.000Z",
+          "worker": "9500fb5e-980b-4af7-b4bb-40bde6776a5a",
+          "reason": "replaced by f5ac567a-c6fd-43f9-a39f-cf93f1aa9284"
         }
       ]
     },
@@ -6362,24 +6365,19 @@
       "subject": "design-tokens",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:39:22.000Z",
-      "worker": "9500fb5e-980b-4af7-b4bb-40bde6776a5a",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:11:15.000Z",
+      "worker": "f5ac567a-c6fd-43f9-a39f-cf93f1aa9284",
       "techniques": [
         {
           "technique": "token-taxonomy",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:127 desktop-bridge badge consumes raw palette primitives (bg-orange-500/10 border-orange-500/20 text-orange-400) - the skipped layer"
-        },
-        {
-          "technique": "token-taxonomy",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:144 recipe badge hand-rolls emerald with border /20 where the success role binds border-emerald-500/30 (src/lib/design/statusTokens.ts:30) - a forked role"
+          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:127 component consumes primitive hue ramp directly - the skipped-layer anti-pattern"
         },
         {
           "technique": "token-enforcement",
           "verdict": "deviation",
-          "evidence": "src/lib/design/statusTokens.ts:28 STATUS_PALETTE.success.text expands to the byte-identical raw text-emerald-400, so at the call site adopter and violator are lexically indistinguishable; the census text rule cannot separate them and nothing gates bg-/border- hue"
+          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:144 bg-/border- primitive refs pass every gate; only text- colour is censused"
         }
       ],
       "superseded": [
@@ -6396,6 +6394,13 @@
           "evaluatedAt": "2026-10-09T16:48:57.000Z",
           "worker": "6a6fbd8d-5410-4ac9-9ebe-6eb38b9fa4e5",
           "reason": "replaced by 9500fb5e-980b-4af7-b4bb-40bde6776a5a"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:127 badges still author colour by hue (orange-500/10, orange-400; :144 emerald with /20 border vs STATUS_PALETTE /30) - skipped layer, and the bg/border half has no gate (census raw-palette-text-colour sees text- only); re-confirmed 2026-10-10",
+          "evaluatedAt": "2026-10-10T11:39:22.000Z",
+          "worker": "9500fb5e-980b-4af7-b4bb-40bde6776a5a",
+          "reason": "replaced by f5ac567a-c6fd-43f9-a39f-cf93f1aa9284"
         }
       ]
     },
@@ -8535,19 +8540,20 @@
       "subject": "design-tokens",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:39:22.000Z",
-      "worker": "9500fb5e-980b-4af7-b4bb-40bde6776a5a",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:11:15.000Z",
+      "worker": "f5ac567a-c6fd-43f9-a39f-cf93f1aa9284",
       "techniques": [
         {
           "technique": "motion-tokens",
           "verdict": "deviation",
-          "evidence": "src/lib/utils/rafAnimationEngine.ts:71 per-consumer honoring of one of two reduced-motion signals; the token-layer door (src/hooks/utility/interaction/useMotion.ts:25 reads both) is bypassed"
+          "evidence": "src/lib/utils/rafAnimationEngine.ts:71 per-consumer matchMedia check instead of the one token-layer door (data-motion) the rest of the app uses"
         },
         {
           "technique": "cross-language-token-parity",
           "verdict": "realized",
-          "evidence": "src/lib/utils/designTokens.ts:26 JS MOTION durations are a gated mirror of the CSS --duration-* vars, held equal by motionTokens.parity.test.ts"
+          "evidence": "src/lib/utils/designTokens.ts:26 JS MOTION durations are a gated mirror of the CSS --duration-* vars, held equal by motionTokens.parity.test.ts",
+          "carriedFrom": "2026-10-10"
         }
       ],
       "superseded": [
@@ -8564,6 +8570,13 @@
           "evaluatedAt": "2026-10-09T16:48:57.000Z",
           "worker": "6a6fbd8d-5410-4ac9-9ebe-6eb38b9fa4e5",
           "reason": "replaced by 9500fb5e-980b-4af7-b4bb-40bde6776a5a"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/lib/utils/rafAnimationEngine.ts:71 reduced motion reads only the OS media query, never the in-app data-motion=reduce toggle that useMotion.ts:25 honours, so rAF springs ignore the app setting; re-confirmed 2026-10-10",
+          "evaluatedAt": "2026-10-10T11:39:22.000Z",
+          "worker": "9500fb5e-980b-4af7-b4bb-40bde6776a5a",
+          "reason": "replaced by f5ac567a-c6fd-43f9-a39f-cf93f1aa9284"
         }
       ]
     },

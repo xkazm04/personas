@@ -1,0 +1,100 @@
+{
+  "schema": "conform-run/1",
+  "worker": "f5ac567a-c6fd-43f9-a39f-cf93f1aa9284",
+  "subject": "design-tokens",
+  "evaluatedAt": "2026-10-16T18:11:15Z",
+  "evaluatedAgainst": "sha256-b2:165125b7a54d0de3",
+  "evaluatedRevision": 7,
+  "pairs": [
+    {
+      "context": "14c7d145-2166-454b-aee5-d69d9d527d79",
+      "subject": "design-tokens",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/styles/globals.css:907 brightness is still a whole-<html> pixel filter, so the contrast gate grades declared colours the screen never shows (scripts/check-themes.mjs:469 models the rendered tier but prints it, never grades it); re-confirmed 2026-10-16",
+      "techniques": [
+        {
+          "technique": "density-and-scale-axes",
+          "verdict": "deviation",
+          "evidence": "src/styles/globals.css:907 filter: brightness(var(--app-brightness)) - the named whole-surface pixel-filter trap instead of rebinding the ramp"
+        },
+        {
+          "technique": "token-enforcement",
+          "verdict": "deviation",
+          "evidence": "scripts/check-themes.mjs:469 rendered (filtered) contrast is \"Printed, never graded\" - gate does not see the target"
+        }
+      ]
+    },
+    {
+      "context": "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6",
+      "subject": "design-tokens",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/utils/rafAnimationEngine.ts:71 reduced motion reads only the OS media query, never the in-app data-motion=reduce toggle that src/hooks/utility/interaction/useMotion.ts:25 honours, so rAF springs ignore the app setting; re-confirmed 2026-10-16",
+      "techniques": [
+        {
+          "technique": "motion-tokens",
+          "verdict": "deviation",
+          "evidence": "src/lib/utils/rafAnimationEngine.ts:71 per-consumer matchMedia check instead of the one token-layer door (data-motion) the rest of the app uses"
+        }
+      ]
+    },
+    {
+      "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65",
+      "subject": "design-tokens",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:127 badges still author colour by hue (orange-500/10, orange-400; :144 emerald with /20 border vs STATUS_PALETTE /30) - skipped layer, and the bg/border half has no gate (census raw-palette-text-colour sees text- only); re-confirmed 2026-10-16",
+      "techniques": [
+        {
+          "technique": "token-taxonomy",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:127 component consumes primitive hue ramp directly - the skipped-layer anti-pattern"
+        },
+        {
+          "technique": "token-enforcement",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:144 bg-/border- primitive refs pass every gate; only text- colour is censused"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-16T18:11:15Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "design-tokens"
+      ],
+      "techniques": [
+        "density-and-scale-axes",
+        "token-enforcement"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T18:11:15Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "design-tokens"
+      ],
+      "techniques": [
+        "motion-tokens"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T18:11:15Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "design-tokens"
+      ],
+      "techniques": [
+        "token-taxonomy",
+        "token-enforcement"
+      ],
+      "deviations": 1
+    }
+  ]
+}
