@@ -1295,3 +1295,7 @@
 {"ts":"2026-10-16T17:17:44Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["warm-remount-caches","swr-design","cache-key-discipline","in-flight-dedup"],"deviations":1}
 {"ts":"2026-10-16T17:18:29Z","bundle":"software-engineering","subjects":["i18n"],"techniques":["catalog-architecture","completeness-gates","token-label-separation","interpolation-and-plurals","string-extraction-enforcement"],"deviations":2}
 {"ts":"2026-10-16T17:18:29Z","bundle":"software-engineering","subjects":["i18n"],"techniques":["completeness-gates","token-label-separation"],"deviations":1}
+{"ts":"2026-10-16T17:18:58Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["overlay-precedence","missing-anchor-degradation","narration-and-pacing","anchor-contracts"],"deviations":1}
+{"ts":"2026-10-16T17:18:58Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["missing-anchor-degradation","tour-lifecycle"],"deviations":2}
+{"ts":"2026-10-16T17:18:58Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["tour-lifecycle"],"deviations":1}
+{"ts":"2026-10-16T17:18:58Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["tour-lifecycle"],"deviations":1}
