@@ -9731,42 +9731,42 @@
       "subject": "modal-stack",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T12:11:05.000Z",
-      "worker": "d7d57e6e-f5fd-421e-aaff-91407fa7b0cc",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:07:37.000Z",
+      "worker": "bd7a5dbc-4fc2-4f79-9ff8-a3afb694a646",
       "techniques": [
-        {
-          "technique": "destructive-confirmation",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:310 hard-deletes a template with no confirm or undo and closes at :311 before the await settles, so a failed delete is only logged (src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:208) - confirm-then-fail with no confirm"
-        },
         {
           "technique": "stack-ownership",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/modals/useModalStack.ts:24 is a second, feature-private stack beside the app registry (src/lib/ui/ModalStackContext.tsx), addressed by kind not identity (close(type) at :37), and CompareModal bypasses it on a local boolean (src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:353 isOpen={compareOpen})"
+          "evidence": "src/features/templates/sub_generated/gallery/modals/useModalStack.ts:25 is a second, feature-private stack beside the app registry, closed by type not id (:37); CompareModal and the credential modal bypass even that door (src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:62, src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx:112), and the app registry entries carry no kind (src/lib/ui/ModalStackContext.tsx:13), so nothing outside can ask what is open"
         },
         {
           "technique": "dismissal-semantics",
           "verdict": "deviation",
-          "evidence": "src/lib/ui/BaseModal.tsx:283 backdrop click calls onClose unguarded on every modal, incl. CatalogCredentialModal whose typed credential fields (src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx:113) vanish on a stray click; one onClose callback cannot tell cancel from dismiss"
+          "evidence": "src/lib/ui/BaseModal.tsx:283 backdrop click and Escape (:199-201) call one unguarded onClose: () => void, so RebuildModal's typed direction is discarded by a stray click and callers cannot tell cancel from dismiss from complete"
         },
         {
           "technique": "focus-and-scroll-containment",
           "verdict": "deviation",
-          "evidence": "src/lib/ui/BaseModal.tsx:230 restores focus only on the isOpen flag-flip, but RebuildModal and CatalogCredentialModal close by unmount (src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx:62) so focus drops to the document root; BaseModal has no scroll lock or background inertness"
+          "evidence": "src/lib/ui/BaseModal.tsx:231 restores focus only on the isOpen flip, but RebuildModal and the credential modals close by unmounting with isOpen hard-wired true (src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx:62), so focus drops to the document root; aria-modal at src/lib/ui/BaseModal.tsx:289 is declared on the table-scoped detail modal with no inert marking on the rest of the app"
         },
         {
           "technique": "layering-and-precedence",
           "verdict": "deviation",
-          "evidence": "src/lib/ui/BaseModal.tsx:9 portal modals sit at hand-picked z 10000 while the shared Tooltip portals to body at z-[9999] (src/features/shared/components/display/Tooltip.tsx:348), so CompareModal tooltips (CompareModal.tsx:223) render beneath their own modal"
+          "evidence": "src/lib/ui/BaseModal.tsx:177 fuses detachment and precedence in one portal flag (base 50 vs 10000, :9), and TemplateDetailModal writes a raw z-50 at the use site (src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:145)"
+        },
+        {
+          "technique": "destructive-confirmation",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:310 deletes immediately with no confirm or undo, closes optimistically at :311, and the failure is only logged at src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:207"
         },
         {
           "technique": "anchored-positioning",
           "verdict": "unknown",
-          "evidence": "src/features/shared/components/display/Tooltip.tsx:338 the only anchored surface here is the shared Tooltip primitive, owned by context display-data-formatters; not judged from this consumer"
+          "evidence": "src/features/shared/components/display/Tooltip.tsx:338 the only anchored surface here is the shared Tooltip primitive, owned by context display-data-formatters; not judged from this consumer",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "Coverage hole in the consumer context map, not the corpus: src/lib/ui/BaseModal.tsx and src/lib/ui/ModalStackContext.tsx - the app-wide overlay primitives that realize (or fail) most modal-stack techniques - belong to no context in context-map.json, so modal-stack governs only this gallery consumer and the primitive defects (no scroll lock, flag-only focus restore, z 10000 vs Tooltip z-9999) are judged secondhand. A context for src/lib/ui overlay primitives, paired with modal-stack, would let the fix land once.",
       "superseded": [
         {
           "state": "deviation",
@@ -9788,6 +9788,13 @@
           "evaluatedAt": "2026-10-10T02:10:24.000Z",
           "worker": "06a5d3c4-73db-4c67-9635-9df1b799834a",
           "reason": "replaced by d7d57e6e-f5fd-421e-aaff-91407fa7b0cc"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:310 hard-deletes a template with no confirm or undo and closes at :311 before the await settles, so failure is only logged (cards/useGalleryActions.ts:208); 5 of 5 judged techniques fail (anchored-positioning left unjudged)",
+          "evaluatedAt": "2026-10-10T12:11:05.000Z",
+          "worker": "d7d57e6e-f5fd-421e-aaff-91407fa7b0cc",
+          "reason": "replaced by bd7a5dbc-4fc2-4f79-9ff8-a3afb694a646"
         }
       ]
     },

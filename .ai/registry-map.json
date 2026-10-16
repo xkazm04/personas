@@ -35018,10 +35018,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:310 hard-deletes a template with no confirm or undo and closes at :311 before the await settles, so failure is only logged (cards/useGalleryActions.ts:208); 5 of 5 judged techniques fail (anchored-positioning left unjudged)",
-          "evaluatedAt": "2026-10-10",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:310 hard-deletes a template with no confirm or undo and closes at :311 before the await settles, so failure is only logged (src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:207); 5 of 5 judged techniques fail (anchored-positioning unjudged: no anchored overlay in this context)",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:7848e4396b8a86da",
-          "evaluatedRevision": 4,
+          "evaluatedRevision": 5,
           "revisionsBehind": 1
         },
         {

@@ -1,0 +1,15 @@
+{"schema": "conform-run/1", "worker": "bd7a5dbc-4fc2-4f79-9ff8-a3afb694a646", "subject": "modal-stack",
+ "evaluatedAt": "2026-10-16T17:07:37Z",
+ "pairs": [{"context": "d3346f2c-d747-4d85-b6e6-c1450da57ec9", "subject": "modal-stack", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:310 hard-deletes a template with no confirm or undo and closes at :311 before the await settles, so failure is only logged (src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:207); 5 of 5 judged techniques fail (anchored-positioning unjudged: no anchored overlay in this context)",
+   "evaluatedAgainst": "sha256-b2:7848e4396b8a86da", "evaluatedRevision": 5,
+   "techniques": [
+     {"technique": "stack-ownership", "verdict": "deviation", "evidence": "src/features/templates/sub_generated/gallery/modals/useModalStack.ts:25 is a second, feature-private stack beside the app registry, closed by type not id (:37); CompareModal and the credential modal bypass even that door (src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:62, src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx:112), and the app registry entries carry no kind (src/lib/ui/ModalStackContext.tsx:13), so nothing outside can ask what is open"},
+     {"technique": "dismissal-semantics", "verdict": "deviation", "evidence": "src/lib/ui/BaseModal.tsx:283 backdrop click and Escape (:199-201) call one unguarded onClose: () => void, so RebuildModal's typed direction is discarded by a stray click and callers cannot tell cancel from dismiss from complete"},
+     {"technique": "focus-and-scroll-containment", "verdict": "deviation", "evidence": "src/lib/ui/BaseModal.tsx:231 restores focus only on the isOpen flip, but RebuildModal and the credential modals close by unmounting with isOpen hard-wired true (src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx:62), so focus drops to the document root; aria-modal at src/lib/ui/BaseModal.tsx:289 is declared on the table-scoped detail modal with no inert marking on the rest of the app"},
+     {"technique": "layering-and-precedence", "verdict": "deviation", "evidence": "src/lib/ui/BaseModal.tsx:177 fuses detachment and precedence in one portal flag (base 50 vs 10000, :9), and TemplateDetailModal writes a raw z-50 at the use site (src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:145)"},
+     {"technique": "destructive-confirmation", "verdict": "deviation", "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:310 deletes immediately with no confirm or undo, closes optimistically at :311, and the failure is only logged at src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:207"}
+   ]}],
+ "declined": [],
+ "consults": [{"ts": "2026-10-16T17:07:37Z", "bundle": "software-engineering", "subjects": ["modal-stack"], "techniques": ["stack-ownership", "dismissal-semantics", "focus-and-scroll-containment", "layering-and-precedence", "destructive-confirmation"], "deviations": 5}]}
