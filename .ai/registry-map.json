@@ -8864,7 +8864,11 @@
           "revision": 8,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/narrationTimeline.ts:46 Each distinct narration event extends the in-memory turn log without an entry or byte budget, so long turns can accumulate unbounded live state.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:f390cca5c416535b",
+          "evaluatedRevision": 8
         },
         {
           "subject": "agent-cli-transport",
@@ -15181,7 +15185,11 @@
           "revision": 8,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/hooks/execution/cliStreamBuffer.ts:115 Once armed, the intermediate queue accumulates output without an entry or byte budget until its animation-frame flush runs.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:f390cca5c416535b",
+          "evaluatedRevision": 8
         },
         {
           "subject": "agent-cli-transport",
@@ -20714,7 +20722,11 @@
           "revision": 8,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/parser.rs:516 Unrecognized well-formed events lose their payload and display representation, preventing the required forwarding of unknown events with raw data.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:f390cca5c416535b",
+          "evaluatedRevision": 8
         },
         {
           "subject": "engine-binding-surface",

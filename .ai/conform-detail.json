@@ -27335,6 +27335,155 @@
           "evidence": "src/lib/types/frontendTypes.ts:162 Review policy models mode as an open optional string allowing auto_triage/trust_llm without enforcing a truncated verdict space where machine admission is structurally impossible."
         }
       ]
+    },
+    "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc/streaming-output": {
+      "context": "triggers-studio",
+      "subject": "streaming-output",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T22:17:35.316Z",
+      "techniques": [
+        {
+          "technique": "buffering-and-backpressure",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/routing/layouts/useRoutingState.ts:99 Loads routing inventory; no live output buffer was found."
+        },
+        {
+          "technique": "cancellation-and-finalization",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:115 This operation commits trigger configuration rather than finalizing a streaming turn."
+        },
+        {
+          "technique": "emit-behind-the-revision-window",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:18 Routes gate completed executions, with no revising output producer here."
+        },
+        {
+          "technique": "mid-turn-steering",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:161 Form submission creates a route rather than injecting input into an active turn."
+        },
+        {
+          "technique": "phase-derivation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioLabels.ts:14 These labels describe routing conditions, not phases derived from streaming events."
+        },
+        {
+          "technique": "render-throttling",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/routing/layouts/useRoutingState.ts:107 Renders fetched subscription snapshots rather than a live output stream."
+        },
+        {
+          "technique": "run-attribution",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioDraftModel.ts:24 The model describes route configuration; no stream application requiring run attribution was found."
+        },
+        {
+          "technique": "sink-reversibility-decides-the-commit",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:131 Removes a committed configuration draft, with no partial output record being emitted."
+        },
+        {
+          "technique": "stream-parsing",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/routing/layouts/buildEventRows.ts:3 Derives routing rows from backend collections rather than framing producer bytes."
+        }
+      ],
+      "withdrawn": {
+        "worker": "9b276dfd-4bc8-46d6-8b14-89bf34daae5a",
+        "state": "not-applicable",
+        "at": "2026-10-16T22:18:12.253998+00:00",
+        "reason": "reviewer (sonnet): The anchor studioCommit.ts:8 is a header comment that does not itself show streaming is absent. The claim of no streaming matches under the triggers directory is also doubtful: useRoutingState.ts:60 mentions 'LiveStream', and I did not confirm that nothing in the context consumes incremental output."
+      }
+    },
+    "a3b615d2-05d8-47bd-ad92-672c6b42b0f3/streaming-output": {
+      "context": "output-stream-parser",
+      "subject": "streaming-output",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T22:17:35.316Z",
+      "worker": "9b276dfd-4bc8-46d6-8b14-89bf34daae5a",
+      "techniques": [
+        {
+          "technique": "buffering-and-backpressure",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2874 After the cumulative cap, the branch skips every subsequent record before parsing, shedding newest output and terminal events instead of retaining a live tail."
+        },
+        {
+          "technique": "sink-reversibility-decides-the-commit",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2851 This parsing caller uses the reader that appends clip markers inside the bytes, then passes the modified line to the provider parser; the out-of-band clip API is bypassed."
+        },
+        {
+          "technique": "stream-parsing",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/parser.rs:516 Unknown well-formed events become a payload-free Unknown; the runner also omits Unknown from its structured event channel."
+        }
+      ]
+    },
+    "a6843b83-43a1-4eab-ae40-26f23b949a0d/streaming-output": {
+      "context": "hooks-execution",
+      "subject": "streaming-output",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T22:17:35.316Z",
+      "worker": "9b276dfd-4bc8-46d6-8b14-89bf34daae5a",
+      "techniques": [
+        {
+          "technique": "buffering-and-backpressure",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/cliStreamBuffer.ts:115 Only the pre-arm hold buffer is capped; the armed queue has no admission budget or eviction accounting."
+        },
+        {
+          "technique": "cancellation-and-finalization",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/useExecutionSummary.ts:98 A non-live trace without an authoritative status or terminal event defaults to completed, converting missing termination evidence into success."
+        },
+        {
+          "technique": "phase-derivation",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/useAiHealingStream.ts:160 An unrecognized healing phase retains the previous specific phase instead of degrading to a generic claim."
+        },
+        {
+          "technique": "render-throttling",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/cliStreamBuffer.ts:134 dispose marks the buffer disposed and clears queued output without a trailing flush, including teardown paths that preserve execution state."
+        },
+        {
+          "technique": "run-attribution",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:273 Asynchronous recovery appends the captured run's lines to the current store without rechecking the active execution identity."
+        }
+      ]
+    },
+    "50bf2ad0-3da7-4405-991a-6e22695903a2/streaming-output": {
+      "context": "companion-narration-ops",
+      "subject": "streaming-output",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T22:17:35.316Z",
+      "worker": "9b276dfd-4bc8-46d6-8b14-89bf34daae5a",
+      "techniques": [
+        {
+          "technique": "buffering-and-backpressure",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/narrationTimeline.ts:46 Deduplication provides no memory budget; the presentation's five-row limit does not bound this stored array."
+        },
+        {
+          "technique": "cancellation-and-finalization",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/chat/athenaChatStream.ts:180 The error exit clears accumulated narration instead of attaching it to a settled record with a failed outcome."
+        },
+        {
+          "technique": "run-attribution",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/chat/athenaChatStream.ts:60 CLI and terminal handling use conversation identity without comparing the event's turnId to the live turn, allowing an old turn's events to affect its successor."
+        }
+      ]
     }
   }
 }
