@@ -3,7 +3,7 @@ import { MessagesSquare } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ConversationComposer } from './ConversationComposer';
-import { ConversationGhostRows } from './ConversationCards';
+import { ConversationGhostRows } from './ConversationGhostRows';
 import { VirtualConversation } from './VirtualConversation';
 import type { ConversationRow } from './conversationModel';
 import type { useConversation } from './useConversation';
