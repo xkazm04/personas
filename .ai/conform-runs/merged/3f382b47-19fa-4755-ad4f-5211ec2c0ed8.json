@@ -1,0 +1,25 @@
+{"schema":"conform-run/1","worker":"3f382b47-19fa-4755-ad4f-5211ec2c0ed8","subject":"authorization","evaluatedAt":"2026-10-16T18:19:14Z",
+"pairs":[
+{"context":"621caefc-8ae0-42e7-89b6-8e879ad62814","subject":"authorization","bundle":"software-engineering","state":"deviation",
+ "evidence":"src-tauri/src/engine/management_api.rs:777 an unknown API-key token is refused 401 with no audit row (missing key likewise at :712; MCP twin src-tauri/src/mcp_server/auth.rs:75 'No key row -> nothing to audit'), so a credential-probing sequence leaves no queryable trail - re-confirmed at HEAD 2026-10-16",
+ "techniques":[{"technique":"authorization-audit","verdict":"deviation","evidence":"src-tauri/src/engine/management_api.rs:777 silent-gate denial: refuse and return, record nothing, for the unknown-key case the technique names as probe detection"}],
+ "registryProposal":"authorization-audit says record every denial with caller channel identity, but does not say what to key the row on when the denial IS 'no such identity' (no FK target). Both personas doors skip the write for that reason; the technique could name a keyless denial stream (hashed token prefix + origin) as the conformant shape."},
+{"context":"0ecc70bc-a005-4ff8-9a98-f362d2a75f53","subject":"authorization","bundle":"software-engineering","state":"deviation",
+ "evidence":"src-tauri/src/commands/network/identity.rs:60 import_trusted_peer adds a P2P trust anchor yet carries no #[requires] and is absent from PRIVILEGED_COMMANDS (src-tauri/src/ipc_auth.rs:117); its only guard require_auth_sync is a no-op Ok(()) at src-tauri/src/ipc_auth.rs:470 - re-confirmed at HEAD 2026-10-16",
+ "techniques":[{"technique":"declarative-requirements","verdict":"deviation","evidence":"src-tauri/src/commands/network/identity.rs:60 a trust-anchor-minting command registers and dispatches with no stated requirement; totality rule says unannotated must be unbuildable"},
+               {"technique":"privilege-tiers","verdict":"deviation","evidence":"src-tauri/src/ipc_auth.rs:470 require_auth_sync is Ok(()) so the command falls into the public tier by default"}]},
+{"context":"ee9d4d9e-0414-4460-b159-5d9c7c4108a7","subject":"authorization","bundle":"software-engineering","state":"deviation",
+ "evidence":"src-tauri/src/engine/api_proxy.rs:795 a Block (and at :777 a WarnOnly) out-of-scope credential use is recorded only via tracing::warn!, never through audit_log (used at :666 for decrypts only), so the per-credential audit trail cannot show scope denials - re-confirmed at HEAD 2026-10-16",
+ "techniques":[{"technique":"authorization-audit","verdict":"deviation","evidence":"src-tauri/src/engine/api_proxy.rs:795 scope denial goes to a log stream, not the queryable per-credential trail, so 'why is this blocked' is not a query"}]}
+],
+"declined":[
+{"subject":"authorization","context":"e61f931c-25d7-4532-9ec7-ab6f3fc377e2","reason":"not-applicable verdict already recorded against the current digest sha256-b2:57d60a438fa36d05 (rev 6); subject unchanged since, so it was left as is within budget"},
+{"subject":"authorization","context":"c413de7d-1182-4abc-8a08-9c8832254c62","reason":"not-applicable verdict already recorded against the current digest (rev 6), lexical false match; left as is"},
+{"subject":"authorization","context":"3619ab0d-0367-43d0-b4eb-ec39c1302d65","reason":"not-applicable verdict already recorded against the current digest (rev 6); left as is"},
+{"subject":"authorization","context":"b62fa237-32b4-41c3-bf56-3e498b643da9","reason":"not-applicable verdict already recorded against the current digest (rev 6); left as is"}
+],
+"consults":[
+{"ts":"2026-10-16T18:19:14Z","bundle":"software-engineering","subjects":["authorization"],"techniques":["authorization-audit"],"deviations":1},
+{"ts":"2026-10-16T18:19:14Z","bundle":"software-engineering","subjects":["authorization"],"techniques":["declarative-requirements","privilege-tiers"],"deviations":1},
+{"ts":"2026-10-16T18:19:14Z","bundle":"software-engineering","subjects":["authorization"],"techniques":["authorization-audit"],"deviations":1}
+]}

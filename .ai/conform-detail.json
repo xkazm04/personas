@@ -8303,24 +8303,25 @@
       "subject": "authorization",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:38:27.000Z",
-      "worker": "08806135-96c9-4f5c-bf26-a66aded81198",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:19:14.000Z",
+      "worker": "3f382b47-19fa-4755-ad4f-5211ec2c0ed8",
       "techniques": [
-        {
-          "technique": "privilege-tiers",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/network/identity.rs:60 a trust-anchor mutation dispatches at the public tier; worst-reachable-effect puts it at privileged/elevated"
-        },
         {
           "technique": "declarative-requirements",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/network/identity.rs:65 the requirement is an imperative require_auth_sync call (a no-op), not a #[requires] annotation the gate reads - registered-but-unclassified is still representable"
+          "evidence": "src-tauri/src/commands/network/identity.rs:60 a trust-anchor-minting command registers and dispatches with no stated requirement; totality rule says unannotated must be unbuildable"
+        },
+        {
+          "technique": "privilege-tiers",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/ipc_auth.rs:470 require_auth_sync is Ok(()) so the command falls into the public tier by default"
         },
         {
           "technique": "dispatch-chokepoint-gating",
           "verdict": "realized",
-          "evidence": "src-tauri/src/ipc_auth.rs:610 wrap_invoke_handler gates listed commands before dispatch with constant_time_eq at :663 - the chokepoint exists; this command is simply not on its list"
+          "evidence": "src-tauri/src/ipc_auth.rs:610 wrap_invoke_handler gates listed commands before dispatch with constant_time_eq at :663 - the chokepoint exists; this command is simply not on its list",
+          "carriedFrom": "2026-10-10"
         }
       ],
       "superseded": [
@@ -8330,6 +8331,13 @@
           "evaluatedAt": "2026-10-09T16:45:02.000Z",
           "worker": "00ab5518-4af7-45f4-9cdb-bfa7cea0ffd9",
           "reason": "replaced by 08806135-96c9-4f5c-bf26-a66aded81198"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/network/identity.rs:60 import_trusted_peer adds a P2P trust anchor yet carries no #[requires] and is absent from PRIVILEGED_COMMANDS (src-tauri/src/ipc_auth.rs:117); its only guard require_auth_sync is a no-op Ok(()) at src-tauri/src/ipc_auth.rs:471, so any webview content can mint a trusted peer - re-confirmed at HEAD 2026-10-10",
+          "evaluatedAt": "2026-10-10T01:38:27.000Z",
+          "worker": "08806135-96c9-4f5c-bf26-a66aded81198",
+          "reason": "replaced by 3f382b47-19fa-4755-ad4f-5211ec2c0ed8"
         }
       ]
     },
@@ -13124,27 +13132,29 @@
       "subject": "authorization",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:38:27.000Z",
-      "worker": "08806135-96c9-4f5c-bf26-a66aded81198",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:19:14.000Z",
+      "worker": "3f382b47-19fa-4755-ad4f-5211ec2c0ed8",
       "techniques": [
         {
           "technique": "authorization-audit",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/management_api.rs:777 invalid-key denial writes nothing; record_audit at :791 swallows insert failure at debug level with no visible counter, and src-tauri/src/mcp_server/auth.rs:89 discards the audit Result with `let _ =`"
+          "evidence": "src-tauri/src/engine/management_api.rs:777 silent-gate denial: refuse and return, record nothing, for the unknown-key case the technique names as probe detection"
         },
         {
           "technique": "scope-design",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/management_api.rs:731 per-route scope check before next.run, denial audited as 403 at :739"
+          "evidence": "src-tauri/src/engine/management_api.rs:731 per-route scope check before next.run, denial audited as 403 at :739",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "dispatch-chokepoint-gating",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/management_api.rs:731 the auth middleware decides before the handler runs (next.run only after authorize + rate limit)"
+          "evidence": "src-tauri/src/engine/management_api.rs:731 the auth middleware decides before the handler runs (next.run only after authorize + rate limit)",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "authorization-audit assumes every denial has a caller channel identity to record; it is silent on the unattributable denial (unknown/revoked token, no key row), which this repo uses as the stated reason to record nothing (src-tauri/src/mcp_server/auth.rs:75). The technique should say what an unattributed denial carries (origin, token-prefix fingerprint, correlation handle) so 'no identity' cannot read as 'nothing to audit'.",
+      "registryProposal": "authorization-audit says record every denial with caller channel identity, but does not say what to key the row on when the denial IS 'no such identity' (no FK target). Both personas doors skip the write for that reason; the technique could name a keyless denial stream (hashed token prefix + origin) as the conformant shape.",
       "superseded": [
         {
           "state": "deviation",
@@ -13152,6 +13162,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by 08806135-96c9-4f5c-bf26-a66aded81198"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/management_api.rs:777 an unknown API-key token is refused 401 with no audit row (also missing-key at :712, and the MCP twin at src-tauri/src/mcp_server/auth.rs:76), so a credential-probing sequence against /api/* or personas-mcp leaves no queryable trail - re-confirmed at HEAD 2026-10-10",
+          "evaluatedAt": "2026-10-10T01:38:27.000Z",
+          "worker": "08806135-96c9-4f5c-bf26-a66aded81198",
+          "reason": "replaced by 3f382b47-19fa-4755-ad4f-5211ec2c0ed8"
         }
       ]
     },
@@ -13160,27 +13177,28 @@
       "subject": "authorization",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:38:27.000Z",
-      "worker": "08806135-96c9-4f5c-bf26-a66aded81198",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:19:14.000Z",
+      "worker": "3f382b47-19fa-4755-ad4f-5211ec2c0ed8",
       "techniques": [
         {
           "technique": "authorization-audit",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/api_proxy.rs:799 scope Block is logged to tracing only; the refusal path at :827-834 returns Forbidden without an audit_log write"
+          "evidence": "src-tauri/src/engine/api_proxy.rs:795 scope denial goes to a log stream, not the queryable per-credential trail, so 'why is this blocked' is not a query"
         },
         {
           "technique": "failure-direction",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/scope_enforcement.rs:52 absent metadata resolves to Warn - warn-only is the global undated default rather than a per-restriction migration with an exit, so a user's scope picks are advisory unless they opt into block; corrupt metadata does fail closed at :61"
+          "evidence": "src-tauri/engine/src/scope_enforcement.rs:52 absent metadata resolves to Warn - warn-only is the global undated default rather than a per-restriction migration with an exit, so a user's scope picks are advisory unless they opt into block; corrupt metadata does fail closed at :61",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "scope-design",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/api_proxy.rs:768 scope_enforcement::evaluate intersects the request path with the credential's picked resources before any secret is applied"
+          "evidence": "src-tauri/src/engine/api_proxy.rs:768 scope_enforcement::evaluate intersects the request path with the credential's picked resources before any secret is applied",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "failure-direction's 'graduated enforcement is a migration state' rule could name the shape seen here explicitly: a per-grant opt-in to enforcement (default warn) is the global warn-only mode in disguise, because no restriction ever exits warn unless a user flips it.",
       "superseded": [
         {
           "state": "deviation",
@@ -13188,6 +13206,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by 08806135-96c9-4f5c-bf26-a66aded81198"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/api_proxy.rs:799 a Block (and at :781 a WarnOnly) out-of-scope credential use is recorded only via tracing::warn!, never through audit_log, so the per-credential audit trail cannot show scope denials or would-be denials - re-confirmed at HEAD 2026-10-10",
+          "evaluatedAt": "2026-10-10T01:38:27.000Z",
+          "worker": "08806135-96c9-4f5c-bf26-a66aded81198",
+          "reason": "replaced by 3f382b47-19fa-4755-ad4f-5211ec2c0ed8"
         }
       ]
     },

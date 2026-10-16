@@ -4488,8 +4488,8 @@
           "changedAt": "2026-09-18",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/management_api.rs:777 an unknown API-key token is refused 401 with no audit row (also missing-key at :712, and the MCP twin at src-tauri/src/mcp_server/auth.rs:76), so a credential-probing sequence against /api/* or personas-mcp leaves no queryable trail - re-confirmed at HEAD 2026-10-10",
-          "evaluatedAt": "2026-10-10",
+          "evidence": "src-tauri/src/engine/management_api.rs:777 an unknown API-key token is refused 401 with no audit row (missing key likewise at :712; MCP twin src-tauri/src/mcp_server/auth.rs:75 'No key row -> nothing to audit'), so a credential-probing sequence leaves no queryable trail - re-confirmed at HEAD 2026-10-16",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:57d60a438fa36d05",
           "evaluatedRevision": 6,
           "revisionsBehind": 0
@@ -4762,8 +4762,8 @@
           "changedAt": "2026-09-18",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/network/identity.rs:60 import_trusted_peer adds a P2P trust anchor yet carries no #[requires] and is absent from PRIVILEGED_COMMANDS (src-tauri/src/ipc_auth.rs:117); its only guard require_auth_sync is a no-op Ok(()) at src-tauri/src/ipc_auth.rs:471, so any webview content can mint a trusted peer - re-confirmed at HEAD 2026-10-10",
-          "evaluatedAt": "2026-10-10",
+          "evidence": "src-tauri/src/commands/network/identity.rs:60 import_trusted_peer adds a P2P trust anchor yet carries no #[requires] and is absent from PRIVILEGED_COMMANDS (src-tauri/src/ipc_auth.rs:117); its only guard require_auth_sync is a no-op Ok(()) at src-tauri/src/ipc_auth.rs:470 - re-confirmed at HEAD 2026-10-16",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:57d60a438fa36d05",
           "evaluatedRevision": 6,
           "revisionsBehind": 0
@@ -39072,8 +39072,8 @@
           "changedAt": "2026-09-18",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/api_proxy.rs:799 a Block (and at :781 a WarnOnly) out-of-scope credential use is recorded only via tracing::warn!, never through audit_log, so the per-credential audit trail cannot show scope denials or would-be denials - re-confirmed at HEAD 2026-10-10",
-          "evaluatedAt": "2026-10-10",
+          "evidence": "src-tauri/src/engine/api_proxy.rs:795 a Block (and at :777 a WarnOnly) out-of-scope credential use is recorded only via tracing::warn!, never through audit_log (used at :666 for decrypts only), so the per-credential audit trail cannot show scope denials - re-confirmed at HEAD 2026-10-16",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:57d60a438fa36d05",
           "evaluatedRevision": 6,
           "revisionsBehind": 0
