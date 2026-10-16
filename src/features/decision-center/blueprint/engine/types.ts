@@ -11,7 +11,10 @@ export interface EngineWords {
   notDrawn: string;
   /** A lens verdict word, sentence case. */
   verdict(h: Health): string;
+  /** "Features: n" (the panels' form). */
   features(n: number): string;
+  /** "n features" (bp's stats-line form, on the canvas). */
+  featuresN(n: number): string;
   live(n: number): string;
   building(n: number): string;
   partlyOpen(n: number): string;
@@ -19,6 +22,8 @@ export interface EngineWords {
   demolish(n: number): string;
   good(n: number): string;
   watch(n: number): string;
+  /** "n to watch" (a lens's place aggregate). */
+  toWatch(n: number): string;
   bad(n: number): string;
   unmeasured(n: number): string;
   inTrouble(n: number): string;
@@ -27,6 +32,12 @@ export interface EngineWords {
   newestWork: string;
   chronology: string;
   canvasLabel: string;
+  /** A number in the app's language. */
+  num(n: number): string;
+  /** A percentage (0-100) in the app's language. */
+  pct(n: number): string;
+  /** A boolean evidence field that is false: "No <label>". */
+  fieldNo(label: string): string;
 }
 
 /** The current item: the fixture the eye was sent to, and the proposal that sent it. */

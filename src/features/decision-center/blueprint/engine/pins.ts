@@ -1,56 +1,78 @@
-// Pins (PORTED from bp src/engine/render/dynamic.ts drawPins, via the prototype): one pennant per room on the site
-// and wing plans, one per item on a fixture; waiting work flies amber (red when risk is high), approved-not-built
-// work flies mint. Plus the focus ring: the current item's fixture, always where the eye was sent.
+// The dynamic layer under the flags (PORTED from bp src/engine/render/dynamic.ts drawPins / drawOverlays selBox
+// and hover / drawFocus, at u = 1), drawn at the live camera every frame: one RFI pennant per room on the site and
+// wing plans and one per item on a fixture (bp's decisions are this sheet's waiting work: proposed flies amber, red
+// at high risk; approved-not-built flies mint), the hover outline, the selection's dashed box in the lens accent,
+// and the current item's amber pulse.
+// EDIT (port): bp's agents, pulses, heat, conduits, breaches, previews and releases are driven by its simulation
+// (scans.ts, simwatch.ts); the snapshot carries none of that, so they are not brought.
 import type { Engine } from './Engine';
 import { glyphPin } from './glyphs';
+import { featRect } from './plan';
+import { onView, rs, type SRect, type View } from './view';
 
 /** Items at or above this risk (the store's 1-10) fly the high pennant. */
 const HIGH_RISK = 4;
+const sr: SRect = { x: 0, y: 0, w: 0, h: 0 };
+const phase = (e: Engine, t: number) => (e.cam.reduced() ? 0 : t % 1);
 
-export function drawPins(e: Engine, ctx: CanvasRenderingContext2D, now: number): void {
-  const { th, cam } = e, lod = cam.lod(), pf = e.tx.f(12, 600, true), m = e.mixS;
+export function drawPins(e: Engine, ctx: CanvasRenderingContext2D, v: View, lod: number, now: number): void {
+  const th = e.th, pf = e.tx.f(12, 600, true), m = e.mixS;
   if (lod < 0.995) {
-    ctx.save(); ctx.globalAlpha = 1 - lod;
+    ctx.save();
     for (const R of e.plan.L.rooms) {
-      let n = 0, emph = 0, ok = 0;
+      let n = 0, emph = 0, hi = false, ok = 0;
       for (const f of R.feats) for (const p of e.waitingOf(f)) {
-        if (p.status === 'proposed') { n++; if (m.p(p.lens)) emph++; } else ok++;
+        if (p.status !== 'proposed') { ok++; continue; }
+        n++;
+        if (m.p(p.lens)) { emph++; if ((p.risk ?? 0) >= HIGH_RISK) hi = true; }
       }
       if (!n && !ok) continue;
-      const r = cam.rs(R);
-      if (!e.onView(r, 30)) continue;
-      glyphPin(ctx, th, r.x + r.w - 22, r.y + 32, n ? 'med' : 'ok', emph > 0 || (!n && ok > 0), 0.9, m.top ? emph : n, 0, pf);
+      const r = rs(v, R, sr); if (!onView(v, r, 30)) continue;
+      ctx.globalAlpha = 1 - lod;
+      glyphPin(ctx, th, r.x + r.w - 18, r.y + 32, !n ? 'ok' : hi ? 'high' : emph ? 'med' : 'low', n ? emph > 0 : true, 0.9, n || ok, 0, pf);
     }
     ctx.restore();
   }
   if (lod > 0.005) {
     ctx.save(); ctx.globalAlpha = lod;
     for (const T of e.plan.L.tiles) {
-      const ws = e.waitingOf(T.f);
-      if (!ws.length) continue;
-      const r = cam.rs(T);
-      if (!e.onView(r, 20) || r.w < 40) continue;
+      const ws = e.waitingOf(T.f); if (!ws.length) continue;
+      const r = rs(v, T, sr); if (!onView(v, r, 20) || r.w < 40) continue;
       const max = Math.max(1, Math.floor((r.w - 30) / 18));
       ws.slice(0, max).forEach((p, j) => {
-        const cur = e.focus?.pid === p.id, ring = cur && !cam.reduced() ? (now / 1200) % 1 : 0;
-        glyphPin(ctx, th, r.x + r.w - 12 - j * 18, r.y + r.h - 5, p.status === 'approved' ? 'ok' : (p.risk ?? 0) >= HIGH_RISK ? 'high' : 'med', m.p(p.lens) === 1, 0.85, j === max - 1 && ws.length > max ? ws.length : 0, ring, pf);
+        const ring = e.focus?.pid === p.id ? phase(e, now / 1200) : 0;
+        const state = p.status === 'approved' ? 'ok' : (p.risk ?? 0) >= HIGH_RISK ? 'high' : 'med';
+        glyphPin(ctx, th, r.x + r.w - 12 - j * 18, r.y + r.h - 5, state, m.p(p.lens) === 1, 0.85, j === max - 1 && ws.length > max ? ws.length : 0, ring, pf);
       });
     }
     ctx.restore();
   }
 }
 
-export function drawFocus(e: Engine, ctx: CanvasRenderingContext2D, now: number): void {
-  if (!e.focus) return;
-  const r = e.featRect(e.focus.fid, e.cam.lod());
-  if (!r) return;
-  const th = e.th, p = e.cam.reduced() ? 0.5 : 0.5 + 0.5 * Math.sin(now / 320);
-  ctx.save(); ctx.strokeStyle = th.focus; ctx.lineWidth = 2.5; ctx.globalAlpha = 0.95;
-  ctx.strokeRect(r.x - 5, r.y - 5, r.w + 10, r.h + 10);
-  ctx.globalAlpha = 0.35 * p; ctx.lineWidth = 7; ctx.strokeRect(r.x - 9, r.y - 9, r.w + 18, r.h + 18);
-  ctx.restore();
-  if (e.hot) {
-    const hr = e.featRect(e.hot, e.cam.lod());
-    if (hr) { ctx.strokeStyle = th.inkHi; ctx.lineWidth = 1.5; ctx.strokeRect(hr.x - 2.5, hr.y - 2.5, hr.w + 5, hr.h + 5); }
+/** Hover and selection (bp drawOverlays): the hovered fixture in ink-hi, the selected one in a dashed box in the lens accent. */
+export function drawOverlays(e: Engine, ctx: CanvasRenderingContext2D, v: View, lod: number, now: number): void {
+  const th = e.th, sel = e.focus?.fid;
+  if (sel && e.plan.L.TILE[sel]) {
+    const r = featRect(e, v, sel, lod, sr);
+    if (r) {
+      const pad = Math.min(14, Math.max(5, r.w * 0.12));
+      ctx.save(); ctx.strokeStyle = e.accentOf(e.mixS.top); ctx.lineWidth = 1.8; ctx.setLineDash([5, 4]);
+      ctx.lineDashOffset = e.cam.reduced() ? 0 : -((now / 40) % 1000) * 0.6;
+      ctx.strokeRect(r.x - pad, r.y - pad, r.w + pad * 2, r.h + pad * 2); ctx.restore();
+    }
   }
+  if (e.hot && e.plan.L.TILE[e.hot]) {
+    const r = featRect(e, v, e.hot, lod, sr);
+    if (r) { ctx.strokeStyle = th.inkHi; ctx.lineWidth = 2.5; ctx.strokeRect(r.x, r.y, r.w, r.h); }
+  }
+}
+
+/** The current item (bp drawFocus over an open decision): an amber ring pulsing out from the fixture's centre. */
+export function drawFocus(e: Engine, ctx: CanvasRenderingContext2D, v: View, lod: number, now: number): void {
+  const F = e.focus;
+  if (!F || !F.pid) return;
+  const fr = featRect(e, v, F.fid, lod, sr); if (!fr) return;
+  const cx = fr.x + fr.w / 2, cy = fr.y + fr.h / 2, pu = phase(e, now / 1100);
+  ctx.save(); ctx.strokeStyle = e.th.amber; ctx.globalAlpha = 1 - pu; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.arc(cx, cy, 12 + pu * 26, 0, 6.2832); ctx.stroke(); ctx.restore();
 }

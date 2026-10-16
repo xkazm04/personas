@@ -2,6 +2,7 @@
 // own subset as `EngineWords` (it never reads a translation itself), and the panels take the rest through `B`.
 import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { formatCount, formatPercent } from '@/lib/utils/formatters';
 import type { Health, Stage } from '../standard/types';
 import type { EngineWords } from '../engine/types';
 
@@ -27,12 +28,13 @@ const VERDICT_KEY = {
 export const stageWord = (B: BpText, s: Stage): string => B[STAGE_KEY[s]];
 export const verdictWord = (B: BpText, h: Health): string => B[VERDICT_KEY[h]];
 
-export function useEngineWords({ B, tx }: BlueprintText): EngineWords {
+export function useEngineWords({ B, tx, language }: BlueprintText): EngineWords {
   return useMemo<EngineWords>(() => ({
     stage: (s) => stageWord(B, s),
     notDrawn: B.not_drawn,
     verdict: (h) => verdictWord(B, h),
     features: (n) => tx(B.count_features, { count: n }),
+    featuresN: (n) => tx(B.canvas_features, { count: n }),
     live: (n) => tx(B.count_live, { count: n }),
     building: (n) => tx(B.count_building, { count: n }),
     partlyOpen: (n) => tx(B.count_partly_open, { count: n }),
@@ -40,6 +42,7 @@ export function useEngineWords({ B, tx }: BlueprintText): EngineWords {
     demolish: (n) => tx(B.count_demolish, { count: n }),
     good: (n) => tx(B.count_good, { count: n }),
     watch: (n) => tx(B.count_watch, { count: n }),
+    toWatch: (n) => tx(B.canvas_to_watch, { count: n }),
     bad: (n) => tx(B.count_bad, { count: n }),
     unmeasured: (n) => tx(B.count_unmeasured, { count: n }),
     inTrouble: (n) => tx(B.count_in_trouble, { count: n }),
@@ -48,5 +51,8 @@ export function useEngineWords({ B, tx }: BlueprintText): EngineWords {
     newestWork: B.chrono_newest,
     chronology: B.chrono_rule,
     canvasLabel: B.canvas_label,
-  }), [B, tx]);
+    num: (n) => formatCount(n, { language }),
+    pct: (n) => formatPercent(n, { language, precision: 0 }),
+    fieldNo: (label) => tx(B.canvas_field_no, { label }),
+  }), [B, tx, language]);
 }

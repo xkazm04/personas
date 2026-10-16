@@ -1,131 +1,179 @@
-// Fixtures and ribbons (PORTED from bp src/engine/render/plan.ts paintTile / ribbon + flags' health marks, via the
-// prototype): a feature as a fixture tile at room level and deeper, as a ribbon segment above it. Stage is the
-// fill and stroke, health the cloud or tick, the General strip one lens glyph per lens in the colour of its verdict.
+// Fixtures and ribbon segments (PORTED from bp src/engine/render/plan.ts makeGeom / healthMarks / lensVerdict /
+// paintTile / ribSeg, near verbatim at u = 1): a feature's stage fill and stroke (ink only), its trouble cloud or
+// watch tick, the delta triangle when its stage moved in the last week, the lens marks, the "?" over the unmeasured,
+// and at fixture scale its code, evidence line, name (doubling at L3) and trouble stamp.
+// EDIT (port): bp's blast-radius and GA filters and its swarm chips are not brought (no such modes here); the
+// sheet's drawing is always "now", so the time-travel branches fold away.
 import type { Feature } from '../standard/load';
 import type { TileNode } from '../model/layout';
+import { dnum } from '../model/layout';
 import { clamp, smooth } from './camera';
 import type { Engine } from './Engine';
-import { cloud, glyph, stageFill, stageStroke } from './glyphs';
+import { cloud, stageFill, stageStroke } from './glyphs';
+import { composeGeneral, expandedRect, lensContent, lensMarks, type MarkArgs, type Rect, type TileGeom } from './lens';
+import { unknownFill } from './patterns';
 import { drawText } from './text';
+import { sxv, syv, type View } from './view';
 
-type H = Feature['health'];
+/** bp's default delta window (UI state `delta: 7`): a stage change this many days before the as-of date flies a triangle. */
+const DELTA_DAYS = 7;
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-export function healthMarks(e: Engine, ctx: CanvasRenderingContext2D, h: H, x: number, y: number, w: number, hh: number, compact: boolean): void {
-  const th = e.th;
+const GEO: TileGeom = { x: 0, y: 0, w: 0, h: 0, form: 'tile', u: 1, k: 1, strip: { x: 0, y: 0, w: 0, h: 0 }, body: { x: 0, y: 0, w: 0, h: 0 }, text: false };
+function makeGeom(x: number, y: number, w: number, h: number, form: 'ribbon' | 'tile', k: number): TileGeom {
+  const u = 1, g = GEO, s = g.strip, b = g.body;
+  g.x = x; g.y = y; g.w = w; g.h = h; g.form = form; g.u = u; g.k = k;
+  g.text = form === 'tile' && w >= 100 * u && h >= 44 * u;
+  if (form === 'tile') { s.x = x + 6 * u; s.y = y + 3 * u; s.w = w - 12 * u; s.h = clamp(h * 0.07, 3 * u, 6 * u); b.x = x + 3 * u; b.y = y + 3 * u; b.w = w - 6 * u; b.h = h - 6 * u; }
+  else { s.x = x; s.y = y; s.w = w; s.h = Math.min(3 * u, h * 0.2); b.x = x + 1; b.y = y + 1; b.w = Math.max(0, w - 2); b.h = Math.max(0, h - 2); }
+  return g;
+}
+
+/** bp aggregates.ts deltaWin: did the feature's stage move within the window that ends on the as-of date? */
+export function deltaWin(f: Feature, asOf: string): boolean {
+  const t = dnum(asOf), from = t - DELTA_DAYS;
+  for (let i = f.revs.length - 1; i >= 0; i--) { const d = dnum(f.revs[i]!.date); if (d > from && d <= t) return true; }
+  return false;
+}
+
+export function healthMarks(e: Engine, ctx: CanvasRenderingContext2D, h: string, x: number, y: number, w: number, hh: number, compact: boolean, a: number): void {
+  const th = e.th, ga = ctx.globalAlpha;
+  ctx.globalAlpha = ga * a;
   if (compact) {
     if (h === 'bad') { ctx.fillStyle = th.red; ctx.fillRect(x, y - 3, w, 3); }
     else if (h === 'watch') { ctx.fillStyle = th.amber; ctx.fillRect(x, y - 3, w, 2); }
   } else if (h === 'bad') {
     ctx.strokeStyle = th.red; ctx.lineWidth = w < 40 ? 1.3 : 1.8; ctx.lineJoin = 'round';
-    const r = clamp(w / 14, 2.4, 6);
-    cloud(ctx, x - r * 0.8, y - r * 0.8, w + r * 1.6, hh + r * 1.6, r); ctx.stroke();
+    const r = clamp(w / 14, 2.4, 6); cloud(ctx, x - r * 0.8, y - r * 0.8, w + r * 1.6, hh + r * 1.6, r); ctx.stroke();
   } else if (h === 'watch' && w >= 22) {
     ctx.strokeStyle = th.amber; ctx.lineWidth = 2; ctx.lineCap = 'round';
-    const tx = x + w - 12;
-    ctx.beginPath(); ctx.moveTo(tx, y - 2); ctx.lineTo(tx + 4, y - 7); ctx.moveTo(tx + 5, y - 2); ctx.lineTo(tx + 9, y - 7); ctx.stroke(); ctx.lineCap = 'butt';
+    const tx = x + w - 12; ctx.beginPath(); ctx.moveTo(tx, y - 2); ctx.lineTo(tx + 4, y - 7); ctx.moveTo(tx + 5, y - 2); ctx.lineTo(tx + 9, y - 7); ctx.stroke(); ctx.lineCap = 'butt';
   }
+  ctx.globalAlpha = ga;
 }
 
-/** How a feature reads under the current sheet: faded when the lens does not apply, hatched with `?` when unmeasured. */
-export function verdict(e: Engine, f: Feature): { fade: number; unk: 0 | 1 } {
+/** What the lens in view says about the feature as a whole: `na` fades the tile; unmeasured lays the "?" (returned as `unk`). */
+export function lensVerdict(e: Engine, f: Feature): { fade: number; unk: number } {
   const top = e.mixS.top;
   let measured = false, unknown = false;
   for (const l of e.plan.lenses) {
     if (measured) break;
-    const h = f.lens[l.id]?.h;
+    const h = f.lens[l.id]?.h ?? 'unmeasured';
     if (h === 'unmeasured') unknown = true; else if (h !== 'na') measured = true;
   }
-  const hl = top ? f.lens[top]?.h : null;
-  return { fade: hl === 'na' ? 0.35 : 1, unk: (!measured && unknown && !top) || hl === 'unmeasured' ? 1 : 0 };
+  const hl = top ? f.lens[top]?.h ?? 'unmeasured' : null;
+  return { fade: hl === 'na' ? 0.35 : 1, unk: top ? (hl === 'unmeasured' ? 1 : 0) : !measured && unknown ? 1 : 0 };
 }
 
-/** General's strip: one slot per lens across the top edge, its glyph in the colour of its verdict. */
-function strip(e: Engine, ctx: CanvasRenderingContext2D, f: Feature, x: number, y: number, w: number, h: number, a: number): void {
-  const th = e.th, ls = e.plan.lenses, n = ls.length, sw = (w - 12) / n, gs = clamp(Math.min(sw * 0.55, h * 0.13), 5, 10), top = e.mixS.top;
-  for (let i = 0; i < n; i++) {
-    const l = ls[i]!, v = f.lens[l.id]?.h ?? 'unmeasured', cx = x + 6 + sw * (i + 0.5);
-    const col = v === 'bad' ? th.red : v === 'watch' ? th.amber : v === 'good' ? th.inkA(0.9) : th.inkA(0.42);
-    ctx.globalAlpha = a * (top && top !== l.id ? 0.35 : 1) * (v === 'na' ? 0.6 : 1);
-    glyph(ctx, l.glyph, cx - gs / 2, y + 3.5, gs, col, 1.4);
-    if (v === 'good') { ctx.fillStyle = col; ctx.fillRect(cx - gs / 2, y + 3.5 + gs + 2, gs, 1.2); }
+const SLOT: Rect = { x: 0, y: 0, w: 0, h: 0 }, EXP: Rect = { x: 0, y: 0, w: 0, h: 0 }, BLEND: Rect = { x: 0, y: 0, w: 0, h: 0 };
+/** Every lens present in the mix, on one tile or ribbon segment (bp plan.ts lensMarks). */
+function marks(e: Engine, ctx: CanvasRenderingContext2D, g: TileGeom, f: Feature): void {
+  const ls = e.plan.lenses, ga = ctx.globalAlpha, live = e.live(f), m = e.mixS;
+  for (let i = 0; i < ls.length; i++) {
+    const d = ls[i]!, p = m.p(d.id);
+    if (p <= 0.004) continue;
+    const x = m.x(d.id), slot = composeGeneral(g, ls.length, i, SLOT), exp = expandedRect(g, EXP);
+    let r: Rect, w: number;
+    if (slot) { r = BLEND; r.x = lerp(slot.x, exp.x, x); r.y = lerp(slot.y, exp.y, x); r.w = lerp(slot.w, exp.w, x); r.h = lerp(slot.h, exp.h, x); w = p; }
+    else { if (x <= 0.004) continue; r = exp; w = p * x; }
+    if (r.w < 1 || r.h < 1) continue;
+    const a: MarkArgs = { ctx, th: e.th, tile: g, f, d, slot, r, w, x, live };
+    ctx.save(); lensMarks(a); ctx.restore();
+    ctx.globalAlpha = ga;
   }
-  ctx.globalAlpha = a;
 }
 
-/** The value a lens sheet prints on a tile: "<measure label> <value>", else the verdict word. */
-function lensWord(e: Engine, f: Feature, lensId: string): string {
-  const L = e.plan.LENS[lensId], fl = f.lens[lensId];
-  const m = L?.measures, val = m && fl ? fl.v[m.key] : undefined;
-  if (m && val !== undefined) return `${m.label.toUpperCase()} ${val}${m.type === 'percent' ? '%' : ''}`;
-  return e.words.verdict(fl?.h ?? 'unmeasured').toUpperCase();
+function deltaMark(e: Engine, ctx: CanvasRenderingContext2D, xw: number, y: number, ds: number): void {
+  ctx.fillStyle = e.th.delta; ctx.beginPath();
+  ctx.moveTo(xw + 1, y - ds * 1.2); ctx.lineTo(xw + 1 + ds * 0.7, y + ds * 0.3); ctx.lineTo(xw + 1 - ds * 0.7, y + ds * 0.3); ctx.closePath(); ctx.fill();
 }
 
-export function paintTile(e: Engine, ctx: CanvasRenderingContext2D, T: TileNode, alphaMul: number): void {
-  const f = T.f, th = e.th, k = e.cam.k, tx = e.tx, cam = e.cam;
-  const x = cam.sx(T.x), y = cam.sy(T.y), w = T.w * k, h = T.h * k;
-  if (x > cam.FW + 10 || y > cam.FH + 10 || x + w < -10 || y + h < -10) return;
-  const st = f.stage, vd = verdict(e, f);
-  const a = alphaMul * vd.fade;
+export function ribSeg(e: Engine, ctx: CanvasRenderingContext2D, f: Feature, x: number, y: number, w: number, h: number, a0: number, k: number): void {
+  const th = e.th, st = f.stage, vd = st ? lensVerdict(e, f) : { fade: 1, unk: 0 }, aa = a0 * vd.fade;
+  if (aa <= 0.01) return;
+  ctx.globalAlpha = aa;
+  ctx.fillStyle = th.tileBase; ctx.fillRect(x, y, w, h);
+  const Lv = e.live(f);
+  stageFill(ctx, th, st, x, y, w, h, Lv.rolloutPct, Lv.progressPct);
+  if (!st || st === 'specified' || st === 'idea') { stageStroke(ctx, th, st, aa, 1); ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); ctx.setLineDash([]); ctx.globalAlpha = aa; }
+  if (st) healthMarks(e, ctx, e.mixS.top ? f.lens[e.mixS.top]?.h ?? 'unmeasured' : f.health, x, y, w, h, true, 1);
+  if (st && deltaWin(f, e.plan.S.asOf)) deltaMark(e, ctx, x + w * 0.9, y, clamp((w * 0.9) / 9, 4, 8));
+  const g = makeGeom(x, y, w, h, 'ribbon', k);
+  marks(e, ctx, g, f);
+  ctx.globalAlpha = aa;
+  if (vd.unk > 0.004) unknownFill(ctx, th, g.body.x, g.body.y, g.body.w, g.body.h, 1, aa * Math.min(1, vd.unk));
+  ctx.globalAlpha = 1;
+}
+
+/** General's stamp when a feature is in trouble (bad): the worst lens's reason with "+N", then shorter forms. */
+function stampOf(e: Engine, f: Feature, maxW: number, font: string): string | null {
+  const t = f.trouble;
+  if (!t.length || t[0]!.h !== 'bad') return null;
+  const t0 = t[0]!, more = t.length > 1 ? ' +' + (t.length - 1) : '', sh = t0.short ? [t0.short + more, t0.short] : [];
+  return fitStamp(e, [t0.why + more, t0.why, ...sh], (e.plan.LENS[t0.lens]?.name ?? t0.lens) + more, maxW, font);
+}
+/** The first candidate that fits, else the last cut at a word with an ellipsis (2+ words), else `last`. */
+function fitStamp(e: Engine, cands: readonly string[], last: string | null, maxW: number, font: string): string | null {
+  for (const c of cands) { const s = e.tx.fit([c], maxW, font); if (s) return s; }
+  const words = (cands[cands.length - 1] ?? '').split(' ');
+  for (let n = words.length - 1; n >= 2; n--) { const s = e.tx.fit([words.slice(0, n).join(' ').replace(/[,;:]$/, '') + '…'], maxW, font); if (s) return s; }
+  return last ? e.tx.fit([last], maxW, font) : null;
+}
+
+export function paintTile(e: Engine, ctx: CanvasRenderingContext2D, v: View, T: TileNode, alphaMul: number): void {
+  const f = T.f, th = e.th, k = v.k, x = sxv(v, T.x), y = syv(v, T.y), w = T.w * k, h = T.h * k;
+  if (x > v.c1x + 10 || y > v.c1y + 10 || x + w < v.c0x - 10 || y + h < v.c0y - 10) return;
+  const st = f.stage, vd = st ? lensVerdict(e, f) : { fade: 1, unk: 0 }, a = alphaMul * vd.fade;
   if (a <= 0.01) return;
   ctx.globalAlpha = a;
-  const rr = Math.min(th.radius * k * 1.5, 7);
-  ctx.save(); ctx.beginPath(); ctx.roundRect(x, y, w, h, rr); ctx.clip();
+  const g = makeGeom(x, y, w, h, 'tile', k), Lv = e.live(f);
   ctx.fillStyle = th.tileBase; ctx.fillRect(x, y, w, h);
-  stageFill(ctx, th, st, x, y, w, h);
-  if (st === 'live' && h > 20) { ctx.fillStyle = th.alpha(th.live, 0.85); ctx.fillRect(x, y + h - Math.max(2, 3 * k), w, Math.max(2, 3 * k)); }
-  ctx.restore();
-  stageStroke(ctx, th, st, a, w < 30 ? 1 : 1.5); ctx.beginPath(); ctx.roundRect(x + 0.5, y + 0.5, w - 1, h - 1, rr); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = a;
-  const m = e.mixS, hl = m.top ? f.lens[m.top]?.h ?? 'unmeasured' : f.health;
-  healthMarks(e, ctx, hl, x, y, w, h, false);
-  if (w >= 60) strip(e, ctx, f, x, y, w, h, a);
-  if (vd.unk) { const q = th.pattern('q', 30, th.inkA(1), 1); if (q) { ctx.globalAlpha = a * 0.16; ctx.fillStyle = q; ctx.fillRect(x + 3, y + 3, w - 6, h - 6); ctx.globalAlpha = a; } }
+  stageFill(ctx, th, st, x, y, w, h, Lv.rolloutPct, Lv.progressPct);
+  stageStroke(ctx, th, st, a, w < 30 ? 1 : 1.5); ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  ctx.setLineDash([]); ctx.globalAlpha = a;
+  const top = e.mixS.top;
+  if (st) healthMarks(e, ctx, top ? f.lens[top]?.h ?? 'unmeasured' : f.health, x, y, w, h, false, 1);
+  if (st && deltaWin(f, e.plan.S.asOf)) deltaMark(e, ctx, x + w, y, clamp(w / 9, 4, 8));
+  marks(e, ctx, g, f);
+  ctx.globalAlpha = a;
+  if (vd.unk > 0.004) unknownFill(ctx, th, g.body.x, g.body.y, g.body.w, g.body.h, 1, a * Math.min(1, vd.unk));
+  ctx.textBaseline = 'alphabetic';
   e.budget.of++;
-  if (!(w >= 100 && h >= 44)) { ctx.globalAlpha = 1; return; }
+  if (!g.text) { ctx.globalAlpha = 1; return; }
   e.budget.names++;
-  const ta = a * clamp((w - 100) / 14, 0, 1) * clamp((h - 44) / 8, 0, 1);
-  const bigA = clamp((w - 150) / 16, 0, 1) * clamp((h - 64) / 8, 0, 1) >= 0.5;
-  const hy = y + 3 + clamp(h * 0.07, 3, 6) + 12 + 8;
-  ctx.globalAlpha = ta;
-  if (bigA) {
-    const mono = tx.f(12, 500, true), word = st ? e.words.stage(st).toUpperCase() : e.words.notDrawn.toUpperCase();
-    ctx.textAlign = 'right';
-    const ev = tx.fit([m.top ? lensWord(e, f, m.top) : word], w - 14, mono);
-    if (ev) drawText(ctx, ev, x + w - 7, hy, mono, m.top ? e.accentOf(m.top) : th.ink);
-    ctx.textAlign = 'left';
-    let stamp: string | null = null;
-    if (m.top) { const lv = f.lens[m.top]; if (lv && (lv.h === 'bad' || lv.h === 'watch')) stamp = lv.short || lv.why; }
-    else if (f.trouble[0]?.h === 'bad') stamp = (f.trouble[0].short || f.trouble[0].why) + (f.trouble.length > 1 ? ' +' + (f.trouble.length - 1) : '');
-    const l3 = smooth(0.78, 0.94, k / cam.fitKOf(T.bay));
-    const roomH = h - (hy - y) - 8 - (stamp ? 20 : 6);
-    let lh = 0, nf = '', lines: string[] | null = null;
-    for (let ns = Math.round(2 * clamp(13.5 + (w - 150) / 60, 14, 17) * (1 + l3)) / 2; ns >= 14; ns -= 2) {
-      lh = ns * 1.16; nf = tx.f(ns, 500); lines = tx.wrap(f.name, w - 14, nf, Math.max(1, Math.floor(roomH / lh)));
-      if (lines) break;
-    }
-    if (!lines) { nf = tx.f(14, 500); lh = 16.2; lines = tx.wrap(f.name, w - 14, nf, Math.max(1, Math.floor(roomH / lh))) || [f.name]; }
-    lines.forEach((ln, i) => drawText(ctx, ln, x + 7, hy + 6 + lh * (i + 0.82), nf, th.inkHi));
-    if (stamp) {
-      const sf = tx.f(13, 600), s = tx.fit([stamp], w - 40, sf) || tx.fit([stamp.split(' ').slice(0, 4).join(' ') + '…'], w - 40, sf);
-      if (s) drawText(ctx, s, x + 7, y + h - 7, sf, th.red2, th.halo);
-    }
-  } else {
-    const nf2 = tx.f(13, 500), l2 = 15, lines2 = tx.wrap(f.name, w - 12, nf2, Math.max(1, Math.floor((h - 12 - (hy - y - 12)) / l2)));
-    if (lines2) {
-      const top2 = hy - 12 + (h - (hy - y - 12) - lines2.length * l2) / 2;
-      lines2.forEach((ln, j) => drawText(ctx, ln, x + 6, top2 + l2 * (j + 0.78), nf2, th.inkHi));
-    }
-  }
+  paintWords(e, ctx, T, g, a);
   ctx.globalAlpha = 1;
 }
 
-export function ribSeg(e: Engine, ctx: CanvasRenderingContext2D, f: Feature, x: number, y: number, w: number, h: number, a0: number): void {
-  const th = e.th, st = f.stage, vd = verdict(e, f), aa = a0 * vd.fade;
-  if (aa <= 0.01) return;
-  ctx.globalAlpha = aa; ctx.fillStyle = th.tileBase; ctx.fillRect(x, y, w, h);
-  stageFill(ctx, th, st, x, y, w, h);
-  if (!st || st === 'specified' || st === 'idea') { stageStroke(ctx, th, st, aa, 1); ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); ctx.setLineDash([]); ctx.globalAlpha = aa; }
-  const m = e.mixS;
-  healthMarks(e, ctx, m.top ? f.lens[m.top]?.h ?? 'unmeasured' : f.health, x, y, w, h, true);
-  if (vd.unk && w > 10) { ctx.globalAlpha = aa * 0.34; ctx.fillStyle = th.ink; ctx.font = `600 12px ${th.sans}`; ctx.textAlign = 'center'; ctx.fillText('?', x + w / 2, y + h / 2 + 4); ctx.textAlign = 'left'; }
-  ctx.globalAlpha = 1;
+/** A fixture's words: code and evidence line, the name (twice its plan size at L3) and the trouble stamp. */
+function paintWords(e: Engine, ctx: CanvasRenderingContext2D, T: TileNode, g: TileGeom, a: number): void {
+  const { x, y, w, h, k } = g, f = T.f, th = e.th, tx = e.tx, top = e.mixS.top, W = e.words, st = f.stage;
+  const ta = a * clamp((w - 100) / 14, 0, 1) * clamp((h - 44) / 8, 0, 1);
+  const bigA = clamp((w - 150) / 16, 0, 1) * clamp((h - 64) / 8, 0, 1) >= 0.5;
+  if (ta <= 0.004) return;
+  const hy = g.strip.y + g.strip.h + 12;
+  ctx.globalAlpha = ta;
+  if (!bigA) {
+    const nf2 = tx.f(13, 500), l2 = 15, lines2 = tx.wrap(f.name, w - 12, nf2, Math.max(1, Math.floor((h - 8 - (hy - y - 12)) / l2)));
+    if (lines2) { const t2 = hy - 12 + (h - (hy - y - 12) - lines2.length * l2) / 2; lines2.forEach((l, i) => drawText(ctx, l, x + 6, t2 + l2 * (i + 0.78), nf2, th.inkHi)); }
+    return;
+  }
+  const mono = tx.f(12, 500, true), code = f.code, idw = code ? tx.w(code, mono) : -10, Lv = e.live(f);
+  const ev = !st ? [W.notDrawn.toUpperCase()] : st === 'flagged' && Lv.rolloutPct < 100 ? [W.stage(st).toUpperCase(), W.pct(Lv.rolloutPct)] : st === 'in-dev' ? [W.stage(st).toUpperCase(), W.pct(Math.round(Lv.progressPct))] : [W.stage(st).toUpperCase()];
+  const d = top ? e.plan.LENS[top] : undefined, lensC = d && st ? lensContent(W, d, f, Lv) : null;
+  const room = w - 16 - idw - 10, gFit = tx.fit(ev, room, mono), lFit = lensC ? tx.fit(lensC.parts, room, mono) : null;
+  const showId = !!code && !(lensC ? lFit == null : gFit == null), roomW = showId ? room : w - 14;
+  if (showId) drawText(ctx, code, x + 7, hy, mono, th.inkA(0.9));
+  ctx.textAlign = 'right';
+  const s = lensC ? (showId ? lFit : tx.fit(lensC.parts, roomW, mono)) : showId ? gFit : tx.fit(ev, roomW, mono);
+  if (s) drawText(ctx, s, x + w - 7, hy, mono, lensC ? e.accentOf(top) : th.ink);
+  ctx.textAlign = 'left';
+  const sf = tx.f(12.5, 600), stamp = lensC ? (lensC.stamp ? fitStamp(e, [lensC.stamp], null, w - 14, sf) : null) : st ? stampOf(e, f, w - 14, sf) : null;
+  // at L3 (the camera at the bay's fit) the title is twice its plan size; it steps back down 2 px at a time to fit
+  const l3 = smooth(0.78, 0.94, k / e.cam.fitKOf(T.bay)), roomH = h - (hy - y) - 8 - (stamp ? 20 : 6);
+  let ns = Math.round(2 * clamp(13.5 + (w - 150) / 60, 14, 17) * (1 + l3)) / 2, lh = 0, nf = '', lines: string[] | null = null;
+  for (; ns >= 14; ns -= 2) { lh = ns * 1.16; nf = tx.f(ns, 500); lines = tx.wrap(f.name, w - 14, nf, Math.max(1, Math.floor(roomH / lh))); if (lines) break; }
+  if (!lines) { nf = tx.f(14, 500); lh = 16.2; lines = tx.wrap(f.name, w - 14, nf, Math.max(1, Math.floor(roomH / lh))); }
+  if (lines) lines.forEach((l, i) => drawText(ctx, l, x + 7, hy + 6 + lh * (i + 0.82), nf, th.inkHi));
+  if (stamp) drawText(ctx, stamp, x + 7, y + h - 7, sf, th.red2, th.halo);
 }

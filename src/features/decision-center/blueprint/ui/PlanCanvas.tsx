@@ -85,7 +85,11 @@ export function PlanCanvas({ plan, work, words, lens, view, hooks, onEngine, des
     <div ref={frame} className="bp-frame">
       <Figure label={words.canvasLabel} desc={desc} height={h} className="bp-figure" testId="blueprint-figure">
         <div ref={host} className="bp-host">
+          {/* bp's ground: the paper under the canvas (which paints no paper of its own), the vignette and the double frame over it */}
+          <div className="bp-paper" aria-hidden="true" />
           <canvas ref={cv} className="bp-canvas" aria-hidden="true" tabIndex={-1} />
+          <div className="bp-vig" aria-hidden="true" />
+          <div className="bp-dframe" aria-hidden="true" />
         </div>
       </Figure>
     </div>

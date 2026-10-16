@@ -1,4 +1,4 @@
-// The drawing's marks (PORTED from bp src/engine/render/glyphs.ts and lens-glyph.ts, with the prototype's
+// The drawing's marks (PORTED from bp src/engine/render/glyphs.ts and lens-glyph.ts, with this sheet's
 // approved-not-built pennant): lens glyphs by NAME or by a custom 16x16 path, pennants, clouds, stage fills and
 // strokes, and the two bars (stage, health). Colour only through the theme.
 import type { GlyphName } from '../standard/types';
@@ -91,47 +91,57 @@ export function cloud(ctx: CanvasRenderingContext2D, x: number, y: number, w: nu
   ctx.closePath();
 }
 
-export type PinState = 'med' | 'high' | 'ok';
+export type PinState = 'high' | 'med' | 'low' | 'ok';
 
-/** A request for information pinned to its place: pole and pennant, optional count (bp glyphPin). State `ok`: an item approved here and not yet built flies a mint pennant with a check. */
+/**
+ * A request for information pinned to its place: pole and pennant, with an optional count bubble (bp glyphPin,
+ * verbatim but for `u` = 1). State `ok` is this sheet's own: an item approved here and not yet built flies a mint
+ * pennant with a check.
+ */
 export function glyphPin(ctx: CanvasRenderingContext2D, th: CanvasTheme, x: number, y: number, state: PinState, emph: boolean, s: number, count: number, ring: number, font: string): void {
   let col = state === 'ok' ? th.mint : state === 'high' ? th.red : th.amber, hgt = 19 * s, wd = 12 * s;
   if (!emph) { col = th.inkA(0.62); hgt *= 0.8; wd *= 0.8; }
+  const ga = ctx.globalAlpha;
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   if (ring) {
-    const ga = ctx.globalAlpha;
     ctx.strokeStyle = col; ctx.globalAlpha = ga * (1 - ring) * 0.9; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(x, y - hgt * 0.55, 10 + ring * 14, 0, TAU); ctx.stroke(); ctx.globalAlpha = ga;
   }
-  const flag = () => { ctx.beginPath(); ctx.moveTo(x, y - hgt); ctx.lineTo(x + wd, y - hgt * 0.74); ctx.lineTo(x, y - hgt * 0.48); ctx.closePath(); };
   ctx.strokeStyle = th.glyphEdge; ctx.lineWidth = 4;
   ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - hgt); ctx.stroke();
-  flag(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y - hgt); ctx.lineTo(x + wd, y - hgt * 0.74); ctx.lineTo(x, y - hgt * 0.48); ctx.closePath(); ctx.stroke();
   ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - hgt); ctx.stroke();
-  ctx.fillStyle = col; flag(); ctx.fill();
+  ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x, y - hgt); ctx.lineTo(x + wd, y - hgt * 0.74); ctx.lineTo(x, y - hgt * 0.48); ctx.closePath(); ctx.fill();
   if (state === 'ok' && emph) {
     ctx.strokeStyle = th.glyphEdge; ctx.lineWidth = 1.4;
     ctx.beginPath(); ctx.moveTo(x + 2, y - hgt * 0.75); ctx.lineTo(x + wd * 0.38, y - hgt * 0.6); ctx.lineTo(x + wd * 0.7, y - hgt * 0.92); ctx.stroke();
   }
   if (count > 0) {
-    const bx = x - 8, by = y - hgt + 4;
+    const bx = x - 8, by = y - hgt + 4, br = count > 99 ? 11 : 8.5;
     ctx.fillStyle = emph ? th.inkHi : th.inkA(0.85); ctx.strokeStyle = th.glyphEdge; ctx.lineWidth = 1.4;
-    ctx.beginPath(); ctx.arc(bx, by, count > 99 ? 11 : 8.5, 0, TAU); ctx.fill(); ctx.stroke();
-    ctx.textAlign = 'center'; ctx.font = font; ctx.fillStyle = th.paper; ctx.fillText(String(count), bx, by + 4.2); ctx.textAlign = 'left';
+    ctx.beginPath(); ctx.arc(bx, by, br, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.font = font; ctx.fillStyle = th.mode === 'dark' ? th.glyphEdge : th.paper; ctx.fillText(String(count), bx, by + 4.2); ctx.textAlign = 'left';
   }
   ctx.lineCap = 'butt';
 }
 
 type Stage = string | null;
 
-export function stageFill(ctx: CanvasRenderingContext2D, th: CanvasTheme, st: Stage, x: number, y: number, w: number, h: number): void {
-  if (st === 'live') { ctx.fillStyle = th.alpha(th.live, 0.16); ctx.fillRect(x, y, w, h); }
+/** The base fill of a tile: its lifecycle stage, ink only (bp glyphs.ts stageFill). The same in every lens. */
+export function stageFill(ctx: CanvasRenderingContext2D, th: CanvasTheme, st: Stage, x: number, y: number, w: number, h: number, rolloutPct: number, progressPct: number): void {
+  if (st === 'live') { ctx.fillStyle = th.inkA(0.22); ctx.fillRect(x, y, w, h); }
   else if (st === 'flagged') {
-    ctx.fillStyle = th.inkA(0.3); ctx.fillRect(x, y, w * 0.5, h);
-    ctx.strokeStyle = th.ink; ctx.lineWidth = 1; ctx.setLineDash([2, 2]); ctx.beginPath(); ctx.moveTo(x + w * 0.5, y); ctx.lineTo(x + w * 0.5, y + h); ctx.stroke(); ctx.setLineDash([]);
-  } else if (st === 'in-review') { const p = th.pattern('cross', 5, th.inkA(0.55), 0.8); if (p) { ctx.fillStyle = p; ctx.fillRect(x, y, w, h); } }
-  else if (st === 'in-dev') { const q = th.pattern('diag', 7, th.alpha(th.build, 0.6), 1); if (q) { ctx.fillStyle = q; ctx.fillRect(x, y, w, h); } }
-  else if (st === 'deprecated') { ctx.strokeStyle = th.alpha(th.dep, 0.8); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y + h); ctx.moveTo(x + w, y); ctx.lineTo(x, y + h); ctx.stroke(); }
+    const p = rolloutPct;
+    ctx.fillStyle = th.inkA(0.3); ctx.fillRect(x, y, (w * p) / 100, h);
+    ctx.strokeStyle = th.ink; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);
+    ctx.beginPath(); ctx.moveTo(x + (w * p) / 100, y); ctx.lineTo(x + (w * p) / 100, y + h); ctx.stroke(); ctx.setLineDash([]);
+  } else if (st === 'in-review') { const p = th.pattern({ kind: 'cross', size: 5, color: th.inkA(0.55), lw: 0.8 }); if (p) { ctx.fillStyle = p; ctx.fillRect(x, y, w, h); } }
+  else if (st === 'in-dev') {
+    const p = th.pattern({ kind: 'diag', size: 7, color: th.inkA(0.6), lw: 1 }); if (p) { ctx.fillStyle = p; ctx.fillRect(x, y, w, h); }
+    const bh = Math.max(2, Math.min(5, h * 0.07)); ctx.fillStyle = th.ink; ctx.fillRect(x, y + h - bh, (w * progressPct) / 100, bh);
+  } else if (st === 'deprecated') {
+    ctx.strokeStyle = th.inkA(0.8); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y + h); ctx.moveTo(x + w, y); ctx.lineTo(x, y + h); ctx.stroke();
+  }
 }
 
 export function stageStroke(ctx: CanvasRenderingContext2D, th: CanvasTheme, st: Stage, a: number, lw: number): void {
@@ -149,7 +159,7 @@ export function drawStageBar(ctx: CanvasRenderingContext2D, th: CanvasTheme, x: 
   for (const s of segs) {
     const sw = w * s[0] / tot;
     if (sw <= 0) continue;
-    if (s[1] == null) { ctx.fillStyle = th.inkA(0.12); ctx.fillRect(xx, y, sw, h); const p = th.pattern('diag', 7, th.inkA(0.6), 1); if (p) { ctx.fillStyle = p; ctx.fillRect(xx, y, sw, h); } }
+    if (s[1] == null) { ctx.fillStyle = th.inkA(0.12); ctx.fillRect(xx, y, sw, h); const p = th.pattern({ kind: 'diag', size: 7, color: th.inkA(0.6), lw: 1 }); if (p) { ctx.fillStyle = p; ctx.fillRect(xx, y, sw, h); } }
     else { ctx.fillStyle = s[1]; ctx.fillRect(xx, y, sw, h); }
     xx += sw;
   }

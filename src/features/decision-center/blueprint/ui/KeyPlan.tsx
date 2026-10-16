@@ -12,11 +12,11 @@ export function KeyPlan() {
   const shown = lv.n >= 1 && !s.ui.sheet;
   useEffect(() => {
     if (!shown) return;
-    const draw = () => { if (cv.current && s.engine) drawKeyPlan(cv.current, s.plan.L, s.engine.th, s.engine.cam); };
+    const draw = () => { if (cv.current && s.engine) drawKeyPlan(cv.current, s.plan.L, s.engine.th, s.engine.cam, undefined, s.work); };
     const first = requestAnimationFrame(draw);
     const off = s.view.onFrame(draw);
     return () => { cancelAnimationFrame(first); off(); };
-  }, [shown, s.view, s.plan, s.engine]);
+  }, [shown, s.view, s.plan, s.engine, s.work]);
   if (!shown) return null;
   return (
     <div className="bp-kp" aria-hidden="true">
