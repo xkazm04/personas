@@ -1378,3 +1378,7 @@
 {"ts":"2026-10-16T17:41:19Z","bundle":"llm-observability","subjects":["judge-calibration-and-drift"],"techniques":["golden-set-agreement-measurement","reference-ladder"],"deviations":0}
 {"ts":"2026-10-16T17:43:43Z","bundle":"software-engineering","subjects":["agent-chaining"],"techniques":["handoff-figures-carry-their-population","chain-identity-and-rollup","stop-reason-ledgers","run-conditions","graph-to-wiring-translation","cycle-and-depth-guards"],"deviations":4}
 {"ts":"2026-10-16T17:44:08Z","bundle":"software-engineering","subjects":["background-jobs"],"techniques":["job-progress-and-cancellation","loop-supervision","timeout-is-a-status-not-a-consumption"],"deviations":1}
+{"ts":"2026-10-16T17:45:00Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":["language-registry-single-source","canonical-fallback-serving","canonical-and-derived-split","source-identical-value-audit","pseudo-localization-readiness","prompt-context-contract"],"deviations":3}
+{"ts":"2026-10-16T17:45:00Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:45:00Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:45:00Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":[],"deviations":0}

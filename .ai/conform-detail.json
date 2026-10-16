@@ -18509,72 +18509,87 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:34:37.368Z",
-      "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:45:00.000Z",
+      "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
       "techniques": [
         {
           "technique": "language-registry-single-source",
           "verdict": "deviation",
-          "evidence": "src/i18n/locales.manifest.ts:16 LocaleDescriptor specifies only code, nativeName, englishName, and dir, omitting engine tags and a single CI opt-in flag."
-        },
-        {
-          "technique": "pseudo-localization-readiness",
-          "verdict": "deviation",
-          "evidence": "src/i18n/pseudoLocale.ts:34 Pseudo-locale implements boundary brackets and accent replacements but completely lacks banded length correction and independent toggle knobs."
+          "evidence": "src/features/home/sub_welcome/LanguageSwitcher.tsx:16 and src/features/onboarding/components/AppearanceStep.tsx:13 declare their own language tables instead of deriving from LOCALES; per-language font config also sprawls into src/stores/i18nStore.ts:20 - the one-line-diff test fails (adding a locale touches 3+ files)"
         },
         {
           "technique": "canonical-fallback-serving",
           "verdict": "deviation",
-          "evidence": "src/i18n/useTranslation.ts:310 deepMergeSection splices English fallback strings at the individual missing leaf key level rather than falling back per whole unit."
+          "evidence": "src/features/onboarding/components/AppearanceStep.tsx:13 offers 11 of 14 served locales (published bn/id/vi work unreachable from that switcher); per-key fallback itself is realized by the deep-merge loader (src/features/home/sub_releases/i18n/useReleasesTranslation.ts:7)"
         },
         {
           "technique": "canonical-and-derived-split",
           "verdict": "deviation",
-          "evidence": "src/i18n/locales.manifest.ts:9 Translated locale catalogs are committed directly to main gated only by key parity without isolating unreviewed machine output in a derived store."
+          "evidence": ".claude/rules/i18n.md:164 makes medium-quality machine translation the committed bar for gap-fill; scripts/i18n/translate-merge.mjs gates only key and placeholder parity, so unreviewed subagent output lands in the reviewed catalog with no marker separating it"
         },
         {
           "technique": "source-identical-value-audit",
-          "verdict": "deviation",
-          "evidence": "src/i18n/DebtText.tsx:16 Key parity without value-level auditing allowed unreviewed source strings in the debt channel to sit 0% translated across locales behind a green gate."
+          "verdict": "realized",
+          "evidence": "scripts/i18n/check-untranslated.mjs:17 per-locale \"<lang>:<key>\" allowlist (with *: wildcard for locale-independent classes), gated at pre-commit by lefthook.yml:85"
+        },
+        {
+          "technique": "pseudo-localization-readiness",
+          "verdict": "realized",
+          "evidence": "src/i18n/pseudoLocale.ts:2 dev-only pseudo-locale synthesized from English with no engine"
+        },
+        {
+          "technique": "prompt-context-contract",
+          "verdict": "partial",
+          "evidence": "scripts/i18n/plan-gaps.mjs:60 attaches per-key translator notes to gap chunks; surface, glossary terms and placeholder map are still left to the subagent (per the registry's own personas application)"
         },
         {
           "technique": "non-translatable-value-classification",
           "verdict": "deviation",
-          "evidence": "src/i18n/pseudoLocale.ts:39 Pseudo-locale protects inline placeholder brackets but the runtime catalog architecture lacks the four-class exclusion vocabulary."
+          "evidence": "src/i18n/pseudoLocale.ts:39 Pseudo-locale protects inline placeholder brackets but the runtime catalog architecture lacks the four-class exclusion vocabulary.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "fuzzy-reuse-under-a-threshold",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/englishSections.ts:56 Frontend client bundle does not operate a translation memory or fuzzy matching reuse system."
+          "evidence": "src/i18n/englishSections.ts:56 Frontend client bundle does not operate a translation memory or fuzzy matching reuse system.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "hand-authored-exception-contract",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/locales.manifest.ts:32 The app UI catalog treats all locales uniformly with no separate hand-authored exception pages or baseline revision tracking."
-        },
-        {
-          "technique": "prompt-context-contract",
-          "verdict": "not-applicable",
-          "evidence": "src/i18n/routeSections.ts:25 Runtime route section loader manages client chunk prefetching, not machine-translation engine prompt contracts."
+          "evidence": "src/i18n/locales.manifest.ts:32 The app UI catalog treats all locales uniformly with no separate hand-authored exception pages or baseline revision tracking.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "serialization-transport-safety",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/tokenMaps.ts:35 Token resolution hook maps IPC status strings to catalog keys and does not handle batch MT transport serialization."
+          "evidence": "src/i18n/tokenMaps.ts:35 Token resolution hook maps IPC status strings to catalog keys and does not handle batch MT transport serialization.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "sharded-translation-ci",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/useTranslation.ts:42 Runtime lazy section loader is client-side code-splitting, not a sharded CI translation execution pipeline."
+          "evidence": "src/i18n/useTranslation.ts:42 Runtime lazy section loader is client-side code-splitting, not a sharded CI translation execution pipeline.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "source-hash-translation-cache",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/en.ts:75 The en Proxy is a backward-compatibility synchronous shim rather than a source-hash translation cache."
+          "evidence": "src/i18n/en.ts:75 The en Proxy is a backward-compatibility synchronous shim rather than a source-hash translation cache.",
+          "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "The standard expects either a derived-and-served pipeline for document corpora or a reviewed-and-committed string catalog. Clarify the standard's fallback rules for desktop/client-side applications: in client runtimes with async section chunks, key-level fallback via deep-merge is used to prevent blank UI controls, which directly conflicts with the strict whole-unit fallback prohibition ('never splice')."
+      "registryProposal": "canonical-and-derived-split names this desktop app as committing catalogs because every string went through the review wave first; its gap-fill path (.claude/rules/i18n.md:164, translate-extract -> Sonnet subagent -> translate-merge) has no review wave, so the technique's cited example is only half-true. Correct the sighting, and consider whether a bundled offline app needs a sanctioned third shape: machine output committed but provenance-marked per key. Separately: home-welcome (src/features/home/sub_welcome/LanguageSwitcher.tsx) and onboarding-components (src/features/onboarding/components/AppearanceStep.tsx) hold the two shadow language lists but carry no translation-pipeline-topology pair; the matcher missed them because they use switcher/picker vocabulary, not translation/pipeline.",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/i18n/locales.manifest.ts:16 The central locale descriptor omits machine-translation engine tags and single CI opt-in flags, violating the single-source registry contract and exposing all locales directly to the UI switcher.",
+          "evaluatedAt": "2026-10-12T18:34:37.368Z",
+          "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+          "reason": "replaced by 19b298ea-84af-4d34-9283-f671997cccf4"
+        }
+      ]
     },
     "1ffb5765-de47-4f01-87ec-06732a63522c/translation-pipeline-topology": {
       "context": "i18n-generated",
@@ -24711,6 +24726,36 @@
         }
       ],
       "registryProposal": "Matcher resonance on the word 'confidence': a lexical-retrieval gate named 'confidence' is a heuristic match-strength threshold, not generator uncertainty. Repo-wide, no logprob/top_logprobs/self-consistency/semantic-entropy code exists in src or src-tauri (git grep 2026-10-16), so this repo has no context the subject governs today."
+    },
+    "b39776f5-3909-41e3-b69f-14c9a6c70bec/translation-pipeline-topology": {
+      "context": "home-learning",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:45:00.000Z",
+      "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
+      "techniques": []
+    },
+    "d146b88b-6223-41c7-8330-8b9d7a1b3ee0/translation-pipeline-topology": {
+      "context": "api-pipeline",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:45:00.000Z",
+      "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
+      "techniques": []
+    },
+    "e61f931c-25d7-4532-9ec7-ab6f3fc377e2/translation-pipeline-topology": {
+      "context": "lib-credentials",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:45:00.000Z",
+      "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
+      "techniques": []
     }
   }
 }

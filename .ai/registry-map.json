@@ -4892,8 +4892,12 @@
           "revision": 12,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/api/pipeline/triggers.ts:3 the context is IPC wrappers for persona triggers/scheduler/teams; 'pipeline' here is agent automation, not translation, so no translated content is stored or moved",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
+          "evaluatedRevision": 12
         },
         {
           "subject": "scheduling",
@@ -14577,8 +14581,12 @@
           "revision": 12,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/features/home/sub_releases/i18n/useReleasesTranslation.ts:7 is a display-shape adapter over the main i18n loader; it owns no locale data, list, store or pipeline step, so the topology precondition is unmet",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
+          "evaluatedRevision": 12
         },
         {
           "subject": "client-fetch-cache",
@@ -15911,8 +15919,8 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/i18n/locales.manifest.ts:16 The central locale descriptor omits machine-translation engine tags and single CI opt-in flags, violating the single-source registry contract and exposing all locales directly to the UI switcher.",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src/i18n/locales.manifest.ts:13 claims no other file enumerates locales, but two switchers keep hand-made lists and the onboarding one (src/features/onboarding/components/AppearanceStep.tsx:13) already omits bn/id/vi, so 3 of 14 shipped locales cannot be picked at onboarding",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
           "evaluatedRevision": 12,
           "revisionsBehind": 0
@@ -17039,8 +17047,12 @@
           "revision": 12,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/lib/credentials/builtinConnectors.ts:2 the 'catalog' is a connector definition catalog, not a string catalog; no locale registry, translation store or MT request lives here",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
+          "evaluatedRevision": 12
         },
         {
           "subject": "mcp-tools",
