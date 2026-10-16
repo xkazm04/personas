@@ -80,7 +80,7 @@ export const ProjectRow = memo(function ProjectRow({ tm, active, onSelect, prese
           </span>
           <Figure n={unread} />
           <Figure n={asks} warn />
-          <Lamp lamp={{ tone: 'warn', lit: holding }} />
+          <Lamp lamp={{ tone: holding ? 'warn' : 'off', lit: holding }} />
         </span>
       </Button>
     </Tooltip>
