@@ -1,0 +1,5 @@
+{"schema": "conform-run/1", "worker": "931e4f6d-c3c9-483c-98b8-d240bf8bbd8d", "subject": "packaging",
+ "evaluatedAt": "2026-10-16T17:09:30Z",
+ "pairs": [],
+ "declined": [{"subject": "packaging", "context": null, "reason": "no-op: .ai/registry-map.json (generated 2026-10-14T18:25:17Z, 219 contexts, 1890 pairs) lists zero packaging pairs and no subjectIndex entry; no context's paths cover the installer/bundle surface (src-tauri/tauri.conf.json, src-tauri/tauri.lite.conf.json, scripts/ensure-ort-cache.mjs, docs/development/build.md), so there is no pair to judge and adding one is outside a worker's remit. Registry proposal: the dispatch ranked packaging on '5 consumer deviations' that are not this repo's - Personas ships NSIS/MSI Tauri installers with a bundled ONNX runtime, so a build-and-release context (tauri*.conf.json + scripts/build/** + scripts/ensure-ort-cache.mjs) should exist in context-map.json and would pair strongly with packaging; that is a context-map coverage gap, not a matcher miss."}],
+ "consults": []}
