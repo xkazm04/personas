@@ -1311,3 +1311,6 @@
 {"ts":"2026-10-16T17:22:23Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["health-probing"],"deviations":1}
 {"ts":"2026-10-16T17:22:23Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["health-probing","rotation-and-remediation"],"deviations":1}
 {"ts":"2026-10-16T17:22:12Z","bundle":"software-engineering","subjects":["web-scraping"],"techniques":["extraction-rule-dsl","dry-run-preview","shape-change-detection","dedup-and-datasets","scrape-scheduling"],"deviations":3}
+{"ts":"2026-10-16T17:24:01Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["storm-hygiene","refusal-contract","key-design"],"deviations":1}
+{"ts":"2026-10-16T17:24:01Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["limit-observability","limiter-topology"],"deviations":2}
+{"ts":"2026-10-16T17:24:01Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["refusal-contract","storm-hygiene"],"deviations":2}
