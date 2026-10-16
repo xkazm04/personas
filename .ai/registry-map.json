@@ -13619,7 +13619,11 @@
           "revision": 5,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 the \"Composer\" here is a set of Schedule/Connectors/Events config picker modals, not a transcript write door - no turns, no transcript",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+          "evaluatedRevision": 5
         },
         {
           "subject": "operator-surfaces-for-llm-spend",
@@ -24047,7 +24051,11 @@
           "revision": 5,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/components/ChatThread.tsx:25 export has no importer anywhere in src/ (nor ChatMessageContent) and no component reads chatSlice streaming state - the transcript is unmounted, so no live transcript precondition holds",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+          "evaluatedRevision": 5
         },
         {
           "subject": "agent-cli-transport",
@@ -30831,7 +30839,11 @@
           "revision": 5,
           "changedAt": "2026-09-25",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/components/editors/MarkdownRenderer.tsx:347 the shared door Athena chat renders model text through loads any model-referenced <img src> on render; CSP still admits http://127.0.0.1:* and googleusercontent, so injected markup can fire GETs at local services",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+          "evaluatedRevision": 5
         },
         {
           "subject": "table",

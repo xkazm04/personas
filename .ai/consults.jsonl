@@ -1384,3 +1384,6 @@
 {"ts":"2026-10-16T17:45:00Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":[],"deviations":0}
 {"ts":"2026-10-16T17:45:00Z","bundle":"software-engineering","subjects":["audit-logging"],"techniques":["write-chokepoint","append-only-design","best-effort-with-accounting"],"deviations":0}
 {"ts":"2026-10-16T17:45:00Z","bundle":"software-engineering","subjects":["audit-logging"],"techniques":["audit-querying","append-only-design","write-chokepoint"],"deviations":0}
+{"ts":"2026-10-16T17:47:39Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["markdown-and-code-rendering"],"deviations":1}
+{"ts":"2026-10-16T17:47:39Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["markdown-and-code-rendering","turn-model"],"deviations":0}
+{"ts":"2026-10-16T17:47:39Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["composer-turn-queue"],"deviations":0}

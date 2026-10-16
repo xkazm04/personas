@@ -24810,6 +24810,62 @@
         }
       ],
       "registryProposal": "Coverage question: this context's audit vocabulary ('audit incidents inbox', 'audit trail layer' in its description) belongs to triage-queues, and the healing 'audit log' to best-effort-with-accounting's gap counter viewed from the health side. Suggest the matcher weigh 'incident'/'acknowledge'/'resolve' toward triage-queues over audit-logging."
+    },
+    "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0/chat-transcript": {
+      "context": "shared-components-layout",
+      "subject": "chat-transcript",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:47:49.000Z",
+      "worker": "c349d73a-cf7a-4ff3-974f-d1379308f6bb",
+      "techniques": [
+        {
+          "technique": "markdown-and-code-rendering",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/editors/MarkdownRenderer.tsx:347 img renders src with no block/proxy/click-to-load policy (links do carry one at :337); remote content loads implicitly"
+        }
+      ],
+      "registryProposal": "This context is a shared primitive library that contains the transcript sanitizing door (MarkdownRenderer) but is not itself a transcript: only markdown-and-code-rendering genuinely governs it. A per-technique pairing (or routing the door to prompt-safety/output-sanitization) would fit better than the whole subject."
+    },
+    "b7c818bf-fe04-44ff-aa8d-7cd51e0fc67f/chat-transcript": {
+      "context": "persona-shared-ui",
+      "subject": "chat-transcript",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:47:49.000Z",
+      "worker": "c349d73a-cf7a-4ff3-974f-d1379308f6bb",
+      "techniques": [
+        {
+          "technique": "markdown-and-code-rendering",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/ChatMessageContent.tsx:202 would load model img src implicitly, but the component is never mounted"
+        },
+        {
+          "technique": "turn-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/ChatThread.tsx:56 coerces every non-user role to the assistant bubble, but the component is never mounted"
+        }
+      ],
+      "registryProposal": "Orphan resurrected: commit 1a67c0435a deleted an orphan ChatThread.tsx and the file is back (checkpoint 1adee979e0) still with zero importers - a dead-code finding for this repo, not a chat-transcript one."
+    },
+    "19f3a6a0-f733-47d1-94b4-a1256c8a92fc/chat-transcript": {
+      "context": "glyph-command-panel",
+      "subject": "chat-transcript",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:47:49.000Z",
+      "worker": "c349d73a-cf7a-4ff3-974f-d1379308f6bb",
+      "techniques": [
+        {
+          "technique": "composer-turn-queue",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 modal picker shell for agent configuration; nothing is submitted into a running turn"
+        }
+      ],
+      "registryProposal": "Technique-shaped resonance: matched on composer/channel/event tokens; the subject precondition (an alternating human-and-machine transcript) fails. Route by precondition."
     }
   }
 }
