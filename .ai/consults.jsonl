@@ -1428,3 +1428,6 @@
 {"ts":"2026-10-16T17:59:23Z","bundle":"software-engineering","subjects":["sync-replication"],"techniques":["conflict-detection-and-policy","tombstone-propagation","change-tracking-and-cursors","in-flight-is-per-connection"],"deviations":1}
 {"ts":"2026-10-16T17:59:23Z","bundle":"software-engineering","subjects":["sync-replication"],"techniques":[],"deviations":0}
 {"ts":"2026-10-16T17:59:23Z","bundle":"software-engineering","subjects":["sync-replication"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:59:17Z","bundle":"software-engineering","subjects":["webhook-ingestion"],"techniques":["delivery-logging-and-replay","sender-authentication","payload-bounds","duplicate-and-replay-dedup","ingress-topology","listener-lifecycle"],"deviations":3}
+{"ts":"2026-10-16T17:59:17Z","bundle":"software-engineering","subjects":["webhook-ingestion"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:59:17Z","bundle":"software-engineering","subjects":["webhook-ingestion"],"techniques":[],"deviations":0}

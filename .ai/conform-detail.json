@@ -3562,38 +3562,49 @@
       "subject": "webhook-ingestion",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-9",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:59:17.000Z",
+      "worker": "93627d0a-dc71-4094-82a1-b01d43ca2cf3",
       "techniques": [
         {
           "technique": "delivery-logging-and-replay",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/tools/triggers.rs:1745 replay consumes the redacted body field (the technique's 'replay that quietly replays the mask'); the curl export at :1830 emits the same placeholder, and headers are logged verbatim at src-tauri/src/engine/webhook.rs:279."
+          "evidence": "src-tauri/src/commands/tools/triggers.rs:1745 replay re-delivers the redaction marker set at src-tauri/src/engine/webhook.rs:313; export repeats it at src-tauri/src/commands/tools/triggers.rs:1826; headers are logged verbatim (signature included) at src-tauri/src/engine/webhook.rs:302 with no denylist"
         },
         {
           "technique": "sender-authentication",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/engine/webhook.rs:463 a trigger with no secret is rejected (fail closed, 403), and :608 verifies the HMAC with constant-time verify_slice over the raw body."
+          "verdict": "partial",
+          "evidence": "src-tauri/src/engine/webhook.rs:617 constant-time verify over raw body and :483 fails closed when secretless (realized); no timestamp window anywhere in webhook.rs, and the smee mouth fails OPEN by default - src-tauri/src/engine/smee_relay.rs:440 verifies only when an env secret is set, over re-serialized bytes at :445"
         },
         {
           "technique": "payload-bounds",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/engine/webhook.rs:93 a 1 MiB DefaultBodyLimit is layered on the router, enforced before the handler parses anything."
-        },
-        {
-          "technique": "ingress-topology",
-          "verdict": "unread",
-          "evidence": ""
+          "verdict": "partial",
+          "evidence": "src-tauri/src/engine/webhook.rs:93 DefaultBodyLimit 1MB enforced while reading, rate limit before HMAC (realized); no content-type discipline, and :483 tells an unauthenticated caller the trigger has no secret configured (oracle the technique's response-minimalism rule forbids)"
         },
         {
           "technique": "duplicate-and-replay-dedup",
-          "verdict": "unread",
-          "evidence": ""
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/webhook.rs:638 the direct listener mints a fresh uuid per delivery with no (source, delivery-id) or content-digest mark, so every sender retry becomes a second persona_event; only the smee mouth dedups, in process memory"
+        },
+        {
+          "technique": "ingress-topology",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/smee_relay.rs:564 the relay mouth publishes through event_repo::publish with its own verify/rate-limit copy instead of the listener's admission door, and writes no webhook_request_log row - three mouths, separate doors (one-validation-door)"
         },
         {
           "technique": "listener-lifecycle",
-          "verdict": "unread",
-          "evidence": ""
+          "verdict": "partial",
+          "evidence": "src-tauri/src/engine/webhook.rs:109 graceful shutdown + /health realized; src-tauri/src/engine/background/lifecycle.rs:694 an EADDRINUSE bind failure is downgraded to a warn log while the app continues, the swallowed-bind outcome the technique names"
+        }
+      ],
+      "registryProposal": "The rust--delivery-logging-and-replay application cites triggers.rs:1790/1836 and webhook.rs:244-255; current anchors are triggers.rs:1745/1826 and webhook.rs:302-313 - the application's line citations have drifted and should be re-verified.",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/tools/triggers.rs:1745 replay still reads log_entry.body, which src-tauri/src/engine/webhook.rs:304 writes as the literal '[redacted: see encrypted persona_event payload]', so every replay re-signs and re-delivers the redaction marker and reports success instead of the bytes that exposed the bug.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by 93627d0a-dc71-4094-82a1-b01d43ca2cf3"
         }
       ]
     },
@@ -25503,6 +25514,28 @@
       "worker": "220ca2b2-6f21-4563-90da-61d77993f221",
       "techniques": [],
       "registryProposal": "Technique-shaped resonance: matched on observability/detection/health, the vocabulary of sync-observability, but the subject's precondition (a record living on both sides of a boundary) fails here. Route by precondition; alerting / observability-telemetry govern this context."
+    },
+    "03e7f46a-3f19-47b8-98a5-398efed815b4/webhook-ingestion": {
+      "context": "hooks-realtime",
+      "subject": "webhook-ingestion",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:59:17.000Z",
+      "worker": "93627d0a-dc71-4094-82a1-b01d43ca2cf3",
+      "techniques": [],
+      "registryProposal": "Technique-shaped resonance: matched on listener/webhook/replay tokens; the golden path's precondition is an exposed inbound endpoint, which a frontend event-bus hook context does not have."
+    },
+    "1d3f934a-fae4-4cc8-a55c-a098b77b0bee/webhook-ingestion": {
+      "context": "execution-replay",
+      "subject": "webhook-ingestion",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:59:17.000Z",
+      "worker": "93627d0a-dc71-4094-82a1-b01d43ca2cf3",
+      "techniques": [],
+      "registryProposal": "Lexical false positive on 'replay'/'events': execution-trace replay belongs to time-travel-replay, not webhook-ingestion."
     }
   }
 }

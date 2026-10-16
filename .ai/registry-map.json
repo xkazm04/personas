@@ -12529,7 +12529,11 @@
           "revision": 11,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/libs/useReplayState.ts:2 'replay' here is a time-scrub of a recorded agent execution timeline, not re-injection of an inbound delivery; no external sender or admission path exists in this context",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:42ae9b9486b8352d",
+          "evaluatedRevision": 11
         }
       ],
       "governance": "governed"
@@ -15474,7 +15478,11 @@
           "revision": 11,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/hooks/realtime/useSmeeRelayStatus.ts:24 the context only subscribes to a backend relay-status event; no inbound delivery endpoint, admission door or delivery record lives here (the ingress is context 767b2bb5)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:42ae9b9486b8352d",
+          "evaluatedRevision": 11
         },
         {
           "subject": "tenant-scoped-agent-runtime",
@@ -40924,8 +40932,8 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/tools/triggers.rs:1745 replay still reads log_entry.body, which src-tauri/src/engine/webhook.rs:304 writes as the literal '[redacted: see encrypted persona_event payload]', so every replay re-signs and re-delivers the redaction marker and reports success instead of the bytes that exposed the bug.",
-          "evaluatedAt": "2026-09-23",
+          "evidence": "src-tauri/src/commands/tools/triggers.rs:1745 replay still reads log_entry.body, which src-tauri/src/engine/webhook.rs:313 writes as the literal '[redacted: see encrypted persona_event payload]', so every replay re-signs and re-delivers the redaction marker and reports success (re-confirmed 2026-10-16, unfixed since 2026-09-23; line moved 304->313)",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:42ae9b9486b8352d",
           "evaluatedRevision": 11,
           "revisionsBehind": 0
