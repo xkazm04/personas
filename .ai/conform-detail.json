@@ -20269,47 +20269,46 @@
       "context": "onboarding-components",
       "subject": "narrative-scroll-surface",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T08:24:42.750Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:53:39.000Z",
+      "worker": "1e81c5fe-db1f-443f-a0be-41ee96cf9f60",
       "techniques": [
-        {
-          "technique": "illustration-carries-the-claim",
-          "verdict": "not-applicable",
-          "evidence": "src/features/onboarding/components/TourSpotlight.tsx:25 TourSpotlight renders a dimming overlay highlight cut-out around live DOM elements rather than display illustrations evidencing factual claims."
-        },
-        {
-          "technique": "motion-carries-the-mechanism",
-          "verdict": "not-applicable",
-          "evidence": "src/features/onboarding/components/TourProgressArc.tsx:12 TourProgressArc renders an SVG ring showing fractional completion rather than an explainer animation derived from a beat list."
-        },
-        {
-          "technique": "no-orientation-tax",
-          "verdict": "not-applicable",
-          "evidence": "src/features/onboarding/components/StepProgress.tsx:24 StepProgress provides a clickable step navigation list with jump handlers for an interactive in-app wizard rather than a passive you-are-here reading indicator."
-        },
-        {
-          "technique": "reveal-without-loss",
-          "verdict": "not-applicable",
-          "evidence": "src/features/onboarding/components/TourPanelBody.tsx:194 Tour content transitions occur via explicit Next and Previous button clicks, not through scroll-bound reveals."
-        },
         {
           "technique": "scroll-bound-progression",
           "verdict": "not-applicable",
-          "evidence": "src/features/onboarding/components/TourNarrativeDeck.tsx:98 The narrative deck modal card enforces maximum dimensions and local scrolling without any scroll-bound progression curves."
+          "evidence": "src/features/onboarding/components/GuidedTour.tsx:243 progression is advanceTour() on an explicit Next, no scroll-position signal exists to bind to"
         },
         {
           "technique": "sequence-as-spine",
           "verdict": "not-applicable",
-          "evidence": "src/features/onboarding/components/OnboardingOverlay.tsx:49 OnboardingOverlay coordinates a modal multi-step task wizard for user account and system setup rather than rendering an explanatory narrative spine."
+          "evidence": "src/features/onboarding/components/TourNarrativeDeck.tsx:90 one step at a time in a fixed overlay card; there is no long column of stations for a spine to hang them on"
+        },
+        {
+          "technique": "reveal-without-loss",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/TourNarrativeDeck.tsx:90 fixed-position overlay inside a desktop app; no crawler/print/link-preview readers of a served page"
+        },
+        {
+          "technique": "illustration-carries-the-claim",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/TourSpotlight.tsx:25 TourSpotlight renders a dimming overlay highlight cut-out around live DOM elements rather than display illustrations evidencing factual claims.",
+          "carriedFrom": "2026-10-13"
+        },
+        {
+          "technique": "motion-carries-the-mechanism",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/TourProgressArc.tsx:12 TourProgressArc renders an SVG ring showing fractional completion rather than an explainer animation derived from a beat list.",
+          "carriedFrom": "2026-10-13"
+        },
+        {
+          "technique": "no-orientation-tax",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/StepProgress.tsx:24 StepProgress provides a clickable step navigation list with jump handlers for an interactive in-app wizard rather than a passive you-are-here reading indicator.",
+          "carriedFrom": "2026-10-13"
         }
       ],
-      "withdrawn": {
-        "worker": "5ecdf088-86b2-4c09-b7bf-faf878c5a76c",
-        "state": "not-applicable",
-        "at": "2026-10-13T08:25:11.467684+00:00",
-        "reason": "reviewer (sonnet): The evidence anchor tourConstants.ts:31 is `export const TOUR_RAIL_WIDTH = 292;`, a width constant that doesn't show the module is an in-app guided tour rather than a narrative scroll surface, so the anchor is incidental."
-      }
+      "registryProposal": "Coverage: the golden path's use_when lists 'building a product tour', which lexically pulls in-app coach-mark tours (stepped overlays on a live app) into this subject; those belong to guided-tours. 'Where this subject stops' should name guided-tours as a neighbour so the seam is routed by precondition (scrolling explanatory page vs stepped overlay on a working app)."
     },
     "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20/narrative-scroll-surface": {
       "context": "plugins-radio",
@@ -25237,6 +25236,16 @@
           "reason": "replaced by ab812473-03dd-40e7-8bdb-4ba162e58cb8"
         }
       ]
+    },
+    "f838d49f-2928-441e-ac8d-f6e6c412b262/narrative-scroll-surface": {
+      "context": "shared-glyph",
+      "subject": "narrative-scroll-surface",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:53:39.000Z",
+      "worker": "1e81c5fe-db1f-443f-a0be-41ee96cf9f60",
+      "techniques": []
     }
   }
 }

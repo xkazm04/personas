@@ -1412,3 +1412,5 @@
 {"ts":"2026-10-16T17:53:38Z","bundle":"software-engineering","subjects":["model-routing"],"techniques":[],"deviations":0}
 {"ts":"2026-10-16T17:53:38Z","bundle":"software-engineering","subjects":["model-routing"],"techniques":[],"deviations":0}
 {"ts":"2026-10-16T17:53:38Z","bundle":"software-engineering","subjects":["model-routing"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:53:39Z","bundle":"software-engineering","subjects":["narrative-scroll-surface"],"techniques":["scroll-bound-progression","sequence-as-spine","reveal-without-loss"],"deviations":0}
+{"ts":"2026-10-16T17:53:39Z","bundle":"software-engineering","subjects":["narrative-scroll-surface"],"techniques":[],"deviations":0}

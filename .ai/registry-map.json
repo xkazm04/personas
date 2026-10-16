@@ -20391,8 +20391,12 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/features/onboarding/components/GuidedTour.tsx:243 steps advance on a Next click/app event over the live app (fixed rail + overlay deck), not on scroll down an explanatory page for an uncommitted reader - the subject's precondition (a scrolling narrative page) does not hold",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:e93abcf9f70a6c36",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"
@@ -31178,8 +31182,12 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/features/shared/glyph/index.ts:1 the module exports SVG sigil/card/grid primitives embedded in app surfaces; it owns no page, no scroll sequence and no explanatory narrative, so the subject's precondition does not hold",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:e93abcf9f70a6c36",
+          "evaluatedRevision": 3
         },
         {
           "subject": "sidecar-provisioning",
