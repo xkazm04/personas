@@ -35,8 +35,11 @@ export function deliberationLook(status: string): { win: string; lamp: Lamp } {
 /** The converged proposal, as the engine stores it on the row. */
 export interface DeliberationProposal { title?: string; objective?: string; summary?: string }
 
-/** What the team is leaning to: the converged proposal's title once there is one, else the newest turn's first line. */
-export function deliberationLeaning(d: TeamDeliberation | undefined, newestTurn: string | null | undefined): string | null {
+/** What the team is leaning to: the converged proposal's title, once the engine wrote one. Never guessed from a turn. */
+export function deliberationLeaning(d: TeamDeliberation | undefined): string | null {
   const proposal = parseJsonOrDefault<DeliberationProposal | null>(d?.resolution, null);
-  return proposal?.title ?? plainLine(newestTurn);
+  return proposal?.title ?? null;
 }
+
+/** The newest turn as one plain line, for the band's caption. */
+export const turnLine = plainLine;

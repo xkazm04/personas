@@ -29,7 +29,7 @@ function OutcomeBand({ side, outcome }: { side: 'yes' | 'no'; outcome: Outcome }
   );
 }
 
-export function AskHead({ kind, tier, title, context, body, outcomes, stacked = true }: {
+export function AskHead({ kind, tier, title, context, body, outcomes, stacked = true, aside }: {
   /** The kind word: Review, Question. */
   kind: string;
   tier: 1 | 2;
@@ -39,6 +39,8 @@ export function AskHead({ kind, tier, title, context, body, outcomes, stacked = 
   outcomes: readonly [Outcome, Outcome];
   /** Stack the pair (a rail) or set it side by side (a wide card). */
   stacked?: boolean;
+  /** Right end of the eyebrow line (the rail's n of N walk). */
+  aside?: ReactNode;
 }) {
   const { t } = useTranslation();
   const m = t.monitor;
@@ -54,10 +56,12 @@ export function AskHead({ kind, tier, title, context, body, outcomes, stacked = 
             <Lamp tone={TIER_TONE[tier]} breathe={tier === 1} />
           </span>
         </Tooltip>
+        {aside && <span className="ml-auto flex items-center gap-0.5">{aside}</span>}
       </span>
       <span className="line-clamp-2 typo-heading text-foreground [text-wrap:balance]">{title}</span>
       <span className="truncate typo-caption">{context}</span>
-      {body && <span className="line-clamp-2 typo-body text-foreground">{body}</span>}
+      {/* The ask's own words, when the rail has the height for them (the head and dock must stay on screen). */}
+      {body && <span className="hidden typo-body text-foreground [@media(min-height:880px)]:line-clamp-2">{body}</span>}
       <div className={`mt-1 grid gap-1.5 ${stacked ? 'grid-cols-1' : 'grid-cols-2'}`}>
         <OutcomeBand side="yes" outcome={outcomes[0]} />
         <OutcomeBand side="no" outcome={outcomes[1]} />

@@ -86,10 +86,10 @@ export const ConversationSidebar = memo(function ConversationSidebar({
 
   return (
     <section className="ae-plate flex h-full min-h-0 flex-col overflow-hidden rounded-card" data-testid="conv-projects">
-      <div className="flex h-11 flex-shrink-0 items-center gap-2 border-b border-border pl-3.5 pr-3">
+      <div className="flex h-11 flex-shrink-0 items-center gap-1 border-b border-border pl-3.5 pr-3.5">
         <Engraved className="min-w-0 flex-1 truncate">{m.conv_projects}</Engraved>
-        <Engraved className="w-7 flex-shrink-0 text-right">{m.cv_col_new}</Engraved>
-        <Engraved className="w-7 flex-shrink-0 text-right">{m.cv_col_you}</Engraved>
+        <Engraved className="w-8 flex-shrink-0 text-right">{m.cv_col_new}</Engraved>
+        <Engraved className="w-8 flex-shrink-0 text-right">{m.cv_col_you}</Engraved>
         <span className="w-2 flex-shrink-0" />
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto p-1.5 space-y-0.5">

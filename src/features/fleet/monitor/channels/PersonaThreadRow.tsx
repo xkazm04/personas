@@ -45,7 +45,7 @@ export const PersonaThreadRow = memo(function PersonaThreadRow({ persona, active
         data-testid="conv-persona-row"
         className={`ae-plan ae-focus ${active ? 'is-open' : ''}`}
       >
-        <span className="flex w-full min-w-0 items-center gap-2">
+        <span className="flex w-full min-w-0 items-center gap-1">
           <PersonaIcon icon={persona.icon} color={persona.color} display="framed" frameSize="sm" />
           <span className={`min-w-0 flex-1 truncate typo-body ${active ? 'text-primary' : 'text-foreground'}`}>{name}</span>
           <Figure n={unread} />

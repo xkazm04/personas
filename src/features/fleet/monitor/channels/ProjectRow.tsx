@@ -26,7 +26,7 @@ import type { StreamTeam } from './types';
 /** A right-aligned tabular figure: blank at zero, `null` (unread) never prints. */
 export function Figure({ n, warn = false }: { n: number | null; warn?: boolean }) {
   return (
-    <span className={`w-7 flex-shrink-0 text-right typo-data tabular-nums ${warn ? 'text-status-warning' : 'text-foreground'}`}>
+    <span className={`w-8 flex-shrink-0 text-right typo-data tabular-nums ${warn ? 'text-status-warning' : 'text-foreground'}`}>
       {n !== null && n > 0 ? (n > 99 ? '99+' : n) : null}
     </span>
   );
@@ -68,12 +68,12 @@ export const ProjectRow = memo(function ProjectRow({ tm, active, onSelect, prese
         onClick={() => onSelect(tm.teamId)}
         aria-current={active}
         data-testid="conv-project-row"
-        className={`ae-plan ae-focus relative pl-4! ${active ? 'is-open' : ''}`}
+        className={`ae-plan ae-focus relative pl-3.5! ${active ? 'is-open' : ''}`}
       >
-        <span className="flex w-full min-w-0 items-center gap-2">
+        <span className="flex w-full min-w-0 items-center gap-1">
           <span aria-hidden className="absolute inset-y-1.5 left-1 w-1 rounded-full" style={{ backgroundColor: colorWithAlpha(tm.teamColor, 0.85) }} />
           <span className={`min-w-0 flex-1 truncate typo-body ${active ? 'text-primary' : 'text-foreground'}`}>{name}</span>
-          <span className="ae-share w-6 flex-shrink-0" aria-hidden>
+          <span className="ae-share w-4 flex-shrink-0" aria-hidden>
             <span className="ae-t-run" style={{ flexGrow: share.working }} />
             <span className="ae-t-warn" style={{ flexGrow: share.waiting }} />
             <span className="ae-t-off" style={{ flexGrow: share.idle }} />

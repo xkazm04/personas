@@ -32,21 +32,21 @@ function HandHead({ ask, ny }: { ask: Ask; ny: NeedsYou }) {
   const copy = askCopy(m, ask);
   const tier = ask.tier === 1 ? m.dc_hub_tier_blocking : m.dc_hub_tier_decide;
   return (
-    <div className="flex flex-col gap-1">
-      <div className="-mb-1 flex items-center justify-end gap-0.5">
-        <span className="pr-1 typo-caption tabular-nums"><Numeric value={ny.index + 1} /> {tx(m.dc_deck_position, { total: ny.total })}</span>
-        <Button variant="ghost" size="icon-sm" aria-label={m.quick_prev_decision} onClick={() => ny.walk(-1)} disabled={ny.total < 2}><ChevronLeft className="h-4 w-4" aria-hidden /></Button>
-        <Button variant="ghost" size="icon-sm" aria-label={m.quick_next_decision} onClick={() => ny.walk(1)} disabled={ny.total < 2}><ChevronRight className="h-4 w-4" aria-hidden /></Button>
-      </div>
-      <AskHead
-        kind={copy.kind}
-        tier={ask.tier}
-        title={ask.title}
-        context={<>{tier} · {tx(m.cv_from, { name: who })}{ask.at && <> · <RelativeTime timestamp={ask.at} /></>}</>}
-        body={ask.kind === 'review' ? ask.body : null}
-        outcomes={copy.outcomes}
-      />
-    </div>
+    <AskHead
+      aside={(
+        <>
+          <span className="pr-1 typo-caption tabular-nums"><Numeric value={ny.index + 1} /> {tx(m.dc_deck_position, { total: ny.total })}</span>
+          <Button variant="ghost" size="icon-sm" aria-label={m.quick_prev_decision} onClick={() => ny.walk(-1)} disabled={ny.total < 2}><ChevronLeft className="h-4 w-4" aria-hidden /></Button>
+          <Button variant="ghost" size="icon-sm" aria-label={m.quick_next_decision} onClick={() => ny.walk(1)} disabled={ny.total < 2}><ChevronRight className="h-4 w-4" aria-hidden /></Button>
+        </>
+      )}
+      kind={copy.kind}
+      tier={ask.tier}
+      title={ask.title}
+      context={<>{tier} · {tx(m.cv_from, { name: who })}{ask.at && <> · <RelativeTime timestamp={ask.at} /></>}</>}
+      body={ask.kind === 'review' ? ask.body : null}
+      outcomes={copy.outcomes}
+    />
   );
 }
 
@@ -76,7 +76,7 @@ export function NeedsYouRail({ asks, ny, loading, error, onRetry }: {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-testid="needs-you-rail">
-      <div className="max-h-[60%] flex-shrink-0 overflow-y-auto px-3 pb-2 pt-1.5">
+      <div className="flex-shrink-0 px-3 pb-2 pt-2">
         {error && <div className="mb-2"><InlineErrorBanner severity="error" message={m.reviews_error} onRetry={onRetry} compact /></div>}
         <HandHead ask={ny.ask} ny={ny} />
       </div>

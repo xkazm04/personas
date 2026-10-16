@@ -10,7 +10,7 @@ import { memberColor } from '@/lib/channel/eventModel';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import type { TeamDeliberation } from '@/lib/bindings/TeamDeliberation';
 import { Engraved, Lamp } from '../grid/prototype/entry-e/parts';
-import { deliberationLeaning, deliberationLook, deliberationStatusLabel } from './deliberationStatus';
+import { deliberationLeaning, deliberationLook, deliberationStatusLabel, turnLine } from './deliberationStatus';
 
 /* ----------------------------------------------------------------------------
  * DELIBERATION BAND - a team deciding something, OUTCOME FIRST (WP12).
@@ -46,7 +46,10 @@ export const DeliberationBand = memo(function DeliberationBand({
   const share = budget > 0 ? Math.min(1, spent / budget) : 0;
   const look = deliberationLook(status);
   const voices = useMemo(() => items.map((i) => i.personaId), [items]);
-  const leaning = deliberationLeaning(deliberation, items[items.length - 1]?.body);
+  const leaning = deliberationLeaning(deliberation);
+  const newest = items[items.length - 1];
+  const said = turnLine(newest?.body);
+  const speaker = newest?.personaId ? personaIndex.get(newest.personaId)?.name.replace(/^T:\s*/, '') : null;
   const topic = deliberation?.topic ?? m.conv_card_deliberation;
 
   return (
@@ -62,19 +65,26 @@ export const DeliberationBand = memo(function DeliberationBand({
           <span className="flex w-full min-w-0 items-center gap-2">
             <Lamp lamp={look.lamp} />
             <Engraved className="min-w-0 flex-1 truncate">
-              {m.conv_card_deliberation} · {deliberationStatusLabel(t, status)} · {tx(m.delib_round, { round })}
+              {m.conv_card_deliberation} · {deliberationStatusLabel(t, status)}
             </Engraved>
             <span className={`ae-bar ${share > 0.8 ? 'ae-t-warn' : 'ae-t-agent'} w-16 flex-shrink-0`} aria-hidden><i style={{ width: `${share * 100}%` }} /></span>
             <span className="typo-data tabular-nums text-foreground">
               <Numeric value={spent} precision={2} /> / <Numeric value={budget} precision={2} />
             </span>
-            <PersonaStack ids={voices} index={personaIndex} />
-            <span className="typo-caption"><RelativeTime timestamp={items[items.length - 1]!.at} /></span>
           </span>
           <span className="line-clamp-2 typo-heading text-foreground [text-wrap:pretty]">
             {leaning ? <><span className="typo-label text-role-agent">{m.cv_leaning}: </span>{leaning}</> : topic}
           </span>
-          <span className="truncate typo-caption">{leaning ? `${topic} · ` : ''}{tx(m.cv_turns, { count: items.length })}</span>
+          <span className="flex min-w-0 items-baseline gap-1.5 typo-caption">
+            <span className="flex-shrink-0 tabular-nums">{tx(m.delib_round, { round })} · {tx(m.cv_turns, { count: items.length })}</span>
+            {leaning
+              ? <span className="min-w-0 truncate">· {topic}</span>
+              : said && <span className="min-w-0 truncate">· {speaker ? `${speaker}: ` : ''}{said}</span>}
+            <span className="ml-auto flex flex-shrink-0 items-center gap-2 pl-2">
+              <PersonaStack ids={voices} index={personaIndex} />
+              <RelativeTime timestamp={items[items.length - 1]!.at} />
+            </span>
+          </span>
         </Button>
         <Button variant="accent" tone="agent" size="xs" onClick={() => onFocus(deliberationId)} aria-pressed={driving} className="flex-shrink-0" data-testid="conv-drive">
           {m.conv_drive}

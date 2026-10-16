@@ -60,7 +60,7 @@ export function ConversationBriefing({
   // Two rails, two remembered widths, two edges, their own keys. The defaults
   // leave the thread as wide as it can be at 1280 while the rail still holds
   // the ask in hand and its dock (WP12).
-  const sidebarRail = useRailWidth({ storageKey: 'conversation-sidebar-width', defaultWidth: 248, side: 'left' });
+  const sidebarRail = useRailWidth({ storageKey: 'conversation-sidebar-width', defaultWidth: 288, side: 'left' });
   const decisionRail = useRailWidth({ storageKey: 'conversation-rail-width', defaultWidth: 336 });
 
   useEffect(() => {
