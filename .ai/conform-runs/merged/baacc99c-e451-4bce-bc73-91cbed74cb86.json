@@ -1,0 +1,11 @@
+{"schema":"conform-run/1","worker":"baacc99c-e451-4bce-bc73-91cbed74cb86","subject":"canvas-graph","evaluatedAt":"2026-10-16T18:26:05Z",
+"pairs":[{"context":"ff513ec2-b52d-403b-b3e3-b94e45a8c2dc","subject":"canvas-graph","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src/features/triggers/sub_studio/StudioPatchbay.tsx:244 re-anchored at revision 6 (sha256-b2:98dcec8d04236b95) after a9b80c8dac shifted the line: routes still render as a linear ledger of cable rows (connected.map), no transform, no SVG geometry, no drag-to-place; the golden path's table/list exit applies",
+"techniques":[{"technique":"viewport-transform","verdict":"not-applicable","evidence":"src/features/triggers/sub_studio/StudioPatchbay.tsx:244 rows are a flowed list, no world space to map"},{"technique":"direct-manipulation","verdict":"not-applicable","evidence":"src/features/triggers/sub_studio/StudioPatchbay.tsx:244 cables are list items, not positioned nodes"}],
+"registryProposal":"Ranking finding 'single stack (react)' is confirmed here and cannot be cured from this repo: Personas' only canvas-graph surface (vault-dependency-graph, SVG in React) is the same stack as all 7 existing applications; a second-stack application must come from another consumer"}],
+"declined":[
+{"subject":"canvas-graph","context":"77b8c703-0803-42bc-808a-f255725cc293","reason":"deviation judged 2026-10-15 against the current digest; re-read anchors GraphCanvas.tsx:42/:144/:183 and they still hold (no memo, no commits to sub_dependencies since); nothing to re-judge"},
+{"subject":"canvas-graph","context":"6e3e06ef-e5d0-4b4d-807f-688123370b14","reason":"not-applicable judged 2026-10-16 against the current digest; anchor MastermindPage.tsx:9 holds and sub_canvas is still absent"},
+{"subject":"canvas-graph","context":"ca705961-f138-494a-b0fe-f882c674d25a","reason":"not-applicable judged 2026-10-16 against the current digest; anchor MastermindPage.tsx:701 holds"},
+{"subject":"canvas-graph","context":"283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0","reason":"not-applicable judged 2026-10-16 against the current digest; anchor ContentLayout.tsx:51 holds"}],
+"consults":[{"ts":"2026-10-16T18:26:05Z","bundle":"software-engineering","subjects":["canvas-graph"],"techniques":["viewport-transform","direct-manipulation"],"deviations":0}]}

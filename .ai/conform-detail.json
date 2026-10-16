@@ -21075,15 +21075,21 @@
       "bundle": "software-engineering",
       "state": "not-applicable",
       "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:14:03.000Z",
-      "worker": "c2bf05c6-6801-4c21-87e2-5b9c47a74b82",
+      "evaluatedTs": "2026-10-16T18:26:05.000Z",
+      "worker": "baacc99c-e451-4bce-bc73-91cbed74cb86",
       "techniques": [
         {
           "technique": "viewport-transform",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/TriggerStudioCanvas.tsx:17 the canvas wrapper only mounts StudioPatchbay in a flex column; no pan, zoom or world space"
+          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:244 rows are a flowed list, no world space to map"
+        },
+        {
+          "technique": "direct-manipulation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:244 cables are list items, not positioned nodes"
         }
       ],
+      "registryProposal": "Ranking finding 'single stack (react)' is confirmed here and cannot be cured from this repo: Personas' only canvas-graph surface (vault-dependency-graph, SVG in React) is the same stack as all 7 existing applications; a second-stack application must come from another consumer",
       "superseded": [
         {
           "state": "not-applicable",
@@ -21098,6 +21104,13 @@
           "evaluatedAt": "2026-10-14T00:00:00.000Z",
           "worker": "f995d01e-3430-4f4c-84e4-712c4214824e",
           "reason": "replaced by c2bf05c6-6801-4c21-87e2-5b9c47a74b82"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:243 re-judged at revision 6 (sha256-b2:98dcec8d04236b95): routes render as a linear ledger of cable rows (connected.map), no geometry, no transform, no drag-to-place; the golden path's table/list exit applies and no coordinate mapping exists to retain",
+          "evaluatedAt": "2026-10-16T17:14:03.000Z",
+          "worker": "c2bf05c6-6801-4c21-87e2-5b9c47a74b82",
+          "reason": "replaced by baacc99c-e451-4bce-bc73-91cbed74cb86"
         }
       ]
     },

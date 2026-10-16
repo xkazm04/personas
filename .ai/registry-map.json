@@ -37857,7 +37857,7 @@
           "state": "not-applicable",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:243 re-judged at revision 6 (sha256-b2:98dcec8d04236b95): routes render as a linear ledger of cable rows (connected.map), no geometry, no transform, no drag-to-place; the golden path's table/list exit applies and no coordinate mapping exists to retain",
+          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:244 re-anchored at revision 6 (sha256-b2:98dcec8d04236b95) after a9b80c8dac shifted the line: routes still render as a linear ledger of cable rows (connected.map), no transform, no SVG geometry, no drag-to-place; the golden path's table/list exit applies",
           "digest": "sha256-b2:98dcec8d04236b95",
           "revision": 6,
           "changedAt": "2026-10-14",

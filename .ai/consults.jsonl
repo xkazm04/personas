@@ -1510,3 +1510,4 @@
 {"ts":"2026-10-16T18:23:55Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":[],"deviations":0,"context":"7159d27d-86c2-43be-a83f-8b50c4c816be"}
 {"ts":"2026-10-16T18:23:55Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":[],"deviations":0,"context":"ae80cd74-5beb-4d76-ae0a-16a4b581a2df"}
 {"ts":"2026-10-16T18:23:55Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":[],"deviations":0,"context":"c5f662f2-458b-4b5d-b03b-e4acf8f54049"}
+{"ts":"2026-10-16T18:26:05Z","bundle":"software-engineering","subjects":["canvas-graph"],"techniques":["viewport-transform","direct-manipulation"],"deviations":0}
