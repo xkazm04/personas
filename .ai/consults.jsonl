@@ -1514,3 +1514,4 @@
 {"ts":"2026-10-16T18:28:01Z","bundle":"software-engineering","subjects":["embedded-preview"],"techniques":["cross-frame-protocol","dev-server-registry"],"deviations":0}
 {"ts":"2026-10-16T18:28:00Z","bundle":"llm-observability","subjects":["breach-alerting-and-attribution"],"techniques":["scoped-dedup-keys","off-request-path-delivery","identity-scope-attribution-refusal"],"deviations":1}
 {"ts":"2026-10-16T18:28:00Z","bundle":"llm-observability","subjects":["breach-alerting-and-attribution"],"techniques":["scoped-dedup-keys","top-contributor-attribution","identity-scope-attribution-refusal","off-request-path-delivery"],"deviations":2}
+{"ts":"2026-10-16T18:28:20Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["swr-design","warm-remount-caches","in-flight-dedup","cache-key-discipline"],"deviations":1}

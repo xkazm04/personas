@@ -38070,7 +38070,11 @@
           "revision": 15,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/triggers/sub_shared/EventHistoryModal.tsx:65 a failed listFirings writes [] so the modal paints its 'no history' empty state as if the feed never fired; useSharedEvents.ts:61 does the same for a failed first catalog load (UnifiedTable shows no_feeds) and the hook exposes no error",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
+          "evaluatedRevision": 15
         }
       ],
       "governance": "weak"

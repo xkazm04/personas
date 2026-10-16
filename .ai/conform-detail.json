@@ -26853,6 +26853,38 @@
         }
       ],
       "registryProposal": "Weak lexical-only match on the token 'preview' (here: a persona design summary). Matcher false positive, not a corpus hole; the golden path's 'When the subject does not apply' static-preview clause could be surfaced to the matcher as a negative use_when so lexical 'preview' hits on in-tree renderers stop pairing."
+    },
+    "e0563a39-fb7e-485f-a698-f9c4dc1004a7/client-fetch-cache": {
+      "context": "triggers-test",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:28:20.000Z",
+      "worker": "cdc9ecb8-7442-4613-a3dd-a52bdeabe42c",
+      "techniques": [
+        {
+          "technique": "swr-design",
+          "verdict": "deviation",
+          "evidence": "src/features/triggers/sub_shared/EventHistoryModal.tsx:65 failure collapses into an empty collection (failure-not-empty-success); same at src/features/triggers/sub_shared/useSubscribedFeeds.ts:31 and src/features/triggers/sub_shared/useSharedEvents.ts:61. The refresh path (useSharedEvents.ts:78) keeps stale rows but reports nothing beside them"
+        },
+        {
+          "technique": "warm-remount-caches",
+          "verdict": "deviation",
+          "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:17 the catalog lives in component state, so every return to the Marketplace tab repaints cold and refetches; there is no module-scoped last result"
+        },
+        {
+          "technique": "in-flight-dedup",
+          "verdict": "partial",
+          "evidence": "src/lib/tauriInvoke.ts:194 transport auto-dedup covers shared_events_list_subscriptions, but shared_events_browse_catalog (src/api/events/sharedEvents.ts:11) has no list/get/fetch verb and is not eligible"
+        },
+        {
+          "technique": "cache-key-discipline",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:30 there is no keyed cache to key; the args-to-answer race is handled by a latest-wins token (loadSeqRef), which is client-state's async-race-guards"
+        }
+      ],
+      "registryProposal": "Coverage: the map marks triggers-test governance 'weak', but the subject's precondition holds (two hooks and a modal keep IPC read responses past the call). Weak status comes from domain coverage of the context, not from this subject, so a weak row can hide a strongly-governed pair. Consider ranking pairs inside weak rows by subject precondition rather than skipping them wholesale. Separately, the transport auto-dedup in this repo keys eligibility on a verb regex (list|get|fetch), which silently excludes read verbs like 'browse'; in-flight-dedup could name verb-inferred eligibility as a failure mode beside opt-in dedup."
     }
   }
 }
