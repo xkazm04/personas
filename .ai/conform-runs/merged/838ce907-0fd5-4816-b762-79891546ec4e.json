@@ -1,0 +1,6 @@
+{"schema": "conform-run/1", "worker": "838ce907-0fd5-4816-b762-79891546ec4e", "subject": "repo-manifest-standard",
+ "evaluatedAt": "2026-10-16T17:55:15Z",
+ "pairs": [],
+ "declined": [],
+ "consults": [],
+ "note": "no work: .ai/registry-map.json lists zero pairs for repo-manifest-standard (absent from subjectIndex and every context's subjects[], no orphans), and no context in context-map.json covers .ai/manifest.yaml, the repo's manifest. The '1 consumer deviation' that ranked this subject is not recorded in this map. Registry finding: the subject that governs this repo's own .ai/manifest.yaml has no context to attach to, because the context map does not scan .ai/; a pairing needs a context that covers the manifest first."}
