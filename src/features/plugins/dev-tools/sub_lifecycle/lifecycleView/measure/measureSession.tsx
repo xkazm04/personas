@@ -17,8 +17,8 @@
  * open for `LINGER_MS`, or until dismissed; a pointer resting on the panel or
  * focus inside it holds it open. A project switch forgets the session.
  *
- * Mounted around the whole page (`LifecyclePage`), so the header's control,
- * its subtitle and Layer 1 read one session.
+ * Mounted around the whole page (`LifecyclePage`), so the top bar's control,
+ * the header's readout and the project plane read one session.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 

@@ -1,0 +1,413 @@
+/*
+ * The Lens (contest lifecycle-portfolio-r2, winner A/3). Its look is gradients,
+ * glows and pseudo-elements, so it is ported in the form it was drawn in: a
+ * stylesheet over the app's tokens (promotion rule 2). Layout lives here; type
+ * is a `typo-*` class on each element; colour is a token or color-mix() over one.
+ *
+ * Two owner changes against the winner:
+ *  - the header has ONE fixed height on every plane and in every state
+ *    (`--lens-head-h`); nothing in it is conditional, hover only rewrites the
+ *    readout line;
+ *  - the lit column is lit, not magnified into a panel over the strip; the
+ *    detail is its own plane.
+ */
+
+.lens-stage {
+  container: lens / inline-size;
+  /* eyebrow + hero title + a two-line lede + the readout, at the type scale's own sizes */
+  --lens-head-h: 10.75rem;
+  --lens-top-h: 3.25rem;
+  --lens-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  display: grid;
+  grid-template-rows: var(--lens-top-h) var(--lens-head-h) minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* the monitor field behind everything */
+.lens-surface {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 60% at 8% 0%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 70%),
+    radial-gradient(45% 55% at 92% 18%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
+    radial-gradient(70% 55% at 55% 105%, color-mix(in srgb, var(--status-info) 11%, transparent), transparent 70%);
+}
+.lens-surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, color-mix(in srgb, var(--foreground) 22%, transparent) 0 1px, transparent 1.4px) 14px 14px / 28px 28px;
+  mask-image: linear-gradient(180deg, black 55%, transparent 124%);
+}
+
+/* ---------- top bar ---------- */
+.lens-top {
+  min-width: 0;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 1.5rem;
+  min-width: 0;
+}
+.lens-top-mark {
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--primary) 25%, transparent);
+}
+.lens-depth { display: flex; align-items: center; gap: 0.35rem; flex: none; }
+.lens-depth i {
+  display: block;
+  height: 0.375rem;
+  width: 0.375rem;
+  border-radius: 999px;
+  background: var(--card-border);
+  transition: width 0.4s var(--lens-ease), background 0.4s, box-shadow 0.4s;
+}
+.lens-depth i.is-on { width: 1.75rem; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.lens-top .k-crumbs { min-width: 0; flex: 0 1 auto; overflow: hidden; }
+.lens-top .k-crumbs ol { flex-wrap: nowrap; overflow: hidden; }
+.lens-top .k-crumbs li { white-space: nowrap; }
+.lens-keys { margin-left: auto; display: flex; gap: 0.75rem; align-items: center; flex: none; }
+.lens-keys kbd {
+  font-family: var(--font-mono);
+  border: 1px solid var(--card-border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 0 0.3rem;
+  margin-right: 0.15rem;
+}
+.lens-actions { position: relative; display: flex; align-items: center; gap: 0.5rem; flex: none; height: 2.25rem; }
+/* a control's note floats under the slot instead of wrapping the bar taller */
+.lens-actions > p:not(.sr-only) {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  z-index: 5;
+  max-width: 32rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--radius-input, 0.5rem);
+  border: 1px solid var(--card-border);
+  background: color-mix(in srgb, var(--background) 92%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--background) 60%, transparent);
+}
+
+/* ---------- the header: fixed slots, fixed height ---------- */
+.lens-head {
+  height: var(--lens-head-h);
+  min-height: var(--lens-head-h);
+  max-height: var(--lens-head-h);
+  /* Each slot clips itself (one-line ellipses, a two-line clamp); the header stays visible so a
+     control's note can float out from under the actions. */
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr) auto;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 0.5rem 1.5rem;
+}
+.lens-head-mark {
+  width: 6rem;
+  height: 6rem;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 0 1.25rem color-mix(in srgb, var(--primary) 35%, transparent));
+}
+.lens-head-mark > svg { width: 100%; height: 100%; }
+/* the project's actions: wrap inside the header's fixed height, right-aligned */
+.lens-head-aside {
+  width: 24rem;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.lens-head-aside:empty { display: none; }
+.lens-head-aside .lens-actions { flex: 1 1 auto; min-width: 0; height: auto; flex-wrap: wrap; justify-content: flex-end; row-gap: 0.5rem; }
+.lens-step-mark {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--primary);
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  background: radial-gradient(circle at 40% 35%, color-mix(in srgb, currentColor 14%, transparent), color-mix(in srgb, var(--foreground) 2%, transparent));
+  box-shadow: 0 0 1.5rem color-mix(in srgb, currentColor 30%, transparent);
+}
+.lens-step-mark > svg { width: 3rem; height: 3rem; }
+.lens-step-mark.lens-ink-red { color: var(--status-error); }
+.lens-step-mark.lens-ink-amber { color: var(--status-warning); }
+.lens-step-mark.lens-ink-stale { color: var(--status-info); }
+.lens-step-mark.lens-ink-green { color: var(--status-success); }
+.lens-head-text { min-width: 0; display: grid; grid-template-rows: auto auto auto auto; row-gap: 0.25rem; }
+.lens-line {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.lens-head-eyebrow { color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; font-family: var(--font-mono); }
+.lens-head-eyebrow .lens-dim { color: var(--muted-foreground); }
+/* Light themes: the accent is too pale for text on the field; a quarter toward the foreground
+   clears AA and stays the same hue (the module's own rule, layer1.css). */
+[data-theme^="light"] .lens-head-eyebrow { color: color-mix(in srgb, var(--primary) 70%, var(--foreground)); }
+.lens-head-title { line-height: 1.1; letter-spacing: -0.025em; }
+.lens-head-title .lens-ink-red { color: var(--status-error); text-shadow: 0 0 26px color-mix(in srgb, var(--status-error) 50%, transparent); }
+.lens-head-title .lens-ink-amber { color: var(--status-warning); }
+.lens-head-title .lens-ink-stale { color: var(--status-info); }
+.lens-head-title .lens-ink-green { color: var(--status-success); }
+.lens-head-title .lens-ink-quiet { color: var(--primary); }
+.lens-head-title .lens-qualifier { margin-left: 0.6rem; letter-spacing: 0; color: var(--muted-foreground); }
+.lens-head-lede {
+  margin: 0;
+  color: var(--muted-foreground);
+  max-width: 96ch;
+  line-height: 1.45;
+  /* always two lines tall, never more */
+  height: 2.9em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.lens-head-readout { color: var(--foreground); height: 1.5em; }
+.lens-head-readout > span { display: inline-block; animation: lens-fade 0.2s var(--lens-ease); }
+@keyframes lens-fade { from { opacity: 0; } }
+
+/* ---------- planes: a camera move between them ---------- */
+.lens-planes { position: relative; min-height: 0; perspective: 1600px; }
+.lens-plane {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 1.5rem 1.25rem;
+  transform-origin: 50% 30%;
+}
+.lens-plane-scroll { overflow-y: auto; }
+
+/* ---------- the field: ten columns ---------- */
+.lens-lanes { display: flex; gap: 0.5rem; margin-bottom: 0.375rem; flex: none; }
+.lens-lane {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--muted-foreground);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  transition: flex-grow 0.6s var(--lens-ease);
+}
+.lens-lane::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--card-border), transparent); }
+.lens-field { flex: 1; min-height: 0; display: flex; gap: 0.5rem; }
+.lens-gap { flex: 0 0 0.5rem; position: relative; }
+.lens-gap::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed color-mix(in srgb, var(--foreground) 14%, transparent);
+}
+
+.lens-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  padding: 0.625rem 0.25rem 0.5rem;
+  border-radius: var(--radius-card, 0.75rem);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: flex-grow 0.6s var(--lens-ease), transform 0.6s var(--lens-ease), background 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+.lens-col:hover { background: color-mix(in srgb, var(--foreground) 3%, transparent); border-color: var(--glass-border, var(--card-border)); }
+.lens-col:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 2px; }
+.lens-col-head { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; flex: none; color: var(--muted-foreground); }
+.lens-disc {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--card-border);
+  background: radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--foreground) 8%, transparent), color-mix(in srgb, var(--foreground) 1.5%, transparent));
+}
+.lens-disc > svg { width: 1.25rem; height: 1.25rem; }
+.lens-col-name { white-space: nowrap; color: var(--foreground); }
+.lens-bar {
+  flex: 1;
+  min-height: 0;
+  width: clamp(2rem, 42%, 4.5rem);
+  margin: 0.625rem 0 0.5rem;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+}
+.lens-foot { flex: none; text-align: center; line-height: 1.25; min-height: 2.5em; }
+.lens-foot.is-red { color: var(--status-error); }
+.lens-foot.is-amber { color: var(--status-warning); }
+.lens-foot.is-stale { color: var(--status-info); }
+.lens-foot.is-green { color: var(--status-success); }
+.lens-foot.is-quiet { color: var(--muted-foreground); }
+
+/* a failing step is back-lit red */
+.lens-col.is-fault .lens-disc {
+  color: var(--status-error);
+  border-color: color-mix(in srgb, var(--status-error) 55%, transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--status-error) 40%, transparent);
+}
+
+/* the lit column: the lens light, no panel over the strip */
+.lens-col.is-lit {
+  flex-grow: 1.6;
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 9%, transparent), color-mix(in srgb, var(--background) 60%, transparent));
+  box-shadow: 0 18px 40px color-mix(in srgb, var(--background) 70%, transparent), 0 0 34px color-mix(in srgb, var(--primary) 14%, transparent), inset 0 1px 0 color-mix(in srgb, var(--accent) 24%, transparent);
+  transform: translateY(-0.25rem);
+}
+.lens-col.is-lit.is-fault {
+  border-color: color-mix(in srgb, var(--status-error) 45%, transparent);
+  box-shadow: 0 18px 40px color-mix(in srgb, var(--background) 70%, transparent), 0 0 40px color-mix(in srgb, var(--status-error) 16%, transparent), inset 0 1px 0 color-mix(in srgb, var(--status-error) 26%, transparent);
+}
+.lens-col.is-lit::before {
+  content: '';
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: -4rem;
+  height: 5rem;
+  pointer-events: none;
+  background: radial-gradient(50% 60% at 50% 100%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%);
+}
+.lens-col.is-lit.is-fault::before { background: radial-gradient(50% 60% at 50% 100%, color-mix(in srgb, var(--status-error) 26%, transparent), transparent 70%); }
+.lens-col.is-lit .lens-disc { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.lens-col.is-lit.is-fault .lens-disc { color: var(--status-error); }
+.lens-watermark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 92%;
+  max-width: 11rem;
+  aspect-ratio: 1;
+  color: color-mix(in srgb, var(--accent) 12%, transparent);
+  pointer-events: none;
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--primary) 40%, transparent));
+}
+.lens-col.is-fault .lens-watermark { color: color-mix(in srgb, var(--status-error) 20%, transparent); }
+
+/* ---------- cells: a project (portfolio) or a change (project) ---------- */
+.lens-cell { flex: 1; min-height: 2px; border-radius: 3px; position: relative; z-index: 1; transition: outline-color 0.15s; }
+.lens-cell.is-red,
+.lens-cell.is-failed {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--status-error) 60%, var(--foreground)), var(--status-error));
+  box-shadow: 0 0 9px color-mix(in srgb, var(--status-error) 65%, transparent);
+}
+.lens-cell.is-green,
+.lens-cell.is-done {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--status-success) 65%, var(--foreground)), var(--status-success));
+  box-shadow: 0 0 6px color-mix(in srgb, var(--status-success) 40%, transparent);
+}
+.lens-cell.is-amber { background: var(--status-warning); }
+.lens-cell.is-stale { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--status-info) 50%, transparent) 0 2px, transparent 2px 4px); }
+.lens-cell.is-unmeasured {
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--foreground) 6%, transparent) 0 3px, transparent 3px 6px);
+  outline: 1px dashed color-mix(in srgb, var(--muted-foreground) 50%, transparent);
+  outline-offset: -1px;
+}
+.lens-cell.is-instructed { background: color-mix(in srgb, var(--foreground) 12%, transparent); }
+.lens-cell.is-skipped { outline: 1.5px solid color-mix(in srgb, var(--foreground) 45%, transparent); outline-offset: -1.5px; }
+.lens-cell.is-unknown { outline: 1px dashed color-mix(in srgb, var(--muted-foreground) 38%, transparent); outline-offset: -1px; }
+.lens-cell.is-none { outline: 1px dotted color-mix(in srgb, var(--foreground) 9%, transparent); outline-offset: -1px; }
+.lens-cell.is-hl { outline: 2px solid var(--foreground); outline-offset: 1px; }
+.lens-cell.is-cursor { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.lens-field.is-intro .lens-cell { animation: lens-lite 0.5s var(--lens-ease) both; animation-delay: calc(var(--c) * 50ms + var(--r) * 20ms); }
+@keyframes lens-lite { from { opacity: 0; transform: scaleX(0.2); } }
+
+/* ---------- one step across the portfolio (a leaf) ---------- */
+.lens-across { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; align-content: start; padding-bottom: 1rem; }
+.lens-across-rule {
+  position: relative;
+  overflow: hidden;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-card, 0.75rem);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 7%, transparent), transparent);
+}
+.lens-across-rule.is-fault { border-color: color-mix(in srgb, var(--status-error) 40%, transparent); }
+.lens-across-rule .lens-watermark { left: auto; top: -1.5rem; right: -1.5rem; transform: none; width: 10rem; max-width: none; }
+.lens-group-head { color: var(--muted-foreground); letter-spacing: 0.08em; text-transform: uppercase; font-family: var(--font-mono); padding: 0.25rem 0.75rem; }
+.lens-group-head b { color: var(--foreground); margin-left: 0.4rem; }
+.lens-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(30rem, 1fr)); gap: 0.25rem 1rem; }
+.lens-rows.is-quiet { grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr)); }
+.lens-row {
+  display: grid;
+  grid-template-columns: 0.375rem 2.5rem minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.4rem 0.75rem 0.4rem 0.375rem;
+  border-radius: var(--radius-input, 0.5rem);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.lens-row:hover,
+.lens-row.is-cursor { background: color-mix(in srgb, var(--primary) 8%, transparent); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+.lens-row.is-red:hover,
+.lens-row.is-red.is-cursor { background: color-mix(in srgb, var(--status-error) 8%, transparent); border-color: color-mix(in srgb, var(--status-error) 38%, transparent); }
+.lens-row:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 1px; }
+.lens-row > .lens-cell { width: 0.375rem; height: 2.25rem; flex: none; }
+.lens-row.is-quiet { grid-template-columns: 0.375rem 1.75rem minmax(0, 1fr) auto; padding-top: 0.2rem; padding-bottom: 0.2rem; }
+.lens-row.is-quiet > .lens-cell { height: 1.5rem; }
+.lens-row-name { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.lens-row-name small { margin-left: 0.35rem; color: var(--muted-foreground); }
+.lens-row-why { display: block; color: var(--muted-foreground); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.lens-row-figure { text-align: right; line-height: 1.1; font-family: var(--font-mono); }
+.lens-row-figure.is-red { color: var(--status-error); }
+.lens-row-figure small { display: block; font-family: var(--font-sans); color: var(--muted-foreground); }
+
+/* ---------- the detail plane ---------- */
+.lens-detail { max-width: 96rem; width: 100%; margin: 0 auto; padding-top: 0.25rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lens-stage *,
+  .lens-stage *::before { animation: none !important; transition: none !important; }
+}
+
+/* the kit host the page mounts the stage in carries no height of its own */
+.k-host:has(> .lens-stage) { height: 100%; }
+
+/* a verdict a Measure just changed: the foot lights once */
+.lens-col[data-settle] .lens-foot { animation: lens-settle 1.2s var(--lens-ease) 1; }
+@keyframes lens-settle { 0% { text-shadow: 0 0 0 transparent; } 30% { text-shadow: 0 0 14px currentColor; } 100% { text-shadow: 0 0 0 transparent; } }
+.lens-col[data-measuring] .lens-foot { color: var(--primary); }
+
+/* the field before its data: real geometry, inert, painted a beat late so a warm load never shows it */
+.lens-ghost .lens-field,
+.lens-ghost .lens-lanes { pointer-events: none; animation: lens-ghost-in 0.3s ease-out 0.15s both; }
+.lens-ghost .lens-col { cursor: default; }
+@keyframes lens-ghost-in { from { opacity: 0; } }
+
+/* a narrow stage: the keys step aside first, then the depth's words; the trail stays */
+@container lens (max-width: 72rem) { .lens-keys { display: none; } }
+@container lens (max-width: 56rem) { .lens-depth-label { display: none; } }

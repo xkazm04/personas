@@ -17,7 +17,7 @@ import { useTimeTravel } from '../../history/timeTravel';
 import { stepChange } from '../../layer1/delta';
 import type { HealthStep } from '../../layer1/healthModel';
 import { healthPhrase } from '../../layer1/layer1Labels';
-import { DeltaMark } from '../../layer1/rail/DeltaMark';
+import { DeltaMark } from '../../layer1/parts/DeltaMark';
 import { BAND } from '../../system/lcSurface';
 import { LT } from '../../system/lcType';
 import { GLYPH } from '../../system/scales';

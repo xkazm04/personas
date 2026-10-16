@@ -3,17 +3,18 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 
 import en from '@/i18n/locales/en.json';
 
-// Wave 10: the first-run setup in Layer 1's status slot - what detection found
-// as a checklist grouped by step, the coverage suggestions (never saved on
-// their own), Save and Measure (each step's commands, then a Measure),
-// Measure with these (nothing saved), the empty state, and the measured
-// project that gets the status plate instead.
+// Wave 10: the first-run setup at the head of the Gate detail (the Lens's last
+// layer) - what detection found as a checklist grouped by step, the coverage
+// suggestions (never saved on their own), Save and Measure (each step's
+// commands, then a Measure), Measure with these (nothing saved), the empty
+// state, and the measured project whose Gate detail opens on its screen alone.
 
 const api = vi.hoisted(() => ({
   detectLifecycleCommands: vi.fn(),
   setLifecycleStepParams: vi.fn(),
   measureLifecycle: vi.fn(),
   getLifecycleHistory: vi.fn(async () => ({ measures: [], stepIds: ['gate', 'tests'] })),
+  getLifecycleStepDetail: vi.fn(async (_p: string, stepId: string) => ({ stepId, runs: [], docs: [], related: [], evidence: [] })),
 }));
 vi.mock('@/api/devTools/lifecycle', () => api);
 vi.mock('../../layer2/stepChunks', async (importOriginal) => ({
@@ -28,7 +29,7 @@ vi.mock('@/i18n/useTranslation', async (importOriginal) => {
 import type { LifecycleGateCommand } from '@/lib/bindings/LifecycleGateCommand';
 
 import { healthyMix, soloV0 } from '../../../journey/__tests__/fixtures';
-import { Layer1 } from '../Layer1';
+import { ProjectLens } from '../../lens/ProjectLens';
 import { coverageTemplates, needsSetup } from '../setup/setupModel';
 import { __resetSetupCacheForTests } from '../setup/useSetup';
 import { renderLayer1 } from './renderLayer1';
@@ -55,17 +56,17 @@ const rowIds = (group: HTMLElement) =>
   [...group.querySelectorAll('[data-testid^="lc10-setup-row-"]')].map((r) => r.getAttribute('data-testid')!.replace('lc10-setup-row-', ''));
 
 async function openSetup(projectId: string) {
-  const view = renderLayer1(<Layer1 />, soloV0({ projectId }));
+  const view = renderLayer1(<ProjectLens />, soloV0({ projectId }), 'gate');
   await screen.findByTestId('lc10-setup-row-lint');
   return view;
 }
 
 describe('when the setup shows', () => {
-  it('shows for a project never measured, and the status plate for a measured one', () => {
+  it('shows on the Gate detail of a project never measured, and not for a measured one', () => {
     expect(needsSetup(soloV0())).toBe(true);
     expect(needsSetup(healthyMix())).toBe(false);
-    renderLayer1(<Layer1 />, healthyMix({ projectId: 'p-measured' }));
-    expect(screen.getByTestId('lc1-status')).toBeTruthy();
+    renderLayer1(<ProjectLens />, healthyMix({ projectId: 'p-measured' }), 'gate');
+    expect(screen.getByTestId('lens-detail')).toBeTruthy();
     expect(screen.queryByTestId('lc10-setup')).toBeNull();
     expect(api.detectLifecycleCommands).not.toHaveBeenCalled();
   });
@@ -162,7 +163,7 @@ describe('the ways on', () => {
 describe('nothing detected', () => {
   it('says so, offers no Measure, and Add a command opens the Gate editor', async () => {
     api.detectLifecycleCommands.mockResolvedValue([]);
-    const { openStep } = renderLayer1(<Layer1 />, soloV0({ projectId: 'p-none' }));
+    const { openStep } = renderLayer1(<ProjectLens />, soloV0({ projectId: 'p-none' }), 'gate');
     expect(await screen.findByText(dl.lcx10_setup_none_title)).toBeTruthy();
     expect(screen.queryByTestId('lc10-setup-save')).toBeNull();
     expect(screen.queryByTestId('lc10-setup-measure')).toBeNull();

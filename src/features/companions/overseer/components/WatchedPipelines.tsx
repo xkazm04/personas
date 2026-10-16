@@ -22,14 +22,18 @@ import type { LifecycleWatchedPipeline } from '@/lib/bindings/LifecycleWatchedPi
 import { resolveError } from '@/lib/errors/errorRegistry';
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { useDevToolsLiveStore } from '@/stores/devToolsLiveStore';
+import { openLifecycleProject } from '@/features/plugins/dev-tools/sub_lifecycle/lifecycleView/lens/model/lensFocus';
 import { useSystemStore } from '@/stores/systemStore';
 
 import { WatchedPipelineCard } from './WatchedPipelineCard';
 
-/** Teams > Lifecycle, scoped to one project (the page acts on the active project). */
+/**
+ * Teams > Lifecycle, opened on one project. Lifecycle keeps its own focus, so
+ * this never changes the app-wide active project (owner, 2026-10-16).
+ */
 function openLifecycle(projectId: string) {
   const sys = useSystemStore.getState();
-  void sys.setActiveProject(projectId);
+  openLifecycleProject(projectId);
   sys.setSidebarSection('teams');
   sys.setTeamsTab('lifecycle');
 }

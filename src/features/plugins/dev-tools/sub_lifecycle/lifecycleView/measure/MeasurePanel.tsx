@@ -1,7 +1,7 @@
 /**
- * THE MEASURE PANEL: a running Measure, command by command, in the status
- * band's slot at the head of Layer 1 (the band yields while the panel is open
- * and returns, re-judged, when it closes; `layer1/Layer1`). Its plate is
+ * THE MEASURE PANEL: a running Measure, command by command, at the head of
+ * the project's plane, over its columns (`lens/planes/ProjectPlane`); the
+ * header above never moves for it. Its plate is
  * outlined in the accent while the Measure runs, the warning tone while it is
  * cancelling, and its result's tone once it ended.
  *

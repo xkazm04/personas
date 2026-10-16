@@ -39,7 +39,7 @@ const message = (err: unknown) => resolveError(err instanceof Error ? err.messag
 
 export function useSetup() {
   const { projectId, snapshot, dl } = useLifecycleViewModel();
-  const techStack = useSystemStore((s) => s.projects.find((p) => p.id === s.activeProjectId)?.tech_stack ?? null);
+  const techStack = useSystemStore((s) => s.projects.find((p) => p.id === projectId)?.tech_stack ?? null);
   const measureNow = useMeasureNow();
   const [detected, setDetected] = useState<LifecycleGateCommand[] | null>(() => (projectId ? detectedCache.get(projectId) ?? null : null));
   const [detect, setDetect] = useState<DetectState>(detected ? 'ready' : 'loading');

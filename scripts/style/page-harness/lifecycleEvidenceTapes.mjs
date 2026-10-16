@@ -18,7 +18,7 @@
 // at risk from 50%). Fixture CODE, no personal data. Mirrors
 // journey/__tests__/evidenceFixtures.ts.
 //
-//   plugins/lifecycle/evidence   open a step with --steps "click=[data-testid=lc-node-land];wait=600"
+//   plugins/lifecycle/evidence   open a step with --steps "click=[data-testid=lens-col-land];click=[data-testid=lens-col-land];wait=600"
 import { lifecycleDetailTapes } from './lifecycleDetailTapes.mjs';
 
 export function lifecycleEvidenceTapes({ RECORDED_AT }) {

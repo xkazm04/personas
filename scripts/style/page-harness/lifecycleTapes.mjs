@@ -223,6 +223,30 @@ export function lifecycleTapes({ RECORDED_AT }) {
     };
   }
 
+  /**
+   * The Lens portfolio (the page's landing): three projects with their own snapshots, answered
+   * per `projectId` - the collar's mix, one never measured, one after a bad day. Synthetic.
+   */
+  function portfolioTape(module, note) {
+    const rows = [
+      [PROJECT, snapshot()],
+      [{ ...PROJECT, id: 'p-borealis', name: 'Borealis API', root_path: 'C:/code/borealis', tech_stack: 'Rust' }, snapshot(NEVER)],
+      [{ ...PROJECT, id: 'p-cirrus', name: 'Cirrus Docs', root_path: 'C:/code/cirrus', tech_stack: 'Astro' }, snapshot({ health: REGRESSED })],
+    ];
+    return {
+      version: 1, module, source: 'synthetic', recordedAt: RECORDED_AT, note,
+      calls: [
+        ...rows.map(([p, s]) => ({ cmd: 'dev_tools_get_lifecycle', args: { projectId: p.id }, response: { ...s, projectId: p.id } })),
+        { cmd: 'dev_tools_list_projects', response: rows.map(([p]) => p) },
+        { cmd: 'dev_tools_workspace_list', response: [] },
+        { cmd: 'dev_tools_lifecycle_history', response: HISTORY },
+        { cmd: 'dev_tools_lifecycle_send_preview', response: PREVIEW },
+        { cmd: 'companions_status', response: companionsStatus(true) },
+        { cmd: 'dev_tools_lifecycle_detect_commands', response: DETECTED },
+      ],
+    };
+  }
+
   const MIX = 'Synthetic: Solo v0 with all six health verdicts, a null metric, the Overseer goal and twelve changes of evidence.';
   return {
     PROJECT,
@@ -233,6 +257,7 @@ export function lifecycleTapes({ RECORDED_AT }) {
     snapshot,
     tape,
     builders: {
+      'plugins/lifecycle/portfolio': () => portfolioTape('plugins/lifecycle/portfolio', 'Synthetic: three projects (the collar mix, never measured, a bad day), the Lens portfolio.'),
       'plugins/lifecycle/collar': () => tape('plugins/lifecycle/collar', `${MIX} Twelve Measures of history.`, snapshot()),
       'plugins/lifecycle/history-failed': () => tape('plugins/lifecycle/history-failed', `${MIX} The Measure history read fails.`, snapshot(), 'fail'),
       'plugins/lifecycle/empty': () => tape('plugins/lifecycle/empty', 'Synthetic: no health rows and no goal (the backend before WP1), never measured.', snapshot(NEVER), NO_HISTORY),

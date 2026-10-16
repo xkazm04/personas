@@ -8,8 +8,8 @@
  *
  * - `selected` is the rail's roving cursor (the key that owns the tab stop,
  *   moved by the arrow keys). It is pre-seeded to the weakest step.
- * - `openStepId` is the step whose Layer-2 screen replaces Layer 1 in the same
- *   page (not a modal, not a route). Opening a step also selects it, so
+ * - `openStepId` is the step whose screen is the Lens's last layer, in place
+ *   of the project's columns (not a modal, not a route). Opening a step also selects it, so
  *   closing returns the cursor to the key that was opened.
  *
  * The model is ONE memoised object: every block reads it through one context,
@@ -111,11 +111,15 @@ export interface LifecycleViewModel {
   askAthena: () => void;
 }
 
-export function useLifecycleView(): LifecycleViewModel {
+/**
+ * `projectId` is the project Lifecycle is focused on: the Lens route's own,
+ * never the app-wide active project (owner, 2026-10-16). Null on the
+ * portfolio planes, where the model holds no snapshot.
+ */
+export function useLifecycleView(projectId: string | null): LifecycleViewModel {
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
-  const projectId = useSystemStore((s) => s.activeProjectId);
-  const project = useSystemStore((s) => s.projects.find((p) => p.id === s.activeProjectId));
+  const project = useSystemStore((s) => (projectId ? s.projects.find((p) => p.id === projectId) : undefined));
   const ask = useAskAthena();
   const { snapshot, loading, error, refetch } = useLifecycleSnapshot(projectId);
   const [selectedId, setSelectedId] = useState<string | null>(null);

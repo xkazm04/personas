@@ -10,7 +10,7 @@ import { formatDuration } from '@/lib/utils/formatters';
 import { stepLabel } from '../../journey/journeyLabels';
 import { useLifecycleViewModel } from '../context';
 import { healthLabel } from '../layer1/layer1Labels';
-import { signedChange } from '../layer1/rail/DeltaMark';
+import { signedChange } from '../layer1/parts/DeltaMark';
 import type { ChangeFragment } from './historyModel';
 
 /** Ink per fragment tone (and the tone is also said in words, so it reads without colour). */

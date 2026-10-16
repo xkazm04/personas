@@ -18,7 +18,7 @@
  * the step band's "At risk" pill 3.66-3.95, an info pill 4.3, the accent
  * eyebrow 4.3. Mixed a quarter toward the theme's own foreground they clear it,
  * and stay the same hue. Dark themes are untouched. Scoped to the page's host
- * (`.lcx-inks`, LifecycleBody). */
+ * (`.lcx-inks`, the Lens stage). */
 [data-theme^="light"] .lcx-inks .text-status-success { color: color-mix(in srgb, var(--status-success) 74%, var(--foreground)); }
 [data-theme^="light"] .lcx-inks .text-status-warning { color: color-mix(in srgb, var(--status-warning) 70%, var(--foreground)); }
 [data-theme^="light"] .lcx-inks .text-status-error { color: color-mix(in srgb, var(--status-error) 78%, var(--foreground)); }

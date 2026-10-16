@@ -27,6 +27,8 @@ vi.mock('@/i18n/useTranslation', async (importOriginal) => {
   return { ...actual, useTranslation: () => ({ t: en, tx: actual.interpolate, language: 'en' }) };
 });
 
+import { useLensFocus } from '@/features/plugins/dev-tools/sub_lifecycle/lifecycleView/lens/model/lensFocus';
+
 import { WatchedPipelines } from '../components/WatchedPipelines';
 import { standingOf, verdictTally } from '../watchedModel';
 
@@ -88,14 +90,15 @@ describe('WatchedPipelines', () => {
     listOverseerWatchedPipelines.mockResolvedValue([BETA]);
     render(<WatchedPipelines />);
 
+    // Lifecycle keeps its own focus: the app-wide active project never moves.
     fireEvent.click(await screen.findByRole('button', { name: 'Beta' }));
-    expect(sys.setActiveProject).toHaveBeenCalledWith('p2');
+    expect(useLensFocus.getState().take()).toEqual({ projectId: 'p2', stepId: null });
     expect(sys.setSidebarSection).toHaveBeenCalledWith('teams');
     expect(sys.setTeamsTab).toHaveBeenCalledWith('lifecycle');
 
-    sys.setActiveProject.mockClear();
     fireEvent.click(screen.getByTestId('watched-open-p2'));
-    expect(sys.setActiveProject).toHaveBeenCalledWith('p2');
+    expect(useLensFocus.getState().take()).toEqual({ projectId: 'p2', stepId: null });
+    expect(sys.setActiveProject).not.toHaveBeenCalled();
   });
 
   it('says a failed read inline', async () => {

@@ -8,7 +8,7 @@ import { stepView } from '../../../../journey/__tests__/fixtures';
 import { evidenceRowsFor } from '../../../blocks/evidenceRows';
 import { renderLayer1 } from '../../../layer1/__tests__/renderLayer1';
 import { loadStepChunk } from '../../../layer2/stepChunks';
-import { LifecycleBody } from '../../../LifecycleBody';
+import { ProjectLens } from '../../../lens/ProjectLens';
 import { ChangeDrawer } from '../ChangeDrawer';
 
 const getLifecycleStepDetail = vi.hoisted(() => vi.fn());
@@ -36,7 +36,7 @@ beforeEach(() => {
 function openLand(projectId: string, count = 60): LifecycleSnapshot {
   details.land = landHistory(count);
   const snap = snapshotOver(details.land, 20, { projectId });
-  renderLayer1(<LifecycleBody />, snap, 'land');
+  renderLayer1(<ProjectLens />, snap, 'land');
   return snap;
 }
 
@@ -116,7 +116,7 @@ describe('an evidence step tells the story of its practice', () => {
 
   it('Commit, healthy with a dip week: no contrast, a judged dip under the target', async () => {
     details.commit = commitHistory();
-    renderLayer1(<LifecycleBody />, snapshotOver(details.commit, 20, { projectId: 'p-ev-commit' }), 'commit');
+    renderLayer1(<ProjectLens />, snapshotOver(details.commit, 20, { projectId: 'p-ev-commit' }), 'commit');
     const figure = await screen.findByTestId('lc8-adherence');
     await waitFor(() => expect(Number(screen.getByTestId('lc2-evidence').getAttribute('data-rows'))).toBe(56));
     expect(screen.queryByTestId('lc8-source-contrast')).toBeNull();
@@ -130,7 +130,7 @@ describe('a custom step', () => {
     details['x-review'] = history('x-review', 12, 24, (i) => ({ kind: 'task', outcome: i % 4 === 0 ? 'skipped' : 'done', detail: i % 4 === 0 ? 'No second reviewer' : null }));
     const snap = snapshotOver(details['x-review'], 20, { projectId: 'p-ev-custom' });
     snap.steps = [...snap.steps, stepView('x-review', 'after', [['advisory', 'advisory']])];
-    renderLayer1(<LifecycleBody />, snap, 'x-review');
+    renderLayer1(<ProjectLens />, snap, 'x-review');
     expect((await screen.findByTestId('lc2-instructed')).textContent).toContain('changes record it too');
     expect(screen.getByTestId('lc8-adherence')).toBeTruthy();
     expect(screen.queryByTestId('lc2-done-rate')).toBeNull();

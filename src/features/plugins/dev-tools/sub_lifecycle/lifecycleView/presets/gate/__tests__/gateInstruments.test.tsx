@@ -5,7 +5,7 @@ import { mixWithEvidence, testsDetail } from '../../../../journey/__tests__/deta
 import { ESLINT_ERROR, ESLINT_OUTPUT, instrumentGateDetail, slowingRuns } from '../../../../journey/__tests__/gateFixtures';
 import { renderLayer1 } from '../../../layer1/__tests__/renderLayer1';
 import { loadStepChunk } from '../../../layer2/stepChunks';
-import { LifecycleBody } from '../../../LifecycleBody';
+import { ProjectLens } from '../../../lens/ProjectLens';
 import { __resetGateViewForTests } from '../gateView';
 import { RunChart } from '../RunChart';
 import { __resetRunOutputsForTests } from '../useRunOutput';
@@ -33,7 +33,7 @@ beforeEach(() => {
 });
 
 const openGate = async (projectId: string) => {
-  renderLayer1(<LifecycleBody />, mixWithEvidence({ projectId }), 'gate');
+  renderLayer1(<ProjectLens />, mixWithEvidence({ projectId }), 'gate');
   await screen.findByTestId('lc2-cmd-eslint');
 };
 const bars = (commandId: string) => screen.getByTestId(`lc2-spark-${commandId}`).querySelectorAll<HTMLElement>('[data-bar]');
@@ -162,7 +162,7 @@ describe('time travel on the chart', () => {
 
 describe('Tests coverage instrument', () => {
   it('draws coverage over its runs against the thresholds, with the distance to green', async () => {
-    renderLayer1(<LifecycleBody />, mixWithEvidence({ projectId: 'p-w6-cov' }), 'tests');
+    renderLayer1(<ProjectLens />, mixWithEvidence({ projectId: 'p-w6-cov' }), 'tests');
     const chart = await screen.findByTestId('lc2-coverage-trend');
     expect(chart.getAttribute('data-points')).toBe('2');
     expect(screen.getByTestId('lc6-cov-to-green').textContent).toBe('7 pts to green');

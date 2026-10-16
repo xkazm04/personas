@@ -1,4 +1,4 @@
-// Layer 2's keyboard: Esc returns to Layer 1, Left / Right walk to the
+// A step screen's keyboard: Esc returns to the project's columns, Left / Right walk to the
 // neighbouring step's screen without returning. Registered on the app's
 // keyboard ladder at the route rung, so a modal opened from the screen (the
 // docs change log, a related backlog item) takes Escape first, and a key

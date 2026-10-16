@@ -13,7 +13,7 @@ import { useLifecycleViewModel } from '../../context';
 import { metricDelta } from '../../layer1/delta';
 import { VERDICT, type HealthStep } from '../../layer1/healthModel';
 import { MetricValue, SampleNote } from '../../layer1/parts/MetricValue';
-import { DeltaMark } from '../../layer1/rail/DeltaMark';
+import { DeltaMark } from '../../layer1/parts/DeltaMark';
 import { RHYTHM } from '../../system/lcSurface';
 import { LT } from '../../system/lcType';
 import type { StepThresholds } from '../../system/rules';

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { healthyMix, prev } from '../../../journey/__tests__/fixtures';
 import { buildLanes } from '../../../journey/journeyModel';
-import { signedChange } from '../rail/DeltaMark';
+import { signedChange } from '../parts/DeltaMark';
 import { higherIsBetter, metricDelta, stepChange } from '../delta';
 import { joinHealth, type HealthStep } from '../healthModel';
 

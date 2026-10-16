@@ -1,6 +1,6 @@
 /**
- * The Overseer's goal on Layer 1: the goal as HIS WORK, the second row of the
- * status plate (`layer1/status/StatusBand`), beside the verdict counts.
+ * The Overseer's goal on a project: the goal as HIS WORK, a strip at the head
+ * of the project's plane (`lens/planes/ProjectPlane`), over its columns.
  *
  * Wave 10 folded the wave-9 strip into the plate, so the rail under it fits a
  * 1280x800 screen again with a goal: one row, `GoalLine` - his mark, the
@@ -30,7 +30,7 @@ import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
 import { useLifecycleViewModel } from '../context';
 import type { HealthStep } from '../layer1/healthModel';
-import { GoalMeter } from '../layer1/status/GoalMeter';
+import { GoalMeter } from './GoalMeter';
 import { LT } from '../system/lcType';
 import { GLYPH } from '../system/scales';
 import { GoalItemRow } from './GoalItemRow';

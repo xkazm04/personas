@@ -10,7 +10,7 @@
 // broken doc is red; clean / verifiable). Fixture CODE, no personal data.
 // Mirrors journey/__tests__/docsFixtures.ts.
 //
-//   plugins/lifecycle/docs   open the step with --steps "click=[data-testid=lc-node-docs];wait=600"
+//   plugins/lifecycle/docs   open the step with --steps "click=[data-testid=lens-col-docs];click=[data-testid=lens-col-docs];wait=600"
 import { lifecycleDetailTapes } from './lifecycleDetailTapes.mjs';
 
 export function lifecycleDocsTapes({ RECORDED_AT }) {

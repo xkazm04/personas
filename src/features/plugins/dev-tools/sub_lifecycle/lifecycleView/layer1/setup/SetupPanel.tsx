@@ -1,5 +1,5 @@
 /**
- * THE FIRST-RUN SETUP: Layer 1's status slot for a project that has never been
+ * THE FIRST-RUN SETUP: the head of the Gate and Tests detail (`lens/planes/DetailPlane`) for a project that has never been
  * measured (`setupModel.needsSetup`). It says what Lifecycle does ("measures
  * your pipeline by running its own commands"), lists the commands it would run
  * as a checklist grouped by step (Gate, Tests; `SetupGroup`), each with its kind
@@ -12,8 +12,8 @@
  *
  * When nothing was found at all it says so and offers the Gate editor. While
  * detection answers, the two groups are drawn with ghost rows under their real
- * heads. Once a Measure starts, the Measure panel takes the slot
- * (`layer1/Layer1`); once one has landed, the status plate does.
+ * heads. Once a Measure has landed, the project no longer needs it and the
+ * detail opens on its step screen alone.
  */
 import { useId } from 'react';
 import { Gauge, Play, Settings2 } from 'lucide-react';
