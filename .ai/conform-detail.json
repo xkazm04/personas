@@ -3785,23 +3785,49 @@
       "subject": "session-resume",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-8",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:26:16.000Z",
+      "worker": "86e86b00-7d72-4d76-bf72-a315885eeb45",
       "techniques": [
         {
           "technique": "last-seen-anchors",
-          "verdict": "conformant",
-          "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts:145 heartbeat skips beats while document.hidden (fixed since the old verdict, 1b7f06b58d); anchor snapshotted in a lazy initializer before any beat (:185), acknowledgment advances it (:212), missing anchor reads as null/first-run (:68)"
-        },
-        {
-          "technique": "first-run-and-quiet-silence",
           "verdict": "deviation",
-          "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts:104 the outcome is now discriminated (quiet vs not-derived, added since the old verdict) but only for runs; the alerts input (:35) cannot express 'not loaded', so not-derived cannot fire for it"
+          "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts:185 snapshot taken after the HomePage.tsx:59 heartbeat's immediate beat (sinceLeftBriefing.ts:148) advanced the value, and the advance does not wait for derivation to land; dismiss at sinceLeftBriefing.ts:212 stamps the click clock, not the time the shown view was evaluated, so anything arriving between load and dismiss is marked seen unseen"
         },
         {
           "technique": "delta-briefings",
           "verdict": "deviation",
-          "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts:85 the run count comes from a 500-row sample (homeSpineSlice.ts:47 RUNS_SAMPLE_LIMIT) rendered as a plain '{count} runs' total (SinceYouLeftBriefing.tsx:35), so an away period with over 500 runs reads as exactly 500, not '500+'"
+          "evidence": "src/stores/slices/overview/homeSpineSlice.ts:47 runs come from a 500-row sample and render as a plain total with no N+ bound, so long absences undercount; deep links (SinceYouLeftBriefing.tsx:45) open unfiltered views, not the since-anchor predicate"
+        },
+        {
+          "technique": "first-run-and-quiet-silence",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts:35 alerts are a bare array (a failed fetch is swallowed at src/stores/slices/overview/alertSlice.ts:259 leaving []) and approvals a bare number, so only runs can yield not-derived (sinceLeftBriefing.ts:104): failure silence still reads as quiet for 2 of 3 inputs; first-run silence is realized (sinceLeftBriefing.ts:68)"
+        },
+        {
+          "technique": "resume-affordances",
+          "verdict": "conformant",
+          "evidence": "src/features/home/sub_welcome/useResumeContext.ts:56 per-kind offer expiry (failure 24h, edit 7d at :55), ranked single signal failure>tour>edit, entity validated at render (:270), inline banner with recorded dismiss (ResumeBanner.tsx:37)"
+        },
+        {
+          "technique": "layered-place-restoration",
+          "verdict": "unknown",
+          "evidence": "src/features/home/sub_welcome/useResumeContext.ts:12 not audited layer-by-layer this run"
+        },
+        {
+          "technique": "content-freshness-states",
+          "verdict": "unknown",
+          "evidence": "src/features/home/sub_welcome/SinceYouLeftBriefing.tsx:18 this context owns no fetched-remote content panel; freshness lives in sub_releases, outside it"
+        }
+      ],
+      "registryProposal": "Upward lesson: the repo's discriminated BriefingOutcome (sinceLeftBriefing.ts:47) shows the discrimination is only as good as each input's ability to be null - a store that defaults to [] and swallows fetch errors (alertSlice.ts:259) defeats it silently; delta-briefings could name 'every input must carry a not-loaded state' explicitly. Also last-seen-anchors could name the lazy/Suspense-mounted consumer whose first-render snapshot runs after an ancestor's mount effect - a component-world variant of the self-erasing stamp.",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts:35 only runs can be null - alerts are a bare array (alertHistory defaults to [] and a failed fetch leaves it [], alertSlice.ts:260) and approvals fall back to 0, so an alerts or approvals source that never loaded yields outcome 'quiet': failure-caused silence still reads as a peaceful week for 2 of 3 inputs",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by 86e86b00-7d72-4d76-bf72-a315885eeb45"
         }
       ]
     },

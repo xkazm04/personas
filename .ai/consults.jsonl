@@ -1323,3 +1323,4 @@
 {"ts":"2026-10-16T17:24:50.608Z","bundle":"software-engineering","subjects":["p2p-networking"],"techniques":["resilience-and-reconnection","connection-lifecycle","discovery-advertisement","peer-state-honesty","exposure-controls"],"deviations":1,"context":"eba8081c-3a43-4529-b172-9bef07493935"}
 {"ts":"2026-10-16T17:24:50.608Z","bundle":"software-engineering","subjects":["p2p-networking"],"techniques":["exposure-controls"],"deviations":1,"context":"219fe76c-1a70-4d42-88e2-393b7b98121a"}
 {"ts":"2026-10-16T17:24:50.608Z","bundle":"software-engineering","subjects":["p2p-networking"],"techniques":["exposure-controls"],"deviations":1,"context":"7159d27d-86c2-43be-a83f-8b50c4c816be"}
+{"ts":"2026-10-16T17:26:16Z","bundle":"software-engineering","subjects":["session-resume"],"techniques":["last-seen-anchors","delta-briefings","first-run-and-quiet-silence","resume-affordances"],"deviations":3}
