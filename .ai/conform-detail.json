@@ -23227,6 +23227,38 @@
           "reason": "replaced by 7749bf3f-85ef-47fa-9fd9-8c4812c4c473"
         }
       ]
+    },
+    "7741725e-8124-4899-b17e-8e39e7fcf1ed/settings": {
+      "context": "studio",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:12:59.000Z",
+      "worker": "f67e0fe5-03a3-4f35-ac63-3136be6a0860",
+      "techniques": [
+        {
+          "technique": "key-registry",
+          "verdict": "not-applicable",
+          "evidence": "src/features/studio/studioHistory.ts:134 the persisted slice is keyed by one client-state store name, not by setting keys; no app-settings key is referenced anywhere under src/features/studio"
+        },
+        {
+          "technique": "typed-accessors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/studio/StudioBuildSettings.tsx:45 values are read typed from the in-memory runtime (BuildStyle union, inline default), not parsed from a stored string"
+        },
+        {
+          "technique": "settings-audit-and-history",
+          "verdict": "not-applicable",
+          "evidence": "src/features/studio/studioStore.ts:768 setBuildSettings patches runtime and a localStorage preference; nothing reaches a settings store that could be audited"
+        },
+        {
+          "technique": "setting-kinds",
+          "verdict": "not-applicable",
+          "evidence": "src/features/studio/studioHistory.ts:130 the persisted members are user/view preferences (goals rail, sheet style), none an operational config, ceiling or flag"
+        }
+      ],
+      "registryProposal": "Borderline worth naming in the client-state/settings boundary: gatePlanDefault (src/features/studio/studioHistory.ts:68-72) is a localStorage preference that changes agent behavior (whether a build pauses for plan review) and is lost on a WebView clear; the boundary rule 'drives backend behavior => setting' does not say how to classify a client-orchestrated behavioral gate."
     }
   }
 }

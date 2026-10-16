@@ -32618,7 +32618,11 @@
           "revision": 13,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/studio/studioHistory.ts:134 Studio's only durable knobs (goalsOpen, sheetStyle, gatePlanDefault, open tabs) live in a zustand persist localStorage slice, and its per-turn build controls are in-memory runtime fields (src/features/studio/studioStore.ts:318 effort defaults inline, passed per call at :583); the context reads and writes no app_settings key, so the backend key-space techniques have no surface here and the golden path's Boundaries section assigns client-persisted view state to client-state",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
+          "evaluatedRevision": 13
         }
       ],
       "governance": "governed"
