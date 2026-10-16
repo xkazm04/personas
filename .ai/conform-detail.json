@@ -8979,28 +8979,68 @@
       "bundle": "software-engineering",
       "state": "deviation",
       "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T01:48:30.892Z",
+      "evaluatedTs": "2026-10-16T18:14:16.000Z",
+      "worker": "89ed55a8-8b1a-4e96-8d21-882b531e1c2a",
       "techniques": [
         {
           "technique": "crash-capture",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:43 componentDidCatch traps component render crashes before they escape to Sentry.withErrorBoundary without sending a telemetry event or attaching a breadcrumb trail."
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:43 the catch hides the crash from the escape hook at src/main.tsx:223 (the auto-capture tier sees escapes, not failures) and no handled-path Sentry door replaces it; :47 persists unsanitized message/stack via logger.error -> devlog (src/lib/log.ts:52), violating sanitize-before-anything-persists"
         },
         {
           "technique": "error-doors",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:47 Handled render crashes log only to console and local storage without reaching operator telemetry."
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:50 a user-facing failure reaches the user (fallback UI) and a local log/crash store (src/lib/utils/crashPersistence.ts:144 reportFrontendCrash -> SQLite) but not telemetry; the route requires user + telemetry"
         },
         {
-          "technique": "swallowed-error-prevention",
-          "verdict": "deviation",
-          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:50 Handled crashes persist to localStorage without notifying operator telemetry, keeping the handled crash rate invisible."
+          "technique": "containment-boundary-restores-state",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:53 reset clears the boundary state and delegates restore to the host onReset; render-tree containment holds no mutable document, so restore is a remount"
         },
         {
           "technique": "user-facing-mapping",
-          "verdict": "not-judged",
-          "evidence": "src/features/shared/components/feedback/ErrorBanner.tsx:52 banners render caller-supplied text; mapping is the caller's (registry judged under 2e1e105a)",
-          "carriedFrom": "2026-10-10"
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBanner.tsx:10 banners render caller-supplied copy with an onRetry slot; the raw-to-copy mapping is owned by callers via resolveErrorTranslated, not by the primitive"
+        },
+        {
+          "technique": "taxonomy-design",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); no category set is declared or consumed here"
+        },
+        {
+          "technique": "reclassification-is-not-repair",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); no internal-class code is assigned here"
+        },
+        {
+          "technique": "structured-propagation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); nothing is propagated across a layer or boundary"
+        },
+        {
+          "technique": "parse-failure-keeps-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); no collection decode"
+        },
+        {
+          "technique": "swallowed-error-prevention",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); the one empty catch (src/features/shared/components/feedback/ErrorBoundary.tsx:105) falls back to hard navigation, a declared last resort"
+        },
+        {
+          "technique": "cancellation-attribution",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); no cancellable work"
+        },
+        {
+          "technique": "consumer-decides-error-shape",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); no published error enumeration"
+        },
+        {
+          "technique": "exit-contract-is-a-taxonomy-projection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); no process exit contract"
         }
       ],
       "superseded": [
@@ -9024,14 +9064,15 @@
           "evaluatedAt": "2026-10-10T01:44:49.000Z",
           "worker": "d1cc0cd3-6e4c-4d0d-831a-33d1788b799a",
           "reason": "replaced by 1c57ad9d-f667-4345-b68d-4a4a045d763d"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:43 the section boundary (36 call sites) catches render crashes before the root Sentry.withErrorBoundary (src/main.tsx:223) and opens no Sentry door - every handled render crash is dark to operator telemetry and persists with no breadcrumb trail (src/lib/utils/crashPersistence.ts:114)",
+          "evaluatedAt": "2026-10-10",
+          "worker": null,
+          "reason": "replaced by 89ed55a8-8b1a-4e96-8d21-882b531e1c2a"
         }
-      ],
-      "withdrawn": {
-        "worker": "1c57ad9d-f667-4345-b68d-4a4a045d763d",
-        "state": "deviation",
-        "at": "2026-10-16T01:48:56.121300+00:00",
-        "reason": "reviewer (sonnet): ErrorBoundary.componentDidCatch calls persistCrash, which also calls reportFrontendCrash (src/lib/utils/crashPersistence.ts:144) to send the sanitized crash to the backend. That contradicts the claim that handled render crashes reach only console and localStorage and never operator telemetry."
-      }
+      ]
     },
     "647d6a54-3813-4149-bbf7-2d96a57a77c7/search": {
       "context": "vault-databases-tabs",
@@ -24395,24 +24436,71 @@
       "bundle": "software-engineering",
       "state": "conformant",
       "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T02:44:36.379Z",
+      "evaluatedTs": "2026-10-16T18:14:16.000Z",
+      "worker": "89ed55a8-8b1a-4e96-8d21-882b531e1c2a",
       "techniques": [
         {
           "technique": "taxonomy-design",
           "verdict": "conformant",
-          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:33 The test parses pub mod stop_reason in chain.rs at runtime and requires the i18n keys to equal those consts. Line 30 fails the test if the parse matches nothing."
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:16 the stop_reason vocabulary is read from src-tauri/db/src/chain.rs rather than hand-copied, and :30 refuses a parse that matched nothing"
+        },
+        {
+          "technique": "user-facing-mapping",
+          "verdict": "conformant",
+          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:77 the fully unmatched error resolves to the generic translated message+suggestion; :28-:70 pin key-present, key-missing raw fallback and registry chain links"
         },
         {
           "technique": "error-doors",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:2 These files pin copy resolution. No production catch routes a failure to a door. types.ts hits for \"catch\" are catch_up marketing strings."
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no catch site"
         },
         {
-          "technique": "user-facing-mapping",
-          "verdict": "deviation",
-          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:73 Link 2 of the pinned chain shows the wire text (the test's raw is 'OAuth grant revoked: c1') when the catalog key is missing. The unmatched path at line 80 does use the generic 'Something went wrong.' The generated error_registry type pairs message and suggestion keys."
+          "technique": "reclassification-is-not-repair",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no internal class"
+        },
+        {
+          "technique": "structured-propagation",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no layer crossing"
+        },
+        {
+          "technique": "parse-failure-keeps-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no external collection decode"
+        },
+        {
+          "technique": "swallowed-error-prevention",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no catch body"
+        },
+        {
+          "technique": "crash-capture",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no execution-context edge"
+        },
+        {
+          "technique": "cancellation-attribution",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no cancellable work"
+        },
+        {
+          "technique": "consumer-decides-error-shape",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no published error type"
+        },
+        {
+          "technique": "containment-boundary-restores-state",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no mutation chokepoint"
+        },
+        {
+          "technique": "exit-contract-is-a-taxonomy-projection",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no process exit"
         }
       ],
+      "registryProposal": "A test-only context matched to a production subject: its tests realize two techniques of code owned by the i18n context (whose own verdict is a deviation on prose matching in src/lib/errors/errorRegistry.ts). The matcher could fold test contexts into the subject they test rather than judging them as governed surfaces.",
       "superseded": [
         {
           "state": "conformant",
@@ -24421,13 +24509,7 @@
           "worker": null,
           "reason": "replaced by 03599f6c-283c-4cd5-abd9-22565d62a181"
         }
-      ],
-      "withdrawn": {
-        "worker": "03599f6c-283c-4cd5-abd9-22565d62a181",
-        "state": "deviation",
-        "at": "2026-10-16T02:45:19.242742+00:00",
-        "reason": "reviewer (sonnet): The only evidence is a test that pins the raw-string fallback; the code that renders that message is useTranslatedError.ts, which is outside this context, and no production catch in the context was shown to skip a door."
-      }
+      ]
     },
     "320d2cea-9761-4233-97c1-ee2eaf4d6c17/mcp-tools": {
       "context": "db-repos-execution",

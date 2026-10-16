@@ -12592,8 +12592,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:43 the section boundary (36 call sites) catches render crashes before the root Sentry.withErrorBoundary (src/main.tsx:223) and opens no Sentry door - every handled render crash is dark to operator telemetry and persists with no breadcrumb trail (src/lib/utils/crashPersistence.ts:114)",
-          "evaluatedAt": "2026-10-10"
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:43 the section boundary (used from 12 files) catches render crashes before the root Sentry.withErrorBoundary (src/main.tsx:223) and opens no telemetry event, so the handled crash reaches only the user, the JSONL log and the local crash table, never the operator; and :47 writes the raw error.message + componentStack to the log unsanitized while persistCrash sanitizes the same data (src/lib/utils/crashPersistence.ts:98)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:d811928687fd4faf",
+          "evaluatedRevision": 17
         },
         {
           "subject": "test-harness",
@@ -16357,8 +16359,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "taxonomy-design's cross-boundary mirroring (chainStopReasons.parity.test.ts:16-37 parses src-tauri/db/src/chain.rs's stop_reason consts at test time rather than hand-copying, citing failure-not-empty-success), user-facing-mapping (useTranslatedError.test.ts:27-59 pins the four-link resolveErrorTranslated fallback chain against ERROR_KEY_MAP). Remaining techniques not-applicable to this test-only context -- no production catch/propagation/cancellation code.",
-          "evaluatedAt": "2026-10-03"
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:16 parses the Rust stop_reason authority at test time (one authority, mirrored, never re-declared) and asserts a non-empty parse (:30); src/i18n/__tests__/useTranslatedError.test.ts:77 pins the honest generic fallback at the end of the mapping chain",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:d811928687fd4faf",
+          "evaluatedRevision": 17
         }
       ],
       "governance": "governed"

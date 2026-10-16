@@ -1,0 +1,205 @@
+{
+  "schema": "conform-run/1",
+  "worker": "89ed55a8-8b1a-4e96-8d21-882b531e1c2a",
+  "subject": "error-handling",
+  "evaluatedAt": "2026-10-16T18:14:16Z",
+  "pairs": [
+    {
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "subject": "error-handling",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:43 the section boundary (used from 12 files) catches render crashes before the root Sentry.withErrorBoundary (src/main.tsx:223) and opens no telemetry event, so the handled crash reaches only the user, the JSONL log and the local crash table, never the operator; and :47 writes the raw error.message + componentStack to the log unsanitized while persistCrash sanitizes the same data (src/lib/utils/crashPersistence.ts:98)",
+      "techniques": [
+        {
+          "technique": "crash-capture",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:43 the catch hides the crash from the escape hook at src/main.tsx:223 (the auto-capture tier sees escapes, not failures) and no handled-path Sentry door replaces it; :47 persists unsanitized message/stack via logger.error -> devlog (src/lib/log.ts:52), violating sanitize-before-anything-persists"
+        },
+        {
+          "technique": "error-doors",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:50 a user-facing failure reaches the user (fallback UI) and a local log/crash store (src/lib/utils/crashPersistence.ts:144 reportFrontendCrash -> SQLite) but not telemetry; the route requires user + telemetry"
+        },
+        {
+          "technique": "containment-boundary-restores-state",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:53 reset clears the boundary state and delegates restore to the host onReset; render-tree containment holds no mutable document, so restore is a remount"
+        },
+        {
+          "technique": "user-facing-mapping",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBanner.tsx:10 banners render caller-supplied copy with an onRetry slot; the raw-to-copy mapping is owned by callers via resolveErrorTranslated, not by the primitive"
+        },
+        {
+          "technique": "taxonomy-design",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); no category set is declared or consumed here"
+        },
+        {
+          "technique": "reclassification-is-not-repair",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); no internal-class code is assigned here"
+        },
+        {
+          "technique": "structured-propagation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); nothing is propagated across a layer or boundary"
+        },
+        {
+          "technique": "parse-failure-keeps-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); no collection decode"
+        },
+        {
+          "technique": "swallowed-error-prevention",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); the one empty catch (src/features/shared/components/feedback/ErrorBoundary.tsx:105) falls back to hard navigation, a declared last resort"
+        },
+        {
+          "technique": "cancellation-attribution",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); no cancellable work"
+        },
+        {
+          "technique": "consumer-decides-error-shape",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); no published error enumeration"
+        },
+        {
+          "technique": "exit-contract-is-a-taxonomy-projection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:33 the context is presentational feedback primitives (boundary, banners, dialogs); no process exit contract"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:d811928687fd4faf",
+      "evaluatedRevision": 17
+    },
+    {
+      "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+      "subject": "error-handling",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:16 parses the Rust stop_reason authority at test time (one authority, mirrored, never re-declared) and asserts a non-empty parse (:30); src/i18n/__tests__/useTranslatedError.test.ts:77 pins the honest generic fallback at the end of the mapping chain",
+      "techniques": [
+        {
+          "technique": "taxonomy-design",
+          "verdict": "conformant",
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:16 the stop_reason vocabulary is read from src-tauri/db/src/chain.rs rather than hand-copied, and :30 refuses a parse that matched nothing"
+        },
+        {
+          "technique": "user-facing-mapping",
+          "verdict": "conformant",
+          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:77 the fully unmatched error resolves to the generic translated message+suggestion; :28-:70 pin key-present, key-missing raw fallback and registry chain links"
+        },
+        {
+          "technique": "error-doors",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no catch site"
+        },
+        {
+          "technique": "reclassification-is-not-repair",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no internal class"
+        },
+        {
+          "technique": "structured-propagation",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no layer crossing"
+        },
+        {
+          "technique": "parse-failure-keeps-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no external collection decode"
+        },
+        {
+          "technique": "swallowed-error-prevention",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no catch body"
+        },
+        {
+          "technique": "crash-capture",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no execution-context edge"
+        },
+        {
+          "technique": "cancellation-attribution",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no cancellable work"
+        },
+        {
+          "technique": "consumer-decides-error-shape",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no published error type"
+        },
+        {
+          "technique": "containment-boundary-restores-state",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no mutation chokepoint"
+        },
+        {
+          "technique": "exit-contract-is-a-taxonomy-projection",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 the context is two test files plus a generated type tree, no production catch, propagation or classification code; no process exit"
+        }
+      ],
+      "registryProposal": "A test-only context matched to a production subject: its tests realize two techniques of code owned by the i18n context (whose own verdict is a deviation on prose matching in src/lib/errors/errorRegistry.ts). The matcher could fold test contexts into the subject they test rather than judging them as governed surfaces.",
+      "evaluatedAgainst": "sha256-b2:d811928687fd4faf",
+      "evaluatedRevision": 17
+    }
+  ],
+  "declined": [
+    {
+      "subject": "error-handling",
+      "context": "468953eb-0204-4013-b366-9357b2161138",
+      "reason": "already judged 2026-10-16 against the current digest sha256-b2:d811928687fd4faf (rev 17); not re-read"
+    },
+    {
+      "subject": "error-handling",
+      "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+      "reason": "already judged 2026-10-16 against the current digest (rev 17)"
+    },
+    {
+      "subject": "error-handling",
+      "context": "456eb952-9b93-4de4-bad5-79e6f101aeb1",
+      "reason": "already judged 2026-10-16 against the current digest (rev 17)"
+    },
+    {
+      "subject": "error-handling",
+      "context": "90f639de-ffc7-4225-b67f-1566e5d66b8b",
+      "reason": "already judged 2026-10-16 against the current digest (rev 17)"
+    },
+    {
+      "subject": "error-handling",
+      "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757",
+      "reason": "already judged 2026-10-16 against the current digest (rev 17)"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T18:14:16Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "error-handling"
+      ],
+      "techniques": [
+        "crash-capture",
+        "error-doors",
+        "containment-boundary-restores-state"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-16T18:14:16Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "error-handling"
+      ],
+      "techniques": [
+        "taxonomy-design",
+        "user-facing-mapping"
+      ],
+      "deviations": 0
+    }
+  ]
+}
