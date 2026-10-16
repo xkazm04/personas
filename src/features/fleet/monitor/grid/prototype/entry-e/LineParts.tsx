@@ -28,12 +28,13 @@ export function Tok({ children, label, className = '' }: { children: ReactNode; 
 /**
  * A one-line slot whose content leaves WHOLE when it does not fit: the slot
  * wraps, its first line holds a zero-width spacer, and a token wider than the
- * room falls to the clipped second line instead of being cut.
+ * room falls to the clipped second line instead of being cut. Its line is
+ * the head's height (h-6), so a token in it sits on the name's baseline.
  */
 export function DropSlot({ children, className }: { children: ReactNode; className: string }) {
   return (
-    <span className={`flex h-5 flex-wrap items-center overflow-hidden ${className}`}>
-      <span aria-hidden className="h-5 w-0" />
+    <span className={`flex h-6 flex-wrap items-center overflow-hidden ${className}`}>
+      <span aria-hidden className="h-6 w-0" />
       {children}
     </span>
   );
