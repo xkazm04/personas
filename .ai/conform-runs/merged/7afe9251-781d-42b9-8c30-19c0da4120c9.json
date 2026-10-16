@@ -1,0 +1,39 @@
+{"schema": "conform-run/1", "worker": "7afe9251-781d-42b9-8c30-19c0da4120c9", "subject": "cross-provider-benchmark-operations",
+ "evaluatedAt": "2026-10-16T17:40:51Z",
+ "pairs": [
+  {"context": "9b0ee86c-2613-49a5-9fda-fcc4d432fb72", "subject": "cross-provider-benchmark-operations", "bundle": "llm-observability", "state": "deviation",
+   "evidence": "src-tauri/engine/src/test_runner/lab.rs:551 a budget-halted run (halted_by_budget skips the completeness gate) finalizes LabRunStatus::Completed with no partial state, and src-tauri/db/src/repos/lab/arena.rs:71 persists runs with no dataset version or determinism stamp, so halted and unpinned runs store and compare as full ones (re-confirmed against rev 12)",
+   "techniques": [
+    {"technique": "budget-preflight-and-ceiling", "verdict": "deviation", "evidence": "src-tauri/engine/src/test_runner/lab.rs:551 halted_by_budget run finalizes Completed; src-tauri/core/src/models/lab.rs:13 LabRunStatus has no Partial variant, so 'halted run must not read as passing' is unmet"},
+    {"technique": "dataset-sampling-anonymize-freeze", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 INSERT INTO lab_arena_runs carries no dataset/scenario-set version or frozen flag; src-tauri/db/src/migrations/schema.rs:782 table never gained one"},
+    {"technique": "determinism-stamping", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/lab/arena.rs:103 lab_arena_results row records model/provider/scores/cost but no generation or judge pinning stamp"},
+    {"technique": "target-matrix-runs", "verdict": "conformant", "evidence": "src-tauri/db/src/repos/lab/arena.rs:103 each cell row records scenario x model_id x provider with quality, tokens, cost and duration on the same call"},
+    {"technique": "axes-and-caveats-live-at-the-surface", "verdict": "conformant", "evidence": "src-tauri/db/src/repos/lab/ratings.rs:119 renormalised composites carry a partial_coverage flag onto the rating row so the caveat reaches the UI"}
+   ]},
+  {"context": "97025c06-0d64-4025-8a1f-98b90ba1c233", "subject": "cross-provider-benchmark-operations", "bundle": "llm-observability", "state": "not-applicable",
+   "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:311 buildCompareOutcomeEvent still has no production caller; the only live import is ANTHROPIC_TIERS (:57) consumed by src/features/agents/sub_lab/components/arena/arenaSpendEstimate.ts:15, so the context runs no comparison and its price book is judged with the lab-arena preflight",
+   "techniques": []},
+  {"context": "92f6c0fc-8d5c-43a7-bab8-1851973d5198", "subject": "cross-provider-benchmark-operations", "bundle": "llm-observability", "state": "not-applicable",
+   "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 ranks personas doing different jobs by production health signals; no shared case set or model targets, so the subject's precondition (evidence for which model serves one workload) does not hold",
+   "techniques": []},
+  {"context": "5d538a29-a2bb-4d61-8ec2-c51bcde105fe", "subject": "cross-provider-benchmark-operations", "bundle": "llm-observability", "state": "not-applicable",
+   "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:15 configures per-run output assertions on one persona (production quality gates), not a case set run across model targets; lexical match on case/cases/settings",
+   "techniques": [],
+   "registryProposal": "Map builder reports revisionsBehind: 1 on pairs whose evaluatedRevision (12) equals the registry index revision (12, digest sha256-b2:609da9e2f3c21869 at 11037a6c); the revision delta looks off by one in build-registry-map.mjs."}
+ ],
+ "declined": [
+  {"subject": "cross-provider-benchmark-operations", "context": "0b0ee725-52a2-4656-9e13-07c5204de60e", "reason": "stale not-applicable left for a later run; over budget (4 pairs judged)"},
+  {"subject": "cross-provider-benchmark-operations", "context": "b30528dc-8655-4b38-800e-8cb73e96d618", "reason": "stale not-applicable left for a later run; over budget"},
+  {"subject": "cross-provider-benchmark-operations", "context": "456eb952-9b93-4de4-bad5-79e6f101aeb1", "reason": "stale not-applicable left for a later run; over budget"},
+  {"subject": "cross-provider-benchmark-operations", "context": "835ed922-2ebd-425b-a542-dbe5996e1e78", "reason": "stale not-applicable left for a later run; over budget"},
+  {"subject": "cross-provider-benchmark-operations", "context": "b0cf3902-0739-40a8-8c76-ae594f41421b", "reason": "stale not-applicable left for a later run; over budget"},
+  {"subject": "cross-provider-benchmark-operations", "context": "2dcda6bf-9982-422b-b63f-1481c414cdab", "reason": "stale not-applicable left for a later run; over budget"},
+  {"subject": "cross-provider-benchmark-operations", "context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f", "reason": "stale not-applicable left for a later run; over budget"},
+  {"subject": "cross-provider-benchmark-operations", "context": "54236947-3775-4d0a-8e14-1a709dd4d8bc", "reason": "stale not-applicable left for a later run; over budget"}
+ ],
+ "consults": [
+  {"ts":"2026-10-16T17:40:51Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":["budget-preflight-and-ceiling","dataset-sampling-anonymize-freeze","determinism-stamping","target-matrix-runs","axes-and-caveats-live-at-the-surface"],"deviations":3},
+  {"ts":"2026-10-16T17:40:51Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":[],"deviations":0},
+  {"ts":"2026-10-16T17:40:51Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":[],"deviations":0},
+  {"ts":"2026-10-16T17:40:51Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":[],"deviations":0}
+ ]}

@@ -10215,39 +10215,58 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:25:35.000Z",
-      "worker": "6e7b7da6-2885-45da-86bc-2e45c441984d",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:40:51.000Z",
+      "worker": "7afe9251-781d-42b9-8c30-19c0da4120c9",
       "techniques": [
         {
           "technique": "target-matrix-runs",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:311 compare aggregation survives only as dead code with test-only callers"
+          "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:311 compare aggregation survives only as dead code with test-only callers",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "budget-preflight-and-ceiling",
           "verdict": "conformant",
-          "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:51 a model absent from the price book is UNPRICED, not free - the null-never-zero rule the preflight relies on"
+          "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:51 a model absent from the price book is UNPRICED, not free - the null-never-zero rule the preflight relies on",
+          "carriedFrom": "2026-10-09"
         }
       ],
-      "registryProposal": "dead-code finding, not this subject: compareHelpers.ts aggregateResultsDetailed/buildCompareStartEvent/buildCompareOutcomeEvent/rowFailure/ALL_COMPARE_MODELS are unreferenced in production after d71e0eb948; FREE_COST labels Ollama Cloud presets (:79) although that tier is a subscription allowance (entitlement-exhaustion-is-not-ill-health territory)"
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:311 buildCompareOutcomeEvent (and ALL_COMPARE_MODELS at :63) has no production caller since d71e0eb948 deleted the A/B compare panel; the context no longer runs or renders a model comparison, and its live remainder is the ANTHROPIC_TIERS price book consumed by the lab-arena preflight, which is judged on that context",
+          "evaluatedAt": "2026-10-09T17:25:35.000Z",
+          "worker": "6e7b7da6-2885-45da-86bc-2e45c441984d",
+          "reason": "replaced by 7afe9251-781d-42b9-8c30-19c0da4120c9"
+        }
+      ]
     },
     "92f6c0fc-8d5c-43a7-bab8-1851973d5198/cross-provider-benchmark-operations": {
       "context": "overview-leaderboard",
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:25:35.000Z",
-      "worker": "6e7b7da6-2885-45da-86bc-2e45c441984d",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:40:51.000Z",
+      "worker": "7afe9251-781d-42b9-8c30-19c0da4120c9",
       "techniques": [
         {
           "technique": "target-matrix-runs",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 targets are personas with distinct workloads, not provider x model x prompt over the same cases"
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 targets are personas with distinct workloads, not provider x model x prompt over the same cases",
+          "carriedFrom": "2026-10-09"
         }
       ],
-      "registryProposal": "lexical lure: an operational per-agent fleet leaderboard (leaderboard/matrix/quality/cost tokens) matches this subject strongly; the golden path could name it in a when-NOT section so the matcher or a judge routes it to scoring-rubrics / metrics instead"
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 ranks PERSONAS doing different jobs by production health signals (success, health, speed, cost, activity); no shared case set, no provider/model targets - the subject precondition (evidence for which model serves one workload) does not hold, and target-matrix-runs names differing workloads as when-not-to-use",
+          "evaluatedAt": "2026-10-09T17:25:35.000Z",
+          "worker": "6e7b7da6-2885-45da-86bc-2e45c441984d",
+          "reason": "replaced by 7afe9251-781d-42b9-8c30-19c0da4120c9"
+        }
+      ]
     },
     "2dcda6bf-9982-422b-b63f-1481c414cdab/cross-provider-benchmark-operations": {
       "context": "plugins-dev-tools-llm-overview",
@@ -12947,14 +12966,25 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T02:06:36.108Z",
-      "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:40:51.000Z",
+      "worker": "7afe9251-781d-42b9-8c30-19c0da4120c9",
       "techniques": [
         {
           "technique": "target-matrix-runs",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:16 assertions are evaluated on every production run of a single persona; nothing compares targets"
+          "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:16 assertions are evaluated on every production run of a single persona; nothing compares targets",
+          "carriedFrom": "2026-10-10"
+        }
+      ],
+      "registryProposal": "Map builder reports revisionsBehind: 1 on pairs whose evaluatedRevision (12) equals the registry index revision (12, digest sha256-b2:609da9e2f3c21869 at 11037a6c); the revision delta looks off by one in build-registry-map.mjs.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:15 the context configures per-run output assertions on one persona (production quality gates), not a case set run across model targets; lexical match on case/cases/settings",
+          "evaluatedAt": "2026-10-10T02:06:36.108Z",
+          "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
+          "reason": "replaced by 7afe9251-781d-42b9-8c30-19c0da4120c9"
         }
       ]
     },
@@ -14937,24 +14967,34 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T12:07:04.000Z",
-      "worker": "f9423480-bb6c-424a-9616-ef7002896726",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:40:51.000Z",
+      "worker": "7afe9251-781d-42b9-8c30-19c0da4120c9",
       "techniques": [
+        {
+          "technique": "budget-preflight-and-ceiling",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:551 halted_by_budget run finalizes Completed; src-tauri/core/src/models/lab.rs:13 LabRunStatus has no Partial variant, so 'halted run must not read as passing' is unmet"
+        },
         {
           "technique": "dataset-sampling-anonymize-freeze",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 the run row records models and use-case filter but no dataset version"
+          "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 INSERT INTO lab_arena_runs carries no dataset/scenario-set version or frozen flag; src-tauri/db/src/migrations/schema.rs:782 table never gained one"
         },
         {
           "technique": "determinism-stamping",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 no generation/judge pinning stamp is stored on the run"
+          "evidence": "src-tauri/db/src/repos/lab/arena.rs:103 lab_arena_results row records model/provider/scores/cost but no generation or judge pinning stamp"
         },
         {
-          "technique": "budget-preflight-and-ceiling",
-          "verdict": "deviation",
-          "evidence": "src-tauri/core/src/models/lab.rs:13 status enum lacks partial; src-tauri/engine/src/test_runner/lab.rs:551 a halted_by_budget run finalizes Completed"
+          "technique": "target-matrix-runs",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/lab/arena.rs:103 each cell row records scenario x model_id x provider with quality, tokens, cost and duration on the same call"
+        },
+        {
+          "technique": "axes-and-caveats-live-at-the-surface",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/lab/ratings.rs:119 renormalised composites carry a partial_coverage flag onto the rating row so the caveat reaches the UI"
         }
       ],
       "superseded": [
@@ -14964,6 +15004,13 @@
           "evaluatedAt": "2026-10-05",
           "worker": null,
           "reason": "replaced by f9423480-bb6c-424a-9616-ef7002896726"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 persists an arena run with no dataset version/frozen flag and no determinism stamp; src-tauri/core/src/models/lab.rs:13 LabRunStatus has no Partial state, so a budget-halted run finalizes Completed (src-tauri/engine/src/test_runner/lab.rs:551) - runs cannot be compared and a halted run stores as a full one (re-confirmed 2026-10-10)",
+          "evaluatedAt": "2026-10-10T12:07:04.000Z",
+          "worker": "f9423480-bb6c-424a-9616-ef7002896726",
+          "reason": "replaced by 7afe9251-781d-42b9-8c30-19c0da4120c9"
         }
       ]
     },

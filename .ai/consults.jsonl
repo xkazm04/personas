@@ -1368,3 +1368,7 @@
 {"ts":"2026-10-16T17:38:37Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["step-state-model","commit-boundary","progress-communication"],"deviations":0}
 {"ts":"2026-10-16T17:39:53Z","bundle":"software-engineering","subjects":["public-claim-provenance"],"techniques":["derived-numerator-authored-denominator","build-time-derivation-off-the-client-bundle","degraded-never-claims-live"],"deviations":0}
 {"ts":"2026-10-16T17:40:37Z","bundle":"llm-observability","subjects":["federated-benchmark-sharing"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:40:51Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":["budget-preflight-and-ceiling","dataset-sampling-anonymize-freeze","determinism-stamping","target-matrix-runs","axes-and-caveats-live-at-the-surface"],"deviations":3}
+{"ts":"2026-10-16T17:40:51Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:40:51Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:40:51Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":[],"deviations":0}

@@ -3981,12 +3981,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:15 the context configures per-run output assertions on one persona (production quality gates), not a case set run across model targets; lexical match on case/cases/settings",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:15 configures per-run output assertions on one persona (production quality gates), not a case set run across model targets; lexical match on case/cases/settings",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-runtime-assembly",
@@ -10736,12 +10735,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 persists an arena run with no dataset version/frozen flag and no determinism stamp; src-tauri/core/src/models/lab.rs:13 LabRunStatus has no Partial state, so a budget-halted run finalizes Completed (src-tauri/engine/src/test_runner/lab.rs:551) - runs cannot be compared and a halted run stores as a full one (re-confirmed 2026-10-10)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:551 a budget-halted run (halted_by_budget skips the completeness gate) finalizes LabRunStatus::Completed with no partial state, and src-tauri/db/src/repos/lab/arena.rs:71 persists runs with no dataset version or determinism stamp, so halted and unpinned runs store and compare as full ones (re-confirmed against rev 12)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-memory",
@@ -18877,12 +18875,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:311 buildCompareOutcomeEvent (and ALL_COMPARE_MODELS at :63) has no production caller since d71e0eb948 deleted the A/B compare panel; the context no longer runs or renders a model comparison, and its live remainder is the ANTHROPIC_TIERS price book consumed by the lab-arena preflight, which is judged on that context",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:311 buildCompareOutcomeEvent still has no production caller; the only live import is ANTHROPIC_TIERS (:57) consumed by src/features/agents/sub_lab/components/arena/arenaSpendEstimate.ts:15, so the context runs no comparison and its price book is judged with the lab-arena preflight",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 1
         },
         {
           "subject": "eval-harness",
@@ -21715,12 +21712,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 ranks PERSONAS doing different jobs by production health signals (success, health, speed, cost, activity); no shared case set, no provider/model targets - the subject precondition (evidence for which model serves one workload) does not hold, and target-matrix-runs names differing workloads as when-not-to-use",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 ranks personas doing different jobs by production health signals; no shared case set or model targets, so the subject's precondition (evidence for which model serves one workload) does not hold",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 1
         },
         {
           "subject": "quality-regression-gating",
