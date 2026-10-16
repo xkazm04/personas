@@ -9238,7 +9238,11 @@
           "revision": 10,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "tests/playwright/companion-stop-button.spec.ts:1 Playwright UI e2e specs for the companion panel; the match came from 'spec/fixtures/stop' vocabulary - nothing here checks a repository against a declared contract",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:58a3b7c0b9efb42c",
+          "evaluatedRevision": 10
         },
         {
           "subject": "schema-driven-ui",
@@ -26532,7 +26536,11 @@
           "revision": 10,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:102 a failed listStandards is swallowed to [] yet sweep.ts:111 still marks standards_finding probed, so verify.ts:111 stamps every shipped standards finding 'cleared' - unable-to-check folded into pass, the loop certifies fixes it never measured",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:58a3b7c0b9efb42c",
+          "evaluatedRevision": 10
         },
         {
           "subject": "copy-quality-gates",
