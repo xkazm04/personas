@@ -6817,8 +6817,8 @@
           "changedAt": "2026-08-31",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/personas.rs:2470 blast_radius counts only running/queued executions while persona_executions is ON DELETE CASCADE (src-tauri/db/src/migrations/schema.rs:111), so a persona delete destroys every completed/failed run the preview never names; re-confirmed 2026-10-12 at registry bb180d5d",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src-tauri/db/src/repos/core/personas.rs:2470 blast_radius counts only running/queued executions while persona_executions is ON DELETE CASCADE (src-tauri/db/src/migrations/schema.rs:111), so a persona delete destroys every completed/failed run the preview never names; re-confirmed 2026-10-16 at registry 328bf071",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:cef5e3463825ff22",
           "evaluatedRevision": 6,
           "revisionsBehind": 0

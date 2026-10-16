@@ -1394,19 +1394,24 @@
       "subject": "entity-lifecycle",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:33:05.000Z",
-      "worker": "15ffc944-535b-4234-be02-5e07dd694beb",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:30:35.000Z",
+      "worker": "67e70cf3-ac65-44fa-b84a-16a7d6f3801d",
       "techniques": [
         {
           "technique": "blast-radius-computation",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/personas.rs:2470 preview predicate filters status IN ('running','queued') while the declared cascade at src-tauri/db/src/migrations/schema.rs:111 removes all rows - the technique's 'one predicate, clause for clause' rule; preview is not produced through the enforcement path"
+          "evidence": "src-tauri/db/src/repos/core/personas.rs:2470 preview predicate (status IN running/queued) differs from the cascade (all rows), and the preview is hand-written counts, not a counting-mode run through the enforcement path"
+        },
+        {
+          "technique": "blast-radius-computation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/personas.rs:2529 chain-dependent probe drops row errors via filter_map(|r| r.ok()), so a failing read renders as fewer dependents (failure-not-empty-success)"
         },
         {
           "technique": "cascade-design",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/migrations/schema.rs:111 execution history is declared CASCADE rather than a named survivor (detach), so run history does not outlive the persona"
+          "evidence": "src-tauri/db/src/migrations/schema.rs:111 run history (a survivor-class record) is declared CASCADE rather than kept as a survivor with denormalized provenance"
         }
       ],
       "superseded": [
@@ -1437,6 +1442,13 @@
           "evaluatedAt": "2026-10-10T12:10:09.000Z",
           "worker": "5f27c61e-f98c-4dca-9247-1eadab405776",
           "reason": "replaced by 15ffc944-535b-4234-be02-5e07dd694beb"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/personas.rs:2470 blast_radius counts only running/queued executions while persona_executions is ON DELETE CASCADE (src-tauri/db/src/migrations/schema.rs:111), so a persona delete destroys every completed/failed run the preview never names; re-confirmed 2026-10-12 at registry bb180d5d",
+          "evaluatedAt": "2026-10-12T12:33:05.000Z",
+          "worker": "15ffc944-535b-4234-be02-5e07dd694beb",
+          "reason": "replaced by 67e70cf3-ac65-44fa-b84a-16a7d6f3801d"
         }
       ]
     },
