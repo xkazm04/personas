@@ -11288,37 +11288,44 @@
       "subject": "retry-backoff",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:47:45.000Z",
-      "worker": "1dab6d9e-31d6-44aa-a588-ffa94914f6fc",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:56:07.000Z",
+      "worker": "221087c8-5061-4342-9ddd-a13f0cddbd4c",
       "techniques": [
         {
           "technique": "durable-retries",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:78 maxRetries:3 is an in-memory counter keyed by row id; the ladder's rung is not derived from the persisted dev_tasks.attempt written at src-tauri/db/src/repos/dev/tasks.rs:963, violating 'attempt count lives in the row and only the row' and leaving the lineage with no reaper"
+          "evidence": "src-tauri/db/src/repos/dev/tasks.rs:963 attempt is persisted per lineage but the ceiling lives in in-memory HealingAttempt keyed by row id (src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:78), so the budget neither survives a remount nor follows the new child row"
         },
         {
           "technique": "error-classification-for-retry",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:45 classifies by regex over error/description/title text rather than a structured kind, and the unknown class (:49) is never retried rather than retried a small separately-counted number of times"
+          "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:45 retryability is decided by regex over error+description+title at the UI call site, so a task whose title says 'fix type error' is classed build_error regardless of how it actually failed"
         },
         {
-          "technique": "retry-observability",
-          "verdict": "unknown",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:60 exhaustion surfaces only as a toast for the manual path; not read further"
-        },
-        {
-          "technique": "circuit-breakers",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:1895 the retry re-queues a local task, there is no shared remote dependency to break on"
+          "technique": "backoff-design",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:138 auto-heal re-dispatches a fresh failure in the same effect tick with no delay or jitter, so a deterministic failure loops back-to-back"
         },
         {
           "technique": "jittered-revocation-with-irrevocable-terminal",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:1895 stage: multi-service; this context revokes no issued credentials"
+          "evidence": "src-tauri/db/src/repos/dev/tasks.rs:944 retry re-runs a local dev task; no issued credential to revoke (stage: multi-service)"
+        },
+        {
+          "technique": "retry-observability",
+          "verdict": "unknown",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:60 exhaustion surfaces only as a toast for the manual path; not read further",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "circuit-breakers",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:1895 the retry re-queues a local task, there is no shared remote dependency to break on",
+          "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "The map pairs retry-backoff only with run-desk (confidence probable); the Rust engine's provider/HTTP retry paths and the fleet healing loop likely carry stronger governance and were not matched - a coverage question worth a matcher pass.",
+      "registryProposal": "durable-retries step 4 (identity-survives-reuse) could name the retry-as-new-row lineage shape explicitly: when each attempt is a fresh row with parent/attempt columns, the budget must key on the lineage root or the persisted attempt, never the row id - a recurring way the ladder silently resets.",
       "superseded": [
         {
           "state": "deviation",
@@ -11333,6 +11340,13 @@
           "evaluatedAt": "2026-10-10T02:40:23.000Z",
           "worker": "a62153a5-f0fe-45cd-9af0-c585cfd62a3c",
           "reason": "replaced by 1dab6d9e-31d6-44aa-a588-ffa94914f6fc"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:100 heal cap is looked up by row id in session memory while every retry mints a new row (src-tauri/db/src/repos/dev/tasks.rs:944) whose persisted attempt (:963) is never checked, so auto-heal retries each child failure afresh and the lineage has no bound - re-confirmed live at registry bb180d5d",
+          "evaluatedAt": "2026-10-12T12:47:45.000Z",
+          "worker": "1dab6d9e-31d6-44aa-a588-ffa94914f6fc",
+          "reason": "replaced by 221087c8-5061-4342-9ddd-a13f0cddbd4c"
         }
       ]
     },

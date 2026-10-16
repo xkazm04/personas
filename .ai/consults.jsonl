@@ -1418,3 +1418,4 @@
 {"ts":"2026-10-16T17:54:32Z","bundle":"software-engineering","subjects":["migrations"],"techniques":["pre-migration-snapshots","error-propagation"],"deviations":1}
 {"ts":"2026-10-16T17:54:32Z","bundle":"software-engineering","subjects":["migrations"],"techniques":[],"deviations":0}
 {"ts":"2026-10-16T17:54:32Z","bundle":"software-engineering","subjects":["migrations"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:56:07Z","bundle":"software-engineering","subjects":["retry-backoff"],"techniques":["durable-retries","error-classification-for-retry","backoff-design","jittered-revocation-with-irrevocable-terminal"],"deviations":1}
