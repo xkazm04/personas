@@ -23717,32 +23717,39 @@
       "context": "stores-slices-agents",
       "subject": "cost-metering",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T21:35:41.778Z",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:07:52.000Z",
+      "worker": "26a261d0-277d-43e2-8c68-5107a8d2f5f2",
       "techniques": [
         {
           "technique": "budget-enforcement",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/agents/chatSlice.ts:201 Chat turns initiate metered spend without checking isBudgetBlocked or routing through a unified enforcement gate."
+          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:151 override is an unrecorded in-memory Set that the server gate src-tauri/src/commands/execution/executions.rs:476 never consults; the UI gate reads a 60s-TTL frontend mirror (:29) instead of the store it enforces, and fails open before the first fetch (:148)"
+        },
+        {
+          "technique": "usage-ledgers",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:106 keeps only result.items and discards MonthlySpendResult.periodStartUtc, so the reset label is re-derived in local time by a consumer (src/features/agents/sub_executions/components/runner/BudgetRecoveryCard.tsx:17) while the gate uses the UTC month"
+        },
+        {
+          "technique": "spend-observability",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:33 the slice holds per-persona gate state only; no spend surface is drawn here"
         },
         {
           "technique": "preflight-estimation",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:72 Enforcement checks only retrospective monthly spend without estimating prospective token consumption before launching runs."
+          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:72 Enforcement checks only retrospective monthly spend without estimating prospective token consumption before launching runs.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "time-ceilings-count-working-time",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/agents/chatSlice.ts:32 Streaming chat uses an elapsed wall-clock timeout watchdog rather than accumulating active working turn durations."
+          "evidence": "src/stores/slices/agents/chatSlice.ts:32 Streaming chat uses an elapsed wall-clock timeout watchdog rather than accumulating active working turn durations.",
+          "carriedFrom": "2026-10-15"
         }
-      ],
-      "withdrawn": {
-        "worker": "925f883c-ea35-4b36-ba0f-e1617949b4e9",
-        "state": "deviation",
-        "at": "2026-10-15T21:36:34.185691+00:00",
-        "reason": "reviewer (sonnet): chatSlice.sendChatMessage calls startChatTurn, which runs chat_turn::start_with and then execute_persona_inner (src-tauri/src/commands/execution/executions.rs:472-481). That function rejects a run when monthly spend is at or over max_budget_usd, so chat turns do pass a budget gate; it sits in the Ru"
-      }
+      ]
     },
     "208f50de-5d3b-4345-9fed-1c106a7a36e9/cost-metering": {
       "context": "execution-detail-inspector",
@@ -25788,6 +25795,54 @@
           "technique": "fingerprinting-and-cache-keys",
           "verdict": "deviation",
           "evidence": "src/lib/personas/promptMigration.ts:244 previewPrompt silently falls back to renderToMarkdown, which omits tools/protocols, so the reviewed preview is not the prompt sent and nothing marks it partial"
+        }
+      ]
+    },
+    "7901fd6c-0346-430b-aefe-fc4cd623b167/cost-metering": {
+      "context": "overview-usage-charts",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:07:52.000Z",
+      "worker": "26a261d0-277d-43e2-8c68-5107a8d2f5f2",
+      "techniques": [
+        {
+          "technique": "spend-observability",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 the only series logic is an ordinal period split, a metrics-rollups comparison concern, applied to whatever series a caller hands it"
+        }
+      ],
+      "registryProposal": "Technique-shaped resonance, not governance: the match rides on the token 'cost' in a chart-kit context; metrics-rollups (comparison honesty) is what governs periodComparison.ts."
+    },
+    "2dcda6bf-9982-422b-b63f-1481c414cdab/cost-metering": {
+      "context": "plugins-dev-tools-llm-overview",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:07:52.000Z",
+      "worker": "26a261d0-277d-43e2-8c68-5107a8d2f5f2",
+      "techniques": [
+        {
+          "technique": "price-tables",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:158 unknown -> 0 with no counter; the pinpoint (:28) has no unpriced-calls field to mark the total as a floor"
+        },
+        {
+          "technique": "unit-classes-are-open",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/LlmOverviewPage.tsx:341 tokens column sums exactly inputTokens + outputTokens; cached/reasoning classes the tools report are dropped by the mappers with no residual"
+        },
+        {
+          "technique": "spend-observability",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:28 LlmPinpoint carries no status/failure axis, so failed-call spend cannot be shown as its own series - though the surface sorts most-expensive-first (LlmOverviewPage.tsx:505), banners a truncated window as a floor (:512) and labels costs as estimates (:534)"
+        },
+        {
+          "technique": "budget-enforcement",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:20 LLM_COST_THRESHOLD_USD is a findings-severity threshold on an external project's spend, not a ceiling this product enforces"
         }
       ]
     }

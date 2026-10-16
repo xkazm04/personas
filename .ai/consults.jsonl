@@ -1448,3 +1448,6 @@
 {"ts":"2026-10-16T18:06:32Z","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":["context-budgeting","layered-composition","variable-interpolation","capability-documentation"],"deviations":3}
 {"ts":"2026-10-16T18:06:32Z","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":["capability-documentation","layered-composition","fingerprinting-and-cache-keys"],"deviations":2}
 {"ts":"2026-10-16T18:06:32Z","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":["pinned-prompt-clock"],"deviations":0}
+{"ts":"2026-10-16T18:07:52Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["budget-enforcement","usage-ledgers","spend-observability"],"deviations":2}
+{"ts":"2026-10-16T18:07:52Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["spend-observability"],"deviations":0}
+{"ts":"2026-10-16T18:07:52Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["price-tables","unit-classes-are-open","spend-observability","budget-enforcement"],"deviations":3}

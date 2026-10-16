@@ -22932,7 +22932,11 @@
           "revision": 15,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/chartConstants.ts:49 a unit tag (cost -> usd) is the context's only money knowledge: a generic chart kit (tooltip, gradients, period merge) that prices, records, attributes and gates nothing; spend semantics live in its consumers, judged under overview-activity-metrics and overview-observability",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
+          "evaluatedRevision": 15
         },
         {
           "subject": "measurement-honesty",
@@ -25893,7 +25897,11 @@
           "revision": 15,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:158 toNum coerces a missing tool-reported cost to 0, so every trace Langfuse/LangSmith left unpriced (:235, :303) sums into the cost column as free with no unpriced count, and the over-threshold flag under-fires on exactly the newest models",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
+          "evaluatedRevision": 15
         },
         {
           "subject": "operator-surfaces-for-llm-spend",
@@ -31833,7 +31841,11 @@
           "revision": 15,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:151 the session-scoped \"Run anyway\" override unblocks only the frontend mirror and is never recorded, while the real gate at src-tauri/src/commands/execution/executions.rs:476 takes no override and refuses the run as a generic Validation error - the slice header (:23 \"frontend-only gating\") describes a gate that no longer exists, so the override is a dead door",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
+          "evaluatedRevision": 15
         },
         {
           "subject": "cross-provider-benchmark-operations",
