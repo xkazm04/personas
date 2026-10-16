@@ -12,6 +12,7 @@ import { WebhookCreatedSheet } from './WebhookCreatedSheet';
 import { useTriggerOperations } from '@/features/triggers/hooks/useTriggerOperations';
 import { useRenderTriggerError } from '@/features/triggers/lib/triggerError';
 import { useTranslation } from '@/i18n/useTranslation';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 
 export function TriggerConfig() {
   const { t } = useTranslation();
@@ -137,9 +138,7 @@ export function TriggerConfig() {
         ))}
 
         {triggers.length === 0 && (
-          <div className="text-center py-10 text-foreground typo-body">
-            {t.triggers.config.empty}
-          </div>
+          <EmptyState art="bolt" size="sm" title={t.triggers.config.empty} />
         )}
       </div>
     </div>

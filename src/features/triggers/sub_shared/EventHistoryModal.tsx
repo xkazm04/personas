@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ExternalLink, History, Tag } from 'lucide-react';
+import { ExternalLink, Tag } from 'lucide-react';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -102,9 +102,8 @@ export function EventHistoryModal({ entry, onClose }: Props) {
           </>
         ) : changes.length === 0 ? (
           <EmptyState
-            icon={History}
-            iconColor="text-sky-400"
-            iconContainerClassName="bg-sky-500/10 border-sky-500/20"
+            art="archive"
+            size="sm"
             title={m.history_empty_title}
             subtitle={m.history_empty_hint}
           />

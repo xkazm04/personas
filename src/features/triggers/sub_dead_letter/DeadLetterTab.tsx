@@ -593,7 +593,8 @@ export function DeadLetterTab() {
 
         {!loading && totalEvents === 0 && (
           <EmptyState
-            icon={Archive}
+            art="archive"
+            size="md"
             title={t.triggers.no_dead_letters}
             subtitle={t.triggers.all_events_processed}
           />

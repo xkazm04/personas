@@ -166,6 +166,7 @@ export default function WhitelistLedger({
       defaultSortKey="origin"
       defaultSortDir="asc"
       ariaLabel={w.table_aria}
+      emptyArt="shield"
       emptyTitle={w.empty_title}
       emptyDescription={w.empty_description}
     />

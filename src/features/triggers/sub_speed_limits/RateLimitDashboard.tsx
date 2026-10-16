@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Shield, Layers, AlertTriangle } from 'lucide-react';
-import { MotionizedGlyph } from '@/features/shared/components/display/MotionizedGlyph';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { RATELIMIT_GLYPH } from '@/features/shared/glyph/glyphs/ratelimitGlyph';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { usePipelineStore } from "@/stores/pipelineStore";
@@ -62,14 +62,13 @@ export function RateLimitDashboard({ triggers, triggersLoading = false }: RateLi
   // Show empty state only once the fetch has settled and nothing was found.
   if (isEmpty) {
     return (
-      <div className="mx-6 mt-4 rounded-modal border border-dashed border-primary/15 bg-secondary/10 p-6 flex flex-col items-center gap-3 text-center">
-        <MotionizedGlyph data={RATELIMIT_GLYPH.data} viewBox={RATELIMIT_GLYPH.viewBox} spread={1} className="w-28 h-28 -mb-1" />
-        <div>
-          <p className="typo-body text-foreground">{t.triggers.no_rate_limits}</p>
-          <p className="typo-caption text-foreground mt-1 max-w-xs">
-            {t.triggers.no_rate_limits_desc}
-          </p>
-        </div>
+      <div className="mx-6 mt-4 rounded-modal border border-dashed border-primary/15 bg-secondary/10">
+        <ScenarioEmptyState
+          glyph={RATELIMIT_GLYPH}
+          size="sm"
+          title={t.triggers.no_rate_limits}
+          subtitle={t.triggers.no_rate_limits_desc}
+        />
       </div>
     );
   }

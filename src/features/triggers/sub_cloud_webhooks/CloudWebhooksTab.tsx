@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
-import { Cloud, CloudOff, Plus, Trash2, Webhook, RefreshCw } from 'lucide-react';
+import { Cloud, Plus, Trash2, Webhook, RefreshCw } from 'lucide-react';
 import { CopyButton, Button } from '@/features/shared/components/buttons';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
@@ -143,7 +143,8 @@ export function CloudWebhooksTab() {
     return (
       <div className="flex-1 flex items-center justify-center">
         <EmptyState
-          icon={CloudOff}
+          art="link"
+          size="md"
           title={t.triggers.cloud_not_connected}
           subtitle={t.triggers.cloud_not_connected_desc}
         />
@@ -250,7 +251,8 @@ export function CloudWebhooksTab() {
         {/* Empty state */}
         {!isLoading && webhookRows.length === 0 && (
           <EmptyState
-            icon={Webhook}
+            art="link"
+            size="md"
             title={t.triggers.no_webhook_triggers}
             subtitle={t.triggers.no_webhook_triggers_desc}
           />
@@ -335,7 +337,7 @@ export function CloudWebhooksTab() {
                 <ListSkeleton calm rows={3} rowHeight={40} leading={false} className="border border-border/30 rounded-modal overflow-hidden" />
               </div>
             ) : firings.length === 0 ? (
-              <p className="typo-body text-foreground py-4">{t.triggers.no_firings}</p>
+              <EmptyState art="stream" size="sm" title={t.triggers.no_firings} />
             ) : (
               <div className="border border-border/30 rounded-modal overflow-hidden">
                 <div className="grid grid-cols-[1fr_0.8fr_0.6fr_0.8fr] gap-3 px-4 py-2 bg-secondary/30 border-b border-border/20 text-xs font-mono text-foreground uppercase tracking-wider">

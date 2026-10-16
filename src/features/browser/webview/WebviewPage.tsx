@@ -311,7 +311,7 @@ export default function WebviewPage() {
               action={{ label: t.common.retry, onClick: () => void refreshTabs() }}
             />
           ) : (
-            <EmptyState icon={Globe} title={v.empty_title} description={v.empty_description} />
+            <EmptyState art="link" size="lg" title={v.empty_title} description={v.empty_description} />
           )
         ) : null}
         <PageSlot hasTab={state.tabs.length > 0} />

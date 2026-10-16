@@ -499,6 +499,7 @@ export function LiveStreamTab() {
           isLoading={isLoading}
           loadingLabel={t.triggers.connecting_to_bus}
           emptyIcon={Radio}
+          emptyArt="stream"
           emptyTitle={t.triggers.no_events_title}
           emptyDescription={t.triggers.no_events_desc}
           // Operator, Gate 2b: the pager sits under the last event, not at the

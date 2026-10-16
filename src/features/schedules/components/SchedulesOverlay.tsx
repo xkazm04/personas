@@ -256,7 +256,8 @@ export default function SchedulesOverlay() {
           <CalendarGhost />
         ) : cronAgents.length === 0 ? (
           <ScenarioEmptyState
-            icon={CalendarClock}
+            art="schedule"
+            size="md"
             title={t.schedules.no_scheduled_agents}
             description={t.schedules.no_scheduled_hint}
           />

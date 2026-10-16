@@ -11,6 +11,7 @@ import { useTriggerHistory } from '../hooks/useTriggerHistory';
 import { TriggerHealthSparkline } from './TriggerHealthSparkline';
 import { JsonPayloadBlock } from './JsonPayloadBlock';
 import { useTranslation } from '@/i18n/useTranslation';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 
 // --- Execution Row --------------------------------------------------
 
@@ -183,9 +184,7 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
                   </button>
                 </div>
               ) : history.executions.length === 0 ? (
-                <div className="py-2 typo-body text-foreground">
-                  {t.triggers.no_executions_recorded}
-                </div>
+                <EmptyState art="runs" size="sm" title={t.triggers.no_executions_recorded} />
               ) : (
                 <>
                   <TriggerHealthSparkline executions={history.executions} />

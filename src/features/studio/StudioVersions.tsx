@@ -6,6 +6,7 @@ import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import type { BuildVersion } from '@/lib/bindings/BuildVersion';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 
 // C7 — version history: each build turn commits a snapshot; this lists them and
 // restores the project's files to a chosen one (git history is kept, so it's a
@@ -93,7 +94,7 @@ export default function StudioVersions({ id, onRestored }: { id: string; onResto
           {loading ? (
             <p className="px-2 py-1.5 typo-caption">{t.common.loading}</p>
           ) : versions.length === 0 ? (
-            <p className="px-2 py-1.5 typo-caption">{t.studio.no_versions_yet}</p>
+            <EmptyState art="archive" size="sm" title={t.studio.no_versions_yet} />
           ) : (
             versions.map((v, i) => (
               <button

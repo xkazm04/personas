@@ -1,5 +1,4 @@
 import {
-  FlaskConical,
   Check,
   AlertCircle,
   RefreshCw,
@@ -17,6 +16,7 @@ import {
   rankTemplatesByApprovedApps,
 } from './templateRecommendation';
 import type { TemplateLoadState } from './useOnboardingState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 
 export function TemplatePickerStep({
   templates,
@@ -78,19 +78,13 @@ export function TemplatePickerStep({
 
   if (loadState.phase === 'empty' || templates.length === 0) {
     return (
-      <div className="text-center py-16">
-        <FlaskConical className="w-10 h-10 mx-auto text-foreground mb-3" />
-        <p className="typo-body text-foreground">{t.onboarding.no_templates}</p>
-        <p className="typo-body text-foreground mt-1">{t.onboarding.no_templates_hint}</p>
-        <button
-          type="button"
-          onClick={onRetry}
-          className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 typo-heading rounded-card border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          {t.onboarding.retry}
-        </button>
-      </div>
+      <EmptyState
+        art="templates"
+        size="md"
+        title={t.onboarding.no_templates}
+        subtitle={t.onboarding.no_templates_hint}
+        action={{ label: t.onboarding.retry, onClick: onRetry, icon: RefreshCw }}
+      />
     );
   }
 
