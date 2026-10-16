@@ -25876,6 +25876,95 @@
           "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:101 the unmount check is not vacuous: RecentDecisionsWidget starts loading=true and renders, so the waitFor must observe a transition, and the error cases (:46, :80) carry their retry controls"
         }
       ]
+    },
+    "e4b48fb7-3763-4955-8ea9-01fd48aa0cf7/eval-harness": {
+      "context": "commands-contest",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:08:01.000Z",
+      "worker": "652f57b8-e2d7-45bb-b03a-790b19356197",
+      "techniques": [
+        {
+          "technique": "resolution-precondition",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/contest/view.rs:126 max_by over non-broken means with no margin-vs-spread check; ContestScoreRow.spread (src-tauri/src/commands/contest/arena.rs:387) is carried but never consulted, and an exact tie is resolved by iteration order"
+        },
+        {
+          "technique": "comparison-modes",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/contest/decide.rs:3 the winner is a declared owner verdict passed to contest.mjs verdict, not inferred from the scoreboard sort"
+        },
+        {
+          "technique": "judge-stability",
+          "verdict": "unknown",
+          "evidence": "src-tauri/src/commands/contest/create.rs:62 validate refuses duplicate judges and an empty enabled panel but does not check judge family against participants; the cross-family rule lives in the skill instrument (.claude/skills/contest/SKILL.md:217), outside this context"
+        }
+      ],
+      "registryProposal": "resolution-precondition speaks of within-condition SD from repeated trials; single-trial judged contests only have inter-judge spread (max-min). A sentence on using judge spread as the noise floor when trials=1 would make the rule directly testable for panel-judged contests."
+    },
+    "6da794b4-7a5f-4087-a4d4-fb8a416456e5/eval-harness": {
+      "context": "commands-execution",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:08:01.000Z",
+      "worker": "652f57b8-e2d7-45bb-b03a-790b19356197",
+      "techniques": [
+        {
+          "technique": "scenario-design",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/execution/tests.rs:57 suite_id is dropped at run creation; the scenario identity the scores attach to is lost"
+        },
+        {
+          "technique": "assertion-vs-judgment",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/execution/assertions.rs:21 output-assertion vocabularies are closed and an unknown type is a Validation error rather than silently running a different deterministic check"
+        },
+        {
+          "technique": "judge-stability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/execution/tests.rs:57 nothing about the judge packet reaches the run record (consistent with the recorded test-runner-lab deviation at src-tauri/engine/src/eval.rs:616)"
+        }
+      ]
+    },
+    "320d2cea-9761-4233-97c1-ee2eaf4d6c17/eval-harness": {
+      "context": "db-repos-execution",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:08:01.000Z",
+      "worker": "652f57b8-e2d7-45bb-b03a-790b19356197",
+      "techniques": [
+        {
+          "technique": "scenario-design",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/test_suites.rs:100 scenarios = COALESCE(?3, scenarios) mutates the fixture under a stable identity"
+        },
+        {
+          "technique": "judge-stability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/test_runs.rs:63 persona_test_runs stores models_tested only; persona_test_results carries output_quality_score with no judge model or rubric version"
+        },
+        {
+          "technique": "comparison-modes",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/test_runs.rs:63 absolute scores are persisted without their instrument versions, so a plotted series cannot mark an instrument discontinuity"
+        }
+      ]
+    },
+    "5d538a29-a2bb-4d61-8ec2-c51bcde105fe/eval-harness": {
+      "context": "agents-use-cases",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:08:01.000Z",
+      "worker": "652f57b8-e2d7-45bb-b03a-790b19356197",
+      "techniques": []
     }
   }
 }

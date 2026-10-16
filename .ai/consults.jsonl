@@ -1454,3 +1454,7 @@
 {"ts":"2026-10-16T18:08:00Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["unreached-decisions-pin-nothing","negative-control-tests"],"deviations":1}
 {"ts":"2026-10-16T18:08:00Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["unreached-decisions-pin-nothing","fixture-economics","negative-control-tests"],"deviations":1}
 {"ts":"2026-10-16T18:08:00Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["unreached-decisions-pin-nothing","negative-control-tests"],"deviations":1}
+{"ts":"2026-10-16T18:08:01Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["resolution-precondition","comparison-modes","judge-stability"],"deviations":1}
+{"ts":"2026-10-16T18:08:01Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["scenario-design","assertion-vs-judgment","judge-stability"],"deviations":2}
+{"ts":"2026-10-16T18:08:01Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["scenario-design","judge-stability","comparison-modes"],"deviations":3}
+{"ts":"2026-10-16T18:08:01Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0}

@@ -1,0 +1,331 @@
+{
+  "schema": "conform-run/1",
+  "worker": "652f57b8-e2d7-45bb-b03a-790b19356197",
+  "subject": "eval-harness",
+  "evaluatedAt": "2026-10-16T18:08:01Z",
+  "pairs": [
+    {
+      "context": "e4b48fb7-3763-4955-8ea9-01fd48aa0cf7",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/contest/view.rs:126 judges_lead publishes the max panel mean as the judges lean (shown to one decimal at LedgerVerdict.tsx:67) without checking the margin against the rows spread, so a lead inside the judges own disagreement is presented to the owner as a ranking",
+      "techniques": [
+        {
+          "technique": "resolution-precondition",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/contest/view.rs:126 max_by over non-broken means with no margin-vs-spread check; ContestScoreRow.spread (src-tauri/src/commands/contest/arena.rs:387) is carried but never consulted, and an exact tie is resolved by iteration order"
+        },
+        {
+          "technique": "comparison-modes",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/contest/decide.rs:3 the winner is a declared owner verdict passed to contest.mjs verdict, not inferred from the scoreboard sort"
+        },
+        {
+          "technique": "judge-stability",
+          "verdict": "unknown",
+          "evidence": "src-tauri/src/commands/contest/create.rs:62 validate refuses duplicate judges and an empty enabled panel but does not check judge family against participants; the cross-family rule lives in the skill instrument (.claude/skills/contest/SKILL.md:217), outside this context"
+        }
+      ],
+      "registryProposal": "resolution-precondition speaks of within-condition SD from repeated trials; single-trial judged contests only have inter-judge spread (max-min). A sentence on using judge spread as the noise floor when trials=1 would make the rule directly testable for panel-judged contests."
+    },
+    {
+      "context": "6da794b4-7a5f-4087-a4d4-fb8a416456e5",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/execution/tests.rs:57 start_test_run loads scenarios from suite_id but creates the run with persona_id and models only, so a run scores cannot be traced to the suite (or suite content) that produced them",
+      "techniques": [
+        {
+          "technique": "scenario-design",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/execution/tests.rs:57 suite_id is dropped at run creation; the scenario identity the scores attach to is lost"
+        },
+        {
+          "technique": "assertion-vs-judgment",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/execution/assertions.rs:21 output-assertion vocabularies are closed and an unknown type is a Validation error rather than silently running a different deterministic check"
+        },
+        {
+          "technique": "judge-stability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/execution/tests.rs:57 nothing about the judge packet reaches the run record (consistent with the recorded test-runner-lab deviation at src-tauri/engine/src/eval.rs:616)"
+        }
+      ]
+    },
+    {
+      "context": "320d2cea-9761-4233-97c1-ee2eaf4d6c17",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/execution/test_suites.rs:100 overwrites a suite scenarios in place under the same id with no version, and src-tauri/db/src/repos/execution/test_runs.rs:63 records no suite id or scenario version on the run, so historical scores silently compare against a changed exam",
+      "techniques": [
+        {
+          "technique": "scenario-design",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/test_suites.rs:100 scenarios = COALESCE(?3, scenarios) mutates the fixture under a stable identity"
+        },
+        {
+          "technique": "judge-stability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/test_runs.rs:63 persona_test_runs stores models_tested only; persona_test_results carries output_quality_score with no judge model or rubric version"
+        },
+        {
+          "technique": "comparison-modes",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/test_runs.rs:63 absolute scores are persisted without their instrument versions, so a plotted series cannot mark an instrument discontinuity"
+        }
+      ]
+    },
+    {
+      "context": "5d538a29-a2bb-4d61-8ec2-c51bcde105fe",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:16 output assertions are runtime quality gates evaluated on every production run, not scenarios scored across versions; no declared scenario set, trials or judge exist here",
+      "techniques": []
+    }
+  ],
+  "declined": [
+    {
+      "subject": "eval-harness",
+      "context": "6c0d30e4-99b9-4580-ba02-9a526db1d639",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "2fb16136-586e-478d-823f-38434d2d5b9a",
+      "reason": "weak context: the match itself is doubtful; left as a coverage question, not judged"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "33a96a83-6adc-42f7-b57c-839382bcef54",
+      "reason": "weak context: the match itself is doubtful; left as a coverage question, not judged"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "b164f847-45d6-4c9e-85bc-a1308375085d",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "89eddf81-0c57-441d-a07d-de36bf022cb5",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "0f1b56ac-cd96-4355-993e-dc445a20e63e",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "942d2449-34ab-4f02-af7e-b130269d10ef",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "c5228746-931d-4733-9cf7-84519a2c9605",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "ad601e35-b998-4029-97a5-77487f00d561",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "97025c06-0d64-4025-8a1f-98b90ba1c233",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "a7ece012-8300-4780-b286-b9cea81801fc",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "c413de7d-1182-4abc-8a08-9c8832254c62",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "90f639de-ffc7-4225-b67f-1566e5d66b8b",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "5e531c95-b6d9-46f5-a33d-d07001fee61e",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "66bc7a14-bf15-41d7-8d9a-900aa670f47e",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "a4174786-a5fb-4145-a1b3-f02826fac64a",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "d9cffe6c-a868-4ed4-b5e8-6c8add36918a",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "3c107fe6-ec95-4f45-bf31-665e9ccfe223",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b",
+      "reason": "weak context: the match itself is doubtful; left as a coverage question, not judged"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "06ef5a64-1796-4637-a4d9-f860bbe67562",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "56a0fd55-279d-428b-b2f6-7c89154abd6f",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "dd45411d-8955-4579-906e-5a3b00ba16da",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "54236947-3775-4d0a-8e14-1a709dd4d8bc",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "7e214a7d-44c6-4e6c-8b54-b30f4483ce12",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "9b6cc17c-3add-4152-a349-c189b15a109f",
+      "reason": "weak context: the match itself is doubtful; left as a coverage question, not judged"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "7dddb34a-3a9b-4ce0-832f-55ea352c12b5",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "9fca099d-94e4-4fd0-8460-3cf5d8c85acf",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "e13cfc6c-f666-4959-81c0-2cfbc4815f04",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "0dabb588-48ce-4c35-b425-c344fd723ce7",
+      "reason": "probable-confidence pair with priorNotApplicable=8, unread this run; budget spent on the four contexts that persist or publish eval results"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T18:08:01Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "eval-harness"
+      ],
+      "techniques": [
+        "resolution-precondition",
+        "comparison-modes",
+        "judge-stability"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T18:08:01Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "eval-harness"
+      ],
+      "techniques": [
+        "scenario-design",
+        "assertion-vs-judgment",
+        "judge-stability"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-16T18:08:01Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "eval-harness"
+      ],
+      "techniques": [
+        "scenario-design",
+        "judge-stability",
+        "comparison-modes"
+      ],
+      "deviations": 3
+    },
+    {
+      "ts": "2026-10-16T18:08:01Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "eval-harness"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

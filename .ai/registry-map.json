@@ -3962,8 +3962,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 8
+          "state": "not-applicable",
+          "priorNotApplicable": 8,
+          "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:16 output assertions are runtime quality gates evaluated on every production run, not scenarios scored across versions; no declared scenario set, trials or judge exist here",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "cross-provider-benchmark-operations",
@@ -6664,8 +6668,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 8
+          "state": "deviation",
+          "priorNotApplicable": 8,
+          "evidence": "src-tauri/src/commands/contest/view.rs:126 judges_lead publishes the max panel mean as the judges lean (shown to one decimal at LedgerVerdict.tsx:67) without checking the margin against the rows spread, so a lead inside the judges own disagreement is presented to the owner as a ranking",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "prompt-assembly",
@@ -7547,8 +7555,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 8
+          "state": "deviation",
+          "priorNotApplicable": 8,
+          "evidence": "src-tauri/src/commands/execution/tests.rs:57 start_test_run loads scenarios from suite_id but creates the run with persona_id and models only, so a run scores cannot be traced to the suite (or suite content) that produced them",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "mcp-tools",
@@ -10658,8 +10670,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 8
+          "state": "deviation",
+          "priorNotApplicable": 8,
+          "evidence": "src-tauri/db/src/repos/execution/test_suites.rs:100 overwrites a suite scenarios in place under the same id with no version, and src-tauri/db/src/repos/execution/test_runs.rs:63 records no suite id or scenario version on the run, so historical scores silently compare against a changed exam",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         }
       ],
       "governance": "governed"
