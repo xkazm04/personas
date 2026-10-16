@@ -35136,7 +35136,11 @@
           "revision": 2,
           "changedAt": "2026-09-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/design-preview/DesignResultPreview.tsx:11 the 'preview' renders the host's own AgentIR design result in-tree; none of the context's 8 files has a frame, guest server or postMessage bridge - the golden path's static-preview exclusion",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:a6e12ae70d42efcc",
+          "evaluatedRevision": 2
         },
         {
           "subject": "generated-workflow-candidates",

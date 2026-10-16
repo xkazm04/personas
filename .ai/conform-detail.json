@@ -26808,6 +26808,28 @@
       "evaluatedTs": "2026-10-16T18:23:55.000Z",
       "worker": "5f45a205-d269-4e76-958a-fe58b368b0bc",
       "techniques": []
+    },
+    "9b6cc17c-3add-4152-a349-c189b15a109f/embedded-preview": {
+      "context": "template-design-preview",
+      "subject": "embedded-preview",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:28:01.000Z",
+      "worker": "9f159bb1-4eba-4dbc-847e-5b584f25dde3",
+      "techniques": [
+        {
+          "technique": "cross-frame-protocol",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/design-preview/DesignResultPreview.tsx:1 composes in-tree components (PromptTabsPreview); no frame exists to speak a protocol across"
+        },
+        {
+          "technique": "dev-server-registry",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/design-preview/DesignResultPreview.tsx:11 input is an in-memory AgentIR, no guest process is started"
+        }
+      ],
+      "registryProposal": "Weak lexical-only match on the token 'preview' (here: a persona design summary). Matcher false positive, not a corpus hole; the golden path's 'When the subject does not apply' static-preview clause could be surfaced to the matcher as a negative use_when so lexical 'preview' hits on in-tree renderers stop pairing."
     }
   }
 }
