@@ -18,9 +18,39 @@ export interface BlueprintProduct {
   root: string;
 }
 
+/**
+ * How ready a product is to be drawn - bp's `lib/scan/readiness.ts` verdict, shown as a shape-only icon in the
+ * project switcher and the Monitor's project list (spark bp-fidelity, Stage A).
+ *   missing  = no readable map: the product cannot be drawn.
+ *   map-only = the map draws, nothing measured yet.
+ *   measured = the map and at least one reading.
+ *   full     = measured, plus the events log (the timeline has history).
+ */
+export type ReadinessLevel = 'missing' | 'map-only' | 'measured' | 'full';
+
+/** One row of the project switcher: every lens-scan product the app knows, the open one included. */
+export interface BlueprintProductEntry {
+  projectId: string;
+  name: string;
+  level: ReadinessLevel;
+  /** Open proposals (`status = proposed`). */
+  proposals: number;
+  /** ISO time the latest run ended; absent when the store has no run. */
+  lastRunAt?: string;
+  /** Why the store could not be read; absent when it could. */
+  error?: string;
+}
+
 /** Everything the drawing reads for one product. */
 export interface BlueprintData {
   product: BlueprintProduct;
+  /**
+   * Every product for the header's project switcher (the open one included). Absent (the fixture, a test) = the
+   * switcher shows the open product alone and offers no switch.
+   */
+  products?: BlueprintProductEntry[];
+  /** ISO time the open product's latest run ended, for the header's last-scan pill; absent = never scanned. */
+  lastRunAt?: string;
   /** `app-structure.json`, parsed; the drawing narrows it with bp's `loadStructure`. */
   structure: unknown;
   /** `events.jsonl`, raw text (empty when the file is absent). */
@@ -85,4 +115,9 @@ export interface BlueprintActions {
   shotUrl(path: string): Promise<string>;
   /** Re-read the product after a write or an outside change. */
   refresh(): Promise<BlueprintData>;
+  /**
+   * Switch the sheet to another product (the header's project switcher). The host reopens the sheet on that
+   * product; the drawing does nothing else. Absent = no switching (the fixture, a test).
+   */
+  openProduct?(projectId: string): void;
 }
