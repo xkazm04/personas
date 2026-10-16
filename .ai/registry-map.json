@@ -6386,8 +6386,8 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:192 budget feed sums COALESCE(e.spend, 0.0) beside max_budget_usd with no unpriced count, over rows the gate src-tauri/src/engine/execution.rs:3021 enforces on (get_monthly_spend(..).unwrap_or(0.0)), which src-tauri/src/engine/runner/mod.rs:3996 always writes as Some(f64) - phantom-zero spend gives a cap headroom it does not have (anchor re-pinned from :3991, drifted by 3797ab2173).",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:4012 writes cost_usd: Some(metrics.cost_usd) from a bare f64 defaulting to 0 (src-tauri/core/src/types.rs:526), summed as COALESCE(e.spend, 0.0) beside max_budget_usd at src-tauri/src/commands/communication/observability/metrics.rs:192 and enforced at src-tauri/src/engine/execution.rs:3021 - phantom-zero spend gives the budget cap headroom it does not have (anchor re-pinned from :3996, drifted by d2625bd9f2).",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:9f199f8ff9e7a925",
           "evaluatedRevision": 7,
           "revisionsBehind": 0
@@ -20210,8 +20210,8 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/core/src/models/llm_spend.rs:46 LlmSpendTotals sums a nullable cost_usd (:30) into a bare f64 with no unpriced-call count, and LlmSpendInsert (:20) carries no cost_source, so a window with unpriced rows reads as fully priced and self-reported CLI cost is indistinguishable from book cost (re-confirmed 2026-10-12; file unchanged since 10-09 verdict).",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src-tauri/core/src/models/llm_spend.rs:46 LlmSpendTotals sums a nullable cost_usd (:30) into a bare f64 with no unpriced-call count, and LlmSpendInsert (:20) carries no cost_source - a window with unpriced rows reads as fully priced (re-confirmed 2026-10-16; file unchanged since 10-12).",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:9f199f8ff9e7a925",
           "evaluatedRevision": 7,
           "revisionsBehind": 0
@@ -26048,8 +26048,8 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:38 LlmPinpoint.totalCostUsd is non-nullable and mappers substitute 0 for missing provider cost (:95 r.cost_usd ?? 0, :402 toNum(r.costUSD)) - phantom zero; the shape (:28) has no cached-input/reasoning counters (re-confirmed 2026-10-12; no commits since 10-09).",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:38 LlmPinpoint.totalCostUsd is non-nullable and mappers substitute 0 for missing cost (:95 r.cost_usd ?? 0, :402 toNum(r.costUSD)) - phantom zero; the shape (:28) has no cached-input/reasoning counters (re-confirmed 2026-10-16; file unchanged since 10-09).",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:9f199f8ff9e7a925",
           "evaluatedRevision": 7,
           "revisionsBehind": 0
