@@ -226,6 +226,13 @@
   box-shadow: inset 3px 0 0 var(--ae-tone);
 }
 .ae-line:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+/* Every other row of a bay wears the same line (WP11 C: `SessionLine`,
+   `RemoteLine`, a compact `QueueRung`; `LineParts.tsx`). A capped holder that
+   also runs keeps the amber over-cap edge over its run edge; an inert line (a
+   rung, an ended session) keeps the default cursor; a lifted rung is opaque. */
+.ae-line.is-over.is-working { box-shadow: inset 2px 0 0 var(--status-warning); }
+.ae-line.is-inert { cursor: default; }
+.ae-line.ae-dragging { background-color: color-mix(in oklab, var(--background) 92%, var(--foreground)); }
 /* The persona line's row measures itself: in the narrowest columns its
    "+n more" count leaves (the tooltip lists every reason), so the name keeps
    its floor beside the figure and the lamp (`PersonaTail.tsx`). */
@@ -294,7 +301,8 @@
 /* A queue rung's verbs float over its right edge, on a puck of the page
    colour, only on hover or keyboard focus: hidden, they take no width and no
    pointer, so the title keeps the lane. */
-.ae-pile .ae-reveal.ae-float {
+.ae-pile .ae-reveal.ae-float,
+.ae-line .ae-reveal.ae-float {
   position: absolute;
   top: 50%;
   right: 4px;
@@ -328,6 +336,22 @@
     background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--fb-tone) 22%, transparent), transparent);
     animation: ae-sweep 3.2s linear infinite;
     animation-delay: var(--fb-sd, 0s);
+  }
+}
+/* A running LINE keeps the session card's ambient sweep, as a faint wash in
+   the line's tone (`ae-sweep`, set on running session lines), under the same
+   two gates. The line clips it. */
+.ae-line.ae-sweep { overflow: hidden; }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="reduce"]) .ae-moving .ae-line.ae-sweep::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 40%;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--ae-tone) 12%, transparent), transparent);
+    animation: ae-sweep 3.2s linear infinite;
+    animation-delay: var(--ae-sd, 0s);
   }
 }
 @media (prefers-reduced-motion: reduce) {

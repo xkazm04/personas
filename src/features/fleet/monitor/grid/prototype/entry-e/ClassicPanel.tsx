@@ -1,7 +1,7 @@
 // Classic: the whole fleet as bays of one panel, laid as masonry so a bay is
 // exactly as tall as its roster and the next bay fills the gap below it.
-// Agents are one line each, live sessions two. The panel filter narrows agents
-// AND sessions; a bay the filter empties leaves the board. The ungrouped tray
+// Agents and live sessions are one 36px line each (`LineParts.tsx`). The
+// panel filter narrows agents AND sessions; a bay the filter empties leaves the board. The ungrouped tray
 // is the widest bay, at the foot, in as many columns as the width allows.
 //
 // WINDOWING — which axis, and why not `grid/ColumnBody`.
@@ -16,11 +16,11 @@
 //  • It hands the virtualizer `estimateSize` and never measures. That needs a
 //    constant height per row kind, and this panel has none: `PersonaLine` sets
 //    `minHeight`, not `height`, and GROWS when the persona has a chat bubble
-//    (two clamped lines); `RemoteLine` declares no height at all. A column of
+//    (two clamped lines) or a peer's switch outcome. A column of
 //    fixed-height nodes can be placed arithmetically; a list of lines has to be
 //    measured, so these virtualizers run `measureElement`.
 //  • Its rows are `ColumnRow`s whose heights come from `gridGeometry` (the TILE
-//    board: 54 / 42 px). Entry E's lines are 36 / 50. Reusing the type would
+//    board: 54 / 42 px). Entry E's lines are 36. Reusing the type would
 //    mean carrying heights that are wrong for every row on this surface.
 //
 // Below `VIRTUALIZE_ABOVE` rows each list renders EXACTLY the DOM it rendered

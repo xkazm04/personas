@@ -34,6 +34,7 @@ import { Lamp } from './parts';
 import { toneClass } from './tone';
 import { personaTail, tailSentence } from './personaTailModel';
 import { TailFigure, TailHead } from './PersonaTail';
+import { lineEdgeClass } from './LineParts';
 import { useNextStartMs } from './useMonitorSchedules';
 import { DeviceGlyph, PersonaResource } from './devices/DeviceGlyph';
 import { ResourceGlyph } from './devices/ResourceGlyph';
@@ -113,8 +114,7 @@ export const PersonaLine = memo(function PersonaLine({
       ? tx(t.monitor.grid_chat_pending_aria, { name: facts.name, text: bubble.text })
       : tx(t.monitor.grid_chat_bubble_aria, { name: facts.name, text: bubble.text })] : []),
   ];
-  const edge = kind === 'critical' ? 'is-lit is-critical' : kind === 'warning' ? 'is-lit'
-    : kind === 'working' ? 'is-working' : kind === 'off' ? 'is-off' : '';
+  const edge = lineEdgeClass(kind);
 
   return (
     <Tooltip content={<span className="whitespace-pre-line">{lines.join('\n')}</span>} placement="right" delay={450}>
