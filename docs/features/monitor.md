@@ -1261,6 +1261,33 @@ nameplates' lamps still speak the Annunciator's lamp vocabulary (`tone.ts`). Har
 `/sim`; `monitor/lanes` until the WP10 cutover freed the word for the decision
 lanes) in `scripts/style/page-harness/monitorActivitySurfaces.tsx`.
 
+**Persona lines say what the persona is doing (WP11 "Tail", 2026-10-16).** The
+persona line no longer wears its pile as a fill. It is one flat 36px row in the
+bay nameplate's grammar (`entry-e/PersonaLine.tsx` + `PersonaTail.tsx`, model
+`personaTailModel.ts`): the framed face, the bold name, then the activity as
+caption tokens (the last run's outcome glyph and age, or, while it runs, how
+many runs wait behind it; then a calendar glyph and the next scheduled start),
+and at the right edge the one figure (why it needs you with its count, or the
+run's elapsed time, or the off glyph) and the lamp. State is the lamp plus a
+tone edge (`.ae-line`): needs-you lights the edge and a soft wash, critical a
+stronger wash and a wider edge, a run keeps only the edge, off is greyed. In a
+narrow column the tokens give way in a fixed order and none is cut mid-token:
+the next start leaves whole first, then the name truncates down to a floor,
+then the last-run token leaves whole. The tooltip and the accessible name
+always carry the whole sentence: the reason in words, the activity, and the
+next start. Sources: the last run is `get_persona_summaries` (outcome and
+`lastRunAt`), the run and its queue come from the live process events, and the
+next start is `list_cron_agents`, now read while the Monitor is open
+(`entry-e/useMonitorSchedules.ts`: once for the panel, on open, every 30 s
+while the window is visible, and when the scheduler fires overdue triggers; a
+failed read is logged, not toasted). A switched-off trigger, an off persona and
+a peer's agent have no next start; a value nobody reported is absent, never
+guessed. A peer's line keeps its device glyph and on/off switch and shows only
+its state word, since the device snapshot carries no last run or schedule.
+Harness: `monitor/persona-cards` (`&narrow=1` pins the bays to the 250px
+column floor) and `monitor/persona-cards/peer`; shots in
+`docs/design/mandate-lanes/wp11-shots/`.
+
 ## Card context menus
 
 Every card on the Activity board carries its verbs on a right-click, and both
