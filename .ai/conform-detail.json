@@ -21940,62 +21940,69 @@
       "context": "commands-contest",
       "subject": "terminal-multiplexing",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T00:49:04.653Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T00:56:20.869Z",
+      "worker": "bddfb6fd-f22a-4a5f-9ace-2255e42060fe",
       "techniques": [
         {
-          "technique": "attach-detach-lifecycle",
+          "technique": "keystroke-injection",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/contest/driver.rs:995 Boot re-attach restores a fleet watcher and the seat record, not a terminal widget rung."
-        },
-        {
-          "technique": "bounded-replay-buffers",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/contest/node.rs:6 Instrument output is a drained pipe captured to completion, not a per-session terminal replay ring."
-        },
-        {
-          "technique": "completion-authority-arbitration",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/contest/driver.rs:588 A seat ends when the fleet row settles or the caller ceiling elapses, not by arbitrating terminal silence against an injected protocol."
-        },
-        {
-          "technique": "injected-hook-reconvergence",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/contest/preview.rs:32 The only injection is an HTML scroll reporter in a sandboxed preview, not a shell prompt-cycle hook."
-        },
-        {
-          "technique": "multi-client-fan-out",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/contest/driver.rs:540 One watcher is kept per fleet session id; a second insert is dropped, so there is no multi-viewer fan-out."
-        },
-        {
-          "technique": "multiplexer-state",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/contest/driver.rs:249 Live seat state is read from the fleet registry; this module holds no terminal manager, focus pointer, or emulator map."
+          "evidence": "src-tauri/src/commands/fleet/contest_seat.rs:176 The contest prompt becomes a headless task rather than simulated terminal keystrokes."
         },
         {
           "technique": "occupant-state-detection",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/contest/driver.rs:246 Whether a seat is still running is a fleet registry fact, including a dozing restored row, not a screen classification."
+          "evidence": "src-tauri/src/commands/fleet/contest_seat.rs:421 Contest occupants provide structured completion events, excluding the technique's screen-only precondition."
         },
         {
           "technique": "pty-management",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/contest/node.rs:127 The process spawn in this context goes through piped capture_output, not a pseudo-terminal spawn/resize/exit contract."
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:767 The traced headless launcher wires standard streams through pipes rather than allocating a pseudo-terminal."
+        },
+        {
+          "technique": "attach-detach-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/contest/driver.rs:995 Boot re-attach restores a fleet watcher and the seat record, not a terminal widget rung.",
+          "carriedFrom": "2026-10-15"
+        },
+        {
+          "technique": "bounded-replay-buffers",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/contest/node.rs:6 Instrument output is a drained pipe captured to completion, not a per-session terminal replay ring.",
+          "carriedFrom": "2026-10-15"
+        },
+        {
+          "technique": "completion-authority-arbitration",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/contest/driver.rs:588 A seat ends when the fleet row settles or the caller ceiling elapses, not by arbitrating terminal silence against an injected protocol.",
+          "carriedFrom": "2026-10-15"
+        },
+        {
+          "technique": "injected-hook-reconvergence",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/contest/preview.rs:32 The only injection is an HTML scroll reporter in a sandboxed preview, not a shell prompt-cycle hook.",
+          "carriedFrom": "2026-10-15"
+        },
+        {
+          "technique": "multi-client-fan-out",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/contest/driver.rs:540 One watcher is kept per fleet session id; a second insert is dropped, so there is no multi-viewer fan-out.",
+          "carriedFrom": "2026-10-15"
+        },
+        {
+          "technique": "multiplexer-state",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/contest/driver.rs:249 Live seat state is read from the fleet registry; this module holds no terminal manager, focus pointer, or emulator map.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "renderer-economics",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/contest/node.rs:22 The only viewport work is a headless browser script, not a budget of accelerated terminal renderers."
+          "evidence": "src-tauri/src/commands/contest/node.rs:22 The only viewport work is a headless browser script, not a budget of accelerated terminal renderers.",
+          "carriedFrom": "2026-10-15"
         }
-      ],
-      "withdrawn": {
-        "worker": "7336adf4-f1e4-4ca6-9e4f-68a671c64554",
-        "state": "not-applicable",
-        "at": "2026-10-15T00:49:26.564223+00:00",
-        "reason": "reviewer (sonnet): The anchor driver.rs:5 only shows that seats are admitted through the fleet's spawn_contest_seat; that function (commands/fleet/contest_seat.rs) closes PTY handles and emits pty registry changes, so the seats are PTY-backed fleet sessions. 'Not hosting interactive terminals' is therefore unproven by"
-      }
+      ]
     },
     "bcb603ad-ce58-4b76-9623-aa99ace984af/agent-memory": {
       "context": "companion-proactive",

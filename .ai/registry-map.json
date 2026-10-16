@@ -6766,7 +6766,11 @@
           "changedAt": "2026-09-04",
           "confidence": "probable",
           "priorNotApplicable": 16,
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/contest_seat.rs:264 Searches found no terminal-multiplexing terms in the contest directory, and tracing its dedicated seat launcher confirmed headless subprocess execution while terminal machinery resides elsewhere in Fleet.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:c3ef11aba4a471f5",
+          "evaluatedRevision": 7
         }
       ],
       "governance": "governed"

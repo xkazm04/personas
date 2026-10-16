@@ -1,0 +1,66 @@
+{
+ "schema": "conform-run/1",
+ "worker": "bddfb6fd-f22a-4a5f-9ace-2255e42060fe",
+ "subject": "terminal-multiplexing",
+ "evaluatedAt": "2026-10-16T00:56:20.869621+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "commands-contest",
+   "subject": "terminal-multiplexing",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/fleet/contest_seat.rs:264 Searches found no terminal-multiplexing terms in the contest directory, and tracing its dedicated seat launcher confirmed headless subprocess execution while terminal machinery resides elsewhere in Fleet.",
+   "techniques": [
+    {
+     "technique": "keystroke-injection",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/fleet/contest_seat.rs:176 The contest prompt becomes a headless task rather than simulated terminal keystrokes."
+    },
+    {
+     "technique": "occupant-state-detection",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/fleet/contest_seat.rs:421 Contest occupants provide structured completion events, excluding the technique's screen-only precondition."
+    },
+    {
+     "technique": "pty-management",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/fleet/headless.rs:767 The traced headless launcher wires standard streams through pipes rather than allocating a pseudo-terminal."
+    }
+   ],
+   "absenceTerms": [
+    "xterm",
+    "scrollback",
+    "portable_pty",
+    "multiplexer",
+    "bracketed_paste"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "terminal-multiplexing",
+   "context": "recipes-playground",
+   "reason": "No context files were supplied, searches found neither RecipePlaygroundModal nor useRecipeTestRunner in current TypeScript sources or tracked filenames, and the documented src/features/recipes/sub_playground directory does not exist; surviving documentation and translation references cannot establish the implementation."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-16T00:56:20.869621+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "terminal-multiplexing"
+   ],
+   "techniques": [
+    "keystroke-injection",
+    "occupant-state-detection",
+    "pty-management"
+   ],
+   "deviations": 0,
+   "context": "commands-contest",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}
