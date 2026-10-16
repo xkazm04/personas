@@ -33597,7 +33597,11 @@
           "revision": 9,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_assignments/useAssignmentProgressListener.ts:9 This context's files only refetch an assignment checklist from progress events and draw a project sounding chart, so they never validate or execute a user-authored graph; searches of both context directories found no unevaluable, topological, edge_condition, joinMode, or dryRun.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:396bc727ea6bcf37",
+          "evaluatedRevision": 9
         }
       ],
       "governance": "governed"

@@ -27578,6 +27578,57 @@
           "evidence": "src/features/vault/shared/vector/VectorKbModal.tsx:91 The inspected element query targets the modal's own DOM tab button rather than a foreign application's accessibility tree."
         }
       ]
+    },
+    "6e3e06ef-e5d0-4b4d-807f-688123370b14/pipeline-dag": {
+      "context": "teams-canvas",
+      "subject": "pipeline-dag",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T23:33:43.606Z",
+      "worker": "98e5585f-1d46-49ff-abe1-220366173ab1",
+      "techniques": [
+        {
+          "technique": "composite-condition-verdicts",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_assignments/useAssignmentNotificationDispatcher.ts:21 The only branch is equality on one status string, so there is no child-condition fold that can fail to answer."
+        },
+        {
+          "technique": "conditional-edges",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_assignments/useAssignmentProgressListener.ts:18 The progress payload is assignment id, status, and step id, with no edge condition to resolve as fired, not-fired, or unevaluable."
+        },
+        {
+          "technique": "deterministic-vs-model-nodes",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_assignments/useGlobalAssignmentProgressListener.ts:19 The module only forwards a progress event into the store and declares no node-class determinism or effect contract."
+        },
+        {
+          "technique": "external-adapter-nodes",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_assignments/useAssignmentNotificationDispatcher.ts:126 The only call reads assignment detail over IPC, so there is no user-supplied endpoint to vet and no remote registration to commit."
+        },
+        {
+          "technique": "graph-validation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:4 The only edges this page describes are cross-project relation currents on a chart, not a pipeline document checked before a run."
+        },
+        {
+          "technique": "node-execution-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_assignments/useAssignmentProgressListener.ts:9 The listener says it stays decoupled from the per-step state machine, so it does not own readiness, status transitions, or crash recovery."
+        },
+        {
+          "technique": "pause-and-gate-nodes",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_assignments/useAssignmentNotificationDispatcher.ts:81 awaiting_review is only a toast category for a status string; this file does not persist a gate, hold a thread, or choose an expiry verdict."
+        },
+        {
+          "technique": "valid-but-degraded-plans",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:2 A sounding chart of project urgency is not a planner-authored execution graph, so shape comparison across runs does not apply."
+        }
+      ]
     }
   }
 }
