@@ -1299,3 +1299,7 @@
 {"ts":"2026-10-16T17:18:58Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["missing-anchor-degradation","tour-lifecycle"],"deviations":2}
 {"ts":"2026-10-16T17:18:58Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["tour-lifecycle"],"deviations":1}
 {"ts":"2026-10-16T17:18:58Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["tour-lifecycle"],"deviations":1}
+{"ts":"2026-10-16T17:19:52Z","bundle":"software-engineering","subjects":["versioning-snapshots"],"techniques":["promotion-lifecycle"],"deviations":1}
+{"ts":"2026-10-16T17:19:52Z","bundle":"software-engineering","subjects":["versioning-snapshots"],"techniques":["snapshot-scope","lineage-and-variants"],"deviations":1}
+{"ts":"2026-10-16T17:19:52Z","bundle":"software-engineering","subjects":["versioning-snapshots"],"techniques":["restore-semantics"],"deviations":1}
+{"ts":"2026-10-16T17:19:52Z","bundle":"software-engineering","subjects":["versioning-snapshots"],"techniques":["restore-semantics","lineage-and-variants"],"deviations":1}
