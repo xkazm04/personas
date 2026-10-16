@@ -65,7 +65,7 @@ describe('composeRelease', () => {
 describe('the bp link', () => {
   it('builds the Release tab URL from the setting, or from the default when unset or blank', () => {
     expect(bpReleaseUrl(bpBaseUrl('http://bp.test:4000/'), 'teapot-works')).toBe('http://bp.test:4000/?product=teapot-works&page=ledger&tab=release');
-    expect(bpReleaseUrl(bpBaseUrl(null), 'teapot-works')).toBe('http://localhost:3000/?product=teapot-works&page=ledger&tab=release');
+    expect(bpReleaseUrl(bpBaseUrl(null), 'teapot-works')).toBe('http://localhost:3010/?product=teapot-works&page=ledger&tab=release');
     expect(bpBaseUrl('   ')).toBe(BP_URL_DEFAULT);
     expect(bpBaseUrl('javascript:alert(1)')).toBe(BP_URL_DEFAULT);
   });

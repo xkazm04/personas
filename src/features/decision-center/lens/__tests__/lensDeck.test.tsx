@@ -166,7 +166,7 @@ describe('the release composition', () => {
     const open = await screen.findByTestId('lens-release-open-bp');
     await waitFor(() => expect((open as HTMLButtonElement).disabled).toBe(false));
     key('Enter');
-    await waitFor(() => expect(api.openExternalUrl).toHaveBeenCalledWith('http://localhost:3000/?product=teapot-works&page=ledger&tab=release'));
+    await waitFor(() => expect(api.openExternalUrl).toHaveBeenCalledWith('http://localhost:3010/?product=teapot-works&page=ledger&tab=release'));
   });
 
   it('when bp does not answer, says it is not running, shows the command, and offers no open', async () => {

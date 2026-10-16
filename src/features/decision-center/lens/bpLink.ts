@@ -6,7 +6,8 @@
  *   <lens_scan.bp_url>/?product=<slug>&page=ledger&tab=release
  *
  * `lens_scan.bp_url` is an app setting (Rust `settings_keys::LENS_SCAN_BP_URL`),
- * `http://localhost:3000` (Next's default port) when unset or blank.
+ * `http://localhost:3010` (bp's own dev and start port, clear of the 3000
+ * that local test servers take) when unset or blank.
  *
  * The slug: bp names a product by the slug in its own registry
  * (`bp.products.local.json`), which Personas cannot read. A product's registry
@@ -16,7 +17,7 @@
  * React-free.
  */
 export const BP_URL_SETTING = 'lens_scan.bp_url';
-export const BP_URL_DEFAULT = 'http://localhost:3000';
+export const BP_URL_DEFAULT = 'http://localhost:3010';
 /** What the operator runs in bp's root to start it. */
 export const BP_START_COMMAND = 'npm run dev';
 

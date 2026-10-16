@@ -159,7 +159,8 @@ and every decision happens on the sheet. A Release card opens the release's
 **composition, read only** (version, items, notes); its one action, **Open in
 bp** (`Enter`), opens bp's Release tab in your browser at
 `<lens_scan.bp_url>/?product=<slug>&page=ledger&tab=release` (setting
-`lens_scan.bp_url`, default `http://localhost:3000`). When bp does not answer,
+`lens_scan.bp_url`, default `http://localhost:3010`, the port bp's `npm run dev`
+serves on). When bp does not answer,
 the sheet says bp is not running and shows `npm run dev`, to run in bp's root.
 Closing a sheet, and every write on the blueprint, re-reads the products so the
 counts follow. No mandate ever acts on a lens-scan card, signed or not (the
