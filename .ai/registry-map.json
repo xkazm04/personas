@@ -30646,8 +30646,8 @@
           "changedAt": "2026-09-01",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/shared/components/forms/DesignInput.tsx:177 renders the primary composition textarea with only a placeholder (:186) and no label, aria-label or FormField wiring, so it has no accessible name once typing starts; TableSelector.tsx's filter input is also placeholder-only. DirectoryPickerInput has been fixed since the last verdict.",
-          "evaluatedAt": "2026-09-23",
+          "evidence": "src/features/shared/components/forms/DesignInput.tsx:177 the primary composition textarea still has no label, aria-label or FormField wiring; its only name is the hardcoded English placeholder at :186, which vanishes on first keystroke (TableSelector.tsx:67 filter input same) - the primitives library itself ships a placeholder-as-label control",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:8c778ef90ec95e82",
           "evaluatedRevision": 4,
           "revisionsBehind": 0
@@ -35824,13 +35824,16 @@
           "score": 0,
           "why": [],
           "confidence": "strong",
-          "state": "unknown",
+          "state": "deviation",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "added by /conform triage 2026-08-29: the golden path precondition governs this context; the matcher paired on vocabulary",
+          "evidence": "src/features/templates/sub_presets/PresetQuestionnaireForm.tsx:253 every adoption question renders a bare <label> with no htmlFor and controls with no id, so no select/text/number control has a programmatic name; NumberControl coerces a cleared value to 0 (:346)",
           "digest": "sha256-b2:8c778ef90ec95e82",
           "revision": 4,
-          "changedAt": "2026-09-01"
+          "changedAt": "2026-09-01",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:8c778ef90ec95e82",
+          "evaluatedRevision": 4
         }
       ],
       "governance": "governed"
@@ -38757,7 +38760,11 @@
           "revision": 4,
           "changedAt": "2026-09-01",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:229 one `error` slot (fixed id schema-form-error) carries both the name-required check and every server rejection, and SchemaFormFields.tsx:53 sets aria-invalid on the name input whenever it is set - a failed connector/credential create marks the name field invalid though it is not attributable to it",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:8c778ef90ec95e82",
+          "evaluatedRevision": 4
         },
         {
           "subject": "multi-provider-gateway-plane",

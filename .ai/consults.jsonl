@@ -1404,3 +1404,6 @@
 {"ts":"2026-10-16T17:51:28Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":["environment-promotion","deploy-gate-coupling"],"deviations":1}
 {"ts":"2026-10-16T17:52:07Z","bundle":"software-engineering","subjects":["health-checks"],"techniques":["health-rollup","three-state-outcomes","check-scheduling"],"deviations":1}
 {"ts":"2026-10-16T17:52:07Z","bundle":"software-engineering","subjects":["health-checks"],"techniques":["three-state-outcomes","health-rollup","remediation-affordances"],"deviations":1}
+{"ts":"2026-10-16T17:52:42Z","bundle":"software-engineering","subjects":["form"],"techniques":["field-composition","error-aggregation-and-focus","validation-timing"],"deviations":1}
+{"ts":"2026-10-16T17:52:42Z","bundle":"software-engineering","subjects":["form"],"techniques":["server-error-mapping","field-composition","error-aggregation-and-focus"],"deviations":1}
+{"ts":"2026-10-16T17:52:42Z","bundle":"software-engineering","subjects":["form"],"techniques":["field-composition","validation-timing"],"deviations":1}

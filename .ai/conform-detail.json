@@ -5304,33 +5304,45 @@
       "subject": "form",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-9",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:52:42.000Z",
+      "worker": "4bdb3732-24fa-4b50-8cfb-e16e3a0671ec",
       "techniques": [
         {
           "technique": "field-composition",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/forms/DesignInput.tsx:177 textarea has no label and no error wiring and does not take FormField's props, forking the field vocabulary inside the folder that owns FormField."
+          "evidence": "src/features/shared/components/forms/DesignInput.tsx:177 placeholder-only textarea (prohibitions 1-2); the primitive itself is sound: FormField.tsx:144 mints ids via useId and wires aria-invalid/aria-describedby with one feedback slot priority error>availability>help"
         },
         {
           "technique": "error-aggregation-and-focus",
-          "verdict": "conformant",
-          "evidence": "src/features/shared/components/forms/FormErrorSummary.tsx:34 each summary entry focuses its field, inside a role=alert summary region."
+          "verdict": "realized-with-gap",
+          "evidence": "src/features/shared/components/forms/FormErrorContext.tsx:16 split stable-write/changing-read registry holding only visible errors, FormErrorSummary focuses+scrolls the field; but register appends in visibility order (FormErrorContext.tsx:60), not user-facing visual order"
         },
         {
           "technique": "validation-timing",
-          "verdict": "unread",
-          "evidence": ""
+          "verdict": "realized",
+          "evidence": "src/features/shared/components/forms/FormField.tsx:155 validateOn gate: blur by default, then live revalidation after first interaction, forceValidation for submit; useAsyncFieldValidation.ts:116 debounced check guarded by AbortController"
         },
         {
           "technique": "submit-lifecycle",
           "verdict": "unread",
-          "evidence": ""
+          "evidence": "",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "server-error-mapping",
           "verdict": "unread",
-          "evidence": ""
+          "evidence": "",
+          "carriedFrom": "2026-09-23"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/shared/components/forms/DesignInput.tsx:177 renders the primary composition textarea with only a placeholder (:186) and no label, aria-label or FormField wiring, so it has no accessible name once typing starts; TableSelector.tsx's filter input is also placeholder-only. DirectoryPickerInput has been fixed since the last verdict.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by 4bdb3732-24fa-4b50-8cfb-e16e3a0671ec"
         }
       ]
     },
@@ -25100,6 +25112,54 @@
       "worker": "d4786621-d5b3-48b3-98a0-d1ed77076c1a",
       "techniques": [],
       "registryProposal": "Coverage, not corpus: this context is dead (map row paths: [], every context-map entry_point absent from git ls-files) yet the builder counts deadContexts: 0 - it should be flagged dead/orphaned. The original match was a technique-shaped resonance (report/generation/headings tokens) - the subject's precondition 'periodic stakeholder briefing from system aggregates' never held for a research-paper synthesiser."
+    },
+    "6229df3d-d54e-47bb-8091-abb479003c18/form": {
+      "context": "vault-catalog-schemas",
+      "subject": "form",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:52:42.000Z",
+      "worker": "4bdb3732-24fa-4b50-8cfb-e16e3a0671ec",
+      "techniques": [
+        {
+          "technique": "server-error-mapping",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:229 resolveErrorTranslated maps the message (rung 3 is loud) but form-level and field-level rejections share one slot, so rung 2 lands on the name field"
+        },
+        {
+          "technique": "field-composition",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/forms/TemplateFormBody.tsx:100 label has no htmlFor and the input no id - no programmatic association; SchemaFormFields.tsx:47 hand-assembles label+input+error with a hard-coded describedby id while forms/FormField exists"
+        },
+        {
+          "technique": "error-aggregation-and-focus",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:111 name-required failure sets text rendered at the bottom of the form (:229) and moves no focus to the name field"
+        }
+      ]
+    },
+    "2a54cdc2-87af-4298-b490-9eb87f230df7/form": {
+      "context": "templates-draft-editor",
+      "subject": "form",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:52:42.000Z",
+      "worker": "4bdb3732-24fa-4b50-8cfb-e16e3a0671ec",
+      "techniques": [
+        {
+          "technique": "field-composition",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_presets/PresetQuestionnaireForm.tsx:253 hand-rolled label+hint+control stack unassociated (prohibitions 1 and 5); :346 onChange(v ?? 0) invents a value the user never entered (prohibition 6); :323 hardcoded On/Off"
+        },
+        {
+          "technique": "validation-timing",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_presets/PresetQuestionnaireForm.tsx:66 header states validation is HTML5 min/max only and out-of-range answers silently fall back to the template default at adopt time - no field-level feedback on any schedule"
+        }
+      ],
+      "registryProposal": "Not a corpus finding but a context-map one: this context is described as the n8n draft editor (entry point src/features/templates/draft-editor/DraftEditStep.tsx), which no longer exists in git; its file_paths now cover template explore + presets. The form pairing still holds via PresetQuestionnaireForm, but the context should be re-described or split on the next context scan."
     }
   }
 }
