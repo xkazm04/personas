@@ -25733,6 +25733,63 @@
           "evidence": "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx:91 no unknown lane: the success rate is computed over terminal outcomes only, inflating it by every attempt whose window closed without evidence"
         }
       ]
+    },
+    "a3b615d2-05d8-47bd-ad92-672c6b42b0f3/prompt-assembly": {
+      "context": "output-stream-parser",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:06:32.000Z",
+      "worker": "5cdae3b8-b67e-4dfb-af4c-9a8489128895",
+      "techniques": [
+        {
+          "technique": "context-budgeting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/ai_healing.rs:171 error = truncate_str(error, 2000) drops the tail silently; contrast src-tauri/src/engine/deliberation.rs:444 which appends [truncated]"
+        },
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/deliberation.rs:1320 YOUR CAPABILITIES is written after THE CONVERSATION SO FAR (:1303), against the stability gradient; src-tauri/engine/src/ai_healing.rs:145 is a call-site format! with no family assembler"
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/deliberation.rs:1314 other members' model-authored turns are interpolated as bare '- {who}: {line}' bullets with no trust class or boundary"
+        },
+        {
+          "technique": "capability-documentation",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/deliberation.rs:1320 the capability list is rendered only when non-empty, from caller-supplied (id, title) pairs, and the act clause changes with it"
+        }
+      ]
+    },
+    "7826a48f-5883-4f26-8476-c3c515bda745/prompt-assembly": {
+      "context": "lib-personas",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:06:32.000Z",
+      "worker": "5cdae3b8-b67e-4dfb-af4c-9a8489128895",
+      "techniques": [
+        {
+          "technique": "capability-documentation",
+          "verdict": "deviation",
+          "evidence": "src/lib/personas/parsers/workflowPipeline.ts:230 hand-written 'Use the following tools in sequence: <labels>' instead of text derived from the tool ids built at :189"
+        },
+        {
+          "technique": "layered-composition",
+          "verdict": "conformant",
+          "evidence": "src/lib/personas/promptMigration.ts:48 STANDARD_SECTION_KEYS gives identity/instructions/toolGuidance/... owned sections that the Rust assembler renders"
+        },
+        {
+          "technique": "fingerprinting-and-cache-keys",
+          "verdict": "deviation",
+          "evidence": "src/lib/personas/promptMigration.ts:244 previewPrompt silently falls back to renderToMarkdown, which omits tools/protocols, so the reviewed preview is not the prompt sent and nothing marks it partial"
+        }
+      ]
     }
   }
 }

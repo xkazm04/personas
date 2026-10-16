@@ -1445,3 +1445,6 @@
 {"ts":"2026-10-16T18:05:34Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["gate-laddering"],"deviations":1}
 {"ts":"2026-10-16T18:05:34Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["unmeasurable-criteria","unparseable-form-is-a-finding"],"deviations":1}
 {"ts":"2026-10-16T18:05:34Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["refusal-names-a-reachable-remedy"],"deviations":1}
+{"ts":"2026-10-16T18:06:32Z","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":["context-budgeting","layered-composition","variable-interpolation","capability-documentation"],"deviations":3}
+{"ts":"2026-10-16T18:06:32Z","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":["capability-documentation","layered-composition","fingerprinting-and-cache-keys"],"deviations":2}
+{"ts":"2026-10-16T18:06:32Z","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":["pinned-prompt-clock"],"deviations":0}

@@ -17736,7 +17736,11 @@
           "revision": 43,
           "changedAt": "2026-10-02",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/personas/parsers/workflowPipeline.ts:230 writes the imported persona's Tool Guidance naming tools by node label while the tools actually created are ${service}_${safeName} (:189), and the engine renders that section into every run (src-tauri/engine/src/prompt/assemble.rs:475) - capability drift born at import",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "mcp-tools",
@@ -20565,7 +20569,11 @@
           "revision": 43,
           "changedAt": "2026-10-02",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/ai_healing.rs:171 cuts the failure text at 2000 bytes (truncate_on_char_boundary) with no notice, so the self-healing model diagnoses a partial error that presents as complete; and src-tauri/src/engine/deliberation.rs:1320 renders the capability layer after the per-turn conversation (:1303), so no two turns share a stable prefix",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "agent-runtime-assembly",
