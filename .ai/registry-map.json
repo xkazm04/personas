@@ -18413,7 +18413,11 @@
           "revision": 15,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:304 the goals flight is keyed 'goals' without the projectIds that change the answer, so a one-project post-mutation refresh (MastermindGoalsModal.tsx:87) supersedes the whole-portfolio fan-out, leaving the rest of the projects unloaded and lastGoalProjectIds narrowed to one",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
+          "evaluatedRevision": 15
         },
         {
           "subject": "data-access",
@@ -30165,7 +30169,11 @@
           "revision": 15,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts:133 a failed reopen refresh overwrites the shown list with [] and settles the scope, so the modal paints its no-results empty state (ExportSelectionModal.tsx:303) while the previous selection ids stay selected and exportable",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
+          "evaluatedRevision": 15
         },
         {
           "subject": "motion",
@@ -33172,7 +33180,11 @@
           "revision": 15,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:103 a team switch resets filters but not memories/total/stats, and the host keeps the pane mounted across switches (TeamMemoryPane.tsx:15), so team B paints team A's memories until B's list lands, and keeps them if it fails (MemoryPanelList.tsx:123 hides the failure when rows exist)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
+          "evaluatedRevision": 15
         },
         {
           "subject": "render-mount-pipeline",

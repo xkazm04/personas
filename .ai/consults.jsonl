@@ -1290,3 +1290,6 @@
 {"ts":"2026-10-16T17:15:19Z","bundle":"llm-observability","subjects":["breach-alerting-and-attribution"],"techniques":["scoped-dedup-keys","top-contributor-attribution","off-request-path-delivery"],"deviations":2}
 {"ts":"2026-10-16T12:00:00Z","bundle":"software-engineering","subjects":["embedded-preview"],"techniques":["origin-validation","cross-frame-protocol","injected-instrumentation-with-fallback","dev-server-registry","convention-discovery","preview-checkpoints"],"deviations":3}
 {"ts":"2026-10-16T12:00:00Z","bundle":"software-engineering","subjects":["embedded-preview"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:17:44Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["cache-key-discipline","in-flight-dedup","swr-design","warm-remount-caches","prefetch-and-defer"],"deviations":1}
+{"ts":"2026-10-16T17:17:44Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["swr-design","warm-remount-caches","in-flight-dedup"],"deviations":1}
+{"ts":"2026-10-16T17:17:44Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["warm-remount-caches","swr-design","cache-key-discipline","in-flight-dedup"],"deviations":1}
