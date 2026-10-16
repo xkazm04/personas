@@ -7581,22 +7581,32 @@
       "subject": "concurrency-guards",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:44:47.000Z",
-      "worker": "1b61cc9c-0790-4efd-b90d-2e57af91f215",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:03:07.000Z",
+      "worker": "48366d38-bad3-4bd4-9e95-a8e39495ac3d",
       "techniques": [
         {
-          "technique": "guard-key-design",
+          "technique": "single-flight-primitives",
           "verdict": "not-applicable",
-          "evidence": "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:79 actioning is a per-row UI disable, not a shared operation-identity set"
+          "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:34 a component-local busy flag, not a shared in-flight key set; the UI room belongs to client-state async-race-guards"
         },
         {
           "technique": "idempotency-by-design",
           "verdict": "not-applicable",
-          "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:95 the create write is delegated to onSubmit; the write side is not in this context"
+          "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:82 approvePairing(current.nonce, ...) carries the operation identity to the backend, where the effect and its dedup live"
+        },
+        {
+          "technique": "shared-claims-by-announce-and-verify",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 the context only names the backend URL; it holds no shared-store claim of any mode (new in rev 16, checked and absent)"
+        },
+        {
+          "technique": "guard-key-design",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:79 actioning is a per-row UI disable, not a shared operation-identity set",
+          "carriedFrom": "2026-10-09"
         }
       ],
-      "registryProposal": "Matcher miss: src-tauri/engine/src/inflight_guard.rs:24 is the repo-wide in-flight key set (InflightGuard) and sits in NO context; the commands-curator (33a96a83) and commands-fleet (2de6333f) contexts hold real backend single-flight sites yet carry no concurrency-guards pair, while the only three pairs it got are frontend contexts whose guards are client-state busy flags.",
       "superseded": [
         {
           "state": "not-applicable",
@@ -7604,6 +7614,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by 1b61cc9c-0790-4efd-b90d-2e57af91f215"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:50 the only guard is a per-instance submitting flag on one dialog, the UI-side async race the golden path assigns to client-state (concurrency-guards.md:38); the key-create/revoke commands that could need idempotency live in src-tauri, outside this context",
+          "evaluatedAt": "2026-10-09T16:44:47.000Z",
+          "worker": "1b61cc9c-0790-4efd-b90d-2e57af91f215",
+          "reason": "replaced by 48366d38-bad3-4bd4-9e95-a8e39495ac3d"
         }
       ]
     },
@@ -7612,19 +7629,25 @@
       "subject": "concurrency-guards",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:44:47.000Z",
-      "worker": "1b61cc9c-0790-4efd-b90d-2e57af91f215",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:03:07.000Z",
+      "worker": "48366d38-bad3-4bd4-9e95-a8e39495ac3d",
       "techniques": [
-        {
-          "technique": "release-guarantees",
-          "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/feedback/ConfirmDialog.tsx:48 the busy flag releases in finally, but it guards a UI instance, not a shared key"
-        },
         {
           "technique": "single-flight-primitives",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/feedback/ConfirmDialog.tsx:37 per-instance useState, no shared in-flight set to adopt"
+          "evidence": "src/features/shared/components/feedback/ConfirmDialog.tsx:40 instance-local re-entry guard; no operation is reachable from two places through this context"
+        },
+        {
+          "technique": "atomic-file-publish",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ConfirmDialog.tsx:40 the context writes no file; rev 15-16 amendments checked and inapplicable"
+        },
+        {
+          "technique": "release-guarantees",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ConfirmDialog.tsx:48 the busy flag releases in finally, but it guards a UI instance, not a shared key",
+          "carriedFrom": "2026-10-09"
         }
       ],
       "superseded": [
@@ -7634,6 +7657,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by 1b61cc9c-0790-4efd-b90d-2e57af91f215"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ConfirmDialog.tsx:40 if (busy) return is a single-caller re-entry guard on one dialog instance, the client-state async-race-guards room (concurrency-guards.md:38); no operation identity, cross-process exclusion or idempotent write exists in this context",
+          "evaluatedAt": "2026-10-09T16:44:47.000Z",
+          "worker": "1b61cc9c-0790-4efd-b90d-2e57af91f215",
+          "reason": "replaced by 48366d38-bad3-4bd4-9e95-a8e39495ac3d"
         }
       ]
     },

@@ -4516,10 +4516,10 @@
           "changedAt": "2026-09-17",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:50 the only guard is a per-instance submitting flag on one dialog, the UI-side async race the golden path assigns to client-state (concurrency-guards.md:38); the key-create/revoke commands that could need idempotency live in src-tauri, outside this context",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:41b09d489d8f7ef9",
-          "evaluatedRevision": 14,
+          "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:50 the only guards are per-instance submitting/busy flags (also PairApprovalModal.tsx:34), the UI-side async race concurrency-guards.md:39 assigns to client-state; create/revoke/approvePairing are IPC calls (ApiKeysSettings.tsx:104) whose guard and idempotency live in src-tauri, outside this context",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:ccc991958e998a93",
+          "evaluatedRevision": 16,
           "revisionsBehind": 0
         },
         {
@@ -12683,10 +12683,10 @@
           "changedAt": "2026-09-17",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/shared/components/feedback/ConfirmDialog.tsx:40 if (busy) return is a single-caller re-entry guard on one dialog instance, the client-state async-race-guards room (concurrency-guards.md:38); no operation identity, cross-process exclusion or idempotent write exists in this context",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:41b09d489d8f7ef9",
-          "evaluatedRevision": 14,
+          "evidence": "src/features/shared/components/feedback/ConfirmDialog.tsx:40 if (busy) return is a single-caller re-entry guard on one dialog instance, the client-state async-race-guards room (concurrency-guards.md:39); no operation identity, cross-process exclusion, file publish or idempotent write exists in these presentational primitives",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:ccc991958e998a93",
+          "evaluatedRevision": 16,
           "revisionsBehind": 0
         },
         {

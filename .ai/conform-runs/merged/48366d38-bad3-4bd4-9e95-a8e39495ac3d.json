@@ -1,0 +1,89 @@
+{
+ "schema": "conform-run/1",
+ "worker": "48366d38-bad3-4bd4-9e95-a8e39495ac3d",
+ "subject": "concurrency-guards",
+ "evaluatedAt": "2026-10-16T17:03:07Z",
+ "pairs": [
+  {
+   "context": "621caefc-8ae0-42e7-89b6-8e879ad62814",
+   "subject": "concurrency-guards",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:ccc991958e998a93",
+   "evaluatedRevision": 16,
+   "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:50 the only guards are per-instance submitting/busy flags (also PairApprovalModal.tsx:34), the UI-side async race concurrency-guards.md:39 assigns to client-state; create/revoke/approvePairing are IPC calls (ApiKeysSettings.tsx:104) whose guard and idempotency live in src-tauri, outside this context",
+   "techniques": [
+    {
+     "technique": "single-flight-primitives",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:34 a component-local busy flag, not a shared in-flight key set; the UI room belongs to client-state async-race-guards"
+    },
+    {
+     "technique": "idempotency-by-design",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:82 approvePairing(current.nonce, ...) carries the operation identity to the backend, where the effect and its dedup live"
+    },
+    {
+     "technique": "shared-claims-by-announce-and-verify",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 the context only names the backend URL; it holds no shared-store claim of any mode (new in rev 16, checked and absent)"
+    }
+   ]
+  },
+  {
+   "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+   "subject": "concurrency-guards",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:ccc991958e998a93",
+   "evaluatedRevision": 16,
+   "evidence": "src/features/shared/components/feedback/ConfirmDialog.tsx:40 if (busy) return is a single-caller re-entry guard on one dialog instance, the client-state async-race-guards room (concurrency-guards.md:39); no operation identity, cross-process exclusion, file publish or idempotent write exists in these presentational primitives",
+   "techniques": [
+    {
+     "technique": "single-flight-primitives",
+     "verdict": "not-applicable",
+     "evidence": "src/features/shared/components/feedback/ConfirmDialog.tsx:40 instance-local re-entry guard; no operation is reachable from two places through this context"
+    },
+    {
+     "technique": "atomic-file-publish",
+     "verdict": "not-applicable",
+     "evidence": "src/features/shared/components/feedback/ConfirmDialog.tsx:40 the context writes no file; rev 15-16 amendments checked and inapplicable"
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "concurrency-guards",
+   "context": "9b6cc17c-3add-4152-a349-c189b15a109f",
+   "reason": "governance: weak - the match itself is doubtful (pure render components of a design result); the skill does not judge weak rows by default. Its carried not-applicable verdict at rev 14 is left as-is for a coverage review"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-16T17:03:07Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "concurrency-guards"
+   ],
+   "techniques": [
+    "single-flight-primitives",
+    "idempotency-by-design",
+    "shared-claims-by-announce-and-verify"
+   ],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-16T17:03:07Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "concurrency-guards"
+   ],
+   "techniques": [
+    "single-flight-primitives",
+    "atomic-file-publish"
+   ],
+   "deviations": 0
+  }
+ ]
+}
