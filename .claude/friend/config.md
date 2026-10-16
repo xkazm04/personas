@@ -142,4 +142,4 @@ SAME commit. Enforced by the Stop hook.
 
 ## Skill improvement log
 
-_(created on first wrap)_
+- 2026-10-14 (friend 1.6.0, agents): adding en.json keys also obliges `node scripts/i18n/gen-types.mjs` + `node scripts/i18n/split-locales.mjs` (regenerate `src/i18n/generated/` and `src/i18n/section-locales/`) - tsc fails without them and `## Codegen` does not list them. A fresh worktree has no node_modules; junction the main one and rmdir it before removal.
