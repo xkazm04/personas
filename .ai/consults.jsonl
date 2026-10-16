@@ -1314,3 +1314,6 @@
 {"ts":"2026-10-16T17:24:01Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["storm-hygiene","refusal-contract","key-design"],"deviations":1}
 {"ts":"2026-10-16T17:24:01Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["limit-observability","limiter-topology"],"deviations":2}
 {"ts":"2026-10-16T17:24:01Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["refusal-contract","storm-hygiene"],"deviations":2}
+{"ts":"2026-10-16T17:24:47Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["machine-owned-regions","instruction-freshness","single-source-topology","line-earning","workspace-ancestry-isolation"],"deviations":3}
+{"ts":"2026-10-16T17:24:47Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:24:47Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0}

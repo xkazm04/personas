@@ -31664,8 +31664,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "strong",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/stores/slices/agents/labSlice.ts:490 these slices pass per-run persona instructions held in app state to IPC; no repo-owned standing instruction file is authored, loaded or maintained here (prompt-assembly territory)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "cost-metering",
@@ -34427,8 +34431,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "strong",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:81 the hook maps questionnaire answers onto persona dimensions in a UI surface; it authors no instruction file a coding harness loads",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "eval-harness",
@@ -40978,8 +40986,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "deviation",
+          "priorNotApplicable": 4,
+          "evidence": "src-tauri/src/commands/infrastructure/context_map_export.rs:370 splice requires both markers else appends a second block; a CLAUDE.md holding a START without its END gets a duplicate START, and the next scan replaces everything from the orphan START to the new END, deleting hand-written lines outside the fence",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "agent-memory",

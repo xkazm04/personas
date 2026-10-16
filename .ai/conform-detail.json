@@ -23716,6 +23716,63 @@
       "evaluatedTs": "2026-10-16T17:20:32.000Z",
       "worker": "998197f5-1b48-46d2-9c29-c06cc0f7cb65",
       "techniques": []
+    },
+    "63edaec0-367e-4553-a6ee-bfd4144be305/agent-instruction-files": {
+      "context": "workspace-governance",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:24:47.000Z",
+      "worker": "9e93a69b-1184-472e-8961-09c36122f0b9",
+      "techniques": [
+        {
+          "technique": "machine-owned-regions",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/context_map_export.rs:370 fenced (:36-37) and the regenerate-only notice is visible prose (:430), but a half-fence makes the generator rewrite hand territory, and the block never states when its generator last ran"
+        },
+        {
+          "technique": "instruction-freshness",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:209 the doc-rot walk skips every dot-directory and scripts/docs/feature-doc-map.json names no .claude file, so .claude/CLAUDE.md and .claude/rules/*.md, the files the agent trusts most, never get the broken-path check"
+        },
+        {
+          "technique": "single-source-topology",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/context_map_export.rs:354 the target is hard-coded to CLAUDE.md, so in a managed repo whose canonical file is AGENTS.md the map goes into one harness's bridge file, or a new CLAUDE.md is created, and other harnesses never see it"
+        },
+        {
+          "technique": "line-earning",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/context_map_export.rs:391 the always-loaded block is reduced to a pointer to context-map.json plus a group index, not an inlined copy of the map"
+        },
+        {
+          "technique": "workspace-ancestry-isolation",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:1227 unattended authoring worktrees are rooted in the app data dir, outside the managed repo's instruction-file ancestry span"
+        }
+      ],
+      "registryProposal": "machine-owned-regions says the block names when its generator last ran; a timestamp inside a committed block churns a git diff on every scan. Consider allowing the run stamp to live in the artifact the block points at (here context-map.json generated_at) when the block is the pointer form. Also: the fence contract could name the half-fence case (START without END) explicitly as the splice failure that writes outside the fence."
+    },
+    "b6e66a59-78d3-465e-83b7-e77498b4c6ae/agent-instruction-files": {
+      "context": "stores-slices-agents",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:24:47.000Z",
+      "worker": "9e93a69b-1184-472e-8961-09c36122f0b9",
+      "techniques": []
+    },
+    "b88ef121-d028-4999-bf34-6e44aed99959/agent-instruction-files": {
+      "context": "template-adoption-persona-layout",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:24:47.000Z",
+      "worker": "9e93a69b-1184-472e-8961-09c36122f0b9",
+      "techniques": []
     }
   }
 }

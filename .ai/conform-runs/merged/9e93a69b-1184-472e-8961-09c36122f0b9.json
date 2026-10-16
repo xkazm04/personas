@@ -1,0 +1,27 @@
+{"schema":"conform-run/1","worker":"9e93a69b-1184-472e-8961-09c36122f0b9","subject":"agent-instruction-files","evaluatedAt":"2026-10-16T17:24:47Z",
+"pairs":[
+{"context":"63edaec0-367e-4553-a6ee-bfd4144be305","subject":"agent-instruction-files","bundle":"software-engineering","state":"deviation",
+ "evidence":"src-tauri/src/commands/infrastructure/context_map_export.rs:370 splice requires both markers else appends a second block; a CLAUDE.md holding a START without its END gets a duplicate START, and the next scan replaces everything from the orphan START to the new END, deleting hand-written lines outside the fence",
+ "techniques":[
+  {"technique":"machine-owned-regions","verdict":"deviation","evidence":"src-tauri/src/commands/infrastructure/context_map_export.rs:370 fenced (:36-37) and the regenerate-only notice is visible prose (:430), but a half-fence makes the generator rewrite hand territory, and the block never states when its generator last ran"},
+  {"technique":"instruction-freshness","verdict":"deviation","evidence":"src-tauri/src/commands/infrastructure/doc_rot.rs:209 the doc-rot walk skips every dot-directory and scripts/docs/feature-doc-map.json names no .claude file, so .claude/CLAUDE.md and .claude/rules/*.md, the files the agent trusts most, never get the broken-path check"},
+  {"technique":"single-source-topology","verdict":"deviation","evidence":"src-tauri/src/commands/infrastructure/context_map_export.rs:354 the target is hard-coded to CLAUDE.md, so in a managed repo whose canonical file is AGENTS.md the map goes into one harness's bridge file, or a new CLAUDE.md is created, and other harnesses never see it"},
+  {"technique":"line-earning","verdict":"conformant","evidence":"src-tauri/src/commands/infrastructure/context_map_export.rs:391 the always-loaded block is reduced to a pointer to context-map.json plus a group index, not an inlined copy of the map"},
+  {"technique":"workspace-ancestry-isolation","verdict":"conformant","evidence":"src-tauri/src/commands/infrastructure/dev_tools.rs:1227 unattended authoring worktrees are rooted in the app data dir, outside the managed repo's instruction-file ancestry span"}
+ ],
+ "registryProposal":"machine-owned-regions says the block names when its generator last ran; a timestamp inside a committed block churns a git diff on every scan. Consider allowing the run stamp to live in the artifact the block points at (here context-map.json generated_at) when the block is the pointer form. Also: the fence contract could name the half-fence case (START without END) explicitly as the splice failure that writes outside the fence."},
+{"context":"b6e66a59-78d3-465e-83b7-e77498b4c6ae","subject":"agent-instruction-files","bundle":"software-engineering","state":"not-applicable",
+ "evidence":"src/stores/slices/agents/labSlice.ts:490 these slices pass per-run persona instructions held in app state to IPC; no repo-owned standing instruction file is authored, loaded or maintained here (prompt-assembly territory)",
+ "techniques":[]},
+{"context":"b88ef121-d028-4999-bf34-6e44aed99959","subject":"agent-instruction-files","bundle":"software-engineering","state":"not-applicable",
+ "evidence":"src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:81 the hook maps questionnaire answers onto persona dimensions in a UI surface; it authors no instruction file a coding harness loads",
+ "techniques":[]}
+],
+"declined":[
+ {"subject":"agent-instruction-files","context":"*","reason":"~75 further probable pairs all carry priorNotApplicable:4 and are app-feature contexts; left for later runs within budget (3 pairs this run)"}
+],
+"consults":[
+ {"ts":"2026-10-16T17:24:47Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["machine-owned-regions","instruction-freshness","single-source-topology","line-earning","workspace-ancestry-isolation"],"deviations":3},
+ {"ts":"2026-10-16T17:24:47Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0},
+ {"ts":"2026-10-16T17:24:47Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0}
+]}
