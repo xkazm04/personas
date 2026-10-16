@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect } from 'react';
-import { Bell, BellOff, X, ExternalLink, RefreshCw, FileText, Trash2, ClipboardCheck, ArrowRight, MessageCircleQuestion } from 'lucide-react';
+import { Bell, X, ExternalLink, RefreshCw, FileText, Trash2, ClipboardCheck, ArrowRight, MessageCircleQuestion } from 'lucide-react';
 import { useNotificationCenterStore, READ_RETENTION_MS, type PipelineNotification, type ProcessType } from '@/stores/notificationCenterStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
@@ -8,6 +8,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { getProcessLabel } from '@/lib/notifications/notifyProcessComplete';
 import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { useConnectorAttention } from '@/features/vault/sub_credentials/components/card/attention/useConnectorAttention';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ConnectorAttentionSection } from './ConnectorAttentionSection';
 
 // ---------------------------------------------------------------------------
@@ -418,17 +419,8 @@ export function NotificationCenter() {
               <ConnectorAttentionSection />
               {notifications.length === 0 ? (
                   attentionCount > 0 ? null : (
-                  <div
-                    key="empty"
-                    className="animate-fade-slide-in flex flex-col items-center justify-center py-16 text-center"
-                  >
-                    <div className="w-14 h-14 rounded-2xl bg-secondary/40 border border-primary/10 flex items-center justify-center mb-4">
-                      <BellOff className="w-7 h-7 text-foreground" />
-                    </div>
-                    <p className="typo-heading-lg text-foreground">{t.gitlab.no_notifications_yet}</p>
-                    <p className="text-md text-foreground mt-1 max-w-[220px]">
-                      {t.gitlab.pipeline_status_hint}
-                    </p>
+                  <div key="empty" className="animate-fade-slide-in">
+                    <ScenarioEmptyState art="bell" size="md" title={t.gitlab.no_notifications_yet} description={t.gitlab.pipeline_status_hint} />
                   </div>
                   )
                 ) : (

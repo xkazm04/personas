@@ -20,7 +20,7 @@ export function FactoryContextDetail({ cell, groupName, data, onDecide, onNote, 
   onNote: (s: string) => void;
   w: FactoryWords;
 }) {
-  if (!cell) return <Section title={w.context} state="empty" empty={{ title: w.L.noContexts }} />;
+  if (!cell) return <Section title={w.context} state="empty" empty={{ art: 'folder', title: w.L.noContexts }} />;
   const name = cell.ctx.business_feature?.trim() || cell.ctx.name;
   const proposals = data.proposalsByContext.get(cell.ctx.id) ?? [];
   const cov = coverageOf(data, cell.ctx.id);

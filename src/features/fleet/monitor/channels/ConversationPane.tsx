@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { MessagesSquare } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ConversationComposer } from './ConversationComposer';
@@ -35,7 +34,8 @@ export function ConversationPane({
       ) : conv.rows.length === 0 ? (
         <ScenarioEmptyState
           className="flex-1 justify-center"
-          icon={MessagesSquare}
+          art="chat"
+          size="sm"
           title={t.monitor.conv_empty_title}
           subtitle={t.monitor.conv_empty_body}
         />

@@ -78,7 +78,7 @@ export function NoteArchiveModal({
         </h2>
 
         {notes.length === 0 && shipped.length === 0 ? (
-          <EmptyState icon={Undo2} title={t.notepad.archived_empty} />
+          <EmptyState art="archive" size="sm" title={t.notepad.archived_empty} />
         ) : (
           <div className="flex flex-col gap-4 max-h-96 overflow-y-auto">
             {notes.length > 0 && (

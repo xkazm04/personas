@@ -5,7 +5,6 @@
 // the rack the queue waits as a ladder you can drag into a new order.
 // The panel filter narrows every card; the rack's own count stays the door's.
 
-import { Layers } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useFixedTicker } from '@/hooks/utility/timing/relativeTimeTicker';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -58,7 +57,7 @@ export function RunwayPanel({
   if (model.empty && cap === 0) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center px-6" data-testid="entry-e-empty">
-        <ScenarioEmptyState icon={Layers} title={m.queue_empty_title} description={m.queue_empty_hint} />
+        <ScenarioEmptyState art="inbox" size="sm" title={m.queue_empty_title} description={m.queue_empty_hint} />
       </div>
     );
   }

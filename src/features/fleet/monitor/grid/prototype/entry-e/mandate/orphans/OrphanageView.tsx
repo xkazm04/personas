@@ -80,7 +80,7 @@ export function OrphanageView({ mandates }: { mandates: readonly MandateSummary[
             label={m.ml_orphanage}
             columns={columns}
             nameHead={m.ml_col_project}
-            empty={{ title: m.ml_orphans_empty, testId: 'orphanage-empty' }}
+            empty={{ art: 'inbox', title: m.ml_orphans_empty, testId: 'orphanage-empty' }}
           >
             {clusters.map((x, i) => (
               <ListRow

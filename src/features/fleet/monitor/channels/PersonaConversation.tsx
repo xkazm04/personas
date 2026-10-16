@@ -1,5 +1,4 @@
 import { memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { MessagesSquare } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -157,7 +156,8 @@ export const PersonaConversation = memo(function PersonaConversation({ persona }
       ) : rows.length === 0 ? (
         <ScenarioEmptyState
           className="flex-1 justify-center"
-          icon={MessagesSquare}
+          art="chat"
+          size="sm"
           title={t.monitor.conv_persona_empty_title}
           subtitle={t.monitor.conv_persona_empty_body}
         />

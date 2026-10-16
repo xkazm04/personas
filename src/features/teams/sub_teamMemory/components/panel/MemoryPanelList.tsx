@@ -1,4 +1,5 @@
 import { Brain, Search, GitCommitVertical, X, FilterX } from 'lucide-react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import Button from '@/features/shared/components/buttons/Button';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import TeamMemoryRow from './TeamMemoryRow';
@@ -140,15 +141,12 @@ export default function MemoryPanelList({
             ))}
           </div>
         ) : memories.length === 0 ? (
-          <div className="text-center py-6">
-            <Brain className="w-8 h-8 mx-auto mb-2 text-foreground" />
-            <p className="typo-body text-foreground">
-              {activeRunFilter ? t.pipeline.no_memories_for_run : t.pipeline.no_memories_yet}
-            </p>
-            <p className="typo-body text-foreground mt-0.5">
-              {activeRunFilter ? t.pipeline.try_clearing_filter : t.pipeline.run_pipeline_or_add}
-            </p>
-          </div>
+          <ScenarioEmptyState
+            art={activeRunFilter ? 'search' : 'report'}
+            size="sm"
+            title={activeRunFilter ? t.pipeline.no_memories_for_run : t.pipeline.no_memories_yet}
+            description={activeRunFilter ? t.pipeline.try_clearing_filter : t.pipeline.run_pipeline_or_add}
+          />
         ) : (
           <>
             {memories.map((memory) => (

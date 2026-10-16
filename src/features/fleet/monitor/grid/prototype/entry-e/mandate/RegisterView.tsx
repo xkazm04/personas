@@ -67,7 +67,7 @@ export function RegisterView({ state, selected, onSelect, onOpen, onOpenLog, hel
             label={m.ml_register}
             columns={columns}
             nameHead={m.ml_col_project}
-            empty={{ title: m.ml_stewards_none, testId: 'mandate-register-empty' }}
+            empty={{ art: 'team', title: m.ml_stewards_none, testId: 'mandate-register-empty' }}
           >
             {rows.map((x, i) => (
               <ListRow

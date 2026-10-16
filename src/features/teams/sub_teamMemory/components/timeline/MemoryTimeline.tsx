@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { GitCommitVertical } from 'lucide-react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
@@ -94,10 +95,7 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
 
   if (timeline.length === 0) {
     return (
-      <div className="text-center py-4">
-        <GitCommitVertical className="w-6 h-6 mx-auto mb-1.5 text-foreground" />
-        <p className="typo-body text-foreground">{pt.no_timeline_data}</p>
-      </div>
+      <ScenarioEmptyState art="archive" size="sm" title={pt.no_timeline_data} />
     );
   }
 

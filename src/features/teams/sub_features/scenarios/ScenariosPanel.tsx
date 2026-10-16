@@ -100,6 +100,8 @@ export function ScenariosPanel({
       {declared.length === 0 ? (
         <div className="mt-3">
           <ScenarioEmptyState
+            art="report"
+            size="sm"
             title={t.scenarios_none_title}
             subtitle={t.scenarios_none_subtitle}
             action={{ label: t.scenario_add, onClick: () => setCreating(true) }}

@@ -127,7 +127,7 @@ export function ActLog({ log, filter, onFilter, rows, selected, onSelect, mandat
           label={m.ml_act_log}
           columns={columns}
           nameHead={m.ml_col_act}
-          empty={{ title: filter === 'all' ? m.ml_acts_empty : m.ml_acts_empty_filter, testId: 'mandate-act-log-empty' }}
+          empty={{ art: filter === 'all' ? 'stream' : 'search', title: filter === 'all' ? m.ml_acts_empty : m.ml_acts_empty_filter, testId: 'mandate-act-log-empty' }}
         >
           {rows.map((a, i) => {
             const head = actHeadline(m, a, mandateTitle?.(a.charterId));
