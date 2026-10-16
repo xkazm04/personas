@@ -1,4 +1,4 @@
-import { Rocket, Plus, BookOpen } from 'lucide-react';
+import { Plus, BookOpen } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { CARD_CONTAINER } from '@/features/overview/libs/dashboardGrid';
@@ -17,11 +17,10 @@ export function DashboardEmptyState() {
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-violet-500/5 pointer-events-none" />
         <div className="relative z-10">
           <EmptyState
-            icon={Rocket}
+            art="launch"
+            size="lg"
             title={t.overview.dashboard.empty_title}
             subtitle={t.overview.dashboard.empty_subtitle}
-            iconColor="text-indigo-400"
-            iconContainerClassName="bg-indigo-500/10 border-indigo-500/20"
             action={{ label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
             secondaryAction={{ label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
           />

@@ -174,11 +174,10 @@ export default function EventLogList() {
         {showRichEmpty ? (
           <div className="flex-1 flex items-center justify-center p-6">
             <EmptyState
-              icon={Zap}
+              art="stream"
+              size="lg"
               title={t.overview.events.no_events}
               subtitle={t.overview.events.no_events_hint}
-              iconColor="text-amber-400/80"
-              iconContainerClassName="bg-amber-500/10 border-amber-500/20"
               action={{ label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
               secondaryAction={{ label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
             />
@@ -192,6 +191,7 @@ export default function EventLogList() {
               onRowClick={setSelectedEvent}
               isLoading={isFetching}
               emptyTitle={t.overview.events.no_filter_match}
+              emptyArt="search"
               rowHeight={EVENT_ROW_HEIGHT}
               rowAccent={(e) =>
                 e.status === 'failed'

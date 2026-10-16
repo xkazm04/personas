@@ -168,6 +168,7 @@ export function IncidentsLedgerDossier(props: IncidentLedgerViewProps) {
         density="compact"
         borderless
         emptyTitle={t.overview.incidents.ledger.empty_view}
+        emptyArt="inbox"
       />
 
       <LedgerPager pageIndex={ledger.pageIndex} pageCount={ledger.pageCount} pageSize={ledger.pageSize}

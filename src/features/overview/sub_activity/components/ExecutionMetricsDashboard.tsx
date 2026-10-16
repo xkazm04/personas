@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TrendingUp, AlertTriangle, Zap, DollarSign, CheckCircle, Clock, Timer, RefreshCw } from 'lucide-react';
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
@@ -92,9 +93,8 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       ) : m.isInitialLoading || !m.data ? (
         <KpiGhosts />
       ) : !hasSeries ? (
-        <div className="text-center py-8">
-          <TrendingUp className="w-6 h-6 text-foreground mx-auto mb-2" />
-          <p className="typo-body text-foreground">{t.overview.activity.no_data}</p>
+        <div className="flex justify-center py-6">
+          <ScenarioEmptyState art="chart" size="sm" title={t.overview.activity.no_data} />
         </div>
       ) : (
         <div className={SUMMARY_GRID}>

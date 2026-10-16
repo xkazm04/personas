@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo, useState, useCallback } from 'react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import type { Translations } from '@/i18n/en';
@@ -217,13 +218,12 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
       {/* Rotation items list */}
       {rotationOverviewList.length === 0 ? (
         <div className="flex items-center justify-center py-6">
-          <div className="text-center flex flex-col items-center">
-            <div className="w-10 h-10 rounded-modal bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-2 opacity-70">
-              <RotateCw className="w-4 h-4 text-violet-400" />
-            </div>
-            <p className="typo-body text-foreground">{t.overview.analytics_dashboard.no_rotation_policies}</p>
-            <p className="typo-caption text-foreground mt-0.5">{t.overview.analytics_dashboard.no_rotation_hint}</p>
-          </div>
+          <ScenarioEmptyState
+            art="vault"
+            size="sm"
+            title={t.overview.analytics_dashboard.no_rotation_policies}
+            subtitle={t.overview.analytics_dashboard.no_rotation_hint}
+          />
         </div>
       ) : (
         <div className="divide-y divide-primary/5">

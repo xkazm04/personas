@@ -77,7 +77,7 @@ export function VerdictWidget({ config, title, span, actions, footer }: CockpitW
       actions={actions}
       footer={choices || footer ? <>{choices}{footer}</> : undefined}
       state={headline ? undefined : 'empty'}
-      empty={{ title: c.widget_empty }}
+      empty={{ art: 'report', title: c.widget_empty }}
       testId="cockpit-verdict"
     >
       <div className="k-in max-w-[96ch]">

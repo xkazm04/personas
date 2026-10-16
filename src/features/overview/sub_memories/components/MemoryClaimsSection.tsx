@@ -6,6 +6,7 @@
 // is deliberately absent from this surface: injections already carry the
 // access signal, and a thumbs-up button would just farm noise.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { CheckCircle2, Flag, ShieldQuestion } from 'lucide-react';
 
 import {
@@ -112,7 +113,9 @@ export function MemoryClaimsSection({ memoryId, onResolved }: {
       </div>
 
       {claims.length === 0 && (
-        <p className="typo-caption text-foreground mb-2">{md.claims_empty}</p>
+        <div className="mb-2 flex justify-center">
+          <ScenarioEmptyState art="report" size="sm" title={md.claims_empty} />
+        </div>
       )}
 
       {claims.length > 0 && (

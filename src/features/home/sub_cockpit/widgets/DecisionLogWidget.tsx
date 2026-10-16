@@ -102,7 +102,7 @@ export function DecisionLogWidget({ config, title, span, actions, footer }: Cock
       actions={actions}
       footer={footer}
       state={empty ? 'empty' : undefined}
-      empty={{ title: t.athena.decision_log_empty }}
+      empty={{ art: 'archive', title: t.athena.decision_log_empty }}
       testId="companion-decision-log-widget"
     >
       <WidgetTable<DecisionRow>

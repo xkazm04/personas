@@ -6,7 +6,6 @@
  *  - empty  the queue has nothing left — said in words, not as a blank, and
  *           followed by the other chips that still hold cards (`EmptyOffers`).
  */
-import { Inbox } from 'lucide-react';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { EmptyOffers, type ChipOffer } from './EmptyOffers';
@@ -34,7 +33,7 @@ export function EmptyCard({ offers = [] }: { offers?: ChipOffer[] }) {
   const { t } = useTranslation();
   return (
     <div className="au-card absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-modal px-6" data-testid="deck-empty">
-      <ScenarioEmptyState icon={Inbox} title={t.monitor.dc_hub_peek_empty_title} subtitle={t.monitor.dc_hub_peek_empty_hint} />
+      <ScenarioEmptyState art="inbox" size="sm" title={t.monitor.dc_hub_peek_empty_title} subtitle={t.monitor.dc_hub_peek_empty_hint} />
       <EmptyOffers offers={offers} />
     </div>
   );

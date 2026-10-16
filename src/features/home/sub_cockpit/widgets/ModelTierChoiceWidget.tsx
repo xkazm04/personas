@@ -46,7 +46,7 @@ export function ModelTierChoiceWidget({ config, title, span, actions, footer }: 
       actions={actions}
       footer={footer}
       state={tiers.length === 0 ? 'empty' : undefined}
-      empty={{ title: a.model_tier_empty }}
+      empty={{ art: 'templates', title: a.model_tier_empty }}
       testId="companion-model-tier-choice-widget"
     >
       <Rows count={ordered.length} empty={{ title: a.model_tier_empty }}>

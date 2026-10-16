@@ -124,6 +124,7 @@ export default function GlobalExecutionList() {
               tableId="overview-activity"
               ariaLabel={act.title}
               emptyTitle={act.no_executions}
+              emptyArt="runs"
               scrollRestoreKey={`overview/activity|${context}`}
               rowReveal={{ resetKey: context }}
               borderless

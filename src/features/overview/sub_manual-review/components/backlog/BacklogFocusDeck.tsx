@@ -17,8 +17,9 @@
 // fast lane; a swipe whose write fails now keeps the card (the queue rejects
 // and toasts) instead of looking decided.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Hammer, Layers, ScanSearch, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Hammer, Layers, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
 
 import * as devApi from '@/api/devTools/devTools';
 import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
@@ -189,12 +190,8 @@ export function BacklogFocusDeck({
       )}
 
       {rows.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
-            <ScanSearch className="w-7 h-7 text-amber-400/50" />
-          </div>
-          <p className="typo-body text-foreground mb-1">{r.backlog_deck_empty_title}</p>
-          <p className="typo-caption text-muted-foreground">{r.backlog_deck_empty_subtitle}</p>
+        <div className="flex justify-center py-12">
+          <ScenarioEmptyState art="inbox" title={r.backlog_deck_empty_title} subtitle={r.backlog_deck_empty_subtitle} />
         </div>
       ) : (
         <>

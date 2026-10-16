@@ -212,6 +212,7 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
             density="compact"
             defaultSortKey="runs"
             emptyTitle={t.overview.events.no_filter_match}
+            emptyArt="chart"
             rowAccent={(row) => {
               const errPct = errorRatePercent(row);
               return errPct >= 10 ? 'border-l-rose-400/70' : errPct >= 1 ? 'border-l-amber-400/70' : undefined;

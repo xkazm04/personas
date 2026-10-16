@@ -19,6 +19,7 @@ import { seedMockMessage, deleteAllReports } from '@/api/overview/reports';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { toastCatch } from '@/lib/silentCatch';
 import { Trash2 } from 'lucide-react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { priorityConfig, MESSAGE_ROW_HEIGHT, type PriorityStyle } from '../libs/reportHelpers';
@@ -360,8 +361,8 @@ export default function ReportList() {
           <div className={`flex-1 min-h-0 flex flex-col ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
             {columnHeaderRow}
             {filteredMessages.length === 0 ? (
-              <div className="py-8 text-center">
-                <p className="typo-body text-foreground">{t.overview.reports_view.no_filter_match}</p>
+              <div className="py-6 flex justify-center">
+                <ScenarioEmptyState art="search" size="sm" title={t.overview.reports_view.no_filter_match} />
               </div>
             ) : (
               <div ref={parentRef} className="flex-1 overflow-y-auto">

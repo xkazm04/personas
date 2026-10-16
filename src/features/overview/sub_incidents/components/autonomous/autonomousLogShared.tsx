@@ -4,7 +4,7 @@
 // in typography and symbol strategy — never in behaviour.
 
 import { useMemo, useState, type ReactNode } from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { InboxZero } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -62,9 +62,8 @@ export function AutonomousLogFrame({
   if (loading && incidents.length === 0) return <ListSkeleton calm rows={6} rowHeight={rowHeight} />;
   if (incidents.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 px-4 py-12 text-center">
-        <ShieldCheck className="h-6 w-6 text-status-success" aria-hidden="true" />
-        <p className="typo-body text-foreground">{t.overview.incidents.noc_handled_empty}</p>
+      <div className="flex justify-center px-4 py-8">
+        <InboxZero title={t.overview.incidents.noc_handled_empty} />
       </div>
     );
   }

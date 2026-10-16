@@ -38,7 +38,7 @@ export function LogExcerptWidget({ config, title, span, actions, footer }: Cockp
       actions={actions}
       footer={footer}
       state={lines.length === 0 ? 'empty' : undefined}
-      empty={{ title: t.overview.cockpit.widget_empty }}
+      empty={{ art: 'report', title: t.overview.cockpit.widget_empty }}
       testId="cockpit-log-excerpt"
     >
       <div className="k-in">

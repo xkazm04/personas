@@ -69,7 +69,7 @@ export function ReportSummaryWidget({ config, title, span, actions, footer }: Co
       footer={footer}
       testId="cockpit-widget-message_summary"
       state={excerpt ? undefined : 'empty'}
-      empty={{ title: c.report_empty }}
+      empty={{ art: 'report', title: c.report_empty }}
     >
       <div className="k-in">
         <MarkdownRenderer content={excerpt} variant="card" />

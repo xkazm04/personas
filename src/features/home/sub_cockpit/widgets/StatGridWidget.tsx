@@ -39,7 +39,7 @@ export function StatGridWidget({ config, title, span, actions, footer }: Cockpit
       actions={actions}
       footer={footer}
       state={stats.length === 0 ? 'empty' : undefined}
-      empty={{ title: t.overview.cockpit.widget_empty }}
+      empty={{ art: 'chart', title: t.overview.cockpit.widget_empty }}
       testId="cockpit-stat-grid"
     >
       <StatStrip tiles={stats.map(figureTile)} />

@@ -80,10 +80,8 @@ export default function HomeReleases() {
               locales the whole time; it just had no surface. */}
           {roadmapItems.length === 0 && (
             <EmptyState
-              icon={Rocket}
+              art="launch"
               title={t.empty}
-              iconColor="text-primary"
-              iconContainerClassName="bg-primary/10 border-primary/20"
             />
           )}
 

@@ -84,7 +84,7 @@ export function TemplateSuggestionsWidget({ config, title, span, actions, footer
       testId="companion-template-suggestions-widget"
       state={loading ? 'loading' : searched && matches.length === 0 ? 'empty' : undefined}
       ghostRows={2}
-      empty={{ title: t.athena.template_suggestions_empty }}
+      empty={{ art: 'templates', title: t.athena.template_suggestions_empty }}
       error={error ? { title: failure?.message, hint: failure?.suggestion } : undefined}
       footer={
         matches.length > 0 || footer ? (

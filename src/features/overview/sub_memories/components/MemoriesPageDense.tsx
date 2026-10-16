@@ -6,6 +6,7 @@
 // padding, mono-font numerics, persistent column sort affordance.
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { Brain, Sparkles, Plus, Search, Trash2, Shield, Lightbulb } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -34,7 +35,7 @@ import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReve
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/types/types';
 import type { MemoryTierFilter } from '@/api/overview/memories';
-import { DebtText, debtText } from '@/i18n/DebtText';
+import { debtText } from '@/i18n/DebtText';
 
 
 type SortField = 'title' | 'persona' | 'category' | 'importance' | 'access_count' | 'last_accessed' | 'created' | 'tier';
@@ -527,10 +528,10 @@ export default function MemoriesPageDense() {
               // filters", so a first-run user with an empty store and no filter
               // set was told their filters were too narrow. Filtered-to-zero and
               // nothing-here-yet are different states and get different copy.
-              <div className="flex items-center justify-center py-12 typo-body text-foreground">
+              <div className="flex items-center justify-center py-10">
                 {hasActiveFilters
-                  ? <DebtText k="auto_no_memories_match_current_filters_06cb075f" />
-                  : <DebtText k="auto_no_memories_yet_775ad944" />}
+                  ? <ScenarioEmptyState art="search" size="sm" title={debtText('auto_no_memories_match_current_filters_06cb075f')} />
+                  : <ScenarioEmptyState art="report" title={debtText('auto_no_memories_yet_775ad944')} />}
               </div>
             ) : (
               <>

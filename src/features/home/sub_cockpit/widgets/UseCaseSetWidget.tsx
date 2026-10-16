@@ -99,7 +99,7 @@ export function UseCaseSetWidget({ config, title, span, actions, footer }: Cockp
       actions={actions}
       footer={footer}
       state={useCases.length === 0 ? 'empty' : undefined}
-      empty={{ title: t.athena.use_case_set_empty }}
+      empty={{ art: 'templates', title: t.athena.use_case_set_empty }}
       testId="companion-use-case-set-widget"
     >
       <Stack gap="s">

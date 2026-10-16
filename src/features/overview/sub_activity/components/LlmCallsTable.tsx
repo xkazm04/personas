@@ -347,6 +347,7 @@ export default function LlmCallsTable() {
           tableId="overview-llm-calls"
           ariaLabel={t.overview.activity.title}
           emptyTitle={t.overview.activity.no_executions}
+          emptyArt="runs"
           rowReveal={{ resetKey: `${timeWindow}|${modelFilter}` }}
           onEndReached={globalExecutionsHasMore ? handleLoadMore : undefined}
         />

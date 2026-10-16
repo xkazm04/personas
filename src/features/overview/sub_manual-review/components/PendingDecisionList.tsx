@@ -188,6 +188,7 @@ export function PendingDecisionList({
           density="compact"
           borderless
           emptyTitle={t.overview.dc_pending_list_aria}
+          emptyArt="inbox"
         />
         {/* Keyset sentinel: scrolling near it pulls the next page. No spinner —
             the next page's rows ARE the progress. */}

@@ -7,8 +7,9 @@
 // has learned — categories as star groups, personas as constellation lines.
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Brain, Sparkles, Plus, X, GitFork } from 'lucide-react';
+import { Brain, Sparkles, Plus, X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
@@ -19,7 +20,7 @@ import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES, formatRelativeTime } fro
 import { categoryColor } from '../libs/memoryVisualTokens';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/types/types';
-import { DebtText } from '@/i18n/DebtText';
+import { DebtText, debtText } from '@/i18n/DebtText';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
@@ -275,10 +276,7 @@ export default function MemoriesPageGraph() {
                   still in flight (that's the ghost's job above). */}
               {filtered.length === 0 && !isFetching && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="flex flex-col items-center gap-3">
-                    <GitFork className="w-8 h-8 text-foreground" />
-                    <p className="typo-body text-foreground"><DebtText k="auto_no_memories_in_this_cluster_29741022" /></p>
-                  </div>
+                  <ScenarioEmptyState art="link" size="sm" title={debtText('auto_no_memories_in_this_cluster_29741022')} />
                 </div>
               )}
             </div>

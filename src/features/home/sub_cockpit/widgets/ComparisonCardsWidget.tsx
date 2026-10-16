@@ -63,7 +63,7 @@ export function ComparisonCardsWidget({ config, title, span, actions, footer }: 
       actions={actions}
       footer={footer}
       state={options.length === 0 ? 'empty' : undefined}
-      empty={{ title: c.widget_empty }}
+      empty={{ art: 'chart', title: c.widget_empty }}
       testId="cockpit-comparison-cards"
     >
       <ContextCards label={title ?? options.map((o) => o.label).join(' / ')} min="15rem">

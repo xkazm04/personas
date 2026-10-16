@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { InboxZero } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Shield, ChevronDown, Check } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
@@ -16,7 +17,7 @@ import {
 import { trackInteraction } from '@/lib/sentry';
 import { mergeMemories } from '../libs/conflictHelpers';
 import ConflictCard from './ConflictCard';
-import { DebtText } from '@/i18n/DebtText';
+import { DebtText, debtText } from '@/i18n/DebtText';
 import { useTranslation } from '@/i18n/useTranslation';
 
 
@@ -274,9 +275,8 @@ export function MemoryConflictReview({ onConflictsResolved, loading }: MemoryCon
           <div className="animate-fade-slide-in overflow-hidden">
             <div className="mt-2 space-y-2 max-h-[400px] overflow-y-auto pr-1">
               {unresolvedConflicts.length === 0 ? (
-                <div className="text-center py-6 typo-body text-foreground">
-                  <Check className="w-5 h-5 mx-auto mb-2 text-emerald-400" />
-                  <DebtText k="auto_all_conflicts_resolved_b848395b" />
+                <div className="flex justify-center py-4">
+                  <InboxZero title={debtText('auto_all_conflicts_resolved_b848395b')} />
                 </div>
               ) : (
                 unresolvedConflicts.map((conflict) => (

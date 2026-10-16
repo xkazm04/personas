@@ -242,7 +242,8 @@ export default function IncidentsInbox() {
               <div className="flex items-center justify-center py-16">
                 {isNarrowed ? (
                   <EmptyState
-                    icon={Inbox}
+                    art="search"
+                    size="sm"
                     title={t.overview.incidents.empty_filtered_title}
                     subtitle={t.overview.incidents.empty_state_filtered}
                   />

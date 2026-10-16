@@ -89,7 +89,7 @@ export function BrowserTestReportWidget({ config, title, span, actions, footer }
       actions={actions}
       footer={fileAction || footer ? <>{fileAction}{footer}</> : undefined}
       state={empty ? 'empty' : undefined}
-      empty={{ title: c.browser_report_empty }}
+      empty={{ art: 'report', title: c.browser_report_empty }}
       testId={empty ? 'companion-browser-test-report-empty' : 'companion-browser-test-report'}
     >
       <BrowserReportSections steps={steps} defects={defects} consoleErrors={consoleErrors} securityNotes={securityNotes} />
