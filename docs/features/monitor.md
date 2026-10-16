@@ -1318,6 +1318,32 @@ Harness: `monitor/persona-cards` (`&narrow=1` pins the bays to the 250px
 column floor) and `monitor/persona-cards/peer`; shots in
 `docs/design/mandate-lanes/wp11-shots/`.
 
+**Every bay row in the same hand (WP11 C, 2026-10-16).** Sessions, a paired
+device's sessions and the compact queue rungs left the pile tiles too, so a
+bay of personas and sessions is one list. Every row is the same 36px `.ae-line`
+built from one shared token row (`entry-e/LineParts.tsx`, which `PersonaTail`
+also uses): a face in the persona face's 24px frame, the bold name, glyph and
+time tokens that give way by priority and never mid-token, and at the right
+edge the figure and the lamp. A session line (`SessionLine.tsx`, model
+`sessionTailModel.ts`; Classic's bays and tray, the Queue view's Running and
+Parked lanes) shows its origin glyph, the title, the state glyph, then the
+state in words (not while it runs) and the project (board-wide lists only),
+which leave first in a narrow column; the session's age is the right-edge
+figure (the old foot bar is gone). Its lamp is `sessionLamp` (`tone.ts`),
+lit in the edge's tone whenever the edge is lit: awaiting input or stale lights
+amber, a failed exit is critical red, a clean exit or expired row is greyed.
+The recap floats over the right edge on hover or focus, a capped holder keeps
+the amber over-cap edge, and a running line keeps the ambient sweep as a faint
+wash under the same motion gates. A device's session (`RemoteLine.tsx`) is the
+same line with a terminal face and the device glyph at the right edge, drawing
+only what the device's snapshot carries (title, state, project, age). A compact
+queue rung (`QueueRung.tsx`, the Queued lane and a peer bay's queue) keeps its
+grip and rank, then the origin face, the title, an hourglass with the estimated
+start in the persona line's clock, the amber not-before time, and the lamp; the
+full Runway rung stays a ladder on purpose. Cold bays and lanes draw line
+ghosts in the same geometry. Harness tape with sessions sent to a device:
+`scripts/style/page-harness/bayRowsTape.mjs`; shots `wp11-shots/c-*`.
+
 ## Card context menus
 
 Every card on the Activity board carries its verbs on a right-click, and both
