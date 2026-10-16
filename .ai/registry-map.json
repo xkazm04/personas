@@ -3219,7 +3219,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_activity/ActivityTab.tsx:101 every feed's fetch failure lands [] (same at :124/:137/:150/:163), so a dead feed renders the 'no activity' empty state at ActivityList.tsx:180; and :217 filters plus the column sorts run over six server-truncated 50-row windows merged client-side, with :252 presenting items.length as the tab count.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "settings",
@@ -3628,7 +3632,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/components/list/ExecutionList.tsx:69 origin/status/capability filters run over the loaded pages of a server-paged list (useExecutionPaging.ts:51, 50 per page), so a filter that matches only unloaded runs shows 'no results' at :204 while Load more is still offered.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "production-trace-scoring",
@@ -16606,7 +16614,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/shared/LabHistoryTable.tsx:39 an empty runs array replaces the whole table (headers included) with an empty state, and the primitive takes no loading or error input, so callers like ArenaHistory cannot render empty-loading or error distinctly from empty-settled.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "test-harness",
@@ -16777,7 +16789,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/versions_table/LabVersionsTable.tsx:331 loading clears in finally and the table never reads the slice error set at labSlice.ts:554, so a failed version fetch renders the 'no versions' empty state at :334 with no retry.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "quality-gates",

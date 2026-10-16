@@ -1470,3 +1470,7 @@
 {"ts":"2026-10-16T18:11:06Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection","pty-management","bounded-replay-buffers","occupant-state-detection","injected-hook-reconvergence","multiplexer-state","multi-client-fan-out"],"deviations":1}
 {"ts":"2026-10-16T18:11:06Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection"],"deviations":1}
 {"ts":"2026-10-16T18:11:06Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection"],"deviations":1}
+{"ts":"2026-10-16T18:11:36Z","bundle":"software-engineering","subjects":["table"],"techniques":["loading-and-empty-states","client-server-split","filtering","sorting","pagination"],"deviations":4,"context":"1ff7809a-171b-4baa-9c9b-12d888b017f0"}
+{"ts":"2026-10-16T18:11:36Z","bundle":"software-engineering","subjects":["table"],"techniques":["client-server-split","sorting","loading-and-empty-states","pagination"],"deviations":2,"context":"03960450-6979-4412-9de3-35c897fe56d2"}
+{"ts":"2026-10-16T18:11:36Z","bundle":"software-engineering","subjects":["table"],"techniques":["loading-and-empty-states","sorting","client-server-split","pagination"],"deviations":2,"context":"f7a0fdbc-ccc1-46c1-a62f-c2b20321997b"}
+{"ts":"2026-10-16T18:11:36Z","bundle":"software-engineering","subjects":["table"],"techniques":["loading-and-empty-states","grid-keyboard-model","performance","pagination"],"deviations":2,"context":"ba0d4722-bfde-40aa-8e1d-52591719f834"}
