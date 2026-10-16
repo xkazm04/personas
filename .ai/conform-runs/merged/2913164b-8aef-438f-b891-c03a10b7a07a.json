@@ -1,0 +1,112 @@
+{
+  "schema": "conform-run/1",
+  "worker": "2913164b-8aef-438f-b891-c03a10b7a07a",
+  "subject": "self-healing",
+  "evaluatedAt": "2026-10-16T18:00:28Z",
+  "pairs": [
+    {
+      "context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f",
+      "subject": "self-healing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:88 \"heal\" (and the Auto-heal switch) re-runs the task with nothing changed - src-tauri/db/src/repos/dev/tasks.rs:957 copies the parent title/description verbatim - under action copy promising a fix (SelfHealingPanel.tsx:213), chosen by a private regex classifier (selfHealing.ts:36), with attempts that never reach an outcome (SelfHealingPanel.tsx:69)",
+      "techniques": [
+        {
+          "technique": "failure-diagnosis",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:36 a private regex zoo over error+description+title prose (selfHealing.ts:45) assigns the category instead of consuming the AppError taxonomy; no signature, no diagnosis-vs-guess marker"
+        },
+        {
+          "technique": "strategy-selection",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:88 every pattern maps to the same one strategy (retry), so the selection is a retry wearing healing labels; no recorded do-nothing reason for non-autoFixable rows"
+        },
+        {
+          "technique": "effectiveness-accounting",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:69 attempts only ever enter status healing; nothing moves them to healed/failed, and the ledger is session useState, so no confirmed/reverted/unknown outcome exists to learn from"
+        },
+        {
+          "technique": "blast-radius-bounds",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:101 the autonomous path is a tier-1 re-queue bounded by the manual max-retries ceiling, and the switch defaults off (SelfHealingPanel.tsx:46)"
+        }
+      ],
+      "registryProposal": "Boundary case worth a sentence in the golden path: a surface that labels a pure retry as healing (\"Install missing dependencies and retry\" while the retry changes nothing) is neither cleanly retry-backoff nor self-healing; the path should say the label itself is the defect (the claim outruns the mechanism), so judges stop splitting it between not-applicable and deviation."
+    },
+    {
+      "context": "4810daf8-0549-4899-95d2-99c81cde6455",
+      "subject": "self-healing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_observability/libs/useHealingPanelState.ts:63 counts auto_fixed as Auto-fixed with success tone (HealingIssuesPanel.tsx:111), but auto_fixed=1 is written at schedule time before the retry runs (src-tauri/db/src/repos/execution/healing.rs:427), so pending, unconfirmed attempts read to the operator as fixes",
+      "techniques": [
+        {
+          "technique": "effectiveness-accounting",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_observability/components/HealingIssueSummary.tsx:23 the weekly auto-fixed figure also counts auto_fix_pending rows; absence of evidence is shown as confirmed rather than unknown"
+        }
+      ],
+      "registryProposal": "The rust--effectiveness-accounting application covers the ledger; the operator-surface half (a pending flag rendered as a success count) is a distinct, common failure worth a line in effectiveness-accounting or operator-surface guidance."
+    },
+    {
+      "context": "90f639de-ffc7-4225-b67f-1566e5d66b8b",
+      "subject": "self-healing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx:91 shows confirmed/reverted/attempted with attempted = confirmed+reverted (src-tauri/db/src/repos/execution/healing.rs:30), so TTL-expired and still-pending attempts vanish from the rate instead of appearing as an unknown share, and cells are per category only (HealingEffectivenessPanel.tsx:98), never strategy x category",
+      "techniques": [
+        {
+          "technique": "effectiveness-accounting",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx:91 no unknown lane: the success rate is computed over terminal outcomes only, inflating it by every attempt whose window closed without evidence"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "self-healing",
+      "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757",
+      "reason": "existing deviation (2026-09-23) is at the current digest sha256-b2:d27f99525a697c4b, revisionsBehind 0; both anchors re-printed and still say what the evidence claims (IncidentsInbox.tsx:6 grouping gone by construction; AuditIncident.ts dedup_key per source row), so nothing to re-judge"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T18:00:28Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "self-healing"
+      ],
+      "techniques": [
+        "failure-diagnosis",
+        "strategy-selection",
+        "effectiveness-accounting",
+        "blast-radius-bounds"
+      ],
+      "deviations": 3
+    },
+    {
+      "ts": "2026-10-16T18:00:28Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "self-healing"
+      ],
+      "techniques": [
+        "effectiveness-accounting"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T18:00:28Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "self-healing"
+      ],
+      "techniques": [
+        "effectiveness-accounting"
+      ],
+      "deviations": 1
+    }
+  ]
+}

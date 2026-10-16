@@ -21421,7 +21421,11 @@
           "revision": 11,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx:91 shows confirmed/reverted/attempted with attempted = confirmed+reverted (src-tauri/db/src/repos/execution/healing.rs:30), so TTL-expired and still-pending attempts vanish from the rate instead of appearing as an unknown share, and cells are per category only (HealingEffectivenessPanel.tsx:98), never strategy x category",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:d27f99525a697c4b",
+          "evaluatedRevision": 11
         },
         {
           "subject": "agent-memory",
@@ -22381,7 +22385,11 @@
           "revision": 11,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_observability/libs/useHealingPanelState.ts:63 counts auto_fixed as Auto-fixed with success tone (HealingIssuesPanel.tsx:111), but auto_fixed=1 is written at schedule time before the retry runs (src-tauri/db/src/repos/execution/healing.rs:427), so pending, unconfirmed attempts read to the operator as fixes",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:d27f99525a697c4b",
+          "evaluatedRevision": 11
         },
         {
           "subject": "prompt-assembly",
@@ -29657,7 +29665,11 @@
           "revision": 11,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:88 \"heal\" (and the Auto-heal switch) re-runs the task with nothing changed - src-tauri/db/src/repos/dev/tasks.rs:957 copies the parent title/description verbatim - under action copy promising a fix (SelfHealingPanel.tsx:213), chosen by a private regex classifier (selfHealing.ts:36), with attempts that never reach an outcome (SelfHealingPanel.tsx:69)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:d27f99525a697c4b",
+          "evaluatedRevision": 11
         }
       ],
       "governance": "governed"

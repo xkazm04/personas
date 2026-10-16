@@ -1431,3 +1431,6 @@
 {"ts":"2026-10-16T17:59:17Z","bundle":"software-engineering","subjects":["webhook-ingestion"],"techniques":["delivery-logging-and-replay","sender-authentication","payload-bounds","duplicate-and-replay-dedup","ingress-topology","listener-lifecycle"],"deviations":3}
 {"ts":"2026-10-16T17:59:17Z","bundle":"software-engineering","subjects":["webhook-ingestion"],"techniques":[],"deviations":0}
 {"ts":"2026-10-16T17:59:17Z","bundle":"software-engineering","subjects":["webhook-ingestion"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T18:00:28Z","bundle":"software-engineering","subjects":["self-healing"],"techniques":["failure-diagnosis","strategy-selection","effectiveness-accounting","blast-radius-bounds"],"deviations":3}
+{"ts":"2026-10-16T18:00:28Z","bundle":"software-engineering","subjects":["self-healing"],"techniques":["effectiveness-accounting"],"deviations":1}
+{"ts":"2026-10-16T18:00:28Z","bundle":"software-engineering","subjects":["self-healing"],"techniques":["effectiveness-accounting"],"deviations":1}
