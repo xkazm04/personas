@@ -20,6 +20,7 @@
 import type { ReactNode } from 'react';
 import type { HarnessModule } from './registry';
 import { Drive, prepareFleet, type Step } from './monitorActivitySurfaces';
+import { CONVERSATION_PORT_MODULES } from './conversationPortSurfaces';
 
 const OPEN: Step[] = [{ selector: '[data-testid="monitor-view-conversations"]' }];
 
@@ -56,4 +57,6 @@ export const CONVERSATION_VARIANTS_MODULES: Record<string, HarnessModule> = {
   'monitor/conversations/v1/drive': conversations(v1, true),
   'monitor/conversations/v2/drive': conversations(v2, true),
   'monitor/conversations/v3/drive': conversations(v3, true),
+  // Phase B: the tab as it ships (conversationPortSurfaces.tsx).
+  ...CONVERSATION_PORT_MODULES,
 };
