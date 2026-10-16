@@ -47,6 +47,9 @@ pub mod goals;
 pub mod ideas;
 /// `dev_kpis`, `dev_kpi_measurements`, `dev_kpi_bindings`.
 pub mod kpis;
+/// The lens-scan store, read side: a product repo's `.ai/lens-scan/scan.db`, opened
+/// read-only in place (spark one-control, WP2). Writes belong to lens-scan's `store.mjs`.
+pub mod lens_scan;
 /// `dev_lifecycle_versions` and `dev_lifecycle_evidence` - Lifecycle v2: each
 /// project's versioned development practice and the per-task evidence of it.
 pub mod lifecycle;

@@ -32,6 +32,9 @@ pub mod headless_master;
 /// `POST /dev-tools/reports`: a headless App Master's report, its attachment
 /// copies and the approval it raises.
 pub mod headless_report;
+/// Lens-scan doors: a product's lens-scan store read in place, decided / triaged
+/// through lens-scan's own `store.mjs`, and runs started through `drive.mjs`.
+pub mod lens_scan;
 /// The `/note-task` skill's one gated door back into the app (the Notepad).
 pub mod notepad_ingest;
 pub mod replay_queue;

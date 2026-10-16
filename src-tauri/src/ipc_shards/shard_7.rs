@@ -373,5 +373,14 @@ pub(super) fn shard(
         commands::infrastructure::webbuild::webbuild_session_send,
         commands::infrastructure::webbuild::webbuild_session_stop,
         commands::infrastructure::webbuild::webbuild_next_ready,
+        // Lens-scan doors (spark one-control WP2)
+        commands::infrastructure::lens_scan::lens_scan_products,
+        commands::infrastructure::lens_scan::lens_scan_snapshot,
+        commands::infrastructure::lens_scan::lens_scan_decide,
+        commands::infrastructure::lens_scan::lens_scan_triage,
+        commands::infrastructure::lens_scan::lens_scan_start,
+        commands::infrastructure::lens_scan::lens_scan_identity,
+        commands::infrastructure::lens_scan::lens_scan_commit_diff,
+        commands::infrastructure::lens_scan::lens_scan_shot,
     ])
 }

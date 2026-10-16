@@ -39,6 +39,7 @@ mod knowledge;
 #[cfg(feature = "ml")]
 mod knowledge_base;
 pub mod lab;
+mod lens_scan;
 mod lifecycle;
 mod lifecycle_proposal;
 mod llm_spend;
@@ -132,6 +133,7 @@ pub use knowledge::*;
 #[cfg(feature = "ml")]
 pub use knowledge_base::*;
 pub use lab::*;
+pub use lens_scan::*;
 pub use lifecycle::*;
 pub use lifecycle_proposal::*;
 pub use llm_spend::*;
