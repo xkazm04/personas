@@ -441,11 +441,25 @@ async fn apply_forwarded(app: &AppHandle, job: RemoteJobAssignment, handle: Remo
         Err(e) => CharterVerdictReceipt {
             applied: false,
             outcome: None,
-            reason: Some(e.to_string()),
+            reason: Some(refusal_for_peer(&e)),
         },
     };
     if let Err(e) = handle.finish_charter_verdict(&receipt).await {
         tracing::warn!(error = %e, "charter mirror: could not report a verdict job");
+    }
+}
+
+/// The reason a refused verdict's receipt carries to the peer. A refusal on
+/// the merits (`Validation`, `NotFound`, `Forbidden`) is the peer's to read;
+/// anything else (a database, pool or serialisation failure) is this device's
+/// internals and stays in its own log, so the receipt names the door only.
+pub(crate) fn refusal_for_peer(e: &AppError) -> String {
+    match e {
+        AppError::Validation(m) | AppError::NotFound(m) | AppError::Forbidden(m) => m.clone(),
+        other => {
+            tracing::warn!(error = %other, "charter mirror: a forwarded verdict failed at home");
+            "The home device could not apply it; its log has the cause.".to_string()
+        }
     }
 }
 

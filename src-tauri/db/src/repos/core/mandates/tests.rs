@@ -628,6 +628,40 @@ fn keep_stamps_the_reread_marker_at_the_decision_acts_held_now() {
     ));
 }
 
+/// Security close-out: a keep's reason is the re-read CODE it answered. Free
+/// text (unbounded on the local door) is refused and writes nothing.
+#[test]
+fn keep_takes_only_a_reread_code_as_its_reason() {
+    let pool = init_test_db().unwrap();
+    seed(&pool);
+    charter(&pool, "c1", "draft", MANDATE_DOMAIN);
+    sign(&pool, "c1", &sign_input(), None).unwrap();
+    let before = charter_acts::list(&pool, &filter()).unwrap().len();
+    for bad in [
+        "",
+        "bogus",
+        "<img src=x onerror=alert(1)>",
+        &"x".repeat(64 * 1024),
+    ] {
+        assert!(
+            matches!(keep(&pool, "c1", bad, None), Err(AppError::Validation(_))),
+            "a keep reason of {} bytes must be refused",
+            bad.len()
+        );
+    }
+    assert_eq!(
+        charter_acts::list(&pool, &filter()).unwrap().len(),
+        before,
+        "a refused keep writes no act"
+    );
+    for code in ["cap", "asks", " merges ", "dominant"] {
+        let act = keep(&pool, "c1", code, None).unwrap();
+        let shown: serde_json::Value =
+            serde_json::from_str(act.shown_json.as_deref().unwrap()).unwrap();
+        assert_eq!(shown["reread"], code.trim());
+    }
+}
+
 #[test]
 fn re_signing_a_signed_mandate_moves_the_reread_marker_a_first_signature_does_not() {
     let pool = init_test_db().unwrap();

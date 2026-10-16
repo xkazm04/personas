@@ -282,7 +282,7 @@ impl VerdictPort for HomeInProcess {
             Err(e) => CharterVerdictReceipt {
                 applied: false,
                 outcome: None,
-                reason: Some(e.to_string()),
+                reason: Some(refusal_for_peer(&e)),
             },
         };
         let job = RemoteJob {
@@ -505,4 +505,44 @@ fn a_mirrored_draft_joins_the_peers_sign_lane_and_holds_nothing() {
     };
     crate::engine::mandate_lanes::add_mirrored(&mut again, &store::list(&peer).unwrap());
     assert!(again.items.is_empty());
+}
+
+/// Security close-out: a refused verdict's receipt carries the refusal on the
+/// merits to the peer, never this device's internals (a database or pool
+/// error names tables, paths and SQL).
+#[test]
+fn a_refused_verdict_tells_the_peer_why_on_the_merits_and_nothing_internal() {
+    assert_eq!(
+        refusal_for_peer(&AppError::Validation("The mandate changed.".into())),
+        "The mandate changed."
+    );
+    assert_eq!(
+        refusal_for_peer(&AppError::NotFound(
+            "Act a1 is not an act of mandate c1".into()
+        )),
+        "Act a1 is not an act of mandate c1"
+    );
+    let internal = refusal_for_peer(&AppError::Internal(
+        "no such column: decide_scopes in C:/Users/op/AppData/personas.db".into(),
+    ));
+    assert!(!internal.contains("decide_scopes"), "{internal}");
+    assert!(!internal.contains("AppData"), "{internal}");
+
+    // End to end: a keep whose reason is no re-read code is refused at home
+    // and the peer reads the refusal, not an error dump.
+    let home = home();
+    sign(&home);
+    let refused = apply_verdict(
+        &home,
+        PEER_NAME,
+        &verdict(
+            CharterVerdict::Keep {
+                reason: "anything at all".into(),
+            },
+            1,
+        ),
+    )
+    .unwrap_err();
+    assert!(matches!(refused, AppError::Validation(_)), "{refused:?}");
+    assert!(refusal_for_peer(&refused).contains("re-read"));
 }

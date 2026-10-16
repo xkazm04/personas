@@ -17,7 +17,7 @@ use rusqlite::{params, Connection, OptionalExtension, Transaction, TransactionBe
 use crate::models::{
     CharterAct, CharterActRevertError, CharterActRevertRefusal, CharterActor, DecideScope,
     EnvelopeChange, EnvelopeOp, EnvelopeSnapshot, MandateChange, MandateEnvelope, MandateLoad,
-    MandateOrigin, MandateSignInput, MandateSummary, MergePolicy, NewCharterAct,
+    MandateOrigin, MandateSignInput, MandateSummary, MergePolicy, NewCharterAct, RereadCode,
     ResponsibilityStatus, ACT_KIND_MANDATE, ACT_KIND_REVERT, ALL_DECIDE_SCOPES,
 };
 use crate::repos::core::charter_acts;
@@ -578,6 +578,17 @@ pub fn drop_draft(
     )
 }
 
+/// The re-read code a Keep answers (`cap`, `asks`, `merges`, `dominant`), or
+/// `Validation` for anything else.
+fn reread_code(reason: &str) -> Result<RereadCode, AppError> {
+    serde_json::from_value::<RereadCode>(serde_json::Value::String(reason.trim().to_string()))
+        .map_err(|_| {
+            AppError::Validation(
+                "A keep answers one re-read: cap, asks, merges or dominant".to_string(),
+            )
+        })
+}
+
 /// Keep a signed, active mandate as signed after a re-read: sets the re-read
 /// marker (`kept_at_acts`) to the decision acts it holds now, so the re-read
 /// does not come back until its use has grown past that, and records one act
@@ -588,6 +599,10 @@ pub fn keep(
     reason: &str,
     origin_device: Option<&str>,
 ) -> Result<CharterAct, AppError> {
+    // The reason is the re-read CODE the Keep answered, a closed set: free text
+    // here was stored unbounded in the act (the local door had no cap, only
+    // the peer wire did) and mirrored to every paired device.
+    let code = reread_code(reason)?;
     timed_query!("persona_responsibilities", "mandates::keep", {
         let mut conn = pool.conn("mandates::keep")?;
         let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -608,7 +623,7 @@ pub fn keep(
         let mut act = envelope_act(&row, "kept", origin_device);
         act.reversible = false;
         act.shown_json =
-            Some(serde_json::json!({ "reread": reason.trim(), "keptAtActs": acts }).to_string());
+            Some(serde_json::json!({ "reread": code.as_str(), "keptAtActs": acts }).to_string());
         let snap = snapshot_of(&row);
         let change = EnvelopeChange {
             op: EnvelopeOp::Keep,
