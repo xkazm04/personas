@@ -27046,6 +27046,161 @@
       "evaluatedTs": "2026-10-16T21:17:48.869Z",
       "worker": "51ee89c9-8ba3-4163-89ae-3663574096e2",
       "techniques": []
+    },
+    "d7525012-ab19-4b29-99bb-0d4b6b9e084b/agent-instruction-files": {
+      "context": "plugins-fleet-tests",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T21:39:03.410Z",
+      "techniques": [
+        {
+          "technique": "line-earning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/sub_harvest/fleetRunMarkdown.ts:7 This markdown is an operator paste artefact, not a harness-injected floor."
+        },
+        {
+          "technique": "sibling-floor-ownership",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_skills/useSkillData.ts:100 Install is implemented; the hook's API has no removal or retention review."
+        },
+        {
+          "technique": "write-back-sink-class",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/sub_skills/useSkillData.ts:179 This save writes the editor buffer a person is editing, not an agent append sink."
+        },
+        {
+          "technique": "listing-tier-by-initiator",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_skills/useSkillData.ts:107 The install call has name, source, target, and overwrite, and no listed / name-only / hidden tier."
+        }
+      ],
+      "withdrawn": {
+        "worker": "f1c065e5-8322-4ad1-8db3-0f17d8a51969",
+        "state": "deviation",
+        "at": "2026-10-16T21:39:35.565202+00:00",
+        "reason": "reviewer (sonnet): The verdict is about sub_skills/useSkillData.ts, which is not among this context's files (only __tests__ files); the code it describes belongs to the skill-browser and fleet-session-grid contexts, not this one."
+      }
+    },
+    "cd8712a3-9546-4c21-895b-9e64a4b161b1/agent-instruction-files": {
+      "context": "engine-build-session",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T21:39:03.410Z",
+      "worker": "f1c065e5-8322-4ad1-8db3-0f17d8a51969",
+      "techniques": [
+        {
+          "technique": "line-earning",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:475 The standing prompt injects a write-tests platitude into the persona instructions it authors."
+        },
+        {
+          "technique": "enforcement-demotion",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:23 A MUST ASK rule is kept in the prompt and hand-mirrored into gates.rs, which is the two-copy drift the sort forbids."
+        },
+        {
+          "technique": "single-source-topology",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:32 The model-tier rule lives once and the fan-out interpolates that constant instead of restating it."
+        },
+        {
+          "technique": "machine-owned-regions",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/build_session/templates.rs:339 The template block is a string this function returns into the same assembler, not a second generator rewriting a hand-written file between markers."
+        },
+        {
+          "technique": "instruction-freshness",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/provider/claude.rs:57 The CLI floor states the version and why it moves, and the following comment attributes the bugs that set it."
+        },
+        {
+          "technique": "restraint-amplifier-balance",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:474 A do-not-jump restraint is paired with an instruction to offer competing design directions the user can pick."
+        },
+        {
+          "technique": "capability-before-steering",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:717 When nobody is there to answer, the fix is a longer override block telling the model to decide, not a program that fills the defaults."
+        },
+        {
+          "technique": "workspace-ancestry-isolation",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/runner.rs:531 The CLI cwd is a fresh directory under the OS temp dir, outside the product tree."
+        },
+        {
+          "technique": "substrate-coupled-expiry",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/templates.rs:46 The Reference Templates block stays in every build prompt after the file itself says its effect was never measured."
+        },
+        {
+          "technique": "context-reset-redelivery",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/runner.rs:630 Turn 0 sends the full prompt; later turns treat --continue as a context-preserving resume and do not inject the floor again."
+        },
+        {
+          "technique": "capability-coverage-contract",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:336 Built-in tools are a hardcoded name list in the prompt, not a set read from the tool registry."
+        },
+        {
+          "technique": "host-contract-compilation",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/provider/claude.rs:17 This context implements one provider context-file name; there is no second host render or golden."
+        },
+        {
+          "technique": "rewrite-behavior-pinning",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:42 The fan-out change stopped a paraphrase by quoting one constant; it is not a compression rewrite of the floor."
+        },
+        {
+          "technique": "inherited-default-ownership",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/provider/mod.rs:73 Resume used to drop the chosen model and fall back to the CLI default; the trait now requires the profile on the resume path."
+        },
+        {
+          "technique": "principal-tier-gating",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/build_session/runner.rs:248 Imported workflow text is sanitized as untrusted data; this prompt has no maintainer versus contributor tiers."
+        }
+      ],
+      "registryProposal": "The golden path sets this subject against prompt-assembly, but a product-owned system prompt that the same program assembles and sends on every run of a flow is still the uncuttable brief. Say that case is in scope."
+    },
+    "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394/agent-instruction-files": {
+      "context": "fleet-session-grid",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T21:39:03.410Z",
+      "worker": "f1c065e5-8322-4ad1-8db3-0f17d8a51969",
+      "techniques": [
+        {
+          "technique": "line-earning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/FleetHooksPill.tsx:10 This file is header chrome for hook install status, not an always-loaded instruction file."
+        },
+        {
+          "technique": "enforcement-demotion",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/FleetHooksPill.tsx:32 The pill calls an installer; it does not carry a prose rule to sort into a gate."
+        },
+        {
+          "technique": "sibling-floor-ownership",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/SkillLibraryDrawer.tsx:241 The drawer implements install into a repo and has no keep-or-remove review beside it."
+        },
+        {
+          "technique": "listing-tier-by-initiator",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/SkillLibraryDrawer.tsx:86 A person starts the skill by name, which the technique maps to name-only, and this drawer never writes that tier."
+        }
+      ],
+      "registryProposal": "listing-tier-by-initiator says the installer writes the consumer's listed / name-only / hidden setting. installSkill here takes name, source, target, and overwrite only, so the tier has nowhere to go."
     }
   }
 }

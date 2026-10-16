@@ -11713,8 +11713,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "deviation",
+          "priorNotApplicable": 4,
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:475 The build prompt orders a standard-practice TDD paragraph into every code persona's instruction set, and several other standing rules are mirrored or hardcoded instead of enumerated.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "agent-memory",
@@ -13206,8 +13210,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "deviation",
+          "priorNotApplicable": 4,
+          "evidence": "src/features/plugins/fleet/SkillLibraryDrawer.tsx:86 The drawer starts a skill by typing its slash name and offers install-to-repo, and neither path writes a listing tier or a retention decision.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "mcp-tools",
@@ -27048,8 +27056,8 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "priorNotApplicable": 4,
+          "state": "unknown"
         },
         {
           "subject": "prompt-assembly",
