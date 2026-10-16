@@ -25370,6 +25370,33 @@
       "evaluatedTs": "2026-10-16T17:54:32.000Z",
       "worker": "2670246b-3ae0-4f90-a9b9-bb0482a68536",
       "techniques": []
+    },
+    "aebcd52a-07a3-4305-bf42-d961b4f37a62/session-continuation": {
+      "context": "dev-tools-features",
+      "subject": "session-continuation",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:57:16.000Z",
+      "worker": "77864223-e4f8-4758-8372-05b7fc612743",
+      "techniques": [
+        {
+          "technique": "continuation-as-state",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools/goals.rs:336 one-shot spawn_browser_test_turn; no keep-working fact is armed or read"
+        },
+        {
+          "technique": "single-loop-authority",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools/git_ops.rs:160 dev_tools_run_tests is a single invocation, no loop owner exists in the context"
+        },
+        {
+          "technique": "ordered-teardown",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools/workspace.rs:20 worktree isolation sits at the subprocess spawn boundary (subprocess-lifecycle seam), not a session's cancel path"
+        }
+      ],
+      "registryProposal": "Lexical resonance, not a hole: the match was earned by 'goal'/'checkpoint'/'tools' (the context-map's api_surface names a dev_tools_git_checkpoint that does not appear in git_ops.rs). Goal/milestone CRUD should not route to session-continuation; consider down-weighting 'goal' and 'checkpoint' as use_when tokens when no turn/stop/loop vocabulary co-occurs."
     }
   }
 }

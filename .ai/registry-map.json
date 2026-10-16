@@ -10859,8 +10859,12 @@
           "revision": 8,
           "changedAt": "2026-10-09",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 7
+          "state": "not-applicable",
+          "priorNotApplicable": 7,
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools/goals.rs:336 the only agent work here is a single fire-and-forget browser-test turn per operator click (dev_tools_run_goal_uat); the rest are CRUD/git commands (git_ops.rs:160 one test run, workspace.rs:20 worktree isolation at the spawn boundary) - no session turn boundary, continuation mode or stop decision lives in this context",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
+          "evaluatedRevision": 8
         },
         {
           "subject": "prompt-assembly",
