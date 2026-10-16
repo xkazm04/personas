@@ -370,7 +370,14 @@
     "open_release": "Mở bản phát hành",
     "open_release_effect": "Mở phần soạn bản phát hành. bp soạn và hoàn tất bản phát hành.",
     "rework": "Làm lại",
-    "store_version": "v{version}"
+    "store_version": "v{version}",
+    "tab_blueprint": "Bản thiết kế",
+    "tab_blueprint_hint": "Bộ bản vẽ của mọi sản phẩm lens-scan. Mở một sản phẩm để duyệt, từ chối và phân loại.",
+    "picker_title": "Sản phẩm lens-scan",
+    "picker_empty": "Chưa có dự án nào có kho dữ liệu lens-scan",
+    "picker_empty_hint": "Một dự án mã sẽ xuất hiện ở đây khi kho mã của nó có .ai/lens-scan/scan.db.",
+    "picker_failed": "Không thể đọc các sản phẩm lens-scan.",
+    "product_counts": "Đề xuất: {proposed} · Đã duyệt: {approved} · Cần phân loại: {triage}"
   },
   "release": {
     "body_bp": "bp soạn và hoàn tất các bản phát hành. Thẻ này mở phần soạn ở chế độ chỉ đọc.",

@@ -370,7 +370,14 @@
     "open_release": "Ouvrir la version",
     "open_release_effect": "Ouvre la composition de la version. bp compose et finalise la version.",
     "rework": "Retravailler",
-    "store_version": "v{version}"
+    "store_version": "v{version}",
+    "tab_blueprint": "Plan",
+    "tab_blueprint_hint": "Les plans de chaque produit lens-scan. Ouvrez-en un pour approuver, refuser et trier.",
+    "picker_title": "Produits lens-scan",
+    "picker_empty": "Aucun projet n'a encore de magasin lens-scan",
+    "picker_empty_hint": "Un projet de code apparaît ici dès que son dépôt contient .ai/lens-scan/scan.db.",
+    "picker_failed": "Impossible de lire les produits lens-scan.",
+    "product_counts": "Proposés : {proposed} · Approuvés : {approved} · À trier : {triage}"
   },
   "release": {
     "body_bp": "bp compose et finalise les versions. Cette carte ouvre la composition, en lecture seule.",

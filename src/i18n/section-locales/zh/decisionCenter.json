@@ -370,7 +370,14 @@
     "open_release": "打开发布",
     "open_release_effect": "打开发布编排。bp 负责编排并完成发布。",
     "rework": "返工",
-    "store_version": "v{version}"
+    "store_version": "v{version}",
+    "tab_blueprint": "蓝图",
+    "tab_blueprint_hint": "每个 lens-scan 产品的图纸集。打开一个即可批准、拒绝和分类。",
+    "picker_title": "lens-scan 产品",
+    "picker_empty": "还没有项目拥有 lens-scan 存储",
+    "picker_empty_hint": "当代码项目的仓库包含 .ai/lens-scan/scan.db 时，它会出现在这里。",
+    "picker_failed": "无法读取 lens-scan 产品。",
+    "product_counts": "已提议：{proposed} · 已批准：{approved} · 待分类：{triage}"
   },
   "release": {
     "body_bp": "bp 负责编排并完成发布。此卡片以只读方式打开发布编排。",

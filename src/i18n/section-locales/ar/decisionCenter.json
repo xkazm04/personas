@@ -370,7 +370,14 @@
     "open_release": "فتح الإصدار",
     "open_release_effect": "يفتح تركيب الإصدار. يتولى bp تركيب الإصدار وإنهاءه.",
     "rework": "إعادة عمل",
-    "store_version": "v{version}"
+    "store_version": "v{version}",
+    "tab_blueprint": "المخطط",
+    "tab_blueprint_hint": "مجموعة رسومات كل منتج lens-scan. افتح أحدها للموافقة والرفض والفرز.",
+    "picker_title": "منتجات lens-scan",
+    "picker_empty": "لا يملك أي مشروع مخزن lens-scan بعد",
+    "picker_empty_hint": "يظهر مشروع الشيفرة هنا عندما يحتوي مستودعه على .ai/lens-scan/scan.db.",
+    "picker_failed": "تعذّرت قراءة منتجات lens-scan.",
+    "product_counts": "مقترح: {proposed} · موافق عليه: {approved} · بانتظار الفرز: {triage}"
   },
   "release": {
     "body_bp": "يتولى bp تركيب الإصدارات وإنهاءها. تفتح هذه البطاقة التركيب للقراءة فقط.",

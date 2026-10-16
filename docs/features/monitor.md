@@ -165,6 +165,13 @@ Closing a sheet, and every write on the blueprint, re-reads the products so the
 counts follow. No mandate ever acts on a lens-scan card, signed or not (the
 router's keep-out). A product whose store cannot be read shows no card.
 
+**The Blueprint tab** (2026-10-16). The Monitor header carries a fourth destination beside
+Activity: **Blueprint** lists every lens-scan product as a tile (proposed, approved and to-triage
+counts from the same `lens_scan_products` read). **Open the blueprint** opens that product's drawing
+set, the same sheet a Build card opens, whether or not anything waits for a decision; a product with a
+release waiting also gets **Open the release**. A product whose map cannot be read opens the store's
+error frame instead of the drawing.
+
 **Stewards plate.** In the supply column the Autopilot plate became the
 Stewards plate: the attention-loop switch on top (unchanged, same tour anchors
 `fleet-autopilot` / `fleet-autopilot-toggle`), Athena's CLI answerer as its own

@@ -370,7 +370,14 @@
     "open_release": "Otevřít vydání",
     "open_release_effect": "Otevře složení vydání. Vydání sestavuje a dokončuje bp.",
     "rework": "Přepracovat",
-    "store_version": "v{version}"
+    "store_version": "v{version}",
+    "tab_blueprint": "Výkres",
+    "tab_blueprint_hint": "Výkresy všech produktů s lens-scan. Otevřete jeden a schvalujte, zamítejte a třiďte.",
+    "picker_title": "Produkty s lens-scan",
+    "picker_empty": "Žádný projekt zatím nemá úložiště lens-scan",
+    "picker_empty_hint": "Projekt s kódem se zde objeví, jakmile jeho repozitář obsahuje .ai/lens-scan/scan.db.",
+    "picker_failed": "Produkty s lens-scan se nepodařilo načíst.",
+    "product_counts": "Navrženo: {proposed} · Schváleno: {approved} · K třídění: {triage}"
   },
   "release": {
     "body_bp": "bp sestavuje a dokončuje vydání. Tato karta otevře jeho složení pouze pro čtení.",

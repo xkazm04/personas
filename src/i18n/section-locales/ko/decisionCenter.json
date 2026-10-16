@@ -370,7 +370,14 @@
     "open_release": "릴리스 열기",
     "open_release_effect": "릴리스 구성을 엽니다. 릴리스 구성과 마무리는 bp가 담당합니다.",
     "rework": "재작업",
-    "store_version": "v{version}"
+    "store_version": "v{version}",
+    "tab_blueprint": "블루프린트",
+    "tab_blueprint_hint": "모든 lens-scan 제품의 도면 세트입니다. 하나를 열어 승인, 거절, 분류하세요.",
+    "picker_title": "lens-scan 제품",
+    "picker_empty": "아직 lens-scan 저장소가 있는 프로젝트가 없습니다",
+    "picker_empty_hint": "저장소에 .ai/lens-scan/scan.db가 있는 코드 프로젝트가 여기에 표시됩니다.",
+    "picker_failed": "lens-scan 제품을 읽을 수 없습니다.",
+    "product_counts": "제안됨: {proposed} · 승인됨: {approved} · 분류 대기: {triage}"
   },
   "release": {
     "body_bp": "릴리스 구성과 마무리는 bp가 담당합니다. 이 카드는 구성을 읽기 전용으로 엽니다.",

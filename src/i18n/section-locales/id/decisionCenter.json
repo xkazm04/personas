@@ -370,7 +370,14 @@
     "open_release": "Buka rilis",
     "open_release_effect": "Membuka komposisi rilis. bp menyusun dan menyelesaikan rilis.",
     "rework": "Kerjakan ulang",
-    "store_version": "v{version}"
+    "store_version": "v{version}",
+    "tab_blueprint": "Cetak biru",
+    "tab_blueprint_hint": "Gambar kerja setiap produk lens-scan. Buka salah satu untuk menyetujui, menolak, dan memilah.",
+    "picker_title": "Produk lens-scan",
+    "picker_empty": "Belum ada proyek yang memiliki penyimpanan lens-scan",
+    "picker_empty_hint": "Proyek kode muncul di sini setelah repositorinya memiliki .ai/lens-scan/scan.db.",
+    "picker_failed": "Produk lens-scan tidak dapat dibaca.",
+    "product_counts": "Diusulkan: {proposed} · Disetujui: {approved} · Perlu dipilah: {triage}"
   },
   "release": {
     "body_bp": "bp menyusun dan menyelesaikan rilis. Kartu ini membuka komposisi, hanya baca.",

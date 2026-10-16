@@ -352,7 +352,14 @@
     "error_registry": "lens-scan is not installed for this product.",
     "error_node": "Node.js is not on PATH, so lens-scan cannot run here.",
     "error_hint": "Nothing on this sheet writes. Close it, fix the cause, and open the card again.",
-    "close": "Close"
+    "close": "Close",
+    "tab_blueprint": "Blueprint",
+    "tab_blueprint_hint": "Every lens-scan product's drawing set. Open one to approve, decline and triage.",
+    "picker_title": "Lens-scan products",
+    "picker_empty": "No project holds a lens-scan store yet",
+    "picker_empty_hint": "A code project appears here once its repo has .ai/lens-scan/scan.db.",
+    "picker_failed": "The lens-scan products could not be read.",
+    "product_counts": "Proposed: {proposed} · Approved: {approved} · To triage: {triage}"
   },
   "build": {
     "title": "{product}: build queue",

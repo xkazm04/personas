@@ -370,7 +370,14 @@
     "open_release": "Release öffnen",
     "open_release_effect": "Öffnet die Release-Zusammenstellung. bp stellt das Release zusammen und schließt es ab.",
     "rework": "Überarbeiten",
-    "store_version": "v{version}"
+    "store_version": "v{version}",
+    "tab_blueprint": "Bauplan",
+    "tab_blueprint_hint": "Die Zeichnungssätze aller lens-scan-Produkte. Öffne einen, um zu genehmigen, abzulehnen und zu sichten.",
+    "picker_title": "lens-scan-Produkte",
+    "picker_empty": "Noch kein Projekt hat einen lens-scan-Speicher",
+    "picker_empty_hint": "Ein Code-Projekt erscheint hier, sobald sein Repository .ai/lens-scan/scan.db enthält.",
+    "picker_failed": "Die lens-scan-Produkte konnten nicht gelesen werden.",
+    "product_counts": "Vorgeschlagen: {proposed} · Genehmigt: {approved} · Zu sichten: {triage}"
   },
   "release": {
     "body_bp": "bp stellt Releases zusammen und schließt sie ab. Diese Karte öffnet die Zusammenstellung, nur lesend.",

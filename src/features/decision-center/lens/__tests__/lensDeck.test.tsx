@@ -16,6 +16,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { en } from '@/i18n/en';
 import { AppKeyboardProvider } from '@/lib/keyboard/AppKeyboardProvider';
 import type { BlueprintSheetProps } from '../../blueprint/BlueprintSheet';
+import kettleStructure from '../../blueprint/fixture/kettle.structure.json';
 
 const api = vi.hoisted(() => ({
   listLensScanProducts: vi.fn(),
@@ -104,7 +105,7 @@ describe('the blueprint a lens card opens', () => {
     host();
     act(() => openLensSheet({ kind: 'evidence', projectId: 'proj-teapot' }));
     expect(await screen.findByTestId('lens-blueprint-ghost')).toBeTruthy();
-    await act(async () => land({ structure: {}, events: '', scan: packScan, storeVersion: 3 }));
+    await act(async () => land({ structure: kettleStructure, events: '', scan: packScan, storeVersion: 3 }));
     const sheet = await screen.findByTestId('blueprint-sheet');
     expect(sheet.getAttribute('data-product')).toBe('proj-teapot');
     expect(sheet.getAttribute('data-feature')).toBe('brew-timer');
@@ -112,7 +113,7 @@ describe('the blueprint a lens card opens', () => {
   });
 
   it('a Build card opens at the product, not a feature', async () => {
-    api.getLensScanSnapshot.mockResolvedValue({ structure: {}, events: '', scan: packScan, storeVersion: 3 });
+    api.getLensScanSnapshot.mockResolvedValue({ structure: kettleStructure, events: '', scan: packScan, storeVersion: 3 });
     host();
     act(() => openLensSheet({ kind: 'build', projectId: 'proj-teapot' }));
     expect((await screen.findByTestId('blueprint-sheet')).getAttribute('data-feature')).toBe('');

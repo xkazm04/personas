@@ -117,6 +117,7 @@ vi.mock('@/i18n/useTranslation', () => ({
         channels_layout_map: 'Map', channels_layout_map_hint: 'Map',
         channels_no_teams: 'No teams', system: 'System',
       },
+      decisionCenter: { lens: { tab_blueprint: 'Blueprint', tab_blueprint_hint: 'Blueprint' } },
     },
     tx: (s: string) => s,
   }),
@@ -274,5 +275,16 @@ describe('Escape belongs to whatever is on screen', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
 
     expect(onClose).not.toHaveBeenCalled();
+  });
+});
+
+describe('the header router', () => {
+  it('offers Blueprint as a peer destination right after Activity', () => {
+    render(<PersonaMonitor visible onClose={onClose} />);
+
+    const tabs = [...screen.getByTestId('monitor-view-tabs').querySelectorAll('[data-testid^="monitor-view-"]')]
+      .map((el) => el.getAttribute('data-testid'));
+
+    expect(tabs).toEqual(['monitor-view-activity', 'monitor-view-blueprint', 'monitor-view-conversations', 'monitor-view-map']);
   });
 });

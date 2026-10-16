@@ -21,7 +21,7 @@
 
 import { memo, Suspense, useState, useMemo, useEffect, useCallback, startTransition } from 'react';
 import { motion } from 'framer-motion';
-import { X, Activity, MessagesSquare, Bell, LayoutGrid, Orbit } from 'lucide-react';
+import { X, Activity, MessagesSquare, Bell, LayoutGrid, Orbit, DraftingCompass } from 'lucide-react';
 import FleetActivityStrip from '@/features/shared/chrome/FleetActivityStrip';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { lazyRetry } from '@/lib/lazyRetry';
@@ -63,6 +63,7 @@ const ConversationBriefing = lazyRetry(() =>
 );
 const ChannelMap = lazyRetry(() => import('./channels/map/ChannelMap'));
 const QuickDispatchDock = lazyRetry(() => import('./grid/QuickDispatchDock'));
+const BlueprintPicker = lazyRetry(() => import('@/features/decision-center/lens/BlueprintPicker'));
 
 /** The dock's footprint while its chunk loads: the same 36px collapsed bar. */
 function DockPlaceholder() {
@@ -128,8 +129,9 @@ const HIDE_AFTER_EXIT_MS = 220;
 // into a bail-out at this boundary.
 const MemoFleetActivityStrip = memo(FleetActivityStrip);
 
-/** The three top-level Monitor destinations. */
-type MonitorView = 'activity' | 'conversations' | 'map';
+/** The four top-level Monitor destinations. Blueprint (spark one-control) is
+ *  the lens-scan products' door that does not wait for a Decision Center card. */
+type MonitorView = 'activity' | 'blueprint' | 'conversations' | 'map';
 
 /**
  * Last-selected tab, remembered for the life of the session.
@@ -545,6 +547,7 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
   // uses, so the tab and the view it opens read as the same thing.
   const VIEWS: Array<{ id: MonitorView; label: string; hint: string; icon: typeof LayoutGrid }> = [
     { id: 'activity', label: t.monitor.activity_mode, hint: t.monitor.activity_mode_title, icon: LayoutGrid },
+    { id: 'blueprint', label: t.decisionCenter.lens.tab_blueprint, hint: t.decisionCenter.lens.tab_blueprint_hint, icon: DraftingCompass },
     { id: 'conversations', label: t.monitor.channels_layout_grid, hint: t.monitor.channels_layout_grid_hint, icon: MessagesSquare },
     { id: 'map', label: t.monitor.channels_layout_map, hint: t.monitor.channels_layout_map_hint, icon: Orbit },
   ];
@@ -753,6 +756,13 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
               </Suspense>
             )}
           </MonitorDrawerShell>
+        </div>
+      ) : view === 'blueprint' ? (
+        /* The lens-scan products; a tile opens its blueprint over the app (LensSheetHost). */
+        <div className="relative z-10 flex-1 min-h-0 overflow-y-auto">
+          <div className="p-4">
+            <BlueprintPicker />
+          </div>
         </div>
       ) : (
         <div className="relative z-10 flex-1 min-h-0">

@@ -18,6 +18,9 @@ export function lensCardsTapes({ RECORDED_AT }) {
   const ago = (minutes) => new Date(T0 - minutes * 60_000).toISOString();
   const deck = decisionDeckTapes({ RECORDED_AT, PERSONAS: [] }).builders['decision-center/deck']();
   const scan = read('../../../src/features/decision-center/blueprint/fixture/kettle.scan.json');
+  // the Kettle sample's own map and events, so a blueprint opened from the picker renders the real drawing
+  const structure = read('../../../src/features/decision-center/blueprint/fixture/kettle.structure.json');
+  const events = readFileSync(new URL('../../../src/features/decision-center/blueprint/fixture/kettle.events.jsonl', import.meta.url), 'utf8');
 
   const products = [
     {
@@ -35,7 +38,7 @@ export function lensCardsTapes({ RECORDED_AT }) {
     { cmd: 'decision_lanes_snapshot', response: { items: [], charters: [], failedSources: [], generatedAt: RECORDED_AT } },
     { cmd: 'mandate_list', response: [] },
     { cmd: 'lens_scan_products', response: products },
-    { cmd: 'lens_scan_snapshot', response: { structure: {}, events: '', scan, storeVersion: 3 } },
+    { cmd: 'lens_scan_snapshot', response: { structure, events, scan, storeVersion: 3 } },
     { cmd: 'get_app_setting', response: 'http://bp.harness.test' },
     { cmd: 'list_manual_reviews_page', response: { rows: [], nextCursor: null, hasMore: false } },
     { cmd: 'dev_tools_undispatched_ideas', response: [] },

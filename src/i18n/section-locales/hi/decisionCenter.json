@@ -370,7 +370,14 @@
     "open_release": "रिलीज़ खोलें",
     "open_release_effect": "रिलीज़ संरचना खोलता है। bp रिलीज़ तैयार करता है और पूरा करता है।",
     "rework": "दोबारा बनवाएं",
-    "store_version": "v{version}"
+    "store_version": "v{version}",
+    "tab_blueprint": "ब्लूप्रिंट",
+    "tab_blueprint_hint": "हर lens-scan उत्पाद का ड्रॉइंग सेट। स्वीकृत, अस्वीकृत और छँटाई करने के लिए कोई एक खोलें।",
+    "picker_title": "lens-scan उत्पाद",
+    "picker_empty": "अभी किसी प्रोजेक्ट में lens-scan स्टोर नहीं है",
+    "picker_empty_hint": "कोई कोड प्रोजेक्ट यहाँ तब दिखता है जब उसकी रिपॉज़िटरी में .ai/lens-scan/scan.db हो।",
+    "picker_failed": "lens-scan उत्पाद पढ़े नहीं जा सके।",
+    "product_counts": "प्रस्तावित: {proposed} · स्वीकृत: {approved} · छँटाई बाकी: {triage}"
   },
   "release": {
     "body_bp": "bp रिलीज़ तैयार करता है और पूरा करता है। यह कार्ड संरचना को केवल पढ़ने के लिए खोलता है।",

@@ -3,8 +3,10 @@
  * `lensCardsTapes.mjs`: the global `DecisionDeckHost`, the real lens source and adapters, opened on a
  * lane in `prepare` through the one door (`openDecisionDeck`). Nothing here builds a card.
  *
- *   decision-center/lens-cards   --kit build | evidence | release | release-sheet | bp-down
+ *   decision-center/lens-cards   --kit build | evidence | release | release-sheet | bp-down | picker
  *                                (default: build)
+ *
+ * `picker` renders the Monitor's Blueprint destination (`BlueprintPicker`) instead of opening the deck.
  *
  * `release-sheet` and `bp-down` open the Release card's read-only composition over the deck
  * (`openLensSheet`). bp's base URL comes from the tape (`http://bp.harness.test`); this page answers
@@ -13,14 +15,15 @@
 import type { ReactNode } from 'react';
 import type { HarnessModule } from './registry';
 
-type Kit = 'build' | 'evidence' | 'release' | 'release-sheet' | 'bp-down';
+type Kit = 'build' | 'evidence' | 'release' | 'release-sheet' | 'bp-down' | 'picker';
 
-const KITS: Record<Kit, { lane: 'breach' | 'accept'; focusId: string; sheet?: boolean }> = {
+const KITS: Record<Kit, { lane: 'breach' | 'accept'; focusId: string; sheet?: boolean; picker?: boolean }> = {
   build: { lane: 'breach', focusId: 'build:fixture-kettle' },
   evidence: { lane: 'accept', focusId: 'evidence:fixture-kettle' },
   release: { lane: 'accept', focusId: 'release:fixture-kettle' },
   'release-sheet': { lane: 'accept', focusId: 'release:fixture-kettle', sheet: true },
   'bp-down': { lane: 'accept', focusId: 'release:fixture-kettle', sheet: true },
+  picker: { lane: 'breach', focusId: 'build:fixture-kettle', picker: true },
 };
 
 function kitOf(): Kit {
@@ -49,7 +52,8 @@ async function prepareLensCards(): Promise<void> {
   const kit = kitOf();
   stubBp(kit);
   await refreshLensScanProducts();
-  const { lane, focusId, sheet } = KITS[kit];
+  const { lane, focusId, sheet, picker } = KITS[kit];
+  if (picker) return;
   openDecisionDeck({ scope: { kind: 'lane', lane }, focusId });
   if (sheet) setTimeout(() => openLensSheet({ kind: 'release', projectId: 'fixture-kettle' }), 600);
 }
@@ -62,12 +66,21 @@ async function keyboardProvider() {
 export const LENS_CARDS_MODULES: Record<string, HarnessModule> = {
   'decision-center/lens-cards': {
     load: async () => {
-      const [{ default: DecisionDeckHost }, { useTranslation }] = await Promise.all([
+      const [{ default: DecisionDeckHost }, { useTranslation }, { BlueprintPicker }] = await Promise.all([
         import('@/features/decision-center/deck/DecisionDeckHost'),
         import('@/i18n/useTranslation'),
+        import('@/features/decision-center/lens/BlueprintPicker'),
       ]);
       function LensCardsPage() {
         const { t } = useTranslation();
+        if (kitOf() === 'picker') {
+          return (
+            <div className="flex flex-1 flex-col gap-3 p-8">
+              <BlueprintPicker />
+              <DecisionDeckHost />
+            </div>
+          );
+        }
         return (
           <div className="flex flex-1 flex-col gap-3 p-8">
             <h1 className="typo-heading-lg text-foreground">{t.monitor.title}</h1>

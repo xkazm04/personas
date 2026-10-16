@@ -156,8 +156,6 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
       onBack={closeDecisionDeck}
       onOpenLink={onOpenLink}
     />
-    {/* The blueprint sheet (or a release's composition) a lens-scan card opens, over the deck. */}
-    <LensSheetHost />
     </DeckLaneContext.Provider>
   );
 }
@@ -165,7 +163,13 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
 export default function DecisionDeckHost() {
   const request = useDecisionDeckStore((s) => s.request);
   const session = useDecisionDeckStore((s) => s.session);
-  // Never opened: mount nothing, read nothing.
-  if (session === 0) return null;
-  return <LiveDeck request={request} session={session} />;
+  return (
+    <>
+      {/* Never opened: mount no deck, read nothing. */}
+      {session !== 0 && <LiveDeck request={request} session={session} />}
+      {/* The blueprint sheet (or a release's composition), over the deck. Mounted whether or not the deck ever
+          opened: a lens-scan card opens it, and so does the Monitor's Blueprint picker, which needs no deck. */}
+      <LensSheetHost />
+    </>
+  );
 }

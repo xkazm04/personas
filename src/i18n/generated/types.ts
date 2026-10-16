@@ -27264,6 +27264,13 @@ export type Translations = {
       error_node: string;
       error_hint: string;
       close: string;
+      tab_blueprint: string;
+      tab_blueprint_hint: string;
+      picker_title: string;
+      picker_empty: string;
+      picker_empty_hint: string;
+      picker_failed: string;
+      product_counts: string;
     };
     build: {
       title: string;

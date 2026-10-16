@@ -17,6 +17,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import type { ScanSnapshot } from '@/lib/lensScan/wire';
 
 import { refreshLensScanProducts, useLensScanProducts } from '../../roster/lensScanSource';
+import { loadStructure } from '../standard/load';
 import type { BlueprintActions, BlueprintData, BlueprintProduct } from '../source';
 import { createLiveActions, readBlueprint } from './liveActions';
 import { loadErrorKind, type LoadErrorKind } from './loadError';
@@ -63,6 +64,9 @@ export function useLiveBlueprint(projectId: string): LiveBlueprint {
     const actions = createLiveActions(product, onChanged);
     readBlueprint(product)
       .then((data) => {
+        // A map the drawing cannot read (absent, or neither app-structure v2 nor v3) is the store's
+        // error frame, never a sheet that throws while it renders.
+        loadStructure(data.structure, data.events || null);
         if (!cancelled) setState({ status: 'ready', data, actions });
       })
       .catch((err: unknown) => {

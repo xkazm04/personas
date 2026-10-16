@@ -370,7 +370,14 @@
     "open_release": "রিলিজ খুলুন",
     "open_release_effect": "রিলিজ কম্পোজিশন খোলে। bp রিলিজ তৈরি ও সম্পন্ন করে।",
     "rework": "পুনর্কাজ",
-    "store_version": "v{version}"
+    "store_version": "v{version}",
+    "tab_blueprint": "ব্লুপ্রিন্ট",
+    "tab_blueprint_hint": "প্রতিটি lens-scan প্রোডাক্টের নকশার সেট। অনুমোদন, প্রত্যাখ্যান ও বাছাই করতে একটি খুলুন।",
+    "picker_title": "lens-scan প্রোডাক্ট",
+    "picker_empty": "এখনও কোনো প্রজেক্টে lens-scan স্টোর নেই",
+    "picker_empty_hint": "কোনো কোড প্রজেক্টের রিপোতে .ai/lens-scan/scan.db থাকলে সেটি এখানে দেখা যায়।",
+    "picker_failed": "lens-scan প্রোডাক্টগুলো পড়া যায়নি।",
+    "product_counts": "প্রস্তাবিত: {proposed} · অনুমোদিত: {approved} · বাছাই বাকি: {triage}"
   },
   "release": {
     "body_bp": "bp রিলিজ তৈরি ও সম্পন্ন করে। এই কার্ড কম্পোজিশনটি শুধু পড়ার জন্য খোলে।",
