@@ -24919,6 +24919,89 @@
       "worker": "c853cb03-b28f-4d07-b6e2-77ad8253386d",
       "techniques": [],
       "registryProposal": "Lexical false match: 'spec' and 'fixtures' in a test-only context resonate with fixture-repo-testing; the subject's precondition (a checker emitting an assessment of a repository) is what should route, and test-harness is the governing subject for these files."
+    },
+    "9e46b252-8eb1-4a15-a627-f7e342f1d85a/codebase-scanning": {
+      "context": "companion-brain",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:48:30.000Z",
+      "worker": "2ba0470f-d435-4b3c-b925-3a25da2bf5b1",
+      "techniques": [
+        {
+          "technique": "the-tree-is-not-the-population",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:215 walk errors are skipped silently and SKIP_DIRS exclusions are never counted, so the published file total has no excluded-count beside it"
+        },
+        {
+          "technique": "sensor-pipeline",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:242 per-file read failure is tolerated but not recorded as a skip, so the failed read and an empty file are spelled the same; cap and early-stop ARE disclosed at :334 and :295"
+        },
+        {
+          "technique": "rule-precision-discipline",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:283 the marker rule is a bare substring match (HACK/XXX inside identifiers) with false positives accepted in a comment and no measured precision recorded"
+        },
+        {
+          "technique": "finding-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:169 only a one-line summary is persisted; findings are a chat report, not filed work items"
+        }
+      ]
+    },
+    "9967adb9-e895-4dcd-b296-ab49a19ab122/codebase-scanning": {
+      "context": "project-overview",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:48:30.000Z",
+      "worker": "2ba0470f-d435-4b3c-b925-3a25da2bf5b1",
+      "techniques": [
+        {
+          "technique": "sensor-pipeline",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:59 failure and completion collapse into one refetch, so a scan that could not run and one that found nothing are spelled the same"
+        },
+        {
+          "technique": "llm-assisted-scanning",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:73 compliance % is computed over whatever rows exist with no count of rules expected vs assessed, so a model run that errored mid-stream yields a confident score; unknown statuses ARE clamped to a conservative 0 here"
+        }
+      ]
+    },
+    "4cfcafbc-1964-4d65-994f-66c4cd1f8820/codebase-scanning": {
+      "context": "dev-tools-shell",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:48:30.000Z",
+      "worker": "2ba0470f-d435-4b3c-b925-3a25da2bf5b1",
+      "techniques": [
+        {
+          "technique": "incremental-scanning",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:81 setContextScanComplete takes a boolean, so a partial scan cannot be labelled partial on this surface (ContextMapPage.tsx:326 does distinguish it)"
+        },
+        {
+          "technique": "verify-after-generate",
+          "verdict": "unknown",
+          "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:104 this context only launches the generator; the post-generation audit lives in the backend context, not judged here"
+        }
+      ]
+    },
+    "c06088ef-d143-4aa4-b60a-9d6f7aff9aba/codebase-scanning": {
+      "context": "stores-slices-system",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:48:30.000Z",
+      "worker": "2ba0470f-d435-4b3c-b925-3a25da2bf5b1",
+      "techniques": []
     }
   }
 }

@@ -1389,3 +1389,7 @@
 {"ts":"2026-10-16T17:47:39Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["composer-turn-queue"],"deviations":0}
 {"ts":"2026-10-16T17:47:54Z","bundle":"software-engineering","subjects":["conformance-checking"],"techniques":["finding-severity-ladder","derived-expectation-needs-an-evidence-floor","claim-write-back","checker-false-positive-discipline","fixture-repo-testing","pass-ratio-comparability"],"deviations":1}
 {"ts":"2026-10-16T17:47:54Z","bundle":"software-engineering","subjects":["conformance-checking"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:48:30Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":["the-tree-is-not-the-population","sensor-pipeline","rule-precision-discipline","finding-lifecycle"],"deviations":1}
+{"ts":"2026-10-16T17:48:30Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":["sensor-pipeline","llm-assisted-scanning"],"deviations":1}
+{"ts":"2026-10-16T17:48:30Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":["incremental-scanning","verify-after-generate"],"deviations":1}
+{"ts":"2026-10-16T17:48:30Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":[],"deviations":0}
