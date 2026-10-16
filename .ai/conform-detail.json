@@ -8062,32 +8062,34 @@
       "subject": "usage-limit-governance",
       "bundle": "llm-observability",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:59:40.000Z",
-      "worker": "592a86c1-bc8f-42be-a69e-188c896f4f6c",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:16:01.000Z",
+      "worker": "bf602dce-34e0-433b-9ef2-8e1febcea7b1",
       "techniques": [
         {
           "technique": "concurrent-admission-integrity",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/execution/executions.rs:472 get_monthly_spend is a check-then-act read with no per-persona exclusive section, and the predicate at src-tauri/db/src/repos/execution/executions.rs:2346 excludes queued/running rows - concurrent launches all pass on pre-burst spend"
+          "evidence": "src-tauri/src/commands/execution/executions.rs:477 check-then-act over a total that excludes queued/running rows (src-tauri/db/src/repos/execution/executions.rs:2346), no per-persona critical section around check+insert - an enforcing cap that holds only under serial traffic"
         },
         {
           "technique": "cost-evidence-and-imputation",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/http_engine/openai.rs:232 None => 0.0 (and src-tauri/engine/src/http_engine/config.rs:44 cost_of) writes unpriced spend as zero instead of null+imputation; the enforcing cap reads it as headroom and never refuses as unmeasurable"
+          "evidence": "src-tauri/engine/src/http_engine/openai.rs:232 unpriced model cost becomes 0.0 rather than imputed or refused, so zero-because-unmeasured reads as headroom on an enforcing cap"
         },
         {
           "technique": "metric-window-threshold-action-model",
           "verdict": "partial",
-          "evidence": "src-tauri/src/commands/execution/executions.rs:470 cost metric x UTC calendar-month window x max_budget_usd threshold x hard-stop action; budget>0 guard treats non-positive as no cap rather than rejecting at write time; no observe-only or soft-warning tier on the local cap"
+          "evidence": "src-tauri/src/commands/execution/executions.rs:470 cost metric x UTC calendar-month window x max_budget_usd threshold x hard-stop action; budget>0 guard treats non-positive as no cap rather than rejecting at write time; no observe-only or soft-warning tier on the local cap",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "graduated-throttle-with-deterministic-shed",
           "verdict": "not-realized",
-          "evidence": "src-tauri/src/commands/execution/executions.rs:474 single >= wall, no ramp - acceptable for a per-persona monthly cap with low event rate, not counted toward the deviation"
+          "evidence": "src-tauri/src/commands/execution/executions.rs:474 single >= wall, no ramp - acceptable for a per-persona monthly cap with low event rate, not counted toward the deviation",
+          "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "Boundary question: the golden path places a program capping its OWN emitted traffic on the builder side, outside this subject; Personas caps the runs it itself launches, so this pair may be a technique-shaped resonance (concurrent-admission-integrity and cost-evidence-and-imputation apply regardless). The registry should say whether a local-first multi-agent runner capping per-agent spend is governed here or by cost-metering, so the six consumer deviations it ranks on are not partly a routing artifact.",
+      "registryProposal": "Boundary question: the golden path places 'an agent framework that stops its own run at a spend ceiling' on the builder's side of the seam, yet Personas' per-persona max_budget_usd is a local operator capping a fleet of agents it hosts, and concurrent-admission-integrity and cost-evidence-and-imputation bite it exactly. Consider stating whether a multi-agent host governing its own personas is in scope, or forging a builder-side sibling subject.",
       "superseded": [
         {
           "state": "deviation",
@@ -8109,6 +8111,13 @@
           "evaluatedAt": "2026-10-10T01:30:00.000Z",
           "worker": "8e6105a6-7386-4b67-bc09-e51f85a3c11c",
           "reason": "replaced by 592a86c1-bc8f-42be-a69e-188c896f4f6c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/execution/executions.rs:474 admits against terminal-status-only spend (src-tauri/db/src/repos/execution/executions.rs:2346) read before the insert, so queued/running runs are invisible and a burst overshoots by up to N budgets; src-tauri/engine/src/http_engine/openai.rs:232 stamps unpriced remote models $0.0, so that traffic spends against the cap for free (re-confirmed; openai.rs anchor moved from src-tauri/src/engine/)",
+          "evaluatedAt": "2026-10-12T11:59:40.000Z",
+          "worker": "592a86c1-bc8f-42be-a69e-188c896f4f6c",
+          "reason": "replaced by bf602dce-34e0-433b-9ef2-8e1febcea7b1"
         }
       ]
     },

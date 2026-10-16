@@ -1480,3 +1480,4 @@
 {"ts":"2026-10-16T18:15:34Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["unpriced-span-accounting"],"deviations":1}
 {"ts":"2026-10-16T18:15:34Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["derived-trace-rollup","single-shape-rule","span-cap-truncation-signal"],"deviations":1}
 {"ts":"2026-10-16T18:15:34Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["unpriced-span-accounting"],"deviations":1}
+{"ts":"2026-10-16T18:16:01Z","bundle":"llm-observability","subjects":["usage-limit-governance"],"techniques":["concurrent-admission-integrity","cost-evidence-and-imputation"],"deviations":1}
