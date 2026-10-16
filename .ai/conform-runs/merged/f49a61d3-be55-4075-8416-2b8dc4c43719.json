@@ -1,0 +1,10 @@
+{"schema": "conform-run/1", "worker": "f49a61d3-be55-4075-8416-2b8dc4c43719", "subject": "device-pairing",
+ "evaluatedAt": "2026-10-16T17:50:45Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "device-pairing", "context": "219fe76c-1a70-4d42-88e2-393b7b98121a", "reason": "No device-pairing pair exists anywhere in .ai/registry-map.json (subjectIndex has no entry; dropped at regeneration a1411a54c1, where it had been a lexical-only match on 'timing'). Worker rules forbid adding pairs, so nothing was judged. Missing pairing: p2p-network (src-tauri/src/commands/network/*) carries the mesh pairing/trust commands and is the strongest candidate."},
+  {"subject": "device-pairing", "context": "621caefc-8ae0-42e7-89b6-8e879ad62814", "reason": "Unpaired in the map; context contains src/features/settings/sub_api_keys/components/PairApprovalModal.tsx, a pairing-approval surface. Left for a run that may add the pair."},
+  {"subject": "device-pairing", "context": "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e", "reason": "Unpaired in the map; context contains src/features/plugins/fleet/FleetPairDevice.tsx, a device-pairing UI. Left for a run that may add the pair."}
+ ],
+ "consults": []
+}
