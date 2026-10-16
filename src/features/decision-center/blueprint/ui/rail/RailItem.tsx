@@ -22,6 +22,8 @@ export interface RailEntry {
   /** The key that opens it, printed as a keycap when there is no figure. */
   kbd?: string;
   on?: boolean;
+  /** The item opens a flyout: whether it is the one open (aria-expanded; the selected bar). */
+  expanded?: boolean;
   disabled?: boolean;
   onPress?: () => void;
 }
@@ -61,7 +63,8 @@ export function RailItem({ it }: { it: RailEntry }) {
   const name = it.label + (it.n !== null ? ': ' + it.n : '') + (it.sub ? ' ' + it.sub : '') + (it.n2 ? ', ' + (it.n2title ?? it.n2) : '');
   return (
     <Tooltip content={it.title} placement="left">
-      <Press tone={`ri t-${it.tone}`} on={it.on} disabled={it.disabled} onClick={it.onPress} aria-label={name} data-k={it.k}>
+      <Press tone={`ri t-${it.tone}`} on={it.on} disabled={it.disabled} onClick={it.onPress} aria-label={name} data-k={it.k}
+        aria-expanded={it.expanded} aria-controls={it.expanded ? 'bp-flyout' : undefined}>
         {pulse > 0 && <motion.span key={pulse} className="pl" aria-hidden="true" initial={{ opacity: 0.55, scale: 0.92 }} animate={{ opacity: 0, scale: 1.08 }} transition={{ duration: 0.8, ease: 'easeOut' }} />}
         <span className="g" aria-hidden="true">{it.glyph}{it.n2 ? <b className="n2">{it.n2}</b> : null}</span>
         {it.n !== null ? <span className="n" aria-hidden="true">{typeof it.n === 'number' ? <Count n={it.n} /> : it.n}</span> : <span className="n kb" aria-hidden="true">{it.kbd}</span>}

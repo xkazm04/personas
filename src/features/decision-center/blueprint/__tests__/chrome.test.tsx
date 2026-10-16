@@ -103,7 +103,7 @@ describe('the rail and the tabs', () => {
     expect(document.querySelector('.bp-side')).toBeTruthy();
     fireEvent.click(review);
     await waitFor(() => expect(document.querySelector('.bp-side')).toBeNull());
-    expect(document.querySelector('[data-k="view"]')?.hasAttribute('disabled')).toBe(true);
+    expect(document.querySelector('[data-k="view"]')?.hasAttribute('disabled')).toBe(false);
   });
 
   it('a lens tab selects its sheet', async () => {

@@ -1,10 +1,11 @@
 /* rail.css - bp's right rail (bp src/components/rail.css:8-34, Dock.tsx), re-ported: a slim 64 px column of counters,
    each a glyph, a tabular figure, a mono label and an optional sub-label; tones amber (waiting on a person), red
-   (failed), mint (working) colour the glyph, the figure and a 2 px inset on the right edge. The flyouts are Stage C. */
+   (failed), mint (working) colour the glyph, the figure and a 2 px inset on the right edge. An item that opens a flyout
+   shows the open one with the selected bar (aria-expanded), as a toggle does with aria-pressed. */
 .bp-rr { position: absolute; right: 14px; top: 74px; bottom: var(--bp-bb); width: 64px; z-index: 6; background: var(--bp-card); border: 1px solid var(--bp-ink-3); box-shadow: 0 14px 36px var(--bp-shadow); display: flex; flex-direction: column; padding: 4px 0; gap: 1px; overflow: hidden auto; scrollbar-width: none; }
 .bp-rr .ri { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 2px 8px; border-left: 3px solid transparent; color: var(--bp-ink-2); flex: 0 0 auto; transition: background 0.15s, border-color 0.15s, color 0.15s; }
 .bp-rr .ri:hover:not(:disabled) { background: color-mix(in srgb, var(--bp-accent) 9%, transparent); color: var(--bp-ink-hi); }
-.bp-rr .ri[aria-pressed='true'] { background: color-mix(in srgb, var(--bp-ink) 12%, transparent); border-left-color: var(--bp-lens, var(--bp-ink)); color: var(--bp-ink-hi); }
+.bp-rr .ri[aria-pressed='true'], .bp-rr .ri[aria-expanded='true'] { background: color-mix(in srgb, var(--bp-ink) 12%, transparent); border-left-color: var(--bp-lens, var(--bp-ink)); color: var(--bp-ink-hi); }
 .bp-rr .ri:disabled { cursor: default; }
 .bp-rr .ri:focus-visible { outline-offset: -2px; }
 .bp-rr .ri .g { position: relative; width: 22px; height: 22px; display: block; }
@@ -31,3 +32,26 @@
   .bp-rr .ri .lb, .bp-rr .ri .sb { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .bp-rr .ri .pl { display: none; } }
+
+/* ---------- flyout (bp rail.css:46-72): a panel over the plan to the rail's left, one at a time; it never moves the
+   plan. The classic width is 340 px; every panel brought here is a wide workbench (workbench.css). It sits at the
+   rail's footprint: 64 px rail + 14 px edge + 8 px gap. */
+.bp-fly { position: absolute; right: 86px; top: 74px; bottom: var(--bp-bb); width: 340px; z-index: 6; background: var(--bp-card); border: 1px solid var(--bp-ink-3); box-shadow: 0 18px 50px var(--bp-shadow); display: flex; flex-direction: column; color: var(--bp-ink); font-family: var(--bp-font-sans); }
+.bp-fly .fh { flex: 0 0 auto; display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 4px 9px; padding: 10px 10px 10px 12px; border-bottom: 1px solid var(--bp-ink-3); }
+.bp-fly .fh .g svg { width: 22px; height: 22px; display: block; color: var(--bp-ink-2); }
+.bp-fly .fh.t-amber .g svg { color: var(--bp-amber-2); }
+.bp-fly .fh.t-red .g svg { color: var(--bp-red-2); }
+.bp-fly .fh.t-mint .g svg { color: var(--bp-mint-2); }
+.bp-fly .fh h2 { margin: 0; font: 600 var(--bp-fs-16)/1.2 var(--bp-font-sans); letter-spacing: 0.03em; text-transform: uppercase; color: var(--bp-ink-hi); min-width: 0; }
+.bp-fly .fh .x { height: var(--bp-h-ctl-xs); padding: 0 7px; border: 1px solid var(--bp-ink-3); font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); letter-spacing: var(--bp-ls-2); text-transform: uppercase; color: var(--bp-ink-2); }
+.bp-fly .fh .x:hover { border-color: var(--bp-ink); color: var(--bp-ink-hi); }
+.bp-fly .fb { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--bp-ink-3) transparent; outline: none; }
+
+/* the staggered entrance of the panel's blocks (bp fly-in); none under reduced motion */
+@keyframes bp-fly-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.bp-fly .fb > * { animation: bp-fly-in 0.34s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.bp-fly .fb > :nth-child(2) { animation-delay: 0.04s; }
+.bp-fly .fb > :nth-child(3) { animation-delay: 0.08s; }
+.bp-fly .fb > :nth-child(n + 4) { animation-delay: 0.12s; }
+.bp-fly .fb.still > * { animation: none; }
+@media (prefers-reduced-motion: reduce) { .bp-fly .fb > * { animation: none; } }
