@@ -1463,3 +1463,4 @@
 {"ts":"2026-10-16T18:09:14Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["session-registry"],"deviations":1}
 {"ts":"2026-10-16T18:09:14Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["parallel-dispatch","hibernation-and-resume"],"deviations":1}
 {"ts":"2026-10-16T18:09:14Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["absent-status-passthrough","evidence-outranks-a-liveness-claim"],"deviations":2}
+{"ts":"2026-10-16T18:10:56Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["batching-and-n-plus-one","query-construction","row-mapping"],"deviations":5}

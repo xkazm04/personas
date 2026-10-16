@@ -2576,10 +2576,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:149 handleBatchArchive (and handleBatchRestore at :173) loops the singular archivePersona/restorePersona IPC once per selected persona, serially - N round trips and N write transactions for one bulk action, while the sibling bulk delete already goes set-shaped (bulkDeletePersonas at :80, per-id outcome report) - the technique's named failure, a bulk route that keeps looping the singular",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:150 batch archive still awaits the singular archivePersona IPC once per selected id (restore likewise at :174); src/api/agents/personas.ts:83 is the only archive door, so an N-row bulk action is N sequential round trips with no set-shaped operation",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
           "source": "retained",
           "revisionsBehind": 0
         }
@@ -10601,10 +10601,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 get_by_execution_id (a single-record read by identity) decodes the spans JSON with unwrap_or_default(), so a corrupt trace reaches the UI as a trace with zero spans rather than an error - and annotations.rs:13 does the same to tags; the rev-17 conformant verdict read only executions.rs",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
+          "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 get_by_execution_id (single-record read by identity, query at :46) still decodes spans with unwrap_or_default(), so a corrupt trace returns as a present trace with zero spans rather than a loud decode error",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
           "revisionsBehind": 0
         },
         {
@@ -18532,10 +18532,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:243 calls listScans once per project (and listGoals per project at :313) under mapWithConcurrency because the surface offers only per-parent reads (src-tauri/db/src/repos/dev/scans.rs:25, src-tauri/db/src/repos/dev/goals.rs:45) - opening Mastermind costs N IPC round trips + N queries per family, linear in project count, against the file's own <=1-IPC goal (:5)",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:243 still calls listScans once per project (listGoals per project at :313) under mapWithConcurrency because src/api/devTools/devTools.ts:908 and :163 offer only per-parent reads; no children-of-parents operation grouped by project exists",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
           "revisionsBehind": 0
         },
         {
@@ -29145,10 +29145,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/core/src/models/build_session.rs:502 PersistedBuildSession::from_session still decodes JSON payload columns outside the seam with unwrap_or_default() (and .ok() at :506) instead of the propagating Json<T> FromSql at src-tauri/core/src/models/json_column.rs:91, so a corrupt resolved_cells/pending_question/agent_ir reaches the UI (src-tauri/src/commands/design/build_sessions.rs:614) as absent - a single-record read reporting corruption as not-there",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
+          "evidence": "src-tauri/core/src/models/build_session.rs:502 PersistedBuildSession decode still maps a corrupt resolved_cells column to an empty default (unwrap_or_default) and pending_question to None via .ok() at :506, so an unreadable persisted session reads as an empty one instead of failing loud",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
           "revisionsBehind": 0
         }
       ],
@@ -39793,10 +39793,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:42 still hand-escapes a Redis key and splices it into TYPE command text at :43 - a value interpolated into a command plus a second copy of the quoting grammar whose authority is src-tauri/src/engine/db_query.rs:1760 split_redis_command; re-judged at rev 18, unchanged since the rev-17 verdict",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:42 still hand-escapes a Redis key and splices it into TYPE command text at :43, a second quoting implementation beside src/features/vault/sub_databases/introspectionQueries.ts:147 escapeRedisGlob instead of one audited escaping door or a bound argument",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
           "revisionsBehind": 0
         },
         {

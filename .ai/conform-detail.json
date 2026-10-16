@@ -7598,22 +7598,31 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:31:00.000Z",
-      "worker": "a6beddbc-d977-484a-b82d-b5b70add603c",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:10:56.000Z",
+      "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
       "techniques": [
         {
           "technique": "batching-and-n-plus-one",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:243 loops listScans(id) per project id; no children-of-parents operation exists at src-tauri/db/src/repos/dev/scans.rs:25 or src-tauri/db/src/repos/dev/goals.rs:45, so bounded concurrency (5) only caps the fan-out, it does not make it set-shaped"
+          "evidence": "src/api/devTools/devTools.ts:163 listGoals(projectId) and :908 listScans(projectId?) are single-parent; caller loops at src/features/teams/sub_mastermind/lib/sceneStore.ts:243"
         },
         {
           "technique": "layering-rules",
           "verdict": "conformant",
-          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:19 reaches the store only through named typed IPC operations (getCrossProjectMetadata, listGoals, listScans, tasksPage); no query text or raw handle above the db crate"
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:19 reaches the store only through named typed IPC operations (getCrossProjectMetadata, listGoals, listScans, tasksPage); no query text or raw handle above the db crate",
+          "carriedFrom": "2026-10-09"
         }
       ],
-      "registryProposal": "batching-and-n-plus-one is written for a caller inside the same process as the repository; here the loop sits across an IPC hop, so each iteration is a query plus a serialization round trip. A bounded-concurrency fan-out (mapWithConcurrency(ids, 5)) is a recurring 'mitigation' that hides the N+1 from latency while leaving the count linear - worth naming as a known non-fix in the technique."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:243 calls listScans once per project (and listGoals per project at :313) under mapWithConcurrency because the surface offers only per-parent reads (src-tauri/db/src/repos/dev/scans.rs:25, src-tauri/db/src/repos/dev/goals.rs:45) - opening Mastermind costs N IPC round trips + N queries per family, linear in project count, against the file's own <=1-IPC goal (:5)",
+          "evaluatedAt": "2026-10-09T16:31:00.000Z",
+          "worker": "a6beddbc-d977-484a-b82d-b5b70add603c",
+          "reason": "replaced by a2ed1275-cc0d-4308-8001-2b5b12bf55ee"
+        }
+      ]
     },
     "0aded02d-f5c5-4e24-8366-90783fb343b1/data-access": {
       "context": "stores-util",
@@ -12657,14 +12666,14 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:31:33.733Z",
-      "worker": "bd5abba4-e76b-472e-85a1-fe02de1d99c8",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:10:56.000Z",
+      "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
       "techniques": [
         {
           "technique": "query-construction",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:43 value spliced into command text; bound values and one owner of escaping are the never-optional floor even for a SQL-console surface"
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:42 local escaping copy interpolated into command text at :43; escaping not hoisted to one place"
         }
       ],
       "superseded": [
@@ -12674,6 +12683,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by bd5abba4-e76b-472e-85a1-fe02de1d99c8"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:42 still hand-escapes a Redis key and splices it into TYPE command text at :43 - a value interpolated into a command plus a second copy of the quoting grammar whose authority is src-tauri/src/engine/db_query.rs:1760 split_redis_command; re-judged at rev 18, unchanged since the rev-17 verdict",
+          "evaluatedAt": "2026-10-10T01:31:33.733Z",
+          "worker": "bd5abba4-e76b-472e-85a1-fe02de1d99c8",
+          "reason": "replaced by a2ed1275-cc0d-4308-8001-2b5b12bf55ee"
         }
       ]
     },
@@ -12682,14 +12698,14 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:31:33.733Z",
-      "worker": "bd5abba4-e76b-472e-85a1-fe02de1d99c8",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:10:56.000Z",
+      "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
       "techniques": [
         {
           "technique": "row-mapping",
           "verdict": "deviation",
-          "evidence": "src-tauri/core/src/models/build_session.rs:506 per-field .ok() collapses a decode failure into None on a by-id read; single-record reads must fail loud"
+          "evidence": "src-tauri/core/src/models/build_session.rs:502 serde_json::from_str(...).unwrap_or_default() silently replaces a corrupt payload; :506 .ok() does the same"
         }
       ],
       "superseded": [
@@ -12699,6 +12715,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by bd5abba4-e76b-472e-85a1-fe02de1d99c8"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/build_session.rs:502 PersistedBuildSession::from_session still decodes JSON payload columns outside the seam with unwrap_or_default() (and .ok() at :506) instead of the propagating Json<T> FromSql at src-tauri/core/src/models/json_column.rs:91, so a corrupt resolved_cells/pending_question/agent_ir reaches the UI (src-tauri/src/commands/design/build_sessions.rs:614) as absent - a single-record read reporting corruption as not-there",
+          "evaluatedAt": "2026-10-10T01:31:33.733Z",
+          "worker": "bd5abba4-e76b-472e-85a1-fe02de1d99c8",
+          "reason": "replaced by a2ed1275-cc0d-4308-8001-2b5b12bf55ee"
         }
       ]
     },
@@ -12707,27 +12730,32 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:31:33.733Z",
-      "worker": "bd5abba4-e76b-472e-85a1-fe02de1d99c8",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:10:56.000Z",
+      "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
       "techniques": [
         {
           "technique": "batching-and-n-plus-one",
           "verdict": "deviation",
-          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:151 await archivePersona(id) inside a for-of over the selection; the surface (src/api/agents/personas.ts:83, :87) offers no set-shaped archive/restore though bulk_delete_personas proves the shape"
-        },
-        {
-          "technique": "batching-and-n-plus-one",
-          "verdict": "conformant",
-          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewPage.tsx:100 listDirectorScoreTrends(ids) - one keyed-map call for every visible row; src/features/agents/components/allPersonas/PersonaConfigPanel.tsx:333 resolveEffectiveConfigBulk for the config panel (reads are set-shaped; only the bulk writes loop)"
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:150 bulk route loops the singular write; no archive-by-ids exists beside src/api/agents/personas.ts:83"
         },
         {
           "technique": "layering-rules",
           "verdict": "conformant",
-          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:4 the list view reaches persistence only through typed IPC wrappers; no query text or connection in the context"
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:4 the list view reaches persistence only through typed IPC wrappers; no query text or connection in the context",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "batching-and-n-plus-one scopes its set-shaped rule to reads (membership, child-of-parent, aggregate) and its loader to reads only; the commonest desktop-IPC case met here is a bulk WRITE action looping a single-record mutation. The technique's bulk-route-looping-the-singular sentence covers it only by analogy - a paragraph on set-shaped writes (per-id outcome report vs one all-or-nothing transaction) would turn this verdict from an inference into a rule"
+      "registryProposal": "Map lag: every data-access pair in this map carries digest sha256-b2:b67182492821d592 (revision 18) while the registry index is at sha256-b2:2dba94be6400dea1 (revision 19, an added rust--existence-authority-written-last--agent-mail application only); verdicts here were stamped against revision 19. Context recipes-playground (06ef5a64) has no live code and should be dropped or re-pointed at src/features/templates/sub_recipes on the next context scan + map rebuild.",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:149 handleBatchArchive (and handleBatchRestore at :173) loops the singular archivePersona/restorePersona IPC once per selected persona, serially - N round trips and N write transactions for one bulk action, while the sibling bulk delete already goes set-shaped (bulkDeletePersonas at :80, per-id outcome report) - the technique's named failure, a bulk route that keeps looping the singular",
+          "evaluatedAt": "2026-10-10T01:31:33.733Z",
+          "worker": "bd5abba4-e76b-472e-85a1-fe02de1d99c8",
+          "reason": "replaced by a2ed1275-cc0d-4308-8001-2b5b12bf55ee"
+        }
+      ]
     },
     "532bbf10-3fd3-4b57-a8ea-95a957645697/data-access": {
       "context": "stores-slices-overview",
@@ -14631,44 +14659,50 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:38:19.000Z",
-      "worker": "8839de9b-9ad2-4e19-862a-e3c630f43e4d",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:10:56.000Z",
+      "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
       "techniques": [
         {
           "technique": "row-mapping",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 corrupt spans JSON -> empty Vec on a by-id read (same at :137 for the chain read); src-tauri/db/src/repos/execution/annotations.rs:13 corrupt tags JSON -> empty list, and the upsert below overwrites tags, so an edit round-trip launders the corruption"
+          "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 spans: serde_json::from_str(&spans_json).unwrap_or_default() on a single-record read"
         },
         {
           "technique": "query-construction",
           "verdict": "realized",
-          "evidence": "src-tauri/db/src/repos/execution/executions.rs:374 build_fts5_query centralizes FTS5 token quoting; filters are bound params via QueryBuilder"
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:374 build_fts5_query centralizes FTS5 token quoting; filters are bound params via QueryBuilder",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "batching-and-n-plus-one",
           "verdict": "realized",
-          "evidence": "src-tauri/db/src/repos/execution/executions.rs:455 get_all_global replaces the per-persona get_by_persona_id N+1 with one query"
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:455 get_all_global replaces the per-persona get_by_persona_id N+1 with one query",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "transactions-and-units-of-work",
           "verdict": "realized",
-          "evidence": "src-tauri/db/src/repos/execution/test_runs.rs:231 opens one transaction and passes it into the cross-repo child-row write at :270"
+          "evidence": "src-tauri/db/src/repos/execution/test_runs.rs:231 opens one transaction and passes it into the cross-repo child-row write at :270",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "repo-testing",
           "verdict": "realized",
-          "evidence": "src-tauri/db/src/repos/execution/executions.rs:2742 tests run on init_test_db() real-engine fixtures"
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:2742 tests run on init_test_db() real-engine fixtures",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "read-models-and-projections",
           "verdict": "realized",
-          "evidence": "src-tauri/db/src/repos/execution/executions.rs:93 one COLUMNS declaration for the aggregate read, with lean list projections declared beside it"
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:93 one COLUMNS declaration for the aggregate read, with lean list projections declared beside it",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "cross-driver-invariant-parity",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/db/Cargo.toml:69 single rusqlite engine; no second backend behind this surface"
+          "evidence": "src-tauri/db/Cargo.toml:69 single rusqlite engine; no second backend behind this surface",
+          "carriedFrom": "2026-10-10"
         }
       ],
       "superseded": [
@@ -14678,6 +14712,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by 8839de9b-9ad2-4e19-862a-e3c630f43e4d"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 get_by_execution_id (a single-record read by identity) decodes the spans JSON with unwrap_or_default(), so a corrupt trace reaches the UI as a trace with zero spans rather than an error - and annotations.rs:13 does the same to tags; the rev-17 conformant verdict read only executions.rs",
+          "evaluatedAt": "2026-10-10T11:38:19.000Z",
+          "worker": "8839de9b-9ad2-4e19-862a-e3c630f43e4d",
+          "reason": "replaced by a2ed1275-cc0d-4308-8001-2b5b12bf55ee"
         }
       ]
     },

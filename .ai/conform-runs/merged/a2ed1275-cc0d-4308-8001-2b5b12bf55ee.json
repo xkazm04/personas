@@ -1,0 +1,116 @@
+{
+  "schema": "conform-run/1",
+  "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
+  "subject": "data-access",
+  "evaluatedAt": "2026-10-16T18:10:56Z",
+  "pairs": [
+    {
+      "context": "a8857307-216c-46e0-9571-e05e8cf06112",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:150 batch archive still awaits the singular archivePersona IPC once per selected id (restore likewise at :174); src/api/agents/personas.ts:83 is the only archive door, so an N-row bulk action is N sequential round trips with no set-shaped operation",
+      "techniques": [
+        {
+          "technique": "batching-and-n-plus-one",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:150 bulk route loops the singular write; no archive-by-ids exists beside src/api/agents/personas.ts:83"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+      "evaluatedRevision": 19,
+      "registryProposal": "Map lag: every data-access pair in this map carries digest sha256-b2:b67182492821d592 (revision 18) while the registry index is at sha256-b2:2dba94be6400dea1 (revision 19, an added rust--existence-authority-written-last--agent-mail application only); verdicts here were stamped against revision 19. Context recipes-playground (06ef5a64) has no live code and should be dropped or re-pointed at src/features/templates/sub_recipes on the next context scan + map rebuild."
+    },
+    {
+      "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:243 still calls listScans once per project (listGoals per project at :313) under mapWithConcurrency because src/api/devTools/devTools.ts:908 and :163 offer only per-parent reads; no children-of-parents operation grouped by project exists",
+      "techniques": [
+        {
+          "technique": "batching-and-n-plus-one",
+          "verdict": "deviation",
+          "evidence": "src/api/devTools/devTools.ts:163 listGoals(projectId) and :908 listScans(projectId?) are single-parent; caller loops at src/features/teams/sub_mastermind/lib/sceneStore.ts:243"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+      "evaluatedRevision": 19
+    },
+    {
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:42 still hand-escapes a Redis key and splices it into TYPE command text at :43, a second quoting implementation beside src/features/vault/sub_databases/introspectionQueries.ts:147 escapeRedisGlob instead of one audited escaping door or a bound argument",
+      "techniques": [
+        {
+          "technique": "query-construction",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:42 local escaping copy interpolated into command text at :43; escaping not hoisted to one place"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+      "evaluatedRevision": 19
+    },
+    {
+      "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/core/src/models/build_session.rs:502 PersistedBuildSession decode still maps a corrupt resolved_cells column to an empty default (unwrap_or_default) and pending_question to None via .ok() at :506, so an unreadable persisted session reads as an empty one instead of failing loud",
+      "techniques": [
+        {
+          "technique": "row-mapping",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/build_session.rs:502 serde_json::from_str(...).unwrap_or_default() silently replaces a corrupt payload; :506 .ok() does the same"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+      "evaluatedRevision": 19
+    },
+    {
+      "context": "320d2cea-9761-4233-97c1-ee2eaf4d6c17",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 get_by_execution_id (single-record read by identity, query at :46) still decodes spans with unwrap_or_default(), so a corrupt trace returns as a present trace with zero spans rather than a loud decode error",
+      "techniques": [
+        {
+          "technique": "row-mapping",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 spans: serde_json::from_str(&spans_json).unwrap_or_default() on a single-record read"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+      "evaluatedRevision": 19
+    }
+  ],
+  "declined": [
+    {
+      "subject": "data-access",
+      "context": "06ef5a64-1796-4637-a4d9-f860bbe67562",
+      "reason": "recipes-playground is a dead context: its file_paths are empty and every entry point (src/features/recipes/sub_playground/...) was deleted by 450f1c9e5c (never-mounted recipe manager tree); there is no code to judge, and the surviving recipe UI lives in src/features/templates/sub_recipes, which this context does not cover"
+    },
+    {
+      "subject": "data-access",
+      "context": "511ca12f-50df-4941-84e1-e2d74a3dff85",
+      "reason": "weak context (capability-config-view); not judged by default per the skill"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T18:10:56Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "data-access"
+      ],
+      "techniques": [
+        "batching-and-n-plus-one",
+        "query-construction",
+        "row-mapping"
+      ],
+      "deviations": 5
+    }
+  ]
+}
