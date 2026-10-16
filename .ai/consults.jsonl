@@ -1350,3 +1350,7 @@
 {"ts":"2026-10-16T17:34:47Z","bundle":"software-engineering","subjects":["pipeline-dag"],"techniques":[],"deviations":0}
 {"ts":"2026-10-16T17:35:18Z","bundle":"software-engineering","subjects":["subprocess-lifecycle"],"techniques":["termination-and-reaping","decode-child-output-per-line"],"deviations":1}
 {"ts":"2026-10-16T17:35:18Z","bundle":"software-engineering","subjects":["subprocess-lifecycle"],"techniques":["session-reuse","decode-child-output-per-line","spawn-contract"],"deviations":1}
+{"ts":"2026-10-16T17:35:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set","non-stealing-overlay","query-transparent-overlay","observer-perturbation","permission-gate-vector","layout-resolved-input-synthesis"],"deviations":1}
+{"ts":"2026-10-16T17:35:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set","non-stealing-overlay","query-transparent-overlay","observer-perturbation","layout-resolved-input-synthesis"],"deviations":1}
+{"ts":"2026-10-16T17:35:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set","non-stealing-overlay"],"deviations":0}
+{"ts":"2026-10-16T17:35:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set","non-stealing-overlay"],"deviations":0}

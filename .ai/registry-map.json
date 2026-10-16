@@ -13199,13 +13199,12 @@
           "revision": 4,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "not-applicable",
-          "evidence": "src/features/plugins/fleet/FleetTerminalOverlay.tsx:294 The terminal grid is a document-fixed div under the app title bar; a search of src/features/plugins/fleet for alwaysOnTop, setIgnoreCursorEvents, globalShortcut, AXUIElement, and SendInput returned no hits, and session commands are text written to a PTY.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:eb941b25ec740109",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:84 spawns a claude process with the renderer-supplied root_path as cwd; fleet_spawn_session (src-tauri/src/commands/fleet/commands.rs:33) takes any string, admission only requires it non-empty (src-tauri/src/commands/fleet/queue.rs:1101) and the command carries no require_auth, so the executing command's target is chosen by the less trusted side instead of a project id the native side resolves",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-runtime-assembly",
@@ -19281,13 +19280,12 @@
           "revision": 4,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "not-applicable",
-          "evidence": "src/features/notepad/NotepadOverlayHost.tsx:423 The pad is a portaled dialog that leaves the app title bar reachable; a search of src/features/notepad for alwaysOnTop, setIgnoreCursorEvents, globalShortcut, AXUIElement, and SendInput returned no hits.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:eb941b25ec740109",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/notepad/notepadActions.ts:162 sends project.root_path as the write target to fleet_write_dispatch_brief, whose native side only checks is_dir on it (src-tauri/src/commands/fleet/external.rs:93), so a corrupted renderer can write brief content under any directory on disk - while :176 of the same function already sends project.id to installSystemSkill and lets the native side resolve the root",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 1
         },
         {
           "subject": "voice-io",
@@ -23824,12 +23822,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:53 The sigil editor is an absolute layer over the in-page sigil; a search of src/features/shared/glyph/persona-layout for alwaysOnTop, setIgnoreCursorEvents, globalShortcut, AXUIElement, and SendInput returned no hits.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:eb941b25ec740109",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:53 the editor is an absolute layer over the in-page sigil; none of the context's 10 files imports @/api or @tauri-apps, so it reaches no native capability and no native command - revision 4's command-target technique has nothing to bound here either",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 1
         },
         {
           "subject": "prompt-assembly",
@@ -30846,12 +30843,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 The fullest surface in this context is a dialog painted under the app title bar; a search of src/features/shared/components for alwaysOnTop, setIgnoreCursorEvents, globalShortcut, AXUIElement, and SendInput returned no hits, so no host capability, foreign window, or synthesized input is present.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:eb941b25ec740109",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 the fullest surface is a document overlay below the title bar; none of the context's 33 files imports @/api or @tauri-apps, so no host capability, foreign window, synthesized input or native command crosses here",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 1
         },
         {
           "subject": "async-ui-states",
