@@ -2367,38 +2367,48 @@
       "subject": "embedded-preview",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-9",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T12:00:00.000Z",
+      "worker": "45b61c21-f5d6-41e3-9a39-4489f32cc06f",
       "techniques": [
         {
           "technique": "origin-validation",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/webbuild/preview_agent.rs:53 agent-side inbound check is shape-only and :63 / :82 post with a \"*\" target; the technique requires the agent to apply both rules against a build-time-injected host origin. Host outbound fixed: src/features/studio/StudioPage.tsx:187 posts to previewTargetOrigin, never \"*\"."
+          "evidence": "src-tauri/src/webbuild/athena_preview_agent.tsx:295 guest accepts any sender whose payload says source:'athena'; :145 replies to targetOrigin '*'; host half addresses its sends to the frame origin (src/features/studio/useStudioPreview.ts:196) but attributes inbound by contentWindow identity, not e.origin"
         },
         {
           "technique": "cross-frame-protocol",
           "verdict": "deviation",
-          "evidence": "src/features/studio/StudioPage.tsx:186 reqId is the tab id, reused for every ping, and the reply handler (:149) never reads it; no pending table and no timeout outcome, only eight blind retries (:189), so a stale 'located' reply is applied to whatever question is current."
+          "evidence": "src/features/studio/useStudioPreview.ts:196 reqId is the tab id, not minted per request, and the 8-try retry interval stops silently with no pending table and no timeout outcome, so a stale 'located' reply cannot be told from a current one"
         },
         {
           "technique": "injected-instrumentation-with-fallback",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/webbuild/preview_agent.rs:146 the agent is written into the guest source and rendered only under NODE_ENV === development, re-added idempotently on every dev start (:112); src/features/studio/StudioPage.tsx:342 the orb falls back to the coarse region when the agent returns no rect."
+          "verdict": "realized",
+          "evidence": "src-tauri/src/webbuild/preview_agent.rs:16 agent baked into the guest source, dev-gated in the layout patch and in the effect (athena_preview_agent.tsx:135), best-effort with coarse-anchoring fallback (preview_agent.rs:7-9)"
         },
         {
           "technique": "dev-server-registry",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/webbuild/devserver.rs:78 the registry (keyed by project, pid+port recorded at spawn :90, tree kill :155, stop_all :163, HTTP readiness probe :193) discards the server's stderr, so a server that never becomes healthy cannot be surfaced with its own output."
+          "verdict": "realized",
+          "evidence": "src-tauri/src/webbuild/devserver.rs:124 one Mutex<HashMap> registry per project; :10 kill_tree takes the whole process tree and stop_all runs on app exit"
         },
         {
           "technique": "convention-discovery",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/webbuild/routes.rs:13 routes are derived by scanning the guest's app-router tree (dynamic segments kept, groups stripped), and src/features/studio/StudioPage.tsx:116 rescans when the tab goes live and on every reload nonce, including after a restore."
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/routes.rs:21 routes are derived from the app-router tree (skips _private at :34) but a missing app dir or unreadable directory (:27) returns Ok(empty), the 'no pages' empty success the technique names as failure"
         },
         {
           "technique": "preview-checkpoints",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/webbuild/versions.rs:30 the per-turn snapshot (called at src-tauri/src/companion/session/build_turn.rs:198) discards git commit's result, so a turn whose capture failed looks identical to a protected one."
+          "verdict": "realized",
+          "evidence": "src-tauri/src/webbuild/versions.rs:20 per-turn snapshots on a private ref refs/athena/snapshots, restore as a files-only forward move (:93)"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/webbuild/preview_agent.rs:53 the injected guest agent still dispatches on shape alone (no e.origin check) and replies to window.parent with \"*\" (:63, :82), so any document in the frame tree can drive the locate verb and the agent's reports go to whatever parent is loaded; the HOST half is now fixed (StudioPage.tsx:187 addresses the frame's own origin, :146 attributes replies by contentWindow identity).",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by 45b61c21-f5d6-41e3-9a39-4489f32cc06f"
         }
       ]
     },
@@ -23357,6 +23367,17 @@
           "evidence": "src/stores/slices/overview/alertSlice.ts:497 the evaluator writes the UI first and then persists best-effort through api.createFiredAlert, with pending-sync retry and no blocking on the sink"
         }
       ]
+    },
+    "c5f662f2-458b-4b5d-b03b-e4acf8f54049/embedded-preview": {
+      "context": "plugins-dev-tools-projects",
+      "subject": "embedded-preview",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T12:00:00.000Z",
+      "worker": "45b61c21-f5d6-41e3-9a39-4489f32cc06f",
+      "techniques": [],
+      "registryProposal": "lexical false positive: the matcher paired this on the tokens dev/preview/cross; 'preview' names a host-rendered graph thumbnail here, which the golden path's 'When the subject does not apply' section excludes"
     }
   }
 }

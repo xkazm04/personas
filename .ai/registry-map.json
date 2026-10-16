@@ -26087,7 +26087,11 @@
           "revision": 2,
           "changedAt": "2026-09-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/TeamGraphPreview.tsx:4 the context's only 'preview' renders the host's own persona team graph from its bindings in-tree; no frame, guest server or bridge exists in its 14 files, the golden path's first-party exclusion",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:a6e12ae70d42efcc",
+          "evaluatedRevision": 2
         },
         {
           "subject": "readiness-passports",
@@ -40481,8 +40485,8 @@
           "changedAt": "2026-09-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/webbuild/preview_agent.rs:53 the injected guest agent still dispatches on shape alone (no e.origin check) and replies to window.parent with \"*\" (:63, :82), so any document in the frame tree can drive the locate verb and the agent's reports go to whatever parent is loaded; the HOST half is now fixed (StudioPage.tsx:187 addresses the frame's own origin, :146 attributes replies by contentWindow identity).",
-          "evaluatedAt": "2026-09-23",
+          "evidence": "src-tauri/src/webbuild/athena_preview_agent.tsx:295 the injected guest agent (embedded via preview_agent.rs:16) still dispatches inbound commands on shape alone with no origin check and posts every report to window.parent with \"*\" (:145), so any document in the frame tree can drive locate/inspect and the agent's reports reach whatever parent loaded it; prior anchor preview_agent.rs:53 moved into this file",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:a6e12ae70d42efcc",
           "evaluatedRevision": 2,
           "revisionsBehind": 0

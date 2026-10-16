@@ -1,0 +1,27 @@
+{"schema": "conform-run/1", "worker": "45b61c21-f5d6-41e3-9a39-4489f32cc06f", "subject": "embedded-preview",
+ "evaluatedAt": "2026-10-16T12:00:00Z",
+ "pairs": [
+  {"context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd", "subject": "embedded-preview", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/webbuild/athena_preview_agent.tsx:295 the injected guest agent (embedded via preview_agent.rs:16) still dispatches inbound commands on shape alone with no origin check and posts every report to window.parent with \"*\" (:145), so any document in the frame tree can drive locate/inspect and the agent's reports reach whatever parent loaded it; prior anchor preview_agent.rs:53 moved into this file",
+   "techniques": [
+    {"technique": "origin-validation", "verdict": "deviation", "evidence": "src-tauri/src/webbuild/athena_preview_agent.tsx:295 guest accepts any sender whose payload says source:'athena'; :145 replies to targetOrigin '*'; host half addresses its sends to the frame origin (src/features/studio/useStudioPreview.ts:196) but attributes inbound by contentWindow identity, not e.origin"},
+    {"technique": "cross-frame-protocol", "verdict": "deviation", "evidence": "src/features/studio/useStudioPreview.ts:196 reqId is the tab id, not minted per request, and the 8-try retry interval stops silently with no pending table and no timeout outcome, so a stale 'located' reply cannot be told from a current one"},
+    {"technique": "injected-instrumentation-with-fallback", "verdict": "realized", "evidence": "src-tauri/src/webbuild/preview_agent.rs:16 agent baked into the guest source, dev-gated in the layout patch and in the effect (athena_preview_agent.tsx:135), best-effort with coarse-anchoring fallback (preview_agent.rs:7-9)"},
+    {"technique": "dev-server-registry", "verdict": "realized", "evidence": "src-tauri/src/webbuild/devserver.rs:124 one Mutex<HashMap> registry per project; :10 kill_tree takes the whole process tree and stop_all runs on app exit"},
+    {"technique": "convention-discovery", "verdict": "deviation", "evidence": "src-tauri/src/webbuild/routes.rs:21 routes are derived from the app-router tree (skips _private at :34) but a missing app dir or unreadable directory (:27) returns Ok(empty), the 'no pages' empty success the technique names as failure"},
+    {"technique": "preview-checkpoints", "verdict": "realized", "evidence": "src-tauri/src/webbuild/versions.rs:20 per-turn snapshots on a private ref refs/athena/snapshots, restore as a files-only forward move (:93)"}
+   ]},
+  {"context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049", "subject": "embedded-preview", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_projects/TeamGraphPreview.tsx:4 the context's only 'preview' renders the host's own persona team graph from its bindings in-tree; no frame, guest server or bridge exists in its 14 files, the golden path's first-party exclusion",
+   "techniques": [],
+   "registryProposal": "lexical false positive: the matcher paired this on the tokens dev/preview/cross; 'preview' names a host-rendered graph thumbnail here, which the golden path's 'When the subject does not apply' section excludes"}
+ ],
+ "declined": [
+  {"subject": "embedded-preview", "context": "9b6cc17c-3add-4152-a349-c189b15a109f", "reason": "weak context (governance: weak, lexical-only grounding); per the skill, weak pairs are a coverage question, not judged by default. DesignResultPreview renders a generated design summary in-tree, which looks like the golden path's static-preview exclusion"}
+ ],
+ "consults": [
+  {"ts": "2026-10-16T12:00:00Z", "bundle": "software-engineering", "subjects": ["embedded-preview"], "techniques": ["origin-validation", "cross-frame-protocol", "injected-instrumentation-with-fallback", "dev-server-registry", "convention-discovery", "preview-checkpoints"], "deviations": 3},
+  {"ts": "2026-10-16T12:00:00Z", "bundle": "software-engineering", "subjects": ["embedded-preview"], "techniques": [], "deviations": 0}
+ ]}
