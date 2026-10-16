@@ -2536,33 +2536,47 @@
       "subject": "data-viz",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-8",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:19:27.000Z",
+      "worker": "76bfd302-0e7c-4154-86ab-5dd85ceb0d58",
       "techniques": [
         {
           "technique": "metric-identity",
           "verdict": "deviation",
-          "evidence": "src/features/overview/libs/computeTrends.ts:94 the 1% stable band lives only in makeTrend; the KpiTile trend path (computeTrends.ts:66, KpiTile.tsx:176) classifies without it, forking trend direction along the resolution band; resolveMetricPercent now returns null for an empty denominator (src/features/overview/libs/metricIdentity.ts:70)"
+          "evidence": "src/features/overview/components/shared/KpiTile.tsx:177 classifies direction by bare sign with no resolution band and no non-finite guard, and polarity arrives per call site as an invertColor boolean (:37) instead of from the metric's definition"
         },
         {
           "technique": "empty-and-degraded-chart-states",
           "verdict": "deviation",
-          "evidence": "src/features/overview/components/shared/KpiTile.tsx:250 a measured 0% delta and an absent comparison render the same '--'"
+          "evidence": "src/features/overview/components/shared/KpiTile.tsx:250 a measured 0% delta and an absent comparison render the same '--'",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "scale-and-axis-design",
           "verdict": "conformant",
-          "evidence": "src/features/overview/sub_observability/components/ObservabilityDashboard.tsx:222 every sparkline caller declares its domain (percent {0,100}, others 'zero') - the recorded auto-floor defect is fixed at the callers; latent: KpiTile defaults sparkScale to 'auto' (KpiTile.tsx:173), flooring at the sample minimum (src/features/overview/libs/sparklineScale.ts:34), so an undeclared future caller inherits it"
+          "evidence": "src/features/overview/sub_observability/components/ObservabilityDashboard.tsx:222 every sparkline caller declares its domain (percent {0,100}, others 'zero') - the recorded auto-floor defect is fixed at the callers; latent: KpiTile defaults sparkScale to 'auto' (KpiTile.tsx:173), flooring at the sample minimum (src/features/overview/libs/sparklineScale.ts:34), so an undeclared future caller inherits it",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "micro-visualizations",
           "verdict": "conformant",
-          "evidence": "src/features/overview/libs/sparklineScale.ts:50 fewer than two points draws no sparkline instead of a fabricated slope"
+          "evidence": "src/features/overview/libs/sparklineScale.ts:50 fewer than two points draws no sparkline instead of a fabricated slope",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "chart-loading-economics",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/components/shared/KpiTile.tsx:116 the sparkline is hand-drawn inline SVG; there is no chart engine to lazy-load"
+          "evidence": "src/features/overview/components/shared/KpiTile.tsx:116 the sparkline is hand-drawn inline SVG; there is no chart engine to lazy-load",
+          "carriedFrom": "2026-09-23"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/components/shared/KpiTile.tsx:176 shows a direction arrow for any non-zero delta and renders a measured 0% change as '--' (:250), the same mark as no comparison, fed raw percentages by computeSeriesTrendPct (src/features/overview/libs/computeTrends.ts:66) - a 0.3% sub-resolution wobble gets a red/green arrow while makeTrend in the same file (:94) calls it stable under STABLE_THRESHOLD_PCT (:20)",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by 76bfd302-0e7c-4154-86ab-5dd85ceb0d58"
         }
       ]
     },

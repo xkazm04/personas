@@ -1495,3 +1495,4 @@
 {"ts":"2026-10-16T18:19:14Z","bundle":"software-engineering","subjects":["authorization"],"techniques":["authorization-audit"],"deviations":1}
 {"ts":"2026-10-16T18:19:14Z","bundle":"software-engineering","subjects":["authorization"],"techniques":["declarative-requirements","privilege-tiers"],"deviations":1}
 {"ts":"2026-10-16T18:19:14Z","bundle":"software-engineering","subjects":["authorization"],"techniques":["authorization-audit"],"deviations":1}
+{"ts":"2026-10-16T18:19:27Z","bundle":"software-engineering","subjects":["data-viz"],"techniques":["metric-identity"],"deviations":1}

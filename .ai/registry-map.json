@@ -22764,8 +22764,8 @@
           "changedAt": "2026-09-20",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/overview/components/shared/KpiTile.tsx:176 shows a direction arrow for any non-zero delta and renders a measured 0% change as '--' (:250), the same mark as no comparison, fed raw percentages by computeSeriesTrendPct (src/features/overview/libs/computeTrends.ts:66) - a 0.3% sub-resolution wobble gets a red/green arrow while makeTrend in the same file (:94) calls it stable under STABLE_THRESHOLD_PCT (:20)",
-          "evaluatedAt": "2026-09-23",
+          "evidence": "src/features/overview/components/shared/KpiTile.tsx:176 re-verified 2026-10-16 (unchanged since 09-23): any non-zero pct gets a red/green direction arrow and a measured 0% renders '--' (:250), the same mark as no comparison, while makeTrend calls |pct|<STABLE_THRESHOLD_PCT stable (src/features/overview/libs/computeTrends.ts:94) - a sub-resolution wobble from computeSeriesTrendPct (:66) is drawn as a move, and a NaN pct fails the === 0 guard and prints a down arrow",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:0a15845e9dc44963",
           "evaluatedRevision": 6,
           "revisionsBehind": 0

@@ -1,0 +1,8 @@
+{"schema":"conform-run/1","worker":"76bfd302-0e7c-4154-86ab-5dd85ceb0d58","subject":"data-viz","evaluatedAt":"2026-10-16T18:19:27Z",
+"pairs":[{"context":"5e531c95-b6d9-46f5-a33d-d07001fee61e","subject":"data-viz","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/overview/components/shared/KpiTile.tsx:176 re-verified 2026-10-16 (unchanged since 09-23): any non-zero pct gets a red/green direction arrow and a measured 0% renders '--' (:250), the same mark as no comparison, while makeTrend calls |pct|<STABLE_THRESHOLD_PCT stable (src/features/overview/libs/computeTrends.ts:94) - a sub-resolution wobble from computeSeriesTrendPct (:66) is drawn as a move, and a NaN pct fails the === 0 guard and prints a down arrow",
+"techniques":[{"technique":"metric-identity","verdict":"deviation","evidence":"src/features/overview/components/shared/KpiTile.tsx:177 classifies direction by bare sign with no resolution band and no non-finite guard, and polarity arrives per call site as an invertColor boolean (:37) instead of from the metric's definition"}]}],
+"declined":[
+{"subject":"data-viz","context":"456eb952-9b93-4de4-bad5-79e6f101aeb1","reason":"judged not-applicable on 2026-10-16 against the current subject digest sha256-b2:0a15845e9dc44963 (revision 6); re-reading the same code the same day buys nothing"},
+{"subject":"data-viz","context":"7901fd6c-0346-430b-aefe-fc4cd623b167","reason":"judged deviation on 2026-10-16 against the current subject digest sha256-b2:0a15845e9dc44963 (revision 6); re-reading the same code the same day buys nothing"}],
+"consults":[{"ts":"2026-10-16T18:19:27Z","bundle":"software-engineering","subjects":["data-viz"],"techniques":["metric-identity"],"deviations":1}]}
