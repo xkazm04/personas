@@ -1,0 +1,30 @@
+{
+  "schema": "conform-run/1",
+  "worker": "9edf103e-0f90-4098-847f-431cddd69a2f",
+  "subject": "scheduling",
+  "evaluatedAt": "2026-10-16T17:56:06.746Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "scheduling",
+      "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
+      "reason": "deviation of 2026-10-12 is current: digest sha256-b2:cd982b42588a2de5 rev 6 equals the registry index at 11037a6c and no anchored file changed since the verdict; anchors re-printed and still say what the evidence claims - re-judging would only restamp a current verdict (src-tauri/src/commands/tools/triggers.rs:1522 still has no cause/due-time field; scheduler.rs:848 still only a tracing::debug skip)"
+    },
+    {
+      "subject": "scheduling",
+      "context": "4810daf8-0549-4899-95d2-99c81cde6455",
+      "reason": "deviation of 2026-10-12 is current: digest sha256-b2:cd982b42588a2de5 rev 6 equals the registry index at 11037a6c and no anchored file changed since the verdict; anchors re-printed and still say what the evidence claims - re-judging would only restamp a current verdict (src/stores/slices/overview/alertSlice.ts:440 still a level-triggered 1h cooldown, FIRED_COOLDOWN_MS at :210)"
+    },
+    {
+      "subject": "scheduling",
+      "context": "56a0fd55-279d-428b-b2f6-7c89154abd6f",
+      "reason": "deviation of 2026-10-12 is current: digest sha256-b2:cd982b42588a2de5 rev 6 equals the registry index at 11037a6c and no anchored file changed since the verdict; anchors re-printed and still say what the evidence claims - re-judging would only restamp a current verdict (src/features/schedules/libs/calendarHelpers.ts:19 still collapses skip causes into past-unknown)"
+    },
+    {
+      "subject": "scheduling",
+      "context": "417112d1-004b-41d5-a656-57997a47d818",
+      "reason": "weak context (governance: weak, lexical-only); not-applicable of 2026-10-10 is current against the same digest and src/hooks/utility/timing/useDebounce.ts:12 is unchanged"
+    }
+  ],
+  "consults": []
+}
