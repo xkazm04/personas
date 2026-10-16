@@ -1,62 +1,95 @@
+import '../../styles/page.css';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { AnimatePresence, animate, usePresence } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSheet } from '../../controller/SheetContext';
-import { isBuilt } from '../../model/triage';
-import { ComparePanel } from '../compare/ComparePanel';
-import { LensCards } from './LensCards';
-import { PackRow } from './PackRow';
-import { ProposalCard } from './ProposalCard';
-import { SheetHead } from './SheetHead';
-import { SheetSide } from './SheetSide';
-import { SheetTabs } from './SheetTabs';
+import { SheetPage } from './SheetPage';
 
-const STAGE_PLAIN_KEY = {
-  live: 'plain_live', flagged: 'plain_flagged', 'in-review': 'plain_in_review', 'in-dev': 'plain_in_dev',
-  specified: 'plain_specified', idea: 'plain_idea', deprecated: 'plain_deprecated',
-} as const;
+type Rect = { x: number; y: number; w: number; h: number };
+/** bp's morph: 320 ms out of the tile, ease [.2, .7, .2, 1]; back into it in 85% of that, ease [.4, 0, .2, 1]. */
+const MORPH = 0.32;
+const FULL = 'translate(0px, 0px) scale(1, 1)';
+
+/** The transform that lays the page box over the tile's rect (origin top left): where the morph starts and ends. */
+function overTile(t: Rect, b: DOMRect): string {
+  const sx = Math.max(0.02, t.w / b.width), sy = Math.max(0.02, t.h / b.height);
+  return `translate(${(t.x - b.left).toFixed(1)}px, ${(t.y - b.top).toFixed(1)}px) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
+}
+
+/** The page over the plan, with its dim. `morph`: grow out of the feature's tile and shrink back into it. */
+function Layer({ fid, morph }: { fid: string; morph: boolean }) {
+  const s = useSheet();
+  const { B, tx } = s.text;
+  const page = useRef<HTMLElement>(null), inner = useRef<HTMLDivElement>(null), dim = useRef<HTMLDivElement>(null), closeRef = useRef<HTMLButtonElement>(null);
+  const [isPresent, safeToRemove] = usePresence();
+  // the page's content mounts a frame after the shell, so the morph is already running while it renders
+  const [content, setContent] = useState(!morph);
+  const engine = s.engine;
+  // the tile's screen rect, from the engine (read-only): canvas-local, so offset by the canvas's own box
+  const tileRect = (): Rect | null => {
+    const r = engine?.featRect(fid, 1), c = engine?.cv.getBoundingClientRect();
+    return r && c && r.w >= 1 && r.h >= 1 ? { x: c.left + r.x, y: c.top + r.y, w: r.w, h: r.h } : null;
+  };
+  const tileRef = useRef(tileRect);
+  tileRef.current = tileRect;
+
+  useLayoutEffect(() => {
+    const el = page.current;
+    if (!morph || !el) return;
+    const t = tileRef.current(), b = el.getBoundingClientRect();
+    const run = [dim.current ? animate(dim.current, { opacity: [0, 1] }, { duration: MORPH }) : null,
+      inner.current ? animate(inner.current, { opacity: [0, 1] }, { duration: 0.2, delay: MORPH * 0.55 }) : null,
+      t ? animate(el, { transform: [overTile(t, b), FULL] }, { duration: MORPH, ease: [0.2, 0.7, 0.2, 1] }) : animate(el, { opacity: [0, 1] }, { duration: 0.18 })];
+    const raf = requestAnimationFrame(() => setContent(true));
+    return () => { cancelAnimationFrame(raf); run.forEach((a) => a?.stop()); };
+  }, [morph]);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => closeRef.current?.focus({ preventScroll: true }), morph ? MORPH * 1000 + 40 : 0);
+    return () => window.clearTimeout(id);
+  }, [morph]);
+
+  useEffect(() => {
+    if (isPresent) return;
+    const el = page.current;
+    if (!el) { safeToRemove?.(); return; }
+    el.style.transform = '';
+    const t = tileRef.current(), b = el.getBoundingClientRect();
+    if (inner.current) animate(inner.current, { opacity: 0 }, { duration: 0.08 });
+    if (dim.current) animate(dim.current, { opacity: 0 }, { duration: MORPH });
+    const a = t ? animate(el, { transform: [FULL, overTile(t, b)] }, { duration: MORPH * 0.85, ease: [0.4, 0, 0.2, 1] }) : animate(el, { opacity: 0 }, { duration: 0.18 });
+    void a.then(() => safeToRemove?.());
+    return () => a.stop();
+  }, [isPresent, safeToRemove]);
+
+  const name = s.plan.L.TILE[fid]?.f.name ?? fid;
+  return (
+    <div className="pg-layer">
+      <div ref={dim} className="pg-dim" aria-hidden="true" onClick={s.nav.closeSheet}
+        onWheel={(e) => page.current?.querySelector('.pg-scroll')?.scrollBy({ top: e.deltaY })} />
+      <section ref={page} className="pg" aria-label={tx(B.pg_label, { name })} data-testid="blueprint-feature-sheet" data-feature={fid}>
+        <div ref={inner} className="pg-in">{content ? <SheetPage fid={fid} enter={morph ? MORPH * 0.55 : 0} closeRef={closeRef} /> : null}</div>
+        <div className="pg-frame" aria-hidden="true" />
+      </section>
+    </div>
+  );
+}
 
 /**
- * L4, the feature sheet (bp FeatureSheet): laid over the plan, clear of the right rail, the level bar and the
- * timeline. The feature's lens cards (all of them on the overview, one on a lens tab), the work on it split into
- * what is built in a pack and what is still the queue's, and the side tables. Keys are the sheet's own: A, X and B
- * act on the current item here exactly as they do in the queue. A built item opens the compare panel (WP4b) in the
- * side tables' place, where Y, R, S and U triage it while its evidence is in view.
+ * L4, the feature page (bp FeatureSheet): one feature as a full page nested in the plan. The feature's tile grows
+ * into the page (a ~320 ms transform morph from the tile's rect, the engine's `featRect`) while the plan dims behind
+ * it, still showing at the edges; closing shrinks the page back into the tile. Under reduced motion there is no
+ * morph and no count: the page is simply there. Stepping to another feature inside the page swaps its content in
+ * place; only opening and closing morph. Keys are the sheet's own (useSheetKeys): A, X and B act on the current item
+ * here as in the queue, Y, R, S and U triage the built item the compare panel shows.
  */
 export function FeatureSheet() {
   const s = useSheet();
-  const { B, tx } = s.text;
-  const fid = s.ui.sheet;
-  const T = fid ? s.plan.L.TILE[fid] : undefined;
-  if (!fid || !T) return null;
-  const f = T.f, sl = s.ui.sheetLens;
-  const mine = (s.work.byFeature.get(fid) ?? []).filter((p) => sl === 'general' || p.lens === sl);
-  const packed = mine.filter((p) => p.pack && p.status !== 'proposed' && p.status !== 'approved');
-  const cmp = s.ui.compare && s.work.byId.get(s.ui.compare)?.fid === fid ? s.ui.compare : null;
-  const rest = mine.filter((p) => !packed.includes(p));
-  const waiting = rest.filter((p) => p.status === 'proposed').length;
-  // the pack's rows lead the column while the compare panel is open: the item list sits beside the item shown
-  const packBox = packed.length > 0 && (
-    <div className="bp-scan bp-packbox">
-      <div className="typo-eyebrow bp-eyebrow">{tx(B.pack_box, { id: packed[0]?.pack ?? '', count: packed.length })}</div>
-      {packed.map((p) => (isBuilt(p) ? <PackRow key={p.id} p={p} /> : <ProposalCard key={p.id} p={p} />))}
-    </div>
-  );
-  return (
-    <section className={cmp ? 'bp-fs bp-fs-cmp' : 'bp-fs'} aria-labelledby="bp-sheet-title" data-testid="blueprint-feature-sheet">
-      <SheetHead fid={fid} />
-      <SheetTabs fid={fid} wide={!!cmp}>
-        <div className="bp-main">
-          {cmp ? packBox : null}
-          <p className="bp-sum typo-body-lg">{f.summary}</p>
-          <p className="bp-plain typo-body">{f.stage ? B[STAGE_PLAIN_KEY[f.stage]] : B.plain_none}</p>
-          <div className="typo-eyebrow bp-ink bp-eyebrow">{sl === 'general' ? tx(B.cards_all, { count: s.plan.lenses.length }) : s.plan.LENS[sl]?.name ?? ''}</div>
-          <LensCards f={f} lens={sl} />
-          {cmp ? null : packBox}
-          <div className="bp-scan">
-            <div className="typo-eyebrow bp-eyebrow">{tx(B.scan_heading, { count: waiting })}</div>
-            {rest.length ? rest.map((p) => <ProposalCard key={p.id} p={p} />) : <p className="bp-empty typo-body">{sl === 'general' ? B.nothing_on_feature : tx(B.nothing_under_lens, { lens: s.plan.LENS[sl]?.name ?? '' })}</p>}
-          </div>
-        </div>
-        {cmp ? <ComparePanel id={cmp} /> : <SheetSide fid={fid} />}
-      </SheetTabs>
-    </section>
-  );
+  const reduce = useReducedMotion();
+  const fid = s.ui.sheet && s.plan.L.TILE[s.ui.sheet] ? s.ui.sheet : null;
+  // every opening is a new page instance: one that opens while the last is still shrinking away runs its own morph
+  const [inst, setInst] = useState({ open: false, n: 0 });
+  if (!!fid !== inst.open) setInst({ open: !!fid, n: fid ? inst.n + 1 : inst.n });
+  if (reduce) return fid ? <Layer fid={fid} morph={false} /> : null;
+  return <AnimatePresence>{fid ? <Layer key={inst.n} fid={fid} morph /> : null}</AnimatePresence>;
 }

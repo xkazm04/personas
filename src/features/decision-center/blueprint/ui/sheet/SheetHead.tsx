@@ -1,37 +1,48 @@
+import type { ReactNode, Ref } from 'react';
 import { useSheet } from '../../controller/SheetContext';
-import { stageWord } from '../../controller/useBlueprintText';
-import { STAGE_ORDER } from '../../model/aggregates';
-import { Keycap } from '../Keycap';
+import { capOf } from '../../model/keymap';
+import { AsOfBar, StageLadder } from '../page/bits';
 import { Press } from '../Press';
 
-/** The head of the L4 sheet (bp FeatureSheet): crumbs, the detail number, the name and the stage legend. The lens tabs are SheetTabs. */
-export function SheetHead({ fid }: { fid: string }) {
+/**
+ * The sticky head of the L4 page (bp FeatureSheet Head): the crumbs (each goes back to that level), Back to plan, the
+ * 68 px detail bubble (detail number over the feature code), the kicker (priority, kind, milestone), the 34 px name,
+ * the stage ladder, the as-of marker on a past date, and the tab strip (SheetPage's, passed in). bp's Blast radius control stays out
+ * (operator: outside the brief).
+ */
+export function SheetHead({ fid, closeRef, tabs }: { fid: string; closeRef?: Ref<HTMLButtonElement>; tabs: ReactNode }) {
   const s = useSheet();
-  const { B } = s.text;
+  const { B, tx } = s.text;
   const T = s.plan.L.TILE[fid];
   if (!T) return null;
   const f = T.f;
+  const ms = f.milestone ? s.plan.S.milestones.find((m) => m.id === f.milestone) : undefined;
+  const kicker = [f.priority, f.kind, ms ? (ms.code ? ms.code + ' ' : '') + ms.name : null].filter(Boolean).join(' · ') || B.pg_kind_default;
+  const crumb = (n: number, label: string) => <span key={n}><i aria-hidden="true">{'›'}</i><Press onClick={() => s.nav.toLevel(n)}>{label}</Press></span>;
   return (
-    <div className="bp-top">
-      <nav className="bp-crumbs typo-code" aria-label={B.crumbs}>
-        <span>{B.level_site}</span><span aria-hidden="true">{'›'}</span>
-        <span>{T.wing.def.letter} {'·'} {T.wing.def.name}</span><span aria-hidden="true">{'›'}</span>
-        {T.room.d.name !== T.wing.def.name && <><span>{T.room.d.name}</span><span aria-hidden="true">{'›'}</span></>}
-        <span>{T.bay.cap.code} {T.bay.cap.name}</span><span aria-hidden="true">{'›'}</span>
-        <b>{f.name}</b>
-        <span className="bp-grow" />
-        <Press tone="bp-btn" onClick={s.nav.closeSheet}><span className="typo-body">{B.back_to_plan}</span><Keycap k="Escape" /></Press>
-      </nav>
-      <div className="bp-ttl">
-        <div className="bp-no" aria-hidden="true"><span className="typo-code">{T.idx}</span><em className="typo-code">{T.bay.cap.code}</em></div>
-        <div>
-          <div className="typo-eyebrow bp-ink">{f.kind}{f.tier ? ` · ${f.tier}` : ''}</div>
-          <h2 className="bp-h2 typo-heading-lg" id="bp-sheet-title">{f.name}</h2>
-        </div>
-        <div className="bp-legend">
-          {STAGE_ORDER.map((st) => <span key={st} className={`typo-code${f.stage === st ? ' bp-on' : ''}`}><i />{stageWord(B, st).toUpperCase()}</span>)}
+    <header className="pg-head">
+      <div className="pg-bar">
+        <nav className="pg-crumbs" aria-label={B.crumbs}>
+          <Press onClick={() => s.nav.toLevel(0)}>{B.level_site}</Press>
+          {crumb(1, tx(B.pg_crumb_wing, { letter: T.wing.def.letter, name: T.wing.def.name }))}
+          {T.room.d.name !== T.wing.def.name ? crumb(2, T.room.d.name) : null}
+          {crumb(3, T.bay.cap.name)}
+          <span><i aria-hidden="true">{'›'}</i><b aria-current="page">{f.name}</b></span>
+        </nav>
+        <div className="pg-acts">
+          <Press tone="btn" ref={closeRef} onClick={s.nav.closeSheet} data-testid="blueprint-page-back">{tx(B.pg_back, { key: capOf('Escape') })}</Press>
         </div>
       </div>
-    </div>
+      <div className="pg-title">
+        <div className="bubble" aria-hidden="true"><span className="a">{T.idx}</span><span className="b">{f.code || T.bay.cap.code || '—'}</span></div>
+        <div className="tt">
+          <div className="k">{kicker}</div>
+          <h2 id="bp-sheet-title">{f.name}</h2>
+        </div>
+        <StageLadder f={f} />
+      </div>
+      <AsOfBar />
+      {tabs}
+    </header>
   );
 }

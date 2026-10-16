@@ -1,35 +1,37 @@
-import type { ReactNode } from 'react';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSheet } from '../../controller/SheetContext';
+import { verdictWord } from '../../controller/useBlueprintText';
+import type { Feature } from '../../standard/load';
 import { Press } from '../Press';
 
 /**
- * The lens tabs of the L4 sheet and the panel they choose: General (the overview), then one tab per lens, each with a
- * mark when the feature is measured under it. Selecting a tab filters the lens cards and the work shown in the panel.
- * `wide`: the compare panel is open, so the panel splits into the feature and the compare, each scrolling on its own.
+ * The tab strip of the L4 page (bp FeatureSheet Tabs): GEN (the overview), then every enabled lens by its short code
+ * over its name, a 7 px health square after the code, and the lens-coloured 3 px underline under the chosen tab
+ * (it travels between tabs; under reduced motion it is simply there). The tab is the plan's lens, as in bp: choosing
+ * one switches the plan's lens behind the page too, exactly as the digit keys do. The tablist and its panel are
+ * SheetPage's (one file declares both); this renders the tabs inside it.
  */
-export function SheetTabs({ fid, wide, children }: { fid: string; wide?: boolean; children: ReactNode }) {
+export function SheetTabs({ f }: { f: Feature }) {
   const s = useSheet();
   const { B } = s.text;
-  const T = s.plan.L.TILE[fid];
-  if (!T) return null;
-  const f = T.f, sl = s.ui.sheetLens;
+  const reduce = useReducedMotion();
+  const sl = s.ui.sheetLens;
   const tabs = [{ id: 'general', short: B.sheet_gen, name: B.sheet_overview }, ...s.plan.lenses.map((l) => ({ id: l.id, short: l.short, name: l.name }))];
+  const choose = (id: string) => { s.dispatch({ type: 'lens', id }); s.dispatch({ type: 'sheetLens', id }); };
   return (
     <>
-      <div className="bp-tabs-bar">
-        <div className="bp-tabs" role="tablist" aria-label={B.sheets}>
-          {tabs.map((t) => {
-            const v = t.id === 'general' ? null : f.lens[t.id]?.h;
-            return (
-              <Press key={t.id} tone="bp-tab" on={sl === t.id} onClick={() => s.dispatch({ type: 'sheetLens', id: t.id })} role="tab" id={"bp-tab-" + t.id} aria-selected={sl === t.id} aria-controls="bp-sheet-panel" aria-label={t.name}>
-                <span className="bp-s typo-code">{t.short}{v ? <i className={v !== 'unmeasured' && v !== 'na' ? 'bp-m' : ''} /> : null}</span>
-                <span className="typo-body">{t.name}</span>
-              </Press>
-            );
-          })}
-        </div>
-      </div>
-      <div className={wide ? 'bp-body bp-cmp-on' : 'bp-body'} role="tabpanel" id="bp-sheet-panel" aria-labelledby={"bp-tab-" + sl}>{children}</div>
+      {tabs.map((t) => {
+        const lens = t.id !== 'general', h = lens ? f.lens[t.id]?.h ?? 'unmeasured' : null, on = sl === t.id;
+        return (
+          <Press key={t.id} onClick={() => choose(t.id)} role="tab" id={'bp-tab-' + t.id} aria-selected={on} aria-controls="bp-sheet-panel"
+            aria-label={h ? t.name + ', ' + verdictWord(B, h) : t.name} data-testid={'blueprint-page-tab-' + t.id}>
+            <span className="sh">{t.short}{h ? <i className={'hd ' + h} aria-hidden="true" /> : null}</span>
+            <span className="nm">{t.name}</span>
+            {on ? (reduce ? <span className="uline" /> : <motion.span layoutId="bp-pg-uline" className="uline" transition={{ type: 'spring', stiffness: 420, damping: 36 }} />) : null}
+          </Press>
+        );
+      })}
     </>
   );
 }
