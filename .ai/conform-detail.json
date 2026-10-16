@@ -24321,6 +24321,39 @@
       "worker": "648e2e87-0113-4aac-8acb-efd7455597ce",
       "techniques": [],
       "registryProposal": "Coverage: lexical-only match on analytics/usage/coverage; this context is run-history/performance analytics for dispatched agent skills, closer to delivery-analytics or adoption-measurement than to product usage telemetry."
+    },
+    "b164f847-45d6-4c9e-85bc-a1308375085d/copy-quality-gates": {
+      "context": "db-repos-communication",
+      "subject": "copy-quality-gates",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:37:34.000Z",
+      "worker": "3f28088c-0062-42e6-96c7-2f73dcf8a5e8",
+      "techniques": [],
+      "registryProposal": "technique-shaped resonance: use_when tokens 'reviews/review/human' (anchored-model-review, reviewer-calibration-and-sampling) match HITL approval repos; route by the subject's precondition (catalog copy), the governing subject here is hitl-approval"
+    },
+    "50f50f97-be0e-4a93-8f1c-c0b967cd45d0/copy-quality-gates": {
+      "context": "plugins-dev-tools-triage",
+      "subject": "copy-quality-gates",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:37:34.000Z",
+      "worker": "3f28088c-0062-42e6-96c7-2f73dcf8a5e8",
+      "techniques": [],
+      "registryProposal": "lexical resonance on 'finding/rule' (every-finding-cites-an-anchor, severity-as-declared-data); triage-queues/codebase-scanning govern this context, not copy gates"
+    },
+    "3619ab0d-0367-43d0-b4eb-ec39c1302d65/copy-quality-gates": {
+      "context": "vault-catalog-picker",
+      "subject": "copy-quality-gates",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:37:34.000Z",
+      "worker": "3f28088c-0062-42e6-96c7-2f73dcf8a5e8",
+      "techniques": [],
+      "registryProposal": "matcher miss: copy-quality-gates is not paired with the i18n context 2e1e105a-866c-4039-9620-7ed5d0d30b17, where the repo's real source-copy gates live (scripts/i18n/check-escapes.mjs, scripts/i18n/check-untranslated.mjs, check:i18n:strict, census rules on hardcoded JSX text); pair it there and judge it - the 'catalog' token collides with connector-catalog vocabulary"
     }
   }
 }

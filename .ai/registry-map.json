@@ -10300,7 +10300,11 @@
           "revision": 10,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:52 SQLite repo that persists human-in-the-loop execution review rows; it neither authors nor gates source-language catalog copy, so the subject's precondition (a pipeline proving catalog copy before it becomes the source) does not hold - 'review' matched lexically",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:f00a2dbd4e8fdce1",
+          "evaluatedRevision": 10
         },
         {
           "subject": "mcp-tools",
@@ -26513,7 +26517,11 @@
           "revision": 10,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/types.ts:10 FindingDraft is a dev-issue record from Sentry/KPI/coverage sensors, not a copy finding; no string catalog is extracted, linted or gated here - 'findings/rule' matched lexically",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:f00a2dbd4e8fdce1",
+          "evaluatedRevision": 10
         },
         {
           "subject": "triage-queues",
@@ -38426,7 +38434,11 @@
           "revision": 10,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:17 a connector-catalog picker UI that consumes strings; 'catalog' here is the connector catalog, not a message catalog, and no copy gate or copy authoring lives in this context",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:f00a2dbd4e8fdce1",
+          "evaluatedRevision": 10
         },
         {
           "subject": "agent-instruction-files",
