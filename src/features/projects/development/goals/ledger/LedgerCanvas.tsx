@@ -15,17 +15,18 @@
  * their timing in one glance; a table shows you forty rows and makes you read.
  * This variant is for working the backlog, not for sensing it.
  */
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { GoalStatusBadge } from '../GoalStatusBadge';
 import { CanvasFrame } from '../shared/canvasParts';
 import { useProgressView } from '../shared/canvasHost';
 import { LedgerLaneCell } from './LedgerLaneCell';
+import { LedgerStatusCell } from './LedgerStatusCell';
+import { ledgerFillColor, ledgerFillPct, ledgerRail } from './ledgerSignals';
 import type { MilestoneLane } from '../shared/milestoneOps';
 import type { ProgressNode } from '../shared/useProgressModel';
 
@@ -39,7 +40,7 @@ export interface LedgerRow {
 const ROW_HEIGHT = 40;
 
 export function LedgerCanvas() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { model, canvas, dl, openGoal } = useProgressView();
 
   const rows = useMemo<LedgerRow[]>(
@@ -54,6 +55,13 @@ export function LedgerCanvas() {
         }));
       }),
     [model.rows, canvas.lanesByProject],
+  );
+
+  const percent = useMemo(() => new Intl.NumberFormat(language, { style: 'percent', maximumFractionDigits: 0 }), [language]);
+  const checklist = model.checklistByGoal;
+  const pctOf = useCallback(
+    (r: LedgerRow) => ledgerFillPct(checklist.get(r.node.goal.id), r.node.goal.progress),
+    [checklist],
   );
 
   const columns = useMemo<TableColumn<LedgerRow>[]>(
@@ -85,10 +93,12 @@ export function LedgerCanvas() {
       {
         key: 'status',
         label: t.common.status,
-        width: '7.5rem',
+        width: 'minmax(0, 1.7fr)',
         sortable: true,
         sortFn: (a, b) => a.node.goal.status.localeCompare(b.node.goal.status),
-        render: (r) => <GoalStatusBadge status={r.node.goal.status} />,
+        render: (r) => (
+          <LedgerStatusCell goalId={r.node.goal.id} status={r.node.goal.status} onSettled={model.refresh} onOpen={() => openGoal(r.node.goal.id)} />
+        ),
       },
       {
         key: 'milestone',
@@ -120,13 +130,13 @@ export function LedgerCanvas() {
         width: '5rem',
         align: 'right',
         sortable: true,
-        sortFn: (a, b) => a.node.goal.progress - b.node.goal.progress,
+        sortFn: (a, b) => pctOf(a) - pctOf(b),
         render: (r) => (
-          <span className="typo-caption text-foreground tabular-nums">{r.node.goal.progress}%</span>
+          <span className="typo-caption text-foreground tabular-nums">{percent.format(pctOf(r) / 100)}</span>
         ),
       },
     ],
-    [dl, t],
+    [dl, t, pctOf, percent, model.refresh],
   );
 
   return (
@@ -141,7 +151,8 @@ export function LedgerCanvas() {
       ariaLabel={dl.goal_view_progress}
       emptyTitle={dl.progress_empty_title}
       groupBy={(r) => ({ key: r.projectId, label: r.projectName })}
-      rowAccent={(r) => (r.node.overdue ? 'border-l-status-error/70' : undefined)}
+      rowAccent={(r) => ledgerRail(r.node.goal.status, r.node.overdue)}
+      rowFill={(r) => ({ pct: pctOf(r), color: ledgerFillColor(checklist.get(r.node.goal.id)) })}
       rowReveal={{ resetKey: model.doneFilter }}
     />
   );

@@ -47,6 +47,8 @@ export interface UnifiedTableRowProps<T> {
   onRowClick: (row: T) => void;
   clickable: boolean;
   accent: string | undefined;
+  /** Progress fill behind the row; compared by value. */
+  fill?: { pct: number; color: string };
   focused: boolean;
   /** DOM id / test id for callers that scroll to or tour a row. */
   domId?: string;
@@ -87,7 +89,7 @@ export function rowPropsEqual<T>(a: UnifiedTableRowProps<T>, b: UnifiedTableRowP
   if (
     a.rowKey !== b.rowKey ||
     a.clickable !== b.clickable ||
-    a.accent !== b.accent ||
+    a.accent !== b.accent || a.fill?.pct !== b.fill?.pct || a.fill?.color !== b.fill?.color ||
     a.focused !== b.focused ||
     a.domId !== b.domId ||
     a.testId !== b.testId ||
@@ -102,7 +104,7 @@ export function rowPropsEqual<T>(a: UnifiedTableRowProps<T>, b: UnifiedTableRowP
 }
 
 function UnifiedTableRowImpl<T>({
-  row, rowKey, index, columns, gridTemplate, onRowClick, clickable, accent, focused, domId, testId,
+  row, rowKey, index, columns, gridTemplate, onRowClick, clickable, accent, fill, focused, domId, testId,
   revealDelayMs, onRevealEnd, padY, virtualStart, virtualSize,
 }: UnifiedTableRowProps<T>) {
   const virtual = virtualStart !== undefined;
@@ -113,6 +115,7 @@ function UnifiedTableRowImpl<T>({
       : null),
     gridTemplateColumns: gridTemplate,
     contain: 'layout paint style',
+    ...(fill ? { backgroundImage: `linear-gradient(to right, ${fill.color} ${fill.pct}%, transparent ${fill.pct}%)` } : null),
     ...(entering ? { animationDelay: `${revealDelayMs}ms` } : null),
   };
   return (

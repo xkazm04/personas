@@ -21,6 +21,7 @@ import {
   isRecentlyDone,
   type PortfolioProjectGoals,
 } from '../progressShared';
+import { useGoalChecklistCounts, type ChecklistCount } from './useGoalChecklistCounts';
 
 /**
  * How much completed history the view carries.
@@ -80,6 +81,8 @@ export interface ProgressModel {
   hiddenIds: ReadonlySet<string>;
   shownGoals: number;
   hiddenGoals: number;
+  /** Checklist done/total per goal id; an absent goal has manual progress. */
+  checklistByGoal: ReadonlyMap<string, ChecklistCount>;
   /** Re-pull the portfolio after a mutation lands. */
   refresh: () => void;
 }
@@ -156,6 +159,9 @@ export function useProgressModel(projectScope?: PickerScope): ProgressModel {
     return hidden;
   }, [allGoals, doneFilter]);
 
+  const projectIds = useMemo(() => rows.map((r) => r.projectId), [rows]);
+  const checklistByGoal = useGoalChecklistCounts(projectIds, allGoals?.length ?? 0);
+
   return {
     doneFilter,
     setDoneFilter,
@@ -164,6 +170,7 @@ export function useProgressModel(projectScope?: PickerScope): ProgressModel {
     hiddenIds,
     shownGoals: (allGoals?.length ?? 0) - hiddenIds.size,
     hiddenGoals: hiddenIds.size,
+    checklistByGoal,
     refresh,
   };
 }

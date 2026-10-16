@@ -145,6 +145,8 @@ export interface UnifiedTableProps<T> {
    * undefined for no accent. Mirrors the Activity table's status-accent rows.
    */
   rowAccent?: (row: T, index: number) => string | undefined;
+  /** Progress fill painted behind the row (left to right, `pct` 0..100, `color` any CSS colour). */
+  rowFill?: (row: T, index: number) => { pct: number; color: string } | undefined;
   /**
    * Pin the header to the top of the nearest scrolling ancestor. Default true —
    * harmless in virtual mode (header sits outside the scroll container) and
@@ -513,6 +515,7 @@ export function UnifiedTable<T>({
   tableId,
   density = 'comfortable',
   rowAccent,
+  rowFill,
   stickyHeader = true,
   ariaLabel,
   borderless = false,
@@ -713,6 +716,7 @@ export function UnifiedTable<T>({
           getRowKey={getRowKey}
           onRowClick={onRowClick ? handleRowClick : undefined}
           rowAccent={rowAccent}
+          rowFill={rowFill}
           groupBy={groupBy!}
           scrollRestoreKey={scrollRestoreKey}
           onEndReached={onEndReached}
@@ -743,6 +747,7 @@ export function UnifiedTable<T>({
                   onRowClick={handleRowClick}
                   clickable={clickable}
                   accent={rowAccent?.(row, vRow.index)}
+                  fill={rowFill?.(row, vRow.index)}
                   focused={vRow.index === focusedIndex || rowKey === activeKey}
                   domId={rowAttrs?.(row).id}
                   testId={rowAttrs?.(row).testId}
@@ -776,6 +781,7 @@ export function UnifiedTable<T>({
                 onRowClick={handleRowClick}
                 clickable={clickable}
                 accent={rowAccent?.(row, idx)}
+                fill={rowFill?.(row, idx)}
                 focused={idx === focusedIndex || rowKey === activeKey}
                 domId={rowAttrs?.(row).id}
                 testId={rowAttrs?.(row).testId}
@@ -809,6 +815,7 @@ function GroupedTableBody<T>({
   getRowKey,
   onRowClick,
   rowAccent,
+  rowFill,
   groupBy,
   scrollRestoreKey,
   onEndReached,
@@ -823,6 +830,8 @@ function GroupedTableBody<T>({
   getRowKey: (row: T) => string;
   onRowClick?: (row: T) => void;
   rowAccent?: (row: T, index: number) => string | undefined;
+  /** Progress fill painted behind the row (left to right, `pct` 0..100, `color` any CSS colour). */
+  rowFill?: (row: T, index: number) => { pct: number; color: string } | undefined;
   groupBy: (row: T) => GroupSpec;
   scrollRestoreKey?: string;
   onEndReached?: () => void;
@@ -912,6 +921,7 @@ function GroupedTableBody<T>({
               onRowClick={handleRowClick}
               clickable={navigable}
               accent={rowAccent?.(item, dataIndex)}
+              fill={rowFill?.(item, dataIndex)}
               focused={dataIndex === focusedIndex}
               revealDelayMs={delayFor(rowKey, dataIndex)}
               onRevealEnd={markEntered}

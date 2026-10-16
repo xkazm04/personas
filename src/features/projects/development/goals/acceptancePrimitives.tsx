@@ -20,10 +20,13 @@ import { useTranslation } from '@/i18n/useTranslation';
 export function AcceptRejectControls({
   onAccept,
   onReject,
+  onSendBackIntent,
   size = 'md',
 }: {
   onAccept: () => void;
   onReject: (comment: string) => void;
+  /** When set, Send back hands off here (a host too small for the comment field) instead of opening it inline. */
+  onSendBackIntent?: () => void;
   size?: 'sm' | 'md';
 }) {
   const { t } = useTranslation();
@@ -75,7 +78,7 @@ export function AcceptRejectControls({
       </button>
       <button
         type="button"
-        onClick={() => setRejecting(true)}
+        onClick={() => (onSendBackIntent ? onSendBackIntent() : setRejecting(true))}
         aria-label={dl.accept_send_back}
         title={dl.accept_send_back}
         className={`inline-flex items-center gap-1 typo-caption rounded-interactive ${pad} text-muted-foreground bg-primary/10 hover:text-[var(--destructive)] hover:bg-[var(--destructive)]/15 transition-colors`}
