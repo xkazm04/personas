@@ -7899,49 +7899,51 @@
       "subject": "job-coordination",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:48:43.000Z",
-      "worker": "e2ae7f03-025d-4529-922e-b913f855c1d5",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:05:24.000Z",
+      "worker": "9002ed3a-6dd3-40bf-a27b-65e208c2fbe6",
       "techniques": [
         {
           "technique": "terminal-state-recovery",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/persona_jobs.rs:205 one blanket UPDATE stamps failed on every running row (the named anti-pattern), and src-tauri/src/boot/workers.rs:233 runs it before the is_leader() check at :246, so the sweep - not the conditional claim - caps this system at one executor: rev 17's 'the sweep sets the executor ceiling' case"
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:205 one blanket UPDATE ... WHERE status = running stamps failed on every survivor, no per-class verdict, and runs ungated by leadership at src-tauri/src/boot/workers.rs:233"
         },
         {
-          "technique": "job-state-machines",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/persona_jobs.rs:176 mark_completed (and mark_failed/mark_canceled beside it) write status WHERE id only - no source-state guard, so a terminal verdict can be rewritten; status is a free String (:66), no single transition door, no strict parse"
+          "technique": "atomic-claiming@delivery-guarantees",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:153 conditional UPDATE ... WHERE id = ?2 AND status = queued; zero rows means lost claim"
         },
         {
-          "technique": "job-observability",
+          "technique": "lease-renewal",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/core/persona_jobs.rs:28 the command surface is enqueue/schedule only - no list or get over persona_background_job reaches the operator, so position/holder/age/next-action cannot be read from storage"
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:155 the claim writes only started_at, no holder or renewed lease, so reclaim cannot tell a dead executor from a live leader"
         },
         {
           "technique": "job-progress-and-cancellation@background-jobs",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/migrations/incremental/e05_twin_and_memory_review.rs:207 cancel_requested defaults 0 and no code anywhere sets it; src-tauri/src/engine/persona_jobs.rs:239 checks a brake nothing can pull (its comment cites a request_cancel that no longer exists)"
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:229 comment names a request_cancel path that does not exist; cancel_requested (:77) has no writer anywhere in src-tauri/src or src/"
         },
         {
-          "technique": "atomic-claiming@delivery-guarantees",
-          "verdict": "partial",
-          "evidence": "src-tauri/src/engine/persona_jobs.rs:156 the claim is a conditional write (WHERE status = 'queued') exactly one caller wins, but it records no holder - only started_at"
+          "technique": "job-observability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/persona_jobs.rs:28 the command surface is enqueue + schedule get/set only; no command lists or reads job rows, so position/age/holder are not queryable"
+        },
+        {
+          "technique": "job-state-machines",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:65 status vocabulary is a doc comment over a String field; transitions are scattered raw UPDATEs, not one checked door"
         },
         {
           "technique": "terms-travel-permission-does-not",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/persona_jobs.rs:127 params_json is frozen into the row at enqueue and the handler reads its terms (e.g. force) from the record, not from live settings"
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:127 params_json is frozen into the row at enqueue and the handler reads its terms (e.g. force) from the record, not from live settings",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "step-position-and-resumability",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/persona_jobs.rs:294 every kind is one handler call producing a reviewable proposal; there is no multi-step position to persist"
-        },
-        {
-          "technique": "lease-renewal",
-          "verdict": "unknown",
-          "evidence": "src-tauri/db/src/migrations/incremental/e05_twin_and_memory_review.rs:207 the table carries no holder or heartbeat column; whether minutes-long LLM runs cross the technique's 'hold longer than minutes' threshold was not measured"
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:294 every kind is one handler call producing a reviewable proposal; there is no multi-step position to persist",
+          "carriedFrom": "2026-10-09"
         }
       ],
       "superseded": [
@@ -7951,6 +7953,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by e2ae7f03-025d-4529-922e-b913f855c1d5"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/boot/workers.rs:233 recover_orphans runs on EVERY process boot, ahead of the leader-only gate at :246, and blanket-fails every running persona_background_job row (src-tauri/src/engine/persona_jobs.rs:205) - a follower (daemon or second UI, per engine/leadership.rs) booting kills the leader's in-flight job; no state-transition door, no job list surface, and the cancel flag has no writer",
+          "evaluatedAt": "2026-10-09T16:48:43.000Z",
+          "worker": "e2ae7f03-025d-4529-922e-b913f855c1d5",
+          "reason": "replaced by 9002ed3a-6dd3-40bf-a27b-65e208c2fbe6"
         }
       ]
     },
@@ -7959,9 +7968,9 @@
       "subject": "job-coordination",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:48:43.000Z",
-      "worker": "e2ae7f03-025d-4529-922e-b913f855c1d5",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:05:24.000Z",
+      "worker": "9002ed3a-6dd3-40bf-a27b-65e208c2fbe6",
       "techniques": [],
       "superseded": [
         {
@@ -7970,6 +7979,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by e2ae7f03-025d-4529-922e-b913f855c1d5"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/api/pipeline/scheduler.ts:13 every export is a one-line invokeWithTimeout forward to a Tauri command with no local state; the durable job record this subject governs lives in the Rust engine, not this IPC binding layer",
+          "evaluatedAt": "2026-10-09T16:48:43.000Z",
+          "worker": "e2ae7f03-025d-4529-922e-b913f855c1d5",
+          "reason": "replaced by 9002ed3a-6dd3-40bf-a27b-65e208c2fbe6"
         }
       ]
     },
@@ -7978,9 +7994,9 @@
       "subject": "job-coordination",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:48:43.000Z",
-      "worker": "e2ae7f03-025d-4529-922e-b913f855c1d5",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:05:24.000Z",
+      "worker": "9002ed3a-6dd3-40bf-a27b-65e208c2fbe6",
       "techniques": [],
       "superseded": [
         {
@@ -7989,6 +8005,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by e2ae7f03-025d-4529-922e-b913f855c1d5"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/onboarding/components/useOnboardingState.ts:70 step position is renderer Zustand state with no durable job record or executor; the golden path routes human-paced step flows to wizard-flows",
+          "evaluatedAt": "2026-10-09T16:48:43.000Z",
+          "worker": "e2ae7f03-025d-4529-922e-b913f855c1d5",
+          "reason": "replaced by 9002ed3a-6dd3-40bf-a27b-65e208c2fbe6"
         }
       ]
     },
@@ -7997,9 +8020,9 @@
       "subject": "job-coordination",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:48:43.000Z",
-      "worker": "e2ae7f03-025d-4529-922e-b913f855c1d5",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:05:24.000Z",
+      "worker": "9002ed3a-6dd3-40bf-a27b-65e208c2fbe6",
       "techniques": [],
       "superseded": [
         {
@@ -8008,6 +8031,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by e2ae7f03-025d-4529-922e-b913f855c1d5"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/passport/ProjectsPassportWall.tsx:38 a display component over pre-fetched passport props; it owns no job record, claim, or recovery path",
+          "evaluatedAt": "2026-10-09T16:48:43.000Z",
+          "worker": "e2ae7f03-025d-4529-922e-b913f855c1d5",
+          "reason": "replaced by 9002ed3a-6dd3-40bf-a27b-65e208c2fbe6"
         }
       ]
     },
@@ -8016,9 +8046,9 @@
       "subject": "job-coordination",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:48:43.000Z",
-      "worker": "e2ae7f03-025d-4529-922e-b913f855c1d5",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:05:24.000Z",
+      "worker": "9002ed3a-6dd3-40bf-a27b-65e208c2fbe6",
       "techniques": [],
       "superseded": [
         {
@@ -8027,6 +8057,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by e2ae7f03-025d-4529-922e-b913f855c1d5"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/gitlab/components/GitLabPipelineViewer.tsx:28 renders GitLab-owned job status from store selectors; GitLab owns the job record, so cicd-monitoring governs, not job-coordination",
+          "evaluatedAt": "2026-10-09T16:48:43.000Z",
+          "worker": "e2ae7f03-025d-4529-922e-b913f855c1d5",
+          "reason": "replaced by 9002ed3a-6dd3-40bf-a27b-65e208c2fbe6"
         }
       ]
     },

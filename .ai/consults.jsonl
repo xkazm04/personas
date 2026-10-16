@@ -1254,3 +1254,8 @@
 {"ts":"2026-10-16T17:04:00Z","bundle":"software-engineering","subjects":["async-ui-states"],"techniques":["placeholder-design","failure-states","empty-state-design","state-model"],"deviations":1}
 {"ts":"2026-10-16T17:04:00Z","bundle":"software-engineering","subjects":["async-ui-states"],"techniques":["empty-state-design","failure-states","state-model"],"deviations":1}
 {"ts":"2026-10-16T17:04:00Z","bundle":"software-engineering","subjects":["async-ui-states"],"techniques":["action-busy-states","placeholder-design","state-model"],"deviations":1}
+{"ts":"2026-10-16T17:05:24Z","bundle":"software-engineering","subjects":["job-coordination"],"techniques":["terminal-state-recovery","atomic-claiming","lease-renewal","job-progress-and-cancellation","job-observability","job-state-machines"],"deviations":1}
+{"ts":"2026-10-16T17:05:24Z","bundle":"software-engineering","subjects":["job-coordination"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:05:24Z","bundle":"software-engineering","subjects":["job-coordination"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:05:24Z","bundle":"software-engineering","subjects":["job-coordination"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:05:24Z","bundle":"software-engineering","subjects":["job-coordination"],"techniques":[],"deviations":0}
