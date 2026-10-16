@@ -4713,7 +4713,11 @@
           "revision": 9,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/api/overview/incidents.ts:34 the 'audit' surfaces here are a mutable incident triage queue (acknowledge/resolve/dismiss/reopen) and a healing silent-failure log (src/api/overview/healing.ts:57); the context neither writes nor reads an audit ledger of business records - the real ledgers (credential audit_log, policy_events) are written in Rust and read elsewhere",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:154304c5d9578971",
+          "evaluatedRevision": 10
         },
         {
           "subject": "agent-instruction-files",
@@ -17299,7 +17303,11 @@
           "revision": 9,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/lib/execution/middleware/auditMiddleware.ts:4 the only 'audit' here is WebView console logging 'for debugging and operational visibility' (createLogger, src/lib/log.ts:3); no business-record ledger exists in this context, so the subject's precondition fails and observability-telemetry governs instead",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:154304c5d9578971",
+          "evaluatedRevision": 10
         },
         {
           "subject": "voice-io",

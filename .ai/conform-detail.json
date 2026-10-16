@@ -24756,6 +24756,60 @@
       "evaluatedTs": "2026-10-16T17:45:00.000Z",
       "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
       "techniques": []
+    },
+    "1db5c86e-3237-4d2a-8e2f-1426d680757c/audit-logging": {
+      "context": "lib-execution",
+      "subject": "audit-logging",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:45:00.000Z",
+      "worker": "0a2aceb0-661f-4798-801d-d5d2d39dc48d",
+      "techniques": [
+        {
+          "technique": "write-chokepoint",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/execution/middleware/auditMiddleware.ts:14 the middleware writes to a console logger, not to a ledger insert door; execution records are persisted by the Rust backend outside this context"
+        },
+        {
+          "technique": "append-only-design",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/execution/middleware/auditMiddleware.ts:4 console output has no store, so there is no mutation surface to judge"
+        },
+        {
+          "technique": "best-effort-with-accounting",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/execution/middleware/auditMiddleware.ts:4 diagnostic lines; the boundary test (an engineer inconvenienced, no account of what happened missing) puts them outside the subject"
+        }
+      ],
+      "registryProposal": "Technique-shaped resonance, not a hole: the matcher paired this context on the tokens audit/logging/sink because a diagnostic middleware is NAMED auditMiddleware. The golden path's own boundary test rejects it. A use_when negative (\"a component named audit that only writes diagnostic logs\") or down-weighting the bare token 'audit' when it co-occurs with 'logger'/'console' would stop this pairing."
+    },
+    "0ecc70bc-a005-4ff8-9a98-f362d2a75f53/audit-logging": {
+      "context": "api-overview",
+      "subject": "audit-logging",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:45:00.000Z",
+      "worker": "0a2aceb0-661f-4798-801d-d5d2d39dc48d",
+      "techniques": [
+        {
+          "technique": "audit-querying",
+          "verdict": "not-applicable",
+          "evidence": "src/api/overview/healing.ts:57 the one 'audit log' read wraps HealingAuditEntry, which records healing subsystems that 'silently could not complete' an action (src/lib/bindings/HealingAuditEntry.ts:4) - diagnostic accounting, not an account of who did what"
+        },
+        {
+          "technique": "append-only-design",
+          "verdict": "not-applicable",
+          "evidence": "src/api/overview/incidents.ts:34 incidents are triage-queue items whose state is meant to change; mutability is correct for that subject, not an append-only violation"
+        },
+        {
+          "technique": "write-chokepoint",
+          "verdict": "not-applicable",
+          "evidence": "src/api/overview/reviews.ts:233 the policy_events audit write happens inside the Rust gc command; this wrapper layer holds no insert door"
+        }
+      ],
+      "registryProposal": "Coverage question: this context's audit vocabulary ('audit incidents inbox', 'audit trail layer' in its description) belongs to triage-queues, and the healing 'audit log' to best-effort-with-accounting's gap counter viewed from the health side. Suggest the matcher weigh 'incident'/'acknowledge'/'resolve' toward triage-queues over audit-logging."
     }
   }
 }
