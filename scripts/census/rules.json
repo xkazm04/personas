@@ -5856,6 +5856,10 @@
         {
           "path": "src/features/companions/landing/heartlight.css",
           "reason": "the Heartlight art layer: decorative SVG-and-gradient art on pure black that stays dark in every theme, with the companions' identity colours fixed on purpose (see the file header); not a themed surface"
+        },
+        {
+          "path": "src/features/decision-center/blueprint/theme/bp-tokens.css",
+          "reason": "bp's own drafting palette, the ONE file that writes the blueprint's colours (operator decision 2026-10-16, spark bp-fidelity: inside the blueprint the drawing falls back to bp's palette). Values verbatim from bp/src/app/globals.css, both theme blocks complete; every other blueprint stylesheet and the canvas read --bp-* from it"
         }
       ],
       "baseline": {

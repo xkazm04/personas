@@ -1,21 +1,7 @@
 /* blueprint.css - the drawing set's furniture (bp Header, BaseBar, rail, Legend, FeatureSheet, Queue), laid out as bp
-   lays it and printed in the app's own tokens. Nothing here writes a colour literal or a font size: the drawing's ink
-   (--bp-*) is DERIVED from the app's tokens below, once, so a theme change moves the page and the canvas together
-   (the engine reads these same variables through a probe, engine/theme.ts). Type is a typo-* class on the element;
-   the few sizes written here are steps of the type scale, never px.
-
-   Token map (the prototype's tokens.css -> the app, "re-typed" nothing):
-     --bp-paper      <- --background tinted with --primary          (the drafting paper)
-     --bp-ink        <- --accent lifted toward white               (hairlines, secondary text)
-     --bp-ink-hi     <- --foreground                               (primary text)
-     --bp-grid       <- --accent                                   (the 40 px grid)
-     --bp-live       <- --status-success      --bp-mint <- --status-success   (built, approved)
-     --bp-build      <- --brand-amber         --bp-amber <- --status-warning  (under construction, waiting)
-     --bp-dep        <- --brand-rose          --bp-red <- --status-error      (demolish, trouble)
-     --bp-focus      <- --brand-purple                             (the current item's ring)
-     --bp-chrome     <- --bp-paper toward black (white in light)   (bars and docks)
-     --bp-line       <- --accent at 30%                            (every rule)
-     radius -> --radius-sm|md|lg, shadow -> --shadow-elevation-3, focus -> --focus-ring-color, motion -> --duration-normal */
+   lays it. Its colours are bp's own palette (theme/bp-tokens.css, operator decision 2026-10-16): this file writes no
+   colour literal and no font size; it reads --bp-* and the --bp-fs-* steps. The engine reads the same variables
+   through a probe (engine/theme.ts), so the canvas and the DOM can never disagree. */
 
 /* BaseModal draws the stack: its container is fixed at 10000 + 10 per level, so this sheet sits above the deck and any
    dialog it opens (Find, the decline reason, the key sheet) sits above it. The panel is pinned to the viewport edge to
@@ -29,43 +15,14 @@
   --bp-t4: calc(var(--type-4) * var(--type-f));
   --bp-t5: calc(var(--type-5) * var(--type-f));
   --bp-side-w: clamp(18rem, 24vw, 24rem);
-  --bp-paper: color-mix(in srgb, var(--background) 87%, var(--primary));
-  --bp-ink: color-mix(in srgb, var(--accent) 72%, white);
-  --bp-ink-hi: var(--foreground);
-  --bp-halo: color-mix(in srgb, var(--bp-paper) 92%, transparent);
-  --bp-accent: var(--accent);
-  --bp-grid: var(--accent);
-  --bp-live: var(--status-success);
-  --bp-build: var(--brand-amber);
-  --bp-dep: var(--brand-rose);
-  --bp-mint: var(--status-success);
-  --bp-amber: var(--status-warning);
-  --bp-amber-2: var(--status-warning);
-  --bp-red: var(--status-error);
-  --bp-red-2: color-mix(in srgb, var(--status-error) 70%, white);
-  --bp-delta: var(--brand-cyan);
-  --bp-glyph-edge: color-mix(in srgb, var(--bp-paper) 70%, black);
-  --bp-label-bg: color-mix(in srgb, var(--bp-paper) 90%, var(--accent));
-  --bp-tile-base: color-mix(in srgb, var(--accent) 5%, transparent);
-  --bp-poche: color-mix(in srgb, var(--bp-paper) 84%, var(--accent));
-  --bp-focus: var(--brand-purple);
-  --bp-chrome: color-mix(in srgb, var(--bp-paper) 86%, black);
-  --bp-line: color-mix(in srgb, var(--accent) 30%, transparent);
-  --bp-radius: 4;
-  --bp-glow: 1;
-}
-[data-theme^="light"] .bp-root {
-  --bp-paper: color-mix(in srgb, var(--primary) 3%, white);
-  --bp-ink: color-mix(in srgb, var(--brand-cyan) 55%, var(--primary));
-  --bp-grid: var(--brand-cyan);
-  --bp-amber: var(--brand-amber);
-  --bp-amber-2: var(--status-warning);
-  --bp-red-2: var(--status-error);
-  --bp-glyph-edge: white;
-  --bp-label-bg: color-mix(in srgb, var(--bp-paper) 92%, var(--brand-cyan));
-  --bp-tile-base: color-mix(in srgb, white 70%, transparent);
-  --bp-poche: color-mix(in srgb, var(--bp-paper) 86%, var(--brand-cyan));
-  --bp-chrome: white;
+  /* The palette is bp's own (theme/bp-tokens.css, on the same element as .bp-scope). The names below are the
+     round-one roles this sheet's furniture still reads, mapped onto bp's tokens. */
+  --bp-live: var(--bp-mint);
+  --bp-build: var(--bp-amber);
+  --bp-dep: var(--bp-red);
+  --bp-focus: var(--bp-accent);
+  --bp-chrome: var(--bp-card);
+  --bp-radius: 0;
   --bp-glow: 0;
 }
 
@@ -192,7 +149,7 @@
 .bp-btag .bp-c { color: color-mix(in srgb, var(--bp-ink) 85%, transparent); white-space: nowrap; }
 .bp-btag .bp-c:first-child { border-right: 1px solid color-mix(in srgb, var(--bp-ink) 75%, transparent); }
 .bp-btag .bp-c:last-child { border-left: 1px solid color-mix(in srgb, var(--bp-ink) 75%, transparent); }
-.bp-btag .bp-n { font-family: var(--font-sans); font-weight: 700; color: var(--bp-ink-hi); letter-spacing: 0.06em; }
+.bp-btag .bp-n { font-family: var(--bp-font-sans); font-weight: 600; color: var(--bp-ink-hi); letter-spacing: 0.06em; }
 .bp-it { display: grid; grid-template-columns: 1.4rem 1fr; gap: 3px 0.5rem; padding: 0.5rem 0.5rem 0.55rem; margin: 2px 0; width: 100%; border: 1px solid transparent; border-radius: var(--radius-sm); }
 .bp-it:hover { background: color-mix(in srgb, var(--bp-ink) 6%, transparent); border-color: color-mix(in srgb, var(--bp-ink) 18%, transparent); }
 .bp-it[aria-current="true"] { border-color: var(--bp-focus); background: color-mix(in srgb, var(--bp-focus) 10%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--bp-focus) 35%, transparent); }

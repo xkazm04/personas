@@ -8,6 +8,7 @@
  * its keyboard handler registers above the deck's, so Esc climbs (overlay, armed build, L4 sheet, level by level)
  * and only at the whole-site level closes the sheet, never the deck behind it in the same press.
  */
+import './theme/fonts';
 import './blueprint.css';
 import { useEffect, useRef } from 'react';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -51,7 +52,7 @@ export function BlueprintSheet({ data, actions, onClose, initialFeature }: Bluep
   return (
     <BaseModal isOpen onClose={onClose} titleId="bp-title" portal maxWidthClass="max-w-none" panelClassName="bp-panel" staggerChildren={false}>
       <SheetContext.Provider value={sheet}>
-        <div ref={root} className="bp-root bp-sheet" tabIndex={-1} data-queue={sheet.ui.queueOpen ? 'open' : 'closed'} data-testid="blueprint-sheet">
+        <div ref={root} className="bp-scope bp-root bp-sheet" tabIndex={-1} data-queue={sheet.ui.queueOpen ? 'open' : 'closed'} data-testid="blueprint-sheet">
           <span id="bp-title" className="sr-only">{B.title}</span>
           {sheet.ui.queueOpen && <QueueSidebar />}
           <div className="bp-plan">

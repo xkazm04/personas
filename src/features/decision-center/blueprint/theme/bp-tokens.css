@@ -1,0 +1,163 @@
+/* bp-tokens.css - bp's own drafting palette, type and measures, the ONE place the blueprint's colours are written.
+
+   Operator decision 2026-10-16 (spark bp-fidelity): inside the blueprint, bp's palette serves better than the app's,
+   so the drawing falls back to it. The values are bp's `src/app/globals.css` (:root dark block, [data-theme=light]
+   block, and the theme-independent scale) VERBATIM; only the names are prefixed `--bp-`, because bp's bare names
+   (`--accent`, `--ink`, `--panel`, `--card`) would shadow the app's globals inside the scope and restyle every shared
+   component drawn in the sheet. Every other blueprint stylesheet, the picker and the canvas (engine/theme.ts) consume
+   these variables and write no colour of their own.
+
+   Rebinding roles at a scope boundary is the design-tokens golden path's sanctioned move; every role is defined in
+   BOTH theme blocks (a role missing from one block is the landmine that path names). The census rule
+   `feature-css-type-literal` excludes this file by name for the same reason it excludes heartlight.css. */
+
+.bp-scope {
+  color-scheme: dark;
+  --bp-paper: #071a33;
+  --bp-paper-hi: #12497a;
+  --bp-paper-mid: #0e3a68;
+  --bp-paper-lo: #061830;
+  --bp-ink: #dff0ff;
+  --bp-ink-2: rgba(223, 240, 255, 0.74);
+  --bp-ink-3: rgba(223, 240, 255, 0.38);
+  --bp-ink-4: rgba(223, 240, 255, 0.16);
+  --bp-line: rgba(223, 240, 255, 0.55);
+  --bp-grid: rgba(127, 224, 255, 0.07);
+  --bp-panel: rgba(5, 20, 40, 0.78);
+  --bp-panel-solid: #0a2342;
+  --bp-halo: rgba(7, 26, 51, 0.92);
+  --bp-accent: #7fe0ff;
+  --bp-mint: #6ff2c8;
+  --bp-amber: #ffc35a;
+  --bp-red: #ff6a58;
+  --bp-red-2: #ff9a8c;
+  --bp-mint-2: #6ff2c8;
+  --bp-amber-2: #ffc35a;
+  --bp-vignette: rgba(2, 10, 24, 0.62);
+  --bp-ink-hi: #ffffff;
+  --bp-on-ink: #061b38;
+  --bp-on-mint: #04261b;
+  --bp-delta: #9fe8ff;
+  --bp-glyph-edge: #04223a;
+  --bp-label-bg: #0b2c52;
+  --bp-tile-base: rgba(3, 18, 40, 0.3);
+  --bp-poche: #0c2f57;
+  --bp-chip-bg: rgba(5, 26, 50, 0.95);
+  --bp-card: rgba(6, 24, 48, 0.96);
+  --bp-card-hi: rgba(11, 40, 74, 0.98);
+  --bp-scrim: rgba(5, 22, 46, 0.97);
+  --bp-shadow: rgba(0, 0, 0, 0.45);
+  --bp-sheet-a: #10396a;
+  --bp-sheet-b: #082246;
+  --bp-sheet-c: #061a34;
+  --bp-code-bg: #08203f;
+  --bp-term-bg: #041327;
+  --bp-term-ink: #b9d3f0;
+  --bp-term-dim: #6f8fb4;
+  --bp-term-ok: #7ff0c4;
+  --bp-term-warn: #ffd27a;
+  --bp-term-err: #ff9aa9;
+  --bp-shot-bg: #000000;
+  --bp-shot-tag-bg: rgba(4, 18, 36, 0.82);
+  --bp-shot-tag-ink: #ffffff;
+  --bp-heat: #ff3d71;
+  --bp-heat-box: #ffd23f;
+  --bp-veil: rgba(2, 10, 22, 0.55);
+  --bp-lift: #ffffff;
+}
+
+[data-theme^="light"] .bp-scope {
+  color-scheme: light;
+  --bp-paper: #f4f8fc;
+  --bp-paper-hi: #ffffff;
+  --bp-paper-mid: #eef4fa;
+  --bp-paper-lo: #dde8f3;
+  --bp-ink: #0b2a4a;
+  --bp-ink-2: rgba(11, 42, 74, 0.76);
+  --bp-ink-3: rgba(11, 42, 74, 0.42);
+  --bp-ink-4: rgba(11, 42, 74, 0.14);
+  --bp-line: rgba(14, 58, 104, 0.6);
+  --bp-grid: rgba(18, 73, 122, 0.07);
+  --bp-panel: rgba(255, 255, 255, 0.86);
+  --bp-panel-solid: #ffffff;
+  --bp-halo: rgba(244, 248, 252, 0.94);
+  --bp-accent: #0a6fb8;
+  --bp-mint: #0e9f78;
+  --bp-amber: #b97800;
+  --bp-red: #d2402e;
+  --bp-red-2: #b8321f;
+  --bp-mint-2: #087553;
+  --bp-amber-2: #8f5d00;
+  --bp-vignette: rgba(14, 58, 104, 0.08);
+  --bp-ink-hi: #061a33;
+  --bp-on-ink: #ffffff;
+  --bp-on-mint: #ffffff;
+  --bp-delta: #0a7fc0;
+  --bp-glyph-edge: #ffffff;
+  --bp-label-bg: #ffffff;
+  --bp-tile-base: rgba(255, 255, 255, 0.55);
+  --bp-poche: #d3e1ef;
+  --bp-chip-bg: rgba(255, 255, 255, 0.96);
+  --bp-card: rgba(255, 255, 255, 0.97);
+  --bp-card-hi: rgba(255, 255, 255, 0.99);
+  --bp-scrim: rgba(244, 248, 252, 0.97);
+  --bp-shadow: rgba(14, 58, 104, 0.18);
+  --bp-sheet-a: #ffffff;
+  --bp-sheet-b: #f4f8fc;
+  --bp-sheet-c: #eaf1f8;
+  --bp-code-bg: #f7fafd;
+  --bp-term-bg: #0b1f3a;
+  --bp-term-ink: #b9d3f0;
+  --bp-term-dim: #6f8fb4;
+  --bp-term-ok: #7ff0c4;
+  --bp-term-warn: #ffd27a;
+  --bp-term-err: #ff9aa9;
+  --bp-shot-bg: #000000;
+  --bp-shot-tag-bg: rgba(4, 18, 36, 0.82);
+  --bp-shot-tag-ink: #ffffff;
+  --bp-heat: #ff3d71;
+  --bp-heat-box: #ffd23f;
+  --bp-veil: rgba(2, 10, 22, 0.55);
+  --bp-lift: #ffffff;
+}
+
+/* The theme-independent scale (bp globals.css :root, second block). Sizes ride the app's text-scale setting
+   (--type-f, 1 by default) so the Settings slider still reaches the sheet. */
+.bp-scope {
+  --bp-font-sans: 'IBM Plex Sans Condensed', 'Arial Narrow', system-ui, sans-serif;
+  --bp-font-mono: 'IBM Plex Mono', 'Cascadia Mono', Consolas, monospace;
+  --bp-f: var(--type-f, 1);
+  --bp-fs-12: calc(12px * var(--bp-f));
+  --bp-fs-13: calc(13px * var(--bp-f));
+  --bp-fs-14: calc(14px * var(--bp-f));
+  --bp-fs-15: calc(15px * var(--bp-f));
+  --bp-fs-16: calc(16px * var(--bp-f));
+  --bp-fs-18: calc(18px * var(--bp-f));
+  --bp-fs-19: calc(19px * var(--bp-f));
+  --bp-fs-20: calc(20px * var(--bp-f));
+  --bp-fs-22: calc(22px * var(--bp-f));
+  --bp-fs-24: calc(24px * var(--bp-f));
+  --bp-fs-26: calc(26px * var(--bp-f));
+  --bp-fs-28: calc(28px * var(--bp-f));
+  --bp-fs-34: calc(34px * var(--bp-f));
+  --bp-lh-title: 1.3;
+  --bp-lh-read: 1.45;
+  --bp-lh-code: 1.5;
+  --bp-ls-1: 0.04em;
+  --bp-ls-2: 0.06em;
+  --bp-ls-3: 0.08em;
+  --bp-ls-4: 0.1em;
+  --bp-ls-5: 0.12em;
+  --bp-r-sm: 2px;
+  --bp-bw-mark: 1.5px;
+  --bp-bw-bar: 3px;
+  --bp-elev-sheet: 0 24px 70px var(--bp-shadow);
+  --bp-h-tag: 24px;
+  --bp-h-ctl-xs: 26px;
+  --bp-h-ctl-sm: 28px;
+  --bp-h-ctl-md: 30px;
+  --bp-h-ctl: 32px;
+  --bp-h-field: 34px;
+  --bp-h-touch: 40px;
+  font-family: var(--bp-font-sans);
+}

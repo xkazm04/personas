@@ -41,13 +41,13 @@ export function readTheme(host: HTMLElement): CanvasTheme {
   host.removeChild(probe);
   const cache = new Map<string, string>();
   const pats = new Map<string, CanvasPattern | null>();
-  const sans = cs.getPropertyValue('--font-sans').trim() || 'system-ui, sans-serif';
+  const sans = (cs.getPropertyValue('--bp-font-sans') || cs.getPropertyValue('--font-sans')).trim() || 'system-ui, sans-serif';
   const th: CanvasTheme = {
     ...colors,
     mode: document.documentElement.getAttribute('data-theme')?.startsWith('light') ? 'light' : 'dark',
     radius: parseFloat(cs.getPropertyValue('--bp-radius')) || 0,
     glow: parseFloat(cs.getPropertyValue('--bp-glow')) || 0,
-    sans, mono: cs.getPropertyValue('--font-mono').trim() || 'Consolas, monospace',
+    sans, mono: (cs.getPropertyValue('--bp-font-mono') || cs.getPropertyValue('--font-mono')).trim() || 'Consolas, monospace',
     alpha(col, a) {
       const key = col + '|' + Math.round(a * 1000);
       let s = cache.get(key);
