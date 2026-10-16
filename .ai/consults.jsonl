@@ -1273,3 +1273,5 @@
 {"ts":"2026-10-16T17:09:20Z","bundle":"software-engineering","subjects":["motion"],"techniques":["reduced-motion-mechanics","performance-discipline"],"deviations":1}
 {"ts":"2026-10-16T17:09:20Z","bundle":"software-engineering","subjects":["motion"],"techniques":["reduced-motion-mechanics","preset-vocabulary"],"deviations":1}
 {"ts":"2026-10-16T17:09:20Z","bundle":"software-engineering","subjects":["motion"],"techniques":["one-shot-guarding","unprompted-motion-lifecycle"],"deviations":1}
+{"ts":"2026-10-16T17:10:50Z","bundle":"software-engineering","subjects":["search"],"techniques":["query-parsing","full-text-indexing"],"deviations":1}
+{"ts":"2026-10-16T17:10:50Z","bundle":"software-engineering","subjects":["search"],"techniques":["query-parsing","faceting-and-filters"],"deviations":2}

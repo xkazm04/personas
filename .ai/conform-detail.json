@@ -1397,14 +1397,19 @@
       "subject": "search",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:10:31.000Z",
-      "worker": "85338d00-3201-4a31-bd6e-647179dc6f66",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:10:50.000Z",
+      "worker": "2e192993-32d0-4526-a8f2-a6cdbd369c08",
       "techniques": [
         {
           "technique": "query-parsing",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:69 inline lowercase-substring match bypasses src/lib/text/search.ts:33 matchesQuery, so matching policy cannot be corrected centrally"
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:69 re-derives case-only, non-diacritic, adjacency-requiring matching inline; three call sites in this context, none through src/lib/text/search.ts:33"
+        },
+        {
+          "technique": "full-text-indexing",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/ConnectorFilterDropdown.tsx:64 in-memory scan over a small closed option list; the r6 index-or-scan rule chooses scan here, and nothing is indexed"
         }
       ],
       "superseded": [
@@ -1428,6 +1433,13 @@
           "evaluatedAt": "2026-10-10T01:41:49.000Z",
           "worker": "97834f4d-3d30-48cb-8390-c35a56a728e1",
           "reason": "replaced by 85338d00-3201-4a31-bd6e-647179dc6f66"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:69 matches with raw toLowerCase().includes (also filters/ConnectorFilterDropdown.tsx:64, suggestions/SearchAutocomplete.tsx:33) instead of the one-door matcher src/lib/text/search.ts:33 matchesQuery; accented input fails and multi-word queries need adjacency in a 14-locale app. Re-confirmed 2026-10-12 against search r5; no commits on these paths since.",
+          "evaluatedAt": "2026-10-12T12:10:31.000Z",
+          "worker": "85338d00-3201-4a31-bd6e-647179dc6f66",
+          "reason": "replaced by 2e192993-32d0-4526-a8f2-a6cdbd369c08"
         }
       ]
     },
@@ -8380,14 +8392,19 @@
       "subject": "search",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:10:31.000Z",
-      "worker": "85338d00-3201-4a31-bd6e-647179dc6f66",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:10:50.000Z",
+      "worker": "2e192993-32d0-4526-a8f2-a6cdbd369c08",
       "techniques": [
         {
           "technique": "query-parsing",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:118 const q = filter.trim().toLowerCase() then substring includes at :122, bypassing the one-door matcher"
+          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:123 inline lowercase+includes; no diacritic folding, multi-term needs adjacency"
+        },
+        {
+          "technique": "faceting-and-filters",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:135 totalCount = tables.length (loaded window) shown at :256 without disclosing the window; violates the completeness precondition and count-carries-predicate"
         }
       ],
       "superseded": [
@@ -8411,6 +8428,13 @@
           "evaluatedAt": "2026-10-10T01:41:49.000Z",
           "worker": "97834f4d-3d30-48cb-8390-c35a56a728e1",
           "reason": "replaced by 85338d00-3201-4a31-bd6e-647179dc6f66"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:118 re-derives matching inline instead of src/lib/text/search.ts:33 matchesQuery, and filters only the loaded window of a paginated list (src/hooks/database/useTableIntrospection.ts:202 fetchMoreTables) while totalCount at TableListSidebar.tsx:134 labels tables.length as the total with no more-exists marker; a table on an unfetched page is invisible to the filter and undercounted. Re-confirmed 2026-10-12 against search r5 (2b52e25371 touched the hook but not this behavior).",
+          "evaluatedAt": "2026-10-12T12:10:31.000Z",
+          "worker": "85338d00-3201-4a31-bd6e-647179dc6f66",
+          "reason": "replaced by 2e192993-32d0-4526-a8f2-a6cdbd369c08"
         }
       ]
     },

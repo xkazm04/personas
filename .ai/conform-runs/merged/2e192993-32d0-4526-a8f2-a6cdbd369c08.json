@@ -1,0 +1,77 @@
+{
+  "schema": "conform-run/1",
+  "worker": "2e192993-32d0-4526-a8f2-a6cdbd369c08",
+  "subject": "search",
+  "evaluatedAt": "2026-10-16T17:10:50Z",
+  "pairs": [
+    {
+      "context": "4be04ef0-88db-4f48-859c-92e6ba4d203f",
+      "subject": "search",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:395e660a5e607abe",
+      "evaluatedRevision": 6,
+      "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:69 still matches with raw toLowerCase().includes (also filters/ConnectorFilterDropdown.tsx:64, suggestions/SearchAutocomplete.tsx:33) instead of the one-door matcher src/lib/text/search.ts:33 matchesQuery; accented input fails and multi-word queries need adjacency in a 14-locale app. Re-judged 2026-10-16 against search r6 (r6 changed full-text-indexing only).",
+      "techniques": [
+        {
+          "technique": "query-parsing",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:69 re-derives case-only, non-diacritic, adjacency-requiring matching inline; three call sites in this context, none through src/lib/text/search.ts:33"
+        },
+        {
+          "technique": "full-text-indexing",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/ConnectorFilterDropdown.tsx:64 in-memory scan over a small closed option list; the r6 index-or-scan rule chooses scan here, and nothing is indexed"
+        }
+      ]
+    },
+    {
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "subject": "search",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:395e660a5e607abe",
+      "evaluatedRevision": 6,
+      "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:123 re-derives matching inline (toLowerCase().includes) instead of src/lib/text/search.ts:33 matchesQuery, and filters only the loaded window of a paginated list (src/hooks/database/useTableIntrospection.ts:202 fetchMoreTables) while the footer at src/features/vault/sub_databases/tabs/TableListSidebar.tsx:256 reports tables.length (:135) as the total with no more-exists marker even when truncated is set; a table on an unfetched page is invisible to the filter and undercounted. Re-judged 2026-10-16 against search r6.",
+      "techniques": [
+        {
+          "technique": "query-parsing",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:123 inline lowercase+includes; no diacritic folding, multi-term needs adjacency"
+        },
+        {
+          "technique": "faceting-and-filters",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:135 totalCount = tables.length (loaded window) shown at :256 without disclosing the window; violates the completeness precondition and count-carries-predicate"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-16T17:10:50Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "search"
+      ],
+      "techniques": [
+        "query-parsing",
+        "full-text-indexing"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T17:10:50Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "search"
+      ],
+      "techniques": [
+        "query-parsing",
+        "faceting-and-filters"
+      ],
+      "deviations": 2
+    }
+  ]
+}

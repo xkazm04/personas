@@ -35106,10 +35106,10 @@
           "changedAt": "2026-09-24",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:69 matches with raw toLowerCase().includes (also filters/ConnectorFilterDropdown.tsx:64, suggestions/SearchAutocomplete.tsx:33) instead of the one-door matcher src/lib/text/search.ts:33 matchesQuery; accented input fails and multi-word queries need adjacency in a 14-locale app. Re-confirmed 2026-10-12 against search r5; no commits on these paths since.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:b76b1bab72ccfec5",
-          "evaluatedRevision": 5,
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:69 still matches with raw toLowerCase().includes (also filters/ConnectorFilterDropdown.tsx:64, suggestions/SearchAutocomplete.tsx:33) instead of the one-door matcher src/lib/text/search.ts:33 matchesQuery; accented input fails and multi-word queries need adjacency in a 14-locale app. Re-judged 2026-10-16 against search r6 (r6 changed full-text-indexing only).",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:395e660a5e607abe",
+          "evaluatedRevision": 6,
           "revisionsBehind": 0
         },
         {
@@ -39635,10 +39635,10 @@
           "changedAt": "2026-09-24",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:118 re-derives matching inline instead of src/lib/text/search.ts:33 matchesQuery, and filters only the loaded window of a paginated list (src/hooks/database/useTableIntrospection.ts:202 fetchMoreTables) while totalCount at TableListSidebar.tsx:134 labels tables.length as the total with no more-exists marker; a table on an unfetched page is invisible to the filter and undercounted. Re-confirmed 2026-10-12 against search r5 (2b52e25371 touched the hook but not this behavior).",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:b76b1bab72ccfec5",
-          "evaluatedRevision": 5,
+          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:123 re-derives matching inline (toLowerCase().includes) instead of src/lib/text/search.ts:33 matchesQuery, and filters only the loaded window of a paginated list (src/hooks/database/useTableIntrospection.ts:202 fetchMoreTables) while the footer at src/features/vault/sub_databases/tabs/TableListSidebar.tsx:256 reports tables.length (:135) as the total with no more-exists marker even when truncated is set; a table on an unfetched page is invisible to the filter and undercounted. Re-judged 2026-10-16 against search r6.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:395e660a5e607abe",
+          "evaluatedRevision": 6,
           "revisionsBehind": 0
         },
         {
