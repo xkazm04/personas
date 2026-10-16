@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Loader2, Moon, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -96,7 +96,7 @@ export function BrainCycleReports({ limit = DEFAULT_LIMIT }: { limit?: number })
     return (
       <div data-testid="cycles-empty">
         <EmptyState
-          icon={Moon}
+          art="report"
           title={t.athena.cycles_empty}
           subtitle={t.athena.cycles_empty_hint}
         />

@@ -48,6 +48,7 @@ export function PersonaOverviewEmptyState({
     <>
       <ScenarioEmptyState
         icon={Bot}
+        size="lg"
         title={t.agents.sidebar.empty}
         action={{ label: t.agents.editor_empty.create, onClick: onCreate, icon: Plus }}
       />

@@ -626,6 +626,8 @@ function ListEmpty({ kind }: { kind: BrainKind }) {
     return (
       <EmptyState
         icon={Icon}
+        art="report"
+        size="sm"
         title={t.athena.brain_empty}
         subtitle={t.athena.brain_empty_hint}
       >
@@ -662,6 +664,8 @@ function ListEmpty({ kind }: { kind: BrainKind }) {
   return (
     <EmptyState
       icon={Icon}
+      art="report"
+      size="sm"
       title={t.athena.brain_empty}
       subtitle={t.athena.brain_empty_hint}
       action={action}

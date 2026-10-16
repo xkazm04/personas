@@ -88,7 +88,7 @@ function LedgerBodyInner({
               card that replaced the page. */}
           {model.rows === null && (
             <div className="cb-lrow cb-lempty" data-role="cb-ledger-empty" data-phase={phase}>
-              <EmptyState className="cb-note" {...ledgerPhaseCopy(w, phase)}>
+              <EmptyState className="cb-note" art="report" size="sm" {...ledgerPhaseCopy(w, phase)}>
                 {/* The ledger's own ink for "nobody looked", in the place the
                     rows would be. */}
                 <span className="cb-unkbox" aria-hidden="true" />

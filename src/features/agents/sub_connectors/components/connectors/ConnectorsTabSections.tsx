@@ -1,9 +1,9 @@
-import { Link, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle, Clock, ShieldQuestion, Filter } from 'lucide-react';
+import { Link, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle, Clock, ShieldQuestion } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
-import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ConnectorStatusCard } from './ConnectorStatusCard';
 import type { ConnectorStatus, ConnectorHealthFilter } from '../../libs/connectorTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -149,10 +149,10 @@ export function ConnectorsSection({
         ) : undefined}
       />
       {roleGroups.length === 0 && healthFilter && onHealthFilterChange ? (
-        <ScenarioEmptyState
-          icon={Filter}
+        <NoResults
           title={t.agents.connectors.st_filter_empty}
-          action={{ label: t.agents.connectors.st_filter_clear, onClick: () => onHealthFilterChange(null) }}
+          resetLabel={t.agents.connectors.st_filter_clear}
+          onReset={() => onHealthFilterChange(null)}
         />
       ) : (
       <div className="space-y-2">

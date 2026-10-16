@@ -97,6 +97,7 @@ export function ResponsibilitiesTab() {
   if (!selectedPersona) {
     return (
       <EmptyState
+        art="agents"
         title={t.agents.use_cases.no_persona_selected_title}
         description={t.agents.use_cases.no_persona_selected_desc}
       />
@@ -191,7 +192,7 @@ export function ResponsibilitiesTab() {
             isLoading ? (
               <ListSkeleton rows={3} />
             ) : (
-              <EmptyState title={c.empty_title} description={c.empty_body} />
+              <EmptyState art="report" size="sm" title={c.empty_title} description={c.empty_body} />
             )
           }
         />

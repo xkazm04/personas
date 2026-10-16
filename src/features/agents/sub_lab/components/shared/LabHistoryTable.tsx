@@ -1,4 +1,4 @@
-import { Trash2, Clock } from 'lucide-react';
+import { Trash2, Clock, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -18,7 +18,7 @@ interface LabHistoryTableProps<TRun extends { id: string; status: string; create
   activeRunId: string | null;
   onRowClick: (runId: string) => void;
   onDelete: (runId: string) => void;
-  emptyIcon: React.ComponentType<{ className?: string }>;
+  emptyIcon?: LucideIcon;
   emptyTitle: string;
   emptySubtitle: string;
   title: string;
@@ -30,7 +30,7 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
   activeRunId,
   onRowClick,
   onDelete,
-  emptyIcon: EmptyIcon,
+  emptyIcon,
   emptyTitle,
   emptySubtitle,
   title,
@@ -43,7 +43,7 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
           <Clock className="w-3 h-3" />
           {title}
         </h4>
-        <LabEmptyState icon={EmptyIcon} title={emptyTitle} subtitle={emptySubtitle} />
+        <LabEmptyState icon={emptyIcon} title={emptyTitle} subtitle={emptySubtitle} />
       </div>
     );
   }

@@ -330,6 +330,7 @@ export function LabVersionsTable() {
         density="compact"
         isLoading={loading && rows.length === 0}
         ariaLabel={lab.vr_title}
+        emptyArt="archive"
         emptyTitle={lab.vr_empty_title}
         emptyDescription={lab.vr_empty_desc}
         rowAccent={(row) => (row.isActive ? 'border-l-primary' : row.isBaseline ? 'border-l-amber-400' : undefined)}

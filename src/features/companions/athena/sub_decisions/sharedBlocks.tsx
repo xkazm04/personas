@@ -1,4 +1,4 @@
-import { ScrollText, Search, Sparkles, X } from 'lucide-react';
+import { Search, Sparkles, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState, {
   NoResults,
@@ -139,9 +139,7 @@ export function DecisionsEmpty({
   }
   return (
     <EmptyState
-      icon={ScrollText}
-      iconColor="text-fuchsia-400/80"
-      iconContainerClassName="bg-fuchsia-500/10 border-fuchsia-500/20"
+      art="report"
       title={t.athena.decisions_panel_empty_title}
       subtitle={t.athena.decisions_panel_empty}
       action={{

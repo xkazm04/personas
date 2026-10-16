@@ -91,7 +91,8 @@ export function CoverageTile({
 
         {rows.length === 0 && !isLoading ? (
           <EmptyState
-            icon={ScanSearch}
+            art="chart"
+            size="sm"
             title={b.coverage_none_title}
             description={chartersFailed ? b.coverage_roster_unavailable : b.coverage_none_desc}
             className="py-4"
@@ -111,6 +112,7 @@ export function CoverageTile({
             // so a roster of 300 charters costs the same DOM as a roster of 8.
             rowHeight={COVERAGE_ROW_HEIGHT}
             className="max-h-[300px]"
+            emptyArt="chart"
             emptyTitle={b.coverage_none_title}
             emptyDescription={b.coverage_none_desc}
             ariaLabel={b.coverage_title}

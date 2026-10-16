@@ -200,6 +200,7 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
             density={density === 'compact' ? 'compact' : 'comfortable'}
             tableId="persona-executions"
             ariaLabel={e.history}
+            emptyArt="runs"
             emptyTitle={t.common.no_results}
             scrollRestoreKey={`persona-executions|${personaId}`}
             className="max-h-[70vh]"

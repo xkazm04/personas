@@ -126,6 +126,7 @@ export function CharterDraftInbox({ personaId, onApplied }: CharterDraftInboxPro
           data={rows}
           getRowKey={(p) => p.id}
           isLoading={isLoading}
+          emptyArt="inbox"
           emptyTitle={c.draft_inbox_empty_title}
           emptyDescription={c.draft_inbox_empty_body}
           density="compact"

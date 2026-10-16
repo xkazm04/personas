@@ -178,6 +178,7 @@ export function ActivityList({ items, isLoading, useCaseOptions, annotationsByEx
         onRowClick={onRowClick}
         isLoading={isLoading}
         emptyTitle={t.agents.activity.no_activity}
+        emptyArt="stream"
       />
     </div>
   );

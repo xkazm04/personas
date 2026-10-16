@@ -78,6 +78,7 @@ export function MappedRegistriesSection() {
       {rows.length === 0 ? (
         <EmptyState
           icon={Link2}
+          size="sm"
           title={t.companions.setup.curator_registry_empty}
           action={
             devToolsReachable

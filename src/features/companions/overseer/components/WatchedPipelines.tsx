@@ -73,7 +73,7 @@ export function WatchedPipelines() {
         count={rows ? count : undefined}
         desc={d.watched_pipelines_desc}
         state={empty ? 'empty' : undefined}
-        empty={{ title: d.watched_pipelines_empty, hint: d.watched_pipelines_empty_hint, testId: 'watched-pipelines-empty' }}
+        empty={{ art: 'link', title: d.watched_pipelines_empty, hint: d.watched_pipelines_empty_hint, testId: 'watched-pipelines-empty' }}
       >
         {error && <Banner severity="error" compact message={error} onRetry={reload} />}
         {rows === null && !error && (

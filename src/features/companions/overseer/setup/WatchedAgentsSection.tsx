@@ -6,7 +6,7 @@
 // elsewhere in the app - a shared meaning the operator should learn from the
 // control rather than discover from the consequence.
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { Star, UserPlus } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 
 import { setPersonaStarred } from '@/api/agents/personas';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
@@ -79,7 +79,7 @@ export function WatchedAgentsSection() {
       </div>
 
       {watched.length === 0 ? (
-        <EmptyState icon={Star} title={t.companions.setup.overseer_scope_empty} />
+        <EmptyState art="agents" size="sm" title={t.companions.setup.overseer_scope_empty} />
       ) : (
         <ul className="rounded-card border border-primary/10 divide-y divide-foreground/5">
           {watched.map((p) => (

@@ -383,6 +383,8 @@ export default function PersonaOverviewPage() {
             selectAll={allSelected}
             onSelectAll={handleSelectAll}
             density="compact"
+            emptyArt="agents"
+            emptyTitle={t.agents.sidebar.empty}
           />
         )}
           </>

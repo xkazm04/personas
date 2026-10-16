@@ -50,7 +50,7 @@ export function CharterParametersCard({ charter, onPatch }: CharterParametersCar
     return (
       <SectionCard title={c.parameters_title}>
         <div data-testid="resp-params-empty">
-          <EmptyState title={c.parameters_empty_title} description={c.parameters_empty_body} />
+          <EmptyState art="report" size="sm" title={c.parameters_empty_title} description={c.parameters_empty_body} />
         </div>
       </SectionCard>
     );

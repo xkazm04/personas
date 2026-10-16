@@ -272,7 +272,7 @@ export function UnifiedDeploymentDashboard() {
         {!cloudConnected && !gitlabConnected ? (
           <div className="flex items-center justify-center h-full px-6">
             <EmptyState
-              icon={Cloud}
+              art="link"
               title={dt.no_targets_title}
               subtitle={dt.no_targets_hint}
               action={{ label: dt.connect_cloud_cta, onClick: () => setCloudTab('cloud'), icon: Cloud }}
