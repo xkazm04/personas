@@ -10737,41 +10737,41 @@
       "bundle": "software-engineering",
       "state": "deviation",
       "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:07:37.000Z",
-      "worker": "bd7a5dbc-4fc2-4f79-9ff8-a3afb694a646",
+      "evaluatedTs": "2026-10-16T18:21:16.000Z",
+      "worker": "a9b0b5e4-6b34-48d1-a9ec-b0af2526318f",
       "techniques": [
         {
           "technique": "stack-ownership",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/modals/useModalStack.ts:25 is a second, feature-private stack beside the app registry, closed by type not id (:37); CompareModal and the credential modal bypass even that door (src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:62, src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx:112), and the app registry entries carry no kind (src/lib/ui/ModalStackContext.tsx:13), so nothing outside can ask what is open"
+          "evidence": "src/features/templates/sub_generated/gallery/modals/useModalStack.ts:37 a private feature stack closes by type, not by minted id, and src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx:112 renders the credential modal from separate state outside the stack, so render is a fixed JSX order rather than a fold over the stack"
         },
         {
           "technique": "dismissal-semantics",
           "verdict": "deviation",
-          "evidence": "src/lib/ui/BaseModal.tsx:283 backdrop click and Escape (:199-201) call one unguarded onClose: () => void, so RebuildModal's typed direction is discarded by a stray click and callers cannot tell cancel from dismiss from complete"
+          "evidence": "src/features/templates/sub_generated/gallery/modals/RebuildModal.tsx:72 passes a bare onClose to BaseModal, whose backdrop (src/lib/ui/BaseModal.tsx:283) closes unconditionally, so a stray click discards the typed rebuild direction (textarea at src/features/templates/sub_generated/gallery/modals/RebuildModal.tsx:116) with no dirty guard and no cancel/dismiss distinction"
         },
         {
           "technique": "focus-and-scroll-containment",
           "verdict": "deviation",
-          "evidence": "src/lib/ui/BaseModal.tsx:231 restores focus only on the isOpen flip, but RebuildModal and the credential modals close by unmounting with isOpen hard-wired true (src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx:62), so focus drops to the document root; aria-modal at src/lib/ui/BaseModal.tsx:289 is declared on the table-scoped detail modal with no inert marking on the rest of the app"
+          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:122 returns null before BaseModal ever sees isOpen=false, so the focus-return effect at src/lib/ui/BaseModal.tsx:231 never runs and focus is dropped to body on close; no scroll lock or background inertness either"
         },
         {
           "technique": "layering-and-precedence",
           "verdict": "deviation",
-          "evidence": "src/lib/ui/BaseModal.tsx:177 fuses detachment and precedence in one portal flag (base 50 vs 10000, :9), and TemplateDetailModal writes a raw z-50 at the use site (src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:145)"
+          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:145 hard-codes containerClassName with z-50, which switches off the depth-derived zIndex at src/lib/ui/BaseModal.tsx:278, so the detail modal ranks by a hand-picked number instead of the shared scale and stack depth"
         },
         {
           "technique": "destructive-confirmation",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:310 deletes immediately with no confirm or undo, closes optimistically at :311, and the failure is only logged at src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:207"
+          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:310 an irreversible delete runs on one click with neither a confirmation nor an undo"
         },
         {
           "technique": "anchored-positioning",
-          "verdict": "unknown",
-          "evidence": "src/features/shared/components/display/Tooltip.tsx:338 the only anchored surface here is the shared Tooltip primitive, owned by context display-data-formatters; not judged from this consumer",
-          "carriedFrom": "2026-10-10"
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx:62 every overlay in this context is a centered BaseModal dialog; none is anchored to a control"
         }
       ],
+      "registryProposal": "Upward note for stack-ownership's registry variant: src/lib/ui/BaseModal.tsx:157 joins an app-wide registry (useModalStackPosition) that answers isTopmost/depth and gates Escape correctly, yet a feature can still defeat its layering by overriding the container class (TemplateDetailModal.tsx:145). The technique could name 'an escape hatch on the primitive that bypasses the registry's z derivation' as a failure form of the registry variant.",
       "superseded": [
         {
           "state": "deviation",
@@ -10800,6 +10800,13 @@
           "evaluatedAt": "2026-10-10T12:11:05.000Z",
           "worker": "d7d57e6e-f5fd-421e-aaff-91407fa7b0cc",
           "reason": "replaced by bd7a5dbc-4fc2-4f79-9ff8-a3afb694a646"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:310 hard-deletes a template with no confirm or undo and closes at :311 before the await settles, so failure is only logged (src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:207); 5 of 5 judged techniques fail (anchored-positioning unjudged: no anchored overlay in this context)",
+          "evaluatedAt": "2026-10-16T17:07:37.000Z",
+          "worker": "bd7a5dbc-4fc2-4f79-9ff8-a3afb694a646",
+          "reason": "replaced by a9b0b5e4-6b34-48d1-a9ec-b0af2526318f"
         }
       ]
     },
