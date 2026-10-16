@@ -4,18 +4,29 @@ import type { WorkItem } from '../model/work';
 import { deltaText } from './format';
 import { LensGlyphIcon } from './LensGlyphIcon';
 import { Press } from './Press';
-import { StatusChip } from './StatusChip';
+import { statusWord } from './StatusChip';
 
-/** One item of the Build queue: the lens glyph in the lens's colour, the title, where it moves the metric, size and risk. The current row wears the plan's focus ring. */
+/** Risk at or above this (of 10) reads as urgent: the row's edge turns red while it waits. */
+const HIGH_RISK = 7;
+
+/**
+ * One item of the Build queue as bp's workbench row (bp rail/wide/workbench.css .wb-row): a 5 px edge in the item's
+ * urgency (waiting amber, a risky wait or a failed build red, approved and accepted mint), a 12 px mono kicker (the
+ * lens glyph in its accent, its short code, the state's word), the title on at most two lines, and the move on the
+ * metric with size and risk. The current row is filled 13% ink with a 3 px accent inset; hovering it lights the
+ * feature on the plan.
+ */
 export function QueueItem({ p }: { p: WorkItem }) {
   const s = useSheet();
   const { B, tx, language } = s.text;
   const L = s.plan.LENS[p.lens];
   const open = () => { if (s.ui.itemId === p.id) s.nav.openSheet(p.fid); else s.nav.select(p, true); };
   const accent = s.engine ? s.engine.accentOf(p.lens) : undefined;
+  const tone = STATUS[p.status].tone;
+  const urg = p.status === 'proposed' && (p.risk ?? 0) >= HIGH_RISK ? 'high' : tone;
   return (
     <Press
-      tone={`bp-it bp-tone-${STATUS[p.status].tone}`}
+      tone={`bp-it u-${urg} bp-tone-${tone}`}
       current={s.ui.itemId === p.id}
       onClick={open}
       onMouseEnter={() => { if (s.engine) { s.engine.hot = p.fid; s.engine.dirty = true; } }}
@@ -23,13 +34,13 @@ export function QueueItem({ p }: { p: WorkItem }) {
       data-item={p.id}
       data-status={p.status}
     >
-      <span className="bp-g" style={accent ? { color: accent } : undefined}><LensGlyphIcon glyph={L?.glyph ?? null} /></span>
-      <span className="bp-tt typo-body">{p.title}</span>
-      <span className="bp-d typo-body"><span className="typo-code">{L?.short ?? p.lens}</span><span>{deltaText(s.plan, p, language)}</span></span>
-      <span className="bp-d2 typo-body">
-        <span className="typo-code">{tx(B.size_risk, { size: p.size, risk: p.risk ?? '-' })}</span>
-        {p.status !== 'proposed' && <StatusChip B={B} status={p.status} />}
+      <span className="urg" aria-hidden="true" />
+      <span className="rk">
+        <span className="lz"><span className="bp-g" style={accent ? { color: accent } : undefined}><LensGlyphIcon glyph={L?.glyph ?? null} /></span>{L?.short ?? p.lens}</span>
+        <span className="uw">{statusWord(B, p.status)}</span>
       </span>
+      <span className="rt">{p.title}</span>
+      <span className="rm"><span>{deltaText(s.plan, p, language)}</span><span>{tx(B.size_risk, { size: p.size, risk: p.risk ?? '-' })}</span></span>
     </Press>
   );
 }

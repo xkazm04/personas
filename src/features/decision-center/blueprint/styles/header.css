@@ -1,0 +1,74 @@
+/* header.css - bp's header (bp src/components/blueprint.css:26-66, Header.tsx), re-ported: the title line, the
+   crumbs with their measured count summary, the last-scan pill and the lens tabs. bp's names are kept where they read
+   (.proj, .sum, .uline); the selectors hang off .bp-hd, the sheet's title block. Tokens only (theme/bp-tokens.css):
+   bp `var(--x)` reads `var(--bp-x)`, its px type reads the --bp-fs-* steps. */
+
+.bp-hd { position: absolute; left: 14px; top: 8px; right: 14px; height: 58px; z-index: 3; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+.bp-hd > * { pointer-events: auto; }
+.bp-hd::before { content: ''; position: absolute; left: -14px; right: -14px; top: -8px; height: 86px; background: linear-gradient(180deg, var(--bp-scrim) 0, var(--bp-scrim) 58px, transparent 86px); pointer-events: none; z-index: -1; }
+.bp-id { min-width: 240px; flex: 1 1 0; padding-right: 14px; }
+
+/* the title line: DRAWING SET . sheet G-001 . General arrangement; segments drop whole (ProjLine sets data-fit) */
+.bp-hd .bp-l1 { display: flex; align-items: center; min-width: 0; font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); letter-spacing: var(--bp-ls-5); color: var(--bp-ink-2); text-transform: uppercase; margin-top: 5px; white-space: nowrap; overflow: hidden; }
+.bp-l1 > span { flex: none; white-space: pre; }
+.bp-l1 .pj-sheet { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.bp-l1[data-fit='1'] .pj-ttl, .bp-l1[data-fit='2'] .pj-sheet { display: none; }
+.bp-l1 b { color: var(--bp-lens, var(--bp-ink)); font-weight: 500; }
+.bp-l1 .pgsw { display: inline-flex; border: 1px solid var(--bp-ink-3); }
+.bp-l1 .pgsw span { padding: 2px 6px; background: var(--bp-ink); color: var(--bp-on-ink); letter-spacing: var(--bp-ls-5); }
+.bp-l1 .bp-say { flex: 0 1 auto; min-width: 0; margin-left: 14px; overflow: hidden; text-overflow: ellipsis; text-transform: none; letter-spacing: var(--bp-ls-1); color: var(--bp-mint-2); }
+
+/* the crumbs and the place's summary (19 px sans 600 uppercase, "›" separators, 15 px summary) */
+.bp-hd .bp-l2 { margin-top: 8px; display: flex; flex-wrap: nowrap; align-items: baseline; gap: 4px; white-space: nowrap; overflow: hidden; }
+.bp-l2 .bp-crumb { padding: 2px 3px; font-size: var(--bp-fs-19); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--bp-ink-2); border-bottom: 1px solid transparent; flex: 0 0 auto; }
+.bp-l2 .bp-crumb:hover { border-bottom-color: var(--bp-accent); color: var(--bp-ink-hi); }
+.bp-l2 .bp-crumb[aria-current] { color: var(--bp-ink-hi); }
+.bp-l2 .bp-sep { color: var(--bp-ink-3); font-size: var(--bp-fs-16); }
+.bp-l2 .sum { margin-left: 14px; font-size: var(--bp-fs-15); color: var(--bp-ink-2); letter-spacing: 0.01em; display: inline-flex; flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: pre; }
+.bp-l2 .sum .cl { flex: 0 0 auto; }
+.bp-l2 .sum .cl + .cl { margin-left: 10px; }
+.bp-l2 .sum.off { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip-path: inset(50%); }
+.bp-l2 .sum b { color: var(--bp-ink-hi); font-weight: 500; }
+.bp-l2 .sum em { font-style: normal; color: var(--bp-red-2); }
+.bp-l2 .sum i { font-style: normal; color: var(--bp-amber-2); }
+.bp-l2 .sum .mk { display: inline-flex; align-items: baseline; gap: 4px; font-family: var(--bp-font-mono); }
+.bp-l2 .sum .mk svg { width: 14px; height: 14px; align-self: center; }
+
+/* the right of the header: switcher, last-scan pill, lens tabs, the way out */
+.bp-hdr-r { display: flex; gap: 8px; align-items: flex-start; flex: 0 1 auto; min-width: 0; }
+.bp-hdr-r > :not(.bp-sheets-col) { flex: 0 0 auto; }
+
+/* bp LivePill (blueprint.css:370-376): 30 px, 12 px mono uppercase, an 8 px dot */
+.bp-live { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--bp-ink-3); background: var(--bp-panel); font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-3); text-transform: uppercase; color: var(--bp-ink); white-space: nowrap; }
+.bp-live > i { width: 8px; height: 8px; border-radius: 50%; background: var(--bp-ink-3); }
+.bp-live.on { border-color: var(--bp-mint); color: var(--bp-mint-2); }
+.bp-live.on > i { background: var(--bp-mint); }
+.bp-live.off { border-color: var(--bp-amber); color: var(--bp-amber-2); }
+.bp-live.off > i { background: var(--bp-amber); }
+
+/* the lens tabs (blueprint.css:51-66): a ruled box, 54 px tabs (27 px on two rows), the lens underline sliding */
+.bp-sheets-col { position: relative; display: flex; flex-direction: column; flex: 0 1 auto; min-width: 0; overflow: auto hidden; scrollbar-width: none; border: 1px solid var(--bp-ink-3); border-bottom: 2px solid var(--bp-ink-2); background: var(--bp-panel); }
+.bp-sheets-col .tab-row { display: flex; }
+.bp-sheets-col .tab-row.custom { border-top: 1px solid var(--bp-ink-4); }
+.bp-sheets-col .tab-cap { flex: 0 0 auto; width: 76px; display: flex; align-items: center; padding: 0 8px; font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); letter-spacing: var(--bp-ls-2); text-transform: uppercase; color: var(--bp-ink-2); border-right: 1px solid var(--bp-ink-4); }
+.bp-sheets-col .bp-tab-b { flex: 0 0 auto; min-width: 76px; height: 54px; border-right: 1px solid var(--bp-ink-4); text-align: left; padding: 0 26px 0 9px; position: relative; transition: background 0.15s; display: flex; align-items: center; }
+.bp-sheets-col[data-rows='2'] .bp-tab-b { height: 27px; }
+.bp-sheets-col .tab-row > :last-child .bp-tab-b, .bp-sheets-col .tab-row > .bp-tab-b:last-child { border-right: 0; }
+.bp-tab-b .no { display: block; font: 500 var(--bp-fs-13)/1 var(--bp-font-mono); letter-spacing: var(--bp-ls-1); color: var(--bp-ink-2); white-space: nowrap; }
+.bp-tab-b .kb { position: absolute; right: 7px; top: 50%; transform: translateY(-50%); font: 400 var(--bp-fs-12)/1 var(--bp-font-mono); color: var(--bp-ink-2); }
+.bp-tab-b .ct { font: 600 var(--bp-fs-12)/1 var(--bp-font-mono); color: var(--bp-amber-2); margin-left: 6px; }
+.bp-tab-b:hover { background: color-mix(in srgb, var(--bp-accent) 9%, transparent); }
+.bp-tab-b[aria-pressed='true'] { background: color-mix(in srgb, var(--bp-ink) 14%, transparent); }
+.bp-tab-b[aria-pressed='true'] .no { color: var(--bp-ink-hi); }
+.bp-tab-b .uline { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--bp-lens, var(--bp-ink)); }
+.bp-sheets-col[data-rows='2'] .uline { height: 3px; }
+
+/* the way out: bp's square header control (its theme toggle's place) */
+.bp-hd .bp-close { display: grid; place-items: center; width: 34px; height: 30px; border: 1px solid var(--bp-ink-3); background: var(--bp-panel); color: var(--bp-ink-2); }
+.bp-hd .bp-close:hover { border-color: var(--bp-ink); color: var(--bp-ink-hi); }
+.bp-hd .bp-close svg { width: 16px; height: 16px; }
+
+/* a narrow plan (the queue open at 1280): the brand keeps room for a full chain at L3 and the tabs scroll instead (bp
+   lets the strip scroll the same way); the current crumb ellipsizes last, so the row never clips */
+.bp-l2 .bp-crumb[aria-current] { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+@container bp-plan (max-width: 75rem) { .bp-id { min-width: 340px; } }

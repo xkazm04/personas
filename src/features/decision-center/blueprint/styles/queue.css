@@ -1,0 +1,98 @@
+/* queue.css - the Build queue column (a Personas addition the operator kept), its dock console, the hover card and the
+   sheet's dialogs, inked in bp's language: --bp-card panels, the border ladder 1 px ink-3 -> 1.5 px ink -> 2 px ink,
+   3-5 px status edges, 12 px mono uppercase kickers, mono figures, condensed sans prose, square corners. The rows are
+   bp's workbench row (bp src/components/rail/wide/workbench.css: .wb-gh, .wb-row, .urg); the console is bp's terminal
+   (--bp-term-*); Find is bp's rail Find (rail.css #searchbox). */
+
+/* ---------- the column */
+.bp-side { overflow: hidden; display: flex; flex-direction: column; min-width: 0; color: var(--bp-ink); background: var(--bp-card); border-right: 1px solid var(--bp-ink-3); box-shadow: 14px 0 36px var(--bp-shadow); z-index: 2; font: 400 var(--bp-fs-14)/1.35 var(--bp-font-sans); }
+.bp-side .bp-kick { font: 500 var(--bp-fs-12)/1.2 var(--bp-font-mono); letter-spacing: var(--bp-ls-3); text-transform: uppercase; color: var(--bp-ink-2); }
+.bp-sb-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px 10px 16px; border-bottom: 1px solid var(--bp-ink-3); }
+.bp-sb-top h2 { margin: 0; font: 600 var(--bp-fs-16)/1.2 var(--bp-font-sans); letter-spacing: 0.03em; text-transform: uppercase; color: var(--bp-ink-hi); }
+
+/* the product: its name and waiting count as bp's strip figure, the stage bar as the plan prints it over a wing */
+.bp-prod { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 4px 12px; padding: 12px 16px; border-bottom: 1px solid var(--bp-ink-3); background: color-mix(in srgb, var(--bp-ink) 3%, transparent); }
+.bp-prod .bp-pn { font: 600 var(--bp-fs-18)/1.2 var(--bp-font-sans); letter-spacing: 0.02em; text-transform: uppercase; color: var(--bp-ink-hi); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bp-prod .bp-pc { font: 600 var(--bp-fs-24)/1 var(--bp-font-mono); color: var(--bp-amber-2); }
+.bp-prod .bp-ps { grid-column: 1 / 3; font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-2); text-transform: uppercase; color: var(--bp-ink-2); }
+.bp-sbar { grid-column: 1 / 3; display: flex; height: 6px; border: 1px solid var(--bp-ink-3); margin-top: 2px; }
+.bp-sbar i { display: block; height: 100%; }
+.bp-sbar .live { background: var(--bp-ink); }
+.bp-sbar .flag { background: color-mix(in srgb, var(--bp-ink) 55%, transparent); }
+.bp-sbar .build { background: repeating-linear-gradient(135deg, var(--bp-ink-2) 0 1px, transparent 1px 5px); }
+.bp-sbar .paper { background: var(--bp-ink-4); }
+.bp-sbar .dep { background: var(--bp-red); }
+
+/* here: the level, the place, its waiting figure and the depth rail (the ladder's cells, smaller) */
+.bp-here { padding: 12px 16px; border-bottom: 1px solid var(--bp-ink-3); }
+.bp-ht { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-top: 6px; }
+.bp-hn { font: 600 var(--bp-fs-19)/1.25 var(--bp-font-sans); color: var(--bp-ink-hi); letter-spacing: 0.01em; }
+.bp-hc { font: 600 var(--bp-fs-24)/1 var(--bp-font-mono); color: var(--bp-amber-2); }
+.bp-hd2 { margin: 4px 0 0; font-size: var(--bp-fs-13); line-height: 1.4; color: var(--bp-ink-2); }
+.bp-depth { display: flex; margin-top: 10px; height: 28px; border: 1px solid var(--bp-ink-3); background: var(--bp-panel); }
+.bp-depth .bp-press { flex: 1; border-right: 1px solid var(--bp-ink-4); font: 500 var(--bp-fs-12)/26px var(--bp-font-mono); letter-spacing: var(--bp-ls-2); color: var(--bp-ink-2); text-align: center; }
+.bp-depth .bp-press:last-child { border-right: 0; }
+.bp-depth .bp-press:hover { color: var(--bp-ink-hi); }
+.bp-depth .bp-press.bp-past { color: var(--bp-ink); background: color-mix(in srgb, var(--bp-ink) 7%, transparent); }
+.bp-depth .bp-press[aria-current='true'] { background: var(--bp-lens, var(--bp-ink)); color: var(--bp-on-ink); }
+
+/* the list: sticky group heads on card-hi (bp .wb-gh), workbench rows (bp .wb-row) */
+.bp-list { flex: 1; overflow: auto; overscroll-behavior: contain; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--bp-ink-3) transparent; }
+.bp-gh { position: sticky; top: 0; z-index: 1; margin: 0; display: flex; justify-content: space-between; gap: 10px; padding: 12px 16px 7px; background: var(--bp-card-hi); border-bottom: 1px solid var(--bp-ink-4); font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-3); text-transform: uppercase; color: var(--bp-ink-2); }
+.bp-gh > :first-child { color: var(--bp-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.bp-gh > :last-child { flex: 0 0 auto; }
+.bp-gh .bp-code { color: var(--bp-ink-2); margin-right: 8px; }
+.bp-list .bp-it { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; width: 100%; padding: 11px 16px 11px 20px; border-bottom: 1px solid var(--bp-ink-4); transition: background 0.12s; }
+.bp-list .bp-it:hover { background: color-mix(in srgb, var(--bp-accent) 7%, transparent); }
+.bp-list .bp-it[aria-current='true'] { background: color-mix(in srgb, var(--bp-ink) 13%, transparent); box-shadow: inset 3px 0 0 var(--bp-accent); }
+.bp-list .bp-it:focus-visible { outline: 2px solid var(--bp-accent); outline-offset: -2px; }
+.bp-it .urg { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--bp-ink-3); }
+.bp-it.u-wait .urg { background: var(--bp-amber); }
+.bp-it.u-high .urg, .bp-it.u-fail .urg { background: var(--bp-red); }
+.bp-it.u-ok .urg { background: var(--bp-mint); }
+.bp-it .rk { display: flex; align-items: center; gap: 10px; font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-2); text-transform: uppercase; color: var(--bp-ink-2); min-width: 0; }
+.bp-it .rk .lz { display: inline-flex; align-items: center; gap: 6px; }
+.bp-it .rk .lz svg { width: 14px; height: 14px; }
+.bp-it.u-high .rk .uw, .bp-it.u-fail .rk .uw { color: var(--bp-red-2); }
+.bp-it.u-wait .rk .uw { color: var(--bp-amber-2); }
+.bp-it.u-ok .rk .uw { color: var(--bp-mint-2); }
+.bp-it .rt { font-size: var(--bp-fs-15); font-weight: 500; line-height: 1.35; color: var(--bp-ink-hi); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.bp-it .rm { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: var(--bp-fs-13); color: var(--bp-ink-2); min-width: 0; }
+.bp-it .rm > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bp-it .rm > :last-child:not(:first-child) { flex: 0 0 auto; font-family: var(--bp-font-mono); font-size: var(--bp-fs-12); }
+.bp-it.bp-tone-no .rt { text-decoration: line-through; color: var(--bp-ink-2); }
+.bp-list .bp-empty { padding: 20px 16px; margin: 0; font-size: var(--bp-fs-14); line-height: 1.45; color: var(--bp-ink-2); }
+
+/* a state chip: a mono word in a 1 px frame, the state's tone */
+.bp-chip { padding: 0 5px; border: 1px solid currentColor; white-space: nowrap; line-height: 1.5; font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-2); text-transform: uppercase; }
+.bp-chip.bp-tone-wait { color: var(--bp-amber-2); }
+.bp-chip.bp-tone-ok { color: var(--bp-mint-2); }
+.bp-chip.bp-tone-run { color: var(--bp-ink-hi); background: color-mix(in srgb, var(--bp-ink) 14%, transparent); }
+.bp-chip.bp-tone-no { color: var(--bp-ink-2); }
+.bp-chip.bp-tone-pack { color: var(--bp-accent); }
+.bp-chip.bp-tone-fail { color: var(--bp-red-2); }
+
+/* the keys under the column (bp .hint) */
+.bp-ft { padding: 8px 12px; border-top: 1px solid var(--bp-ink-3); display: flex; gap: 6px 14px; flex-wrap: wrap; font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-2); text-transform: uppercase; color: var(--bp-ink-2); background: var(--bp-card-hi); }
+.bp-ft span { display: inline-flex; align-items: center; gap: 5px; }
+.bp-kbd { display: inline-block; min-width: 1.7em; text-align: center; padding: 1px 5px; border: 1px solid var(--bp-ink-3); font: 500 var(--bp-fs-12)/1.2 var(--bp-font-mono); color: var(--bp-ink); text-transform: none; letter-spacing: 0; }
+.bp-kcs { display: inline-flex; gap: 3px; }
+
+/* ---------- the dock console: bp's terminal */
+.bp-dock { border-top: 2px solid var(--bp-ink-3); padding: 10px 14px 12px; background: var(--bp-term-bg); color: var(--bp-term-ink); max-height: 42%; overflow: auto; font: 400 var(--bp-fs-13)/1.45 var(--bp-font-mono); scrollbar-width: thin; scrollbar-color: var(--bp-ink-3) transparent; }
+.bp-dk-top { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 6px; font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-3); text-transform: uppercase; color: var(--bp-term-dim); }
+.bp-dock.bp-armed { border-top-color: var(--bp-amber); }
+.bp-dock.bp-armed .bp-dk-top { color: var(--bp-term-warn); }
+.bp-cmd { color: var(--bp-term-ok); word-break: break-all; padding: 4px 0 4px 10px; border-left: 3px solid var(--bp-term-ok); margin-bottom: 4px; }
+.bp-cmd.bp-old { color: var(--bp-term-dim); border-left-color: var(--bp-ink-4); }
+.bp-cmd.bp-fail { color: var(--bp-term-err); border-left-color: var(--bp-term-err); }
+.bp-skip { color: var(--bp-term-warn); }
+.bp-dock .bp-why { color: var(--bp-term-dim); margin-top: 4px; font-family: var(--bp-font-sans); font-size: var(--bp-fs-13); }
+.bp-older summary { color: var(--bp-term-dim); cursor: pointer; margin: 8px 0 6px; font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-3); text-transform: uppercase; }
+
+/* ---------- the hover card (bp #hov) */
+.bp-tip { position: absolute; z-index: 5; width: 360px; pointer-events: none; background: var(--bp-card); border: 1px solid var(--bp-ink-2); border-top: 3px solid var(--bp-lens, var(--bp-ink)); padding: 10px 14px 11px; box-shadow: 0 14px 44px var(--bp-shadow); font: 600 var(--bp-fs-19)/1.2 var(--bp-font-sans); color: var(--bp-ink-hi); }
+.bp-tip .bp-s { font: 400 var(--bp-fs-15)/1.35 var(--bp-font-sans); color: var(--bp-ink); margin-top: 5px; }
+.bp-tip .bp-w { font: 400 var(--bp-fs-14)/1.35 var(--bp-font-sans); color: var(--bp-amber-2); margin-top: 5px; }
+.bp-tip .bp-k { font: 500 var(--bp-fs-12)/1.2 var(--bp-font-mono); letter-spacing: var(--bp-ls-3); text-transform: uppercase; color: var(--bp-ink-2); }
+.bp-tip .bp-n { font: 600 var(--bp-fs-26)/1.05 var(--bp-font-sans); letter-spacing: 0.01em; color: var(--bp-ink-hi); margin: 5px 0 6px; }

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { ModalShell } from '@/features/shared/components/modals/ModalShell';
 import { useSheet } from '../controller/SheetContext';
 import type { NoteMove } from '../state/uiState';
+import { BpDialog } from './dialog/BpDialog';
 import { deltaText } from './format';
 import { Keycap } from './Keycap';
 import { LensGlyphIcon } from './LensGlyphIcon';
@@ -35,26 +35,23 @@ export function ReasonDialog({ itemId, move }: { itemId: string; move: NoteMove 
     : `triage(["${p.id}"], "${move}"${text ? `, ${JSON.stringify(text)}` : ''})`;
   const title = { decline: B.reason_question, rework: B.note_q_rework, descope: B.note_q_descope, accept: B.note_q_accept }[move];
   return (
-    <ModalShell
-      isOpen
-      portal
+    <BpDialog
       onClose={close}
       titleId="bp-reason-title"
-      width="md"
       title={title}
-      subtitle={tx(decline ? B.reason_for : B.note_for, { lens: L?.name ?? p.lens })}
-      footer={<div className="bp-dlg-foot typo-body"><span><Keycap k="Enter" /> {B.hint_send}</span><span><Keycap k="Escape" /> {B.hint_cancel}</span></div>}
+      sub={tx(decline ? B.reason_for : B.note_for, { lens: L?.name ?? p.lens })}
+      footer={<><span><Keycap k="Enter" /> {B.hint_send}</span><span><Keycap k="Escape" /> {B.hint_cancel}</span></>}
     >
       <div className="bp-ctx">
         <span className="bp-g"><LensGlyphIcon glyph={L?.glyph ?? null} /></span>
         <span>
-          <b className="typo-body">{p.title}</b>
-          <span className="typo-code">{p.f.name} {'·'} {tx(B.size_risk, { size: p.size, risk: p.risk ?? '-' })} {'·'} {deltaText(s.plan, p, language)}</span>
+          <b>{p.title}</b>
+          <span className="bp-ctx-m">{p.f.name} {'·'} {tx(B.size_risk, { size: p.size, risk: p.risk ?? '-' })} {'·'} {deltaText(s.plan, p, language)}</span>
         </span>
       </div>
-      <label className="typo-eyebrow bp-dlg-l" htmlFor="bp-reason-input">{decline ? B.reason_label : B.note_label}</label>
-      <input id="bp-reason-input" ref={input} className="bp-input typo-body" value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={onKey} placeholder={decline ? B.reason_placeholder : B.note_placeholder} autoComplete="off" data-testid="blueprint-reason-input" />
-      <div className="bp-dlg-cmd typo-code" data-testid="blueprint-reason-preview"><span className="typo-eyebrow">{B.reason_preview}</span> {preview}</div>
-    </ModalShell>
+      <label className="bp-dlg-l" htmlFor="bp-reason-input">{decline ? B.reason_label : B.note_label}</label>
+      <input id="bp-reason-input" ref={input} className="bp-input" value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={onKey} placeholder={decline ? B.reason_placeholder : B.note_placeholder} autoComplete="off" data-testid="blueprint-reason-input" />
+      <div className="bp-dlg-cmd" data-testid="blueprint-reason-preview"><span className="bp-kick">{B.reason_preview}</span> {preview}</div>
+    </BpDialog>
   );
 }

@@ -23,7 +23,7 @@ vi.mock('@/hooks/utility/interaction/useMotion', async (importOriginal) => ({
 }));
 
 beforeAll(() => {
-  const ctx = new Proxy({ measureText: () => ({ width: 8 }), createPattern: () => ({ setTransform() {} }) } as Record<string, unknown>, {
+  const ctx = new Proxy({ measureText: () => ({ width: 8 }), createPattern: () => ({ setTransform() {} }), getTransform: () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }) } as Record<string, unknown>, {
     get: (t, k: string) => (k in t ? t[k] : () => undefined),
     set: (t, k: string, v) => { t[k] = v; return true; },
   });

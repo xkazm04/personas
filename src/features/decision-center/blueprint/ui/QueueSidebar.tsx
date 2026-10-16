@@ -8,9 +8,9 @@ import { QueueList } from './QueueList';
 import { StageBar } from './StageBar';
 
 /**
- * The Build queue (the winning prototype's left column): printed on the plan's own paper, grid and ink so the
- * queue and the drawing read as one sheet. The product (its stage bar, as the plan prints it above a wing), where
- * the camera is, the work waiting there, the dock console, and the keys.
+ * The Build queue (a Personas addition the operator kept), inked as bp's review workbench (bp rail/wide
+ * workbench.css): a --bp-card column with a flyout-style head, the product as bp's strip figure over its stage bar,
+ * where the camera is, the work waiting there as workbench rows, the dock console as bp's terminal, and the keys.
  */
 export function QueueSidebar() {
   const s = useSheet();
@@ -19,17 +19,17 @@ export function QueueSidebar() {
   const all = s.queueAll.filter((p) => p.status === 'proposed').length;
   return (
     <aside className="bp-side" aria-label={B.queue}>
-      <div className="bp-sb-top"><span className="typo-eyebrow">{B.queue}</span><span className="typo-eyebrow bp-dim">{B.decision_center}</span></div>
+      <div className="bp-sb-top"><h2>{B.queue}</h2><span className="bp-kick">{B.decision_center}</span></div>
       <section className="bp-prod" aria-label={s.data.product.name}>
-        <span className="bp-pn typo-heading">{s.data.product.name}</span>
-        <span className="bp-pc typo-data">{all}</span>
+        <span className="bp-pn">{s.data.product.name}</span>
+        <span className="bp-pc">{all}</span>
         <StageBar c={c} />
-        <span className="bp-ps typo-code">{tx(B.product_line, { features: c.n, built: c.live })}{s.work.packFlow ? ` · ${B.pack_flow}` : ''}</span>
+        <span className="bp-ps">{tx(B.product_line, { features: c.n, built: c.live })}{s.work.packFlow ? ` · ${B.pack_flow}` : ''}</span>
       </section>
       <HerePanel />
       <QueueList />
       <DockConsole />
-      <div className="bp-ft typo-code">
+      <div className="bp-ft">
         <span><Keycaps keys={[keysFor('next')[0] ?? '', keysFor('prev')[0] ?? '']} />{B.hint_walk}</span>
         <span><Keycaps keys={keysFor('approve')} />{B.hint_approve}</span>
         <span><Keycaps keys={keysFor('decline')} />{B.hint_decline}</span>

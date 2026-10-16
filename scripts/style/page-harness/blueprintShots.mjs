@@ -79,6 +79,8 @@ const STATES = {
   'state-build-started': async (p) => { await k(p, 'j'); await k(p, 'a'); await k(p, 'b'); await k(p, 'b'); },
   'state-find': async (p) => { await k(p, '/'); await p.keyboard.type('book'); },
   'state-keys': async (p) => { await k(p, '?'); },
+  // bp-fidelity Stage A: the header's project switcher, open on the fixture's synthetic product list
+  'state-switcher': async (p) => { await p.click('[data-testid="blueprint-project-switcher"] .projsw-btn'); await p.waitForTimeout(300); },
   'state-lens-performance': async (p) => { await k(p, '0'); await k(p, '8'); },
   'state-lens-custom': async (p) => { await k(p, '0'); await k(p, '9'); },
   // WP4b: the compare panel on a done item (opens with the feature), on a performance item, the rework note prompt,

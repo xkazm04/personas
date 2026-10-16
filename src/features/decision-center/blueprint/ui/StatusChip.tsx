@@ -14,5 +14,5 @@ export function nextHint(B: BpText, s: ProposalStatus): string {
 
 /** A state chip: the word, in the tone the state table gives its status (never a hue named at the call site). */
 export function StatusChip({ B, status }: { B: BpText; status: ProposalStatus }) {
-  return <span className={`bp-chip typo-label bp-tone-${STATUS[status].tone}`} data-status={status}>{statusWord(B, status)}</span>;
+  return <span className={`bp-chip bp-tone-${STATUS[status].tone}`} data-status={status}>{statusWord(B, status)}</span>;
 }

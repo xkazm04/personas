@@ -5,13 +5,14 @@ import type { Feature } from '../standard/load';
 import type { WorkItem } from '../model/work';
 import { QueueItem } from './QueueItem';
 
+/** A group head (bp workbench .wb-gh): sticky on card-hi, the bay code and the feature, its stage on the right. */
 function BayTag({ f, right }: { f: Feature; right: string }) {
   const s = useSheet();
   const T = s.plan.L.TILE[f.id];
   return (
-    <div className="bp-btag typo-code">
-      <span className="bp-c">{T?.bay.cap.code ?? ''}</span><span className="bp-n typo-body">{f.name}</span><span className="bp-c">{right}</span>
-    </div>
+    <h3 className="bp-gh">
+      <span><span className="bp-code">{T?.bay.cap.code ?? ''}</span>{f.name}</span><span>{right}</span>
+    </h3>
   );
 }
 
@@ -36,15 +37,15 @@ export function QueueList() {
     <div className="bp-list" ref={list} id="bp-queue-list">
       {packs.length > 0 && (
         <>
-          <div className="bp-grp"><span className="typo-eyebrow">{tx(B.pack, { id: packs[0]?.pack ?? '' })}</span><span className="typo-eyebrow">{tx(B.pack_built, { count: packs.length })}</span></div>
+          <h3 className="bp-gh"><span>{tx(B.pack, { id: packs[0]?.pack ?? '' })}</span><span>{tx(B.pack_built, { count: packs.length })}</span></h3>
           {packs.map((p) => <div key={p.id}><BayTag f={p.f} right={p.f.stage ? stageWord(B, p.f.stage) : ''} /><QueueItem p={p} /></div>)}
-          <div className="bp-grp"><span className="typo-eyebrow">{B.waiting}</span><span className="typo-eyebrow">{waiting}</span></div>
+          <h3 className="bp-gh"><span>{B.waiting}</span><span>{waiting}</span></h3>
         </>
       )}
-      {groups.length === 0 && <p className="bp-empty typo-body">{tx(B.queue_empty, { place: placeName(s) })}</p>}
+      {groups.length === 0 && <p className="bp-empty">{tx(B.queue_empty, { place: placeName(s) })}</p>}
       {groups.map((g) => (
         <div key={g.f.id}>
-          <BayTag f={g.f} right={g.f.stage ? stageWord(B, g.f.stage).toUpperCase() : ''} />
+          <BayTag f={g.f} right={g.f.stage ? stageWord(B, g.f.stage) : ''} />
           {g.ps.map((p) => <QueueItem key={p.id} p={p} />)}
         </div>
       ))}

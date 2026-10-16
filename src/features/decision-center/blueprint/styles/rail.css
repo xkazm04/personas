@@ -1,0 +1,33 @@
+/* rail.css - bp's right rail (bp src/components/rail.css:8-34, Dock.tsx), re-ported: a slim 64 px column of counters,
+   each a glyph, a tabular figure, a mono label and an optional sub-label; tones amber (waiting on a person), red
+   (failed), mint (working) colour the glyph, the figure and a 2 px inset on the right edge. The flyouts are Stage C. */
+.bp-rr { position: absolute; right: 14px; top: 74px; bottom: var(--bp-bb); width: 64px; z-index: 6; background: var(--bp-card); border: 1px solid var(--bp-ink-3); box-shadow: 0 14px 36px var(--bp-shadow); display: flex; flex-direction: column; padding: 4px 0; gap: 1px; overflow: hidden auto; scrollbar-width: none; }
+.bp-rr .ri { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 2px 8px; border-left: 3px solid transparent; color: var(--bp-ink-2); flex: 0 0 auto; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+.bp-rr .ri:hover:not(:disabled) { background: color-mix(in srgb, var(--bp-accent) 9%, transparent); color: var(--bp-ink-hi); }
+.bp-rr .ri[aria-pressed='true'] { background: color-mix(in srgb, var(--bp-ink) 12%, transparent); border-left-color: var(--bp-lens, var(--bp-ink)); color: var(--bp-ink-hi); }
+.bp-rr .ri:disabled { cursor: default; }
+.bp-rr .ri:focus-visible { outline-offset: -2px; }
+.bp-rr .ri .g { position: relative; width: 22px; height: 22px; display: block; }
+.bp-rr .ri .g svg { width: 22px; height: 22px; display: block; }
+.bp-rr .ri .n { font: 600 var(--bp-fs-15)/1 var(--bp-font-mono); color: var(--bp-ink-hi); letter-spacing: 0.01em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bp-rr .ri .n.kb { font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); border: 1px solid var(--bp-ink-3); padding: 2px 6px; color: var(--bp-ink-2); }
+.bp-rr .ri .lb { font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); letter-spacing: var(--bp-ls-1); text-transform: uppercase; }
+.bp-rr .ri .sb { font: 400 var(--bp-fs-12)/1 var(--bp-font-sans); color: var(--bp-ink-2); max-width: 56px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bp-rr .ri .n2 { position: absolute; left: 15px; top: -6px; min-width: 18px; height: 16px; padding: 0 3px; border: 1px solid var(--bp-red); background: var(--bp-card); color: var(--bp-red-2); font: 600 var(--bp-fs-12)/14px var(--bp-font-mono); text-align: center; border-radius: 8px; }
+.bp-rr .ri.t-amber .g, .bp-rr .ri.t-amber .n { color: var(--bp-amber-2); }
+.bp-rr .ri.t-red .g, .bp-rr .ri.t-red .n { color: var(--bp-red-2); }
+.bp-rr .ri.t-mint .g, .bp-rr .ri.t-mint .n { color: var(--bp-mint-2); }
+.bp-rr .ri.t-amber { box-shadow: inset -2px 0 0 color-mix(in srgb, var(--bp-amber) 55%, transparent); }
+.bp-rr .ri.t-red { box-shadow: inset -2px 0 0 color-mix(in srgb, var(--bp-red) 60%, transparent); }
+.bp-rr .ri .pl { position: absolute; inset: 3px 4px; border: 1.5px solid currentColor; pointer-events: none; }
+.bp-rr .ri.t-amber .pl { color: var(--bp-amber-2); }
+.bp-rr .ri.t-red .pl { color: var(--bp-red); }
+.bp-rr .ri.t-mint .pl { color: var(--bp-mint-2); }
+.bp-rr .ri[data-k='find'] { border-bottom: 1px solid var(--bp-ink-4); padding-bottom: 10px; margin-bottom: 3px; }
+.bp-rr .ri[data-k='plan'] { border-top: 1px solid var(--bp-ink-4); margin-top: 3px; padding-top: 10px; }
+@media (max-height: 700px) {
+  .bp-rr { scrollbar-width: thin; scrollbar-color: var(--bp-ink-3) transparent; }
+  .bp-rr .ri { gap: 2px; padding: 5px 2px 4px; }
+  .bp-rr .ri .lb, .bp-rr .ri .sb { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .bp-rr .ri .pl { display: none; } }

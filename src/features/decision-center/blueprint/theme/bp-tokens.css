@@ -122,11 +122,12 @@
 }
 
 /* The theme-independent scale (bp globals.css :root, second block). Sizes ride the app's text-scale setting
-   (--type-f, 1 by default) so the Settings slider still reaches the sheet. */
+   (--type-f) UPWARD only: the app's default is 0.875 (typography.css), which would print bp's 12 px floor at 10.5 px,
+   so the factor is clamped at 1 and the Settings slider can enlarge the sheet but never take it under bp's floor. */
 .bp-scope {
   --bp-font-sans: 'IBM Plex Sans Condensed', 'Arial Narrow', system-ui, sans-serif;
   --bp-font-mono: 'IBM Plex Mono', 'Cascadia Mono', Consolas, monospace;
-  --bp-f: var(--type-f, 1);
+  --bp-f: max(1, var(--type-f, 1));
   --bp-fs-12: calc(12px * var(--bp-f));
   --bp-fs-13: calc(13px * var(--bp-f));
   --bp-fs-14: calc(14px * var(--bp-f));

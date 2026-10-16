@@ -1,0 +1,45 @@
+/* timeline.css - the bottom of the sheet, re-ported from bp: the level ladder and the scale bar (bp
+   src/components/blueprint.css:171-179, Overlays.tsx Ladder/ScaleBar) and the collapsed timeline strip (bp
+   src/components/timeline.css, timeline/Strip.tsx). The strip is 28 px at 8 px from the bottom; --bp-bb (the root) is
+   what sits above it: strip + margin + a 6 px gap. Expansion and scrubbing are Stage D. */
+
+/* ---------- the ladder: - + LEVEL L0 SITE .. L4 FEATURE, the current level in the lens accent */
+.bp-lv { position: absolute; left: 14px; bottom: var(--bp-bb); display: flex; align-items: stretch; height: 30px; background: var(--bp-card); border: 1px solid var(--bp-ink-3); z-index: 3; }
+.bp-lv .bp-press { border-right: 1px solid var(--bp-ink-4); padding: 0 9px; font: 500 var(--bp-fs-12)/28px var(--bp-font-mono); letter-spacing: var(--bp-ls-2); color: var(--bp-ink-2); white-space: nowrap; text-transform: uppercase; }
+.bp-lv .bp-press:hover { color: var(--bp-ink-hi); }
+.bp-lv .bp-press[aria-current='true'] { color: var(--bp-on-ink); background: var(--bp-lens, var(--bp-ink)); }
+.bp-lv .bp-press.zb { font: 500 var(--bp-fs-18)/28px var(--bp-font-sans); width: 30px; padding: 0; text-align: center; color: var(--bp-ink); }
+.bp-lv .lvl { font: 500 var(--bp-fs-12)/28px var(--bp-font-mono); color: var(--bp-ink-2); padding: 0 6px 0 9px; letter-spacing: var(--bp-ls-2); text-transform: uppercase; border-right: 1px solid var(--bp-ink-4); }
+.bp-lv .lvl:last-child { border-right: 0; }
+.bp-lv .bp-names { padding: 0 9px; border-right: 0; }
+.bp-lv .bp-names b { color: var(--bp-ink-hi); font-weight: 500; }
+
+/* ---------- the scale bar: 7 px alternating ink / transparent, "= one feature" */
+.bp-scale { position: absolute; right: 92px; bottom: calc(var(--bp-bb) + 2px); font: 500 var(--bp-fs-12) var(--bp-font-mono); color: var(--bp-ink-2); letter-spacing: var(--bp-ls-1); pointer-events: none; z-index: 3; display: flex; align-items: center; gap: 8px; white-space: nowrap; text-transform: uppercase; text-shadow: 0 0 6px var(--bp-paper), 0 0 3px var(--bp-paper); }
+.bp-scale .sb { display: inline-block; height: 7px; border: 1px solid var(--bp-ink-2); border-top: 0; background: linear-gradient(90deg, var(--bp-ink-2) 0 25%, transparent 25% 50%, var(--bp-ink-2) 50% 75%, transparent 75%); }
+.bp-scale .tail { text-transform: none; }
+@container bp-plan (max-width: 70rem) { .bp-scale { display: none; } }
+
+/* ---------- the strip (collapsed) */
+.bp-tl { position: absolute; left: 14px; right: 14px; bottom: 8px; height: 28px; display: flex; align-items: center; gap: 14px; padding-right: 8px; border: 1px solid var(--bp-ink-3); background: var(--bp-panel); font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); letter-spacing: var(--bp-ls-2); color: var(--bp-ink-2); z-index: 4; white-space: nowrap; text-transform: uppercase; }
+.bp-tl .tl-exp { align-self: stretch; display: flex; align-items: center; gap: 7px; padding: 0 10px; border-right: 1px solid var(--bp-ink-4); letter-spacing: var(--bp-ls-5); color: var(--bp-ink-2); }
+.bp-tl .tl-exp kbd { font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); padding: 1px 4px; border: 1px solid var(--bp-ink-3); color: var(--bp-ink-2); }
+.bp-tl .tl-chev { color: var(--bp-ink); }
+.bp-tl .tl-pos { display: flex; align-items: center; gap: 8px; }
+.bp-tl .tl-pos b { font-weight: 500; color: var(--bp-ink-hi); letter-spacing: var(--bp-ls-4); }
+.bp-tl .tl-dim { color: var(--bp-ink-2); }
+.bp-tl .tl-clk { display: flex; align-items: center; gap: 6px; padding-left: 14px; border-left: 1px solid var(--bp-ink-4); }
+.bp-tl .tl-k { letter-spacing: var(--bp-ls-5); }
+.bp-tl .tl-st { color: var(--bp-ink); letter-spacing: var(--bp-ls-3); }
+.bp-tl .tl-st.on { color: var(--bp-mint-2); }
+.bp-tl .tl-ago { text-transform: none; letter-spacing: 0; }
+@container bp-plan (max-width: 70rem) { .bp-tl .tl-exp kbd, .bp-tl .tl-pos .tl-dim, .bp-tl .tl-clk .tl-dim { display: none; } }
+
+/* the hairline: a sparkline of the weekly totals, a tick per week, the amber handle at now */
+.bp-tl .tl-line { flex: 1 1 auto; min-width: 120px; align-self: stretch; position: relative; }
+.bp-tl .tl-line svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.tl-area { fill: var(--bp-ink); fill-opacity: 0.12; }
+.tl-spark { fill: none; stroke: var(--bp-ink-2); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.tl-base, .tl-tick { stroke: var(--bp-ink-3); stroke-width: 1; }
+.tl-handle line { stroke: var(--bp-amber); stroke-width: 1.6; }
+.tl-handle path { fill: var(--bp-amber); }

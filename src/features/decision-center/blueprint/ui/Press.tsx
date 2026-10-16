@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';
 
 /**
  * Press - the drafting sheet's one press target. The sheet's controls (sheet tabs, depth rail, level bar, queue
@@ -15,11 +15,14 @@ export interface PressProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>
   /** The row the camera and the keys are on. Sets aria-current. */
   current?: boolean;
   children?: ReactNode;
+  /** React 19 passes a ref as a plain prop (the project switcher focuses its trigger back). */
+  ref?: Ref<HTMLButtonElement>;
 }
 
-export function Press({ tone, on, current, children, ...rest }: PressProps) {
+export function Press({ tone, on, current, children, ref, ...rest }: PressProps) {
   return (
     <button
+      ref={ref}
       type="button"
       className={tone ? `bp-press ${tone}` : 'bp-press'}
       aria-pressed={rest.role === 'tab' ? undefined : on}

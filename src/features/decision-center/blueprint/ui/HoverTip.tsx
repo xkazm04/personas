@@ -3,7 +3,7 @@ import { stageWord } from '../controller/useBlueprintText';
 import type { TipStore } from '../state/tipStore';
 import { useTip } from '../state/tipStore';
 
-/** The hover card (bp Overlays): the feature under the pointer, its stage, the lens that flagged it, what waits on it. */
+/** The hover card (bp Overlays #hov): a 12 px mono kicker (bay and stage), the feature's name large, the lens that flagged it, what waits on it; a 3 px lens rule on top. */
 export function HoverTip({ store }: { store: TipStore }) {
   const s = useSheet();
   const { B, tx } = s.text;
@@ -27,8 +27,8 @@ export function HoverTip({ store }: { store: TipStore }) {
   const fl = tip.flag ? f.lens[tip.flag.lens] : null;
   return (
     <div className="bp-tip" style={{ left, top }} role="tooltip">
-      {f.name}
-      <div className="bp-s">{f.stage ? stageWord(B, f.stage) : B.not_drawn} {'·'} {T.bay.cap.code} {T.bay.cap.name}</div>
+      <div className="bp-k">{T.bay.cap.code} {T.bay.cap.name} {'·'} {f.stage ? stageWord(B, f.stage) : B.not_drawn}</div>
+      <div className="bp-n">{f.name}</div>
       {fl && tip.flag && <div className="bp-s">{s.plan.LENS[tip.flag.lens]?.name}: {fl.why}</div>}
       {waiting > 0 && <div className="bp-w">{tx(B.tip_waiting, { count: waiting })}</div>}
     </div>

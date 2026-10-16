@@ -8,6 +8,7 @@
 // fixture's commits and screens are synthetic too (commits.ts, shots.ts).
 import type { ScanSnapshot } from '@/lib/lensScan/wire';
 import type { BlueprintData } from '../source';
+import { FIXTURE_PRODUCTS } from './products';
 import structure from './kettle.structure.json';
 import events from './kettle.events.jsonl?raw';
 import scan from './kettle.scan.json';
@@ -17,10 +18,11 @@ export const KETTLE_ROOT = 'C:/sample/kettle';
 /** A deep copy of the scan, so one fixture session never edits another's rows. */
 export const kettleScan = (): ScanSnapshot => structuredClone(scan) as unknown as ScanSnapshot;
 
-/** The fixture product as the drawing reads it. */
+/** The fixture product as the drawing reads it, with the switcher's synthetic product list (products.ts). */
 export function kettleData(): BlueprintData {
   return {
     product: { projectId: 'fixture-kettle', name: 'Kettle', root: KETTLE_ROOT },
+    products: FIXTURE_PRODUCTS.map((p) => ({ ...p })),
     structure: structuredClone(structure),
     events,
     scan: kettleScan(),

@@ -2,7 +2,7 @@ import { capOf } from '../model/keymap';
 
 /** A drafting keycap: the key as the keymap names it (`ArrowDown` prints as an arrow). Decorative next to its label. */
 export function Keycap({ k }: { k: string }) {
-  return <kbd className="bp-kbd typo-code">{capOf(k)}</kbd>;
+  return <kbd className="bp-kbd">{capOf(k)}</kbd>;
 }
 
 /** Keycaps for the keys of one binding, at most `max` of them. */

@@ -26,14 +26,14 @@ function TriageEntry({ line, B, tx, old }: { line: Extract<ConsoleLine, { kind: 
   const r = line.result;
   return (
     <div className={`bp-entry${old ? ' bp-old' : ''}`} data-testid="blueprint-triage-result">
-      <div className={`bp-cmd typo-code${old ? ' bp-old' : ''}`}>
+      <div className={`bp-cmd${old ? ' bp-old' : ''}`}>
         {tx(B.console_decide, { decision: r.decision, by: r.by })}
         {r.triaged.length > 0 && <div>{tx(B.console_triaged, { ids: r.triaged.join(', ') })}</div>}
         {r.skipped.map((k) => <Skipped key={k.id} k={k} B={B} tx={tx} />)}
         {r.packs_triaged.length > 0 && <div>{tx(B.console_packs_triaged, { ids: r.packs_triaged.join(', ') })}</div>}
         {r.packs_reopened && r.packs_reopened.length > 0 && <div>{tx(B.console_packs_reopened, { ids: r.packs_reopened.join(', ') })}</div>}
       </div>
-      {!old && line.note && <div className="bp-why typo-body">{tx(B.console_note, { note: line.note })}</div>}
+      {!old && line.note && <div className="bp-why">{tx(B.console_note, { note: line.note })}</div>}
     </div>
   );
 }
@@ -48,20 +48,20 @@ function Entry({ line, B, tx, old }: { line: ConsoleLine; B: BpText; tx: Tx; old
   if (line.kind === 'start') {
     return (
       <div className={`bp-entry${old ? ' bp-old' : ''}`}>
-        <div className={`bp-cmd typo-code${old ? ' bp-old' : ''}`} data-testid="blueprint-command">{line.result.command}</div>
-        <div className="bp-why typo-body">{tx(B.console_started, { lens: line.lens, label: line.result.label, pid: line.result.pid })}</div>
+        <div className={`bp-cmd${old ? ' bp-old' : ''}`} data-testid="blueprint-command">{line.result.command}</div>
+        <div className="bp-why">{tx(B.console_started, { lens: line.lens, label: line.result.label, pid: line.result.pid })}</div>
       </div>
     );
   }
   const r = line.result;
   return (
     <div className={`bp-entry${old ? ' bp-old' : ''}`} data-testid="blueprint-decide-result">
-      <div className={`bp-cmd typo-code${old ? ' bp-old' : ''}`}>
+      <div className={`bp-cmd${old ? ' bp-old' : ''}`}>
         {tx(B.console_decide, { decision: r.decision, by: r.by })}
         {r.decided.length > 0 && <div>{tx(B.console_decided, { ids: r.decided.join(', ') })}</div>}
         {r.skipped.map((k) => <Skipped key={k.id} k={k} B={B} tx={tx} />)}
       </div>
-      {!old && line.note && <div className="bp-why typo-body">{tx(B.console_note, { note: line.note })}</div>}
+      {!old && line.note && <div className="bp-why">{tx(B.console_note, { note: line.note })}</div>}
     </div>
   );
 }
@@ -81,20 +81,20 @@ export function DockConsole() {
     for (const id of armed) { const p = s.work.byId.get(id); if (p) by.set(p.lens, [...(by.get(p.lens) ?? []), id]); }
     return (
       <section className="bp-dock bp-armed" aria-label={B.console} data-testid="blueprint-armed">
-        <div className="bp-dk-top typo-eyebrow"><span>{B.armed_title}</span><span>{tx(B.armed_counts, { items: armed.length, jobs: by.size })}</span></div>
-        {[...by].map(([lens, ids]) => <div key={lens} className="bp-cmd typo-code">{tx(B.armed_job, { lens: s.plan.LENS[lens]?.short ?? lens, ids: ids.join(', ') })}</div>)}
-        <div className="bp-why typo-body">{B.armed_hint}</div>
+        <div className="bp-dk-top"><span>{B.armed_title}</span><span>{tx(B.armed_counts, { items: armed.length, jobs: by.size })}</span></div>
+        {[...by].map(([lens, ids]) => <div key={lens} className="bp-cmd">{tx(B.armed_job, { lens: s.plan.LENS[lens]?.short ?? lens, ids: ids.join(', ') })}</div>)}
+        <div className="bp-why">{B.armed_hint}</div>
       </section>
     );
   }
   const [last, ...older] = lines;
   return (
     <section className="bp-dock" aria-label={B.console} aria-busy={busy} data-testid="blueprint-dock">
-      <div className="bp-dk-top typo-eyebrow"><span>{busy ? B.console_sending : B.console_title}</span><span>{tx(B.console_count, { count: lines.length })}</span></div>
+      <div className="bp-dk-top"><span>{busy ? B.console_sending : B.console_title}</span><span>{tx(B.console_count, { count: lines.length })}</span></div>
       {last && <Entry line={last} B={B} tx={tx} />}
       {older.length > 0 && (
         <details className="bp-older">
-          <summary className="typo-eyebrow">{tx(B.console_earlier, { count: older.length })}</summary>
+          <summary className="bp-kick">{tx(B.console_earlier, { count: older.length })}</summary>
           {older.slice(0, 7).map((l) => <Entry key={l.key} line={l} B={B} tx={tx} old />)}
         </details>
       )}

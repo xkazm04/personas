@@ -1,7 +1,7 @@
-import { ModalShell } from '@/features/shared/components/modals/ModalShell';
 import { useSheet } from '../controller/SheetContext';
 import type { BpText } from '../controller/useBlueprintText';
 import { KEYMAP, type KeyAct, type KeyGroup } from '../model/keymap';
+import { BpDialog } from './dialog/BpDialog';
 import { Keycaps } from './Keycap';
 
 const GROUPS: KeyGroup[] = ['walk', 'decide', 'triage', 'move', 'sheets'];
@@ -21,20 +21,20 @@ export function KeySheet() {
   const close = () => s.dispatch({ type: 'overlay', overlay: null });
   const title = (g: KeyGroup) => ({ walk: B.keys_walk, decide: B.keys_decide, triage: B.keys_triage, move: B.keys_move, sheets: B.keys_sheets })[g];
   return (
-    <ModalShell isOpen portal onClose={close} titleId="bp-keys-title" width="lg" title={B.keys_title} subtitle={B.keys_any_closes}>
+    <BpDialog onClose={close} titleId="bp-keys-title" width="lg" title={B.keys_title} sub={B.keys_any_closes}>
       <div className="bp-keys">
         {GROUPS.map((g) => (
           <section key={g} className="bp-kg" aria-label={title(g)}>
-            <h3 className="typo-eyebrow">{title(g)}</h3>
+            <h3>{title(g)}</h3>
             {KEYMAP.filter((b) => b.group === g).map((b) => (
               <div key={b.act} className="bp-kr">
-                <span className="bp-kc"><Keycaps keys={b.keys} max={b.act === 'lens' ? 1 : 2} />{b.act === 'lens' && <span className="typo-code">1 - 9</span>}</span>
-                <span className="typo-body">{B[TEXT[b.act]]}</span>
+                <span className="bp-kc"><Keycaps keys={b.keys} max={b.act === 'lens' ? 1 : 2} />{b.act === 'lens' && <span>1 - 9</span>}</span>
+                <span>{B[TEXT[b.act]]}</span>
               </div>
             ))}
           </section>
         ))}
       </div>
-    </ModalShell>
+    </BpDialog>
   );
 }

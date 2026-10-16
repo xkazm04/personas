@@ -10,6 +10,12 @@
  */
 import './theme/fonts';
 import './blueprint.css';
+import './styles/header.css';
+import './styles/projects.css';
+import './styles/rail.css';
+import './styles/timeline.css';
+import './styles/queue.css';
+import './styles/dialog.css';
 import { useEffect, useRef } from 'react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { SheetContext } from './controller/SheetContext';

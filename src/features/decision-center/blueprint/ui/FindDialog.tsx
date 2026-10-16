@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { ModalShell } from '@/features/shared/components/modals/ModalShell';
 import { useSheet } from '../controller/SheetContext';
 import { stageWord } from '../controller/useBlueprintText';
 import { findHits, type Hit } from '../model/find';
+import { BpDialog } from './dialog/BpDialog';
 import { Keycap } from './Keycap';
 import { Press } from './Press';
 
 /**
  * Find (/): wings, bays, features and queued work in one list. Up and Down pick, Enter flies there, Esc closes. The
- * input owns these keys itself (the sheet's window handler leaves a field alone), and the dialog is the shared
- * ModalShell, so it sits in the modal stack like any other.
+ * input owns these keys itself (the sheet's window handler leaves a field alone). The box and the hits are bp's rail
+ * Find (40 px field, accent focus ring, ruled result rows) in the sheet's dialog frame (BpDialog, over BaseModal).
  */
 export function FindDialog() {
   const s = useSheet();
@@ -45,25 +45,22 @@ export function FindDialog() {
   const kind = (h: Hit) => (h.kind === 'wing' ? B.find_kind_wing : h.kind === 'bay' ? B.find_kind_bay : h.kind === 'feature' ? B.find_kind_feature : B.find_kind_item);
   const title = (h: Hit) => (h.kind === 'wing' ? `${h.letter} · ${h.title}` : h.kind === 'bay' ? `${h.code} · ${h.title}` : h.title);
   return (
-    <ModalShell
-      isOpen
-      portal
+    <BpDialog
       onClose={close}
       titleId="bp-find-title"
-      width="md"
       title={tx(B.find_title, { product: s.data.product.name })}
-      subtitle={hits.length ? tx(B.find_matches, { count: hits.length }) : B.find_scope}
-      footer={<div className="bp-dlg-foot typo-body"><span><Keycap k="ArrowUp" /><Keycap k="ArrowDown" /> {B.hint_pick}</span><span><Keycap k="Enter" /> {B.hint_fly}</span><span><Keycap k="Escape" /> {B.hint_close}</span></div>}
+      sub={hits.length ? tx(B.find_matches, { count: hits.length }) : B.find_scope}
+      footer={<><span><Keycap k="ArrowUp" /><Keycap k="ArrowDown" /> {B.hint_pick}</span><span><Keycap k="Enter" /> {B.hint_fly}</span><span><Keycap k="Escape" /> {B.hint_close}</span></>}
     >
-      <input ref={input} className="bp-input typo-body" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKey} placeholder={B.find_placeholder} aria-label={B.find_placeholder} autoComplete="off" data-testid="blueprint-find-input" />
+      <input ref={input} className="bp-input" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKey} placeholder={B.find_placeholder} aria-label={B.find_placeholder} autoComplete="off" data-testid="blueprint-find-input" />
       <div className="bp-hits" role="listbox" aria-label={B.find_title_aria}>
         {hits.map((h, i) => (
           <Press key={h.kind + h.id} tone="bp-hit" onClick={() => go(h)} current={i === hi} role="option" aria-selected={i === hi}>
-            <span className="bp-kind typo-code">{kind(h)}</span><span className="bp-ht2 typo-body">{title(h)}</span><span className="bp-d typo-body">{detail(h)}</span>
+            <span className="bp-kind">{kind(h)}</span><span className="bp-ht2">{title(h)}</span><span className="bp-d">{detail(h)}</span>
           </Press>
         ))}
-        {!hits.length && <p className="bp-empty typo-body">{tx(B.find_none, { product: s.data.product.name })}</p>}
+        {!hits.length && <p className="bp-empty">{tx(B.find_none, { product: s.data.product.name })}</p>}
       </div>
-    </ModalShell>
+    </BpDialog>
   );
 }
