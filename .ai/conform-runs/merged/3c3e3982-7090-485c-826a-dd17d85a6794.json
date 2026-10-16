@@ -1,0 +1,17 @@
+{
+ "schema": "conform-run/1",
+ "worker": "3c3e3982-7090-485c-826a-dd17d85a6794",
+ "subject": "data-access",
+ "evaluatedAt": "2026-10-16T01:15:28.038203+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "data-access",
+   "context": "recipes-playground",
+   "reason": "context-map.json lists file_paths as empty and entry_points under src/features/recipes/sub_playground/ (RecipePlaygroundModal.tsx, useRecipeTestRunner.ts, RecipeVersionsTab.tsx), but the entire src/features/recipes/** tree (29 files) was deleted in commit 450f1c9e5c as dead unmounted code, as documented in docs/features/recipes/README.md. With no context source files present on disk, this context cannot be judged against data-access."
+  }
+ ],
+ "consults": []
+}
