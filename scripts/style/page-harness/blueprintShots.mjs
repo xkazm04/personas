@@ -69,9 +69,9 @@ const LEVELS = new Set(['L0', 'L1', 'L2', 'L3', 'L4']);
 
 const STATES = {
   L0: async (p) => { await k(p, '0'); },
-  L1: async (p) => { await k(p, '0'); await k(p, 'l'); },
-  L2: async (p) => { await k(p, '0'); await k(p, 'l'); await k(p, 'Enter'); },
-  L3: async (p) => { await k(p, '0'); await k(p, 'l'); await k(p, 'Enter'); await k(p, 'Enter'); },
+  L1: async (p) => { await k(p, '0'); await k(p, 'ArrowRight'); },
+  L2: async (p) => { await k(p, '0'); await k(p, 'ArrowRight'); await k(p, 'Enter'); },
+  L3: async (p) => { await k(p, '0'); await k(p, 'ArrowRight'); await k(p, 'Enter'); await k(p, 'Enter'); },
   L4: async (p) => { await k(p, '0'); await k(p, 'j'); await k(p, 'Enter'); await k(p, 'Enter'); await k(p, 'Enter'); },
   'state-approved': async (p) => { await k(p, 'j'); await k(p, 'a'); },
   'state-decline-prompt': async (p) => { await k(p, 'j'); await k(p, 'x'); await p.keyboard.type('Superseded by the redesign'); },
@@ -90,15 +90,45 @@ const STATES = {
   'state-rework-prompt': async (p) => { await k(p, 'r'); await p.keyboard.type('Shoot the designed state, not the default'); },
   'state-reopen-refused': async (p) => { await k(p, 'u'); },
   'state-in-release': async (p) => { await k(p, 's'); await p.keyboard.type('Not worth the risk now'); await k(p, 'Enter'); },
+  // WP-D1 (bp-fidelity): the L4 feature page re-ported from bp: General, a healthy lens tab and one in trouble
+  'page-general': async () => {},
+  'page-lens-good': async (p) => { await k(p, '4'); },
+  'page-lens-bad': async (p) => { await k(p, '6'); },
+  // WP-C (bp-fidelity): the rail's flyouts - Agents with a run read in full, Plan's legend overview, View's window
+  'fly-agents': async (p) => { await k(p, '0'); await p.click('[data-testid="blueprint-rail"] [data-k="agents"]'); await p.waitForTimeout(300); await p.click('[data-testid="blueprint-flyout"] [data-row^="run:"]'); },
+  'fly-plan': async (p) => { await k(p, '0'); await p.click('[data-testid="blueprint-rail"] [data-k="plan"]'); },
+  'fly-plan-feature': async (p) => { await k(p, '0'); await p.click('[data-testid="blueprint-rail"] [data-k="plan"]'); await p.waitForTimeout(300); await p.click('[data-testid="blueprint-flyout"] .wb-row.ft'); },
+  'fly-view': async (p) => { await k(p, '0'); await p.click('[data-testid="blueprint-rail"] [data-k="view"]'); },
+  // WP-D2 (bp-fidelity): the expanded timeline at now; travelled 14 weeks back (panel closed again: the plan as it
+  // stood and the strip's travelled state); the hover card on a fixture at L1; the on-plan decision card; three picked
+  'tl-open': async (p) => { await k(p, '0'); await k(p, 't'); },
+  'tl-travel': async (p) => { await k(p, '0'); await k(p, 'Enter'); await k(p, 't'); await p.focus('[data-testid="blueprint-revisions"]'); for (let i = 0; i < 14; i++) await p.keyboard.press('ArrowLeft'); await p.waitForTimeout(300); await k(p, 'Escape'); },
+  'tl-travel-open': async (p) => { await k(p, '0'); await k(p, 'Enter'); await k(p, 't'); await p.focus('[data-testid="blueprint-revisions"]'); for (let i = 0; i < 14; i++) await p.keyboard.press('ArrowLeft'); },
+  'ov-hover': async (p) => {
+    await k(p, '0'); await k(p, 'Enter');
+    const b = await p.evaluate(() => { const r = document.querySelector('.bp-host')?.getBoundingClientRect(); return r ? { x: r.left + r.width * 0.42, y: r.top + r.height * 0.52 } : null; });
+    if (b) for (let i = 0; i < 6; i++) { await p.mouse.move(b.x + i * 6, b.y + i * 2); await p.waitForTimeout(60); }
+  },
+  'ov-decision': async (p) => { await k(p, 'j'); await p.waitForTimeout(500); },
+  'ov-select': async (p) => { for (let i = 0; i < 3; i++) { await k(p, '0'); await k(p, 'j'); await k(p, 'Space'); } },
+  // WP-B (bp-fidelity): the findings ledger (L) - the In packs table with a done item open in the compare panel (a wide
+  // window opens the first item itself; J walks and the panel follows), the change map mode, the backlog, the matrix
+  // and the release tab
+  'lg-triage': async (p) => { await k(p, 'l'); for (let i = 0; i < 3; i++) await k(p, 'j'); await p.waitForTimeout(600); },
+  'lg-map': async (p) => { await k(p, 'l'); for (let i = 0; i < 3; i++) await k(p, 'j'); for (let i = 0; i < 3; i++) await k(p, 'm'); await p.waitForTimeout(1500); },
+  'lg-backlog': async (p) => { await k(p, 'l'); await p.click('[data-testid="blueprint-ledger-filters"] .tr-seg .tr-seg-b:nth-child(2)'); await k(p, 'j'); await k(p, 'Space'); await k(p, 'j'); await k(p, 'Space'); },
+  'lg-matrix': async (p) => { await k(p, 'l'); await k(p, '2'); },
+  'lg-release': async (p) => { await k(p, 'l'); await k(p, '3'); },
 };
 
 /** The feature a state opens on (`?feature=`), its L4 sheet open at once. */
 const FEATURE = {
   'state-compare': 'book-a-class', 'state-compare-perf': 'drag-and-drop-timetable-editor', 'state-rework-prompt': 'book-a-class',
   'state-reopen-refused': 'studio-kpi-dashboard', 'state-in-release': 'revenue-reports',
+  'page-general': 'tax-handling', 'page-lens-good': 'tax-handling', 'page-lens-bad': 'tax-handling',
 };
 /** Frames taken at every size: the levels and the compare panel. */
-const EVERY_SIZE = new Set([...LEVELS, 'state-compare']);
+const EVERY_SIZE = new Set([...LEVELS, 'state-compare', 'page-general', 'page-lens-good', 'page-lens-bad', 'fly-agents', 'fly-plan', 'fly-view', 'tl-open', 'tl-travel', 'tl-travel-open', 'ov-hover', 'ov-decision', 'ov-select', 'lg-triage', 'lg-matrix', 'lg-release']);
 
 /** The title block, measured: what is clipped, what the lens sheets cover, whether the sheets leave the block. */
 const TITLE_CHECK = () => {

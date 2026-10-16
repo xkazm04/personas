@@ -59,13 +59,15 @@ export function BlueprintSheet({ data, actions, onClose, initialFeature }: Bluep
     return () => { cancelAnimationFrame(a); cancelAnimationFrame(b); };
   }, []);
   const ov = sheet.ui.overlay;
+  // The ledger is bp's full-width page: the Build queue column steps aside while it is up and returns with the plan.
+  const queueShown = sheet.ui.queueOpen && sheet.ui.page === 'plan';
   const desc = tx(B.figure_desc, { features: sheet.plan.S.features.length, wings: sheet.plan.L.wings.length, waiting: sheet.queueAll.filter((p) => p.status === 'proposed').length });
   return (
     <BaseModal isOpen onClose={onClose} titleId="bp-title" portal maxWidthClass="max-w-none" panelClassName="bp-panel" staggerChildren={false}>
       <SheetContext.Provider value={sheet}>
-        <div ref={root} className="bp-scope bp-root bp-sheet" tabIndex={-1} data-queue={sheet.ui.queueOpen ? 'open' : 'closed'} data-testid="blueprint-sheet">
+        <div ref={root} className="bp-scope bp-root bp-sheet" tabIndex={-1} data-queue={queueShown ? 'open' : 'closed'} data-testid="blueprint-sheet">
           <span id="bp-title" className="sr-only">{B.title}</span>
-          {sheet.ui.queueOpen && <QueueSidebar />}
+          {queueShown && <QueueSidebar />}
           <div className="bp-plan">
             <PlanCanvas plan={sheet.plan} work={sheet.work} words={words} lens={sheet.ui.lens} view={sheet.view} hooks={hooks} onEngine={setEngine} desc={desc} />
             <TitleBlock />

@@ -127,7 +127,8 @@
 .bp-scope {
   --bp-font-sans: 'IBM Plex Sans Condensed', 'Arial Narrow', system-ui, sans-serif;
   --bp-font-mono: 'IBM Plex Mono', 'Cascadia Mono', Consolas, monospace;
-  --bp-f: max(1, var(--type-f, 1));
+  --bp-font-hand: 'Caveat', 'Segoe Print', cursive;
+  --bp-f:max(1, var(--type-f, 1));
   --bp-fs-12: calc(12px * var(--bp-f));
   --bp-fs-13: calc(13px * var(--bp-f));
   --bp-fs-14: calc(14px * var(--bp-f));
@@ -162,3 +163,27 @@
   --bp-h-touch: 40px;
   font-family: var(--bp-font-sans);
 }
+
+/* The findings ledger's own palette and type (spark bp-fidelity Stage B): bp's src/components/ledger/ledger-theme.css
+   VERBATIM (the contest release-manager winner A/1, chosen by bp's owner for the ledger over the drawing set's Plex
+   and palette), scoped to the ledger page so the header, plan and rail around it keep theirs. Only the values of the
+   same roles change, so every ledger rule that reads a role repaints with no rule of its own; bp's `--sans` / `--mono`
+   are this file's `--bp-font-sans` / `--bp-font-mono`. A/1 sets no color-scheme, so its native controls are light. */
+.bp-scope .lg-page {
+  --bp-font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --bp-font-mono: "Cascadia Mono", "JetBrains Mono", Consolas, "SFMono-Regular", Menlo, monospace;
+  --bp-sheet-a: #12345e; --bp-sheet-b: #0d2a4f; --bp-sheet-c: #0a2345; --bp-paper: #071a33;
+  --bp-ink: #cfe3fb; --bp-ink-hi: #ffffff; --bp-ink-2: #93b2d6; --bp-ink-3: #3c6594; --bp-ink-4: #22477a; --bp-on-ink: #071a33;
+  --bp-accent: #5ccfff; --bp-mint: #5fe3b3; --bp-mint-2: #5fe3b3; --bp-red: #ff8b9b; --bp-red-2: #ff8b9b; --bp-amber: #ffc86b; --bp-amber-2: #ffc86b;
+  --bp-panel: #0a2142; --bp-panel-solid: #0a2142; --bp-card: #0c2850; --bp-card-hi: #10305c; --bp-shadow: rgba(0, 8, 20, .55); --bp-code-bg: #08203f;
+  --bp-on-mint: #04261a;
+  color-scheme: light;
+}
+[data-theme^="light"] .bp-scope .lg-page {
+  --bp-sheet-a: #f6f9fd; --bp-sheet-b: #eef4fb; --bp-sheet-c: #e8f0fa; --bp-paper: #dfe9f5;
+  --bp-ink: #1d3c63; --bp-ink-hi: #0a2244; --bp-ink-2: #4f6c90; --bp-ink-3: #9db5d3; --bp-ink-4: #ccdaeb; --bp-on-ink: #ffffff;
+  --bp-accent: #0b6fc2; --bp-mint: #0f8a5f; --bp-mint-2: #0f8a5f; --bp-red: #c23047; --bp-red-2: #c23047; --bp-amber: #a26300; --bp-amber-2: #a26300;
+  --bp-panel: #ffffff; --bp-panel-solid: #ffffff; --bp-card: #f3f7fc; --bp-card-hi: #e6eef8; --bp-shadow: rgba(20, 50, 90, .18); --bp-code-bg: #f7fafd;
+}
+/* The compare slider's knob (A/1): ink on the accent and its ring, the same in both themes and on both pages. */
+.bp-scope { --bp-knob-ink: #003322; --bp-knob-ring: rgba(0, 0, 0, .4); }

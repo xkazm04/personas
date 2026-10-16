@@ -91,8 +91,3 @@
 .bp-older summary { color: var(--bp-term-dim); cursor: pointer; margin: 8px 0 6px; font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-3); text-transform: uppercase; }
 
 /* ---------- the hover card (bp #hov) */
-.bp-tip { position: absolute; z-index: 5; width: 360px; pointer-events: none; background: var(--bp-card); border: 1px solid var(--bp-ink-2); border-top: 3px solid var(--bp-lens, var(--bp-ink)); padding: 10px 14px 11px; box-shadow: 0 14px 44px var(--bp-shadow); font: 600 var(--bp-fs-19)/1.2 var(--bp-font-sans); color: var(--bp-ink-hi); }
-.bp-tip .bp-s { font: 400 var(--bp-fs-15)/1.35 var(--bp-font-sans); color: var(--bp-ink); margin-top: 5px; }
-.bp-tip .bp-w { font: 400 var(--bp-fs-14)/1.35 var(--bp-font-sans); color: var(--bp-amber-2); margin-top: 5px; }
-.bp-tip .bp-k { font: 500 var(--bp-fs-12)/1.2 var(--bp-font-mono); letter-spacing: var(--bp-ls-3); text-transform: uppercase; color: var(--bp-ink-2); }
-.bp-tip .bp-n { font: 600 var(--bp-fs-26)/1.05 var(--bp-font-sans); letter-spacing: 0.01em; color: var(--bp-ink-hi); margin: 5px 0 6px; }
