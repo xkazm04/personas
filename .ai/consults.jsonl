@@ -1517,3 +1517,6 @@
 {"ts":"2026-10-16T18:28:20Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["swr-design","warm-remount-caches","in-flight-dedup","cache-key-discipline"],"deviations":1}
 {"ts":"2026-10-16T18:30:02Z","bundle":"software-engineering","subjects":["i18n"],"techniques":["catalog-architecture","completeness-gates","locale-runtime","encoding-corruption-ratchet"],"deviations":1}
 {"ts":"2026-10-16T18:30:02Z","bundle":"software-engineering","subjects":["i18n"],"techniques":["token-label-separation","completeness-gates"],"deviations":1}
+{"ts":"2026-10-16T18:31:00Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["verification-scope","reading-is-not-running"],"deviations":1}
+{"ts":"2026-10-16T18:31:00Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["verification-scope","archive-extraction-safety"],"deviations":1}
+{"ts":"2026-10-16T18:31:00Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":[],"deviations":0}

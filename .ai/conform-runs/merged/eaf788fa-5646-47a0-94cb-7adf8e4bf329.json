@@ -1,0 +1,35 @@
+{"schema": "conform-run/1", "worker": "eaf788fa-5646-47a0-94cb-7adf8e4bf329", "subject": "supply-chain",
+ "evaluatedAt": "2026-10-16T18:31:00Z",
+ "evaluatedAgainst": "sha256-b2:f5666db1094acd9f", "evaluatedRevision": 6,
+ "pairs": [
+  {"context": "63edaec0-367e-4553-a6ee-bfd4144be305", "subject": "supply-chain", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/infrastructure/setup.rs:486 the Node MSI fetched from nodejs.org (:450) is executed by msiexec with no digest check against the published SHASUMS256, and :675 pipes curl into sudo bash; a substituted or tampered installer runs with installer privileges",
+   "evaluatedAgainst": "sha256-b2:f5666db1094acd9f", "evaluatedRevision": 6,
+   "techniques": [
+    {"technique": "verification-scope", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/setup.rs:486 downloaded MSI run unverified; :675 curl|sudo bash; :820 unpinned npm install -g @anthropic-ai/claude-code - every fetch the app performs on the user's behalf is outside any pin"},
+    {"technique": "reading-is-not-running", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:113 the self-described read-only scan spawns knip/fallow in the project root, evaluating its configs and their local imports with no digest approval (same anchor as the plugins-dev-tools-skills deviation)"},
+    {"technique": "verification-scope", "verdict": "partial", "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:102 preflight refuses an npx fetch of a tool the project never adopted, but :291 exempts Impeccable, so `npx impeccable` downloads and runs an unpinned package on every scan"}
+   ]},
+  {"context": "107445f8-c266-4671-8160-f854bd79319e", "subject": "supply-chain", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/hooks/utility/data/useAutoInstaller.ts:147 the one-click installer starts the backend flow that runs a downloaded Node MSI with no digest check (src-tauri/src/commands/infrastructure/setup.rs:486) and an unpinned global npm install (:820)",
+   "evaluatedAgainst": "sha256-b2:f5666db1094acd9f", "evaluatedRevision": 6,
+   "techniques": [
+    {"technique": "verification-scope", "verdict": "deviation", "evidence": "src/hooks/utility/data/useAutoInstaller.ts:147 drives installs whose fetches are pinned by nothing (setup.rs:486, :675, :820)"},
+    {"technique": "archive-extraction-safety", "verdict": "not-applicable", "evidence": "src/hooks/utility/data/useAutoUpdater.ts:2 the updater path goes through tauri-plugin-updater with a minisign pubkey (src-tauri/tauri.conf.json:61); signature trust of shipped artifacts is packaging/signed-artifacts, not this subject, and no hook here unpacks an archive"}
+   ]},
+  {"context": "468953eb-0204-4013-b366-9357b2161138", "subject": "supply-chain", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/core/src/lib.rs:1 the dependency-free foundation crate plus cloud remote-command polling (src-tauri/src/cloud/remote_commands.rs:3, signed-envelope verbs = device-pairing/authorization); no lockfile, archive unpack, permission manifest, history scan or code-loading crossing the subject governs",
+   "evaluatedAgainst": "sha256-b2:f5666db1094acd9f", "evaluatedRevision": 6,
+   "techniques": []}
+ ],
+ "declined": [
+  {"subject": "supply-chain", "context": "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0", "reason": "commands-core imports persona bundles as validated JSON data (src-tauri/src/commands/core/import_export.rs:328, gallery deep link src-tauri/src/commands/core/gallery.rs:133) with no archive and no executed script; whether imported triggers arrive enabled is an extension-trust-boundary question, not read far enough to judge here"}
+ ],
+ "consults": [
+  {"ts": "2026-10-16T18:31:00Z", "bundle": "software-engineering", "subjects": ["supply-chain"], "techniques": ["verification-scope", "reading-is-not-running"], "deviations": 1},
+  {"ts": "2026-10-16T18:31:00Z", "bundle": "software-engineering", "subjects": ["supply-chain"], "techniques": ["verification-scope", "archive-extraction-safety"], "deviations": 1},
+  {"ts": "2026-10-16T18:31:00Z", "bundle": "software-engineering", "subjects": ["supply-chain"], "techniques": [], "deviations": 0}
+ ]}

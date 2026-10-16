@@ -9698,7 +9698,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/core/src/lib.rs:1 the dependency-free foundation crate plus cloud remote-command polling (src-tauri/src/cloud/remote_commands.rs:3, signed-envelope verbs = device-pairing/authorization); no lockfile, archive unpack, permission manifest, history scan or code-loading crossing the subject governs",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "cost-metering",
@@ -15694,7 +15698,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/hooks/utility/data/useAutoInstaller.ts:147 the one-click installer starts the backend flow that runs a downloaded Node MSI with no digest check (src-tauri/src/commands/infrastructure/setup.rs:486) and an unpinned global npm install (:820)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "test-harness",
@@ -41340,7 +41348,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/setup.rs:486 the Node MSI fetched from nodejs.org (:450) is executed by msiexec with no digest check against the published SHASUMS256, and :675 pipes curl into sudo bash; a substituted or tampered installer runs with installer privileges",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "prompt-assembly",

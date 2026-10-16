@@ -26912,6 +26912,63 @@
         }
       ],
       "registryProposal": "Coverage: the map marks triggers-test governance 'weak', but the subject's precondition holds (two hooks and a modal keep IPC read responses past the call). Weak status comes from domain coverage of the context, not from this subject, so a weak row can hide a strongly-governed pair. Consider ranking pairs inside weak rows by subject precondition rather than skipping them wholesale. Separately, the transport auto-dedup in this repo keys eligibility on a verb regex (list|get|fetch), which silently excludes read verbs like 'browse'; in-flight-dedup could name verb-inferred eligibility as a failure mode beside opt-in dedup."
+    },
+    "63edaec0-367e-4553-a6ee-bfd4144be305/supply-chain": {
+      "context": "workspace-governance",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:31:00.000Z",
+      "worker": "eaf788fa-5646-47a0-94cb-7adf8e4bf329",
+      "techniques": [
+        {
+          "technique": "verification-scope",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/setup.rs:486 downloaded MSI run unverified; :675 curl|sudo bash; :820 unpinned npm install -g @anthropic-ai/claude-code - every fetch the app performs on the user's behalf is outside any pin"
+        },
+        {
+          "technique": "reading-is-not-running",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:113 the self-described read-only scan spawns knip/fallow in the project root, evaluating its configs and their local imports with no digest approval (same anchor as the plugins-dev-tools-skills deviation)"
+        },
+        {
+          "technique": "verification-scope",
+          "verdict": "partial",
+          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:102 preflight refuses an npx fetch of a tool the project never adopted, but :291 exempts Impeccable, so `npx impeccable` downloads and runs an unpinned package on every scan"
+        }
+      ]
+    },
+    "107445f8-c266-4671-8160-f854bd79319e/supply-chain": {
+      "context": "hooks-utility-data",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:31:00.000Z",
+      "worker": "eaf788fa-5646-47a0-94cb-7adf8e4bf329",
+      "techniques": [
+        {
+          "technique": "verification-scope",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/data/useAutoInstaller.ts:147 drives installs whose fetches are pinned by nothing (setup.rs:486, :675, :820)"
+        },
+        {
+          "technique": "archive-extraction-safety",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/data/useAutoUpdater.ts:2 the updater path goes through tauri-plugin-updater with a minisign pubkey (src-tauri/tauri.conf.json:61); signature trust of shipped artifacts is packaging/signed-artifacts, not this subject, and no hook here unpacks an archive"
+        }
+      ]
+    },
+    "468953eb-0204-4013-b366-9357b2161138/supply-chain": {
+      "context": "core",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:31:00.000Z",
+      "worker": "eaf788fa-5646-47a0-94cb-7adf8e4bf329",
+      "techniques": []
     }
   }
 }
