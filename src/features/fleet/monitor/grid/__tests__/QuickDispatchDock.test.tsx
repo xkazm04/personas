@@ -185,8 +185,8 @@ describe('QuickDispatchDock — the readout', () => {
     expand();
     expect(screen.getByTestId('quick-dispatch-status-pill').textContent).toBe('STANDBY');
     // An em dash, not a price: the console must not quote a run it would refuse.
-    expect(screen.getByTestId('quick-dispatch-gauge-cost').textContent).toContain('—');
-    expect(screen.getByTestId('quick-dispatch-gauge-eta').textContent).toContain('—');
+    expect(screen.getByTestId('quick-dispatch-gauge-cost').textContent).toContain('-');
+    expect(screen.getByTestId('quick-dispatch-gauge-eta').textContent).toContain('-');
   });
 
   it('stays on STANDBY with an objective but no target — ARMED tracks what would really fire', async () => {

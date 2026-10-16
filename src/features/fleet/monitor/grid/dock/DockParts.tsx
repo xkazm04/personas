@@ -55,7 +55,7 @@ export function DockReadout({ console: d }: { console: DockConsole }) {
         <span className={PILL} data-testid="quick-dispatch-gauge-cost">
           ≈
           <span className="typo-data tabular-nums text-foreground">
-            {armed ? formatEstimateCost(estimate.cost) : '—'}
+            {armed ? formatEstimateCost(estimate.cost) : '-'}
           </span>
         </span>
       </Tooltip>
@@ -63,7 +63,7 @@ export function DockReadout({ console: d }: { console: DockConsole }) {
         <span className={PILL} data-testid="quick-dispatch-gauge-eta">
           ~
           <span className="typo-data tabular-nums text-foreground">
-            {armed ? formatEstimateMinutes(estimate.minutes) : '—'}
+            {armed ? formatEstimateMinutes(estimate.minutes) : '-'}
           </span>
         </span>
       </Tooltip>
