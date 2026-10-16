@@ -234,9 +234,34 @@ On WP1's anatomy:
 - Delete the chip strip, `chipMeta`, the chip lists in `decisionModel` and `deckMeta`, and the setting. Docs
   (`docs/features/monitor.md`, decision-center docs), onboarding anchors and the page harness updated in the same commit.
 
+### WP11: Persona cards in the bays (frontend, variants then port)
+
+Added 2026-10-16 after the owner found the plan had no real redesign of the main content: WP8 only reskinned it,
+and B/1 kept today's `PersonaLine` tiles. Owner decision: **calm + richer**. State reads as a lamp and a colour
+edge in the plate language, never a full saturated fill; each card gains one line of what the persona is doing
+now (current task or last run, next schedule). Taller cards are accepted.
+- Phase A: three variants in the page harness over the real board (rail, CommandBar, dock, every bay state:
+  needs you, critical, working, idle, off, scheduled), dark and light, 1280x800 and 1920x1080. The owner picks
+  or fuses.
+- Phase B: port the winner into `entry-e/PersonaLine.tsx` and its consumers (`ClassicPanel`, `PeerBay`, the Queue
+  view), with tests. Every field on the activity line names the query that fills it, and a missing value shows
+  as absent, never as invented.
+
+### WP12: Conversations restructured (frontend, variants then port)
+
+Owner decision 2026-10-16: **restructure**, not restyle. The Conversations tab is rebuilt in the deck and plate
+anatomy: run and deliberation cards show the outcome first; reviews are decided inline with the deck's fixed
+verdict dock and keys (no raw Reject/Approve buttons); the projects rail uses the Stewards row grammar with a
+lamp; `ConversationCards` (440), `PersonaConversationCards` (355), `ConversationSidebar` (323) and the other
+files over 200 LOC are split.
+- Phase A: three variants in the page harness with the real Monitor chrome, dark and light, both sizes. The owner
+  picks or fuses.
+- Phase B: port the winner into `src/features/fleet/monitor/channels/**`, keeping every behaviour of today's tab
+  (threads, deliberations, quick replies, the composer, reviews), with tests.
+
 **Order and parallelism.** WP0, WP1 and WP2 have disjoint files and can run in parallel. WP3 needs WP2. WP4
 needs WP3's snapshot, so the Director commits the binding types and command stubs first. WP5 needs WP1 and WP4.
-WP6 needs WP3, WP4 and WP5. WP7 needs WP2. WP8 needs WP0's verdict. WP9 needs WP2. WP10 is last.
+WP6 needs WP3, WP4 and WP5. WP7 needs WP2. WP8 needs WP0's verdict. WP9 needs WP2. WP10 is last. WP11 and WP12 follow WP10, run in parallel (disjoint files), and each waits on the owner's pick between its phases.
 
 ## 6. UX and UI rules for every package
 
