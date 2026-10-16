@@ -26969,6 +26969,83 @@
       "evaluatedTs": "2026-10-16T18:31:00.000Z",
       "worker": "eaf788fa-5646-47a0-94cb-7adf8e4bf329",
       "techniques": []
+    },
+    "d7525012-ab19-4b29-99bb-0d4b6b9e084b/agent-runtime-assembly": {
+      "context": "plugins-fleet-tests",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T21:17:48.869Z",
+      "techniques": [],
+      "registryProposal": "The golden path already sends fleet orchestration and the replay viewer to other subjects, but the matcher still binds fleet UI tests, the React/Tauri event fan-out, and the execution trace inspector; naming those three surfaces where the subject stops would keep judgment on the hook chain.",
+      "withdrawn": {
+        "worker": "51ee89c9-8ba3-4163-89ae-3663574096e2",
+        "state": "not-applicable",
+        "at": "2026-10-16T21:18:10.386377+00:00",
+        "reason": "reviewer (sonnet): The anchor FleetSessionInsights.tsx is not one of this context's files, which are all __tests__ files, so the line does not show the precondition is absent for them; I also found that fleet has spawn and dispatch code (FleetSpawnTaskModal, quick-dispatch) that I did not trace."
+      }
+    },
+    "03e7f46a-3f19-47b8-98a5-398efed815b4/agent-runtime-assembly": {
+      "context": "hooks-realtime",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T21:17:48.869Z",
+      "worker": "51ee89c9-8ba3-4163-89ae-3663574096e2",
+      "techniques": []
+    },
+    "767b2bb5-4662-4be1-ad24-c881ac334016/agent-runtime-assembly": {
+      "context": "webhook-ingestion",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T21:17:48.869Z",
+      "worker": "51ee89c9-8ba3-4163-89ae-3663574096e2",
+      "techniques": [
+        {
+          "technique": "session-scoped-capability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/cli_capabilities.rs:93 A per-session CLI surface is stored in one Option and handed to whichever caller asks next; stamping served_from_cache does not key the answer by session."
+        },
+        {
+          "technique": "operator-tier-code-loading",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:215 install_mcp_sidecar refuses to merge a project settings.json mcpServers command and writes only the host-bundled personas-mcp entry."
+        },
+        {
+          "technique": "checkpoint-mode-custody",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/git_checkpoint.rs:8 These are git stage commits on a run branch; no full-versus-delta conversation checkpoint mode appears in this context."
+        },
+        {
+          "technique": "bounded-projection-of-external-work",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/polling.rs:166 The poller hashes HTTP trigger bodies on a scheduler; the model loop is not holding a remote job handle."
+        },
+        {
+          "technique": "host-routes-win",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/webhook.rs:90 The axum tables in webhook.rs and pairing.rs are host-built routes; no contributed router is mounted on them."
+        },
+        {
+          "technique": "additive-input-at-the-call-boundary",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/context_fidelity.rs:3 Each pipeline node is a new one-shot process, so there is no in-flight model call for a follow-up to join."
+        }
+      ]
+    },
+    "208f50de-5d3b-4345-9fed-1c106a7a36e9/agent-runtime-assembly": {
+      "context": "execution-detail-inspector",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T21:17:48.869Z",
+      "worker": "51ee89c9-8ba3-4163-89ae-3663574096e2",
+      "techniques": []
     }
   }
 }

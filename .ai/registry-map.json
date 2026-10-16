@@ -12386,8 +12386,12 @@
           "revision": 27,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/features/agents/sub_executions/detail/inspector/SubagentTree.tsx:24 SubagentTree only displays a live execution stream and says a finished run shows nothing, and a search of the detail directory for MutationPoint, checkpoint_mode, mcpServers, assembly_digest, and fail_open found none.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "agent-memory",
@@ -15403,8 +15407,12 @@
           "revision": 27,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/hooks/realtime/createSingletonListener.ts:8 This context fans one native Tauri listener out to React subscribers, and a search of src/hooks for MutationPoint, checkpoint_mode, mcpServers, assembly_digest, and fail_open found none, so these are UI subscriptions rather than hooks around a model or tool call.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "test-harness",
@@ -27089,8 +27097,8 @@
           "revision": 27,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "priorNotApplicable": 4,
+          "state": "unknown"
         },
         {
           "subject": "sidecar-provisioning",
@@ -41061,8 +41069,12 @@
           "revision": 27,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "deviation",
+          "priorNotApplicable": 4,
+          "evidence": "src-tauri/engine/src/cli_capabilities.rs:93 The CLI capability probe's own docs say two spawns can disagree because of the child session, but get_or_probe keeps one process-wide cache and only labels the replay served_from_cache.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "webhook-ingestion",

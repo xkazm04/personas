@@ -1,0 +1,146 @@
+{
+  "schema": "conform-run/1",
+  "worker": "51ee89c9-8ba3-4163-89ae-3663574096e2",
+  "subject": "agent-runtime-assembly",
+  "evaluatedAt": "2026-10-16T21:17:48.869215+00:00",
+  "provider": "grok",
+  "model": "grok-4.7",
+  "pairs": [
+    {
+      "context": "hooks-realtime",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/hooks/realtime/createSingletonListener.ts:8 This context fans one native Tauri listener out to React subscribers, and a search of src/hooks for MutationPoint, checkpoint_mode, mcpServers, assembly_digest, and fail_open found none, so these are UI subscriptions rather than hooks around a model or tool call.",
+      "techniques": [],
+      "absenceTerms": [
+        "MutationPoint",
+        "mcpServers",
+        "assembly_digest",
+        "fail_open"
+      ]
+    },
+    {
+      "context": "webhook-ingestion",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/cli_capabilities.rs:93 The CLI capability probe's own docs say two spawns can disagree because of the child session, but get_or_probe keeps one process-wide cache and only labels the replay served_from_cache.",
+      "techniques": [
+        {
+          "technique": "session-scoped-capability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/cli_capabilities.rs:93 A per-session CLI surface is stored in one Option and handed to whichever caller asks next; stamping served_from_cache does not key the answer by session."
+        },
+        {
+          "technique": "operator-tier-code-loading",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:215 install_mcp_sidecar refuses to merge a project settings.json mcpServers command and writes only the host-bundled personas-mcp entry."
+        },
+        {
+          "technique": "checkpoint-mode-custody",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/git_checkpoint.rs:8 These are git stage commits on a run branch; no full-versus-delta conversation checkpoint mode appears in this context."
+        },
+        {
+          "technique": "bounded-projection-of-external-work",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/polling.rs:166 The poller hashes HTTP trigger bodies on a scheduler; the model loop is not holding a remote job handle."
+        },
+        {
+          "technique": "host-routes-win",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/webhook.rs:90 The axum tables in webhook.rs and pairing.rs are host-built routes; no contributed router is mounted on them."
+        },
+        {
+          "technique": "additive-input-at-the-call-boundary",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/context_fidelity.rs:3 Each pipeline node is a new one-shot process, so there is no in-flight model call for a follow-up to join."
+        }
+      ]
+    },
+    {
+      "context": "execution-detail-inspector",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_executions/detail/inspector/SubagentTree.tsx:24 SubagentTree only displays a live execution stream and says a finished run shows nothing, and a search of the detail directory for MutationPoint, checkpoint_mode, mcpServers, assembly_digest, and fail_open found none.",
+      "techniques": [],
+      "absenceTerms": [
+        "MutationPoint",
+        "mcpServers",
+        "assembly_digest",
+        "fail_open"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-runtime-assembly",
+      "context": "output-stream-parser",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "agent-runtime-assembly",
+      "context": "plugins-fleet-tests",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor FleetSessionInsights.tsx is not one of this context's files, which are all __tests__ files, so the line does not show the precondition is absent for them; I also found that fleet has spawn and dispatch code (FleetSpawnTaskModal, quick-dispatch) that I did not trace."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T21:17:48.869215+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-runtime-assembly"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "plugins-fleet-tests",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-16T21:17:48.869215+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-runtime-assembly"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "hooks-realtime",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-16T21:17:48.869215+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-runtime-assembly"
+      ],
+      "techniques": [
+        "additive-input-at-the-call-boundary",
+        "bounded-projection-of-external-work",
+        "checkpoint-mode-custody",
+        "host-routes-win",
+        "operator-tier-code-loading",
+        "session-scoped-capability"
+      ],
+      "deviations": 1,
+      "context": "webhook-ingestion",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-16T21:17:48.869215+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-runtime-assembly"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "execution-detail-inspector",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    }
+  ]
+}

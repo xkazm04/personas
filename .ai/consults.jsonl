@@ -1521,3 +1521,7 @@
 {"ts":"2026-10-16T18:31:00Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["verification-scope","archive-extraction-safety"],"deviations":1}
 {"ts":"2026-10-16T18:31:00Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":[],"deviations":0}
 {"ts":"2026-10-16T20:43:24Z","bundle":"software-engineering","subjects":["design-tokens","canvas-graph"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T21:17:48.869215+00:00","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":[],"deviations":0,"context":"plugins-fleet-tests","via":"curator-multi:grok","model":"grok-4.7"}
+{"ts":"2026-10-16T21:17:48.869215+00:00","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":[],"deviations":0,"context":"hooks-realtime","via":"curator-multi:grok","model":"grok-4.7"}
+{"ts":"2026-10-16T21:17:48.869215+00:00","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["additive-input-at-the-call-boundary","bounded-projection-of-external-work","checkpoint-mode-custody","host-routes-win","operator-tier-code-loading","session-scoped-capability"],"deviations":1,"context":"webhook-ingestion","via":"curator-multi:grok","model":"grok-4.7"}
+{"ts":"2026-10-16T21:17:48.869215+00:00","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":[],"deviations":0,"context":"execution-detail-inspector","via":"curator-multi:grok","model":"grok-4.7"}
