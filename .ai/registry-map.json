@@ -7683,8 +7683,12 @@
           "revision": 27,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "deviation",
+          "priorNotApplicable": 4,
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:53 fleet launch door scrubs a hand-enumerated list of 7 CLAUDE_* names instead of the CLAUDE_CODE_ family, so any identifier a newer CLI injects rides into every fleet child (companion/session/launch.rs:463 already scrubs by prefix; cli_process.rs:750 strips two names) - three lists, one concept",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "mcp-tools",
@@ -10476,8 +10480,12 @@
           "revision": 27,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "conformant",
+          "priorNotApplicable": 4,
+          "evidence": "src-tauri/db/src/repos/execution/restart_recovery.rs:124 interrupted runs close as incomplete/unproven (not failed), escalation cap checked before the freshness window, restarts counted on their own key and cleared only on completion (executions.rs:1236)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "quality-gates",
@@ -17218,8 +17226,12 @@
           "revision": 27,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/lib/execution/middleware/index.ts:21 every pipeline middleware is host-authored and registered at this one point, with no extension surface; the techniques' own 'when not to use' (single author, no contributed hooks) excludes it, and the chain wraps frontend run bookkeeping, not the model or tool call (which runs inside the CLI)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "quality-gates",

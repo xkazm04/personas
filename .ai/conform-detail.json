@@ -23773,6 +23773,127 @@
       "evaluatedTs": "2026-10-16T17:24:47.000Z",
       "worker": "9e93a69b-1184-472e-8961-09c36122f0b9",
       "techniques": []
+    },
+    "2de6333f-8375-404b-8fdc-fe0fb15d4f95/agent-runtime-assembly": {
+      "context": "commands-fleet",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:24:10.000Z",
+      "worker": "24c2d3b1-ecef-4152-994f-38e602681015",
+      "techniques": [
+        {
+          "technique": "nested-run-is-not-its-parent",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:53 launch-door scrub is a per-site enumerated list, not the prefix family from one door-owned list; receiver half is realized at src-tauri/src/commands/fleet/hooks.rs:236 (an unknown session id resolves to None unless SessionStart announces clear/resume)"
+        },
+        {
+          "technique": "activation-is-a-separate-mutation",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/fleet/hook_install.rs:216 check_hooks reads the activation itself (user settings.json entries, port and token drift) and returns installed/missing/Err; src-tauri/src/boot/services.rs:191 re-runs it at boot and reinstalls on drift"
+        },
+        {
+          "technique": "semantic-hook-placement",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/hook_install.rs:39 Personas contributes observer hooks into Claude Code's chain; it composes no chain of its own here"
+        },
+        {
+          "technique": "operator-tier-code-loading",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/hook_install.rs:102 the installed payload is a fixed curl to the local receiver, not contributed code loaded into the host"
+        }
+      ],
+      "registryProposal": "nested-run-is-not-its-parent: field case where ONE repo holds both forms side by side (enumerated list at the fleet door, prefix scrub at the companion door, a two-name strip in the one-shot CLI helper) - the technique could name 'several launch doors in one process' as the shape that produces divergent lists, and prescribe one shared scrub function rather than one list per door"
+    },
+    "320d2cea-9761-4233-97c1-ee2eaf4d6c17/agent-runtime-assembly": {
+      "context": "db-repos-execution",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:24:10.000Z",
+      "worker": "24c2d3b1-ecef-4152-994f-38e602681015",
+      "techniques": [
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/execution/restart_recovery.rs:30 Unproven = incomplete + recovery_state column (first-class, not a message string); :124 cap before window; :64 window reuses the zombie-sweep liveness threshold; :129 unreadable start stamp -> Unproven; src-tauri/db/src/repos/execution/executions.rs:1236 mark cleared on completed, not on attempt"
+        },
+        {
+          "technique": "checkpoint-mode-custody",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:1052 the repo keeps only the CLI's session id; the conversation checkpoint store belongs to the Claude CLI, not this layer"
+        },
+        {
+          "technique": "bounded-projection-of-external-work",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/execution/mod.rs:7 this context is the durable job record, which the golden path assigns to job-coordination; the loop-side projection rule lives elsewhere"
+        },
+        {
+          "technique": "additive-input-at-the-call-boundary",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/execution/mod.rs:1 repository modules only; no model-call loop to inject into"
+        },
+        {
+          "technique": "semantic-hook-placement",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/execution/mod.rs:1 repository modules only; no hook chain is composed in this crate"
+        },
+        {
+          "technique": "observer-and-mutator-surfaces",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/execution/mod.rs:1 no registration surface in this context"
+        },
+        {
+          "technique": "honest-hook-registry",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/execution/mod.rs:1 no event registry in this context"
+        },
+        {
+          "technique": "operator-tier-code-loading",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/execution/mod.rs:1 no extension loading in this context"
+        },
+        {
+          "technique": "host-routes-win",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/execution/mod.rs:1 no routes mounted in this context"
+        },
+        {
+          "technique": "assembly-identity",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/execution/mod.rs:1 no assembly is built here; the repo stores run records"
+        }
+      ],
+      "registryProposal": "technique-shaped resonance: the golden path says 'the job record is not this subject', yet indeterminate-closure-on-interruption's realization here lives entirely in the job-record layer (a classifier over persisted running rows). Worth stating in the technique that the closure may be realized at the record layer when the runtime delegates the loop to an external CLI. Also a matcher gap: src-tauri/src/engine/runner/hooks/mod.rs (the runner's observer/interceptor registry, cited by this subject's own rust--operator-tier-code-loading application) sits in no context-map context, and engine-project-tracking (holds src-tauri/src/engine/runner/*) is not paired with this subject"
+    },
+    "1db5c86e-3237-4d2a-8e2f-1426d680757c/agent-runtime-assembly": {
+      "context": "lib-execution",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:24:10.000Z",
+      "worker": "24c2d3b1-ecef-4152-994f-38e602681015",
+      "techniques": [
+        {
+          "technique": "semantic-hook-placement",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/execution/middleware/index.ts:21 single-author list with stage + numeric priority; below the second-party threshold the technique keeps the list"
+        },
+        {
+          "technique": "observer-and-mutator-surfaces",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/execution/pipeline.ts:744 one surface where a throw aborts the stage (the failure the technique names), latent while all registrants are first-party and catch internally (src/lib/execution/knowledgeMiddleware.ts:89)"
+        },
+        {
+          "technique": "operator-tier-code-loading",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/execution/middleware/index.ts:21 no contributed code enters; registrants are static imports"
+        }
+      ],
+      "registryProposal": "If addMiddleware ever gets a non-host caller (plugins), this pair flips: pipeline.ts:744 runs entries unisolated and a throw skips every successor - the propagated-failure mode operator-tier-code-loading names"
     }
   }
 }
