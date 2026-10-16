@@ -1267,3 +1267,9 @@
 {"ts":"2026-10-16T17:07:37Z","bundle":"software-engineering","subjects":["modal-stack"],"techniques":["stack-ownership","dismissal-semantics","focus-and-scroll-containment","layering-and-precedence","destructive-confirmation"],"deviations":5}
 {"ts":"2026-10-16T17:08:30Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["decision-records","review-queues","consent-gates"],"deviations":1}
 {"ts":"2026-10-16T17:08:30Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["gate-state-machines","author-advisories-yield-to-the-users-mode","consent-gates"],"deviations":1}
+{"ts":"2026-10-16T17:09:20Z","bundle":"software-engineering","subjects":["motion"],"techniques":["reduced-motion-mechanics","preset-vocabulary"],"deviations":1}
+{"ts":"2026-10-16T17:09:20Z","bundle":"software-engineering","subjects":["motion"],"techniques":["reduced-motion-mechanics"],"deviations":1}
+{"ts":"2026-10-16T17:09:20Z","bundle":"software-engineering","subjects":["motion"],"techniques":["reduced-motion-mechanics"],"deviations":1}
+{"ts":"2026-10-16T17:09:20Z","bundle":"software-engineering","subjects":["motion"],"techniques":["reduced-motion-mechanics","performance-discipline"],"deviations":1}
+{"ts":"2026-10-16T17:09:20Z","bundle":"software-engineering","subjects":["motion"],"techniques":["reduced-motion-mechanics","preset-vocabulary"],"deviations":1}
+{"ts":"2026-10-16T17:09:20Z","bundle":"software-engineering","subjects":["motion"],"techniques":["one-shot-guarding","unprompted-motion-lifecycle"],"deviations":1}
