@@ -1,0 +1,9 @@
+{"schema": "conform-run/1", "worker": "87e9243d-6803-455c-915f-f7f50247b34f", "subject": "structured-output",
+ "evaluatedAt": "2026-10-16T18:12:48Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "structured-output", "context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5", "reason": "no work: all 10 structured-output pairs carry verdicts evaluatedAgainst sha256-b2:d51aec71411ccb2b rev 15, which equals the registry index digest at 11037a6c (revisionsBehind 0, none stale); re-judging current verdicts would only repeat them"},
+  {"subject": "structured-output", "context": "876c0b4e-6472-4544-a21b-56e7529fb6b3", "reason": "existing deviation re-read and still live: src-tauri/src/engine/kb_extract.rs:161 warn-only per-document failure, :169 finalize_run(..., None), :307 confidence unwrap_or(1.0), :314 entity_type stored unchecked - verdict unchanged, so not rewritten"},
+  {"subject": "structured-output", "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b", "reason": "weak context (governance: weak), dead since 0697f13438; not judged by default"}
+ ],
+ "consults": []}
