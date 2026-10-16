@@ -40,11 +40,14 @@ export interface SessionTail {
   age: string;
 }
 
+/** An unlit lamp rests grey, as a persona line's does: colour is for a light that is on. */
+const restingDark = (l: Lamp): Lamp => (l.lit ? l : { tone: 'off', lit: false });
+
 export function sessionTail(i: SessionTailInput): SessionTail {
   const kind = sessionPileKey(i);
   const lamp: Lamp = kind === 'critical' ? { tone: 'err', lit: true }
     : kind === 'warning' ? { tone: 'warn', lit: true }
-      : sessionLamp(i.state);
+      : restingDark(sessionLamp(i.state));
   return { kind, tone: lamp.tone, lamp, word: kind !== 'working', age: compactAge(Math.max(0, i.now - i.startedAt)) };
 }
 

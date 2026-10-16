@@ -34,9 +34,9 @@ describe('sessionTail: state -> lamp and edge (the persona line\'s grammar)', ()
   });
 
   it('queued, idle and finished rest: no edge, a dark lamp in sessionLamp\'s tone', () => {
-    expect(tail('queued').lamp).toEqual({ tone: 'info', lit: false });
-    expect(tail('idle').lamp).toEqual({ tone: 'ok', lit: false });
-    expect(tail('finished').lamp).toEqual({ tone: 'ok', lit: false });
+    expect(tail('queued').lamp).toEqual({ tone: 'off', lit: false });
+    expect(tail('idle').lamp).toEqual({ tone: 'off', lit: false });
+    expect(tail('finished').lamp).toEqual({ tone: 'off', lit: false });
     for (const s of ['queued', 'idle', 'finished'] as const) expect(lineEdgeClass(tail(s).kind)).toBe('');
   });
 
