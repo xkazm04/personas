@@ -1364,3 +1364,5 @@
 {"ts":"2026-10-16T17:38:11Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["voice-ux-integration","tts-pipeline","bounded-playback-wait"],"deviations":2}
 {"ts":"2026-10-16T17:38:11Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["voice-setup-experience","speech-ready-text","on-device-vs-cloud","bounded-playback-wait"],"deviations":3}
 {"ts":"2026-10-16T17:38:11Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["spoken-intent-parsing","bounded-playback-wait"],"deviations":1}
+{"ts":"2026-10-16T17:38:37Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["ai-driven-elicitation","step-state-model","snapshot-and-resume"],"deviations":0}
+{"ts":"2026-10-16T17:38:37Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["step-state-model","commit-boundary","progress-communication"],"deviations":0}

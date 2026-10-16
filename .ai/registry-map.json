@@ -28173,7 +28173,11 @@
           "revision": 4,
           "changedAt": "2026-08-22",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:65 the context's only interview engine has zero callers in src (TrainingStudio.tsx:43 is rendered only by its own test; entry point TrainingAtelier.tsx no longer exists), so no live staged flow remains in this context - the live twin interview is src/features/plugins/twin/experience/ExperienceBody.tsx:60 useSetupSession, outside it",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:e0fac678b7164451",
+          "evaluatedRevision": 4
         },
         {
           "subject": "agent-runtime-assembly",
@@ -35678,7 +35682,11 @@
           "revision": 4,
           "changedAt": "2026-08-22",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_presets/usePresetAdoption.ts:30 the only staged surface is preview|adopting|done over ONE screen (PresetPreviewModal.tsx:142 preview, :183 customize as an inline collapsible), every decision shown at once - the golden path's 'show them at once' case, not a sequenced wizard; ExploreView/BentoGrid are browsing and the described draft-editor tabs are not in this context's files",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:e0fac678b7164451",
+          "evaluatedRevision": 4
         },
         {
           "subject": "supply-chain",

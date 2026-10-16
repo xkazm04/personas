@@ -24418,6 +24418,60 @@
       "worker": "3f28088c-0062-42e6-96c7-2f73dcf8a5e8",
       "techniques": [],
       "registryProposal": "matcher miss: copy-quality-gates is not paired with the i18n context 2e1e105a-866c-4039-9620-7ed5d0d30b17, where the repo's real source-copy gates live (scripts/i18n/check-escapes.mjs, scripts/i18n/check-untranslated.mjs, check:i18n:strict, census rules on hardcoded JSX text); pair it there and judge it - the 'catalog' token collides with connector-catalog vocabulary"
+    },
+    "3a377c10-3b0f-4674-87f9-aae9cb267c99/wizard-flows": {
+      "context": "plugins-twin-training",
+      "subject": "wizard-flows",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:38:37.000Z",
+      "worker": "23226631-9a50-4270-82fb-b71a9e3fbbd6",
+      "techniques": [
+        {
+          "technique": "ai-driven-elicitation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:65 dead hook; were it live, :205 'catch { return null; }' renders a failed follow-up generation as 'no follow-up needed' (failure-not-empty-success)"
+        },
+        {
+          "technique": "step-state-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/TrainingStudio.tsx:43 the live-in-tests studio is an unsequenced Q&A board with batch save, not a stepped flow"
+        },
+        {
+          "technique": "snapshot-and-resume",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:65 no mounted flow to resume"
+        }
+      ],
+      "registryProposal": "Coverage hole in the consumer's context map, not the corpus: src/features/plugins/twin/setup/ (useSetupSession.ts, a persisted backend-owned question queue - the live successor of this context's interview) belongs to NO context in context-map.json, so wizard-flows/ai-driven-elicitation cannot be paired with the code it actually governs. This context's keywords ('wizard','interview') also describe retired code; rescan the context map."
+    },
+    "2a54cdc2-87af-4298-b490-9eb87f230df7/wizard-flows": {
+      "context": "templates-draft-editor",
+      "subject": "wizard-flows",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:38:37.000Z",
+      "worker": "23226631-9a50-4270-82fb-b71a9e3fbbd6",
+      "techniques": [
+        {
+          "technique": "step-state-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_presets/usePresetAdoption.ts:30 three lifecycle stages, no steps to declare"
+        },
+        {
+          "technique": "commit-boundary",
+          "verdict": "realized (resonance only)",
+          "evidence": "src/features/templates/sub_presets/usePresetAdoption.ts:136 synchronous double-fire guard; :205 retry re-runs only failed members with per-member status rows"
+        },
+        {
+          "technique": "progress-communication",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_presets/PresetPreviewModal.tsx:142 single preview screen, no step rail"
+        }
+      ],
+      "registryProposal": "Technique-shaped resonance: usePresetAdoption.ts is a single-screen review+multi-part apply that realizes commit-boundary's partial-failure doctrine well (per-part outcomes, retry-only-failed, handoff-repair as a named compensating action) without being a wizard. commit-boundary's partial-failure section may deserve a home outside wizard-flows (e.g. a bulk-apply / batch-commit subject) so non-wizard multi-part commits can be judged against it; the matcher paired this context on 'draft/wizard/committed' tokens from a stale description."
     }
   }
 }
