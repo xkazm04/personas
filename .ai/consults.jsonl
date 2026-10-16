@@ -1259,3 +1259,6 @@
 {"ts":"2026-10-16T17:05:24Z","bundle":"software-engineering","subjects":["job-coordination"],"techniques":[],"deviations":0}
 {"ts":"2026-10-16T17:05:24Z","bundle":"software-engineering","subjects":["job-coordination"],"techniques":[],"deviations":0}
 {"ts":"2026-10-16T17:05:24Z","bundle":"software-engineering","subjects":["job-coordination"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:06:42Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["tool-identity-vs-tool-name","transport-selection","server-composition"],"deviations":1}
+{"ts":"2026-10-16T17:06:42Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["client-integration","tool-identity-vs-tool-name","transport-selection"],"deviations":2}
+{"ts":"2026-10-16T17:06:42Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["client-integration","untrusted-result-handling"],"deviations":1}

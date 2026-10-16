@@ -10452,7 +10452,11 @@
           "revision": 31,
           "changedAt": "2026-10-06",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/tool_usage.rs:59 persona_tool_usage stores only tool_name (no tool id column) and :114 groups the monthly KP connector totals by it, so renaming a tool definition splits its usage history into a death and a birth even though the caller holds tool.id (src-tauri/src/engine/tool_runner.rs:413)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "agent-runtime-assembly",
@@ -33267,7 +33271,11 @@
           "revision": 31,
           "changedAt": "2026-10-06",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/mcp_gateways.rs:63 inserts a gateway member whose display_name becomes the '<name>::' tool prefix with no per-gateway uniqueness (the only UNIQUE is (gateway, member)), so two members named alike collide and src-tauri/src/engine/mcp_tools.rs:837 routes every call to whichever matches first, under that member's credential",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "agent-memory",
@@ -37992,7 +38000,11 @@
           "revision": 31,
           "changedAt": "2026-10-06",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/desktop/McpServerCard.tsx:24 the Claude Desktop MCP import shows the spawn command CSS-truncated and never its args, and one click (:39) registers it as a stdio server Personas will execute, which is a code-execution consent about a program the user cannot fully see",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "hitl-approval",
