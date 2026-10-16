@@ -150,6 +150,7 @@ export function LedgerCanvas() {
       borderless
       ariaLabel={dl.goal_view_progress}
       emptyTitle={dl.progress_empty_title}
+      emptyArt="chart"
       groupBy={(r) => ({ key: r.projectId, label: r.projectName })}
       rowAccent={(r) => ledgerRail(r.node.goal.status, r.node.overdue)}
       rowFill={(r) => ({ pct: pctOf(r), color: ledgerFillColor(checklist.get(r.node.goal.id)) })}

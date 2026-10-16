@@ -6,7 +6,8 @@
  * composes. Kept as a separate module so the view file stays about layout.
  */
 import { memo, useCallback, useEffect, useState, type ReactNode } from 'react';
-import { ChartNoAxesGantt, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSystemStore } from '@/stores/systemStore';
 import * as devApi from '@/api/devTools/devTools';
@@ -382,11 +383,9 @@ export function ProgressGhost() {
 /** Shared empty state — no goals anywhere in the portfolio. */
 export function ProgressEmpty({ dl }: { dl: DevLifecycleT }) {
   return (
-    <div className="relative flex flex-col items-center justify-center py-16 text-center">
+    <div className="relative py-8">
       <GoalAtmosphere />
-      <ChartNoAxesGantt className="w-10 h-10 text-foreground mb-3" />
-      <h3 className="typo-section-title">{dl.progress_empty_title}</h3>
-      <p className="typo-body text-foreground mt-1 max-w-md">{dl.progress_empty_sub}</p>
+      <ScenarioEmptyState art="chart" size="lg" title={dl.progress_empty_title} description={dl.progress_empty_sub} />
     </div>
   );
 }

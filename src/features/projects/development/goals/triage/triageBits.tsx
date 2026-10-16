@@ -4,7 +4,7 @@
 // Semantic tokens only: `typo-*` for every text tier, `--status-*`/`--primary`
 // for ink, `rounded-card`/`rounded-interactive` for radii.
 import type { LucideIcon } from 'lucide-react';
-import { Target } from 'lucide-react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -83,10 +83,8 @@ export function TriageHeaderBand({ icon: Icon, title, subject, awaiting, childre
 /** Whole-surface empty copy. */
 export function TriageEmpty({ title, body }: { title: string; body: string }) {
   return (
-    <div className="h-full flex flex-col items-center justify-center gap-1 px-6 text-center py-12">
-      <Target className="w-7 h-7 text-foreground/15 mb-1" aria-hidden />
-      <p className="typo-title">{title}</p>
-      <p className="typo-caption text-foreground/70 max-w-[42ch]">{body}</p>
+    <div className="h-full flex items-center justify-center px-6 py-12">
+      <ScenarioEmptyState art="inbox" size="lg" title={title} description={body} />
     </div>
   );
 }
