@@ -20945,7 +20945,11 @@
           "revision": 6,
           "changedAt": "2026-09-20",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/components/dashboard/DashboardHome.tsx:1 delegates the home dashboard to sub_missionControl (another context); the only drawing file here, src/features/overview/components/dashboard/widgets/DashboardChartCard.tsx:44, has zero importers in src/, so no live chart renders from this context - if revived it carries a null engine fallback (:73) and a single isEmpty boolean for all four empty facts",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:0a15845e9dc44963",
+          "evaluatedRevision": 6
         },
         {
           "subject": "app-shell",
@@ -22739,7 +22743,11 @@
           "revision": 6,
           "changedAt": "2026-09-20",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_usage/libs/chartConstants.ts:13 CHART_COLORS is an 8-slot hardcoded-hex palette (not tokens, not theme-adaptive) that carries the success/warning/danger hues (#10b981, #f59e0b, #EA4335) and is assigned by index i % length - the cost-by-persona chart emits top-8 + Other = 9 series (src/features/overview/sub_activity/libs/useExecutionMetrics.ts:91), so Other renders the same blue as the top persona and the legend cannot tell them apart",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:0a15845e9dc44963",
+          "evaluatedRevision": 6
         },
         {
           "subject": "usage-pricing-models",

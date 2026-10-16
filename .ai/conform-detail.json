@@ -22968,6 +22968,49 @@
           "evidence": "src/features/vault/sub_catalog/components/desktop/DiscoveryMcpList.tsx:56 lists configured servers only; no tool result is consumed in this context"
         }
       ]
+    },
+    "7901fd6c-0346-430b-aefe-fc4cd623b167/data-viz": {
+      "context": "overview-usage-charts",
+      "subject": "data-viz",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:08:30.000Z",
+      "worker": "b24a7080-9d82-45a6-b57d-755b5336324c",
+      "techniques": [
+        {
+          "technique": "encoding-vocabulary",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/libs/chartConstants.ts:13 index-assigned categorical hex palette with reserved status hues and capacity 8, wrapped by i % CHART_COLORS.length at src/features/overview/sub_activity/components/MetricsCharts.tsx:65 over 9 series; grid/axis colours ARE tokenised (chartConstants.ts:36 reads --chart-grid-stroke)"
+        },
+        {
+          "technique": "chart-loading-economics",
+          "verdict": "realized",
+          "evidence": "src/features/shared/charts/RechartsWrapper.tsx:15 one shared dynamic import of the engine (no static recharts import in src/); src/features/overview/sub_usage/components/MetricChart.tsx:60 per-chart ChartErrorBoundary around LazyChart with a height-reserving fallback at :62; boundary reports via devlog at ChartErrorBoundary.tsx:32 (without chart identity or data shape)"
+        },
+        {
+          "technique": "empty-and-degraded-chart-states",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:67 a failed fetch sets rows to [] and renders the same chart-variant empty state as no data (:206) - could-not-answer spelled as nothing-exists; MetricChart offers only one optional emptySlot, so the four facts are left to each caller"
+        },
+        {
+          "technique": "metric-identity",
+          "verdict": "unknown",
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:30 derives error rate locally; not traced to whether a shared derivation exists"
+        }
+      ],
+      "registryProposal": "Dead-but-exported chart primitives are a recurring shape here (sub_usage/components/LazyChart.tsx:22 - an IntersectionObserver deferral with no fail-open - has zero importers, as do pivotToolUsage and DashboardChartCard); chart-loading-economics could say that an unused deferral primitive beside the live one is itself a finding, since the next author may pick the broken one."
+    },
+    "456eb952-9b93-4de4-bad5-79e6f101aeb1/data-viz": {
+      "context": "overview-components",
+      "subject": "data-viz",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:08:30.000Z",
+      "worker": "b24a7080-9d82-45a6-b57d-755b5336324c",
+      "techniques": [],
+      "registryProposal": "Matcher matched on the context description ('reusable dashboard card primitives', 'TrafficErrorsChart') which describes code that has since moved to sub_missionControl or died; the description is stale, not the subject."
     }
   }
 }
