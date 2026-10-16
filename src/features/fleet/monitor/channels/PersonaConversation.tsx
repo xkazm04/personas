@@ -1,7 +1,5 @@
-import {
-  memo, Suspense, useCallback, useEffect, useMemo, useRef, useState,
-} from 'react';
-import { MessagesSquare, Send } from 'lucide-react';
+import { memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { MessagesSquare } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -11,7 +9,10 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaReport } from '@/lib/types/types';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
-import { ConversationGhostRows } from './ConversationCards';
+import { ConversationGhostRows } from './ConversationGhostRows';
+import { PersonaComposer } from './PersonaComposer';
+import { useLiftReportModal } from './useLiftReportModal';
+import { Engraved } from '../grid/prototype/entry-e/parts';
 import { VirtualConversation } from './VirtualConversation';
 import { dayLabel } from './conversationModel';
 import {
@@ -50,114 +51,6 @@ const ReportDetailModal = lazyRetry(() =>
     default: m.ReportDetailModal,
   })),
 );
-
-/**
- * Lift the report modal above the Monitor overlay.
- *
- * THE BUG THIS EXISTS FOR: the Persona Monitor is mounted by `TrayOverlays`
- * *inside* `<div class="titlebar">`, and `globals.css` gives `.titlebar`
- * `position:relative; z-index:9999` — a stacking context far above everything
- * else. `ReportDetailModal` → `DetailModal` → `BaseModal portal`, which
- * portals to `document.body`; and because `DetailModal` passes an explicit
- * `containerClassName` (`fixed inset-0 z-[200] …`), `BaseModal` deliberately
- * skips its own `zIndex: Z_INDEX_PORTAL_BASE (10000)` style
- * (`BaseModal.tsx` — `style={containerClassName ? undefined : {...}}`).
- * So the modal mounted at z-200 while the opaque `bg-background` monitor sat
- * at 9999: the fetch ran, the modal rendered, and the user saw nothing.
- *
- * (The team channel's `ChannelDetailModal` works from the same surface only
- * because it uses a NON-portal `BaseModal`, which renders in-tree inside the
- * monitor's own stacking context.)
- *
- * The real fix is one token in the shared `DetailModal` (stop hard-coding
- * `z-[200]`, or let `BaseModal` merge its portal z with a supplied container
- * class) — out of this change's scope, and it would move every DetailModal in
- * the app. Until then this lifts OUR overlay only, and no-ops the moment the
- * shared fix lands (it never lowers a container that is already high enough).
- */
-const MONITOR_TITLEBAR_Z = 9999;
-const REPORT_MODAL_Z = 10050;
-
-function useLiftReportModal(open: boolean): void {
-  useEffect(() => {
-    if (!open) return;
-    const lift = () => {
-      // `detail-modal-title` is DetailModal's fixed titleId, so this reaches
-      // exactly the overlay we opened and nothing else on <body>.
-      const host = document.getElementById('detail-modal-title')?.closest('body > div');
-      if (!(host instanceof HTMLElement)) return false;
-      const current = Number.parseInt(window.getComputedStyle(host).zIndex, 10);
-      if (!Number.isFinite(current) || current <= MONITOR_TITLEBAR_Z) {
-        host.style.zIndex = String(REPORT_MODAL_Z);
-      }
-      return true;
-    };
-    // The modal is lazy, so it usually is not in the DOM on this first pass.
-    if (lift()) return;
-    const observer = new MutationObserver(() => {
-      if (lift()) observer.disconnect();
-    });
-    observer.observe(document.body, { childList: true });
-    return () => observer.disconnect();
-  }, [open]);
-}
-
-function PersonaComposer({ persona }: { persona: Persona }) {
-  const { t, tx } = useTranslation();
-  const send = usePipelineStore((s) => s.sendPersonaChannelMessage);
-  const [draft, setDraft] = useState('');
-  const ref = useRef<HTMLTextAreaElement>(null);
-
-  // rAF-batched autosize — same C4 rationale as the team composer.
-  useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      const el = ref.current;
-      if (!el) return;
-      el.style.height = 'auto';
-      el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-    });
-    return () => cancelAnimationFrame(id);
-  }, [draft]);
-
-  const submit = () => {
-    const text = draft.trim();
-    if (!text) return;
-    setDraft('');
-    // Fire-and-forget: the echo renders instantly; a failed post marks the
-    // echo in place and the door's rejection surfaces as a toast.
-    void send(persona.id, text).catch(toastCatch('personaChannel:send'));
-  };
-
-  return (
-    <div className="flex-shrink-0 border-t border-border bg-foreground/[0.02] px-3 py-2">
-      <div className="flex items-end gap-2">
-        <textarea
-          ref={ref}
-          rows={1}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-              e.preventDefault();
-              submit();
-            }
-          }}
-          placeholder={tx(t.monitor.conv_persona_composer_placeholder, { name: persona.name })}
-          className="flex-1 resize-none px-3 py-2 rounded-input bg-secondary/30 border border-border typo-body text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40"
-        />
-        <button
-          type="button"
-          onClick={submit}
-          disabled={!draft.trim()}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-interactive border border-status-success/30 bg-status-success/10 typo-body text-status-success hover:bg-status-success/20 transition-colors disabled:opacity-40"
-        >
-          <Send className="w-4 h-4" aria-hidden />
-          {t.monitor.conv_composer_send}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 export const PersonaConversation = memo(function PersonaConversation({ persona }: { persona: Persona }) {
   const { t } = useTranslation();
@@ -221,7 +114,6 @@ export const PersonaConversation = memo(function PersonaConversation({ persona }
   // Stable-closure renderRow (C2/C3): keyed callbacks only, so the memo'd
   // cards bail unless their own row changed.
   const personaName = persona.name.replace(/^T:\s*/, '');
-  const personaColor = persona.color;
   const renderRow = useCallback(
     (row: PersonaConversationRow) => {
       switch (row.kind) {
@@ -229,7 +121,7 @@ export const PersonaConversation = memo(function PersonaConversation({ persona }
           return (
             <div className="flex items-center gap-2 py-2">
               <span className="flex-1 h-px bg-border" />
-              <span className="typo-caption text-foreground opacity-40">{dayLabel(row.at, dayWords)}</span>
+              <Engraved>{dayLabel(row.at, dayWords)}</Engraved>
               <span className="flex-1 h-px bg-border" />
             </div>
           );
@@ -246,12 +138,12 @@ export const PersonaConversation = memo(function PersonaConversation({ persona }
               return <PersonaSystemLine item={row.item} />;
             default:
               return (
-                <PersonaChatBubble item={row.item} personaName={personaName} personaColor={personaColor} />
+                <PersonaChatBubble item={row.item} persona={persona} />
               );
           }
       }
     },
-    [dayWords, personaName, personaColor, openReport, onResolvedReview],
+    [dayWords, personaName, persona, openReport, onResolvedReview],
   );
 
   return (
